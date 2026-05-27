@@ -41,7 +41,7 @@ namespace Hecton8.Lighting
         private const uint RelayContextHash = 0x47495245u;
         private const uint SHLayoutMismatchHash = 0x53484C4Fu;
         private const uint NonFiniteInputHash = 0x4749464Eu;
-        private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_SHINOBU_347_GI_RELAY_SYNC.bin";
+        private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_13KRA.bin";
 
         private static readonly int _WaterVolumeId = Shader.PropertyToID("_WaterVolume");
         private static readonly int _HectonGIRelaySHBufferId = Shader.PropertyToID("_HectonGIRelaySHBuffer");
@@ -362,7 +362,7 @@ namespace Hecton8.Lighting
                 return;
 
             _vault = ResolveDataVault();
-            if (_vault == null)
+            if (_vault == null || _vault.IsAllocationLocked)
                 return;
 
             _shDay = AcquireBuffer<float>(SHDayBuffer, SHCoefficientCount, NativeArrayOptions.UninitializedMemory);
@@ -371,7 +371,18 @@ namespace Hecton8.Lighting
             _shOutput = AcquireBuffer<float>(SHOutputBuffer, SHCoefficientCount, NativeArrayOptions.UninitializedMemory);
             _shLightningScratch = AcquireBuffer<float>(SHLightningScratchBuffer, SHCoefficientCount, NativeArrayOptions.UninitializedMemory);
             _telemetryRing = AcquireBuffer<GIRelayTelemetryEntry>(SHTelemetryRingBuffer, TelemetryCapacity);
-            EnsureDayNightRelayNativeStorage();
+            if (!HasRequiredGIRelayStorage())
+            {
+                _nativeStorageReady = false;
+                return;
+            }
+
+            if (!EnsureDayNightRelayNativeStorage())
+            {
+                _nativeStorageReady = false;
+                return;
+            }
+
             EnsureShUploadBuffers();
 
             BuildSHProfiles();
@@ -404,11 +415,30 @@ namespace Hecton8.Lighting
             int length,
             NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct
         {
+            if (_vault == null)
+                return default;
+
             VaultGenerationHandle<T> handle = _vault.EnsureGenerationHandle<T>(bufferId, length, MemoryOwner, options);
             if (!TryOpenGIRelayBuffer(in handle, bufferId, length, out NativeArray<T> buffer) || !buffer.IsCreated)
-                throw new InvalidOperationException("GI relay DataVault buffer acquisition failed.");
+                return default;
 
             return handle;
+        }
+
+        private bool HasRequiredGIRelayStorage()
+        {
+            return TryOpenGIRelayBuffer(in _shDay, SHDayBuffer, SHCoefficientCount, out NativeArray<float> day) &&
+                   day.IsCreated &&
+                   TryOpenGIRelayBuffer(in _shNight, SHNightBuffer, SHCoefficientCount, out NativeArray<float> night) &&
+                   night.IsCreated &&
+                   TryOpenGIRelayBuffer(in _shDiscreteStates, SHDiscreteStatesBuffer, SHCoefficientCount * SHStateCount, out NativeArray<float> states) &&
+                   states.IsCreated &&
+                   TryOpenGIRelayBuffer(in _shOutput, SHOutputBuffer, SHCoefficientCount, out NativeArray<float> output) &&
+                   output.IsCreated &&
+                   TryOpenGIRelayBuffer(in _shLightningScratch, SHLightningScratchBuffer, SHCoefficientCount, out NativeArray<float> scratch) &&
+                   scratch.IsCreated &&
+                   TryOpenGIRelayBuffer(in _telemetryRing, SHTelemetryRingBuffer, TelemetryCapacity, out NativeArray<GIRelayTelemetryEntry> telemetry) &&
+                   telemetry.IsCreated;
         }
 
         private IDataVault ResolveDataVault()
@@ -607,7 +637,7 @@ namespace Hecton8.Lighting
             if (_vault == null ||
                 _celestialStateRead.BufferID != unchecked((uint)(int)BufferID.Shinobu345CelestialStateRead) ||
                 _celestialStateRead.Generation == 0u ||
-                !_vault.TryReadHandle(in _celestialStateRead, out NativeArray<CelestialStateDTO> states) ||
+                !_vault.TryReadOnlyHandle(in _celestialStateRead, out NativeArray<CelestialStateDTO>.ReadOnly states) ||
                 !states.IsCreated ||
                 states.Length <= 0)
             {

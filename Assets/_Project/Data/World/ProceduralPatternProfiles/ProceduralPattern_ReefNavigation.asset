@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: ProceduralPattern_ReefNavigation
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPatternProfile
   pattern: 1
-  label: Reef Navigation
-  summary: Readable reef water with route memory, shelter detours and passive fauna.
+  label: Fossil Shelf Navigation
+  summary: Readable fossil-shelf water with route memory, shelter detours and passive fauna.
   groundBudgetScale: 0.95
   clusterBudgetScale: 1.6
   structureBudgetScale: 1.1

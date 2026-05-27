@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
@@ -1338,19 +1339,22 @@ namespace Hecton8.Gameplay
         private Playable _wrappedSourcePlayable;
         private AnimationScriptPlayable _ikPlayable;
 
-        private NativeArray<TransformStreamHandle> _streamHandles;
-        private NativeArray<ContextualPhysicalIkTwoBoneSetup> _twoBoneSetups;
-        private NativeArray<ContextualPhysicalIkAppendageChainRuntime> _appendageChainRuntimes;
-        private NativeArray<float> _appendageSegmentLengths;
-        private NativeArray<ContextualPhysicalIkAppendageTarget> _appendageTargets;
-        private NativeArray<float3> _appendageScratchPositions;
-        private NativeArray<ContextualPhysicalIkSpineChainRuntime> _spineChainRuntimes;
-        private NativeArray<float3> _spineTargets;
-        private NativeArray<ContextualPhysicalIkSecondaryChainRuntime> _secondaryChainRuntimes;
-        private NativeArray<ContextualPhysicalIkSecondaryState> _secondaryStates;
-        private NativeArray<ContextualPhysicalIkCachedPoseState> _cachedLocalPoseStates;
-        private NativeArray<float> _muscleBulgeOutput;
-        private NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly _currentTargetFrames;
+        // COLD ALLOC: RigNativeBufferSet[1] - native IK animation buffer owner indirection - owner: ContextualPhysicalIkRig
+        private RigNativeBufferSet _nativeBuffers = new RigNativeBufferSet();
+
+        private ref NativeArray<TransformStreamHandle> _streamHandles => ref _nativeBuffers.StreamHandles;
+        private ref NativeArray<ContextualPhysicalIkTwoBoneSetup> _twoBoneSetups => ref _nativeBuffers.TwoBoneSetups;
+        private ref NativeArray<ContextualPhysicalIkAppendageChainRuntime> _appendageChainRuntimes => ref _nativeBuffers.AppendageChainRuntimes;
+        private ref NativeArray<float> _appendageSegmentLengths => ref _nativeBuffers.AppendageSegmentLengths;
+        private ref NativeArray<ContextualPhysicalIkAppendageTarget> _appendageTargets => ref _nativeBuffers.AppendageTargets;
+        private ref NativeArray<float3> _appendageScratchPositions => ref _nativeBuffers.AppendageScratchPositions;
+        private ref NativeArray<ContextualPhysicalIkSpineChainRuntime> _spineChainRuntimes => ref _nativeBuffers.SpineChainRuntimes;
+        private ref NativeArray<float3> _spineTargets => ref _nativeBuffers.SpineTargets;
+        private ref NativeArray<ContextualPhysicalIkSecondaryChainRuntime> _secondaryChainRuntimes => ref _nativeBuffers.SecondaryChainRuntimes;
+        private ref NativeArray<ContextualPhysicalIkSecondaryState> _secondaryStates => ref _nativeBuffers.SecondaryStates;
+        private ref NativeArray<ContextualPhysicalIkCachedPoseState> _cachedLocalPoseStates => ref _nativeBuffers.CachedLocalPoseStates;
+        private ref NativeArray<float> _muscleBulgeOutput => ref _nativeBuffers.MuscleBulgeOutput;
+        private ref NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly _currentTargetFrames => ref _nativeBuffers.CurrentTargetFrames;
 
         private Transform[] _appendageTargetSources;
         private Transform[] _appendageFallbackTips;
@@ -1390,7 +1394,7 @@ namespace Hecton8.Gameplay
         private float _externalSqueezePoleHoldTimer;
         private float _upperArmCullTimer;
         private Material _muscleBulgeMaterialInstance;
-        private Material[] _muscleBulgeSharedMaterials;
+        private List<Material> _muscleBulgeSharedMaterials;
         private Material _muscleBulgeOriginalMaterial;
         private float _muscleBulgeCurrent;
         private float _cachedLeftLegReach;
@@ -2916,18 +2920,19 @@ namespace Hecton8.Gameplay
 
         private void DisposeRuntimeArrays()
         {
-            DisposeNativeArray(ref _streamHandles);
-            DisposeNativeArray(ref _twoBoneSetups);
-            DisposeNativeArray(ref _appendageChainRuntimes);
-            DisposeNativeArray(ref _appendageSegmentLengths);
-            DisposeNativeArray(ref _appendageTargets);
-            DisposeNativeArray(ref _appendageScratchPositions);
-            DisposeNativeArray(ref _spineChainRuntimes);
-            DisposeNativeArray(ref _spineTargets);
-            DisposeNativeArray(ref _secondaryChainRuntimes);
-            DisposeNativeArray(ref _secondaryStates);
-            DisposeNativeArray(ref _cachedLocalPoseStates);
-            DisposeNativeArray(ref _muscleBulgeOutput);
+            DisposeNativeArray(ref _nativeBuffers.StreamHandles);
+            DisposeNativeArray(ref _nativeBuffers.TwoBoneSetups);
+            DisposeNativeArray(ref _nativeBuffers.AppendageChainRuntimes);
+            DisposeNativeArray(ref _nativeBuffers.AppendageSegmentLengths);
+            DisposeNativeArray(ref _nativeBuffers.AppendageTargets);
+            DisposeNativeArray(ref _nativeBuffers.AppendageScratchPositions);
+            DisposeNativeArray(ref _nativeBuffers.SpineChainRuntimes);
+            DisposeNativeArray(ref _nativeBuffers.SpineTargets);
+            DisposeNativeArray(ref _nativeBuffers.SecondaryChainRuntimes);
+            DisposeNativeArray(ref _nativeBuffers.SecondaryStates);
+            DisposeNativeArray(ref _nativeBuffers.CachedLocalPoseStates);
+            DisposeNativeArray(ref _nativeBuffers.MuscleBulgeOutput);
+            _nativeBuffers.CurrentTargetFrames = default;
             _appendageTargetSources = null;
             _appendageFallbackTips = null;
             _appendageVoxelVolumes = null;
@@ -2962,6 +2967,23 @@ namespace Hecton8.Gameplay
             _hasPreviousRightPredictiveControllerPose = false;
             ReleaseMuscleBulgeMaterial();
             _runtimeInitialized = false;
+        }
+
+        private sealed class RigNativeBufferSet
+        {
+            public NativeArray<TransformStreamHandle> StreamHandles;
+            public NativeArray<ContextualPhysicalIkTwoBoneSetup> TwoBoneSetups;
+            public NativeArray<ContextualPhysicalIkAppendageChainRuntime> AppendageChainRuntimes;
+            public NativeArray<float> AppendageSegmentLengths;
+            public NativeArray<ContextualPhysicalIkAppendageTarget> AppendageTargets;
+            public NativeArray<float3> AppendageScratchPositions;
+            public NativeArray<ContextualPhysicalIkSpineChainRuntime> SpineChainRuntimes;
+            public NativeArray<float3> SpineTargets;
+            public NativeArray<ContextualPhysicalIkSecondaryChainRuntime> SecondaryChainRuntimes;
+            public NativeArray<ContextualPhysicalIkSecondaryState> SecondaryStates;
+            public NativeArray<ContextualPhysicalIkCachedPoseState> CachedLocalPoseStates;
+            public NativeArray<float> MuscleBulgeOutput;
+            public NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly CurrentTargetFrames;
         }
 
         private void RegisterNativeMemorySentinel()
@@ -3178,10 +3200,14 @@ namespace Hecton8.Gameplay
             if (muscleBulgeRenderer == null)
                 return false;
 
-            _muscleBulgeSharedMaterials = muscleBulgeRenderer.sharedMaterials;
-            if (_muscleBulgeSharedMaterials == null ||
+            if (_muscleBulgeSharedMaterials == null)
+                _muscleBulgeSharedMaterials = new List<Material>(4); // COLD ALLOC: List<Material> - per-rig reusable renderer material slot buffer - owner: ContextualPhysicalIkRig
+
+            _muscleBulgeSharedMaterials.Clear();
+            muscleBulgeRenderer.GetSharedMaterials(_muscleBulgeSharedMaterials);
+            if (_muscleBulgeSharedMaterials.Count == 0 ||
                 muscleBulgeMaterialSlot < 0 ||
-                muscleBulgeMaterialSlot >= _muscleBulgeSharedMaterials.Length)
+                muscleBulgeMaterialSlot >= _muscleBulgeSharedMaterials.Count)
             {
                 return false;
             }
@@ -3193,7 +3219,7 @@ namespace Hecton8.Gameplay
             _muscleBulgeMaterialInstance = new Material(_muscleBulgeOriginalMaterial); // COLD ALLOC: Material[1] - per-rig muscle bulge material instance - owner: ContextualPhysicalIkRig
             _muscleBulgeMaterialInstance.SetFloat(MuscleBulgeShaderId, 0.0f);
             _muscleBulgeSharedMaterials[muscleBulgeMaterialSlot] = _muscleBulgeMaterialInstance;
-            muscleBulgeRenderer.sharedMaterials = _muscleBulgeSharedMaterials;
+            muscleBulgeRenderer.SetSharedMaterials(_muscleBulgeSharedMaterials);
             _muscleBulgeCurrent = 0.0f;
             _muscleBulgeMaterialInitialized = true;
             return true;
@@ -3204,11 +3230,11 @@ namespace Hecton8.Gameplay
             if (muscleBulgeRenderer != null &&
                 _muscleBulgeSharedMaterials != null &&
                 muscleBulgeMaterialSlot >= 0 &&
-                muscleBulgeMaterialSlot < _muscleBulgeSharedMaterials.Length &&
+                muscleBulgeMaterialSlot < _muscleBulgeSharedMaterials.Count &&
                 _muscleBulgeOriginalMaterial != null)
             {
                 _muscleBulgeSharedMaterials[muscleBulgeMaterialSlot] = _muscleBulgeOriginalMaterial;
-                muscleBulgeRenderer.sharedMaterials = _muscleBulgeSharedMaterials;
+                muscleBulgeRenderer.SetSharedMaterials(_muscleBulgeSharedMaterials);
             }
 
             if (_muscleBulgeMaterialInstance != null)
@@ -3220,7 +3246,7 @@ namespace Hecton8.Gameplay
             }
 
             _muscleBulgeMaterialInstance = null;
-            _muscleBulgeSharedMaterials = null;
+            _muscleBulgeSharedMaterials?.Clear();
             _muscleBulgeOriginalMaterial = null;
             _muscleBulgeCurrent = 0.0f;
             _muscleBulgeMaterialInitialized = false;

@@ -1291,7 +1291,7 @@ namespace Hecton8.World
         internal bool TryBuildEnvelope(Vector3 worldPosition, out EcosystemEnvelope envelope)
         {
             float depthMeters = 0f;
-            MapMagicBridge mapMagicBridge = GlobalRegistry.MapMagic;
+            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
             if (mapMagicBridge != null)
                 depthMeters = math.max(0f, mapMagicBridge.WaterSurfaceLevel - worldPosition.y);
 
@@ -1571,7 +1571,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            MapMagicBridge bridge = GlobalRegistry.MapMagic;
+            MapMagicBridge bridge = MapMagicBridge.Instance;
             if (bridge == null ||
                 !bridge.TryGetHeight(worldPosition.x, worldPosition.z, out float terrainHeight) ||
                 !math.isfinite(terrainHeight))
@@ -1700,7 +1700,7 @@ namespace Hecton8.World
         {
             target = default;
             heat01 = 0f;
-            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
+            AbyssalThermalManager thermalManager = AbyssalThermalManager.ActiveRuntimeInstance;
             return thermalManager != null &&
                    thermalManager.TryResolveNearestActiveVentAttractor(in queryAup, searchRadiusMeters, out target, out heat01);
         }
@@ -2663,7 +2663,7 @@ namespace Hecton8.World
                 toxicity01 = math.max(toxicity01, SanitizeMutationScalar01(hazardToxicity01));
             }
 
-            ResourceDistributionDirector resourceDistribution = GlobalRegistry.ResourceDistribution;
+            ResourceDistributionDirector resourceDistribution = ResourceDistributionDirector.ActiveRuntimeInstance;
             if (resourceDistribution == null || !resourceDistribution.TrySampleBrineLayer(runtimePosition, out BrineLayerSample brineSample))
             {
                 if (invalidScalar)
@@ -3145,7 +3145,7 @@ namespace Hecton8.World
             if (!IsInitialized || preyConsumed <= 0)
                 return;
 
-            GlobalRegistry.EnvironmentalStrain?.AccumulatePredationStrain(worldPosition, preyConsumed);
+            EnvironmentalStrainManager.Instance?.AccumulatePredationStrain(worldPosition, preyConsumed);
             QueueOrApplyBiomassImpact(worldPosition, BiomassImpactKindPredation, preyConsumed * math.rcp(math.max(1f, maxPreyPopulation)));
             if (HasPendingSimulationJob())
                 return;
@@ -3335,9 +3335,9 @@ namespace Hecton8.World
         {
             _cachedVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (_cachedPersistentWorldRegistry == null)
-                _cachedPersistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+                _cachedPersistentWorldRegistry = PersistentWorldRegistry.Instance;
             if (_cachedSargassumMicroFauna == null)
-                _cachedSargassumMicroFauna = GlobalRegistry.SargassumMicroFauna;
+                _cachedSargassumMicroFauna = SargassumMicroFaunaBoids.ActiveRuntimeInstance;
             if (_cachedPlayerContext == null)
                 _cachedPlayerContext = GlobalRegistry.Player;
         }
@@ -3412,7 +3412,7 @@ namespace Hecton8.World
         private static float ResolveCombinedCorpseSpawnInfluence01(Vector3 worldPosition, float radiusMeters)
         {
             float liveCorpseInfluence01 = ResolveCorpseSpawnInfluence01(worldPosition, radiusMeters);
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
             float persistentWhaleFallInfluence01 = registry != null
                 ? registry.ResolveWhaleFallSpawnInfluence01(worldPosition, ReadDispatcherTimeSeconds(), radiusMeters)
                 : 0f;
@@ -4140,7 +4140,7 @@ namespace Hecton8.World
 
             PersistentWorldRegistry registry = _cachedPersistentWorldRegistry != null
                 ? _cachedPersistentWorldRegistry
-                : GlobalRegistry.PersistentWorldRegistry;
+                : PersistentWorldRegistry.Instance;
             if (registry == null)
                 return;
 
@@ -4206,7 +4206,7 @@ namespace Hecton8.World
 
         private static float ResolveWaterSurfaceLevel(Vector3 worldPosition)
         {
-            MapMagicBridge bridge = GlobalRegistry.MapMagic;
+            MapMagicBridge bridge = MapMagicBridge.Instance;
             if (bridge != null)
                 return bridge.WaterSurfaceLevel;
 
@@ -4990,7 +4990,7 @@ namespace Hecton8.World
 
         private static byte EncodeMacroSwarmVisualQualityByte(float qualityWeight01)
         {
-            return (byte)math.clamp((int)math.round(math.saturate(qualityWeight01) * 3f), 0, 3);
+            return (byte)math.clamp((int)math.round(math.saturate(qualityWeight01) * 255f), 0, 255);
         }
 
         private static float ResolveGlobalQualityWeight01()
@@ -5814,7 +5814,7 @@ namespace Hecton8.World
                 return;
 
             if (_cachedPersistentWorldRegistry == null)
-                _cachedPersistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+                _cachedPersistentWorldRegistry = PersistentWorldRegistry.Instance;
 
             if (_cachedPersistentWorldRegistry == null)
                 return;

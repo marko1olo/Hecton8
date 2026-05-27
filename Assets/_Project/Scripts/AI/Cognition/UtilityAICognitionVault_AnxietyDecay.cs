@@ -58,7 +58,7 @@ namespace Hecton8.AI.Cognition
         }
     }
 
-    public struct UtilityAIAnxietyVaultBuffers
+    public ref struct UtilityAIAnxietyVaultBuffers
     {
         public NativeArray<AnxietyProfileDTO> Profiles;
         public NativeArray<AnxietyRuntimeTuningDTO> Tuning;

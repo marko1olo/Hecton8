@@ -121,6 +121,11 @@ Allowed global routes:
   - New/widened routes: `IAtlasSignalDecodeSink`, `IAtlas6DirectiveCommandSink`, `IFaunaWorldSeedReadModel`, `IResourceScarcityReadModel`, `IPersistentDroppedItemRegistry`, `ICelestialResonanceReadModel`, `IEnvironmentalStrainIndustrialSink`, `ILoreDatabaseReadModel`, and voxel cave-in dust on `IFluidDecalPresentationSink`.
   - Proof: `CompileWallX003Audit.py` concrete casts `968->950`; critical source using/FQN `0`; hot-path lookup `0`.
   - Residual: runtime concrete sibling refs remain `96`; that loop's build was blocked by CPU 93 plus active `dotnet` PIDs 55120/56776.
+- 2026-05-27/13pro: production new-game prologue route documented as `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO`.
+  - Owner: `PrologueWorldHandoffSceneLoader` consumes sequence-owned `SignalBus<PrologueCompleteSignal>` and calls cached `ISceneService`.
+  - Route: `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD` for new game; load-game resume may still enter `02_HECTON_WORLD` directly.
+  - Review disposition: `YELLOW / STATIC_SOURCE_ONLY`.
+  - Proof blocker: compile currently fails on out-of-domain Odin/inventory/BufferID walls; Unity import, Play Mode, profiler/GC, and no-survivor-root proof remain pending.
 
 ## Required Audit Commands
 

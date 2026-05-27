@@ -76,6 +76,11 @@ namespace Hecton8.Interaction
             InteractableRegistry.InvalidateTree(this);
         }
 
+        private void OnDestroy()
+        {
+            InteractableRegistry.InvalidateTree(this);
+        }
+
         void IInteractable.OnHoverStart()
         {
             if (_highlighter != null)

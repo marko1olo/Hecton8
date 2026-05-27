@@ -54,6 +54,7 @@
 //   • GameTickManager.Register/Unregister — zero GC (buffered list ops).
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Unity.Mathematics;
@@ -177,8 +178,23 @@ namespace Hecton8.Interaction
         {
             _RendererScratch.Clear();
             GetComponentsInChildren<Renderer>(false, _RendererScratch);
-            targetRenderers = _RendererScratch.ToArray();
+            targetRenderers = CopyRendererScratch(targetRenderers);
             _RendererScratch.Clear();
+        }
+
+        private static Renderer[] CopyRendererScratch(Renderer[] target)
+        {
+            int count = _RendererScratch.Count;
+            if (count <= 0)
+                return Array.Empty<Renderer>();
+
+            if (target == null || target.Length != count)
+                target = new Renderer[count];
+
+            for (int i = 0; i < count; i++)
+                target[i] = _RendererScratch[i];
+
+            return target;
         }
 
         /// <summary>

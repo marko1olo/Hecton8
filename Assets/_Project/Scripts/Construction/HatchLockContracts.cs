@@ -19,6 +19,7 @@ namespace Hecton8.Construction
         public const float DefaultSafePressureDifferentialATM = 0.5f;
         public const float DefaultStructuralJamThreshold01 = 0.3f;
         public const float DefaultCatastrophicPressureDifferentialATM = 0.75f;
+        public const float AuthoritativeQualityWeight = 1f;
         public const float UltraTickIntervalSeconds = 0.016f;
         public const float SurvivalTickIntervalSeconds = 0.2f;
         public const float DumpThresholdMicroseconds = 200f;
@@ -64,10 +65,22 @@ namespace Hecton8.Construction
         [FieldOffset(4)] public uint RoomBHashID;
         [FieldOffset(8)] public float PressureDifferentialATM;
         [FieldOffset(12)] public uint FsmStateMask;
-        [FieldOffset(16)] private uint _pad0;
-        [FieldOffset(20)] private uint _pad1;
-        [FieldOffset(24)] private uint _pad2;
-        [FieldOffset(28)] private uint _pad3;
+        [FieldOffset(16)] private byte _pad0;
+        [FieldOffset(17)] private byte _pad1;
+        [FieldOffset(18)] private byte _pad2;
+        [FieldOffset(19)] private byte _pad3;
+        [FieldOffset(20)] private byte _pad4;
+        [FieldOffset(21)] private byte _pad5;
+        [FieldOffset(22)] private byte _pad6;
+        [FieldOffset(23)] private byte _pad7;
+        [FieldOffset(24)] private byte _pad8;
+        [FieldOffset(25)] private byte _pad9;
+        [FieldOffset(26)] private byte _pad10;
+        [FieldOffset(27)] private byte _pad11;
+        [FieldOffset(28)] private byte _pad12;
+        [FieldOffset(29)] private byte _pad13;
+        [FieldOffset(30)] private byte _pad14;
+        [FieldOffset(31)] private byte _pad15;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -143,7 +156,7 @@ namespace Hecton8.Construction
                    GetOffset<HatchStateDTO>(nameof(HatchStateDTO.PressureDifferentialATM)) == 8 &&
                    GetOffset<HatchStateDTO>(nameof(HatchStateDTO.FsmStateMask)) == 12 &&
                    GetOffset<HatchStateDTO>("_pad0") == 16 &&
-                   GetOffset<HatchStateDTO>("_pad3") == 28;
+                   GetOffset<HatchStateDTO>("_pad15") == 31;
 #else
             return true;
 #endif

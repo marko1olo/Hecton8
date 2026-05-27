@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Burst;
 using Unity.Collections;
@@ -19,7 +19,11 @@ namespace Hecton8.World
         public float GetWaterTemperature(Vector3 position)
         {
             if (!_abyssalThermalGridInitialized ||
-                !_nativeMemory.AbyssalThermalGridNative.IsCreated ||
+                !TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalThermalGridHandle,
+                    BufferID.VegetationAbyssalThermalGrid,
+                    _abyssalThermalGridCellCount,
+                    out _) ||
                 _abyssalThermalGridResolutionXZ <= 0 ||
                 _abyssalThermalGridResolutionY <= 0)
             {
@@ -74,7 +78,11 @@ namespace Hecton8.World
 
         private float SampleThermalGridAtPosition(Vector3 position)
         {
-            if (!_nativeMemory.AbyssalThermalGridNative.IsCreated ||
+            if (!TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalThermalGridHandle,
+                    BufferID.VegetationAbyssalThermalGrid,
+                    _abyssalThermalGridCellCount,
+                    out NativeArray<float> thermalGrid) ||
                 _abyssalThermalGridResolutionXZ <= 0 ||
                 _abyssalThermalGridResolutionY <= 0 ||
                 thermalGridHorizontalCellSize <= 0f ||
@@ -105,14 +113,14 @@ namespace Hecton8.World
             float fracZ = normalizedZ - z0;
             float fracY = normalizedY - y0;
 
-            float sample000 = _nativeMemory.AbyssalThermalGridNative[GetThermalGridPhysicalIndex(x0, y0, z0)];
-            float sample100 = _nativeMemory.AbyssalThermalGridNative[GetThermalGridPhysicalIndex(x1, y0, z0)];
-            float sample010 = _nativeMemory.AbyssalThermalGridNative[GetThermalGridPhysicalIndex(x0, y0, z1)];
-            float sample110 = _nativeMemory.AbyssalThermalGridNative[GetThermalGridPhysicalIndex(x1, y0, z1)];
-            float sample001 = _nativeMemory.AbyssalThermalGridNative[GetThermalGridPhysicalIndex(x0, y1, z0)];
-            float sample101 = _nativeMemory.AbyssalThermalGridNative[GetThermalGridPhysicalIndex(x1, y1, z0)];
-            float sample011 = _nativeMemory.AbyssalThermalGridNative[GetThermalGridPhysicalIndex(x0, y1, z1)];
-            float sample111 = _nativeMemory.AbyssalThermalGridNative[GetThermalGridPhysicalIndex(x1, y1, z1)];
+            float sample000 = thermalGrid[GetThermalGridPhysicalIndex(x0, y0, z0)];
+            float sample100 = thermalGrid[GetThermalGridPhysicalIndex(x1, y0, z0)];
+            float sample010 = thermalGrid[GetThermalGridPhysicalIndex(x0, y0, z1)];
+            float sample110 = thermalGrid[GetThermalGridPhysicalIndex(x1, y0, z1)];
+            float sample001 = thermalGrid[GetThermalGridPhysicalIndex(x0, y1, z0)];
+            float sample101 = thermalGrid[GetThermalGridPhysicalIndex(x1, y1, z0)];
+            float sample011 = thermalGrid[GetThermalGridPhysicalIndex(x0, y1, z1)];
+            float sample111 = thermalGrid[GetThermalGridPhysicalIndex(x1, y1, z1)];
             float sampleX00 = LerpClamped(sample000, sample100, fracX);
             float sampleX10 = LerpClamped(sample010, sample110, fracX);
             float sampleX01 = LerpClamped(sample001, sample101, fracX);

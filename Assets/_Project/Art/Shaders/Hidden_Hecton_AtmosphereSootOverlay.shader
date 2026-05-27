@@ -18,11 +18,15 @@ Shader "Hidden/Hecton8/AtmosphereSootOverlay"
             Name "AtmosphereSootOverlay"
 
             HLSLPROGRAM
-            #pragma target 4.5
+            #pragma target 3.5
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
             CBUFFER_START(HectonAtmosphereSootGlobals)
                 float4 _HectonAtmosphereSootParams;
@@ -33,11 +37,13 @@ Shader "Hidden/Hecton8/AtmosphereSootOverlay"
 
             struct Attributes
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 uint vertexID : SV_VertexID;
             };
 
             struct Varyings
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float2 screenUV : TEXCOORD0;
@@ -47,6 +53,8 @@ Shader "Hidden/Hecton8/AtmosphereSootOverlay"
             Varyings Vert(Attributes input)
             {
                 Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.screenUV = float2((input.vertexID << 1) & 2, input.vertexID & 2);
                 output.positionCS = float4(output.screenUV * 2.0 - 1.0, 0.0, 1.0);
@@ -67,13 +75,19 @@ Shader "Hidden/Hecton8/AtmosphereSootOverlay"
                 return frac(p.x * p.y);
             }
 
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(uv);
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float intensity = saturate(_HectonAtmosphereSootParams.x);
                 float2 uv = UnityStereoTransformScreenSpaceTex(input.screenUV);
-                half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
+                half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(uv));
                 if (intensity <= 0.0001)
                     return color;
 

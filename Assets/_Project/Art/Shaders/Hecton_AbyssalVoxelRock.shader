@@ -267,10 +267,41 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             half skirtAlpha : TEXCOORD2;
         };
 
+        float HectonVoxelRockFiniteOr(float value, float fallbackValue)
+        {
+            return isfinite(value) ? value : fallbackValue;
+        }
+
+        float3 HectonVoxelRockFiniteOr(float3 value, float3 fallbackValue)
+        {
+            return all(isfinite(value)) ? value : fallbackValue;
+        }
+
+        float4 HectonVoxelRockFiniteOr(float4 value, float4 fallbackValue)
+        {
+            return all(isfinite(value)) ? value : fallbackValue;
+        }
+
+        half4 HectonVoxelRockFiniteOr(half4 value, half4 fallbackValue)
+        {
+            return all(isfinite(value)) ? value : fallbackValue;
+        }
+
+        half HectonVoxelRockFiniteSaturate(float value, half fallbackValue)
+        {
+            return (half)saturate(HectonVoxelRockFiniteOr(value, fallbackValue));
+        }
+
+        float HectonVoxelRockSafeTime()
+        {
+            return HectonVoxelRockFiniteOr(_Time.y, 0.0);
+        }
+
         half3 SafeNormalize3(half3 value)
         {
+            value = all(isfinite(value)) ? value : half3(0.0h, 1.0h, 0.0h);
             half lenSq = dot(value, value);
-            half valid = step(0.0001h, lenSq);
+            half valid = isfinite(lenSq) ? step(0.0001h, lenSq) : 0.0h;
             half3 axis = abs(value);
             half maxAxis = max(axis.x, max(axis.y, axis.z));
             half minAxis = min(axis.x, min(axis.y, axis.z));
@@ -324,12 +355,14 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
         float ResolveDitherNoise(float2 positionCS)
         {
+            positionCS = all(isfinite(positionCS)) ? positionCS : float2(0.0, 0.0);
             float2 pixel = floor(positionCS);
             return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
         }
 
         float ValueNoise3(float3 value)
         {
+            value = HectonVoxelRockFiniteOr(value, float3(0.0, 0.0, 0.0));
             float primary = HectonCoreLitTrianglePulse01(dot(value, float3(0.173, 0.097, 0.131)));
             float secondary = HectonCoreLitTrianglePulse01(dot(value.yzx + 17.13, float3(0.071, 0.149, 0.109)));
             return saturate(primary * 0.68 + secondary * 0.32);
@@ -337,7 +370,9 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
         float3 ResolveSamplePositionWS(float3 positionWS)
         {
-            return positionWS + _HectonFloatingOriginOffset.xyz;
+            float3 safePositionWS = HectonVoxelRockFiniteOr(positionWS, float3(0.0, 0.0, 0.0));
+            float3 safeOffset = HectonVoxelRockFiniteOr(_HectonFloatingOriginOffset.xyz, float3(0.0, 0.0, 0.0));
+            return safePositionWS + safeOffset;
         }
 
         half3 ResolveChunkBorderStitchedNormal(half3 normalWS, float currentAbsoluteHeight, float neighborBorderHeight, half edgeBlend)
@@ -376,15 +411,18 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
         float3 ResolveVoxelPositionOS(Attributes input)
         {
-            float3 safeNormalOS = HectonCoreLitSafeNormalize(input.normalOS + float3(0.0, 0.0001, 0.0));
-            half seamMask = saturate(max((half)input.color.a, (half)input.dirtyBlendUv2.y));
-            float displacement = ResolveOrganicVertexDisplacement(input.absolutePositionWS.xyz, safeNormalOS, seamMask);
+            float3 safePositionOS = HectonVoxelRockFiniteOr(input.positionOS.xyz, float3(0.0, 0.0, 0.0));
+            float3 safeAbsolutePositionWS = HectonVoxelRockFiniteOr(input.absolutePositionWS.xyz, safePositionOS);
+            float3 safeNormalOS = HectonCoreLitSafeNormalize(HectonVoxelRockFiniteOr(input.normalOS, float3(0.0, 1.0, 0.0)) + float3(0.0, 0.0001, 0.0));
+            half seamMask = saturate(max(HectonVoxelRockFiniteSaturate(input.color.a, 0.0h), HectonVoxelRockFiniteSaturate(input.dirtyBlendUv2.y, 0.0h)));
+            float displacement = ResolveOrganicVertexDisplacement(safeAbsolutePositionWS, safeNormalOS, seamMask);
             displacement += ResolveCaveMouthVertexDisplacement(
-                input.absolutePositionWS.xyz,
+                safeAbsolutePositionWS,
                 safeNormalOS,
-                saturate((half)input.color.a),
-                saturate((half)input.dirtyBlendUv2.y));
-            return input.positionOS.xyz + safeNormalOS * displacement;
+                HectonVoxelRockFiniteSaturate(input.color.a, 0.0h),
+                HectonVoxelRockFiniteSaturate(input.dirtyBlendUv2.y, 0.0h));
+            displacement = HectonVoxelRockFiniteOr(displacement, 0.0);
+            return safePositionOS + safeNormalOS * displacement;
         }
 
         void ApplyChunkDissolveFade(float4 positionCS)
@@ -403,9 +441,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             if (reveal <= 0.0001h || strength <= 0.0001h)
                 return 0.0h;
 
-            float scanline = frac(positionCS.y * 0.125 + _Time.y * 17.0);
+            float safeTime = HectonVoxelRockSafeTime();
+            positionWS = HectonVoxelRockFiniteOr(positionWS, float3(0.0, 0.0, 0.0));
+            float scanline = frac(HectonVoxelRockFiniteOr(positionCS.y, 0.0) * 0.125 + safeTime * 17.0);
             half scanPulse = smoothstep(0.84h, 0.98h, (half)scanline);
-            half staticNoise = (half)ValueNoise3(positionWS * 5.0 + _Time.y * 3.0);
+            half staticNoise = (half)ValueNoise3(positionWS * 5.0 + safeTime * 3.0);
             half edgeNoise = smoothstep(0.52h, 0.93h, staticNoise);
             half malfunction = saturate((scanPulse * 0.55h + edgeNoise * 0.45h) * reveal * strength);
 
@@ -421,9 +461,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 return 0.0h;
 
             float scale = max(_CaveMouthPhosphorPulseScale, 0.05);
-            float phase = dot(positionWS, float3(0.37, 0.19, 0.41)) * scale + _Time.y * 3.7;
+            positionWS = HectonVoxelRockFiniteOr(positionWS, float3(0.0, 0.0, 0.0));
+            float safeTime = HectonVoxelRockSafeTime();
+            float phase = dot(positionWS, float3(0.37, 0.19, 0.41)) * scale + safeTime * 3.7;
             half sinePulse = smoothstep(0.78h, 1.0h, (half)HectonCoreLitTrianglePulse01(phase));
-            half gridNoise = (half)ValueNoise3(positionWS * (scale * 2.0) + _Time.y);
+            half gridNoise = (half)ValueNoise3(positionWS * (scale * 2.0) + safeTime);
             return gate * saturate(sinePulse * lerp(0.65h, 1.0h, gridNoise));
         }
 
@@ -516,11 +558,13 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             if (_HectonScatterBiomeInfluenceGridCount <= 0 || _BiomeFamilyTintStrength <= 0.0001)
                 return half3(1.0h, 1.0h, 1.0h);
 
-            float cellSize = max(_HectonScatterBiomeInfluenceGridParams.x, 0.01);
+            absolutePositionWS = HectonVoxelRockFiniteOr(absolutePositionWS, float3(0.0, 0.0, 0.0));
+            float cellSize = max(HectonVoxelRockFiniteOr(_HectonScatterBiomeInfluenceGridParams.x, 1.0), 0.01);
             float invCellSize = rcp(cellSize);
-            int gridSide = max(1, HectonVoxelRockRoundToIntFast(_HectonScatterBiomeInfluenceGridOrigin.z));
-            int cellX = (int)floor(absolutePositionWS.x * invCellSize) - HectonVoxelRockRoundToIntFast(_HectonScatterBiomeInfluenceGridOrigin.x);
-            int cellZ = (int)floor(absolutePositionWS.z * invCellSize) - HectonVoxelRockRoundToIntFast(_HectonScatterBiomeInfluenceGridOrigin.y);
+            float3 safeGridOrigin = HectonVoxelRockFiniteOr(_HectonScatterBiomeInfluenceGridOrigin.xyz, float3(0.0, 0.0, 1.0));
+            int gridSide = max(1, HectonVoxelRockRoundToIntFast(safeGridOrigin.z));
+            int cellX = (int)floor(absolutePositionWS.x * invCellSize) - HectonVoxelRockRoundToIntFast(safeGridOrigin.x);
+            int cellZ = (int)floor(absolutePositionWS.z * invCellSize) - HectonVoxelRockRoundToIntFast(safeGridOrigin.y);
             if (cellX < 0 || cellZ < 0 || cellX >= gridSide || cellZ >= gridSide)
                 return half3(1.0h, 1.0h, 1.0h);
 
@@ -543,14 +587,18 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             if (_BiomeFamilyTintVolumeStrength <= 0.0001)
                 return half3(1.0h, 1.0h, 1.0h);
 
-            float3 volumeSize = max(_BiomeFamilyTintVolumeWorldSize.xyz, float3(1.0, 1.0, 1.0));
-            float3 uvw = saturate((absolutePositionWS - _BiomeFamilyTintVolumeWorldOrigin.xyz) * rcp(volumeSize));
+            absolutePositionWS = HectonVoxelRockFiniteOr(absolutePositionWS, float3(0.0, 0.0, 0.0));
+            float3 volumeOrigin = HectonVoxelRockFiniteOr(_BiomeFamilyTintVolumeWorldOrigin.xyz, float3(0.0, 0.0, 0.0));
+            float3 volumeSize = max(HectonVoxelRockFiniteOr(_BiomeFamilyTintVolumeWorldSize.xyz, float3(1.0, 1.0, 1.0)), float3(1.0, 1.0, 1.0));
+            float3 uvw = saturate((absolutePositionWS - volumeOrigin) * rcp(volumeSize));
             half3 volumeTint = SAMPLE_TEXTURE3D(_BiomeFamilyTintVolume, sampler_BiomeFamilyTintVolume, uvw).rgb;
+            volumeTint = all(isfinite(volumeTint)) ? volumeTint : half3(1.0h, 1.0h, 1.0h);
             return lerp(half3(1.0h, 1.0h, 1.0h), volumeTint, saturate((half)_BiomeFamilyTintVolumeStrength));
         }
 
         half ResolveHorizontalSiltDust(float3 absolutePositionWS, half3 normalWS)
         {
+            absolutePositionWS = HectonVoxelRockFiniteOr(absolutePositionWS, float3(0.0, 0.0, 0.0));
             half upward = smoothstep(0.7h, 0.9h, saturate(normalWS.y));
             half dustNoise = lerp(0.62h, 1.0h, (half)ValueNoise3(absolutePositionWS * max(_HorizontalSiltDustTiling, 0.01) + 71.9));
             return saturate(upward * dustNoise * (half)_HorizontalSiltDustStrength);
@@ -594,6 +642,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             if (_HectonMathLodMode < 0.5)
                 return bakedAmbientOcclusion;
 
+            absolutePositionWS = HectonVoxelRockFiniteOr(absolutePositionWS, float3(0.0, 0.0, 0.0));
             float depthU = frac(absolutePositionWS.y * max(_CavityAoDepthScale, 0.001));
             half rampNoise = SAMPLE_TEXTURE2D(_CavityNoiseRamp, sampler_CavityNoiseRamp, float2(depthU, 0.5)).r;
             half aoNoise = lerp(1.0h, lerp(0.72h, 1.08h, rampNoise), saturate((half)_CavityAoNoiseStrength));
@@ -626,28 +675,28 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
         half EvaluateGlobalCutMask(float3 positionWS)
         {
-            if (_SargassumCutMaskActive < 0.5)
+            if (_SargassumCutMaskActive < 0.5 || !all(isfinite(positionWS)) || !all(isfinite(_SargassumCutMaskWorldRect)))
                 return 0.0h;
 
             float2 uv = float2(
                 (positionWS.x - _SargassumCutMaskWorldRect.x) * _SargassumCutMaskWorldRect.z,
                 (positionWS.z - _SargassumCutMaskWorldRect.y) * _SargassumCutMaskWorldRect.w);
-            if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
+            if (!all(isfinite(uv)) || uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
                 return 0.0h;
 
-            return SAMPLE_TEXTURE2D_LOD(_SargassumCutMaskRT, sampler_SargassumCutMaskRT, uv, 0).r;
+            return HectonVoxelRockFiniteSaturate(SAMPLE_TEXTURE2D_LOD(_SargassumCutMaskRT, sampler_SargassumCutMaskRT, uv, 0).r, 0.0h);
         }
 
         half EvaluateDamageVolumeMask(float3 positionWS)
         {
-            if (_HectonDamageVolumeActive < 0.5)
+            if (_HectonDamageVolumeActive < 0.5 || !all(isfinite(positionWS)) || !all(isfinite(_HectonDamageVolumeWorldMin.xyz)) || !all(isfinite(_HectonDamageVolumeInvSize.xyz)))
                 return 0.0h;
 
             float3 uvw = (positionWS - _HectonDamageVolumeWorldMin.xyz) * _HectonDamageVolumeInvSize.xyz;
-            if (uvw.x < 0.0 || uvw.x > 1.0 || uvw.y < 0.0 || uvw.y > 1.0 || uvw.z < 0.0 || uvw.z > 1.0)
+            if (!all(isfinite(uvw)) || uvw.x < 0.0 || uvw.x > 1.0 || uvw.y < 0.0 || uvw.y > 1.0 || uvw.z < 0.0 || uvw.z > 1.0)
                 return 0.0h;
 
-            return SAMPLE_TEXTURE3D_LOD(_HectonDamageVolumeTex, sampler_HectonDamageVolumeTex, uvw, 0).r;
+            return HectonVoxelRockFiniteSaturate(SAMPLE_TEXTURE3D_LOD(_HectonDamageVolumeTex, sampler_HectonDamageVolumeTex, uvw, 0).r, 0.0h);
         }
 
         half ResolveDearLieCarveMask(half globalCutMask, half damageVolumeMask)
@@ -690,31 +739,36 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
         half ResolveNoirVoxelCaustic(float3 absolutePositionWS, half3 normalWS, float4 positionCS)
         {
-            float waterDepth = max(0.0, _HectonNoirFogStratification.x - absolutePositionWS.y);
-            float depthFade = 1.0 - saturate((waterDepth - _HectonNoirCausticsShape.z) * rcp(max(_HectonNoirCausticsShape.w, 0.25)));
+            absolutePositionWS = HectonVoxelRockFiniteOr(absolutePositionWS, float3(0.0, 0.0, 0.0));
+            float safeWaterline = HectonVoxelRockFiniteOr(_HectonNoirFogStratification.x, 0.0);
+            float waterDepth = max(0.0, safeWaterline - absolutePositionWS.y);
+            float4 safeShape = HectonVoxelRockFiniteOr(_HectonNoirCausticsShape, float4(1.0h, 0.0h, 0.0h, 1.0h));
+            float4 safeLayerA = HectonVoxelRockFiniteOr(_HectonNoirCausticsLayerA, float4(0.02h, 0.0h, 0.0h, 0.0h));
+            float4 safeLayerB = HectonVoxelRockFiniteOr(_HectonNoirCausticsLayerB, float4(0.02h, 0.0h, 0.0h, 0.0h));
+            float depthFade = 1.0 - saturate((waterDepth - safeShape.z) * rcp(max(safeShape.w, 0.25)));
             if (depthFade <= 0.0)
                 return 1.0h;
 
             half upFacingMask = (half)HectonCoreLitEvaluateCausticsUpMask(normalWS);
-            half strength = saturate((_HectonNoirCausticsLayerA.w + _HectonNoirCausticsLayerB.w) * depthFade);
+            half strength = saturate((safeLayerA.w + safeLayerB.w) * depthFade);
             if (upFacingMask <= 0.0001h || strength <= 0.0001h)
                 return 1.0h;
 
-            float timePhase = _Time.y;
-            float3 layerABasis = absolutePositionWS * max(_HectonNoirCausticsLayerA.x, 0.02);
-            float3 layerBSampleAnchor = absolutePositionWS * max(_HectonNoirCausticsLayerB.x, 0.02);
+            float timePhase = HectonVoxelRockSafeTime();
+            float3 layerABasis = absolutePositionWS * max(safeLayerA.x, 0.02);
+            float3 layerBSampleAnchor = absolutePositionWS * max(safeLayerB.x, 0.02);
             float3 layerAInput = float3(
-                layerABasis.x + timePhase * _HectonNoirCausticsLayerA.y,
-                layerABasis.y * 0.23 + timePhase * (_HectonNoirCausticsLayerA.y * 0.31 + _HectonNoirCausticsLayerA.z * 0.17),
-                layerABasis.z + timePhase * _HectonNoirCausticsLayerA.z);
-            float distortion = (ValueNoise3(layerAInput * 0.73 + 7.1) * 2.0 - 1.0) * _HectonNoirCausticsShape.y;
+                layerABasis.x + timePhase * safeLayerA.y,
+                layerABasis.y * 0.23 + timePhase * (safeLayerA.y * 0.31 + safeLayerA.z * 0.17),
+                layerABasis.z + timePhase * safeLayerA.z);
+            float distortion = (ValueNoise3(layerAInput * 0.73 + 7.1) * 2.0 - 1.0) * safeShape.y;
             float3 layerBInput = float3(
-                layerBSampleAnchor.x + timePhase * _HectonNoirCausticsLayerB.y + distortion,
-                layerBSampleAnchor.y * 0.19 + timePhase * (_HectonNoirCausticsLayerB.y * 0.27 + _HectonNoirCausticsLayerB.z * 0.23),
-                layerBSampleAnchor.z + timePhase * _HectonNoirCausticsLayerB.z - distortion);
+                layerBSampleAnchor.x + timePhase * safeLayerB.y + distortion,
+                layerBSampleAnchor.y * 0.19 + timePhase * (safeLayerB.y * 0.27 + safeLayerB.z * 0.23),
+                layerBSampleAnchor.z + timePhase * safeLayerB.z - distortion);
             half layerA = (half)ValueNoise3(layerAInput);
             half layerB = (half)ValueNoise3(layerBInput);
-            half causticRaw = FastVoxelPower01(saturate(layerA * layerB), (half)max(_HectonNoirCausticsShape.x, 1.0));
+            half causticRaw = FastVoxelPower01(saturate(layerA * layerB), (half)max(safeShape.x, 1.0));
             half caveFade = 1.0h;
             return lerp(1.0h, 1.0h + causticRaw * strength * caveFade, upFacingMask);
         }
@@ -733,9 +787,10 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             if (causticMask <= 0.0001h)
                 return 1.0h;
 
-            float scale = max(_LocalCausticScale, 0.05);
-            float speed = max(_LocalCausticSpeed, 0.0);
-            float timePhase = _Time.y * speed;
+            absolutePositionWS = HectonVoxelRockFiniteOr(absolutePositionWS, float3(0.0, 0.0, 0.0));
+            float scale = max(HectonVoxelRockFiniteOr(_LocalCausticScale, 0.05), 0.05);
+            float speed = max(HectonVoxelRockFiniteOr(_LocalCausticSpeed, 0.0), 0.0);
+            float timePhase = HectonVoxelRockSafeTime() * speed;
             float3 causticBasis = absolutePositionWS * scale;
             float3 layerASample = float3(
                 causticBasis.x + timePhase * 0.83,

@@ -28,6 +28,7 @@ namespace Hecton8.Prologue.VFX
         private const uint DumpMagic = 0x4F525646u; // ORVF
         private const int DumpVersion = 1;
         private const uint PrologueSequenceSourceHash = PrologueSignalSourceHashes.SequenceDirector;
+        private const uint OrbitalRelativitySourceHash = PrologueSignalSourceHashes.OrbitalRelativityDirector;
         private const uint PlasmaRoarHash = 0x50524F52u; // PROR
         private const uint OceanWavesHash = 0x4F574156u; // OWAV
         private const uint MassiveSplashHash = 0x4D53504Cu; // MSPL
@@ -38,15 +39,14 @@ namespace Hecton8.Prologue.VFX
         private const float ShaderEpsilon = 0.0005f;
         private const float MaxPresentationDeltaSeconds = 0.25f;
         private const float MinimumOverlayLocalDistanceMeters = 0.02f;
+        private const float MaximumOverlayLocalDistanceMeters = 2f;
+        private const float OverlayNearClipPaddingMeters = 0.03f;
+        private const float OverlayOverscan = 1.08f;
         private const string DumpFileName = "Dump_ORBITAL_DROP_REENTRY_VFX.bin";
 
         private static readonly ProfilerMarker _lateFrameMarker = new ProfilerMarker("H8.PrologueVFX.Reentry.LateFrame");
-        private static readonly int _PlasmaHeatId = Shader.PropertyToID("_PlasmaHeat");
-        private static readonly int _PlasmaOpacityId = Shader.PropertyToID("_PlasmaOpacity");
-        private static readonly int _PlasmaVelocityId = Shader.PropertyToID("_PlasmaVelocity");
-        private static readonly int _PlasmaAltitudeId = Shader.PropertyToID("_PlasmaAltitude01");
-        private static readonly int _PlasmaQualityPressureId = Shader.PropertyToID("_PlasmaQualityPressure");
-        private static readonly int _PlasmaPhaseId = Shader.PropertyToID("_HectonReentryPhase");
+        private static readonly int _HectonReentryPlasmaState0Id = Shader.PropertyToID("_HectonReentryPlasmaState0");
+        private static readonly int _HectonReentryPlasmaState1Id = Shader.PropertyToID("_HectonReentryPlasmaState1");
         private static readonly int _HectonReentryAmbientId = Shader.PropertyToID("_HectonReentryAmbient");
         private static readonly Color _defaultOceanAmbientColor = new Color(0.02f, 0.52f, 0.62f, 1f);
 
@@ -88,7 +88,7 @@ namespace Hecton8.Prologue.VFX
         [SerializeField] private Material plasmaMaterial;
         [SerializeField] private bool assignMaterialOnEnable = true;
         [SerializeField] private bool forceCameraLocalOverlay = true;
-        [SerializeField, Range(0.02f, 0.35f)] private float overlayLocalDistanceMeters = 0.08f;
+        [SerializeField, Range(0.02f, 2f)] private float overlayLocalDistanceMeters = 0.35f;
 
         [Header("Response")]
         [SerializeField, Min(1f)] private float fullHeatVelocityMetersPerSecond = 7600f;
@@ -108,7 +108,7 @@ namespace Hecton8.Prologue.VFX
         private VaultGenerationHandle<ReentryVfxTelemetryEntry> _telemetryHandle;
         private IDataVault _dataVault;
         private ITickDispatcher _tickDispatcher;
-        private Material _activeMaterial;
+        private Camera _camera;
         private AbsoluteUniversePosition _lastCapsuleAup;
         private ReentryPhase _phase;
         private int _telemetryCursor;
@@ -130,9 +130,7 @@ namespace Hecton8.Prologue.VFX
         private float _lastUploadedAltitude = float.PositiveInfinity;
         private float _lastUploadedQualityPressure = float.PositiveInfinity;
         private float _lastUploadedPhase = float.PositiveInfinity;
-        private float _lastGlobalHeat = float.PositiveInfinity;
-        private float _lastGlobalOpacity = float.PositiveInfinity;
-        private float _lastGlobalQualityPressure = float.PositiveInfinity;
+        private float _lastOverlayDistanceMeters;
         private float _lastAppliedAmbientBlend = float.PositiveInfinity;
         private float _whiteoutHoldSecondsRemaining;
         private float _audioCrossfadeElapsedSeconds;
@@ -148,6 +146,25 @@ namespace Hecton8.Prologue.VFX
         private bool _audioCrossfadeActive;
         private bool _hasSpatialAnchor;
 
+        public void ConfigureSceneBindings(
+            Transform cameraTransform,
+            Transform overlayTransform,
+            Renderer windowRenderer,
+            Renderer overlayRenderer,
+            Material overlayMaterial)
+        {
+            if (cameraTransform != null)
+                cameraRoot = cameraTransform;
+            if (overlayTransform != null)
+                plasmaOverlayTransform = overlayTransform;
+            if (windowRenderer != null)
+                capsuleWindowRenderer = windowRenderer;
+            if (overlayRenderer != null)
+                plasmaOverlayRenderer = overlayRenderer;
+            if (overlayMaterial != null)
+                plasmaMaterial = overlayMaterial;
+        }
+
         private void OnEnable()
         {
             EnsureNativeTelemetry();
@@ -155,10 +172,11 @@ namespace Hecton8.Prologue.VFX
             ResetTransientState();
             ResolveColdDependencies();
             ApplyConfiguredMaterial();
-            RefreshQualityPolicyCold();
+            RefreshQualityPolicy();
             RegisterLateFrame();
             TryRegisterHotSwap();
-            PublishShaderState(force: true);
+            if (Application.isPlaying)
+                PublishShaderState(force: true);
         }
 
         private void OnDisable()
@@ -171,9 +189,13 @@ namespace Hecton8.Prologue.VFX
 
             TryUnregisterHotSwap();
             ResetTransientState();
-            _lastAppliedAmbientBlend = float.PositiveInfinity;
-            ApplyAmbientBlend();
-            PublishShaderState(force: true);
+            if (Application.isPlaying)
+            {
+                _lastAppliedAmbientBlend = float.PositiveInfinity;
+                ApplyAmbientBlend();
+                PublishShaderState(force: true);
+            }
+
             _tickDispatcher = null;
         }
 
@@ -184,19 +206,31 @@ namespace Hecton8.Prologue.VFX
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                if (ReferenceEquals(previousService, currentService))
+                {
+                    _tickDispatcher = currentService as ITickDispatcher;
+                    return;
+                }
+
                 _tickDispatcher = currentService as ITickDispatcher;
-                if (_tickDispatcher != null)
+                _registeredLateFrame = false;
+                if (_tickDispatcher != null && isActiveAndEnabled)
                     RegisterLateFrame();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                ReleaseTelemetryBuffer(previousService as IDataVault ?? _dataVault);
+                _dataVault = currentService as IDataVault;
+                _telemetryCursor = 0;
+                EnsureNativeTelemetry();
             }
         }
 
         private void OnDestroy()
         {
-            IDataVault vault = _dataVault;
-            if (vault != null && IsVaultHandleCreated(in _telemetryHandle))
-                vault.ReleaseBuffer(in _telemetryHandle);
-
-            _telemetryHandle = default;
+            ReleaseTelemetryBuffer(_dataVault);
         }
 
         /// <summary>
@@ -212,8 +246,12 @@ namespace Hecton8.Prologue.VFX
                 ResolveMaterialDependencies();
 
                 float deltaTime = ResolveUnscaledDeltaTime();
+                RefreshQualityPolicy();
                 ConsumeAtmosphericSignals();
                 ConsumePrologueCompleteSignals();
+                if (!HasActivePresentationState())
+                    return;
+
                 UpdateTargetsFromPhase();
                 IntegrateState(deltaTime);
                 MaintainCameraLocalOverlay();
@@ -229,6 +267,12 @@ namespace Hecton8.Prologue.VFX
             if (vault == null)
                 return;
 
+            if (vault.IsCompactionFenceActive)
+            {
+                _telemetryHandle = default;
+                return;
+            }
+
             if (IsVaultHandleCreated(in _telemetryHandle) &&
                 vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<ReentryVfxTelemetryEntry>.ReadOnly telemetry) &&
                 telemetry.IsCreated &&
@@ -239,6 +283,9 @@ namespace Hecton8.Prologue.VFX
 
             if (IsVaultHandleCreated(in _telemetryHandle))
                 vault.ReleaseBuffer(in _telemetryHandle);
+
+            if (vault.IsAllocationLocked)
+                return;
 
             _telemetryHandle = vault.EnsureGenerationHandle<ReentryVfxTelemetryEntry>(
                 TelemetryBufferId,
@@ -260,6 +307,14 @@ namespace Hecton8.Prologue.VFX
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
+        private void ReleaseTelemetryBuffer(IDataVault vault)
+        {
+            if (vault != null && IsVaultHandleCreated(in _telemetryHandle))
+                vault.ReleaseBuffer(in _telemetryHandle);
+
+            _telemetryHandle = default;
+        }
+
         private void ResetTransientState()
         {
             _lastCapsuleAup = default;
@@ -278,6 +333,7 @@ namespace Hecton8.Prologue.VFX
             _audioCrossfadeElapsedSeconds = 0f;
             _audioCrossfadeTimer = 0f;
             _audioCrossfadeActive = false;
+            _lastOverlayDistanceMeters = 0f;
             _blackBoxDumped = false;
             _plasmaRoarPublished = false;
             _oceanWavesPublished = false;
@@ -295,16 +351,13 @@ namespace Hecton8.Prologue.VFX
 
         private void ResolveMaterialDependencies()
         {
-            _activeMaterial = plasmaMaterial;
-            if (_activeMaterial == null && capsuleWindowRenderer != null)
-                _activeMaterial = capsuleWindowRenderer.sharedMaterial;
-            if (_activeMaterial == null && plasmaOverlayRenderer != null)
-                _activeMaterial = plasmaOverlayRenderer.sharedMaterial;
+            if (_camera == null && cameraRoot != null)
+                cameraRoot.TryGetComponent(out _camera);
         }
 
         private void RegisterLateFrame()
         {
-            if (_registeredLateFrame)
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -338,9 +391,12 @@ namespace Hecton8.Prologue.VFX
                 plasmaOverlayRenderer.sharedMaterial = plasmaMaterial;
         }
 
-        private void RefreshQualityPolicyCold()
+        private void RefreshQualityPolicy()
         {
             int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_qualityRefreshFrame == frame)
+                return;
+
             _qualityRefreshFrame = frame;
             CacheQualityPolicy(ResolveGlobalQualityWeight());
         }
@@ -556,8 +612,16 @@ namespace Hecton8.Prologue.VFX
             if (!forceCameraLocalOverlay || plasmaOverlayTransform == null)
                 return;
 
+            Camera activeCamera = _camera;
+            if (activeCamera == null && cameraRoot != null)
+            {
+                cameraRoot.TryGetComponent(out activeCamera);
+                _camera = activeCamera;
+            }
+
             Vector3 localPosition = plasmaOverlayTransform.localPosition;
-            float targetZ = ResolveOverlayLocalDistanceMeters();
+            float targetZ = ResolveCameraSafeOverlayLocalDistanceMeters(ResolveOverlayLocalDistanceMeters(), activeCamera);
+            _lastOverlayDistanceMeters = targetZ;
             if (math.abs(localPosition.z - targetZ) > 0.0001f)
             {
                 localPosition.z = targetZ;
@@ -566,30 +630,56 @@ namespace Hecton8.Prologue.VFX
 
             if (cameraRoot != null && plasmaOverlayTransform.parent == cameraRoot)
                 plasmaOverlayTransform.localRotation = Quaternion.identity;
+
+            if (activeCamera == null)
+                return;
+
+            float targetHeight;
+            if (activeCamera.orthographic)
+            {
+                targetHeight = activeCamera.orthographicSize * 2f;
+            }
+            else
+            {
+                float fieldOfView = math.isfinite(activeCamera.fieldOfView) ? activeCamera.fieldOfView : 60f;
+                targetHeight = 2f * targetZ * Mathf.Tan(fieldOfView * 0.5f * Mathf.Deg2Rad);
+            }
+
+            if (!math.isfinite(targetHeight) || targetHeight <= 0f)
+                return;
+
+            float aspect = activeCamera.aspect;
+            if (!math.isfinite(aspect) || aspect <= 0.01f)
+                aspect = 16f / 9f;
+
+            float targetWidth = targetHeight * aspect;
+            Vector3 localScale = plasmaOverlayTransform.localScale;
+            float scaledWidth = targetWidth * OverlayOverscan;
+            float scaledHeight = targetHeight * OverlayOverscan;
+            if (math.abs(localScale.x - scaledWidth) > 0.0001f ||
+                math.abs(localScale.y - scaledHeight) > 0.0001f ||
+                math.abs(localScale.z - 1f) > 0.0001f)
+            {
+                plasmaOverlayTransform.localScale = new Vector3(scaledWidth, scaledHeight, 1f);
+            }
         }
 
         private void PublishShaderState(bool force)
         {
-            Material material = _activeMaterial;
             float velocityScale = PositiveFiniteOrMinimum(fullHeatVelocityMetersPerSecond, 1f);
             float velocity01 = math.saturate(_velocityMetersPerSecond * math.rcp(velocityScale));
             float altitude01 = 1f - ResolveAltitudeOpacity01(_altitudeMeters);
             float qualityPressure01 = ResolveSurvivalPressure01();
             float phase = (float)_phase;
 
-            if (material != null)
-            {
-                SetMaterialFloatIfChanged(material, _PlasmaHeatId, _heat01, ref _lastUploadedHeat, force);
-                SetMaterialFloatIfChanged(material, _PlasmaOpacityId, _opacity01, ref _lastUploadedOpacity, force);
-                SetMaterialFloatIfChanged(material, _PlasmaVelocityId, velocity01, ref _lastUploadedVelocity, force);
-                SetMaterialFloatIfChanged(material, _PlasmaAltitudeId, altitude01, ref _lastUploadedAltitude, force);
-                SetMaterialFloatIfChanged(material, _PlasmaQualityPressureId, qualityPressure01, ref _lastUploadedQualityPressure, force);
-                SetMaterialFloatIfChanged(material, _PlasmaPhaseId, phase, ref _lastUploadedPhase, force);
-            }
-
-            SetGlobalFloatIfChanged(_PlasmaHeatId, _heat01, ref _lastGlobalHeat, force);
-            SetGlobalFloatIfChanged(_PlasmaOpacityId, _opacity01, ref _lastGlobalOpacity, force);
-            SetGlobalFloatIfChanged(_PlasmaQualityPressureId, qualityPressure01, ref _lastGlobalQualityPressure, force);
+            SetReentryRuntimeGlobalsIfChanged(
+                _heat01,
+                _opacity01,
+                velocity01,
+                altitude01,
+                qualityPressure01,
+                phase,
+                force);
         }
 
         private void ApplyAmbientBlend()
@@ -780,42 +870,39 @@ namespace Hecton8.Prologue.VFX
             if (!vault.TryAcquireWriteLock(in _telemetryHandle, VaultOwnerSystemId, out NativeArray<ReentryVfxTelemetryEntry> telemetry))
                 return;
 
-            if (!telemetry.IsCreated || telemetry.Length < TelemetryCapacity)
-            {
-                vault.ReleaseWriteLock(in _telemetryHandle, VaultOwnerSystemId);
-                return;
-            }
-
-            byte flags = extraFlags;
-            if (_opacity01 >= 0.995f)
-                flags |= ReentryVfxStateSignal.FlagWhiteout;
-            if (_phase == ReentryPhase.HydratedFade || _phase == ReentryPhase.Complete)
-                flags |= ReentryVfxStateSignal.FlagHydrated;
-            if (_hasSpatialAnchor)
-                flags |= ReentryVfxStateSignal.FlagSpatialAnchor;
-
-            ReentryVfxTelemetryEntry entry = new ReentryVfxTelemetryEntry
-            {
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Sequence = _stateSequence,
-                HydrationSequence = _hydrationSequence,
-                Heat01 = _heat01,
-                Opacity01 = _opacity01,
-                AltitudeMeters = _altitudeMeters,
-                VelocityMetersPerSecond = _velocityMetersPerSecond,
-                AmbientBlend01 = _ambientBlend01,
-                OverlayDistanceMeters = ResolveOverlayLocalDistanceMeters(),
-                Phase = (byte)_phase,
-                QualityWeightByte = _qualityWeightByte,
-                Flags = flags,
-                Reserved = 0,
-                StateHash = ResolveStateHash(),
-                SectorHashLo = 0u,
-                Reserved2 = 0
-            };
-
             try
             {
+                if (!telemetry.IsCreated || telemetry.Length < TelemetryCapacity)
+                    return;
+
+                byte flags = extraFlags;
+                if (_opacity01 >= 0.995f)
+                    flags |= ReentryVfxStateSignal.FlagWhiteout;
+                if (_phase == ReentryPhase.HydratedFade || _phase == ReentryPhase.Complete)
+                    flags |= ReentryVfxStateSignal.FlagHydrated;
+                if (_hasSpatialAnchor)
+                    flags |= ReentryVfxStateSignal.FlagSpatialAnchor;
+
+                ReentryVfxTelemetryEntry entry = new ReentryVfxTelemetryEntry
+                {
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                    Sequence = _stateSequence,
+                    HydrationSequence = _hydrationSequence,
+                    Heat01 = _heat01,
+                    Opacity01 = _opacity01,
+                    AltitudeMeters = _altitudeMeters,
+                    VelocityMetersPerSecond = _velocityMetersPerSecond,
+                    AmbientBlend01 = _ambientBlend01,
+                    OverlayDistanceMeters = ResolveTelemetryOverlayDistanceMeters(),
+                    Phase = (byte)_phase,
+                    QualityWeightByte = _qualityWeightByte,
+                    Flags = flags,
+                    Reserved = 0,
+                    StateHash = ResolveStateHash(),
+                    SectorHashLo = 0u,
+                    Reserved2 = 0
+                };
+
                 telemetry[_telemetryCursor] = entry;
                 _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
             }
@@ -823,6 +910,31 @@ namespace Hecton8.Prologue.VFX
             {
                 vault.ReleaseWriteLock(in _telemetryHandle, VaultOwnerSystemId);
             }
+        }
+
+        private bool HasActivePresentationState()
+        {
+            if (_phase == ReentryPhase.Idle)
+            {
+                return _heat01 > ShaderEpsilon ||
+                       _targetHeat01 > ShaderEpsilon ||
+                       _opacity01 > ShaderEpsilon ||
+                       _targetOpacity01 > ShaderEpsilon ||
+                       _whiteoutHoldSecondsRemaining > 0f ||
+                       _audioCrossfadeActive;
+            }
+
+            if (_phase == ReentryPhase.Complete)
+            {
+                return _heat01 > ShaderEpsilon ||
+                       _targetHeat01 > ShaderEpsilon ||
+                       _opacity01 > ShaderEpsilon ||
+                       _targetOpacity01 > ShaderEpsilon ||
+                       _whiteoutHoldSecondsRemaining > 0f ||
+                       _audioCrossfadeActive;
+            }
+
+            return true;
         }
 
         private void DumpBlackBoxOnce()
@@ -916,25 +1028,56 @@ namespace Hecton8.Prologue.VFX
 
         private float ResolveOverlayLocalDistanceMeters()
         {
-            return ClampFinite(overlayLocalDistanceMeters, MinimumOverlayLocalDistanceMeters, 0.35f);
+            return ClampFinite(overlayLocalDistanceMeters, MinimumOverlayLocalDistanceMeters, MaximumOverlayLocalDistanceMeters);
         }
 
-        private static void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue, bool force)
+        private float ResolveTelemetryOverlayDistanceMeters()
         {
-            if (!force && math.abs(cachedValue - value) <= ShaderEpsilon)
-                return;
-
-            material.SetFloat(shaderId, value);
-            cachedValue = value;
+            return math.isfinite(_lastOverlayDistanceMeters) && _lastOverlayDistanceMeters > 0f
+                ? _lastOverlayDistanceMeters
+                : ResolveOverlayLocalDistanceMeters();
         }
 
-        private static void SetGlobalFloatIfChanged(int shaderId, float value, ref float cachedValue, bool force)
+        private static float ResolveCameraSafeOverlayLocalDistanceMeters(float baseDistanceMeters, Camera activeCamera)
         {
-            if (!force && math.abs(cachedValue - value) <= ShaderEpsilon)
+            if (activeCamera == null)
+                return baseDistanceMeters;
+
+            float nearClip = activeCamera.nearClipPlane;
+            if (!math.isfinite(nearClip) || nearClip < 0f)
+                return baseDistanceMeters;
+
+            float cameraSafeDistance = math.max(baseDistanceMeters, nearClip + OverlayNearClipPaddingMeters);
+            return math.max(cameraSafeDistance, MinimumOverlayLocalDistanceMeters);
+        }
+
+        private void SetReentryRuntimeGlobalsIfChanged(
+            float heat01,
+            float opacity01,
+            float velocity01,
+            float altitude01,
+            float qualityPressure01,
+            float phase,
+            bool force)
+        {
+            bool changed = force ||
+                           math.abs(_lastUploadedHeat - heat01) > ShaderEpsilon ||
+                           math.abs(_lastUploadedOpacity - opacity01) > ShaderEpsilon ||
+                           math.abs(_lastUploadedVelocity - velocity01) > ShaderEpsilon ||
+                           math.abs(_lastUploadedAltitude - altitude01) > ShaderEpsilon ||
+                           math.abs(_lastUploadedQualityPressure - qualityPressure01) > ShaderEpsilon ||
+                           math.abs(_lastUploadedPhase - phase) > ShaderEpsilon;
+            if (!changed)
                 return;
 
-            Shader.SetGlobalFloat(shaderId, value);
-            cachedValue = value;
+            Shader.SetGlobalVector(_HectonReentryPlasmaState0Id, new Vector4(heat01, opacity01, velocity01, altitude01));
+            Shader.SetGlobalVector(_HectonReentryPlasmaState1Id, new Vector4(qualityPressure01, phase, 0f, 0f));
+            _lastUploadedHeat = heat01;
+            _lastUploadedOpacity = opacity01;
+            _lastUploadedVelocity = velocity01;
+            _lastUploadedAltitude = altitude01;
+            _lastUploadedQualityPressure = qualityPressure01;
+            _lastUploadedPhase = phase;
         }
 
         private static float MoveTowards01(float current, float target, float maxDelta)
@@ -999,7 +1142,7 @@ namespace Hecton8.Prologue.VFX
 
         private void OnValidate()
         {
-            overlayLocalDistanceMeters = ClampFinite(overlayLocalDistanceMeters, MinimumOverlayLocalDistanceMeters, 0.35f);
+            overlayLocalDistanceMeters = ClampFinite(overlayLocalDistanceMeters, MinimumOverlayLocalDistanceMeters, MaximumOverlayLocalDistanceMeters);
             fullHeatVelocityMetersPerSecond = PositiveFiniteOrMinimum(fullHeatVelocityMetersPerSecond, 1f);
             whiteoutAltitudeMeters = PositiveFiniteOrMinimum(whiteoutAltitudeMeters, 1f);
             heatRisePerSecond = ClampFinite(heatRisePerSecond, 0.05f, 8f);
@@ -1028,10 +1171,9 @@ namespace Hecton8.Prologue.VFX
 
         private static bool IsWhiteoutOnlyComplete(in PrologueCompleteSignal signal)
         {
-            if (signal.Phase == PrologueCompleteSignal.PhaseWhiteout)
-                return true;
-
-            return signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
+            return signal.SourceHash == OrbitalRelativitySourceHash &&
+                   signal.Sequence != 0 &&
+                   signal.Phase == PrologueCompleteSignal.PhaseWhiteout &&
                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) != 0;
         }
 

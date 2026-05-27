@@ -176,21 +176,36 @@ namespace Hecton8.AI
         public ulong Reserved6;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct AcousticSensoryTelemetrySnapshot
     {
+        [FieldOffset(0)]
         public uint Frame;
+        [FieldOffset(4)]
         public int ActivePredators;
+        [FieldOffset(8)]
         public int StimulusCount;
+        [FieldOffset(12)]
         public int HeardPredators;
+        [FieldOffset(16)]
         public int OccludedEvaluations;
+        [FieldOffset(20)]
         public float MaxReceivedIntensity;
+        [FieldOffset(24)]
         public float MaxRawIntensity;
+        [FieldOffset(28)]
         public float GlobalQualityWeight;
+        [FieldOffset(32)]
         public float EstimatedMicroseconds;
+        [FieldOffset(36)]
         public int RaySteps;
+        [FieldOffset(40)]
         public uint FaultFlags;
+        [FieldOffset(44)]
         public uint StateHash;
+        [FieldOffset(48)]
         public float3 HottestSourceRuntime;
+        [FieldOffset(60)]
         public uint HottestSoundTypeHash;
     }
 
@@ -1215,7 +1230,7 @@ namespace Hecton8.AI
 
             try
             {
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_SHINOBU_311.bin"));
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_13AI.bin"));
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);

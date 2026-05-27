@@ -69,7 +69,6 @@ namespace Hecton8.Gameplay
         private const uint RepairBlackBoxDumpFaultHash = 0x574C4446u; // WLDF
         private const byte RepairSparkDebrisKind = DebrisSpawnSignal.DebrisKindSparks;
         private const int HullDentVaultCapacity = 16;
-        private const int MaxRepairParentResolveDepth = 32;
         private const int HullDentRadiusQuantizationStepsPerMeter = 16;
         private const float InvHullDentRadiusQuantizationStepsPerMeter = 1f / HullDentRadiusQuantizationStepsPerMeter;
         private const float InvHullDentDepthQuantizationSteps = 1f / 255f;
@@ -1309,13 +1308,12 @@ namespace Hecton8.Gameplay
                 _cachedServiceTargetModule = null;
                 _cachedServiceTargetVoxelRepairTarget = null;
 
-                if (!FindParentComponentBounded(collider, out _cachedServiceTargetModule))
-                    _cachedServiceTargetModule = null;
+                TryResolveCachedRepairModule(collider, out _cachedServiceTargetModule);
 
-                if (_cachedServiceTargetModule == null)
+                if (_cachedServiceTargetModule == null &&
+                    !TryResolveCachedVoxelRepairTarget(collider, out _cachedServiceTargetVoxelRepairTarget))
                 {
-                    if (!FindParentComponentBounded(collider, out _cachedServiceTargetVoxelRepairTarget))
-                        _cachedServiceTargetVoxelRepairTarget = null;
+                    _cachedServiceTargetVoxelRepairTarget = null;
                 }
             }
 
@@ -1333,11 +1331,52 @@ namespace Hecton8.Gameplay
                 _cachedAirlockTargetCollider = collider;
                 _cachedServiceTargetAirlock = null;
 
-                if (!FindParentComponentBounded(collider, out _cachedServiceTargetAirlock))
-                    _cachedServiceTargetAirlock = null;
+                TryResolveCachedRepairAirlock(collider, out _cachedServiceTargetAirlock);
             }
 
             return _cachedServiceTargetAirlock;
+        }
+
+        private static bool TryResolveCachedRepairModule(Collider collider, out IRepairableModuleTarget module)
+        {
+            module = null;
+            if (collider == null ||
+                !InteractableRegistry.TryResolve(collider, out InteractableRegistry.TargetInfo targetInfo))
+            {
+                return false;
+            }
+
+            module = targetInfo.RepairableModuleTarget;
+            if (module == null && targetInfo.BaseModule != null)
+                module = targetInfo.BaseModule as IRepairableModuleTarget;
+
+            return module != null;
+        }
+
+        private static bool TryResolveCachedVoxelRepairTarget(Collider collider, out IVoxelRepairWeldTarget voxelRepairTarget)
+        {
+            voxelRepairTarget = null;
+            if (collider == null ||
+                !InteractableRegistry.TryResolve(collider, out InteractableRegistry.TargetInfo targetInfo))
+            {
+                return false;
+            }
+
+            voxelRepairTarget = targetInfo.VoxelRepairWeldTarget;
+            return voxelRepairTarget != null;
+        }
+
+        private static bool TryResolveCachedRepairAirlock(Collider collider, out BaseAirlock airlock)
+        {
+            airlock = null;
+            if (collider == null ||
+                !InteractableRegistry.TryResolve(collider, out InteractableRegistry.TargetInfo targetInfo))
+            {
+                return false;
+            }
+
+            airlock = targetInfo.Interactable as BaseAirlock;
+            return airlock != null;
         }
 
         private bool TryHandleSubmarineDamageControlHit(float deltaTime)
@@ -1395,7 +1434,7 @@ namespace Hecton8.Gameplay
                 _cachedSubmarineRepairRoomResolver = null;
                 _cachedSubmarineDamageTargetTransform = null;
 
-                FindSubmarineDamageTarget(
+                TryResolveCachedSubmarineDamageTarget(
                     collider,
                     out _cachedSubmarineDamageTarget,
                     out _cachedSubmarineRepairRoomResolver,
@@ -1405,30 +1444,7 @@ namespace Hecton8.Gameplay
             return _cachedSubmarineDamageTarget;
         }
 
-        private static bool FindParentComponentBounded<T>(Collider collider, out T component)
-        {
-            component = default;
-            if (collider == null)
-                return false;
-
-            if (collider.TryGetComponent(out component))
-                return true;
-
-            Transform current = collider.transform != null ? collider.transform.parent : null;
-            int depth = 0;
-            while (current != null && depth < MaxRepairParentResolveDepth)
-            {
-                if (current.TryGetComponent(out component))
-                    return true;
-
-                current = current.parent;
-                depth++;
-            }
-
-            return false;
-        }
-
-        private static bool FindSubmarineDamageTarget(
+        private static bool TryResolveCachedSubmarineDamageTarget(
             Collider collider,
             out ISubmarineDamageControlTarget damageTarget,
             out ISubmarineRepairRoomResolver roomResolver,
@@ -1437,26 +1453,18 @@ namespace Hecton8.Gameplay
             damageTarget = null;
             roomResolver = null;
             targetTransform = null;
-            if (collider == null)
-                return false;
-
-            Transform current = collider.transform;
-            int depth = 0;
-            while (current != null && depth < MaxRepairParentResolveDepth)
+            if (collider == null ||
+                !InteractableRegistry.TryResolve(collider, out InteractableRegistry.TargetInfo targetInfo) ||
+                targetInfo.SubmarineDamageControlTarget == null)
             {
-                if (current.TryGetComponent(out damageTarget))
-                {
-                    Component component = damageTarget as Component;
-                    roomResolver = component as ISubmarineRepairRoomResolver;
-                    targetTransform = component != null ? component.transform : current;
-                    return true;
-                }
-
-                current = current.parent;
-                depth++;
+                return false;
             }
 
-            return false;
+            damageTarget = targetInfo.SubmarineDamageControlTarget;
+            roomResolver = targetInfo.SubmarineRepairRoomResolver;
+            Component component = damageTarget as Component;
+            targetTransform = component != null ? component.transform : collider.transform;
+            return true;
         }
 
         private void PublishRepairSparkSignal(Vector3 worldPoint, float intensity01)
@@ -2336,7 +2344,7 @@ namespace Hecton8.Gameplay
         {
             hit = default;
             return TryResolveRepairRay(out Vector3 origin, out Vector3 direction) &&
-                   TryResolvePrimarySurfaceHit(origin, direction, ResolveRuntimeRepairRange(), repairMask.value, QueryTriggerInteraction.Ignore, out hit);
+                   RequestPrimarySurfaceHit(origin, direction, ResolveRuntimeRepairRange(), repairMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
         private bool TryResolveRepairRay(out Vector3 origin, out Vector3 direction)

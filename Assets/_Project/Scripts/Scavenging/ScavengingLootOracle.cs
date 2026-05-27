@@ -178,7 +178,7 @@ namespace Hecton8.Scavenging
         [FieldOffset(120)] public ulong _pad1;
     }
 
-    public struct ScavengingLootOracleVaultViews
+    public ref struct ScavengingLootOracleVaultViews
     {
         public NativeArray<LootTableEntryDTO> LootEntries;
         public NativeArray<ScavengingHarvestRequestDTO> Requests;

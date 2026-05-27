@@ -132,22 +132,16 @@ namespace Hecton8.World
         private const float ProxyLightMathQualityStart01 = 0.15f;
         private const float ProxyLightMathQualityFull01 = 0.85f;
         private const float ProxyLightMathFarDistanceSq = DistanceMath.HighQualityDistanceSq * 4f;
-        private const Allocator DataVaultExemptProxyLightDataAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptProxyLightIndexAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptProxyLightFreeSlotAllocator = Allocator.Persistent;
-
-        private static NativeParallelHashMap<int, ProxyLightData> _lightsByKey;
-        private static NativeParallelHashMap<int, int> _slotByKey;
-        private static NativeArray<int> _keys;
-        private static NativeQueue<int> _freeProxyLightSlots;
+        // COLD ALLOC: fixed proxy-light registry arrays. O(128) scans are cheaper than persistent native ownership here.
+        private static readonly ProxyLightData[] _lights = new ProxyLightData[MaxProxyLights];
+        private static readonly int[] _keys = new int[MaxProxyLights];
+        private static readonly int[] _freeProxyLightSlots = new int[MaxProxyLights];
+        private static int _freeProxyLightSlotCount;
         private static int _keyCount;
         private static int _registeredCount;
+        private static bool _initialized;
 
-        public static bool IsInitialized =>
-            _lightsByKey.IsCreated &&
-            _slotByKey.IsCreated &&
-            _keys.IsCreated &&
-            _freeProxyLightSlots.IsCreated;
+        public static bool IsInitialized => _initialized;
 
         public static int RegisteredCount => _registeredCount;
 
@@ -162,18 +156,8 @@ namespace Hecton8.World
             if (IsInitialized)
                 return;
 
-            Shutdown();
-            _lightsByKey = new NativeParallelHashMap<int, ProxyLightData>(MaxProxyLights, DataVaultExemptProxyLightDataAllocator); // COLD ALLOC: NativeParallelHashMap<int,ProxyLightData>[128] - proxy light registry storage - owner: ProxyLightRegistry
-            _slotByKey = new NativeParallelHashMap<int, int>(MaxProxyLights, DataVaultExemptProxyLightIndexAllocator); // COLD ALLOC: NativeParallelHashMap<int,int>[128] - proxy light key-to-slot recycling map - owner: ProxyLightRegistry
-            _keys = new NativeArray<int>(MaxProxyLights, DataVaultExemptProxyLightIndexAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[128] - proxy light key iteration buffer - owner: ProxyLightRegistry
-            _freeProxyLightSlots = new NativeQueue<int>(DataVaultExemptProxyLightFreeSlotAllocator); // COLD ALLOC: NativeQueue<int>[128] - O(1) recycled proxy light slot IDs - owner: ProxyLightRegistry
-            NativeMemorySentinel.RegisterNativeParallelHashMap(_lightsByKey, nameof(ProxyLightRegistry), nameof(_lightsByKey), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeParallelHashMap(_slotByKey, nameof(ProxyLightRegistry), nameof(_slotByKey), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_keys, nameof(ProxyLightRegistry), nameof(_keys), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeQueue(_freeProxyLightSlots, MaxProxyLights, nameof(ProxyLightRegistry), nameof(_freeProxyLightSlots), NativeAllocationLifetime.Session);
-            PrewarmFreeProxyLightSlots();
-            _keyCount = 0;
-            _registeredCount = 0;
+            ClearStorage();
+            _initialized = true;
         }
 
         public static bool RegisterOrUpdate(int key, in ProxyLightData data)
@@ -187,41 +171,21 @@ namespace Hecton8.World
                 return false;
 
             EnsureInitialized();
-            bool existed = _slotByKey.TryGetValue(key, out int slot);
+            int slot = FindSlotByKey(key);
+            bool existed = slot >= 0;
             if (!existed)
             {
                 if (!TryAcquireProxyLightSlot(out slot))
                     return false;
 
                 _keys[slot] = key;
-                if (!_slotByKey.TryAdd(key, slot))
-                {
-                    _keys[slot] = 0;
-                    _freeProxyLightSlots.Enqueue(slot);
-                    return false;
-                }
-            }
-            else
-            {
-                _lightsByKey.Remove(key);
             }
 
-            if (_lightsByKey.TryAdd(key, resolvedData))
-            {
-                if (!existed)
-                    _registeredCount++;
-
-                return true;
-            }
-
+            _lights[slot] = resolvedData;
             if (!existed)
-            {
-                _slotByKey.Remove(key);
-                _keys[slot] = 0;
-                _freeProxyLightSlots.Enqueue(slot);
-            }
+                _registeredCount++;
 
-            return false;
+            return true;
         }
 
         public static void Unregister(int key)
@@ -229,22 +193,13 @@ namespace Hecton8.World
             if (!IsInitialized || key == 0)
                 return;
 
-            if (!_slotByKey.TryGetValue(key, out int slot))
-            {
-                _lightsByKey.Remove(key);
-                return;
-            }
-
-            if (!_lightsByKey.Remove(key))
+            int slot = FindSlotByKey(key);
+            if (slot < 0)
                 return;
 
-            _slotByKey.Remove(key);
-            if ((uint)slot < MaxProxyLights)
-            {
-                _keys[slot] = 0;
-                _freeProxyLightSlots.Enqueue(slot);
-            }
-
+            _keys[slot] = 0;
+            _lights[slot] = default;
+            ReleaseProxyLightSlot(slot);
             _registeredCount = math.max(0, _registeredCount - 1);
         }
 
@@ -270,9 +225,10 @@ namespace Hecton8.World
             for (int i = 0; i < _keyCount && visibleCount < output.Length; i++)
             {
                 int key = _keys[i];
-                if (!_lightsByKey.TryGetValue(key, out ProxyLightData light))
+                if (key == 0)
                     continue;
 
+                ProxyLightData light = _lights[i];
                 if ((light.Flags & (uint)ProxyLightFlags.Visible) == 0u ||
                     (light.Flags & (uint)ProxyLightFlags.Powered) == 0u ||
                     light.Intensity <= MinimumVisibleIntensity)
@@ -305,7 +261,15 @@ namespace Hecton8.World
         public static bool TryGet(int key, out ProxyLightData data)
         {
             data = default;
-            return IsInitialized && key != 0 && _lightsByKey.TryGetValue(key, out data);
+            if (!IsInitialized || key == 0)
+                return false;
+
+            int slot = FindSlotByKey(key);
+            if (slot < 0)
+                return false;
+
+            data = _lights[slot];
+            return true;
         }
 
         public static void Clear()
@@ -313,70 +277,56 @@ namespace Hecton8.World
             if (!IsInitialized)
                 return;
 
-            _lightsByKey.Clear();
-            _slotByKey.Clear();
-            while (_freeProxyLightSlots.TryDequeue(out _))
-            {
-            }
-
-            for (int i = 0; i < _keyCount; i++)
-                _keys[i] = 0;
-
-            _keyCount = 0;
-            _registeredCount = 0;
+            ClearStorage();
         }
 
         public static void Shutdown()
         {
-            if (_lightsByKey.IsCreated)
+            ClearStorage();
+            _initialized = false;
+        }
+
+        private static void ClearStorage()
+        {
+            for (int i = 0; i < _keyCount; i++)
             {
-                NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(ProxyLightRegistry), nameof(_lightsByKey));
-                _lightsByKey.Dispose();
+                _keys[i] = 0;
+                _lights[i] = default;
             }
 
-            if (_slotByKey.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(ProxyLightRegistry), nameof(_slotByKey));
-                _slotByKey.Dispose();
-            }
+            for (int i = 0; i < _freeProxyLightSlotCount; i++)
+                _freeProxyLightSlots[i] = 0;
 
-            if (_keys.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_keys);
-                _keys.Dispose();
-            }
-
-            if (_freeProxyLightSlots.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ProxyLightRegistry), nameof(_freeProxyLightSlots));
-                _freeProxyLightSlots.Dispose();
-            }
-
-            _lightsByKey = default;
-            _slotByKey = default;
-            _keys = default;
-            _freeProxyLightSlots = default;
+            _freeProxyLightSlotCount = 0;
             _keyCount = 0;
             _registeredCount = 0;
         }
 
-        private static void PrewarmFreeProxyLightSlots()
+        private static int FindSlotByKey(int key)
         {
-            if (!_freeProxyLightSlots.IsCreated)
+            for (int i = 0; i < _keyCount; i++)
+            {
+                if (_keys[i] == key)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static void ReleaseProxyLightSlot(int slot)
+        {
+            if ((uint)slot >= MaxProxyLights || _freeProxyLightSlotCount >= MaxProxyLights)
                 return;
 
-            for (int i = 0; i < MaxProxyLights; i++)
-                _freeProxyLightSlots.Enqueue(default);
-
-            while (_freeProxyLightSlots.TryDequeue(out _))
-            {
-            }
+            _freeProxyLightSlots[_freeProxyLightSlotCount++] = slot;
         }
 
         private static bool TryAcquireProxyLightSlot(out int slot)
         {
-            while (_freeProxyLightSlots.TryDequeue(out int recycledSlot))
+            while (_freeProxyLightSlotCount > 0)
             {
+                int recycledSlot = _freeProxyLightSlots[--_freeProxyLightSlotCount];
+                _freeProxyLightSlots[_freeProxyLightSlotCount] = 0;
                 if ((uint)recycledSlot < MaxProxyLights && _keys[recycledSlot] == 0)
                 {
                     slot = recycledSlot;

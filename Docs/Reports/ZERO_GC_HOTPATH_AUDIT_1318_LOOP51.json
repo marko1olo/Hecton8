@@ -1,0 +1,35 @@
+{
+  "agentId": "1318",
+  "loop": 51,
+  "source": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+  "sourceSha256": "018768af59c49c2881f3e3b541055c46ad962ac290d7632a4bb2eb1dc80a98d7",
+  "hotRegionCount": 8,
+  "hotForbiddenOwnerHits": 0,
+  "strictPersistentNativeFields": 0,
+  "persistentAllocatorTokens": 0,
+  "boundedStackScratch": [
+    {
+      "owner": "EvaluateAllelopathicRelease",
+      "record": "PassiveDecompositionCandidate",
+      "count": 8,
+      "purpose": "stage lifecycle-read-selected coral deaths before mutation"
+    },
+    {
+      "owner": "ApplyConstructionDecompositionInLane",
+      "record": "PassiveDecompositionCandidate",
+      "count": 8,
+      "purpose": "stage construction overlap deaths before mutation"
+    },
+    {
+      "owner": "ApplyDefoliantDeadZoneInLane",
+      "record": "PassiveDecompositionCandidate",
+      "count": 8,
+      "purpose": "stage chemical dead-zone deaths before mutation"
+    }
+  ],
+  "falsePositiveNotes": [
+    "math.select tokens are not LINQ Select allocations",
+    "Allocator.Temp NativeList occurrences are cold template-cache scratch and registered with NativeMemorySentinel",
+    "Crash dump FileStream IO is anomaly-only and outside normal frame flow"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "agentId": "1318",
+  "loop": 37,
+  "status": "STATIC_HOTPATH_SCAN_CLEAN_BUILD_BLOCKED",
+  "scannedFiles": [
+    "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+  ],
+  "owners": [
+    "Tick",
+    "SlowTick",
+    "LateFrameTick",
+    "Execute",
+    "ProcessYieldBatchIfNeeded"
+  ],
+  "forbiddenHotOwnerHits": 0,
+  "persistentAllocatorTokens": 0,
+  "notes": [
+    "Loop37 code change only expands read-pin coverage and moves harvest interaction metadata/type reads into the locked nearest-target scan.",
+    "No managed collection allocation, LINQ, string formatting, or hot capacity-growth token was introduced by the Loop37 patch."
+  ],
+  "buildGate": "CPU 85.7 and compilerProcessCount 1 block dotnet/Roslyn under AGENTS.md."
+}

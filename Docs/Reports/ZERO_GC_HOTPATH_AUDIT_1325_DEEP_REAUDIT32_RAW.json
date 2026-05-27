@@ -1,0 +1,212 @@
+﻿{
+    "schema":  "hecton8.zero_gc_hotpath_reaudit32.v2",
+    "agentId":  "1325",
+    "scannedFiles":  4,
+    "scannedMethods":  28,
+    "methods":  [
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "TryResolveSectorCoord",
+                        "startLine":  465,
+                        "endLine":  484,
+                        "lineCount":  19
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "TryCopyTo",
+                        "startLine":  1086,
+                        "endLine":  1101,
+                        "lineCount":  15
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "TryCopyTo",
+                        "startLine":  1310,
+                        "endLine":  1333,
+                        "lineCount":  23
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "TryAdd",
+                        "startLine":  1470,
+                        "endLine":  1550,
+                        "lineCount":  80
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "TrySet",
+                        "startLine":  1552,
+                        "endLine":  1636,
+                        "lineCount":  84
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "Remove",
+                        "startLine":  1719,
+                        "endLine":  1769,
+                        "lineCount":  50
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "Remove",
+                        "startLine":  1884,
+                        "endLine":  1887,
+                        "lineCount":  3
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "TryResolvePlayerAupSnapshot",
+                        "startLine":  2934,
+                        "endLine":  2957,
+                        "lineCount":  23
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "Tick",
+                        "startLine":  3363,
+                        "endLine":  3366,
+                        "lineCount":  3
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "LateFrameTick",
+                        "startLine":  3381,
+                        "endLine":  3390,
+                        "lineCount":  9
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "SlowTick",
+                        "startLine":  3392,
+                        "endLine":  3431,
+                        "lineCount":  39
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "RefreshHydrationWindow",
+                        "startLine":  5335,
+                        "endLine":  5404,
+                        "lineCount":  69
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "TryQuantizeSector",
+                        "startLine":  5869,
+                        "endLine":  5875,
+                        "lineCount":  6
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "TryResolveRegistryChunkId",
+                        "startLine":  7935,
+                        "endLine":  7950,
+                        "lineCount":  15
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "EnsureHydrationSessionScheduled",
+                        "startLine":  8225,
+                        "endLine":  8239,
+                        "lineCount":  14
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "WriteWorldTelemetry",
+                        "startLine":  8594,
+                        "endLine":  8640,
+                        "lineCount":  46
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                        "method":  "CaptureQueuedWorldTelemetryDumpSnapshotCold",
+                        "startLine":  8648,
+                        "endLine":  8683,
+                        "lineCount":  35
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                        "method":  "Execute",
+                        "startLine":  1451,
+                        "endLine":  1461,
+                        "lineCount":  10
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                        "method":  "Execute",
+                        "startLine":  1472,
+                        "endLine":  1482,
+                        "lineCount":  10
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                        "method":  "Execute",
+                        "startLine":  1524,
+                        "endLine":  1527,
+                        "lineCount":  3
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                        "method":  "Execute",
+                        "startLine":  1537,
+                        "endLine":  1541,
+                        "lineCount":  4
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                        "method":  "Execute",
+                        "startLine":  1552,
+                        "endLine":  1555,
+                        "lineCount":  3
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                        "method":  "Tick",
+                        "startLine":  1200,
+                        "endLine":  1213,
+                        "lineCount":  13
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                        "method":  "SlowTick",
+                        "startLine":  1239,
+                        "endLine":  1258,
+                        "lineCount":  19
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                        "method":  "LateFrameTick",
+                        "startLine":  1271,
+                        "endLine":  1277,
+                        "lineCount":  6
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                        "method":  "ResolveAupRuntimeVerticalLiftMeters",
+                        "startLine":  3477,
+                        "endLine":  3490,
+                        "lineCount":  13
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                        "method":  "Tick",
+                        "startLine":  309,
+                        "endLine":  327,
+                        "lineCount":  18
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                        "method":  "SlowTick",
+                        "startLine":  330,
+                        "endLine":  379,
+                        "lineCount":  49
+                    }
+                ],
+    "findingCount":  0,
+    "findings":  [
+
+                 ],
+    "generatedAtUtc":  "2026-05-27T09:30:46.8057819Z",
+    "notes":  [
+                  "Scanner refresh after owner-phase telemetry patch; selected simulation Tick/SlowTick/LateFrameTick, Burst job Execute bodies, AUP bridge methods, and owner-phase telemetry snapshot method were scanned for managed allocation/string/LINQ/foreach/throw/catch patterns."
+              ]
+}

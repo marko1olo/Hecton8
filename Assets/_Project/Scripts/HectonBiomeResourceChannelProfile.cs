@@ -24,7 +24,7 @@ namespace Hecton8.Environment
         [Header("Reading")]
         [TextArea(2, 4)] public string pocketRead = "The nearby pocket pays out routine value.";
         [TextArea(2, 4)] public string nodeRead = "The node cluster pays out the biome's heavier extraction value.";
-        [TextArea(2, 4)] public string safePocketRead = "Safe pockets give a small but useful sustain reward.";
+        [TextArea(2, 4)] public string safePocketRead = "Reorientation pockets give a small but useful sustain reward.";
         [TextArea(2, 4)] public string routeRead = "Route anchors hint what kind of material line this biome belongs to.";
         [TextArea(2, 4)] public string rareRead = "Rare objectives pay out the biome's expensive reason to return.";
     }

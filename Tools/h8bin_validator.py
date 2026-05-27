@@ -1722,12 +1722,18 @@ def load_ast_cache() -> dict[str, Any]:
 
 def save_ast_cache(cache: dict[str, Any]) -> None:
     path = ast_cache_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = path.with_name(f".{path.name}.tmp.{os.getpid()}")
-    with temp_path.open("w", encoding="utf-8") as handle:
-        json.dump(cache, handle, separators=(",", ":"))
-        handle.write("\n")
-    os.replace(temp_path, path)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with temp_path.open("w", encoding="utf-8") as handle:
+            json.dump(cache, handle, separators=(",", ":"))
+            handle.write("\n")
+        os.replace(temp_path, path)
+    except OSError:
+        try:
+            temp_path.unlink()
+        except OSError:
+            pass
 
 
 def try_read_cached_parse(
@@ -3770,7 +3776,7 @@ def write_json_report(path: Path, report: dict[str, Any]) -> None:
     with temp_path.open("w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=2)
         handle.write("\n")
-    os.replace(temp_path, path)
+    replace_or_copy_report(temp_path, path)
 
 
 def write_junit_report(path: Path, report: dict[str, Any]) -> None:
@@ -3860,7 +3866,23 @@ def append_metric_phi_data_truth_row(path: Path, report: dict[str, Any]) -> None
     with temp_path.open("w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2)
         handle.write("\n")
-    os.replace(temp_path, path)
+    replace_or_copy_report(temp_path, path)
+
+
+def replace_or_copy_report(temp_path: Path, path: Path) -> None:
+    try:
+        os.replace(temp_path, path)
+        return
+    except OSError:
+        pass
+
+    try:
+        path.write_text(temp_path.read_text(encoding="utf-8"), encoding="utf-8")
+    finally:
+        try:
+            temp_path.unlink()
+        except OSError:
+            pass
 
 
 def exit_code_for_findings(findings: list[Finding]) -> int:

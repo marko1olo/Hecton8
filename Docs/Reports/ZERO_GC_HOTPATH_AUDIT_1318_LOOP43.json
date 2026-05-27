@@ -1,0 +1,18 @@
+﻿{
+    "agentId":  "1318",
+    "loop":  43,
+    "file":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+    "hotOwners":  [
+                      "Tick",
+                      "SlowTick",
+                      "LateFrameTick"
+                  ],
+    "zeroGcHotPathHits":  0,
+    "forbiddenPattern":  "new\\s+|\\.ToString\\(|string\\.Format|Debug\\.Log|Enumerable\\.|\\.Select\\(|\\.Where\\(|\\.ToArray\\(|\\.ToList\\(",
+    "strictPersistentNativeFieldDeclarations":  0,
+    "persistentAllocatorTokens":  0,
+    "suppressionCurrentHealthDirectWritePattern":  0,
+    "staleLightStarvationPrelockHealthPattern":  0,
+    "sourceSha256":  "412fa364c6379a9c547f632772fac0cb41c3cfd13788ca922a32cb662aab8ea0",
+    "status":  "STATIC_CLEAN_BUILD_BLOCKED_CPU_COMPILER_GATE"
+}

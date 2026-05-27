@@ -1,0 +1,67 @@
+{
+  "agentId": "1318",
+  "task": "1318_PURGE",
+  "loop": 24,
+  "status": "VERIFICATION_BLOCKED_CPU_BUILD_GATE",
+  "domain": "Echelon 3 Core Infrastructure and Ecology / Assets/_Project/Scripts/World / DestructibleOrganicManager.cs",
+  "promptExtraction": {
+    "path": "Docs/Reports/AGENT_PROMPT_1318_REEXTRACTED_LOOP24.xml",
+    "status": "EXTRACTED",
+    "promptChars": 25041,
+    "taskCountPattern": "Task NN:",
+    "taskCount": 20
+  },
+  "fixedFindings": [
+    {
+      "id": "LOOP24_TICK_VISUAL_FULL_LANE_SCANS_UNDER_LIFECYCLE_PIN",
+      "severity": "P1",
+      "problem": "Tick held the full organic lifecycle mutation lock while regrowth, decomposition, damage, and wilt visual updates each scanned full surface and underwater lanes.",
+      "fix": "Added per-lane cursors and bounded visual scan slices. Each visual lane now consumes ResolveOrganicVisualScanBudget(), continuously scaled from 96 to 512 checks by GlobalQualityWeight."
+    },
+    {
+      "id": "LOOP24_FIXED_OVERGROWTH_SCAN_BUDGET",
+      "severity": "P2",
+      "problem": "Aggressive overgrowth used a fixed 64-record SlowTick budget instead of the continuous GlobalQualityWeight mandate.",
+      "fix": "Replaced the fixed budget with ResolveOvergrowthScanBudget(), continuously scaled from 8 to 64 checks per lane."
+    },
+    {
+      "id": "LOOP24_FIXED_MATURE_SPORE_SCAN_BUDGET",
+      "severity": "P2",
+      "problem": "Mature-spore acoustic scans used the serialized ceiling directly as a fixed Tick budget.",
+      "fix": "Added ResolveMatureSporeAcousticScanBudget(), continuously scaling from 8 checks to the serialized ceiling without changing gameplay truth or DTO layout."
+    }
+  ],
+  "staticVerification": {
+    "gitDiffCheck": "PASS_WITH_LF_TO_CRLF_WARNING_ONLY",
+    "braceBalance": {
+      "open": 860,
+      "close": 860
+    },
+    "readLikeMutatingMethodFindings": 0,
+    "hotOwnerForbiddenTokens": {
+      "Tick": 0,
+      "SlowTick": 0,
+      "LateFrameTick": 0
+    },
+    "visualLaneFullSafeCountLoopsRemaining": {
+      "UpdateRegrowthLane": 0,
+      "UpdateDecompositionLane": 0,
+      "UpdateDamageLane": 0,
+      "UpdateWiltLane": 0,
+      "UpdateMatureSporeAcousticLane": 0
+    },
+    "sourceSha256": "0e1614ffd0117191fabd7ef606dbfaa25b37397abd683483e078aef678f48531"
+  },
+  "buildVerification": {
+    "attempted": false,
+    "cpuPercentSample": 100.0,
+    "compilerProcessCount": 0,
+    "csprojCount": 28,
+    "blockedReason": "AGENTS.md forbids dotnet build/Roslyn when CPU is above 50%."
+  },
+  "failedGates": [
+    "BUILD_GATE_BLOCKED_BY_CPU_GT_50",
+    "ROSLYN_RERUN_BLOCKED_BY_CPU_GT_50"
+  ],
+  "verificationHashSha256": "0e1614ffd0117191fabd7ef606dbfaa25b37397abd683483e078aef678f48531"
+}

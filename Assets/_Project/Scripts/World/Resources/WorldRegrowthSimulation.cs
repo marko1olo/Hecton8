@@ -161,7 +161,7 @@ namespace Hecton8.World
     /// <summary>
     /// Data-owner memory block for deterministic macro-sector regrowth.
     /// </summary>
-    public struct WorldRegrowthSimulationMemory : IDisposable
+    public ref struct WorldRegrowthSimulationMemory
     {
         private const string NativeMemoryOwner = nameof(WorldRegrowthSimulationMemory);
         private const SystemID NativeMemorySystemId = SystemID.WorldStreaming;
@@ -594,7 +594,19 @@ namespace Hecton8.World
                 File.WriteAllBytes(path, dump);
                 return true;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
             {
                 return false;
             }

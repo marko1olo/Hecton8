@@ -17,6 +17,7 @@ namespace Hecton8.EditorValidation
     {
         private const string MenuPath = "Hecton8/Data Monolith/Compiler Window";
         private const string SchemaFolder = "Data/Balance/Schemas";
+        private const int MaxInspectorSectionEntries = 64;
 
         private Label _status;
         private ScrollView _sourceList;
@@ -304,56 +305,184 @@ namespace Hecton8.EditorValidation
                 return;
             }
 
-            FileInfo info = new FileInfo(path);
-            if (info.Length > int.MaxValue)
+            if (!TryReadInspectorPrefix(path, out byte[] headerBytes, out byte[] sectionTableBytes, out long fileLength, out string readError))
             {
-                _binaryList.Add(new Label("Invalid: too large for editor inspector, bytes=" + info.Length));
+                _binaryList.Add(new Label(readError));
                 return;
             }
 
-            byte[] bytes = new byte[(int)info.Length];
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            if (headerBytes.Length < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
             {
-                int total = 0;
-                while (total < bytes.Length)
+                _binaryList.Add(new Label("Invalid: too small, bytes=" + fileLength));
+                return;
+            }
+
+            fixed (byte* ptr = headerBytes)
+            {
+                H8DataBlobHeader header = UnsafeUtility.ReadArrayElement<H8DataBlobHeader>(ptr, 0);
+                H8DataBlobDirectory directory = UnsafeUtility.ReadArrayElement<H8DataBlobDirectory>(ptr + H8DataLayoutConstants.HeaderSizeBytes, 0);
+                _binaryList.Add(new Label("bytes=" + fileLength + " sections=" + directory.SectionCount));
+                _binaryList.Add(new Label("magic=0x" + header.Magic.ToString("X8") + " version=" + header.FormatVersion + " headerBytes=" + header.HeaderBytes));
+                _binaryList.Add(new Label("checksum-validator=" + (validatorPassed ? "PASS" : "FAIL") + " 0x" + header.Checksum64.ToString("X16")));
+                if (sectionTableBytes.Length >= UnsafeUtility.SizeOf<H8DataSectionEntry>())
                 {
-                    int read = stream.Read(bytes, total, bytes.Length - total);
+                    fixed (byte* sectionPtr = sectionTableBytes)
+                    {
+                        H8DataSectionEntry* sections = (H8DataSectionEntry*)sectionPtr;
+                        int count = Mathf.Min(Mathf.Min(directory.SectionCount, MaxInspectorSectionEntries), sectionTableBytes.Length / UnsafeUtility.SizeOf<H8DataSectionEntry>());
+                        for (int i = 0; i < count; i++)
+                        {
+                            H8DataSectionEntry section = sections[i];
+                            _binaryList.Add(new Label(((H8DataSectionId)section.SectionId) + " count=" + section.Count + " size=" + section.RecordSize + " offset=" + section.OffsetBytes));
+                        }
+                    }
+                }
+            }
+        }
+
+        private static bool TryReadInspectorPrefix(
+            string path,
+            out byte[] headerBytes,
+            out byte[] sectionTableBytes,
+            out long fileLength,
+            out string error)
+        {
+            headerBytes = Array.Empty<byte>();
+            sectionTableBytes = Array.Empty<byte>();
+            fileLength = 0L;
+            error = string.Empty;
+
+            if (!TryGetInspectorFileLength(path, out fileLength, out error))
+                return false;
+
+            int headerLength = H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes;
+            if (fileLength < headerLength)
+            {
+                error = "Invalid: too small, bytes=" + fileLength;
+                return false;
+            }
+
+            headerBytes = new byte[headerLength];
+            if (!TryReadExact(path, 0L, headerBytes, out error))
+                return false;
+
+            fixed (byte* ptr = headerBytes)
+            {
+                H8DataBlobDirectory directory = UnsafeUtility.ReadArrayElement<H8DataBlobDirectory>(ptr + H8DataLayoutConstants.HeaderSizeBytes, 0);
+                int sectionStride = UnsafeUtility.SizeOf<H8DataSectionEntry>();
+                int entryCount = Mathf.Min(directory.SectionCount, MaxInspectorSectionEntries);
+                long tableOffset = directory.SectionTableOffset;
+                long wantedBytes = (long)entryCount * sectionStride;
+                if (entryCount <= 0 || tableOffset >= fileLength || wantedBytes <= 0L)
+                    return true;
+
+                long available = fileLength - tableOffset;
+                if (available < wantedBytes)
+                    wantedBytes = available - (available % sectionStride);
+
+                if (wantedBytes <= 0L || wantedBytes > int.MaxValue)
+                    return true;
+
+                sectionTableBytes = new byte[(int)wantedBytes];
+                return TryReadExact(path, tableOffset, sectionTableBytes, out error);
+            }
+        }
+
+        private static bool TryGetInspectorFileLength(string path, out long fileLength, out string error)
+        {
+            fileLength = 0L;
+            error = string.Empty;
+            try
+            {
+                fileLength = new FileInfo(path).Length;
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                error = "Invalid: file length probe failed";
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                error = "Invalid: file length probe failed";
+                return false;
+            }
+            catch (PathTooLongException)
+            {
+                error = "Invalid: file length probe failed";
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                error = "Invalid: file length probe failed";
+                return false;
+            }
+            catch (IOException)
+            {
+                error = "Invalid: file length probe failed";
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                error = "Invalid: file length probe failed";
+                return false;
+            }
+        }
+
+        private static bool TryReadExact(string path, long offset, byte[] buffer, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                if (offset != 0L)
+                    stream.Seek(offset, SeekOrigin.Begin);
+
+                int total = 0;
+                while (total < buffer.Length)
+                {
+                    int read = stream.Read(buffer, total, buffer.Length - total);
                     if (read <= 0)
                         break;
 
                     total += read;
                 }
 
-                if (total != bytes.Length)
-                {
-                    _binaryList.Add(new Label("Invalid: incomplete editor read, bytes=" + total + "/" + bytes.Length));
-                    return;
-                }
-            }
-            if (bytes.Length < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
-            {
-                _binaryList.Add(new Label("Invalid: too small, bytes=" + bytes.Length));
-                return;
-            }
+                if (total == buffer.Length)
+                    return true;
 
-            fixed (byte* ptr = bytes)
+                error = "Invalid: incomplete editor read, bytes=" + total + "/" + buffer.Length;
+                return false;
+            }
+            catch (ArgumentException)
             {
-                H8DataBlobHeader header = UnsafeUtility.ReadArrayElement<H8DataBlobHeader>(ptr, 0);
-                H8DataBlobDirectory directory = UnsafeUtility.ReadArrayElement<H8DataBlobDirectory>(ptr + H8DataLayoutConstants.HeaderSizeBytes, 0);
-                ulong checksum = H8DataMonolithCompiler.ComputeHash64(bytes, H8DataLayoutConstants.HeaderSizeBytes, bytes.Length - H8DataLayoutConstants.HeaderSizeBytes);
-                _binaryList.Add(new Label("bytes=" + bytes.Length + " sections=" + directory.SectionCount));
-                _binaryList.Add(new Label("magic=0x" + header.Magic.ToString("X8") + " version=" + header.FormatVersion + " headerBytes=" + header.HeaderBytes));
-                _binaryList.Add(new Label("checksum=" + (checksum == header.Checksum64 ? "PASS" : "FAIL") + " 0x" + header.Checksum64.ToString("X16")));
-                if (directory.SectionTableOffset <= bytes.Length && directory.SectionTableBytes <= bytes.Length - directory.SectionTableOffset)
-                {
-                    H8DataSectionEntry* sections = (H8DataSectionEntry*)(ptr + directory.SectionTableOffset);
-                    int count = Mathf.Min(directory.SectionCount, 64);
-                    for (int i = 0; i < count; i++)
-                    {
-                        H8DataSectionEntry section = sections[i];
-                        _binaryList.Add(new Label(((H8DataSectionId)section.SectionId) + " count=" + section.Count + " size=" + section.RecordSize + " offset=" + section.OffsetBytes));
-                    }
-                }
+                error = "Invalid: editor read failed";
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                error = "Invalid: editor read failed";
+                return false;
+            }
+            catch (PathTooLongException)
+            {
+                error = "Invalid: editor read failed";
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                error = "Invalid: editor read failed";
+                return false;
+            }
+            catch (IOException)
+            {
+                error = "Invalid: editor read failed";
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                error = "Invalid: editor read failed";
+                return false;
             }
         }
 

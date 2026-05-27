@@ -1,0 +1,83 @@
+{
+  "schema": "hecton8.physics_culling_impact_queue_lock_audit_1337.v1",
+  "agentId": "1337",
+  "rerun": 35,
+  "timestampLocal": "2026-05-27T09:40:34+04:00",
+  "prompt": {
+    "path": "Docs/Tasks/CURRENT_BATCH.md",
+    "bytes": 18613,
+    "taskLines": 19,
+    "sha256": "3e605cefcb2f812e4e2febd79f1e87c3d527fb27627de85b3f5c8ffa05c01387"
+  },
+  "changedFiles": [
+    "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+    "Docs/Tasks/Status_1337.md",
+    "Docs/AgentLogs/Rationale_1337.md",
+    "Docs/AgentLogs/LOG_1337.md",
+    "Docs/Reports/PHYSICS_CULLING_IMPACT_QUEUE_LOCK_AUDIT_1337_RERUN35.json"
+  ],
+  "defect": {
+    "summary": "Impact queue enqueue/drain mutated a GlobalDataVault lane as a multi-step transaction without one scoped write-lock phase.",
+    "affectedLane": "BufferID.PhysicsImpactEvents",
+    "affectedMethods": [
+      "GlobalPhysicsStateManager.EnqueueImpactEvent",
+      "GlobalPhysicsStateManager.FlushImpactEvents"
+    ]
+  },
+  "fix": {
+    "coldScratchSlots": 256,
+    "enqueueLock": "_impactEvents.TryAcquireWriteLock(out NativeArray<PhysicsImpactEventData>)",
+    "drainLock": "_impactEvents.TryAcquireWriteLock(out NativeArray<PhysicsImpactEventData>)",
+    "releasePolicy": "finally",
+    "publishAfterLockRelease": true,
+    "perFrameManagedAllocationIntroduced": false
+  },
+  "staticGates": {
+    "nativeAliasAudit": {
+      "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN35.json",
+      "scannedFiles": 6,
+      "totalNativeFieldDeclarations": 18,
+      "persistentNativeFieldsRemaining": 0,
+      "transientJobViews": 18,
+      "hash": "74301f378f091fc02225ec800ea9cbe2ec0e469747429a4448bf8272394b7258"
+    },
+    "zeroGcHotPathAudit": {
+      "path": "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN35.json",
+      "scannedFiles": 3,
+      "scannedHotMethods": 21,
+      "zeroGcHotPathHits": 0,
+      "hash": "37d3eaae558afd5435b07b03d91bff82007b29bc958c42ca3b2ca2c062e54011"
+    },
+    "branchAudit": {
+      "path": "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN35.json",
+      "scannedFiles": 3,
+      "jobExecuteIfStatements": 4,
+      "failClosedGuardIfStatements": 4,
+      "jobExecuteNonGuardIfStatements": 0,
+      "distanceSolverDecisionIfStatements": 0,
+      "hash": "7840c12e1756e49e1fc263c62ba27ed19c18ae1ce564b579e2a1354987b43edd"
+    },
+    "directScans": {
+      "forbiddenNativeAllocations": 0,
+      "throwNew": 0,
+      "catchException": 0,
+      "absoluteAupCastSuspects": 0,
+      "impactEventsIndexerHits": 1,
+      "impactEventsIndexerHitClassification": "ClearPhysicsImpactEventQueue1337 under existing scoped write-lock",
+      "linqHits": 0,
+      "mathSelectAnyFalsePositiveHits": 30
+    },
+    "gitDiffCheck": {
+      "whitespaceErrors": 0,
+      "crlfWarningsOnly": true
+    }
+  },
+  "buildGate": {
+    "launched": false,
+    "reason": "CPU gate red; project rules forbid dotnet build when CPU is above 50 percent.",
+    "cpuPercent": 100,
+    "dotnetProcesses": 0,
+    "cscProcesses": 0
+  },
+  "verificationHashSha256": "6a30394305a1dcc4797de3a205879732a7477fd5a270543508ac26ce8a1c5da3"
+}

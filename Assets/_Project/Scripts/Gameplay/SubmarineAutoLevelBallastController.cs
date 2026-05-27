@@ -8,6 +8,7 @@ using Hecton8.Core.Contracts.Fluids;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Contracts.Physics;
+using Hecton8.Interaction;
 using Hecton8.Physics.Vehicles;
 using Hecton8.World;
 using Unity.Burst;
@@ -440,6 +441,7 @@ namespace Hecton8.Gameplay
         private bool _registeredOriginShift;
         private bool _registeredHotSwap;
         private bool _registeredCombatTarget;
+        private bool _interactionTargetRegistered;
         private bool _registeredState;
         private bool _pidJobPending;
         private bool _floodMassJobPending;
@@ -469,8 +471,6 @@ namespace Hecton8.Gameplay
         private float _airReleaseCooldownSeconds;
         private float _lastBallastComputeMicros;
         private float _cachedGlobalQualityWeight = 1f;
-        private float _ballastSampleQualityFiltered;
-        private float _ballastSampleBudgetHoldSeconds;
         private long _ballastScheduleTimestamp;
         private long _ballastProfilesCsvLastWriteTicks;
         private string _ballastProfilesCsvPath;
@@ -754,6 +754,8 @@ namespace Hecton8.Gameplay
                     combatArmorValue,
                     0f);
             }
+
+            TryRegisterInteractionTargetTree();
         }
 
         private void TryRegisterStateReadModel()
@@ -772,6 +774,7 @@ namespace Hecton8.Gameplay
         private void UnregisterRuntime()
         {
             VehicleCommandSignalBus.Unregister(this);
+            TryUnregisterInteractionTargetTree();
 
             if (_registeredCombatTarget)
             {
@@ -826,6 +829,24 @@ namespace Hecton8.Gameplay
             RestoreDynamicFloodAngularDrag();
             RestoreDynamicFloodInertiaTensor();
             ResetExternalFloodDragTensor();
+        }
+
+        private void TryRegisterInteractionTargetTree()
+        {
+            if (_interactionTargetRegistered || !Application.isPlaying)
+                return;
+
+            InteractableRegistry.RegisterTree(this);
+            _interactionTargetRegistered = true;
+        }
+
+        private void TryUnregisterInteractionTargetTree()
+        {
+            if (!_interactionTargetRegistered)
+                return;
+
+            InteractableRegistry.InvalidateTree(this);
+            _interactionTargetRegistered = false;
         }
 
         private void CacheReferences()
@@ -1480,8 +1501,7 @@ namespace Hecton8.Gameplay
                 dependency = new GenerateMockFluidDisplacementJob
                 {
                     FluidSamples = samples,
-                    Frame = unchecked((uint)_tickCount),
-                    GlobalQualityWeight = ReadCachedGlobalQualityWeight()
+                    Frame = unchecked((uint)_tickCount)
                 }.Schedule(1, 1, dependency);
             }
 
@@ -1586,7 +1606,7 @@ namespace Hecton8.Gameplay
             float hullVolume = ResolveBallastHullVolume();
             float hullHeight = math.max(0.1f, ballastHullHeightMeters);
             float quality = ReadCachedGlobalQualityWeight();
-            int activeSampleBudget = ResolveBallastActiveSampleBudget(quality, fixedDeltaTime);
+            int activeSampleBudget = ResolveBallastActiveSampleBudget();
 
             samples[0] = new SubmarineBallastFluidSampleDTO
             {
@@ -1668,44 +1688,9 @@ namespace Hecton8.Gameplay
             return math.saturate(math.isfinite(quality) ? quality : 1f);
         }
 
-        private int ResolveBallastActiveSampleBudget(float quality, float fixedDeltaTime)
+        private static int ResolveBallastActiveSampleBudget()
         {
-            float targetQuality = math.saturate(math.isfinite(quality) ? quality : 1f);
-            if (!math.isfinite(_ballastSampleQualityFiltered))
-                _ballastSampleQualityFiltered = targetQuality;
-
-            float response = math.lerp(0.04f, 0.16f, math.smoothstep(0f, 1f, targetQuality));
-            _ballastSampleQualityFiltered = math.lerp(_ballastSampleQualityFiltered, targetQuality, response);
-            int desiredBudget = ResolveBallastSampleBudgetFromQuality(_ballastSampleQualityFiltered);
-            if (_ballastActiveSampleBudget < 1 || _ballastActiveSampleBudget > 4)
-            {
-                _ballastActiveSampleBudget = desiredBudget;
-                _ballastSampleBudgetHoldSeconds = 0f;
-                return _ballastActiveSampleBudget;
-            }
-
-            if (desiredBudget == _ballastActiveSampleBudget)
-            {
-                _ballastSampleBudgetHoldSeconds = 0f;
-                return _ballastActiveSampleBudget;
-            }
-
-            _ballastSampleBudgetHoldSeconds = math.min(
-                SubmarineBallastConstants.SampleBudgetHysteresisSeconds,
-                _ballastSampleBudgetHoldSeconds + math.max(0f, fixedDeltaTime));
-            if (_ballastSampleBudgetHoldSeconds >= SubmarineBallastConstants.SampleBudgetHysteresisSeconds)
-            {
-                _ballastActiveSampleBudget = desiredBudget;
-                _ballastSampleBudgetHoldSeconds = 0f;
-            }
-
-            return _ballastActiveSampleBudget;
-        }
-
-        private static int ResolveBallastSampleBudgetFromQuality(float quality)
-        {
-            float q = math.saturate(math.isfinite(quality) ? quality : 1f);
-            return math.clamp((int)math.round(math.lerp(1f, 4f, math.smoothstep(0f, 1f, q))), 1, 4);
+            return 4;
         }
 
         private void ApplyMassDistribution()
@@ -2320,9 +2305,7 @@ namespace Hecton8.Gameplay
         private void SeedAuthoritativeMathLod()
         {
             _authoritativeMathLod = 1;
-            _ballastSampleQualityFiltered = ReadCachedGlobalQualityWeight();
-            _ballastActiveSampleBudget = ResolveBallastSampleBudgetFromQuality(_ballastSampleQualityFiltered);
-            _ballastSampleBudgetHoldSeconds = 0f;
+            _ballastActiveSampleBudget = ResolveBallastActiveSampleBudget();
         }
 
         private void AdvanceDynamicFloodSolver(float fixedDeltaTime)

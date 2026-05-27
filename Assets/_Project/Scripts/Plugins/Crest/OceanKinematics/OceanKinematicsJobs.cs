@@ -147,9 +147,8 @@ namespace Hecton8.Physics
                 return;
             }
 
-            float quality = Sanitize01(Tuning.GlobalQualityWeight);
             int octaveLimit = math.clamp(Tuning.MaxOctaveLimit, 1, 4);
-            int activeOctaves = math.clamp((int)math.lerp(1f, octaveLimit, quality), 1, octaveLimit);
+            int activeOctaves = octaveLimit;
             float amplitudeMultiplier = math.max(0f, SanitizeFinite(Tuning.WaveAmplitudeMultiplier, OceanKinematicsConstants.DefaultAmplitudeMultiplier));
             float time = SanitizeFinite(Tuning.TimeSeconds, 0f);
             float height = surfaceY;
@@ -162,8 +161,8 @@ namespace Hecton8.Physics
                 float amplitude = amplitudeMultiplier * (0.42f * math.rcp(1f + octave * 0.65f));
                 float speed = 0.35f + octave * 0.17f;
                 float phase = WrapPhase(((local.x * dir.x) + (local.z * dir.y)) * frequency + time * speed + octave * 1.113f);
-                float waveSin = OceanKinematicsSimdMath.SinPolynomial(phase, quality);
-                float waveCos = OceanKinematicsSimdMath.CosPolynomial(phase, quality);
+                float waveSin = OceanKinematicsSimdMath.SinPolynomial(phase, 1f);
+                float waveCos = OceanKinematicsSimdMath.CosPolynomial(phase, 1f);
                 height += waveCos * amplitude;
                 velocity.x += dir.x * waveSin * amplitude * speed;
                 velocity.z += dir.y * waveSin * amplitude * speed;
@@ -337,9 +336,8 @@ namespace Hecton8.Physics
                 return;
             }
 
-            float quality = Sanitize01(Tuning.GlobalQualityWeight);
             int maxOctaves = math.clamp(Tuning.MaxOctaveLimit, 1, availableWaves);
-            int activeOctaves = math.clamp((int)math.lerp(1f, maxOctaves, quality), 1, maxOctaves);
+            int activeOctaves = maxOctaves;
             float amplitudeMultiplier = math.max(0f, SanitizeFinite(Tuning.WaveAmplitudeMultiplier, OceanKinematicsConstants.DefaultAmplitudeMultiplier));
             float time = SanitizeFinite(Tuning.TimeSeconds, 0f);
             float height = surfaceY;
@@ -357,8 +355,8 @@ namespace Hecton8.Physics
                 float frequency = math.max(0.0001f, SanitizeFinite(wave.Frequency, 0.0001f));
                 float phaseOffset = SanitizeFinite(wave.PhaseOffset, 0f);
                 float phase = WrapPhase(((dir.x * local.x) + (dir.y * local.z)) * frequency - frequency * time + phaseOffset);
-                float waveSin = OceanKinematicsSimdMath.SinPolynomial(phase, quality);
-                float waveCos = OceanKinematicsSimdMath.CosPolynomial(phase, quality);
+                float waveSin = OceanKinematicsSimdMath.SinPolynomial(phase, 1f);
+                float waveCos = OceanKinematicsSimdMath.CosPolynomial(phase, 1f);
                 float contribution = steepness * amplitude;
                 height += contribution * waveCos;
                 float velocityScale = contribution * frequency * waveSin;
@@ -783,8 +781,7 @@ namespace Hecton8.Physics
 
             int available = WaveCount;
             int maxOctaves = math.clamp(Tuning.MaxOctaveLimit, 1, available);
-            float quality = math.saturate(math.select(1f, Tuning.GlobalQualityWeight, math.isfinite(Tuning.GlobalQualityWeight)));
-            return math.clamp((int)math.lerp(1f, maxOctaves, quality), 1, maxOctaves);
+            return maxOctaves;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

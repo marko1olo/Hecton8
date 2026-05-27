@@ -1,0 +1,660 @@
+﻿{
+    "agentId":  "1335",
+    "task":  "1335_PURGE",
+    "status":  "SCOPED_STOCHASTIC_SSR_SCOOTER_SHAFTS_PDA_SONAR_PATCH_BUILD_BLOCKED_STALE_SOLUTION_CPU",
+    "scannedFiles":  43,
+    "failedGates":  [
+                        "last_dotnet_build_failed_external_fauna_core_and_prepatch_dryvolume_dependencies",
+                        "post_dryvolume_and_dump_lock_patch_build_blocked_by_cpu_policy",
+                        "post_retina_noir_halfres_patch_build_blocked_by_cpu_policy",
+                        "post_fluid_visor_patch_build_failed_stale_solution_missing_generated_csproj_and_unity_sdk",
+                        "post_diegetic_visor_lens_patch_build_failed_stale_solution_missing_generated_csproj_and_unity_sdk",
+                        "post_diegetic_lens_compute_and_waterline_patch_build_blocked_by_cpu_policy",
+                        "post_clean_visor_dump_patch_build_blocked_by_cpu_policy",
+                        "post_dynamic_decal_compaction_fence_patch_build_failed_stale_solution_missing_generated_csproj_and_unity_sdk",
+                        "unity_shader_import_not_available_in_current_tool_surface",
+                        "post_somatic_kinematics_and_suitvisor_patch_build_not_run_stale_solution_missing_generated_csproj_and_unity_sdk",
+                        "post_sonar_trauma_shader_patch_build_not_run_stale_solution_missing_generated_csproj_and_unity_sdk",
+                        "post_abyssal_brownout_glitch_patch_build_not_run_no_project_file_stale_solution_cpu_100",
+                        "post_stochastic_scooter_pda_patch_build_not_run_no_project_file_stale_solution_cpu_74_9"
+                    ],
+    "totalNativeFieldDeclarations":  18,
+    "persistentNativeFieldsRemaining":  0,
+    "transientVaultViews":  98,
+    "transientJobViews":  12,
+    "stackOnlyRefStructNativeViews":  6,
+    "nativeFieldDeclarations":  [
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs",
+                                        "line":  1527,
+                                        "declaration":  "NativeArray\u003cComfortTelemetryEntry\u003e Telemetry",
+                                        "classification":  "transient Burst job parameter"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs",
+                                        "line":  1538,
+                                        "declaration":  "NativeArray\u003cSomaticMockSicknessSampleDTO\u003e Samples",
+                                        "classification":  "transient Burst job parameter"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs",
+                                        "line":  1820,
+                                        "declaration":  "NativeArray\u003cSomaticMockSicknessSampleDTO\u003e Samples",
+                                        "classification":  "transient Burst job parameter"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.HorizonLock.cs",
+                                        "line":  578,
+                                        "declaration":  "NativeArray\u003cSomaticTelemetryEntry\u003e Telemetry",
+                                        "classification":  "transient Burst job parameter"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                                        "line":  1882,
+                                        "declaration":  "NativeArray\u003cVisorStateDTO\u003e State",
+                                        "classification":  "stack-only ref struct evaluator field; no Schedule(), IJob, BurstCompile, or JobHandle"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                                        "line":  1883,
+                                        "declaration":  "NativeArray\u003cVisorLensTuningDTO\u003e Tuning",
+                                        "classification":  "stack-only ref struct evaluator field; no Schedule(), IJob, BurstCompile, or JobHandle"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                                        "line":  1884,
+                                        "declaration":  "NativeArray\u003cMockPhysiologySignal\u003e Physiology",
+                                        "classification":  "stack-only ref struct evaluator field; no Schedule(), IJob, BurstCompile, or JobHandle"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                                        "line":  1885,
+                                        "declaration":  "NativeArray\u003cMockVisorEnvironmentSignal\u003e Environment",
+                                        "classification":  "stack-only ref struct evaluator field; no Schedule(), IJob, BurstCompile, or JobHandle"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                                        "line":  1886,
+                                        "declaration":  "NativeArray\u003cDiegeticVisorLensGpuGlobalsDTO\u003e GpuGlobals",
+                                        "classification":  "stack-only ref struct evaluator field; no Schedule(), IJob, BurstCompile, or JobHandle"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                                        "line":  1887,
+                                        "declaration":  "NativeArray\u003cint\u003e NanFlags",
+                                        "classification":  "stack-only ref struct evaluator field; no Schedule(), IJob, BurstCompile, or JobHandle"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+                                        "line":  315,
+                                        "declaration":  "NativeArray\u003cPlayerKinematicState\u003e State",
+                                        "classification":  "transient Burst job parameter"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+                                        "line":  316,
+                                        "declaration":  "NativeArray\u003cPlayerBoundingSphere\u003e BoundingSphere",
+                                        "classification":  "transient Burst job parameter"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+                                        "line":  317,
+                                        "declaration":  "NativeArray\u003cSomaticHandStrokeSample\u003e HandHistory",
+                                        "classification":  "transient Burst job parameter"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+                                        "line":  318,
+                                        "declaration":  "NativeArray\u003cfloat\u003e DragLut",
+                                        "classification":  "transient Burst job parameter"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+                                        "line":  319,
+                                        "declaration":  "NativeArray\u003cSomaticKinematicsTuningData\u003e Tuning",
+                                        "classification":  "transient Burst job parameter"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+                                        "line":  320,
+                                        "declaration":  "NativeArray\u003cSomaticKinematicSignalScratch\u003e SignalScratch",
+                                        "classification":  "transient Burst job parameter"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+                                        "line":  321,
+                                        "declaration":  "NativeArray\u003cSomaticKinematicBlackBoxEntry\u003e BlackBox",
+                                        "classification":  "transient Burst job parameter"
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+                                        "line":  322,
+                                        "declaration":  "NativeArray\u003cint\u003e BlackBoxCursor",
+                                        "classification":  "transient Burst job parameter"
+                                    }
+                                ],
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "SomaticComfortStateDTO",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "FovTunnelingIntensity":  "0:float",
+                                               "HorizonLockBlend":  "4:float",
+                                               "FoveatedScaleMultiplier":  "8:float",
+                                               "ActiveComfortFlags":  "12:uint",
+                                               "ReservedParameters":  "16:float4"
+                                           }
+                           },
+                           {
+                               "structName":  "VrComfortProfileDTO",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "ProfileHash":  "0:uint",
+                                               "UserComfortWeight01":  "4:float",
+                                               "FovAggressiveness":  "8:float",
+                                               "HorizonLockSpeed":  "12:float",
+                                               "FoveatedBaseline":  "16:float",
+                                               "AngularVelocitySoftRadS":  "20:float",
+                                               "AngularAccelerationSoftRadS2":  "24:float",
+                                               "LinearAccelerationSoftMps2":  "28:float",
+                                               "EwmaSharpness":  "32:float",
+                                               "ImpactShockWeight":  "36:float",
+                                               "FlatScreenBaselineFovTunnel":  "40:float",
+                                               "VrBaselineFovTunnel":  "44:float",
+                                               "ReleaseSharpness":  "48:float",
+                                               "MockAmplitude":  "52:float",
+                                               "Flags":  "56:uint",
+                                               "_pad0":  "60:byte",
+                                               "_pad1":  "61:byte",
+                                               "_pad2":  "62:byte",
+                                               "_pad3":  "63:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "VrComfortProfileLookupSlotDTO",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "ProfileHash":  "0:uint",
+                                               "ProfileIndex":  "4:int",
+                                               "Occupied":  "8:uint",
+                                               "_pad0":  "12:byte",
+                                               "_pad1":  "13:byte",
+                                               "_pad2":  "14:byte",
+                                               "_pad3":  "15:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "SomaticKinematicHistoryDTO",
+                               "sizeBytes":  96,
+                               "offsets":  {
+                                               "PreviousAup":  "0:AbsoluteUniversePosition",
+                                               "PreviousRotation":  "48:quaternion",
+                                               "PreviousVelocity":  "64:float3",
+                                               "PreviousAngularVelocity":  "76:float3",
+                                               "PreviousFrame":  "88:uint",
+                                               "Flags":  "92:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "SomaticDerivativeDTO",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "LinearVelocity":  "0:float3",
+                                               "LinearAcceleration":  "12:float3",
+                                               "AngularVelocity":  "24:float3",
+                                               "AngularAcceleration":  "36:float3",
+                                               "PeakAngularVelocityRadS":  "48:float",
+                                               "PeakAngularAccelerationRadS2":  "52:float",
+                                               "PeakLinearAccelerationMps2":  "56:float",
+                                               "Flags":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "ComfortTelemetryEntry",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Frame":  "0:uint",
+                                               "Flags":  "4:uint",
+                                               "PeakAngularVelocityRadS":  "8:float",
+                                               "PeakAngularAccelerationRadS2":  "12:float",
+                                               "PeakLinearAccelerationMps2":  "16:float",
+                                               "FovTunnelingIntensity":  "20:float",
+                                               "HorizonLockBlend":  "24:float",
+                                               "FoveatedScaleMultiplier":  "28:float",
+                                               "BurstExecutionMicroseconds":  "32:float",
+                                               "ImpactShock01":  "36:float",
+                                               "GlobalQualityWeight01":  "40:float",
+                                               "Pressure01":  "44:float",
+                                               "LockContentionCount":  "48:uint",
+                                               "StateHash":  "52:uint",
+                                               "Sequence":  "56:uint",
+                                               "AupHash":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "SomaticMockSicknessSampleDTO",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "LinearAcceleration":  "0:float3",
+                                               "AngularVelocity":  "12:float3",
+                                               "AngularAcceleration":  "24:float3",
+                                               "Rotation":  "36:quaternion",
+                                               "Frame":  "52:uint",
+                                               "Flags":  "56:uint",
+                                               "TimeSeconds":  "60:float"
+                                           }
+                           },
+                           {
+                               "structName":  "VRSomaticComfortDTO",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "StabilizedRotation":  "0:quaternion",
+                                               "FovTunnelScalar":  "16:float",
+                                               "PitchDampening":  "20:float",
+                                               "ComfortFlags":  "24:uint",
+                                               "_pad0":  "28:byte",
+                                               "_pad1":  "29:byte",
+                                               "_pad2":  "30:byte",
+                                               "_pad3":  "31:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "SomaticTelemetryEntry",
+                               "sizeBytes":  96,
+                               "offsets":  {
+                                               "StabilizedRotation":  "0:quaternion",
+                                               "QuaternionDelta":  "16:float4",
+                                               "RawAngularVelocity":  "32:float3",
+                                               "FovTunnelScalar":  "44:float",
+                                               "PitchDampening":  "48:float",
+                                               "BurstExecutionMicroseconds":  "52:float",
+                                               "Frame":  "56:uint",
+                                               "Flags":  "60:uint",
+                                               "StateHash":  "64:uint",
+                                               "AupHash":  "68:uint",
+                                               "_pad0":  "72:byte",
+                                               "_pad1":  "73:byte",
+                                               "_pad2":  "74:byte",
+                                               "_pad3":  "75:byte",
+                                               "_pad4":  "76:byte",
+                                               "_pad5":  "77:byte",
+                                               "_pad6":  "78:byte",
+                                               "_pad7":  "79:byte",
+                                               "_pad8":  "80:byte",
+                                               "_pad9":  "81:byte",
+                                               "_pad10":  "82:byte",
+                                               "_pad11":  "83:byte",
+                                               "_pad12":  "84:byte",
+                                               "_pad13":  "85:byte",
+                                               "_pad14":  "86:byte",
+                                               "_pad15":  "87:byte",
+                                               "_pad16":  "88:byte",
+                                               "_pad17":  "89:byte",
+                                               "_pad18":  "90:byte",
+                                               "_pad19":  "91:byte",
+                                               "_pad20":  "92:byte",
+                                               "_pad21":  "93:byte",
+                                               "_pad22":  "94:byte",
+                                               "_pad23":  "95:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "VRSomaticKinematicStateMirrorDTO",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "AUP_Position":  "0:double3",
+                                               "Velocity":  "24:float3",
+                                               "AngularVelocity":  "36:float3",
+                                               "Mass":  "48:float",
+                                               "Flags":  "52:uint",
+                                               "DragCoefficient":  "56:float",
+                                               "RestingFrameCount":  "60:byte",
+                                               "DeepSleepTickCount":  "61:byte",
+                                               "SleepMaterialIndex":  "62:byte",
+                                               "_pad0":  "63:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "VRSomaticBlackBoxEntry",
+                               "sizeBytes":  128,
+                               "offsets":  {
+                                               "Reserved1":  "0:ulong",
+                                               "HeadRotation":  "8:float4",
+                                               "HeadPosition":  "24:float3",
+                                               "NearCollision01":  "36:float",
+                                               "ComfortVignette01":  "40:float",
+                                               "LeftHandSeparationSq":  "44:float",
+                                               "RightHandSeparationSq":  "48:float",
+                                               "HeadAngularSpeedRadiansPerSecond":  "52:float",
+                                               "KccAngularVelocityRadiansPerSecond":  "56:float",
+                                               "KccAngularAccelerationRadiansPerSecondSq":  "60:float",
+                                               "KccComfortVignette01":  "64:float",
+                                               "KccHorizonLock01":  "68:float",
+                                               "Frame":  "72:int",
+                                               "StateHash":  "76:uint",
+                                               "AupShiftSequence":  "80:uint",
+                                               "KccVelocitySequence":  "84:uint",
+                                               "KccVelocityFrame":  "88:uint",
+                                               "KccVelocitySourceId":  "92:uint",
+                                               "Reserved0":  "96:uint",
+                                               "Flags":  "100:ushort",
+                                               "HandGhostMask":  "102:ushort",
+                                               "_pad0":  "104:byte",
+                                               "_pad1":  "105:byte",
+                                               "_pad2":  "106:byte",
+                                               "_pad3":  "107:byte",
+                                               "_pad4":  "108:byte",
+                                               "_pad5":  "109:byte",
+                                               "_pad6":  "110:byte",
+                                               "_pad7":  "111:byte",
+                                               "_pad8":  "112:byte",
+                                               "_pad9":  "113:byte",
+                                               "_pad10":  "114:byte",
+                                               "_pad11":  "115:byte",
+                                               "_pad12":  "116:byte",
+                                               "_pad13":  "117:byte",
+                                               "_pad14":  "118:byte",
+                                               "_pad15":  "119:byte",
+                                               "_pad16":  "120:byte",
+                                               "_pad17":  "121:byte",
+                                               "_pad18":  "122:byte",
+                                               "_pad19":  "123:byte",
+                                               "_pad20":  "124:byte",
+                                               "_pad21":  "125:byte",
+                                               "_pad22":  "126:byte",
+                                               "_pad23":  "127:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "VRSomaticRootSyncInput",
+                               "sizeBytes":  80,
+                               "offsets":  {
+                                               "HeadRotation":  "0:quaternion",
+                                               "PreviousRootRotation":  "16:quaternion",
+                                               "HeadPosition":  "32:float3",
+                                               "DeltaTime":  "44:float",
+                                               "HeadAngularSpeed":  "48:float",
+                                               "RootRotationSharpness":  "52:float",
+                                               "VignetteAngularSpeedStart":  "56:float",
+                                               "VignetteAngularSpeedFull":  "60:float",
+                                               "VignetteMaximum":  "64:float",
+                                               "AccelerationVignette01":  "68:float",
+                                               "KccHorizonLock01":  "72:float",
+                                               "Reserved0":  "76:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "VRSomaticRootSyncOutput",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "RootRotation":  "0:quaternion",
+                                               "RootPosition":  "16:float3",
+                                               "ComfortVignette01":  "28:float"
+                                           }
+                           },
+                           {
+                               "structName":  "HeadCastSample",
+                               "sizeBytes":  48,
+                               "offsets":  {
+                                               "Point":  "0:float3",
+                                               "Normal":  "12:float3",
+                                               "Distance":  "24:float",
+                                               "LocalSide":  "28:float",
+                                               "HasHit":  "32:int",
+                                               "Reserved0":  "36:uint",
+                                               "_pad0":  "40:byte",
+                                               "_pad1":  "41:byte",
+                                               "_pad2":  "42:byte",
+                                               "_pad3":  "43:byte",
+                                               "_pad4":  "44:byte",
+                                               "_pad5":  "45:byte",
+                                               "_pad6":  "46:byte",
+                                               "_pad7":  "47:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "BrownoutGlobalsDTO",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Params0":  "0:Vector4",
+                                               "Params1":  "16:Vector4",
+                                               "VrComfortSignals":  "32:Vector4",
+                                               "VrComfortMotion":  "48:Vector4"
+                                           }
+                           },
+                           {
+                               "structName":  "VisorHudParamsDTO",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "TargetCoordinates":  "0:float4",
+                                               "VitalStats":  "16:float4",
+                                               "VisorGlitchParams":  "32:float4",
+                                               "QualityAndTime":  "48:float4"
+                                           }
+                           },
+                           {
+                               "structName":  "VisorArTargetDTO",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "ScreenAndFlags":  "0:float4",
+                                               "ColorAndPulse":  "16:float4",
+                                               "LocalMetersAndDistance":  "32:float4",
+                                               "ShapeParams":  "48:float4"
+                                           }
+                           },
+                           {
+                               "structName":  "VisorHudDigitParamsDTO",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "OxygenDigits":  "0:float4",
+                                               "DepthDigits":  "16:float4",
+                                               "PressureDigits":  "32:float4",
+                                               "WarningDigits":  "48:float4"
+                                           }
+                           },
+                           {
+                               "structName":  "VisorTelemetryEntry",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "FrameIndex":  "0:uint",
+                                               "Flags":  "4:uint",
+                                               "TargetCount":  "8:float",
+                                               "QualityWeight":  "12:float",
+                                               "ProjectionMicroseconds":  "16:float",
+                                               "EstimatedGpuMicroseconds":  "20:float",
+                                               "FirstTargetDepthMeters":  "24:float",
+                                               "StateHash":  "28:uint",
+                                               "Oxygen01":  "32:float",
+                                               "Co201":  "36:float",
+                                               "FogIntensity01":  "40:float",
+                                               "StencilScale":  "44:float",
+                                               "LayoutHash":  "48:uint",
+                                               "VaultGeneration":  "52:uint",
+                                               "CameraPixelWidth":  "56:uint",
+                                               "CameraPixelHeight":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "VisorHudProfileDTO",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "NameHash":  "0:uint",
+                                               "FontAtlasScale":  "4:float",
+                                               "Curvature":  "8:float",
+                                               "FogEdgeStrength":  "12:float",
+                                               "PrimaryColor":  "16:float4",
+                                               "WarningColor":  "32:float4",
+                                               "LayoutOffsetScale":  "48:float4"
+                                           }
+                           }
+                       ],
+    "zeroGcHotPathHits":  0,
+    "absoluteAupCastsFound":  0,
+    "compactionAwareLocksProven":  true,
+    "telemetryRingIntegrated":  true,
+    "shaderForbiddenTerms":  {
+                                 "brownout_ar_uber_retina_noir_halfres_fluid_smoothstep":  0,
+                                 "diegetic_lens_compute_smoothstep":  0,
+                                 "length(":  0,
+                                 "pow(":  0,
+                                 "sin(":  0,
+                                 "cos(":  0,
+                                 "suit_visor_smoothstep":  0,
+                                 "suit_visor_length":  0,
+                                 "suit_visor_pow":  0,
+                                 "suit_visor_sin":  0,
+                                 "suit_visor_cos":  0,
+                                 "sonar_grid_smoothstep":  0,
+                                 "sonar_grid_length":  0,
+                                 "sonar_grid_pow":  0,
+                                 "sonar_grid_sin":  0,
+                                 "sonar_grid_cos":  0,
+                                 "trauma_decal_smoothstep":  0,
+                                 "trauma_decal_length":  0,
+                                 "trauma_decal_pow":  0,
+                                 "trauma_decal_sin":  0,
+                                 "trauma_decal_cos":  0,
+                                 "abyssal_ssdo_smoothstep":  0,
+                                 "abyssal_ssdo_length":  0,
+                                 "abyssal_ssdo_pow":  0,
+                                 "abyssal_ssdo_sin":  0,
+                                 "abyssal_ssdo_cos":  0,
+                                 "glitch_aces_smoothstep":  0,
+                                 "glitch_aces_length":  0,
+                                 "glitch_aces_pow":  0,
+                                 "glitch_aces_sin":  0,
+                                 "glitch_aces_cos":  0,
+                                 "stochastic_ssr_smoothstep":  0,
+                                 "stochastic_ssr_length":  0,
+                                 "stochastic_ssr_pow":  0,
+                                 "stochastic_ssr_sin":  0,
+                                 "stochastic_ssr_cos":  0,
+                                 "scooter_shafts_smoothstep":  0,
+                                 "scooter_shafts_length":  0,
+                                 "scooter_shafts_pow":  0,
+                                 "scooter_shafts_sin":  0,
+                                 "scooter_shafts_cos":  0,
+                                 "pda_sonar_map_smoothstep":  0,
+                                 "pda_sonar_map_length":  0,
+                                 "pda_sonar_map_pow":  0,
+                                 "pda_sonar_map_sin":  0,
+                                 "pda_sonar_map_cos":  0
+                             },
+    "syntaxTreeScanner":  {
+                              "engine":  "Scoped disk pass after Stochastic SSR/Scooter/PDA patch: six current files scanned; Stochastic AddBlitPass/SetGlobalTextureAfterPass/Shader.SetGlobalConstantBuffer/target4.5=0; Scooter AddBlitPass/SetGlobalTextureAfterPass/Shader.SetGlobalConstantBuffer/Shader.SetGlobalBuffer/B10=0; Scooter target4.5 retained for StructuredBuffer exposure state; scoped shader smoothstep/length/pow/sin/cos=0; root build not launched because no project file, stale solution, and CPU 74.9 percent.",
+                              "transientVaultViewInvocations":  98,
+                              "jobExecuteLoops":  1,
+                              "branchesInsideJobLoops":  0,
+                              "throwNewHotPathHits":  0,
+                              "broadCatchCount":  0,
+                              "diegeticLensRuntimeFileSha256":  "D4DDE5F91748A8F7D05A3DD8AB2ADC83E8B424A753B47246C65F589915B06815",
+                              "somaticKinematicsFileSha256":  "B08526D1A157066A78FB978E68719B4A5618C10C4C161102BE4A5F279F6CAEF7",
+                              "suitVisorShaderSha256":  "FD83FDC0F3527C46A80C3480CAFD36648FD9E3AEBA7905C5A610D7E4B5ABA2FC",
+                              "sonarGridShaderSha256":  "311AB12C31F91B3E5A66574BB917ECD8229F9239E2380AD5CCD6A83C5657E136",
+                              "visorWoundsShaderSha256":  "5D44513D73CD76F0916826A02487615E42CD8F129AC8C1A6ED6778D77B19E6DB",
+                              "visorTraumaShaderSha256":  "C3AEDCC85DBCAB60B5A7000AA47E116C0D0139DF3F8EC03C00EE197C6B24371E",
+                              "deferredDecalShaderSha256":  "95A5F3F5AEEBFA30BE5ABD88CA0B2F0435C7545BA3F9617F3F4F94542BC1CE2B",
+                              "brownoutShaderSha256":  "BF24E4404F66990B02607349B8C9ACCFCFDC460F603BC15282853D46D72DD6EE",
+                              "glitchAcesShaderSha256":  "6104E5850AF9D708DF511F64A90C04B50D7EBB0DC7F33A42FBB1EF13B165FEE2",
+                              "abyssalSsdoFeatureSha256":  "84FD9D8246C9384BF06A8C36C58D450F435B5CBF55EEA2D20313AC81A954D507",
+                              "abyssalSsdoShaderSha256":  "56B50C25DF4BB4DA373013A9AD8C54B92F5BC8E89542B11F94EA32EF3C0E1715",
+                              "stochasticSsrFeatureSha256":  "C185CA9DF54A0573CE64E39A6AE27B842E44D3858E42B285DC9C506E6DD2A46A",
+                              "stochasticSsrShaderSha256":  "91A4964E0946B1793530CA3531D640F0D98F60485BE47A7657D212E647725316",
+                              "scooterShaftsFeatureSha256":  "A9D52FE97F2548B727DE1729F424943DE6AB6241A701B1AC91CEE91B5A2C1E08",
+                              "scooterShaftsShaderSha256":  "FA3D8A69F35F7D89FBE0FC2A791EB9BFDC9B26841BDA439A1233BDEC95D7CE6D",
+                              "pdaSonarMapShaderSha256":  "62BFCB29B3E801B617C058C1A736158FCC67C6F11AFDB78DB765CD982F7EC94E",
+                              "currentEditorTestSha256":  "5EB7EEEAFE24C29EC9C8C304DF3E8A39672E2CDF23B7296F93054D9ED017FDA2"
+                          },
+    "asNativeArrayHits":  0,
+    "broadCatchCount":  0,
+    "arWriteLocks":  7,
+    "arWriteLockReleases":  7,
+    "arColdCsvWriteLocks":  2,
+    "uberColdCsvWriteLocks":  4,
+    "uberPostStaticTextureBridgeRemoved":  true,
+    "uberPostShaderSetGlobalTextureHits":  0,
+    "noirRuntimeWriteLocks":  5,
+    "reconstructionRuntimeWriteLocks":  3,
+    "lastBuildErrorsBeforeCurrentPatch":  [
+                                              "Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs: PoolSlotData.AupCell missing",
+                                              "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs: PoolSlotData.AupCell missing",
+                                              "Assets/_Project/Scripts/FaunaDirector.cs: PoolSlotData.AupCell missing",
+                                              "Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs: RuntimeShaderReferenceCatalog missing",
+                                              "Assets/_Project/Scripts/Core/SceneRuntimeService.cs: RuntimeShaderReferenceCatalog missing",
+                                              "Assets/_Project/Scripts/World/ImpostorSystem.cs: RuntimeShaderReferenceCatalog missing",
+                                              "Assets/_Project/Scripts/Visor/HectonDryVolumeFeature.cs: RenderGraph texture import signature mismatch"
+                                          ],
+    "patchedPendingBuild":  [
+                                "Assets/_Project/Scripts/Visor/HectonDryVolumeFeature.cs: external Texture removed from RasterCommandBuffer SetGlobalTexture pass data",
+                                "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs: reconstruction telemetry dump lock released before FileStream writes",
+                                "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs: noir telemetry dump lock released before FileStream writes",
+                                "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs: AR telemetry dump lock released before FileStream writes",
+                                "Assets/_Project/Scripts/Visor/HectonRetinaDistortionFeature.cs: AddBlitPass replaced with explicit raster RenderGraph pass and imported CBuffer",
+                                "Assets/_Project/Scripts/Visor/HectonNoirDepthFogFeature.cs: AddBlitPass replaced with explicit raster RenderGraph pass and imported CBuffer",
+                                "Assets/_Project/Scripts/Visor/HectonHalfResParticlesFeature.cs: AddBlitPass/global particle texture publication replaced with graph-owned raster pass inputs",
+                                "Assets/_Project/Art/Shaders/Hecton_RetinaDistortion.shader: Unity foveated source UV remap added",
+                                "Assets/_Project/Art/Shaders/Hecton_NoirDepthFog.shader: Unity foveated source/depth UV remap added and target lowered to 3.5",
+                                "Assets/_Project/Art/Shaders/Hecton_HalfResParticleComposite.shader: Unity foveated camera/depth source UV remap added and target lowered to 3.5",
+                                "Assets/_Project/Scripts/Editor/VRSomaticComfortEvaluatorEditTests.cs: regression tests added for secondary visor fullscreen passes",
+                                "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs: diegetic lens compute CBuffer upload now fails closed on specific GPU mapping faults and broad catches are removed",
+                                "Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader: all smoothstep gates replaced with linear ramps and source/depth samples use foveated remap",
+                                "Assets/_Project/Scripts/Editor/VRSomaticComfortEvaluatorEditTests.cs: regression tests added for fluid visor feature/shader constraints",
+                                "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs: CSV/dump Vault locks are compaction-aware and broad catches are removed",
+                                "Assets/_Project/Art/Shaders/SuitVisor.shader: foveated opaque sampling plus zero smoothstep/length/pow/sin/cos fullscreen mask pass",
+                                "Assets/_Project/Art/Shaders/SonarGridOverlay.shader: target 3.5, foveated source sample, linear sonar masks",
+                                "Assets/_Project/Art/Shaders/Hecton_VisorWounds.shader: foveated source/depth samples and triangle/linear trauma fake",
+                                "Assets/_Project/Art/Shaders/Hecton_VisorTrauma.shader: foveated source/depth samples and triangle/linear trauma fake",
+                                "Assets/_Project/Art/Shaders/Hecton_DeferredDecal.shader: foveated source/depth samples and triangle/linear trauma fake",
+                                "Assets/_Project/Scripts/Editor/VRSomaticComfortEvaluatorEditTests.cs: regression test added for sonar/trauma visor shaders"
+                            ],
+    "dumpLocksReleasedBeforeIo":  true,
+    "dryVolumeRenderGraphCompilePatchApplied":  true,
+    "secondaryFullscreenRenderGraphPatchApplied":  true,
+    "secondaryFullscreenShadersFoveated":  true,
+    "secondaryFullscreenShaderTargets35":  true,
+    "fluidVisorShaderLinearRampAndFoveated":  true,
+    "fluidVisorBroadCatchesRemaining":  0,
+    "diegeticVisorLensTinyJobRemoved":  true,
+    "diegeticVisorLensWriteLocks":  15,
+    "diegeticVisorLensWriteLockReleases":  15,
+    "diegeticLensComputeLinearRamp":  true,
+    "internalFloodWaterlineBroadCatches":  0,
+    "dynamicDecalBroadCatches":  0,
+    "spectrumBroadCatches":  0,
+    "dynamicDecalDumpLockHeldDuringIo":  false,
+    "dynamicDecalTryLockBufferCalls":  19,
+    "dynamicDecalLockHelperMethods":  8,
+    "dynamicDecalCompactionFencePropertyChecks":  13,
+    "spectrumDumpStreamsDirectlyFromTelemetryView":  false,
+    "lastBuildFailure":  "post Stochastic SSR/Scooter/PDA patch build was not launched because C:\\hades\\Hecton8 has 0 .csproj files, C:\\hades\\hades.sln references missing Unity-generated projects and unavailable Unity.Sdk, and CPU averaged 74.9 percent",
+    "verificationHashSha256":  "4AE929C1CD7EBE4F7516089DD030B9B102F68EB92444F524F5925A992FEF9C93",
+    "verificationHashScope":  "Six-file Stochastic SSR, Scooter shafts, and PDA sonar patch: HectonStochasticSsrFeature.cs, Hecton_StochasticSSR.shader, HectonScooterVolumetricShaftsFeature.cs, Hecton_ScooterVolumetricShafts.shader, Hecton_PDA_SonarMap.shader, VRSomaticComfortEvaluatorEditTests.cs",
+    "somaticKinematicsBroadCatches":  0,
+    "somaticKinematicsBareCatches":  0,
+    "somaticKinematicsTryLockBufferDirectCalls":  1,
+    "somaticKinematicsTryLockSomaticBufferCalls":  18,
+    "somaticKinematicsCompactionFenceChecks":  11,
+    "suitVisorCameraOpaqueSamples":  3,
+    "suitVisorCameraOpaqueSamplesFoveated":  3,
+    "sonarGridShaderTarget35":  true,
+    "sonarGridSourceSamplesFoveated":  1,
+    "visorTraumaStructuredTarget45Kept":  true,
+    "visorTraumaSourceSamplesFoveated":  6,
+    "visorTraumaDepthSamplesFoveated":  3,
+    "sonarTraumaEditorRegressionTestAdded":  true,
+    "abyssalSsdoAddBlitPassHits":  0,
+    "abyssalSsdoSetGlobalTextureAfterPassHits":  0,
+    "abyssalSsdoForcedB10Hits":  0,
+    "abyssalSsdoShaderTarget35":  true,
+    "abyssalSsdoCameraDepthFoveated":  true,
+    "abyssalSsdoOcclusionBlurUvRemainsLinear":  true,
+    "brownoutOffsetsResolvedInLinearUv":  true,
+    "visorGlitchAcesFoveatedTriangleFake":  true,
+    "currentPassScannedFiles":  6,
+    "stochasticSsrGraphOwnedMask":  true,
+    "stochasticSsrShaderTarget35":  true,
+    "scooterShaftsGraphOwnedIntermediates":  true,
+    "scooterShaftsStructuredTarget45Kept":  true,
+    "scooterShaftsForcedB10Hits":  0,
+    "pdaSonarRaymarchSmoothstepHits":  0
+}

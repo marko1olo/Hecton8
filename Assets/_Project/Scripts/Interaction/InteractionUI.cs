@@ -58,7 +58,7 @@ namespace Hecton8.Interaction
             CacheLocalizationCold(forceRefresh: true);
             SubscribeInputBindingServiceIfAvailable();
 
-            SubscribeInputManagerIfAvailable();
+            CacheInputManagerCold();
 
             LocalizationEvents.RegisterLanguageListener(this);
 
@@ -73,7 +73,8 @@ namespace Hecton8.Interaction
             TryRegisterHotSwapListener();
             CacheLocalizationCold(forceRefresh: true);
             SubscribeInputBindingServiceIfAvailable();
-            SubscribeInputManagerIfAvailable();
+            CacheInputManagerCold();
+            InitializePromptContainer();
             RefreshInteractPrefixCache();
             RefreshCurrentPrompt();
         }
@@ -232,18 +233,18 @@ namespace Hecton8.Interaction
         {
             if (!Application.isPlaying)
             {
-                if (CacheLocalizedPrefixTemplate(ResolveLocalizationManager()))
+                if (CacheLocalizedPrefixTemplate(GetCachedLocalizationManager()))
                     return;
 
                 CachePrefixLiteral(inputPrefix.AsSpan(), appendTrailingSpace: false);
                 return;
             }
 
-            SubscribeInputManagerIfAvailable();
-            if (_subscribedInputManager != null && CacheInteractBindingMarkup(_subscribedInputManager))
+            INativeInputManagerRuntime inputManager = _subscribedInputManager;
+            if (inputManager != null && CacheInteractBindingMarkup(inputManager))
                 return;
 
-            ILocalizationTextReadModel localizationManager = ResolveLocalizationManager();
+            ILocalizationTextReadModel localizationManager = GetCachedLocalizationManager();
             if (CacheLocalizedPrefixTemplate(localizationManager))
                 return;
 
@@ -285,7 +286,6 @@ namespace Hecton8.Interaction
             if (promptContainer == null)
                 return;
 
-            InitializePromptContainer();
             if (_promptCanvasGroup == null)
                 return;
 
@@ -348,13 +348,14 @@ namespace Hecton8.Interaction
             _cachedInteractPrefixLength = cursor;
         }
 
-        private void SubscribeInputManagerIfAvailable()
+        private void CacheInputManagerCold()
         {
-            if (_subscribedInputManager != null)
-                return;
+            SubscribeInputManagerIfAvailable(GlobalRegistry.NativeInputRuntime);
+        }
 
-            INativeInputManagerRuntime inputManager = GlobalRegistry.NativeInputRuntime;
-            if (inputManager == null)
+        private void SubscribeInputManagerIfAvailable(INativeInputManagerRuntime inputManager)
+        {
+            if (_subscribedInputManager != null || inputManager == null)
                 return;
 
             _subscribedInputManager = inputManager;
@@ -411,9 +412,14 @@ namespace Hecton8.Interaction
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Input:
+                case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
                     UnsubscribeInputManager();
                     if (isActiveAndEnabled)
-                        SubscribeInputManagerIfAvailable();
+                    {
+                        SubscribeInputManagerIfAvailable(currentService as INativeInputManagerRuntime);
+                        if (_subscribedInputManager == null)
+                            CacheInputManagerCold();
+                    }
                     break;
 
                 case GlobalRegistryServiceSlot.InputBinding:
@@ -424,7 +430,7 @@ namespace Hecton8.Interaction
 
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localizationManager = currentService as ILocalizationTextReadModel;
-                    _localizationColdResolved = _localizationManager != null;
+                    _localizationColdResolved = true;
                     break;
 
                 default:
@@ -454,16 +460,18 @@ namespace Hecton8.Interaction
 
         private void CacheLocalizationCold(bool forceRefresh = false)
         {
-            if (!forceRefresh && _localizationColdResolved && _localizationManager != null)
+            if (!forceRefresh && _localizationColdResolved)
                 return;
 
             _localizationManager = Hecton8.Core.GlobalRegistry.LocalizationText;
-            _localizationColdResolved = _localizationManager != null;
+            _localizationColdResolved = true;
         }
 
-        private ILocalizationTextReadModel ResolveLocalizationManager()
+        private ILocalizationTextReadModel GetCachedLocalizationManager()
         {
-            CacheLocalizationCold();
+            if (!Application.isPlaying && !_localizationColdResolved)
+                CacheLocalizationCold();
+
             return _localizationManager;
         }
 

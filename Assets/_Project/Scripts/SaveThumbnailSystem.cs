@@ -126,10 +126,11 @@ namespace Hecton8.SaveSystem
 
         private static readonly Dictionary<string, Texture2D> _textureCache =
             new Dictionary<string, Texture2D>(MaxCachedTextures, StringComparer.OrdinalIgnoreCase);
-        private static readonly List<string> _textureCacheOrder = new List<string>(MaxCachedTextures);
+        private static readonly string[] _textureCacheOrder = new string[MaxCachedTextures]; // COLD ALLOC: fixed save-thumbnail LRU order buffer - owner: SaveThumbnailSystem
         private static readonly Action<AsyncGPUReadbackRequest> s_readbackCompleted = HandleReadbackCompleted;
         private static readonly CaptureCompletion[] s_completionHistory = new CaptureCompletion[CompletionHistoryCapacity]; // COLD ALLOC: fixed completion ring for overlapping save/UI requests - owner: SaveThumbnailSystem
 
+        private static int _textureCacheOrderCount;
         private static Camera _cachedCaptureCamera;
         private static CaptureRequest _pendingRequest;
         private static CaptureRequest _inflightRequest;
@@ -387,7 +388,7 @@ namespace Hecton8.SaveSystem
             {
                 if (cached != null)
                 {
-                    MarkCacheEntryAsMostRecent(_textureCacheOrder, slotName);
+                    MarkCacheEntryAsMostRecent(slotName);
                     return cached;
                 }
 
@@ -414,7 +415,7 @@ namespace Hecton8.SaveSystem
 
             if (_textureCache.TryGetValue(slotName, out Texture2D cached) && cached != null)
             {
-                MarkCacheEntryAsMostRecent(_textureCacheOrder, slotName);
+                MarkCacheEntryAsMostRecent(slotName);
                 return cached;
             }
 
@@ -534,7 +535,7 @@ namespace Hecton8.SaveSystem
             }
 
             _textureCache.Clear();
-            _textureCacheOrder.Clear();
+            ClearTextureCacheOrder();
         }
 
         private static bool TryResolveCaptureCamera(Camera overrideCamera, out Camera captureCamera)
@@ -1061,56 +1062,85 @@ namespace Hecton8.SaveSystem
                 if (existing != null && existing != texture)
                     UnityEngine.Object.Destroy(existing);
             }
+            else if (_textureCacheOrderCount >= MaxCachedTextures)
+            {
+                EvictOldestCacheEntry();
+            }
 
             _textureCache[slotName] = texture;
-            MarkCacheEntryAsMostRecent(_textureCacheOrder, slotName);
-            TrimCacheToLimit();
+            MarkCacheEntryAsMostRecent(slotName);
         }
 
         private static void RemoveCacheEntry(string slotName)
         {
             _textureCache.Remove(slotName);
 
-            for (int i = 0; i < _textureCacheOrder.Count; i++)
+            int index = IndexOfCacheOrder(slotName);
+            if (index >= 0)
+                RemoveCacheOrderAt(index);
+        }
+
+        private static void MarkCacheEntryAsMostRecent(string slotName)
+        {
+            int index = IndexOfCacheOrder(slotName);
+            if (index >= 0)
+            {
+                RemoveCacheOrderAt(index);
+            }
+            else if (_textureCacheOrderCount >= MaxCachedTextures)
+            {
+                EvictOldestCacheEntry();
+            }
+
+            _textureCacheOrder[_textureCacheOrderCount] = slotName;
+            _textureCacheOrderCount++;
+        }
+
+        private static int IndexOfCacheOrder(string slotName)
+        {
+            for (int i = 0; i < _textureCacheOrderCount; i++)
             {
                 if (string.Equals(_textureCacheOrder[i], slotName, StringComparison.OrdinalIgnoreCase))
-                {
-                    _textureCacheOrder.RemoveAt(i);
-                    return;
-                }
+                    return i;
             }
+
+            return -1;
         }
 
-        private static void TrimCacheToLimit()
+        private static void EvictOldestCacheEntry()
         {
-            while (_textureCacheOrder.Count > MaxCachedTextures)
-            {
-                string oldestSlotName = _textureCacheOrder[0];
-                _textureCacheOrder.RemoveAt(0);
+            if (_textureCacheOrderCount <= 0)
+                return;
 
-                if (!_textureCache.TryGetValue(oldestSlotName, out Texture2D cached))
-                    continue;
+            string oldestSlotName = _textureCacheOrder[0];
+            RemoveCacheOrderAt(0);
+            if (string.IsNullOrEmpty(oldestSlotName))
+                return;
 
-                _textureCache.Remove(oldestSlotName);
-                if (cached == null)
-                    continue;
+            if (!_textureCache.TryGetValue(oldestSlotName, out Texture2D cached))
+                return;
 
+            _textureCache.Remove(oldestSlotName);
+            if (cached != null)
                 UnityEngine.Object.Destroy(cached);
-            }
         }
 
-        private static void MarkCacheEntryAsMostRecent(List<string> cacheOrder, string slotName)
+        private static void RemoveCacheOrderAt(int index)
         {
-            for (int i = 0; i < cacheOrder.Count; i++)
-            {
-                if (!string.Equals(cacheOrder[i], slotName, StringComparison.OrdinalIgnoreCase))
-                    continue;
+            int lastIndex = _textureCacheOrderCount - 1;
+            for (int i = index; i < lastIndex; i++)
+                _textureCacheOrder[i] = _textureCacheOrder[i + 1];
 
-                cacheOrder.RemoveAt(i);
-                break;
-            }
+            if (lastIndex >= 0)
+                _textureCacheOrder[lastIndex] = null;
 
-            cacheOrder.Add(slotName);
+            _textureCacheOrderCount = Mathf.Max(0, lastIndex);
+        }
+
+        private static void ClearTextureCacheOrder()
+        {
+            Array.Clear(_textureCacheOrder, 0, _textureCacheOrder.Length);
+            _textureCacheOrderCount = 0;
         }
     }
 }

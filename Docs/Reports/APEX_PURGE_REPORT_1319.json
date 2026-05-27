@@ -1,0 +1,244 @@
+﻿{
+    "agentId":  "1319",
+    "task":  "1319_PURGE",
+    "status":  "VERIFIED_GREEN",
+    "sourcePrompt":  "Docs/Tasks/current_batch.md",
+    "scannedFiles":  22,
+    "failedGates":  [
+
+                    ],
+    "totalNativeFieldDeclarations":  290,
+    "persistentNativeFieldsRemaining":  0,
+    "transientVaultViews":  25,
+    "transientJobViews":  265,
+    "nativeAudit":  {
+                        "path":  "Docs/Reports/APEX_NATIVE_FIELD_AUDIT_1319_RERUN6.json",
+                        "parseFailures":  0,
+                        "forbiddenPersistentCandidates":  0,
+                        "auditHashSha256":  "5e47239f29db243f0cc7a41c92add2b590667bc572ea3b9ce7dd3725f5b4df4e"
+                    },
+    "hotPathAudit":  {
+                         "path":  "Docs/Reports/APEX_HOTPATH_AUDIT_1319_RERUN6_RAW.json",
+                         "scannedFiles":  7,
+                         "parseFailures":  0,
+                         "stringFormatCalls":  0,
+                         "toStringCalls":  0,
+                         "linqCalls":  0,
+                         "foreachStatements":  0,
+                         "interpolatedStrings":  0,
+                         "stringConcatSuspects":  0,
+                         "nativeTempJobAllocations":  0,
+                         "nativePersistentAllocations":  0,
+                         "auditHashSha256":  "ba05ab7e63cad6bfb62ccdfc08b8e041d7e81a3774d77f656e52390f8710e927"
+                     },
+    "lockAudit":  {
+                      "directTryAcquireWriteLockSites":  6,
+                      "directTryLockBufferSites":  6,
+                      "immediateCompactionFenceGuards":  12,
+                      "releaseDiscipline":  "try-finally or immediate fail-release for partial acquisition",
+                      "compactionFenceSource":  "GlobalDataVault.IsCompactionFenceActive =\u003e Volatile.Read(ref _compactionFence) != 0 at Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:549"
+                  },
+    "coldExceptionSites":  [
+                               "LogisticsNetworkGraph.cs:3557 dump I/O",
+                               "ShinobuLogisticsRouter.cs:1760 dump I/O",
+                               "ShinobuLogisticsRouter.cs:1826 authoring CSV import",
+                               "SubmarineOsThermalGridRuntime.cs:1062 authoring CSV import",
+                               "SubmarineOsThermalGridRuntime.cs:1678 dump I/O",
+                               "WfcOutpostPowerBootRuntime.cs:907 dump I/O"
+                           ],
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "LogisticsNode",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "Id":  "0:uint",
+                                               "Capacity":  "4:float",
+                                               "Resistance":  "8:float",
+                                               "CurrentLoad":  "12:float",
+                                               "Potential":  "16:float",
+                                               "Priority":  "20:byte",
+                                               "Flags":  "21:LogisticsNodeFlags",
+                                               "NetworkId":  "22:byte",
+                                               "Reserved":  "23:byte",
+                                               "_pad0":  "24:ulong"
+                                           }
+                           },
+                           {
+                               "structName":  "TopologySummary",
+                               "sizeBytes":  24,
+                               "offsets":  {
+                                               "NodeCount":  "0:int",
+                                               "EdgeCount":  "4:int",
+                                               "IslandCount":  "8:int",
+                                               "CycleCount":  "12:int",
+                                               "BfsVisitedCount":  "16:int",
+                                               "ProducerReachableCount":  "20:int"
+                                           }
+                           },
+                           {
+                               "structName":  "DistributionSummary",
+                               "sizeBytes":  40,
+                               "offsets":  {
+                                               "TotalGeneration":  "0:float",
+                                               "TotalConsumption":  "4:float",
+                                               "Balance":  "8:float",
+                                               "SupplyRatio":  "12:float",
+                                               "ServedDemand":  "16:float",
+                                               "UnservedDemand":  "20:float",
+                                               "PoweredCount":  "24:int",
+                                               "DisabledCount":  "28:int",
+                                               "HasDeficit":  "32:byte",
+                                               "BrownoutTier":  "33:LogisticsBrownoutTier",
+                                               "_pad0":  "34:ushort",
+                                               "_pad1":  "36:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "TopologyEdgeRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "SourceNodeIndex":  "0:int",
+                                               "DestinationNodeIndex":  "4:int",
+                                               "Resistance":  "8:float",
+                                               "_pad0":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "ProducerRecord",
+                               "sizeBytes":  8,
+                               "offsets":  {
+                                               "NodeIndex":  "0:int",
+                                               "_pad0":  "4:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "ConsumerRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "NodeIndex":  "0:int",
+                                               "Demand":  "4:float",
+                                               "PowerPriority":  "8:int",
+                                               "Flags":  "12:LogisticsConsumerFlags",
+                                               "PriorityTier":  "14:byte",
+                                               "_pad0":  "15:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "LogisticsNodeDTO",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "NodeHash":  "0:uint",
+                                               "Capacity":  "4:float",
+                                               "CurrentLoad":  "8:float",
+                                               "Flags":  "12:uint",
+                                               "EdgeStartIndex":  "16:int",
+                                               "EdgeCount":  "20:int",
+                                               "_pad0":  "24:uint",
+                                               "_pad1":  "28:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "LogisticsEdgeDTO",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "Nodes":  "0:int2",
+                                               "Capacity":  "8:float",
+                                               "Resistance":  "12:float",
+                                               "Flow01":  "16:float",
+                                               "LastMilliTransfer":  "20:int",
+                                               "Flags":  "24:uint",
+                                               "_pad0":  "28:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "LogisticsTuningDTO",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "ReactorOutputWatts":  "0:float",
+                                               "LifeSupportDrainWatts":  "4:float",
+                                               "OxygenDiffusionRate":  "8:float",
+                                               "CrushDepthMultiplier":  "12:float",
+                                               "BasePipeResistance":  "16:float",
+                                               "DeltaSmoothingFactor":  "20:float",
+                                               "GlobalQualityWeight":  "24:float",
+                                               "Flags":  "28:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "LogisticsComponentSpecDTO",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "ModuleHash":  "0:uint",
+                                               "Capacity":  "4:float",
+                                               "Resistance":  "8:float",
+                                               "OxygenDemand":  "12:float",
+                                               "Flags":  "16:uint",
+                                               "_pad0":  "20:uint",
+                                               "_pad1":  "24:uint",
+                                               "_pad2":  "28:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "LogisticsGraphTelemetryEntry",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "StateHash":  "0:ulong",
+                                               "TotalPowerGenerated":  "8:float",
+                                               "TotalPowerConsumed":  "12:float",
+                                               "TotalOxygen01":  "16:float",
+                                               "SupplyRatio":  "20:float",
+                                               "FrameIndex":  "24:int",
+                                               "NodeCount":  "28:int",
+                                               "ActiveNodeCount":  "32:int",
+                                               "FaultFlags":  "36:int",
+                                               "BreachedCount":  "40:int",
+                                               "UnpoweredCount":  "44:int",
+                                               "OxygenCadence":  "48:int",
+                                               "ComponentCount":  "52:int",
+                                               "DeltaPassCount":  "56:int",
+                                               "SolverMicros":  "60:int"
+                                           }
+                           },
+                           {
+                               "structName":  "WfcOutpostPowerBootTelemetryEntry",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Frame":  "0:uint",
+                                               "GridHandle":  "4:uint",
+                                               "SectorHash":  "8:ulong",
+                                               "NodeCount":  "16:int",
+                                               "DirectedEdgeCount":  "20:int",
+                                               "DoorCount":  "24:int",
+                                               "RoomCount":  "28:int",
+                                               "GeneratorNodeIndex":  "32:int",
+                                               "ReactorOutput01":  "36:float",
+                                               "SupplyRatio":  "40:float",
+                                               "BrownoutSeverity01":  "44:float",
+                                               "Flags":  "48:uint",
+                                               "GraphHash":  "52:uint",
+                                               "Reserved0":  "56:uint",
+                                               "Reserved1":  "60:uint"
+                                           }
+                           }
+                       ],
+    "zeroGcHotPathHits":  0,
+    "absoluteAupCastsFound":  0,
+    "compactionAwareLocksProven":  true,
+    "telemetryRingIntegrated":  true,
+    "buildVerification":  "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1 executed; exit code 1 due non-Power errors; filtered Power diagnostics count 0; log Docs/Reports/BUILD_1319_APEX_RERUN6.log",
+    "verificationHashSha256":  "04278feef9e9cbb281b575db86443fddceeb392f6a41ce8ece7857349ec64611",
+    "lineAudit":  {
+                      "path":  "Docs/Reports/APEX_LINE_AUDIT_1319_RERUN6.json",
+                      "touchedFiles":  7,
+                      "allocatorPersistent":  0,
+                      "allocatorTempJob":  0,
+                      "throwNew":  0,
+                      "stringFormat":  0,
+                      "toStringCalls":  0,
+                      "linqCalls":  0,
+                      "foreachStatements":  0,
+                      "editorOnlyInterpolatedStrings":  1,
+                      "coldExceptionSites":  6,
+                      "teardownCompleteCalls":  2
+                  }
+}

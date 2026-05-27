@@ -84,6 +84,8 @@ namespace Hecton8.World
         private Bounds _registeredDrawBounds;
         private bool _registeredDrawBoundsValid;
         private bool _hotSwapListenerRegistered;
+        private Material _runtimeMaterial;
+        private Shader _runtimeMaterialShader;
 
         private void Awake()
         {
@@ -164,14 +166,15 @@ namespace Hecton8.World
             Vector3 floatingOffset = new Vector3(globalFloatingOffset.x, globalFloatingOffset.y, globalFloatingOffset.z);
             Bounds combinedBounds = default;
             bool hasCombinedBounds = false;
+            int acceptedCount = 0;
             for (int i = 0; i < instanceCount; i++)
             {
                 HLODInstance instance = instances[i];
-                _uploadedMatrices[i] = instance.LocalToWorld;
-                _uploadedFade[i] = new Vector4(Mathf.Clamp01(instance.Fade01), 0f, 0f, 0f);
+                if (!TryResolveRenderableInstance(in instance, floatingOffset, out Bounds worldBounds))
+                    continue;
 
-                Bounds worldBounds = instance.LocalBounds;
-                worldBounds.center += floatingOffset;
+                _uploadedMatrices[acceptedCount] = instance.LocalToWorld;
+                _uploadedFade[acceptedCount] = new Vector4(Sanitize01(instance.Fade01), 0f, 0f, 0f);
                 if (hasCombinedBounds)
                     combinedBounds.Encapsulate(worldBounds);
                 else
@@ -179,18 +182,31 @@ namespace Hecton8.World
                     combinedBounds = worldBounds;
                     hasCombinedBounds = true;
                 }
+
+                acceptedCount++;
             }
 
-            PublishOwnedUploadBuffers(instanceCount);
-            _instanceCount = instanceCount;
+            if (acceptedCount <= 0)
+            {
+                ClearBinding();
+                return;
+            }
+
+            PublishOwnedUploadBuffers(acceptedCount);
+            _instanceCount = acceptedCount;
             _drawBounds = hasCombinedBounds ? combinedBounds : new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             _hasBoundsOverride = hasCombinedBounds;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || !_hasBoundsOverride || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            if (!isActiveAndEnabled ||
+                !_hasBoundsOverride ||
+                !IsFinite(shiftData.ShiftOffset) ||
+                shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
             Bounds drawBounds = _drawBounds;
             drawBounds.center -= shiftData.ShiftOffset;
@@ -315,7 +331,7 @@ namespace Hecton8.World
 
         private void SetBatchGlobalBoundsIfChanged(Bounds bounds)
         {
-            if (_batchRendererGroup == null)
+            if (_batchRendererGroup == null || !IsFiniteBounds(bounds))
                 return;
 
             if (_registeredDrawBoundsValid &&
@@ -382,7 +398,38 @@ namespace Hecton8.World
 
         private Material ResolveMaterial()
         {
-            return _material;
+            if (_material != null)
+                return _material;
+
+            Shader fallbackShader = ResolveFallbackShader();
+            if (fallbackShader == null)
+                return null;
+
+            if (_runtimeMaterial != null && _runtimeMaterialShader == fallbackShader)
+                return _runtimeMaterial;
+
+            ReleaseRuntimeMaterial();
+            _runtimeMaterial = new Material(fallbackShader)
+            {
+                name = "Hecton HLOD Runtime Material",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            _runtimeMaterialShader = fallbackShader;
+            return _runtimeMaterial;
+        }
+
+        private Shader ResolveFallbackShader()
+        {
+            if (_shader != null)
+                return _shader;
+
+#if UNITY_EDITOR
+            Shader editorShader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
+            if (editorShader != null)
+                return editorShader;
+#endif
+
+            return Shader.Find("Hidden/Hecton8/World/HLODUnlitFog");
         }
 
         private Bounds ResolveDrawBounds()
@@ -431,6 +478,7 @@ namespace Hecton8.World
 
             _uploadedMatrices = null;
             _uploadedFade = null;
+            ReleaseRuntimeMaterial();
         }
 
         private JobHandle OnPerformCulling(
@@ -478,6 +526,9 @@ namespace Hecton8.World
         private static Vector4 ResolveGlobalFloatingOffset()
         {
             Vector3 totalOffset = HectonMapMagicVegetationBridge.GlobalTotalUniverseOffset;
+            if (!IsFinite(totalOffset))
+                totalOffset = Vector3.zero;
+
             return new Vector4(totalOffset.x, totalOffset.y, totalOffset.z, 0f);
         }
 
@@ -493,6 +544,82 @@ namespace Hecton8.World
 
             buffer.Release();
             buffer = null;
+        }
+
+        private void ReleaseRuntimeMaterial()
+        {
+            if (_runtimeMaterial == null)
+                return;
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                DestroyImmediate(_runtimeMaterial);
+            else
+#endif
+                Destroy(_runtimeMaterial);
+
+            _runtimeMaterial = null;
+            _runtimeMaterialShader = null;
+        }
+
+        private static bool TryResolveRenderableInstance(
+            in HLODInstance instance,
+            Vector3 floatingOffset,
+            out Bounds worldBounds)
+        {
+            worldBounds = default;
+            if (!IsFinite(instance.LocalToWorld))
+                return false;
+
+            Bounds localBounds = instance.LocalBounds;
+            if (!IsFiniteBounds(localBounds) || !float.IsFinite(instance.Fade01))
+                return false;
+
+            worldBounds = localBounds;
+            worldBounds.center += floatingOffset;
+            return IsFiniteBounds(worldBounds);
+        }
+
+        private static float Sanitize01(float value)
+        {
+            return float.IsFinite(value) ? Mathf.Clamp01(value) : 0f;
+        }
+
+        private static bool IsFiniteBounds(Bounds bounds)
+        {
+            Vector3 extents = bounds.extents;
+            return IsFinite(bounds.center) &&
+                   IsFinite(extents) &&
+                   extents.x >= 0f &&
+                   extents.y >= 0f &&
+                   extents.z >= 0f;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
+        }
+
+        private static bool IsFinite(Matrix4x4 value)
+        {
+            return float.IsFinite(value.m00) &&
+                   float.IsFinite(value.m01) &&
+                   float.IsFinite(value.m02) &&
+                   float.IsFinite(value.m03) &&
+                   float.IsFinite(value.m10) &&
+                   float.IsFinite(value.m11) &&
+                   float.IsFinite(value.m12) &&
+                   float.IsFinite(value.m13) &&
+                   float.IsFinite(value.m20) &&
+                   float.IsFinite(value.m21) &&
+                   float.IsFinite(value.m22) &&
+                   float.IsFinite(value.m23) &&
+                   float.IsFinite(value.m30) &&
+                   float.IsFinite(value.m31) &&
+                   float.IsFinite(value.m32) &&
+                   float.IsFinite(value.m33);
         }
     }
 }

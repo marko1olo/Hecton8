@@ -77,7 +77,7 @@ namespace Hecton8.World
         /// </summary>
         public static Vector3 ResolveTerrainNormalAtSeam(Vector3 absoluteUniversePosition, float seamBlendRadius)
         {
-            MapMagicBridge mapMagicBridge = GlobalRegistry.MapMagic;
+            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
             if (mapMagicBridge == null)
                 return Vector3.up;
 
@@ -92,7 +92,7 @@ namespace Hecton8.World
             terrainColor = Color.clear;
             blend = 0f;
 
-            MapMagicBridge mapMagicBridge = GlobalRegistry.MapMagic;
+            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
             if (mapMagicBridge == null)
                 return false;
 

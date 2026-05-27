@@ -14,8 +14,8 @@ namespace Hecton8.Rendering.WaterOptics
             [Tooltip("Marker injection point. AfterRenderingOpaques tracks the UberNoir opaque extinction lane without adding a draw.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.AfterRenderingOpaques;
 
-            [Tooltip("Enable a RenderGraph/CommandBuffer marker for water optics opaque-pass telemetry.")]
-            public bool enableCommandBufferMarker = true;
+            [Tooltip("Editor/development-only RenderGraph marker for water optics opaque-pass telemetry.")]
+            public bool enableCommandBufferMarker = false;
         }
 
         private sealed class WaterOpticsTelemetryPass : ScriptableRenderPass
@@ -45,8 +45,7 @@ namespace Hecton8.Rendering.WaterOptics
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
                 if (!Application.isPlaying ||
-                    _settings == null ||
-                    !_settings.enableCommandBufferMarker)
+                    !IsTelemetryMarkerAllowed(_settings))
                 {
                     return;
                 }
@@ -93,7 +92,7 @@ namespace Hecton8.Rendering.WaterOptics
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (!Application.isPlaying || _pass == null || settings == null || !settings.enableCommandBufferMarker)
+            if (!Application.isPlaying || _pass == null || !IsTelemetryMarkerAllowed(settings))
                 return;
 
             CameraType cameraType = renderingData.cameraData.cameraType;
@@ -106,6 +105,15 @@ namespace Hecton8.Rendering.WaterOptics
 
             _pass.Setup(settings);
             renderer.EnqueuePass(_pass);
+        }
+
+        private static bool IsTelemetryMarkerAllowed(FeatureSettings settings)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return settings != null && settings.enableCommandBufferMarker;
+#else
+            return false;
+#endif
         }
     }
 }

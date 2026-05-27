@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BiomeFamilyProfile_biome_family_fossil_reef
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeFamilyProfile
   familyId: biome.family.fossil_reef
-  familyLabel: Fossil Reef
+  familyLabel: Fossil Carbonate Shelf
   debugColor: {r: 0.72, g: 0.82, b: 0.74, a: 1}
   geologicalIdentity: "\xD0\u0178\xD0\xBE\xD1\u20AC\xD0\xB8\xD1\x81\xD1\u201A\xD1\u2039\xD0\xB5
     \xD1\u20AC\xD0\xB8\xD1\u201E\xD1\u2039, \xD0\xBA\xD0\xBE\xD1\u20AC\xD0\xB0\xD0\xBB\xD0\xBB\xD0\xBE\xD0\xB2\xD1\u2039\xD0\xB5
@@ -25,13 +25,13 @@ MonoBehaviour:
     \xD0\xBC\xD0\xB5\xD1\x81\xD1\u201A\xD0\xB0 \xD0\xB1\xD0\xB5\xD0\xB7 \xD0\xBF\xD1\u20AC\xD1\x8F\xD0\xBC\xD0\xBE\xD0\xB9
     \xD0\xB0\xD0\xB3\xD1\u20AC\xD0\xB5\xD1\x81\xD1\x81\xD0\xB8\xD0\xB8 \xD0\xBC\xD0\xB8\xD1\u20AC\xD0\xB0."
   atmosphereMood: organic_murmur
-  navigationStyle: honeycomb_paths
+  navigationStyle: porous_carbonate_paths
   hazardStyle: ambush_and_maze
-  landmarkStyle: reef_walls
-  primaryResourceTheme: fiber_membrane_and_biolum
+  landmarkStyle: carbonate_walls
+  primaryResourceTheme: fiber_membrane_and_dim_biolum
   secondaryResourceTheme: fine_minerals
   suggestedZoneFamily: resources.pickups.near
-  progressionFeeling: curious_exploration
+  progressionFeeling: evidence_led_exploration
   primaryResource: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}
   secondaryResource: {fileID: 11400000, guid: 91b73894e80923843a89007d3b9cc97d, type: 2}
   tertiaryResource: {fileID: 11400000, guid: 32a9672f690416b4fb198838e2b2ff35, type: 2}

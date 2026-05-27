@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Press Angle And Subject Line Bank
 
 Status: draft bank / requires asset proof before use
-Owner lane: SHINOBU_81 / press copy
+Owner lane: Marketing / press copy
 Runtime impact: none
 
 ## Rule

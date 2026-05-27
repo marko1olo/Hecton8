@@ -16,7 +16,7 @@ namespace Hecton8.Narrative.Prologue
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8550)]
-    public sealed class AwaitableDropSequenceDirector : MonoBehaviour, IPrologueSequenceService
+    public sealed class AwaitableDropSequenceDirector : MonoBehaviour, IPrologueSequenceService, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryCapacity = 300;
         private const double Mach10MetersPerSecond = 3430d;
@@ -59,6 +59,15 @@ namespace Hecton8.Narrative.Prologue
         private uint _lastPublishedStateHash;
         private byte _lastPublishedFlags;
         private bool _hasPublishedTelemetry;
+        private bool _registeredHotSwap;
+
+        [Header("Impact Sync")]
+        [Tooltip("Near-surface distance gate before hydration and world handoff.")]
+        [SerializeField] private float impactSyncDistanceMeters = 120f;
+        [Tooltip("Minimum post-release hold before the distance gate can complete.")]
+        [SerializeField] private float impactSyncMinimumHoldSeconds = 0.65f;
+        [Tooltip("Bounded fallback if no valid distance owner is available.")]
+        [SerializeField] private float impactSyncWatchdogSeconds = 8f;
 
         public bool IsConfigured => _configured;
         public bool IsRunning => _running;
@@ -71,6 +80,7 @@ namespace Hecton8.Narrative.Prologue
 
             _runtime = runtime;
             _configured = runtime != null;
+            TryRegisterHotSwap();
             EnsureBlackBox();
             RecordStage(PrologueStage.None, SourceHash, 0);
         }
@@ -97,10 +107,10 @@ namespace Hecton8.Narrative.Prologue
             {
                 _runtime.PrepareSequenceRun();
 
-                if (!await AwaitAtmosphericReentryAsync(cancellationToken))
+                if (!await RunOrbitalSilenceAsync(cancellationToken))
                     return;
 
-                if (!await RunOrbitalSilenceAsync(cancellationToken))
+                if (!await AwaitAtmosphericReentryAsync(cancellationToken))
                     return;
 
                 if (!await RunReentryBurnAsync(cancellationToken))
@@ -155,11 +165,17 @@ namespace Hecton8.Narrative.Prologue
             _cancelReason = normalizedReason;
         }
 
+        private void OnEnable()
+        {
+            TryRegisterHotSwap();
+        }
+
         private void OnDisable()
         {
             CancelSequence(PrologueCancelReasons.ExplicitCancel);
             if (_running)
                 ReleaseInputLockNoThrow();
+            TryUnregisterHotSwap();
         }
 
         private void OnDestroy()
@@ -179,7 +195,28 @@ namespace Hecton8.Narrative.Prologue
             }
 
             _disposed = true;
+            TryUnregisterHotSwap();
             ReleaseBlackBox();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            if (ReferenceEquals(previousService, currentService))
+            {
+                _dataVault = currentService as IDataVault;
+                return;
+            }
+
+            ReleaseBlackBox(previousService as IDataVault ?? _dataVault);
+            _dataVault = currentService as IDataVault;
+            _blackBoxCursor = 0;
+            EnsureBlackBox();
         }
 
         private async Awaitable<bool> AwaitAtmosphericReentryAsync(CancellationToken cancellationToken)
@@ -236,9 +273,8 @@ namespace Hecton8.Narrative.Prologue
             if (ShouldStopForCancellation(cancellationToken))
                 return false;
 
-            RecordStage(PrologueStage.OrbitalSilence, SilenceHash, (byte)(PrologueInputLockFlags.Look | PrologueInputLockFlags.Translation));
-            PublishSequenceInputLock(PrologueInputLockFlags.Look | PrologueInputLockFlags.Translation, paused: true);
-            _runtime.PublishMuffledBreathing(1f, 3f);
+            RecordStage(PrologueStage.OrbitalSilence, SilenceHash, 0);
+            _runtime.PublishMuffledBreathing(0.65f, 3f);
             await _runtime.DelayDilatedAsync(3f, cancellationToken);
             return !ShouldStopForCancellation(cancellationToken) && !TryHandleDevelopmentSkip();
         }
@@ -324,15 +360,33 @@ namespace Hecton8.Narrative.Prologue
 
         private async Awaitable<bool> RunImpactSyncAsync(CancellationToken cancellationToken)
         {
-            RecordStage(PrologueStage.ImpactSync, ImpactHash, _lastComplete.Flags);
-            if (ShouldStopForCancellation(cancellationToken))
-                return false;
+            double elapsedSeconds = 0d;
 
-            if (TryHandleDevelopmentSkip())
-                return false;
+            while (true)
+            {
+                if (ShouldStopForCancellation(cancellationToken))
+                    return false;
 
-            await _runtime.NextFrameAsync(cancellationToken);
-            return !ShouldStopForCancellation(cancellationToken) && !TryHandleDevelopmentSkip();
+                if (TryHandleDevelopmentSkip())
+                    return false;
+
+                bool rangeReached;
+                uint impactStateHash;
+                byte impactFlags;
+                if (!TryResolveImpactRangeReached(out rangeReached, out impactStateHash, out impactFlags))
+                    return false;
+
+                RecordStage(PrologueStage.ImpactSync, impactStateHash, impactFlags);
+
+                if (elapsedSeconds >= SanitizedNonNegative(impactSyncMinimumHoldSeconds, 0.65f) && rangeReached)
+                    return true;
+
+                if (elapsedSeconds >= SanitizedPositive(impactSyncWatchdogSeconds, 8f))
+                    return true;
+
+                await _runtime.NextFrameAsync(cancellationToken);
+                elapsedSeconds += ResolveFrameDeltaSeconds();
+            }
         }
 
         private async Awaitable<bool> AwaitOceanHydrationAsync(CancellationToken cancellationToken)
@@ -345,12 +399,25 @@ namespace Hecton8.Narrative.Prologue
                 if (TryHandleDevelopmentSkip())
                     return false;
 
-                bool allowProxy = _runtime.IsLowTier;
-                byte hydrationMode = allowProxy
-                    ? (byte)PrologueHydrationMode.LowTierProxySurface
-                    : (byte)PrologueHydrationMode.HighResolutionSurface;
+                if (_runtime.IsOceanSurfaceReady(allowProxy: false))
+                {
+                    RecordStage(
+                        PrologueStage.AwaitOceanHydration,
+                        HydrationHash,
+                        (byte)PrologueHydrationMode.HighResolutionSurface);
+                    return true;
+                }
 
-                if (_runtime.IsOceanSurfaceReady(allowProxy))
+                bool survivalProxyAllowed = _runtime.IsLowTier;
+                bool handoffProxyAllowed = _runtime.IsStandaloneOrbitHandoffProxyAllowed;
+                bool allowProxy = survivalProxyAllowed || handoffProxyAllowed;
+                byte hydrationMode = handoffProxyAllowed
+                    ? (byte)PrologueHydrationMode.StandaloneOrbitHandoffProxy
+                    : survivalProxyAllowed
+                        ? (byte)PrologueHydrationMode.LowTierProxySurface
+                        : (byte)PrologueHydrationMode.HighResolutionSurface;
+
+                if (allowProxy && _runtime.IsOceanSurfaceReady(allowProxy: true))
                 {
                     RecordStage(PrologueStage.AwaitOceanHydration, HydrationHash, hydrationMode);
                     return true;
@@ -370,6 +437,77 @@ namespace Hecton8.Narrative.Prologue
             _runtime.ZeroUniverseVelocity();
             _runtime.PublishMassiveImpact();
             _runtime.PublishOceanHandoff();
+        }
+
+        private bool TryResolveImpactRangeReached(out bool rangeReached, out uint stateHash, out byte flags)
+        {
+            rangeReached = false;
+            stateHash = ImpactHash;
+            flags = _lastComplete.Flags;
+            double impactDistance = SanitizedPositive(impactSyncDistanceMeters, 120f);
+            bool hasDistance = false;
+            double nearestDistance = double.MaxValue;
+
+            if (_runtime.TryGetOrbitalSnapshot(out _lastOrbital))
+            {
+                _hasLastOrbitalSnapshot = true;
+                if (!IsFiniteOrbital(in _lastOrbital))
+                {
+                    RecordStage(PrologueStage.Faulted, FaultHash, PrologueCancelReasons.NonFinite);
+                    DumpBlackBox();
+                    TryDumpRuntimeBlackBox(_runtime);
+                    return false;
+                }
+
+                nearestDistance = math.min(nearestDistance, math.max(0d, _lastOrbital.PlanetDistanceMeters));
+                hasDistance = true;
+                stateHash = HashOrbital(in _lastOrbital);
+                flags = _lastOrbital.Flags;
+            }
+
+            if (_runtime.TryConsumeAtmosphericReentry(out _lastAtmosphericReentry))
+            {
+                if (!IsFiniteAtmospheric(in _lastAtmosphericReentry))
+                {
+                    RecordStage(PrologueStage.Faulted, FaultHash, PrologueCancelReasons.NonFinite);
+                    DumpBlackBox();
+                    TryDumpRuntimeBlackBox(_runtime);
+                    return false;
+                }
+
+                nearestDistance = math.min(nearestDistance, math.max(0d, (double)_lastAtmosphericReentry.AltitudeMeters));
+                hasDistance = true;
+                stateHash = HashAtmospheric(in _lastAtmosphericReentry);
+                flags = _lastAtmosphericReentry.Flags;
+            }
+
+            rangeReached = hasDistance && nearestDistance <= impactDistance;
+            return true;
+        }
+
+        private void OnValidate()
+        {
+            impactSyncDistanceMeters = SanitizedPositive(impactSyncDistanceMeters, 120f);
+            impactSyncMinimumHoldSeconds = SanitizedNonNegative(impactSyncMinimumHoldSeconds, 0.65f);
+            impactSyncWatchdogSeconds = math.max(
+                impactSyncMinimumHoldSeconds,
+                SanitizedPositive(impactSyncWatchdogSeconds, 8f));
+        }
+
+        private static double ResolveFrameDeltaSeconds()
+        {
+            float delta = SystemDispatcher.CurrentFrameDeltaTime;
+            return math.isfinite(delta) && delta > 0f ? delta : 1d / 60d;
+        }
+
+        private static float SanitizedPositive(float value, float fallback)
+        {
+            return math.isfinite(value) && value > 0f ? value : fallback;
+        }
+
+        private static float SanitizedNonNegative(float value, float fallback)
+        {
+            return math.isfinite(value) && value >= 0f ? value : fallback;
         }
 
         private bool ShouldStopForCancellation(CancellationToken cancellationToken)
@@ -443,6 +581,12 @@ namespace Hecton8.Narrative.Prologue
             if (vault == null)
                 return;
 
+            if (vault.IsCompactionFenceActive)
+            {
+                ClearBlackBoxDescriptor();
+                return;
+            }
+
             if (IsVaultHandleCreated(in _blackBoxHandle) &&
                 vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<PrologueSequenceTelemetryEntry>.ReadOnly buffer) &&
                 buffer.IsCreated &&
@@ -451,11 +595,40 @@ namespace Hecton8.Narrative.Prologue
                 return;
             }
 
-            _blackBoxHandle = vault.EnsureGenerationHandle<PrologueSequenceTelemetryEntry>(
+            if (IsVaultHandleCreated(in _blackBoxHandle))
+                vault.ReleaseBuffer(in _blackBoxHandle);
+            ClearBlackBoxDescriptor();
+
+            if (vault.TryGetGenerationHandle<PrologueSequenceTelemetryEntry>(
+                    BufferID.PrologueSequenceTelemetryRing,
+                    out VaultGenerationHandle<PrologueSequenceTelemetryEntry> existing) &&
+                vault.TryReadOnlyHandle(in existing, out NativeArray<PrologueSequenceTelemetryEntry>.ReadOnly existingBuffer) &&
+                existingBuffer.IsCreated &&
+                existingBuffer.Length >= TelemetryCapacity)
+            {
+                _blackBoxHandle = existing;
+                return;
+            }
+
+            if (vault.IsAllocationLocked)
+                return;
+
+            VaultGenerationHandle<PrologueSequenceTelemetryEntry> acquired = vault.EnsureGenerationHandle<PrologueSequenceTelemetryEntry>(
                 BufferID.PrologueSequenceTelemetryRing,
                 TelemetryCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryReadOnlyHandle(in acquired, out NativeArray<PrologueSequenceTelemetryEntry>.ReadOnly acquiredBuffer) ||
+                !acquiredBuffer.IsCreated ||
+                acquiredBuffer.Length < TelemetryCapacity)
+            {
+                ClearBlackBoxDescriptor();
+                _blackBoxCursor = 0;
+                return;
+            }
+
+            _blackBoxHandle = acquired;
         }
 
         private void RecordStage(PrologueStage stage, uint stateHash, byte flags)
@@ -651,12 +824,38 @@ namespace Hecton8.Narrative.Prologue
 
         private void ReleaseBlackBox()
         {
-            IDataVault vault = _dataVault;
+            ReleaseBlackBox(_dataVault);
+        }
+
+        private void ReleaseBlackBox(IDataVault vault)
+        {
             if (vault != null && IsVaultHandleCreated(in _blackBoxHandle))
                 vault.ReleaseBuffer(in _blackBoxHandle);
 
-            _blackBoxHandle = default;
+            ClearBlackBoxDescriptor();
             _blackBoxCursor = 0;
+        }
+
+        private void ClearBlackBoxDescriptor()
+        {
+            _blackBoxHandle = default;
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct

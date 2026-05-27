@@ -517,7 +517,7 @@ namespace Hecton8.AI
         private const int DefaultMaxEntities = 128;
         private const int MinLegsPerJob = 32;
         private const int TelemetryCapacity = 300;
-        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ANIM_PROCEDURAL_BEHAVIOR.bin";
+        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
         private static readonly int BodyPoseBufferId = Shader.PropertyToID("_H8CrabBodyPoseBuffer");
         private static readonly int LegJointBufferId = Shader.PropertyToID("_H8CrabLegJointBuffer");
 
@@ -632,7 +632,7 @@ namespace Hecton8.AI
 
         private int LegCapacity => EntityCapacity * MaxLegsPerEntity;
 
-        private struct CrabLegVaultBuffers
+        private ref struct CrabLegVaultBuffers
         {
             public NativeArray<ProceduralCrabLegEntityState> Entities;
             public NativeArray<float3> FootPositions;

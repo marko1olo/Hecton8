@@ -1,0 +1,350 @@
+﻿{
+    "agent":  "1323",
+    "report":  "VAULT_EXORCISM_PLAN_1323_TASKS02_05",
+    "generatedUtc":  "2026-05-25T22:47:46.9272373Z",
+    "ownerSystemId":  "SystemID.HabitatAtmosphere",
+    "bufferIdRange":  "72200..72238 reserved locally for SubmarineAtmosphereSystem; no collisions found by rg across Assets/_Project/Scripts and H8Memory.cs at generation time",
+    "sourceLedger":  "Docs/Reports/VAULT_EXORCISM_LEDGER_1323_TASK01.json",
+    "persistentFieldCount":  37,
+    "bufferMap":  [
+                      {
+                          "name":  "HighPressurePendingEvents",
+                          "bufferId":  72200,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "session static event lane, late-frame flush"
+                      },
+                      {
+                          "name":  "HighPressureNextFrameEvents",
+                          "bufferId":  72201,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "session static event lane, late-frame flush"
+                      },
+                      {
+                          "name":  "FatalPressurePendingEvents",
+                          "bufferId":  72202,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "session static event lane, late-frame flush"
+                      },
+                      {
+                          "name":  "FatalPressureNextFrameEvents",
+                          "bufferId":  72203,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "session static event lane, late-frame flush"
+                      },
+                      {
+                          "name":  "RoomVolumes",
+                          "bufferId":  72204,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "FloodVolumes",
+                          "bufferId":  72205,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "O2Front",
+                          "bufferId":  72206,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "O2Back",
+                          "bufferId":  72207,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "Co2Front",
+                          "bufferId":  72208,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "Co2Back",
+                          "bufferId":  72209,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "InertFront",
+                          "bufferId":  72210,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "InertBack",
+                          "bufferId":  72211,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "PressureFront",
+                          "bufferId":  72212,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "PressureBack",
+                          "bufferId":  72213,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "O2PartialPressureFront",
+                          "bufferId":  72214,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "O2PartialPressureBack",
+                          "bufferId":  72215,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "Co2PartialPressureFront",
+                          "bufferId":  72216,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "Co2PartialPressureBack",
+                          "bufferId":  72217,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "N2PartialPressureFront",
+                          "bufferId":  72218,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "N2PartialPressureBack",
+                          "bufferId":  72219,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "GasVolumeFront",
+                          "bufferId":  72220,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "GasVolumeBack",
+                          "bufferId":  72221,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "O2ConsumptionRates",
+                          "bufferId":  72222,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "Co2GenerationRates",
+                          "bufferId":  72223,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "RoomPlayerCounts",
+                          "bufferId":  72224,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "TemperatureFront",
+                          "bufferId":  72225,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "TemperatureBack",
+                          "bufferId":  72226,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "SteamFront",
+                          "bufferId":  72227,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "SteamBack",
+                          "bufferId":  72228,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "HydrogenPocketFront",
+                          "bufferId":  72229,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "OxygenPocketFront",
+                          "bufferId":  72230,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "RoomHeatWatts",
+                          "bufferId":  72231,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "RoomStatusMaskFront",
+                          "bufferId":  72232,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "RoomStatusMaskBack",
+                          "bufferId":  72233,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "DoorPairs",
+                          "bufferId":  72234,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "DoorSealed",
+                          "bufferId":  72235,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "DoorSealedPrevious",
+                          "bufferId":  72236,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene atmosphere owner buffer, RoomCapacity or DoorCapacity"
+                      },
+                      {
+                          "name":  "TelemetryRing",
+                          "bufferId":  72237,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene/session blackbox, 300-frame ring plus cursor"
+                      },
+                      {
+                          "name":  "TelemetryCursor",
+                          "bufferId":  72238,
+                          "ownerSystemId":  "SystemID.HabitatAtmosphere",
+                          "lifetime":  "scene/session blackbox, 300-frame ring plus cursor"
+                      }
+                  ],
+    "lifecycle":  {
+                      "coldBoot":  "EnsureGenerationHandle\u003cT\u003e in EnsureNativeState/EnsureInitialized; no hot allocation after owner bootstrap",
+                      "simulationPhase":  "FixedTick resolves current views and schedules AtmosphereStepJob; job fields remain transient NativeArray parameters",
+                      "postSimulationPhase":  "ConsumeCompletedJob completes owner job window, swaps descriptors/front-back meaning, applies deferred mutations, publishes fakes/snapshots",
+                      "eventPhase":  "HighPressure/FatalPressure lanes flush in SystemDispatcher late frame; queues must become vault-backed bounded payload arrays or first-party SignalBus lanes",
+                      "teardown":  "ReleaseBuffer\u003cT\u003e via cached vault, no NativeArray.Dispose from atmosphere owner"
+                  },
+    "dependencyGraph":  [
+                            {
+                                "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                                "route":  "ISubmarineAtmosphereRoomMutationSink/ReadModel",
+                                "methods":  "ResolveRoomFloodFillNormalized, TryResolveRoomFloodFillNormalized, ResolveNearestRoomIndexForWorldPosition, InjectOxygenUnits, GetRoomTemperatureCelsius, InjectRoomTemperatureDeltaCelsius, HandleExternalModuleBreach",
+                                "transition":  "public read accessors resolve read-only vault views; mutation methods acquire owner write locks or defer while job active"
+                            },
+                            {
+                                "file":  "Assets/_Project/Scripts/Construction/WaterPumpModule.cs",
+                                "route":  "ISubmarineAtmosphereRoomReadModel",
+                                "methods":  "ResolveNearestRoomIndexForWorldPosition",
+                                "transition":  "pure read accessor only"
+                            },
+                            {
+                                "file":  "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
+                                "route":  "ISubmarineAtmosphereRoomMutationSink",
+                                "methods":  "InjectOxygenUnits",
+                                "transition":  "write path stays through owner sink; sink locks/queues"
+                            },
+                            {
+                                "file":  "Assets/_Project/Scripts/Construction/BatteryBankModule.cs",
+                                "route":  "ISubmarineAtmosphereRoomMutationSink",
+                                "methods":  "ResolveNearestRoomIndexForWorldPosition, InjectRoomHeatEnergyJoules",
+                                "transition":  "write path remains owner sink"
+                            },
+                            {
+                                "file":  "Assets/_Project/Scripts/Construction/LogisticsPipeNode.cs",
+                                "route":  "ISubmarineAtmosphereRoomReadModel",
+                                "methods":  "ResolveNearestRoomIndexForWorldPosition, GetRoomTemperatureCelsius",
+                                "transition":  "read-only vault resolve"
+                            },
+                            {
+                                "file":  "Assets/_Project/Scripts/Gameplay/HectonSubmarineOS.cs",
+                                "route":  "ISubmarineAtmosphereRoomReadModel + pressure event listener",
+                                "methods":  "GetRoomOxygenFraction, GetRoomCarbonDioxidePressureFraction, GetRoomPressureKPa, HighPressureEvents.Register",
+                                "transition":  "read-only vault resolve; pressure event lanes migrate from NativeQueue to vault-backed bounded arrays or SignalBus bridge"
+                            },
+                            {
+                                "file":  "Assets/_Project/Scripts/PowerGrid.cs",
+                                "route":  "ISubmarineAtmosphereRoomMutationSink",
+                                "methods":  "ResolveNearestRoomIndexForWorldPosition, InjectRoomHeatEnergyJoules, GetRoomTemperatureCelsius, GetRoomFloodFillRatio, InjectElectrolysisGasPocket, InjectRoomTemperatureDeltaCelsius",
+                                "transition":  "owner sink locks or defers while atmosphere job running"
+                            },
+                            {
+                                "file":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                "route":  "ISubmarineAtmosphereRoomReadModel",
+                                "methods":  "GetRoomPressureKPa, ResolveThermalFatigueMultiplier",
+                                "transition":  "read-only vault resolve, no job completion"
+                            },
+                            {
+                                "file":  "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+                                "route":  "ISubmarineAtmosphereRoomReadModel",
+                                "methods":  "GetRoomPressureKPa, GetRoomTemperatureCelsius",
+                                "transition":  "read-only vault resolve, no dependency inversion"
+                            },
+                            {
+                                "file":  "Assets/_Project/Scripts/SubmarineElectrolysisModule.cs",
+                                "route":  "ISubmarineAtmosphereRoomMutationSink",
+                                "methods":  "InjectOxygenUnits, InjectRoomTemperatureDeltaCelsius",
+                                "transition":  "owner sink locks or deferred mutation queue"
+                            }
+                        ],
+    "dtoLayout":  [
+                      {
+                          "type":  "float/int/uint/byte/int2 primitive arrays",
+                          "currentLayout":  "CLR/Unity primitive unmanaged",
+                          "action":  "no DTO refactor required; handles preserve primitive element ABI; int2 is 8 bytes"
+                      },
+                      {
+                          "type":  "HighPressureEventPayload",
+                          "currentLayout":  "Explicit Size=32",
+                          "action":  "already 8-byte multiple; can be stored in vault event lane arrays"
+                      },
+                      {
+                          "type":  "FatalPressureImplosionEventPayload",
+                          "currentLayout":  "Explicit Size=32",
+                          "action":  "already 8-byte multiple; can be stored in vault event lane arrays"
+                      },
+                      {
+                          "type":  "PendingAtmosphereMutation",
+                          "currentLayout":  "Explicit Size=32",
+                          "action":  "not forbidden native element; existing managed array cold scratch remains outside DataVault task scope"
+                      },
+                      {
+                          "type":  "AtmosphereTelemetryEntry1323",
+                          "plannedLayout":  "Explicit Size=64",
+                          "offsets":  "0 FrameIndex:int, 4 Flags:uint, 8 BufferId:uint, 12 Generation:uint, 16 PressureKPa:float, 20 O2PartialKPa:float, 24 Co2PartialKPa:float, 28 SolverMicros:int, 32 StateHash:ulong, 40 RoomIndex:int, 44 FailureCode:uint, 48 GlobalQualityWeight:float, 52 ActiveRooms:int, 56 Pad0:ulong",
+                          "action":  "new telemetry ring DTO for Task14/15"
+                      }
+                  ],
+    "telemetryPlan":  {
+                          "ringBufferId":  72237,
+                          "cursorBufferId":  72238,
+                          "capacity":  300,
+                          "entryBytes":  64,
+                          "dumpPath":  "Docs/AgentLogs/Dump_1323_SubmarineAtmosphere.bin",
+                          "hotPathPolicy":  "write structs only; no strings, exceptions, LINQ, managed allocation"
+                      }
+}

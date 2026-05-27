@@ -11,6 +11,9 @@ using UnityEditor.XR.Management.Metadata;
 using UnityEngine;
 using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
+using UnityEngine.XR.OpenXR.Features;
+using UnityEngine.XR.OpenXR.Features.Interactions;
+using UnityEngine.XR.OpenXR.Features.MetaQuestSupport;
 
 namespace Hecton8.Editor.Build
 {
@@ -105,6 +108,7 @@ namespace Hecton8.Editor.Build
             }
 
             openXrSettings.renderMode = OpenXRSettings.RenderMode.SinglePassInstanced;
+            EnableAndroidQuestOpenXrFeatureSet(openXrSettings);
 
             XRGeneralSettings generalSettings = perTargetSettings.SettingsForBuildTarget(BuildTargetGroup.Android);
             if (generalSettings != null)
@@ -248,11 +252,189 @@ namespace Hecton8.Editor.Build
                 Append(failures, "AndroidTargetArchitectures is not ARM64-only. Quest/PICO standalone builds must not include 32-bit ARM.");
             }
 
-            string qualitySettingsPath = Path.Combine(root, "ProjectSettings", "QualitySettings.asset");
-            if (FileContains(qualitySettingsPath, "- Android"))
+            ValidateAndroidQualityRoute(root, failures);
+            ValidateAndroidOpenXrFeatureSet(failures);
+        }
+
+        private static void EnableAndroidQuestOpenXrFeatureSet(OpenXRSettings openXrSettings)
+        {
+            if (openXrSettings == null)
+                return;
+
+            bool changed = false;
+            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<MetaQuestFeature>());
+            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<OculusTouchControllerProfile>());
+            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<MetaQuestTouchPlusControllerProfile>());
+            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<MetaQuestTouchProControllerProfile>());
+            if (changed)
+                EditorUtility.SetDirty(openXrSettings);
+        }
+
+        private static bool EnableOpenXrFeature(OpenXRFeature feature)
+        {
+            if (feature == null || feature.enabled)
+                return false;
+
+            feature.enabled = true;
+            EditorUtility.SetDirty(feature);
+            return true;
+        }
+
+        private static void ValidateAndroidOpenXrFeatureSet(StringBuilder failures)
+        {
+            OpenXRSettings openXrSettings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
+            if (openXrSettings == null)
             {
-                Append(failures, "Project quality tiers exclude Android; standalone VR would inherit no valid tuned quality level.");
+                Append(failures, "OpenXR Android settings are missing; Quest feature set cannot be validated.");
+                return;
             }
+
+            if (!IsOpenXrFeatureEnabled<MetaQuestFeature>(openXrSettings))
+            {
+                Append(failures, "OpenXR Android Meta Quest Support feature is disabled.");
+            }
+
+            if (!IsOpenXrFeatureEnabled<OculusTouchControllerProfile>(openXrSettings) &&
+                !IsOpenXrFeatureEnabled<MetaQuestTouchPlusControllerProfile>(openXrSettings) &&
+                !IsOpenXrFeatureEnabled<MetaQuestTouchProControllerProfile>(openXrSettings))
+            {
+                Append(failures, "OpenXR Android has no Quest controller interaction profile enabled.");
+            }
+        }
+
+        private static bool IsOpenXrFeatureEnabled<TFeature>(OpenXRSettings openXrSettings)
+            where TFeature : OpenXRFeature
+        {
+            TFeature feature = openXrSettings != null ? openXrSettings.GetFeature<TFeature>() : null;
+            return feature != null && feature.enabled;
+        }
+
+        private static void ValidateAndroidQualityRoute(string root, StringBuilder failures)
+        {
+            string qualitySettingsPath = Path.Combine(root, "ProjectSettings", "QualitySettings.asset");
+            if (!File.Exists(qualitySettingsPath))
+            {
+                Append(failures, "ProjectSettings/QualitySettings.asset is missing; Android quality route cannot be validated.");
+                return;
+            }
+
+            string qualityText = File.ReadAllText(qualitySettingsPath);
+            int androidDefaultIndex = ParseAndroidDefaultQualityIndex(qualityText);
+            if (androidDefaultIndex < 0)
+            {
+                Append(failures, "QualitySettings `m_PerPlatformDefaultQuality.Android` is missing or invalid.");
+                return;
+            }
+
+            string qualityName;
+            bool rowFound;
+            bool rowExcludesAndroid = QualityRowExcludesPlatform(
+                qualityText,
+                androidDefaultIndex,
+                "Android",
+                out qualityName,
+                out rowFound);
+            if (!rowFound)
+            {
+                Append(failures, "QualitySettings Android default quality index " + androidDefaultIndex + " does not resolve to a quality row.");
+                return;
+            }
+
+            if (rowExcludesAndroid)
+            {
+                Append(failures, "QualitySettings Android default quality row `" + FormatMissing(qualityName) + "` excludes Android.");
+            }
+        }
+
+        private static int ParseAndroidDefaultQualityIndex(string qualityText)
+        {
+            if (string.IsNullOrEmpty(qualityText))
+                return -1;
+
+            int mapIndex = qualityText.IndexOf("m_PerPlatformDefaultQuality:", StringComparison.Ordinal);
+            if (mapIndex < 0)
+                return -1;
+
+            string[] lines = qualityText.Substring(mapIndex).Split('\n');
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string trimmed = lines[i].Trim();
+                if (!trimmed.StartsWith("Android:", StringComparison.Ordinal))
+                    continue;
+
+                string value = trimmed.Substring("Android:".Length).Trim();
+                int parsed;
+                return int.TryParse(value, out parsed) ? parsed : -1;
+            }
+
+            return -1;
+        }
+
+        private static bool QualityRowExcludesPlatform(
+            string qualityText,
+            int targetIndex,
+            string platformName,
+            out string qualityName,
+            out bool rowFound)
+        {
+            qualityName = string.Empty;
+            rowFound = false;
+            if (string.IsNullOrEmpty(qualityText) || targetIndex < 0)
+                return false;
+
+            string[] lines = qualityText.Split('\n');
+            int rowIndex = -1;
+            bool inTargetRow = false;
+            bool inExcludedPlatforms = false;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string trimmed = lines[i].Trim();
+                if (trimmed.StartsWith("m_TextureMipmapLimitGroupNames:", StringComparison.Ordinal))
+                    break;
+
+                if (trimmed.StartsWith("- serializedVersion:", StringComparison.Ordinal))
+                {
+                    rowIndex++;
+                    inTargetRow = rowIndex == targetIndex;
+                    inExcludedPlatforms = false;
+                    if (inTargetRow)
+                        rowFound = true;
+                    continue;
+                }
+
+                if (!inTargetRow)
+                    continue;
+
+                if (trimmed.StartsWith("name:", StringComparison.Ordinal))
+                {
+                    qualityName = trimmed.Substring("name:".Length).Trim();
+                    continue;
+                }
+
+                if (trimmed.StartsWith("excludedTargetPlatforms:", StringComparison.Ordinal))
+                {
+                    inExcludedPlatforms = true;
+                    continue;
+                }
+
+                if (inExcludedPlatforms && trimmed.StartsWith("- ", StringComparison.Ordinal))
+                {
+                    string excluded = trimmed.Substring(2).Trim();
+                    if (string.Equals(excluded, platformName, StringComparison.Ordinal))
+                        return true;
+                    continue;
+                }
+
+                if (inExcludedPlatforms && trimmed.Length > 0)
+                    inExcludedPlatforms = false;
+            }
+
+            return false;
+        }
+
+        private static string FormatMissing(string value)
+        {
+            return string.IsNullOrEmpty(value) ? "<missing>" : value;
         }
 
         private static bool HasDefine(BuildTarget target, string define)

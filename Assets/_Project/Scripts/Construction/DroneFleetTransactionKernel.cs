@@ -470,7 +470,8 @@ namespace Hecton8.Construction
             }
 
             double3 delta = snapshot.TargetAUP - snapshot.CurrentAUP;
-            if (!math.all(math.isfinite(delta)))
+            if (!math.all(math.isfinite(delta)) ||
+                math.any(math.abs(delta) > (double)float.MaxValue))
                 return false;
 
             float3 localDelta = math.float3((float)delta.x, (float)delta.y, (float)delta.z);

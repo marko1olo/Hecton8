@@ -10,7 +10,10 @@ import sys
 from pathlib import Path
 
 
-DEFAULT_ATLAS = Path("Docs") / "DEPENDENCY_GRAPH.md"
+DEFAULT_ATLAS = Path("Docs") / "Generated" / "DEPENDENCY_GRAPH.md"
+PLACEHOLDER_MARKERS = (
+    "Status: PLACEHOLDER / REGENERATE BEFORE USE",
+)
 
 PATH_PREFIXES = (
     "AGENTS.md",
@@ -149,12 +152,15 @@ def main() -> int:
         print(f"ATLAS_CHECK_FAIL missing_atlas={atlas}", file=sys.stderr)
         return 2
 
-    text = atlas.read_text(encoding="utf-8")
+    text = atlas.read_text(encoding="utf-8-sig")
+    if any(marker in text for marker in PLACEHOLDER_MARKERS):
+        print(f"ATLAS_CHECK_FAIL placeholder_atlas={atlas}", file=sys.stderr)
+        return 6
     refs = collect_references(text)
     json_atlas = atlas.with_suffix(".json")
     if json_atlas.exists():
         try:
-            collect_json_references(json.loads(json_atlas.read_text(encoding="utf-8")), refs)
+            collect_json_references(json.loads(json_atlas.read_text(encoding="utf-8-sig")), refs)
         except json.JSONDecodeError as exc:
             print(f"ATLAS_CHECK_FAIL invalid_json={json_atlas} error={exc}", file=sys.stderr)
             return 3
@@ -162,7 +168,7 @@ def main() -> int:
     if cache_atlas.exists():
         try:
             invalid_cache_keys = collect_source_cache_references(
-                json.loads(cache_atlas.read_text(encoding="utf-8")),
+                json.loads(cache_atlas.read_text(encoding="utf-8-sig")),
                 refs,
             )
         except json.JSONDecodeError as exc:

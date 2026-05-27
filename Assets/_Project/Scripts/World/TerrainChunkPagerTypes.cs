@@ -19,6 +19,8 @@ namespace Hecton8.World
         public const int MaxEvaluatedRingRadius = 5;
         public const float DefaultSectorSizeMeters = 512f;
         public const uint FileMagic = 0x42433848u; // H8CB little endian.
+        public const uint FileVersion = 1u;
+        public const uint FileFlagsMask = 0u;
         public const uint FileCompressionRaw = 0u;
         public const uint FileCompressionLz4 = 1u;
         public const uint TelemetryFaultMissingFile = 1u << 0;
@@ -33,6 +35,7 @@ namespace Hecton8.World
         public const uint TelemetryFaultCapacityOverflow = 1u << 9;
         public const uint RequestFlagMock = 1u << 0;
         public const uint RequestFlagForceMock = 1u << 1;
+        public const uint RequestFlagsMask = RequestFlagForceMock;
         public const uint ResultFlagSuccess = 1u << 0;
         public const uint ResultFlagMock = 1u << 1;
         public const uint ResultFlagMissingFile = 1u << 2;
@@ -175,7 +178,7 @@ namespace Hecton8.World
             tuning.ChunkByteCapacity = TerrainChunkPagerConstants.DefaultChunkBytes;
             tuning.WorkerMockDelayMinMs = 6;
             tuning.WorkerMockDelayMaxMs = 220;
-            tuning.Flags = TerrainChunkPagerConstants.RequestFlagMock;
+            tuning.Flags = 0u;
             tuning.CommitByteBudgetPerFrame = TerrainChunkPagerConstants.DefaultChunkBytes * 2f;
             tuning.LayoutVersion = 1u;
             return TerrainChunkPagerMath.Sanitize(tuning);
@@ -308,6 +311,7 @@ namespace Hecton8.World
             tuning.ChunkByteCapacity = math.max(4096, tuning.ChunkByteCapacity);
             tuning.WorkerMockDelayMinMs = math.clamp(tuning.WorkerMockDelayMinMs, 0, 10000);
             tuning.WorkerMockDelayMaxMs = math.max(tuning.WorkerMockDelayMinMs, math.clamp(tuning.WorkerMockDelayMaxMs, 0, 30000));
+            tuning.Flags &= TerrainChunkPagerConstants.RequestFlagsMask;
             tuning.CommitByteBudgetPerFrame = math.max(4096f, FiniteOr(tuning.CommitByteBudgetPerFrame, tuning.ChunkByteCapacity));
             tuning.EffectiveRingRadius = ResolveContinuousRingRadius(tuning.GlobalQualityWeight, tuning.LatencyEwmaMs, in tuning);
             tuning._pad0 = 0u;

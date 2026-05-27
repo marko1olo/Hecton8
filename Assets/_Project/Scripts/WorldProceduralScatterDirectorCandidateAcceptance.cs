@@ -14,7 +14,7 @@ namespace Hecton8.World
         private const int FloraChunkInstanceHardCap = 4096;
         private const int PoissonDiskMaxRejectionAttempts = 30;
 
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
         internal readonly struct ScatterPlacementSpatialMetadata
         {
             public ScatterPlacementSpatialMetadata(
@@ -31,35 +31,93 @@ namespace Hecton8.World
                 ScatterLayer = scatterLayer;
                 ProceduralDomain = proceduralDomain;
                 FloraBudgetClass = floraBudgetClass;
+                _pad0 = 0;
+                _pad1 = 0;
             }
 
+            [System.Runtime.InteropServices.FieldOffset(0)]
             public readonly float3 Position;
+
+            [System.Runtime.InteropServices.FieldOffset(12)]
             public readonly float EffectiveSpacing;
+
+            [System.Runtime.InteropServices.FieldOffset(16)]
             public readonly int FamilyHash;
+
+            [System.Runtime.InteropServices.FieldOffset(20)]
             public readonly int ScatterLayer;
+
+            [System.Runtime.InteropServices.FieldOffset(24)]
             public readonly int ProceduralDomain;
+
+            [System.Runtime.InteropServices.FieldOffset(28)]
             public readonly byte FloraBudgetClass;
+
+            [System.Runtime.InteropServices.FieldOffset(29)]
+            private readonly byte _pad0;
+
+            [System.Runtime.InteropServices.FieldOffset(30)]
+            private readonly ushort _pad1;
         }
 
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         internal struct ScatterCellCandidateAcceptanceInput
         {
+            [System.Runtime.InteropServices.FieldOffset(0)]
             public float3 Position;
+
+            [System.Runtime.InteropServices.FieldOffset(12)]
             public float EffectiveSpacing;
+
+            [System.Runtime.InteropServices.FieldOffset(16)]
             public int CellX;
+
+            [System.Runtime.InteropServices.FieldOffset(20)]
             public int CellZ;
+
+            [System.Runtime.InteropServices.FieldOffset(24)]
             public int HeightLayerIndex;
+
+            [System.Runtime.InteropServices.FieldOffset(28)]
             public int FamilyHash;
+
+            [System.Runtime.InteropServices.FieldOffset(32)]
             public int ScatterLayer;
+
+            [System.Runtime.InteropServices.FieldOffset(36)]
             public int ProceduralDomain;
+
+            [System.Runtime.InteropServices.FieldOffset(40)]
             public int ClusterAccentRole;
+
+            [System.Runtime.InteropServices.FieldOffset(44)]
             public int StructureAccentRole;
+
+            [System.Runtime.InteropServices.FieldOffset(48)]
             public byte IsPassiveSpawnFamily;
+
+            [System.Runtime.InteropServices.FieldOffset(49)]
             public byte IsPredatorSpawnFamily;
+
+            [System.Runtime.InteropServices.FieldOffset(50)]
             public byte ExternalBlock;
+
+            [System.Runtime.InteropServices.FieldOffset(51)]
             public byte FloraBudgetClass;
+
+            [System.Runtime.InteropServices.FieldOffset(52)]
             public byte RequiresClusterPatch;
+
+            [System.Runtime.InteropServices.FieldOffset(53)]
+            private byte _pad0;
+
+            [System.Runtime.InteropServices.FieldOffset(54)]
+            private ushort _pad1;
+
+            [System.Runtime.InteropServices.FieldOffset(56)]
             public float ClusterNoiseScale;
+
+            [System.Runtime.InteropServices.FieldOffset(60)]
             public float ClusterNoiseThreshold;
         }
 

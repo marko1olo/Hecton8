@@ -26,7 +26,7 @@ MonoBehaviour:
   rareRewardHook: 'The rare pull is real: Titanium Scrap and Structural Bracket.'
   landmarkIdentity: The Wall-Fissures reads through walls, fins, fissures, and giant
     vertical breaks. Landmarks should feel large and route-defining.
-  safePocketIdentity: Safe pockets live behind slab cover and under wall breaks.
+  safePocketIdentity: Reorientation pockets live behind slab cover and under wall breaks.
   riskSummary: 'Main failure mode: vertical trap geometry and hard commitment, then
     overstaying for loot. Creature pressure stays medium.'
   extractionFocus: 'Pocket mining along walls and ledges with careful positioning.

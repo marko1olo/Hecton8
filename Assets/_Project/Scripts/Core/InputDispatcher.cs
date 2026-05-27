@@ -221,6 +221,7 @@ namespace Hecton8.Core
         private bool _isInitialized;
         private bool _subscribedToNativeInput;
         private bool _subscribedToDeviceChanges;
+        private bool _subscribedToXRActiveChanged;
         private int _lastCapturedFrame = -1;
         private int _nextXRDeviceRescanFrame;
         private int _lastXRLookAtHitFrame = -1;
@@ -408,6 +409,8 @@ namespace Hecton8.Core
             {
                 EnsureInputBinding();
                 RefreshCachedDataVaultCold();
+                EnsureDeterministicInputNativeBuffers();
+                EnsureInputReplayWriter();
                 CaptureState();
                 return;
             }
@@ -416,7 +419,8 @@ namespace Hecton8.Core
             RefreshCachedPlayerRuntimeContext();
             RefreshCachedDataVaultCold();
             EnsureHapticDeviceBinding();
-            RefreshXRNativeBufferState();
+            SubscribeToXRActiveChanged();
+            RefreshXRNativeBufferState(allowColdAcquire: true);
             EnsureDeterministicInputNativeBuffers();
 #if UNITY_EDITOR
             EnsureInputProfileCsvWatcher();
@@ -438,7 +442,8 @@ namespace Hecton8.Core
             RefreshCachedPlayerRuntimeContext();
             RefreshCachedDataVaultCold();
             EnsureHapticDeviceBinding();
-            RefreshXRNativeBufferState();
+            SubscribeToXRActiveChanged();
+            RefreshXRNativeBufferState(allowColdAcquire: true);
             EnsureDeterministicInputNativeBuffers();
 #if UNITY_EDITOR
             EnsureInputProfileCsvWatcher();
@@ -452,7 +457,8 @@ namespace Hecton8.Core
             EnsureInputBinding();
             RefreshCachedDataVaultCold();
             EnsureHapticDeviceBinding();
-            RefreshXRNativeBufferState();
+            SubscribeToXRActiveChanged();
+            RefreshXRNativeBufferState(allowColdAcquire: true);
             EnsureDeterministicInputNativeBuffers();
 #if UNITY_EDITOR
             EnsureInputProfileCsvWatcher();
@@ -489,6 +495,7 @@ namespace Hecton8.Core
                 ActiveRuntimeInstance = null;
 
             UnsubscribeFromNativeInput();
+            UnsubscribeFromXRActiveChanged();
             ResetGamepadHaptics();
             ResetXRHaptics();
             UnsubscribeFromDeviceChanges();
@@ -548,11 +555,10 @@ namespace Hecton8.Core
 
         public void PreSimulationInputTick(float deltaTime)
         {
-            EnsureDeterministicInputNativeBuffers();
 #if UNITY_EDITOR
-            ApplyPendingInputProfileCsv();
+            if (_deterministicVaultBuffersReady)
+                ApplyPendingInputProfileCsv();
 #endif
-            EnsureInputReplayWriter();
 
             float sanitizedDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
                 ? deltaTime
@@ -729,64 +735,52 @@ namespace Hecton8.Core
             if ((pressed & (uint)PlayerInputAction.Pda) != 0u)
             {
                 PublishPlayerInputCommand(PlayerInputSignalCommands.TogglePda);
-                OnPDA?.Invoke();
             }
             if ((pressed & (uint)PlayerInputAction.Inventory) != 0u)
             {
                 PublishPlayerInputCommand(PlayerInputSignalCommands.ToggleInventory);
-                OnInventory?.Invoke();
             }
             if ((pressed & (uint)PlayerInputAction.Cancel) != 0u)
             {
                 PublishPlayerInputCommand(PlayerInputSignalCommands.Cancel);
-                OnCancel?.Invoke();
             }
             if ((pressed & (uint)PlayerInputAction.TabNext) != 0u)
             {
                 PublishPlayerInputCommand(PlayerInputSignalCommands.TabNext);
-                OnTabNext?.Invoke();
             }
             if ((pressed & (uint)PlayerInputAction.TabPrevious) != 0u)
             {
                 PublishPlayerInputCommand(PlayerInputSignalCommands.TabPrevious);
-                OnTabPrevious?.Invoke();
             }
             if ((pressed & (uint)PlayerInputAction.ToolSlot1) != 0u)
             {
                 PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot1);
-                OnToolSlot1?.Invoke();
             }
             if ((pressed & (uint)PlayerInputAction.ToolSlot2) != 0u)
             {
                 PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot2);
-                OnToolSlot2?.Invoke();
             }
             if ((pressed & (uint)PlayerInputAction.ToolSlot3) != 0u)
             {
                 PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot3);
-                OnToolSlot3?.Invoke();
             }
             if ((pressed & (uint)PlayerInputAction.ToolSlot4) != 0u)
             {
                 PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot4);
-                OnToolSlot4?.Invoke();
             }
             if ((pressed & (uint)PlayerInputAction.Flashlight) != 0u)
                 PublishPlayerInputCommand(PlayerInputSignalCommands.Flashlight);
             if ((pressed & (uint)PlayerInputAction.Interact) != 0u)
             {
                 PublishPlayerInputCommand(PlayerInputSignalCommands.Interact);
-                OnInteract?.Invoke();
             }
             if ((pressed & (uint)PlayerInputAction.PrimaryFire) != 0u)
             {
                 PublishPlayerInputCommand(PlayerInputSignalCommands.PrimaryAction);
-                OnPrimaryAction?.Invoke();
             }
             if ((pressed & (uint)PlayerInputAction.SecondaryFire) != 0u)
             {
                 PublishPlayerInputCommand(PlayerInputSignalCommands.SecondaryAction);
-                OnSecondaryAction?.Invoke();
             }
         }
 
@@ -1831,7 +1825,6 @@ namespace Hecton8.Core
                 if ((window[index] & buttonBit) == 0u)
                     continue;
 
-                _bufferedInputsConsumedThisFrame++;
                 return true;
             }
 
@@ -2392,7 +2385,7 @@ namespace Hecton8.Core
         private void CaptureState(float deltaTime = 0f)
         {
             EnsureInputBinding();
-            RefreshXRNativeBufferState();
+            RefreshXRNativeBufferState(allowColdAcquire: false);
 
             int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastCapturedFrame == currentFrame)
@@ -2660,11 +2653,12 @@ namespace Hecton8.Core
             return true;
         }
 
-        private void RefreshXRNativeBufferState()
+        private void RefreshXRNativeBufferState(bool allowColdAcquire)
         {
             if (HectonXRRuntimeState.IsXRActive)
             {
-                EnsureXRNativeBuffers();
+                if (allowColdAcquire)
+                    EnsureXRNativeBuffers();
                 return;
             }
 
@@ -2676,6 +2670,39 @@ namespace Hecton8.Core
             ClearCachedXRControllers();
             ClearXRRuntimeFrameStateIfActive();
             DisposeXRNativeBuffers(default);
+        }
+
+        private void SubscribeToXRActiveChanged()
+        {
+            if (_subscribedToXRActiveChanged)
+                return;
+
+            HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
+            HectonXRRuntimeState.XRActiveChanged += HandleXRActiveChanged;
+            _subscribedToXRActiveChanged = true;
+        }
+
+        private void UnsubscribeFromXRActiveChanged()
+        {
+            if (!_subscribedToXRActiveChanged)
+                return;
+
+            HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
+            _subscribedToXRActiveChanged = false;
+        }
+
+        private void HandleXRActiveChanged(bool isActive)
+        {
+            if (isActive)
+            {
+                RefreshXRNativeBufferState(allowColdAcquire: true);
+                RefreshCachedXRControllerBindings();
+                _nextXRDeviceRescanFrame = 0;
+                return;
+            }
+
+            ResetXRHaptics();
+            RefreshXRNativeBufferState(allowColdAcquire: false);
         }
 
         private bool HasXRRuntimeStateToClear()
@@ -3218,35 +3245,30 @@ namespace Hecton8.Core
             InputLatencyTracker.MarkInputCaptured();
             _latchedActionBits |= (uint)PlayerInputAction.Interact;
             PublishPlayerInputCommand(PlayerInputSignalCommands.Interact);
-            OnInteract?.Invoke();
         }
 
         private void HandleToolSlot1Pressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot1);
-            OnToolSlot1?.Invoke();
         }
 
         private void HandleToolSlot2Pressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot2);
-            OnToolSlot2?.Invoke();
         }
 
         private void HandleToolSlot3Pressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot3);
-            OnToolSlot3?.Invoke();
         }
 
         private void HandleToolSlot4Pressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot4);
-            OnToolSlot4?.Invoke();
         }
 
         private void HandlePrimaryActionPressed()
@@ -3254,7 +3276,6 @@ namespace Hecton8.Core
             InputLatencyTracker.MarkInputCaptured();
             _latchedActionBits |= (uint)PlayerInputAction.PrimaryFire;
             PublishPlayerInputCommand(PlayerInputSignalCommands.PrimaryAction);
-            OnPrimaryAction?.Invoke();
         }
 
         private void HandleSecondaryActionPressed()
@@ -3262,42 +3283,36 @@ namespace Hecton8.Core
             InputLatencyTracker.MarkInputCaptured();
             _latchedActionBits |= (uint)PlayerInputAction.SecondaryFire;
             PublishPlayerInputCommand(PlayerInputSignalCommands.SecondaryAction);
-            OnSecondaryAction?.Invoke();
         }
 
         private void HandlePDAPressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.TogglePda);
-            OnPDA?.Invoke();
         }
 
         private void HandleInventoryPressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.ToggleInventory);
-            OnInventory?.Invoke();
         }
 
         private void HandleCancelPressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.Cancel);
-            OnCancel?.Invoke();
         }
 
         private void HandleTabNextPressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.TabNext);
-            OnTabNext?.Invoke();
         }
 
         private void HandleTabPreviousPressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.TabPrevious);
-            OnTabPrevious?.Invoke();
         }
 
         private void HandleFlashlightPressed()
@@ -3325,7 +3340,6 @@ namespace Hecton8.Core
 
         private void DrainToolHaptics(float deltaTime)
         {
-            EnsureDeterministicInputNativeBuffers();
             uint schemeHash = _currentInputSchemeHash != 0u ? _currentInputSchemeHash : ResolveCurrentInputSchemeHash();
             float safeDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
                 ? math.min(deltaTime, 0.1f)

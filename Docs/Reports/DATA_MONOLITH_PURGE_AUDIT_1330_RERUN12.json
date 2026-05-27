@@ -1,0 +1,535 @@
+﻿{
+    "agentId":  "1330",
+    "task":  "1330_PURGE",
+    "status":  "VERIFIED_GREEN",
+    "generatedUtc":  "2026-05-26T16:24:12.3324920Z",
+    "scannedFiles":  17,
+    "scannedFileList":  [
+                            "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                            "Assets/_Project/Scripts/Data/Monolith/H8CreatureSoAReconstructJob.cs",
+                            "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+                            "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithLayoutGuard.cs",
+                            "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompiler.cs",
+                            "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCorruptionFuzzer.cs",
+                            "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithReleaseBuildGate.cs",
+                            "Assets/_Project/Scripts/Editor/DataMonolith/OOP_StaticData_Scanner.cs",
+                            "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithGlobalDataVaultStressProbe.cs",
+                            "Assets/_Project/Editor/DataMonolith/DataMonolithBakerWindow.cs",
+                            "Tools/DataMonolithBakeCli/UnityEditorStubs.cs",
+                            "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+                            "Tools/DataMonolithBakeCli/DataMonolithLoadStressProbe.cs",
+                            "Tools/DataMonolithBakeCli/DataMonolithFailClosedProbe.cs",
+                            "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+                            "Tools/DataMonolithBakeCli/Program.cs",
+                            "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs"
+                        ],
+    "failedGates":  [
+
+                    ],
+    "totalNativeFieldDeclarations":  17,
+    "persistentNativeFieldsRemaining":  0,
+    "transientVaultViews":  30,
+    "transientJobViews":  17,
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "H8DataBlobHeader",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Magic":  "0:uint",
+                                               "FormatVersion":  "4:ushort",
+                                               "HeaderBytes":  "6:ushort",
+                                               "Checksum64":  "8:ulong",
+                                               "BlobBytes":  "16:uint",
+                                               "DirectoryOffset":  "20:uint",
+                                               "DirectoryBytes":  "24:uint",
+                                               "SectionTableOffset":  "28:uint",
+                                               "SectionCount":  "32:uint",
+                                               "Flags":  "36:uint",
+                                               "WorldSeed":  "40:uint",
+                                               "AppVersionHash":  "44:uint",
+                                               "SchemaHash":  "48:uint",
+                                               "Reserved0":  "52:uint",
+                                               "Reserved1":  "56:uint",
+                                               "Reserved2":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8DataBlobDirectory",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Magic":  "0:uint",
+                                               "FormatVersion":  "4:ushort",
+                                               "SectionCount":  "6:ushort",
+                                               "SectionTableOffset":  "8:uint",
+                                               "SectionTableBytes":  "12:uint",
+                                               "BlobBytes":  "16:uint",
+                                               "DataStartOffset":  "20:uint",
+                                               "LocalizationOffset":  "24:uint",
+                                               "LocalizationBytes":  "28:uint",
+                                               "Flags":  "32:uint",
+                                               "WorldSeed":  "36:uint",
+                                               "AppVersionHash":  "40:uint",
+                                               "Reserved0":  "44:uint",
+                                               "Reserved1":  "48:uint",
+                                               "Reserved2":  "52:uint",
+                                               "Reserved3":  "56:uint",
+                                               "Reserved4":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8DataSectionEntry",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "SectionId":  "0:uint",
+                                               "RecordSize":  "4:uint",
+                                               "Count":  "8:uint",
+                                               "OffsetBytes":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8ItemRecord",
+                               "sizeBytes":  80,
+                               "offsets":  {
+                                               "RecipeMask0":  "0:ulong",
+                                               "RecipeMask1":  "8:ulong",
+                                               "HashId":  "16:uint",
+                                               "RecordIndex":  "20:uint",
+                                               "CategoryHash":  "24:uint",
+                                               "Flags":  "28:uint",
+                                               "MassKg":  "32:float",
+                                               "VolumeM3":  "36:float",
+                                               "BaseQuality":  "40:float",
+                                               "HeatCapacity":  "44:float",
+                                               "YieldHash":  "48:uint",
+                                               "NameUtf8Offset":  "52:uint",
+                                               "DescriptionUtf8Offset":  "56:uint",
+                                               "NameUtf8ByteLength":  "60:uint",
+                                               "DescriptionUtf8ByteLength":  "64:uint",
+                                               "Cost":  "68:uint",
+                                               "AccessFrequency":  "72:float",
+                                               "MaxStack":  "76:ushort",
+                                               "RecipeIngredientCount":  "78:ushort"
+                                           }
+                           },
+                           {
+                               "structName":  "H8CreatureGenomeTraitBlock",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "Aggression":  "0:float",
+                                               "Metabolism":  "4:float",
+                                               "MaxHealth":  "8:float",
+                                               "CruiseSpeed":  "12:float",
+                                               "BurstSpeed":  "16:float",
+                                               "SpawnCreditCost":  "20:float",
+                                               "PressureMinMeters":  "24:float",
+                                               "PressureMaxMeters":  "28:float"
+                                           }
+                           },
+                           {
+                               "structName":  "H8CreatureTraitRecord",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "SpeciesHash":  "0:uint",
+                                               "RecordIndex":  "4:uint",
+                                               "MateMask":  "8:uint",
+                                               "BiomeMask":  "12:uint",
+                                               "Genome":  "16:H8CreatureGenomeTraitBlock",
+                                               "DisplayNameUtf8Offset":  "48:uint",
+                                               "LootTableHash":  "52:uint",
+                                               "Flags":  "56:uint",
+                                               "DisplayNameUtf8ByteLength":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8BiomeRecord",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "BiomeHash":  "0:uint",
+                                               "RecordIndex":  "4:uint",
+                                               "Flags":  "8:uint",
+                                               "SurfaceId":  "12:uint",
+                                               "MinDepthMeters":  "16:float",
+                                               "MaxDepthMeters":  "20:float",
+                                               "TemperatureCelsius":  "24:float",
+                                               "PressureScalar":  "28:float",
+                                               "FogDensity":  "32:float",
+                                               "LightScatterR":  "36:float",
+                                               "LightScatterG":  "40:float",
+                                               "LightScatterB":  "44:float",
+                                               "DisplayNameUtf8Offset":  "48:uint",
+                                               "HeatmapId":  "52:uint",
+                                               "RadiationFieldHash":  "56:uint",
+                                               "DisplayNameUtf8ByteLength":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8RecipeRecord",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "IngredientMask0":  "0:ulong",
+                                               "IngredientMask1":  "8:ulong",
+                                               "OutputHash":  "16:uint",
+                                               "StationHash":  "20:uint",
+                                               "Flags":  "24:uint",
+                                               "IngredientCount":  "28:uint",
+                                               "IngredientHash0":  "32:uint",
+                                               "IngredientHash1":  "36:uint",
+                                               "IngredientHash2":  "40:uint",
+                                               "IngredientHash3":  "44:uint",
+                                               "CraftSeconds":  "48:float",
+                                               "OutputCount":  "52:uint",
+                                               "Reserved0":  "56:uint",
+                                               "Reserved1":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8BiomeHeatmapCellRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "BiomeHash":  "0:uint",
+                                               "Reserved0":  "4:uint",
+                                               "Reserved1":  "8:uint",
+                                               "X":  "12:ushort",
+                                               "Y":  "14:ushort"
+                                           }
+                           },
+                           {
+                               "structName":  "H8QuestNodeRecord",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "NodeHash":  "0:uint",
+                                               "CompletionFlagId":  "4:uint",
+                                               "FirstEdgeIndex":  "8:uint",
+                                               "RequiredMask0":  "12:uint",
+                                               "RequiredMask1":  "16:uint",
+                                               "RequiredMask2":  "20:uint",
+                                               "RequiredMask3":  "24:uint",
+                                               "EdgeCount":  "28:ushort",
+                                               "NodeType":  "30:ushort"
+                                           }
+                           },
+                           {
+                               "structName":  "H8QuestEdgeRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "FromNodeHash":  "0:uint",
+                                               "ToNodeHash":  "4:uint",
+                                               "GateFlagId":  "8:uint",
+                                               "Reserved0":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8LootCdfRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "TableHash":  "0:uint",
+                                               "ItemHash":  "4:uint",
+                                               "CumulativeWeight":  "8:uint",
+                                               "TotalWeight":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8VoxelMaterialRecord",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "VoxelHash":  "0:uint",
+                                               "YieldHash":  "4:uint",
+                                               "Hardness":  "8:float",
+                                               "MeltingPointCelsius":  "12:float",
+                                               "Density":  "16:float",
+                                               "SurfaceId":  "20:uint",
+                                               "Flags":  "24:uint",
+                                               "Reserved0":  "28:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8AudioClipRegistryRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "EventHash":  "0:uint",
+                                               "AddressableKeyUtf8Offset":  "4:uint",
+                                               "BankHash":  "8:uint",
+                                               "AddressableKeyUtf8ByteLength":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8VfxScalarRecord",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "EffectHash":  "0:uint",
+                                               "EmissionRate":  "4:float",
+                                               "ColorR":  "8:float",
+                                               "ColorG":  "12:float",
+                                               "ColorB":  "16:float",
+                                               "ColorA":  "20:float",
+                                               "Intensity":  "24:float",
+                                               "Flags":  "28:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8DepthPressureSampleRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "DepthMeters":  "0:float",
+                                               "PressureAtmospheres":  "4:float",
+                                               "Normalized":  "8:float",
+                                               "Reserved0":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8ToolHeatCapacityRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "ToolHash":  "0:uint",
+                                               "HeatCapacity":  "4:float",
+                                               "MaxSafeTemperature":  "8:float",
+                                               "Reserved0":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8SubmarineHullConstantRecord",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "PartHash":  "0:uint",
+                                               "MassKg":  "4:float",
+                                               "DragScalar":  "8:float",
+                                               "BuoyancyScalar":  "12:float",
+                                               "CrushDepthMeters":  "16:float",
+                                               "IntegrityCap":  "20:float",
+                                               "Flags":  "24:uint",
+                                               "Reserved0":  "28:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8NarrativeTriggerRecord",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "AupX":  "0:double",
+                                               "AupY":  "8:double",
+                                               "AupZ":  "16:double",
+                                               "TriggerHash":  "24:uint",
+                                               "RadiusMeters":  "28:float"
+                                           }
+                           },
+                           {
+                               "structName":  "H8PhysicsMaterialRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "SurfaceHash":  "0:uint",
+                                               "Friction":  "4:float",
+                                               "Restitution":  "8:float",
+                                               "Flags":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8GhostModuleRecord",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "ModuleHash":  "0:uint",
+                                               "Flags":  "4:uint",
+                                               "SnapOffsetX":  "8:float",
+                                               "SnapOffsetY":  "12:float",
+                                               "SnapOffsetZ":  "16:float",
+                                               "PowerRequirement":  "20:float",
+                                               "BuildCostScalar":  "24:float",
+                                               "RecipeHash":  "28:uint",
+                                               "DisplayNameUtf8Offset":  "32:uint",
+                                               "PortMask0":  "36:uint",
+                                               "PortMask1":  "40:uint",
+                                               "PortMask2":  "44:uint",
+                                               "PortMask3":  "48:uint",
+                                               "DisplayNameUtf8ByteLength":  "52:uint",
+                                               "Reserved0":  "56:uint",
+                                               "Reserved1":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8RadiationIntensityCellRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "CellHash":  "0:uint",
+                                               "IntensitySv":  "4:float",
+                                               "FalloffMeters":  "8:float",
+                                               "Reserved0":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8SpawnCreditCostRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "EntityHash":  "0:uint",
+                                               "CreditCost":  "4:float",
+                                               "DirectorMask":  "8:uint",
+                                               "Reserved0":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8LightAttenuationSampleRecord",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "DepthMeters":  "0:float",
+                                               "FogDensity":  "4:float",
+                                               "ScatterR":  "8:float",
+                                               "ScatterG":  "12:float",
+                                               "ScatterB":  "16:float",
+                                               "Absorption":  "20:float",
+                                               "Flags":  "24:uint",
+                                               "Reserved0":  "28:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8SopErrorRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "ErrorHash":  "0:uint",
+                                               "MessageUtf8Offset":  "4:uint",
+                                               "Severity":  "8:uint",
+                                               "MessageUtf8ByteLength":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8HudLayoutRecord",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "ElementHash":  "0:uint",
+                                               "Flags":  "4:uint",
+                                               "M00":  "8:float",
+                                               "M01":  "12:float",
+                                               "M02":  "16:float",
+                                               "M03":  "20:float",
+                                               "M10":  "24:float",
+                                               "M11":  "28:float",
+                                               "M12":  "32:float",
+                                               "M13":  "36:float",
+                                               "M20":  "40:float",
+                                               "M21":  "44:float",
+                                               "M22":  "48:float",
+                                               "M23":  "52:float",
+                                               "M30":  "56:float",
+                                               "M31":  "60:float"
+                                           }
+                           },
+                           {
+                               "structName":  "H8SectorPageRecord",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "AupX":  "0:long",
+                                               "AupZ":  "8:long",
+                                               "SectorHash":  "16:uint",
+                                               "BiomeHash":  "20:uint",
+                                               "FileOffsetBytes":  "24:uint",
+                                               "ByteCount":  "28:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8EconomyRecord",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "HashId":  "0:uint",
+                                               "NameUtf8Offset":  "4:uint",
+                                               "DescriptionUtf8Offset":  "8:uint",
+                                               "BasePrice":  "12:float",
+                                               "Scarcity01":  "16:float",
+                                               "Demand01":  "20:float",
+                                               "SupplyRefreshSeconds":  "24:float",
+                                               "AccessFrequency":  "28:float",
+                                               "NameUtf8ByteLength":  "32:uint",
+                                               "DescriptionUtf8ByteLength":  "36:uint",
+                                               "Flags":  "40:uint",
+                                               "Reserved0":  "44:uint",
+                                               "Reserved1":  "48:uint",
+                                               "Reserved2":  "52:uint",
+                                               "Reserved3":  "56:uint",
+                                               "Reserved4":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8PhysicsConstantsRecord",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "HashId":  "0:uint",
+                                               "NameUtf8Offset":  "4:uint",
+                                               "DescriptionUtf8Offset":  "8:uint",
+                                               "NameUtf8ByteLength":  "12:uint",
+                                               "DescriptionUtf8ByteLength":  "16:uint",
+                                               "MassKg":  "20:float",
+                                               "AddedMass":  "24:float",
+                                               "LinearDrag":  "28:float",
+                                               "Buoyancy":  "32:float",
+                                               "CrushDepthM":  "36:float",
+                                               "AupSectorSizeMeters":  "40:float",
+                                               "MaxWorldBoundsMeters":  "44:float",
+                                               "AccessFrequency":  "48:float",
+                                               "Flags":  "52:uint",
+                                               "Reserved0":  "56:uint",
+                                               "Reserved1":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8DataMonolithTelemetryEntry",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Checksum64":  "0:ulong",
+                                               "LoadTicks":  "8:long",
+                                               "IoTicks":  "16:long",
+                                               "FrameIndex":  "24:uint",
+                                               "BlobBytes":  "28:uint",
+                                               "SectionCount":  "32:uint",
+                                               "LoadStatus":  "36:uint",
+                                               "PathFlags":  "40:uint",
+                                               "StateHash":  "44:uint",
+                                               "Reserved0":  "48:uint",
+                                               "Reserved1":  "52:uint",
+                                               "Reserved2":  "56:uint",
+                                               "Reserved3":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8StaticLocalizationReference",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "KeyHash":  "0:uint",
+                                               "Utf8Offset":  "4:uint",
+                                               "ByteLength":  "8:int",
+                                               "Reserved0":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8StaticLocalizationCursor",
+                               "sizeBytes":  8,
+                               "offsets":  {
+                                               "Section":  "0:int",
+                                               "RecordIndex":  "4:int"
+                                           }
+                           }
+                       ],
+    "zeroGcHotPathHits":  0,
+    "absoluteAupCastsFound":  0,
+    "compactionAwareLocksProven":  true,
+    "telemetryRingIntegrated":  true,
+    "verificationHashSha256":  "5f421cbb124c211578c93c27a74f920635753a5d5441ef5ec9fb35f80166581d",
+    "nativeAliasAudit":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1330_RERUN12.json",
+    "parseAudit":  "Docs/Reports/DATA_MONOLITH_RERUN12_PARSE_AUDIT_1330.json",
+    "focusedHotPathAudit":  "Docs/Reports/DATA_MONOLITH_HOTPATH_AUDIT_1330_RERUN12.json",
+    "h8binValidatorAudit":  "Docs/Reports/DATA_MONOLITH_H8BIN_VALIDATOR_1330_RERUN12.json",
+    "catchAllExceptionFindings":  0,
+    "cancellationThrowOrManagedBlobFindings":  0,
+    "packOneRuntimeDtoFindings":  0,
+    "finiteTernaryFindings":  0,
+    "branchlessFiniteFallbacksProven":  true,
+    "h8binValidatorStatus":  "PASS",
+    "proofArtifactCoverageFixed":  true,
+    "releaseGatePlatformPalCountCorrected":  true,
+    "promptSourceHygiene":  "Docs/Tasks/CURRENT_BATCH.md currently lacks id=1330; preserved prompt replayed from Docs/AgentLogs/AGENT_PROMPT_1330_REEXTRACTED_APEX_RERUN.xml. CURRENT_BATCH not edited to avoid cross-agent interference.",
+    "buildStatus":  "BLOCKED_HOST_CPU_SAMPLES_79_63_85_96_AVG_80_8_DOTNET_CSC_0",
+    "diffCheck":  "PASS_NO_WHITESPACE_ERRORS_LF_TO_CRLF_WARNINGS_ONLY",
+    "scopeNotes":  [
+                       "RERUN12 removed StructLayout Pack=1 from runtime-view Data Monolith DTOs and made the layout guard reject Pack=1; explicit FieldOffset/Size remains the ABI owner.",
+                       "RERUN12 h8bin validator passed: files=1 structs=32 mb=1.015076 seconds=0.71216.",
+                       "RERUN12 converted runtime finite fallback accessors to H8SoAReconstructMath.FiniteOr, matching the branchless Burst unpack path.",
+                       "Roslyn native alias audit remains green: 17 NativeArray fields, all transient IJobParallelFor parameters, 0 persistent native collection fields.",
+                       "Focused hot-path scan now includes Data Monolith finite fallback accessors and remains green with 0 allocation/string/LINQ/foreach/throw/catch/finite-ternary hits.",
+                       "Parse audit reports 0 catch(Exception), 0 ThrowIfCancellationRequested, 0 managed UWR buffer staging, 0 Thread.Sleep spin wait, 0 Pack=1 runtime DTO declarations.",
+                       "Build recheck refused by host throttle: CPU samples 79/63/85/96, average 80.8%, dotnet/csc=0."
+                   ]
+}

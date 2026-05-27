@@ -45,6 +45,7 @@ namespace Hecton8.Interaction
         private bool _connected;
         private bool _registeredLateFrame;
         private bool _registeredOriginShift;
+        private bool _registeredHotSwap;
 
         public bool IsDragging => _dragging;
         public bool IsConnected => _connected;
@@ -102,8 +103,7 @@ namespace Hecton8.Interaction
         private void OnEnable()
         {
             InteractableRegistry.RegisterTree(this);
-            if (Application.isPlaying)
-                GlobalRegistry.TryRegisterHotSwapListener(this);
+            TryRegisterHotSwapListener();
 
             TryRegisterOriginShiftListener();
             RefreshLateFrameRegistration();
@@ -115,7 +115,16 @@ namespace Hecton8.Interaction
             InteractableRegistry.InvalidateTree(this);
             TryUnregisterOriginShiftListener();
             TryUnregisterLateFrameTickable();
-            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            TryUnregisterHotSwapListener();
+            ConnectionSplineBatchRenderer.RemoveRelayLink(_linkId);
+        }
+
+        private void OnDestroy()
+        {
+            InteractableRegistry.InvalidateTree(this);
+            TryUnregisterOriginShiftListener();
+            TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
             ConnectionSplineBatchRenderer.RemoveRelayLink(_linkId);
         }
 
@@ -699,6 +708,23 @@ namespace Hecton8.Interaction
 
             HectonFloatingOrigin.UnregisterListener(this);
             _registeredOriginShift = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(

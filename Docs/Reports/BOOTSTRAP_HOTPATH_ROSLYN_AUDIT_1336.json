@@ -1,0 +1,17 @@
+﻿{
+    "schema":  "hecton8.bootstrap_hotpath_roslyn_audit.v1",
+    "agentId":  "1336",
+    "sourceRaw":  "Docs/Reports/BOOTSTRAP_HOTPATH_ROSLYN_AUDIT_1336_RAW.json",
+    "rawHashSha256":  "09482be3493c83d6a0df598bcf1b70465bcaa2025cd61d2bc8b7896c0a451ede",
+    "scannedFiles":  4,
+    "parseFailures":  0,
+    "scannedHotOwners":  [
+                             "SlowTick",
+                             "WarmConfiguredShaderVariantCollectionsAsync"
+                         ],
+    "scannedJobStructs":  0,
+    "filteredFindingCount":  0,
+    "findings":  [
+
+                 ]
+}

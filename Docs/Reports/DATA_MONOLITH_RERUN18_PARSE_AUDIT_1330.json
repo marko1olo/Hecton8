@@ -1,0 +1,46 @@
+{
+    "schema":  "hecton8.data_monolith.rerun18_parse_audit.v1",
+    "agentId":  "1330",
+    "status":  "VERIFIED_GREEN",
+    "generatedUtc":  "2026-05-26T18:35:04.0546717Z",
+    "scannedFiles":  17,
+    "promptSources":  [
+                          {
+                              "path":  "C:\\hades\\current_batch.md",
+                              "found":  false,
+                              "length":  0,
+                              "taskCount":  0
+                          },
+                          {
+                              "path":  "Docs/Tasks/CURRENT_BATCH.md",
+                              "found":  true,
+                              "length":  19491,
+                              "taskCount":  20
+                          },
+                          {
+                              "path":  "Docs/Tasks/current_batch.md",
+                              "found":  true,
+                              "length":  19491,
+                              "taskCount":  20
+                          },
+                          {
+                              "path":  "Docs/AgentLogs/AGENT_PROMPT_1330_REEXTRACTED_APEX_RERUN.xml",
+                              "found":  true,
+                              "length":  19491,
+                              "taskCount":  20
+                          }
+                      ],
+    "activePromptSourceDrift":  false,
+    "replayPromptAvailable":  true,
+    "roslynHotpathParseFailures":  0,
+    "nativeAliasParseFailures":  0,
+    "h8binValidatorStatus":  "PASS",
+    "facadeThrowFindings":  0,
+    "facadeCatchAllFindings":  0,
+    "facadeReflectionFailClosed":  true,
+    "compilerPromoteRawFileExistsFindings":  0,
+    "compilerPromoteUsesTryFileExists":  true,
+    "cleanupHelpersGuarded":  true,
+    "validateBlobUsesTryFileExists":  true,
+    "verificationHashSha256":  "9001cb1a92258ad174f5bb0a6d9066fb7f600a4a8caad908d5d76434ee0f5403"
+}

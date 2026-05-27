@@ -91,6 +91,16 @@ Shader "Hecton8/UI/DiegeticVisorCurvedHUD"
 
             float _HectonVRBrownoutIntensity;
 
+            float ResolveLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) / max(edge1 - edge0, 1e-5));
+            }
+
+            float SignedTriangleWave(float phase)
+            {
+                return (1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0)) * 2.0 - 1.0;
+            }
+
             float Bayer4x4(float2 pixelPosition)
             {
                 float2 cell = floor(frac(pixelPosition * 0.25) * 4.0);
@@ -136,7 +146,7 @@ Shader "Hecton8/UI/DiegeticVisorCurvedHUD"
                 Varyings output;
                 float3 positionOS = input.positionOS.xyz;
                 float tearBand = step(0.82, frac(input.uv.y * 18.0 + _Time.y * 5.0));
-                float tearWave = sin((input.uv.y * 96.0) + (_Time.y * 70.0));
+                float tearWave = SignedTriangleWave((input.uv.y * 96.0) + (_Time.y * 70.0));
                 positionOS.x += tearWave * tearBand * _DamageGlitch * 0.018;
                 output.positionCS = TransformObjectToHClip(positionOS);
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
@@ -148,7 +158,7 @@ Shader "Hecton8/UI/DiegeticVisorCurvedHUD"
                 float2 centered = input.uv - 0.5;
                 float2 absCenter = abs(centered) * 2.0;
                 float edge = max(absCenter.x, absCenter.y);
-                float edgeFade = 1.0 - smoothstep(1.0 - _EdgeFade, 1.0, edge);
+                float edgeFade = 1.0 - ResolveLinearRamp01(1.0 - _EdgeFade, 1.0, edge);
 
                 float chromaWeight = saturate(dot(centered, centered) * 4.5);
                 float4 centerSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);

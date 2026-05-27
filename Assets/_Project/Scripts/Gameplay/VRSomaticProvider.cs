@@ -1,3 +1,6 @@
+using System;
+using System.Buffers.Binary;
+using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -22,7 +25,10 @@ namespace Hecton8.Gameplay
         [FieldOffset(16)] public float FovTunnelScalar;
         [FieldOffset(20)] public float PitchDampening;
         [FieldOffset(24)] public uint ComfortFlags;
-        [FieldOffset(28)] private uint _pad0;
+        [FieldOffset(28)] private byte _pad0;
+        [FieldOffset(29)] private byte _pad1;
+        [FieldOffset(30)] private byte _pad2;
+        [FieldOffset(31)] private byte _pad3;
     }
 
     /// <summary>Fixed 300-frame horizon-lock blackbox row. Size: 96 bytes.</summary>
@@ -39,9 +45,30 @@ namespace Hecton8.Gameplay
         [FieldOffset(60)] public uint Flags;
         [FieldOffset(64)] public uint StateHash;
         [FieldOffset(68)] public uint AupHash;
-        [FieldOffset(72)] public ulong _pad0;
-        [FieldOffset(80)] public ulong _pad1;
-        [FieldOffset(88)] public ulong _pad2;
+        [FieldOffset(72)] private byte _pad0;
+        [FieldOffset(73)] private byte _pad1;
+        [FieldOffset(74)] private byte _pad2;
+        [FieldOffset(75)] private byte _pad3;
+        [FieldOffset(76)] private byte _pad4;
+        [FieldOffset(77)] private byte _pad5;
+        [FieldOffset(78)] private byte _pad6;
+        [FieldOffset(79)] private byte _pad7;
+        [FieldOffset(80)] private byte _pad8;
+        [FieldOffset(81)] private byte _pad9;
+        [FieldOffset(82)] private byte _pad10;
+        [FieldOffset(83)] private byte _pad11;
+        [FieldOffset(84)] private byte _pad12;
+        [FieldOffset(85)] private byte _pad13;
+        [FieldOffset(86)] private byte _pad14;
+        [FieldOffset(87)] private byte _pad15;
+        [FieldOffset(88)] private byte _pad16;
+        [FieldOffset(89)] private byte _pad17;
+        [FieldOffset(90)] private byte _pad18;
+        [FieldOffset(91)] private byte _pad19;
+        [FieldOffset(92)] private byte _pad20;
+        [FieldOffset(93)] private byte _pad21;
+        [FieldOffset(94)] private byte _pad22;
+        [FieldOffset(95)] private byte _pad23;
     }
 
     /// <summary>Gameplay-owned presentation mirror of the physics KCC state. Size: 64 bytes.</summary>
@@ -143,7 +170,9 @@ namespace Hecton8.Gameplay
         private const ushort BlackBoxFlagKccSignal = 1 << 12;
         private const ushort BlackBoxFlagKccAccelerationTunnel = 1 << 13;
         private const ushort BlackBoxFlagDynamicHorizonLock = 1 << 14;
-        private const string BlackBoxDumpFileName = "Dump_SHINOBU_126.bin";
+        private const int BlackBoxDumpHeaderSizeBytes = 16;
+        private const int BlackBoxDumpEntrySizeBytes = 128;
+        private const string BlackBoxDumpFileName = "Dump_1335_SomaticComfort.bin";
         private const uint StateHeadCollisionReady = 1u << 0;
         private const uint StateRegisteredService = 1u << 1;
         private const uint StateRegisteredUpdate = 1u << 2;
@@ -205,59 +234,55 @@ namespace Hecton8.Gameplay
                 };
             }
 
-            public bool IsCreated => TryRead(out _);
+            public bool IsCreated => TryReadOnlyNativeArray(out _);
 
             public int Length
             {
                 get
                 {
-                    return TryRead(out NativeArray<T> array) ? array.Length : 0;
+                    return TryReadOnlyNativeArray(out NativeArray<T>.ReadOnly array) ? array.Length : 0;
                 }
             }
 
-            public T this[int index]
-            {
-                get
-                {
-                    NativeArray<T> array = AsNativeArray();
-                    return array[index];
-                }
-                set
-                {
-                    NativeArray<T> array = AsNativeArray();
-                    array[index] = value;
-                }
-            }
-
-            public NativeArray<T> AsNativeArray()
-            {
-                if (TryResolve(out NativeArray<T> array))
-                    return array;
-
-                FatalMemoryException.ThrowStaleVaultHandle();
-                return default;
-            }
-
-            private bool TryResolve(out NativeArray<T> array)
+            public bool TryReadOnlyNativeArray(out NativeArray<T>.ReadOnly array)
             {
                 array = default;
                 return IsHandleValid() &&
                        _vault != null &&
                        !_vault.IsCompactionFenceActive &&
-                       _vault.TryResolveHandle(in _handle, out array) &&
+                       _vault.TryReadOnlyHandle(in _handle, out array) &&
+                       !_vault.IsCompactionFenceActive &&
                        array.IsCreated &&
                        array.Length >= _requiredLength;
             }
 
-            private bool TryRead(out NativeArray<T> array)
+            public bool TryAcquireWriteNativeArray(out NativeArray<T> array)
             {
                 array = default;
-                return IsHandleValid() &&
-                       _vault != null &&
-                       !_vault.IsCompactionFenceActive &&
-                       _vault.TryReadHandle(in _handle, out array) &&
-                       array.IsCreated &&
-                       array.Length >= _requiredLength;
+                if (!IsHandleValid() ||
+                    _vault == null ||
+                    _vault.IsCompactionFenceActive ||
+                    !_vault.TryAcquireWriteLock(in _handle, VaultOwnerSystem, out array))
+                {
+                    return false;
+                }
+
+                if (_vault.IsCompactionFenceActive ||
+                    !array.IsCreated ||
+                    array.Length < _requiredLength)
+                {
+                    _vault.ReleaseWriteLock(in _handle, VaultOwnerSystem);
+                    array = default;
+                    return false;
+                }
+
+                return true;
+            }
+
+            public void ReleaseWriteNativeArray()
+            {
+                if (IsHandleValid() && _vault != null)
+                    _vault.ReleaseWriteLock(in _handle, VaultOwnerSystem);
             }
 
             public void Release()
@@ -269,11 +294,6 @@ namespace Hecton8.Gameplay
                 _handle = default;
                 _bufferId = default;
                 _requiredLength = 0;
-            }
-
-            public static implicit operator NativeArray<T>(VaultBufferView<T> view)
-            {
-                return view.AsNativeArray();
             }
 
             private bool IsHandleValid()
@@ -562,13 +582,17 @@ namespace Hecton8.Gameplay
             if (!_snapshot.IsActive ||
                 handIndex >= HandCount ||
                 !HandTargets.IsCreated ||
-                !HandPhysicalPositions.IsCreated)
+                !HandPhysicalPositions.IsCreated ||
+                !HandTargets.TryReadOnlyNativeArray(out NativeArray<float3>.ReadOnly handTargets) ||
+                !HandPhysicalPositions.TryReadOnlyNativeArray(out NativeArray<float3>.ReadOnly handPhysicalPositions) ||
+                handTargets.Length <= handIndex ||
+                handPhysicalPositions.Length <= handIndex)
             {
                 return false;
             }
 
-            float3 target = HandTargets[handIndex];
-            float3 physical = HandPhysicalPositions[handIndex];
+            float3 target = handTargets[handIndex];
+            float3 physical = handPhysicalPositions[handIndex];
             float3 separation = target - physical;
             float separationSq = math.lengthsq(separation);
             if (!IsFiniteFloat3(target) || !IsFiniteFloat3(physical) || !math.isfinite(separationSq))
@@ -625,8 +649,29 @@ namespace Hecton8.Gameplay
                 return;
 
             float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
-            RebaseHandArray(HandTargets, shift);
-            RebaseHandArray(HandPhysicalPositions, shift);
+            bool handTargetsLocked = false;
+            bool handPhysicalLocked = false;
+            try
+            {
+                if (HandTargets.TryAcquireWriteNativeArray(out NativeArray<float3> handTargets))
+                {
+                    handTargetsLocked = true;
+                    RebaseHandArray(handTargets, shift);
+                }
+
+                if (HandPhysicalPositions.TryAcquireWriteNativeArray(out NativeArray<float3> handPhysicalPositions))
+                {
+                    handPhysicalLocked = true;
+                    RebaseHandArray(handPhysicalPositions, shift);
+                }
+            }
+            finally
+            {
+                if (handPhysicalLocked)
+                    HandPhysicalPositions.ReleaseWriteNativeArray();
+                if (handTargetsLocked)
+                    HandTargets.ReleaseWriteNativeArray();
+            }
         }
 
         public void Tick(float deltaTime)
@@ -1771,7 +1816,6 @@ namespace Hecton8.Gameplay
                 EnsureNativeBuffers();
             if (!_rootSyncInput.IsCreated || !_rootSyncOutput.IsCreated)
                 return;
-
             quaternion sanitizedHeadRotation = ResolveSomaticStabilizedRootRotation(headRotation);
             quaternion previousRootRotation = (_stateFlags & StateRootInitialized) != 0u
                 ? _lastRootRotation
@@ -1793,9 +1837,36 @@ namespace Hecton8.Gameplay
                 KccHorizonLock01 = math.max(Sanitize01(_kccHorizonLock01, 0f), Sanitize01(_somaticHorizonLockBlend01, 0f))
             };
 
-            _rootSyncInput[0] = input;
             VRSomaticRootSyncOutput output = ResolveRootSyncOutput(in input);
-            _rootSyncOutput[0] = output;
+            bool rootInputLocked = false;
+            bool rootOutputLocked = false;
+            try
+            {
+                if (!_rootSyncInput.TryAcquireWriteNativeArray(out NativeArray<VRSomaticRootSyncInput> rootSyncInput) ||
+                    rootSyncInput.Length == 0)
+                {
+                    return;
+                }
+
+                rootInputLocked = true;
+                if (!_rootSyncOutput.TryAcquireWriteNativeArray(out NativeArray<VRSomaticRootSyncOutput> rootSyncOutput) ||
+                    rootSyncOutput.Length == 0)
+                {
+                    return;
+                }
+
+                rootOutputLocked = true;
+                rootSyncInput[0] = input;
+                rootSyncOutput[0] = output;
+            }
+            finally
+            {
+                if (rootOutputLocked)
+                    _rootSyncOutput.ReleaseWriteNativeArray();
+                if (rootInputLocked)
+                    _rootSyncInput.ReleaseWriteNativeArray();
+            }
+
             ApplyRootSyncOutput(in output);
         }
 
@@ -1826,32 +1897,59 @@ namespace Hecton8.Gameplay
                 EnsureNativeBuffers();
             if (!HandTargets.IsCreated || !HandPhysicalPositions.IsCreated)
                 return;
-
-            CaptureHandTargets(headPosition, headRotation);
-            if ((_stateFlags & StateHandsInitialized) == 0u)
+            bool handTargetsLocked = false;
+            bool handPhysicalLocked = false;
+            try
             {
+                if (!HandTargets.TryAcquireWriteNativeArray(out NativeArray<float3> handTargets))
+                    return;
+
+                handTargetsLocked = true;
+                if (!HandPhysicalPositions.TryAcquireWriteNativeArray(out NativeArray<float3> handPhysicalPositions))
+                    return;
+
+                handPhysicalLocked = true;
+                if (
+                    handTargets.Length < HandCount ||
+                    handPhysicalPositions.Length < HandCount)
+                {
+                    return;
+                }
+
+                CaptureHandTargets(handTargets, headPosition, headRotation);
+                if ((_stateFlags & StateHandsInitialized) == 0u)
+                {
+                    for (int i = 0; i < HandCount; i++)
+                        handPhysicalPositions[i] = handTargets[i];
+
+                    _stateFlags |= StateHandsInitialized;
+                }
+
+                float safeDeltaTime = math.max(deltaTime, MinimumDeltaTime);
+                float springForce = SanitizeMinimum(handSpringForce, 1f);
                 for (int i = 0; i < HandCount; i++)
-                    HandPhysicalPositions[i] = HandTargets[i];
+                    handPhysicalPositions[i] = ResolveHandPhysicalPosition(handTargets[i], handPhysicalPositions[i], safeDeltaTime, springForce);
 
-                _stateFlags |= StateHandsInitialized;
+                _handGhostMask = ResolveHandGhostMask(handTargets, handPhysicalPositions);
             }
-
-            float safeDeltaTime = math.max(deltaTime, MinimumDeltaTime);
-            float springForce = SanitizeMinimum(handSpringForce, 1f);
-            for (int i = 0; i < HandCount; i++)
-                HandPhysicalPositions[i] = ResolveHandPhysicalPosition(HandTargets[i], HandPhysicalPositions[i], safeDeltaTime, springForce);
-
-            _handGhostMask = ResolveHandGhostMask();
+            finally
+            {
+                if (handPhysicalLocked)
+                    HandPhysicalPositions.ReleaseWriteNativeArray();
+                if (handTargetsLocked)
+                    HandTargets.ReleaseWriteNativeArray();
+            }
         }
 
-        private void CaptureHandTargets(Vector3 headPosition, Quaternion headRotation)
+        private void CaptureHandTargets(NativeArray<float3> handTargets, Vector3 headPosition, Quaternion headRotation)
         {
             InputDispatcher dispatcher = InputDispatcher.ActiveRuntimeInstance;
-            HandTargets[0] = ResolveHandTarget(dispatcher, 0, headPosition, headRotation, -0.22f);
-            HandTargets[1] = ResolveHandTarget(dispatcher, 1, headPosition, headRotation, 0.22f);
+            handTargets[0] = ResolveHandTarget(handTargets, dispatcher, 0, headPosition, headRotation, -0.22f);
+            handTargets[1] = ResolveHandTarget(handTargets, dispatcher, 1, headPosition, headRotation, 0.22f);
         }
 
         private float3 ResolveHandTarget(
+            NativeArray<float3> handTargets,
             InputDispatcher dispatcher,
             byte handIndex,
             Vector3 headPosition,
@@ -1866,20 +1964,24 @@ namespace Hecton8.Gameplay
             }
 
             if ((_stateFlags & StateHandsInitialized) != 0u &&
-                HandTargets.IsCreated &&
-                handIndex < HandTargets.Length &&
-                IsFiniteFloat3(HandTargets[handIndex]))
+                handTargets.IsCreated &&
+                handIndex < handTargets.Length &&
+                IsFiniteFloat3(handTargets[handIndex]))
             {
-                return HandTargets[handIndex];
+                return handTargets[handIndex];
             }
 
             return ResolveFallbackHandTarget(headPosition, headRotation, lateralOffset);
         }
 
-        private uint ResolveHandGhostMask()
+        private uint ResolveHandGhostMask(NativeArray<float3> handTargets, NativeArray<float3> handPhysicalPositions)
         {
-            if (!HandTargets.IsCreated || !HandPhysicalPositions.IsCreated)
+            if (!handTargets.IsCreated || !handPhysicalPositions.IsCreated ||
+                handTargets.Length < HandCount ||
+                handPhysicalPositions.Length < HandCount)
+            {
                 return 0u;
+            }
 
             float baseThreshold = SanitizeMinimum(ghostHandDistanceMeters, 0.01f);
             float qualityCurve = Smoothstep01(_globalQualityWeight01);
@@ -1890,7 +1992,7 @@ namespace Hecton8.Gameplay
             uint mask = 0u;
             for (int i = 0; i < HandCount; i++)
             {
-                float3 delta = HandTargets[i] - HandPhysicalPositions[i];
+                float3 delta = handTargets[i] - handPhysicalPositions[i];
                 float distanceSq = math.lengthsq(delta);
                 if (math.isfinite(distanceSq) && distanceSq > thresholdSq)
                     mask |= 1u << i;
@@ -1924,23 +2026,40 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float3 origin = new float3(headPosition.x, headPosition.y, headPosition.z);
-            quaternion rotation = TrySanitizeQuaternion(headRotation, out Quaternion sanitizedHeadRotation)
-                ? new quaternion(sanitizedHeadRotation.x, sanitizedHeadRotation.y, sanitizedHeadRotation.z, sanitizedHeadRotation.w)
-                : quaternion.identity;
-            float nearFieldDistance = SanitizeMinimum(nearFieldDistanceMeters, MinimumNearFieldDistanceMeters);
-            float stepMeters = ResolveNearFieldSdfStepMeters(nearFieldDistance, _globalQualityWeight01);
-            for (int i = 0; i < HeadCollisionCommandCount; i++)
+            bool samplesLocked = false;
+            try
             {
-                float localSide;
-                float3 direction = ResolveHeadSdfProbeDirection(rotation, i, out localSide);
-                _headCollisionSamples[i] = BuildHeadSdfSample(
-                    readModel,
-                    origin,
-                    direction,
-                    nearFieldDistance,
-                    stepMeters,
-                    localSide);
+                if (!_headCollisionSamples.TryAcquireWriteNativeArray(out NativeArray<HeadCastSample> headCollisionSamples) ||
+                    headCollisionSamples.Length < HeadCollisionCommandCount)
+                {
+                    FadeNearFieldCollisionToZero(_lastTickDeltaTime);
+                    return;
+                }
+
+                samplesLocked = true;
+                float3 origin = new float3(headPosition.x, headPosition.y, headPosition.z);
+                quaternion rotation = TrySanitizeQuaternion(headRotation, out Quaternion sanitizedHeadRotation)
+                    ? new quaternion(sanitizedHeadRotation.x, sanitizedHeadRotation.y, sanitizedHeadRotation.z, sanitizedHeadRotation.w)
+                    : quaternion.identity;
+                float nearFieldDistance = SanitizeMinimum(nearFieldDistanceMeters, MinimumNearFieldDistanceMeters);
+                float stepMeters = ResolveNearFieldSdfStepMeters(nearFieldDistance, _globalQualityWeight01);
+                for (int i = 0; i < HeadCollisionCommandCount; i++)
+                {
+                    float localSide;
+                    float3 direction = ResolveHeadSdfProbeDirection(rotation, i, out localSide);
+                    headCollisionSamples[i] = BuildHeadSdfSample(
+                        readModel,
+                        origin,
+                        direction,
+                        nearFieldDistance,
+                        stepMeters,
+                        localSide);
+                }
+            }
+            finally
+            {
+                if (samplesLocked)
+                    _headCollisionSamples.ReleaseWriteNativeArray();
             }
 
             _stateFlags |= StateHeadCollisionReady;
@@ -2004,8 +2123,24 @@ namespace Hecton8.Gameplay
             if (!_headCollisionSamples.IsCreated)
                 return;
 
-            for (int i = 0; i < HeadCollisionCommandCount; i++)
-                _headCollisionSamples[i] = default;
+            bool samplesLocked = false;
+            try
+            {
+                if (!_headCollisionSamples.TryAcquireWriteNativeArray(out NativeArray<HeadCastSample> headCollisionSamples) ||
+                    headCollisionSamples.Length < HeadCollisionCommandCount)
+                {
+                    return;
+                }
+
+                samplesLocked = true;
+                for (int i = 0; i < HeadCollisionCommandCount; i++)
+                    headCollisionSamples[i] = default;
+            }
+            finally
+            {
+                if (samplesLocked)
+                    _headCollisionSamples.ReleaseWriteNativeArray();
+            }
         }
 
         private static float ResolveNearFieldSdfStepMeters(float nearFieldDistance, float qualityWeight01)
@@ -2088,6 +2223,13 @@ namespace Hecton8.Gameplay
                 _nearFieldCollision01 = 0f;
                 return;
             }
+            if (!_headCollisionSamples.TryReadOnlyNativeArray(out NativeArray<HeadCastSample>.ReadOnly headCollisionSamples) ||
+                headCollisionSamples.Length < HeadCollisionCommandCount)
+            {
+                _collisionState = default;
+                _nearFieldCollision01 = 0f;
+                return;
+            }
 
             bool hasContact = false;
             HeadCastSample bestSample = default;
@@ -2095,7 +2237,7 @@ namespace Hecton8.Gameplay
             float bestDistance = nearFieldDistance;
             for (int i = 0; i < HeadCollisionCommandCount; i++)
             {
-                HeadCastSample sample = _headCollisionSamples[i];
+                HeadCastSample sample = headCollisionSamples[i];
                 if (sample.HasHit == 0 ||
                     !math.isfinite(sample.Distance) ||
                     sample.Distance < 0f ||
@@ -2538,7 +2680,6 @@ namespace Hecton8.Gameplay
 
                 EnsureBlackBoxBuffer();
             }
-
             float4 headRotationValue = new float4(headRotation.x, headRotation.y, headRotation.z, headRotation.w);
             bool hasFiniteRotation = math.all(math.isfinite(headRotationValue));
             float rotationLengthSq = math.lengthsq(headRotationValue);
@@ -2556,18 +2697,10 @@ namespace Hecton8.Gameplay
             float kccComfortVignette = Sanitize01(_kccAngularComfortVignette01, 0f);
             float kccHorizonLock = Sanitize01(_kccHorizonLock01, 0f);
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            int index;
-            if (_blackBoxCursor > 0 && _blackBoxLastRecordedFrame == frame)
-            {
-                index = (_blackBoxCursor - 1) % BlackBoxFrameCapacity;
-                flags |= _blackBox[index].Flags;
-            }
-            else
-            {
-                index = _blackBoxCursor % BlackBoxFrameCapacity;
-                _blackBoxCursor++;
-                _blackBoxLastRecordedFrame = frame;
-            }
+            bool mergePreviousFlags = _blackBoxCursor > 0 && _blackBoxLastRecordedFrame == frame;
+            int index = mergePreviousFlags
+                ? (_blackBoxCursor - 1) % BlackBoxFrameCapacity
+                : _blackBoxCursor % BlackBoxFrameCapacity;
 
             VRSomaticBlackBoxEntry entry = new VRSomaticBlackBoxEntry
             {
@@ -2606,7 +2739,34 @@ namespace Hecton8.Gameplay
                 Reserved1 = 0ul
             };
 
-            _blackBox[index] = entry;
+            bool blackBoxLocked = false;
+            try
+            {
+                if (!_blackBox.TryAcquireWriteNativeArray(out NativeArray<VRSomaticBlackBoxEntry> blackBox) ||
+                    blackBox.Length < BlackBoxFrameCapacity)
+                {
+                    return;
+                }
+
+                blackBoxLocked = true;
+                if (mergePreviousFlags)
+                {
+                    entry.Flags = (ushort)(entry.Flags | blackBox[index].Flags);
+                }
+                else
+                {
+                    _blackBoxCursor++;
+                    _blackBoxLastRecordedFrame = frame;
+                }
+
+                blackBox[index] = entry;
+            }
+            finally
+            {
+                if (blackBoxLocked)
+                    _blackBox.ReleaseWriteNativeArray();
+            }
+
             if ((flags & BlackBoxFlagNonFinite) != 0)
                 DumpBlackBoxOnce();
         }
@@ -2644,13 +2804,17 @@ namespace Hecton8.Gameplay
         {
             if (!HandTargets.IsCreated ||
                 !HandPhysicalPositions.IsCreated ||
+                !HandTargets.TryReadOnlyNativeArray(out NativeArray<float3>.ReadOnly handTargets) ||
+                !HandPhysicalPositions.TryReadOnlyNativeArray(out NativeArray<float3>.ReadOnly handPhysicalPositions) ||
                 index < 0 ||
-                index >= HandCount)
+                index >= HandCount ||
+                handTargets.Length <= index ||
+                handPhysicalPositions.Length <= index)
             {
                 return 0f;
             }
 
-            float3 delta = HandTargets[index] - HandPhysicalPositions[index];
+            float3 delta = handTargets[index] - handPhysicalPositions[index];
             float distanceSq = math.lengthsq(delta);
             return math.isfinite(distanceSq) ? distanceSq : 0f;
         }
@@ -2701,6 +2865,10 @@ namespace Hecton8.Gameplay
         {
             if (_blackBoxDumped || !_blackBox.IsCreated)
                 return;
+            if (_blackBox.Length < BlackBoxFrameCapacity)
+            {
+                return;
+            }
 
             _blackBoxDumped = true;
             try
@@ -2711,54 +2879,115 @@ namespace Hecton8.Gameplay
                     "Docs",
                     "AgentLogs",
                     BlackBoxDumpFileName));
-                using (System.IO.FileStream stream = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
-                using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
+                string directory = System.IO.Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    System.IO.Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     int count = math.min(_blackBoxCursor, BlackBoxFrameCapacity);
                     int start = _blackBoxCursor - count;
-                    writer.Write(BlackBoxMagic);
-                    writer.Write(BlackBoxVersion);
-                    writer.Write(BlackBoxFrameCapacity);
-                    writer.Write(count);
+                    Span<byte> header = stackalloc byte[BlackBoxDumpHeaderSizeBytes];
+                    WriteBlackBoxHeader(header, count);
+                    stream.Write(header);
+
+                    Span<byte> row = stackalloc byte[BlackBoxDumpEntrySizeBytes];
                     for (int i = 0; i < count; i++)
                     {
-                        VRSomaticBlackBoxEntry entry = _blackBox[(start + i) % BlackBoxFrameCapacity];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.HandGhostMask);
-                        writer.Write(entry.HeadPosition.x);
-                        writer.Write(entry.HeadPosition.y);
-                        writer.Write(entry.HeadPosition.z);
-                        writer.Write(entry.HeadRotation.x);
-                        writer.Write(entry.HeadRotation.y);
-                        writer.Write(entry.HeadRotation.z);
-                        writer.Write(entry.HeadRotation.w);
-                        writer.Write(entry.NearCollision01);
-                        writer.Write(entry.ComfortVignette01);
-                        writer.Write(entry.LeftHandSeparationSq);
-                        writer.Write(entry.RightHandSeparationSq);
-                        writer.Write(entry.HeadAngularSpeedRadiansPerSecond);
-                        writer.Write(entry.AupShiftSequence);
-                        writer.Write(entry.KccAngularVelocityRadiansPerSecond);
-                        writer.Write(entry.KccAngularAccelerationRadiansPerSecondSq);
-                        writer.Write(entry.KccComfortVignette01);
-                        writer.Write(entry.KccHorizonLock01);
-                        writer.Write(entry.KccVelocitySequence);
-                        writer.Write(entry.KccVelocityFrame);
-                        writer.Write(entry.KccVelocitySourceId);
-                        writer.Write(entry.Reserved0);
-                        writer.Write(entry.Reserved1);
-                        writer.Write(entry.Reserved2);
-                        writer.Write(entry.Reserved3);
-                        writer.Write(entry.Reserved4);
+                        if (!TryReadBlackBoxEntry((start + i) % BlackBoxFrameCapacity, out VRSomaticBlackBoxEntry entry))
+                            return;
+
+                        WriteBlackBoxEntry(row, in entry);
+                        stream.Write(row);
                     }
                 }
             }
-            catch (System.Exception exception)
+            catch (System.ObjectDisposedException exception)
             {
-                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpFaultHash, BlackBoxMagic, exception.HResult);
+                PublishBlackBoxDumpFault(exception.HResult);
             }
+            catch (System.IO.IOException exception)
+            {
+                PublishBlackBoxDumpFault(exception.HResult);
+            }
+            catch (System.UnauthorizedAccessException exception)
+            {
+                PublishBlackBoxDumpFault(exception.HResult);
+            }
+            catch (System.ArgumentException exception)
+            {
+                PublishBlackBoxDumpFault(exception.HResult);
+            }
+            catch (System.NotSupportedException exception)
+            {
+                PublishBlackBoxDumpFault(exception.HResult);
+            }
+        }
+
+        private bool TryReadBlackBoxEntry(int index, out VRSomaticBlackBoxEntry entry)
+        {
+            entry = default;
+            if (index < 0 ||
+                !_blackBox.TryReadOnlyNativeArray(out NativeArray<VRSomaticBlackBoxEntry>.ReadOnly blackBox) ||
+                blackBox.Length < BlackBoxFrameCapacity ||
+                index >= blackBox.Length)
+            {
+                return false;
+            }
+
+            entry = blackBox[index];
+            return true;
+        }
+
+        private static void WriteBlackBoxHeader(Span<byte> destination, int entryCount)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), BlackBoxMagic);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), BlackBoxVersion);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(8, 4), BlackBoxFrameCapacity);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(12, 4), entryCount);
+        }
+
+        private static void WriteBlackBoxEntry(Span<byte> destination, in VRSomaticBlackBoxEntry entry)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.StateHash);
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(8, 2), entry.Flags);
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(10, 2), entry.HandGhostMask);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.HeadPosition.x);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.HeadPosition.y);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.HeadPosition.z);
+            WriteFloatLittleEndian(destination.Slice(24, 4), entry.HeadRotation.x);
+            WriteFloatLittleEndian(destination.Slice(28, 4), entry.HeadRotation.y);
+            WriteFloatLittleEndian(destination.Slice(32, 4), entry.HeadRotation.z);
+            WriteFloatLittleEndian(destination.Slice(36, 4), entry.HeadRotation.w);
+            WriteFloatLittleEndian(destination.Slice(40, 4), entry.NearCollision01);
+            WriteFloatLittleEndian(destination.Slice(44, 4), entry.ComfortVignette01);
+            WriteFloatLittleEndian(destination.Slice(48, 4), entry.LeftHandSeparationSq);
+            WriteFloatLittleEndian(destination.Slice(52, 4), entry.RightHandSeparationSq);
+            WriteFloatLittleEndian(destination.Slice(56, 4), entry.HeadAngularSpeedRadiansPerSecond);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(60, 4), entry.AupShiftSequence);
+            WriteFloatLittleEndian(destination.Slice(64, 4), entry.KccAngularVelocityRadiansPerSecond);
+            WriteFloatLittleEndian(destination.Slice(68, 4), entry.KccAngularAccelerationRadiansPerSecondSq);
+            WriteFloatLittleEndian(destination.Slice(72, 4), entry.KccComfortVignette01);
+            WriteFloatLittleEndian(destination.Slice(76, 4), entry.KccHorizonLock01);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(80, 4), entry.KccVelocitySequence);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(84, 4), entry.KccVelocityFrame);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(88, 4), entry.KccVelocitySourceId);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(92, 4), entry.Reserved0);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(96, 8), entry.Reserved1);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(104, 8), 0ul);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(112, 8), 0ul);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(120, 8), 0ul);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination, math.asuint(value));
+        }
+
+        private static void PublishBlackBoxDumpFault(int hResult)
+        {
+            GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpFaultHash, BlackBoxMagic, hResult);
         }
 
         private static float Sanitize01(float value, float fallback)
@@ -2795,21 +3024,18 @@ namespace Hecton8.Gameplay
                 UnsafeUtility.SizeOf<VrComfortProfileLookupSlotDTO>() != 16 ||
                 UnsafeUtility.SizeOf<SomaticKinematicHistoryDTO>() != 96 ||
                 UnsafeUtility.SizeOf<SomaticDerivativeDTO>() != 64 ||
-                UnsafeUtility.SizeOf<ComfortTelemetryEntry>() != 80 ||
+                UnsafeUtility.SizeOf<ComfortTelemetryEntry>() != 64 ||
                 UnsafeUtility.SizeOf<SomaticMockSicknessSampleDTO>() != 64 ||
                 OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.FovTunnelingIntensity)) != 0 ||
                 OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.HorizonLockBlend)) != 4 ||
                 OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.FoveatedScaleMultiplier)) != 8 ||
                 OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.ActiveComfortFlags)) != 12 ||
                 OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.ReservedParameters)) != 16 ||
-                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.VramPressure01)) != 44 ||
-                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.ThermalPressure01)) != 48 ||
-                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.SystemPressure01)) != 52 ||
-                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.StateHash)) != 56 ||
-                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.Sequence)) != 60 ||
-                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.AupHash)) != 64 ||
-                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry._pad0)) != 68 ||
-                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry._pad1)) != 72)
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.Pressure01)) != 44 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.LockContentionCount)) != 48 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.StateHash)) != 52 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.Sequence)) != 56 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.AupHash)) != 60)
             {
                 throw new System.InvalidOperationException("VRSomaticProvider native layout contract drift.");
             }
@@ -3387,9 +3613,30 @@ namespace Hecton8.Gameplay
             [FieldOffset(96)] public uint Reserved0;
             [FieldOffset(100)] public ushort Flags;
             [FieldOffset(102)] public ushort HandGhostMask;
-            [FieldOffset(104)] public ulong Reserved2;
-            [FieldOffset(112)] public ulong Reserved3;
-            [FieldOffset(120)] public ulong Reserved4;
+            [FieldOffset(104)] private byte _pad0;
+            [FieldOffset(105)] private byte _pad1;
+            [FieldOffset(106)] private byte _pad2;
+            [FieldOffset(107)] private byte _pad3;
+            [FieldOffset(108)] private byte _pad4;
+            [FieldOffset(109)] private byte _pad5;
+            [FieldOffset(110)] private byte _pad6;
+            [FieldOffset(111)] private byte _pad7;
+            [FieldOffset(112)] private byte _pad8;
+            [FieldOffset(113)] private byte _pad9;
+            [FieldOffset(114)] private byte _pad10;
+            [FieldOffset(115)] private byte _pad11;
+            [FieldOffset(116)] private byte _pad12;
+            [FieldOffset(117)] private byte _pad13;
+            [FieldOffset(118)] private byte _pad14;
+            [FieldOffset(119)] private byte _pad15;
+            [FieldOffset(120)] private byte _pad16;
+            [FieldOffset(121)] private byte _pad17;
+            [FieldOffset(122)] private byte _pad18;
+            [FieldOffset(123)] private byte _pad19;
+            [FieldOffset(124)] private byte _pad20;
+            [FieldOffset(125)] private byte _pad21;
+            [FieldOffset(126)] private byte _pad22;
+            [FieldOffset(127)] private byte _pad23;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 80)]
@@ -3426,7 +3673,14 @@ namespace Hecton8.Gameplay
             [FieldOffset(28)] public float LocalSide;
             [FieldOffset(32)] public int HasHit;
             [FieldOffset(36)] public uint Reserved0;
-            [FieldOffset(40)] public ulong Reserved1;
+            [FieldOffset(40)] private byte _pad0;
+            [FieldOffset(41)] private byte _pad1;
+            [FieldOffset(42)] private byte _pad2;
+            [FieldOffset(43)] private byte _pad3;
+            [FieldOffset(44)] private byte _pad4;
+            [FieldOffset(45)] private byte _pad5;
+            [FieldOffset(46)] private byte _pad6;
+            [FieldOffset(47)] private byte _pad7;
         }
     }
 }

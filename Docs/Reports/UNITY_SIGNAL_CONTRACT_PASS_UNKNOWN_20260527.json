@@ -1,0 +1,65 @@
+{
+  "schema": "UNITY_SIGNAL_CONTRACT_PASS_UNKNOWN_20260527",
+  "date": "2026-05-27",
+  "agent": "UNKNOWN",
+  "evidence_class": "STATIC_SOURCE_CLASSIFIED",
+  "changed_files": [
+    "Assets/_Project/Scripts/Gameplay/PlayerSignalEvents.cs",
+    "Assets/_Project/Scripts/PlayerToolManager.cs",
+    "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs",
+    "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+    "Assets/_Project/Scripts/UI/DiegeticVisorHudMesh.cs",
+    "Assets/_Project/Scripts/Plugins/Hecton8.Plugins.asmdef"
+  ],
+  "fixed": {
+    "duplicate_runtime_signal_name": {
+      "before_errors": 2,
+      "after_errors": 0,
+      "old_local_type": "Hecton8.Gameplay.ToolDepletedSignal",
+      "new_local_type": "Hecton8.Gameplay.PlayerToolDepletedSignal",
+      "authoritative_signalbus_type": "Hecton8.Tools.ToolDepletedSignal"
+    },
+    "asmdef_contract_reference_missing": {
+      "before_warnings": 1,
+      "after_warnings": 0,
+      "assembly": "Hecton8.Plugins",
+      "added_reference": "Hecton8.Core.Contracts"
+    }
+  },
+  "final_contract_scan": {
+    "raw_json": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_FINALSCAN.json",
+    "scanned_csharp_files": 2439,
+    "scanned_compute_files": 71,
+    "errors": 0,
+    "confirmed_errors": 0,
+    "warnings": 529,
+    "infos": 681,
+    "asmdef_contract_boundary_hits": 0
+  },
+  "build_recheck": {
+    "log": "Docs/Reports/BUILD_UNKNOWN_SIGNAL_CONTRACT_PASS_RECHECK_20260527.log",
+    "launched": true,
+    "cpu_percent": 10.89,
+    "compiler_process_count": 0,
+    "exit_code": 1,
+    "warnings": 0,
+    "errors": 62,
+    "classification": "MSB3202_MISSING_UNITY_GENERATED_CSPROJ",
+    "csharp_compile_reached": false
+  },
+  "documentation_gates": {
+    "verify_doc_structure": {
+      "pass": true,
+      "active_doc_count": 668,
+      "encoding_without_utf8_sig": 0
+    },
+    "oop_doc_scanner": {
+      "final_pass": true,
+      "active_file_count": 668,
+      "source_sync_pass": true,
+      "word_reduction_pass": true
+    }
+  },
+  "runtime_microseconds_saved_claimed": 0,
+  "profiler_proof": false
+}

@@ -283,7 +283,7 @@ namespace Hecton8.Editor
                     name = "SHINOBU_LSystemPreviewSegment",
                     hideFlags = HideFlags.HideAndDontSave
                 };
-                _previewSegmentMesh.vertices = new[]
+                _previewSegmentMesh.SetVertices(new[]
                 {
                     new Vector3(-0.5f, -0.5f, -0.5f),
                     new Vector3(0.5f, -0.5f, -0.5f),
@@ -293,8 +293,8 @@ namespace Hecton8.Editor
                     new Vector3(0.5f, -0.5f, 0.5f),
                     new Vector3(0.5f, 0.5f, 0.5f),
                     new Vector3(-0.5f, 0.5f, 0.5f)
-                };
-                _previewSegmentMesh.triangles = new[]
+                });
+                _previewSegmentMesh.SetTriangles(new[]
                 {
                     0, 2, 1, 0, 3, 2,
                     4, 5, 6, 4, 6, 7,
@@ -302,7 +302,7 @@ namespace Hecton8.Editor
                     2, 3, 7, 2, 7, 6,
                     1, 2, 6, 1, 6, 5,
                     3, 0, 4, 3, 4, 7
-                };
+                }, 0, false);
                 _previewSegmentMesh.RecalculateBounds();
             }
 

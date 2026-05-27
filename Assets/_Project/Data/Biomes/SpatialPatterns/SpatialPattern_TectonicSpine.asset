@@ -18,7 +18,7 @@ MonoBehaviour:
     short shelves between hard turns.
   nodeClusterPattern: Node clusters appear on spine seams and exposed ridge cuts,
     often in a line rather than a blob.
-  safePocketPattern: 'Safe pockets are rare but strong: the correct side of a ridge,
+  safePocketPattern: 'Reorientation pockets are rare but strong: the correct side of a ridge,
     a fracture bend, a protected step.'
   routeAnchorPattern: The route is the ridge. If the player loses the spine, they
     should feel it immediately.

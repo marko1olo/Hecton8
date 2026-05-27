@@ -38,6 +38,7 @@ namespace Hecton8.AI.Ambient
         private const int BiomeChangedSignalLaneCapacity = 64;
         private const int EntitySpawnSignalLaneCapacity = 128;
         private const int DebrisSpawnSignalLaneCapacity = 128;
+        private const int CapacityResizeGranularity = 256;
         private const uint BiomeChangedSignalLaneHash = 0xBE8113A5u;
         private const uint EntitySpawnSignalLaneHash = 0x573BB0DDu;
         private const uint DebrisSpawnSignalLaneHash = 0x40D0075Du;
@@ -56,7 +57,7 @@ namespace Hecton8.AI.Ambient
         private const byte EntitySpawnVisualOverkillFlag = 1 << 3;
         private const uint AmbientStateMinimumQualityBillboardFlag = 1u << 1;
         private const uint AmbientStateVisualOverkillReactiveFlag = 1u << 4;
-        private const string AgentDumpFileName = "Dump_AMBIENT_BIOTA_DIRECTOR.bin";
+        private const string AgentDumpFileName = "Dump_13AI.bin";
         private static readonly int BiotaInstancesShaderId = Shader.PropertyToID("_HectonBiotaInstances");
         private static readonly int BiotaCapacityShaderId = Shader.PropertyToID("_HectonBiotaCapacity");
         private static readonly int BiotaActiveCountShaderId = Shader.PropertyToID("_HectonBiotaActiveCount");
@@ -67,6 +68,25 @@ namespace Hecton8.AI.Ambient
         private static readonly int BiotaOverkillShaderId = Shader.PropertyToID("_HectonBiotaOverkill01");
         private static readonly int BiotaVisualTimeShaderId = Shader.PropertyToID("_HectonBiotaVisualTime");
         private static readonly int BiotaOriginWsShaderId = Shader.PropertyToID("_HectonBiotaOriginWS");
+        private static readonly Vector3[] FallbackQuadVertices =
+        {
+            new Vector3(-0.5f, -0.5f, 0f),
+            new Vector3(-0.5f, 0.5f, 0f),
+            new Vector3(0.5f, 0.5f, 0f),
+            new Vector3(0.5f, -0.5f, 0f)
+        }; // COLD ALLOC: Vector3[4] - immutable fallback ambient quad vertices - owner: AMBIENT_BIOTA_DIRECTOR
+        private static readonly Vector2[] FallbackQuadUvs =
+        {
+            new Vector2(0f, 0f),
+            new Vector2(0f, 1f),
+            new Vector2(1f, 1f),
+            new Vector2(1f, 0f)
+        }; // COLD ALLOC: Vector2[4] - immutable fallback ambient quad UVs - owner: AMBIENT_BIOTA_DIRECTOR
+        private static readonly int[] FallbackQuadIndices =
+        {
+            0, 1, 2,
+            0, 2, 3
+        }; // COLD ALLOC: int[6] - immutable fallback ambient quad indices - owner: AMBIENT_BIOTA_DIRECTOR
 
         [Header("Biota Capacity")]
         [FormerlySerializedAs("lowTierCapacity")]
@@ -99,6 +119,8 @@ namespace Hecton8.AI.Ambient
         private GraphicsBuffer _gpuInstanceBufferB;
         private GraphicsBuffer _indirectArgsBufferA;
         private GraphicsBuffer _indirectArgsBufferB;
+        private Material _biotaRuntimeMaterial;
+        private Material _biotaRuntimeMaterialSource;
         private Mesh _runtimeFallbackMesh;
         private Mesh _indirectArgsMesh;
         private JobHandle _activeJobHandle;
@@ -111,6 +133,7 @@ namespace Hecton8.AI.Ambient
         private float _cachedSystemStress01;
         private int _capacity;
         private int _activeBiotaCount;
+        private int _gpuVisibleInstanceCount;
         private int _previousActiveBiotaCount;
         private int _lastCulledCount;
         private int _tickCount;
@@ -127,10 +150,23 @@ namespace Hecton8.AI.Ambient
         private int _gpuBufferIndex;
         private int _indirectArgsBufferIndex;
         private int _indirectArgsCapacity = -1;
+        private Material _publishedBiotaMaterial;
+        private GraphicsBuffer _publishedBiotaInstanceBuffer;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private Vector4 _publishedBiotaFlowVector;
+        private Vector4 _publishedBiotaOriginWs;
+        private int _publishedBiotaCapacity = -1;
+        private int _publishedBiotaActiveCount = -1;
+        private uint _publishedBiotaBiomeHash;
+        private float _publishedBiotaQualityWeight = -1f;
+        private float _publishedBiotaSystemStress = -1f;
+        private float _publishedBiotaOverkill = -1f;
+        private float _publishedBiotaVisualTime = -1f;
         private bool _jobPending;
         private bool _pendingDebrisDrainActive;
         private bool _blackBoxDumped;
         private bool _gpuPayloadDirty = true;
+        private bool _biotaDrawMaterialPublished;
         private bool _serviceRegistered;
         private bool _tickRegistered;
         private bool _slowTickRegistered;
@@ -151,13 +187,13 @@ namespace Hecton8.AI.Ambient
         public float CullRatePerSecond => _cullRatePerSecond;
 
         public NativeArray<AbsoluteUniversePosition>.ReadOnly BiotaAups =>
-            TryResolveBiotaAupBuffer(out NativeArray<AbsoluteUniversePosition> aups) ? aups.AsReadOnly() : default;
+            !_jobPending && TryResolveBiotaAupBuffer(out NativeArray<AbsoluteUniversePosition> aups) ? aups.AsReadOnly() : default;
 
         public NativeArray<float4>.ReadOnly BiotaVelocities =>
-            TryResolveBiotaVelocityBuffer(out NativeArray<float4> velocities) ? velocities.AsReadOnly() : default;
+            !_jobPending && TryResolveBiotaVelocityBuffer(out NativeArray<float4> velocities) ? velocities.AsReadOnly() : default;
 
         public NativeArray<AmbientBiotaState>.ReadOnly BiotaStates =>
-            TryResolveBiotaStateBuffer(out NativeArray<AmbientBiotaState> states) ? states.AsReadOnly() : default;
+            !_jobPending && TryResolveBiotaStateBuffer(out NativeArray<AmbientBiotaState> states) ? states.AsReadOnly() : default;
 
         private void OnEnable()
         {
@@ -168,6 +204,7 @@ namespace Hecton8.AI.Ambient
             RefreshQualityPolicy();
             EnsureVaultBuffers();
             EnsureFallbackDrawMeshReady();
+            EnsureBiotaRuntimeMaterialReady();
             EnsureSignalLanesReady();
             TryRegisterHotSwapListener();
             RegisterRuntime();
@@ -179,6 +216,7 @@ namespace Hecton8.AI.Ambient
             UnregisterRuntime();
             TryUnregisterHotSwapListener();
             ReleaseGraphicsResources();
+            ReleaseBiotaRuntimeMaterial();
             ClearVaultHandles();
             _vault = null;
             _ecosystem = null;
@@ -255,7 +293,8 @@ namespace Hecton8.AI.Ambient
             if (_jobPending)
                 return;
 
-            EnsureVaultBuffers();
+            if (!HasVaultBuffersReadyNoGrow())
+                return;
 
             if (!TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states))
                 return;
@@ -351,8 +390,8 @@ namespace Hecton8.AI.Ambient
             ClearMacroCounters(counters);
             int safeSwarmCount = math.min(swarmCount, swarms.Length);
             float radiusMeters = math.max(8f, radiusMetersQ);
-            byte spawnQualityByte = ResolveMacroVisualQualityByte(in centerAup, qualityByte, systemStress01);
-            float macroQualityWeight01 = math.saturate(spawnQualityByte * (1f / 3f));
+            float macroQualityWeight01 = ResolveMacroVisualQualityWeight01(in centerAup, qualityByte, systemStress01);
+            byte spawnQualityByte = EncodeMacroVisualQualitySignalByte(macroQualityWeight01);
             float macroSurvivalPressure01 = math.max(
                 1f - SmoothStep01(macroQualityWeight01),
                 SmoothStep01(math.saturate((systemStress01 - 0.62f) * math.rcp(0.38f))));
@@ -464,6 +503,9 @@ namespace Hecton8.AI.Ambient
 
             if (_abyssalFlowReadModel == null)
                 _abyssalFlowReadModel = GlobalRegistry.AbyssalFlowVolume;
+
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
         }
 
         private void RegisterRuntime()
@@ -560,6 +602,10 @@ namespace Hecton8.AI.Ambient
 
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     _abyssalFlowReadModel = currentService as IAbyssalFlowVolumeReadModel;
+                    return;
+
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     return;
             }
         }
@@ -661,7 +707,24 @@ namespace Hecton8.AI.Ambient
             }
 
             _capacity = desiredCapacity;
+            if (enableIndirectDraw)
+                TryEnsureGraphicsResourcesCold(_capacity);
             return true;
+        }
+
+        private bool HasVaultBuffersReadyNoGrow()
+        {
+            return _vault != null &&
+                   _capacity > 0 &&
+                   IsHandleCreated(in _biotaAupHandle) &&
+                   IsHandleCreated(in _biotaVelocityHandle) &&
+                   IsHandleCreated(in _biotaStateHandle) &&
+                   IsHandleCreated(in _macroHydrationCounterHandle) &&
+                   IsHandleCreated(in _telemetryRingHandle) &&
+                   IsHandleCreated(in _telemetryCursorHandle) &&
+                   TryResolveBiotaBuffers(_capacity, out _, out _, out _) &&
+                   TryResolveMacroCounters(out _) &&
+                   TryResolveTelemetryBuffers(out _, out _);
         }
 
         private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
@@ -823,7 +886,9 @@ namespace Hecton8.AI.Ambient
             float qualityCurve = SmoothStep01(_cachedQualityWeight01);
             float ultraCurve = SmoothStep01(math.saturate((_cachedQualityWeight01 - 0.82f) * math.rcp(0.18f)));
             float requested = math.lerp(survivalCapacity, precisionCapacity, qualityCurve) + precisionCapacity * ultraCurve;
-            return math.clamp((int)math.round(requested), 128, 32768);
+            int requestedCapacity = math.clamp((int)math.round(requested), 128, 32768);
+            int quantizedCapacity = ((requestedCapacity + (CapacityResizeGranularity >> 1)) / CapacityResizeGranularity) * CapacityResizeGranularity;
+            return math.clamp(quantizedCapacity, 128, 32768);
         }
 
         private int ResolveTargetActiveCount(float preyBiomass01, float carryingCapacity01)
@@ -882,30 +947,23 @@ namespace Hecton8.AI.Ambient
 
         private bool TryCapturePlayerPose(out PlayerRuntimePoseSnapshot pose)
         {
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
-                runtimeContext == null ||
-                !runtimeContext.IsBound)
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.TryGetPlayerPoseSnapshot(out pose))
             {
                 pose = default;
                 return false;
             }
 
-            PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-            if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
-                !math.all(math.isfinite(movementState.WorldPosition)) ||
-                !IsFiniteAup(in movementState.PredictedAup))
+            if ((pose.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !math.all(math.isfinite(pose.RuntimePosition)) ||
+                !IsFiniteAup(in pose.Aup))
             {
                 pose = default;
                 return false;
             }
 
-            float3 fallbackForward = SanitizeForward(movementState.Forward, new float3(0f, 0f, 1f));
-            float3 cameraForward = SanitizeForward(movementState.CameraForward, fallbackForward);
-            pose = new PlayerRuntimePoseSnapshot(
-                movementState.WorldPosition,
-                cameraForward,
-                movementState.PredictedAup,
-                movementState.Flags);
+            pose.Forward = SanitizeForward(pose.Forward, new float3(0f, 0f, 1f));
             return true;
         }
 
@@ -970,29 +1028,30 @@ namespace Hecton8.AI.Ambient
             if (!enableIndirectDraw || _capacity <= 0 || _activeBiotaCount <= 0)
                 return;
 
-            Material material = biotaMaterial;
-            if (material == null || !TryResolveDrawMesh(out Mesh mesh) || !EnsureGraphicsResources(_capacity))
-                return;
-
-            if ((_gpuPayloadDirty || payloadDirty) && !UploadGpuPayload(aups, velocities, states, _capacity))
-                return;
-
-            if (!TryResolveGpuReadBuffer(out GraphicsBuffer instanceBuffer) ||
-                !UploadIndirectArgs(mesh, _capacity, out GraphicsBuffer indirectArgsBuffer))
+            Material material = _biotaRuntimeMaterial;
+            if (material == null ||
+                !ReferenceEquals(_biotaRuntimeMaterialSource, biotaMaterial) ||
+                !TryResolveDrawMesh(out Mesh mesh) ||
+                !HasGraphicsResources(_capacity))
             {
                 return;
             }
 
-            material.SetBuffer(BiotaInstancesShaderId, instanceBuffer);
-            material.SetInt(BiotaCapacityShaderId, _capacity);
-            material.SetInt(BiotaActiveCountShaderId, _activeBiotaCount);
-            material.SetFloat(BiotaBiomeHashShaderId, (float)_currentBiomeHash);
-            material.SetFloat(BiotaQualityWeightShaderId, _cachedQualityWeight01);
-            material.SetFloat(BiotaSystemStressShaderId, _cachedSystemStress01);
-            material.SetVector(BiotaFlowVectorShaderId, new Vector4(_flowVector.x, _flowVector.y, _flowVector.z, 0f));
-            material.SetFloat(BiotaOverkillShaderId, _visualOverkillWeight01);
-            material.SetFloat(BiotaVisualTimeShaderId, _telemetryClockSeconds);
-            material.SetVector(BiotaOriginWsShaderId, new Vector4(_lastPlayerRuntimePosition.x, _lastPlayerRuntimePosition.y, _lastPlayerRuntimePosition.z, 1f));
+            int requestedDrawCount = math.min(_activeBiotaCount, _capacity);
+            if ((_gpuPayloadDirty || payloadDirty) && !UploadGpuPayload(aups, velocities, states, _capacity, requestedDrawCount))
+                return;
+
+            int drawCount = math.clamp(_gpuVisibleInstanceCount, 0, requestedDrawCount);
+            if (drawCount <= 0)
+                return;
+
+            if (!TryResolveGpuReadBuffer(out GraphicsBuffer instanceBuffer) ||
+                !UploadIndirectArgs(mesh, drawCount, out GraphicsBuffer indirectArgsBuffer))
+            {
+                return;
+            }
+
+            PublishBiotaDrawMaterial(material, instanceBuffer, drawCount);
 
             float radius = ResolveSimulationRadiusMeters();
             Bounds drawBounds = new Bounds(
@@ -1014,8 +1073,8 @@ namespace Hecton8.AI.Ambient
             if (capacity <= 0)
                 return false;
 
-            if (_gpuBufferCapacity >= capacity && AreGraphicsBuffersValid(capacity))
-                return AreIndirectArgsBuffersValid();
+            if (HasGraphicsResources(capacity))
+                return true;
 
             ReleaseGraphicsResources();
             _gpuInstanceBufferA = CreateStructuredBuffer<AmbientBiotaGpuInstance>(capacity); // COLD ALLOC: GraphicsBuffer[BiotaInstances A] - double-buffered packed ambient biota render payload - owner: AMBIENT_BIOTA_DIRECTOR
@@ -1030,6 +1089,156 @@ namespace Hecton8.AI.Ambient
             _indirectArgsCapacity = -1;
             return AreGraphicsBuffersValid(capacity) &&
                    AreIndirectArgsBuffersValid();
+        }
+
+        private bool TryEnsureGraphicsResourcesCold(int capacity)
+        {
+            try
+            {
+                return EnsureGraphicsResources(capacity);
+            }
+            catch (InvalidOperationException)
+            {
+                ReleaseGraphicsResources();
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                ReleaseGraphicsResources();
+                return false;
+            }
+            catch (UnityException)
+            {
+                ReleaseGraphicsResources();
+                return false;
+            }
+        }
+
+        private bool HasGraphicsResources(int capacity)
+        {
+            return capacity > 0 &&
+                   _gpuBufferCapacity >= capacity &&
+                   AreGraphicsBuffersValid(capacity) &&
+                   AreIndirectArgsBuffersValid();
+        }
+
+        private bool EnsureBiotaRuntimeMaterialReady()
+        {
+            Material source = biotaMaterial;
+            if (source == null)
+            {
+                ReleaseBiotaRuntimeMaterial();
+                return false;
+            }
+
+            if (_biotaRuntimeMaterial != null && ReferenceEquals(_biotaRuntimeMaterialSource, source))
+                return true;
+
+            ReleaseBiotaRuntimeMaterial();
+            _biotaRuntimeMaterial = new Material(source); // COLD ALLOC: Material[1] - owner-local ambient indirect draw state copy - owner: AMBIENT_BIOTA_DIRECTOR
+            _biotaRuntimeMaterialSource = source;
+            ResetBiotaDrawMaterialCache();
+            return true;
+        }
+
+        private void PublishBiotaDrawMaterial(
+            Material material,
+            GraphicsBuffer instanceBuffer,
+            int drawCount)
+        {
+            if (!ReferenceEquals(_publishedBiotaMaterial, material))
+            {
+                ResetBiotaDrawMaterialCache();
+                _publishedBiotaMaterial = material;
+            }
+
+            if (!_biotaDrawMaterialPublished || !ReferenceEquals(_publishedBiotaInstanceBuffer, instanceBuffer))
+            {
+                material.SetBuffer(BiotaInstancesShaderId, instanceBuffer);
+                _publishedBiotaInstanceBuffer = instanceBuffer;
+            }
+
+            if (!_biotaDrawMaterialPublished || _publishedBiotaCapacity != _capacity)
+            {
+                material.SetInt(BiotaCapacityShaderId, _capacity);
+                _publishedBiotaCapacity = _capacity;
+            }
+
+            if (!_biotaDrawMaterialPublished || _publishedBiotaActiveCount != drawCount)
+            {
+                material.SetInt(BiotaActiveCountShaderId, drawCount);
+                _publishedBiotaActiveCount = drawCount;
+            }
+
+            if (!_biotaDrawMaterialPublished || _publishedBiotaBiomeHash != _currentBiomeHash)
+            {
+                material.SetFloat(BiotaBiomeHashShaderId, (float)_currentBiomeHash);
+                _publishedBiotaBiomeHash = _currentBiomeHash;
+            }
+
+            if (!_biotaDrawMaterialPublished || _publishedBiotaQualityWeight != _cachedQualityWeight01)
+            {
+                material.SetFloat(BiotaQualityWeightShaderId, _cachedQualityWeight01);
+                _publishedBiotaQualityWeight = _cachedQualityWeight01;
+            }
+
+            if (!_biotaDrawMaterialPublished || _publishedBiotaSystemStress != _cachedSystemStress01)
+            {
+                material.SetFloat(BiotaSystemStressShaderId, _cachedSystemStress01);
+                _publishedBiotaSystemStress = _cachedSystemStress01;
+            }
+
+            Vector4 flowVector = new Vector4(_flowVector.x, _flowVector.y, _flowVector.z, 0f);
+            if (!_biotaDrawMaterialPublished || !SameVector4(in _publishedBiotaFlowVector, in flowVector))
+            {
+                material.SetVector(BiotaFlowVectorShaderId, flowVector);
+                _publishedBiotaFlowVector = flowVector;
+            }
+
+            if (!_biotaDrawMaterialPublished || _publishedBiotaOverkill != _visualOverkillWeight01)
+            {
+                material.SetFloat(BiotaOverkillShaderId, _visualOverkillWeight01);
+                _publishedBiotaOverkill = _visualOverkillWeight01;
+            }
+
+            if (!_biotaDrawMaterialPublished || _publishedBiotaVisualTime != _telemetryClockSeconds)
+            {
+                material.SetFloat(BiotaVisualTimeShaderId, _telemetryClockSeconds);
+                _publishedBiotaVisualTime = _telemetryClockSeconds;
+            }
+
+            Vector4 originWs = new Vector4(_lastPlayerRuntimePosition.x, _lastPlayerRuntimePosition.y, _lastPlayerRuntimePosition.z, 1f);
+            if (!_biotaDrawMaterialPublished || !SameVector4(in _publishedBiotaOriginWs, in originWs))
+            {
+                material.SetVector(BiotaOriginWsShaderId, originWs);
+                _publishedBiotaOriginWs = originWs;
+            }
+
+            _biotaDrawMaterialPublished = true;
+        }
+
+        private static bool SameVector4(in Vector4 left, in Vector4 right)
+        {
+            return left.x == right.x &&
+                   left.y == right.y &&
+                   left.z == right.z &&
+                   left.w == right.w;
+        }
+
+        private void ResetBiotaDrawMaterialCache()
+        {
+            _publishedBiotaMaterial = null;
+            _publishedBiotaInstanceBuffer = null;
+            _publishedBiotaCapacity = -1;
+            _publishedBiotaActiveCount = -1;
+            _publishedBiotaBiomeHash = 0u;
+            _publishedBiotaQualityWeight = -1f;
+            _publishedBiotaSystemStress = -1f;
+            _publishedBiotaOverkill = -1f;
+            _publishedBiotaVisualTime = -1f;
+            _publishedBiotaFlowVector = default;
+            _publishedBiotaOriginWs = default;
+            _biotaDrawMaterialPublished = false;
         }
 
         private static GraphicsBuffer CreateIndirectArgsBuffer()
@@ -1071,17 +1280,19 @@ namespace Hecton8.AI.Ambient
             NativeArray<AbsoluteUniversePosition> aups,
             NativeArray<float4> velocities,
             NativeArray<AmbientBiotaState> states,
-            int count)
+            int capacity,
+            int targetActiveCount)
         {
             int writeIndex = 1 - _gpuBufferIndex;
             if (!TryResolveGpuBuffer(writeIndex, out GraphicsBuffer instanceBuffer))
                 return false;
 
-            bool uploaded = UploadPackedGpuInstances(instanceBuffer, aups, velocities, states, count);
+            bool uploaded = UploadPackedGpuInstances(instanceBuffer, aups, velocities, states, capacity, targetActiveCount, out int visibleCount);
             if (!uploaded)
                 return false;
 
             _gpuBufferIndex = writeIndex;
+            _gpuVisibleInstanceCount = visibleCount;
             _gpuPayloadDirty = false;
             return true;
         }
@@ -1123,14 +1334,13 @@ namespace Hecton8.AI.Ambient
                 writeBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
             try
             {
-                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
-                {
-                    indexCountPerInstance = indexCount,
-                    instanceCount = (uint)capacity,
-                    startIndex = startIndex,
-                    baseVertexIndex = baseVertexIndex,
-                    startInstance = 0u
-                };
+                GraphicsBuffer.IndirectDrawIndexedArgs indirectArgs = default;
+                indirectArgs.indexCountPerInstance = indexCount;
+                indirectArgs.instanceCount = (uint)capacity;
+                indirectArgs.startIndex = startIndex;
+                indirectArgs.baseVertexIndex = baseVertexIndex;
+                indirectArgs.startInstance = 0u;
+                argsWrite[0] = indirectArgs;
             }
             finally
             {
@@ -1159,26 +1369,40 @@ namespace Hecton8.AI.Ambient
             NativeArray<AbsoluteUniversePosition> aups,
             NativeArray<float4> velocities,
             NativeArray<AmbientBiotaState> states,
-            int count)
+            int capacity,
+            int targetActiveCount,
+            out int visibleCount)
         {
+            visibleCount = 0;
             int sourceLength = math.min(aups.IsCreated ? aups.Length : 0, math.min(velocities.IsCreated ? velocities.Length : 0, states.IsCreated ? states.Length : 0));
-            int safeCount = ResolveSafeWriteCount(destination, sourceLength, count, UnsafeUtility.SizeOf<AmbientBiotaGpuInstance>());
+            int safeCount = ResolveSafeWriteCount(destination, sourceLength, capacity, UnsafeUtility.SizeOf<AmbientBiotaGpuInstance>());
             if (safeCount <= 0)
                 return false;
 
-            var mapped = destination.LockBufferForWrite<AmbientBiotaGpuInstance>(0, safeCount);
+            int targetCount = math.clamp(targetActiveCount, 0, safeCount);
+            if (targetCount <= 0)
+                return true;
+
+            var mapped = destination.LockBufferForWrite<AmbientBiotaGpuInstance>(0, targetCount);
             try
             {
-                for (int i = 0; i < safeCount; i++)
+                int writeIndex = 0;
+                for (int i = 0; i < sourceLength && writeIndex < targetCount; i++)
                 {
                     AbsoluteUniversePosition aup = aups[i];
                     AmbientBiotaState state = states[i];
-                    mapped[i] = BuildGpuInstance(in aup, velocities[i], in state, in _lastPlayerAup);
+                    if (!TryBuildGpuInstance(in aup, velocities[i], in state, in _lastPlayerAup, out AmbientBiotaGpuInstance instance))
+                        continue;
+
+                    mapped[writeIndex] = instance;
+                    writeIndex++;
                 }
+
+                visibleCount = writeIndex;
             }
             finally
             {
-                destination.UnlockBufferAfterWrite<AmbientBiotaGpuInstance>(safeCount);
+                destination.UnlockBufferAfterWrite<AmbientBiotaGpuInstance>(targetCount);
             }
             return true;
         }
@@ -1194,47 +1418,48 @@ namespace Hecton8.AI.Ambient
             return math.min(math.min(requestedCount, sourceLength), destination.count);
         }
 
-        private static AmbientBiotaGpuInstance BuildGpuInstance(
+        private static bool TryBuildGpuInstance(
             in AbsoluteUniversePosition aup,
             float4 velocity,
             in AmbientBiotaState state,
-            in AbsoluteUniversePosition centerAup)
+            in AbsoluteUniversePosition centerAup,
+            out AmbientBiotaGpuInstance instance)
         {
+            instance = default;
+            if ((state.StateFlags & AmbientBiotaState.FlagActive) == 0u)
+                return false;
+
             double3 deltaMeters = DeltaMeters(in aup, in centerAup);
-            bool deltaFinite = IsFinite(deltaMeters) &&
-                               math.abs(deltaMeters.x) <= 10000.0d &&
-                               math.abs(deltaMeters.y) <= 10000.0d &&
-                               math.abs(deltaMeters.z) <= 10000.0d;
+            bool deltaFinite = TryResolveFiniteLocalDelta(deltaMeters, 10000.0d, out float3 localMeters);
             bool velocityFinite = math.all(math.isfinite(velocity));
             bool stateFinite = math.isfinite(state.AgeSeconds) &&
                                math.isfinite(state.LifetimeSeconds) &&
                                math.isfinite(state.ScaleMeters) &&
                                math.isfinite(state.Emission01);
-            bool active = (state.StateFlags & AmbientBiotaState.FlagActive) != 0u &&
-                          deltaFinite &&
+            bool active = deltaFinite &&
                           velocityFinite &&
                           stateFinite &&
                           state.ScaleMeters > 0f;
-            float3 localMeters = active
-                ? new float3((float)deltaMeters.x, (float)deltaMeters.y, (float)deltaMeters.z)
-                : float3.zero;
+            if (!active)
+                return false;
+
             float4 safeVelocity = velocityFinite ? velocity : float4.zero;
             float safeLifetime = math.max(0.001f, math.select(1f, state.LifetimeSeconds, math.isfinite(state.LifetimeSeconds)));
             float safeAge = math.select(0f, state.AgeSeconds, math.isfinite(state.AgeSeconds));
             float age01 = math.saturate(safeAge * math.rcp(safeLifetime));
             float hash01 = (state.StableHash & 0xFFFFu) * (1f / 65535f);
-            uint activeFlags = active ? state.StateFlags : 0u;
 
-            return new AmbientBiotaGpuInstance
+            instance = new AmbientBiotaGpuInstance
             {
-                PositionScale = new float4(localMeters, active ? math.max(0.001f, state.ScaleMeters) : 0f),
-                VelocityEmission = new float4(safeVelocity.x, safeVelocity.y, safeVelocity.z, active ? math.saturate(state.Emission01) : 0f),
-                StateFlags = activeFlags,
-                StableHash = active ? state.StableHash : 0u,
-                SpeciesBucket = active ? (((uint)state.BucketId << 16) | (uint)state.SpeciesId) : 0u,
-                Reserved = active ? state.Reserved : 0u,
-                VisualParams = new float4(age01, safeAge, hash01, active ? 1f : 0f)
+                PositionScale = new float4(localMeters, math.max(0.001f, state.ScaleMeters)),
+                VelocityEmission = new float4(safeVelocity.x, safeVelocity.y, safeVelocity.z, math.saturate(state.Emission01)),
+                VisualParams = new float4(age01, safeAge, hash01, 1f),
+                StateFlags = state.StateFlags,
+                StableHash = state.StableHash,
+                SpeciesBucket = ((uint)state.BucketId << 16) | (uint)state.SpeciesId,
+                Reserved = state.Reserved
             };
+            return true;
         }
 
         private static GraphicsBuffer CreateStructuredBuffer<T>(int capacity) where T : struct
@@ -1277,21 +1502,9 @@ namespace Hecton8.AI.Ambient
             {
                 name = "H8_AmbientBiota_IndirectQuad"
             }; // COLD ALLOC: Mesh[1] - fallback ambient biota indirect quad - owner: AMBIENT_BIOTA_DIRECTOR
-            mesh.vertices = new[]
-            {
-                new Vector3(-0.5f, -0.5f, 0f),
-                new Vector3(-0.5f, 0.5f, 0f),
-                new Vector3(0.5f, 0.5f, 0f),
-                new Vector3(0.5f, -0.5f, 0f)
-            }; // COLD ALLOC: Vector3[4] - fallback ambient quad vertices - owner: AMBIENT_BIOTA_DIRECTOR
-            mesh.uv = new[]
-            {
-                new Vector2(0f, 0f),
-                new Vector2(0f, 1f),
-                new Vector2(1f, 1f),
-                new Vector2(1f, 0f)
-            }; // COLD ALLOC: Vector2[4] - fallback ambient quad UVs - owner: AMBIENT_BIOTA_DIRECTOR
-            mesh.triangles = new[] { 0, 1, 2, 0, 2, 3 }; // COLD ALLOC: int[6] - fallback ambient quad indices - owner: AMBIENT_BIOTA_DIRECTOR
+            mesh.SetVertices(FallbackQuadVertices);
+            mesh.SetUVs(0, FallbackQuadUvs);
+            mesh.SetTriangles(FallbackQuadIndices, 0, false);
             mesh.RecalculateBounds();
             return mesh;
         }
@@ -1304,16 +1517,30 @@ namespace Hecton8.AI.Ambient
             ReleaseBuffer(ref _indirectArgsBufferB);
             _gpuBufferCapacity = 0;
             _gpuBufferIndex = 0;
+            _gpuVisibleInstanceCount = 0;
             _indirectArgsBufferIndex = 0;
             _gpuPayloadDirty = true;
             _indirectArgsMesh = null;
             _indirectArgsCapacity = -1;
+            ResetBiotaDrawMaterialCache();
 
             if (_runtimeFallbackMesh != null)
             {
                 Destroy(_runtimeFallbackMesh);
                 _runtimeFallbackMesh = null;
             }
+        }
+
+        private void ReleaseBiotaRuntimeMaterial()
+        {
+            if (_biotaRuntimeMaterial != null)
+            {
+                Destroy(_biotaRuntimeMaterial);
+                _biotaRuntimeMaterial = null;
+            }
+
+            _biotaRuntimeMaterialSource = null;
+            ResetBiotaDrawMaterialCache();
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
@@ -1471,17 +1698,17 @@ namespace Hecton8.AI.Ambient
 
         private static void DumpBlackBox(NativeArray<AmbientBiotaTelemetryEntry> ring, int cursor)
         {
-            string dumpPath = ResolveAgentDumpPath();
-            if (string.IsNullOrEmpty(dumpPath))
+            string dumpPath = BuildAgentDumpPath();
+            if (dumpPath == null || dumpPath.Length == 0)
                 return;
 
             try
             {
                 string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
+                if (directory != null && directory.Length != 0)
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(DirectorSourceHash);
@@ -1513,10 +1740,10 @@ namespace Hecton8.AI.Ambient
             }
         }
 
-        private static string ResolveAgentDumpPath()
+        private static string BuildAgentDumpPath()
         {
             string currentDirectory = Directory.GetCurrentDirectory();
-            if (string.IsNullOrEmpty(currentDirectory))
+            if (currentDirectory == null || currentDirectory.Length == 0)
                 return null;
 
             string projectRoot = Path.GetFileName(currentDirectory) == "Hecton8"
@@ -1530,11 +1757,11 @@ namespace Hecton8.AI.Ambient
         {
             [FieldOffset(0)] public float4 PositionScale;
             [FieldOffset(16)] public float4 VelocityEmission;
-            [FieldOffset(32)] public uint StateFlags;
-            [FieldOffset(36)] public uint StableHash;
-            [FieldOffset(40)] public uint SpeciesBucket;
-            [FieldOffset(44)] public uint Reserved;
-            [FieldOffset(48)] public float4 VisualParams;
+            [FieldOffset(32)] public float4 VisualParams;
+            [FieldOffset(48)] public uint StateFlags;
+            [FieldOffset(52)] public uint StableHash;
+            [FieldOffset(56)] public uint SpeciesBucket;
+            [FieldOffset(60)] public uint Reserved;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -1864,13 +2091,16 @@ namespace Hecton8.AI.Ambient
             {
                 AmbientBiotaState originalState = States[index];
                 AmbientBiotaState state = originalState;
-                AbsoluteUniversePosition originalAup = Aups[index];
-                float4 originalPackedVelocity = Velocities[index];
                 bool active = (state.StateFlags & AmbientBiotaState.FlagActive) != 0u;
                 bool bucketActive = ((int)state.BucketId & BucketMask) == (ActiveBucket & BucketMask);
                 bool validDeltaTime = math.isfinite(DeltaTime) & DeltaTime > 0f;
-                bool shouldSimulate = active & bucketActive & validDeltaTime;
-                float safeDeltaTime = math.select(0f, DeltaTime, shouldSimulate);
+                if (!active || !bucketActive || !validDeltaTime)
+                    return;
+
+                AbsoluteUniversePosition originalAup = Aups[index];
+                float4 originalPackedVelocity = Velocities[index];
+                bool shouldSimulate = true;
+                float safeDeltaTime = DeltaTime;
                 bool faultSanitized = false;
                 float survivalPressure01 = math.saturate(math.select(1f, SurvivalPressure01, math.isfinite(SurvivalPressure01)));
                 float visualOverkill01 = math.saturate(math.select(0f, VisualOverkill01, math.isfinite(VisualOverkill01)));
@@ -1891,7 +2121,7 @@ namespace Hecton8.AI.Ambient
                 float3 targetVelocity = math.select(brownian, rawTargetVelocity, targetVelocityFinite);
 
                 double3 deltaFromPlayer = DeltaMeters(in originalAup, in CenterAup);
-                float3 relative = new float3((float)deltaFromPlayer.x, (float)deltaFromPlayer.y, (float)deltaFromPlayer.z);
+                float3 relative = ResolveFiniteLocalDeltaOrZero(deltaFromPlayer, 10000.0d, ref faultSanitized);
                 float3 outward = SafeNormalize(relative, float3.zero, ref faultSanitized);
                 float3 playerForward = SafeNormalize(PlayerForward, new float3(0f, 0f, 1f), ref faultSanitized);
                 float frontDot = math.dot(outward, playerForward);
@@ -2003,6 +2233,31 @@ namespace Hecton8.AI.Ambient
                 math.select(falseValue.z, trueValue.z, condition));
         }
 
+        private static bool TryResolveFiniteLocalDelta(double3 deltaMeters, double maxAbsMeters, out float3 localMeters)
+        {
+            localMeters = default;
+            bool finite = IsFinite(deltaMeters) &&
+                          math.isfinite(maxAbsMeters) &&
+                          maxAbsMeters > 0.0d &&
+                          math.abs(deltaMeters.x) <= maxAbsMeters &&
+                          math.abs(deltaMeters.y) <= maxAbsMeters &&
+                          math.abs(deltaMeters.z) <= maxAbsMeters;
+            if (!finite)
+                return false;
+
+            localMeters = new float3((float)deltaMeters.x, (float)deltaMeters.y, (float)deltaMeters.z);
+            return math.all(math.isfinite(localMeters));
+        }
+
+        private static float3 ResolveFiniteLocalDeltaOrZero(double3 deltaMeters, double maxAbsMeters, ref bool faultSanitized)
+        {
+            if (TryResolveFiniteLocalDelta(deltaMeters, maxAbsMeters, out float3 localMeters))
+                return localMeters;
+
+            faultSanitized = true;
+            return float3.zero;
+        }
+
         private static AbsoluteUniversePosition SelectAup(
             in AbsoluteUniversePosition falseValue,
             in AbsoluteUniversePosition trueValue,
@@ -2076,15 +2331,19 @@ namespace Hecton8.AI.Ambient
             };
         }
 
-        private static byte ResolveMacroVisualQualityByte(in AbsoluteUniversePosition centerAup, byte qualityByte, float systemStress01)
+        private static float ResolveMacroVisualQualityWeight01(in AbsoluteUniversePosition centerAup, byte qualityByte, float systemStress01)
         {
             if (!IsFiniteAup(in centerAup) || !math.isfinite(systemStress01))
-                return 0;
+                return 0f;
 
-            byte clampedQuality = qualityByte <= 3 ? qualityByte : (byte)3;
-            float quality01 = clampedQuality * (1f / 3f);
+            float quality01 = qualityByte * (1f / 255f);
             float stressPressure01 = SmoothStep01(math.saturate((systemStress01 - 0.62f) * math.rcp(0.38f)));
-            return (byte)math.clamp((int)math.round(math.saturate(quality01 * (1f - stressPressure01)) * 3f), 0, 3);
+            return math.saturate(quality01 * (1f - stressPressure01));
+        }
+
+        private static byte EncodeMacroVisualQualitySignalByte(float qualityWeight01)
+        {
+            return (byte)math.clamp((int)math.round(math.saturate(qualityWeight01) * 255f), 0, 255);
         }
 
         private static double3 DeltaMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)

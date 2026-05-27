@@ -42,4 +42,13 @@ namespace Hecton8.Tools
         /// <returns>True if the battery was inserted successfully.</returns>
         bool InsertBattery(ItemData battery, float charge);
     }
+
+    /// <summary>
+    /// Optional narrow bridge for battery tools that also publish central equipment state.
+    /// </summary>
+    public interface IRuntimeEquipmentIdProvider
+    {
+        /// <summary>Runtime equipment/tool hash owned by the tool runtime. Zero means unavailable.</summary>
+        uint RuntimeEquipmentId { get; }
+    }
 }

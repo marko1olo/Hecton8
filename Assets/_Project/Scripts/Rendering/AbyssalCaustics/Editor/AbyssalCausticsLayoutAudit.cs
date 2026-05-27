@@ -13,9 +13,9 @@ namespace Hecton8.Rendering.Editor
         {
             bool valid = ValidateAll();
             if (valid)
-                Debug.Log("SHINOBU_232 caustics DTO layout audit passed.");
+                Debug.Log("13KRA caustics DTO layout audit passed.");
             else
-                Debug.LogError("SHINOBU_232 caustics DTO layout audit failed.");
+                Debug.LogError("13KRA caustics DTO layout audit failed.");
         }
 
         internal static bool ValidateAll()

@@ -29,6 +29,8 @@ namespace Hecton8.UI
         private const int MaxQualityResolution = 512;
         private const int MinQualityResolution = 256;
         private const int MaxIdleDecryptionStride = 6;
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const float AttentionCullDistanceMeters = 20f;
         private const float AttentionCullDistanceSq = AttentionCullDistanceMeters * AttentionCullDistanceMeters;
         private const uint FaultLayoutMismatch = 1u << 0;
@@ -190,8 +192,8 @@ namespace Hecton8.UI
         private int _blitKernel = -1;
         private int _groupsX;
         private int _groupsY;
-        private int _threadsX = 8;
-        private int _threadsY = 8;
+        private int _threadsX;
+        private int _threadsY;
         private int _telemetryCursor;
         private int _decryptionTelemetryCursor;
         private int _csvProbeFrame;
@@ -921,7 +923,32 @@ namespace Hecton8.UI
                 _decryptionDumpWriter = new DecryptionBlackBoxDumpWriter(_decryptionDumpFullPath);
                 _decryptionDumpWriter.Start();
             }
-            catch (Exception exception)
+            catch (IOException exception)
+            {
+                _decryptionDumpWriter = null;
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                _decryptionDumpWriter = null;
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (NotSupportedException exception)
+            {
+                _decryptionDumpWriter = null;
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (ArgumentException exception)
+            {
+                _decryptionDumpWriter = null;
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (ObjectDisposedException exception)
+            {
+                _decryptionDumpWriter = null;
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (InvalidOperationException exception)
             {
                 _decryptionDumpWriter = null;
                 Hecton8.Core.H8Debug.LogException(exception);
@@ -1264,19 +1291,23 @@ namespace Hecton8.UI
         private bool TryOpenVaultBuffer<T>(ref VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
-            if (_vault == null || !IsValidVaultHandle(in handle))
+            if (_vault == null || _vault.IsCompactionFenceActive || !IsValidVaultHandle(in handle))
                 return false;
 
-            return _vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated;
+            return _vault.TryResolveHandle(in handle, out buffer) &&
+                   !_vault.IsCompactionFenceActive &&
+                   buffer.IsCreated;
         }
 
         private bool TryReadVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
-            if (_vault == null || !IsValidVaultHandle(in handle))
+            if (_vault == null || _vault.IsCompactionFenceActive || !IsValidVaultHandle(in handle))
                 return false;
 
-            return _vault.TryReadHandle(in handle, out buffer) && buffer.IsCreated;
+            return _vault.TryReadHandle(in handle, out buffer) &&
+                   !_vault.IsCompactionFenceActive &&
+                   buffer.IsCreated;
         }
 
         private static bool IsValidVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
@@ -1508,8 +1539,7 @@ namespace Hecton8.UI
             if (_bindingsDirty)
                 BindTerminalRenderers();
 
-            EnsureComputeKernelForOwner();
-            RefreshDispatchGroupCounts();
+            bool computeReady = EnsureComputeKernelForOwner() && RefreshDispatchGroupCounts();
             _graphicsResourcesReady = _terminalTextureArray != null &&
                                       _stateBuffer0 != null &&
                                       _stateBuffer1 != null &&
@@ -1522,7 +1552,8 @@ namespace Hecton8.UI
                                       TerminalProjectionGraphicsReady() &&
                                       _decryptionPuzzleBuffer0 != null &&
                                       _decryptionPuzzleBuffer1 != null &&
-                                      _decryptionPuzzleBuffer != null;
+                                      _decryptionPuzzleBuffer != null &&
+                                      computeReady;
         }
 
         private void EnsureTextureArray()
@@ -1582,22 +1613,80 @@ namespace Hecton8.UI
             return _decryptionPuzzleWriteBufferIndex == 0 ? _decryptionPuzzleBuffer0 : _decryptionPuzzleBuffer1;
         }
 
-        private void EnsureComputeKernelForOwner()
+        private bool EnsureComputeKernelForOwner()
         {
-            if (_blitKernel >= 0 || terminalBlitCompute == null)
-                return;
+            if (terminalBlitCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+            {
+                ResetTerminalBlitComputeState();
+                return false;
+            }
+
+            if (_blitKernel >= 0 && _threadsX > 0 && _threadsY > 0)
+                return true;
+
+            if (!terminalBlitCompute.HasKernel("KTerminalBlit")) { ResetTerminalBlitComputeState(); return false; }
 
             _blitKernel = terminalBlitCompute.FindKernel("KTerminalBlit");
-            terminalBlitCompute.GetKernelThreadGroupSizes(_blitKernel, out uint x, out uint y, out _);
-            _threadsX = (int)math.max(1u, x);
-            _threadsY = (int)math.max(1u, y);
+            if (_blitKernel < 0 || !terminalBlitCompute.IsSupported(_blitKernel))
+            {
+                ResetTerminalBlitComputeState();
+                return false;
+            }
+
+            terminalBlitCompute.GetKernelThreadGroupSizes(_blitKernel, out uint x, out uint y, out uint z);
+            if (x == 0u || y == 0u || z != 1u)
+            {
+                ResetTerminalBlitComputeState();
+                return false;
+            }
+
+            if (x > PortableMaxComputeThreadsPerGroup ||
+                y > PortableMaxComputeThreadsPerGroup)
+            {
+                ResetTerminalBlitComputeState();
+                return false;
+            }
+
+            uint xyThreads = x * y;
+            if (xyThreads > PortableMaxComputeThreadsPerGroup)
+            {
+                ResetTerminalBlitComputeState();
+                return false;
+            }
+
+            _threadsX = (int)x;
+            _threadsY = (int)y;
+            return true;
         }
 
-        private void RefreshDispatchGroupCounts()
+        private bool RefreshDispatchGroupCounts()
         {
             int resolution = math.max(1, _textureResolution);
-            _groupsX = (resolution + _threadsX - 1) / _threadsX;
-            _groupsY = (resolution + _threadsY - 1) / _threadsY;
+            _groupsX = ResolveDispatchGroups(resolution, _threadsX);
+            _groupsY = ResolveDispatchGroups(resolution, _threadsY);
+            return _groupsX > 0 && _groupsY > 0;
+        }
+
+        private static int ResolveDispatchGroups(int value, int divisor)
+        {
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long numerator = (long)value + divisor - 1L;
+            long groups = numerator / divisor;
+            if (groups <= 0L || groups > MaxDispatchGroupsPerDimension)
+                return 0;
+
+            return (int)groups;
+        }
+
+        private void ResetTerminalBlitComputeState()
+        {
+            _blitKernel = -1;
+            _threadsX = 0;
+            _threadsY = 0;
+            _groupsX = 0;
+            _groupsY = 0;
         }
 
         private int BuildDirtyList(int ownerFrame)
@@ -2005,8 +2094,17 @@ namespace Hecton8.UI
 
         private int DispatchDirtyScreens(int dirtyCount, int ownerFrame)
         {
-            if (terminalBlitCompute == null || _blitKernel < 0 || _terminalTextureArray == null || dirtyCount <= 0)
+            if (terminalBlitCompute == null ||
+                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                _blitKernel < 0 ||
+                _terminalTextureArray == null ||
+                dirtyCount <= 0 ||
+                dirtyCount > MaxDispatchGroupsPerDimension ||
+                _groupsX <= 0 ||
+                _groupsY <= 0)
+            {
                 return 0;
+            }
 
             long start = Stopwatch.GetTimestamp();
             GraphicsBuffer stateBuffer = SelectStateBuffer(_writeBufferIndex);
@@ -3468,24 +3566,79 @@ namespace Hecton8.UI
         private void TryDumpBlackBox(uint faultFlags)
         {
             if (_blackBoxDumped ||
-                !TryOpenVaultBuffer(ref _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry> telemetryRing) ||
-                string.IsNullOrEmpty(_dumpFullPath))
+                string.IsNullOrEmpty(_dumpFullPath) ||
+                !TryReadTerminalTelemetryDumpShape(out int telemetryLength, out int telemetryRingLength, out int telemetryCursor))
                 return;
 
             _blackBoxDumped = true;
             try
             {
-                WriteBlackBoxDump(_dumpFullPath, faultFlags, telemetryRing);
+                WriteBlackBoxDump(_dumpFullPath, faultFlags, telemetryLength, telemetryRingLength, telemetryCursor);
                 if (!string.IsNullOrEmpty(_dumpMirrorFullPath))
-                    WriteBlackBoxDump(_dumpMirrorFullPath, faultFlags, telemetryRing);
+                    WriteBlackBoxDump(_dumpMirrorFullPath, faultFlags, telemetryLength, telemetryRingLength, telemetryCursor);
             }
-            catch (Exception exception)
+            catch (IOException exception)
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (NotSupportedException exception)
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (ArgumentException exception)
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (ObjectDisposedException exception)
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (InvalidOperationException exception)
             {
                 Hecton8.Core.H8Debug.LogException(exception);
             }
         }
 
-        private unsafe void WriteBlackBoxDump(string path, uint faultFlags, NativeArray<TerminalTelemetryEntry> telemetryRing)
+        private bool TryReadTerminalTelemetryDumpShape(out int telemetryLength, out int telemetryRingLength, out int telemetryCursor)
+        {
+            telemetryLength = 0;
+            telemetryRingLength = 0;
+            telemetryCursor = 0;
+            if (!TryReadVaultBuffer(in _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry> telemetryRing) ||
+                telemetryRing.Length == 0)
+            {
+                return false;
+            }
+
+            telemetryRingLength = telemetryRing.Length;
+            telemetryLength = math.min(TerminalOsConstants.BlackBoxFrameCount, telemetryRing.Length);
+            telemetryCursor = _telemetryCursor;
+            if (telemetryCursor < 0)
+                telemetryCursor = 0;
+            if (telemetryCursor >= telemetryRing.Length)
+                telemetryCursor %= telemetryRing.Length;
+
+            return telemetryLength > 0;
+        }
+
+        private bool TryReadTerminalTelemetryDumpEntry(int index, out TerminalTelemetryEntry entry)
+        {
+            entry = default;
+            if (!TryReadVaultBuffer(in _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry> telemetryRing) ||
+                (uint)index >= (uint)telemetryRing.Length)
+            {
+                return false;
+            }
+
+            entry = telemetryRing[index];
+            return _vault != null && !_vault.IsCompactionFenceActive;
+        }
+
+        private unsafe void WriteBlackBoxDump(string path, uint faultFlags, int telemetryLength, int telemetryRingLength, int telemetryCursor)
         {
             string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory))
@@ -3498,14 +3651,18 @@ namespace Hecton8.UI
                 WriteUInt32LittleEndian(header, 0, 0x544F5348u); // HSOT
                 WriteUInt32LittleEndian(header, 4, 2u);
                 WriteUInt32LittleEndian(header, 8, faultFlags);
-                WriteUInt32LittleEndian(header, 12, unchecked((uint)telemetryRing.Length));
-                WriteUInt32LittleEndian(header, 16, unchecked((uint)_telemetryCursor));
+                WriteUInt32LittleEndian(header, 12, unchecked((uint)telemetryLength));
+                WriteUInt32LittleEndian(header, 16, unchecked((uint)telemetryCursor));
                 WriteUInt32LittleEndian(header, 20, unchecked((uint)rowBytes));
                 stream.Write(header);
 
-                for (int i = 0; i < telemetryRing.Length; i++)
+                for (int i = 0; i < telemetryLength; i++)
                 {
-                    TerminalTelemetryEntry entry = telemetryRing[i];
+                    int index = telemetryCursor + i;
+                    if (index >= telemetryRingLength)
+                        index -= telemetryRingLength;
+
+                    TryReadTerminalTelemetryDumpEntry(index, out TerminalTelemetryEntry entry);
                     stream.Write(MemoryMarshal.CreateReadOnlySpan(
                         ref UnsafeUtility.AsRef<byte>(UnsafeUtility.AddressOf(ref entry)),
                         rowBytes));
@@ -3609,7 +3766,7 @@ namespace Hecton8.UI
             _decryptionPuzzleUploadCount = 0;
             ReleaseRenderTexture();
             _graphicsResourcesReady = false;
-            _blitKernel = -1;
+            ResetTerminalBlitComputeState();
         }
 
         private void ReleaseRenderTexture()

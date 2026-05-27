@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
-using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Inventory
@@ -76,9 +75,26 @@ namespace Hecton8.Inventory
         [FieldOffset(40), SerializeField] private byte audioMaterialId;
         [FieldOffset(41), SerializeField] private byte physicsMaterialTag;
         [FieldOffset(42), SerializeField] private ushort _reserved0;
-        [FieldOffset(44)] private uint _pad0;
-        [FieldOffset(48)] private ulong _pad1;
-        [FieldOffset(56)] private ulong _pad2;
+        [FieldOffset(44)] private byte _pad00;
+        [FieldOffset(45)] private byte _pad01;
+        [FieldOffset(46)] private byte _pad02;
+        [FieldOffset(47)] private byte _pad03;
+        [FieldOffset(48)] private byte _pad04;
+        [FieldOffset(49)] private byte _pad05;
+        [FieldOffset(50)] private byte _pad06;
+        [FieldOffset(51)] private byte _pad07;
+        [FieldOffset(52)] private byte _pad08;
+        [FieldOffset(53)] private byte _pad09;
+        [FieldOffset(54)] private byte _pad10;
+        [FieldOffset(55)] private byte _pad11;
+        [FieldOffset(56)] private byte _pad12;
+        [FieldOffset(57)] private byte _pad13;
+        [FieldOffset(58)] private byte _pad14;
+        [FieldOffset(59)] private byte _pad15;
+        [FieldOffset(60)] private byte _pad16;
+        [FieldOffset(61)] private byte _pad17;
+        [FieldOffset(62)] private byte _pad18;
+        [FieldOffset(63)] private byte _pad19;
 
         public ItemTemplate(
             uint hashID,
@@ -157,11 +173,10 @@ namespace Hecton8.Inventory
     /// </summary>
     public static class ItemTemplateRegistry
     {
-        private static NativeHashMap<uint, int> s_hashToIndex;
         private static ItemTemplate[] s_templates = Array.Empty<ItemTemplate>();
         private static uint s_revision;
 
-        public static bool IsInitialized => s_hashToIndex.IsCreated && s_templates.Length > 0;
+        public static bool IsInitialized => s_templates.Length > 0;
         public static int Count => s_templates.Length;
         public static ReadOnlySpan<ItemTemplate> Templates => s_templates;
         public static uint Revision => s_revision;
@@ -185,29 +200,24 @@ namespace Hecton8.Inventory
             // COLD ALLOC: ItemTemplate[templates.Length] — runtime template snapshot copied from authored registry asset — owner: ItemTemplateRegistry
             s_templates = new ItemTemplate[templates.Length];
             Array.Copy(templates, s_templates, templates.Length);
-            s_hashToIndex = new NativeHashMap<uint, int>(templates.Length, Allocator.Persistent);
-            NativeMemorySentinel.RegisterNativeHashMap(
-                s_hashToIndex,
-                nameof(ItemTemplateRegistry),
-                nameof(s_hashToIndex),
-                NativeAllocationLifetime.Session);
-
-            for (int index = 0; index < s_templates.Length; index++)
-            {
-                ItemTemplate template = s_templates[index];
-                if (!template.IsValid)
-                    continue;
-
-                s_hashToIndex[template.HashID] = index;
-            }
         }
 
         public static bool TryGetIndex(uint hashID, out int index)
         {
             index = -1;
-            return hashID != 0u &&
-                   s_hashToIndex.IsCreated &&
-                   s_hashToIndex.TryGetValue(hashID, out index);
+            if (hashID == 0u)
+                return false;
+
+            for (int i = 0; i < s_templates.Length; i++)
+            {
+                if (s_templates[i].HashID != hashID)
+                    continue;
+
+                index = i;
+                return true;
+            }
+
+            return false;
         }
 
         public static bool TryGetIndex(int hashID, out int index)
@@ -256,13 +266,6 @@ namespace Hecton8.Inventory
 
         public static void Clear()
         {
-            if (s_hashToIndex.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeHashMap(nameof(ItemTemplateRegistry), nameof(s_hashToIndex));
-                s_hashToIndex.Dispose();
-                s_hashToIndex = default;
-            }
-
             s_templates = Array.Empty<ItemTemplate>();
             unchecked
             {

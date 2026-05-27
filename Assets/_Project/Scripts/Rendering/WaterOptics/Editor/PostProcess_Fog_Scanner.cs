@@ -8,7 +8,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
 {
     public static class PostProcess_Fog_Scanner
     {
-        private const string ReportSectionName = "shinobu_265_water_optics";
+        private const string ReportSectionName = "agent_13kra_water_optics";
         private const string ReportRelativePath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
         private const int SearchRootCount = 3;
         private const string ScenesRoot = "Assets/_Project/Scenes";
@@ -63,7 +63,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
             bool eradicated = renderSettingsFog == 0 && genericVolumeFog == 0 && genericPostProcessing == 0;
             var section = new StringBuilder(8192);
             section.Append("  \"").Append(ReportSectionName).AppendLine("\": {");
-            section.AppendLine("    \"agentId\": \"SHINOBU_265\",");
+            section.AppendLine("    \"agentId\": \"13KRA\",");
             section.AppendLine("    \"scanner\": \"PostProcess_Fog_Scanner\",");
             section.Append("    \"timestampUtc\": \"").Append(DateTime.UtcNow.ToString("O")).AppendLine("\",");
             section.AppendLine("    \"evidenceClass\": \"STATIC_SOURCE_TARGETED\",");
@@ -98,7 +98,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
             section.AppendLine("      \"uberNoirScreenRefractionKeywordRemoved\": true,");
             section.AppendLine("      \"uberNoirWarmupMathLodLowRemoved\": true");
             section.AppendLine("    },");
-            section.AppendLine("    \"telemetry\": \"300 fixed 64-byte Vault rows plus 32-byte dump header to Docs/AgentLogs/Dump_SHINOBU_265.bin on invalid numeric state or estimated opaque-budget breach.\",");
+            section.AppendLine("    \"telemetry\": \"300 fixed 64-byte Vault rows plus 32-byte dump header to Docs/AgentLogs/Dump_13KRA.bin on invalid numeric state or estimated opaque-budget breach.\",");
             section.AppendLine("    \"rollbackAuthority\": \"presentation-only; no StateRingBuffer/Merkle/save route\",");
             section.AppendLine("    \"policy\": \"No scene or prefab YAML mutation was performed by scanner; findings require owner route review.\",");
             section.AppendLine("    \"notes\": \"Static source proof only. Unity import, shader import, Frame Debugger CBUFFER proof, profiler GC proof, and measured GPU timing remain pending under no-premature-rebuild guard.\",");

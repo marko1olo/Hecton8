@@ -173,6 +173,7 @@ namespace Hecton8.Items
 
         private int _persistentHashId;
         private int _legacyNameHashId;
+        private int _descriptionTableHashId;
         private GameLanguage _cachedLanguage = (GameLanguage)(-1);
         private string _cachedItemName = string.Empty;
         private string _cachedDescription = string.Empty;
@@ -253,6 +254,7 @@ namespace Hecton8.Items
         /// Localization table key bound to the item description reference.
         /// </summary>
         public string DescriptionTableKey => localizedDescription.TableKey;
+        public int DescriptionTableHashId => _descriptionTableHashId;
 
         /// <summary>
         /// Stable content identifier used by persistence-facing systems.
@@ -376,6 +378,10 @@ namespace Hecton8.Items
         {
             _persistentHashId = LocHash.Compute(PersistentId);
             _legacyNameHashId = LocHash.Compute(name);
+            string descriptionTableKey = localizedDescription.TableKey;
+            _descriptionTableHashId = string.IsNullOrWhiteSpace(descriptionTableKey)
+                ? 0
+                : LocHash.Compute(descriptionTableKey);
         }
 
         /// <summary>
@@ -438,7 +444,7 @@ namespace Hecton8.Items
         /// </summary>
         public ReadOnlySpan<char> GetDescriptionSpan(ILocalizationTextReadModel manager)
         {
-            return localizedDescription.ResolveSpanOrFallback(manager, legacyDescription);
+            return localizedDescription.ResolveSpanOrFallback(manager, legacyDescription, _descriptionTableHashId);
         }
 
         /// <summary>

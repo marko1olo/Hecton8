@@ -78,7 +78,7 @@ boot -> world load -> safe exit -> swim -> oxygen/depth pressure
 
 |---|---|
 
-| Boot | Production order reaches `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`. |
+| Boot | New Game reaches `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`; load-game resumes may still enter `02_HECTON_WORLD` directly from `01_MAIN_MENU`. |
 
 | Safe exit | Player exits the start/lifepod state without hidden dev grants deciding the route. |
 

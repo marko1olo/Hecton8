@@ -1,0 +1,1470 @@
+{
+  "schema": "hecton8.agent1318.light_source_audit.v1",
+  "agentId": "1318",
+  "files": [
+    "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+    "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+    "Assets/_Project/Scripts/World/DropBuffer.cs",
+    "Assets/_Project/Scripts/Editor/FloraDearLieDestructionLayoutGuard.cs",
+    "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+    "Assets/_Project/Scripts/HectonFluidEngine.cs",
+    "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+    "Assets/_Project/Scripts/Scavenging/HarvestableTemplate.cs"
+  ],
+  "scannedFiles": 8,
+  "nativeLexicalHits": 547,
+  "nativeByCollection": {
+    "NativeArray": 533,
+    "NativeList": 13,
+    "NativeParallelMultiHashMap": 1
+  },
+  "fieldishNativeDeclarations": [
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1114,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1115,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1116,
+      "text": "NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1118,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1119,
+      "text": "NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1120,
+      "text": "NativeArray<Unity.Mathematics.half> health = underwater ? _underwaterHealth : _surfaceHealth;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2668,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2669,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2670,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2671,
+      "text": "NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2672,
+      "text": "NativeArray<Unity.Mathematics.half> health = underwater ? _underwaterHealth : _surfaceHealth;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2673,
+      "text": "NativeArray<FloraDearLieClaim64> claims = underwater ? _underwaterDearLieClaims : _surfaceDearLieClaims;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2674,
+      "text": "NativeArray<int> bucketHeads = underwater ? _underwaterDearLieBucketHeads : _surfaceDearLieBucketHeads;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2675,
+      "text": "NativeArray<int> bucketNext = underwater ? _underwaterDearLieBucketNext : _surfaceDearLieBucketNext;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2773,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2906,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2918,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2928,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3118,
+      "text": "[NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDearLieClaim64> Claims;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3133,
+      "text": "[NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> BucketHeads;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3148,
+      "text": "[ReadOnly, NoAlias] public NativeArray<Matrix4x4> Matrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3149,
+      "text": "[ReadOnly, NoAlias] public NativeArray<uint> InstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3150,
+      "text": "[ReadOnly, NoAlias] public NativeArray<Unity.Mathematics.half> Health;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3151,
+      "text": "[NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> BucketHeads;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3152,
+      "text": "[NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> BucketNext;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3198,
+      "text": "[NoAlias, NativeDisableParallelForRestriction] public NativeArray<Matrix4x4> Matrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3199,
+      "text": "[NoAlias, NativeDisableParallelForRestriction] public NativeArray<HectonVegetationInstanceData> Metadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3200,
+      "text": "[ReadOnly, NoAlias] public NativeArray<uint> InstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3201,
+      "text": "[ReadOnly, NoAlias] public NativeArray<byte> MaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3202,
+      "text": "[NoAlias, NativeDisableParallelForRestriction] public NativeArray<Unity.Mathematics.half> Health;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3203,
+      "text": "[NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDearLieClaim64> Claims;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3204,
+      "text": "[ReadOnly, NoAlias] public NativeArray<FloraDestructionEventDTO> Events;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3208,
+      "text": "[NoAlias, NativeDisableParallelForRestriction, NativeDisableContainerSafetyRestriction] public NativeArray<FloraDearLieDestructionResult> Results;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3209,
+      "text": "[NoAlias, NativeDisableParallelForRestriction, NativeDisableContainerSafetyRestriction] public NativeArray<FloraDearLieCounter64> Counters;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3210,
+      "text": "[ReadOnly, NoAlias] public NativeArray<int> BucketHeads;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3211,
+      "text": "[ReadOnly, NoAlias] public NativeArray<int> BucketNext;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3383,
+      "text": "[NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDestructionEventDTO> Events;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3589,
+      "text": "NativeArray<Matrix4x4> matrices = _underwaterMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3590,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = _underwaterMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3591,
+      "text": "NativeArray<int> types = _underwaterTypes;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3593,
+      "text": "NativeArray<uint> instanceUids = _underwaterInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3594,
+      "text": "NativeArray<byte> materialClasses = _underwaterMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3735,
+      "text": "NativeList<HarvestableTemplate.LootRuntimeEntry> lootScratch ="
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3825,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3826,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3827,
+      "text": "NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3829,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3830,
+      "text": "NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3879,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3880,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3881,
+      "text": "NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3883,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3884,
+      "text": "NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4027,
+      "text": "NativeList<HarvestableTemplate.LootRuntimeEntry> scratch ="
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4054,
+      "text": "NativeArray<Matrix4x4> matrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4055,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4056,
+      "text": "NativeArray<int> types;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4089,
+      "text": "NativeArray<uint> instanceUids = underwater"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4092,
+      "text": "NativeArray<byte> materialClasses = underwater"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4095,
+      "text": "NativeArray<Unity.Mathematics.half> health = underwater"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4321,
+      "text": "NativeArray<DestroyedOrganicEvent> yieldJobInput = _yieldJobInput;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4322,
+      "text": "NativeArray<ItemDropData> dropOutput = _dropOutput;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4323,
+      "text": "NativeArray<int> dropBudget = _dropBudget;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4435,
+      "text": "NativeArray<int> dropBudget = _dropBudget;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4436,
+      "text": "NativeArray<ItemDropData> dropOutput = _dropOutput;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4445,
+      "text": "NativeArray<int> dropBudget = _dropBudget;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4446,
+      "text": "NativeArray<ItemDropData> dropOutput = _dropOutput;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4487,
+      "text": "NativeArray<ItemDropData> dropOutput = _dropOutput;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4488,
+      "text": "NativeArray<int> dropBudget = _dropBudget;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4676,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4677,
+      "text": "NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4770,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4771,
+      "text": "NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4888,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4889,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4890,
+      "text": "NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4891,
+      "text": "NativeArray<Unity.Mathematics.half> health = underwater ? _underwaterHealth : _surfaceHealth;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4945,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4946,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4947,
+      "text": "NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4948,
+      "text": "NativeArray<Unity.Mathematics.half> health = underwater ? _underwaterHealth : _surfaceHealth;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5050,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5051,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5052,
+      "text": "NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5053,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5054,
+      "text": "NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5055,
+      "text": "NativeArray<Unity.Mathematics.half> health = underwater ? _underwaterHealth : _surfaceHealth;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5435,
+      "text": "NativeArray<HectonVegetationInstanceData> buffer = metadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5477,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5478,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5479,
+      "text": "NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5819,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6134,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6143,
+      "text": "NativeArray<Unity.Mathematics.half> laneHealth = underwater ? _underwaterHealth : _surfaceHealth;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6149,
+      "text": "NativeArray<Unity.Mathematics.half> laneHealth = underwater ? _underwaterHealth : _surfaceHealth;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6200,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6230,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6231,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6232,
+      "text": "NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6293,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6294,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6326,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6327,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6328,
+      "text": "NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6371,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6372,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6424,
+      "text": "NativeArray<Matrix4x4> matrixBuffer = matrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6425,
+      "text": "NativeArray<HectonVegetationInstanceData> metadataBuffer = metadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6449,
+      "text": "NativeArray<Matrix4x4> buffer = matrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6487,
+      "text": "NativeArray<HectonVegetationInstanceData> buffer = metadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6523,
+      "text": "NativeArray<HectonVegetationInstanceData> buffer = metadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6593,
+      "text": "NativeArray<HectonVegetationInstanceData> buffer = metadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6599,
+      "text": "NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6600,
+      "text": "NativeArray<Unity.Mathematics.half> laneHealth = underwater ? _underwaterHealth : _surfaceHealth;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6601,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6639,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6640,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6641,
+      "text": "NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6828,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6829,
+      "text": "NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6898,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6899,
+      "text": "NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 7154,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 7155,
+      "text": "NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 7179,
+      "text": "NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 7180,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 7181,
+      "text": "NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 7278,
+      "text": "NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+      "line": 114,
+      "text": "[NoAlias] [ReadOnly] public NativeArray<FractionalDrillingYieldSample> Samples;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+      "line": 115,
+      "text": "[NoAlias] public NativeArray<FractionalDrillingYieldResult> Results;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+      "line": 170,
+      "text": "[NoAlias] [ReadOnly] public NativeArray<DestroyedOrganicEvent> Events;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+      "line": 171,
+      "text": "[NoAlias] [ReadOnly] public NativeArray<HarvestableTemplate.RuntimeDescriptor> TemplateDescriptors;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+      "line": 172,
+      "text": "[NoAlias] [ReadOnly] public NativeArray<HarvestableTemplate.LootRuntimeEntry> LootEntries;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+      "line": 173,
+      "text": "[NoAlias] [ReadOnly] public NativeArray<EntropyYieldMaterialLutEntry> MaterialLut;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+      "line": 184,
+      "text": "[NoAlias, NativeDisableParallelForRestriction] public NativeArray<ItemDropData> DropOutput;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+      "line": 185,
+      "text": "[NativeDisableParallelForRestriction] public NativeArray<int> DropBudget;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3796,
+      "text": "NativeArray<long> desiredSectorHashes = default;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3797,
+      "text": "NativeList<PersistentWorldDeltaRecord> loadedSectorRecords = default;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4666,
+      "text": "NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4710,
+      "text": "NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(entityStateBucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5970,
+      "text": "NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(entityStates.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 7183,
+      "text": "NativeArray<WorldTelemetryEntry> ring = _worldTelemetryRing.AsArray();"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2648,
+      "text": "NativeArray<GerstnerWaveComponent> sharedWaves;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2649,
+      "text": "NativeArray<OceanGerstnerWaveBufferMeta> sharedMeta;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3103,
+      "text": "NativeArray<int> cursorBuffer = default;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8197,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float3> PositionsWS;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8198,
+      "text": "[ReadOnly, NoAlias] public NativeArray<BuoyancyParams> ObjParams;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8199,
+      "text": "[WriteOnly, NoAlias] public NativeArray<float> VerticalOffsets;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8200,
+      "text": "[WriteOnly, NoAlias] public NativeArray<float3> SurfaceUpVectors;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8202,
+      "text": "[ReadOnly, NoAlias] public NativeArray<GerstnerWaveComponent> Waves;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8203,
+      "text": "[ReadOnly, NoAlias] public NativeArray<ushort> TerrainHeightSamples;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8331,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float3>         positions;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8332,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float3>         previousPositions;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8333,
+      "text": "[ReadOnly, NoAlias] public NativeArray<byte>           previousPositionValid;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8334,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float3>         velocities;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8335,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float3>         angularVelocities;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8336,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float3>         upVectors;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8337,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float3>         surfaceUpVectors;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8338,
+      "text": "[ReadOnly, NoAlias] public NativeArray<BuoyancyParams> objParams;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8339,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float>          waveOffsets;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8340,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float>          gpuBuoyancyForcesY;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8341,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float>          brineHeights;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8342,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float>          brineDensityMultipliers;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8343,
+      "text": "[ReadOnly, NoAlias] public NativeArray<byte>           brineFlags;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8344,
+      "text": "[ReadOnly, NoAlias] public NativeArray<ActiveThrusterFlow> activeThrusters;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8345,
+      "text": "[ReadOnly, NoAlias] public NativeArray<WhirlpoolFlow> activeWhirlpools;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8346,
+      "text": "[ReadOnly, NoAlias] public NativeArray<FluidViscosityRegion> activeViscosityRegions;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8347,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float> viscosityGradientLut;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8348,
+      "text": "[ReadOnly, NoAlias] public NativeArray<float3> vectorNoiseField;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8353,
+      "text": "[WriteOnly, NoAlias] public NativeArray<FluidImpactEvent> impactEvents;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8354,
+      "text": "[WriteOnly, NoAlias] public NativeArray<int> impactEventFlags;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8357,
+      "text": "[WriteOnly, NoAlias] public NativeArray<float3> resultForces;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8358,
+      "text": "[WriteOnly, NoAlias] public NativeArray<float3> resultTorques;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 9307,
+      "text": "[NoAlias] public NativeArray<InteriorFloodNode> Nodes;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 9308,
+      "text": "[ReadOnly, NoAlias] public NativeArray<InteriorFloodEdge> Edges;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 9309,
+      "text": "[NoAlias] public NativeArray<int> Queue;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 9310,
+      "text": "[NoAlias] public NativeArray<int> Visited;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 9311,
+      "text": "[NoAlias] public NativeArray<InteriorFloodBfsResult> Result;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 641,
+      "text": "public NativeArray<float> MetallicGrainBank;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 642,
+      "text": "public NativeArray<int> VoiceActive;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 643,
+      "text": "public NativeArray<int> VoiceElapsed;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 644,
+      "text": "public NativeArray<int> VoiceLength;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 645,
+      "text": "public NativeArray<int> VoiceStart;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 646,
+      "text": "public NativeArray<uint> VoiceSeed;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 647,
+      "text": "public NativeArray<float> VoiceCursor;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 648,
+      "text": "public NativeArray<float> VoicePlaybackRate;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 649,
+      "text": "public NativeArray<float> VoiceGain;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 654,
+      "text": "public NativeArray<float> BinauralDelayRing;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 655,
+      "text": "public NativeArray<float> BinauralShadowHistory;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 656,
+      "text": "public NativeArray<float> LowPassInputHistory1;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 657,
+      "text": "public NativeArray<float> LowPassInputHistory2;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 658,
+      "text": "public NativeArray<float> LowPassOutputHistory1;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 659,
+      "text": "public NativeArray<float> LowPassOutputHistory2;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 664,
+      "text": "public NativeArray<float> SabineReverbDelay;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 665,
+      "text": "public NativeArray<float> CaveConvolutionImpulse;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 666,
+      "text": "public NativeArray<float> CaveConvolutionDelay;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 667,
+      "text": "public NativeArray<float> InteriorFdnDelay;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 672,
+      "text": "public NativeArray<float> ImpactClangDelay;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 673,
+      "text": "public NativeArray<float> ThrusterCombDelay;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 678,
+      "text": "public NativeArray<float> HullScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 679,
+      "text": "public NativeArray<float> SonarScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 680,
+      "text": "public NativeArray<float> ImpactEchoScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 681,
+      "text": "public NativeArray<float> ThrusterScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 682,
+      "text": "public NativeArray<float> HeartbeatScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 683,
+      "text": "public NativeArray<float> HeartbeatDuckScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 684,
+      "text": "public NativeArray<float> BubbleScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 685,
+      "text": "public NativeArray<float> MixScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 686,
+      "text": "public NativeArray<float> StereoMixScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 691,
+      "text": "public NativeArray<SonarEchoTap> PendingA;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 692,
+      "text": "public NativeArray<SonarEchoTap> PendingB;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 693,
+      "text": "public NativeArray<SonarEchoTap> Worker;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 694,
+      "text": "public NativeArray<SonarEchoTap> UploadRing;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 699,
+      "text": "public NativeArray<float> EchoDelay;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 700,
+      "text": "public NativeArray<float> ReadCursors;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 701,
+      "text": "public NativeArray<float> FilterInput1;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 702,
+      "text": "public NativeArray<float> FilterInput2;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 703,
+      "text": "public NativeArray<float> FilterOutput1;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 704,
+      "text": "public NativeArray<float> FilterOutput2;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 709,
+      "text": "public NativeArray<SonarEchoCompositeGroup> CandidatesA;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 710,
+      "text": "public NativeArray<SonarEchoCompositeGroup> CandidatesB;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 711,
+      "text": "public NativeArray<SonarEchoCompositeGroup> Groups;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 712,
+      "text": "public NativeArray<int> GroupCount;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 713,
+      "text": "public NativeArray<AcousticEcholocationRayHit> Hits;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 726,
+      "text": "[NoAlias] public NativeArray<AcousticEcholocationRayHit> Hits;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 1846,
+      "text": "[ReadOnly, NoAlias] public NativeArray<SonarEchoCompositeGroup> Candidates;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 1847,
+      "text": "[NoAlias] public NativeArray<SonarEchoCompositeGroup> Groups;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 1848,
+      "text": "[NoAlias] public NativeArray<int> GroupCount;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 1897,
+      "text": "[WriteOnly] public NativeArray<float> Output;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 3920,
+      "text": "NativeArray<SonarEchoTap> sourceTapBuffer = activeIndex == 0 ? tapViews.PendingA : tapViews.PendingB;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 4899,
+      "text": "NativeArray<SonarEchoTap> inactiveTapBuffer = inactiveIndex == 0"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5019,
+      "text": "NativeArray<SonarEchoTap> inactiveTapBuffer = inactiveIndex == 0 ? tapViews.PendingA : tapViews.PendingB;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5251,
+      "text": "NativeArray<SonarEchoTap> inactiveTapBuffer = inactiveIndex == 0 ? tapViews.PendingA : tapViews.PendingB;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5451,
+      "text": "NativeArray<SonarEchoCompositeGroup> writeCandidates = GetSonarEchoCompositeCandidateBuffer(ref spatialViews, _sonarEchoCompositeWriteBufferIndex);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5484,
+      "text": "NativeArray<SonarEchoCompositeGroup> candidates = GetSonarEchoCompositeCandidateBuffer(ref spatialViews, writeBufferIndex);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5524,
+      "text": "NativeArray<SonarEchoCompositeGroup> candidates = GetSonarEchoCompositeCandidateBuffer(ref spatialViews, _sonarEchoCompositeScheduledBufferIndex);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8683,
+      "text": "NativeArray<float> heartbeatScratch = frameViews.HeartbeatScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8684,
+      "text": "NativeArray<float> heartbeatDuckScratch = frameViews.HeartbeatDuckScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8774,
+      "text": "NativeArray<float> bubbleScratch = frameViews.BubbleScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8843,
+      "text": "NativeArray<float> hullScratch = frameViews.HullScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8844,
+      "text": "NativeArray<float> sonarScratch = frameViews.SonarScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8845,
+      "text": "NativeArray<float> impactEchoScratch = frameViews.ImpactEchoScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8846,
+      "text": "NativeArray<float> thrusterScratch = frameViews.ThrusterScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8847,
+      "text": "NativeArray<float> heartbeatScratch = frameViews.HeartbeatScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8848,
+      "text": "NativeArray<float> heartbeatDuckScratch = frameViews.HeartbeatDuckScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8849,
+      "text": "NativeArray<float> bubbleScratch = frameViews.BubbleScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8850,
+      "text": "NativeArray<float> mixScratch = frameViews.MixScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8851,
+      "text": "NativeArray<float> sabineReverbDelay = reverbViews.SabineReverbDelay;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8852,
+      "text": "NativeArray<float> caveConvolutionImpulse = reverbViews.CaveConvolutionImpulse;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8853,
+      "text": "NativeArray<float> caveConvolutionDelay = reverbViews.CaveConvolutionDelay;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8854,
+      "text": "NativeArray<float> interiorFdnDelay = reverbViews.InteriorFdnDelay;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8855,
+      "text": "NativeArray<float> lowPassInputHistory1 = filterViews.LowPassInputHistory1;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8856,
+      "text": "NativeArray<float> lowPassInputHistory2 = filterViews.LowPassInputHistory2;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8857,
+      "text": "NativeArray<float> lowPassOutputHistory1 = filterViews.LowPassOutputHistory1;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8858,
+      "text": "NativeArray<float> lowPassOutputHistory2 = filterViews.LowPassOutputHistory2;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 10449,
+      "text": "NativeArray<float> hullScratch = frameViews.HullScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 10659,
+      "text": "NativeArray<float> mixScratch = frameViews.MixScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 10660,
+      "text": "NativeArray<float> stereoMixScratch = frameViews.StereoMixScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 10661,
+      "text": "NativeArray<float> binauralDelayRing = filterViews.BinauralDelayRing;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 10662,
+      "text": "NativeArray<float> binauralShadowHistory = filterViews.BinauralShadowHistory;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 10786,
+      "text": "NativeArray<float> sonarScratch = frameViews.SonarScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 10787,
+      "text": "NativeArray<float> stereoMixScratch = frameViews.StereoMixScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 10812,
+      "text": "NativeArray<SonarEchoTap> activeTapBuffer = tapViews.Worker;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11225,
+      "text": "NativeArray<float> thrusterScratch = frameViews.ThrusterScratch;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11229,
+      "text": "NativeArray<float> thrusterCombDelay = transientViews.ThrusterCombDelay;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11534,
+      "text": "NativeArray<int> voiceActive = granularViews.VoiceActive;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11535,
+      "text": "NativeArray<int> voiceElapsed = granularViews.VoiceElapsed;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11536,
+      "text": "NativeArray<int> voiceLength = granularViews.VoiceLength;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11537,
+      "text": "NativeArray<int> voiceStart = granularViews.VoiceStart;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11538,
+      "text": "NativeArray<float> voiceCursor = granularViews.VoiceCursor;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11539,
+      "text": "NativeArray<float> voicePlaybackRate = granularViews.VoicePlaybackRate;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11540,
+      "text": "NativeArray<float> voiceGain = granularViews.VoiceGain;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11704,
+      "text": "NativeArray<int> voiceActive = granularViews.VoiceActive;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11705,
+      "text": "NativeArray<int> voiceElapsed = granularViews.VoiceElapsed;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11706,
+      "text": "NativeArray<float> voiceCursor = granularViews.VoiceCursor;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11707,
+      "text": "NativeArray<float> voiceGain = granularViews.VoiceGain;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11743,
+      "text": "NativeArray<AudioSynthesisTelemetryEntry> telemetryRing = default;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11834,
+      "text": "NativeArray<GranularAudioTelemetryEntry> granularTelemetryRing = default;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11922,
+      "text": "NativeArray<PrologueAudioTransitionTelemetryEntry> prologueTelemetryRing = default;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12218,
+      "text": "NativeArray<int> voiceActive = granularViews.VoiceActive;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12219,
+      "text": "NativeArray<int> voiceElapsed = granularViews.VoiceElapsed;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12220,
+      "text": "NativeArray<int> voiceLength = granularViews.VoiceLength;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12221,
+      "text": "NativeArray<int> voiceStart = granularViews.VoiceStart;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12222,
+      "text": "NativeArray<uint> voiceSeed = granularViews.VoiceSeed;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12223,
+      "text": "NativeArray<float> voiceCursor = granularViews.VoiceCursor;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12224,
+      "text": "NativeArray<float> voicePlaybackRate = granularViews.VoicePlaybackRate;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12225,
+      "text": "NativeArray<float> voiceGain = granularViews.VoiceGain;"
+    }
+  ],
+  "fieldishNativeDeclarationCount": 286,
+  "hotForbiddenFindings": [],
+  "hotForbiddenFindingCount": 0,
+  "directAbsoluteAupCastFindings": [
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3284,
+      "text": "localDelta.y = (float)localDeltaAup.y;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3285,
+      "text": "localDelta.z = (float)localDeltaAup.z;"
+    }
+  ],
+  "directAbsoluteAupCastFindingCount": 2,
+  "verificationHashSha256": "ea12db3c96e99f71de66d43a04215c947c9273fdc138a6731f20b54b5b31ebb4"
+}

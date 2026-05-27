@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Social Account Setup And Platform Playbook
 
 Status: pre public social ops
-Owner lane: SHINOBU_81 / social publishing
+Owner lane: Marketing / social publishing
 Runtime impact: none
 
 ## Purpose

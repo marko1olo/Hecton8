@@ -31,10 +31,12 @@ Shader "Hidden/Hecton8/VisorUberPost"
             #pragma fragment Frag
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #if !defined(SHADER_API_MOBILE)
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #endif
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
             #include "Assets/_Project/Art/Shaders/Post/Hecton_SnellRefractionCore.hlsl"
 
             float _HectonUberHealthFraction;
@@ -122,6 +124,11 @@ Shader "Hidden/Hecton8/VisorUberPost"
             #endif
             }
 
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(uv);
+            }
+
             float InterleavedGradientNoise(float2 uv, float frameSalt)
             {
                 float2 screenParams = max(HectonFinite4(_ScreenParams, float4(1.0, 1.0, 1.0, 1.0)).xy, float2(1.0, 1.0));
@@ -161,6 +168,13 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 return abs(frac(value) * 2.0 - 1.0) * 2.0 - 1.0;
             }
 
+            float ResolveLinearRamp01(float value, float start, float end)
+            {
+                float safeStart = HectonFiniteValue(start, 0.0);
+                float safeRange = max(abs(HectonFiniteValue(end, safeStart + 1.0) - safeStart), 0.000001);
+                return saturate((HectonFiniteValue(value, safeStart) - safeStart) * rcp(safeRange));
+            }
+
             float FastEdge01(float2 uv)
             {
                 float2 safeUv = all(isfinite(uv)) ? saturate(uv) : float2(0.5, 0.5);
@@ -182,14 +196,20 @@ Shader "Hidden/Hecton8/VisorUberPost"
             {
                 float4 waveParams = HectonFinite4(_HectonUberWaveParams, float4(1.0, 0.0, 0.0, 0.0));
                 float2 safeUv = all(isfinite(uv)) ? saturate(uv) : float2(0.0, 0.0);
-                float enabled = 1.0 - smoothstep(0.35, 0.95, HectonFinite01(qualityPressure01));
+                float enabled = 1.0 - ResolveLinearRamp01(qualityPressure01, 0.35, 0.95);
                 float freq = max(1.0, waveParams.x);
                 float speed = waveParams.y;
                 float amplitude = HectonFiniteValue(waveParams.z, 0.0) * HectonFinite01(heat01) * enabled;
+                [branch]
+                if (amplitude <= 0.000001)
+                    return float2(0.0, 0.0);
+
                 float2 wave;
                 float visualTime = HectonFiniteValue(_HectonUberVisualTime, 0.0);
-                wave.x = sin(safeUv.y * freq + visualTime * speed);
-                wave.y = sin(safeUv.x * freq * 0.73 - visualTime * speed * 0.71);
+                float freqCycles = freq * 0.15915494;
+                float timeCycles = visualTime * speed * 0.15915494;
+                wave.x = CheapSignedTriangle(safeUv.y * freqCycles + timeCycles);
+                wave.y = CheapSignedTriangle(safeUv.x * freqCycles * 0.73 - timeCycles * 0.71);
                 return HectonClampUvOffset(wave * amplitude, 0.1);
             }
 
@@ -208,12 +228,13 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float3 cameraRay = farWorld - cameraPosition;
                 float waterlineY = HectonFiniteValue(_InternalWaterlineY, cameraPosition.y - 1.0);
                 float yDelta = waterlineY - cameraPosition.y;
-                float cameraSubmerged = smoothstep(-softness, softness, (waterlineY - 0.03) - cameraPosition.y);
-                float planeInFront = smoothstep(-softness, softness, yDelta * cameraRay.y);
+                float invSoftRange = rcp(max(softness * 2.0, 0.001));
+                float cameraSubmerged = saturate(((waterlineY - 0.03) - cameraPosition.y + softness) * invSoftRange);
+                float planeInFront = saturate((yDelta * cameraRay.y + softness) * invSoftRange);
                 return active * saturate(max(cameraSubmerged, planeInFront));
             #else
                 float splitLine = HectonFinite01(waterlineParams.x);
-                return active * saturate(1.0 - smoothstep(splitLine - softness, splitLine + softness, safeUv.y));
+                return active * (1.0 - ResolveLinearRamp01(safeUv.y, splitLine - softness, splitLine + softness));
             #endif
             }
 
@@ -238,7 +259,8 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float2 cell = floor(safeUv * float2(78.0, 44.0));
                 float seed = Hash21(cell);
                 float density = step(0.78, Hash21(cell + float2(19.17, 5.31)));
-                float streak = 1.0 - smoothstep(0.03, 0.18, abs(frac(safeUv.y * 44.0 + seed * 6.17 + (1.0 - safeDroplets01) * 0.92) - 0.5));
+                float streakDistance = abs(frac(safeUv.y * 44.0 + seed * 6.17 + (1.0 - safeDroplets01) * 0.92) - 0.5);
+                float streak = 1.0 - ResolveLinearRamp01(streakDistance, 0.03, 0.18);
                 return density * streak * HectonFinite01(safeDroplets01 * 1.35 - seed * 0.28);
             }
 
@@ -274,7 +296,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float v8 = v4 * v4;
                 float low = lerp(v, v2, saturate(e - 1.0));
                 float high = lerp(v2, v8, saturate((e - 2.0) * 0.16666667));
-                return lerp(low, high, smoothstep(1.85, 2.15, e));
+                return lerp(low, high, ResolveLinearRamp01(e, 1.85, 2.15));
             }
 
             void ResolveProceduralCracks(float2 uv, float damage01, out float crackReveal, out float2 crackNormal)
@@ -285,12 +307,12 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float2 cell = floor(safeUv * 11.0);
                 float seed = Hash21(cell);
                 float primary = abs(centered.x * 0.72 + centered.y * 0.31 + (seed - 0.5) * 0.13);
-                float branch = abs(centered.x * -0.27 + centered.y * 0.86 + sin((centered.x + seed) * 9.0) * 0.025);
-                float primaryVein = 1.0 - smoothstep(0.008, 0.035, primary);
-                float branchVein = 1.0 - smoothstep(0.004, 0.019, branch);
-                float vein = saturate(max(primaryVein, branchVein * 0.62) * smoothstep(0.08, 0.96, radial));
+                float branch = abs(centered.x * -0.27 + centered.y * 0.86 + CheapSignedTriangle((centered.x + seed) * 1.4323945) * 0.025);
+                float primaryVein = 1.0 - ResolveLinearRamp01(primary, 0.008, 0.035);
+                float branchVein = 1.0 - ResolveLinearRamp01(branch, 0.004, 0.019);
+                float vein = saturate(max(primaryVein, branchVein * 0.62) * ResolveLinearRamp01(radial, 0.08, 0.96));
                 float threshold = lerp(1.15, 0.18 + seed * 0.54, vein);
-                crackReveal = smoothstep(threshold - 0.045, threshold + 0.045, damage01) * vein;
+                crackReveal = ResolveLinearRamp01(damage01, threshold - 0.045, threshold + 0.045) * vein;
                 float2 gradient = float2(primaryVein - branchVein, branchVein - primaryVein * 0.38);
                 float2 normalSeed = gradient + centered * (0.15 + seed * 0.1);
                 crackNormal = normalSeed * rsqrt(max(dot(normalSeed, normalSeed), 0.0001));
@@ -301,9 +323,9 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float2 safeUv = all(isfinite(uv)) ? saturate(uv) : float2(0.5, 0.5);
                 float2 centered = safeUv * 2.0 - 1.0;
                 float radial = saturate(dot(centered, centered));
-                float angleWave = sin(HectonFastAtan2(centered.y, centered.x) * 11.0 + Hash21(floor(safeUv * 9.0)) * 6.2831853);
+                float angleWave = CheapSignedTriangle(HectonFastAtan2(centered.y, centered.x) * 1.7507044 + Hash21(floor(safeUv * 9.0)));
                 float serration = 0.58 + 0.42 * angleWave;
-                float edgeBand = smoothstep(0.54, 0.98, radial) * edge01;
+                float edgeBand = ResolveLinearRamp01(radial, 0.54, 0.98) * edge01;
                 float drive = HectonFinite01(max(damage01, stress01));
                 return saturate(edgeBand * drive * serration);
             }
@@ -326,6 +348,11 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 return proceduralNoise;
             }
 
+            float ResolveLinearComfortRamp(float value, float start, float invRange)
+            {
+                return saturate((HectonFiniteValue(value, 0.0) - start) * invRange);
+            }
+
             float ResolveComfortShaftMask(float2 uv, float edge01)
             {
                 float4 textureFlags = HectonFinite4(_HectonUberTextureFlags, float4(0.0, 0.0, 0.0, 0.0));
@@ -333,11 +360,16 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float2 safeUv = all(isfinite(uv)) ? saturate(uv) : float2(0.5, 0.5);
                 float qualityPressure01 = HectonFinite01(_HectonUberQualityPressure);
                 float comfortVignette01 = HectonFinite01(max(HectonFinite01(_VRComfortVignette01), comfortJerkState.x * comfortJerkState.w));
-                float comfortEdgeProcedural = smoothstep(0.16, 1.0, edge01);
-                float comfortEdgePressure = smoothstep(0.36, 0.48, edge01);
-                float comfortQualityPressure01 = smoothstep(0.25, 0.95, qualityPressure01);
-                float comfortMaskTexture = SAMPLE_TEXTURE2D(_HectonVRComfortMaskTex, sampler_HectonVRComfortMaskTex, safeUv).r;
-                comfortEdgePressure = lerp(comfortEdgePressure, comfortMaskTexture, saturate(textureFlags.w));
+                float comfortEdgeProcedural = ResolveLinearComfortRamp(edge01, 0.16, 1.1904762);
+                float comfortEdgePressure = ResolveLinearComfortRamp(edge01, 0.36, 8.333333);
+                float comfortQualityPressure01 = ResolveLinearComfortRamp(qualityPressure01, 0.25, 1.4285715);
+                float textureMaskWeight = saturate(textureFlags.w);
+                [branch]
+                if (textureMaskWeight > 0.001)
+                {
+                    float comfortMaskTexture = SAMPLE_TEXTURE2D(_HectonVRComfortMaskTex, sampler_HectonVRComfortMaskTex, safeUv).r;
+                    comfortEdgePressure = lerp(comfortEdgePressure, comfortMaskTexture, textureMaskWeight);
+                }
 
                 float comfortEdge = lerp(comfortEdgeProcedural, comfortEdgePressure, comfortQualityPressure01);
                 return 1.0 - saturate(comfortEdge * comfortVignette01 * 0.92);
@@ -378,10 +410,10 @@ Shader "Hidden/Hecton8/VisorUberPost"
                     float tapMask = step((float)i + 0.5, taps);
                     float tapIndex = (float)i + 0.5;
                     float2 sampleUv = saturate(uv + stepUv * tapIndex);
-                    half3 sampleColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, sampleUv).rgb;
+                    half3 sampleColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(sampleUv)).rgb;
                     float sampleLuma = dot(sampleColor, half3(0.2126h, 0.7152h, 0.0722h));
                     float emissionMask = saturate((sampleLuma - emissionThreshold) * 2.0);
-                    float rawDepth = HectonFiniteSceneRawDepth(SampleSceneDepth(sampleUv));
+                    float rawDepth = HectonFiniteSceneRawDepth(SampleSceneDepth(ResolveFoveatedSourceUV(sampleUv)));
                     float sampleDepthValid = HectonSceneDepthValid01(rawDepth);
                     float sampleEyeDepth = HectonFiniteNonNegative(LinearEyeDepth(rawDepth, zBufferParams), centerEyeDepth + depthBias);
                     float occlusion = lerp(0.12, 1.0, sampleDepthValid * step(centerEyeDepth - depthBias, sampleEyeDepth));
@@ -406,7 +438,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float4 shaftParams = HectonFinite4(_HectonLightShaftParams, float4(0.0, 0.0, 0.0, 0.0));
                 float4 shaftQuality = HectonFinite4(_HectonLightShaftQuality, float4(0.01, 1.0, 0.001, 1.0));
                 float qualityPressure01 = HectonFinite01(_HectonUberQualityPressure);
-                float shaftQualityWeight = 1.0 - smoothstep(0.35, 0.95, qualityPressure01);
+                float shaftQualityWeight = 1.0 - ResolveLinearRamp01(qualityPressure01, 0.35, 0.95);
 
                 [branch]
                 if (HectonFinite01(_HectonUberDepthlessTBDR) > 0.5)
@@ -418,7 +450,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                     return half3(0.0h, 0.0h, 0.0h);
 
                 float4 zBufferParams = HectonFinite4(_ZBufferParams, float4(1.0, 1.0, 1.0, 1.0));
-                float rawDepth = HectonFiniteSceneRawDepth(SampleSceneDepth(safeUv));
+                float rawDepth = HectonFiniteSceneRawDepth(SampleSceneDepth(ResolveFoveatedSourceUV(safeUv)));
                 float centerDepthValid = HectonSceneDepthValid01(rawDepth);
                 float centerEyeDepth = HectonFiniteNonNegative(LinearEyeDepth(rawDepth, zBufferParams), 0.0);
                 float sampleBudget = lerp(1.0, clamp(shaftQuality.y, 1.0, 16.0), shaftQualityWeight);
@@ -427,9 +459,9 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float globalIntensity = HectonFiniteNonNegative(shaftParams.y, 0.0) * sootBoost * comfortMask * shaftQualityWeight;
 
                 half3 shafts = half3(0.0h, 0.0h, 0.0h);
-                shafts += AccumulateLightShaftSource(safeUv, centerEyeDepth, _HectonLightShaftSource0, _HectonLightShaftColor0, sampleBudget) * (half)smoothstep(0.01, 0.99, activeCount);
-                shafts += AccumulateLightShaftSource(safeUv, centerEyeDepth, _HectonLightShaftSource1, _HectonLightShaftColor1, sampleBudget) * (half)smoothstep(1.01, 1.99, activeCount);
-                shafts += AccumulateLightShaftSource(safeUv, centerEyeDepth, _HectonLightShaftSource2, _HectonLightShaftColor2, sampleBudget) * (half)smoothstep(2.01, 2.99, activeCount);
+                shafts += AccumulateLightShaftSource(safeUv, centerEyeDepth, _HectonLightShaftSource0, _HectonLightShaftColor0, sampleBudget) * (half)ResolveLinearRamp01(activeCount, 0.01, 0.99);
+                shafts += AccumulateLightShaftSource(safeUv, centerEyeDepth, _HectonLightShaftSource1, _HectonLightShaftColor1, sampleBudget) * (half)ResolveLinearRamp01(activeCount, 1.01, 1.99);
+                shafts += AccumulateLightShaftSource(safeUv, centerEyeDepth, _HectonLightShaftSource2, _HectonLightShaftColor2, sampleBudget) * (half)ResolveLinearRamp01(activeCount, 2.01, 2.99);
                 return shafts * (half)globalIntensity;
             #endif
             }
@@ -444,7 +476,8 @@ Shader "Hidden/Hecton8/VisorUberPost"
 
                 float2 cell = floor(safeUv * 18.0);
                 float grain = Hash21(cell);
-                float streak = 1.0 - smoothstep(0.08, 0.34, abs(frac(safeUv.x * 7.0 + safeUv.y * 1.7 + grain) - 0.5));
+                float streakDistance = abs(frac(safeUv.x * 7.0 + safeUv.y * 1.7 + grain) - 0.5);
+                float streak = 1.0 - ResolveLinearRamp01(streakDistance, 0.08, 0.34);
                 float grime = saturate(edge01 * 0.55 + streak * 0.22 + grain * 0.16);
                 return half3(
                     (half)(1.0 - grime * 0.34),
@@ -465,7 +498,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 if (HectonFinite01(_HectonUberDepthlessTBDR) > 0.5)
                     return color;
 
-                float rawDepth = HectonFiniteSceneRawDepth(SampleSceneDepth(safeUv));
+                float rawDepth = HectonFiniteSceneRawDepth(SampleSceneDepth(ResolveFoveatedSourceUV(safeUv)));
                 float depthValid = HectonSceneDepthValid01(rawDepth);
                 float3 worldPosition = ComputeWorldSpacePosition(safeUv, rawDepth, UNITY_MATRIX_I_VP);
                 worldPosition = HectonFinite3(worldPosition, float3(0.0, brineHeightY + 1.0, 0.0));
@@ -512,7 +545,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 if (textureFlags.x > 0.5)
                 {
                     float4 crackSample = SAMPLE_TEXTURE2D(_HectonVisorCrackTex, sampler_HectonVisorCrackTex, uv);
-                    crackReveal = smoothstep(crackSample.a - 0.045, crackSample.a + 0.045, damage01);
+                    crackReveal = ResolveLinearRamp01(damage01, crackSample.a - 0.045, crackSample.a + 0.045);
                     crackNormal = crackSample.rg * 2.0 - 1.0;
                 }
                 else
@@ -532,17 +565,17 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 warpedUV += HectonClampUvOffset(visorEdgeNormal * (tornEdgeMask * HectonFiniteValue(strengths1.z, 0.0) * 0.35), 0.04);
                 warpedUV = saturate(warpedUV);
 
-                half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, warpedUV);
+                half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(warpedUV));
                 float internalWaterMask = ResolveInternalWaterMask(uv);
                 [branch]
                 if (internalWaterMask > 0.001)
                 {
                     float2 waterUV = saturate(warpedUV + InternalWaterOffset(uv, internalWaterMask));
-                    float refractionBlend = HectonFinite01(internalWaterMask * smoothstep(1e-5, 8e-5, waterlineDistortion.x));
+                    float refractionBlend = HectonFinite01(internalWaterMask * ResolveLinearRamp01(waterlineDistortion.x, 1e-5, 8e-5));
                     [branch]
                     if (refractionBlend > 0.001)
                     {
-                        half4 refractedColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, waterUV);
+                        half4 refractedColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(waterUV));
                         color = lerp(color, refractedColor, (half)refractionBlend);
                     }
 
@@ -555,14 +588,14 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 {
                     float dropletMask = ResolveInternalDropletMask(uv, droplets01) * (0.35 + edge01 * 0.65);
                     float dropletRefractionQuality =
-                        (1.0 - smoothstep(0.35, 0.95, HectonFinite01(waterlineDistortion.w))) *
-                        smoothstep(1e-5, 8e-5, waterlineDistortion.x);
+                        (1.0 - ResolveLinearRamp01(waterlineDistortion.w, 0.35, 0.95)) *
+                        ResolveLinearRamp01(waterlineDistortion.x, 1e-5, 8e-5);
                     float dropletRefractBlend = saturate(dropletMask * dropletRefractionQuality);
                     [branch]
                     if (dropletRefractBlend > 0.001)
                     {
                         float2 dropletUV = saturate(warpedUV + InternalDropletOffset(uv, dropletRefractBlend));
-                        half4 dropletColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, dropletUV);
+                        half4 dropletColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(dropletUV));
                         color = lerp(color, dropletColor, (half)(dropletRefractBlend * 0.65));
                     }
 
@@ -600,16 +633,24 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 color.rgb = lerp(color.rgb, frostTint, (half)(frostMask * frostDrive));
 
                 float comfortVignette01 = HectonFinite01(max(HectonFinite01(_VRComfortVignette01), comfortJerkState.x * comfortJerkState.w));
-                float comfortEdgeProcedural = smoothstep(0.16, 1.0, edge01);
-                float comfortEdgePressure = smoothstep(0.36, 0.48, edge01);
-                float comfortQualityPressure01 = smoothstep(0.25, 0.95, qualityPressure01);
-                float comfortMaskTexture = SAMPLE_TEXTURE2D(_HectonVRComfortMaskTex, sampler_HectonVRComfortMaskTex, uv).r;
-                comfortEdgePressure = lerp(comfortEdgePressure, comfortMaskTexture, saturate(textureFlags.w));
+                float comfortEdgeProcedural = ResolveLinearComfortRamp(edge01, 0.16, 1.1904762);
+                float comfortEdgePressure = ResolveLinearComfortRamp(edge01, 0.36, 8.333333);
+                float comfortQualityPressure01 = ResolveLinearComfortRamp(qualityPressure01, 0.25, 1.4285715);
+                float textureMaskWeight = saturate(textureFlags.w);
+                [branch]
+                if (textureMaskWeight > 0.001)
+                {
+                    float comfortMaskTexture = SAMPLE_TEXTURE2D(_HectonVRComfortMaskTex, sampler_HectonVRComfortMaskTex, uv).r;
+                    comfortEdgePressure = lerp(comfortEdgePressure, comfortMaskTexture, textureMaskWeight);
+                }
                 float comfortEdge = lerp(comfortEdgeProcedural, comfortEdgePressure, comfortQualityPressure01);
+                float comfortDrive = comfortEdge * comfortVignette01 * 0.92;
+                float comfortDither = step(blueNoise, saturate(comfortDrive + comfortVignette01 * 0.03125));
+                float ditheredComfortDrive = comfortDrive * lerp(0.58, 1.0, comfortDither);
                 float vignette = saturate(
                     edge01 * stress01 * strengths1.w +
                     edge01 * damageDrive * waveParams.w +
-                    comfortEdge * comfortVignette01 * 0.92);
+                    ditheredComfortDrive);
                 color.rgb *= 1.0h - (half)vignette;
 
                 float bleeding = HectonFinite01(_HectonUberBleeding01);

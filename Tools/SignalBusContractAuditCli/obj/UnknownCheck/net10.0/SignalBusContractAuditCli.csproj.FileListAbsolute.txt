@@ -1,0 +1,14 @@
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\bin\UnknownCheck\net10.0\SignalBusContractAuditCli.exe
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\bin\UnknownCheck\net10.0\SignalBusContractAuditCli.runtimeconfig.json
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\bin\UnknownCheck\net10.0\SignalBusContractAuditCli.dll
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\bin\UnknownCheck\net10.0\SignalBusContractAuditCli.pdb
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\obj\UnknownCheck\net10.0\SignalBusContractAuditCli.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\obj\UnknownCheck\net10.0\SignalBusContractAuditCli.AssemblyInfoInputs.cache
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\obj\UnknownCheck\net10.0\SignalBusContractAuditCli.AssemblyInfo.cs
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\obj\UnknownCheck\net10.0\SignalBusContractAuditCli.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\obj\UnknownCheck\net10.0\SignalBusContractAuditCli.sourcelink.json
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\obj\UnknownCheck\net10.0\SignalBusContractAuditCli.dll
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\obj\UnknownCheck\net10.0\refint\SignalBusContractAuditCli.dll
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\obj\UnknownCheck\net10.0\SignalBusContractAuditCli.pdb
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\obj\UnknownCheck\net10.0\SignalBusContractAuditCli.genruntimeconfig.cache
+C:\hades\Hecton8\Tools\SignalBusContractAuditCli\obj\UnknownCheck\net10.0\ref\SignalBusContractAuditCli.dll

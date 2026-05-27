@@ -28,10 +28,10 @@ namespace Hecton8.Physics
             float wind = math.max(0.01f, math.select(10f, WindSpeedMetersPerSecond, math.isfinite(WindSpeedMetersPerSecond)));
             float windDirection = math.select(0.35f, WindDirectionRadians, math.isfinite(WindDirectionRadians));
             GerstnerWaveParamsDTO row = default;
-            row.Wave1 = BuildWave(index * 4 + 0, windDirection, wind, q, FrameIndex);
-            row.Wave2 = BuildWave(index * 4 + 1, windDirection, wind, q, FrameIndex);
-            row.Wave3 = BuildWave(index * 4 + 2, windDirection, wind, q, FrameIndex);
-            row.Wave4 = BuildWave(index * 4 + 3, windDirection, wind, q, FrameIndex);
+            row.Wave1 = BuildWave(index * 4 + 0, windDirection, wind, FrameIndex);
+            row.Wave2 = BuildWave(index * 4 + 1, windDirection, wind, FrameIndex);
+            row.Wave3 = BuildWave(index * 4 + 2, windDirection, wind, FrameIndex);
+            row.Wave4 = BuildWave(index * 4 + 3, windDirection, wind, FrameIndex);
             Spectrum[index] = row;
 
             if (index == 0 && Tuning.IsCreated && Tuning.Length > 0)
@@ -50,12 +50,12 @@ namespace Hecton8.Physics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float4 BuildWave(int octave, float windDirection, float windSpeed, float quality, uint frame)
+        private static float4 BuildWave(int octave, float windDirection, float windSpeed, uint frame)
         {
             float octave01 = math.saturate(octave * (1f / math.max(1f, AnalyticalGerstnerWaveConstants.MaxOctaves - 1f)));
-            float angleJitter = HashToSigned01((uint)(octave + 1) * 0x9E3779B9u + frame) * math.lerp(0.08f, 0.28f, quality);
+            float angleJitter = HashToSigned01((uint)(octave + 1) * 0x9E3779B9u + frame) * 0.28f;
             float wavelength = math.lerp(128f, 6f, octave01);
-            float steepness = math.lerp(0.018f, 0.11f, quality) * math.lerp(1f, 0.42f, octave01);
+            float steepness = 0.11f * math.lerp(1f, 0.42f, octave01);
             float speed = math.lerp(0.18f, 1.45f, octave01) * math.lerp(0.65f, 1.55f, math.saturate(windSpeed * (1f / 28f)));
             return new float4(windDirection + angleJitter + octave * 0.37f, steepness, wavelength, speed);
         }
@@ -237,7 +237,6 @@ namespace Hecton8.Physics
 
             float octaveBudget = AnalyticalGerstnerWaveMath.ResolveOctaveBudget(in Tuning);
             int activeOctaves = AnalyticalGerstnerWaveMath.ResolveActiveOctaves(octaveBudget, in Tuning);
-            float quality = AnalyticalGerstnerWaveMath.ResolveQuality01(in Tuning);
             bool4 useCoarse = ResolveCoarseMask(r0, r1, r2, r3, solveActive);
             float4 height = new float4(0f);
             float4 dispX = new float4(0f);
@@ -255,8 +254,8 @@ namespace Hecton8.Physics
                     float wavelength = math.max(0.01f, math.select(1f, wave.z, math.isfinite(wave.z)));
                     float speed = math.max(0.01f, math.select(1f, wave.w, math.isfinite(wave.w)));
                     float2 direction = new float2(
-                        AnalyticalGerstnerWaveMath.CosPolynomial(angle, quality),
-                        AnalyticalGerstnerWaveMath.SinPolynomial(angle, quality));
+                        AnalyticalGerstnerWaveMath.CosPolynomial(angle, 1f),
+                        AnalyticalGerstnerWaveMath.SinPolynomial(angle, 1f));
                     float waveNumber = AnalyticalGerstnerWaveConstants.TwoPi * math.rcp(wavelength);
                     float amplitude = AnalyticalGerstnerWaveMath.ResolveAmplitude(steepness, wavelength, in Tuning) *
                         AnalyticalGerstnerWaveMath.ResolveOctaveWeight(octave, octaveBudget);
@@ -265,8 +264,8 @@ namespace Hecton8.Physics
                     float originProjectionMeters = AnalyticalGerstnerWaveMath.ResolveOriginProjectionModulo(direction, wavelength, in Tuning);
                     float4 projectedMeters = (direction.x * x) + (direction.y * z) + new float4(originProjectionMeters);
                     float4 phase = WrapPhase((waveNumber * projectedMeters) - new float4(timePhase) + octave * 0.173f);
-                    float4 sinPhase = AnalyticalGerstnerWaveMath.SinPolynomial(phase, quality);
-                    float4 cosPhase = AnalyticalGerstnerWaveMath.CosPolynomial(phase, quality);
+                    float4 sinPhase = AnalyticalGerstnerWaveMath.SinPolynomial(phase, 1f);
+                    float4 cosPhase = AnalyticalGerstnerWaveMath.CosPolynomial(phase, 1f);
                     height += amplitude * cosPhase;
                     float slope = amplitude * waveNumber;
                     slopeX += direction.x * slope * sinPhase;
@@ -516,10 +515,9 @@ namespace Hecton8.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveOctaveBudget(in GerstnerWaveTuningDTO tuning)
         {
-            float q = math.smoothstep(0f, 1f, ResolveQuality01(in tuning));
             int total = math.clamp(tuning.TotalOctaves <= 0 ? AnalyticalGerstnerWaveConstants.MaxOctaves : tuning.TotalOctaves, 1, AnalyticalGerstnerWaveConstants.MaxOctaves);
             int maxLimit = math.clamp(tuning.MaxOctaveLimit <= 0 ? total : tuning.MaxOctaveLimit, 1, total);
-            return math.lerp(1f, maxLimit, q);
+            return maxLimit;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -642,7 +640,6 @@ namespace Hecton8.Physics
             float slopeZ = 0f;
             float dispX = 0f;
             float dispZ = 0f;
-            float quality = ResolveQuality01(in tuning);
             float octaveBudget = ResolveOctaveBudget(in tuning);
             int count = math.clamp(activeOctaves, 0, AnalyticalGerstnerWaveConstants.MaxOctaves);
             for (int i = 0; i < count; i++)
@@ -653,8 +650,8 @@ namespace Hecton8.Physics
                 float wavelength = math.max(0.01f, math.select(1f, wave.z, math.isfinite(wave.z)));
                 float speed = math.max(0.01f, math.select(1f, wave.w, math.isfinite(wave.w)));
                 float2 direction = new float2(
-                    CosPolynomial(angle, quality),
-                    SinPolynomial(angle, quality));
+                    CosPolynomial(angle, 1f),
+                    SinPolynomial(angle, 1f));
                 float waveNumber = AnalyticalGerstnerWaveConstants.TwoPi * math.rcp(wavelength);
                 float amplitude = ResolveAmplitude(steepness, wavelength, in tuning) *
                     ResolveOctaveWeight(i, octaveBudget);
@@ -662,8 +659,8 @@ namespace Hecton8.Physics
                 float timePhase = ResolveTimePhaseModulo(phaseVelocity, waveNumber, in tuning);
                 float originProjectionMeters = ResolveOriginProjectionModulo(direction, wavelength, in tuning);
                 float phase = WrapPhase((waveNumber * (math.dot(direction, local) + originProjectionMeters)) - timePhase + i * 0.173f);
-                float sinPhase = SinPolynomial(phase, quality);
-                float cosPhase = CosPolynomial(phase, quality);
+                float sinPhase = SinPolynomial(phase, 1f);
+                float cosPhase = CosPolynomial(phase, 1f);
                 height += amplitude * cosPhase;
                 float slope = amplitude * waveNumber;
                 slopeX += direction.x * slope * sinPhase;

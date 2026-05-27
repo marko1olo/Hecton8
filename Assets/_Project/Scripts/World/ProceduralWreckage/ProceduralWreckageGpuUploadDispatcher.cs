@@ -21,6 +21,10 @@ namespace Hecton8.World.ProceduralWreckage
         private int _capacity;
         private int _writeIndex;
         private int _activeIndex = -1;
+        private int _activeInstanceCount;
+        private readonly MaterialPropertyBlock _propertyBlock = new MaterialPropertyBlock();
+        private WreckageGpuScalarDTO _activeScalar;
+        private bool _hasActiveScalar;
 
         public bool EnsureGraphicsResources(int requiredCapacity)
         {
@@ -36,16 +40,26 @@ namespace Hecton8.World.ProceduralWreckage
 
             ReleaseGraphicsResources();
             _capacity = NextPowerOfTwo(capacity);
-            // COLD ALLOC: GraphicsBuffer[float4x4 wreckage matrices A] - double-buffered procedural wreck matrix upload - owner: ProceduralWreckageGpuUploadDispatcher
-            _matrixBufferA = CreateStructuredLockBuffer<float4x4>(_capacity);
-            // COLD ALLOC: GraphicsBuffer[float4x4 wreckage matrices B] - double-buffered procedural wreck matrix upload - owner: ProceduralWreckageGpuUploadDispatcher
-            _matrixBufferB = CreateStructuredLockBuffer<float4x4>(_capacity);
-            // COLD ALLOC: GraphicsBuffer[indirect args A] - DrawProceduralIndirect argument buffer - owner: ProceduralWreckageGpuUploadDispatcher
-            _argsBufferA = CreateIndirectArgsBuffer();
-            // COLD ALLOC: GraphicsBuffer[indirect args B] - DrawProceduralIndirect argument buffer - owner: ProceduralWreckageGpuUploadDispatcher
-            _argsBufferB = CreateIndirectArgsBuffer();
+            try
+            {
+                // COLD ALLOC: GraphicsBuffer[float4x4 wreckage matrices A] - double-buffered procedural wreck matrix upload - owner: ProceduralWreckageGpuUploadDispatcher
+                _matrixBufferA = CreateStructuredLockBuffer<float4x4>(_capacity);
+                // COLD ALLOC: GraphicsBuffer[float4x4 wreckage matrices B] - double-buffered procedural wreck matrix upload - owner: ProceduralWreckageGpuUploadDispatcher
+                _matrixBufferB = CreateStructuredLockBuffer<float4x4>(_capacity);
+                // COLD ALLOC: GraphicsBuffer[indirect args A] - DrawProceduralIndirect argument buffer - owner: ProceduralWreckageGpuUploadDispatcher
+                _argsBufferA = CreateIndirectArgsBuffer();
+                // COLD ALLOC: GraphicsBuffer[indirect args B] - DrawProceduralIndirect argument buffer - owner: ProceduralWreckageGpuUploadDispatcher
+                _argsBufferB = CreateIndirectArgsBuffer();
+            }
+            catch (Exception)
+            {
+                ReleaseGraphicsResources();
+                return false;
+            }
+
             _writeIndex = 0;
             _activeIndex = -1;
+            _activeInstanceCount = 0;
             return _matrixBufferA != null && _matrixBufferB != null && _argsBufferA != null && _argsBufferB != null;
         }
 
@@ -57,7 +71,7 @@ namespace Hecton8.World.ProceduralWreckage
             if (!matrices.IsCreated || !indirectArgs.IsCreated || indirectArgs.Length <= 0)
                 return false;
 
-            int requested = math.min((int)indirectArgs[0].InstanceCount, matrices.Length);
+            int requested = ResolveRequestedInstanceCount(indirectArgs[0].InstanceCount, matrices.Length);
             if (!EnsureGraphicsResources(math.max(requested, 1)))
                 return false;
 
@@ -92,18 +106,24 @@ namespace Hecton8.World.ProceduralWreckage
             }
 
             _activeIndex = _writeIndex;
+            _activeInstanceCount = writeCount;
             _writeIndex ^= 1;
-            Shader.SetGlobalBuffer(_WreckageMatricesId, matrixTarget);
-            PublishScalars(gpuScalars);
+            CaptureScalars(gpuScalars);
             return true;
         }
 
         public bool TryDraw(Material material, Bounds bounds, MeshTopology topology = MeshTopology.Triangles)
         {
-            if (material == null || !TryGetActiveBuffers(out GraphicsBuffer matrixBuffer, out GraphicsBuffer argsBuffer))
+            if (material == null ||
+                _activeInstanceCount <= 0 ||
+                !TryGetActiveBuffers(out GraphicsBuffer matrixBuffer, out GraphicsBuffer argsBuffer))
+            {
                 return false;
+            }
 
-            Shader.SetGlobalBuffer(_WreckageMatricesId, matrixBuffer);
+            _propertyBlock.Clear();
+            _propertyBlock.SetBuffer(_WreckageMatricesId, matrixBuffer);
+            ApplyScalars(_propertyBlock);
             UnityEngine.Graphics.DrawProceduralIndirect(
                 material,
                 bounds,
@@ -111,7 +131,7 @@ namespace Hecton8.World.ProceduralWreckage
                 argsBuffer,
                 0,
                 null,
-                null,
+                _propertyBlock,
                 ShadowCastingMode.On,
                 true,
                 0);
@@ -135,15 +155,28 @@ namespace Hecton8.World.ProceduralWreckage
             ReleaseGraphicsResources();
         }
 
-        private static void PublishScalars(NativeArray<WreckageGpuScalarDTO> gpuScalars)
+        private void CaptureScalars(NativeArray<WreckageGpuScalarDTO> gpuScalars)
         {
             if (!gpuScalars.IsCreated || gpuScalars.Length <= 0)
                 return;
 
-            WreckageGpuScalarDTO scalar = gpuScalars[0];
-            Shader.SetGlobalVector(_WreckageScalar0Id, new Vector4(scalar.CausticRustSiltQuality.x, scalar.CausticRustSiltQuality.y, scalar.CausticRustSiltQuality.z, scalar.CausticRustSiltQuality.w));
-            Shader.SetGlobalVector(_WreckageScalar1Id, new Vector4(scalar.BoundsAndDensity.x, scalar.BoundsAndDensity.y, scalar.BoundsAndDensity.z, scalar.BoundsAndDensity.w));
-            Shader.SetGlobalVector(_WreckageScalar2Id, new Vector4(scalar.FaultAndFrame.x, scalar.FaultAndFrame.y, scalar.FaultAndFrame.z, scalar.FaultAndFrame.w));
+            _activeScalar = gpuScalars[0];
+            _hasActiveScalar = true;
+        }
+
+        private void ApplyScalars(MaterialPropertyBlock propertyBlock)
+        {
+            if (propertyBlock == null)
+                return;
+
+            WreckageGpuScalarDTO scalar = _hasActiveScalar ? _activeScalar : default;
+            propertyBlock.SetVector(
+                _WreckageScalar0Id,
+                ToFiniteVector4(scalar.CausticRustSiltQuality, new float4(0.08f, 0.35f, 0.25f, 0.5f)));
+            propertyBlock.SetVector(
+                _WreckageScalar1Id,
+                ToFiniteVector4(scalar.BoundsAndDensity, new float4(0f, 0f, 0f, 1f)));
+            propertyBlock.SetVector(_WreckageScalar2Id, ToFiniteVector4(scalar.FaultAndFrame, float4.zero));
         }
 
         private void ReleaseGraphicsResources()
@@ -155,6 +188,10 @@ namespace Hecton8.World.ProceduralWreckage
             _capacity = 0;
             _writeIndex = 0;
             _activeIndex = -1;
+            _activeInstanceCount = 0;
+            _activeScalar = default;
+            _hasActiveScalar = false;
+            _propertyBlock.Clear();
         }
 
         private static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : struct
@@ -180,6 +217,12 @@ namespace Hecton8.World.ProceduralWreckage
             return buffer != null && buffer.IsValid() && buffer.count >= count && buffer.stride == stride;
         }
 
+        private static int ResolveRequestedInstanceCount(uint rawInstanceCount, int matrixCapacity)
+        {
+            int safeCapacity = math.max(0, matrixCapacity);
+            return rawInstanceCount > (uint)safeCapacity ? safeCapacity : (int)rawInstanceCount;
+        }
+
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
         {
             if (buffer == null)
@@ -200,6 +243,12 @@ namespace Hecton8.World.ProceduralWreckage
             v |= v >> 16;
             v++;
             return v;
+        }
+
+        private static Vector4 ToFiniteVector4(float4 value, float4 fallback)
+        {
+            float4 safe = math.all(math.isfinite(value)) ? value : fallback;
+            return new Vector4(safe.x, safe.y, safe.z, safe.w);
         }
     }
 }

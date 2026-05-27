@@ -1421,11 +1421,10 @@ namespace Hecton8.Physiology
             if (!_insideHabitat || gas == null || !gas.IsInitialized || _activeHabitatRoomId < 0)
                 return false;
 
-            NativeArray<float>.ReadOnly roomPressure = gas.RoomPressure;
-            if (!roomPressure.IsCreated || (uint)_activeHabitatRoomId >= (uint)roomPressure.Length)
+            if (!gas.TryGetRoomSnapshot(_activeHabitatRoomId, out GasRoomSnapshot snapshot))
                 return false;
 
-            float pressureKPa = roomPressure[_activeHabitatRoomId];
+            float pressureKPa = snapshot.PressureKPa;
             if (!math.isfinite(pressureKPa) || pressureKPa <= 0f)
                 return false;
 

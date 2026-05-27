@@ -1,12 +1,8 @@
 ﻿# Screenshot And Clip Shotlist
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only as static documentation/source/platform-orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current official platform rules, current verification artifacts, and the latest DOC_GLOBAL reports.
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, public Steam page, public demo, wishlist performance, creator outreach readiness, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters, platform rules, dates, creator availability, contact routes, and marketing claims inside this file are subordinate to fresh official sources and current project proof.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 Status: pre-capture plan
 Rule: every asset must sell identity without a paragraph
@@ -304,7 +300,7 @@ Performance claim planned? no unless measured:
 
 Use this for the first real capture session. The goal is not a full campaign pack. The goal is to learn whether the current build can produce proof assets without lying.
 
-V6 priority note: the 2026-05-21 Steam API/appdetails refresh kept SN2 `Very Positive` while the API summary rose to 76,686 all-language reviews, 45,755 English reviews, and 71,190 appdetails recommendations. This confirms competitor strength, not collapse. After identity and player verb, do not spend the first session on mood-only anomaly footage if base/machinery and agency/decision proof are still missing. If the session time collapses, prioritize `PLAN-SHOT-002` or `PLAN-SHOT-005`, then `PLAN-SHOT-006` or a decision clip (`PLAN-CLIP-001` / `PLAN-CLIP-003`) before `PLAN-SHOT-007`.
+V7 priority note: the 2026-05-26 Steam API/appdetails/screenshot refresh kept SN2 `Very Positive` while the API summary rose to 98,345 all-language reviews, 59,676 English reviews, and 90,944 appdetails recommendations. Official screenshots confirm competitor strength in bright/cozy alien-ocean readability, clean bases, and co-op presence, not in industrial pressure-vessel dread. After identity and player verb, do not spend the first session on mood-only anomaly footage if base/machinery, black-water severity, and agency/decision proof are still missing. If the session time collapses, prioritize `PLAN-SHOT-002` or `PLAN-SHOT-005`, then `PLAN-SHOT-006` or a decision clip (`PLAN-CLIP-001` / `PLAN-CLIP-003`) before `PLAN-SHOT-007`.
 
 | Timebox | Attempt | Asset IDs | Required result | Stop if |
 |---:|---|---|---|---|
@@ -405,7 +401,7 @@ Freshness rule: recheck `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.
 | `PLAN-SHOT-002` | Base-building praise/friction means base visuals must be readable, not only decorative. | Show gauge/seal/pipe affordances and a maintenance surface. Reject clean corridor beauty. |
 | `PLAN-SHOT-003` | Negative reviews mention thin loops and missing player agency. | Tool, salvage target, hazard, and reward reason must be visible in one frame. |
 | `PLAN-SHOT-005` | Save/death-loop frustration makes unfair failure risky. | Failure state must show a response path: repair, seal, reroute, or escape. |
-| `PLAN-SHOT-006` | V6 agency/defensive-choice signal makes passive monster shots weak. | Threat must create a player choice through sonar/floodlight/route relation. Do not use a helpless monster-pose thumbnail. |
+| `PLAN-SHOT-006` | V7 agency/defensive-choice and screenshot-gap signal makes passive monster shots weak. | Threat must create a player choice through sonar/floodlight/route relation. Do not use a helpless monster-pose thumbnail. |
 | `PLAN-SHOT-008` | Performance trust is fragile. | Keep internal unless measured. It can prove readability at low settings, not frame rate. |
 | `PLAN-CLIP-001` | Pressure must be a system, not mood. | First 3 seconds: warning, leak, and player choice. |
 | `PLAN-CLIP-002` | Atmosphere praise means HECTON must not lose wonder, only change its contract. | Let instrument/audio dread carry the reveal before creature/shape visibility. |

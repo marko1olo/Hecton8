@@ -990,7 +990,7 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
         }
     }
 
-    internal struct StaticCaveSdfBakeTelemetryBuffer
+    internal ref struct StaticCaveSdfBakeTelemetryBuffer
     {
         public NativeArray<StaticCaveSdfTelemetryEntry> Ring;
         public int Cursor;

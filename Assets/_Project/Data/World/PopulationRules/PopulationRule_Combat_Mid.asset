@@ -21,8 +21,8 @@ MonoBehaviour:
   prefabFamily: combat.pressure.node
   familyProfile: {fileID: 11400000, guid: 7d93d962142b9fa439b2276b3eb3711b, type: 2}
   gameplayPurpose: Hostile or controlling combat contact.
-  biomeFitSummary: Best in reefs, fractures, and hostile terrain that create short
-    control fights instead of flat arenas.
+  biomeFitSummary: Best in fossil shelves, fractures, and hostile terrain that create
+    short control fights instead of flat arenas.
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
   - {fileID: 11400000, guid: 97d72d86bc4df824493eefc28e110fd1, type: 2}

@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Visual Identity And Key Art Direction
 
 Status: creative direction / pre-key-art
-Owner lane: SHINOBU_81 / creative positioning
+Owner lane: Marketing / creative positioning
 Runtime impact: none
 
 ## Core Visual Sentence
@@ -31,6 +31,25 @@ HECTON-8 should look like industrial survival equipment losing an argument with 
 - glossy spaceship UI;
 - cozy ocean exploration mood;
 - "Subnautica but darker" composition.
+
+## 2026-05-26 V7 Competitor Visual Ceiling
+
+Internal use only. Do not name the competitor in public copy, thumbnails, captions, creator hooks, or Steam text.
+
+| Competitor strength observed | HECTON counter-proof | Asset/camera requirement | Kill if |
+|---|---|---|---|
+| Bright/cozy alien ocean readability. | Black-water pressure with one functional readable affordance. | Keep one gauge, hatch, tool, route light, or salvage target readable at thumbnail size. | The frame becomes empty dark water or a blue/purple reef variant. |
+| Clean modular base fantasy. | Base as pressure machine under stress. | Show seals, pipes, gauges, leaks, condensation, clamps, warning states, and a response path. | Interior reads as lounge, clean corridor, or spaceship lab. |
+| Co-op/player-group warmth. | Single-player isolation and machine dependence. | Use one player/tool relation; machines and routes carry scale, not friend silhouettes. | More than one player-like silhouette creates co-op implication. |
+| Soft rounded vehicles and safe traversal. | Heavy machinery with mass, wear, and consequence. | Show ballast, pump, hatch, arm, cable, engine, or vehicle relation doing work. | Machine reads as static prop, toy, or generic mech poster. |
+| Colorful creature/wonder appeal. | Instrument-led dread before reveal. | Sonar, floodlight, silt, partial silhouette, and route decision before full creature display. | Monster face becomes the whole poster or the player has no visible choice. |
+
+Quality scaling requirement:
+
+- Low: sell silhouette, grime, labels, warning color, and route affordance with baked/static composition.
+- Middle: add moving machinery states, stronger silt/fog fakes, and readable failure response.
+- High: add denser particles, light shafts, wet materials, and layered instrumentation.
+- Ultra: add visual overkill through richer volumetrics, debris, sonar layers, and failure staging, without changing gameplay truth ownership.
 
 ## Imageboard Visual Stress Rules
 

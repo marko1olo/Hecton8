@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: ProceduralRule_rule_fauna_reef_apex_zone
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
   ruleId: rule.fauna.reef_apex_zone
-  ruleLabel: Reef Apex Territory Zones
+  ruleLabel: Fossil Shelf Apex Territory Zones
   familyProfile: {fileID: 11400000, guid: 93fa74407b09405f88c798c752d0ef1b, type: 2}
-  gameplayIntent: Sparse apex territories in reef, kelp and biological nesting habitats.
+  gameplayIntent: Sparse apex territories around fossil shelves, kelp, and biological
+    nesting habitats.
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
   - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}

@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Marketing Asset QA Checklist
 
 Status: mandatory pre-publication gate
-Owner lane: SHINOBU_81 / creative QA
+Owner lane: Marketing / creative QA
 Runtime impact: none
 
 ## Purpose

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ProceduralFamily_family_coral_brittle
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
   familyId: family.coral.brittle
-  familyLabel: Coral Brittle
+  familyLabel: Brittle Carbonate
   defaultFidelity: 1
   budgetClass: 1
   expectsCollision: 0
@@ -34,7 +34,7 @@ MonoBehaviour:
   clusterCountMin: 3
   clusterCountMax: 8
   heatmapChannel: flora_density
-  proxyColor: {r: 0.36, g: 0.62, b: 0.64, a: 1}
+  proxyColor: {r: 0.32, g: 0.46, b: 0.44, a: 1}
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
   - {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
@@ -121,5 +121,5 @@ MonoBehaviour:
     uniformScaleRange: {x: 0.94, y: 1.08}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Coral/Coral_Brittle
-  gameplayRole: Deep brittle fan coral with pale mineral growth and cavity glow for
-    hadal biomes.
+  gameplayRole: Deep brittle mineral fan growth with pale deposits and cavity glow
+    for hard silhouettes.

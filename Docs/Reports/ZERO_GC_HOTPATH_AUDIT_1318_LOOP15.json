@@ -1,0 +1,16 @@
+﻿{
+    "file":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+    "scannedMethods":  [
+                           "Tick",
+                           "LateFrameTick",
+                           "ProcessDearLieRegeneration",
+                           "TryPopReadyDearLieRegeneration",
+                           "ScanOvergrowthLane",
+                           "TrySetMaturationProgress",
+                           "TrySetRegrowthProgress"
+                       ],
+    "zeroGcHotPathHits":  0,
+    "hits":  [
+
+             ]
+}

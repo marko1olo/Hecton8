@@ -134,6 +134,7 @@ namespace Hecton8.World
         private readonly List<ShapeGerstnerBatched> _gerstnerScratch = new List<ShapeGerstnerBatched>(16);
         // COLD ALLOC: List<GameObject>[16] - scene-root scratch used to sweep distributed Crest shapes during rare origin shifts - owner: HectonCrestOceanDepthCacheBootstrap
         private readonly List<GameObject> _sceneRootScratch = new List<GameObject>(16);
+        private HectonCelestialEngine _celestialEngine;
         private bool _loggedMissingResolvedTerrains;
 
         private void Awake()
@@ -155,12 +156,14 @@ namespace Hecton8.World
         private void OnEnable()
         {
             HectonFloatingOrigin.RegisterListener(this);
+            CacheRuntimeDependenciesCold();
             TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void Start()
         {
+            CacheRuntimeDependenciesCold();
             TryRegister();
             TryResolveReferences();
             if (oceanRenderer == null)
@@ -191,6 +194,13 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
+            if (HectonRuntimeDepthCacheCameraDisabled)
+            {
+                _pendingDepthCacheVisualSync = false;
+                UpdateDiagnostics(cacheReady: false, terrainCount: 0, waterLevel: ResolveFallbackWaterLevel());
+                return;
+            }
+
             if (_debugCacheReady && !repopulateOnTerrainChange)
                 return;
 
@@ -203,13 +213,6 @@ namespace Hecton8.World
                 return;
 
             _pendingDepthCacheVisualSync = false;
-            TryResolveReferences();
-            if (oceanRenderer == null)
-            {
-                UpdateDiagnostics(cacheReady: false, terrainCount: _debugTerrainCount, waterLevel: ResolveFallbackWaterLevel());
-                return;
-            }
-
             TryConfigureAndPopulate(forcePopulate: !_debugCacheReady);
         }
 
@@ -228,7 +231,7 @@ namespace Hecton8.World
 
         private void ResetCrestSimulationForOriginShift(Vector3 shiftOffset)
         {
-            if (!TryResolveReferences())
+            if (!TryResolveReferences(resolveDepthCache: false))
                 return;
 
             if (oceanRenderer == null)
@@ -266,10 +269,11 @@ namespace Hecton8.World
         {
             EnsureRuntimeOceanViewOwnership();
 
-            if (TryUseAuthoredLocalDepthCaches(forcePopulate: true))
+            RefreshDepthCacheScratch();
+            if (TryUseAuthoredLocalDepthCaches(forcePopulate: true, refreshScratch: false))
                 return;
 
-            PurgeLegacyDepthCaches();
+            PurgeLegacyDepthCaches(refreshScratch: false);
             EnsureDepthCacheComponent();
             ApplyDepthCacheSettings();
             TryConfigureAndPopulate(forcePopulate: true);
@@ -312,11 +316,25 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
+            {
+                _celestialEngine = currentService as HectonCelestialEngine;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 
             TryUnregister();
             TryRegister();
+        }
+
+        private void CacheRuntimeDependenciesCold()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            _celestialEngine = GlobalRegistry.CelestialEngine;
         }
 
         private void TryRegisterHotSwapListener()
@@ -338,16 +356,6 @@ namespace Hecton8.World
 
         private bool TryConfigureAndPopulate(bool forcePopulate)
         {
-            if (!TryResolveReferences() ||
-                oceanRenderer == null ||
-                !oceanRenderer.CreateSeaFloorDepthData)
-            {
-                UpdateDiagnostics(cacheReady: false, terrainCount: 0, waterLevel: ResolveFallbackWaterLevel());
-                return false;
-            }
-
-            EnsureRuntimeOceanViewOwnership();
-
             if (HectonRuntimeDepthCacheCameraDisabled)
             {
                 oceanDepthCache = null;
@@ -357,10 +365,21 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (TryUseAuthoredLocalDepthCaches(forcePopulate))
+            if (!TryResolveReferences(resolveDepthCache: false) ||
+                oceanRenderer == null ||
+                !oceanRenderer.CreateSeaFloorDepthData)
+            {
+                UpdateDiagnostics(cacheReady: false, terrainCount: 0, waterLevel: ResolveFallbackWaterLevel());
+                return false;
+            }
+
+            EnsureRuntimeOceanViewOwnership();
+
+            RefreshDepthCacheScratch();
+            if (TryUseAuthoredLocalDepthCaches(forcePopulate, refreshScratch: false))
                 return true;
 
-            PurgeLegacyDepthCaches();
+            PurgeLegacyDepthCaches(refreshScratch: false);
             OceanDepthCache depthCache = EnsureDepthCacheComponent();
             if (depthCache == null)
             {
@@ -424,7 +443,7 @@ namespace Hecton8.World
             return cacheReady;
         }
 
-        private bool TryResolveReferences()
+        private bool TryResolveReferences(bool resolveDepthCache = true)
         {
             if (oceanRenderer == null)
                 TryGetComponent(out oceanRenderer);
@@ -432,15 +451,22 @@ namespace Hecton8.World
             if (mapMagicBridge == null)
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
 
-            oceanDepthCache = ResolvePreferredDepthCache();
+            if (resolveDepthCache)
+                oceanDepthCache = ResolvePreferredDepthCache();
 
             return oceanRenderer != null;
         }
 
-        private bool TryUseAuthoredLocalDepthCaches(bool forcePopulate)
+        private void RefreshDepthCacheScratch()
         {
             _depthCacheScratch.Clear();
             GetComponentsInChildren(true, _depthCacheScratch);
+        }
+
+        private bool TryUseAuthoredLocalDepthCaches(bool forcePopulate, bool refreshScratch = true)
+        {
+            if (refreshScratch)
+                RefreshDepthCacheScratch();
 
             bool foundAuthoredLocalDepthCache = false;
             bool anyLocalCacheReady = false;
@@ -667,7 +693,7 @@ namespace Hecton8.World
             if (!enableTidalHeightCacheModulation || tidalHeightCacheAmplitudeMeters <= 0f)
                 return 0f;
 
-            HectonCelestialEngine celestialEngine = GlobalRegistry.CelestialEngine;
+            HectonCelestialEngine celestialEngine = _celestialEngine;
             if (celestialEngine == null ||
                 !celestialEngine.TryGetAegirSkyDirection(out Vector3 aegirDirection) ||
                 !IsFiniteVector3(aegirDirection))
@@ -687,10 +713,10 @@ namespace Hecton8.World
             return offset;
         }
 
-        private void PurgeLegacyDepthCaches()
+        private void PurgeLegacyDepthCaches(bool refreshScratch = true)
         {
-            _depthCacheScratch.Clear();
-            GetComponentsInChildren(true, _depthCacheScratch);
+            if (refreshScratch)
+                RefreshDepthCacheScratch();
 
             if (_depthCacheScratch.Count == 0)
             {
@@ -713,8 +739,7 @@ namespace Hecton8.World
 
         private OceanDepthCache ResolvePreferredDepthCache()
         {
-            _depthCacheScratch.Clear();
-            GetComponentsInChildren(true, _depthCacheScratch);
+            RefreshDepthCacheScratch();
             return ResolvePreferredDepthCacheFromScratch();
         }
 

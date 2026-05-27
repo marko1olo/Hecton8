@@ -17,9 +17,6 @@ namespace Hecton8.Physics
     {
         private const int MaxBatchSampleCount = 5;
         private const int ProviderPriority = 400;
-        private static readonly int _waveFoamStrengthId = Shader.PropertyToID("_WaveFoamStrength");
-        private static readonly int _waveFoamCoverageId = Shader.PropertyToID("_WaveFoamCoverage");
-        private static readonly int _foamScaleId = Shader.PropertyToID("_FoamScale");
 
         [Header("References")]
         [Tooltip("Explicit Crest ocean owner. Assign this directly or colocate the OceanRenderer on the same GameObject.")]
@@ -28,7 +25,7 @@ namespace Hecton8.Physics
         [Header("Burst Sampling")]
         [Tooltip("Depth below the resolved surface where Burst ocean kinematics returns a still-water result before trigonometry.")]
         [SerializeField, Range(0f, 200f)] private float burstDepthCullingThresholdMeters = OceanKinematicsConstants.DefaultDepthCullMeters;
-        [Tooltip("Maximum Gerstner octaves available to the Burst analytical sampler. GlobalQualityWeight continuously resolves the active count.")]
+        [Tooltip("Maximum deterministic Gerstner octaves available to the Burst analytical sampler. GlobalQualityWeight is telemetry only and must not change water truth.")]
         [SerializeField, Range(1, OceanKinematicsConstants.WaveCapacity)] private int burstMaxOctaveLimit = 6;
         [Tooltip("Continuous amplitude multiplier for the Burst analytical and emergency mock samplers.")]
         [SerializeField, Range(0f, 4f)] private float burstWaveAmplitudeMultiplier = OceanKinematicsConstants.DefaultAmplitudeMultiplier;
@@ -77,28 +74,6 @@ namespace Hecton8.Physics
             uint flags = (uint)HectonOceanSurfaceWeatherStateFlags.SupportsWindSpeed;
             state.WindSpeed = Mathf.Max(0f, oceanRenderer._globalWindSpeed);
 
-            Material oceanMaterial = oceanRenderer.OceanMaterial;
-            if (oceanMaterial != null)
-            {
-                if (oceanMaterial.HasProperty(_waveFoamStrengthId))
-                {
-                    flags |= (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamStrength;
-                    state.FoamStrength = oceanMaterial.GetFloat(_waveFoamStrengthId);
-                }
-
-                if (oceanMaterial.HasProperty(_waveFoamCoverageId))
-                {
-                    flags |= (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamCoverage;
-                    state.FoamCoverage = oceanMaterial.GetFloat(_waveFoamCoverageId);
-                }
-
-                if (oceanMaterial.HasProperty(_foamScaleId))
-                {
-                    flags |= (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamScale;
-                    state.FoamScale = oceanMaterial.GetFloat(_foamScaleId);
-                }
-            }
-
             state.Flags = flags;
             return true;
         }
@@ -113,28 +88,6 @@ namespace Hecton8.Physics
             uint flags = state.Flags;
             if ((flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsWindSpeed) != 0u)
                 oceanRenderer._globalWindSpeed = Mathf.Max(0f, state.WindSpeed);
-
-            Material oceanMaterial = oceanRenderer.OceanMaterial;
-            if (oceanMaterial == null)
-                return true;
-
-            if ((flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamStrength) != 0u &&
-                oceanMaterial.HasProperty(_waveFoamStrengthId))
-            {
-                oceanMaterial.SetFloat(_waveFoamStrengthId, state.FoamStrength);
-            }
-
-            if ((flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamCoverage) != 0u &&
-                oceanMaterial.HasProperty(_waveFoamCoverageId))
-            {
-                oceanMaterial.SetFloat(_waveFoamCoverageId, state.FoamCoverage);
-            }
-
-            if ((flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamScale) != 0u &&
-                oceanMaterial.HasProperty(_foamScaleId))
-            {
-                oceanMaterial.SetFloat(_foamScaleId, state.FoamScale);
-            }
 
             return true;
         }
@@ -515,6 +468,7 @@ namespace Hecton8.Physics
         private void Awake()
         {
             BindLocalOceanRendererIfMissing();
+            DisableUnsupportedHighResourceCrestCompute();
             int ownerHash = unchecked((int)EntityId.ToULong(GetEntityId()));
             _heightQueryOwnerHash = ownerHash;
             _waveQueryOwnerHash = ownerHash ^ 0x2F31;
@@ -524,6 +478,7 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
+            DisableUnsupportedHighResourceCrestCompute();
             Hecton8.Core.OceanVisualBridgeRegistry.Register(this);
             Hecton8.Core.OceanKinematicsRuntimeService.RegisterProvider(this);
         }
@@ -692,6 +647,15 @@ namespace Hecton8.Physics
         {
             if (crestOceanRenderer == null)
                 TryGetComponent(out crestOceanRenderer);
+        }
+
+        private void DisableUnsupportedHighResourceCrestCompute()
+        {
+            if (Hecton8.Core.HardwareTierDetector.AllowHighResourceComputeShaders)
+                return;
+
+            if (TryGetComponent(out global::Crest.ShapeFFT shapeFft))
+                shapeFft.enabled = false;
         }
 
         protected override global::Crest.OceanRenderer ReadBoundOceanRenderer()

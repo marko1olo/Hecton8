@@ -303,7 +303,7 @@ namespace Hecton8.SaveSystem
                 inventoryShadow = new InventoryShadowDTO(),
                 worldState    = new WorldStateDTO(),
                 proceduralWorldState = new ProceduralWorldStateDTO(),
-                construction  = new ConstructionDTO(),
+                construction  = ConstructionDTO.CreatePreallocated(),
                 scanLog       = new ScanLogDTO(),
                 barter        = new BarterDTO(),
                 fieldOperations = new FieldOperationLogDTO(),
@@ -877,6 +877,13 @@ namespace Hecton8.SaveSystem
         public const int MaxModules = 256;
         public const int MaxGraphEdges = MaxModules * 6;
 
+        public static ConstructionDTO CreatePreallocated()
+        {
+            ConstructionDTO dto = default;
+            dto.EnsureCapacity();
+            return dto;
+        }
+
         public void EnsureCapacity()
         {
             SaveData.EnsureExactArrayCapacity(ref modules, MaxModules);
@@ -884,6 +891,21 @@ namespace Hecton8.SaveSystem
             SaveData.EnsureExactArrayCapacity(ref graphEdges, MaxGraphEdges);
             SaveData.EnsureExactArrayCapacity(ref moduleBlitRecords, MaxModules);
             SaveData.EnsureExactArrayCapacity(ref habitatFloodStates, MaxModules);
+            EnsureModuleNestedArrayCapacity();
+        }
+
+        private void EnsureModuleNestedArrayCapacity()
+        {
+            if (modules == null)
+                return;
+
+            int count = Math.Min(MaxModules, modules.Length);
+            for (int i = 0; i < count; i++)
+            {
+                ModuleDTO module = modules[i];
+                module.EnsureNestedArrayCapacity();
+                modules[i] = module;
+            }
         }
 
         public void RefreshHabitatFloodStateMirrors()
@@ -1448,6 +1470,9 @@ namespace Hecton8.SaveSystem
     [Serializable]
     public struct ModuleDTO
     {
+        public const int MaxSorterBufferedSlots = 8;
+        public const int MaxCultivationSlots = 4;
+
         public string prefabId;
         public string slottedToolItemId;
         public string pipeInFlightItemId;
@@ -1485,6 +1510,67 @@ namespace Hecton8.SaveSystem
         public Vector3 GetPosition() => new Vector3(posX, posY, posZ);
         public Quaternion GetRotation() => new Quaternion(rotX, rotY, rotZ, rotW);
 
+        public void EnsureNestedArrayCapacity()
+        {
+            SaveData.EnsureExactArrayCapacity(ref sorterBufferedItemIds, MaxSorterBufferedSlots);
+            SaveData.EnsureExactArrayCapacity(ref sorterBufferedQuantities, MaxSorterBufferedSlots);
+            SaveData.EnsureExactArrayCapacity(ref cultivationSeedItemIds, MaxCultivationSlots);
+            SaveData.EnsureExactArrayCapacity(ref cultivationGeneticsMasks, MaxCultivationSlots);
+            SaveData.EnsureExactArrayCapacity(ref cultivationGrowth01, MaxCultivationSlots);
+            SaveData.EnsureExactArrayCapacity(ref cultivationQuality01, MaxCultivationSlots);
+        }
+
+        public bool HasNestedArrayCapacity()
+        {
+            return HasSorterSaveCapacity() && HasCultivationSaveCapacity();
+        }
+
+        public bool HasSorterSaveCapacity()
+        {
+            return sorterBufferedItemIds != null &&
+                   sorterBufferedItemIds.Length >= MaxSorterBufferedSlots &&
+                   sorterBufferedQuantities != null &&
+                   sorterBufferedQuantities.Length >= MaxSorterBufferedSlots;
+        }
+
+        public bool HasCultivationSaveCapacity()
+        {
+            return cultivationSeedItemIds != null &&
+                   cultivationSeedItemIds.Length >= MaxCultivationSlots &&
+                   cultivationGeneticsMasks != null &&
+                   cultivationGeneticsMasks.Length >= MaxCultivationSlots &&
+                   cultivationGrowth01 != null &&
+                   cultivationGrowth01.Length >= MaxCultivationSlots &&
+                   cultivationQuality01 != null &&
+                   cultivationQuality01.Length >= MaxCultivationSlots;
+        }
+
+        public void ResetForConstructionSave()
+        {
+            string[] sorterItemIds = sorterBufferedItemIds;
+            int[] sorterQuantities = sorterBufferedQuantities;
+            string[] seedItemIds = cultivationSeedItemIds;
+            ulong[] geneticsMasks = cultivationGeneticsMasks;
+            float[] growthValues = cultivationGrowth01;
+            float[] qualityValues = cultivationQuality01;
+
+            this = default;
+
+            sorterBufferedItemIds = sorterItemIds;
+            sorterBufferedQuantities = sorterQuantities;
+            cultivationSeedItemIds = seedItemIds;
+            cultivationGeneticsMasks = geneticsMasks;
+            cultivationGrowth01 = growthValues;
+            cultivationQuality01 = qualityValues;
+
+            ClearArray(sorterBufferedItemIds);
+            ClearArray(sorterBufferedQuantities);
+            ClearArray(cultivationSeedItemIds);
+            ClearArray(cultivationGeneticsMasks);
+            ClearArray(cultivationGrowth01);
+            ClearArray(cultivationQuality01);
+        }
+
         public void SetPosition(Vector3 pos)
         {
             posX = pos.x; posY = pos.y; posZ = pos.z;
@@ -1493,6 +1579,14 @@ namespace Hecton8.SaveSystem
         public void SetRotation(Quaternion rot)
         {
             rotX = rot.x; rotY = rot.y; rotZ = rot.z; rotW = rot.w;
+        }
+
+        private static void ClearArray<T>(T[] values)
+        {
+            if (values == null || values.Length == 0)
+                return;
+
+            Array.Clear(values, 0, values.Length);
         }
     }
 

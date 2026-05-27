@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: HarvestableTemplate_DeepCoral
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.HarvestableTemplate
   stableId: harvestable.deep_coral
-  displayName: Deep Coral
+  displayName: Deep Carbonate
   baseHealth: 24
   toolResistance: 1.35
   materialClass: 2

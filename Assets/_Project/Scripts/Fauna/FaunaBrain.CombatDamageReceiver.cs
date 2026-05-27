@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -13,6 +14,7 @@ namespace Hecton8.AI
         private int _combatDamageTargetId;
         private bool _combatDamageRegistered;
         private bool _combatDamageSyncDirty;
+        private bool _interactionTargetRegistered;
 
         public Vector3 CombatForward => ResolveSelfLogicForward();
 
@@ -117,7 +119,12 @@ namespace Hecton8.AI
 
         private void TryRegisterCombatDamageTarget()
         {
-            if (_combatDamageRegistered || !Application.isPlaying || _isDead)
+            if (!Application.isPlaying || _isDead)
+                return;
+
+            TryRegisterInteractionTargetTree();
+
+            if (_combatDamageRegistered)
                 return;
 
             if (_combatDamageTargetId == 0)
@@ -140,12 +147,32 @@ namespace Hecton8.AI
 
         private void TryUnregisterCombatDamageTarget()
         {
+            TryUnregisterInteractionTargetTree();
+
             if (!_combatDamageRegistered)
                 return;
 
             CombatDamageRuntime.UnregisterTarget(_combatDamageTargetId, this);
             _combatDamageRegistered = false;
             _combatDamageSyncDirty = false;
+        }
+
+        private void TryRegisterInteractionTargetTree()
+        {
+            if (_interactionTargetRegistered || !Application.isPlaying || _isDead)
+                return;
+
+            InteractableRegistry.RegisterTree(this);
+            _interactionTargetRegistered = true;
+        }
+
+        private void TryUnregisterInteractionTargetTree()
+        {
+            if (!_interactionTargetRegistered)
+                return;
+
+            InteractableRegistry.InvalidateTree(this);
+            _interactionTargetRegistered = false;
         }
 
         private void MarkCombatDamageSyncDirty()

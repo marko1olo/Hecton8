@@ -1,0 +1,62 @@
+﻿{
+    "schema":  "hecton8.data_monolith_hotpath_focus.v2",
+    "agentId":  "1330",
+    "generatedUtc":  "2026-05-26T16:23:14.7774938Z",
+    "scannedMethods":  [
+                           "H8CreatureSoAReconstructJob.Execute",
+                           "H8ItemSoAReconstructJob.Execute",
+                           "H8StaticDataArena.TryGetCreatureGenomeBlock",
+                           "H8StaticDataArena.TrySampleDepthPressure",
+                           "GameBootstrapper.SlowTick"
+                       ],
+    "scannedFiles":  [
+                         "Assets/_Project/Scripts/Data/Monolith/H8CreatureSoAReconstructJob.cs",
+                         "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                         "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs"
+                     ],
+    "methodSummaries":  [
+                            {
+                                "method":  "H8CreatureSoAReconstructJob.Execute",
+                                "path":  "Assets/_Project/Scripts/Data/Monolith/H8CreatureSoAReconstructJob.cs",
+                                "startLine":  33,
+                                "finiteOrCalls":  5,
+                                "findings":  0
+                            },
+                            {
+                                "method":  "H8ItemSoAReconstructJob.Execute",
+                                "path":  "Assets/_Project/Scripts/Data/Monolith/H8CreatureSoAReconstructJob.cs",
+                                "startLine":  73,
+                                "finiteOrCalls":  4,
+                                "findings":  0
+                            },
+                            {
+                                "method":  "H8StaticDataArena.TryGetCreatureGenomeBlock",
+                                "path":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                                "startLine":  787,
+                                "finiteOrCalls":  8,
+                                "findings":  0
+                            },
+                            {
+                                "method":  "H8StaticDataArena.TrySampleDepthPressure",
+                                "path":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                                "startLine":  1056,
+                                "finiteOrCalls":  1,
+                                "findings":  0
+                            },
+                            {
+                                "method":  "GameBootstrapper.SlowTick",
+                                "path":  "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+                                "startLine":  1347,
+                                "finiteOrCalls":  0,
+                                "findings":  0
+                            }
+                        ],
+    "zeroGcHotPathHits":  0,
+    "branchlessFiniteFallbacksProven":  true,
+    "findings":  [
+
+                 ],
+    "notes":  [
+                  "Focused scan covers Burst Execute bodies, Data Monolith runtime finite-fallback accessors touched in RERUN12, and dispatcher SlowTick dependency. Cold bootstrap/editor I/O findings are excluded from zero-GC hot-path count."
+              ]
+}

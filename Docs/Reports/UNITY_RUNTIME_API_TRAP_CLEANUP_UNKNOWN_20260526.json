@@ -1,0 +1,66 @@
+{
+  "date": "2026-05-26",
+  "agent": "UNKNOWN",
+  "evidenceClass": "STATIC_SOURCE + OFFICIAL_UNITY_DOCS + CLI_COMPILE",
+  "domain": "Unity runtime hidden-allocation/API trap cleanup",
+  "changedFiles": [
+    "Assets/_Project/Scripts/Editor/UnityApiTrapDetector.cs",
+    "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+    "Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs",
+    "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
+    "Assets/_Project/Scripts/Gameplay/DebrisManager.cs"
+  ],
+  "fixes": [
+    "UnityApiTrapDetector now detects Renderer.sharedMaterials getter, generic GetComponents array overloads, and skips #if UNITY_EDITOR blocks inside runtime files.",
+    "ContextualPhysicalIkRig uses Renderer.GetSharedMaterials(List<Material>) and SetSharedMaterials(List<Material>) instead of sharedMaterials copied-array access.",
+    "PrologueSequenceRegistryBridge uses GetComponents<MonoBehaviour>(List<MonoBehaviour>) instead of the array overload.",
+    "HarvestableOutcrop uses cached List<Renderer> and List<Collider> child discovery buffers.",
+    "OrganicDebrisProfile uses cached List<MeshFilter> for RebuildCache scanning."
+  ],
+  "staticResults": {
+    "updatedDetectorMimicHits": 0,
+    "inputTouchesRuntimeHits": 0,
+    "allocatingPhysicsQueryRuntimeHits": 0,
+    "objectFindRuntimeHits": 0,
+    "tagEqualityRuntimeHits": 0,
+    "unwaivedGenericGetComponentsArrayMimicHits": 0,
+    "unwaivedRendererSharedMaterialsGetterMimicHits": 0
+  },
+  "build": {
+    "launched": true,
+    "cpuGuard": "Blocked at 100%, 96%, 88%, 77%, 74%, 62%, and 73%; launched at 21% with no dotnet/csc process.",
+    "command": "dotnet build .\\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false",
+    "log": "Docs/Reports/BUILD_UNKNOWN_RUNTIME_API_TRAP_CLEANUP_20260526.log",
+    "exitCode": 0,
+    "warnings": 0,
+    "errors": 0,
+    "diffCheck": "passed with LF/CRLF warnings only"
+  },
+  "documentation": {
+    "verifyDocStructure": {
+      "pass": true,
+      "activeDocCount": 693,
+      "encodingWithoutUtf8Sig": 0
+    },
+    "oopDocScanner": {
+      "pass": true,
+      "activeFileCount": 693,
+      "sourceSyncPass": true
+    }
+  },
+  "runtimeMicrosecondsSavedClaimed": 0,
+  "residual": [
+    "No Unity Play Mode proof.",
+    "No profiler proof.",
+    "Shader.Find cold fallback sites require a separate shader residency policy pass."
+  ],
+  "sourceUrls": [
+    "https://docs.unity3d.com/ScriptReference/Renderer-sharedMaterials.html",
+    "https://docs.unity.cn/ja/ScriptReference/Renderer.GetSharedMaterials.html",
+    "https://docs.unity3d.com/cn/2023.2/ScriptReference/Renderer.SetSharedMaterials.html",
+    "https://docs.unity3d.com/ja/6000.0/Manual/physics-optimization-raycasts-queries.html",
+    "https://docs.unity3d.com/ja/6000.0/ScriptReference/Input.GetTouch.html",
+    "https://docs.unity3d.com/es/530/ScriptReference/Input-touches.html",
+    "https://docs.unity3d.com/ja/2023.2/ScriptReference/GameObject.CompareTag.html"
+  ]
+}

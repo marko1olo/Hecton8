@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Unity.Mathematics;
@@ -16,6 +15,7 @@ namespace Hecton8.World
         private const float BaselineEpsilon = 0.0005f;
         private const float ViewerFallbackRetryIntervalSeconds = 2f;
         private const float VolumeFallbackRefreshIntervalSeconds = 2f;
+        private const int VolumeBufferCapacity = 32;
 
         [Header("-- References ----------------")]
         [Tooltip("Optional explicit viewer transform. Falls back to the player transform and main camera.")]
@@ -46,8 +46,9 @@ namespace Hecton8.World
         private bool _occlusionVisualDirty;
         private WorldCaveDirector _worldCaveDirector;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        // COLD ALLOC: List<HectonVoxelVolume>[32] - active cave-volume cache pulled from WorldCaveDirector without scene scans - owner: HectonCaveVoxelAmbientOcclusionController
-        private readonly List<HectonVoxelVolume> _volumeBuffer = new List<HectonVoxelVolume>(32);
+        // COLD ALLOC: HectonVoxelVolume[32] - active cave-volume cache pulled from WorldCaveDirector without scene scans - owner: HectonCaveVoxelAmbientOcclusionController
+        private readonly HectonVoxelVolume[] _volumeBuffer = new HectonVoxelVolume[VolumeBufferCapacity];
+        private int _volumeBufferCount;
         private float _targetOcclusion;
         private float _appliedOcclusion;
         private float _sourceAmbientIntensity = 1f;
@@ -234,12 +235,12 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveWorldCaveDirector(ref _worldCaveDirector);
             if (_worldCaveDirector != null)
             {
-                _worldCaveDirector.CollectActiveVolumes(_volumeBuffer);
-                _debugVolumeCount = _volumeBuffer.Count;
+                _volumeBufferCount = _worldCaveDirector.CopyActiveVolumesTo(_volumeBuffer);
+                _debugVolumeCount = _volumeBufferCount;
                 return;
             }
 
-            _volumeBuffer.Clear();
+            ClearVolumeBuffer();
             float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now < _nextVolumeFallbackRefreshTime)
             {
@@ -264,7 +265,7 @@ namespace Hecton8.World
 
             _debugViewerPositionWS = viewerPositionWS;
             float strongestOcclusion = 0f;
-            int volumeCount = _volumeBuffer.Count;
+            int volumeCount = _volumeBufferCount;
             for (int volumeIndex = 0; volumeIndex < volumeCount; volumeIndex++)
             {
                 HectonVoxelVolume volume = _volumeBuffer[volumeIndex];
@@ -278,6 +279,14 @@ namespace Hecton8.World
 
             _targetOcclusion = Mathf.Clamp01(strongestOcclusion);
             _debugTargetOcclusion = _targetOcclusion;
+        }
+
+        private void ClearVolumeBuffer()
+        {
+            for (int i = 0; i < _volumeBufferCount; i++)
+                _volumeBuffer[i] = null;
+
+            _volumeBufferCount = 0;
         }
 
         private bool TryResolveViewerPosition(out Vector3 viewerPositionWS)

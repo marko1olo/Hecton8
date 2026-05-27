@@ -180,9 +180,11 @@ namespace UnityEditor
     {
         public static bool isCompiling;
         public static bool isPlaying;
+#pragma warning disable CS0067
         public static event Action update;
         public static event Action quitting;
         public static event Action<PlayModeStateChange> playModeStateChanged;
+#pragma warning restore CS0067
 
         public static void Exit(int exitCode)
         {
@@ -192,7 +194,9 @@ namespace UnityEditor
 
     public static class AssemblyReloadEvents
     {
+#pragma warning disable CS0067
         public static event Action beforeAssemblyReload;
+#pragma warning restore CS0067
     }
 
     public class AssetPostprocessor

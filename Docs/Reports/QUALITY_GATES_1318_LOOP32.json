@@ -1,0 +1,77 @@
+﻿{
+    "agentId":  "1318",
+    "task":  "1318_PURGE",
+    "loop":  32,
+    "status":  "VERIFICATION_BLOCKED_CPU_AND_MISSING_PROJECT_FILES",
+    "domain":  "Echelon 3 Core Infrastructure and Ecology / Assets/_Project/Scripts/World / DestructibleOrganicManager.cs",
+    "promptExtraction":  {
+                             "path":  "Docs/Reports/AGENT_PROMPT_1318_REEXTRACTED_LOOP32.xml",
+                             "status":  "EXTRACTED",
+                             "promptChars":  25043,
+                             "taskCountPattern":  "Task NN:",
+                             "taskCount":  20,
+                             "looseTaskMentions":  23
+                         },
+    "mandatesReloaded":  [
+                             "OPT_Native_Memory_Collections_JobSystem_Protocol",
+                             "OPT_Zero_GC_Policy_AllocFree_Mandate",
+                             "ARCH_Execution_Phases",
+                             "DBG_Telemetry_Crash_Reporting_PostMortem",
+                             "PHYS_Destructible_Organic_Entropy"
+                         ],
+    "fixedFindings":  [
+                          {
+                              "id":  "LOOP32_REGROWTH_DESTROYED_TOMBSTONE_CONFLICT",
+                              "severity":  "P1",
+                              "problem":  "Regrowth removed local destroyed truth but did not clear the persisted destroyed tombstone. Persistence import also skipped destroyed records blocked by active regrowth without staging registry cleanup, so the tombstone could re-destroy the instance after regrowth completed.",
+                              "fix":  "TrySetRegrowthProgress now clears PersistentWorldRegistry destroyed flora after unlocking when regrowth is admitted. SyncDestroyedFloraFromPersistence now stages destroyed registry cleanup when a copied destroyed record conflicts with active regrowth."
+                          },
+                          {
+                              "id":  "LOOP32_DROP_DRAIN_LOSSY_SINK_ROUTE",
+                              "severity":  "P1",
+                              "problem":  "DrainDropBuffer removed drops from the Vault output before proving a lossless sink. If inventory/catalog/registry were unavailable, or registry failed to persist rejected inventory quantity, organic loot could be silently discarded.",
+                              "fix":  "DrainDropBuffer now requires a complete inventory+registry+catalog route before draining non-empty output. Rejected quantities whose registry publish fails are returned to the Vault drop output; route failures stop further draining and record telemetry."
+                          }
+                      ],
+    "staticVerification":  {
+                               "gitDiffCheckTarget":  "PASS_WITH_LF_TO_CRLF_WARNING_ONLY",
+                               "braceBalance":  {
+                                                    "open":  890,
+                                                    "close":  890,
+                                                    "balanced":  true
+                                                },
+                               "sameMapRemoveThenWriteHits":  0,
+                               "targetNativePersistentFieldsStrict":  0,
+                               "persistentAllocatorTokenHits":  0,
+                               "readLikeMutatingMatches":  0,
+                               "hotOwnerForbiddenTokens":  {
+                                                               "Tick":  0,
+                                                               "SlowTick":  0,
+                                                               "LateFrameTick":  0
+                                                           },
+                               "targetedRouteChecks":  {
+                                                           "SyncDestroyedFloraFromPersistenceClearDestroyedCalls":  1,
+                                                           "TrySetRegrowthProgressClearDestroyedCalls":  1,
+                                                           "DrainDropBufferReturnDropCalls":  1,
+                                                           "TryReturnDropToOutputDropDrainLocks":  1,
+                                                           "TryReadDropOutputStateDropDrainLocks":  1
+                                                       },
+                               "sourceSha256":  "844d1cf6c3ef01103303c3f804847c766f8241fd28db92c1dccd5a68e10dc8cf"
+                           },
+    "buildVerification":  {
+                              "attempted":  false,
+                              "gateSample":  {
+                                                 "cpuPercent":  100,
+                                                 "compilerProcessCount":  0,
+                                                 "rootCsprojCount":  1,
+                                                 "missingSlnxProjectRefs":  61
+                                             },
+                              "blockedReason":  "AGENTS.md forbids dotnet/Roslyn while CPU is above 50 percent. Hecton8.slnx also references 61 missing Unity-generated/project files, so compiler proof remains blocked by project generation."
+                          },
+    "failedGates":  [
+                        "BUILD_GATE_BLOCKED_BY_CPU_GT_50",
+                        "UNITY_GENERATED_CSPROJ_REFERENCES_MISSING",
+                        "UNITY_IMPORT_OR_PROJECT_GENERATION_REQUIRED_FOR_COMPILER_PROOF"
+                    ],
+    "verificationHashSha256":  "844d1cf6c3ef01103303c3f804847c766f8241fd28db92c1dccd5a68e10dc8cf"
+}

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Core;
 using UnityEngine;
 
@@ -8,6 +7,8 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4100)]
     public sealed class WorldSliceDirector : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
+        private const int MaxSliceAnchorSnapshotCount = 64;
+
         internal static WorldSliceDirector ActiveRuntimeInstance { get; private set; }
 
         [Header("References")]
@@ -32,7 +33,9 @@ namespace Hecton8.World
         [SerializeField] private float _debugProfileNearScale = 1f;
         [SerializeField] private float _debugProfileMidScale = 1f;
 
-        private readonly List<WorldSliceAnchor> _anchors = new List<WorldSliceAnchor>(32);
+        private readonly WorldSliceAnchor[] _anchors = new WorldSliceAnchor[MaxSliceAnchorSnapshotCount];
+        private int _anchorCount;
+        private int _lastAnchorVersion = -1;
         private bool _registeredToTickManager;
         private bool _registeredHotSwapListener;
         private IPlayerRuntimeContext _cachedPlayerContext;
@@ -104,8 +107,9 @@ namespace Hecton8.World
 
         public void RefreshAnchors()
         {
-            WorldSliceAnchor.CopyActiveAnchorsTo(_anchors);
-            _debugSliceCount = _anchors.Count;
+            _anchorCount = WorldSliceAnchor.CopyActiveAnchorsTo(_anchors);
+            _lastAnchorVersion = WorldSliceAnchor.ActiveAnchorVersion;
+            _debugSliceCount = _anchorCount;
         }
 
         public void SetDistanceScales(float nearScale, float midScale)
@@ -135,7 +139,8 @@ namespace Hecton8.World
         private void ApplySlices(bool forceRefresh)
         {
             ResolvePlayer();
-            if (forceRefresh || _anchors.Count == 0)
+            int activeAnchorVersion = WorldSliceAnchor.ActiveAnchorVersion;
+            if (forceRefresh || _anchorCount == 0 || activeAnchorVersion != _lastAnchorVersion)
                 RefreshAnchors();
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
@@ -154,7 +159,7 @@ namespace Hecton8.World
                 midDistanceScale *
                 interestMidDistanceScale *
                 zoneMidDistanceScale;
-            for (int i = 0; i < _anchors.Count; i++)
+            for (int i = 0; i < _anchorCount; i++)
             {
                 WorldSliceAnchor anchor = _anchors[i];
                 if (anchor == null)
@@ -211,7 +216,7 @@ namespace Hecton8.World
 
         private void UpdateDiagnostics(bool applied)
         {
-            _debugSliceCount = _anchors.Count;
+            _debugSliceCount = _anchorCount;
             _debugPlayerReady = playerTransform != null;
             _debugApplied = applied;
             _debugProfileNearScale = _profileNearDistanceScale;

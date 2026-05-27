@@ -2555,7 +2555,7 @@ namespace Hecton8.Gameplay
                 interactionService.IsInitialized &&
                 TryResolveToolPose(out Vector3 origin, out Vector3 direction, out _))
             {
-                return interactionService.TryResolvePrimarySurfaceHit(_surfaceRequesterId, origin, direction, GetRuntimeMaxRange(maxRange), ResolveCuttableSurfaceMask(), QueryTriggerInteraction.Ignore, out hit);
+                return interactionService.RequestPrimarySurfaceHit(_surfaceRequesterId, origin, direction, GetRuntimeMaxRange(maxRange), ResolveCuttableSurfaceMask(), QueryTriggerInteraction.Ignore, out hit);
             }
 
             hit = default;

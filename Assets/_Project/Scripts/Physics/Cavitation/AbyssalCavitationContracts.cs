@@ -29,6 +29,7 @@ namespace Hecton8.Physics
         public const int SdfVolumeDimZ = 64;
         public const int SdfVoxelCapacity = SdfVolumeDimX * SdfVolumeDimY * SdfVolumeDimZ;
         public const float SafeLocalAupSpanMeters = 32768f;
+        public const float AuthoritativeQualityWeight = 1f;
         public const uint SourceHash = 0x53323438u; // S248
     }
 

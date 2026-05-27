@@ -10,6 +10,7 @@ namespace Hecton8.World
     internal static class VegetationMath
     {
         public const int DensityGridResolution = 8;
+        private const int DensityGridCellCount = DensityGridResolution * DensityGridResolution;
 
         public static float BuildJitteredCoordinate(float min, float step, int index, float jitterFraction, uint seed)
         {
@@ -212,14 +213,24 @@ namespace Hecton8.World
             NativeArray<float3> densityGrid,
             int chunkCount)
         {
+            if (!chunks.IsCreated || !densityGrid.IsCreated || chunkCount <= 0)
+                return float3.zero;
+
             float3 density = float3.zero;
-            for (int i = 0; i < chunkCount; i++)
+            int safeChunkCount = math.min(chunkCount, chunks.Length);
+            for (int i = 0; i < safeChunkCount; i++)
             {
                 HectonMapMagicVegetationBridge.VegetationDensityChunkRecord chunk = chunks[i];
-                if (position.x < chunk.MinX || position.x > chunk.MaxX || position.z < chunk.MinZ || position.z > chunk.MaxZ)
+                if (!IsDensityChunkUsable(chunk, densityGrid.Length) ||
+                    position.x < chunk.MinX ||
+                    position.x > chunk.MaxX ||
+                    position.z < chunk.MinZ ||
+                    position.z > chunk.MaxZ)
+                {
                     continue;
+                }
 
-                density += SampleChunkDensityChannels(position.x, position.z, chunk, densityGrid);
+                density += SampleChunkDensityChannelsUnchecked(position.x, position.z, chunk, densityGrid);
             }
 
             return density;
@@ -235,6 +246,9 @@ namespace Hecton8.World
             int gridResolution,
             int chunkCount)
         {
+            if (!chunks.IsCreated || !densityGrid.IsCreated || chunkCount <= 0)
+                return float3.zero;
+
             if (!chunkHash.IsCreated)
                 return SampleDensityChannelsAtPosition(position, chunks, densityGrid, chunkCount);
 
@@ -243,6 +257,7 @@ namespace Hecton8.World
                 return float3.zero;
 
             float3 density = float3.zero;
+            int safeChunkCount = math.min(chunkCount, chunks.Length);
             NativeParallelMultiHashMapIterator<int> iterator;
             int chunkIndex;
             if (!chunkHash.TryGetFirstValue(cellIndex, out chunkIndex, out iterator))
@@ -250,14 +265,20 @@ namespace Hecton8.World
 
             do
             {
-                if (chunkIndex < 0 || chunkIndex >= chunkCount || chunkIndex >= chunks.Length)
+                if (chunkIndex < 0 || chunkIndex >= safeChunkCount)
                     continue;
 
                 HectonMapMagicVegetationBridge.VegetationDensityChunkRecord chunk = chunks[chunkIndex];
-                if (position.x < chunk.MinX || position.x > chunk.MaxX || position.z < chunk.MinZ || position.z > chunk.MaxZ)
+                if (!IsDensityChunkUsable(chunk, densityGrid.Length) ||
+                    position.x < chunk.MinX ||
+                    position.x > chunk.MaxX ||
+                    position.z < chunk.MinZ ||
+                    position.z > chunk.MaxZ)
+                {
                     continue;
+                }
 
-                density += SampleChunkDensityChannels(position.x, position.z, chunk, densityGrid);
+                density += SampleChunkDensityChannelsUnchecked(position.x, position.z, chunk, densityGrid);
             }
             while (chunkHash.TryGetNextValue(out chunkIndex, ref iterator));
 
@@ -270,14 +291,24 @@ namespace Hecton8.World
             NativeArray<float2> attractorGrid,
             int chunkCount)
         {
+            if (!chunks.IsCreated || !attractorGrid.IsCreated || chunkCount <= 0)
+                return float2.zero;
+
             float2 attractor = float2.zero;
-            for (int i = 0; i < chunkCount; i++)
+            int safeChunkCount = math.min(chunkCount, chunks.Length);
+            for (int i = 0; i < safeChunkCount; i++)
             {
                 HectonMapMagicVegetationBridge.VegetationDensityChunkRecord chunk = chunks[i];
-                if (position.x < chunk.MinX || position.x > chunk.MaxX || position.z < chunk.MinZ || position.z > chunk.MaxZ)
+                if (!IsDensityChunkUsable(chunk, attractorGrid.Length) ||
+                    position.x < chunk.MinX ||
+                    position.x > chunk.MaxX ||
+                    position.z < chunk.MinZ ||
+                    position.z > chunk.MaxZ)
+                {
                     continue;
+                }
 
-                attractor += SampleThreatAttractorChunk(position.x, position.z, chunk, attractorGrid);
+                attractor += SampleThreatAttractorChunkUnchecked(position.x, position.z, chunk, attractorGrid);
             }
 
             return attractor;
@@ -293,6 +324,9 @@ namespace Hecton8.World
             int gridResolution,
             int chunkCount)
         {
+            if (!chunks.IsCreated || !attractorGrid.IsCreated || chunkCount <= 0)
+                return float2.zero;
+
             if (!chunkHash.IsCreated)
                 return SampleThreatAttractorAtPosition(position, chunks, attractorGrid, chunkCount);
 
@@ -301,6 +335,7 @@ namespace Hecton8.World
                 return float2.zero;
 
             float2 attractor = float2.zero;
+            int safeChunkCount = math.min(chunkCount, chunks.Length);
             NativeParallelMultiHashMapIterator<int> iterator;
             int chunkIndex;
             if (!chunkHash.TryGetFirstValue(cellIndex, out chunkIndex, out iterator))
@@ -308,14 +343,20 @@ namespace Hecton8.World
 
             do
             {
-                if (chunkIndex < 0 || chunkIndex >= chunkCount || chunkIndex >= chunks.Length)
+                if (chunkIndex < 0 || chunkIndex >= safeChunkCount)
                     continue;
 
                 HectonMapMagicVegetationBridge.VegetationDensityChunkRecord chunk = chunks[chunkIndex];
-                if (position.x < chunk.MinX || position.x > chunk.MaxX || position.z < chunk.MinZ || position.z > chunk.MaxZ)
+                if (!IsDensityChunkUsable(chunk, attractorGrid.Length) ||
+                    position.x < chunk.MinX ||
+                    position.x > chunk.MaxX ||
+                    position.z < chunk.MinZ ||
+                    position.z > chunk.MaxZ)
+                {
                     continue;
+                }
 
-                attractor += SampleThreatAttractorChunk(position.x, position.z, chunk, attractorGrid);
+                attractor += SampleThreatAttractorChunkUnchecked(position.x, position.z, chunk, attractorGrid);
             }
             while (chunkHash.TryGetNextValue(out chunkIndex, ref iterator));
 
@@ -323,6 +364,18 @@ namespace Hecton8.World
         }
 
         public static float3 SampleChunkDensityChannels(
+            float worldX,
+            float worldZ,
+            HectonMapMagicVegetationBridge.VegetationDensityChunkRecord chunk,
+            NativeArray<float3> densityGrid)
+        {
+            if (!densityGrid.IsCreated || !IsDensityChunkUsable(chunk, densityGrid.Length))
+                return float3.zero;
+
+            return SampleChunkDensityChannelsUnchecked(worldX, worldZ, chunk, densityGrid);
+        }
+
+        private static float3 SampleChunkDensityChannelsUnchecked(
             float worldX,
             float worldZ,
             HectonMapMagicVegetationBridge.VegetationDensityChunkRecord chunk,
@@ -452,6 +505,18 @@ namespace Hecton8.World
             HectonMapMagicVegetationBridge.VegetationDensityChunkRecord chunk,
             NativeArray<float2> attractorGrid)
         {
+            if (!attractorGrid.IsCreated || !IsDensityChunkUsable(chunk, attractorGrid.Length))
+                return float2.zero;
+
+            return SampleThreatAttractorChunkUnchecked(worldX, worldZ, chunk, attractorGrid);
+        }
+
+        private static float2 SampleThreatAttractorChunkUnchecked(
+            float worldX,
+            float worldZ,
+            HectonMapMagicVegetationBridge.VegetationDensityChunkRecord chunk,
+            NativeArray<float2> attractorGrid)
+        {
             float width = math.max(0.01f, chunk.MaxX - chunk.MinX);
             float depth = math.max(0.01f, chunk.MaxZ - chunk.MinZ);
             float normalizedX = math.saturate((worldX - chunk.MinX) / width) * (DensityGridResolution - 1);
@@ -470,6 +535,21 @@ namespace Hecton8.World
             float2 sampleX0 = math.lerp(sample00, sample10, fracX);
             float2 sampleX1 = math.lerp(sample01, sample11, fracX);
             return math.lerp(sampleX0, sampleX1, fracZ);
+        }
+
+        private static bool IsDensityChunkUsable(
+            HectonMapMagicVegetationBridge.VegetationDensityChunkRecord chunk,
+            int gridLength)
+        {
+            return gridLength >= DensityGridCellCount &&
+                   chunk.GridOffset >= 0 &&
+                   chunk.GridOffset <= gridLength - DensityGridCellCount &&
+                   math.isfinite(chunk.MinX) &&
+                   math.isfinite(chunk.MaxX) &&
+                   math.isfinite(chunk.MinZ) &&
+                   math.isfinite(chunk.MaxZ) &&
+                   chunk.MinX <= chunk.MaxX &&
+                   chunk.MinZ <= chunk.MaxZ;
         }
 
         private static float2 NormalizeSafe(float2 value, float2 fallback)

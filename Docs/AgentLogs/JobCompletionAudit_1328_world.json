@@ -1,0 +1,842 @@
+{
+  "byClassification": {
+    "EditorOrTestComplete": 45,
+    "FramePathPolledDispatcherComplete": 1,
+    "RuntimeOtherDispatcherComplete": 20,
+    "RuntimeOtherForcedDispatcherComplete": 6,
+    "RuntimeOtherPolledDispatcherComplete": 4,
+    "TeardownDispatcherComplete": 1,
+    "TeardownForcedDispatcherComplete": 13
+  },
+  "byDomain": {
+    "World": 90
+  },
+  "bySurface": {
+    "EditorOrTest": 45,
+    "FramePath": 1,
+    "RuntimeOther": 30,
+    "Teardown": 14
+  },
+  "csFileCount": 276,
+  "findingCount": 90,
+  "findings": [
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 2356,
+      "method": "CompleteThermalMapJobIfReady",
+      "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _thermalMapJobHandle, forceComplete))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 1152,
+      "method": "CompletePipelineForShutdown",
+      "path": "Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _seedHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 1163,
+      "method": "CompletePipelineForShutdown",
+      "path": "Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _pipelineHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 144,
+      "method": "RunFogBlendSmokeTest",
+      "path": "Assets/_Project/Scripts/World/BiomeTransitionSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 252,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "finalHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 292,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "cleanupHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 424,
+      "method": "BakePreviewTexture",
+      "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 436,
+      "method": "BakePreviewTexture",
+      "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "cleanupHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 310,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "countRleHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 326,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "rleHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 390,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "cleanupHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 555,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "countRleHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 571,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "rleHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 636,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "cleanupHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 771,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 796,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "cleanupHandle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "World",
+      "line": 911,
+      "method": "TryInitializeVaultBuffers",
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref zeroHandle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 1651,
+      "method": "CompleteScheduledWorkForTeardown",
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledHandle, true))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 3392,
+      "method": "CompleteDearLieJobIfNeeded",
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _dearLieJobHandle, force))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 68,
+      "method": "TryComplete",
+      "path": "Assets/_Project/Scripts/World/DispatcherJobSwap.cs",
+      "surface": "RuntimeOther",
+      "text": "return DispatcherJobFence.TryComplete(ref handle, forceComplete);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 4306,
+      "method": "CompleteScheduledSolve",
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledSolveHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 4750,
+      "method": "CompleteScheduledGenomeMutation",
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledGenomeMutationHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 4844,
+      "method": "CompleteScheduledMacroSwarmTravel",
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _macroSwarmTravelHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 5526,
+      "method": "CompleteScheduledApexTerritoryOverlap",
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledApexTerritoryOverlapHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "World",
+      "line": 6608,
+      "method": "ClearMacroSwarmRuntimeState",
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _macroSwarmTravelHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 3334,
+      "method": "CompleteWakeDecayJob",
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "surface": "RuntimeOther",
+      "text": "? DispatcherJobSwap.TryComplete(ref _wakeDecayHandle, forceComplete)"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 3850,
+      "method": "CompleteFloraSwayFieldJobForTeardown",
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _floraSwayFieldBuildHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 7302,
+      "method": "CompleteCascadePhaseSeedJob",
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _underwaterCascadePhaseSeedHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 7317,
+      "method": "CompleteCascadePhaseSeedJob",
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _surfaceCascadePhaseSeedHandle, forceComplete))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 173,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (DispatcherJobFence.TryComplete(ref _scanJobHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "World",
+      "line": 6646,
+      "method": "TryPrepareRendererWriteBuffer",
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref readerHandle, forceComplete: false);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 148,
+      "method": "RunSmokeTest",
+      "path": "Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref sampleHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 203,
+      "method": "RunSmokeTest",
+      "path": "Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref sampleHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 117,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "sealHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 123,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "cavityHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 134,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 149,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 168,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 178,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 348,
+      "method": "Rebuild",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalStructureForgeWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(rayCount, 64).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 292,
+      "method": "RunToCompletion",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "_activeHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 363,
+      "method": "Update",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "_activeHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 418,
+      "method": "Cancel",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "_activeHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 425,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "_activeHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 287,
+      "method": "Rebuild",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchForgeWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "ventsJob.Schedule(s_faultCount, 32, faultsJob.Schedule(math.max(1, s_faultCount >> 1), 32)).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 38,
+      "method": "Run",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchMockBenchmark.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 143,
+      "method": "RunAndWriteReport",
+      "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/OfflineWreckageMockBenchmark.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 266,
+      "method": "PreviewSelectedMesh",
+      "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "previewHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 377,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 541,
+      "method": "TryBuildBaseBuffers",
+      "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 2252,
+      "method": "CompleteCurrentOutpostJobForTeardown",
+      "path": "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 67,
+      "method": "RunSlopeCavitySplatmapSmoke",
+      "path": "Assets/_Project/Scripts/World/PlanetaryCanvasSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 83,
+      "method": "RunSlopeCavitySplatmapSmoke",
+      "path": "Assets/_Project/Scripts/World/PlanetaryCanvasSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "World",
+      "line": 1730,
+      "method": "CompleteAndApplyMetamorphismJob",
+      "path": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _metamorphismJobHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 1784,
+      "method": "CancelMetamorphismJobForTeardown",
+      "path": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _metamorphismJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 615,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _spawnJob, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "World",
+      "line": 656,
+      "method": "CompleteSpawnJobForDisable",
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _spawnJob, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 1144,
+      "method": "CompletePendingOreReadDependencyForTeardown",
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingOreReadDependency, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "World",
+      "line": 1976,
+      "method": "CompleteDensityFieldBuildIfReady",
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _densityBuildHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 2070,
+      "method": "ReleaseDensityBuildStorage",
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _densityBuildHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "World",
+      "line": 4009,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _densityBuildHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 5745,
+      "method": "CompletePendingPredatorConsumption",
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _predatorConsumptionHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 7794,
+      "method": "CompletePendingFoveatedSimulationDecision",
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _foveatedSimulationHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 7986,
+      "method": "CompletePendingLeviathanNodeBuild",
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _leviathanNodeBuildHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "World",
+      "line": 122,
+      "method": "ForceComplete",
+      "path": "Assets/_Project/Scripts/World/ScatterEvaluator.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 796,
+      "method": "CompleteFrameJobForTeardown",
+      "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/SeedShipAnomalyRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 506,
+      "method": "TryRetireQueuedBake",
+      "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/Editor/ShinobuPoiTopologyTunerWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "_queuedBakeFenceHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 118,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/StaticCaveSdfBaker/Editor/StaticCaveSdfBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(triangleCount, 64).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 189,
+      "method": "InvalidOperationException",
+      "path": "Assets/_Project/Scripts/World/StaticCaveSdfBaker/Editor/StaticCaveSdfBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 216,
+      "method": "InvalidOperationException",
+      "path": "Assets/_Project/Scripts/World/StaticCaveSdfBaker/Editor/StaticCaveSdfBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "validateSdfHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 233,
+      "method": "InvalidOperationException",
+      "path": "Assets/_Project/Scripts/World/StaticCaveSdfBaker/Editor/StaticCaveSdfBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(voxelCount, compressBatchSize).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 483,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/StaticCaveSdfBaker/Editor/StaticCaveSdfBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(triangleCount, 64).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 500,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/StaticCaveSdfBaker/Editor/StaticCaveSdfBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(triangleCount, 64).Complete();"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 377,
+      "method": "CompleteThreatPropagationJob",
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref jobState.Handle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 436,
+      "method": "CompleteFlowFieldJob",
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref jobState.Handle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 470,
+      "method": "CompleteThermalGridJob",
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref jobState.Handle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 337,
+      "method": "CompleteNativePoolDefragIfReady",
+      "path": "Assets/_Project/Scripts/World/VegetationMemoryPool.cs",
+      "surface": "RuntimeOther",
+      "text": "!DispatcherJobSwap.TryComplete(ref _surfacePoolDefragHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 343,
+      "method": "CompleteNativePoolDefragIfReady",
+      "path": "Assets/_Project/Scripts/World/VegetationMemoryPool.cs",
+      "surface": "RuntimeOther",
+      "text": "!DispatcherJobSwap.TryComplete(ref _underwaterPoolDefragHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "World",
+      "line": 523,
+      "method": "ForceCompleteAbyssalPathDependency",
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 1192,
+      "method": "CompleteHLODCullJob",
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _hlodCullHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 1736,
+      "method": "CompleteAbyssalPathJob",
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _abyssalPathHandle, forceComplete))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 1015,
+      "method": "OnDisable",
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "World",
+      "line": 1324,
+      "method": "RebindDataVault",
+      "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 249,
+      "method": "RunHeadlessSmokeTest",
+      "path": "Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref finalReduceHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownDispatcherComplete",
+      "domain": "World",
+      "line": 722,
+      "method": "TryDisposeCompleted",
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref PendingDynamicUpdateHandle, forceComplete: false))"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "World",
+      "line": 1373,
+      "method": "CompletePendingDynamicObstacleUpdates",
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref record.PendingDynamicUpdateHandle, forceComplete: false))"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 154,
+      "method": "RunMockBenchmark",
+      "path": "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/VoxelTerrainSeamBinderPipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "JobHandle.CombineDependencies(terrainIndexHandle, voxelIndexHandle).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 397,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/VoxelTerrainSeamBinderPipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "JobHandle.CombineDependencies(terrainColorHandle, voxelColorHandle).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 477,
+      "method": "TryBuildBaseBuffers",
+      "path": "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/VoxelTerrainSeamBinderPipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 2852,
+      "method": "CompleteResidencyJobForTeardown",
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _residencyJobHandle, forceComplete: true);"
+    }
+  ],
+  "framePathBlockerCount": 0,
+  "framePathBlockers": [],
+  "pluginSyncCompleteCount": 0,
+  "pluginSyncCompletes": [],
+  "rawRuntimeBlockerCount": 0,
+  "rawRuntimeBlockers": [],
+  "schema": "hecton8.job_completion_audit.v1",
+  "sourceRoot": "Assets/_Project/Scripts/World"
+}

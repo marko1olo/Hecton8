@@ -57,6 +57,20 @@ namespace Hecton8.World.Outposts
         private static readonly int OutpostCellTypesId = Shader.PropertyToID("_OutpostCellTypes");
         private static readonly int OutpostAge01Id = Shader.PropertyToID("_OutpostAge01");
         private static readonly int HectonMaterialDecayRuntimeId = Shader.PropertyToID("_HectonMaterialDecayRuntime");
+        private static readonly Vector3[] FallbackCubeVertices =
+        {
+            new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0.5f, -0.5f, -0.5f), new Vector3(0.5f, 0.5f, -0.5f), new Vector3(-0.5f, 0.5f, -0.5f),
+            new Vector3(-0.5f, -0.5f, 0.5f), new Vector3(0.5f, -0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(-0.5f, 0.5f, 0.5f)
+        }; // COLD ALLOC: Vector3[8] - immutable fallback cube vertices - owner: MARAUDER_OUTPOST_ARCHITECT
+        private static readonly int[] FallbackCubeIndices =
+        {
+            0, 2, 1, 0, 3, 2,
+            4, 5, 6, 4, 6, 7,
+            0, 1, 5, 0, 5, 4,
+            2, 3, 7, 2, 7, 6,
+            1, 2, 6, 1, 6, 5,
+            3, 0, 4, 3, 4, 7
+        }; // COLD ALLOC: int[36] - immutable fallback cube triangle indices - owner: MARAUDER_OUTPOST_ARCHITECT
 
         private enum JobPhase : byte
         {
@@ -784,9 +798,16 @@ namespace Hecton8.World.Outposts
 
         private uint ResolveWorldSeed()
         {
-            IWorldSeedProvider seedProvider = ResolveWorldSeedProvider();
-            if (seedProvider != null && seedProvider.IsInitialized)
+            if (global::HectonWorldGenerator.TryGetActiveRuntimeWorldSeed(out int runtimeWorldSeed))
+                return unchecked((uint)runtimeWorldSeed);
+
+            IWorldSeedProvider seedProvider = _cachedWorldSeedProvider;
+            if (seedProvider != null &&
+                !IsDestroyedUnityObject(seedProvider) &&
+                seedProvider.IsInitialized)
+            {
                 return unchecked((uint)seedProvider.RuntimeWorldSeed);
+            }
 
             return fallbackWorldSeed;
         }
@@ -841,15 +862,8 @@ namespace Hecton8.World.Outposts
         private MapMagicBridge ResolveMapMagicBridge()
         {
             if (_cachedMapMagicBridge == null)
-                _cachedMapMagicBridge = GlobalRegistry.MapMagic;
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _cachedMapMagicBridge);
             return _cachedMapMagicBridge;
-        }
-
-        private IWorldSeedProvider ResolveWorldSeedProvider()
-        {
-            if (_cachedWorldSeedProvider == null || IsDestroyedUnityObject(_cachedWorldSeedProvider))
-                _cachedWorldSeedProvider = GlobalRegistry.WorldSeedProvider;
-            return _cachedWorldSeedProvider;
         }
 
         private IAsyncPersistenceService ResolveAsyncPersistence()
@@ -1042,7 +1056,11 @@ namespace Hecton8.World.Outposts
 
             if (shellMaterial == null && _runtimeShellMaterial == null)
             {
-                Shader shader = Shader.Find("Hecton8/Environment/MarauderOutpostIndirect");
+                RuntimeShaderReferenceCatalog.TryGetMarauderOutpostIndirectShader(out Shader shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (shader == null)
+                    shader = Shader.Find("Hecton8/Environment/MarauderOutpostIndirect");
+#endif
                 if (shader != null)
                 {
                     // COLD ALLOC: Material[1] - fallback indirect shell material when no asset is assigned - owner: MARAUDER_OUTPOST_ARCHITECT
@@ -1506,12 +1524,19 @@ namespace Hecton8.World.Outposts
 
             if (_publishedPowerGridHandle != 0u)
             {
-                if (WfcOutpostGridRegistry.TryGetGrid(_publishedPowerGridHandle, out _))
+                if (WfcOutpostGridRegistry.TryGetGrid(_publishedPowerGridHandle, out WfcOutpostGridLease lease))
                 {
-                    PublishGeneratedSignalForHandle();
-                    _generatedSignalReplayFrames = GeneratedSignalReplayFrames;
-                    _generatedSignalHeartbeatFrames = GeneratedSignalHeartbeatFrames;
-                    return true;
+                    try
+                    {
+                        PublishGeneratedSignalForHandle();
+                        _generatedSignalReplayFrames = GeneratedSignalReplayFrames;
+                        _generatedSignalHeartbeatFrames = GeneratedSignalHeartbeatFrames;
+                        return true;
+                    }
+                    finally
+                    {
+                        WfcOutpostGridRegistry.ReleaseGridLease(in lease);
+                    }
                 }
 
                 _publishedPowerGridHandle = 0u;
@@ -1605,18 +1630,25 @@ namespace Hecton8.World.Outposts
                 return;
             }
 
-            if (!WfcOutpostGridRegistry.TryGetGrid(_publishedPowerGridHandle, out _))
+            if (!WfcOutpostGridRegistry.TryGetGrid(_publishedPowerGridHandle, out WfcOutpostGridLease lease))
             {
                 _publishedPowerGridHandle = 0u;
                 TryPublishGeneratedSignal();
                 return;
             }
 
-            PublishGeneratedSignalForHandle();
-            if (_generatedSignalReplayFrames > 0)
-                _generatedSignalReplayFrames--;
-            else
-                _generatedSignalHeartbeatFrames = GeneratedSignalHeartbeatFrames;
+            try
+            {
+                PublishGeneratedSignalForHandle();
+                if (_generatedSignalReplayFrames > 0)
+                    _generatedSignalReplayFrames--;
+                else
+                    _generatedSignalHeartbeatFrames = GeneratedSignalHeartbeatFrames;
+            }
+            finally
+            {
+                WfcOutpostGridRegistry.ReleaseGridLease(in lease);
+            }
         }
 
         private void PublishGeneratedSignalForHandle()
@@ -1864,22 +1896,8 @@ namespace Hecton8.World.Outposts
                 hideFlags = HideFlags.DontSave
             };
 
-            // COLD ALLOC: Vector3[8] - fallback cube vertices - owner: MARAUDER_OUTPOST_ARCHITECT
-            mesh.vertices = new[]
-            {
-                new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0.5f, -0.5f, -0.5f), new Vector3(0.5f, 0.5f, -0.5f), new Vector3(-0.5f, 0.5f, -0.5f),
-                new Vector3(-0.5f, -0.5f, 0.5f), new Vector3(0.5f, -0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(-0.5f, 0.5f, 0.5f)
-            };
-            // COLD ALLOC: int[36] - fallback cube triangle indices - owner: MARAUDER_OUTPOST_ARCHITECT
-            mesh.triangles = new[]
-            {
-                0, 2, 1, 0, 3, 2,
-                4, 5, 6, 4, 6, 7,
-                0, 1, 5, 0, 5, 4,
-                2, 3, 7, 2, 7, 6,
-                1, 2, 6, 1, 6, 5,
-                3, 0, 4, 3, 4, 7
-            };
+            mesh.SetVertices(FallbackCubeVertices);
+            mesh.SetTriangles(FallbackCubeIndices, 0, false);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;

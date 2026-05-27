@@ -539,20 +539,7 @@ namespace Hecton8.Gameplay
             _activeBeacons.Add(beacon);
 
             int cap = Mathf.Clamp(maxActive > 0 ? maxActive : maxTrackedBeacons, 1, BeaconNetworkDTO.MaxEntries);
-            while (_activeBeacons.Count > cap)
-            {
-                BeaconRuntime oldest = _activeBeacons[0];
-                _activeBeacons.RemoveAt(0);
-                if (oldest != null)
-                {
-                    oldest.DespawnSelf();
-                    FieldOperationLogSystem.RecordOperation(
-                        DefaultBeaconPrefix,
-                        "BEACON GRID TRIMMED",
-                        "Oldest beacon anchor was retired to preserve the active field-marker cap.",
-                        "WARN");
-                }
-            }
+            TrimOldestBeaconsToCap(cap);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (verboseLogging)
@@ -561,6 +548,29 @@ namespace Hecton8.Gameplay
 
             NetworkChanged?.Invoke();
             return true;
+        }
+
+        private void TrimOldestBeaconsToCap(int cap)
+        {
+            int excessCount = _activeBeacons.Count - cap;
+            if (excessCount <= 0)
+                return;
+
+            for (int i = 0; i < excessCount; i++)
+            {
+                BeaconRuntime oldest = _activeBeacons[i];
+                if (oldest == null)
+                    continue;
+
+                oldest.DespawnSelf();
+                FieldOperationLogSystem.RecordOperation(
+                    DefaultBeaconPrefix,
+                    "BEACON GRID TRIMMED",
+                    "Oldest beacon anchor was retired to preserve the active field-marker cap.",
+                    "WARN");
+            }
+
+            _activeBeacons.RemoveRange(0, excessCount);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

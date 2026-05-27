@@ -113,6 +113,8 @@ namespace Hecton8.Celestial
         private bool _hotSwapRegistered;
         private bool _pendingPlacementVisualSync;
         private ObserverRelativeCelestialBody _parentObserverRelativeBody;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private bool _usingRegisteredAtmosphere;
         private bool _editorPreviewDirty = true;
         private Vector3 _editorLastObserverPosition;
         private Vector3 _editorLastParentPosition;
@@ -122,7 +124,7 @@ namespace Hecton8.Celestial
         /// <summary>
         /// Current normalized sky direction solved by this body.
         /// </summary>
-        public Vector3 CurrentDirection => ResolvePlacementDirection(ResolveTimeSeconds());
+        public Vector3 CurrentDirection => ResolvePlacementDirection(ResolveTimeSeconds(), false);
 
         /// <summary>
         /// Current apparent angular diameter in degrees.
@@ -142,11 +144,12 @@ namespace Hecton8.Celestial
         private void OnEnable()
         {
 #if UNITY_EDITOR
-            if (EditorApplication.isCompiling || !Application.isPlaying)
+            if (EditorApplication.isCompiling)
                 return;
 #endif
 
             CacheAuthoringReferences();
+            CacheRuntimeRegistryServicesCold();
             TryCaptureInitialDirection();
             ApplyPlacement();
 
@@ -287,6 +290,23 @@ namespace Hecton8.Celestial
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.AtmosphereRuntime)
+            {
+                if (_usingRegisteredAtmosphere || atmosphereManager == null)
+                {
+                    atmosphereManager = currentService as HectonAtmosphereManager;
+                    _usingRegisteredAtmosphere = atmosphereManager != null;
+                }
+
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 
@@ -372,12 +392,12 @@ namespace Hecton8.Celestial
             transform.localRotation = ResolveLocalRotation(ResolveTimeSeconds());
         }
 
-        private Vector3 ResolvePlacementDirection(float timeSeconds)
+        private Vector3 ResolvePlacementDirection(float timeSeconds, bool allowReferenceCaching = true)
         {
             switch (placementMode)
             {
                 case CelestialPlacementMode.OrbitAroundParent:
-                    return ResolveOrbitDirection(timeSeconds);
+                    return ResolveOrbitDirection(timeSeconds, allowReferenceCaching);
 
                 default:
                     return ResolveFixedDirection();
@@ -403,9 +423,9 @@ namespace Hecton8.Celestial
             return fixedDirection.normalized;
         }
 
-        private Vector3 ResolveOrbitDirection(float timeSeconds)
+        private Vector3 ResolveOrbitDirection(float timeSeconds, bool allowReferenceCaching)
         {
-            Vector3 parentDirection = ResolveParentDirection();
+            Vector3 parentDirection = ResolveParentDirection(allowReferenceCaching);
             if (parentDirection.sqrMagnitude <= DirectionEpsilon)
                 return ResolveFixedDirection();
 
@@ -510,12 +530,12 @@ namespace Hecton8.Celestial
             return true;
         }
 
-        private Vector3 ResolveParentDirection()
+        private Vector3 ResolveParentDirection(bool allowReferenceCaching)
         {
             if (parentBodyTransform == null)
                 return Vector3.zero;
 
-            if (_parentObserverRelativeBody == null)
+            if (allowReferenceCaching && _parentObserverRelativeBody == null)
                 parentBodyTransform.TryGetComponent(out _parentObserverRelativeBody);
 
             if (_parentObserverRelativeBody != null && _parentObserverRelativeBody != this)
@@ -532,7 +552,7 @@ namespace Hecton8.Celestial
                     return localDirection.normalized;
             }
 
-            Vector3 observerPosition = ResolveObserverWorldPosition();
+            Vector3 observerPosition = ResolveObserverWorldPosition(allowReferenceCaching);
             if (observerPosition.sqrMagnitude > DirectionEpsilon || observerTransform != null)
             {
                 Vector3 worldDirection = parentBodyTransform.position - observerPosition;
@@ -641,11 +661,25 @@ namespace Hecton8.Celestial
 
         private void ResolveAtmosphereManager()
         {
-            if (atmosphereManager == null)
+            if (atmosphereManager == null && !Application.isPlaying)
                 atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
         }
 
-        private Vector3 ResolveObserverWorldPosition()
+        private void CacheRuntimeRegistryServicesCold()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (atmosphereManager == null || _usingRegisteredAtmosphere)
+            {
+                atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
+                _usingRegisteredAtmosphere = atmosphereManager != null;
+            }
+
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+        }
+
+        private Vector3 ResolveObserverWorldPosition(bool allowReferenceCaching = true)
         {
             if (observerTransform != null)
                 return observerTransform.position;
@@ -661,11 +695,15 @@ namespace Hecton8.Celestial
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
-                Camera playerCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null
-                    ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+                Camera playerCamera = playerContext != null && playerContext.PlayerCamera != null
+                    ? playerContext.PlayerCamera
                     : ResolveComponentOnTransform<Camera>(playerTransform);
-                if (playerCamera != null)
+                if (allowReferenceCaching && playerCamera != null)
                     observerTransform = playerCamera.transform;
+
+                if (playerCamera != null)
+                    return playerCamera.transform.position;
             }
 
             return observerTransform != null
@@ -707,8 +745,6 @@ namespace Hecton8.Celestial
 
         private float ResolveTimeSeconds()
         {
-            ResolveAtmosphereManager();
-
             if (timeSourceMode == CelestialTimeSourceMode.AtmosphereCycle && atmosphereManager != null)
                 return (float)atmosphereManager.ElapsedCycleTimeSeconds;
 
@@ -730,7 +766,7 @@ namespace Hecton8.Celestial
 #if UNITY_EDITOR
         private void HandleEditorUpdate()
         {
-            if (EditorApplication.isCompiling || !Application.isPlaying)
+            if (EditorApplication.isCompiling)
             {
                 EditorApplication.update -= HandleEditorUpdate;
                 return;
@@ -752,7 +788,7 @@ namespace Hecton8.Celestial
 
         private void OnValidate()
         {
-            if (EditorApplication.isCompiling || !Application.isPlaying)
+            if (EditorApplication.isCompiling)
                 return;
 
             _registeredToTickManager = false;

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
@@ -18,6 +17,7 @@ namespace Hecton8.World
         private const string KindPowerLabel = "Power";
         private const string KindServiceLabel = "Service";
         private const string KindProgressionHubLabel = "ProgressionHub";
+        private const int MaxInterestAnchorSnapshotCount = 32;
 
         [Header("References")]
         [SerializeField] private Transform playerTransform;
@@ -45,8 +45,9 @@ namespace Hecton8.World
         [SerializeField] private bool _debugApplied;
 #pragma warning restore CS0414
 
-        // COLD ALLOC: List<WorldInterestAnchor>[24] - slow-tick world-interest anchor scratch - owner: WorldInterestDirector
-        private readonly List<WorldInterestAnchor> _anchors = new List<WorldInterestAnchor>(24);
+        private readonly WorldInterestAnchor[] _anchors = new WorldInterestAnchor[MaxInterestAnchorSnapshotCount];
+        private int _anchorCount;
+        private int _lastAnchorVersion = -1;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonPlayerMovement _playerMovement;
         private bool _registeredToTickManager;
@@ -165,15 +166,17 @@ namespace Hecton8.World
 
         public void RefreshAnchors()
         {
-            WorldInterestAnchor.CopyActiveAnchorsTo(_anchors);
-            _debugAnchorCount = _anchors.Count;
+            _anchorCount = WorldInterestAnchor.CopyActiveAnchorsTo(_anchors);
+            _lastAnchorVersion = WorldInterestAnchor.ActiveAnchorVersion;
+            _debugAnchorCount = _anchorCount;
         }
 
         private void ApplyInterest(bool forceRefresh)
         {
             ResolveReferences();
 
-            if (forceRefresh || _anchors.Count == 0)
+            int activeAnchorVersion = WorldInterestAnchor.ActiveAnchorVersion;
+            if (forceRefresh || _anchorCount == 0 || activeAnchorVersion != _lastAnchorVersion)
                 RefreshAnchors();
 
             if (scatterBudgetController == null)
@@ -198,7 +201,7 @@ namespace Hecton8.World
             float sliceNearScale = idleSliceNearScale;
             float sliceMidScale = idleSliceMidScale;
 
-            for (int i = 0; i < _anchors.Count; i++)
+            for (int i = 0; i < _anchorCount; i++)
             {
                 WorldInterestAnchor anchor = _anchors[i];
                 if (anchor == null)
@@ -234,7 +237,7 @@ namespace Hecton8.World
             _debugDominantAnchor = bestAnchor != null ? bestAnchor.InterestLabel : NoneLabel;
             _debugDominantKind = bestAnchor != null ? ResolveInterestKindLabel(bestAnchor.Kind) : NoneLabel;
             _debugDominantInfluence = bestInfluence;
-            _debugAnchorCount = _anchors.Count;
+            _debugAnchorCount = _anchorCount;
             _debugApplied = true;
         }
 

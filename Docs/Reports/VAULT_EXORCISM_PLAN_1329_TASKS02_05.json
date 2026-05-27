@@ -1,0 +1,56 @@
+{
+  "agentId": "1329",
+  "primaryTarget": "Assets/_Project/Scripts/Fabricator.cs",
+  "taskCount": 20,
+  "loop": "01-05",
+  "staticScan": {
+    "tool": "Tools/VaultNativeAliasRoslynAudit net10 direct run",
+    "filteredReport": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1329_BEFORE.json",
+    "fabricatorForbiddenPersistentNativeAliases": 13,
+    "nativeParallelHashMapFields": 1,
+    "nativeArrayFields": 12,
+    "filteredReportSha256": "93f4b96a5c30b84cab9b53f0a7fd44fdcdf58b0cefdb3c1514b80da3d2f14fe9"
+  },
+  "bufferOwnershipMap": [
+    { "oldField": "_craftInventoryCounts", "newHandle": "_craftInventoryCountsHandle", "elementType": "int2", "capacity": 128, "bufferId": "ShinobuFabricatorInventoryCountPairs", "numericId": 71144, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; Fabricator stores descriptor only" },
+    { "oldField": "_craftRecipeCosts", "newHandle": "_craftRecipeCostsHandle", "elementType": "int2", "capacity": 32, "bufferId": "ShinobuFabricatorRecipeCosts", "numericId": 71148, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; phase-local writer view only" },
+    { "oldField": "_craftRecipeEvaluationResult", "newHandle": "_craftRecipeEvaluationResultHandle", "elementType": "byte", "capacity": 1, "bufferId": "ShinobuFabricatorRecipeEvaluationResult", "numericId": 71149, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; phase-local writer view only" },
+    { "oldField": "_deconstructionRecipeOutputs", "newHandle": "_deconstructionRecipeOutputsHandle", "elementType": "int2", "capacity": 32, "bufferId": "ShinobuFabricatorDeconstructionRecipeOutputs", "numericId": 71169, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; writer lock spans deconstruction emission loop" },
+    { "oldField": "_deconstructionOutputCount", "newHandle": "_deconstructionOutputCountHandle", "elementType": "int", "capacity": 1, "bufferId": "ShinobuFabricatorDeconstructionOutputCount", "numericId": 71170, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; writer lock spans deconstruction emission loop" },
+    { "oldField": "_complexRecipeGraphNodes", "newHandle": "_complexRecipeGraphNodesHandle", "elementType": "int2", "capacity": 64, "bufferId": "ShinobuFabricatorComplexRecipeGraphNodes", "numericId": 71171, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; phase-local writer view only" },
+    { "oldField": "_complexRecipeGraphEdges", "newHandle": "_complexRecipeGraphEdgesHandle", "elementType": "int2", "capacity": 128, "bufferId": "ShinobuFabricatorComplexRecipeGraphEdges", "numericId": 71172, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; phase-local writer view only" },
+    { "oldField": "_complexRecipeGraphInDegrees", "newHandle": "_complexRecipeGraphInDegreesHandle", "elementType": "int", "capacity": 64, "bufferId": "ShinobuFabricatorComplexRecipeGraphInDegrees", "numericId": 71173, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; phase-local writer view only" },
+    { "oldField": "_complexRecipeGraphQueue", "newHandle": "_complexRecipeGraphQueueHandle", "elementType": "int", "capacity": 64, "bufferId": "ShinobuFabricatorComplexRecipeGraphQueue", "numericId": 71174, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; phase-local writer view only" },
+    { "oldField": "_complexRecipeRawCosts", "newHandle": "_complexRecipeRawCostsHandle", "elementType": "int2", "capacity": 32, "bufferId": "ShinobuFabricatorComplexRecipeRawCosts", "numericId": 71175, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; phase-local writer view only" },
+    { "oldField": "_complexRecipeRawCostCount", "newHandle": "_complexRecipeRawCostCountHandle", "elementType": "int", "capacity": 1, "bufferId": "ShinobuFabricatorComplexRecipeRawCostCount", "numericId": 71176, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; phase-local writer view only" },
+    { "oldField": "_complexRecipeGraphStatus", "newHandle": "_complexRecipeGraphStatusHandle", "elementType": "byte", "capacity": 1, "bufferId": "ShinobuFabricatorComplexRecipeGraphStatus", "numericId": 71177, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; phase-local writer view only" },
+    { "oldField": "_unlockedRecipes", "newHandle": "_unlockedRecipesHandle", "elementType": "ulong", "capacity": 8, "bufferId": "ShinobuFabricatorUnlockedRecipes", "numericId": 71178, "owner": "SystemID.Crafting", "lifecycle": "GlobalDataVault persistent buffer; read-only accessor view for IsRecipeUnlockBitSet" }
+  ],
+  "extraVaultBuffers": [
+    { "field": "_fabricatorMemoryTelemetryRingHandle", "elementType": "FabricatorMemoryTelemetryEntry", "capacity": 300, "bufferId": "ShinobuFabricatorMemoryTelemetryRing", "numericId": 71179, "owner": "SystemID.Crafting", "entrySizeBytes": 64 }
+  ],
+  "dependencyGraph": [
+    { "caller": "HasIngredients", "nativeInputs": ["inventory count pairs", "recipe costs", "availability result", "complex graph buffers"], "consumer": "CraftingSystem.CanCraft linear overload", "lockPlan": "acquire all writer views once; release in finally" },
+    { "caller": "ConsumeIngredients", "nativeInputs": ["recipe costs", "complex graph buffers"], "consumer": "CraftingSystem.TryBuildRecipeCostBuffer and TryBuildTotalRawCostBuffer", "lockPlan": "acquire required writer views by branch; release in finally" },
+    { "caller": "TryDeconstructItem", "nativeInputs": ["deconstruction outputs", "deconstruction count"], "consumer": "CraftingSystem.TryBuildDeconstructionYieldBuffer", "lockPlan": "writer lock spans build and emission readback because output view cannot persist after release" },
+    { "caller": "EnsureRecipeUnlockMask", "nativeInputs": ["unlock words"], "consumer": "Fabricator.WriteRecipeUnlockBit", "lockPlan": "writer lock only while rebuilding words" },
+    { "caller": "IsRecipeUnlockBitSet", "nativeInputs": ["unlock words"], "consumer": "Fabricator.IsRecipeUnlockBitSet", "lockPlan": "pure read-only handle resolution, no mutation" }
+  ],
+  "dtoLayout": [
+    { "type": "VaultGenerationHandle<T>", "source": "Core/Memory/GlobalDataVault.cs", "layout": "Explicit/Sequential existing vault contract", "sizeBytes": 16, "arm64MultipleOfEight": true },
+    { "type": "FabricatorMemoryTelemetryEntry", "plannedLayout": "Explicit", "sizeBytes": 64, "arm64MultipleOfEight": true }
+  ],
+  "telemetryPlan": {
+    "ringCapacity": 300,
+    "entrySizeBytes": 64,
+    "trigger": "vault ensure/acquire/read failure or stale handle mismatch",
+    "dumpPath": "Docs/AgentLogs/Dump_1329_Fabricator.bin",
+    "managedAllocationPosition": "fault-only dump path; hot path writes fixed native entry"
+  },
+  "scalability": {
+    "minimum": "fixed small buffers; no dynamic resize from hot craft checks",
+    "middle": "same authoritative scratch with continuous quality weight recorded in telemetry",
+    "high": "saved CPU can be spent by existing visual fabrication runtime; no gameplay route change",
+    "ultra": "visual overkill remains outside memory ownership path"
+  }
+}

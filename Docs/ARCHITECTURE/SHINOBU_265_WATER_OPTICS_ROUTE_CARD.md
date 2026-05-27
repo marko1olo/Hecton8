@@ -60,7 +60,7 @@ UberNoir solid surfaces and volumetric fog need the same water absorption/scatte
 - Current static GUID scan finds no authored owner, and scene/bootstrap placement remains an owner-review blocker.
 - Domain reload no longer mutates renderer assets.
 - Editor/development profile bridge:
-  - Source: `Docs/water_optics_profiles.csv`.
+  - Source: `Docs/Data/Profiles/water_optics_profiles.csv`.
   - Scope: `UNITY_EDITOR` cold bootstrap or Abyssal Optics Tuner reload.
   - Path guard: Unity project root or `Hecton8` child with `Assets` and `ProjectSettings`.
   - Player runtime: no text loading from `StreamingAssets`.
@@ -127,7 +127,7 @@ No `Pack=1`, no managed fields, no Unity object references.
 - Owner-local private `NativeArray`: rejected; persistent rows live in DataVault.
 - Hot `GlobalRegistry.DataVault` polling from dispatcher phases: rejected; Vault acquisition is cold lifecycle/hot-swap only.
 - Hot `EnsureVaultBuffers` repair from `PRE_SIMULATION`/`SIMULATION`: rejected; stale or missing handles fail closed until cold bootstrap or hot-swap replacement repairs ownership.
-- Player runtime text CSV loading from `StreamingAssets`: rejected; `Docs/water_optics_profiles.csv` is an editor tuning bridge, not production payload authority.
+- Player runtime text CSV loading from `StreamingAssets`: rejected; `Docs/Data/Profiles/water_optics_profiles.csv` is an editor tuning bridge, not production payload authority.
 - Removed math-LOD/platform shader split for water extinction LUT: rejected; quality selection is a runtime continuous scalar.
 - Leaving UberNoir `input.extinctionColor` on the old RGB analytical exp path at low quality: rejected; legacy vertex/fog tint now uses mono-first spectral admission.
 - UberNoir `_MATH_LOD_LOW` and `H8_UBERNOIR_SCREEN_REFRACTION` local variants: rejected; light-probe trilinear sampling and screen refraction now admit through runtime quality/material gates.

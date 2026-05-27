@@ -62,16 +62,18 @@ namespace Hecton8.Modding
     }
 
     /// <summary>
-    /// Disposable subscription token returned by <see cref="HectonEventBus.Subscribe{TEvent}(Action{TEvent},string)"/>.
+    /// Disposable subscription token returned by the first-party event bridge behind <see cref="HectonAPI.Events"/>.
     /// Dispose this token from <c>IHectonMod.OnUnload()</c> to remove the handler safely.
     /// </summary>
     public sealed class HectonEventSubscription : IDisposable
     {
         private IHectonEventChannel _channel;
+        private readonly bool _requiresOwnerScope;
 
-        internal HectonEventSubscription(IHectonEventChannel channel, int subscriptionId, string subscriberId)
+        internal HectonEventSubscription(IHectonEventChannel channel, int subscriptionId, string subscriberId, bool requiresOwnerScope)
         {
             _channel = channel;
+            _requiresOwnerScope = requiresOwnerScope;
             SubscriptionId = subscriptionId;
             SubscriberId = subscriberId ?? string.Empty;
         }
@@ -96,8 +98,21 @@ namespace Hecton8.Modding
             if (_channel == null)
                 return;
 
+            ThrowIfOwnerScopeMismatch();
             _channel.Unsubscribe(SubscriptionId);
             _channel = null;
+        }
+
+        private void ThrowIfOwnerScopeMismatch()
+        {
+            if (!_requiresOwnerScope)
+                return;
+
+            if (!ModExecutionScope.HasActiveMod)
+                throw new IllegalContractException("HectonEventSubscription.Dispose requires an active mod execution scope for mod-owned tokens.");
+
+            if (!string.Equals(ModExecutionScope.CurrentModId, SubscriberId, StringComparison.Ordinal))
+                throw new IllegalContractException("HectonEventSubscription.Dispose subscription owner must match the active mod execution scope.");
         }
     }
 
@@ -106,7 +121,7 @@ namespace Hecton8.Modding
     /// First-party gameplay queues such as Save/Quest/Scan are owned separately by their NativeQueue-backed static buses.
     /// Unlike raw C# events, every handler invocation is isolated behind try/catch so one broken mod cannot break the chain.
     /// </summary>
-    public static class HectonEventBus
+    internal static class HectonEventBus
     {
         private const int MaxEventDispatchDepth = 5;
         private const uint ManagedEventCascadeBreakerSubjectHash = 0x45564450u; // EVDP
@@ -168,9 +183,10 @@ namespace Hecton8.Modding
                 return null;
             }
 
-            string resolvedSubscriberId = string.IsNullOrWhiteSpace(subscriberId)
-                ? ModExecutionScope.CurrentModId
-                : subscriberId;
+            string resolvedSubscriberId = subscriberId;
+            if (string.IsNullOrWhiteSpace(resolvedSubscriberId))
+                resolvedSubscriberId = ModExecutionScope.CurrentModId;
+            resolvedSubscriberId = RequireConcreteSubscriberId("HectonEventBus.Subscribe", resolvedSubscriberId);
 
             return EventChannelCache<TEvent>.Instance.Subscribe(handler, resolvedSubscriberId);
         }
@@ -182,7 +198,7 @@ namespace Hecton8.Modding
         /// <param name="handler">Method invoked on dispatch.</param>
         /// <param name="subscriberId">Stable mod identifier used for isolation.</param>
         /// <returns>A disposable subscription token.</returns>
-        public static HectonEventSubscription Subscribe<TPayload>(
+        internal static HectonEventSubscription Subscribe<TPayload>(
             HectonUnmanagedEventHandler<TPayload> handler,
             string subscriberId = null)
             where TPayload : unmanaged
@@ -193,9 +209,7 @@ namespace Hecton8.Modding
             if (handler == null)
                 throw new IllegalContractException("Cannot subscribe a null unmanaged payload handler.");
 
-            string resolvedSubscriberId = string.IsNullOrWhiteSpace(subscriberId)
-                ? ModExecutionScope.CurrentModId
-                : subscriberId;
+            string resolvedSubscriberId = RequireModSubscriberScope("HectonEventBus.Subscribe", subscriberId);
 
             return UnmanagedEventChannelCache<TPayload>.Instance.Subscribe(handler, resolvedSubscriberId);
         }
@@ -206,7 +220,7 @@ namespace Hecton8.Modding
         /// <param name="handler">Callback invoked during the managed bridge flush.</param>
         /// <param name="subscriberId">Stable mod identifier used for automatic isolation on callback failure.</param>
         /// <returns>Subscription token, or null when the handler is invalid.</returns>
-        public static HectonEventSubscription SubscribeNative(HectonNativeEventHandler handler, string subscriberId = null)
+        internal static HectonEventSubscription SubscribeNative(HectonNativeEventHandler handler, string subscriberId = null)
         {
             if (ModLoader.GetIsFutureCommandEnvelopeOnly())
                 throw new IllegalContractException(EnvelopeOnlyEventSurfaceDisabledMessage);
@@ -219,9 +233,7 @@ namespace Hecton8.Modding
                 return null;
             }
 
-            string resolvedSubscriberId = string.IsNullOrWhiteSpace(subscriberId)
-                ? ModExecutionScope.CurrentModId
-                : subscriberId;
+            string resolvedSubscriberId = RequireModSubscriberScope("HectonEventBus.SubscribeNative", subscriberId);
 
             return _nativePayloadChannel.Subscribe(handler, resolvedSubscriberId);
         }
@@ -233,7 +245,7 @@ namespace Hecton8.Modding
         /// <param name="handler">Projected event callback.</param>
         /// <param name="subscriberId">Stable mod identifier used for automatic isolation.</param>
         /// <returns>Subscription token, or null when the handler is invalid.</returns>
-        public static HectonEventSubscription SubscribeProjected(Action<ModEventDto> handler, string subscriberId = null)
+        internal static HectonEventSubscription SubscribeProjected(Action<ModEventDto> handler, string subscriberId = null)
         {
             if (ModLoader.GetIsFutureCommandEnvelopeOnly())
                 throw new IllegalContractException(EnvelopeOnlyEventSurfaceDisabledMessage);
@@ -246,11 +258,32 @@ namespace Hecton8.Modding
                 return null;
             }
 
-            string resolvedSubscriberId = string.IsNullOrWhiteSpace(subscriberId)
-                ? ModExecutionScope.CurrentModId
-                : subscriberId;
+            string resolvedSubscriberId = RequireModSubscriberScope("HectonEventBus.SubscribeProjected", subscriberId);
 
             return ModEventProjectionBridge.SubscribeProjected(handler, resolvedSubscriberId);
+        }
+
+        private static string RequireModSubscriberScope(string apiName, string subscriberId)
+        {
+            if (!ModExecutionScope.HasActiveMod)
+                throw new IllegalContractException(apiName + " requires an active mod execution scope.");
+
+            string currentModId = ModExecutionScope.CurrentModId;
+            if (string.IsNullOrWhiteSpace(subscriberId))
+                return currentModId;
+
+            if (!string.Equals(subscriberId, currentModId, StringComparison.Ordinal))
+                throw new IllegalContractException(apiName + " subscriber id must match the active mod execution scope.");
+
+            return currentModId;
+        }
+
+        private static string RequireConcreteSubscriberId(string apiName, string subscriberId)
+        {
+            if (string.IsNullOrWhiteSpace(subscriberId))
+                throw new IllegalContractException(apiName + " requires a concrete subscriber id before token creation.");
+
+            return subscriberId;
         }
 
         /// <summary>
@@ -286,7 +319,7 @@ namespace Hecton8.Modding
         /// </summary>
         /// <typeparam name="TPayload">Unmanaged event payload type.</typeparam>
         /// <param name="payload">Blittable payload.</param>
-        public static void Publish<TPayload>(in TPayload payload)
+        internal static void Publish<TPayload>(in TPayload payload)
             where TPayload : unmanaged
         {
             if (ModLoader.GetIsFutureCommandEnvelopeOnly())
@@ -493,7 +526,7 @@ namespace Hecton8.Modding
 
             internal HectonEventSubscription Subscribe(HectonUnmanagedEventHandler<TPayload> handler, string subscriberId)
             {
-                string resolvedSubscriberId = string.IsNullOrWhiteSpace(subscriberId) ? "anonymous" : subscriberId;
+                string resolvedSubscriberId = RequireConcreteSubscriberId("HectonEventBus.UnmanagedEventChannel.Subscribe", subscriberId);
                 SubscriptionEntry entry = new SubscriptionEntry
                 {
                     Id = _nextSubscriptionId++,
@@ -505,7 +538,7 @@ namespace Hecton8.Modding
                 };
 
                 _subscriptions.Add(entry);
-                return new HectonEventSubscription(this, entry.Id, entry.SubscriberId);
+                return new HectonEventSubscription(this, entry.Id, entry.SubscriberId, ModExecutionScope.HasActiveMod);
             }
 
             internal void Publish(in TPayload payload)
@@ -656,7 +689,7 @@ namespace Hecton8.Modding
 
             internal HectonEventSubscription Subscribe(HectonNativeEventHandler handler, string subscriberId)
             {
-                string resolvedSubscriberId = string.IsNullOrWhiteSpace(subscriberId) ? "anonymous" : subscriberId;
+                string resolvedSubscriberId = RequireConcreteSubscriberId("HectonEventBus.NativePayloadChannel.Subscribe", subscriberId);
                 SubscriptionEntry entry = new SubscriptionEntry
                 {
                     Id = _nextSubscriptionId++,
@@ -668,7 +701,7 @@ namespace Hecton8.Modding
                 };
 
                 _subscriptions.Add(entry);
-                return new HectonEventSubscription(this, entry.Id, entry.SubscriberId);
+                return new HectonEventSubscription(this, entry.Id, entry.SubscriberId, ModExecutionScope.HasActiveMod);
             }
 
             internal void Publish(HectonNativeEventKind eventKind, ReadOnlySpan<byte> payload)
@@ -827,7 +860,7 @@ namespace Hecton8.Modding
 
             internal HectonEventSubscription Subscribe(Action<TEvent> handler, string subscriberId)
             {
-                string resolvedSubscriberId = string.IsNullOrWhiteSpace(subscriberId) ? "anonymous" : subscriberId;
+                string resolvedSubscriberId = RequireConcreteSubscriberId("HectonEventBus.EventChannel.Subscribe", subscriberId);
                 SubscriptionEntry entry = new SubscriptionEntry
                 {
                     Id = _nextSubscriptionId++,
@@ -839,7 +872,7 @@ namespace Hecton8.Modding
                 };
 
                 _subscriptions.Add(entry);
-                return new HectonEventSubscription(this, entry.Id, entry.SubscriberId);
+                return new HectonEventSubscription(this, entry.Id, entry.SubscriberId, ModExecutionScope.HasActiveMod);
             }
 
             internal void Publish(TEvent evt)

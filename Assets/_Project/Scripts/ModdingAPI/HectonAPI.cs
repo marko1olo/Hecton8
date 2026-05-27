@@ -21,6 +21,68 @@ namespace Hecton8.Modding
     /// </summary>
     public static class HectonAPI
     {
+        private static void ThrowIfNoActiveMod(string surface)
+        {
+            if (!ModExecutionScope.HasActiveMod)
+                throw new IllegalContractException($"HectonAPI.{surface} calls must originate from an active mod execution scope.");
+        }
+
+        private static void ThrowIfScopeMismatch(string surface, string modId)
+        {
+            ThrowIfNoActiveMod(surface);
+            if (!string.Equals(ModExecutionScope.CurrentModId, modId, StringComparison.Ordinal))
+                throw new IllegalContractException($"HectonAPI.{surface} modId must match the active mod execution scope.");
+        }
+
+        private static void ThrowIfSignatureMismatch(string surface, uint modHash)
+        {
+            ThrowIfNoActiveMod(surface);
+            if (ModExecutionScope.CurrentModHash != modHash)
+                throw new IllegalContractException($"HectonAPI.{surface} ModderSignature must match the active mod execution scope.");
+        }
+
+        private static string RequireSubscriberScope(string surface, string subscriberId)
+        {
+            ThrowIfNoActiveMod(surface);
+            if (!string.IsNullOrWhiteSpace(subscriberId) &&
+                !string.Equals(ModExecutionScope.CurrentModId, subscriberId, StringComparison.Ordinal))
+            {
+                throw new IllegalContractException($"HectonAPI.{surface} subscriberId must match the active mod execution scope.");
+            }
+
+            return ModExecutionScope.CurrentModId;
+        }
+
+        private static void ThrowIfSubscriptionScopeMismatch(string surface, HectonEventSubscription subscription)
+        {
+            ThrowIfNoActiveMod(surface);
+            if (subscription == null || string.IsNullOrWhiteSpace(subscription.SubscriberId))
+                return;
+
+            if (!string.Equals(ModExecutionScope.CurrentModId, subscription.SubscriberId, StringComparison.Ordinal))
+                throw new IllegalContractException($"HectonAPI.{surface} subscription owner must match the active mod execution scope.");
+        }
+
+        private static void ThrowIfEngineOwnedPublishPayload<TPayload>(string surface)
+            where TPayload : unmanaged
+        {
+            Type payloadType = typeof(TPayload);
+            if (payloadType == typeof(ModEventDto) ||
+                payloadType == typeof(ModPlayerSpawnedEvent) ||
+                payloadType == typeof(ModBiomeChangedEvent) ||
+                payloadType == typeof(ModRaycastResultPayload) ||
+                payloadType == typeof(ModInteractionRejectedPayload) ||
+                payloadType == typeof(ModCriticalMemoryEvictionPayload) ||
+                payloadType == typeof(ModAupResponse) ||
+                payloadType == typeof(FutureCommandEnvelope) ||
+                payloadType == typeof(ModCommand) ||
+                payloadType == typeof(ModAupCommand) ||
+                payloadType == typeof(ModRenderInstanceCommand))
+            {
+                throw new IllegalContractException($"HectonAPI.{surface} cannot publish engine-owned mod payload type {payloadType.Name}.");
+            }
+        }
+
         /// <summary>
         /// Event-facing mod API.
         /// Use this surface for safe subscriptions instead of binding directly to first-party runtime owners.
@@ -62,8 +124,9 @@ namespace Hecton8.Modding
                 string subscriberId = null)
                 where TPayload : unmanaged
             {
+                string resolvedSubscriberId = RequireSubscriberScope("Events.Subscribe", subscriberId);
                 ThrowIfEnvelopeOnly();
-                return HectonEventBus.Subscribe(handler, subscriberId);
+                return HectonEventBus.Subscribe(handler, resolvedSubscriberId);
             }
 
             /// <summary>
@@ -74,8 +137,9 @@ namespace Hecton8.Modding
             /// <returns>A disposable subscription token.</returns>
             public static HectonEventSubscription SubscribeNative(HectonNativeEventHandler handler, string subscriberId = null)
             {
+                string resolvedSubscriberId = RequireSubscriberScope("Events.SubscribeNative", subscriberId);
                 ThrowIfEnvelopeOnly();
-                return HectonEventBus.SubscribeNative(handler, subscriberId);
+                return HectonEventBus.SubscribeNative(handler, resolvedSubscriberId);
             }
 
             /// <summary>
@@ -86,24 +150,27 @@ namespace Hecton8.Modding
             /// <returns>A disposable subscription token.</returns>
             public static HectonEventSubscription SubscribeProjected(Action<ModEventDto> handler, string subscriberId = null)
             {
+                string resolvedSubscriberId = RequireSubscriberScope("Events.SubscribeProjected", subscriberId);
                 ThrowIfEnvelopeOnly();
-                return HectonEventBus.SubscribeProjected(handler, subscriberId);
+                return HectonEventBus.SubscribeProjected(handler, resolvedSubscriberId);
             }
 
             public static HectonEventSubscription OnPlayerSpawned(
                 HectonUnmanagedEventHandler<ModPlayerSpawnedEvent> handler,
                 string subscriberId = null)
             {
+                string resolvedSubscriberId = RequireSubscriberScope("Events.OnPlayerSpawned", subscriberId);
                 ThrowIfEnvelopeOnly();
-                return HectonEventBus.Subscribe(handler, subscriberId);
+                return HectonEventBus.Subscribe(handler, resolvedSubscriberId);
             }
 
             public static HectonEventSubscription OnBiomeChanged(
                 HectonUnmanagedEventHandler<ModBiomeChangedEvent> handler,
                 string subscriberId = null)
             {
+                string resolvedSubscriberId = RequireSubscriberScope("Events.OnBiomeChanged", subscriberId);
                 ThrowIfEnvelopeOnly();
-                return HectonEventBus.Subscribe(handler, subscriberId);
+                return HectonEventBus.Subscribe(handler, resolvedSubscriberId);
             }
 
             /// <summary>
@@ -113,6 +180,7 @@ namespace Hecton8.Modding
             /// <param name="subscription">Subscription token returned by <see cref="Subscribe{TEvent}"/>.</param>
             public static void Unsubscribe(HectonEventSubscription subscription)
             {
+                ThrowIfSubscriptionScopeMismatch("Events.Unsubscribe", subscription);
                 subscription?.Dispose();
             }
 
@@ -141,7 +209,9 @@ namespace Hecton8.Modding
             public static void Publish<TPayload>(in TPayload payload)
                 where TPayload : unmanaged
             {
+                ThrowIfNoActiveMod("Events.Publish");
                 ThrowIfEnvelopeOnly();
+                ThrowIfEngineOwnedPublishPayload<TPayload>("Events.Publish");
                 HectonEventBus.Publish(in payload);
             }
 
@@ -162,6 +232,7 @@ namespace Hecton8.Modding
             /// </summary>
             public static uint GetButtonMask()
             {
+                ThrowIfNoActiveMod("Input.GetButtonMask");
                 IInputService input = GlobalRegistry.Input;
                 if (input == null)
                     return 0u;
@@ -195,6 +266,7 @@ namespace Hecton8.Modding
             /// <returns>True when the envelope entered the quarantine queue.</returns>
             public static bool RequestFuture(in FutureCommandEnvelope envelope)
             {
+                ThrowIfSignatureMismatch("Commands.RequestFuture", envelope.ModderSignature);
                 return FutureCommandSandboxValidator.Request(in envelope);
             }
 
@@ -207,6 +279,7 @@ namespace Hecton8.Modding
             [System.Obsolete("Legacy ModCommand lane is quarantined and returns false. Use RequestFuture with a 64-byte FutureCommandEnvelope.", false)]
             public static bool Request(in ModCommand command)
             {
+                ThrowIfNoActiveMod("Commands.Request");
                 return false;
             }
 
@@ -218,6 +291,7 @@ namespace Hecton8.Modding
             [System.Obsolete("Legacy AUP command lane is quarantined and returns false. Use RequestFuture with a 64-byte FutureCommandEnvelope.", false)]
             public static bool RequestAup(in ModAupCommand command)
             {
+                ThrowIfNoActiveMod("Commands.RequestAup");
                 return false;
             }
 
@@ -229,6 +303,7 @@ namespace Hecton8.Modding
             [System.Obsolete("Legacy render-instance lane is quarantined and returns false. Use RequestFuture with a 64-byte FutureCommandEnvelope.", false)]
             public static bool RequestRenderInstance(in ModRenderInstanceCommand command)
             {
+                ThrowIfNoActiveMod("Commands.RequestRenderInstance");
                 return false;
             }
 #pragma warning restore CS0618
@@ -242,13 +317,20 @@ namespace Hecton8.Modding
             /// <summary>
             /// Current mod resource proxy.
             /// </summary>
-            public static IModResourceProxy Proxy => ModResourceProxy.Instance;
+            public static IModResourceProxy Proxy => GetProxy();
+
+            private static IModResourceProxy GetProxy()
+            {
+                ThrowIfNoActiveMod("Resources.Proxy");
+                return ModResourceProxy.Instance;
+            }
 
             /// <summary>
             /// Resolves a prefab asset name to a hash identifier.
             /// </summary>
             public static bool TryResolvePrefab(string assetName, out uint hashId)
             {
+                ThrowIfNoActiveMod("Resources.TryResolvePrefab");
                 return ModResourceProxy.Instance.TryResolvePrefab(assetName, out hashId);
             }
 
@@ -257,6 +339,7 @@ namespace Hecton8.Modding
             /// </summary>
             public static bool TryResolveAudioClip(string assetName, out uint hashId)
             {
+                ThrowIfNoActiveMod("Resources.TryResolveAudioClip");
                 return ModResourceProxy.Instance.TryResolveAudioClip(assetName, out hashId);
             }
 
@@ -265,6 +348,7 @@ namespace Hecton8.Modding
             /// </summary>
             public static bool TryResolveTexture(string assetName, out uint hashId)
             {
+                ThrowIfNoActiveMod("Resources.TryResolveTexture");
                 return ModResourceProxy.Instance.TryResolveTexture(assetName, out hashId);
             }
         }
@@ -281,135 +365,101 @@ namespace Hecton8.Modding
             /// <param name="scalarValue">Optional scalar payload.</param>
             public static void Publish(uint markerHash, float scalarValue)
             {
-                if (!ModExecutionScope.HasActiveMod)
-                    throw new IllegalContractException("Mod telemetry writes must originate from an active mod execution scope.");
-
+                ThrowIfNoActiveMod("Telemetry.Publish");
                 GlobalTelemetryBus.PublishModTelemetry(ModExecutionScope.CurrentModHash, markerHash, scalarValue);
             }
         }
 
         /// <summary>
-        /// Item-facing mod API for registering and resolving supported runtime content.
+        /// Item-facing mod API. ScriptableObject item handles are not public mod API.
         /// </summary>
         public static class Items
         {
             /// <summary>
-            /// Registers a custom <see cref="ItemData"/> into the live item catalog without mutating the authored ScriptableObject asset.
-            /// If the player-facing catalog is not available yet, the item is queued and injected on the first bootstrap-ready frame.
+            /// Internal guard for the forbidden ScriptableObject item path.
             /// </summary>
             /// <param name="data">Authored item asset to expose to runtime systems and save/load lookups.</param>
             /// <returns>
-            /// True when the item was accepted for runtime registration or deferred injection.
-            /// False when the item is invalid or collides with an existing stable identifier.
+            /// Always throws for mod callers.
             /// </returns>
-            public static bool RegisterCustomItem(ItemData data)
+            internal static bool RegisterCustomItem(ItemData data)
             {
-                bool success = ModItemRegistry.TryRegister(data, out string error);
-                if (!success)
-                {
-                    Hecton8.Core.H8Debug.LogWarning(
-                        $"[HectonAPI.Items] Failed to register custom item '{(data != null ? data.name : "null")}': {error}");
-                }
-
-                return success;
+                _ = data;
+                throw new IllegalContractException("Mods cannot pass ScriptableObject ItemData handles through HectonAPI. Use approved hash/CRC content envelopes.");
             }
 
             /// <summary>
-            /// Resolves an item by stable ID through the active runtime item catalog.
-            /// This includes authored items plus mod-injected runtime registrations.
+            /// Internal guard for the forbidden ScriptableObject item lookup path.
             /// </summary>
             /// <param name="persistentId">Stable item identifier used by saves and catalogs.</param>
             /// <param name="itemData">Resolved item asset when found.</param>
-            /// <returns>True when the active runtime catalog exists and the ID resolves successfully.</returns>
-            public static bool TryFindItem(string persistentId, out ItemData itemData)
+            /// <returns>Never returns for mod callers.</returns>
+            internal static bool TryFindItem(string persistentId, out ItemData itemData)
             {
+                _ = persistentId;
                 itemData = null;
-
-                ItemCatalog catalog = ModItemRegistry.ResolveActiveCatalog();
-                if (catalog == null || string.IsNullOrWhiteSpace(persistentId))
-                    return false;
-
-                itemData = catalog.FindById(persistentId);
-                return itemData != null;
+                throw new IllegalContractException("Mods cannot receive ScriptableObject ItemData handles from HectonAPI. Use hash-only resource/content identifiers.");
             }
         }
 
         /// <summary>
-        /// Crafting-facing mod API for runtime recipe injection.
+        /// Crafting-facing mod API. Direct recipe/recycle owner overrides are not public mod API.
         /// </summary>
         public static class Crafting
         {
             /// <summary>
-            /// Registers a runtime recipe overlay without mutating any authored fabricator recipe list.
-            /// Registered recipes are appended to live fabricator views through the supported overlay registry.
-            /// Alternative recipes that output an existing first-party item are supported as long as the recipe asset itself is valid.
+            /// Internal guard for the forbidden ScriptableObject recipe path.
             /// </summary>
             /// <param name="recipe">Authored recipe asset to expose through the live crafting registry.</param>
             /// <returns>
-            /// True when the recipe was accepted by the runtime registry.
-            /// False when the recipe payload is invalid.
+            /// Always throws for mod callers.
             /// </returns>
-            public static bool RegisterRecipe(RecipeData recipe)
+            internal static bool RegisterRecipe(RecipeData recipe)
             {
-                bool success = ModRecipeRegistry.TryRegister(recipe, out string error);
-                if (!success)
-                {
-                    Hecton8.Core.H8Debug.LogWarning(
-                        $"[HectonAPI.Crafting] Failed to register custom recipe '{(recipe != null ? recipe.name : "null")}': {error}");
-                }
-
-                return success;
+                _ = recipe;
+                throw new IllegalContractException("Mods cannot pass ScriptableObject RecipeData handles through HectonAPI. Use approved hash/CRC content envelopes.");
             }
 
             /// <summary>
-            /// Registers a runtime recycle-yield overlay for the specified source item without mutating authored item or recipe assets.
-            /// Explicit recycle yields override the built-in auto-derivation path used by the official recycling owner.
+            /// Internal guard for the forbidden recycle-yield owner override path.
             /// </summary>
             /// <param name="itemId">Stable source item identifier used by the runtime item catalog.</param>
             /// <param name="yield">Resource stacks granted when one unit of the source item is recycled.</param>
             /// <returns>
-            /// True when the recycle-yield overlay was accepted by the runtime registry.
-            /// False when the source ID or yield payload is invalid.
+            /// Always throws for mod callers.
             /// </returns>
-            public static bool RegisterRecycleYield(string itemId, List<ResourceStack> yield)
+            internal static bool RegisterRecycleYield(string itemId, List<ResourceStack> yield)
             {
-                bool success = ModRecycleRegistry.TryRegister(itemId, yield, out string error);
-                if (!success)
-                {
-                    Hecton8.Core.H8Debug.LogWarning(
-                        $"[HectonAPI.Crafting] Failed to register recycle yield for '{itemId ?? "null"}': {error}");
-                }
-
-                return success;
+                _ = itemId;
+                _ = yield;
+                throw new IllegalContractException("Mods cannot override recycle yields through HectonAPI. Use an approved content manifest or FutureCommandEnvelope owner route.");
             }
         }
 
         /// <summary>
-        /// Recycling-facing API for the official dismantling owner.
+        /// Recycling-facing API. Direct inventory mutation is not public mod API.
         /// </summary>
         public static class Recycling
         {
             /// <summary>
-            /// Attempts to recycle one inventory unit of the specified item through the official recycling owner.
-            /// Recycle yields come from registered runtime overlays first and fall back to auto-derived dismantle results.
+            /// Internal guard for the forbidden direct recycling owner path.
             /// </summary>
             /// <param name="itemId">Stable item identifier stored in the active runtime item catalog.</param>
-            /// <returns>True when one unit was removed from inventory and the recycle outputs were granted successfully.</returns>
-            public static bool ProcessRecycle(string itemId)
+            /// <returns>Never returns for mod callers.</returns>
+            internal static bool ProcessRecycle(string itemId)
             {
-                ScrapManager manager = GlobalRegistry.Scrap;
-                return manager != null && manager.ProcessRecycle(itemId);
+                _ = itemId;
+                throw new IllegalContractException("Mods cannot mutate inventory through HectonAPI.Recycling. Submit a validated FutureCommandEnvelope through HectonAPI.Commands.RequestFuture.");
             }
         }
 
         /// <summary>
-        /// Construction-facing mod API for runtime buildable injection.
+        /// Construction-facing mod API. ScriptableObject buildable handles are not public mod API.
         /// </summary>
         public static class Construction
         {
             /// <summary>
-            /// Registers a runtime buildable overlay into the live module catalog without mutating the authored ScriptableObject asset list.
-            /// The injected buildable becomes visible to supported build UIs, preview cycling, and save-facing module lookup through the active catalog owner.
+            /// Internal guard for the forbidden ScriptableObject buildable path.
             /// </summary>
             /// <param name="data">Buildable module definition to expose at runtime.</param>
             /// <param name="customCategory">
@@ -417,38 +467,26 @@ namespace Hecton8.Modding
             /// This metadata does not overwrite the authored <see cref="BuildableData.family"/> field.
             /// </param>
             /// <returns>
-            /// True when the buildable was accepted for runtime registration or deferred injection.
-            /// False when the payload is invalid or collides with an existing module identity alias.
+            /// Always throws for mod callers.
             /// </returns>
-            public static bool RegisterBuildable(BuildableData data, string customCategory = "Mods")
+            internal static bool RegisterBuildable(BuildableData data, string customCategory = "Mods")
             {
-                bool success = ModBuildableRegistry.TryRegister(data, customCategory, out string error);
-                if (!success)
-                {
-                    Hecton8.Core.H8Debug.LogWarning(
-                        $"[HectonAPI.Construction] Failed to register custom buildable '{(data != null ? data.name : "null")}': {error}");
-                }
-
-                return success;
+                _ = data;
+                _ = customCategory;
+                throw new IllegalContractException("Mods cannot pass ScriptableObject BuildableData handles through HectonAPI. Use approved hash/CRC content envelopes.");
             }
 
             /// <summary>
-            /// Resolves a buildable module definition through the active runtime module catalog.
-            /// This includes authored modules plus mod-injected runtime registrations.
+            /// Internal guard for the forbidden ScriptableObject buildable lookup path.
             /// </summary>
             /// <param name="persistentId">Stable buildable identifier used by saves and catalogs.</param>
             /// <param name="buildableData">Resolved buildable asset when found.</param>
-            /// <returns>True when the active runtime catalog exists and the identifier resolves successfully.</returns>
-            public static bool TryFindBuildable(string persistentId, out BuildableData buildableData)
+            /// <returns>Never returns for mod callers.</returns>
+            internal static bool TryFindBuildable(string persistentId, out BuildableData buildableData)
             {
+                _ = persistentId;
                 buildableData = null;
-
-                ModuleCatalog catalog = ModBuildableRegistry.ResolveActiveCatalog();
-                if (catalog == null || string.IsNullOrWhiteSpace(persistentId))
-                    return false;
-
-                buildableData = catalog.FindDataById(persistentId);
-                return buildableData != null;
+                throw new IllegalContractException("Mods cannot receive ScriptableObject BuildableData handles from HectonAPI. Use hash-only resource/content identifiers.");
             }
         }
 
@@ -458,24 +496,16 @@ namespace Hecton8.Modding
         public static class Ecosystem
         {
             /// <summary>
-            /// Registers a biome-scoped mutation overlay that biases runtime fauna genetics without mutating authored creature assets.
-            /// Matching is deterministic and evaluated by the live ecosystem genetics owner during spawn.
+            /// Internal guard for the forbidden direct ecosystem mutation overlay path.
             /// </summary>
             /// <param name="definition">Biome mutation definition to merge into the live runtime overlay registry.</param>
             /// <returns>
-            /// True when the mutation definition was accepted by the runtime registry.
-            /// False when the payload is invalid.
+            /// Always throws for mod callers.
             /// </returns>
-            public static bool RegisterBiomeMutation(FaunaBiomeMutationDefinition definition)
+            internal static bool RegisterBiomeMutation(FaunaBiomeMutationDefinition definition)
             {
-                bool success = ModEcosystemRegistry.TryRegister(definition, out string error);
-                if (!success)
-                {
-                    Hecton8.Core.H8Debug.LogWarning(
-                        $"[HectonAPI.Ecosystem] Failed to register biome mutation for biome '{(definition != null ? definition.BiomeId : 0)}': {error}");
-                }
-
-                return success;
+                _ = definition;
+                throw new IllegalContractException("Mods cannot register ecosystem mutation overlays through HectonAPI without owner revocation and runtime proof.");
             }
         }
 
@@ -532,6 +562,7 @@ namespace Hecton8.Modding
                 GameLanguage language,
                 ReadOnlySpan<byte> babelEnvelope)
             {
+                ThrowIfNoActiveMod("Localization.InjectBabelEnvelope");
                 _ = language;
                 _ = babelEnvelope;
                 throw new IllegalContractException("Mod localization injection is disabled until Babel binary/hash envelopes are supported.");
@@ -550,6 +581,7 @@ namespace Hecton8.Modding
             /// <param name="message">User-facing message body.</param>
             public static void ShowInfo(string message)
             {
+                ThrowIfNoActiveMod("UI.ShowInfo");
                 if (HUDNotification.TryGetActive(out HUDNotification notification))
                 {
                     notification.ShowInfo(message ?? string.Empty);
@@ -565,6 +597,7 @@ namespace Hecton8.Modding
             /// <param name="message">User-facing warning body.</param>
             public static void ShowWarning(string message)
             {
+                ThrowIfNoActiveMod("UI.ShowWarning");
                 if (HUDNotification.TryGetActive(out HUDNotification notification))
                 {
                     notification.ShowWarning(message ?? string.Empty);
@@ -580,6 +613,7 @@ namespace Hecton8.Modding
             /// <param name="message">User-facing critical body.</param>
             public static void ShowCritical(string message)
             {
+                ThrowIfNoActiveMod("UI.ShowCritical");
                 if (HUDNotification.TryGetActive(out HUDNotification notification))
                 {
                     notification.ShowCritical(message ?? string.Empty);
@@ -599,6 +633,7 @@ namespace Hecton8.Modding
             /// <param name="onValueChanged">Callback invoked immediately with the current value and again whenever the player changes it.</param>
             public static void RegisterSetting(string modId, string settingName, bool defaultValue, Action<bool> onValueChanged)
             {
+                ThrowIfScopeMismatch("UI.RegisterSetting", modId);
                 ModSettingsRegistry.RegisterToggle(modId, settingName, defaultValue, onValueChanged);
             }
 
@@ -620,6 +655,7 @@ namespace Hecton8.Modding
                 float minValue = 0f,
                 float maxValue = 1f)
             {
+                ThrowIfScopeMismatch("UI.RegisterSetting", modId);
                 ModSettingsRegistry.RegisterSlider(modId, settingName, defaultValue, minValue, maxValue, onValueChanged);
             }
         }
@@ -632,7 +668,13 @@ namespace Hecton8.Modding
             /// <summary>
             /// True after the active gameplay scene finished bootstrap and published a live player object.
             /// </summary>
-            public static bool IsGameReady => GameBootstrapper.IsGameReady;
+            public static bool IsGameReady => GetIsGameReady();
+
+            private static bool GetIsGameReady()
+            {
+                ThrowIfNoActiveMod("World.IsGameReady");
+                return GameBootstrapper.IsGameReady;
+            }
 
             /// <summary>
             /// Resolves the live player GameObject published by bootstrap.
@@ -663,6 +705,7 @@ namespace Hecton8.Modding
             /// <returns>True when a player object is currently published.</returns>
             public static bool TryGetPlayerEntityHash(out uint playerHash)
             {
+                ThrowIfNoActiveMod("World.TryGetPlayerEntityHash");
                 GameObject playerObject = GameBootstrapper.CurrentPlayerObject;
                 playerHash = playerObject != null
                     ? unchecked((uint)EntityId.ToULong(playerObject.GetEntityId()))
@@ -708,9 +751,7 @@ namespace Hecton8.Modding
             /// <param name="value">Serialized payload text. Null is normalized to an empty string.</param>
             public static void SetModString(string key, string value)
             {
-                if (!ModExecutionScope.HasActiveMod)
-                    throw new IllegalContractException("Mod save writes must originate from an active mod execution scope.");
-
+                ThrowIfNoActiveMod("SaveState.SetModString");
                 ModSaveStateStore.SetModString(key, value);
             }
 
@@ -722,9 +763,7 @@ namespace Hecton8.Modding
             /// <returns>The stored payload text or <paramref name="defaultValue"/> when no payload exists.</returns>
             public static string GetModString(string key, string defaultValue = "")
             {
-                if (!ModExecutionScope.HasActiveMod)
-                    throw new IllegalContractException("Mod save reads must originate from an active mod execution scope.");
-
+                ThrowIfNoActiveMod("SaveState.GetModString");
                 return ModSaveStateStore.GetModString(key, defaultValue);
             }
         }
@@ -732,13 +771,13 @@ namespace Hecton8.Modding
         /// <summary>
         /// Loader-facing diagnostics API for supported menus and tooling.
         /// </summary>
-        public static class Mods
+        internal static class Mods
         {
             /// <summary>
             /// Copies the current discovered mod descriptors into the provided list.
             /// </summary>
             /// <param name="destination">Destination list that will be cleared and filled with current runtime info records.</param>
-            public static void GetLoadedMods(List<ModRuntimeInfo> destination)
+            internal static void GetLoadedMods(List<ModRuntimeInfo> destination)
             {
                 ModLoader.CollectRuntimeInfo(destination);
             }

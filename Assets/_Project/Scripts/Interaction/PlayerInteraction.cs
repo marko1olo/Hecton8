@@ -116,6 +116,7 @@ namespace Hecton8.Interaction
 
         private IInteractable _currentHovered;
         private IInventoryPickupSource _currentPickupSource;
+        private InteractableRegistry.TargetInfo _currentTargetInfo;
         private float         _targetProbeTimer;
         private Transform     _cameraTransform;
         private Hecton8.Interaction.PhysicalInteractionHandler _physicalInteractionHandler;
@@ -178,6 +179,8 @@ namespace Hecton8.Interaction
             _hotSwapListenerRegistered = false;
             TryGetComponent(out _physicalInteractionHandler);
             RefreshActiveInteractKeyCache();
+            if (Application.isPlaying)
+                InteractionEvents.PrewarmCold();
 
             // ────────────────────────────────────────────────────
             // Layer mask validation — catch misconfiguration early.
@@ -285,6 +288,12 @@ namespace Hecton8.Interaction
 
                     BaselineInteractInputSignalSequence();
                     RefreshActiveInteractKeyCache();
+                    return;
+
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _registeredToTickManager = false;
+                    if (currentService != null && isActiveAndEnabled)
+                        _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
                     return;
             }
         }
@@ -467,6 +476,8 @@ namespace Hecton8.Interaction
                 IInteractable interactable = hit.TargetInfo.Interactable;
                 if (ReferenceEquals(interactable, _currentHovered))
                 {
+                    _currentPickupSource = hit.TargetInfo.PickupSource;
+                    _currentTargetInfo = hit.TargetInfo;
                     PublishLookTargetSignal(interactable, in hit, PlayerLookTargetSignalStates.Acquired);
                     return;
                 }
@@ -494,6 +505,7 @@ namespace Hecton8.Interaction
         {
             _currentHovered = target;
             _currentPickupSource = pickupSource;
+            _currentTargetInfo = hit.TargetInfo;
             _currentHovered.OnHoverStart();
 
             // Audio: subtle metallic click on hover acquisition.
@@ -516,6 +528,7 @@ namespace Hecton8.Interaction
             _currentHovered.OnHoverEnd();
             _currentHovered = null;
             _currentPickupSource = null;
+            _currentTargetInfo = default;
 
             InteractionEvents.TryRaiseHoverChanged(null);
         }
@@ -645,18 +658,18 @@ namespace Hecton8.Interaction
                 audioService.PlayStatic2D(interactSound, 0.6f);
             }
 
-            PlayerInventory inventory = _playerInventoryService != null ? _playerInventoryService.Inventory : null;
-            if (_currentPickupSource != null &&
-                inventory != null &&
-                _currentPickupSource.TryHandleInventoryPickup(inventory, transform))
+            if (_physicalInteractionHandler != null &&
+                _physicalInteractionHandler.TryHandleInteraction(_currentHovered, transform, in _currentTargetInfo))
             {
                 InteractionEvents.TryRaiseInteractionStarted(
                     _currentHovered, transform);
                 return;
             }
 
-            if (_physicalInteractionHandler != null &&
-                _physicalInteractionHandler.TryHandleInteraction(_currentHovered, transform))
+            PlayerInventory inventory = _playerInventoryService != null ? _playerInventoryService.Inventory : null;
+            if (_currentPickupSource != null &&
+                inventory != null &&
+                _currentPickupSource.TryHandleInventoryPickup(inventory, transform))
             {
                 InteractionEvents.TryRaiseInteractionStarted(
                     _currentHovered, transform);

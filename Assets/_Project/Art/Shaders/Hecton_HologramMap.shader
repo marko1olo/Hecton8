@@ -90,14 +90,31 @@ Shader "Hecton8/UI/Hecton Hologram Map"
                 float3 edge = min(cell, 1.0 - cell);
                 float nearestEdge = min(edge.x, min(edge.y, edge.z));
                 float width = lerp(0.065, 0.022, saturate(_Quality));
-                return (half)(1.0 - smoothstep(width, width * 1.9, nearestEdge));
+                return (half)(1.0 - saturate((nearestEdge - width) * rcp(max(width * 0.9, 0.0001))));
+            }
+
+            float Triangle01(float phase)
+            {
+                return 1.0 - abs(frac(phase) * 2.0 - 1.0);
+            }
+
+            float SignedTriangle01(float phase)
+            {
+                return Triangle01(phase) * 2.0 - 1.0;
+            }
+
+            float Hash21(float2 p)
+            {
+                p = frac(p * float2(123.34, 456.21));
+                p += dot(p, p + 45.32);
+                return frac(p.x * p.y);
             }
 
             half4 Frag(Varyings input) : SV_Target
             {
                 uint axis = (uint)max(_CartographyGridParams.x, 1.0);
                 half quality = saturate(_Quality * _CartographyGridParams.z);
-                int steps = (int)round(lerp(8.0, 64.0, quality * quality * (3.0 - 2.0 * quality)));
+                int steps = (int)(8.0 + quality * 56.0 + 0.5);
                 float timePhase = _CartographyVisualParams.x;
                 float2 uv = input.uv;
                 float2 centered = uv * 2.0 - 1.0;
@@ -112,7 +129,7 @@ Shader "Hecton8/UI/Hecton Hologram Map"
                         break;
 
                     float t = ((float)i + 0.5) / max((float)steps, 1.0);
-                    float wobble = sin((uv.y + t) * 41.0 + timePhase * 3.7) * lerp(0.002, 0.014, quality);
+                    float wobble = SignedTriangle01(((uv.y + t) * 41.0 + timePhase * 3.7) * 0.15915494 + 0.25) * lerp(0.002, 0.014, quality);
                     float3 uvw = float3(saturate(uv.x + wobble), saturate(t), saturate(uv.y - wobble));
                     half voxel = SampleVoxelNearest(uvw, axis);
                     half wire = WireMask(uvw, axis);
@@ -120,8 +137,8 @@ Shader "Hecton8/UI/Hecton Hologram Map"
                     edgeAccum += voxel * wire * (half)(1.0 / 64.0);
                 }
 
-                half scan = (half)(0.72 + 0.28 * sin((uv.y * 720.0) + timePhase * 9.0));
-                half flicker = (half)(0.88 + 0.12 * frac(sin(dot(uv, float2(12.9898, 78.233)) + timePhase) * 43758.5453));
+                half scan = (half)(0.72 + 0.28 * Triangle01((uv.y * 720.0 + timePhase * 9.0) * 0.15915494));
+                half flicker = (half)(0.88 + 0.12 * Hash21(floor(uv * 192.0) + timePhase));
                 half chroma = SampleVoxelNearest(float3(saturate(uv.x + 0.006), 0.5, saturate(uv.y - 0.004)), axis);
                 half alpha = saturate((density + edgeAccum * _Glow + chroma * 0.18h) * _Opacity * shell * scan * flicker);
                 half3 cyan = _Tint.rgb * (0.35h + _Glow * 0.28h);

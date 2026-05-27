@@ -178,7 +178,10 @@ namespace Hecton8.Interaction
         public void Tick(float dt)
         {
             if (_tickDormant)
+            {
+                TryRetireDormantTickRegistration();
                 return;
+            }
 
             float safeDeltaTime = SanitizeDeltaTime(dt);
             if (_snapCooldownRemaining > 0f)
@@ -191,6 +194,7 @@ namespace Hecton8.Interaction
             {
                 _currentAngle = _targetAngle;
                 QueueAngle(_currentAngle);
+                TryRegisterLateFrameTick();
                 if (_snapCooldownRemaining <= 0f)
                     _tickDormant = true;
                 return;
@@ -199,15 +203,18 @@ namespace Hecton8.Interaction
             float alpha = FastDecayBlend(_resolvedSnapSpeed, safeDeltaTime);
             _currentAngle = math.lerp(_currentAngle, _targetAngle, alpha);
             QueueAngle(_currentAngle);
+            TryRegisterLateFrameTick();
         }
 
         public void LateFrameTick()
         {
-            if (!_hasPendingVisualAngle)
-                return;
+            if (_hasPendingVisualAngle)
+            {
+                _hasPendingVisualAngle = false;
+                ApplyAngle(_pendingVisualAngle);
+            }
 
-            _hasPendingVisualAngle = false;
-            ApplyAngle(_pendingVisualAngle);
+            TryRetireDormantTickRegistration();
         }
 
         private static float FastDecayBlend(float speed, float deltaTime)
@@ -275,13 +282,43 @@ namespace Hecton8.Interaction
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            TryRegisterUpdateTick();
+            TryRegisterLateFrameTick();
+        }
+
+        private void TryRegisterUpdateTick()
+        {
+            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
             if (_registered)
                 _tickDormant = false;
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryRetireDormantTickRegistration()
+        {
+            if (!_tickDormant)
+                return;
+
+            if (_hasPendingVisualAngle)
+            {
+                TryRegisterLateFrameTick();
+                return;
+            }
+
+            Unregister();
         }
 
         private void RefreshTickRegistration()
@@ -294,8 +331,12 @@ namespace Hecton8.Interaction
 
         private void Unregister()
         {
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registered = false;
+            }
+
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -324,7 +365,7 @@ namespace Hecton8.Interaction
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registered = false;
                     _registeredLateFrame = false;
-                    if (currentService != null)
+                    if (currentService != null && isActiveAndEnabled)
                         RefreshTickRegistration();
                     break;
             }

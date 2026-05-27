@@ -39,6 +39,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
         public const float ViolentPressureDeltaAtm = 4f;
         public const float CatastrophicWaterRatio = 0.92f;
         public const float CatastrophicStressScaleAtm = 48f;
+        public const float AuthoritativeQualityWeight = 1f;
         public const uint AgentHash = 0x53333338u;
         public const uint HeavyPumpHash = 0x48504D50u;
         public const uint ViolentBubblesHash = 0x56425542u;
@@ -249,6 +250,12 @@ namespace Hecton8.Gameplay.AirlockPressurization
         {
             float quality = math.saturate(FiniteOr(globalQualityWeight, 0.5f));
             return math.lerp(0.016f, 0.1f, 1f - quality);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveAuthorityTickInterval()
+        {
+            return ResolveTickInterval(AirlockPressurizationConstants.AuthoritativeQualityWeight);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -285,7 +285,7 @@ namespace Hecton8.World
     /// Completed simulation output for one scatter pass.
     /// NativeArray ownership stays with the backend that produced it.
     /// </summary>
-    public readonly struct ScatterSimulationResult
+    public readonly ref struct ScatterSimulationResult
     {
         public ScatterSimulationResult(
             NativeArray<ScatterSimulationCandidate> candidates,

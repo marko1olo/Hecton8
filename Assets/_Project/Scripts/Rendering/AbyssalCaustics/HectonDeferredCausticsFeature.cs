@@ -143,9 +143,11 @@ namespace Hecton8.Rendering
                 settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
 #endif
 
-            Shader shader = settings != null && settings.shader != null
-                ? settings.shader
-                : Shader.Find("Hidden/Hecton8/DeferredCaustics");
+            Shader shader = settings != null ? settings.shader : null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find("Hidden/Hecton8/DeferredCaustics");
+#endif
             RecreateMaterial(ref _material, shader);
             _pass ??= new DeferredCausticsPass();
         }

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.PDA;
@@ -19,12 +18,13 @@ namespace Hecton8.Ecosystem
         private const float InfectionActivationDebt = 20f;
         private const float InfectionFullDebt = 140f;
 
-        // COLD ALLOC: HashSet<long>[64] - infected chunk registry persisted in local save - owner: EcosystemHealthDirector
-        private readonly HashSet<long> _infectedChunkKeys = new HashSet<long>(EcosystemStateDTO.MaxInfectedZones);
-        // COLD ALLOC: Dictionary<long,float>[64] - infected chunk severity lookup - owner: EcosystemHealthDirector
-        private readonly Dictionary<long, float> _severityByChunkKey = new Dictionary<long, float>(EcosystemStateDTO.MaxInfectedZones);
+        // COLD ALLOC: long[64] - fixed infection-zone registry; avoids managed hash buckets in slow-tick/read paths - owner: EcosystemHealthDirector
+        private readonly long[] _infectedChunkKeys = new long[EcosystemStateDTO.MaxInfectedZones];
+        // COLD ALLOC: float[64] - severity mirror aligned by index with _infectedChunkKeys - owner: EcosystemHealthDirector
+        private readonly float[] _infectedSeverities = new float[EcosystemStateDTO.MaxInfectedZones];
         // COLD ALLOC: long[16384] - explored PDA chunk copy buffer for infection-zone selection - owner: EcosystemHealthDirector
         private readonly long[] _exploredChunkBuffer = new long[ExplorationMapDTO.MaxExploredChunks];
+        private int _infectedZoneCount;
         private bool _registeredToTick;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
@@ -33,9 +33,10 @@ namespace Hecton8.Ecosystem
         private IFaunaWorldSeedReadModel _faunaGenetics;
         private IEnvironmentalStrainReadModel _environmentalStrain;
         private ISaveService _saveService;
+        private static EcosystemHealthDirector s_activeRuntime;
 
         /// <summary>Active runtime owner while the gameplay scene is loaded.</summary>
-        public static EcosystemHealthDirector Instance => GlobalRegistry.EcosystemHealth;
+        public static EcosystemHealthDirector Instance => s_activeRuntime;
 
         /// <inheritdoc />
         public int SavePriority => 42;
@@ -101,8 +102,11 @@ namespace Hecton8.Ecosystem
         /// <inheritdoc />
         public void SlowTick()
         {
-            float infectionPressure = ResolveInfectionPressure01();
-            int targetZoneCount = Mathf.Clamp(Mathf.CeilToInt(infectionPressure * EcosystemStateDTO.MaxInfectedZones * 0.25f), 0, EcosystemStateDTO.MaxInfectedZones);
+            float infectionPressure = SaturateFinite01(ResolveInfectionPressure01());
+            int targetZoneCount = Mathf.Clamp(
+                Mathf.CeilToInt(infectionPressure * EcosystemStateDTO.MaxInfectedZones * 0.25f),
+                0,
+                EcosystemStateDTO.MaxInfectedZones);
 
             if (targetZoneCount <= 0)
             {
@@ -119,7 +123,7 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public bool IsChunkInfected(WorldChunkCoordinate chunkCoordinate)
         {
-            return _infectedChunkKeys.Contains(PackChunkKey(chunkCoordinate));
+            return FindZoneIndex(PackChunkKey(chunkCoordinate)) >= 0;
         }
 
         /// <summary>
@@ -131,10 +135,7 @@ namespace Hecton8.Ecosystem
                 return;
 
             long chunkKey = PackChunkKey(chunkCoordinate);
-            bool infected = _infectedChunkKeys.Contains(chunkKey);
-            float severity = infected && _severityByChunkKey.TryGetValue(chunkKey, out float storedSeverity)
-                ? storedSeverity
-                : 0f;
+            bool infected = TryGetZoneSeverity(chunkKey, out float severity);
 
             faunaBrain.SetInfectedState(infected, severity);
         }
@@ -148,15 +149,11 @@ namespace Hecton8.Ecosystem
             data.ecosystemState.EnsureCapacity();
 
             int writeIndex = 0;
-            HashSet<long>.Enumerator enumerator = _infectedChunkKeys.GetEnumerator();
-            while (enumerator.MoveNext() && writeIndex < EcosystemStateDTO.MaxInfectedZones)
+            int count = Mathf.Clamp(_infectedZoneCount, 0, EcosystemStateDTO.MaxInfectedZones);
+            for (int i = 0; i < count && writeIndex < EcosystemStateDTO.MaxInfectedZones; i++)
             {
-                long chunkKey = enumerator.Current;
-                data.ecosystemState.infectedChunkKeys[writeIndex] = chunkKey;
-                data.ecosystemState.infectedSeverities[writeIndex] =
-                    _severityByChunkKey.TryGetValue(chunkKey, out float severity)
-                        ? Mathf.Clamp01(severity)
-                        : 0f;
+                data.ecosystemState.infectedChunkKeys[writeIndex] = _infectedChunkKeys[i];
+                data.ecosystemState.infectedSeverities[writeIndex] = SaturateFinite01(_infectedSeverities[i]);
                 writeIndex++;
             }
 
@@ -171,31 +168,39 @@ namespace Hecton8.Ecosystem
         /// <inheritdoc />
         public void LoadFromSaveData(SaveData data)
         {
-            _infectedChunkKeys.Clear();
-            _severityByChunkKey.Clear();
+            ClearAllZones();
 
             if (data == null)
                 return;
 
             EcosystemStateDTO dto = data.ecosystemState;
-            int count = Mathf.Clamp(dto.infectedZoneCount, 0, dto.infectedChunkKeys != null ? dto.infectedChunkKeys.Length : 0);
+            int sourceCapacity = dto.infectedChunkKeys != null
+                ? Mathf.Min(dto.infectedChunkKeys.Length, EcosystemStateDTO.MaxInfectedZones)
+                : 0;
+            int count = Mathf.Clamp(dto.infectedZoneCount, 0, sourceCapacity);
             for (int i = 0; i < count; i++)
             {
                 long chunkKey = dto.infectedChunkKeys[i];
-                _infectedChunkKeys.Add(chunkKey);
-                _severityByChunkKey[chunkKey] = dto.infectedSeverities != null && i < dto.infectedSeverities.Length
-                    ? Mathf.Clamp01(dto.infectedSeverities[i])
+                float severity = dto.infectedSeverities != null && i < dto.infectedSeverities.Length
+                    ? SaturateFinite01(dto.infectedSeverities[i])
                     : 0f;
+                TryUpsertZone(chunkKey, severity);
             }
         }
 
         private void EnsureZoneBudget(int targetZoneCount, float infectionPressure)
         {
+            int target = Mathf.Clamp(targetZoneCount, 0, EcosystemStateDTO.MaxInfectedZones);
+            float safeInfectionPressure = SaturateFinite01(infectionPressure);
+            if (_infectedZoneCount >= target)
+                return;
+
             IPlayerExplorationChunkReadModel tracker = _playerExploration;
             if (tracker == null)
                 return;
 
             int exploredCount = tracker.CopyExploredChunkKeys(_exploredChunkBuffer);
+            exploredCount = Mathf.Clamp(exploredCount, 0, _exploredChunkBuffer.Length);
             if (exploredCount <= 0)
                 return;
 
@@ -206,51 +211,102 @@ namespace Hecton8.Ecosystem
             float playTimeSeconds;
             PDAClockUtility.CaptureStamp(out dayIndex, out dayTimeHours, out playTimeSeconds);
 
-            int startIndex = Mathf.Abs(seed ^ dayIndex ^ Mathf.FloorToInt(playTimeSeconds)) % exploredCount;
-            for (int search = 0; search < exploredCount && _infectedChunkKeys.Count < targetZoneCount; search++)
+            bool playTimeFinite = !float.IsNaN(playTimeSeconds) && !float.IsInfinity(playTimeSeconds);
+            int playTimeBucket = playTimeFinite ? Mathf.FloorToInt(Mathf.Clamp(playTimeSeconds, 0f, 2147483000f)) : 0;
+            uint startSeed = unchecked((uint)seed ^ (uint)dayIndex ^ (uint)playTimeBucket);
+            int startIndex = (int)(startSeed % (uint)exploredCount);
+            for (int search = 0; search < exploredCount && _infectedZoneCount < target; search++)
             {
                 int index = startIndex + search;
                 if (index >= exploredCount)
                     index -= exploredCount;
 
                 long chunkKey = _exploredChunkBuffer[index];
-                if (_infectedChunkKeys.Contains(chunkKey))
+                if (FindZoneIndex(chunkKey) >= 0)
                     continue;
 
-                _infectedChunkKeys.Add(chunkKey);
-                _severityByChunkKey[chunkKey] = Mathf.Clamp01(infectionPressure);
+                TryUpsertZone(chunkKey, safeInfectionPressure);
             }
 
             for (int i = 0; i < exploredCount; i++)
             {
                 long chunkKey = _exploredChunkBuffer[i];
-                if (_severityByChunkKey.ContainsKey(chunkKey))
-                    _severityByChunkKey[chunkKey] = Mathf.Clamp01(infectionPressure);
+                int zoneIndex = FindZoneIndex(chunkKey);
+                if (zoneIndex >= 0)
+                    _infectedSeverities[zoneIndex] = safeInfectionPressure;
             }
         }
 
         private void TrimZones(int targetZoneCount)
         {
-            if (_infectedChunkKeys.Count <= targetZoneCount)
+            if (_infectedZoneCount <= targetZoneCount)
                 return;
 
-            HashSet<long>.Enumerator enumerator = _infectedChunkKeys.GetEnumerator();
-            while (_infectedChunkKeys.Count > targetZoneCount && enumerator.MoveNext())
+            int target = Mathf.Clamp(targetZoneCount, 0, EcosystemStateDTO.MaxInfectedZones);
+            while (_infectedZoneCount > target)
             {
-                long chunkKey = enumerator.Current;
-                _infectedChunkKeys.Remove(chunkKey);
-                _severityByChunkKey.Remove(chunkKey);
-                enumerator = _infectedChunkKeys.GetEnumerator();
+                _infectedZoneCount--;
+                _infectedChunkKeys[_infectedZoneCount] = 0L;
+                _infectedSeverities[_infectedZoneCount] = 0f;
             }
         }
 
         private void ClearAllZones()
         {
-            if (_infectedChunkKeys.Count == 0 && _severityByChunkKey.Count == 0)
+            if (_infectedZoneCount == 0)
                 return;
 
-            _infectedChunkKeys.Clear();
-            _severityByChunkKey.Clear();
+            for (int i = 0; i < _infectedZoneCount; i++)
+            {
+                _infectedChunkKeys[i] = 0L;
+                _infectedSeverities[i] = 0f;
+            }
+
+            _infectedZoneCount = 0;
+        }
+
+        private bool TryGetZoneSeverity(long chunkKey, out float severity)
+        {
+            int index = FindZoneIndex(chunkKey);
+            if (index < 0)
+            {
+                severity = 0f;
+                return false;
+            }
+
+            severity = SaturateFinite01(_infectedSeverities[index]);
+            return true;
+        }
+
+        private bool TryUpsertZone(long chunkKey, float severity)
+        {
+            int index = FindZoneIndex(chunkKey);
+            float safeSeverity = SaturateFinite01(severity);
+            if (index >= 0)
+            {
+                _infectedSeverities[index] = safeSeverity;
+                return true;
+            }
+
+            if (_infectedZoneCount >= EcosystemStateDTO.MaxInfectedZones)
+                return false;
+
+            _infectedChunkKeys[_infectedZoneCount] = chunkKey;
+            _infectedSeverities[_infectedZoneCount] = safeSeverity;
+            _infectedZoneCount++;
+            return true;
+        }
+
+        private int FindZoneIndex(long chunkKey)
+        {
+            int count = Mathf.Clamp(_infectedZoneCount, 0, EcosystemStateDTO.MaxInfectedZones);
+            for (int i = 0; i < count; i++)
+            {
+                if (_infectedChunkKeys[i] == chunkKey)
+                    return i;
+            }
+
+            return -1;
         }
 
         private float ResolveInfectionPressure01()
@@ -259,11 +315,38 @@ namespace Hecton8.Ecosystem
             if (environmentalStrainManager == null)
                 return 0f;
 
-            float weightedDebt = environmentalStrainManager.MicroplasticStrain * 1.5f + environmentalStrainManager.GeneralPollution * 0.35f;
+            float microplasticStrain = NonNegativeFiniteOrZero(environmentalStrainManager.MicroplasticStrain);
+            float generalPollution = NonNegativeFiniteOrZero(environmentalStrainManager.GeneralPollution);
+            float weightedDebt = microplasticStrain * 1.5f + generalPollution * 0.35f;
+            if (!IsFinite(weightedDebt))
+                return 0f;
+
             if (weightedDebt <= InfectionActivationDebt)
                 return 0f;
 
-            return Mathf.Clamp01((weightedDebt - InfectionActivationDebt) / Mathf.Max(1f, InfectionFullDebt - InfectionActivationDebt));
+            float denominator = InfectionFullDebt - InfectionActivationDebt;
+            if (!IsFinite(denominator) || denominator <= 0.0001f)
+                return 0f;
+
+            return SaturateFinite01((weightedDebt - InfectionActivationDebt) / denominator);
+        }
+
+        private static float NonNegativeFiniteOrZero(float value)
+        {
+            return IsFinite(value) && value > 0f ? value : 0f;
+        }
+
+        private static float SaturateFinite01(float value)
+        {
+            if (!IsFinite(value))
+                return 0f;
+
+            return Mathf.Clamp01(value);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private void TryRegisterToTickManager()
@@ -361,6 +444,8 @@ namespace Hecton8.Ecosystem
 
             GlobalRegistry.RegisterEcosystemHealthRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.EcosystemHealth, this);
+            if (_serviceRegistered)
+                s_activeRuntime = this;
         }
 
         private void SuppressDuplicateService()
@@ -378,6 +463,8 @@ namespace Hecton8.Ecosystem
 
             GlobalRegistry.UnregisterEcosystemHealthRuntime(this);
             _serviceRegistered = false;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
         }
 
         private static long PackChunkKey(WorldChunkCoordinate chunkCoordinate)

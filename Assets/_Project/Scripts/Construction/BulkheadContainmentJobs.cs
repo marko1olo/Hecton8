@@ -56,6 +56,12 @@ namespace Hecton8.Construction
             return math.isfinite(lenSq) && lenSq > 1e-6f ? value * math.rsqrt(lenSq) : fallback;
         }
 
+        public static bool CanCastLocalDeltaToFloat3(double3 value)
+        {
+            const double maxFloatMagnitude = 3.4028234663852886e38;
+            return math.all(math.isfinite(value)) && math.all(math.abs(value) <= maxFloatMagnitude);
+        }
+
         public static uint Hash(uint seed, uint value)
         {
             uint hash = seed ^ value;
@@ -132,7 +138,6 @@ namespace Hecton8.Construction
         public float DeltaSeconds;
         public float CloseSpeedPerSecond;
         public float OpenSpeedPerSecond;
-        public float GlobalQualityWeight;
 
         public void Execute(int index)
         {
@@ -381,6 +386,13 @@ namespace Hecton8.Construction
                 float3 normal = BulkheadContainmentMath.SafeNormal(plane.Normal, new float3(0f, 0f, 1f));
                 double3 startDeltaD = PlayerStartAup - plane.CenterAup;
                 double3 endDeltaD = PlayerEndAup - plane.CenterAup;
+                if (!BulkheadContainmentMath.CanCastLocalDeltaToFloat3(startDeltaD) ||
+                    !BulkheadContainmentMath.CanCastLocalDeltaToFloat3(endDeltaD))
+                {
+                    best.Flags |= BulkheadCollisionFlags.NonFinite;
+                    continue;
+                }
+
                 float3 startDelta = (float3)startDeltaD;
                 float3 endDelta = (float3)endDeltaD;
                 if (!math.all(math.isfinite(startDelta)) ||

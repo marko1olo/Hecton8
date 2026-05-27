@@ -1,10 +1,6 @@
-﻿<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-18 R22 Static Actuality Boundary
+﻿## Authority Boundary
 
-This document is active only where it agrees with `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, current source files, and fresh verification artifacts.
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, platform run, campaign telemetry, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older `PASS` / `VERIFIED` labels inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 # Raw Public Creator Leads Readme
 
 Status: data dictionary / not outreach-ready
@@ -19,7 +15,7 @@ Runtime impact: none
 | `UNIQUE_CREATOR_VERIFICATION_QUEUE_2026-05-18.csv` | 4970 | Deduplicated channel queue with segment, pitch angle, pitch stub, risk note, and next action. |
 | `PRIORITY_CREATOR_SHORTLIST_FROM_RAW_2026-05-18.csv` | 250 | Highest-priority first verification batch sorted by repeated cross-game appearance and public metric. |
 | `RAW_LEAD_FETCH_LOG_2026-05-18.csv` | 117 fetches | Fetch audit. 102 OK, 15 rate-limited by HTTP 429. |
-| `RAW_LEAD_SCRAPE_SUMMARY_2026-05-18.md` | summary | Human-readable scrape summary and top 50 sample. |
+| `Docs/DEPRECATED/Active_Doc_Deprecation_2026-05-26/Marketing/Data/RAW_LEAD_SCRAPE_SUMMARY_2026-05-18.md` | summary | Archived human-readable scrape summary and top 50 sample; not an active data contract. |
 
 ## Data Boundary
 
@@ -101,7 +97,7 @@ A verified lead gets one of four pitch modes:
 Do not hammer public sites. Use staged crawls:
 
 1. Add 5-10 adjacent game slugs.
-2. Run `scrape_letsplayindex_public_leads.ps1 -MaxTopPage 300`.
+2. Run `scrape_letsplayindex_public_leads.ps1 -ForceRefresh -MaxTopPage 300` only after the source-ledger/status/rationale trace is ready; keep generated summaries outside active `Data`.
 3. Wait before deeper pages if HTTP 429 appears.
 4. Merge CSVs by `channel_profile_url`.
 5. Verify no more than the top 250 in a source-backed sprint, and only after asset proof exposes a segment gap the live CRM cannot cover.

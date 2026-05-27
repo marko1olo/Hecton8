@@ -143,24 +143,24 @@ namespace Hecton8.Core
         {
             [FieldOffset(0)] public ulong LastFrameHash64;
             [FieldOffset(8)] public ulong LastRemoteHash64;
-            [FieldOffset(16)] public uint CurrentFrame;
-            [FieldOffset(20)] public uint LastRollbackFrame;
-            [FieldOffset(24)] public uint LastRemoteFrame;
-            [FieldOffset(28)] public uint LastMismatchFrame;
-            [FieldOffset(32)] public uint FramesResimulated;
-            [FieldOffset(36)] public uint RollbacksTriggered;
-            [FieldOffset(40)] public float ResimComputeTimeMs;
-            [FieldOffset(44)] public float GlobalQualityWeight;
-            [FieldOffset(48)] public float MismatchSeverity01;
-            [FieldOffset(52)] public uint Flags;
-            [FieldOffset(56)] public uint StateSnapshotBytes;
-            [FieldOffset(60)] public uint StateMemoryOffset;
-            [FieldOffset(64)] public uint DesyncCount;
-            [FieldOffset(68)] public uint DesyncRepairAttempts;
-            [FieldOffset(72)] public uint FirstMismatchBufferId;
-            [FieldOffset(76)] public uint FirstMismatchByteOffset;
-            [FieldOffset(80)] public ulong LastBranchHash64;
-            [FieldOffset(88)] public ulong LastRemoteBranchHash64;
+            [FieldOffset(16)] public ulong LastBranchHash64;
+            [FieldOffset(24)] public ulong LastRemoteBranchHash64;
+            [FieldOffset(32)] public uint CurrentFrame;
+            [FieldOffset(36)] public uint LastRollbackFrame;
+            [FieldOffset(40)] public uint LastRemoteFrame;
+            [FieldOffset(44)] public uint LastMismatchFrame;
+            [FieldOffset(48)] public uint FramesResimulated;
+            [FieldOffset(52)] public uint RollbacksTriggered;
+            [FieldOffset(56)] public float ResimComputeTimeMs;
+            [FieldOffset(60)] public float GlobalQualityWeight;
+            [FieldOffset(64)] public float MismatchSeverity01;
+            [FieldOffset(68)] public uint Flags;
+            [FieldOffset(72)] public uint StateSnapshotBytes;
+            [FieldOffset(76)] public uint StateMemoryOffset;
+            [FieldOffset(80)] public uint DesyncCount;
+            [FieldOffset(84)] public uint DesyncRepairAttempts;
+            [FieldOffset(88)] public uint FirstMismatchBufferId;
+            [FieldOffset(92)] public uint FirstMismatchByteOffset;
         }
 
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.Dispatcher.Update");
@@ -7114,6 +7114,30 @@ namespace Hecton8.Core
             {
                 destination.UnlockBufferAfterWrite<T>(safeCount);
             }
+        }
+
+        /// <summary>
+        /// Uploads a blittable native array into a GPU-write-capable buffer.
+        /// </summary>
+        public static void UploadNativeArraySetData<T>(GraphicsBuffer destination, NativeArray<T> source, int count) where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(destination, source.IsCreated ? source.Length : 0, count);
+            if (safeCount <= 0)
+                return;
+
+            destination.SetData(source, 0, 0, safeCount);
+        }
+
+        /// <summary>
+        /// Uploads a blittable managed staging array into a GPU-write-capable buffer.
+        /// </summary>
+        public static void UploadArraySetData<T>(GraphicsBuffer destination, T[] source, int count) where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(destination, source != null ? source.Length : 0, count);
+            if (safeCount <= 0)
+                return;
+
+            destination.SetData(source, 0, 0, safeCount);
         }
 
         private static int ResolveSafeWriteCount<T>(GraphicsBuffer destination, int sourceLength, int requestedCount) where T : struct

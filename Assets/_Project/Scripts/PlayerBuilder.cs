@@ -4184,7 +4184,7 @@ namespace Hecton8.Building
             if (_buildRayRequesterId == 0UL)
                 _buildRayRequesterId = EntityId.ToULong(gameObject.GetEntityId()) ^ 0x4255494C44524159UL;
 
-            return interactionService.TryResolvePrimarySurfaceHit(
+            return interactionService.RequestPrimarySurfaceHit(
                 _buildRayRequesterId,
                 ray.origin,
                 new Vector3(direction.x, direction.y, direction.z),

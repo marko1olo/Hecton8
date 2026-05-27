@@ -101,12 +101,44 @@ namespace Hecton8.Core
         /// <param name="destination">Caller-owned destination buffer.</param>
         public void CopyRange(long startWriteIndex, int totalCount, NativeArray<T> destination)
         {
-            int safeCount = totalCount;
-            if (safeCount > destination.Length)
-                safeCount = destination.Length;
+            CopyRange(startWriteIndex, totalCount, destination, 0);
+        }
 
-            for (int i = 0; i < safeCount; i++)
-                destination[i] = _buffer[NormalizeIndex(startWriteIndex + i)];
+        /// <summary>
+        /// Copies a chronological range into a caller-owned destination slice.
+        /// </summary>
+        /// <param name="startWriteIndex">First absolute write index to copy.</param>
+        /// <param name="totalCount">Number of entries to copy.</param>
+        /// <param name="destination">Caller-owned destination buffer.</param>
+        /// <param name="destinationStartIndex">Destination start slot.</param>
+        public void CopyRange(long startWriteIndex, int totalCount, NativeArray<T> destination, int destinationStartIndex)
+        {
+            int safeCount = totalCount;
+            if (!_buffer.IsCreated ||
+                !destination.IsCreated ||
+                safeCount <= 0 ||
+                destinationStartIndex < 0 ||
+                destinationStartIndex >= destination.Length)
+            {
+                return;
+            }
+
+            int destinationCapacity = destination.Length - destinationStartIndex;
+            if (safeCount > destinationCapacity)
+                safeCount = destinationCapacity;
+            if (safeCount > _capacity)
+                safeCount = _capacity;
+
+            int sourceIndex = NormalizeIndex(startWriteIndex);
+            int firstCopyCount = _capacity - sourceIndex;
+            if (firstCopyCount > safeCount)
+                firstCopyCount = safeCount;
+
+            NativeArray<T>.Copy(_buffer, sourceIndex, destination, destinationStartIndex, firstCopyCount);
+
+            int remainingCount = safeCount - firstCopyCount;
+            if (remainingCount > 0)
+                NativeArray<T>.Copy(_buffer, 0, destination, destinationStartIndex + firstCopyCount, remainingCount);
         }
 
         public void RegisterBackingArray(string owner, string label, NativeAllocationLifetime lifetime)

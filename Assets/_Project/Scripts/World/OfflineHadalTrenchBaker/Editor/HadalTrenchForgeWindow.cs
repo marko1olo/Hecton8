@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using Hecton8.Core.Memory;
 using Hecton8.World.OfflineHadalTrenchBaker;
 using Unity.Collections;
 using Unity.Jobs;
@@ -220,8 +219,8 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
         public static void Draw()
         {
             if (!HadalTrenchPreviewStore.TryReadPreview(
-                    out NativeArray<FaultLineParamsDTO>.ReadOnly faults,
-                    out NativeArray<ThermalVentSpawnDTO>.ReadOnly vents,
+                    out FaultLineParamsDTO[] faults,
+                    out ThermalVentSpawnDTO[] vents,
                     out int faultCount,
                     out int ventCount,
                     out double3 previewOrigin))
@@ -255,18 +254,12 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
 
     internal static class HadalTrenchPreviewStore
     {
-        private const SystemID PreviewMemoryOwner = SystemID.ContentAuthority;
-        // H8MEMORY_TRACKED_EDITOR_PREVIEW: static editor preview cache is allocated and released through H8Memory.
-        private static NativeArray<FaultLineParamsDTO> s_faults;
-        private static NativeArray<ThermalVentSpawnDTO> s_vents;
+        private static FaultLineParamsDTO[] s_faults;
+        private static ThermalVentSpawnDTO[] s_vents;
         private static int s_faultCount;
         private static int s_ventCount;
         private static double3 s_previewOriginAUP;
         private static bool s_hasPreview;
-        private static JobHandle s_previewHandle;
-        private static bool s_previewPending;
-        private static bool s_hasQueuedRebuild;
-        private static HadalTrenchBakeConfigDTO s_queuedConfig;
 
         static HadalTrenchPreviewStore()
         {
@@ -276,107 +269,69 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
 
         public static bool Rebuild(HadalTrenchBakeConfigDTO config)
         {
-            if (s_previewPending)
-            {
-                if (!s_previewHandle.IsCompleted)
-                {
-                    s_queuedConfig = config;
-                    s_hasQueuedRebuild = true;
-                    return false;
-                }
-
-                s_previewHandle.Complete();
-                s_previewPending = false;
-                s_hasPreview = true;
-            }
-
             Dispose();
             config.FaultGridX = math.clamp(config.FaultGridX, 1, 128);
             config.FaultGridZ = math.clamp(config.FaultGridZ, 1, 128);
             config.FaultCount = config.FaultGridX * config.FaultGridZ * 2;
             s_faultCount = math.min(config.FaultCount, HadalTrenchBakeConstants.MaxPreviewFaults);
             s_ventCount = s_faultCount;
-            s_faults = H8Memory.Allocate<FaultLineParamsDTO>(s_faultCount, PreviewMemoryOwner, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            s_vents = H8Memory.Allocate<ThermalVentSpawnDTO>(s_ventCount, PreviewMemoryOwner, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            if (!s_faults.IsCreated || !s_vents.IsCreated)
+            NativeArray<FaultLineParamsDTO> faults = new NativeArray<FaultLineParamsDTO>(s_faultCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<ThermalVentSpawnDTO> vents = new NativeArray<ThermalVentSpawnDTO>(s_ventCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+            try
             {
-                Dispose();
-                return false;
+                config.FaultCount = s_faultCount;
+                s_previewOriginAUP = config.SectorOriginAUP;
+                GenerateTectonicNetworkJob faultsJob = new GenerateTectonicNetworkJob { Faults = faults, Config = config };
+                GenerateThermalVentNodesJob ventsJob = new GenerateThermalVentNodesJob { Faults = faults, Vents = vents, Config = config };
+                ventsJob.Schedule(s_faultCount, 32, faultsJob.Schedule(math.max(1, s_faultCount >> 1), 32)).Complete();
+
+                s_faults = new FaultLineParamsDTO[s_faultCount];
+                s_vents = new ThermalVentSpawnDTO[s_ventCount];
+                for (int i = 0; i < s_faultCount; i++)
+                    s_faults[i] = faults[i];
+                for (int i = 0; i < s_ventCount; i++)
+                    s_vents[i] = vents[i];
+
+                s_hasPreview = true;
+                SceneView.RepaintAll();
+                return true;
             }
-
-            config.FaultCount = s_faultCount;
-            s_previewOriginAUP = config.SectorOriginAUP;
-            JobHandle faultsHandle = new GenerateTectonicNetworkJob { Faults = s_faults, Config = config }.Schedule(math.max(1, s_faultCount >> 1), 32);
-            s_previewHandle = new GenerateThermalVentNodesJob { Faults = s_faults, Vents = s_vents, Config = config }.Schedule(s_faultCount, 32, faultsHandle);
-            s_previewPending = true;
-            s_hasPreview = false;
-            EditorApplication.update -= PumpPreview;
-            EditorApplication.update += PumpPreview;
-            return true;
-        }
-
-        private static void PumpPreview()
-        {
-            if (!s_previewPending)
+            finally
             {
-                EditorApplication.update -= PumpPreview;
-                return;
+                if (faults.IsCreated)
+                    faults.Dispose();
+                if (vents.IsCreated)
+                    vents.Dispose();
             }
-
-            if (!s_previewHandle.IsCompleted)
-                return;
-
-            s_previewHandle.Complete();
-            s_previewPending = false;
-            if (s_hasQueuedRebuild)
-            {
-                HadalTrenchBakeConfigDTO config = s_queuedConfig;
-                s_hasQueuedRebuild = false;
-                Rebuild(config);
-                return;
-            }
-
-            s_hasPreview = true;
-            EditorApplication.update -= PumpPreview;
-            SceneView.RepaintAll();
         }
 
         public static bool TryGetCounts(out int faultCount, out int ventCount)
         {
             faultCount = s_faultCount;
             ventCount = s_ventCount;
-            return s_previewPending || s_hasPreview;
+            return s_hasPreview;
         }
 
         public static bool TryReadPreview(
-            out NativeArray<FaultLineParamsDTO>.ReadOnly faults,
-            out NativeArray<ThermalVentSpawnDTO>.ReadOnly vents,
+            out FaultLineParamsDTO[] faults,
+            out ThermalVentSpawnDTO[] vents,
             out int faultCount,
             out int ventCount,
             out double3 previewOriginAUP)
         {
-            faults = s_faults.IsCreated ? s_faults.AsReadOnly() : default;
-            vents = s_vents.IsCreated ? s_vents.AsReadOnly() : default;
+            faults = s_faults;
+            vents = s_vents;
             faultCount = s_faultCount;
             ventCount = s_ventCount;
             previewOriginAUP = s_previewOriginAUP;
-            return s_hasPreview && s_faults.IsCreated && s_vents.IsCreated;
+            return s_hasPreview && s_faults != null && s_vents != null;
         }
 
         public static void Dispose()
         {
-            EditorApplication.update -= PumpPreview;
-            if (s_previewPending)
-            {
-                s_previewHandle.Complete();
-                s_previewPending = false;
-            }
-
-            s_hasQueuedRebuild = false;
-            if (s_faults.IsCreated)
-                H8Memory.Release(ref s_faults, PreviewMemoryOwner);
-            if (s_vents.IsCreated)
-                H8Memory.Release(ref s_vents, PreviewMemoryOwner);
+            s_faults = null;
+            s_vents = null;
             s_faultCount = 0;
             s_ventCount = 0;
             s_previewOriginAUP = double3.zero;

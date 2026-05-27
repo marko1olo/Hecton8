@@ -424,7 +424,7 @@ namespace Hecton8.Audio.Virtualization
     /// Fixed-size black-box entry for the last 300 SDF acoustic occlusion frames.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct AcousticTelemetryEntry
+    public struct AcousticOcclusionTelemetryEntry
     {
         [FieldOffset(0)]
         public int Frame;

@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Paid Microtests And Ad Creative Matrix
 
 Status: pre-spend plan
-Owner lane: SHINOBU_81 / low-budget paid tests
+Owner lane: Marketing / low-budget paid tests
 Runtime impact: none
 
 ## Rule

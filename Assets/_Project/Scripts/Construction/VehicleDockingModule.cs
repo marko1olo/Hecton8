@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -42,6 +41,8 @@ namespace Hecton8.Construction
         private const ushort DockTelemetryDumpVersion = 2;
         private const ushort DockTelemetryEntrySizeBytes = 128;
         private const int DockTelemetryDumpCooldownFrames = 30;
+        private const int DockedCargoCrateCapacity = 16;
+        private const int DockedCargoTraversalCapacity = 64;
 
         [StructLayout(LayoutKind.Explicit, Size = 128)]
         private struct DockTelemetryEntry
@@ -142,10 +143,11 @@ namespace Hecton8.Construction
         [SerializeField] private bool _debugDockOccupied;
         [SerializeField] private string _debugDockedTransportName;
 
-        // COLD ALLOC: List<StorageCrate>[4] - temporary cargo storage bridge for the currently docked transport - owner: VehicleDockingModule
-        private readonly List<StorageCrate> _connectedCargoCrates = new List<StorageCrate>(4);
-        // COLD ALLOC: List<StorageCrate>[4] - component query buffer for docked transport cargo discovery - owner: VehicleDockingModule
-        private readonly List<StorageCrate> _cargoDiscoveryBuffer = new List<StorageCrate>(4);
+        // COLD ALLOC: fixed cargo bridge array - bounded to avoid managed List growth during docking.
+        private readonly StorageCrate[] _connectedCargoCrates = new StorageCrate[DockedCargoCrateCapacity];
+        // COLD ALLOC: fixed transform traversal stack - prevents component-query buffer growth.
+        private readonly Transform[] _cargoTraversalStack = new Transform[DockedCargoTraversalCapacity];
+        private int _connectedCargoCrateCount;
         private Transform _cachedTransform;
         private Collider _triggerCollider;
         private CachedTriggerVolume _triggerVolume;
@@ -563,9 +565,9 @@ namespace Hecton8.Construction
             _debugDockOccupied = true;
             _debugDockedTransportName = transportBehaviour.name;
 
-            ResolveDockedBody(transportBehaviour);
-            ResolveDockedVehicleMotor(transportBehaviour);
-            ResolveDockedExternalMassSink(transportBehaviour);
+            CaptureDockedBody(transportBehaviour);
+            CaptureDockedVehicleMotor(transportBehaviour);
+            CaptureDockedExternalMassSink(transportBehaviour);
             BeginDockingControlLock(transportBehaviour);
             _dockingElapsedSeconds = 0f;
             ResetDockingRuntimeCaches();
@@ -622,7 +624,7 @@ namespace Hecton8.Construction
             _debugDockedTransportName = string.Empty;
         }
 
-        private void ResolveDockedBody(MonoBehaviour transportBehaviour)
+        private void CaptureDockedBody(MonoBehaviour transportBehaviour)
         {
             _dockedBody = null;
             if (transportBehaviour == null)
@@ -647,7 +649,7 @@ namespace Hecton8.Construction
             _dockedBody.interpolation = RigidbodyInterpolation.Interpolate;
         }
 
-        private void ResolveDockedVehicleMotor(MonoBehaviour transportBehaviour)
+        private void CaptureDockedVehicleMotor(MonoBehaviour transportBehaviour)
         {
             _dockedVehicleMotor = null;
             if (transportBehaviour == null)
@@ -657,7 +659,7 @@ namespace Hecton8.Construction
                 _dockedVehicleMotor = transportBehaviour.GetComponentInParent<VehicleMotor>();
         }
 
-        private void ResolveDockedExternalMassSink(MonoBehaviour transportBehaviour)
+        private void CaptureDockedExternalMassSink(MonoBehaviour transportBehaviour)
         {
             _dockedExternalMassSink = null;
             if (transportBehaviour == null)
@@ -1130,65 +1132,78 @@ namespace Hecton8.Construction
 
         private void RecordDockTelemetry()
         {
-            if (!TryResolveDockTelemetry(out NativeArray<DockTelemetryEntry> telemetry, out int telemetryLength, out NativeArray<int> cursorBuffer))
-                return;
-
-            Vector3 position = ResolveTelemetryPosition();
-            Quaternion rotation = ResolveTelemetryRotation();
-            if (!IsFiniteVector(position) || !IsFiniteQuaternion(rotation))
+            if (!TryAcquireDockTelemetryWrite(
+                    out NativeArray<DockTelemetryEntry> telemetry,
+                    out int telemetryLength,
+                    out NativeArray<int> cursorBuffer,
+                    out IDataVault vault))
             {
-                DumpDockTelemetry();
                 return;
             }
 
-            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition aup))
+            try
             {
-                DumpDockTelemetry();
-                return;
-            }
+                Vector3 position = ResolveTelemetryPosition();
+                Quaternion rotation = ResolveTelemetryRotation();
+                if (!IsFiniteVector(position) || !IsFiniteQuaternion(rotation))
+                {
+                    DumpDockTelemetryLocked(telemetry, telemetryLength, cursorBuffer);
+                    return;
+                }
 
-            Transform anchor = ResolveDockAnchor();
-            float distanceSq = 0f;
-            float alignmentDot = 0f;
-            if (anchor != null && IsFiniteVector(anchor.position))
-            {
-                AbsoluteUniversePosition anchorAup = OffsetAupByRuntimeDelta(in aup, position, anchor.position);
-                double resolvedDistanceSq = AbsoluteUniversePosition.DistanceSq(in aup, in anchorAup);
-                distanceSq = resolvedDistanceSq < float.MaxValue ? (float)resolvedDistanceSq : float.MaxValue;
-                alignmentDot = IsFiniteQuaternion(anchor.rotation)
-                    ? Vector3.Dot(rotation * Vector3.forward, anchor.forward)
-                    : 0f;
-            }
+                if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition aup))
+                {
+                    DumpDockTelemetryLocked(telemetry, telemetryLength, cursorBuffer);
+                    return;
+                }
 
-            int cursor = SanitizeDockTelemetryCursor(cursorBuffer[0], telemetryLength);
-            telemetry[cursor] = new DockTelemetryEntry
+                Transform anchor = ResolveDockAnchor();
+                float distanceSq = 0f;
+                float alignmentDot = 0f;
+                if (anchor != null && IsFiniteVector(anchor.position))
+                {
+                    AbsoluteUniversePosition anchorAup = OffsetAupByRuntimeDelta(in aup, position, anchor.position);
+                    double resolvedDistanceSq = AbsoluteUniversePosition.DistanceSq(in aup, in anchorAup);
+                    distanceSq = resolvedDistanceSq < float.MaxValue ? (float)resolvedDistanceSq : float.MaxValue;
+                    alignmentDot = IsFiniteQuaternion(anchor.rotation)
+                        ? Vector3.Dot(rotation * Vector3.forward, anchor.forward)
+                        : 0f;
+                }
+
+                int cursor = SanitizeDockTelemetryCursor(cursorBuffer[0], telemetryLength);
+                telemetry[cursor] = new DockTelemetryEntry
+                {
+                    Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
+                    State = _dockingInProgress ? (byte)1 : (_isDocked ? (byte)2 : (byte)0),
+                    HasPower = _hasPower ? (byte)1 : (byte)0,
+                    HasRelativeAup = _hasDockedRelativeAup ? (byte)1 : (byte)0,
+                    Reserved = 0,
+                    DistanceSq = distanceSq,
+                    AlignmentDot = alignmentDot,
+                    SplineDeviationError = _lastSplineDeviationError,
+                    FlowSpeed = FastMagnitudeFromSq(math.lengthsq(_lastDockingFlowVelocity)),
+                    Position = new float3(position.x, position.y, position.z),
+                    SplineTargetPosition = ToFloat3(_lastDockingSplineTargetPosition),
+                    CommandVelocity = ToFloat3(_lastDockingCommandVelocity),
+                    FlowVelocity = _lastDockingFlowVelocity,
+                    Rotation = new float4(rotation.x, rotation.y, rotation.z, rotation.w),
+                    GridX = aup.GridX,
+                    GridY = aup.GridY,
+                    GridZ = aup.GridZ,
+                    OwnerHash = _dockingSplineOwnerHash,
+                    RequestId = _dockingSplineRequestId,
+                    RuntimeFlags = _activeDockingSpline.Flags,
+                    ReservedTail = 0u
+                };
+                cursor++;
+                if (cursor >= telemetryLength)
+                    cursor = 0;
+                cursorBuffer[0] = cursor;
+            }
+            finally
             {
-                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                State = _dockingInProgress ? (byte)1 : (_isDocked ? (byte)2 : (byte)0),
-                HasPower = _hasPower ? (byte)1 : (byte)0,
-                HasRelativeAup = _hasDockedRelativeAup ? (byte)1 : (byte)0,
-                Reserved = 0,
-                DistanceSq = distanceSq,
-                AlignmentDot = alignmentDot,
-                SplineDeviationError = _lastSplineDeviationError,
-                FlowSpeed = FastMagnitudeFromSq(math.lengthsq(_lastDockingFlowVelocity)),
-                Position = new float3(position.x, position.y, position.z),
-                SplineTargetPosition = ToFloat3(_lastDockingSplineTargetPosition),
-                CommandVelocity = ToFloat3(_lastDockingCommandVelocity),
-                FlowVelocity = _lastDockingFlowVelocity,
-                Rotation = new float4(rotation.x, rotation.y, rotation.z, rotation.w),
-                GridX = aup.GridX,
-                GridY = aup.GridY,
-                GridZ = aup.GridZ,
-                OwnerHash = _dockingSplineOwnerHash,
-                RequestId = _dockingSplineRequestId,
-                RuntimeFlags = _activeDockingSpline.Flags,
-                ReservedTail = 0u
-            };
-            cursor++;
-            if (cursor >= telemetryLength)
-                cursor = 0;
-            cursorBuffer[0] = cursor;
+                ReleaseDockTelemetryWriteLocks(vault);
+            }
         }
 
         private Vector3 ResolveTelemetryPosition()
@@ -1211,9 +1226,30 @@ namespace Hecton8.Construction
 
         private void DumpDockTelemetry()
         {
-            if (!TryResolveDockTelemetry(out NativeArray<DockTelemetryEntry> telemetry, out int telemetryLength, out NativeArray<int> cursorBuffer))
+            if (!TryAcquireDockTelemetryWrite(
+                    out NativeArray<DockTelemetryEntry> telemetry,
+                    out int telemetryLength,
+                    out NativeArray<int> cursorBuffer,
+                    out IDataVault vault))
+            {
                 return;
+            }
 
+            try
+            {
+                DumpDockTelemetryLocked(telemetry, telemetryLength, cursorBuffer);
+            }
+            finally
+            {
+                ReleaseDockTelemetryWriteLocks(vault);
+            }
+        }
+
+        private void DumpDockTelemetryLocked(
+            NativeArray<DockTelemetryEntry> telemetry,
+            int telemetryLength,
+            NativeArray<int> cursorBuffer)
+        {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame - _lastDockTelemetryDumpFrame < DockTelemetryDumpCooldownFrames)
                 return;
@@ -1227,7 +1263,7 @@ namespace Hecton8.Construction
 
             string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
             Directory.CreateDirectory(directory);
-            string path = Path.Combine(directory, "Dump_DOCKING_AUTOPILOT_SPLINE.bin");
+            string path = Path.Combine(directory, "Dump_1306_Construction_DockingAutopilotSpline.bin");
             int cursor = SanitizeDockTelemetryCursor(cursorBuffer[0], telemetryLength);
             cursorBuffer[0] = cursor;
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
@@ -1281,21 +1317,47 @@ namespace Hecton8.Construction
             }
         }
 
-        private bool TryResolveDockTelemetry(out NativeArray<DockTelemetryEntry> telemetry, out int telemetryLength, out NativeArray<int> cursor)
+        private bool TryAcquireDockTelemetryWrite(
+            out NativeArray<DockTelemetryEntry> telemetry,
+            out int telemetryLength,
+            out NativeArray<int> cursor,
+            out IDataVault vault)
         {
             telemetry = default;
             telemetryLength = 0;
             cursor = default;
+            vault = null;
             EnsureDockTelemetry();
-            IDataVault vault = _dataVault;
+            vault = _dataVault;
             if (vault == null ||
-                !TryValidateDockTelemetryHandles(
-                    vault,
-                    in _dockTelemetryHandle,
-                    in _dockTelemetryCursorHandle,
-                    out telemetry,
-                    out cursor))
+                !IsVaultHandleCreated(in _dockTelemetryHandle) ||
+                !IsVaultHandleCreated(in _dockTelemetryCursorHandle))
             {
+                ClearDockTelemetryDescriptor();
+                return false;
+            }
+
+            bool ringLocked = false;
+            bool cursorLocked = false;
+            if (!vault.TryAcquireWriteLock(in _dockTelemetryHandle, SystemID.VehiclesPhysics, out telemetry))
+                return false;
+            ringLocked = true;
+            if (!vault.TryAcquireWriteLock(in _dockTelemetryCursorHandle, SystemID.VehiclesPhysics, out cursor))
+            {
+                ReleaseDockTelemetryWriteLocks(vault, cursorLocked, ringLocked);
+                telemetry = default;
+                return false;
+            }
+            cursorLocked = true;
+
+            if (!telemetry.IsCreated ||
+                telemetry.Length < DockTelemetryCapacity ||
+                !cursor.IsCreated ||
+                cursor.Length < 1)
+            {
+                ReleaseDockTelemetryWriteLocks(vault, cursorLocked, ringLocked);
+                telemetry = default;
+                cursor = default;
                 ClearDockTelemetryDescriptor();
                 return false;
             }
@@ -1305,6 +1367,22 @@ namespace Hecton8.Construction
             if (cursor[0] != sanitizedCursor)
                 cursor[0] = sanitizedCursor;
             return true;
+        }
+
+        private void ReleaseDockTelemetryWriteLocks(IDataVault vault)
+        {
+            ReleaseDockTelemetryWriteLocks(vault, true, true);
+        }
+
+        private void ReleaseDockTelemetryWriteLocks(IDataVault vault, bool cursorLocked, bool ringLocked)
+        {
+            if (vault == null)
+                return;
+
+            if (cursorLocked)
+                vault.ReleaseWriteLock(in _dockTelemetryCursorHandle, SystemID.VehiclesPhysics);
+            if (ringLocked)
+                vault.ReleaseWriteLock(in _dockTelemetryHandle, SystemID.VehiclesPhysics);
         }
 
         private static bool TryValidateDockTelemetryHandles(
@@ -1319,10 +1397,10 @@ namespace Hecton8.Construction
             return vault != null &&
                    IsVaultHandleCreated(in ringHandle) &&
                    IsVaultHandleCreated(in cursorHandle) &&
-                   vault.TryResolveHandle(in ringHandle, out telemetry) &&
+                   vault.TryReadHandle(in ringHandle, out telemetry) &&
                    telemetry.IsCreated &&
                    telemetry.Length >= DockTelemetryCapacity &&
-                   vault.TryResolveHandle(in cursorHandle, out cursor) &&
+                   vault.TryReadHandle(in cursorHandle, out cursor) &&
                    cursor.IsCreated &&
                    cursor.Length >= 1;
         }
@@ -1879,35 +1957,97 @@ namespace Hecton8.Construction
             if (!connectDockedCargoToLogistics || _dockedBehaviour == null || _powerNode == null)
                 return;
 
-            _cargoDiscoveryBuffer.Clear();
-            _dockedBehaviour.GetComponentsInChildren(true, _cargoDiscoveryBuffer);
+            Transform root = _dockedBehaviour.transform;
+            if (root == null)
+                return;
 
-            for (int i = 0; i < _cargoDiscoveryBuffer.Count; i++)
+            int stackCount = 1;
+            _cargoTraversalStack[0] = root;
+
+            try
             {
-                StorageCrate crate = _cargoDiscoveryBuffer[i];
-                if (crate == null)
-                    continue;
+                while (stackCount > 0 && _connectedCargoCrateCount < DockedCargoCrateCapacity)
+                {
+                    stackCount--;
+                    Transform current = _cargoTraversalStack[stackCount];
+                    _cargoTraversalStack[stackCount] = null;
+                    if (current == null)
+                        continue;
 
-                PowerNode crateNode = crate.GetComponent<PowerNode>() ?? crate.GetComponentInParent<PowerNode>();
-                if (crateNode != null && crateNode.Grid != null)
-                    continue;
+                    if (current.TryGetComponent(out StorageCrate crate) &&
+                        crate != null &&
+                        !IsDockedCargoConnected(crate) &&
+                        !CrateHasExternalPowerGrid(crate))
+                    {
+                        BaseLogisticsNetwork.RegisterStorage(crate, _powerNode);
+                        _connectedCargoCrates[_connectedCargoCrateCount] = crate;
+                        _connectedCargoCrateCount++;
+                    }
 
-                BaseLogisticsNetwork.RegisterStorage(crate, _powerNode);
-                _connectedCargoCrates.Add(crate);
+                    int childCount = current.childCount;
+                    for (int childIndex = childCount - 1; childIndex >= 0; childIndex--)
+                    {
+                        if (stackCount >= DockedCargoTraversalCapacity)
+                            return;
+
+                        _cargoTraversalStack[stackCount] = current.GetChild(childIndex);
+                        stackCount++;
+                    }
+                }
             }
+            finally
+            {
+                ClearCargoTraversalStack(stackCount);
+            }
+        }
+
+        private bool IsDockedCargoConnected(StorageCrate crate)
+        {
+            for (int i = 0; i < _connectedCargoCrateCount; i++)
+            {
+                if (ReferenceEquals(_connectedCargoCrates[i], crate))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool CrateHasExternalPowerGrid(StorageCrate crate)
+        {
+            if (crate == null)
+                return true;
+
+            Transform cursor = crate.transform;
+            while (cursor != null)
+            {
+                if (cursor.TryGetComponent(out PowerNode node) && node != null && node.Grid != null)
+                    return true;
+
+                cursor = cursor.parent;
+            }
+
+            return false;
+        }
+
+        private void ClearCargoTraversalStack(int stackCount)
+        {
+            int safeCount = math.min(stackCount, _cargoTraversalStack.Length);
+            for (int i = 0; i < safeCount; i++)
+                _cargoTraversalStack[i] = null;
         }
 
         private void DisconnectDockedCargoCrates()
         {
-            for (int i = 0; i < _connectedCargoCrates.Count; i++)
+            for (int i = 0; i < _connectedCargoCrateCount; i++)
             {
                 StorageCrate crate = _connectedCargoCrates[i];
                 if (crate != null)
                     BaseLogisticsNetwork.UnregisterStorage(crate);
+
+                _connectedCargoCrates[i] = null;
             }
 
-            _connectedCargoCrates.Clear();
-            _cargoDiscoveryBuffer.Clear();
+            _connectedCargoCrateCount = 0;
         }
 
     }

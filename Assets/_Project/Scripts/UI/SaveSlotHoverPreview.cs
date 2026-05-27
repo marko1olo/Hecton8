@@ -11,7 +11,7 @@ namespace Hecton8.UI
 {
     /// <summary>
     /// Hover preview for save slots â€” shows enlarged thumbnail + metadata on hover.
-    /// EXCEEDS SUBNAUTICA: Subnautica has no hover preview, only click-to-load.
+    /// Save previews must surface route, pressure, and state evidence before load.
     /// Zero-GC: ILateFrameTickable state machine, cached delegates, CanvasGroup alpha.
     /// </summary>
     [DisallowMultipleComponent]

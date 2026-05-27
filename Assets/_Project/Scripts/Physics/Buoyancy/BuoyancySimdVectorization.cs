@@ -379,12 +379,7 @@ namespace Hecton8.Physics
             if ((uint)index >= (uint)count)
                 return;
 
-            float q = math.saturate(math.select(1f, Tuning.GlobalQualityWeight, math.isfinite(Tuning.GlobalQualityWeight)));
-            bool hasApproximationWeight = math.isfinite(Tuning.ApproximationQualityWeight) &
-                                           Tuning.ApproximationQualityWeight > BuoyancyDisplacementConstants.Epsilon;
-            float approximationWeight = math.saturate(math.select(q, Tuning.ApproximationQualityWeight, hasApproximationWeight));
             float dt = math.clamp(math.select(1f / 60f, Tuning.DeltaTime, math.isfinite(Tuning.DeltaTime)), 0.0001f, 0.1f);
-            int sinDegree = math.clamp(Tuning.SinPolynomialDegree, 3, 7);
             float3 rawPosition = LocalPositions[index].Value;
             float3 rawVelocity = Velocities[index].Value;
             float rawDragCoefficient = DragCoefficients[index];
@@ -395,9 +390,9 @@ namespace Hecton8.Physics
             float drag = math.max(0f, dragCoefficient + baseLinearDrag);
             float3 baseFlow = math.select(float3.zero, Tuning.BaseFlowVelocity, math.isfinite(Tuning.BaseFlowVelocity));
             float phase = (position.x * 0.01171875f) + (position.z * 0.017578125f) + ((Tuning.FrameIndex & 1023u) * 0.0009765625f);
-            float wave = SimdTranscendentalApproximator.SinPolynomial(phase, approximationWeight, sinDegree);
+            float wave = SimdTranscendentalApproximator.SinPolynomial(phase, 1f, 7);
             float turbulenceAmplitude = math.max(0f, math.select(0f, Tuning.TurbulenceAmplitude, math.isfinite(Tuning.TurbulenceAmplitude)));
-            float turbulence = wave * turbulenceAmplitude * q;
+            float turbulence = wave * turbulenceAmplitude;
             float buoyancyY = math.select(0f, Tuning.BuoyancyAccelerationY, math.isfinite(Tuning.BuoyancyAccelerationY));
             float3 acceleration = new float3(baseFlow.x + turbulence, buoyancyY, baseFlow.z - turbulence * 0.65f);
             float denominator = 1f + drag * dt;
@@ -501,19 +496,14 @@ namespace Hecton8.Physics
                 DragCoefficients[index2],
                 DragCoefficients[index3]));
 
-            float q = math.saturate(math.select(1f, Tuning.GlobalQualityWeight, math.isfinite(Tuning.GlobalQualityWeight)));
-            bool hasApproximationWeight = math.isfinite(Tuning.ApproximationQualityWeight) &
-                                           Tuning.ApproximationQualityWeight > BuoyancyDisplacementConstants.Epsilon;
-            float approximationWeight = math.saturate(math.select(q, Tuning.ApproximationQualityWeight, hasApproximationWeight));
             float dt = math.clamp(math.select(1f / 60f, Tuning.DeltaTime, math.isfinite(Tuning.DeltaTime)), 0.0001f, 0.1f);
-            int sinDegree = math.clamp(Tuning.SinPolynomialDegree, 3, 7);
             float baseLinearDrag = math.max(0f, math.select(0f, Tuning.BaseLinearDrag, math.isfinite(Tuning.BaseLinearDrag)));
             float4 drag = math.max(new float4(0f), dragCoefficient + new float4(baseLinearDrag));
             float3 baseFlow = math.select(float3.zero, Tuning.BaseFlowVelocity, math.isfinite(Tuning.BaseFlowVelocity));
             float4 phase = (px * 0.01171875f) + (pz * 0.017578125f) + new float4((float)(Tuning.FrameIndex & 1023u) * 0.0009765625f);
-            float4 wave = SimdTranscendentalApproximator.SinPolynomial(phase, approximationWeight, sinDegree);
+            float4 wave = SimdTranscendentalApproximator.SinPolynomial(phase, 1f, 7);
             float turbulenceAmplitude = math.max(0f, math.select(0f, Tuning.TurbulenceAmplitude, math.isfinite(Tuning.TurbulenceAmplitude)));
-            float4 turbulence = wave * new float4(turbulenceAmplitude * q);
+            float4 turbulence = wave * new float4(turbulenceAmplitude);
             float buoyancyY = math.select(0f, Tuning.BuoyancyAccelerationY, math.isfinite(Tuning.BuoyancyAccelerationY));
             float4 ax = new float4(baseFlow.x) + turbulence;
             float4 ay = new float4(buoyancyY);
@@ -606,12 +596,7 @@ namespace Hecton8.Physics
                         math.min(DragCoefficients.Length, OutputForces.Length))));
             for (int index = 0; index < count; index++)
             {
-                float q = math.saturate(math.select(1f, Tuning.GlobalQualityWeight, math.isfinite(Tuning.GlobalQualityWeight)));
-                bool hasApproximationWeight = math.isfinite(Tuning.ApproximationQualityWeight) &
-                                               Tuning.ApproximationQualityWeight > BuoyancyDisplacementConstants.Epsilon;
-                float approximationWeight = math.saturate(math.select(q, Tuning.ApproximationQualityWeight, hasApproximationWeight));
                 float dt = math.clamp(math.select(1f / 60f, Tuning.DeltaTime, math.isfinite(Tuning.DeltaTime)), 0.0001f, 0.1f);
-                int sinDegree = math.clamp(Tuning.SinPolynomialDegree, 3, 7);
                 float3 rawPosition = LocalPositions[index].Value;
                 float3 rawVelocity = Velocities[index].Value;
                 float rawDragCoefficient = DragCoefficients[index];
@@ -622,9 +607,9 @@ namespace Hecton8.Physics
                 float drag = math.max(0f, dragCoefficient + baseLinearDrag);
                 float3 baseFlow = math.select(float3.zero, Tuning.BaseFlowVelocity, math.isfinite(Tuning.BaseFlowVelocity));
                 float phase = (position.x * 0.01171875f) + (position.z * 0.017578125f) + ((Tuning.FrameIndex & 1023u) * 0.0009765625f);
-                float wave = SimdTranscendentalApproximator.SinPolynomial(phase, approximationWeight, sinDegree);
+                float wave = SimdTranscendentalApproximator.SinPolynomial(phase, 1f, 7);
                 float turbulenceAmplitude = math.max(0f, math.select(0f, Tuning.TurbulenceAmplitude, math.isfinite(Tuning.TurbulenceAmplitude)));
-                float turbulence = wave * turbulenceAmplitude * q;
+                float turbulence = wave * turbulenceAmplitude;
                 float buoyancyY = math.select(0f, Tuning.BuoyancyAccelerationY, math.isfinite(Tuning.BuoyancyAccelerationY));
                 float3 acceleration = new float3(baseFlow.x + turbulence, buoyancyY, baseFlow.z - turbulence * 0.65f);
                 float denominator = 1f + drag * dt;

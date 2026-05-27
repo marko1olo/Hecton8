@@ -142,6 +142,11 @@ namespace Hecton8.Interaction
                 highlightObject.SetActive(false);
         }
 
+        private void OnDestroy()
+        {
+            InteractableRegistry.InvalidateTree(this);
+        }
+
         private void RebuildCache()
         {
             _cachedInteractTextLength = 0;

@@ -82,26 +82,26 @@ namespace Hecton8.Rendering.WaterOptics.Editor
                 UniversalRendererData rendererData = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(rendererAssetPath);
                 if (rendererData == null)
                 {
-                    failure = string.Concat("[SHINOBU_265] Missing renderer asset: ", rendererAssetPath);
+                    failure = string.Concat("[13KRA] Missing renderer asset: ", rendererAssetPath);
                     return false;
                 }
 
                 HectonWaterOpticsTelemetryFeature feature = FindFeatureSubAsset(rendererAssetPath);
                 if (feature == null)
                 {
-                    failure = string.Concat("[SHINOBU_265] Renderer asset has no water optics telemetry feature: ", rendererAssetPath);
+                    failure = string.Concat("[13KRA] Renderer asset has no water optics telemetry feature: ", rendererAssetPath);
                     return false;
                 }
 
                 if (!VerifyFeatureReference(rendererData, feature))
                 {
-                    failure = string.Concat("[SHINOBU_265] Renderer feature reference/map is not serialized: ", rendererAssetPath);
+                    failure = string.Concat("[13KRA] Renderer feature reference/map is not serialized: ", rendererAssetPath);
                     return false;
                 }
 
                 if (!VerifyFeatureSettings(feature))
                 {
-                    failure = string.Concat("[SHINOBU_265] Telemetry feature settings are not bound to the opaque marker lane: ", rendererAssetPath);
+                    failure = string.Concat("[13KRA] Telemetry feature settings are not development-safe: ", rendererAssetPath);
                     return false;
                 }
             }
@@ -345,7 +345,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
             return injectionProperty != null &&
                    injectionProperty.intValue == (int)RenderPassEvent.AfterRenderingOpaques &&
                    markerProperty != null &&
-                   markerProperty.boolValue;
+                   !markerProperty.boolValue;
         }
 
         private static bool VerifyRuntimeOwnerAuthored(out string failure)
@@ -355,7 +355,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
                 return true;
 
             failure = string.Concat(
-                "[SHINOBU_265] WaterOpticsRuntime owner is not authored in _Project scenes/prefabs. Use menu '",
+                "[13KRA] WaterOpticsRuntime owner is not authored in _Project scenes/prefabs. Use menu '",
                 WaterOpticsRuntimeOwnerInstaller.MenuPath,
                 "' or add it to an explicit bootstrap-owned prefab; hidden runtime self-spawn is forbidden.");
             return false;
@@ -394,7 +394,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
             SerializedObject serializedFeature = new SerializedObject(feature);
             bool changed = false;
             changed |= EnsureInt(serializedFeature.FindProperty("settings.injectionPoint"), (int)RenderPassEvent.AfterRenderingOpaques);
-            changed |= EnsureBool(serializedFeature.FindProperty("settings.enableCommandBufferMarker"), true);
+            changed |= EnsureBool(serializedFeature.FindProperty("settings.enableCommandBufferMarker"), false);
             if (!changed)
                 return false;
 

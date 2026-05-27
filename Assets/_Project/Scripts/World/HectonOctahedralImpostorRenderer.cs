@@ -50,6 +50,7 @@ namespace Hecton8.World
         private GraphicsBuffer _matrixSourceBufferB;
         private GraphicsBuffer _activeMatrixSourceBuffer;
         private GraphicsBuffer _argsBuffer;
+        private readonly MaterialPropertyBlock _drawProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - HLOD impostor draw-local payload - owner: HectonOctahedralImpostorRenderer
         private Mesh _argsMesh;
         private Bounds _drawBounds;
         private int _instanceCount;
@@ -67,19 +68,6 @@ namespace Hecton8.World
         private bool _hasBoundsOverride;
         private bool _registeredTick;
         private IInstanceCullingService _instanceCullingService;
-        private Texture2D _lastAlbedoAtlas;
-        private Texture2D _lastNormalAtlas;
-        private Vector4 _lastAtlasGrid = new Vector4(-1f, -1f, -1f, -1f);
-        private float _lastDepthScaleMeters = -1f;
-        private float _lastGlobalQualityWeight = -1f;
-        private Vector3 _lastGlobalFloatingOffset;
-        private Material _lastStaticMaterial;
-        private Material _lastQualityMaterial;
-        private Material _lastFloatingOffsetMaterial;
-        private HectonOctahedralImpostorData _lastStaticData;
-        private bool _staticMaterialDirty = true;
-        private bool _staticPayloadValid;
-        private bool _floatingOffsetDirty = true;
         private bool _hotSwapListenerRegistered;
 
         public int BoundInstanceCount => _instanceCount;
@@ -98,6 +86,7 @@ namespace Hecton8.World
         {
             HectonFloatingOrigin.RegisterListener(this);
             InvalidateMaterialCaches();
+            CacheInstanceCullingServiceCold();
             TryRegisterHotSwapListener();
             RegisterTick();
         }
@@ -139,11 +128,6 @@ namespace Hecton8.World
             if (mesh == null || material == null)
                 return;
 
-            if (!ApplyStaticDataToMaterialIfNeeded(material))
-                return;
-
-            ApplyQualityWeight(material);
-
             bool useMatrixStream = _useVisibleMatrixStream &&
                                    _instanceCullingService != null &&
                                    _instanceCullingService.VisibleInstancesBuffer != null &&
@@ -154,14 +138,11 @@ namespace Hecton8.World
             if (!useMatrixStream)
                 EnsureIndirectArgsBuffer(mesh);
 
-            material.SetInt(UseVisibleMatrixStreamId, useMatrixStream ? 1 : 0);
-            material.SetFloat(ImpostorTimeSecondsId, _impostorTimeSeconds);
-            material.SetFloat(ImpostorFadeOutSecondsId, 1.5f);
-            if (useMatrixStream)
-                material.SetBuffer(VisibleInstancesId, _instanceCullingService.VisibleInstancesBuffer);
-            else
-                material.SetBuffer(ImpostorInstancesId, _activeInstanceBuffer);
-            ApplyGlobalFloatingOffset(material);
+            GraphicsBuffer drawInstanceBuffer = useMatrixStream
+                ? _instanceCullingService.VisibleInstancesBuffer
+                : _activeInstanceBuffer;
+            if (!TryBindDrawProperties(useMatrixStream, drawInstanceBuffer))
+                return;
 
             RenderParams renderParams = new RenderParams(material)
             {
@@ -169,7 +150,8 @@ namespace Hecton8.World
                 layer = gameObject.layer,
                 shadowCastingMode = ShadowCastingMode.Off,
                 receiveShadows = false,
-                camera = _cameraOverride
+                camera = _cameraOverride,
+                matProps = _drawProperties
             };
             GraphicsBuffer argsBuffer = useMatrixStream ? _instanceCullingService.IndirectArgsBuffer : _argsBuffer;
             UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, argsBuffer, 1, 0);
@@ -492,11 +474,12 @@ namespace Hecton8.World
 
         private IInstanceCullingService ResolveInstanceCullingService()
         {
-            if (_instanceCullingService != null)
-                return _instanceCullingService;
-
-            _instanceCullingService = GlobalRegistry.InstanceCulling;
             return _instanceCullingService;
+        }
+
+        private void CacheInstanceCullingServiceCold()
+        {
+            _instanceCullingService = GlobalRegistry.InstanceCulling;
         }
 
         private static InstanceCullingQualityTier ResolveCullingQualityTier(float globalQualityWeight)
@@ -529,16 +512,11 @@ namespace Hecton8.World
             Bounds drawBounds = _drawBounds;
             drawBounds.center -= shiftData.ShiftOffset;
             _drawBounds = drawBounds;
-            _floatingOffsetDirty = true;
         }
 
         private void InvalidateMaterialCaches()
         {
-            _staticMaterialDirty = true;
-            _staticPayloadValid = false;
-            _floatingOffsetDirty = true;
-            _lastQualityMaterial = null;
-            _lastFloatingOffsetMaterial = null;
+            _drawProperties.Clear();
         }
 
         private void RegisterTick()
@@ -677,26 +655,10 @@ namespace Hecton8.World
             return _material;
         }
 
-        private bool ApplyStaticDataToMaterialIfNeeded(Material material)
+        private bool TryBindDrawProperties(bool useMatrixStream, GraphicsBuffer instanceBuffer)
         {
             HectonOctahedralImpostorData data = _impostorData;
-            if (!_staticMaterialDirty &&
-                ReferenceEquals(_lastStaticMaterial, material) &&
-                ReferenceEquals(_lastStaticData, data))
-            {
-                return _staticPayloadValid;
-            }
-
-            _staticMaterialDirty = false;
-            _staticPayloadValid = false;
-            _lastStaticMaterial = material;
-            _lastStaticData = data;
-            _lastAlbedoAtlas = null;
-            _lastNormalAtlas = null;
-            _lastAtlasGrid = new Vector4(-1f, -1f, -1f, -1f);
-            _lastDepthScaleMeters = -1f;
-
-            if (data == null)
+            if (data == null || instanceBuffer == null)
                 return false;
 
             Texture2D albedo = data.AlbedoDepthAtlas;
@@ -704,68 +666,33 @@ namespace Hecton8.World
             if (albedo == null || normal == null)
                 return false;
 
-            if (!ReferenceEquals(_lastAlbedoAtlas, albedo))
-            {
-                material.SetTexture(AlbedoDepthAtlasId, albedo);
-                _lastAlbedoAtlas = albedo;
-            }
-
-            if (!ReferenceEquals(_lastNormalAtlas, normal))
-            {
-                material.SetTexture(NormalDepthAtlasId, normal);
-                _lastNormalAtlas = normal;
-            }
-
             Vector2Int grid = data.AtlasGrid;
             Vector4 atlasGrid = new Vector4(
                 Mathf.Max(1, grid.x),
                 Mathf.Max(1, grid.y),
                 1f / Mathf.Max(1, grid.x),
                 1f / Mathf.Max(1, grid.y));
-            if (_lastAtlasGrid != atlasGrid)
-            {
-                material.SetVector(AtlasGridId, atlasGrid);
-                _lastAtlasGrid = atlasGrid;
-            }
-
             float depthScale = Mathf.Max(0.01f, data.DepthScaleMeters);
-            if (!Mathf.Approximately(_lastDepthScaleMeters, depthScale))
-            {
-                material.SetFloat(DepthScaleMetersId, depthScale);
-                _lastDepthScaleMeters = depthScale;
-            }
-
-            _staticPayloadValid = true;
-            return true;
-        }
-
-        private void ApplyQualityWeight(Material material)
-        {
             float quality = ResolveGlobalQualityWeight01();
-            if (!ReferenceEquals(_lastQualityMaterial, material) || !Mathf.Approximately(_lastGlobalQualityWeight, quality))
-            {
-                material.SetFloat(GlobalQualityWeightId, quality);
-                _lastGlobalQualityWeight = quality;
-                _lastQualityMaterial = material;
-            }
+            Vector3 floatingOffset = ResolveGlobalFloatingOffset();
+
+            _drawProperties.Clear();
+            _drawProperties.SetTexture(AlbedoDepthAtlasId, albedo);
+            _drawProperties.SetTexture(NormalDepthAtlasId, normal);
+            _drawProperties.SetVector(AtlasGridId, atlasGrid);
+            _drawProperties.SetFloat(DepthScaleMetersId, depthScale);
+            _drawProperties.SetFloat(GlobalQualityWeightId, quality);
+            _drawProperties.SetInt(UseVisibleMatrixStreamId, useMatrixStream ? 1 : 0);
+            _drawProperties.SetFloat(ImpostorTimeSecondsId, _impostorTimeSeconds);
+            _drawProperties.SetFloat(ImpostorFadeOutSecondsId, 1.5f);
+            _drawProperties.SetVector(GlobalFloatingOffsetId, floatingOffset);
+            if (useMatrixStream)
+                _drawProperties.SetBuffer(VisibleInstancesId, instanceBuffer);
+            else
+                _drawProperties.SetBuffer(ImpostorInstancesId, instanceBuffer);
 
             _lastQualityMilli = Mathf.RoundToInt(quality * 1000f);
-        }
-
-        private void ApplyGlobalFloatingOffset(Material material)
-        {
-            Vector3 floatingOffset = ResolveGlobalFloatingOffset();
-            if (!_floatingOffsetDirty &&
-                ReferenceEquals(_lastFloatingOffsetMaterial, material) &&
-                _lastGlobalFloatingOffset == floatingOffset)
-            {
-                return;
-            }
-
-            material.SetVector(GlobalFloatingOffsetId, floatingOffset);
-            _lastGlobalFloatingOffset = floatingOffset;
-            _lastFloatingOffsetMaterial = material;
-            _floatingOffsetDirty = false;
+            return true;
         }
 
         private static float ResolveGlobalQualityWeight01()
@@ -802,6 +729,7 @@ namespace Hecton8.World
             _activeMatrixSourceBuffer = null;
             _instanceUploadBufferIndex = 0;
             _matrixSourceUploadBufferIndex = 0;
+            _drawProperties.Clear();
 
             if (_argsBuffer != null)
             {
@@ -817,7 +745,6 @@ namespace Hecton8.World
             _matrixSourceUploadedCount = 0;
             _useVisibleMatrixStream = false;
             _hasBoundsOverride = false;
-            _staticPayloadValid = false;
         }
 
         private static Vector3 ResolveGlobalFloatingOffset()

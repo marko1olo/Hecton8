@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Steam Reviews, Forums, And Support Response Playbook
 
 Status: pre-launch response policy
-Owner lane: SHINOBU_81 / community support
+Owner lane: Marketing / community support
 Runtime impact: none
 
 ## Source Boundary

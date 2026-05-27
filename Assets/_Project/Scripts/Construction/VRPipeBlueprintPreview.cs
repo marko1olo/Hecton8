@@ -56,6 +56,7 @@ namespace Hecton8.Construction
         private VaultGenerationHandle<BuilderGhostVisualDTO> _visualHandle;
         private VaultGenerationHandle<BuilderGhostIndirectArgsDTO> _argsHandle;
         private IDataVault _vault;
+        private IDataVault _pendingBuildWriteLockVault;
         private GraphicsBuffer _stateBufferA;
         private GraphicsBuffer _stateBufferB;
         private GraphicsBuffer _visualBufferA;
@@ -77,6 +78,7 @@ namespace Hecton8.Construction
         private bool _pendingBuildScheduled;
         private bool _pendingBuildDiscard;
         private bool _drawBoundsValid;
+        private int _pendingBuildWriteLockCount;
         private uint _previewFrameCounter;
         private Transform _cachedTransform;
         private int _uploadedCount;
@@ -133,6 +135,7 @@ namespace Hecton8.Construction
             TryUnregisterRuntime();
             CompletePendingBuildForTeardown();
             ClearPreparedPreview();
+            ClearVaultDescriptorState();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -155,13 +158,11 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.DataVault && currentService != null)
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                CompletePendingBuildForTeardown();
+                ClearVaultDescriptorState();
                 _vault = currentService as IDataVault;
-                _stateHandle = default;
-                _visualHandle = default;
-                _argsHandle = default;
-                _stateFlags |= StateMatricesDirty;
                 EnsureBuffersCold();
             }
         }
@@ -183,6 +184,15 @@ namespace Hecton8.Construction
             _registeredHotSwap = false;
         }
 
+        private void ClearVaultDescriptorState()
+        {
+            _vault = null;
+            _stateHandle = default;
+            _visualHandle = default;
+            _argsHandle = default;
+            _stateFlags |= StateMatricesDirty;
+        }
+
         private void OnDestroy()
         {
             CompletePendingBuildForTeardown();
@@ -192,10 +202,7 @@ namespace Hecton8.Construction
             ReleaseGraphicsBuffer(ref _visualBufferB);
             ReleaseGraphicsBuffer(ref _argsBufferA);
             ReleaseGraphicsBuffer(ref _argsBufferB);
-            _stateHandle = default;
-            _visualHandle = default;
-            _argsHandle = default;
-            _vault = null;
+            ClearVaultDescriptorState();
             _boundStateBuffer = null;
             _boundVisualBuffer = null;
 
@@ -292,16 +299,20 @@ namespace Hecton8.Construction
         private void SchedulePreviewBuild()
         {
             if (_pendingBuildScheduled ||
-                !TryReadCachedBuffers(
+                !TryAcquirePreviewWriteBuffers(
                     out NativeArray<BuilderGhostStateDTO> states,
                     out NativeArray<BuilderGhostVisualDTO> visuals,
-                    out NativeArray<BuilderGhostIndirectArgsDTO> args))
+                    out NativeArray<BuilderGhostIndirectArgsDTO> args,
+                    out IDataVault vault))
             {
                 return;
             }
 
             if (!TryResolveRuntimeOriginAup(out double3 runtimeOriginAup))
+            {
+                ReleasePreviewWriteLocks(vault, 3);
                 return;
+            }
 
             float quality = ShinobuSocketConstructionRuntime.ResolveGlobalQualityWeight();
             BuildPipeBlueprintPreviewJob job = new BuildPipeBlueprintPreviewJob
@@ -326,10 +337,23 @@ namespace Hecton8.Construction
                 MaxSegments = MaxPreviewInstances
             };
 
-            _pendingBuildHandle = job.Schedule();
-            _pendingBuildScheduled = true;
-            _pendingBuildDiscard = false;
-            _stateFlags &= ~StateMatricesDirty;
+            bool scheduled = false;
+            try
+            {
+                JobHandle pendingHandle = job.Schedule();
+                _pendingBuildHandle = pendingHandle;
+                _pendingBuildWriteLockVault = vault;
+                _pendingBuildWriteLockCount = 3;
+                _pendingBuildScheduled = true;
+                _pendingBuildDiscard = false;
+                _stateFlags &= ~StateMatricesDirty;
+                scheduled = true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleasePreviewWriteLocks(vault, 3);
+            }
         }
 
         private bool TryFinalizePendingBuildAndUpload()
@@ -341,38 +365,45 @@ namespace Hecton8.Construction
                 return false;
 
             _pendingBuildScheduled = false;
-            if (!TryReadCachedBuffers(
-                    out NativeArray<BuilderGhostStateDTO> states,
-                    out NativeArray<BuilderGhostVisualDTO> visuals,
-                    out NativeArray<BuilderGhostIndirectArgsDTO> args))
+            try
             {
-                ClearPreparedPreview();
-                return false;
-            }
+                if (!TryReadLockedPreviewBuffers(
+                        out NativeArray<BuilderGhostStateDTO> states,
+                        out NativeArray<BuilderGhostVisualDTO> visuals,
+                        out NativeArray<BuilderGhostIndirectArgsDTO> args))
+                {
+                    ClearPreparedPreview();
+                    return false;
+                }
 
-            if (!HasGraphicsBuffers())
-            {
-                ClearPreparedPreview();
-                return false;
-            }
+                if (!HasGraphicsBuffers())
+                {
+                    ClearPreparedPreview();
+                    return false;
+                }
 
-            int uploadCount = _pendingBuildDiscard || args.Length <= 0
-                ? 0
-                : math.clamp((int)args[0].InstanceCount, 0, math.min(states.Length, visuals.Length));
-            _pendingBuildDiscard = false;
-            UpdateDrawBoundsFromStates(states, uploadCount);
-            if (!_drawBoundsValid || uploadCount <= 0)
-            {
-                _uploadedCount = 0;
+                int uploadCount = _pendingBuildDiscard || args.Length <= 0
+                    ? 0
+                    : math.clamp((int)args[0].InstanceCount, 0, math.min(states.Length, visuals.Length));
+                _pendingBuildDiscard = false;
+                UpdateDrawBoundsFromStates(states, uploadCount);
+                if (!_drawBoundsValid || uploadCount <= 0)
+                {
+                    _uploadedCount = 0;
+                    return true;
+                }
+
+                GraphicsBufferUploadUtility.UploadNativeArray(ResolveWriteStateBuffer(), states, uploadCount);
+                GraphicsBufferUploadUtility.UploadNativeArray(ResolveWriteVisualBuffer(), visuals, uploadCount);
+                GraphicsBufferUploadUtility.UploadNativeArray(ResolveWriteArgsBuffer(), args, 1);
+                _uploadedCount = uploadCount;
+                _writeBufferIndex ^= 1;
                 return true;
             }
-
-            GraphicsBufferUploadUtility.UploadNativeArray(ResolveWriteStateBuffer(), states, uploadCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(ResolveWriteVisualBuffer(), visuals, uploadCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(ResolveWriteArgsBuffer(), args, 1);
-            _uploadedCount = uploadCount;
-            _writeBufferIndex ^= 1;
-            return true;
+            finally
+            {
+                ReleasePendingPreviewWriteLocks();
+            }
         }
 
         private void DrawPreparedPreview()
@@ -424,10 +455,33 @@ namespace Hecton8.Construction
             if (authoredPoint != null)
                 return authoredPoint.position;
 
-            if (TryGetRuntimePointAup(index, out AbsoluteUniversePosition runtimeAup))
-                return (Vector3)runtimeAup.ToRuntimeFloat3();
+            if (TryGetRuntimePointAup(index, out AbsoluteUniversePosition runtimeAup) &&
+                TryResolveRuntimeFloat3AupDelta(in runtimeAup, out float3 runtimePoint))
+            {
+                return (Vector3)runtimePoint;
+            }
 
             return _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
+        }
+
+        private static bool TryResolveRuntimeFloat3AupDelta(in AbsoluteUniversePosition position, out float3 runtimePoint)
+        {
+            runtimePoint = default;
+            if (!AbsoluteUniversePosition.IsFinite(in position) ||
+                !TryResolveRuntimeOriginAup(out double3 originAup))
+            {
+                return false;
+            }
+
+            double3 localDelta = position.ToAbsoluteDouble3() - originAup;
+            if (!math.all(math.isfinite(localDelta)) ||
+                math.any(math.abs(localDelta) > (double)float.MaxValue))
+                return false;
+
+            runtimePoint.x = (float)localDelta.x;
+            runtimePoint.y = (float)localDelta.y;
+            runtimePoint.z = (float)localDelta.z;
+            return math.all(math.isfinite(runtimePoint));
         }
 
         private double3 ResolvePointAup(int index, Transform authoredPoint)
@@ -515,13 +569,13 @@ namespace Hecton8.Construction
 
         private void EnsureBuffersCold()
         {
-            if (!TryResolveVault(out IDataVault vault))
+            if (!TryResolveVaultCold(out IDataVault vault))
                 return;
 
             _vault = vault;
-            if (vault.TryResolveHandle(in _stateHandle, out NativeArray<BuilderGhostStateDTO> states) &&
-                vault.TryResolveHandle(in _visualHandle, out NativeArray<BuilderGhostVisualDTO> visuals) &&
-                vault.TryResolveHandle(in _argsHandle, out NativeArray<BuilderGhostIndirectArgsDTO> args) &&
+            if (vault.TryReadHandle(in _stateHandle, out NativeArray<BuilderGhostStateDTO> states) &&
+                vault.TryReadHandle(in _visualHandle, out NativeArray<BuilderGhostVisualDTO> visuals) &&
+                vault.TryReadHandle(in _argsHandle, out NativeArray<BuilderGhostIndirectArgsDTO> args) &&
                 states.IsCreated &&
                 visuals.IsCreated &&
                 args.IsCreated &&
@@ -549,7 +603,60 @@ namespace Hecton8.Construction
                 NativeArrayOptions.UninitializedMemory);
         }
 
-        private bool TryReadCachedBuffers(
+        private bool TryAcquirePreviewWriteBuffers(
+            out NativeArray<BuilderGhostStateDTO> states,
+            out NativeArray<BuilderGhostVisualDTO> visuals,
+            out NativeArray<BuilderGhostIndirectArgsDTO> args,
+            out IDataVault vault)
+        {
+            states = default;
+            visuals = default;
+            args = default;
+            vault = null;
+
+            EnsureBuffersCold();
+            vault = _vault;
+            if (vault == null)
+                return false;
+
+            int acquiredCount = 0;
+            if (!vault.TryAcquireWriteLock(in _stateHandle, SystemID.Construction, out states))
+                return false;
+            acquiredCount = 1;
+            if (!states.IsCreated || states.Length < MaxPreviewInstances)
+            {
+                ReleasePreviewWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _visualHandle, SystemID.Construction, out visuals))
+            {
+                ReleasePreviewWriteLocks(vault, acquiredCount);
+                return false;
+            }
+            acquiredCount = 2;
+            if (!visuals.IsCreated || visuals.Length < MaxPreviewInstances)
+            {
+                ReleasePreviewWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _argsHandle, SystemID.Construction, out args))
+            {
+                ReleasePreviewWriteLocks(vault, acquiredCount);
+                return false;
+            }
+            acquiredCount = 3;
+            if (!args.IsCreated || args.Length < 1)
+            {
+                ReleasePreviewWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryReadLockedPreviewBuffers(
             out NativeArray<BuilderGhostStateDTO> states,
             out NativeArray<BuilderGhostVisualDTO> visuals,
             out NativeArray<BuilderGhostIndirectArgsDTO> args)
@@ -558,21 +665,50 @@ namespace Hecton8.Construction
             visuals = default;
             args = default;
 
-            IDataVault vault = _vault;
-            if (vault == null)
-                return false;
-
-            return vault.TryResolveHandle(in _stateHandle, out states) &&
+            IDataVault vault = _pendingBuildWriteLockVault;
+            return vault != null &&
+                   _pendingBuildWriteLockCount == 3 &&
+                   vault.TryResolveHandle(in _stateHandle, out states) &&
                    vault.TryResolveHandle(in _visualHandle, out visuals) &&
                    vault.TryResolveHandle(in _argsHandle, out args) &&
                    states.IsCreated &&
                    visuals.IsCreated &&
-                   args.IsCreated;
+                   args.IsCreated &&
+                   states.Length >= MaxPreviewInstances &&
+                   visuals.Length >= MaxPreviewInstances &&
+                   args.Length >= 1;
         }
 
-        private static bool TryResolveVault(out IDataVault vault)
+        private void ReleasePendingPreviewWriteLocks()
         {
+            IDataVault vault = _pendingBuildWriteLockVault;
+            int acquiredCount = _pendingBuildWriteLockCount;
+            _pendingBuildWriteLockVault = null;
+            _pendingBuildWriteLockCount = 0;
+            ReleasePreviewWriteLocks(vault, acquiredCount);
+        }
+
+        private void ReleasePreviewWriteLocks(IDataVault vault, int acquiredCount)
+        {
+            if (vault == null || acquiredCount <= 0)
+                return;
+
+            if (acquiredCount >= 3)
+                vault.ReleaseWriteLock(in _argsHandle, SystemID.Construction);
+            if (acquiredCount >= 2)
+                vault.ReleaseWriteLock(in _visualHandle, SystemID.Construction);
+            if (acquiredCount >= 1)
+                vault.ReleaseWriteLock(in _stateHandle, SystemID.Construction);
+        }
+
+        private bool TryResolveVaultCold(out IDataVault vault)
+        {
+            vault = _vault;
+            if (vault != null)
+                return true;
+
             vault = GlobalRegistry.DataVault;
+            _vault = vault;
             return vault != null;
         }
 
@@ -772,11 +908,15 @@ namespace Hecton8.Construction
         private void CompletePendingBuildForTeardown()
         {
             if (!_pendingBuildScheduled)
+            {
+                ReleasePendingPreviewWriteLocks();
                 return;
+            }
 
             DispatcherJobFence.TryComplete(ref _pendingBuildHandle, forceComplete: true);
             _pendingBuildScheduled = false;
             _pendingBuildDiscard = false;
+            ReleasePendingPreviewWriteLocks();
         }
 
         private GraphicsBuffer ResolveWriteStateBuffer()

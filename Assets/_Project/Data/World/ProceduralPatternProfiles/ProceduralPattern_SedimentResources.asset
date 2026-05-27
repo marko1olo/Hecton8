@@ -15,7 +15,7 @@ MonoBehaviour:
   pattern: 2
   label: Sediment Resources
   summary: Reference sediment water with stone floor, rich resource pockets, readable
-    tech traces and calm fauna.
+    tech traces and low-threat fauna.
   groundBudgetScale: 1.08
   clusterBudgetScale: 1.25
   structureBudgetScale: 1.08

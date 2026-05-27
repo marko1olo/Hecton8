@@ -197,7 +197,7 @@ namespace Hecton8.AI.Sensory
         public const int BlackBoxFrameCount = 300;
         public const float SilenceTimeoutSeconds = 5f;
 
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_ACOUSTIC_ECHO_LOCATION_AI.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
         private const float MovementVelocityToVolume = 0.025f;
         private const int MaxQueuedEchoTaps = MaxEchoTapsPerFrame;
 
@@ -215,6 +215,8 @@ namespace Hecton8.AI.Sensory
         private static int _blackBoxCursor;
         private static int _blackBoxDumped;
         private static int _queuedEchoTapCount;
+        private static int _pendingProducerFault;
+        private static AbsoluteUniversePosition _pendingProducerFaultAup;
         private static uint _sequence;
         private static byte _cachedQualityWeightByte;
 
@@ -253,23 +255,24 @@ namespace Hecton8.AI.Sensory
             _blackBoxCursor = 0;
             _blackBoxDumped = 0;
             _queuedEchoTapCount = 0;
+            _pendingProducerFault = 0;
+            _pendingProducerFaultAup = default;
             _sequence = 0u;
             _initialized = 0;
         }
 
         public static bool TryEnqueueEchoTap(in EchoTap tap)
         {
-            EnsureInitialized();
-            if (!EnsureVaultBuffers() || _queuedEchoTapCount >= MaxQueuedEchoTaps)
-                return false;
-
             if (!IsValidTap(in tap))
             {
-                WriteFaultBlackBox(0, in tap.PortalAup);
+                RecordPendingProducerFault(in tap.PortalAup);
                 return false;
             }
 
-            if (!EnsurePendingTaps(out NativeArray<EchoTap> pendingTaps))
+            if (_initialized == 0 || _queuedEchoTapCount >= MaxQueuedEchoTaps)
+                return false;
+
+            if (!TryResolvePendingTapsNoAcquire(out NativeArray<EchoTap> pendingTaps))
                 return false;
 
             if (!pendingTaps.IsCreated || _queuedEchoTapCount >= pendingTaps.Length)
@@ -332,9 +335,10 @@ namespace Hecton8.AI.Sensory
 
         private static void EnsureBootstrapVault()
         {
-            if (_dataVault != null || _initialized != 0)
+            if (_dataVault != null)
                 return;
 
+            // DataVault can be published after early sensory initialization; retry only while unbound.
             _dataVault = GlobalRegistry.DataVault;
         }
 
@@ -482,6 +486,15 @@ namespace Hecton8.AI.Sensory
                    TryResolveVaultBuffer(in _pendingTapsHandle, MaxQueuedEchoTaps, out pendingTaps);
         }
 
+        private static bool TryResolvePendingTapsNoAcquire(out NativeArray<EchoTap> pendingTaps)
+        {
+            pendingTaps = default;
+            return _initialized != 0 &&
+                   _dataVault != null &&
+                   IsVaultHandleCreated(in _pendingTapsHandle) &&
+                   TryResolveVaultBuffer(in _pendingTapsHandle, MaxQueuedEchoTaps, out pendingTaps);
+        }
+
         public static bool TryEnqueuePortalEcho(
             in AbsoluteUniversePosition sourceAup,
             in AcousticAup lastPortalAup,
@@ -552,15 +565,21 @@ namespace Hecton8.AI.Sensory
                 flags);
         }
 
+        public static void TickOwnerFrame(int frame, float currentTime)
+        {
+            EnsureInitialized();
+            RefreshForFrame(frame, currentTime);
+        }
+
         public static bool TryUpdatePredatorEcho(
             int frame,
             in AbsoluteUniversePosition predatorAup,
             float currentTime,
             out AcousticEchoHuntResult result)
         {
-            EnsureInitialized();
-            RefreshForFrame(frame, currentTime);
             result = default;
+            if (_initialized == 0)
+                return false;
 
             AcousticEchoTrailState state = _trailState;
             float silenceSeconds = currentTime - state.LastHeardTime;
@@ -575,7 +594,6 @@ namespace Hecton8.AI.Sensory
             float3 runtimePosition = state.InvestigateAup.ToRuntimeFloat3();
             if (!math.all(math.isfinite(runtimePosition)))
             {
-                WriteFaultBlackBox(frame, in state.InvestigateAup);
                 return false;
             }
 
@@ -590,7 +608,6 @@ namespace Hecton8.AI.Sensory
             result.Sequence = state.Sequence;
             result.Flags = state.Flags;
             result.QualityWeightByte = state.QualityWeightByte;
-            WriteBlackBoxOnce(frame, in state, result.SilenceSeconds);
             return result.Intensity01 > 0.0001f;
         }
 
@@ -601,7 +618,9 @@ namespace Hecton8.AI.Sensory
             float currentTime,
             byte qualityWeightByte)
         {
-            EnsureInitialized();
+            if (_initialized == 0 || !echoTaps.IsCreated)
+                return false;
+
             int safeCount = math.clamp(tapCount, 0, echoTaps.IsCreated ? math.min(MaxEchoTapsPerFrame, echoTaps.Length) : 0);
             bool any = false;
             for (int i = 0; i < safeCount; i++)
@@ -647,6 +666,7 @@ namespace Hecton8.AI.Sensory
             }
 
             currentTime = math.max(0f, currentTime);
+            DrainPendingProducerFault(frame);
 
             if (!EnsureFrameViews(out NativeArray<EchoTap> frameTaps, out NativeArray<AcousticEchoTrailState> jobResult))
             {
@@ -662,6 +682,8 @@ namespace Hecton8.AI.Sensory
                         return;
 
                     _trailState = jobResult[0];
+                    if ((_trailState.Flags & FlagActiveTrail) != 0 && !IsFiniteAup(in _trailState.InvestigateAup))
+                        WriteFaultBlackBox(frame, in _trailState.InvestigateAup);
                     _trackingScheduled = 0;
                 }
                 else
@@ -915,6 +937,22 @@ namespace Hecton8.AI.Sensory
                    math.isfinite(tap.Transmission01) &&
                    math.isfinite(tap.DelaySeconds) &&
                    math.isfinite(tap.LastHeardTime);
+        }
+
+        private static void RecordPendingProducerFault(in AbsoluteUniversePosition faultAup)
+        {
+            _pendingProducerFaultAup = faultAup;
+            _pendingProducerFault = 1;
+        }
+
+        private static void DrainPendingProducerFault(int frame)
+        {
+            if (_pendingProducerFault == 0)
+                return;
+
+            AbsoluteUniversePosition faultAup = _pendingProducerFaultAup;
+            _pendingProducerFault = 0;
+            WriteFaultBlackBox(frame, in faultAup);
         }
 
         private static uint HashState(in AcousticEchoTrailState state)

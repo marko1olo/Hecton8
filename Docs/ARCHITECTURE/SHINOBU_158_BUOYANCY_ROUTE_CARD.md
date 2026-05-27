@@ -28,7 +28,7 @@ Scope: cited local paths exist at capture time. No compile/import/Play/profiler/
 
 - `Assets/_Project/Scripts/Editor/Physics/HydrodynamicBuoyancyTunerWindow.cs`
 
-## R48 Exact Route Field Normalization
+## Route Field Contract
 
 Route ID: SHINOBU_158_BUOYANCY_ROUTE_CARD
 

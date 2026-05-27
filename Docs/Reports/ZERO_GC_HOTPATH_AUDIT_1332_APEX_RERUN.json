@@ -1,0 +1,1349 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\ZERO_GC_HOTPATH_AUDIT_1332_APEX_RERUN.json",
+  "auditHashSha256": "1a206964291fb5b4d8a008e4d527c9e04bb32ca253771292b5d5c657c32791c8",
+  "summary": {
+    "scannedFiles": 7,
+    "parseFailures": 0,
+    "totalFindings": 164,
+    "objectCreations": 153,
+    "valueTypeCreations": 0,
+    "managedRiskCreations": 150,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 3,
+    "stringFormatCalls": 0,
+    "toStringCalls": 3,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 8
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Input\\InputBindingContracts.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Input\\ControlRemapper.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Input\\AccessibilitySettings.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Core\\RebindingManager.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\UI\\PauseControlsPanel.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\UI\\PDAControlsRebindUI.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Tests\\Editor\\InputBindingContractsEditTests.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "line": 116,
+      "owner": "TryDumpTelemetry",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, FileStreamBufferBytes, FileOptions.WriteThrough)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "line": 118,
+      "owner": "TryDumpTelemetry",
+      "kind": "object_creation",
+      "detail": "ReadOnlySpan<byte>",
+      "snippet": "new ReadOnlySpan<byte>(source, byteCount)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "line": 152,
+      "owner": "TrySaveOverrides",
+      "kind": "native_allocation",
+      "detail": "NativeArray<byte>",
+      "snippet": "new NativeArray<byte>(MaxControlsJsonBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "line": 242,
+      "owner": "TryLoadOverrides",
+      "kind": "native_allocation",
+      "detail": "NativeArray<byte>",
+      "snippet": "new NativeArray<byte>(MaxControlsJsonBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "line": 252,
+      "owner": "TryLoadOverrides",
+      "kind": "native_allocation",
+      "detail": "NativeArray<InputActionStateDTO>",
+      "snippet": "new NativeArray<InputActionStateDTO>(MaxBindingRecords, Allocator.Temp, NativeArrayOptions.ClearMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "line": 264,
+      "owner": "TryLoadOverrides",
+      "kind": "object_creation",
+      "detail": "ReadOnlySpan<byte>",
+      "snippet": "new ReadOnlySpan<byte>(bytesPtr + record.PathByteOffset, record.PathByteLength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "line": 282,
+      "owner": "TryLoadOverrides",
+      "kind": "object_creation",
+      "detail": "ReadOnlySpan<byte>",
+      "snippet": "new ReadOnlySpan<byte>(bytesPtr + record.PathByteOffset, record.PathByteLength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "line": 370,
+      "owner": "BuildStateDto",
+      "kind": "object_creation",
+      "detail": "Span<byte>",
+      "snippet": "new Span<byte>(guidBytes, 16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "line": 397,
+      "owner": "TryReadAll",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileStreamBufferBytes, FileOptions.SequentialScan)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "line": 407,
+      "owner": "TryReadAll",
+      "kind": "object_creation",
+      "detail": "Span<byte>",
+      "snippet": "new Span<byte>(destination, (int)length)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "line": 438,
+      "owner": "TryWriteAtomic",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, FileStreamBufferBytes, FileOptions.WriteThrough)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "line": 440,
+      "owner": "TryWriteAtomic",
+      "kind": "object_creation",
+      "detail": "ReadOnlySpan<byte>",
+      "snippet": "new ReadOnlySpan<byte>(source, byteCount)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/AccessibilitySettings.cs",
+      "line": 108,
+      "owner": "VisualSyncTick",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                 _currentConfig.ColorMode,                 _currentConfig.Flags,                 _currentConfig.FilterStrength01,                 _currentConfig.GlobalQualityWeight)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/AccessibilitySettings.cs",
+      "line": 173,
+      "owner": "TryColdBootstrapBuffers",
+      "kind": "object_creation",
+      "detail": "GraphicsBuffer",
+      "snippet": "new GraphicsBuffer(GraphicsBuffer.Target.Constant, 1, InputBindingContractLayout.AccessibilityConfigStrideBytes)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Input/AccessibilitySettings.cs",
+      "line": 174,
+      "owner": "TryColdBootstrapBuffers",
+      "kind": "object_creation",
+      "detail": "GraphicsBuffer",
+      "snippet": "new GraphicsBuffer(GraphicsBuffer.Target.Constant, 1, InputBindingContractLayout.AccessibilityConfigStrideBytes)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 15,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.03f, 0.08f, 0.1f, 0.8f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 16,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.46f, 0.98f, 0.94f, 0.18f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 17,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.05f, 0.12f, 0.14f, 0.62f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 18,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.08f, 0.18f, 0.2f, 0.75f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 19,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.8f, 0.95f, 0.92f, 0.92f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 20,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.46f, 0.98f, 0.94f, 0.95f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 21,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.58f, 0.78f, 0.74f, 0.72f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 22,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.46f, 0.98f, 0.94f, 0.9f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 94,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.82f, 0.98f, 1f, 0.96f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 95,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.08f, 0.22f, 0.34f, 0.9f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 96,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.76f, 0.98f, 0.94f, 0.96f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 97,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.08f, 0.2f, 0.18f, 0.88f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 98,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.98f, 0.76f, 0.46f, 0.96f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 99,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.34f, 0.18f, 0.08f, 0.9f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 100,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.82f, 0.98f, 1f, 0.96f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 101,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.08f, 0.22f, 0.34f, 0.9f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 102,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.05f, 0.1f, 0.12f, 0.82f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 105,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.08f, 0.18f, 0.2f, 0.82f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 106,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.18f, 0.32f, 0.34f, 0.78f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 107,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.46f, 0.98f, 0.94f, 0.96f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 108,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.1f, 0.24f, 0.28f, 0.86f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 641,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 641,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 641,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(18f, -16f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 641,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-18f, 24f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 646,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 646,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 646,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(18f, -16f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 646,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-18f, 24f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 665,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 666,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 667,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.5f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 668,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, -i * (rowHeight + rowGap))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 669,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, rowHeight)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 677,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 677,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 677,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 677,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(4f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 684,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 684,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 684,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 684,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(3f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 690,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 690,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.56f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 690,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(14f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 690,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-12f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 694,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 694,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 694,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-10f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 694,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(176f, 22f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 711,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 711,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 711,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(18f, 18f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 711,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-18f, 32f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1063,
+      "owner": "MakeRow",
+      "kind": "object_creation",
+      "detail": "RebindRow",
+      "snippet": "new RebindRow             {                 label = label,                 actionMap = map,                 actionName = action,                 bindingIndex = bindingIndex             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1086,
+      "owner": "CreateRect",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(name, typeof(RectTransform))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1104,
+      "owner": "CreateText",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(name, typeof(RectTransform))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1126,
+      "owner": "Anchor",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2((anchorMin.x + anchorMax.x) * 0.5f, (anchorMin.y + anchorMax.y) * 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1133,
+      "owner": "Stretch",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1134,
+      "owner": "Stretch",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1135,
+      "owner": "Stretch",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(left, bottom)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1136,
+      "owner": "Stretch",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-right, -top)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1142,
+      "owner": "CreateRule",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.08f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1143,
+      "owner": "CreateRule",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.92f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1144,
+      "owner": "CreateRule",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.5f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1145,
+      "owner": "CreateRule",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "line": 1146,
+      "owner": "CreateRule",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 18,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.03f, 0.08f, 0.1f, 0.8f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 19,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.46f, 0.98f, 0.94f, 0.18f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 20,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.05f, 0.12f, 0.14f, 0.62f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 21,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.08f, 0.18f, 0.2f, 0.75f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 22,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.8f, 0.95f, 0.92f, 0.92f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 23,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.46f, 0.98f, 0.94f, 0.95f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 24,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.58f, 0.78f, 0.74f, 0.72f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 25,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.46f, 0.98f, 0.94f, 0.9f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 26,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.05f, 0.1f, 0.12f, 0.82f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 27,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.82f, 0.98f, 1f, 0.96f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 28,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.08f, 0.22f, 0.34f, 0.9f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 29,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.76f, 0.98f, 0.94f, 0.96f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 30,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.08f, 0.2f, 0.18f, 0.88f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 31,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.08f, 0.18f, 0.2f, 0.82f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 32,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.18f, 0.32f, 0.34f, 0.78f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 33,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.46f, 0.98f, 0.94f, 0.96f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 34,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.1f, 0.24f, 0.28f, 0.86f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 584,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.08f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 584,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.92f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 587,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 587,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 588,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(18f, -18f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 588,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-18f, 24f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 593,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 593,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 594,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(18f, -18f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 594,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-18f, 24f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 600,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 600,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 601,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(18f, 72f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 601,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-18f, -72f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 620,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 620,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 621,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, startY - i * (rowHeight + rowGap))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 622,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, rowHeight)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 630,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 630,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 631,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 631,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(4f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 638,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 638,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 639,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 639,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(3f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 646,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 646,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.55f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 647,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(14f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 647,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-12f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 651,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 651,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 652,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-12f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 652,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(164f, 22f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 670,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 670,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 671,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(18f, 18f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 671,
+      "owner": "EnsureBuilt",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-18f, 36f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 815,
+      "owner": "MakeRow",
+      "kind": "object_creation",
+      "detail": "RebindRow",
+      "snippet": "new RebindRow             {                 label = label,                 actionMap = map,                 actionName = action,                 bindingIndex = bindingIndex             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 1388,
+      "owner": "CreateRect",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(name, typeof(RectTransform))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 1406,
+      "owner": "CreateText",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(name, typeof(RectTransform))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 1428,
+      "owner": "Anchor",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2((anchorMin.x + anchorMax.x) * 0.5f, (anchorMin.y + anchorMax.y) * 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 1435,
+      "owner": "Stretch",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 1436,
+      "owner": "Stretch",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 1437,
+      "owner": "Stretch",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(left, bottom)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 1438,
+      "owner": "Stretch",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-right, -top)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 1446,
+      "owner": "CreateRule",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.5f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 1447,
+      "owner": "CreateRule",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+      "line": 1448,
+      "owner": "CreateRule",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 33,
+      "owner": "CorruptedControlsJsonFailsClosedWithoutClearingOverrides",
+      "kind": "object_creation",
+      "detail": "MockNativeInputRuntime",
+      "snippet": "new MockNativeInputRuntime()"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 57,
+      "owner": "ControlsJsonSerializerSurvivesBoundedInputSpam",
+      "kind": "object_creation",
+      "detail": "MockNativeInputRuntime",
+      "snippet": "new MockNativeInputRuntime()"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 90,
+      "owner": "ControlsJsonRejectsUnknownPathWithoutClearingOverrides",
+      "kind": "object_creation",
+      "detail": "MockNativeInputRuntime",
+      "snippet": "new MockNativeInputRuntime()"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 121,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "InputActionMap",
+      "snippet": "new InputActionMap(\"Player\")"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 122,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "InputActionMap",
+      "snippet": "new InputActionMap(\"UI\")"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 32,
+      "owner": "CorruptedControlsJsonFailsClosedWithoutClearingOverrides",
+      "kind": "to_string_call",
+      "detail": "Guid.NewGuid().ToString",
+      "snippet": "Guid.NewGuid().ToString(\"N\")"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 55,
+      "owner": "ControlsJsonSerializerSurvivesBoundedInputSpam",
+      "kind": "to_string_call",
+      "detail": "Guid.NewGuid().ToString",
+      "snippet": "Guid.NewGuid().ToString(\"N\")"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 88,
+      "owner": "ControlsJsonRejectsUnknownPathWithoutClearingOverrides",
+      "kind": "to_string_call",
+      "detail": "Guid.NewGuid().ToString",
+      "snippet": "Guid.NewGuid().ToString(\"N\")"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 32,
+      "owner": "CorruptedControlsJsonFailsClosedWithoutClearingOverrides",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"h8_controls_bad_\" + Guid.NewGuid().ToString(\"N\") + \".json\""
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 32,
+      "owner": "CorruptedControlsJsonFailsClosedWithoutClearingOverrides",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"h8_controls_bad_\" + Guid.NewGuid().ToString(\"N\")"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 55,
+      "owner": "ControlsJsonSerializerSurvivesBoundedInputSpam",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"h8_controls_\" + Guid.NewGuid().ToString(\"N\") + \".json\""
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 55,
+      "owner": "ControlsJsonSerializerSurvivesBoundedInputSpam",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"h8_controls_\" + Guid.NewGuid().ToString(\"N\")"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 56,
+      "owner": "ControlsJsonSerializerSurvivesBoundedInputSpam",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "path + \".tmp\""
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 88,
+      "owner": "ControlsJsonRejectsUnknownPathWithoutClearingOverrides",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"h8_controls_unknown_\" + Guid.NewGuid().ToString(\"N\") + \".json\""
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 88,
+      "owner": "ControlsJsonRejectsUnknownPathWithoutClearingOverrides",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"h8_controls_unknown_\" + Guid.NewGuid().ToString(\"N\")"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "line": 89,
+      "owner": "ControlsJsonRejectsUnknownPathWithoutClearingOverrides",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "path + \".tmp\""
+    }
+  ],
+  "parseFailures": [
+  ]
+}

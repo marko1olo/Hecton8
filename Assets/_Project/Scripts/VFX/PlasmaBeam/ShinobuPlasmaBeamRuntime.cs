@@ -937,7 +937,12 @@ namespace Hecton8.VFX.PlasmaBeam
                 if (!allowAllocation)
                     return false;
 
-                Shader shader = Shader.Find(ShaderName);
+                Shader shader = null;
+                RuntimeShaderReferenceCatalog.TryGetPlasmaBeamIndirectShader(out shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (shader == null)
+                    shader = Shader.Find(ShaderName);
+#endif
                 if (shader == null)
                 {
                     _runtimeFlags |= FlagShaderMissing;

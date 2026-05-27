@@ -26,7 +26,7 @@ Status: STATIC SOURCE ONLY - Unity import, shader compile, Play Mode, Frame Debu
   - SHINOBU_236 forbidden actions: platform-setting mutation; unverified color-only upscaler route.
 - Until those importer-owned routes execute, SHINOBU_236 remains source-present and fail-closed, but not runtime-proven.
 
-## R48 Exact Route Fields
+## Route Field Contract
 
 Route ID: SHINOBU_236_BILATERAL_DRS_RECONSTRUCTION
 

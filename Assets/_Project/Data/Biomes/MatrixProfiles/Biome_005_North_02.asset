@@ -18,7 +18,7 @@ MonoBehaviour:
   biomeName: Sea-Stack Forest
   minDepthMeters: 0
   maxDepthMeters: 300
-  shortDescription: A forest of isolated circular stone pillars over coral dust and
+  shortDescription: A forest of isolated circular stone pillars over carbonate dust and
     shell fields.
   isPlaceholder: 0
   visitPurpose: Early exploration biome. Come here to learn routes, gather basics,
@@ -27,14 +27,14 @@ MonoBehaviour:
   rareRewardHook: 'Rare pull is modest: Biolum Paste and Fiber Mesh.'
   landmarkIdentity: Sea-Stack Forest reads through spires, steps, and big natural
     crowns. Landmarks should feel bright and readable.
-  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+  safePocketIdentity: Reorientation pockets are frequent. The player should often see a clear
     reset point nearby.
   riskSummary: 'Main failure mode: bad drops and exposed lines. Creature pressure
     stays medium.'
-  extractionFocus: 'Mixed salvage, harvest pockets, and risky reef-node peels. Early
+  extractionFocus: 'Mixed salvage, harvest pockets, and risky carbonate-node peels. Early
     tier: keep runs short and favor stone pockets and hard-form nodes.'
-  landmarkGuidance: Dominant landmark is reef crown or porous fossil wall. This slot
-    should read through coral windows and rib-like skeletons; use vertical forms
+  landmarkGuidance: Dominant landmark is carbonate crown or porous fossil wall. This slot
+    should read through carbonate windows and rib-like skeletons; use vertical forms
     to keep heading.
   loosePickupBias: 4
   nodeExtractionBias: 4

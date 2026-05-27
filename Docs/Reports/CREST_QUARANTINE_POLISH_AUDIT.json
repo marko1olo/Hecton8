@@ -1,4 +1,4 @@
-﻿{
+{
   "agent_id": "SHINOBU_260",
   "checks": [
     {
@@ -57,8 +57,18 @@
       "status": "PASS"
     },
     {
+      "detail": "Root broad C# Dev Kit lscache files with stale WaveHarmonic Crest routes are archived outside active MSBuild/IDE visibility.",
+      "name": "stale_broad_csharp_devkit_lscache_no_waveharmonic_crest",
+      "status": "PASS"
+    },
+    {
       "detail": "Root first-party/generated projects no longer carry direct Crest or archived WaveHarmonic project/package routes.",
       "name": "generated_first_party_projects_have_no_direct_crest_references",
+      "status": "PASS"
+    },
+    {
+      "detail": "Root first-party/generated projects do not compile Hecton8.Crest.Bridge source files through broad assemblies.",
+      "name": "generated_first_party_projects_do_not_compile_bridge_sources",
       "status": "PASS"
     },
     {
@@ -79,10 +89,10 @@
     {
       "detail": "Easy Save global assembly scan defaults no longer list Crest or WaveHarmonic assemblies outside the bridge.",
       "name": "easy_save_defaults_no_crest_assemblies",
-      "status": "PASS"
+      "status": "FAIL"
     },
     {
-      "detail": "Root InitTestScene YAML files no longer ask Unity TestRunner to load WaveHarmonic Crest assemblies.",
+      "detail": "Active root InitTestScene YAML files are absent or no longer ask Unity TestRunner to load WaveHarmonic Crest assemblies.",
       "name": "root_init_test_scenes_no_waveharmonic_crest",
       "status": "PASS"
     },
@@ -129,7 +139,7 @@
     {
       "detail": "OceanSampleRequestDTO offset contract matches the SHINOBU_260 mandate.",
       "name": "request_dto_explicit_32_bytes",
-      "status": "PASS"
+      "status": "FAIL"
     },
     {
       "detail": "Strict ocean DTO contract exposes raw fields, not hot-path properties.",
@@ -184,7 +194,7 @@
     {
       "detail": "Base Crest visual bridge reads only cold-bound renderer/cache hooks and does not poll Crest singletons.",
       "name": "base_bridge_no_ocean_singleton_polling",
-      "status": "PASS"
+      "status": "FAIL"
     },
     {
       "detail": "Underwater Has/Try bridge reads use cached component identity; component lookup remains in Ensure command path only.",
@@ -292,6 +302,16 @@
       "status": "PASS"
     },
     {
+      "detail": "Dependency scanner hard-fails broad root C# Dev Kit lscache files that retain stale Crest/WaveHarmonic routes.",
+      "name": "dependency_scanner_blocks_broad_stale_lscache_crest_routes",
+      "status": "PASS"
+    },
+    {
+      "detail": "Dependency scanner hard-fails broad generated projects that compile Hecton8.Crest.Bridge source files.",
+      "name": "dependency_scanner_blocks_bridge_source_in_broad_project",
+      "status": "PASS"
+    },
+    {
       "detail": "Dependency scanner hard-fails non-bridge Crest shader globals, active Crest migration payloads, and active profiler marker payloads.",
       "name": "dependency_scanner_blocks_shader_globals_migration_and_profiler_payloads",
       "status": "PASS"
@@ -309,6 +329,6 @@
   ],
   "domain": "CREST_VERSION_QUARANTINE_DIRECTOR",
   "evidence_class": "STATIC_SOURCE_ONLY_NO_REBUILD",
-  "failed_count": 0,
-  "status": "PASS"
+  "failed_count": 3,
+  "status": "FAIL"
 }

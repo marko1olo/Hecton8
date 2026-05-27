@@ -17,36 +17,76 @@ float4 _HectonDamageVolumeWorldMinParam;
 float4 _HectonDamageVolumeInvSizeParam;
 int3 _HectonDamageVolumeResolution;
 
+bool HectonDamageVolumeFinite(float value)
+{
+    return !isnan(value) && !isinf(value);
+}
+
+bool HectonDamageVolumeFinite3(float3 value)
+{
+    return all(!isnan(value)) && all(!isinf(value));
+}
+
+float HectonDamageVolumeFiniteOr(float value, float fallbackValue)
+{
+    return HectonDamageVolumeFinite(value) ? value : fallbackValue;
+}
+
+float3 HectonDamageVolumeFiniteOr(float3 value, float3 fallbackValue)
+{
+    return HectonDamageVolumeFinite3(value) ? value : fallbackValue;
+}
+
 [numthreads(4, 4, 4)]
 void StampDamageVolume(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-    if (dispatchThreadId.x >= _HectonDamageVolumeResolution.x ||
-        dispatchThreadId.y >= _HectonDamageVolumeResolution.y ||
-        dispatchThreadId.z >= _HectonDamageVolumeResolution.z)
+    uint sourceWidth;
+    uint sourceHeight;
+    uint sourceDepth;
+    uint resultWidth;
+    uint resultHeight;
+    uint resultDepth;
+    _HectonDamageVolumeSource.GetDimensions(sourceWidth, sourceHeight, sourceDepth);
+    _HectonDamageVolumeResult.GetDimensions(resultWidth, resultHeight, resultDepth);
+
+    uint3 requestedResolution = uint3(
+        (uint)max(_HectonDamageVolumeResolution.x, 0),
+        (uint)max(_HectonDamageVolumeResolution.y, 0),
+        (uint)max(_HectonDamageVolumeResolution.z, 0));
+    uint3 textureResolution = min(uint3(sourceWidth, sourceHeight, sourceDepth), uint3(resultWidth, resultHeight, resultDepth));
+    uint3 activeResolution = min(requestedResolution, textureResolution);
+    if (any(activeResolution == 0u) || any(dispatchThreadId >= activeResolution))
     {
         return;
     }
 
-    float3 resolution = max((float3)_HectonDamageVolumeResolution, 1.0);
+    float3 resolution = max((float3)activeResolution, 1.0);
     float3 volumeUv = ((float3)dispatchThreadId + 0.5) / resolution;
-    float3 worldPosition = _HectonDamageVolumeWorldMinParam.xyz + volumeUv / max(_HectonDamageVolumeInvSizeParam.xyz, 0.000001);
+    float3 worldMin = HectonDamageVolumeFiniteOr(_HectonDamageVolumeWorldMinParam.xyz, float3(0.0, 0.0, 0.0));
+    float3 invSize = max(abs(HectonDamageVolumeFiniteOr(_HectonDamageVolumeInvSizeParam.xyz, float3(0.0, 0.0, 0.0))), 0.000001);
+    float3 worldPosition = worldMin + volumeUv / invSize;
 
-    float current = _HectonDamageVolumeSource.Load(int4(dispatchThreadId.xyz, 0)).r;
-    current = max(0.0, current - _HectonDamageVolumeRecovery);
+    float current = HectonDamageVolumeFiniteOr(_HectonDamageVolumeSource.Load(int4(dispatchThreadId.xyz, 0)).r, 0.0);
+    current = max(0.0, current - max(0.0, HectonDamageVolumeFiniteOr(_HectonDamageVolumeRecovery, 0.0)));
 
     int stampCount = min(max(_HectonDamageVolumeStampCount, 0), HectonDamageVolumeStampCapacity);
     [loop]
     for (int stampIndex = 0; stampIndex < stampCount; stampIndex++)
     {
         float4 positionRadius = _HectonDamageVolumeStampCommands[stampIndex].PositionRadius;
-        float radius = max(positionRadius.w, 0.0001);
+        if (!HectonDamageVolumeFinite3(positionRadius.xyz))
+            continue;
+
+        float radius = max(abs(HectonDamageVolumeFiniteOr(positionRadius.w, 0.0)), 0.0001);
         float radiusSq = radius * radius;
         float invRadiusSq = rcp(max(radiusSq, 0.00000001));
         float3 delta = worldPosition - positionRadius.xyz;
         float normalized = saturate(1.0 - dot(delta, delta) * invRadiusSq);
-        float stamp = normalized * normalized * saturate(_HectonDamageVolumeStampCommands[stampIndex].StrengthPadding.x);
+        float strength = saturate(HectonDamageVolumeFiniteOr(_HectonDamageVolumeStampCommands[stampIndex].StrengthPadding.x, 0.0));
+        float stamp = normalized * normalized * strength;
         current = max(current, stamp);
     }
 
+    current = HectonDamageVolumeFiniteOr(current, 0.0);
     _HectonDamageVolumeResult[dispatchThreadId.xyz] = float4(current, current, current, current);
 }

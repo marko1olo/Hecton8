@@ -34,9 +34,10 @@ namespace Hecton8.Environment
     {
         private static int s_x001HectonMarineSnowRendererSignalPushDropCount;
         private const float BiolumeSurgeDurationSeconds = 4f;
-        private const int DefaultParticleThreadGroupSize = 64;
         private const int DefaultClearKernelTileSize = 8;
         private const int MaxParticleDispatchGroupsPerCall = 512;
+        private const int PortableMaxComputeThreadsPerGroup = 256;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const int MinimumMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.MinimumQualityMarineSnowCount;
         private const int OverkillMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount;
         private const int MaxMarineSnowParticleCapacity = OverkillMarineSnowParticleCapacity;
@@ -574,11 +575,12 @@ namespace Hecton8.Environment
         private int _fogDensityClearKernel = -1;
         private int _wakeProximityKernel = -1;
         private int _rebaseKernel = -1;
-        private int _simulationThreadGroupSize = DefaultParticleThreadGroupSize;
-        private int _initializeThreadGroupSize = DefaultParticleThreadGroupSize;
-        private int _sonarGlowAccumulateThreadGroupSize = DefaultParticleThreadGroupSize;
-        private int _wakeProximityThreadGroupSize = DefaultParticleThreadGroupSize;
-        private int _rebaseThreadGroupSize = DefaultParticleThreadGroupSize;
+        private int _simulationThreadGroupSize;
+        private int _initializeThreadGroupSize;
+        private int _clearVisibleThreadGroupSize;
+        private int _sonarGlowAccumulateThreadGroupSize;
+        private int _wakeProximityThreadGroupSize;
+        private int _rebaseThreadGroupSize;
         private int _sonarGlowClearTileSizeX = DefaultClearKernelTileSize;
         private int _sonarGlowClearTileSizeY = DefaultClearKernelTileSize;
         private int _fogDensityClearTileSizeX = DefaultClearKernelTileSize;
@@ -2495,60 +2497,62 @@ namespace Hecton8.Environment
                 return;
 
             int clampedParticleCount = RefreshAndResolveConfiguredCapacity();
-            if (marineSnowCompute == null || marineSnowMaterial == null)
+            if (marineSnowCompute == null ||
+                marineSnowMaterial == null ||
+                !HardwareTierDetector.AllowHighResourceComputeShaders)
                 return;
 
-            _kernelIndex = marineSnowCompute.FindKernel("CSMain");
-            if (_kernelIndex < 0)
+            if (!TryResolveKernel("CSMain", out _kernelIndex))
             {
                 LogMissingMainKernel();
                 enabled = false;
                 return;
             }
 
-            _initializeKernel = marineSnowCompute.FindKernel("InitializeParticles");
-            if (_initializeKernel < 0)
+            if (!TryResolveKernel("InitializeParticles", out _initializeKernel))
             {
                 LogMissingInitializeKernel();
                 enabled = false;
                 return;
             }
 
-            _clearVisibleKernel = marineSnowCompute.FindKernel("ClearVisibleParticles");
-            if (_clearVisibleKernel < 0)
+            if (!TryResolveKernel("ClearVisibleParticles", out _clearVisibleKernel))
             {
                 LogMissingVisibleKernel();
                 enabled = false;
                 return;
             }
 
-            _sonarGlowClearKernel = marineSnowCompute.FindKernel("ClearSonarGlow");
-            _sonarGlowAccumulateKernel = marineSnowCompute.FindKernel("AccumulateSonarGlow");
-            _fogDensityClearKernel = marineSnowCompute.FindKernel("ClearFogDensity");
-            if (_sonarGlowClearKernel < 0 || _sonarGlowAccumulateKernel < 0 || _fogDensityClearKernel < 0)
+            if (!TryResolveKernel("ClearSonarGlow", out _sonarGlowClearKernel) ||
+                !TryResolveKernel("AccumulateSonarGlow", out _sonarGlowAccumulateKernel) ||
+                !TryResolveKernel("ClearFogDensity", out _fogDensityClearKernel))
             {
                 LogMissingAuxiliaryKernels();
                 enabled = false;
                 return;
             }
 
-            _wakeProximityKernel = marineSnowCompute.FindKernel("CS_EvaluateWakeProximity");
-            _rebaseKernel = marineSnowCompute.FindKernel("CS_RebaseParticles");
-            if (_wakeProximityKernel < 0 || _rebaseKernel < 0)
+            if (!TryResolveKernel("CS_EvaluateWakeProximity", out _wakeProximityKernel) ||
+                !TryResolveKernel("CS_RebaseParticles", out _rebaseKernel))
             {
                 LogMissingPropwashKernels();
                 enabled = false;
                 return;
             }
 
-            CacheKernelThreadGroupSizes();
+            if (!CacheKernelThreadGroupSizes())
+            {
+                LogInvalidKernelThreadGroups();
+                enabled = false;
+                return;
+            }
 
             // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - 100000 * 32B persistent 16-byte aligned silt state ping-pong buffer A - owner: HectonMarineSnowRenderer
-            _particleBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleDataDTO>(clampedParticleCount);
+            _particleBufferA = GraphicsBufferUploadUtility.CreateStructuredBuffer<ParticleDataDTO>(clampedParticleCount);
             // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - 100000 * 32B persistent 16-byte aligned silt state ping-pong buffer B - owner: HectonMarineSnowRenderer
-            _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleDataDTO>(clampedParticleCount);
-            _particleMetaBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleRenderMetaDTO>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - 32B render metadata ping-pong A - owner: HectonMarineSnowRenderer
-            _particleMetaBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleRenderMetaDTO>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - 32B render metadata ping-pong B - owner: HectonMarineSnowRenderer
+            _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredBuffer<ParticleDataDTO>(clampedParticleCount);
+            _particleMetaBufferA = GraphicsBufferUploadUtility.CreateStructuredBuffer<ParticleRenderMetaDTO>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - 32B render metadata ping-pong A - owner: HectonMarineSnowRenderer
+            _particleMetaBufferB = GraphicsBufferUploadUtility.CreateStructuredBuffer<ParticleRenderMetaDTO>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - 32B render metadata ping-pong B - owner: HectonMarineSnowRenderer
             _frameConstantsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FrameConstantsData>(1); // COLD ALLOC: GraphicsBuffer[1] - per-frame marine-snow constant buffer A - owner: HectonMarineSnowRenderer
             _frameConstantsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FrameConstantsData>(1); // COLD ALLOC: GraphicsBuffer[1] - per-frame marine-snow constant buffer B - owner: HectonMarineSnowRenderer
             _activeFrameConstantsBuffer = _frameConstantsBufferA;
@@ -2559,7 +2563,7 @@ namespace Hecton8.Environment
             _flowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(flowFieldCapacity); // COLD ALLOC: GraphicsBuffer[configured float2] - fixed ecosystem flow-field GPU snapshot staging, no runtime resize - owner: HectonMarineSnowRenderer
             _flowFieldBufferCapacity = flowFieldCapacity;
             ClearGraphicsBuffer<float2>(_flowFieldBuffer, _flowFieldBufferCapacity);
-            _visibleParticleIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - GPU-written visible-particle index list - owner: HectonMarineSnowRenderer
+            _visibleParticleIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<uint>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - GPU-written visible-particle index list - owner: HectonMarineSnowRenderer
             _indirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, 1, ProceduralIndirectArgsStride); // COLD ALLOC: GraphicsBuffer[1] - GPU-written non-indexed procedural indirect args: vertexCount, instanceCount, startVertex, startInstance - owner: HectonMarineSnowRenderer
             _emptyAbyssalFlowBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1); // COLD ALLOC: GraphicsBuffer[1] - zero fallback abyssal-flow vector buffer - owner: HectonMarineSnowRenderer
             ClearGraphicsBuffer<Vector4>(_emptyAbyssalFlowBuffer, 1);
@@ -2613,12 +2617,12 @@ namespace Hecton8.Environment
             ReleaseBuffer(ref _visibleParticleIndexBuffer);
 
             // COLD ALLOC: GraphicsBuffer[particleCount] - resized 32B silt state ping-pong buffer A - owner: HectonMarineSnowRenderer
-            _particleBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleDataDTO>(particleCount);
+            _particleBufferA = GraphicsBufferUploadUtility.CreateStructuredBuffer<ParticleDataDTO>(particleCount);
             // COLD ALLOC: GraphicsBuffer[particleCount] - resized 32B silt state ping-pong buffer B - owner: HectonMarineSnowRenderer
-            _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleDataDTO>(particleCount);
-            _particleMetaBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleRenderMetaDTO>(particleCount); // COLD ALLOC: GraphicsBuffer[particleCount] - resized 32B render metadata ping-pong A - owner: HectonMarineSnowRenderer
-            _particleMetaBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleRenderMetaDTO>(particleCount); // COLD ALLOC: GraphicsBuffer[particleCount] - resized 32B render metadata ping-pong B - owner: HectonMarineSnowRenderer
-            _visibleParticleIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(particleCount); // COLD ALLOC: GraphicsBuffer[particleCount] - resized GPU-written visible-particle index list - owner: HectonMarineSnowRenderer
+            _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredBuffer<ParticleDataDTO>(particleCount);
+            _particleMetaBufferA = GraphicsBufferUploadUtility.CreateStructuredBuffer<ParticleRenderMetaDTO>(particleCount); // COLD ALLOC: GraphicsBuffer[particleCount] - resized 32B render metadata ping-pong A - owner: HectonMarineSnowRenderer
+            _particleMetaBufferB = GraphicsBufferUploadUtility.CreateStructuredBuffer<ParticleRenderMetaDTO>(particleCount); // COLD ALLOC: GraphicsBuffer[particleCount] - resized 32B render metadata ping-pong B - owner: HectonMarineSnowRenderer
+            _visibleParticleIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<uint>(particleCount); // COLD ALLOC: GraphicsBuffer[particleCount] - resized GPU-written visible-particle index list - owner: HectonMarineSnowRenderer
 
             _allocatedParticleCapacity = particleCount;
             _debugAllocatedParticleCapacity = particleCount;
@@ -2669,67 +2673,124 @@ namespace Hecton8.Environment
 #endif
         }
 
-        private void CacheKernelThreadGroupSizes()
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidKernelThreadGroups()
         {
-            _simulationThreadGroupSize = ResolveKernelThreadGroupSizeX(_kernelIndex, DefaultParticleThreadGroupSize);
-            _initializeThreadGroupSize = ResolveKernelThreadGroupSizeX(_initializeKernel, DefaultParticleThreadGroupSize);
-            _sonarGlowAccumulateThreadGroupSize = ResolveKernelThreadGroupSizeX(_sonarGlowAccumulateKernel, DefaultParticleThreadGroupSize);
-            _wakeProximityThreadGroupSize = ResolveKernelThreadGroupSizeX(_wakeProximityKernel, DefaultParticleThreadGroupSize);
-            _rebaseThreadGroupSize = ResolveKernelThreadGroupSizeX(_rebaseKernel, DefaultParticleThreadGroupSize);
-            ResolveKernelThreadGroupTile(
-                _sonarGlowClearKernel,
-                DefaultClearKernelTileSize,
-                DefaultClearKernelTileSize,
-                out _sonarGlowClearTileSizeX,
-                out _sonarGlowClearTileSizeY);
-            ResolveKernelThreadGroupTile(
-                _fogDensityClearKernel,
-                DefaultClearKernelTileSize,
-                DefaultClearKernelTileSize,
-                out _fogDensityClearTileSizeX,
-                out _fogDensityClearTileSizeY);
+#if UNITY_EDITOR
+            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel thread-group contract is invalid. Disabling compute marine snow.");
+#endif
         }
 
-        private int ResolveKernelThreadGroupSizeX(int kernelIndex, int fallback)
+        private bool TryResolveKernel(string kernelName, out int kernelIndex)
         {
-            if (marineSnowCompute == null || kernelIndex < 0)
-                return fallback;
+            kernelIndex = -1;
+            if (marineSnowCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+                return false;
+            if (!marineSnowCompute.HasKernel(kernelName))
+                return false;
 
-            marineSnowCompute.GetKernelThreadGroupSizes(kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ);
-            ulong threadCount = (ulong)sizeX * math.max(1u, sizeY) * math.max(1u, sizeZ);
-            if (threadCount == 0UL || threadCount > 1024UL)
-                return fallback;
-
-            return SanitizeKernelDimension(sizeX, fallback);
+            kernelIndex = marineSnowCompute.FindKernel(kernelName);
+            return kernelIndex >= 0;
         }
 
-        private void ResolveKernelThreadGroupTile(
+        private bool CacheKernelThreadGroupSizes()
+        {
+            if (!TryResolveKernelThreadGroupSizeX(_kernelIndex, out _simulationThreadGroupSize) ||
+                !TryResolveKernelThreadGroupSizeX(_initializeKernel, out _initializeThreadGroupSize) ||
+                !TryResolveKernelThreadGroupSizeX(_sonarGlowAccumulateKernel, out _sonarGlowAccumulateThreadGroupSize) ||
+                !TryResolveKernelThreadGroupSizeX(_wakeProximityKernel, out _wakeProximityThreadGroupSize) ||
+                !TryResolveKernelThreadGroupSizeX(_rebaseKernel, out _rebaseThreadGroupSize) ||
+                !TryResolveKernelThreadGroupSizeX(_clearVisibleKernel, out _clearVisibleThreadGroupSize) ||
+                !TryResolveKernelThreadGroupTile(
+                    _sonarGlowClearKernel,
+                    out _sonarGlowClearTileSizeX,
+                    out _sonarGlowClearTileSizeY) ||
+                !TryResolveKernelThreadGroupTile(
+                    _fogDensityClearKernel,
+                    out _fogDensityClearTileSizeX,
+                    out _fogDensityClearTileSizeY))
+            {
+                ResetKernelThreadGroupSizes();
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ResetKernelThreadGroupSizes()
+        {
+            _simulationThreadGroupSize = 0;
+            _initializeThreadGroupSize = 0;
+            _clearVisibleThreadGroupSize = 0;
+            _sonarGlowAccumulateThreadGroupSize = 0;
+            _wakeProximityThreadGroupSize = 0;
+            _rebaseThreadGroupSize = 0;
+            _sonarGlowClearTileSizeX = 0;
+            _sonarGlowClearTileSizeY = 0;
+            _fogDensityClearTileSizeX = 0;
+            _fogDensityClearTileSizeY = 0;
+        }
+
+        private bool TryResolveKernelThreadGroupSizeX(int kernelIndex, out int groupSizeX)
+        {
+            groupSizeX = 0;
+            if (!TryQueryKernelThreadGroups(kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ))
+                return false;
+            if (sizeY != 1u || sizeZ != 1u)
+                return false;
+
+            groupSizeX = (int)sizeX;
+            return true;
+        }
+
+        private bool TryResolveKernelThreadGroupTile(
             int kernelIndex,
-            int fallbackX,
-            int fallbackY,
             out int tileSizeX,
             out int tileSizeY)
         {
-            tileSizeX = fallbackX;
-            tileSizeY = fallbackY;
-            if (marineSnowCompute == null || kernelIndex < 0)
-                return;
+            tileSizeX = 0;
+            tileSizeY = 0;
+            if (!TryQueryKernelThreadGroups(kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ))
+                return false;
+            if (sizeY == 0u || sizeZ != 1u)
+                return false;
 
-            marineSnowCompute.GetKernelThreadGroupSizes(kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ);
-            ulong threadCount = (ulong)sizeX * math.max(1u, sizeY) * math.max(1u, sizeZ);
-            if (threadCount == 0UL || threadCount > 1024UL)
-                return;
-
-            tileSizeX = SanitizeKernelDimension(sizeX, fallbackX);
-            tileSizeY = SanitizeKernelDimension(sizeY, fallbackY);
+            tileSizeX = (int)sizeX;
+            tileSizeY = (int)sizeY;
+            return true;
         }
 
-        private static int SanitizeKernelDimension(uint dimension, int fallback)
+        private bool TryValidateKernelThreadProduct(int kernelIndex)
         {
-            if (dimension == 0u || dimension > 1024u)
-                return fallback;
+            return TryQueryKernelThreadGroups(kernelIndex, out _, out _, out _);
+        }
 
-            return (int)dimension;
+        private bool TryQueryKernelThreadGroups(int kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ)
+        {
+            sizeX = 0u;
+            sizeY = 0u;
+            sizeZ = 0u;
+            if (marineSnowCompute == null ||
+                kernelIndex < 0 ||
+                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !marineSnowCompute.IsSupported(kernelIndex))
+                return false;
+
+            marineSnowCompute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            if (sizeX == 0u || sizeY == 0u || sizeZ == 0u)
+                return false;
+
+            ulong maxThreads = (ulong)PortableMaxComputeThreadsPerGroup;
+            ulong threadCount = (ulong)sizeX * sizeY;
+            if (threadCount == 0UL ||
+                threadCount > maxThreads ||
+                sizeZ > maxThreads / threadCount)
+            {
+                return false;
+            }
+
+            threadCount *= sizeZ;
+            return threadCount <= maxThreads;
         }
 
         private void RefreshFlowFieldUpload(float dt)
@@ -3517,7 +3578,11 @@ namespace Hecton8.Environment
             if (_clearVisibleKernel < 0 || _indirectArgsBuffer == null)
                 return;
 
-            marineSnowCompute.Dispatch(_clearVisibleKernel, 1, 1, 1);
+            int clearGroups = CeilDivide(1, _clearVisibleThreadGroupSize);
+            if (clearGroups <= 0 || clearGroups > MaxDispatchGroupsPerDimension)
+                return;
+
+            marineSnowCompute.Dispatch(_clearVisibleKernel, clearGroups, 1, 1);
         }
 
         private void DispatchFogDensityClear()
@@ -3713,16 +3778,26 @@ namespace Hecton8.Environment
 
         private void DispatchParticleKernelChunked(int kernelIndex, int particleCount, int threadGroupSize)
         {
-            if (kernelIndex < 0 || particleCount <= 0)
+            if (kernelIndex < 0 || particleCount <= 0 || threadGroupSize <= 0)
                 return;
 
-            int safeThreadGroupSize = math.max(1, threadGroupSize);
-            int remainingGroups = (particleCount + safeThreadGroupSize - 1) / safeThreadGroupSize;
+            int remainingGroups = CeilDivide(particleCount, threadGroupSize);
+            if (remainingGroups <= 0)
+                return;
+
             int groupOffset = 0;
+            int maxGroupsPerDispatch = math.min(MaxParticleDispatchGroupsPerCall, MaxDispatchGroupsPerDimension);
             while (remainingGroups > 0)
             {
-                int groupsThisDispatch = math.min(remainingGroups, MaxParticleDispatchGroupsPerCall);
-                int particleOffset = groupOffset * safeThreadGroupSize;
+                int groupsThisDispatch = math.min(remainingGroups, maxGroupsPerDispatch);
+                if (groupsThisDispatch <= 0)
+                    return;
+
+                long particleOffsetLong = (long)groupOffset * threadGroupSize;
+                if (particleOffsetLong > int.MaxValue)
+                    return;
+
+                int particleOffset = (int)particleOffsetLong;
                 SetComputeIntHotIfChanged(ShaderIds.DispatchOffsetId, particleOffset, ref _boundDispatchOffset);
                 marineSnowCompute.Dispatch(kernelIndex, groupsThisDispatch, 1, 1);
                 groupOffset += groupsThisDispatch;
@@ -3732,23 +3807,40 @@ namespace Hecton8.Environment
 
         private void DispatchClearKernelChunked(int kernelIndex, int groupCountX, int groupCountY, int tileSizeX, int tileSizeY)
         {
-            if (kernelIndex < 0 || groupCountX <= 0 || groupCountY <= 0)
+            if (kernelIndex < 0 ||
+                groupCountX <= 0 ||
+                groupCountY <= 0 ||
+                tileSizeX <= 0 ||
+                tileSizeY <= 0)
                 return;
 
-            int safeTileSizeX = math.max(1, tileSizeX);
-            int safeTileSizeY = math.max(1, tileSizeY);
             int xGroupOffset = 0;
+            int maxGroupsPerDispatch = math.min(MaxParticleDispatchGroupsPerCall, MaxDispatchGroupsPerDimension);
             while (xGroupOffset < groupCountX)
             {
-                int groupsXThisDispatch = math.min(groupCountX - xGroupOffset, MaxParticleDispatchGroupsPerCall);
-                int maxYGroupsForX = math.max(1, MaxParticleDispatchGroupsPerCall / groupsXThisDispatch);
+                int groupsXThisDispatch = math.min(groupCountX - xGroupOffset, maxGroupsPerDispatch);
+                if (groupsXThisDispatch <= 0)
+                    return;
+
+                int maxYGroupsForX = maxGroupsPerDispatch / groupsXThisDispatch;
+                if (maxYGroupsForX <= 0)
+                    return;
+
                 int yGroupOffset = 0;
                 while (yGroupOffset < groupCountY)
                 {
                     int groupsYThisDispatch = math.min(groupCountY - yGroupOffset, maxYGroupsForX);
+                    if (groupsYThisDispatch <= 0)
+                        return;
+
+                    long xPixelOffset = (long)xGroupOffset * tileSizeX;
+                    long yPixelOffset = (long)yGroupOffset * tileSizeY;
+                    if (xPixelOffset > int.MaxValue || yPixelOffset > int.MaxValue)
+                        return;
+
                     Vector4 tileOffset = new Vector4(
-                        xGroupOffset * safeTileSizeX,
-                        yGroupOffset * safeTileSizeY,
+                        (int)xPixelOffset,
+                        (int)yPixelOffset,
                         0f,
                         0f);
                     SetComputeVectorHotIfChanged(ShaderIds.DispatchTileOffsetId, tileOffset, ref _boundDispatchTileOffset);
@@ -3966,7 +4058,7 @@ namespace Hecton8.Environment
                 name = "__HectonMarineSnowIndirectQuad",
                 bounds = new Bounds(Vector3.zero, Vector3.one * 2f)
             }; // COLD ALLOC: Mesh[1] - legacy six-vertex quad asset kept for editor fallback paths - owner: HectonMarineSnowRenderer
-            _quadMesh.vertices = QuadMeshVertices;
+            _quadMesh.SetVertices(QuadMeshVertices);
             _quadMesh.SetIndices(QuadMeshIndices, MeshTopology.Triangles, 0, false);
             _quadMesh.UploadMeshData(true);
         }
@@ -4230,8 +4322,14 @@ namespace Hecton8.Environment
 
         private static int CeilDivide(int value, int divisor)
         {
-            int safeDivisor = math.max(1, divisor);
-            return value <= 0 ? 0 : (value + safeDivisor - 1) / safeDivisor;
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            if (groups <= 0L || groups > int.MaxValue)
+                return 0;
+
+            return (int)groups;
         }
 
         private void RenderMarineSnow()

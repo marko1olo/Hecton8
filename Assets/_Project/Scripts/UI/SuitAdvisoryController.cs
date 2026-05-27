@@ -147,7 +147,7 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void OnBaseIntegrityEvent(in BaseIntegrityEventPayload payload)
+        public void OnBaseIntegrityEvent(in UiBaseIntegrityEventPayload payload)
         {
             switch ((BaseIntegrityEventType)payload.EventType)
             {

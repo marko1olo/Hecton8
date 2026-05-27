@@ -76,7 +76,6 @@ namespace Hecton8.Core
     {
         private const int RetainedFrameCount = 1000;
         private const int Capacity = 1024;
-        private const int CapacityMask = Capacity - 1;
         private const int BinaryHeaderSizeBytes = 16;
         private const int Version = 1;
         private const uint BinaryMagic = 0x4D4C4554u; // "TELM"
@@ -846,11 +845,7 @@ namespace Hecton8.Core
 
             int remaining = _snapshotTotalCount - _snapshotCopiedCount;
             int copyCount = math.min(remaining, SnapshotCopyBudgetPerLateFrame);
-            for (int i = 0; i < copyCount; i++)
-            {
-                int ringIndex = (int)(_snapshotStartIndex + _snapshotCopiedCount + i) & CapacityMask;
-                _snapshotBuffer[_snapshotCopiedCount + i] = _ringBuffer[ringIndex];
-            }
+            _ringBuffer.CopyRange(_snapshotStartIndex + _snapshotCopiedCount, copyCount, _snapshotBuffer, _snapshotCopiedCount);
 
             _snapshotCopiedCount += copyCount;
             if (_snapshotCopiedCount < _snapshotTotalCount)
@@ -861,11 +856,7 @@ namespace Hecton8.Core
 
         private static void CopySnapshotUnbounded(long startIndex, int totalCount)
         {
-            for (int i = 0; i < totalCount; i++)
-            {
-                int ringIndex = (int)(startIndex + i) & CapacityMask;
-                _snapshotBuffer[i] = _ringBuffer[ringIndex];
-            }
+            _ringBuffer.CopyRange(startIndex, totalCount, _snapshotBuffer);
         }
 
         private static void CompleteSnapshotCopy()

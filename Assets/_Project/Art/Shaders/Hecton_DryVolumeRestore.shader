@@ -21,7 +21,9 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
         HLSLINCLUDE
         #pragma target 4.5
 
+        #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
         CBUFFER_START(UnityPerMaterial)
@@ -50,11 +52,14 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
 
         struct Attributes
         {
+            UNITY_VERTEX_INPUT_INSTANCE_ID
             uint vertexID : SV_VertexID;
         };
 
         struct Varyings
         {
+            UNITY_VERTEX_INPUT_INSTANCE_ID
+            UNITY_VERTEX_OUTPUT_STEREO
             float4 positionCS : SV_POSITION;
             float2 screenUV : TEXCOORD0;
         };
@@ -62,6 +67,9 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
         Varyings Vert(Attributes input)
         {
             Varyings output;
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_TRANSFER_INSTANCE_ID(input, output);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
             output.screenUV = float2((input.vertexID << 1) & 2, input.vertexID & 2);
             output.positionCS = float4(output.screenUV * 2.0 - 1.0, 0.0, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
@@ -94,9 +102,14 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
         #endif
         }
 
+        float2 ResolveFoveatedSourceUV(float2 uv)
+        {
+            return FoveatedRemapLinearToNonUniform(saturate(uv));
+        }
+
         float3 SampleSceneWorldPosition(float2 screenUV, out float rawDepth, out float depthValid, out float linearEyeDepth)
         {
-            rawDepth = SampleSceneDepth(screenUV);
+            rawDepth = SampleSceneDepth(ResolveFoveatedSourceUV(screenUV));
             depthValid = ResolveRawDepthValidity(rawDepth);
             float resolvedRawDepth = depthValid > 0.5 ? rawDepth : ResolveFarRawDepth();
             float3 positionWS = ComputeWorldSpacePosition(screenUV, resolvedRawDepth, UNITY_MATRIX_I_VP);
@@ -152,24 +165,36 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
 
         half4 FragRestore(Varyings input) : SV_Target
         {
-            return SAMPLE_TEXTURE2D_X(_OceanCameraColorTexture, sampler_LinearClamp, input.screenUV);
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 screenUV = UnityStereoTransformScreenSpaceTex(input.screenUV);
+            float2 sourceUV = ResolveFoveatedSourceUV(screenUV);
+            return SAMPLE_TEXTURE2D_X(_OceanCameraColorTexture, sampler_LinearClamp, sourceUV);
         }
 
         half4 FragCopy(Varyings input) : SV_Target
         {
-            return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 screenUV = UnityStereoTransformScreenSpaceTex(input.screenUV);
+            float2 sourceUV = ResolveFoveatedSourceUV(screenUV);
+            return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, sourceUV);
         }
 
         half4 FragResolve(Varyings input) : SV_Target
         {
-            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 screenUV = UnityStereoTransformScreenSpaceTex(input.screenUV);
+            float2 sourceUV = ResolveFoveatedSourceUV(screenUV);
+            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, sourceUV);
             if (_HectonNoirResolveSettings.z < 0.5)
                 return sourceColor;
 
             float rawDepth;
             float depthValid;
             float linearEyeDepth;
-            float3 scenePositionWS = SampleSceneWorldPosition(input.screenUV, rawDepth, depthValid, linearEyeDepth);
+            float3 scenePositionWS = SampleSceneWorldPosition(screenUV, rawDepth, depthValid, linearEyeDepth);
             half3 resolvedColor = sourceColor.rgb;
             if (depthValid > 0.5)
             {
@@ -179,9 +204,9 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
                 resolvedColor += (half3)(SampleBiolumVolumeRadiance(absolutePositionWS) * depthBiolumScale * 0.22);
             }
 
-            resolvedColor += (half3)SampleMarineSnowSonarGlow(input.screenUV);
+            resolvedColor += (half3)SampleMarineSnowSonarGlow(screenUV);
 
-            float noise = ResolveInterleavedNoise(input.screenUV);
+            float noise = ResolveInterleavedNoise(screenUV);
             half freeze = (half)saturate(_HectonFreezeFrameDither);
             half scanline = (half)step(0.5, frac(input.positionCS.y * 0.5));
             half ditherMask = (half)step(noise, freeze);

@@ -2,6 +2,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using GPUInstancer;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -104,6 +105,7 @@ namespace Hecton8.World
                 counts == null ||
                 bufferCapacities == null ||
                 initializedPrototypes == null ||
+                !CanUseVendorGpuInstancerCompute() ||
                 !Application.isPlaying)
             {
                 return;
@@ -178,6 +180,7 @@ namespace Hecton8.World
             if (manager == null ||
                 knownPrototypes == null ||
                 initializedPrototypes == null ||
+                !CanUseVendorGpuInstancerCompute() ||
                 !Application.isPlaying)
             {
                 return;
@@ -204,8 +207,13 @@ namespace Hecton8.World
         {
             prototype = null;
 
-            if (!Application.isPlaying || manager == null || placement == null)
+            if (!Application.isPlaying ||
+                !CanUseVendorGpuInstancerCompute() ||
+                manager == null ||
+                placement == null)
+            {
                 return false;
+            }
 
             WorldPrefabFamilyProfile family = placement.Family;
             if (family == null ||
@@ -224,6 +232,11 @@ namespace Hecton8.World
 
             prototype = gpuiPrefab.prefabPrototype;
             return prototype != null;
+        }
+
+        private static bool CanUseVendorGpuInstancerCompute()
+        {
+            return HardwareTierDetector.AllowHighResourceComputeShaders;
         }
 
         private static void AccumulateInstancingBounds(

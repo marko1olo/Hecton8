@@ -22,6 +22,9 @@ namespace Hecton8.World.ProceduralCoral
         private int _writeIndex;
         private int _activeIndex = -1;
         private int _activeInstanceCount;
+        private readonly MaterialPropertyBlock _propertyBlock = new MaterialPropertyBlock();
+        private CoralGpuSwayDTO _activeSway;
+        private bool _hasActiveSway;
 
         public bool EnsureGraphicsResources(int requiredCapacity)
         {
@@ -112,8 +115,7 @@ namespace Hecton8.World.ProceduralCoral
             _activeIndex = _writeIndex;
             _activeInstanceCount = writeCount;
             _writeIndex ^= 1;
-            Shader.SetGlobalBuffer(_CoralMatricesId, matrixTarget);
-            PublishSway(gpuSway);
+            CaptureSway(gpuSway);
             return true;
         }
 
@@ -126,7 +128,9 @@ namespace Hecton8.World.ProceduralCoral
                 return false;
             }
 
-            Shader.SetGlobalBuffer(_CoralMatricesId, matrixBuffer);
+            _propertyBlock.Clear();
+            _propertyBlock.SetBuffer(_CoralMatricesId, matrixBuffer);
+            ApplySway(_propertyBlock);
             UnityEngine.Graphics.DrawProceduralIndirect(
                 material,
                 bounds,
@@ -134,7 +138,7 @@ namespace Hecton8.World.ProceduralCoral
                 argsBuffer,
                 0,
                 null,
-                null,
+                _propertyBlock,
                 ShadowCastingMode.On,
                 true,
                 0);
@@ -158,19 +162,28 @@ namespace Hecton8.World.ProceduralCoral
             ReleaseGraphicsResources();
         }
 
-        private static void PublishSway(NativeArray<CoralGpuSwayDTO> gpuSway)
+        private void CaptureSway(NativeArray<CoralGpuSwayDTO> gpuSway)
         {
             if (!gpuSway.IsCreated || gpuSway.Length <= 0)
                 return;
 
-            CoralGpuSwayDTO sway = gpuSway[0];
-            Shader.SetGlobalVector(
+            _activeSway = gpuSway[0];
+            _hasActiveSway = true;
+        }
+
+        private void ApplySway(MaterialPropertyBlock propertyBlock)
+        {
+            if (propertyBlock == null)
+                return;
+
+            CoralGpuSwayDTO sway = _hasActiveSway ? _activeSway : default;
+            propertyBlock.SetVector(
                 _CoralSway0Id,
                 ToFiniteVector4(sway.FlowAndAmplitude, new float4(0.04f, 0f, 1f, 0f)));
-            Shader.SetGlobalVector(
+            propertyBlock.SetVector(
                 _CoralSway1Id,
                 ToFiniteVector4(sway.BoundsAndDensity, new float4(0f, 0f, 0f, 1f)));
-            Shader.SetGlobalVector(_CoralSway2Id, ToFiniteVector4(sway.FaultAndFrame, float4.zero));
+            propertyBlock.SetVector(_CoralSway2Id, ToFiniteVector4(sway.FaultAndFrame, float4.zero));
         }
 
         private void ReleaseGraphicsResources()
@@ -183,6 +196,9 @@ namespace Hecton8.World.ProceduralCoral
             _writeIndex = 0;
             _activeIndex = -1;
             _activeInstanceCount = 0;
+            _activeSway = default;
+            _hasActiveSway = false;
+            _propertyBlock.Clear();
         }
 
         private static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : struct

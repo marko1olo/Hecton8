@@ -1,0 +1,36 @@
+﻿{
+    "schema":  "hecton8.inner_loop_branch_scan.v2",
+    "agentId":  "1317",
+    "file":  "Assets/_Project/Scripts/PlayerInventory.cs",
+    "ranges":  [
+                   {
+                       "name":  "InventoryMassVolumeJob.Execute",
+                       "start":  190,
+                       "end":  205
+                   },
+                   {
+                       "name":  "InventoryRadioactiveHalfLifeKernel.WithConversions",
+                       "start":  254,
+                       "end":  284
+                   },
+                   {
+                       "name":  "InventoryRadioactiveHalfLifeKernel.NoConversions",
+                       "start":  289,
+                       "end":  313
+                   },
+                   {
+                       "name":  "InventoryReactiveChemistryKernel.WithPairs",
+                       "start":  365,
+                       "end":  395
+                   },
+                   {
+                       "name":  "InventoryReactiveChemistryKernel.NoPairs",
+                       "start":  400,
+                       "end":  405
+                   }
+               ],
+    "totalHits":  0,
+    "hits":  [
+
+             ]
+}

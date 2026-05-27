@@ -49,7 +49,7 @@ namespace Hecton8.Physics
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Tools/Flow Field Visualizer")]
-    public sealed class FlowFieldVisualizer : MonoBehaviour
+    public sealed class FlowFieldVisualizer : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -185,6 +185,7 @@ namespace Hecton8.Physics
         private static readonly ProfilerMarker RecalculateMarker
             = new ProfilerMarker("FlowFieldVisualizer.Recalculate");
         private IFluidSurfaceCurrentReadModel _subscribedFluidCurrent;
+        private bool _registeredHotSwapListener;
 
         /// <summary>Object pool dlya particle effects (editor-only)</summary>
         private class ParticlePool
@@ -769,7 +770,7 @@ namespace Hecton8.Physics
 
                 if (useJobSystem && useBurstSampling)
                 {
-                    IFluidSurfaceCurrentReadModel fluidCurrent = GlobalRegistry.FluidSurfaceCurrent;
+                    IFluidSurfaceCurrentReadModel fluidCurrent = _subscribedFluidCurrent;
                     bool includeGlobalCurrent = showGlobalCurrent && fluidCurrent != null;
 
                     var positions = new NativeArray<float3>(totalPoints, Allocator.TempJob, NativeArrayOptions.ClearMemory);
@@ -1087,7 +1088,7 @@ namespace Hecton8.Physics
             Vector3 totalFlow = Vector3.zero;
 
             // Globalnoe phantom techenie
-            IFluidSurfaceCurrentReadModel fluidCurrent = GlobalRegistry.FluidSurfaceCurrent;
+            IFluidSurfaceCurrentReadModel fluidCurrent = _subscribedFluidCurrent;
             if (showGlobalCurrent && fluidCurrent != null)
             {
                 float3 pos = new float3(worldPos.x, worldPos.y, worldPos.z);
@@ -1290,24 +1291,52 @@ namespace Hecton8.Physics
         private void OnEnable()
         {
             // Podpisyvaemsya na izmeneniya nastroek techeniy
-            _subscribedFluidCurrent = GlobalRegistry.FluidSurfaceCurrent;
-            if (_subscribedFluidCurrent != null)
-            {
-                _subscribedFluidCurrent.CurrentSettingsChanged += OnCurrentSettingsChanged;
-            }
+            CacheFluidCurrent(GlobalRegistry.FluidSurfaceCurrent);
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void OnDisable()
         {
             // Otpisyvaemsya ot sobytiy
-            if (_subscribedFluidCurrent != null)
+            if (_registeredHotSwapListener)
             {
-                _subscribedFluidCurrent.CurrentSettingsChanged -= OnCurrentSettingsChanged;
-                _subscribedFluidCurrent = null;
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _registeredHotSwapListener = false;
             }
+
+            CacheFluidCurrent(null);
 
             // Polnostyu osvobozhdaem preview-resursy, chtoby ne ostavlyat hidden editor objects.
             DisposeParticlePreviewPool();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.FluidRuntime)
+                return;
+
+            CacheFluidCurrent(currentService as IFluidSurfaceCurrentReadModel);
+        }
+
+        private void CacheFluidCurrent(IFluidSurfaceCurrentReadModel fluidCurrent)
+        {
+            if (ReferenceEquals(_subscribedFluidCurrent, fluidCurrent))
+                return;
+
+            if (_subscribedFluidCurrent != null)
+            {
+                _subscribedFluidCurrent.CurrentSettingsChanged -= OnCurrentSettingsChanged;
+            }
+
+            _subscribedFluidCurrent = fluidCurrent;
+            if (_subscribedFluidCurrent != null)
+                _subscribedFluidCurrent.CurrentSettingsChanged += OnCurrentSettingsChanged;
+
+            if (showGlobalCurrent)
+                _needsRecalculation = true;
         }
 
         /// <summary>Obrabotchik izmeneniya nastroek techeniy v HectonFluidEngine.</summary>

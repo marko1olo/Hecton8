@@ -7,7 +7,6 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
@@ -61,6 +60,18 @@ namespace Hecton8.Visor
 
         private sealed class ReflectionSheenPass : ScriptableRenderPass
         {
+            private sealed class ReflectionSheenPassData
+            {
+                public TextureHandle Source;
+                public TextureHandle Depth;
+                public TextureHandle Mask;
+                public BufferHandle ConstantsBuffer;
+                public Material Material;
+                public int ShaderPassIndex;
+                public bool BindDepth;
+                public bool BindMask;
+            }
+
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Reflection Sheen");
             private FeatureSettings _settings;
             private Material _material;
@@ -84,7 +95,11 @@ namespace Hecton8.Visor
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingTransparents;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
-                EnsureStochasticSsrGlobalsBuffer();
+            }
+
+            public bool PrepareResources()
+            {
+                return EnsureStochasticSsrGlobalsBuffer();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -133,25 +148,95 @@ namespace Hecton8.Visor
 
                 TextureHandle maskTexture = renderGraph.CreateTexture(maskDesc);
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
+                BufferHandle globalsBuffer = renderGraph.ImportBuffer(_stochasticSsrGlobalsBuffer);
 
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, maskTexture, _material, 0),
-                           passName: "Hecton Reflection Sheen Mask R8 Half",
-                           returnBuilder: true))
-                {
-                    builder.UseTexture(depthTexture, AccessFlags.Read);
-                    builder.SetGlobalTextureAfterPass(maskTexture, ShaderConstants.MaskTextureId);
-                }
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Reflection Sheen Mask R8 Half",
+                    sourceTexture,
+                    depthTexture,
+                    default,
+                    maskTexture,
+                    globalsBuffer,
+                    _material,
+                    0,
+                    true,
+                    false);
 
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 1),
-                           passName: "Hecton Reflection Sheen Composite",
-                           returnBuilder: true))
-                {
-                    builder.UseTexture(maskTexture, AccessFlags.Read);
-                }
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Reflection Sheen Composite",
+                    sourceTexture,
+                    default,
+                    maskTexture,
+                    destinationTexture,
+                    globalsBuffer,
+                    _material,
+                    1,
+                    false,
+                    true);
 
                 resourceData.cameraColor = destinationTexture;
+            }
+
+            private void RecordFullscreenPass(
+                RenderGraph renderGraph,
+                string passName,
+                TextureHandle source,
+                TextureHandle depth,
+                TextureHandle mask,
+                TextureHandle destination,
+                BufferHandle globalsBuffer,
+                Material material,
+                int shaderPassIndex,
+                bool bindDepth,
+                bool bindMask)
+            {
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<ReflectionSheenPassData>(
+                           passName,
+                           out ReflectionSheenPassData passData,
+                           _profilingSampler))
+                {
+                    passData.Source = source;
+                    passData.Depth = depth;
+                    passData.Mask = mask;
+                    passData.ConstantsBuffer = globalsBuffer;
+                    passData.Material = material;
+                    passData.ShaderPassIndex = shaderPassIndex;
+                    passData.BindDepth = bindDepth;
+                    passData.BindMask = bindMask;
+
+                    builder.UseTexture(source, AccessFlags.Read);
+                    if (bindDepth)
+                        builder.UseTexture(depth, AccessFlags.Read);
+                    if (bindMask)
+                        builder.UseTexture(mask, AccessFlags.Read);
+                    builder.UseBuffer(globalsBuffer, AccessFlags.Read);
+                    builder.SetRenderAttachment(destination, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (ReflectionSheenPassData data, RasterGraphContext context) =>
+                    {
+                        if (data.Material == null)
+                            return;
+
+                        GraphicsBuffer constants = data.ConstantsBuffer;
+                        if (constants == null || !constants.IsValid())
+                            return;
+
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
+                        if (data.BindDepth)
+                            context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
+                        if (data.BindMask)
+                            context.cmd.SetGlobalTexture(ShaderConstants.MaskTextureId, data.Mask);
+                        context.cmd.SetGlobalConstantBuffer(
+                            constants,
+                            ShaderConstants.StochasticSsrGlobalsBufferId,
+                            0,
+                            StochasticSsrGlobalsStrideBytes);
+                        CoreUtils.DrawFullScreen(context.cmd, data.Material, null, data.ShaderPassIndex);
+                    });
+                }
             }
 
             public void Dispose()
@@ -183,16 +268,39 @@ namespace Hecton8.Visor
 
                 _stochasticSsrGlobalsBufferA?.Release();
                 _stochasticSsrGlobalsBufferB?.Release();
-                _stochasticSsrGlobalsBufferA = new GraphicsBuffer(
-                    GraphicsBuffer.Target.Constant,
-                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                    1,
-                    StochasticSsrGlobalsStrideBytes);
-                _stochasticSsrGlobalsBufferB = new GraphicsBuffer(
-                    GraphicsBuffer.Target.Constant,
-                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                    1,
-                    StochasticSsrGlobalsStrideBytes);
+                try
+                {
+                    _stochasticSsrGlobalsBufferA = new GraphicsBuffer(
+                        GraphicsBuffer.Target.Constant,
+                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                        1,
+                        StochasticSsrGlobalsStrideBytes);
+                    _stochasticSsrGlobalsBufferB = new GraphicsBuffer(
+                        GraphicsBuffer.Target.Constant,
+                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                        1,
+                        StochasticSsrGlobalsStrideBytes);
+                }
+                catch (ArgumentException)
+                {
+                    Dispose();
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    Dispose();
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    Dispose();
+                    return false;
+                }
+                catch (OutOfMemoryException)
+                {
+                    Dispose();
+                    return false;
+                }
                 _stochasticSsrGlobalsBuffer = _stochasticSsrGlobalsBufferA;
                 _stochasticSsrGlobalsWriteIndex = 1;
                 _hasStochasticSsrGlobals = false;
@@ -201,7 +309,7 @@ namespace Hecton8.Visor
 
             private bool UpdateStochasticSsrGlobals(FeatureSettings settings, int inputWidth, int inputHeight)
             {
-                if (!EnsureStochasticSsrGlobalsBuffer())
+                if (!HasStochasticSsrGlobalsBuffer())
                     return false;
 
                 Vector4 inputSize = new Vector4(inputWidth, inputHeight, 1f / math.max(1, inputWidth), 1f / math.max(1, inputHeight));
@@ -215,29 +323,72 @@ namespace Hecton8.Visor
                 StochasticSsrGlobalsDTO globals = new StochasticSsrGlobalsDTO(inputSize, paramsA, paramsB);
                 if (_hasStochasticSsrGlobals && StochasticSsrGlobalsEqual(in _lastStochasticSsrGlobals, in globals))
                 {
-                    Shader.SetGlobalConstantBuffer(ShaderConstants.StochasticSsrGlobalsBufferId, _stochasticSsrGlobalsBuffer, 0, StochasticSsrGlobalsStrideBytes);
-                    return true;
+                    return _stochasticSsrGlobalsBuffer != null && _stochasticSsrGlobalsBuffer.IsValid();
                 }
 
                 GraphicsBuffer writeBuffer = (_stochasticSsrGlobalsWriteIndex & 1) == 0 ? _stochasticSsrGlobalsBufferA : _stochasticSsrGlobalsBufferB;
                 if (writeBuffer == null || !writeBuffer.IsValid())
                     return false;
 
-                NativeArray<StochasticSsrGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<StochasticSsrGlobalsDTO>(0, 1);
                 try
                 {
-                    mapped[0] = globals;
+                    NativeArray<StochasticSsrGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<StochasticSsrGlobalsDTO>(0, 1);
+                    try
+                    {
+                        mapped[0] = globals;
+                    }
+                    finally
+                    {
+                        writeBuffer.UnlockBufferAfterWrite<StochasticSsrGlobalsDTO>(1);
+                    }
                 }
-                finally
+                catch (ObjectDisposedException)
                 {
-                    writeBuffer.UnlockBufferAfterWrite<StochasticSsrGlobalsDTO>(1);
+                    MarkStochasticSsrGlobalsUnavailable();
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    MarkStochasticSsrGlobalsUnavailable();
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    MarkStochasticSsrGlobalsUnavailable();
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    MarkStochasticSsrGlobalsUnavailable();
+                    return false;
                 }
                 _stochasticSsrGlobalsBuffer = writeBuffer;
                 _stochasticSsrGlobalsWriteIndex ^= 1;
                 _lastStochasticSsrGlobals = globals;
                 _hasStochasticSsrGlobals = true;
-                Shader.SetGlobalConstantBuffer(ShaderConstants.StochasticSsrGlobalsBufferId, _stochasticSsrGlobalsBuffer, 0, StochasticSsrGlobalsStrideBytes);
+                return _stochasticSsrGlobalsBuffer != null && _stochasticSsrGlobalsBuffer.IsValid();
+            }
+
+            private bool HasStochasticSsrGlobalsBuffer()
+            {
+                if (!SystemInfo.supportsSetConstantBuffer)
+                    return false;
+
+                if (_stochasticSsrGlobalsBufferA == null || !_stochasticSsrGlobalsBufferA.IsValid() ||
+                    _stochasticSsrGlobalsBufferB == null || !_stochasticSsrGlobalsBufferB.IsValid())
+                {
+                    return false;
+                }
+
+                if (_stochasticSsrGlobalsBuffer == null || !_stochasticSsrGlobalsBuffer.IsValid())
+                    _stochasticSsrGlobalsBuffer = _stochasticSsrGlobalsBufferA;
                 return true;
+            }
+
+            private void MarkStochasticSsrGlobalsUnavailable()
+            {
+                _stochasticSsrGlobalsBuffer = null;
+                _hasStochasticSsrGlobals = false;
             }
 
             private static bool StochasticSsrGlobalsEqual(in StochasticSsrGlobalsDTO left, in StochasticSsrGlobalsDTO right)
@@ -271,6 +422,8 @@ namespace Hecton8.Visor
         private static class ShaderConstants
         {
             internal static readonly int StochasticSsrGlobalsBufferId = Shader.PropertyToID("HectonStochasticSsrGlobals");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
+            internal static readonly int CameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
             internal static readonly int MaskTextureId = Shader.PropertyToID("_HectonSsrMaskTex");
         }
 
@@ -286,11 +439,16 @@ namespace Hecton8.Visor
                 settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
 #endif
 
-            Shader shader = settings != null && settings.shader != null
-                ? settings.shader
-                : Shader.Find("Hidden/Hecton8/StochasticSSR");
+            Shader shader = settings != null ? settings.shader : null;
+            if (shader == null)
+                RuntimeShaderReferenceCatalog.TryGetStochasticSsrShader(out shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find("Hidden/Hecton8/StochasticSSR");
+#endif
             RecreateMaterial(ref _material, shader);
             _pass ??= new ReflectionSheenPass();
+            _pass.PrepareResources();
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)

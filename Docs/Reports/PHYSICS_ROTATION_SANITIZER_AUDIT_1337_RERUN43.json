@@ -1,0 +1,123 @@
+﻿{
+    "schema":  "hecton8.physics_rotation_sanitizer_audit_1337.v1",
+    "agentId":  "1337",
+    "task":  "1337_RERUN43_ROTATION_SANITIZER_AND_WELD_BROADPHASE_AUDIT",
+    "status":  "STATIC_GREEN_BUILD_DEFERRED_BY_HOST_GATE",
+    "scannedFiles":  6,
+    "failedGates":  [
+                        "dotnet_build_deferred_cpu_96_vbcscompiler_active"
+                    ],
+    "totalNativeFieldDeclarations":  18,
+    "persistentNativeFieldsRemaining":  0,
+    "transientVaultViews":  0,
+    "transientJobViews":  18,
+    "zeroGcHotPathHits":  0,
+    "absoluteAupCastsFound":  0,
+    "compactionAwareLocksProven":  true,
+    "telemetryRingIntegrated":  true,
+    "defectsFixed":  [
+                         {
+                             "id":  "PHYS_VALIDATE_POSE_LENGTHSQ_INF_ACCEPTED",
+                             "file":  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                             "lines":  "1466-1470",
+                             "before":  "SetPose packed quaternion accepted non-finite lengthsq if comparison passed",
+                             "after":  "poseRotationLengthSq must be finite and greater than epsilon"
+                         },
+                         {
+                             "id":  "PHYS_WELD_SNAP_COLLISION_ENABLED_DIRECT_MUTATION",
+                             "file":  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                             "lines":  "4289-4300",
+                             "before":  "direct Rigidbody pose write could run with detectCollisions enabled",
+                             "after":  "detectCollisions is disabled during mutation, transform is published, previous collision flag restored"
+                         },
+                         {
+                             "id":  "PHYS_TOXIC_RECOVERY_UNNORMALIZED_ROTATION_WRITE",
+                             "file":  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                             "lines":  "4002-4004",
+                             "before":  "toxic recovery wrote original currentRotation after validity check",
+                             "after":  "toxic recovery writes normalized quaternion or identity"
+                         },
+                         {
+                             "id":  "PHYS_SAFE_TELEPORT_AND_ADDED_MASS_SPLIT_QUATERNION_CONTRACT",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "lines":  "1652,1718-1720,2924,2982-2994,4211,4222,4234-4235,4934-4964",
+                             "before":  "safe teleport, origin-shift, NaN recovery, and added-mass routes used finite-component checks or raw stored rotations",
+                             "after":  "all affected routes sanitize through finite lengthsq and normalized sign-canonicalized quaternions"
+                         }
+                     ],
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "ForcePacket",
+                               "sizeBytes":  128,
+                               "offsets":  {
+                                               "Target":  "0:int",
+                                               "Force":  "16:float3",
+                                               "Position":  "28:float3",
+                                               "Torque":  "40:float3",
+                                               "LinearVelocity":  "52:float3",
+                                               "AngularVelocity":  "64:float3",
+                                               "PosePosition":  "76:float3",
+                                               "PoseRotation":  "88:quaternion",
+                                               "Flags":  "104:uint",
+                                               "Sequence":  "108:uint",
+                                               "Mode":  "112:int",
+                                               "Command":  "116:int",
+                                               "OwnerId":  "120:uint",
+                                               "_pad0":  "124:byte",
+                                               "_pad1":  "125:byte",
+                                               "_pad2":  "126:byte",
+                                               "_pad3":  "127:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "PhysicsCullingDTO",
+                               "sizeBytes":  40,
+                               "offsets":  {
+                                               "AupX":  "0:double",
+                                               "AupY":  "8:double",
+                                               "AupZ":  "16:double",
+                                               "SleepRadiusSq":  "24:float",
+                                               "WakeRadiusSq":  "28:float",
+                                               "Flags":  "32:uint",
+                                               "InstanceId":  "36:int"
+                                           }
+                           },
+                           {
+                               "structName":  "FrozenVelocityDTO",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "LinearVelocity":  "0:float3",
+                                               "AngularVelocity":  "12:float3",
+                                               "HasVelocity":  "24:byte",
+                                               "_pad0":  "25:byte",
+                                               "_pad1":  "26:byte",
+                                               "_pad2":  "27:byte",
+                                               "_pad3":  "28:byte",
+                                               "_pad4":  "29:byte",
+                                               "_pad5":  "30:byte",
+                                               "_pad6":  "31:byte"
+                                           }
+                           }
+                       ],
+    "staticScans":  {
+                        "nativeFieldRegex":  "18 field declarations; persistent regex returned 0",
+                        "forbiddenTokenScan":  "0 hits for native allocation, throw/catch, string formatting/interpolation, real LINQ, managed foreach, hidden Complete",
+                        "aupScan":  "0 forbidden absolute AUP casts; runtime-to-AUP conversion false positive classified",
+                        "rotationWriteScan":  "0 direct unnormalized Rigidbody rotation writes remain in scoped files",
+                        "diffCheck":  "git diff --check passed; CRLF warnings only"
+                    },
+    "buildGate":  {
+                      "attempted":  false,
+                      "gate":  "CPU=96%, VBCSCompiler active after 30s wait",
+                      "command":  "dotnet build .\\Assembly-CSharp.csproj --no-restore -v:minimal /nr:false",
+                      "result":  "deferred_by_agents_build_throttle"
+                  },
+    "verificationInputs":  [
+                               "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                               "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                               "Docs/Tasks/Status_1337.md",
+                               "Docs/AgentLogs/Rationale_1337.md",
+                               "Docs/AgentLogs/LOG_1337.md"
+                           ],
+    "verificationHashSha256":  "d2053e31f34d15d857efb37e2a1a15da62679b9e276db232c5c93fef57f04b10"
+}

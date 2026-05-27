@@ -7,7 +7,6 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
@@ -31,6 +30,17 @@ namespace Hecton8.Visor
             return cameraType == CameraType.Preview ||
                    cameraType == CameraType.Reflection ||
                    cameraType == CameraType.SceneView;
+        }
+
+        private static float ResolveFiniteSaturated(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float Smooth01(float value)
+        {
+            float t = ResolveFiniteSaturated(value);
+            return t * t * (3f - 2f * t);
         }
 
         [Serializable]
@@ -69,6 +79,14 @@ namespace Hecton8.Visor
 
         private sealed class NoirDepthFogPass : ScriptableRenderPass
         {
+            private sealed class DepthFogPassData
+            {
+                public TextureHandle Source;
+                public TextureHandle Depth;
+                public BufferHandle ConstantsBuffer;
+                public Material Material;
+            }
+
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Noir Depth Fog");
             private FeatureSettings _settings;
             private Material _material;
@@ -77,6 +95,8 @@ namespace Hecton8.Visor
             private GraphicsBuffer _depthFogGlobalsBufferB;
             private DepthFogGlobalsDTO _lastDepthFogGlobals;
             private int _depthFogGlobalsWriteIndex;
+            private float _surfaceFogWeight01 = 1f;
+            private float _qualityWeight01 = 1f;
             private bool _hasDepthFogGlobals;
 
             public NoirDepthFogPass()
@@ -85,14 +105,20 @@ namespace Hecton8.Visor
                 requiresIntermediateTexture = true;
             }
 
-            public void Setup(FeatureSettings settings, Material material)
+            public void Setup(FeatureSettings settings, Material material, float surfaceFogWeight01, float qualityWeight01)
             {
                 _settings = settings;
                 _material = material;
+                _surfaceFogWeight01 = ResolveFiniteSaturated(surfaceFogWeight01);
+                _qualityWeight01 = ResolveFiniteSaturated(qualityWeight01);
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingTransparents;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
-                EnsureDepthFogGlobalsBuffer();
+            }
+
+            public bool PrepareResources()
+            {
+                return EnsureDepthFogGlobalsBuffer();
             }
 
             public void Dispose()
@@ -125,26 +151,58 @@ namespace Hecton8.Visor
                 if (!sourceTexture.IsValid() || !depthTexture.IsValid())
                     return;
 
+                if (!UpdateDepthFogGlobals(_settings))
+                    return;
+                if (_depthFogGlobalsBuffer == null || !_depthFogGlobalsBuffer.IsValid())
+                    return;
+
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
                 TextureDesc destinationDesc = new TextureDesc(sourceDesc);
                 destinationDesc.name = "_HectonNoirDepthFogComposite";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
                 destinationDesc.msaaSamples = MSAASamples.None;
-                destinationDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                destinationDesc.colorFormat = sourceDesc.colorFormat;
                 destinationDesc.useMipMap = false;
                 destinationDesc.autoGenerateMips = false;
 
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
-                if (!UpdateDepthFogGlobals(_settings))
-                    return;
+                BufferHandle globalsBuffer = renderGraph.ImportBuffer(_depthFogGlobalsBuffer);
 
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
-                           passName: "Hecton Noir Depth Fog",
-                           returnBuilder: true))
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<DepthFogPassData>(
+                           "Hecton Noir Depth Fog",
+                           out DepthFogPassData passData,
+                           _profilingSampler))
                 {
+                    passData.Source = sourceTexture;
+                    passData.Depth = depthTexture;
+                    passData.ConstantsBuffer = globalsBuffer;
+                    passData.Material = _material;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.UseBuffer(globalsBuffer, AccessFlags.Read);
+                    builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (DepthFogPassData data, RasterGraphContext context) =>
+                    {
+                        if (data.Material == null)
+                            return;
+
+                        GraphicsBuffer constants = data.ConstantsBuffer;
+                        if (constants == null || !constants.IsValid())
+                            return;
+
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
+                        context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
+                        context.cmd.SetGlobalConstantBuffer(
+                            constants,
+                            ShaderConstants.DepthFogGlobalsBufferId,
+                            0,
+                            DepthFogGlobalsStrideBytes);
+                        CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
+                    });
                 }
 
                 resourceData.cameraColor = destinationTexture;
@@ -191,36 +249,82 @@ namespace Hecton8.Visor
 
             private bool UpdateDepthFogGlobals(FeatureSettings settings)
             {
-                if (!EnsureDepthFogGlobalsBuffer())
+                if (!HasDepthFogGlobalsBuffer())
                     return false;
 
-                DepthFogGlobalsDTO globals = DepthFogGlobalsDTO.FromSettings(settings);
+                DepthFogGlobalsDTO globals = DepthFogGlobalsDTO.FromSettings(
+                    settings,
+                    _qualityWeight01,
+                    _surfaceFogWeight01);
                 if (_hasDepthFogGlobals && DepthFogGlobalsEqual(in _lastDepthFogGlobals, in globals))
                 {
-                    Shader.SetGlobalConstantBuffer(ShaderConstants.DepthFogGlobalsBufferId, _depthFogGlobalsBuffer, 0, DepthFogGlobalsStrideBytes);
-                    return true;
+                    return _depthFogGlobalsBuffer != null && _depthFogGlobalsBuffer.IsValid();
                 }
 
                 GraphicsBuffer writeBuffer = (_depthFogGlobalsWriteIndex & 1) == 0 ? _depthFogGlobalsBufferA : _depthFogGlobalsBufferB;
                 if (writeBuffer == null || !writeBuffer.IsValid())
                     return false;
 
-                NativeArray<DepthFogGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<DepthFogGlobalsDTO>(0, 1);
                 try
                 {
-                    mapped[0] = globals;
+                    NativeArray<DepthFogGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<DepthFogGlobalsDTO>(0, 1);
+                    try
+                    {
+                        mapped[0] = globals;
+                    }
+                    finally
+                    {
+                        writeBuffer.UnlockBufferAfterWrite<DepthFogGlobalsDTO>(1);
+                    }
                 }
-                finally
+                catch (ObjectDisposedException)
                 {
-                    writeBuffer.UnlockBufferAfterWrite<DepthFogGlobalsDTO>(1);
+                    MarkDepthFogGlobalsUnavailable();
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    MarkDepthFogGlobalsUnavailable();
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    MarkDepthFogGlobalsUnavailable();
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    MarkDepthFogGlobalsUnavailable();
+                    return false;
                 }
 
                 _depthFogGlobalsBuffer = writeBuffer;
                 _depthFogGlobalsWriteIndex ^= 1;
-                Shader.SetGlobalConstantBuffer(ShaderConstants.DepthFogGlobalsBufferId, _depthFogGlobalsBuffer, 0, DepthFogGlobalsStrideBytes);
                 _lastDepthFogGlobals = globals;
                 _hasDepthFogGlobals = true;
+                return _depthFogGlobalsBuffer != null && _depthFogGlobalsBuffer.IsValid();
+            }
+
+            private bool HasDepthFogGlobalsBuffer()
+            {
+                if (!SystemInfo.supportsSetConstantBuffer)
+                    return false;
+
+                if (_depthFogGlobalsBufferA == null || !_depthFogGlobalsBufferA.IsValid() ||
+                    _depthFogGlobalsBufferB == null || !_depthFogGlobalsBufferB.IsValid())
+                {
+                    return false;
+                }
+
+                if (_depthFogGlobalsBuffer == null || !_depthFogGlobalsBuffer.IsValid())
+                    _depthFogGlobalsBuffer = _depthFogGlobalsBufferA;
                 return true;
+            }
+
+            private void MarkDepthFogGlobalsUnavailable()
+            {
+                _depthFogGlobalsBuffer = null;
+                _hasDepthFogGlobals = false;
             }
 
             private static bool DepthFogGlobalsEqual(
@@ -248,20 +352,27 @@ namespace Hecton8.Visor
                 [FieldOffset(48)]
                 internal Vector4 ParamsB;
 
-                internal static DepthFogGlobalsDTO FromSettings(FeatureSettings settings)
+                internal static DepthFogGlobalsDTO FromSettings(
+                    FeatureSettings settings,
+                    float qualityWeight01,
+                    float surfaceFogWeight01)
                 {
                     Color shallowFogColor = settings.shallowFogColor.linear;
                     Color abyssFogColor = settings.abyssFogColor.linear;
+                    float quality = ResolveFiniteSaturated(qualityWeight01);
+                    float qualityCurve = Smooth01(quality);
+                    float surfaceFogWeight = ResolveFiniteSaturated(surfaceFogWeight01);
+                    float visualDensity = math.max(settings.density, 0.00001f) * math.lerp(0.82f, 1.12f, qualityCurve);
 
                     DepthFogGlobalsDTO dto;
                     dto.ShallowColor = new Vector4(shallowFogColor.r, shallowFogColor.g, shallowFogColor.b, shallowFogColor.a);
                     dto.AbyssColor = new Vector4(abyssFogColor.r, abyssFogColor.g, abyssFogColor.b, abyssFogColor.a);
                     dto.ParamsA = new Vector4(
-                        math.max(settings.density, 0.00001f),
+                        math.max(visualDensity, 0.00001f),
                         math.max(settings.startDistanceMeters, 0f),
                         math.max(settings.maxDepthMeters, 1f),
                         0f);
-                    dto.ParamsB = new Vector4(0f, 0f, 0f, math.saturate(settings.ditherStrength));
+                    dto.ParamsB = new Vector4(quality, surfaceFogWeight, 0f, math.saturate(settings.ditherStrength));
                     return dto;
                 }
             }
@@ -270,6 +381,8 @@ namespace Hecton8.Visor
         private static class ShaderConstants
         {
             internal static readonly int DepthFogGlobalsBufferId = Shader.PropertyToID("HectonNoirDepthFogGlobals");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
+            internal static readonly int CameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -286,11 +399,16 @@ namespace Hecton8.Visor
                 settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
 #endif
 
-            Shader shader = settings != null && settings.shader != null
-                ? settings.shader
-                : Shader.Find("Hidden/Hecton8/NoirDepthFog");
+            Shader shader = settings != null ? settings.shader : null;
+            if (shader == null)
+                RuntimeShaderReferenceCatalog.TryGetNoirDepthFogShader(out shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find("Hidden/Hecton8/NoirDepthFog");
+#endif
             RecreateMaterial(ref _material, shader);
             _pass ??= new NoirDepthFogPass();
+            _pass.PrepareResources();
             TryRegisterHotSwapListener();
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }
@@ -306,20 +424,24 @@ namespace Hecton8.Visor
             if (IsUnsupportedCameraType(renderingData.cameraData.cameraType))
                 return;
 
-            if (settings.bypassNearSurface &&
-                ShouldBypassForSurfaceReadability(renderingData.cameraData.camera, settings.nearSurfaceBypassDepthMeters))
-            {
+            float surfaceFogWeight01 = ResolveSurfaceFogWeight01(
+                renderingData.cameraData.camera,
+                settings.nearSurfaceBypassDepthMeters,
+                settings.bypassNearSurface);
+            if (surfaceFogWeight01 <= 0.0001f)
                 return;
-            }
 
-            _pass.Setup(settings, _material);
+            _pass.Setup(settings, _material, surfaceFogWeight01, ResolveGlobalQualityWeight01());
             renderer.EnqueuePass(_pass);
         }
 
-        private bool ShouldBypassForSurfaceReadability(Camera renderCamera, float nearSurfaceBypassDepthMeters)
+        private float ResolveSurfaceFogWeight01(Camera renderCamera, float nearSurfaceBypassDepthMeters, bool attenuateNearSurface)
         {
+            if (!attenuateNearSurface)
+                return 1f;
+
             if (renderCamera == null)
-                return false;
+                return 1f;
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
@@ -327,10 +449,19 @@ namespace Hecton8.Visor
             if (playerMovement != null)
             {
                 float safeDepth = math.max(0.05f, nearSurfaceBypassDepthMeters);
-                return !playerMovement.IsPlayerSubmerged || playerMovement.CurrentDepth <= safeDepth;
+                if (!playerMovement.IsPlayerSubmerged)
+                    return 0f;
+
+                return Smooth01(playerMovement.CurrentDepth / safeDepth);
             }
 
-            return renderCamera.transform.position.y >= -0.25f;
+            float fallbackDepth = math.max(0f, -renderCamera.transform.position.y);
+            return Smooth01(fallbackDepth / math.max(0.05f, nearSurfaceBypassDepthMeters));
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            return ResolveFiniteSaturated(HomeostasisBrain.GlobalQualityWeight);
         }
 
         protected override void Dispose(bool disposing)

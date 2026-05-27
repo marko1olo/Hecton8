@@ -295,7 +295,7 @@ namespace Hecton8.Visor
             HandleInteractionSignal(in signal);
         }
 
-        void IPlayerSignalEventListener.OnToolDepletedSignal(in ToolDepletedSignal signal)
+        void IPlayerSignalEventListener.OnToolDepletedSignal(in PlayerToolDepletedSignal signal)
         {
         }
 

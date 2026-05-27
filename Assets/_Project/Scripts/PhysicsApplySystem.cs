@@ -89,11 +89,41 @@ namespace Hecton8.Physics
         public ForcePacketPriority Priority;
 
         [FieldOffset(46)]
-        private ushort _padding0;
+        private byte _padding0;
+        [FieldOffset(47)]
+        private byte _padding1;
         [FieldOffset(48)]
-        private ulong _padding1;
+        private byte _padding2;
+        [FieldOffset(49)]
+        private byte _padding3;
+        [FieldOffset(50)]
+        private byte _padding4;
+        [FieldOffset(51)]
+        private byte _padding5;
+        [FieldOffset(52)]
+        private byte _padding6;
+        [FieldOffset(53)]
+        private byte _padding7;
+        [FieldOffset(54)]
+        private byte _padding8;
+        [FieldOffset(55)]
+        private byte _padding9;
         [FieldOffset(56)]
-        private ulong _padding2;
+        private byte _padding10;
+        [FieldOffset(57)]
+        private byte _padding11;
+        [FieldOffset(58)]
+        private byte _padding12;
+        [FieldOffset(59)]
+        private byte _padding13;
+        [FieldOffset(60)]
+        private byte _padding14;
+        [FieldOffset(61)]
+        private byte _padding15;
+        [FieldOffset(62)]
+        private byte _padding16;
+        [FieldOffset(63)]
+        private byte _padding17;
     }
 
     /// <summary>
@@ -152,13 +182,61 @@ namespace Hecton8.Physics
         [FieldOffset(32)]
         public float EnergyJoules;
         [FieldOffset(36)]
-        private uint _pad0;
+        private byte _pad0;
+        [FieldOffset(37)]
+        private byte _pad1;
+        [FieldOffset(38)]
+        private byte _pad2;
+        [FieldOffset(39)]
+        private byte _pad3;
         [FieldOffset(40)]
-        private ulong _pad1;
+        private byte _pad4;
+        [FieldOffset(41)]
+        private byte _pad5;
+        [FieldOffset(42)]
+        private byte _pad6;
+        [FieldOffset(43)]
+        private byte _pad7;
+        [FieldOffset(44)]
+        private byte _pad8;
+        [FieldOffset(45)]
+        private byte _pad9;
+        [FieldOffset(46)]
+        private byte _pad10;
+        [FieldOffset(47)]
+        private byte _pad11;
         [FieldOffset(48)]
-        private ulong _pad2;
+        private byte _pad12;
+        [FieldOffset(49)]
+        private byte _pad13;
+        [FieldOffset(50)]
+        private byte _pad14;
+        [FieldOffset(51)]
+        private byte _pad15;
+        [FieldOffset(52)]
+        private byte _pad16;
+        [FieldOffset(53)]
+        private byte _pad17;
+        [FieldOffset(54)]
+        private byte _pad18;
+        [FieldOffset(55)]
+        private byte _pad19;
         [FieldOffset(56)]
-        private ulong _pad3;
+        private byte _pad20;
+        [FieldOffset(57)]
+        private byte _pad21;
+        [FieldOffset(58)]
+        private byte _pad22;
+        [FieldOffset(59)]
+        private byte _pad23;
+        [FieldOffset(60)]
+        private byte _pad24;
+        [FieldOffset(61)]
+        private byte _pad25;
+        [FieldOffset(62)]
+        private byte _pad26;
+        [FieldOffset(63)]
+        private byte _pad27;
     }
 
     /// <summary>
@@ -222,11 +300,41 @@ namespace Hecton8.Physics
         [FieldOffset(45)]
         public AcousticImpulseFlags Flags;
         [FieldOffset(46)]
-        private ushort _pad0;
+        private byte _pad0;
+        [FieldOffset(47)]
+        private byte _pad1;
         [FieldOffset(48)]
-        private ulong _pad1;
+        private byte _pad2;
+        [FieldOffset(49)]
+        private byte _pad3;
+        [FieldOffset(50)]
+        private byte _pad4;
+        [FieldOffset(51)]
+        private byte _pad5;
+        [FieldOffset(52)]
+        private byte _pad6;
+        [FieldOffset(53)]
+        private byte _pad7;
+        [FieldOffset(54)]
+        private byte _pad8;
+        [FieldOffset(55)]
+        private byte _pad9;
         [FieldOffset(56)]
-        private ulong _pad2;
+        private byte _pad10;
+        [FieldOffset(57)]
+        private byte _pad11;
+        [FieldOffset(58)]
+        private byte _pad12;
+        [FieldOffset(59)]
+        private byte _pad13;
+        [FieldOffset(60)]
+        private byte _pad14;
+        [FieldOffset(61)]
+        private byte _pad15;
+        [FieldOffset(62)]
+        private byte _pad16;
+        [FieldOffset(63)]
+        private byte _pad17;
 
         private static Vector3 DominantAxisOrDefault(Vector3 value)
         {
@@ -298,11 +406,41 @@ namespace Hecton8.Physics
         [FieldOffset(45)]
         public AcousticImpulseFlags Flags;
         [FieldOffset(46)]
-        private ushort _pad0;
+        private byte _pad0;
+        [FieldOffset(47)]
+        private byte _pad1;
         [FieldOffset(48)]
-        private ulong _pad1;
+        private byte _pad2;
+        [FieldOffset(49)]
+        private byte _pad3;
+        [FieldOffset(50)]
+        private byte _pad4;
+        [FieldOffset(51)]
+        private byte _pad5;
+        [FieldOffset(52)]
+        private byte _pad6;
+        [FieldOffset(53)]
+        private byte _pad7;
+        [FieldOffset(54)]
+        private byte _pad8;
+        [FieldOffset(55)]
+        private byte _pad9;
         [FieldOffset(56)]
-        private ulong _pad2;
+        private byte _pad10;
+        [FieldOffset(57)]
+        private byte _pad11;
+        [FieldOffset(58)]
+        private byte _pad12;
+        [FieldOffset(59)]
+        private byte _pad13;
+        [FieldOffset(60)]
+        private byte _pad14;
+        [FieldOffset(61)]
+        private byte _pad15;
+        [FieldOffset(62)]
+        private byte _pad16;
+        [FieldOffset(63)]
+        private byte _pad17;
 
         public AcousticImpulseEvent ToAcousticImpulseEvent()
         {
@@ -363,17 +501,101 @@ namespace Hecton8.Physics
         [FieldOffset(78)]
         public ushort Reserved;
         [FieldOffset(80)]
-        private ulong _pad0;
+        private byte _pad0;
+        [FieldOffset(81)]
+        private byte _pad1;
+        [FieldOffset(82)]
+        private byte _pad2;
+        [FieldOffset(83)]
+        private byte _pad3;
+        [FieldOffset(84)]
+        private byte _pad4;
+        [FieldOffset(85)]
+        private byte _pad5;
+        [FieldOffset(86)]
+        private byte _pad6;
+        [FieldOffset(87)]
+        private byte _pad7;
         [FieldOffset(88)]
-        private ulong _pad1;
+        private byte _pad8;
+        [FieldOffset(89)]
+        private byte _pad9;
+        [FieldOffset(90)]
+        private byte _pad10;
+        [FieldOffset(91)]
+        private byte _pad11;
+        [FieldOffset(92)]
+        private byte _pad12;
+        [FieldOffset(93)]
+        private byte _pad13;
+        [FieldOffset(94)]
+        private byte _pad14;
+        [FieldOffset(95)]
+        private byte _pad15;
         [FieldOffset(96)]
-        private ulong _pad2;
+        private byte _pad16;
+        [FieldOffset(97)]
+        private byte _pad17;
+        [FieldOffset(98)]
+        private byte _pad18;
+        [FieldOffset(99)]
+        private byte _pad19;
+        [FieldOffset(100)]
+        private byte _pad20;
+        [FieldOffset(101)]
+        private byte _pad21;
+        [FieldOffset(102)]
+        private byte _pad22;
+        [FieldOffset(103)]
+        private byte _pad23;
         [FieldOffset(104)]
-        private ulong _pad3;
+        private byte _pad24;
+        [FieldOffset(105)]
+        private byte _pad25;
+        [FieldOffset(106)]
+        private byte _pad26;
+        [FieldOffset(107)]
+        private byte _pad27;
+        [FieldOffset(108)]
+        private byte _pad28;
+        [FieldOffset(109)]
+        private byte _pad29;
+        [FieldOffset(110)]
+        private byte _pad30;
+        [FieldOffset(111)]
+        private byte _pad31;
         [FieldOffset(112)]
-        private ulong _pad4;
+        private byte _pad32;
+        [FieldOffset(113)]
+        private byte _pad33;
+        [FieldOffset(114)]
+        private byte _pad34;
+        [FieldOffset(115)]
+        private byte _pad35;
+        [FieldOffset(116)]
+        private byte _pad36;
+        [FieldOffset(117)]
+        private byte _pad37;
+        [FieldOffset(118)]
+        private byte _pad38;
+        [FieldOffset(119)]
+        private byte _pad39;
         [FieldOffset(120)]
-        private ulong _pad5;
+        private byte _pad40;
+        [FieldOffset(121)]
+        private byte _pad41;
+        [FieldOffset(122)]
+        private byte _pad42;
+        [FieldOffset(123)]
+        private byte _pad43;
+        [FieldOffset(124)]
+        private byte _pad44;
+        [FieldOffset(125)]
+        private byte _pad45;
+        [FieldOffset(126)]
+        private byte _pad46;
+        [FieldOffset(127)]
+        private byte _pad47;
     }
 
     /// <summary>
@@ -1225,29 +1447,29 @@ namespace Hecton8.Physics
 
         public void Execute(int index)
         {
+            if ((uint)index >= (uint)Packets.Length || (uint)index >= (uint)ValidityMask.Length)
+                return;
+
             ForcePacket packet = Packets[index];
-            if (packet.RigidbodyIndex < 0 || packet.RigidbodyIndex >= MaxTrackedBodies)
-            {
-                ValidityMask[index] = 0;
-                return;
-            }
-
-            int mode = (int)packet.Mode;
-            if (mode < (int)ForceMode.Force || mode > (int)ForceMode.VelocityChange)
-            {
-                ValidityMask[index] = 0;
-                return;
-            }
-
             ForcePacketFlags flags = (ForcePacketFlags)packet.Flags;
             bool setsPose = (flags & ForcePacketFlags.SetPose) != 0;
-            bool validForce = (flags & (ForcePacketFlags.HasForce | ForcePacketFlags.SetLinearVelocity | ForcePacketFlags.SetPose)) == 0 || IsFinite(packet.Force);
-            bool validTorque = (flags & (ForcePacketFlags.HasTorque | ForcePacketFlags.SetAngularVelocity | ForcePacketFlags.SetPose)) == 0 || IsFinite(packet.Torque);
+            bool validBodyIndex = packet.RigidbodyIndex >= 0 & packet.RigidbodyIndex < MaxTrackedBodies;
+            bool validMode = packet.Mode == ForceMode.Force |
+                             packet.Mode == ForceMode.Acceleration |
+                             packet.Mode == ForceMode.Impulse |
+                             packet.Mode == ForceMode.VelocityChange;
+            bool requiresForce = (flags & (ForcePacketFlags.HasForce | ForcePacketFlags.SetLinearVelocity | ForcePacketFlags.SetPose)) != 0;
+            bool requiresTorque = (flags & (ForcePacketFlags.HasTorque | ForcePacketFlags.SetAngularVelocity | ForcePacketFlags.SetPose)) != 0;
+            bool validForce = !requiresForce | IsFinite(packet.Force);
+            bool validTorque = !requiresTorque | IsFinite(packet.Torque);
             bool validPointOffset = IsFinite(packet.PointOffset);
-            bool validPoseRotation = !setsPose ||
-                                     (math.isfinite(packet.PointOffset.x) &&
-                                      math.lengthsq(new float4(packet.Torque.x, packet.Torque.y, packet.Torque.z, packet.PointOffset.x)) > 0.000001f);
-            ValidityMask[index] = validForce && validTorque && validPointOffset && validPoseRotation ? (byte)1 : (byte)0;
+            float4 poseRotation = new float4(packet.Torque.x, packet.Torque.y, packet.Torque.z, packet.PointOffset.x);
+            float poseRotationLengthSq = math.lengthsq(poseRotation);
+            bool validPoseRotation = !setsPose |
+                                     (math.isfinite(poseRotationLengthSq) &
+                                      poseRotationLengthSq > 0.000001f);
+            bool validPacket = validBodyIndex & validMode & validForce & validTorque & validPointOffset & validPoseRotation;
+            ValidityMask[index] = (byte)math.select(0, 1, validPacket);
         }
 
         private static bool IsFinite(Vector3 value)
@@ -1273,6 +1495,7 @@ namespace Hecton8.Physics
         private const int MaxActiveImpactProxyLights = 4;
         private const int DepressurizationVortexContactCapacity = 32;
         private const int ImplosionOverlapCapacity = 64;
+        private const int SubmarineColliderScratchCapacity = 64;
         private const SystemID OwnerSystemId = SystemID.Physics;
         private const float MinMagnitudeSq = 0.000001f;
         private const float HydrodynamicPlayerEquivalentMassKg = 80f;
@@ -1329,6 +1552,10 @@ namespace Hecton8.Physics
         private readonly AbsoluteUniversePosition[] _lastFiniteBodyAups = new AbsoluteUniversePosition[MaxTrackedBodies];
         // COLD ALLOC: byte[64] - validity mask for last finite Rigidbody AUP cache - owner: PhysicsApplySystem
         private readonly byte[] _lastFiniteBodyAupValid = new byte[MaxTrackedBodies];
+        // COLD ALLOC: ForcePacket[64] - front-buffer apply snapshot so Vault locks never cover Unity Rigidbody API calls - owner: PhysicsApplySystem
+        private readonly ForcePacket[] _forcePacketApplyScratch = new ForcePacket[MaxForcePacketsAppliedPerFixedTick];
+        // COLD ALLOC: byte[64] - front-buffer validation snapshot paired with `_forcePacketApplyScratch` - owner: PhysicsApplySystem
+        private readonly byte[] _forcePacketApplyValidityScratch = new byte[MaxForcePacketsAppliedPerFixedTick];
         // COLD ALLOC: DepressurizationVortex[8] - active breach-vortex slots - owner: PhysicsApplySystem
         private readonly DepressurizationVortex[] _depressurizationVortices = new DepressurizationVortex[MaxActiveDepressurizationVortices];
         // COLD ALLOC: SpatialQueryHit[32] - spatial-hash scratch for breach-vortex loose-body collection - owner: PhysicsApplySystem
@@ -1337,8 +1564,8 @@ namespace Hecton8.Physics
         private readonly Rigidbody[] _depressurizationVortexBodies = new Rigidbody[DepressurizationVortexContactCapacity];
         // COLD ALLOC: TransientProxyLightHandle[4] - bounded 0.05s impact proxy-light handles, no GameObject sparks - owner: PhysicsApplySystem
         private readonly TransientProxyLightHandle[] _impactProxyLights = new TransientProxyLightHandle[MaxActiveImpactProxyLights];
-        // COLD ALLOC: List<Collider>[8] - submarine hull collider discovery for contact-modification enablement - owner: PhysicsApplySystem
-        private readonly List<Collider> _submarineColliderScratch = new List<Collider>(8);
+        // COLD ALLOC: List<Collider>[64] - submarine hull collider discovery for contact-modification enablement - owner: PhysicsApplySystem
+        private readonly List<Collider> _submarineColliderScratch = new List<Collider>(SubmarineColliderScratchCapacity);
         private VaultGenerationHandle<ForcePacket> _frontPacketBufferHandle;
         private VaultGenerationHandle<ForcePacket> _backPacketBufferHandle;
         private VaultGenerationHandle<ForcePacket> _validationPacketBufferHandle;
@@ -1531,7 +1758,7 @@ namespace Hecton8.Physics
             if (body.isKinematic)
                 return false;
 
-            GlobalPhysicsStateManager.RegisterTrackedBody(body);
+            GlobalPhysicsStateManager.RegisterTrackedBodyIfMissing(body);
             int rigidbodyIndex = AcquireBodySlotIndex(body);
             if (rigidbodyIndex < 0)
                 return false;
@@ -1585,7 +1812,7 @@ namespace Hecton8.Physics
             if (body.isKinematic)
                 return false;
 
-            GlobalPhysicsStateManager.RegisterTrackedBody(body);
+            GlobalPhysicsStateManager.RegisterTrackedBodyIfMissing(body);
             int rigidbodyIndex = AcquireBodySlotIndex(body);
             if (rigidbodyIndex < 0)
                 return false;
@@ -1629,7 +1856,7 @@ namespace Hecton8.Physics
             if (body.isKinematic)
                 return false;
 
-            GlobalPhysicsStateManager.RegisterTrackedBody(body);
+            GlobalPhysicsStateManager.RegisterTrackedBodyIfMissing(body);
             int rigidbodyIndex = AcquireBodySlotIndex(body);
             if (rigidbodyIndex < 0)
                 return false;
@@ -1659,7 +1886,7 @@ namespace Hecton8.Physics
             if (TryRouteToCachedPlayerLinearVelocitySet(body, sanitizedVelocity))
                 return true;
 
-            GlobalPhysicsStateManager.RegisterTrackedBody(body);
+            GlobalPhysicsStateManager.RegisterTrackedBodyIfMissing(body);
             int rigidbodyIndex = AcquireBodySlotIndex(body);
             if (rigidbodyIndex < 0)
                 return false;
@@ -1694,7 +1921,7 @@ namespace Hecton8.Physics
             if (TrySuppressCachedPlayerAngularVelocitySet(body))
                 return true;
 
-            GlobalPhysicsStateManager.RegisterTrackedBody(body);
+            GlobalPhysicsStateManager.RegisterTrackedBodyIfMissing(body);
             int rigidbodyIndex = AcquireBodySlotIndex(body);
             if (rigidbodyIndex < 0)
                 return false;
@@ -1727,11 +1954,11 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            GlobalPhysicsStateManager.RegisterTrackedBody(body);
+            GlobalPhysicsStateManager.RegisterTrackedBodyIfMissing(body);
             int rigidbodyIndex = AcquireBodySlotIndex(body);
             if (rigidbodyIndex < 0)
                 return false;
-            CacheLastFiniteBodyAup(rigidbodyIndex, sanitizedPosition);
+            CacheLastFiniteBodyAup(rigidbodyIndex, body.position);
 
             ForcePacket packet = new ForcePacket
             {
@@ -1894,19 +2121,31 @@ namespace Hecton8.Physics
 
         private bool TryEnqueueBackPacket(in ForcePacket packet, string saturationMessage)
         {
-            if (!TryGetExistingVaultBuffer(
-                    ref _backPacketBufferHandle,
+            if (_backCount >= MaxQueuedPackets ||
+                !TryAcquireForcePacketBufferWriteLock(
+                    in _backPacketBufferHandle,
                     BufferID.PhysicsForceCommandBack,
-                    MaxQueuedPackets,
-                    out NativeArray<ForcePacket> backPackets) ||
-                _backCount >= MaxQueuedPackets)
+                    out NativeArray<ForcePacket> backPackets))
             {
                 ReportForcePacketSaturationWarningIfNeeded(saturationMessage);
                 return false;
             }
 
-            backPackets[_backCount++] = packet;
-            return true;
+            try
+            {
+                if (_backCount >= MaxQueuedPackets)
+                {
+                    ReportForcePacketSaturationWarningIfNeeded(saturationMessage);
+                    return false;
+                }
+
+                backPackets[_backCount++] = packet;
+                return true;
+            }
+            finally
+            {
+                ReleaseForcePacketBufferWriteLock(in _backPacketBufferHandle);
+            }
         }
 
         private void ReportForcePacketSaturationWarningIfNeeded(string saturationMessage)
@@ -2293,7 +2532,9 @@ namespace Hecton8.Physics
             if (_packetValidationScheduled)
                 return;
 
-            SwapForcePacketBuffers();
+            if (!TrySwapForcePacketBuffers())
+                return;
+
             ClampFrontBufferCountToCapacity();
             ScheduleFrontPacketValidation();
         }
@@ -2311,40 +2552,80 @@ namespace Hecton8.Physics
             if (!_frontBufferValidationReady)
                 return;
 
-            if (!TryGetExistingVaultBuffer(
-                    ref _frontPacketBufferHandle,
-                    BufferID.PhysicsForceCommandFront,
-                    MaxQueuedPackets,
-                    out NativeArray<ForcePacket> frontPackets) ||
-                !TryGetExistingVaultBuffer(
-                    ref _validationMaskBufferHandle,
-                    BufferID.PhysicsForceValidationMask,
-                    MaxQueuedPackets,
-                    out NativeArray<byte> validationMask))
+            bool frontLocked = TryAcquireForcePacketBufferWriteLock(
+                in _frontPacketBufferHandle,
+                BufferID.PhysicsForceCommandFront,
+                out NativeArray<ForcePacket> frontPackets);
+            bool validationMaskLocked = false;
+            NativeArray<byte> validationMask = default;
+            if (frontLocked)
             {
+                validationMaskLocked = TryAcquireByteBufferWriteLock(
+                    in _validationMaskBufferHandle,
+                    BufferID.PhysicsForceValidationMask,
+                    out validationMask);
+            }
+
+            if (!frontLocked || !validationMaskLocked)
+            {
+                if (validationMaskLocked)
+                    ReleaseByteBufferWriteLock(in _validationMaskBufferHandle);
+                if (frontLocked)
+                    ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
                 _frontBufferValidationReady = false;
                 _frontCount = 0;
                 return;
             }
+
+            int queuedCount = _frontCount;
+            int sourceCount = math.min(queuedCount, MaxQueuedPackets);
+            if (sourceCount < 0)
+                sourceCount = 0;
+            int applyCount = math.min(sourceCount, MaxForcePacketsAppliedPerFixedTick);
+            bool clipped = queuedCount > applyCount;
+
+            try
+            {
+                for (int i = 0; i < applyCount; i++)
+                {
+                    _forcePacketApplyScratch[i] = frontPackets[i];
+                    _forcePacketApplyValidityScratch[i] = validationMask[i];
+                }
+
+                ClearForcePacketRange(frontPackets, sourceCount);
+                ClearByteRange(validationMask, sourceCount);
+                _frontCount = 0;
+                _frontBufferValidationReady = false;
+            }
+            finally
+            {
+                if (validationMaskLocked)
+                    ReleaseByteBufferWriteLock(in _validationMaskBufferHandle);
+                if (frontLocked)
+                    ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
+            }
+
+            if (clipped)
+                PublishForcePacketClipWarningIfNeeded(queuedCount);
 
             long startTimestamp = Stopwatch.GetTimestamp();
             try
             {
                 using (_flushFrontBufferProfilerMarker.Auto())
                 {
-                    int applyCount = math.min(_frontCount, MaxForcePacketsAppliedPerFixedTick);
-                    if (_frontCount > applyCount)
-                        PublishForcePacketClipWarningIfNeeded(_frontCount);
-
                     for (int i = 0; i < applyCount; i++)
                     {
-                        if (validationMask[i] == 0)
+                        byte valid = _forcePacketApplyValidityScratch[i];
+                        ForcePacket packet = _forcePacketApplyScratch[i];
+                        _forcePacketApplyValidityScratch[i] = 0;
+                        _forcePacketApplyScratch[i] = default;
+
+                        if (valid == 0)
                         {
                             ReportNonFinitePacket(InvalidForcePacketLog);
                             continue;
                         }
 
-                        ForcePacket packet = frontPackets[i];
                         Rigidbody body = ResolveBody(packet.RigidbodyIndex);
                         if (body == null)
                             continue;
@@ -2452,11 +2733,6 @@ namespace Hecton8.Physics
                                 fixedDeltaTime,
                                 preApplyVelocity);
                     }
-
-                    ClearForcePacketRange(frontPackets, _frontCount);
-                    ClearByteRange(validationMask, _frontCount);
-                    _frontCount = 0;
-                    _frontBufferValidationReady = false;
                 }
             }
             finally
@@ -2967,15 +3243,32 @@ namespace Hecton8.Physics
             return true;
         }
 
-        private void SwapForcePacketBuffers()
+        private bool TrySwapForcePacketBuffers()
         {
-            EnsureForcePacketBuffers();
+            if (!TryGetExistingVaultBuffer(
+                    ref _frontPacketBufferHandle,
+                    BufferID.PhysicsForceCommandFront,
+                    MaxQueuedPackets,
+                    out NativeArray<ForcePacket> _) ||
+                !TryGetExistingVaultBuffer(
+                    ref _backPacketBufferHandle,
+                    BufferID.PhysicsForceCommandBack,
+                    MaxQueuedPackets,
+                    out NativeArray<ForcePacket> _))
+            {
+                _frontCount = 0;
+                _backCount = 0;
+                _frontBufferValidationReady = false;
+                return false;
+            }
+
             VaultGenerationHandle<ForcePacket> swapHandle = _frontPacketBufferHandle;
             _frontPacketBufferHandle = _backPacketBufferHandle;
             _backPacketBufferHandle = swapHandle;
 
             _frontCount = _backCount;
             _backCount = 0;
+            return true;
         }
 
         private void ClampFrontBufferCountToCapacity()
@@ -2984,13 +3277,19 @@ namespace Hecton8.Physics
                 return;
 
             PublishForcePacketClipWarningIfNeeded(_frontCount);
-            if (TryGetExistingVaultBuffer(
-                    ref _frontPacketBufferHandle,
+            if (TryAcquireForcePacketBufferWriteLock(
+                    in _frontPacketBufferHandle,
                     BufferID.PhysicsForceCommandFront,
-                    MaxQueuedPackets,
                     out NativeArray<ForcePacket> frontPackets))
             {
-                ClearForcePacketRange(frontPackets, _frontCount, MaxQueuedPackets);
+                try
+                {
+                    ClearForcePacketRange(frontPackets, _frontCount, MaxQueuedPackets);
+                }
+                finally
+                {
+                    ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
+                }
             }
 
             _frontCount = MaxQueuedPackets;
@@ -3074,18 +3373,86 @@ namespace Hecton8.Physics
 
         private void ClearForcePacketBuffer(ref VaultGenerationHandle<ForcePacket> handle, BufferID bufferId)
         {
-            if (!TryGetExistingVaultBuffer(ref handle, bufferId, MaxQueuedPackets, out NativeArray<ForcePacket> buffer))
+            if (!TryAcquireForcePacketBufferWriteLock(in handle, bufferId, out NativeArray<ForcePacket> buffer))
                 return;
 
-            ClearForcePacketRange(buffer, MaxQueuedPackets);
+            try
+            {
+                ClearForcePacketRange(buffer, MaxQueuedPackets);
+            }
+            finally
+            {
+                ReleaseForcePacketBufferWriteLock(in handle);
+            }
         }
 
         private void ClearByteBuffer(ref VaultGenerationHandle<byte> handle, BufferID bufferId)
         {
-            if (!TryGetExistingVaultBuffer(ref handle, bufferId, MaxQueuedPackets, out NativeArray<byte> buffer))
+            if (!TryAcquireByteBufferWriteLock(in handle, bufferId, out NativeArray<byte> buffer))
                 return;
 
-            ClearByteRange(buffer, MaxQueuedPackets);
+            try
+            {
+                ClearByteRange(buffer, MaxQueuedPackets);
+            }
+            finally
+            {
+                ReleaseByteBufferWriteLock(in handle);
+            }
+        }
+
+        private bool TryAcquireForcePacketBufferWriteLock(
+            in VaultGenerationHandle<ForcePacket> handle,
+            BufferID bufferId,
+            out NativeArray<ForcePacket> buffer)
+        {
+            buffer = default;
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null ||
+                !IsPhysicsVaultHandle(in handle, bufferId) ||
+                !dataVault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= MaxQueuedPackets)
+                return true;
+
+            dataVault.ReleaseWriteLock(in handle, OwnerSystemId);
+            buffer = default;
+            return false;
+        }
+
+        private bool TryAcquireByteBufferWriteLock(
+            in VaultGenerationHandle<byte> handle,
+            BufferID bufferId,
+            out NativeArray<byte> buffer)
+        {
+            buffer = default;
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null ||
+                !IsPhysicsVaultHandle(in handle, bufferId) ||
+                !dataVault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= MaxQueuedPackets)
+                return true;
+
+            dataVault.ReleaseWriteLock(in handle, OwnerSystemId);
+            buffer = default;
+            return false;
+        }
+
+        private void ReleaseForcePacketBufferWriteLock(in VaultGenerationHandle<ForcePacket> handle)
+        {
+            _dataVault?.ReleaseWriteLock(in handle, OwnerSystemId);
+        }
+
+        private void ReleaseByteBufferWriteLock(in VaultGenerationHandle<byte> handle)
+        {
+            _dataVault?.ReleaseWriteLock(in handle, OwnerSystemId);
         }
 
         private static void ClearForcePacketRange(NativeArray<ForcePacket> buffer, int count, int startIndex = 0)
@@ -3345,50 +3712,86 @@ namespace Hecton8.Physics
 
         private void ScheduleFrontPacketValidation()
         {
-            if (_frontCount <= 0)
-            {
-                _frontBufferValidationReady = false;
-                return;
-            }
-
-            EnsureValidationBuffers();
-            if (!TryGetExistingVaultBuffer(
-                    ref _frontPacketBufferHandle,
-                    BufferID.PhysicsForceCommandFront,
-                    MaxQueuedPackets,
-                    out NativeArray<ForcePacket> frontPackets) ||
-                !TryGetExistingVaultBuffer(
-                    ref _validationPacketBufferHandle,
-                    BufferID.PhysicsForceValidationPackets,
-                    MaxQueuedPackets,
-                    out NativeArray<ForcePacket> validationPackets) ||
-                !TryGetExistingVaultBuffer(
-                    ref _validationMaskBufferHandle,
-                    BufferID.PhysicsForceValidationMask,
-                    MaxQueuedPackets,
-                    out NativeArray<byte> validationMask))
+            int queuedCount = _frontCount;
+            if (queuedCount <= 0)
             {
                 _frontBufferValidationReady = false;
                 _frontCount = 0;
                 return;
             }
 
-            for (int i = 0; i < _frontCount; i++)
+            int validationCount = math.min(queuedCount, MaxQueuedPackets);
+            bool clipped = queuedCount > validationCount;
+            bool frontLocked = TryAcquireForcePacketBufferWriteLock(
+                in _frontPacketBufferHandle,
+                BufferID.PhysicsForceCommandFront,
+                out NativeArray<ForcePacket> frontPackets);
+            bool validationPacketsLocked = false;
+            bool validationMaskLocked = false;
+            NativeArray<ForcePacket> validationPackets = default;
+            NativeArray<byte> validationMask = default;
+            if (frontLocked)
             {
-                validationPackets[i] = frontPackets[i];
-                validationMask[i] = 0;
+                validationPacketsLocked = TryAcquireForcePacketBufferWriteLock(
+                    in _validationPacketBufferHandle,
+                    BufferID.PhysicsForceValidationPackets,
+                    out validationPackets);
             }
 
-            ValidateForcePacketsJob validateJob = new ValidateForcePacketsJob
+            if (validationPacketsLocked)
             {
-                Packets = validationPackets,
-                ValidityMask = validationMask,
-                MaxTrackedBodies = _bodySlots.Length
-            };
+                validationMaskLocked = TryAcquireByteBufferWriteLock(
+                    in _validationMaskBufferHandle,
+                    BufferID.PhysicsForceValidationMask,
+                    out validationMask);
+            }
 
-            _packetValidationHandle = validateJob.Schedule(_frontCount, 32);
-            _packetValidationScheduled = true;
-            _frontBufferValidationReady = false;
+            if (!frontLocked || !validationPacketsLocked || !validationMaskLocked)
+            {
+                if (validationMaskLocked)
+                    ReleaseByteBufferWriteLock(in _validationMaskBufferHandle);
+                if (validationPacketsLocked)
+                    ReleaseForcePacketBufferWriteLock(in _validationPacketBufferHandle);
+                if (frontLocked)
+                    ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
+                _frontBufferValidationReady = false;
+                _frontCount = 0;
+                return;
+            }
+
+            try
+            {
+                for (int i = 0; i < validationCount; i++)
+                {
+                    validationPackets[i] = frontPackets[i];
+                    validationMask[i] = 0;
+                }
+
+                _frontCount = validationCount;
+                ValidateForcePacketsJob validateJob = new ValidateForcePacketsJob
+                {
+                    Packets = validationPackets,
+                    ValidityMask = validationMask,
+                    MaxTrackedBodies = _bodySlots.Length
+                };
+
+                _packetValidationHandle = validateJob.Schedule(validationCount, 32);
+                _packetValidationScheduled = true;
+                H8Memory.RegisterActiveJob(OwnerSystemId, _packetValidationHandle);
+                _frontBufferValidationReady = false;
+            }
+            finally
+            {
+                if (validationMaskLocked)
+                    ReleaseByteBufferWriteLock(in _validationMaskBufferHandle);
+                if (validationPacketsLocked)
+                    ReleaseForcePacketBufferWriteLock(in _validationPacketBufferHandle);
+                if (frontLocked)
+                    ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
+            }
+
+            if (clipped)
+                PublishForcePacketClipWarningIfNeeded(queuedCount);
         }
 
         private void CompleteFrontPacketValidationInLateFrameSwapWindow()
@@ -3403,6 +3806,7 @@ namespace Hecton8.Physics
 
                 _packetValidationScheduled = false;
                 _frontBufferValidationReady = _frontCount > 0;
+                H8Memory.RegisterActiveJob(OwnerSystemId, default);
             }
         }
 
@@ -3577,6 +3981,7 @@ namespace Hecton8.Physics
         private void FreezeToxicBody(Rigidbody body, Vector3 toxicVector, int rigidbodyIndex)
         {
             Vector3 currentPosition = body.position;
+            Quaternion currentRotation = body.rotation;
             Vector3 recoveredPosition = RuntimeWatchdog.ReportRigidbodyNanRecovery(
                 NanRecoverySystemHash,
                 toxicVector,
@@ -3586,14 +3991,18 @@ namespace Hecton8.Physics
             Vector3 zeroVelocity = new Vector3(zeroVelocity3.x, zeroVelocity3.y, zeroVelocity3.z);
             body.linearVelocity = zeroVelocity;
             body.angularVelocity = zeroVelocity;
+            body.isKinematic = true;
+            body.detectCollisions = false;
             if (IsFiniteVector(recoveredPosition))
             {
                 body.position = recoveredPosition;
                 CacheLastFiniteBodyAup(rigidbodyIndex, recoveredPosition);
             }
 
-            body.detectCollisions = false;
-            body.isKinematic = true;
+            body.rotation = TryNormalizeQuaternion(currentRotation, out Quaternion recoveredRotation)
+                ? recoveredRotation
+                : Quaternion.identity;
+            body.PublishTransform();
             body.Sleep();
             int entityId = body.gameObject != null
                 ? unchecked((int)EntityId.ToULong(body.gameObject.GetEntityId()))
@@ -3767,7 +4176,10 @@ namespace Hecton8.Physics
         private static bool IsFiniteQuaternion(Quaternion value)
         {
             float4 value4 = new float4(value.x, value.y, value.z, value.w);
-            return math.all(math.isfinite(value4));
+            float lengthSq = math.lengthsq(value4);
+            return math.all(math.isfinite(value4)) &&
+                   math.isfinite(lengthSq) &&
+                   lengthSq > MinMagnitudeSq;
         }
 
         private static bool TryNormalizeQuaternion(Quaternion value, out Quaternion normalized)
@@ -3824,7 +4236,10 @@ namespace Hecton8.Physics
         private void ReleaseValidationBufferViews()
         {
             if (_packetValidationScheduled)
+            {
                 DispatcherJobSwap.TryComplete(ref _packetValidationHandle, forceComplete: true);
+                H8Memory.RegisterActiveJob(OwnerSystemId, default);
+            }
 
             ReleaseVaultBufferView(ref _validationPacketBufferHandle);
             ReleaseVaultBufferView(ref _validationMaskBufferHandle);
@@ -3861,26 +4276,20 @@ namespace Hecton8.Physics
     /// </summary>
     public static class PhysicsForceRouter
     {
-        private const float FixedStepSeconds = 0.02f;
         private const float MaxSafeAcceleration = 50f;
+        private const float QuaternionMagnitudeEpsilonSq = 0.000001f;
 
         internal static bool ApplyKinematicWeldSnap(Rigidbody body, Vector3 targetPosition, Quaternion targetRotation)
         {
             if (body == null ||
                 !IsFiniteVector(targetPosition) ||
-                !IsFiniteQuaternion(targetRotation))
+                !TryNormalizeQuaternion(targetRotation, out Quaternion normalizedRotation))
             {
                 return false;
             }
 
-            bool wasKinematic = body.isKinematic;
-            Vector3 correction = targetPosition - body.position;
-            float3 correction3 = new float3(correction.x, correction.y, correction.z);
-            if (!wasKinematic && math.lengthsq(correction3) > 0.000001f)
-            {
-                body.AddForce(correction / FixedStepSeconds, ForceMode.VelocityChange);
-            }
-
+            bool restoreDetectCollisions = body.detectCollisions;
+            body.detectCollisions = false;
             body.useGravity = false;
             body.isKinematic = true;
             float3 zeroVelocity3 = float3.zero;
@@ -3888,7 +4297,9 @@ namespace Hecton8.Physics
             body.linearVelocity = zeroVelocity;
             body.angularVelocity = zeroVelocity;
             body.position = targetPosition;
-            body.rotation = targetRotation;
+            body.rotation = normalizedRotation;
+            body.PublishTransform();
+            body.detectCollisions = restoreDetectCollisions;
             body.Sleep();
             return true;
         }
@@ -4127,8 +4538,27 @@ namespace Hecton8.Physics
 
         private static bool IsFiniteQuaternion(Quaternion value)
         {
+            return TryNormalizeQuaternion(value, out _);
+        }
+
+        private static bool TryNormalizeQuaternion(Quaternion value, out Quaternion normalized)
+        {
             float4 value4 = new float4(value.x, value.y, value.z, value.w);
-            return math.all(math.isfinite(value4)) && math.lengthsq(value4) > 0.000001f;
+            float lengthSq = math.lengthsq(value4);
+            if (!math.all(math.isfinite(value4)) ||
+                !math.isfinite(lengthSq) ||
+                lengthSq <= QuaternionMagnitudeEpsilonSq)
+            {
+                normalized = Quaternion.identity;
+                return false;
+            }
+
+            value4 *= math.rsqrt(math.max(lengthSq, QuaternionMagnitudeEpsilonSq));
+            if (value4.w < 0f)
+                value4 = -value4;
+
+            normalized = new Quaternion(value4.x, value4.y, value4.z, value4.w);
+            return true;
         }
     }
 }

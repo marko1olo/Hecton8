@@ -935,14 +935,15 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (gas == null || !gas.IsInitialized || gas.RoomCount <= 0)
                 return;
 
-            NativeArray<float>.ReadOnly o2 = gas.RoomO2;
-            NativeArray<float>.ReadOnly co2 = gas.RoomCO2;
-            int rooms = math.min(gas.RoomCount, math.min(o2.Length, co2.Length));
+            int rooms = math.max(0, gas.RoomCount);
             int budget = math.min(rooms, ResolveGasBudget());
             for (int i = 0; i < budget; i++)
             {
-                float oxygen = o2[i];
-                float carbonDioxide = co2[i];
+                if (!gas.TryGetRoomSnapshot(i, out GasRoomSnapshot snapshot))
+                    continue;
+
+                float oxygen = snapshot.OxygenKPa;
+                float carbonDioxide = snapshot.CarbonDioxideKPa;
                 if (!math.isfinite(oxygen) || !math.isfinite(carbonDioxide))
                 {
                     nonFiniteCount++;
@@ -1377,7 +1378,19 @@ namespace Hecton8.Core.Diagnostics.Visuals
                     stream.Write(entryBytes);
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                _dumpWrittenThisFault = true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _dumpWrittenThisFault = true;
+            }
+            catch (ArgumentException)
+            {
+                _dumpWrittenThisFault = true;
+            }
+            catch (NotSupportedException)
             {
                 _dumpWrittenThisFault = true;
             }
@@ -1689,9 +1702,9 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private void CreateQuadMesh()
         {
             _quadMesh = new Mesh { name = "ArchitectEyeIndirectQuad" };
-            _quadMesh.vertices = QuadVertices;
-            _quadMesh.uv = QuadUvs;
-            _quadMesh.triangles = QuadIndices;
+            _quadMesh.SetVertices(QuadVertices);
+            _quadMesh.SetUVs(0, QuadUvs);
+            _quadMesh.SetTriangles(QuadIndices, 0, false);
             _quadMesh.RecalculateBounds();
         }
 

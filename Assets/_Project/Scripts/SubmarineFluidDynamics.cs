@@ -3765,7 +3765,7 @@ namespace Hecton8.Physics
                 ? math.rcp(floorMeters)
                 : inverseDistance;
             float accelerationMagnitude = math.min(math.max(0f, maximumAcceleration), baseAcceleration * inverseSafeDistance);
-            return DominantAxisOrDefault(toBreach, Vector3.zero) * accelerationMagnitude;
+            return SafeNormalize(toBreach, Vector3.zero) * accelerationMagnitude;
         }
 
         private bool TryResolveDepressurizationBounds(int compartmentIndex, out Vector3 roomCenter, out Vector3 breachPosition, out float influenceRadius)
@@ -5777,13 +5777,16 @@ namespace Hecton8.Physics
         private static Vector3 SafeNormalize(Vector3 value, Vector3 fallback)
         {
             float magnitudeSq = value.sqrMagnitude;
-            if (magnitudeSq <= Epsilon)
+            if (!float.IsFinite(magnitudeSq) || magnitudeSq <= Epsilon)
             {
                 float fallbackMagnitudeSq = fallback.sqrMagnitude;
-                return fallbackMagnitudeSq > Epsilon ? DominantAxisOrDefault(fallback, Vector3.up) : Vector3.up;
+                if (!float.IsFinite(fallbackMagnitudeSq) || fallbackMagnitudeSq <= Epsilon)
+                    return Vector3.up;
+
+                return fallback * math.rsqrt(math.max(fallbackMagnitudeSq, Epsilon));
             }
 
-            return DominantAxisOrDefault(value, fallback);
+            return value * math.rsqrt(math.max(magnitudeSq, Epsilon));
         }
 
         private static float ApproximateSqrtPositive(float value)
@@ -5816,24 +5819,6 @@ namespace Hecton8.Physics
             float minAxis = math.min(ax, math.min(ay, az));
             float midAxis = ax + ay + az - maxAxis - minAxis;
             return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
-        }
-
-        private static Vector3 DominantAxisOrDefault(Vector3 value, Vector3 fallback)
-        {
-            float ax = math.abs(value.x);
-            float ay = math.abs(value.y);
-            float az = math.abs(value.z);
-            float maxComponent = math.max(ax, math.max(ay, az));
-            if (maxComponent <= Epsilon)
-                return fallback;
-
-            if (ax >= ay && ax >= az)
-                return new Vector3(value.x >= 0f ? 1f : -1f, 0f, 0f);
-
-            if (ay >= az)
-                return new Vector3(0f, value.y >= 0f ? 1f : -1f, 0f);
-
-            return new Vector3(0f, 0f, value.z >= 0f ? 1f : -1f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

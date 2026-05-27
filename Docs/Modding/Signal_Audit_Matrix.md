@@ -3,22 +3,12 @@
 Date: 2026-05-19
 Status: ENVELOPE-ONLY STATIC SOURCE AUDIT / STATIC VALIDATOR PASSING / PENDING RUNTIME VERIFICATION
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
-
-Owner prompt: MODDING_API_SCHEMA_BUILDER  
-Source file: `Assets/_Project/Scripts/Core/GlobalSignals.cs`  
+Owner domain: Modding API static contract
+Source files: `Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads*.cs`
 Companion schema: `Docs/Modding/Signal_Schema.json`
 
 ## 2026-05-19 Envelope-Only Override
@@ -30,10 +20,10 @@ The projection rows below are historical/source-audit context. Current public UG
 Command used:
 
 ```powershell
-rg -o "public struct [A-Za-z0-9_]+ : ISignal" Assets/_Project/Scripts/Core/GlobalSignals.cs
+rg -o "public\s+(?:readonly\s+|partial\s+)*struct\s+[A-Za-z0-9_]+\s*:\s*ISignal(?![A-Za-z0-9_])" Assets/_Project/Scripts/Core/Signals --glob "GlobalSignalPayloads*.cs"
 ```
 
-Result: 162 unique `ISignal` structs in `GlobalSignals.cs`.
+Result: 173 unique `ISignal` structs in `Core/Signals/GlobalSignalPayloads*.cs`.
 
 Projection bridge source check: `Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs` consumes only `SignalBus<CombatDamageSignal>` and `SignalBus<WeatherChangedSignal>` for `ModEventDto` projection.
 
@@ -48,10 +38,11 @@ Only signals listed in `Signal_Schema.json.allowedSignalBuses` are public to mod
 
 ## Denied-By-Default Inventory
 
-The following 160 current `ISignal` structs are not public mod subscriptions. Any future exposure requires schema update, projection/copy wrapper, cap, telemetry, finite guards, runtime profiling, and Integrator approval.
+The following 171 current `ISignal` structs are not public mod subscriptions. Any future exposure requires schema update, projection/copy wrapper, cap, telemetry, finite guards, runtime profiling, and Integrator approval.
 
 ```text
 AcousticPingSignal
+AcousticZoneChangedEvent
 AnomalyProximitySignal
 AnomalySignal
 AtmosphericReentrySignal
@@ -69,7 +60,6 @@ CameraFrustumSignal
 CameraJuiceImpactSignal
 CameraPositionSignal
 ChunkDehydratedSignal
-CombatDamageSignalAupShiftTransformer
 CompassCalibratedSignal
 ComplianceViolationSignal
 ControlSignal
@@ -88,11 +78,14 @@ DeferredSubmarineImpactSignal
 DeflectSignal
 DesyncDetectedSignal
 DiegeticHudSignal
+DirectorAIMusicSignal
 DockingCompleteSignal
 DockingFailedSignal
 DockingRequestSignal
 DropPodLandedSignal
+EncyclopediaUnlockSignal
 EntityDeathSignal
+EntityDepletedSignal
 EntitySpawnSignal
 FaunaStateChangedSignal
 FluidDensityChangedSignal
@@ -115,9 +108,13 @@ InputStateSignal
 InteractionUiSignal
 InventoryChangedSignal
 InventoryCommandSignal
+InventoryDeathLootCacheSignal
+InventoryRespawnDeathAupSignal
+InventoryRespawnPenaltyResultSignal
 ItemAcquiredSignal
 ItemDecaySignal
 ItemDurabilityChangedSignal
+ItemLifecycleSignal
 KccVelocitySignal
 LaserCutterEventPayload
 LightLevelSignal
@@ -151,6 +148,7 @@ PowerDrainSignal
 PrefabAcousticSignatureSignal
 PrefabLoreLinkSignal
 ProgressionEventSignal
+ProgressionMetaSignal
 PrologueCompleteSignal
 RadiationDoseSignal
 RadiationSourceSignal
@@ -162,12 +160,14 @@ ResourceDepletionDeltaSignal
 RigidbodySleepSignal
 SaveLifecycleSignal
 SaveMetadataReadySignal
+ScalabilityChangedEvent
 ScanCompleteSignal
 ScanLogChangedSignal
 ScannerToolActiveSignal
 SectorDehydratedSignal
 SectorResidencyHydratedSignal
 SeismicSignal
+SessionLifecycleSignal
 SimulationBucketSyncSignal
 SolarFlareSignal
 SonarPingSignal
@@ -204,6 +204,7 @@ VehicleUpgradesChangedSignal
 VisorDropletSignal
 VisualFlareSignal
 VitalWarningSignal
+VocalCueSignal
 VocalWarningSignal
 VoxelCarveEvent
 WakeGeneratedSignal
@@ -225,7 +226,7 @@ WfcOutpostStateChangedSignal
 
 ## Consistency Gate
 
-If the source inventory count changes from 162, the mod signal schema and this audit must be updated before the mod API can be marked runtime verified. A new `SignalBus<T>` exposure is not valid until `Signal_Schema.json.allowedSignalBuses`, `Mod_API_Specification.md`, and this audit matrix all name it explicitly.
+If the source inventory count changes from 173, the mod signal schema and this audit must be updated before the mod API can be marked runtime verified. A new `SignalBus<T>` exposure is not valid until `Signal_Schema.json.allowedSignalBuses`, `Mod_API_Specification.md`, and this audit matrix all name it explicitly.
 
 Run the static drift gate after any signal or mod bridge edit:
 

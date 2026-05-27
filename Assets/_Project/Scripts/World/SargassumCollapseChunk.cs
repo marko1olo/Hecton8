@@ -415,7 +415,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             _objectPool = GlobalRegistry.ObjectPoolService;
-            _sargassumDrag = GlobalRegistry.SargassumDrag;
+            _sargassumDrag = SargassumGlobalDragManager.Instance;
             _physicsService = GlobalRegistry.Physics;
         }
 

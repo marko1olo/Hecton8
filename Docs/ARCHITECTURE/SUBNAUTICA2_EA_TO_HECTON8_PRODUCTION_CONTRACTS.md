@@ -96,7 +96,7 @@ Static disk snapshot during a prior pass; artifact tuple absent; runtime proof p
 
 - `Assets/_SourceData`: contains current editor/source CSV inputs moved out of runtime `StreamingAssets`.
 
-- `Assets/StreamingAssets`: exists but SHINOBU_258 scan finds no `.csv`, `.json`, `.xml`, or `.h8bin` runtime payloads; authoritative `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists in the current X_012 scan; route-specific boot proof remains pending.
+- `Assets/StreamingAssets`: SHINOBU_258 absence scan is historical; current X_012/1334 scans find `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`; route-specific boot proof remains pending.
 
 - `Assets/AddressableAssetsData`: 0 files.
 
@@ -138,7 +138,7 @@ Relevant source:
 
 - Current `Data/Balance/*.csv` headers have `Id` but no `hash32`; this is valid input for the compiler-side hash injection route.
 
-Contract gap: HECTON-8 has a monolith reader/compiler shape, but no proved mandatory build artifact. This is equivalent to shipping a Subnautica-style world without its baked sidecars.
+Contract gap: HECTON-8 has a monolith reader/compiler shape, but no proved mandatory build artifact. This is equivalent to shipping a large streamed world without its baked sidecars.
 
 ### Save And Schema
 

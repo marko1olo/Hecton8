@@ -51,6 +51,10 @@ namespace Hecton8.Construction
         private const uint IntegrityQueueLockBit = 1u << 3;
         private const uint IntegrityDepthLockBit = 1u << 4;
         private const uint IntegrityResultLockBit = 1u << 5;
+        private const uint IntegrityDegreeScratchLockBit = 1u << 6;
+        private const uint IntegrityWriteScratchLockBit = 1u << 7;
+        private const uint IntegrityConnectionLockBit = 1u << 8;
+        private const uint IntegritySocketLookupLockBit = 1u << 9;
 
         private VaultGenerationHandle<IntegrityNodeRecord> _nodeBufferHandle;
         private VaultGenerationHandle<int2> _adjacencyRangesHandle;
@@ -139,7 +143,8 @@ namespace Hecton8.Construction
             int gridMillimeters = ResolveGridMillimeters(snappedGrid);
             if (!TryResolveAupFromRuntimeOrigin(
                     new Vector3(worldPosition.x, worldPosition.y, worldPosition.z),
-                    out double3 absolutePosition))
+                    out double3 absolutePosition,
+                    out double3 originAup))
             {
                 return worldPosition;
             }
@@ -148,8 +153,14 @@ namespace Hecton8.Construction
                 SnapMeterToGridMillimeters(absolutePosition.x, gridMillimeters),
                 SnapMeterToGridMillimeters(absolutePosition.y, gridMillimeters),
                 SnapMeterToGridMillimeters(absolutePosition.z, gridMillimeters));
-            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(snappedAbsolutePosition);
-            return new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            double3 localDelta = snappedAbsolutePosition - originAup;
+            if (!math.all(math.isfinite(localDelta)) ||
+                math.any(math.abs(localDelta) > (double)float.MaxValue))
+            {
+                return worldPosition;
+            }
+
+            return new float3((float)localDelta.x, (float)localDelta.y, (float)localDelta.z);
         }
 
         private static int ResolveGridMillimeters(float gridSize)
@@ -300,6 +311,15 @@ namespace Hecton8.Construction
                 return false;
             }
 
+            int moduleListCount = constructionManager != null ? constructionManager.ModuleCount : 0;
+            if (!EnsureNodeCapacity(moduleListCount + 1) || !TryLockValidationBuffers())
+            {
+                _lastPlacementAllowed = false;
+                _lastIntegrityScore = -1f;
+                _lastBlockReason = UnsupportedReason;
+                return false;
+            }
+
             int nodeCount = BuildValidationGraph(
                 constructionManager,
                 candidatePosition,
@@ -309,40 +329,44 @@ namespace Hecton8.Construction
                 out IntegrityGraphBuffers graphBuffers);
             if (nodeCount <= 0)
             {
+                UnlockValidationBuffers();
                 _lastPlacementAllowed = false;
                 _lastIntegrityScore = -1f;
                 _lastBlockReason = UnsupportedReason;
                 return false;
             }
 
-            if (!TryLockValidationBuffers())
+            bool scheduled = false;
+            try
             {
+                var job = new IntegrityValidationJob
+                {
+                    Nodes = graphBuffers.Nodes,
+                    NodeCount = nodeCount,
+                    AdjacencyRanges = graphBuffers.AdjacencyRanges,
+                    Adjacency = graphBuffers.Adjacency,
+                    Queue = graphBuffers.Queue,
+                    Depths = graphBuffers.Depths,
+                    Result = graphBuffers.Result,
+                    IntegrityBudget = integrityBudget > 0f ? integrityBudget : DefaultIntegrityBudget,
+                    DepthPenalty = depthPenalty > 0f ? depthPenalty : DefaultDepthPenalty,
+                    DisconnectedPenalty = DefaultDisconnectedPenalty
+                };
+
+                JobHandle pendingHandle = job.Schedule();
+                _validationHandle = pendingHandle;
+                _validationPending = true;
+                _discardValidationResult = false;
                 _lastPlacementAllowed = false;
-                _lastIntegrityScore = -1f;
-                _lastBlockReason = UnsupportedReason;
-                return false;
+                _lastBlockReason = PendingReason;
+                scheduled = true;
+                return true;
             }
-
-            var job = new IntegrityValidationJob
+            finally
             {
-                Nodes = graphBuffers.Nodes,
-                NodeCount = nodeCount,
-                AdjacencyRanges = graphBuffers.AdjacencyRanges,
-                Adjacency = graphBuffers.Adjacency,
-                Queue = graphBuffers.Queue,
-                Depths = graphBuffers.Depths,
-                Result = graphBuffers.Result,
-                IntegrityBudget = integrityBudget > 0f ? integrityBudget : DefaultIntegrityBudget,
-                DepthPenalty = depthPenalty > 0f ? depthPenalty : DefaultDepthPenalty,
-                DisconnectedPenalty = DefaultDisconnectedPenalty
-            };
-
-            _validationHandle = job.Schedule();
-            _validationPending = true;
-            _discardValidationResult = false;
-            _lastPlacementAllowed = false;
-            _lastBlockReason = PendingReason;
-            return true;
+                if (!scheduled)
+                    UnlockValidationBuffers();
+            }
         }
 
         public bool TryConsumeCompletedValidation()
@@ -550,7 +574,7 @@ namespace Hecton8.Construction
                         continue;
 
                     Transform moduleTransform = moduleObject.transform;
-                    BuildableData moduleData = ResolveBuildableData(moduleObject);
+                    BuildableData moduleData = FindBuildableDataOnModule(moduleObject);
                     WriteNodeRecord(graphBuffers.Nodes, nodeIndex, moduleTransform.position, moduleData, false);
                     if (!IndexSockets(nodeIndex, moduleTransform.position, moduleTransform.rotation, moduleData, validationGridSize, catalogVault, ref graphBuffers))
                         return -1;
@@ -591,8 +615,32 @@ namespace Hecton8.Construction
             _cachedExistingGraphConnectionCount = 0;
             _connectionCount = 0;
             _socketLookupCount = 0;
-            if (TryResolveValidationGraphBuffers(out IntegrityGraphBuffers graphBuffers))
-                ClearSocketLookup(graphBuffers.SocketLookup);
+            ClearSocketLookupForInvalidation();
+        }
+
+        private void ClearSocketLookupForInvalidation()
+        {
+            if (_catalogVault == null || _socketLookupHandle.BufferID == 0u)
+                return;
+
+            if ((_lockedValidationBufferMask & IntegritySocketLookupLockBit) != 0u)
+            {
+                if (_catalogVault.TryResolveHandle(in _socketLookupHandle, out NativeArray<SocketLookupSlot> lockedLookup))
+                    ClearSocketLookup(lockedLookup);
+                return;
+            }
+
+            if (!_catalogVault.TryAcquireWriteLock(in _socketLookupHandle, SystemID.Construction, out NativeArray<SocketLookupSlot> lookup))
+                return;
+
+            try
+            {
+                ClearSocketLookup(lookup);
+            }
+            finally
+            {
+                _catalogVault.ReleaseWriteLock(in _socketLookupHandle, SystemID.Construction);
+            }
         }
 
         private void ResetGraphScratch(ref IntegrityGraphBuffers graphBuffers)
@@ -643,7 +691,7 @@ namespace Hecton8.Construction
             unchecked
             {
                 int hash = 23;
-                BuildableData data = ResolveBuildableData(module);
+                BuildableData data = FindBuildableDataOnModule(module);
                 hash = FoldSignature(hash, data != null ? data.ModuleHashId : 0);
                 hash = FoldSignature(hash, data != null ? (int)data.family : 0);
 
@@ -1026,7 +1074,13 @@ namespace Hecton8.Construction
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out double3 aup)
         {
+            return TryResolveAupFromRuntimeOrigin(runtimePosition, out aup, out _);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out double3 aup, out double3 originAup)
+        {
             aup = default;
+            originAup = default;
             if (!math.isfinite(runtimePosition.x) ||
                 !math.isfinite(runtimePosition.y) ||
                 !math.isfinite(runtimePosition.z))
@@ -1034,7 +1088,7 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            double3 originAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            originAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             if (!math.all(math.isfinite(originAup)))
                 return false;
 
@@ -1136,7 +1190,7 @@ namespace Hecton8.Construction
             };
         }
 
-        private static BuildableData ResolveBuildableData(GameObject moduleObject)
+        private static BuildableData FindBuildableDataOnModule(GameObject moduleObject)
         {
             if (moduleObject == null)
                 return null;
@@ -1188,7 +1242,7 @@ namespace Hecton8.Construction
             if (_catalogVault == null)
                 return false;
 
-            if (_nodeCapacity >= required && TryResolveValidationGraphBuffers(out _))
+            if (_nodeCapacity >= required && TryReadValidationGraphBuffers(out _))
                 return true;
 
             if (_validationPending)
@@ -1214,7 +1268,7 @@ namespace Hecton8.Construction
             _adjacencyCapacity = newAdjacencyCapacity;
             _connectionCapacity = newConnectionCapacity;
             _socketLookupCapacity = newSocketLookupCapacity;
-            return TryResolveValidationGraphBuffers(out _);
+            return TryReadValidationGraphBuffers(out _);
         }
 
         private bool HasValidationGraphCapacity(int requiredNodes)
@@ -1262,6 +1316,34 @@ namespace Hecton8.Construction
                    graphBuffers.SocketLookup.IsCreated;
         }
 
+        private bool TryReadValidationGraphBuffers(out IntegrityGraphBuffers graphBuffers)
+        {
+            graphBuffers = default;
+            if (_catalogVault == null)
+                return false;
+
+            return _catalogVault.TryReadHandle(in _nodeBufferHandle, out graphBuffers.Nodes) &&
+                   _catalogVault.TryReadHandle(in _adjacencyRangesHandle, out graphBuffers.AdjacencyRanges) &&
+                   _catalogVault.TryReadHandle(in _adjacencyHandle, out graphBuffers.Adjacency) &&
+                   _catalogVault.TryReadHandle(in _queueBufferHandle, out graphBuffers.Queue) &&
+                   _catalogVault.TryReadHandle(in _depthBufferHandle, out graphBuffers.Depths) &&
+                   _catalogVault.TryReadHandle(in _resultBufferHandle, out graphBuffers.Result) &&
+                   _catalogVault.TryReadHandle(in _adjacencyDegreeScratchHandle, out graphBuffers.AdjacencyCounts) &&
+                   _catalogVault.TryReadHandle(in _adjacencyWriteScratchHandle, out graphBuffers.AdjacencyWrites) &&
+                   _catalogVault.TryReadHandle(in _connectionBufferHandle, out graphBuffers.Connections) &&
+                   _catalogVault.TryReadHandle(in _socketLookupHandle, out graphBuffers.SocketLookup) &&
+                   graphBuffers.Nodes.IsCreated &&
+                   graphBuffers.AdjacencyRanges.IsCreated &&
+                   graphBuffers.Adjacency.IsCreated &&
+                   graphBuffers.Queue.IsCreated &&
+                   graphBuffers.Depths.IsCreated &&
+                   graphBuffers.Result.IsCreated &&
+                   graphBuffers.AdjacencyCounts.IsCreated &&
+                   graphBuffers.AdjacencyWrites.IsCreated &&
+                   graphBuffers.Connections.IsCreated &&
+                   graphBuffers.SocketLookup.IsCreated;
+        }
+
         private bool TryResolveResultBuffer(out NativeArray<IntegrityValidationResult> resultBuffer)
         {
             resultBuffer = default;
@@ -1277,7 +1359,7 @@ namespace Hecton8.Construction
                 return default;
 
             if (handle.BufferID != 0u &&
-                _catalogVault.TryResolveHandle(in handle, out NativeArray<T> existing) &&
+                _catalogVault.TryReadHandle(in handle, out NativeArray<T> existing) &&
                 existing.IsCreated &&
                 existing.Length >= requiredLength)
             {
@@ -1352,7 +1434,11 @@ namespace Hecton8.Construction
                    TryLockValidationBuffer(IntegrityAdjacencyBufferId, IntegrityAdjacencyLockBit) &&
                    TryLockValidationBuffer(IntegrityQueueBufferId, IntegrityQueueLockBit) &&
                    TryLockValidationBuffer(IntegrityDepthBufferId, IntegrityDepthLockBit) &&
-                   TryLockValidationBuffer(IntegrityResultBufferId, IntegrityResultLockBit);
+                   TryLockValidationBuffer(IntegrityResultBufferId, IntegrityResultLockBit) &&
+                   TryLockValidationBuffer(IntegrityDegreeScratchBufferId, IntegrityDegreeScratchLockBit) &&
+                   TryLockValidationBuffer(IntegrityWriteScratchBufferId, IntegrityWriteScratchLockBit) &&
+                   TryLockValidationBuffer(IntegrityConnectionBufferId, IntegrityConnectionLockBit) &&
+                   TryLockValidationBuffer(IntegritySocketLookupBufferId, IntegritySocketLookupLockBit);
         }
 
         private bool TryLockValidationBuffer(BufferID bufferId, uint bit)
@@ -1369,6 +1455,10 @@ namespace Hecton8.Construction
 
         private void UnlockValidationBuffers()
         {
+            UnlockValidationBuffer(IntegritySocketLookupBufferId, IntegritySocketLookupLockBit);
+            UnlockValidationBuffer(IntegrityConnectionBufferId, IntegrityConnectionLockBit);
+            UnlockValidationBuffer(IntegrityWriteScratchBufferId, IntegrityWriteScratchLockBit);
+            UnlockValidationBuffer(IntegrityDegreeScratchBufferId, IntegrityDegreeScratchLockBit);
             UnlockValidationBuffer(IntegrityResultBufferId, IntegrityResultLockBit);
             UnlockValidationBuffer(IntegrityDepthBufferId, IntegrityDepthLockBit);
             UnlockValidationBuffer(IntegrityQueueBufferId, IntegrityQueueLockBit);
@@ -1496,9 +1586,13 @@ namespace Hecton8.Construction
             [FieldOffset(24)] public float3 Forward;
             [FieldOffset(36)] public uint Hash;
             [FieldOffset(40)] public byte Occupied;
-            [FieldOffset(41)] public byte _pad0;
-            [FieldOffset(42)] public ushort _pad1;
-            [FieldOffset(44)] public uint _pad2;
+            [FieldOffset(41)] private byte _pad0;
+            [FieldOffset(42)] private byte _pad1;
+            [FieldOffset(43)] private byte _pad2;
+            [FieldOffset(44)] private byte _pad3;
+            [FieldOffset(45)] private byte _pad4;
+            [FieldOffset(46)] private byte _pad5;
+            [FieldOffset(47)] private byte _pad6;
 
             public static SocketLookupSlot Create(in SocketKey key, uint hash, int moduleIndex, uint compatibilityMask, Vector3 forward)
             {
@@ -1525,7 +1619,7 @@ namespace Hecton8.Construction
             }
         }
 
-        private struct IntegrityGraphBuffers
+        private ref struct IntegrityGraphBuffers
         {
             public NativeArray<IntegrityNodeRecord> Nodes;
             public NativeArray<int2> AdjacencyRanges;
@@ -1545,8 +1639,16 @@ namespace Hecton8.Construction
             [FieldOffset(0)] public float Mass;
             [FieldOffset(4)] public byte IsSupportRoot;
             [FieldOffset(5)] public byte IsCandidate;
-            [FieldOffset(6)] public ushort _pad0;
-            [FieldOffset(8)] public ulong _pad1;
+            [FieldOffset(6)] private byte _pad0;
+            [FieldOffset(7)] private byte _pad1;
+            [FieldOffset(8)] private byte _pad2;
+            [FieldOffset(9)] private byte _pad3;
+            [FieldOffset(10)] private byte _pad4;
+            [FieldOffset(11)] private byte _pad5;
+            [FieldOffset(12)] private byte _pad6;
+            [FieldOffset(13)] private byte _pad7;
+            [FieldOffset(14)] private byte _pad8;
+            [FieldOffset(15)] private byte _pad9;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -1556,8 +1658,12 @@ namespace Hecton8.Construction
             [FieldOffset(4)] public int CandidateDepth;
             [FieldOffset(8)] public byte Allowed;
             [FieldOffset(9)] public byte FailureReason;
-            [FieldOffset(10)] public ushort _pad0;
-            [FieldOffset(12)] public uint _pad1;
+            [FieldOffset(10)] private byte _pad0;
+            [FieldOffset(11)] private byte _pad1;
+            [FieldOffset(12)] private byte _pad2;
+            [FieldOffset(13)] private byte _pad3;
+            [FieldOffset(14)] private byte _pad4;
+            [FieldOffset(15)] private byte _pad5;
         }
 
         private enum IntegrityFailureReasonCode : byte

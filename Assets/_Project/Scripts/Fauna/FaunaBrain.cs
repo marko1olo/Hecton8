@@ -695,9 +695,20 @@ namespace Hecton8.AI
         private bool _corpseSinkJobScheduled;
         private bool _corpseSinkLateFrameRegistered;
         private float _corpseSinkPoseDeltaTime;
+        private struct FaunaPlayerRuntimeContextSnapshot
+        {
+            public Transform PlayerTransform;
+            public HectonPlayerMovement PlayerMovement;
+            public PlayerFlashlight Flashlight;
+            public PlayerToolManager ToolManager;
+            public PlayerMovementRuntimeState MovementState;
+            public PlayerLookState LookState;
+            public bool IsBound;
+        }
+
         private int _playerRuntimeContextCacheFrame = -1;
         private bool _playerRuntimeContextCacheValid;
-        private PlayerRuntimeContext _playerRuntimeContextCache;
+        private FaunaPlayerRuntimeContextSnapshot _playerRuntimeContextCache;
         private bool _hotSwapRegistered;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IPhysicsService _physicsService;
@@ -708,7 +719,10 @@ namespace Hecton8.AI
         private IAtmosphereReadModel _atmosphereRuntime;
         private IMicroFaunaPresentationPulseSink _sargassumMicroFauna;
         private IVegetationThreatPulseSink _vegetationThreatPulseSink;
+        private HectonMapMagicVegetationBridge _vegetationBridge;
+        private HectonVoxelEngine _voxelEngine;
         private ISimulationBucketer _simulationBucketerRuntime;
+        private SystemDispatcher _dispatcherRuntime;
 
         // ══════════════════════════════════════════════════════════
         //  SERIALIZATION MIGRATION (Option B Data Preservation)
@@ -1049,8 +1063,8 @@ namespace Hecton8.AI
         {
             FaunaPerceptionSnapshot snapshot = default;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            bool hasRuntimeContext = TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                                     runtimeContext != null;
+            bool hasRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                                     runtimeContext.IsBound;
             PlayerMovementRuntimeState movementState = hasRuntimeContext ? runtimeContext.MovementState : default;
             bool hasMovementRoot = hasRuntimeContext &&
                                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
@@ -1155,17 +1169,26 @@ namespace Hecton8.AI
             _playerNoiseEmitterTransform = playerTransform;
         }
 
-        private bool TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext)
+        private bool RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext)
         {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_playerRuntimeContextCacheFrame != frame)
             {
                 _playerRuntimeContextCacheFrame = frame;
-                _playerRuntimeContextCacheValid =
-                    PlayerRuntimeContextService.TryGetActiveRuntimeContext(out _playerRuntimeContextCache) &&
-                    _playerRuntimeContextCache != null;
-                if (!_playerRuntimeContextCacheValid)
-                    _playerRuntimeContextCache = null;
+                _playerRuntimeContextCache = default;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+                if (playerContext != null)
+                {
+                    _playerRuntimeContextCache.PlayerTransform = playerContext.PlayerTransform;
+                    _playerRuntimeContextCache.PlayerMovement = playerContext.PlayerMovement;
+                    _playerRuntimeContextCache.Flashlight = playerContext.Flashlight;
+                    _playerRuntimeContextCache.ToolManager = playerContext.ToolManager;
+                    playerContext.TryGetMovementRuntimeState(out _playerRuntimeContextCache.MovementState);
+                    playerContext.TryGetLookRuntimeState(out _playerRuntimeContextCache.LookState);
+                    _playerRuntimeContextCache.IsBound = _playerRuntimeContextCache.PlayerTransform != null;
+                }
+
+                _playerRuntimeContextCacheValid = _playerRuntimeContextCache.IsBound;
             }
 
             runtimeContext = _playerRuntimeContextCache;
@@ -1176,7 +1199,7 @@ namespace Hecton8.AI
         {
             _playerRuntimeContextCacheFrame = -1;
             _playerRuntimeContextCacheValid = false;
-            _playerRuntimeContextCache = null;
+            _playerRuntimeContextCache = default;
         }
 
         private void RefreshColdRegistryDependencies()
@@ -1191,7 +1214,12 @@ namespace Hecton8.AI
             _atmosphereRuntime = GlobalRegistry.AtmosphereReadModel;
             _sargassumMicroFauna = GlobalRegistry.MicroFaunaPresentationPulses;
             _vegetationThreatPulseSink = GlobalRegistry.VegetationThreatPulses;
+            _vegetationBridge = GlobalRegistry.MapMagicVegetation;
+            _voxelEngine = GlobalRegistry.VoxelEngine;
             _simulationBucketerRuntime = GlobalRegistry.SimulationBucketer;
+            _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
+            _dispatcherRuntime = GlobalRegistry.Dispatcher;
+            _sensorSuite.BindBrineDensityReadModel(GlobalRegistry.BrineFluidDensity);
             RefreshCachedEcosystemDirectorReference();
         }
 
@@ -1247,11 +1275,24 @@ namespace Hecton8.AI
                     break;
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     _vegetationThreatPulseSink = currentService as IVegetationThreatPulseSink;
+                    _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    break;
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    _voxelEngine = currentService as HectonVoxelEngine;
                     break;
                 case GlobalRegistryServiceSlot.SimulationBucketerRuntime:
                     _simulationBucketerRuntime = currentService as ISimulationBucketer;
                     if (!ReferenceEquals(_simulationBucketer, _simulationBucketerRuntime))
                         ClearSimulationBucketerBinding();
+                    break;
+                case GlobalRegistryServiceSlot.FoveatedSimulationDirector:
+                    _foveatedSimulationDirector = currentService as IFoveatedSimulationDirector;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _dispatcherRuntime = currentService as SystemDispatcher;
+                    break;
+                case GlobalRegistryServiceSlot.ResourceDistributionRuntime:
+                    _sensorSuite.BindBrineDensityReadModel(currentService as IBrineFluidDensityReadModel);
                     break;
                 case GlobalRegistryServiceSlot.EcosystemDirector:
                     BindCachedEcosystemDirectorReference(currentService as IEcosystemDirectorService);
@@ -1270,8 +1311,8 @@ namespace Hecton8.AI
             if (!_sensorSuite.hasVisualPlayerContact)
                 return false;
 
-            bool hasRuntimeContext = TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                                     runtimeContext != null;
+            bool hasRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                                     runtimeContext.IsBound;
             playerTransform = hasRuntimeContext ? runtimeContext.PlayerTransform : null;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             playerTransform ??= playerContext != null ? playerContext.PlayerTransform : null;
@@ -1497,7 +1538,7 @@ namespace Hecton8.AI
                 fearPressure01 += 0.2f;
             if (_utilityBrain.UsesPredatorRole != 0)
             {
-                HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+                HectonMapMagicVegetationBridge vegetationBridge = _vegetationBridge;
                 if (vegetationBridge != null)
                 {
                     int speciesId = ComputeStableSpeciesId();
@@ -1666,8 +1707,8 @@ namespace Hecton8.AI
                 return 0f;
 
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            bool hasRuntimeContext = TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                                     runtimeContext != null;
+            bool hasRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                                     runtimeContext.IsBound;
             PlayerLookState lookState = hasRuntimeContext ? runtimeContext.LookState : default;
             bool hasLookState = hasRuntimeContext &&
                                 (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
@@ -1825,7 +1866,7 @@ namespace Hecton8.AI
             if (TryApplyBurrowAmbushPathGuidance(selfPosition, playerPosition))
                 return;
 
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = _vegetationBridge;
             if (vegetationBridge == null)
             {
                 ClearVoxelPathGuidance();
@@ -1872,10 +1913,11 @@ namespace Hecton8.AI
 
         private bool TryApplyBurrowAmbushPathGuidance(float3 selfPosition, Vector3 playerPosition)
         {
+            HectonVoxelEngine voxelEngine = _voxelEngine;
             if (_faunaDataTemplate == null ||
                 !_faunaDataTemplate.CanBurrowAmbush ||
-                HectonVoxelEngine.ActiveRuntimeInstance == null ||
-                !HectonVoxelEngine.ActiveRuntimeInstance.TryGetNearestActiveVolume(playerPosition, out HectonVoxelVolume volume) ||
+                voxelEngine == null ||
+                !voxelEngine.TryGetNearestActiveVolume(playerPosition, out HectonVoxelVolume volume) ||
                 volume == null)
             {
                 return false;
@@ -1922,8 +1964,8 @@ namespace Hecton8.AI
                 return;
             }
 
-            if (!TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
-                runtimeContext == null ||
+            if (!RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) ||
+                !runtimeContext.IsBound ||
                 runtimeContext.PlayerMovement == null)
             {
                 return;
@@ -1942,8 +1984,8 @@ namespace Hecton8.AI
             if (_isDead ||
                 _faunaDataTemplate == null ||
                 !_faunaDataTemplate.CanDazzleHypnotize ||
-                !TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
-                runtimeContext == null ||
+                !RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) ||
+                !runtimeContext.IsBound ||
                 runtimeContext.PlayerMovement == null)
             {
                 return;
@@ -4026,8 +4068,8 @@ namespace Hecton8.AI
             }
 
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            bool hasRuntimeContext = TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                                     runtimeContext != null;
+            bool hasRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                                     runtimeContext.IsBound;
             PlayerLookState lookState = hasRuntimeContext ? runtimeContext.LookState : default;
             bool hasLookState = hasRuntimeContext &&
                                 (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
@@ -4883,8 +4925,8 @@ namespace Hecton8.AI
             if (_currentCullingPlayerTransform != null)
                 return;
 
-            if (TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
+            if (RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                runtimeContext.IsBound &&
                 runtimeContext.PlayerTransform != null)
             {
                 _currentCullingPlayerTransform = runtimeContext.PlayerTransform;
@@ -5436,7 +5478,7 @@ namespace Hecton8.AI
                 ApplyDirectedStateOverride((float3)selfPosition, targetPosition, AIState.Aggressive);
             }
 
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = _vegetationBridge;
             if (vegetationBridge != null &&
                 ResolveRuntimeAupDistanceSq(selfPosition, targetPosition) <= DirectorVoxelRouteMaxDistanceMetersSqr &&
                 vegetationBridge.TryBuildImmediateAbyssalVoxelRoute(selfPosition, targetPosition, _voxelRouteWaypoints, out int waypointCount))
@@ -5543,8 +5585,8 @@ namespace Hecton8.AI
 
         private bool TryResolvePlayerPredictedAup(out AbsoluteUniversePosition playerAup)
         {
-            if (TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
+            if (RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                runtimeContext.IsBound &&
                 (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
                 playerAup = runtimeContext.MovementState.PredictedAup;
@@ -5600,8 +5642,8 @@ namespace Hecton8.AI
                 if (_sensorSuite.TryGetPerceivedPlayerPosition(out targetPosition))
                     return true;
 
-                if (TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                    runtimeContext != null &&
+                if (RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                    runtimeContext.IsBound &&
                     (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
                     targetPosition = ToVector3(runtimeContext.MovementState.PredictedAup.ToRuntimeFloat3());
@@ -5701,8 +5743,8 @@ namespace Hecton8.AI
             listenerPosition = default;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             playerRoot = playerContext != null ? playerContext.PlayerTransform : null;
-            if (TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null)
+            if (RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                runtimeContext.IsBound)
             {
                 if (playerRoot == null)
                     playerRoot = runtimeContext.PlayerTransform;
@@ -6495,6 +6537,7 @@ namespace Hecton8.AI
         {
             PromoteHunterSquadAlphaAfterLocalLoss();
             _isDead = true;
+            TryUnregisterInteractionTargetTree();
             PublishCarrionDeathSignal();
             RegisterCorpseResourceNode();
             ReportApexPredatorKill();
@@ -6684,7 +6727,7 @@ namespace Hecton8.AI
 
         private float ResolveCorpseFloorY(Vector3 position)
         {
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = _vegetationBridge;
             if (vegetationBridge != null &&
                 vegetationBridge.TryGetCachedTerrainHeight(position.x, position.z, out float terrainHeight) &&
                 math.isfinite(terrainHeight))
@@ -7090,8 +7133,8 @@ namespace Hecton8.AI
                 return;
             }
 
-            bool hasRuntimeContext = TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                                     runtimeContext != null &&
+            bool hasRuntimeContext = RefreshPlayerRuntimeContextCacheForFrame(out FaunaPlayerRuntimeContextSnapshot runtimeContext) &&
+                                     runtimeContext.IsBound &&
                                      (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
             if (!hasRuntimeContext)
             {
@@ -7309,9 +7352,9 @@ namespace Hecton8.AI
                    (_speciesProfile != null && _speciesProfile.baseAggro >= 0.45f);
         }
 
-        private static float ReadDispatcherTimeSeconds()
+        private float ReadDispatcherTimeSeconds()
         {
-            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            SystemDispatcher dispatcher = _dispatcherRuntime;
             double seconds = dispatcher != null ? dispatcher.DilatedTimeSeconds : 0d;
             if (!math.isfinite(seconds) || seconds <= 0d)
                 return 0f;

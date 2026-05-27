@@ -3,21 +3,11 @@
 Date: 2026-05-19
 Status: ENVELOPE-ONLY MODDING AUTHORITY / SDK PLAN ADDED / RUNTIME_PENDING
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
-
-Owner prompt: MODDING_API_SCHEMA_BUILDER
+Owner domain: Modding API static contract
 
 ## 2026-05-19 Envelope-Only Authority
 
@@ -25,7 +15,9 @@ Current UGC runtime authority is envelope-only:
 
 - modders do not run Harmony patches, BepInEx patches, arbitrary managed callbacks, or gameplay `.dll` code in the frame;
 - modder-facing SDK tools may be rich, friendly, and managed, but they are authoring/offline surfaces;
-- the game runtime accepts fixed 64-byte `FutureCommandEnvelope` packets through the sandbox validator;
+- the game runtime accepts fixed 64-byte `FutureCommandEnvelope` packets through `HectonAPI.Commands.RequestFuture`; the sandbox validator and its tuning/capacity constants are engine-internal control-plane code;
+- `RequestFuture` requires an active mod execution scope and a matching `ModderSignature`;
+- event publication hooks and managed command kernels are first-party/internal infrastructure, not SDK extension points;
 - legacy `IHectonMod`, `HectonAPI.Events`, resource proxy, localization injection, asset bundle discovery, `Request`, `RequestAup`, and `RequestRenderInstance` sections are historical/source-audit references unless they explicitly agree with `Mod_API_Sandbox_Quarantine.md`;
 - filesystem content ingress is not a runtime mod right in envelope-only mode; assets must be CRC-approved and referenced by envelope asset opcodes.
 
@@ -33,15 +25,29 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 
 ## Current Contract Snapshot
 
-- Schema revision: `16`
-- Source `ISignal` structs: `162`
+- Schema revision: `57`
+- Source `ISignal` structs: `173`
 - Mod-projected `SignalBus<T>` lanes: `2`
-- Denied-by-default `ISignal` structs: `160`
+- Denied-by-default `ISignal` structs: `171`
 - Accepted command opcodes: `8`
-- Public `HectonAPI` surfaces: `16`
+- Future envelope runtime allowlist: `8` hashes; `TriggerSubtitleCue` and `SubtitleCue` are reserved subtitle aliases, not runtime-allowed opcodes.
+- Public `HectonAPI` surfaces: `15`
 - Public event methods: `7`
 - Native event kinds: `2`
-- SDK builder manifest gap: `ModBuilderWindow.ModManifestData` currently emits `7` fields and omits `RequiredAPIVersion` / `ModPriority`; builder-created packages are not runtime-load proof until the builder emits the full `9`-field manifest or a smoke fixture proves a compatible fallback.
+- SDK builder manifest parity: `ModBuilderWindow.ModManifestData` emits the same `9` manifest fields required by `ModLoader`, including `RequiredAPIVersion` and `ModPriority`; `Validate_Mod_API_Static.ps1` fails if this source parity drifts.
+- Canonical mod IDs: loader and SDK builder require lowercase letters/digits separated by single `.`, `_`, or `-`; IDs and dependency IDs cannot use leading/trailing/repeated separators, whitespace, or reserved filesystem device segments.
+- Scope owner proof: `ModExecutionScope` cannot synthesize an anonymous active owner; active scope requires a non-empty mod id and non-zero owner hash.
+- SaveState owner proof: public mod save payloads require active `ModExecutionScope`; engine-owned mod-world payloads use an explicit `hecton.internal.` store route, not key-hash owner synthesis.
+- Reserved managed assembly identities blocked: loader and SDK builder reject `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, and `netstandard` names by file name or assembly metadata identity. The loader scans every top-level package DLL for this cold identity gate, and the SDK builder deletes stale output DLLs not selected for the current package build.
+- Sandbox control plane: `FutureCommandSandboxValidator`, `MockModQueue` static methods, `MockModQueue` queue handles, and `MockModQueue` instance control methods are internal-only; runtime mods only submit `FutureCommandEnvelope` through `HectonAPI.Commands.RequestFuture`.
+- Direct dispatcher/hooks: `ModCommandDispatcher` static helpers and `HectonModHooks` publication methods are internal-only; public mods route through `HectonAPI.Commands` and `HectonAPI.Events`.
+- Loader diagnostics: `ModRuntimeInfo` and its package-path members are internal-only engine UI diagnostics, not SDK DTOs.
+- Native `SubscribeNative` byte payload layouts: `InteractionEventPayload = 32` bytes and `CraftingEventPayload = 64` bytes; both are explicit-layout source contracts checked by `Validate_Mod_API_Static.ps1`.
+- Legacy managed game events: `HectonGameEvents` payload classes and members are internal-only first-party infrastructure, not SDK event DTOs.
+- Event bus boundary: `HectonEventBus` is internal first-party infrastructure and has no public static bus member surface; public mod event access is only through `HectonAPI.Events`.
+- Event subscription ownership: unmanaged, native, and projected event bridge routes plus private channel implementations reject anonymous subscribers before creating subscription tokens.
+- Projected event cap: per-frame projection and dispatch budget is `round(lerp(10,50,smoothstep(saturate(GlobalQualityWeight01))))`, clamped to `10..50`; this is cadence/fidelity only and never gameplay truth.
+- Resource ownership: resource hash registration rejects forged `modId` values; the owner must match the active `ModExecutionScope`.
 - Runtime proof: `PENDING`
 
 ## Primary Files
@@ -54,8 +60,8 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 - `Sample_InfiniteO2_Mod.md` - safe sample mod spec with no current survival mutation authority.
 - `Future_Command_Kernel_Reservations.md` - non-public reservations for future engine-owned command kernels; no enum/runtime expansion by itself.
 - `Mod_API_Sandbox_Quarantine.md` - current envelope-only runtime quarantine and validator boundary.
-- `allowed_opcodes.csv` - editor-reload allowlist source for `FutureCommandEnvelope` opcode hashes.
-- `kernel_tuning_profiles.csv` - editor-reload priority/budget/range/duration source for command kernels.
+- `allowed_opcodes.csv` - editor-reload allowlist source for currently runtime-accepted `FutureCommandEnvelope` opcode hashes; reserved kernels are rejected even if their hash constants exist.
+- `kernel_tuning_profiles.csv` - editor-reload priority/budget/range/duration source for reserved command-kernel previews; profile rows do not make an opcode public.
 - `SDK_Authoring_Interface_Plan.md` - planned human SDK/workbench/CLI/graph workflow for modders.
 - `SDK_Product_Blueprint.md` - product-level SDK screens, CLI, package format, graph compiler rules, Workshop/moderation model, and MVP backlog.
 

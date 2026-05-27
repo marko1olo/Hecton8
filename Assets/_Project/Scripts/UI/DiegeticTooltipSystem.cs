@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -1445,44 +1446,111 @@ namespace Hecton8.UI
             IDataVault vault = _dataVault;
             if (_blackBoxDumped ||
                 vault == null ||
-                !IsVaultHandleCreated(in _blackBoxHandle) ||
-                !vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<TooltipBlackBoxEntry>.ReadOnly blackBox) ||
-                !blackBox.IsCreated)
+                vault.IsCompactionFenceActive ||
+                !IsVaultHandleCreated(in _blackBoxHandle))
             {
                 return;
             }
 
             _blackBoxDumped = true;
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string dumpPath = Path.Combine(projectRoot, DumpRelativePath);
-            Directory.CreateDirectory(Path.GetDirectoryName(dumpPath));
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            try
             {
-                writer.Write(_blackBoxCursor);
-                writer.Write(blackBox.Length);
-                writer.Write(_blackBoxWrittenCount);
-
-                int firstIndex = _blackBoxWrittenCount >= blackBox.Length ? _blackBoxCursor : 0;
-                for (int i = 0; i < _blackBoxWrittenCount; i++)
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string dumpPath = Path.Combine(projectRoot, DumpRelativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(dumpPath));
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    int entryIndex = firstIndex + i;
-                    if (entryIndex >= blackBox.Length)
-                        entryIndex -= blackBox.Length;
+                    Span<byte> header = stackalloc byte[12];
+                    WriteIntLittleEndian(header.Slice(0, 4), _blackBoxCursor);
+                    WriteIntLittleEndian(header.Slice(4, 4), BlackBoxCapacity);
+                    WriteIntLittleEndian(header.Slice(8, 4), _blackBoxWrittenCount);
+                    stream.Write(header);
 
-                    TooltipBlackBoxEntry entry = blackBox[entryIndex];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.TargetHash);
-                    writer.Write(entry.Anchor.x);
-                    writer.Write(entry.Anchor.y);
-                    writer.Write(entry.Anchor.z);
-                    writer.Write(entry.Alpha);
-                    writer.Write(entry.SchemeHash);
-                    writer.Write(entry.GlyphCount);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.TierFlags);
+                    int writtenCount = math.min(_blackBoxWrittenCount, BlackBoxCapacity);
+                    int firstIndex = writtenCount >= BlackBoxCapacity ? _blackBoxCursor : 0;
+                    Span<byte> row = stackalloc byte[32];
+                    for (int i = 0; i < writtenCount; i++)
+                    {
+                        int entryIndex = firstIndex + i;
+                        if (entryIndex >= BlackBoxCapacity)
+                            entryIndex -= BlackBoxCapacity;
+
+                        if (!TryReadBlackBoxEntry(vault, entryIndex, out TooltipBlackBoxEntry entry))
+                            entry = default;
+
+                        WriteBlackBoxEntry(row, in entry);
+                        stream.Write(row);
+                    }
                 }
             }
+            catch (IOException)
+            {
+                _blackBoxDumped = false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _blackBoxDumped = false;
+            }
+            catch (ObjectDisposedException)
+            {
+                _blackBoxDumped = false;
+            }
+            catch (InvalidOperationException)
+            {
+                _blackBoxDumped = false;
+            }
+            catch (ArgumentException)
+            {
+                _blackBoxDumped = false;
+            }
+            catch (NotSupportedException)
+            {
+                _blackBoxDumped = false;
+            }
+        }
+
+        private bool TryReadBlackBoxEntry(IDataVault vault, int index, out TooltipBlackBoxEntry entry)
+        {
+            entry = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                index < 0 ||
+                index >= BlackBoxCapacity ||
+                !IsVaultHandleCreated(in _blackBoxHandle) ||
+                !vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<TooltipBlackBoxEntry>.ReadOnly blackBox) ||
+                vault.IsCompactionFenceActive ||
+                !blackBox.IsCreated ||
+                index >= blackBox.Length)
+            {
+                return false;
+            }
+
+            entry = blackBox[index];
+            return !vault.IsCompactionFenceActive;
+        }
+
+        private static void WriteBlackBoxEntry(Span<byte> destination, in TooltipBlackBoxEntry entry)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.TargetHash);
+            WriteFloatLittleEndian(destination.Slice(8, 4), entry.Anchor.x);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.Anchor.y);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.Anchor.z);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.Alpha);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(24, 4), entry.SchemeHash);
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(28, 2), entry.GlyphCount);
+            destination[30] = entry.Flags;
+            destination[31] = entry.TierFlags;
+        }
+
+        private static void WriteIntLittleEndian(Span<byte> destination, int value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, value);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
         private void ReleaseResources()

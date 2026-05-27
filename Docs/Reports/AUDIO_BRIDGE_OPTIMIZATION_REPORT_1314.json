@@ -3,18 +3,26 @@
   "role": "AUDIO_MASTER_BUS_ALIGNMENT_REPAIRER",
   "report": "AUDIO_BRIDGE_OPTIMIZATION_REPORT_1314",
   "generatedBy": "codex_static_source_validation",
-  "status": "PASS_STATIC_APEX_RUNTIME_THREAD_BARRIER_FREE_RAW_TELEMETRY_NATIVE_DUMP_ASYNC_QUEUE_TASK08_DATAVAULT_HOT_RING_LIMITATION_COMPILE_NOT_RUN",
-  "staticPass": true,
+  "status": "FAIL_STATIC_STALE_WINDOWS_DLL_AND_MASTER_MIXER_EFFECT_NOT_AUTHORED_COMPILE_NOT_RUN",
+  "staticPass": false,
   "strictPromptTask08HotRingInsideGlobalDataVault": false,
   "strictPromptTask08Limitation": "Authoritative hot telemetry ring is stable H8Memory raw memory; GlobalDataVault owns only the cold BufferID.AudioFrameRingTelemetry mirror because its current public mutation routes are write-lock or relocation-pin based.",
   "compileProof": "BLOCKED_BY_EXTERNAL_BUILD_GATE_PENDING_CPU_AND_COMPILER_RECHECK",
   "liveFuzzerProof": "NOT_RUN_OUTSIDE_UNITY_EDITOR_DATAVAULT_CONTEXT",
   "writeIndexByteOffset": 8,
   "requiredAlignmentBytes": 8,
-  "filesScanned": 6,
-  "failedChecks": 0,
+  "filesScanned": 11,
+  "failedChecks": 6,
+  "releaseBlockers": [
+    "Assets/Plugins/x86_64/HectonAudioKernel.dll is older than NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp and BuildHectonSensoryKernel.bat. Unity loads the stale DLL, so current native source repairs are not proven in the binary. NativePluginMatrixValidator now also rejects this stale DLL during Windows player build preflight.",
+    "Assets/_Project/MasterMixer.mixer has empty m_Effects lists and no Hecton Sensory Kernel effect entry. Descriptor registration alone cannot invoke the native ProcessCallback.",
+    "Assets/Plugins/Android/arm64-v8a/libHectonAudioKernel.so and Assets/Plugins/Android/libs/arm64-v8a/libHectonAudioKernel.so are both absent. Android/Quest audio kernel packaging is blocked.",
+    "Assets/_Project/Plugins/Android arm64 LZ4 plugin paths are absent. Android/Quest native plugin matrix is blocked before player build.",
+    "Assets/_Project/Plugins/Windows/x86_64/liblz4.dll.meta is GUID-only, not a proven PluginImporter metadata asset.",
+    "Native rebuild was not launched because prior CPU samples were above the project 50% compiler gate; this pass did not run build tooling by user instruction."
+  ],
   "runtimeZeroGcScan": {
-    "scope": "NativeAudioFrameRingBuffer.cs full 982-line file plus HectonSensoryKernelNativeBridge.cs full 373-line file",
+    "scope": "NativeAudioFrameRingBuffer.cs full 982-line file plus HectonSensoryKernelNativeBridge.cs full 370-line file",
     "patterns": [
       "new",
       "new byte[",
@@ -40,9 +48,9 @@
     ],
     "runtimeHits": 0,
     "editorOnlyHits": [
-      "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:527 new Thread consumer",
-      "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:549 new Thread producer",
-      "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:498 editor NativeArray allocation"
+      "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:555 new Thread consumer",
+      "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:577 new Thread producer",
+      "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:526 editor NativeArray allocation"
     ]
   },
   "managedExceptionBoundaryScan": {
@@ -61,26 +69,100 @@
   },
   "nativeDumpRoute": {
     "runtimePath": "fixed H8Memory raw byte snapshot",
-    "allocationLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:523-528",
-    "freeLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:551-555",
+    "allocationLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:529-534",
+    "freeLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:557-561",
     "bytes": 19216,
     "formula": "16 header bytes + 300 entries * 64 bytes",
-    "writerLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:729-754 and 804-877",
-    "nativeQueueLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:146-183",
-    "nativeThreadEntryLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:126-144",
-    "nativeExportLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:525-528",
+    "writerLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:735-760 and 810-883",
+    "nativeWriteLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:111-132 and 620-623",
+    "nativeThreadEntryLines": "ABSENT_BY_DESIGN",
+    "nativeExportLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:620-623",
+    "nativeDirectoryGateLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:100-108 and :116",
+    "windowsThreadRoute": "ABSENT_BY_DESIGN: no process.h, _beginthreadex, CreateThread, or native dump thread remains.",
+    "posixThreadDetachLines": "ABSENT_BY_DESIGN",
+    "posixThreadDetachPolicy": "No POSIX dump thread is created; dump export returns the synchronous bounded WriteTelemetryDumpFile result.",
+    "managedGateRearmLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:758-771",
+    "managedGateRearmPolicy": "The C# _telemetryDumpQueued flag only suppresses concurrent snapshot construction. It is reset in finally after each native write attempt; no detached native dump thread owns later completion.",
+    "managedGateScannerProof": "OOP_AudioBridge_Scanner.cs validates the RequestTelemetryDump method body specifically: native write call appears before finally, and finally appears before Volatile.Write(ref _telemetryDumpQueued, 0). Global file-level token matches are no longer accepted as sufficient proof.",
     "managedRuntimeIo": false,
-    "nativeExportInlineFwrite": false,
-    "nativeDumpGlobalDeclarationOrder": "DUMP_GLOBAL_DECL_ORDER_OK",
-    "limitation": "Native export now returns queue acceptance. Post-queue disk-open/write failure is not observable by C# in this patch and still requires native rebuild/runtime proof."
+    "nativeExportInlineFwrite": true,
+    "nativeDumpThreading": false,
+    "limitation": "Native export now returns actual bounded disk write success/failure. Runtime/native rebuild validation is still required because the packaged DLL is stale."
+  },
+  "androidNativeRoute": {
+    "bridgeCompileGate": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:155 includes UNITY_ANDROID in the P/Invoke route.",
+    "buildMatrixGate": "Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs:90-95 requires Assets/Plugins/Android/arm64-v8a/libHectonAudioKernel.so or Assets/Plugins/Android/libs/arm64-v8a/libHectonAudioKernel.so.",
+    "playerBuildHardFailGate": "Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs:25 calls Validate(report.summary.platform, strictBuild: true), so actual player builds fail on missing native plugin blockers; only the editor menu scan is advisory.",
+    "pluginImporterGate": "Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs validates AssetImporter.GetAtPath(assetPath) as PluginImporter plus importer.GetCompatibleWithPlatform(target). Raw files with GUID-only .meta are not accepted as release-ready native plugins.",
+    "windowsImporterMeta": "Assets/Plugins/x86_64/HectonAudioKernel.dll.meta now contains PluginImporter, Any disabled, Windows Editor enabled for OS Windows/CPU x86_64, Standalone Win disabled, Standalone Win64 enabled for CPU x86_64, and Linux/macOS disabled.",
+    "windowsImporterSectionProof": "OOP_AudioBridge_Scanner.cs validates PluginImporter platformData section bodies, not loose file-level tokens: Any enabled:0; Editor enabled:1 CPU:x86_64 OS:Windows; Standalone Win enabled:0; Standalone Win64 enabled:1 CPU:x86_64; Linux64/OSXUniversal enabled:0.",
+    "windowsFreshnessBuildGate": "NativePluginMatrixValidator now calls RequirePluginFreshness for Assets/Plugins/x86_64/HectonAudioKernel.dll against NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp and NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernel.bat. File probes use ToProjectAbsolutePath(Application.dataPath/..) so the check does not depend on the editor process current working directory. Windows player builds fail if the packaged DLL timestamp is older than either reference.",
+    "currentPackagedBinaryScan": "Only Assets/Plugins/x86_64/HectonAudioKernel.dll is present and its .meta is section-scoped PluginImporter-configured for Windows editor and Standalone Win64 x86_64 only. That DLL is stale: DLL UTC 2026-04-24T18:13:13.9632833Z, native source UTC 2026-05-27T09:57:55.5551300Z, build script UTC 2026-05-27T06:32:46.7320745Z. Android arm64 audio kernel binary is still missing. Build preflight reports missing binaries, invalid plugin importer routing, and stale Windows audio DLL freshness.",
+    "limitation": "No Android or Windows native rebuild was run in this pass. Windows rebuild is required before binary/runtime claims; Android/Quest remains blocked until an arm64 .so exists and is tested."
+  },
+  "masterMixerNativeEffectBinding": {
+    "currentAssetScan": "Assets/_Project/MasterMixer.mixer currently contains empty m_Effects lists and no Hecton Sensory Kernel effect text.",
+    "risk": "The native ring descriptor can register successfully while Unity never calls Plugin_HectonSensoryKernel.cpp ProcessCallback because no AudioMixer effect instance exists.",
+    "repair": "AudioMixerSanitizer no longer removes valid Hecton native effects by display name; it removes only unresolved empty-effect-id references. AudioMixerNativeEffectBuildGate now fails player builds if MasterMixer lacks the Hecton Sensory Kernel native effect.",
+    "remainingAction": "Author the Hecton Sensory Kernel effect on MasterMixer through the Unity Editor after the DLL is rebuilt/imported. Manual YAML insertion was rejected because AudioMixerEffectController is internal Unity serialization."
+  },
+  "nativeBuildScriptProof": {
+    "previousDefect": "BuildHectonSensoryKernel.bat compiled AudioPluginUtil.cpp, which contained Unity sample heap helper code not reached by HectonSensoryKernel but still present at source/object level.",
+    "fixLines": "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernel.bat:22-29",
+    "flags": "/Gy /Gw plus /link /OPT:REF /OPT:ICF",
+    "effect": "BuildHectonSensoryKernel.bat now compiles Plugin_HectonSensoryKernel.cpp only. The heap-using Unity sample utility files were removed from the Hecton native kernel directory, so a future wildcard native build cannot casually reattach the alternate utility export route. The checked-in Windows DLL has not been rebuilt after this source/script change, so the scanner now fails stale-binary freshness until the DLL timestamp is newer than both files.",
+    "scannerGuards": "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs native_build_excludes_sample_utility_cpp, native_utility_cpp_removed, native_utility_header_removed, native_plugin_list_removed, native_unity_effect_export_local, native_effect_definition_local_fill, native_build_function_data_sections, native_build_dead_code_elimination, native_plugin_matrix_importer_probe, native_plugin_matrix_project_root_file_probe, and native_plugin_matrix_audio_kernel_freshness_gate checks"
+  },
+  "nativeUtilityBuildExclusion": {
+    "previousDefect": "AudioPluginUtil.cpp is a Unity sample utility file with FFT/analyzer/test helper paths that still contain source-level heap allocation. Depending on linker dead stripping to hide that file was not a release-grade proof.",
+    "fixLines": "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernel.bat:26-29 and NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp UnityGetAudioEffectDefinitions local export",
+    "behavior": "The Hecton kernel build no longer compiles AudioPluginUtil.cpp, and AudioPluginUtil.cpp, AudioPluginUtil.h, and PluginList.h are no longer present in the native kernel directory. Plugin_HectonSensoryKernel.cpp owns effect-definition export using fixed static UnityAudioEffectDefinition storage and bounded char copy. HectonSensoryKernel has zero parameters and does not need the utility helper translation unit.",
+    "scannerGuards": "OOP_AudioBridge_Scanner native_build_excludes_sample_utility_cpp, native_utility_cpp_removed, native_utility_header_removed, native_plugin_list_removed, native_unity_effect_export_local, and native_effect_definition_local_fill checks"
+  },
+  "sourceChannelContractProof": {
+    "previousDefect": "Initialize silently clamped invalid sourceChannels into mono/stereo even though TryWriteInterleaved and the native ABI reject anything outside [1,2]. That could hide a caller bug and create a bridge whose runtime stride differed from the attempted contract.",
+    "fixLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:157-166",
+    "behavior": "Invalid sourceChannels now records NativeAudioKernelBridgeStatus.SharedStateInvalid when an existing ring can accept telemetry, then returns without allocation, descriptor registration, or disposing the current bridge. Valid sourceChannels is copied verbatim into _sourceChannels, SharedState metadata, and descriptor.SourceChannels.",
+    "capacityMathScrub": "TryWriteInterleaved and TryCreateNativeDescriptor validate against _frameSampleCapacity instead of recomputing _capacityFrames * channels at writer/descriptor time.",
+    "capacityUpperBound": "ResolvePowerOfTwoCapacity now caps oversized requests at AudioBufferCapacity=65536 frames before any raw H8Memory allocation. The previous 1<<30 upper path could attempt multi-gigabyte frame buffers.",
+    "scannerGuards": "OOP_AudioBridge_Scanner guards invalid channel retention and fixed 65536-frame bridge capacity."
+  },
+  "rendererClearContractProof": {
+    "previousDefect": "PlayerCriticalProceduralAudioRenderer.ClearNativeOutputBridge called TryClear() and then unconditionally set _nativeOutputRegistered=false. If native clear failed Busy/Active, the renderer could forget a descriptor that the native audio callback still retained. DisposeBuffers also nulled _sampleRingBuffer after void Dispose, which could lose the managed owner for raw H8Memory bridge buffers after deferred clear.",
+    "fixLines": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:8123-8129, 8200-8205 and 8341-8359",
+    "behavior": "Renderer now calls TryClear(out clearStatus), clears _nativeOutputRegistered only on proven clear, records failed clear status into the ring telemetry, force-clears only on PluginUnavailable because no native plugin can retain the descriptor, nulls _sampleRingBuffer only when TryDispose succeeds, and tears down partial vault-backed buffers if ring Initialize returns a mismatched capacity/channel contract.",
+    "scannerGuards": "OOP_AudioBridge_Scanner renderer_native_clear_status_checked, renderer_native_clear_failure_telemetry, renderer_native_clear_plugin_unavailable_release, renderer_preserves_ring_owner_on_deferred_clear, renderer_no_unconditional_ring_owner_drop, and renderer ring contract checks"
+  },
+  "rendererFullFileLimitation": {
+    "scope": "PlayerCriticalProceduralAudioRenderer.cs was touched only for native bridge owner lifecycle. Full-file Zero-GC is not claimed.",
+    "evidence": "Existing renderer code still contains System.IO cold dump routes at lines 12037-12167, managed Thread allocation at 3271, managed arrays at 1050 and 1307, and many value-type `new` tokens. Bridge source files remain strict runtime scan clean; the renderer monolith remains a separate release-audit debt if it is included in the zero-GC domain.",
+    "recommendedNextCut": "Split cold telemetry dump I/O and editor/development diagnostics out of PlayerCriticalProceduralAudioRenderer, then replace or native-route release crash dumps with fixed unmanaged snapshots."
+  },
+  "bridgeRegisterCandidateProof": {
+    "previousDefect": "HectonSensoryKernelNativeBridge.TryRegisterWithRetryGate called TryClear when the candidate descriptor failed local validation. A bad candidate could therefore clear an unrelated previously valid native bridge.",
+    "fixLines": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:135-138",
+    "behavior": "Invalid candidate descriptors and failed registration attempts now return false without clearing native state. Explicit TryClear remains the only allowed clear operation; failed register is no longer cleanup-clear.",
+    "scannerGuards": "OOP_AudioBridge_Scanner bridge_invalid_candidate_does_not_clear_active_bridge and bridge_register_failure_does_not_clear_owned_descriptor checks"
+  },
+  "nativeCallbackBoundsProof": {
+    "previousDefect": "Plugin_HectonSensoryKernel.cpp ProcessCallback accepted host length/outchannels directly. The real Unity callback path had no shared cap equivalent to DebugProcessBlock and used int multiplication for frame/channel indexing.",
+    "fixLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:47-48 and 405-488",
+    "behavior": "The callback now validates frame/channel product through TryComputeOutputSampleCount before memset. If the product exceeds the fixed 65,536*64 sample budget, it records SharedStateInvalid and returns. If the product is bounded but length > 65,536 frames or output channels > 64, it first clears the bounded host output buffer to silence, records SharedStateInvalid, and returns before bridge mixing. Corrupt input contracts (input buffer with non-positive channels, or input channels above 64) also return after bounded silence clear and before bridge mixing. Normal blocks compute output count and input/output base indices as size_t. Input passthrough is copied only for bounded channel layouts.",
+    "scannerGuards": "OOP_AudioBridge_Scanner native_callback_frame_cap, native_callback_channel_cap, native_callback_output_sample_budget, native_callback_sample_count_gate, native_callback_bad_product_rejected, native_callback_bounded_silence_clear, native_callback_bounds_fail_closed, native_callback_input_contract_fail_closed, native_callback_size_t_output_count, native_callback_size_t_output_index, native_callback_size_t_input_index, and native_callback_input_passthrough_cap checks"
+  },
+  "nativeMutationGateProof": {
+    "previousDefect": "Plugin_HectonSensoryKernel.cpp disabled g_hasSharedRingBuffer before callback drain had succeeded in both register and clear. If drain timed out, managed owner-retention kept raw buffers alive, but native callback mixing was already disabled.",
+    "fixLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:235-302, 479-482, and 603-650",
+    "behavior": "A separate g_callbackMutationGate now blocks new callback mixing during register/clear without destroying the current descriptor first. Drain failure reopens the gate and restores Active|Busy or Cleared|Busy status from current ownership. Managed TryRegister requires Active without Busy, so retained old ownership is not misclassified as a successful new registration. Only successful drain zeroes g_hasSharedRingBuffer before replacing or clearing the descriptor.",
+    "scannerGuards": "OOP_AudioBridge_Scanner bridge_register_rejects_busy, native_callback_mutation_gate, native_callback_mutation_gate_checked, native_drain_failure_restores_status, and native_callback_mutation_gate_reopens checks"
   },
   "rawBridgePoolLifetime": {
     "previousDefect": "Long-lived DataVault TryLockBuffer pins were used to protect native-exported bridge pointers, but those pins can block arena relocation/growth while the audio bridge is active.",
-    "allocationLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:485-536",
-    "clearBeforeFreeLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:445-465",
-    "freeLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:539-575",
-    "shutdownSafeFreeGateLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:452-455, 539-549, 587-595 and Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2261",
-    "viewLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:587-615",
+    "allocationLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:491-542",
+    "clearBeforeFreeLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:451-471",
+    "freeLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:545-581",
+    "shutdownSafeFreeGateLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:458-461, 545-555, 593-601 and Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2261",
+    "viewLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:593-621",
     "rawBuffers": [
       "framesPtr",
       "sharedStatePtr",
@@ -91,7 +173,7 @@
       "AudioFrameRingTelemetry"
     ],
     "persistentDataVaultLocks": false,
-    "failureMode": "If any raw bridge allocation fails, Initialize disposes and descriptor registration stays fail-closed. C# bridge validation re-reads SharedState capacity/mask/guards/source-channel metadata before P/Invoke and returns SharedStateInvalid if it no longer matches the descriptor/native contract. SourceChannels is copied into the immutable descriptor at NativeAudioFrameRingBuffer.cs:431, and native callback reads ringBuffer.sourceChannels at Plugin_HectonSensoryKernel.cpp:440 instead of trusting mutable SharedState for frame stride. TryClear rejects native Active or Busy status. If native clear fails for any status except PluginUnavailable while H8Memory is initialized, raw buffers are retained and reinitialize is blocked before any second allocation. If H8Memory is already shut down, raw pointers are nulled instead of retained because their backing memory has already been reaped, and TryResolveRingViews refuses to create NativeArray views over those stale addresses. If managed shared-state cursors are corrupt, TryReadSharedFrameIndex rejects raw indices outside [0, capacityFrames) instead of masking them through capacityMask; producer/DSP bookkeeping records TelemetryStatusSharedStateInvalid and triggers the dump route. Hot telemetry writes go to a stable H8Memory raw 300-entry ring and do not acquire a DataVault writer fence or call Thread.MemoryBarrier. The writer marks a slot Sequence=0 before field writes, publishes final non-zero Sequence last with Volatile.Write, and dump/mirror readers validate sequence plus StateHash through TryReadTelemetryEntryStable before copying a DTO. Fault/shutdown paths best-effort mirror the raw ring into BufferID.AudioFrameRingTelemetry with TryAcquireWriteLock; if the mirror lock is unavailable, the raw binary dump still proceeds and the writer does not block. Native dump export queues the fixed snapshot into a static native scratch buffer and returns without inline fwrite/fopen; if the queue is busy, bad, or thread creation fails, native returns 0 and C# resets the dump gate so the next fault can retry. Final disk write success after queueing remains runtime validation debt."
+    "failureMode": "Invalid sourceChannels records SharedStateInvalid telemetry when an existing ring is live and returns without disposing that known-good bridge. Oversized capacity requests clamp to the fixed 65,536-frame SPSC bridge budget before raw allocation, and both managed and native descriptor validation reject capacities above 65,536 frames. If any raw bridge allocation fails, Initialize disposes the partially initialized bridge and descriptor registration stays fail-closed. C# bridge validation re-reads SharedState capacity/mask/guards/source-channel metadata before P/Invoke and returns SharedStateInvalid if it no longer matches the descriptor/native contract. SourceChannels is copied into the immutable descriptor at NativeAudioFrameRingBuffer.cs:437, and native callback reads ringBuffer.sourceChannels at Plugin_HectonSensoryKernel.cpp:454 instead of trusting mutable SharedState for frame stride. Register and clear now use AndGetStatus exports so managed code reads the mutation result directly; callback health status cannot overwrite a failed mutation before managed observes it. If native clear fails for any status except PluginUnavailable while H8Memory is initialized, TryDispose returns false, raw buffers are retained, reinitialize is blocked before any second allocation, and PlayerCriticalProceduralAudioRenderer keeps _sampleRingBuffer as the owner so a later clear/free retry is still possible. Renderer EnsureBuffers validates IsCreated/capacity/source-channel after Initialize and tears down partial vault-backed buffers if the ring contract is not exact. If H8Memory is already shut down, raw pointers are nulled instead of retained because their backing memory has already been reaped, and TryResolveRingViews refuses to create NativeArray views over those stale addresses. If managed shared-state cursors are corrupt, TryReadSharedFrameIndex rejects raw indices outside [0, capacityFrames) instead of masking them through capacityMask; producer/DSP bookkeeping records TelemetryStatusSharedStateInvalid and triggers the dump route. Hot telemetry writes go to a stable H8Memory raw 300-entry ring and do not acquire a DataVault writer fence or call Thread.MemoryBarrier. The writer marks a slot Sequence=0 before field writes, publishes final non-zero Sequence last with Volatile.Write, and dump/mirror readers validate sequence plus StateHash through TryReadTelemetryEntryStable before copying a DTO. Fault/shutdown paths best-effort mirror the raw ring into BufferID.AudioFrameRingTelemetry with TryAcquireWriteLock; if the mirror lock is unavailable, the raw binary dump still proceeds and the writer does not block. Native dump export now performs the bounded C file write directly and returns write success/failure; C# rearms _telemetryDumpQueued in a finally scope after every native write attempt."
   },
   "nativePluginAbi": {
     "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp",
@@ -101,13 +183,14 @@
     "sourceChannelsSlot": 12,
     "sharedStateSlotCount": 14,
     "requiredAlignmentBytes": 8,
-    "slotMapLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:24-34",
-    "alignmentGateLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:37 and 287-290",
-    "nativeDumpLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:38-39, 101-183, 525-528",
-    "descriptorStaticAssertLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:199-210",
-    "portableAtomicLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:44-99, 219-226, 406-478, 485-528",
-    "boundedDrainLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:42, 257-265, 485-486, 512-513",
-    "nativeHeapProof": "No new EffectData/delete/malloc/free route remains; DebugProcessBlock uses fixed static g_debugProcessScratch with atomic busy gate, and telemetry dump queuing uses fixed static g_telemetryDumpBuffer with atomic busy gate.",
+    "slotMapLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:29-39",
+    "alignmentGateLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:42 and 307-310",
+    "nativeDumpLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:45-46, 100-132, 620-623",
+    "descriptorStaticAssertLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:217-228",
+    "portableAtomicLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:49-104, 237-254, 426-491, 549-595",
+    "boundedDrainLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:47, 275-289, 549-553, 576-580",
+    "callbackBoundsLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:47-50, 357-378, and 424-508",
+    "nativeHeapProof": "No new EffectData/delete/malloc/free route remains in Plugin_HectonSensoryKernel.cpp; DebugProcessBlock uses fixed static g_debugProcessScratch with atomic busy gate, telemetry dump has no heap and no detached thread/static handoff buffer, effect definition export uses fixed static UnityAudioEffectDefinition storage, and AudioPluginUtil.cpp/AudioPluginUtil.h/PluginList.h are absent from the native kernel directory.",
     "descriptorOffsets": {
       "frames": 0,
       "sharedState": 8,
@@ -128,11 +211,11 @@
     "editorGuardLine": "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:1",
     "editorAssembly": "Hecton8.Editor",
     "defaultIterations": 32,
-    "defaultCapacityFrames": 131072,
-    "defaultBlockFrames": 65536,
+    "defaultCapacityFrames": 65536,
+    "defaultBlockFrames": 32768,
     "defaultChannels": 2,
-    "totalDefaultFrames": 2097152,
-    "totalDefaultSamples": 4194304,
+    "totalDefaultFrames": 1048576,
+    "totalDefaultSamples": 2097152,
     "liveResult": "pending Unity Editor DataVault execution"
   },
   "checks": [
@@ -176,7 +259,7 @@
       "id": "bridge_retry_gate",
       "file": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:123",
       "passed": true,
-      "detail": "TryRegisterWithRetryGate validates, retries, and calls TryClear on failure."
+      "detail": "TryRegisterWithRetryGate validates, retries, and returns false on failure without cleanup-clear."
     },
     {
       "id": "old_write_index_slot_removed",
@@ -254,7 +337,7 @@
       "id": "native_descriptor_raw_bridge_pool",
       "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:445-615",
       "passed": true,
-      "detail": "Frames, SharedState, and DumpBytes use stable owner-tagged H8Memory raw allocations with transient NativeArray views; TryClear rejects Active/Busy, failed native clear retains raw memory except PluginUnavailable only while H8Memory is initialized, late dispose is gated by H8Memory.IsInitialized, TryResolveRingViews refuses stale views after shutdown, and no long-lived DataVault relocation pin is held."
+      "detail": "Frames, SharedState, and DumpBytes use stable owner-tagged H8Memory raw allocations with transient NativeArray views; TryClear rejects Active/Busy, TryDispose reports deferred clear instead of hiding it behind void Dispose, failed native clear retains raw memory except PluginUnavailable only while H8Memory is initialized, renderer keeps the sample-ring owner alive for later retry, late dispose is gated by H8Memory.IsInitialized, TryResolveRingViews refuses stale views after shutdown, and no long-lived DataVault relocation pin is held."
     },
     {
       "id": "native_bridge_no_view_after_h8_shutdown",
@@ -300,39 +383,39 @@
     },
     {
       "id": "native_write_index_slot_even",
-      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:24-34",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:29-39",
       "passed": true,
       "detail": "Native plugin now expects kWriteIndexSlot = 2 and kSharedStateSlotCount = 14, matching C# descriptor export."
     },
     {
       "id": "native_stereo_frame_stride",
-      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:440-468",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:460-468",
       "passed": true,
       "detail": "Native callback reads immutable descriptor sourceChannels and uses sourceFrameIndex << 1 for interleaved stereo frames."
     },
     {
       "id": "native_required_alignment_8",
-      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:37 and 287-290",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:42 and 307-310",
       "passed": true,
       "detail": "Native plugin now validates frames/sharedState/readIndex/writeIndex against 8-byte alignment, not 4-byte SInt32 alignment."
     },
     {
       "id": "native_descriptor_static_asserts",
-      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:199-210",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:217-228",
       "passed": true,
       "detail": "Native plugin now compile-time asserts 64-bit ABI, descriptor size 56, and field offsets 0/8/16/24/32/36/40/44/48/52 with pointer fields first."
     },
     {
       "id": "native_portable_atomic_helpers",
-      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:44-99, 219-226, 406-478, 485-528",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:49-104, 237-254, 426-491, 549-595",
       "passed": true,
       "detail": "Native callback/global shared-state paths use HectonAtomicInt32 helpers; non-Windows paths no longer depend on undefined LONG or direct Windows Interlocked calls."
     },
     {
       "id": "native_bounded_callback_drain",
-      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:42, 257-265, 485-486, 512-513",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:47, 275-289, 549-553, 576-580",
       "passed": true,
-      "detail": "Native register/clear drains active callbacks with kDrainSpinLimit and keeps Busy status instead of infinite spinning if the callback depth is stuck."
+      "detail": "Native register/clear drains active callbacks with kDrainSpinLimit; if callback depth is stuck, the mutation gate reopens and previous descriptor ownership is retained instead of infinite spinning or silently disabling g_hasSharedRingBuffer."
     },
     {
       "id": "native_no_heap_debug_scratch",
@@ -342,9 +425,21 @@
     },
     {
       "id": "native_dump_export",
-      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:38-39, 101-183, 525-528",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:43-44, 108-200, 592-595",
       "passed": true,
-      "detail": "Native plugin exports HectonSensoryKernel_DumpAudioBridgeTelemetry; the export queues fixed native scratch to an unmanaged background thread and contains no inline fopen/fwrite."
+      "detail": "Native plugin exports HectonSensoryKernel_DumpAudioBridgeTelemetry; the export performs a bounded synchronous C file write and returns actual write success/failure with no detached native thread."
+    },
+    {
+      "id": "windows_audio_kernel_plugin_importer_meta",
+      "file": "Assets/Plugins/x86_64/HectonAudioKernel.dll.meta",
+      "passed": true,
+      "detail": "Packaged Windows HectonAudioKernel.dll is no longer GUID-only; its .meta declares PluginImporter with Windows editor and Standalone Win64 x86_64 lanes."
+    },
+    {
+      "id": "windows_audio_kernel_plugin_importer_section_proof",
+      "file": "Assets/Plugins/x86_64/HectonAudioKernel.dll.meta and Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:87-99",
+      "passed": true,
+      "detail": "Scanner now validates each PluginImporter platformData section body: Any is disabled, Windows Editor is enabled with OS Windows and CPU x86_64, Win32/Linux/macOS lanes are disabled, and Win64 is enabled with CPU x86_64. Loose token matches are no longer sufficient proof."
     },
     {
       "id": "scanner_source",

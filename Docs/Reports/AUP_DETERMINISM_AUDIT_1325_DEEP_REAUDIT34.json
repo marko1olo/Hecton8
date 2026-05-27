@@ -1,0 +1,26 @@
+﻿{
+    "schema":  "hecton8.aup_determinism_reaudit34.v2",
+    "agentId":  "1325",
+    "scannedFiles":  4,
+    "findingCount":  0,
+    "findings":  [
+
+                 ],
+    "invalidDimensionClampHits":  [
+
+                                  ],
+    "bridgeProof":  {
+                        "resolveCameraRelativeRejectsInvalidAup":  true,
+                        "toRuntimeFloat3RejectsInvalidAup":  true,
+                        "weightedAupAverageRejectsNonFiniteWeight":  true,
+                        "weightedAverageUsesAnchoredDelta":  true,
+                        "snapshotDeltaValidatesBeforeWrite":  true,
+                        "invalidChunkDimensionsFailClosed":  true
+                    },
+    "notes":  [
+                  "Reaudit34 added non-finite AUP and non-finite weight refusal before runtime/centroid bridges.",
+                  "Resident sector snapshots validate delta DTO identity and sector ownership before native TempJob write.",
+                  "No direct absolute-AUP-to-float3 cast pattern was found in the touched bridge files."
+              ],
+    "generatedAtUtc":  "2026-05-27T12:15:20.6461124Z"
+}

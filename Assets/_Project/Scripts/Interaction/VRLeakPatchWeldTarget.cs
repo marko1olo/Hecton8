@@ -46,6 +46,7 @@ namespace Hecton8.Interaction
         private bool _hasAcousticGuide;
         private bool _registeredPatchHoldDecayTick;
         private bool _registeredPhysicsPayloadReader;
+        private bool _registeredHotSwap;
         private int _lastPhysicsEventSnapshotGeneration;
         private byte _missedPatchContactTicks;
 
@@ -66,20 +67,29 @@ namespace Hecton8.Interaction
         private void OnEnable()
         {
             RefreshCachedTransforms();
-            if (Application.isPlaying)
-                GlobalRegistry.TryRegisterHotSwapListener(this);
+            TryRegisterHotSwapListener();
 
+            InteractableRegistry.RegisterTree(this);
             TryRegisterPhysicsPayloadReader();
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterPhysicsPayloadReader();
-            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            TryUnregisterHotSwapListener();
             ClearPatchContactImmediate();
             ClearAcousticGuide();
             _patchHoldSeconds = 0f;
             _missedPatchContactTicks = 0;
+            TryUnregisterPatchHoldDecayTick();
+        }
+
+        private void OnDestroy()
+        {
+            InteractableRegistry.InvalidateTree(this);
+            TryUnregisterPhysicsPayloadReader();
+            TryUnregisterHotSwapListener();
             TryUnregisterPatchHoldDecayTick();
         }
 
@@ -256,7 +266,7 @@ namespace Hecton8.Interaction
 
         private void TryRegisterPhysicsPayloadReader()
         {
-            if (_registeredPhysicsPayloadReader || !Application.isPlaying)
+            if (_registeredPhysicsPayloadReader || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredPhysicsPayloadReader = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
@@ -304,6 +314,23 @@ namespace Hecton8.Interaction
             _registeredPatchHoldDecayTick = false;
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
@@ -311,9 +338,13 @@ namespace Hecton8.Interaction
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                _registeredPhysicsPayloadReader = false;
                 _registeredPatchHoldDecayTick = false;
                 if (currentService != null && isActiveAndEnabled)
+                {
+                    TryRegisterPhysicsPayloadReader();
                     RefreshPatchHoldDecayRegistration();
+                }
             }
         }
 

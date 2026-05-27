@@ -126,7 +126,7 @@ namespace Hecton8.Core.Contracts.Physics
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct FluidIncursionTelemetryEntry
+    public struct CoreFluidIncursionTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public uint StateHash;
@@ -147,7 +147,7 @@ namespace Hecton8.Core.Contracts.Physics
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct FluidCompartmentTelemetryDTO
+    public struct CoreFluidCompartmentTelemetryDTO
     {
         [FieldOffset(0)] public uint NodeHash;
         [FieldOffset(4)] public float CurrentWaterM3;

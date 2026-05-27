@@ -76,7 +76,7 @@ using UnityEngine.Audio;
 using CoreAudioEvent = Hecton8.Core.AudioEvent;
 using AcousticAup = Hecton8.Core.Contracts.AcousticAup;
 using AcousticOcclusionJob = Hecton8.Audio.Virtualization.AcousticOcclusionJob;
-using AcousticOcclusionTelemetryEntry = Hecton8.Audio.Virtualization.AcousticTelemetryEntry;
+using AcousticOcclusionTelemetryEntry = Hecton8.Audio.Virtualization.AcousticOcclusionTelemetryEntry;
 using AcousticPortalTelemetryEntry = Hecton8.Audio.Propagation.AcousticTelemetryEntry;
 using VirtualVoiceSortJob = Hecton8.Audio.Virtualization.VirtualVoiceSortJob;
 using VirtualVoiceSdfSampler = Hecton8.Audio.Virtualization.MockSDFSampler;
@@ -1323,6 +1323,8 @@ namespace Hecton8.Audio
         private VaultGenerationHandle<byte> _acousticVoxelSdfTexture3DHandle;
         private JobHandle _virtualVoiceSortHandle;
         private JobHandle _acousticOcclusionHandle;
+        private HectonVoxelVolume _acousticOcclusionSdfLeaseVolume;
+        private HectonVoxelVolume.PublishedSonarSdfReadLease _acousticOcclusionSdfLease;
         private VirtualVoiceStatistics _lastVirtualVoiceStatistics;
         private VirtualVoiceTuningSnapshot _virtualVoiceTuning = VirtualVoiceTuningSnapshot.CreateDefault();
         private int _virtualVoiceWriteCount;
@@ -1352,6 +1354,7 @@ namespace Hecton8.Audio
         private bool _virtualVoiceSortScheduled;
         private bool _acousticOcclusionScheduled;
         private bool _acousticMaterialRowsLockedForOcclusion;
+        private bool _acousticOcclusionSdfLeaseLocked;
         private bool _virtualVoiceStatisticsLockedForSort;
         private bool _virtualVoiceSortPoolLockedForSort;
         private bool _virtualVoiceSortKeyPoolLockedForSort;
@@ -3429,11 +3432,13 @@ namespace Hecton8.Audio
             float safeDelta = math.max(0.0001f, SanitizeFinite(deltaTime, 1f / 60f));
             bool hasVoxelSdf = TrySnapshotAcousticSdfPayload(
                 new Vector3(_virtualListenerSdfProbePosition.x, _virtualListenerSdfProbePosition.y, _virtualListenerSdfProbePosition.z),
+                out HectonVoxelVolume acousticSdfVolume,
                 out NativeArray<byte>.ReadOnly sdfVoxels,
                 out int3 sdfDimensions,
                 out float3 sdfOrigin,
                 out float3 sdfCellSize,
-                out float sdfRange);
+                out float sdfRange,
+                out HectonVoxelVolume.PublishedSonarSdfReadLease acousticSdfLease);
             double3 listenerVelocity = new double3(
                 _virtualListenerVelocityMetersPerSecond.x,
                 _virtualListenerVelocityMetersPerSecond.y,
@@ -3480,93 +3485,128 @@ namespace Hecton8.Audio
             _acousticOcclusionBuffersLockVault = _dataVault;
             _acousticMaterialRowsLockedForOcclusion = materialRowsLocked;
             _acousticMaterialRowsLockVault = materialRowsLocked ? _dataVault : null;
+            if (hasVoxelSdf)
+            {
+                _acousticOcclusionSdfLeaseVolume = acousticSdfVolume;
+                _acousticOcclusionSdfLease = acousticSdfLease;
+                _acousticOcclusionSdfLeaseLocked = true;
+            }
+            bool scheduleAccepted = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             try
             {
                 _acousticOcclusionHandle = occlusionJob.Schedule(count, 16);
                 _acousticOcclusionScheduled = true;
+                scheduleAccepted = true;
             }
             catch
             {
-                if (materialRowsLocked)
-                    ReleaseAcousticMaterialRowsOcclusionLock();
-                ReleaseAcousticOcclusionBufferLocks();
-                _acousticMaterialRowsLockedForOcclusion = false;
-                _acousticMaterialRowsLockVault = null;
-                _acousticOcclusionScheduled = false;
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SpatialAudioFailureAcousticOcclusionSchedule));
             }
+            finally
+            {
+                if (!scheduleAccepted)
+                {
+                    if (materialRowsLocked)
+                        ReleaseAcousticMaterialRowsOcclusionLock();
+                    ReleaseAcousticOcclusionBufferLocks();
+                    _acousticMaterialRowsLockedForOcclusion = false;
+                    _acousticMaterialRowsLockVault = null;
+                    _acousticOcclusionScheduled = false;
+                }
+            }
 #else
-            _acousticOcclusionHandle = occlusionJob.Schedule(count, 16);
-            _acousticOcclusionScheduled = true;
+            try
+            {
+                _acousticOcclusionHandle = occlusionJob.Schedule(count, 16);
+                _acousticOcclusionScheduled = true;
+                scheduleAccepted = true;
+            }
+            finally
+            {
+                if (!scheduleAccepted)
+                {
+                    if (materialRowsLocked)
+                        ReleaseAcousticMaterialRowsOcclusionLock();
+                    ReleaseAcousticOcclusionBufferLocks();
+                    _acousticMaterialRowsLockedForOcclusion = false;
+                    _acousticMaterialRowsLockVault = null;
+                    _acousticOcclusionScheduled = false;
+                }
+            }
 #endif
         }
 
         private bool TrySnapshotAcousticSdfPayload(
             Vector3 targetRuntimePosition,
+            out HectonVoxelVolume volume,
             out NativeArray<byte>.ReadOnly sdfVoxels,
             out int3 sdfDimensions,
             out float3 sdfOrigin,
             out float3 sdfCellSize,
-            out float sdfRange)
+            out float sdfRange,
+            out HectonVoxelVolume.PublishedSonarSdfReadLease lease)
         {
+            volume = null;
             sdfVoxels = default;
             sdfDimensions = default;
             sdfOrigin = float3.zero;
             sdfCellSize = float3.zero;
             sdfRange = 0f;
+            lease = default;
 
-            if (!HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload(
+            if (!HectonVoxelVolume.TryAcquireClosestPublishedSonarSdfPayloadReadLease(
                     targetRuntimePosition,
+                    out HectonVoxelVolume publishedVolume,
                     out NativeArray<byte>.ReadOnly publishedSdf,
                     out _,
                     out Vector3Int publishedDimensions,
                     out Vector3 publishedOrigin,
                     out Vector3 publishedCellSize,
                     out float publishedRange,
-                    out _))
+                    out _,
+                    out HectonVoxelVolume.PublishedSonarSdfReadLease publishedLease))
             {
                 return false;
             }
 
             int3 resolvedDimensions = new int3(publishedDimensions.x, publishedDimensions.y, publishedDimensions.z);
-            if (!TryResolveAcousticSdfVoxelCount(resolvedDimensions, out int expectedLength) ||
-                !publishedSdf.IsCreated ||
-                publishedSdf.Length < expectedLength)
+            bool accepted = false;
+            try
             {
-                return false;
-            }
+                if (!TryResolveAcousticSdfVoxelCount(resolvedDimensions, out int expectedLength) ||
+                    !publishedSdf.IsCreated ||
+                    publishedSdf.Length < expectedLength)
+                {
+                    return false;
+                }
 
-            NativeArray<byte>.ReadOnly resolvedSdf = publishedSdf;
-            IDataVault vault = _dataVault;
-            if (TryOpenBorrowedAudioVaultBuffer(
-                    vault,
-                    ref _acousticVoxelSdfTexture3DHandle,
-                    BufferID.VoxelSdfTexture3D,
-                    SystemID.WorldStreaming,
-                    expectedLength,
-                    out NativeArray<byte> vaultSdfTexture3D))
+                float3 resolvedOrigin = new float3(publishedOrigin.x, publishedOrigin.y, publishedOrigin.z);
+                float3 resolvedCellSize = new float3(publishedCellSize.x, publishedCellSize.y, publishedCellSize.z);
+                float resolvedRange = math.max(0f, SanitizeFinite(publishedRange, 0f));
+                if (!math.all(math.isfinite(resolvedOrigin)) ||
+                    !math.all(math.isfinite(resolvedCellSize)) ||
+                    math.any(math.abs(resolvedCellSize) <= new float3(0.0001f)) ||
+                    resolvedRange <= 0.0001f)
+                {
+                    return false;
+                }
+
+                volume = publishedVolume;
+                sdfVoxels = publishedSdf;
+                sdfDimensions = resolvedDimensions;
+                sdfOrigin = resolvedOrigin;
+                sdfCellSize = resolvedCellSize;
+                sdfRange = resolvedRange;
+                lease = publishedLease;
+                accepted = true;
+                return true;
+            }
+            finally
             {
-                resolvedSdf = vaultSdfTexture3D.AsReadOnly();
+                if (!accepted && publishedVolume != null)
+                    publishedVolume.ReleasePublishedSonarSdfPayloadReadLease(in publishedLease);
             }
-
-            float3 resolvedOrigin = new float3(publishedOrigin.x, publishedOrigin.y, publishedOrigin.z);
-            float3 resolvedCellSize = new float3(publishedCellSize.x, publishedCellSize.y, publishedCellSize.z);
-            float resolvedRange = math.max(0f, SanitizeFinite(publishedRange, 0f));
-            if (!math.all(math.isfinite(resolvedOrigin)) ||
-                !math.all(math.isfinite(resolvedCellSize)) ||
-                math.any(math.abs(resolvedCellSize) <= new float3(0.0001f)) ||
-                resolvedRange <= 0.0001f)
-            {
-                return false;
-            }
-
-            sdfVoxels = resolvedSdf;
-            sdfDimensions = resolvedDimensions;
-            sdfOrigin = resolvedOrigin;
-            sdfCellSize = resolvedCellSize;
-            sdfRange = resolvedRange;
-            return true;
         }
 
         private static bool TryResolveAcousticSdfVoxelCount(int3 dimensions, out int voxelCount)
@@ -8583,6 +8623,8 @@ namespace Hecton8.Audio
 
         private void ReleaseAcousticOcclusionBufferLocks()
         {
+            ReleaseAcousticOcclusionSdfLease();
+
             IDataVault vault = _acousticOcclusionBuffersLockVault ?? _dataVault;
             if (_acousticDspOutputPoolLockedForOcclusion)
             {
@@ -8612,6 +8654,20 @@ namespace Hecton8.Audio
             }
 
             _acousticOcclusionBuffersLockVault = null;
+        }
+
+        private void ReleaseAcousticOcclusionSdfLease()
+        {
+            if (!_acousticOcclusionSdfLeaseLocked)
+                return;
+
+            HectonVoxelVolume volume = _acousticOcclusionSdfLeaseVolume;
+            if (volume != null)
+                volume.ReleasePublishedSonarSdfPayloadReadLease(in _acousticOcclusionSdfLease);
+
+            _acousticOcclusionSdfLeaseVolume = null;
+            _acousticOcclusionSdfLease = default;
+            _acousticOcclusionSdfLeaseLocked = false;
         }
 
         private void ReleaseAcousticMaterialRowsOcclusionLock()

@@ -162,7 +162,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(120)] public ulong _pad2;
     }
 
-    internal struct ArmorPenetrationVaultViews
+    internal ref struct ArmorPenetrationVaultViews
     {
         public NativeArray<double3> SignalImpactAups;
         public NativeArray<double3> TargetRootAups;

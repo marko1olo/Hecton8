@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Pricing, Discount, And Early Access Policy
 
 Status: planning policy / no price chosen
-Owner lane: SHINOBU_81 / Steam commercial ops
+Owner lane: Marketing / Steam commercial ops
 Public stance: single-player-first
 Runtime impact: none
 

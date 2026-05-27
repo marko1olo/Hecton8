@@ -244,7 +244,11 @@ namespace Hecton8.Editor
                     "RefreshBatteryToolCache();",
                     "tool = _cachedBatteryTool;",
                     "_cachedBatteryTool = batteryToolOwner as IBatteryTool;",
-                    "public bool HasInstalledCell => TryResolveTool(out IBatteryTool tool) && tool.HasBattery;");
+                    "public bool HasInstalledCell => TryGetCachedTool(out IBatteryTool tool) && tool.HasBattery;",
+                    "internal void RefreshBatteryToolCacheCold()") &&
+                ContainsAll(
+                    prologueController,
+                    "o2ScrubberSocket.RefreshBatteryToolCacheCold();");
 
             bool updatableRegistrationPass =
                 ContainsAll(

@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!200 &20000000
+ShaderVariantCollection:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Hecton8MasterVariants
+  m_Shaders:
+  - first: {fileID: 4800000, guid: 4cbb8fb5b0c14e57aa7d232232ca0007, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+  - first: {fileID: 4800000, guid: 0a2df57d7a4e4d44a95b1b4c4bfb2750, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+  - first: {fileID: 4800000, guid: 8f60cfb6a5b944c481b829bb0a2d2b40, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+  - first: {fileID: 4800000, guid: 2b2a9f18d90f4b35b8b4f9d1a8e23501, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+  - first: {fileID: 4800000, guid: 559786835a571e0428aa349084ff940b, type: 3}
+    second:
+      variants:
+      - keywords: _HUD_PHOSPHOR_MODE
+        passType: 0
+  - first: {fileID: 4800000, guid: 021ae9f459be4094b8800c25a19d5d9e, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+  - first: {fileID: 4800000, guid: 93d4136c67d64c5bb944522bd67021a1, type: 3}
+    second:
+      variants:
+      - keywords: INSTANCING_ON
+        passType: 0
+  - first: {fileID: 4800000, guid: 83fe0f4ef4dc4260ae2b77e1e1e218b2, type: 3}
+    second:
+      variants:
+      - keywords: INSTANCING_ON
+        passType: 0
+  - first: {fileID: 4800000, guid: 0e3d6c95b94344c7b864f17da3f25205, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+  - first: {fileID: 4800000, guid: af3b2017e12747bfa050b98c80d0876c, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+  - first: {fileID: 4800000, guid: d8d506639f0b53a4b91a8eb8dbfe316e, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+  - first: {fileID: 4800000, guid: ec43b88b57cf18044b7259539aec0873, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+  - first: {fileID: 4800000, guid: 3c47099abfebebc4bb53df1e8ccc0483, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+  - first: {fileID: 4800000, guid: 0d75901ecc6a479385541da8be342394, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+  - first: {fileID: 4800000, guid: fdac643fbeb24374ba9ea1e341842908, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+      - keywords: DOTS_INSTANCING_ON
+        passType: 0
+      - keywords: INSTANCING_ON
+        passType: 0
+      - keywords: DOTS_INSTANCING_ON INSTANCING_ON
+        passType: 0

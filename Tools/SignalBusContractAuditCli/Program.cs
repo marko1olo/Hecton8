@@ -12,14 +12,18 @@ internal static class Program
     private static readonly Regex LayoutPack1Regex = new(@"\[StructLayout\([^\]]*Pack\s*=\s*1(?!\d)", RegexOptions.Compiled);
     private static readonly Regex ManagedEventRegex = new(@"\b(event\s+(System\.)?Action|UnityEvent|SendMessage\s*\(|BroadcastMessage\s*\(|SendMessageUpwards\s*\(|System\.Action|System\.Func|Action<|Func<)", RegexOptions.Compiled);
     private static readonly Regex StringFieldRegex = new(@"\b(string|System\.String)\s+[A-Za-z_][A-Za-z0-9_]*", RegexOptions.Compiled);
-    private static readonly Regex TelemetryArrayRegex = new(@"\bprivate\s+(?:static\s+)?(?:readonly\s+)?NativeArray\s*<[^>]*(Telemetry|BlackBox|Signal)[^>]*>\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=[^;]*)?;", RegexOptions.Compiled);
+    private static readonly Regex TelemetryArrayRegex = new(@"\b(?<access>private|internal|public|protected)\s+(?:static\s+)?(?:readonly\s+)?(?:ref\s+)?NativeArray\s*<[^>]*(Telemetry|BlackBox|Signal)[^>]*>\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\b(?!\s*=>)\s*(?:=[^;]*)?;", RegexOptions.Compiled);
     private static readonly Regex SignalQueueRegex = new(@"\b(?:private|internal|public|protected)\s+(?:static\s+)?(?:readonly\s+)?NativeQueue\s*<[^>]*(Signal|Command|Packet)[^>]*>\s+([A-Za-z_][A-Za-z0-9_]*)\b", RegexOptions.Compiled);
     private static readonly Regex SyncIoRegex = new(@"\b(File|Directory)\.(Read|Write|Append|Open|Create|Delete)|new\s+FileStream\s*\(", RegexOptions.Compiled);
     private static readonly Regex Compute1024Regex = new(@"numthreads\s*\(\s*1024\s*,", RegexOptions.Compiled);
     private static readonly Regex ContainerTypeRegex = new(@"\b(?<kind>SignalBus|NativeQueue|NativeList|NativeArray)\s*<\s*(?<type>[A-Za-z_][A-Za-z0-9_]*)\s*>", RegexOptions.Compiled);
     private static readonly Regex CacheLineCriticalConfigureRegex = new(@"(?:global::)?(?:(?:[A-Za-z_][A-Za-z0-9_]*\.)*)SignalBus\s*<\s*(?:global::)?(?:(?:[A-Za-z_][A-Za-z0-9_]*\.)*)(?<type>[A-Za-z_][A-Za-z0-9_]*)\s*>\s*\.\s*ConfigureCacheLineCritical\b", RegexOptions.Compiled);
     private static readonly Regex FieldDeclarationTypeRegex = new(@"^\s*(?:\[[^\]]+\]\s*)*(?:public|internal|private|protected)\s+(?:readonly\s+)?(?<type>(?:[A-Za-z_][A-Za-z0-9_]*\.)*[A-Za-z_][A-Za-z0-9_]*)\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*(?:[=;])", RegexOptions.Compiled);
+    private static readonly Regex ConstructorDeclarationRegex = new(@"^\s*(?:(?:public|internal|private|protected)\s+)*(?:(?:static|unsafe|extern)\s+)*(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\([^;]*\)\s*(?:where\b[^{]+)?\{?", RegexOptions.Compiled);
     private static readonly Regex MethodDeclarationRegex = new(@"^\s*(?:(?:public|internal|private|protected)\s+)*(?:(?:static|unsafe|virtual|override|sealed|async|readonly|extern)\s+)*(?:[A-Za-z_][A-Za-z0-9_<>,\[\]\.?\s]*\s+)+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\([^;]*\)\s*(?:where\b[^{]+)?\{?", RegexOptions.Compiled);
+    private static readonly Regex ConstructorDeclarationStartRegex = new(@"^\s*(?:(?:public|internal|private|protected|static|unsafe|extern)\s+)+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\([^;{}]*$", RegexOptions.Compiled);
+    private static readonly Regex MethodDeclarationStartRegex = new(@"^\s*(?:(?:public|internal|private|protected)\s+)*(?:(?:static|unsafe|virtual|override|sealed|async|readonly|extern)\s+)*(?:[A-Za-z_][A-Za-z0-9_<>,\[\]\.?\s]*\s+)+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\([^;{}]*$", RegexOptions.Compiled);
+    private static readonly Regex StructLayoutAttributeRegex = new(@"\[\s*(?:[A-Za-z_][A-Za-z0-9_]*\.)*StructLayout\b", RegexOptions.Compiled);
     private static readonly Regex HotPathEnumerationRegex = new(@"\bforeach\s*\(|\.Where\s*\(|\.Select\s*\(|\.OrderBy\s*\(|\.ToList\s*\(|\.ToArray\s*\(|Enumerable\.", RegexOptions.Compiled);
     private static readonly Regex HotPathAllocationRegex = new(@"\bnew\s+(?:List\s*<|Dictionary\s*<|HashSet\s*<|Queue\s*<|Stack\s*<|StringBuilder\b|string\b|Regex\b|FileStream\b|MemoryStream\b|StringWriter\b|Action\b|Func\b|WaitForSeconds\b|GameObject\b|Material\b|Texture2D\b|RenderTexture\b|Mesh\b|[A-Za-z_][A-Za-z0-9_<>,\.\s]*\s*\[)", RegexOptions.Compiled);
     private static readonly Regex UnityLookupRegex = new(@"GetComponent\s*<|FindObjectOfType|FindObjectsOfType|GameObject\.Find|Object\.Find", RegexOptions.Compiled);
@@ -70,6 +74,7 @@ internal static class Program
         private readonly List<Finding> _findings = [];
         private readonly List<SignalDefinition> _signalDefinitions = [];
         private readonly Dictionary<string, List<Pack1StructInfo>> _pack1StructsByName = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, List<StructLayoutInfo>> _structLayoutsByName = new(StringComparer.Ordinal);
         private int _scannedFiles;
         private int _shaderFilesScanned;
         private int _pack1Count;
@@ -99,7 +104,9 @@ internal static class Program
                 throw new DirectoryNotFoundException("Scripts root not found: " + scriptsRoot);
             }
 
-            BuildPack1StructIndex(Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories));
+            var allScriptFiles = Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories).ToArray();
+            BuildPack1StructIndex(allScriptFiles);
+            BuildStructLayoutIndex(allScriptFiles);
 
             foreach (var file in EnumerateScriptFiles(scriptsRoot))
             {
@@ -219,14 +226,51 @@ internal static class Program
             var currentMethodName = "";
             var methodBraceDepth = 0;
             var methodStarted = false;
+            var preprocessorFrames = new List<PreprocessorFrame>(4);
+            var pendingMethodName = "";
+            var pendingMethodIsConstructor = false;
 
             for (var lineIndex = 0; lineIndex < codeLines.Length; lineIndex++)
             {
                 var rawLine = rawLines[lineIndex];
                 var code = codeLines[lineIndex];
                 var lineNumber = lineIndex + 1;
+                if (TryUpdatePreprocessorFrame(code, preprocessorFrames))
+                {
+                    continue;
+                }
+
                 if (string.IsNullOrWhiteSpace(code))
                 {
+                    continue;
+                }
+
+                if (pendingMethodName.Length > 0)
+                {
+                    if (code.Contains("=>", StringComparison.Ordinal) || code.Contains(';', StringComparison.Ordinal))
+                    {
+                        pendingMethodName = "";
+                        pendingMethodIsConstructor = false;
+                        continue;
+                    }
+
+                    if (!code.Contains('{', StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    currentMethodName = pendingMethodIsConstructor ? ".ctor" : pendingMethodName;
+                    methodBraceDepth = CountBraceDelta(code);
+                    methodStarted = true;
+                    pendingMethodName = "";
+                    pendingMethodIsConstructor = false;
+                    if (methodBraceDepth <= 0 && code.Contains('}', StringComparison.Ordinal))
+                    {
+                        currentMethodName = "";
+                        methodStarted = false;
+                        methodBraceDepth = 0;
+                    }
+
                     continue;
                 }
 
@@ -269,20 +313,61 @@ internal static class Program
                     }
                 }
 
-                var methodMatch = MethodDeclarationRegex.Match(code);
-                if (methodMatch.Success &&
+                var constructorMatch = ConstructorDeclarationRegex.Match(code);
+                var methodMatch = constructorMatch.Success ? Match.Empty : MethodDeclarationRegex.Match(code);
+                if (constructorMatch.Success &&
+                    !code.Contains(';', StringComparison.Ordinal) &&
                     !code.Contains("=>", StringComparison.Ordinal) &&
-                    !Regex.IsMatch(code, @"\b(class|struct|interface|enum)\b"))
+                    !Regex.IsMatch(code, @"\b(class|struct|interface|enum|if|for|foreach|while|switch|catch|using|lock)\b"))
                 {
-                    currentMethodName = methodMatch.Groups["name"].Value;
+                    if (!code.Contains('{', StringComparison.Ordinal))
+                    {
+                        currentMethodName = "";
+                        methodStarted = false;
+                        methodBraceDepth = 0;
+                        pendingMethodName = constructorMatch.Groups["name"].Value;
+                        pendingMethodIsConstructor = true;
+                        continue;
+                    }
+
+                    currentMethodName = ".ctor";
                     methodBraceDepth = CountBraceDelta(code);
-                    methodStarted = code.Contains('{', StringComparison.Ordinal);
-                    if (methodStarted && methodBraceDepth <= 0 && code.Contains('}', StringComparison.Ordinal))
+                    methodStarted = true;
+                    if (methodBraceDepth <= 0 && code.Contains('}', StringComparison.Ordinal))
                     {
                         currentMethodName = "";
                         methodStarted = false;
                         methodBraceDepth = 0;
                     }
+                }
+                else if (methodMatch.Success &&
+                    !code.Contains(';', StringComparison.Ordinal) &&
+                    !code.Contains("=>", StringComparison.Ordinal) &&
+                    !Regex.IsMatch(code, @"\b(class|struct|interface|enum)\b"))
+                {
+                    if (!code.Contains('{', StringComparison.Ordinal))
+                    {
+                        currentMethodName = "";
+                        methodStarted = false;
+                        methodBraceDepth = 0;
+                        pendingMethodName = methodMatch.Groups["name"].Value;
+                        pendingMethodIsConstructor = false;
+                        continue;
+                    }
+
+                    currentMethodName = methodMatch.Groups["name"].Value;
+                    methodBraceDepth = CountBraceDelta(code);
+                    methodStarted = true;
+                    if (methodBraceDepth <= 0 && code.Contains('}', StringComparison.Ordinal))
+                    {
+                        currentMethodName = "";
+                        methodStarted = false;
+                        methodBraceDepth = 0;
+                    }
+                }
+                else if (!methodStarted && TryStartPendingMethodDeclaration(code, out pendingMethodName, out pendingMethodIsConstructor))
+                {
+                    continue;
                 }
                 else if (methodStarted && currentMethodName.Length > 0)
                 {
@@ -295,16 +380,17 @@ internal static class Program
                     }
                 }
 
-                ScanPack1(relativePath, rawLine, code, codeLines, lineNumber, lineIndex, isEditor, isCoreSignalFile, containerTypes, structs);
-                ScanManagedEventSurface(relativePath, rawLine, code, lineNumber, isEditor);
-                ScanManagedStringPayload(relativePath, rawLine, code, lineNumber, isEditor, currentStruct, currentStructIsSignalCandidate, currentStructIsStrictRuntimeContract);
+                var effectiveIsEditor = isEditor || IsInsideEditorOnlyPreprocessor(preprocessorFrames);
+                ScanPack1(relativePath, rawLine, code, codeLines, lineNumber, lineIndex, effectiveIsEditor, isCoreSignalFile, containerTypes, structs);
+                ScanManagedEventSurface(relativePath, rawLine, code, lineNumber, effectiveIsEditor);
+                ScanManagedStringPayload(relativePath, rawLine, code, lineNumber, effectiveIsEditor, currentStruct, currentStructIsSignalCandidate, currentStructIsStrictRuntimeContract);
                 ScanTransitivePack1Field(relativePath, rawLine, code, lineNumber, currentStruct, currentStructIsStrictRuntimeContract);
-                ScanTelemetryRing(relativePath, rawText, rawLine, code, lineNumber, isEditor);
-                ScanLocalSignalQueue(relativePath, rawText, rawLine, code, lineNumber, isEditor);
-                ScanSyncRuntimeIo(relativePath, rawLine, code, lineNumber, isEditor, currentMethodName);
+                ScanTelemetryRing(relativePath, rawText, rawLine, code, lineNumber, effectiveIsEditor, currentStruct);
+                ScanLocalSignalQueue(relativePath, rawText, rawLine, code, lineNumber, effectiveIsEditor);
+                ScanSyncRuntimeIo(relativePath, rawLine, code, lineNumber, effectiveIsEditor, currentMethodName);
                 if (_options.IncludeHotPathHeuristics)
                 {
-                    ScanHotPathHeuristics(relativePath, rawLine, code, lineNumber, isEditor, currentMethodName);
+                    ScanHotPathHeuristics(relativePath, rawLine, code, lineNumber, effectiveIsEditor, currentMethodName);
                 }
             }
         }
@@ -367,6 +453,51 @@ internal static class Program
             }
         }
 
+        private void BuildStructLayoutIndex(IEnumerable<string> files)
+        {
+            foreach (var path in files)
+            {
+                var relativePath = ToRelativePath(path);
+                var rawText = File.ReadAllText(path);
+                if (!rawText.Contains("struct", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var rawLines = File.ReadAllLines(path);
+                var codeLines = rawLines.Select(RemoveCodeTrivia).ToArray();
+                for (var lineIndex = 0; lineIndex < codeLines.Length; lineIndex++)
+                {
+                    var match = StructDeclarationRegex.Match(codeLines[lineIndex]);
+                    if (!match.Success)
+                    {
+                        continue;
+                    }
+
+                    var name = match.Groups[1].Value;
+                    var info = new StructLayoutInfo(
+                        name,
+                        relativePath,
+                        lineIndex + 1,
+                        HasStructLayoutBefore(codeLines, lineIndex),
+                        StructLayoutSizeBefore(codeLines, lineIndex),
+                        IsEditorPath(relativePath),
+                        IsCoreSignalFile(relativePath));
+
+                    if (!_structLayoutsByName.TryGetValue(name, out var entries))
+                    {
+                        entries = [];
+                        _structLayoutsByName.Add(name, entries);
+                    }
+
+                    if (!entries.Any(item => item.Path == info.Path && item.Line == info.Line))
+                    {
+                        entries.Add(info);
+                    }
+                }
+            }
+        }
+
         private List<StructMetadata> CollectStructs(string relativePath, string[] rawLines, string[] codeLines, ContainerTypes containerTypes)
         {
             var structs = new List<StructMetadata>();
@@ -388,13 +519,17 @@ internal static class Program
                     HasStructLayoutBefore(codeLines, lineIndex),
                     StructLayoutSizeBefore(codeLines, lineIndex),
                     StructImplementsISignal(codeLines, lineIndex),
+                    StructImplementsBurstJob(codeLines, lineIndex),
+                    StructBodyContainsExecuteMethod(codeLines, lineIndex),
                     IsEditorPath(relativePath),
                     string.Equals(relativePath, "Assets/_Project/Scripts/Core/GlobalSignals.cs", StringComparison.Ordinal),
                     IsCoreSignalFile(relativePath),
                     IsSignalLikeName(name));
 
                 structs.Add(metadata);
-                if (metadata.IsSignalLikeName || metadata.ImplementsISignal)
+                if ((metadata.IsSignalLikeName || metadata.ImplementsISignal) &&
+                    !metadata.ImplementsBurstJob &&
+                    !metadata.HasExecuteMethod)
                 {
                     var strictSignal = !metadata.IsEditor &&
                         (metadata.ImplementsISignal ||
@@ -418,6 +553,16 @@ internal static class Program
                     {
                         AddFinding("INFO", "EDITOR_SIGNAL_LAYOUT_REVIEW", 55, "EDITOR_ONLY_REVIEW", "ANCHORED_STRUCT_DECLARATION", relativePath, lineIndex + 1, name, rawLines[lineIndex], "Editor/test signal-like structs do not gate runtime, but should not shadow production contracts.",
                             new Dictionary<string, object?> { ["isEditor"] = metadata.IsEditor, ["implementsISignal"] = metadata.ImplementsISignal });
+                    }
+                    else if (metadata.ImplementsBurstJob)
+                    {
+                        AddFinding("INFO", "JOB_STRUCT_LAYOUT_REVIEW", 54, "BURST_JOB_STRUCT_REVIEW", "ANCHORED_STRUCT_DECLARATION", relativePath, lineIndex + 1, name, rawLines[lineIndex], "This signal-like name belongs to a Burst/job carrier, not a binary payload contract. Keep fields unmanaged and owner-owned; do not add StructLayout unless this job struct is serialized or copied as raw bytes.",
+                            new Dictionary<string, object?> { ["isEditor"] = metadata.IsEditor, ["implementsISignal"] = metadata.ImplementsISignal, ["implementsBurstJob"] = true });
+                    }
+                    else if (metadata.HasExecuteMethod)
+                    {
+                        AddFinding("INFO", "EXECUTABLE_STRUCT_LAYOUT_REVIEW", 54, "EXECUTABLE_CARRIER_STRUCT_REVIEW", "ANCHORED_STRUCT_DECLARATION", relativePath, lineIndex + 1, name, rawLines[lineIndex], "This signal-like name belongs to an executable carrier with Execute(), not a binary payload contract. Keep NativeArray handles owner-owned; add StructLayout only if the carrier itself is serialized or copied as raw bytes.",
+                            new Dictionary<string, object?> { ["isEditor"] = metadata.IsEditor, ["implementsISignal"] = metadata.ImplementsISignal, ["hasExecuteMethod"] = true });
                     }
                     else
                     {
@@ -459,10 +604,20 @@ internal static class Program
                 var laneType = match.Groups["type"].Value;
                 var layoutSize = 0;
                 var structLine = 0;
+                var structPath = "";
                 if (structByName.TryGetValue(laneType, out var metadata))
                 {
                     layoutSize = metadata.LayoutSize;
                     structLine = metadata.Line;
+                    structPath = metadata.Path;
+                }
+
+                if ((layoutSize <= 0 || structLine <= 0) &&
+                    TryResolveGlobalStructLayout(laneType, out var globalLayout))
+                {
+                    layoutSize = globalLayout.LayoutSize;
+                    structLine = globalLayout.Line;
+                    structPath = globalLayout.Path;
                 }
 
                 if (layoutSize is 64 or 128)
@@ -487,9 +642,45 @@ internal static class Program
                         ["payloadSize"] = layoutSize,
                         ["expectedStride"] = "64_OR_128",
                         ["structLine"] = structLine,
+                        ["structPath"] = structPath,
                         ["statementLineSpan"] = statement.EndIndex - lineIndex + 1
                     });
             }
+        }
+
+        private bool TryResolveGlobalStructLayout(string name, out StructLayoutInfo layout)
+        {
+            layout = default!;
+            if (!_structLayoutsByName.TryGetValue(name, out var entries) || entries.Count == 0)
+            {
+                return false;
+            }
+
+            var resolved = entries
+                .Where(item => !item.IsEditor && item.HasStructLayout && item.LayoutSize > 0)
+                .OrderByDescending(item => item.IsCoreSignalFile)
+                .ThenBy(item => item.Path, StringComparer.Ordinal)
+                .ThenBy(item => item.Line)
+                .FirstOrDefault();
+            if (resolved is not null)
+            {
+                layout = resolved;
+                return true;
+            }
+
+            resolved = entries
+                .Where(item => !item.IsEditor)
+                .OrderByDescending(item => item.IsCoreSignalFile)
+                .ThenBy(item => item.Path, StringComparer.Ordinal)
+                .ThenBy(item => item.Line)
+                .FirstOrDefault();
+            if (resolved is null)
+            {
+                return false;
+            }
+
+            layout = resolved;
+            return true;
         }
 
         private void ScanPack1(string relativePath, string rawLine, string code, string[] codeLines, int lineNumber, int lineIndex, bool isEditor, bool isCoreSignalFile, ContainerTypes containerTypes, List<StructMetadata> structs)
@@ -665,7 +856,7 @@ internal static class Program
             }
         }
 
-        private void ScanTelemetryRing(string relativePath, string rawText, string rawLine, string code, int lineNumber, bool isEditor)
+        private void ScanTelemetryRing(string relativePath, string rawText, string rawLine, string code, int lineNumber, bool isEditor, StructMetadata? currentStruct)
         {
             if (code.IndexOf("NativeArray", StringComparison.Ordinal) < 0 || !ContainsAny(code, "Telemetry", "BlackBox", "Signal"))
             {
@@ -678,7 +869,16 @@ internal static class Program
                 return;
             }
 
-            var fieldName = match.Groups[2].Value;
+            var fieldName = match.Groups["name"].Value;
+            var access = match.Groups["access"].Value;
+            if (IsNativeTelemetryJobView(rawLine) ||
+                (currentStruct is not null && (currentStruct.ImplementsBurstJob || currentStruct.HasExecuteMethod)))
+            {
+                AddFinding("INFO", "LOCAL_NATIVE_TELEMETRY_JOB_VIEW_REVIEW", 54, "BORROWED_JOB_VIEW_REVIEW", "FIELD_DECLARATION_JOB_VIEW", relativePath, lineNumber, fieldName, rawLine, "This NativeArray telemetry field is a borrowed job/native view, not persistent ownership. Verify the enclosing owner allocates/disposes the backing buffer.",
+                    new Dictionary<string, object?> { ["isEditor"] = isEditor, ["borrowedView"] = true });
+                return;
+            }
+
             var ownership = GetOwnership(relativePath, rawText, rawLine, fieldName, "Array");
             var isTelemetryOrBlackBox = ContainsAny(code, "Telemetry", "BlackBox", "Blackbox") ||
                 ContainsAny(fieldName, "Telemetry", "telemetry", "BlackBox", "blackBox", "Blackbox", "blackbox");
@@ -709,11 +909,31 @@ internal static class Program
             else if (ownership.IsOwned)
             {
                 _registeredLocalTelemetryCount++;
-                AddFinding("WARN", "LOCAL_NATIVE_TELEMETRY_RING_REGISTERED_NON_VAULT", 88, "CONFIRMED_NON_VAULT_OWNERSHIP_WITH_SENTINEL", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This private telemetry ring has register/unregister/dispose coverage, but H-Phi still prefers VaultBufferHandle<T> from GlobalDataVault for persistent blackbox state.",
-                    ownership.ToTags(isEditor));
+                if (IsTelemetryExportStagingBuffer(relativePath, rawText, fieldName))
+                {
+                    AddFinding("INFO", "LOCAL_NATIVE_TELEMETRY_STAGING_BUFFER_OWNER_LOCAL", 82, "CONFIRMED_OWNER_LOCAL_TELEMETRY_STAGING", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This NativeArray is an owner-local telemetry export staging buffer, not persistent blackbox authority. Keep sentinel registration and do not migrate it unless another domain consumes the buffer directly.",
+                        ownership.ToTags(isEditor));
+                }
+                else if (IsOwnerLocalTelemetryRing(relativePath, rawText, fieldName))
+                {
+                    AddFinding("INFO", "LOCAL_NATIVE_TELEMETRY_RING_OWNER_LOCAL", 80, "CONFIRMED_OWNER_LOCAL_TELEMETRY", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This telemetry/blackbox ring has sentinel ownership, bounded lifetime, and owner-local dump usage. Do not migrate it to GlobalDataVault unless another domain consumes the buffer or the state becomes persistent authority.",
+                        ownership.ToTags(isEditor));
+                }
+                else
+                {
+                    AddFinding("WARN", "LOCAL_NATIVE_TELEMETRY_RING_REGISTERED_NON_VAULT", 88, "CONFIRMED_NON_VAULT_OWNERSHIP_WITH_SENTINEL", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This private telemetry ring has register/unregister/dispose coverage, but H-Phi still prefers VaultBufferHandle<T> from GlobalDataVault for persistent blackbox state.",
+                        ownership.ToTags(isEditor));
+                }
             }
             else if (!ownership.HasAllocation)
             {
+                if (currentStruct is not null && !string.Equals(access, "private", StringComparison.Ordinal))
+                {
+                    AddFinding("INFO", "LOCAL_NATIVE_TELEMETRY_STRUCT_VIEW_REVIEW", 56, "BORROWED_STRUCT_VIEW_REVIEW", "FIELD_DECLARATION_WITHOUT_ALLOCATION", relativePath, lineNumber, fieldName, rawLine, "This public/internal NativeArray telemetry field is inside a struct and has no same-file allocation. Treat it as a borrowed view unless source proves persistent ownership.",
+                        ownership.ToTags(isEditor));
+                    return;
+                }
+
                 AddFinding("WARN", "LOCAL_NATIVE_TELEMETRY_RING_DECLARED_ONLY", 73, "STATIC_DECLARATION_REVIEW", "FIELD_DECLARATION_WITHOUT_ALLOCATION", relativePath, lineNumber, fieldName, rawLine, "This telemetry field is declared but no persistent allocation was found in the same source file. Keep it under review, but do not count it as a live ownership breach until allocation exists.",
                     ownership.ToTags(isEditor));
             }
@@ -745,6 +965,11 @@ internal static class Program
                 AddFinding("INFO", "LOCAL_SIGNAL_QUEUE_REGISTERED_NON_BUS_REVIEW", 70, "REGISTERED_LOCAL_QUEUE_REVIEW", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This local signal queue has sentinel ownership, but confirm it intentionally bypasses SignalBus<T> and does not fragment the global signal corridor.",
                     ownership.ToTags(isEditor));
             }
+            else if (!ownership.HasAllocation)
+            {
+                AddFinding("INFO", "LOCAL_SIGNAL_QUEUE_DECLARED_ONLY_REVIEW", 61, "STATIC_DECLARATION_REVIEW", "FIELD_DECLARATION_WITHOUT_ALLOCATION", relativePath, lineNumber, fieldName, rawLine, "This NativeQueue field has no allocation in the same source file. Keep the external owner visible, but do not classify it as a live orphaned lane until allocation exists.",
+                    ownership.ToTags(isEditor));
+            }
             else
             {
                 AddFinding("WARN", "POSSIBLE_ORPHANED_SIGNAL_QUEUE", 82, "PROBABLE_SIGNAL_CORRIDOR_BYPASS", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "Confirm this queue is registered as a typed lane or migrate producers to SignalBus<T>.",
@@ -755,6 +980,56 @@ internal static class Program
         private static bool IsGlobalDataVaultRoot(string relativePath)
         {
             return relativePath.EndsWith("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs", StringComparison.Ordinal);
+        }
+
+        private static bool IsOwnerLocalTelemetryRing(string relativePath, string rawText, string fieldName)
+        {
+            if (Regex.IsMatch(relativePath, @"GlobalTelemetryBus|ModdingAPI"))
+            {
+                return false;
+            }
+
+            var escaped = BuildNativeFieldAliasPattern(rawText, fieldName, "Array");
+            var hasBoundedLifetimeRegistration = Regex.IsMatch(
+                rawText,
+                @"RegisterNativeArray\s*\([^;]*" + escaped + @"[^;]*(NativeAllocationLifetime\.Scene|NativeAllocationLifetime\.Session|NativeMemoryLifetime)",
+                RegexOptions.Singleline);
+            var hasHelperBoundedLifetimeRegistration =
+                IsAssignedByArrayAllocatorHelper(rawText, escaped) &&
+                Regex.IsMatch(rawText, @"RegisterNativeArray\s*\([^;]*(NativeAllocationLifetime\.Scene|NativeAllocationLifetime\.Session|NativeMemoryLifetime)", RegexOptions.Singleline);
+            var hasOwnerDumpRoute = Regex.IsMatch(
+                rawText,
+                @"Dump[A-Za-z0-9_]*(Telemetry|Black[Bb]ox)|TelemetryDumpRelativePath|Dump_[A-Za-z0-9_]+\.bin",
+                RegexOptions.Singleline);
+            var exposesReadOnlyAccessor = Regex.IsMatch(
+                rawText,
+                @"public\s+NativeArray\s*<[^>]+>\.ReadOnly\s+[A-Za-z_][A-Za-z0-9_]*\s*=>\s*" + escaped,
+                RegexOptions.Singleline);
+            return (hasBoundedLifetimeRegistration || hasHelperBoundedLifetimeRegistration) &&
+                hasOwnerDumpRoute &&
+                !exposesReadOnlyAccessor;
+        }
+
+        private static bool IsTelemetryExportStagingBuffer(string relativePath, string rawText, string fieldName)
+        {
+            if (!relativePath.EndsWith("Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs", StringComparison.Ordinal) ||
+                !fieldName.Contains("snapshot", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var escaped = BuildNativeFieldAliasPattern(rawText, fieldName, "Array");
+            return Regex.IsMatch(rawText, @"RegisterNativeArray\s*\([^;]*" + escaped, RegexOptions.Singleline) &&
+                rawText.Contains("CopyRange", StringComparison.Ordinal) &&
+                rawText.Contains("PrepareExportState", StringComparison.Ordinal) &&
+                rawText.Contains("GetUnsafeReadOnlyPtr", StringComparison.Ordinal) &&
+                !Regex.IsMatch(rawText, @"public\s+NativeArray\s*<[^>]+>\.ReadOnly\s+[A-Za-z_][A-Za-z0-9_]*\s*=>\s*" + escaped, RegexOptions.Singleline);
+        }
+
+        private static bool IsNativeTelemetryJobView(string rawLine)
+        {
+            return rawLine.Contains("[NoAlias]", StringComparison.Ordinal) ||
+                rawLine.Contains("[ReadOnly", StringComparison.Ordinal);
         }
 
         private void ScanSyncRuntimeIo(string relativePath, string rawLine, string code, int lineNumber, bool isEditor, string methodName)
@@ -804,8 +1079,16 @@ internal static class Program
                 !Regex.IsMatch(code, @"new\s+(NativeArray|NativeList|NativeQueue|NativeHashMap|NativeParallel|UnsafeList|UnsafeHashMap)\b"))
             {
                 _hotPathRiskCount++;
-                AddFinding("WARN", "ZERO_GC_HOT_PATH_ALLOCATION_REVIEW", 66, "HOT_PATH_HEURISTIC", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "Review this hot-path allocation. If intentional, move it to bootstrap/cold path or document the pooled owner.",
-                    new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+                if (IsColdAllocationReviewContext(relativePath, methodName, code))
+                {
+                    AddFinding("INFO", "COLD_OR_ASYNC_ALLOCATION_REVIEW", 58, "COLD_OR_ASYNC_ALLOCATION_BOUNDARY", "HOT_METHOD_NAME_WITH_COLD_CONTEXT", relativePath, lineNumber, methodName, rawLine, "This allocation is inside a cold/save/telemetry/async context despite a hot-looking method name. Keep it outside frame cadence; do not count it as a proven zero-GC hot-path breach without call-cadence proof.",
+                        new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+                }
+                else
+                {
+                    AddFinding("WARN", "ZERO_GC_HOT_PATH_ALLOCATION_REVIEW", 66, "HOT_PATH_HEURISTIC", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "Review this hot-path allocation. If intentional, move it to bootstrap/cold path or document the pooled owner.",
+                        new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+                }
             }
 
             if (ContainsAny(code, "GetComponent", "FindObject", "GameObject.Find", "Object.Find") &&
@@ -817,11 +1100,24 @@ internal static class Program
             }
 
             if (ContainsAny(code, ".material", "Material.Set", ".SetFloat", ".SetColor", ".SetVector", ".SetTexture") &&
-                MaterialMutationRegex.IsMatch(code))
+                TryClassifyMaterialHotPathMutation(code, out var usesPropertyBlock, out var usesComputeShader))
             {
                 _hotPathRiskCount++;
-                AddFinding("WARN", "SRP_BATCHER_HOT_PATH_MATERIAL_REVIEW", 64, "HOT_PATH_HEURISTIC", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "Review material mutation in hot path. Prefer GraphicsBuffer/CBUFFER paths that keep SRP batching intact.",
-                    new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+                if (usesComputeShader)
+                {
+                    AddFinding("INFO", "GPU_DISPATCH_PARAMETER_HOT_PATH_REVIEW", 54, "HOT_PATH_HEURISTIC", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "This hot path updates ComputeShader dispatch parameters. Keep IDs cached and cadence-gate expensive dispatches; do not classify this as an SRP material mutation without render/profiler evidence.",
+                        new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName, ["computeShaderLike"] = true });
+                }
+                else if (usesPropertyBlock)
+                {
+                    AddFinding("INFO", "MATERIAL_PROPERTY_BLOCK_HOT_PATH_REVIEW", 52, "HOT_PATH_HEURISTIC", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "This hot path updates a cached MaterialPropertyBlock-like receiver. Keep the block cached, avoid per-frame property-block allocation, and escalate only if profiler/SRP evidence shows a batching cost.",
+                        new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName, ["propertyBlockLike"] = true });
+                }
+                else
+                {
+                    AddFinding("WARN", "SRP_BATCHER_HOT_PATH_MATERIAL_REVIEW", 64, "HOT_PATH_HEURISTIC", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "Review material mutation in hot path. Prefer GraphicsBuffer/CBUFFER paths that keep SRP batching intact.",
+                        new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName, ["propertyBlockLike"] = false });
+                }
             }
         }
 
@@ -1107,6 +1403,87 @@ internal static class Program
         return Regex.IsMatch(relativePath, @"Core/GlobalSignals\.cs$|Core/Signals/");
     }
 
+    private static bool TryUpdatePreprocessorFrame(string code, List<PreprocessorFrame> frames)
+    {
+        var trimmed = code.TrimStart();
+        if (!trimmed.StartsWith('#'))
+        {
+            return false;
+        }
+
+        if (trimmed.StartsWith("#if", StringComparison.Ordinal) &&
+            !trimmed.StartsWith("#ifdef", StringComparison.Ordinal) &&
+            !trimmed.StartsWith("#ifndef", StringComparison.Ordinal))
+        {
+            var condition = trimmed[3..].Trim();
+            frames.Add(new PreprocessorFrame(condition, IsEditorOnlyCondition(condition)));
+            return true;
+        }
+
+        if (trimmed.StartsWith("#elif", StringComparison.Ordinal))
+        {
+            if (frames.Count > 0)
+            {
+                var condition = trimmed[5..].Trim();
+                var current = frames[^1];
+                frames[^1] = current with { IsCurrentBranchEditorOnly = IsEditorOnlyCondition(condition) };
+            }
+
+            return true;
+        }
+
+        if (trimmed.StartsWith("#else", StringComparison.Ordinal))
+        {
+            if (frames.Count > 0)
+            {
+                var current = frames[^1];
+                frames[^1] = current with { IsCurrentBranchEditorOnly = IsNonEditorOnlyCondition(current.RootCondition) };
+            }
+
+            return true;
+        }
+
+        if (trimmed.StartsWith("#endif", StringComparison.Ordinal))
+        {
+            if (frames.Count > 0)
+            {
+                frames.RemoveAt(frames.Count - 1);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsInsideEditorOnlyPreprocessor(List<PreprocessorFrame> frames)
+    {
+        for (var i = 0; i < frames.Count; i++)
+        {
+            if (frames[i].IsCurrentBranchEditorOnly)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsEditorOnlyCondition(string condition)
+    {
+        var normalized = Regex.Replace(condition, @"\s+", "");
+        return normalized.Contains("UNITY_EDITOR", StringComparison.Ordinal) &&
+            !normalized.Contains("||", StringComparison.Ordinal) &&
+            !normalized.Contains("!UNITY_EDITOR", StringComparison.Ordinal);
+    }
+
+    private static bool IsNonEditorOnlyCondition(string condition)
+    {
+        var normalized = Regex.Replace(condition, @"\s+", "");
+        return normalized.Contains("!UNITY_EDITOR", StringComparison.Ordinal) &&
+            !normalized.Contains("||", StringComparison.Ordinal);
+    }
+
     private static bool IsFileFormatLike(string relativePath, string symbol)
     {
         var combined = relativePath + "/" + symbol;
@@ -1123,10 +1500,87 @@ internal static class Program
         return Regex.IsMatch(methodName, @"^(Tick|Update|LateUpdate|FixedUpdate|Execute|OnUpdate|Run|Schedule|Simulate|Step|Process|Dispatch|Flush|Render|Sync)");
     }
 
+    private static bool TryStartPendingMethodDeclaration(string code, out string methodName, out bool isConstructor)
+    {
+        methodName = "";
+        isConstructor = false;
+        if (code.Contains("=>", StringComparison.Ordinal) ||
+            Regex.IsMatch(code, @"\b(class|struct|interface|enum|if|for|foreach|while|switch|catch|using|lock)\b"))
+        {
+            return false;
+        }
+
+        var constructorMatch = ConstructorDeclarationStartRegex.Match(code);
+        if (constructorMatch.Success)
+        {
+            methodName = constructorMatch.Groups["name"].Value;
+            isConstructor = true;
+            return true;
+        }
+
+        var methodMatch = MethodDeclarationStartRegex.Match(code);
+        if (!methodMatch.Success)
+        {
+            return false;
+        }
+
+        methodName = methodMatch.Groups["name"].Value;
+        return true;
+    }
+
+    private static bool IsColdAllocationReviewContext(string relativePath, string methodName, string code)
+    {
+        if (methodName.EndsWith("Async", StringComparison.Ordinal) ||
+            methodName.Contains("Async", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (code.Contains("FileStream", StringComparison.Ordinal) &&
+            Regex.IsMatch(relativePath + "/" + methodName, "Save|Persistence|Telemetry|Black[Bb]ox|Dump|Crash|WAL|Wal|Flush|Load|Write|Read"))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryClassifyMaterialHotPathMutation(string code, out bool usesPropertyBlock, out bool usesComputeShader)
+    {
+        usesPropertyBlock = false;
+        usesComputeShader = false;
+        if (code.Contains(".material", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (!MaterialMutationRegex.IsMatch(code))
+        {
+            return false;
+        }
+
+        var match = Regex.Match(code, @"(?<receiver>[A-Za-z_][A-Za-z0-9_]*)\s*\.\s*Set(?:Float|Int|Color|Vector|Texture)\s*\(");
+        if (!match.Success)
+        {
+            return true;
+        }
+
+        var receiver = match.Groups["receiver"].Value;
+        usesComputeShader =
+            receiver.Contains("Compute", StringComparison.Ordinal) ||
+            receiver.Contains("compute", StringComparison.Ordinal);
+        usesPropertyBlock =
+            receiver.Contains("MPB", StringComparison.Ordinal) ||
+            receiver.Contains("mpb", StringComparison.Ordinal) ||
+            receiver.Contains("PropertyBlock", StringComparison.Ordinal) ||
+            receiver.EndsWith("Block", StringComparison.Ordinal);
+        return true;
+    }
+
     private static bool IsColdOrFatalIoContext(string relativePath, string methodName)
     {
         var context = relativePath + "/" + methodName;
-        return Regex.IsMatch(context, "Archaeology|Bootstrap|Cold|Csv|CSV|Debug|Dump|Export|Fatal|Import|Initialize|Load|Open|Report|Shutdown|Teardown|TryLoad|TryOpen|Validate");
+        return Regex.IsMatch(context, "Archaeology|Bake|Black[Bb]ox|Bootstrap|Cache|Cold|Crash|Csv|CSV|Debug|Diagnostic|Dump|Export|Fatal|FileWorker|Import|Initialize|Load|Open|Persistence|Report|Save|Shutdown|Stage|StaticData|Storage|Streaming|Telemetry|Teardown|TryLoad|TryOpen|Validate|WAL|Wal|Worker");
     }
 
     private static bool IsFieldDeclarationLike(string code)
@@ -1145,7 +1599,7 @@ internal static class Program
         var start = Math.Max(0, index - 8);
         for (var i = index; i >= start; i--)
         {
-            if (codeLines[i].Contains("[StructLayout", StringComparison.Ordinal))
+            if (StructLayoutAttributeRegex.IsMatch(codeLines[i]))
             {
                 return true;
             }
@@ -1271,6 +1725,72 @@ internal static class Program
         return Regex.IsMatch(header, @":\s*[^{};]*\bISignal\b");
     }
 
+    private static bool StructImplementsBurstJob(string[] codeLines, int index)
+    {
+        var builder = new StringBuilder();
+        var limit = Math.Min(codeLines.Length - 1, index + 3);
+        for (var i = index; i <= limit; i++)
+        {
+            builder.Append(' ');
+            builder.Append(codeLines[i]);
+            if (codeLines[i].Contains('{'))
+            {
+                break;
+            }
+        }
+
+        var header = builder.ToString();
+        var braceIndex = header.IndexOf('{', StringComparison.Ordinal);
+        if (braceIndex >= 0)
+        {
+            header = header[..braceIndex];
+        }
+
+        var whereMatch = Regex.Match(header, @"\bwhere\b");
+        if (whereMatch.Success)
+        {
+            header = header[..whereMatch.Index];
+        }
+
+        return Regex.IsMatch(header, @":\s*[^{};]*\bIJob(?:ParallelFor|For|Entity|Chunk)?\b");
+    }
+
+    private static bool StructBodyContainsExecuteMethod(string[] codeLines, int index)
+    {
+        var limit = Math.Min(codeLines.Length - 1, index + 240);
+        var started = false;
+        var depth = 0;
+        for (var i = index; i <= limit; i++)
+        {
+            var code = codeLines[i];
+            if (i > index && !started && StructDeclarationRegex.IsMatch(code))
+            {
+                return false;
+            }
+
+            if (code.Contains('{', StringComparison.Ordinal))
+            {
+                started = true;
+            }
+
+            if (started && Regex.IsMatch(code, @"\bvoid\s+Execute\s*\("))
+            {
+                return true;
+            }
+
+            if (started)
+            {
+                depth += CountBraceDelta(code);
+                if (depth <= 0 && i > index)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private static StructMetadata? FindNearestStructMetadata(List<StructMetadata> structs, int index)
     {
         StructMetadata? bestForward = null;
@@ -1337,24 +1857,48 @@ internal static class Program
 
     private static OwnershipInfo GetOwnership(string relativePath, string rawText, string declarationLine, string fieldName, string collectionKind)
     {
-        var escaped = Regex.Escape(fieldName);
+        var escaped = BuildNativeFieldAliasPattern(rawText, fieldName, collectionKind);
+        var escapedPrimary = Regex.Escape(fieldName);
+        var fieldAccess = @"(?:[A-Za-z_][A-Za-z0-9_]*\.)*" + escaped;
         var registerToken = "RegisterNative" + collectionKind;
         var unregisterToken = "UnregisterNative" + collectionKind;
         var hasDirectNativeArrayAllocation = collectionKind == "Array" &&
             Regex.IsMatch(rawText, escaped + @"\s*=\s*new\s+NativeArray\s*<", RegexOptions.Singleline);
+        var hasDirectNativeQueueAllocation = collectionKind == "Queue" &&
+            Regex.IsMatch(rawText, escaped + @"\s*=\s*new\s+NativeQueue\s*<", RegexOptions.Singleline);
         var hasH8MemoryAllocate = collectionKind == "Array" &&
             Regex.IsMatch(rawText, escaped + @"\s*=\s*H8Memory\s*\.\s*Allocate\s*<", RegexOptions.Singleline);
         var hasH8MemoryRelease = collectionKind == "Array" &&
-            Regex.IsMatch(rawText, @"H8Memory\s*\.\s*Release\s*\(\s*ref\s+" + escaped + @"\b", RegexOptions.Singleline);
-        var hasH8MemoryOwnership = hasH8MemoryAllocate && hasH8MemoryRelease;
+            Regex.IsMatch(rawText, @"H8Memory\s*\.\s*Release\s*\(\s*ref\s+" + fieldAccess + @"\b", RegexOptions.Singleline);
+        var fieldAssignedByArrayAllocatorHelper = collectionKind == "Array" &&
+            IsAssignedByArrayAllocatorHelper(rawText, escaped);
+        var hasH8MemoryOwnership = false;
+        var escapedHandle = Regex.Escape(fieldName + "Handle");
+        var fieldAssignedFromResolvedAlias =
+            Regex.IsMatch(rawText, @"\bref\s+" + escapedHandle + @"\b", RegexOptions.Singleline) &&
+            Regex.IsMatch(rawText, escaped + @"\s*=\s*[A-Za-z_][A-Za-z0-9_]*\s*;", RegexOptions.Singleline);
+        var helperVaultAllocatorAlias =
+            fieldAssignedByArrayAllocatorHelper &&
+            rawText.Contains("VaultGenerationHandle", StringComparison.Ordinal) &&
+            rawText.Contains("EnsureGenerationHandle", StringComparison.Ordinal) &&
+            rawText.Contains("TryResolveHandle", StringComparison.Ordinal) &&
+            rawText.Contains("_vaultNativeStateMask", StringComparison.Ordinal);
+        var hasVaultGenerationAlias =
+            collectionKind == "Array" &&
+            rawText.Contains("VaultGenerationHandle", StringComparison.Ordinal) &&
+            ((rawText.Contains("ReleaseBuffer", StringComparison.Ordinal) &&
+              (Regex.IsMatch(rawText, @"\bout\s+" + escaped + @"\b", RegexOptions.Singleline) || fieldAssignedFromResolvedAlias) &&
+              Regex.IsMatch(rawText, @"\b(?:EnsureGenerationHandle|TryResolveHandle|TryEnsure[A-Za-z0-9_]*Buffer|TryEnsure[A-Za-z0-9_]*Array)\b", RegexOptions.Singleline)) ||
+             helperVaultAllocatorAlias);
         var hasVaultAlias =
             declarationLine.Contains("Vault alias", StringComparison.OrdinalIgnoreCase) ||
             declarationLine.Contains("GlobalDataVault owns", StringComparison.OrdinalIgnoreCase) ||
             declarationLine.Contains("ResolveNativeBuffer", StringComparison.Ordinal) ||
             Regex.IsMatch(rawText, @"(?i)(Vault alias|GlobalDataVault owns|VaultBufferHandle)[^\r\n]*\b" + escaped + @"\b|\b" + escaped + @"\b[^\r\n]*(Vault alias|GlobalDataVault owns|VaultBufferHandle)") ||
-            Regex.IsMatch(rawText, @"\bVaultBufferHandle\s*<[^>]+>\s+" + escaped + @"Handle\b") ||
+            Regex.IsMatch(rawText, @"\bVaultBufferHandle\s*<[^>]+>\s+" + escapedPrimary + @"Handle\b") ||
             Regex.IsMatch(rawText, escaped + @"\s*=\s*[A-Za-z_][A-Za-z0-9_]*Handle\s*\.\s*Resolve\s*\(") ||
-            Regex.IsMatch(rawText, escaped + @"\s*=\s*ResolveNativeBuffer\s*<");
+            Regex.IsMatch(rawText, escaped + @"\s*=\s*ResolveNativeBuffer\s*<") ||
+            hasVaultGenerationAlias;
 
         var hasRegister = rawText.Contains(registerToken, StringComparison.Ordinal) &&
             Regex.IsMatch(rawText, registerToken + @"\s*\([^;]*(" + escaped + @"|nameof\s*\(\s*" + escaped + @"\s*\))", RegexOptions.Singleline);
@@ -1362,20 +1906,50 @@ internal static class Program
             Regex.IsMatch(rawText, unregisterToken + @"\s*\([^;]*(" + escaped + @"|nameof\s*\(\s*" + escaped + @"\s*\))", RegexOptions.Singleline);
         var hasDispose = rawText.Contains(".Dispose", StringComparison.Ordinal) &&
             Regex.IsMatch(rawText, escaped + @"\s*\.\s*Dispose\s*\(", RegexOptions.Singleline);
-        var fieldPassedToRegisterHelper = Regex.IsMatch(rawText, @"\b(?:Register|Track)[A-Za-z0-9_]*(?:Array|Buffer|Native)[A-Za-z0-9_]*\s*\(\s*(?:ref\s+)?" + escaped + @"\b", RegexOptions.Singleline);
-        var helperRegistersArray = rawText.Contains(registerToken, StringComparison.Ordinal) &&
-            Regex.IsMatch(rawText, registerToken + @"\s*\([^;]*(array|buffer|nativeArray)", RegexOptions.Singleline | RegexOptions.IgnoreCase);
-        var fieldPassedToDisposeHelper = Regex.IsMatch(rawText, @"\b(?:Dispose|Release)[A-Za-z0-9_]*(?:Array|Buffer|Native)[A-Za-z0-9_]*\s*\(\s*(?:ref\s+)?" + escaped + @"\b", RegexOptions.Singleline);
-        var helperUnregistersArray = rawText.Contains(unregisterToken, StringComparison.Ordinal) &&
-            Regex.IsMatch(rawText, unregisterToken + @"\s*\([^;]*(array|buffer|nativeArray)", RegexOptions.Singleline | RegexOptions.IgnoreCase);
-        var helperDisposesArray = Regex.IsMatch(rawText, @"\b(array|buffer|nativeArray)\s*\.\s*Dispose\s*\(", RegexOptions.Singleline | RegexOptions.IgnoreCase);
-        var hasHelperRegister = fieldPassedToRegisterHelper && helperRegistersArray;
+        var helperKindPattern = collectionKind == "Queue"
+            ? @"(?:Array|Buffer|Native|Queue)"
+            : @"(?:Array|Buffer|Native)";
+        var helperLocalPattern = collectionKind == "Queue"
+            ? @"(?:queue|nativeQueue|buffer|nativeArray|label)"
+            : @"(?:array|buffer|nativeArray)";
+        var fieldPassedToRegisterHelper = Regex.IsMatch(rawText, @"\b(?:Register|Track)[A-Za-z0-9_]*" + helperKindPattern + @"[A-Za-z0-9_]*\s*\(\s*(?:ref\s+)?" + fieldAccess + @"\b", RegexOptions.Singleline);
+        var helperRegistersCollection = rawText.Contains(registerToken, StringComparison.Ordinal) &&
+            Regex.IsMatch(rawText, registerToken + @"\s*\([^;]*" + helperLocalPattern, RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        var fieldPassedToDisposeHelper = Regex.IsMatch(rawText, @"\b(?:Dispose|Release)[A-Za-z0-9_]*" + helperKindPattern + @"[A-Za-z0-9_]*\s*\(\s*(?:ref\s+)?" + fieldAccess + @"\b", RegexOptions.Singleline);
+        var helperUnregistersCollection = rawText.Contains(unregisterToken, StringComparison.Ordinal) &&
+            Regex.IsMatch(rawText, unregisterToken + @"\s*\([^;]*" + helperLocalPattern, RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        var helperDisposesCollection = Regex.IsMatch(rawText, helperLocalPattern + @"\s*\.\s*Dispose\s*\(", RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        var helperReleasesH8MemoryCollection =
+            collectionKind == "Array" &&
+            fieldPassedToDisposeHelper &&
+            rawText.Contains("H8Memory.Release", StringComparison.Ordinal) &&
+            Regex.IsMatch(rawText, @"H8Memory\s*\.\s*Release\s*\(\s*ref\s+" + helperLocalPattern, RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        hasH8MemoryOwnership = hasH8MemoryAllocate && (hasH8MemoryRelease || helperReleasesH8MemoryCollection);
+        var helperAllocatesAndRegistersArray =
+            collectionKind == "Array" &&
+            fieldAssignedByArrayAllocatorHelper &&
+            rawText.Contains(registerToken, StringComparison.Ordinal) &&
+            rawText.Contains("new NativeArray", StringComparison.Ordinal);
+        var helperDisposesRegisteredArray =
+            collectionKind == "Array" &&
+            fieldPassedToDisposeHelper &&
+            rawText.Contains(unregisterToken, StringComparison.Ordinal) &&
+            Regex.IsMatch(rawText, @"\bDispose[A-Za-z0-9_]*Array\s*<[^>]*>\s*\(\s*ref\s+NativeArray\s*<", RegexOptions.Singleline) &&
+            Regex.IsMatch(rawText, @"\barray\s*\.\s*Dispose\s*\(", RegexOptions.Singleline);
+        var hasHelperRegister = fieldPassedToRegisterHelper && helperRegistersCollection;
+        if (helperAllocatesAndRegistersArray)
+        {
+            hasHelperRegister = true;
+        }
+
         if (hasHelperRegister)
         {
             hasRegister = true;
         }
 
-        var hasHelperDispose = fieldPassedToDisposeHelper && helperUnregistersArray && helperDisposesArray;
+        var hasHelperDispose =
+            (fieldPassedToDisposeHelper && helperUnregistersCollection && helperDisposesCollection) ||
+            helperDisposesRegisteredArray;
         if (hasHelperDispose)
         {
             hasUnregister = true;
@@ -1388,11 +1962,43 @@ internal static class Program
             hasDirectNativeArrayAllocation &&
             hasDispose;
         var hasAllocation = hasDirectNativeArrayAllocation ||
+            hasDirectNativeQueueAllocation ||
             hasH8MemoryAllocate ||
+            fieldAssignedByArrayAllocatorHelper ||
+            hasVaultGenerationAlias ||
             Regex.IsMatch(rawText, escaped + @"\s*=\s*ResolveNativeBuffer\s*<", RegexOptions.Singleline) ||
             Regex.IsMatch(rawText, escaped + @"\s*=\s*[A-Za-z_][A-Za-z0-9_]*Handle\s*\.\s*Resolve\s*\(", RegexOptions.Singleline);
 
         return new OwnershipInfo(hasRegister, hasUnregister, hasDispose, hasVaultAlias, hasHelperDispose, hasH8MemoryOwnership, isH8MemoryRootAllocator, hasAllocation);
+    }
+
+    private static bool IsAssignedByArrayAllocatorHelper(string rawText, string escapedFieldName)
+    {
+        return Regex.IsMatch(
+            rawText,
+            escapedFieldName + @"\s*=\s*(?:[A-Za-z_][A-Za-z0-9_]*\.)?(?:Allocate[A-Za-z0-9_]*Array|[A-Za-z_][A-Za-z0-9_]*Allocate[A-Za-z0-9_]*Array)\s*<",
+            RegexOptions.Singleline);
+    }
+
+    private static string BuildNativeFieldAliasPattern(string rawText, string fieldName, string collectionKind)
+    {
+        var aliases = new HashSet<string>(StringComparer.Ordinal) { fieldName };
+        if (collectionKind == "Array")
+        {
+            var aliasRegex = new Regex(
+                @"\bref\s+NativeArray\s*<[^>]+>\s+(?<alias>[A-Za-z_][A-Za-z0-9_]*)\s*=>\s*ref\s+[A-Za-z_][A-Za-z0-9_\.]*\." + Regex.Escape(fieldName) + @"\b",
+                RegexOptions.Singleline);
+            foreach (Match match in aliasRegex.Matches(rawText))
+            {
+                var alias = match.Groups["alias"].Value;
+                if (!string.IsNullOrWhiteSpace(alias))
+                {
+                    aliases.Add(alias);
+                }
+            }
+        }
+
+        return "(?:" + string.Join("|", aliases.Select(Regex.Escape)) + ")";
     }
 
     private static ContainerTypes GetContainerTypes(string[] codeLines)
@@ -1616,6 +2222,8 @@ internal static class MarkdownWriter
 
 internal sealed record ContainerTypes(HashSet<string> SignalBus, HashSet<string> NativeQueue, HashSet<string> NativeList, HashSet<string> NativeArray);
 
+internal sealed record PreprocessorFrame(string RootCondition, bool IsCurrentBranchEditorOnly);
+
 internal sealed record StructMetadata(
     string Name,
     string Declaration,
@@ -1625,6 +2233,8 @@ internal sealed record StructMetadata(
     bool HasStructLayout,
     int LayoutSize,
     bool ImplementsISignal,
+    bool ImplementsBurstJob,
+    bool HasExecuteMethod,
     bool IsEditor,
     bool IsCoreGlobalSignals,
     bool IsCoreSignalFile,
@@ -1635,6 +2245,8 @@ internal sealed record ForwardStatement(string Text, int EndIndex);
 internal sealed record SignalDefinition(string Name, string Path, int Line, bool HasStructLayout, bool ImplementsISignal, bool IsEditor, bool InCoreGlobalSignals, bool IsStrictRuntimeContract);
 
 internal sealed record Pack1StructInfo(string Name, string Path, int Line, bool IsEditor, bool IsFileFormatLike, bool HasWideField);
+
+internal sealed record StructLayoutInfo(string Name, string Path, int Line, bool HasStructLayout, int LayoutSize, bool IsEditor, bool IsCoreSignalFile);
 
 internal sealed record AsmdefInfo(string Path, string RelativePath, string Name, HashSet<string> References, string Directory, int ReferenceLine);
 

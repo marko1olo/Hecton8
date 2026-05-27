@@ -99,7 +99,6 @@ namespace Hecton8.Physics.Vehicles
         public int SignalCount;
         public double3 RootAup;
         public uint Frame;
-        public float GlobalQualityWeight;
         public float RadiusMeters;
         public float Magnitude;
 
@@ -108,7 +107,7 @@ namespace Hecton8.Physics.Vehicles
             if (Signals == null || (uint)index >= (uint)SignalCount)
                 return;
 
-            float quality = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
+            float quality = VehicleDamageConstants.AuthoritativeQualityWeight;
             uint rootHash = FoldAup(RootAup);
             uint hash = Hash((uint)index ^ (Frame * 747796405u) ^ rootHash ^ 0x9E3779B9u);
             Random random = Random.CreateFromIndex(hash);
@@ -357,7 +356,6 @@ namespace Hecton8.Physics.Vehicles
         public int GridHeight;
         public int GridDepth;
         public float3 GridSizeLocal;
-        public float GlobalQualityWeight;
         public float DirectDamageScale;
         public float ExplosionFalloff;
 
@@ -373,7 +371,7 @@ namespace Hecton8.Physics.Vehicles
             if ((uint)cellIndex >= (uint)gridCellCount)
                 return;
 
-            float quality = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
+            float quality = VehicleDamageConstants.AuthoritativeQualityWeight;
             float3 safeGridSize = math.select(new float3(0.001f), GridSizeLocal, math.all(math.isfinite(GridSizeLocal)));
             float directScale = math.select(0f, DirectDamageScale, math.isfinite(DirectDamageScale));
             float explosionFalloff = math.select(0f, ExplosionFalloff, math.isfinite(ExplosionFalloff));
@@ -500,8 +498,9 @@ namespace Hecton8.Physics.Vehicles
             int signalDrops = 0;
             float ingress = 0f;
             float structuralSum = 0f;
-            float quality = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
-            float fireChance = math.saturate(Tuning.FireChance01 * math.lerp(0.35f, 1.65f, quality));
+            float visualQuality = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
+            float authorityQuality = VehicleDamageConstants.AuthoritativeQualityWeight;
+            float fireChance = math.saturate(Tuning.FireChance01 * math.lerp(0.35f, 1.65f, authorityQuality));
             float rootDepth = math.max(0f, math.select(0f, RootDepthMeters, math.isfinite(RootDepthMeters)));
 
             for (int i = 0; i < CellCount; i++)
@@ -606,7 +605,7 @@ namespace Hecton8.Physics.Vehicles
             state.Frame = Frame;
             state.SignalCount = (uint)math.max(0, SignalCount);
             state.TotalDamage01 = 1f - structural01;
-            state.QualityWeight = quality;
+            state.QualityWeight = visualQuality;
             state.Flags = VehicleDamageConstants.StateFlagInitialized;
             if (breaches > 0) state.Flags |= VehicleDamageConstants.StateFlagHasBreach;
             if (burning > 0) state.Flags |= VehicleDamageConstants.StateFlagHasFire;

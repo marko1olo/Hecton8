@@ -9,7 +9,7 @@ namespace Hecton8.Modding
     /// This view is inactive until a scene prefab wires the template references.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ModMenuUIController : MonoBehaviour, IModRegistryEventListener
+    public sealed class ModMenuUIController : MonoBehaviour
     {
         [Header("Mod List")]
         [SerializeField] private Transform modListContainer;
@@ -33,16 +33,18 @@ namespace Hecton8.Modding
         private readonly List<ModMenuSettingToggleView> _toggleViews = new List<ModMenuSettingToggleView>(16);
         // COLD ALLOC: List<ModMenuSettingSliderView>[16] — pooled slider row views — owner: ModMenuUIController
         private readonly List<ModMenuSettingSliderView> _sliderViews = new List<ModMenuSettingSliderView>(16);
+        private ModRegistryEventAdapter _modRegistryEventAdapter;
 
         private void OnEnable()
         {
-            ModRegistryEvents.Register(this);
+            ModRegistryEvents.Register(GetModRegistryEventAdapter());
             RefreshView();
         }
 
         private void OnDisable()
         {
-            ModRegistryEvents.Unregister(this);
+            if (_modRegistryEventAdapter != null)
+                ModRegistryEvents.Unregister(_modRegistryEventAdapter);
         }
 
         /// <summary>
@@ -69,7 +71,7 @@ namespace Hecton8.Modding
         /// Handles deferred mod registry invalidation events.
         /// </summary>
         /// <param name="payload">Unmanaged mod registry payload.</param>
-        public void OnModRegistryEvent(in ModRegistryEventPayload payload)
+        private void HandleModRegistryEvent(in ModRegistryEventPayload payload)
         {
             ModRegistryEventType eventType = (ModRegistryEventType)payload.EventType;
             if (eventType != ModRegistryEventType.RuntimeRegistryChanged &&
@@ -79,6 +81,29 @@ namespace Hecton8.Modding
             }
 
             RefreshView();
+        }
+
+        private ModRegistryEventAdapter GetModRegistryEventAdapter()
+        {
+            if (_modRegistryEventAdapter == null)
+                _modRegistryEventAdapter = new ModRegistryEventAdapter(this); // COLD ALLOC: ModRegistryEventAdapter[1] - internal mod registry invalidation listener bridge - owner: ModMenuUIController
+
+            return _modRegistryEventAdapter;
+        }
+
+        private sealed class ModRegistryEventAdapter : IModRegistryEventListener
+        {
+            private readonly ModMenuUIController _owner;
+
+            public ModRegistryEventAdapter(ModMenuUIController owner)
+            {
+                _owner = owner;
+            }
+
+            void IModRegistryEventListener.OnModRegistryEvent(in ModRegistryEventPayload payload)
+            {
+                _owner.HandleModRegistryEvent(in payload);
+            }
         }
 
         private void BindModList()

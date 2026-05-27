@@ -51,11 +51,11 @@ Shader "Hecton8/Ambient/BiotaIndirect"
             {
                 float4 PositionScale;
                 float4 VelocityEmission;
+                float4 VisualParams;
                 uint StateFlags;
                 uint StableHash;
                 uint SpeciesBucket;
                 uint Reserved;
-                float4 VisualParams;
             };
 
             StructuredBuffer<AmbientBiotaGpuInstance> _HectonBiotaInstances;
@@ -227,7 +227,10 @@ Shader "Hecton8/Ambient/BiotaIndirect"
                 float3 viewDirWS = SafeNormalize3(_WorldSpaceCameraPos.xyz - input.positionWS, float3(0.0, 0.0, 1.0));
                 float rim = pow(saturate(1.0 - dot(SafeNormalize3(input.normalWS, float3(0.0, 0.0, 1.0)), viewDirWS)), _SssPower);
                 float silt = TriPulse(dot(input.positionWS.xz, _HectonBiotaFlowVector.xz * 0.19 + float2(0.031, 0.047)) + _HectonBiotaVisualTime * 0.07 + hash * 9.7);
-                float salt = pow(saturate(edge * TriPulse(uv.x * 11.0 + uv.y * 7.0 + hash * 19.0)), 8.0);
+                float saltBase = saturate(edge * TriPulse(uv.x * 11.0 + uv.y * 7.0 + hash * 19.0));
+                float salt2 = saltBase * saltBase;
+                float salt4 = salt2 * salt2;
+                float salt = salt4 * salt4;
 
                 half3 color = baseColor;
                 color += _SubsurfaceTint.rgb * rim * _SssStrength * lerp(0.35, 1.0, _HectonBiotaOverkill01);

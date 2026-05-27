@@ -24,6 +24,7 @@ namespace Hecton8.Atmosphere
         public const uint SourceHash = 0x53485236u; // SHR6
         public const uint WaterlineBreachLaneHash = 0x57425236u; // WBR6
         public const uint QualityStepTuningHash = 0x51535450u; // QSTP
+        public const float AuthoritativeQualityWeight = 1f;
         public const float DefaultSeaLevel = 0f;
         public const float MinimumWavelength = 0.25f;
         public const float TwoPi = 6.2831853071795864769f;

@@ -36,28 +36,58 @@ namespace Hecton8.Crafting
 
             public void Execute()
             {
-                if ((AvailableResourceMask & RecipeResourceMask) != RecipeResourceMask)
-                {
-                    Result[0] = 0;
-                    return;
-                }
-
-                byte canCraft = 1;
-                for (int index = 0; index < RecipeCostCount; index++)
+                byte canCraft = (byte)math.select(0, 1, (AvailableResourceMask & RecipeResourceMask) == RecipeResourceMask);
+                int safeRecipeCostCount = math.min(RecipeCostCount, RecipeCosts.IsCreated ? RecipeCosts.Length : 0);
+                for (int index = 0; index < safeRecipeCostCount; index++)
                 {
                     int2 cost = RecipeCosts[index];
-                    if (cost.x == 0 || cost.y <= 0)
-                        continue;
-
-                    if (!AvailableItemCounts.TryGetValue(cost.x, out int availableCount) ||
-                        availableCount < cost.y)
-                    {
-                        canCraft = 0;
-                        break;
-                    }
+                    bool activeCost = cost.x != 0 & cost.y > 0;
+                    bool hasCount = AvailableItemCounts.TryGetValue(cost.x, out int availableCount);
+                    bool failsCost = activeCost & (!hasCount | availableCount < cost.y);
+                    canCraft = (byte)(canCraft & math.select(1, 0, failsCost));
                 }
 
                 Result[0] = canCraft;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        internal struct EvaluateRecipeAvailabilityLinearJob : IJob
+        {
+            [ReadOnly, NoAlias] public NativeArray<int2> RecipeCosts;
+            [ReadOnly, NoAlias] public NativeArray<int2> AvailableItemCounts;
+            [NoAlias] public NativeArray<byte> Result;
+            public int RecipeCostCount;
+            public int AvailableItemCount;
+            public ulong AvailableResourceMask;
+            public ulong RecipeResourceMask;
+
+            public void Execute()
+            {
+                byte canCraft = (byte)math.select(0, 1, (AvailableResourceMask & RecipeResourceMask) == RecipeResourceMask);
+                int safeRecipeCostCount = math.min(RecipeCostCount, RecipeCosts.IsCreated ? RecipeCosts.Length : 0);
+                for (int index = 0; index < safeRecipeCostCount; index++)
+                {
+                    int2 cost = RecipeCosts[index];
+                    bool activeCost = cost.x != 0 & cost.y > 0;
+                    bool failsCost = activeCost & (ResolveAvailableCount(cost.x) < cost.y);
+                    canCraft = (byte)(canCraft & math.select(1, 0, failsCost));
+                }
+
+                Result[0] = canCraft;
+            }
+
+            private int ResolveAvailableCount(int itemHashId)
+            {
+                int safeCount = math.min(AvailableItemCount, AvailableItemCounts.IsCreated ? AvailableItemCounts.Length : 0);
+                int availableCount = 0;
+                for (int index = 0; index < safeCount; index++)
+                {
+                    int2 available = AvailableItemCounts[index];
+                    availableCount = math.select(availableCount, available.y, available.x == itemHashId);
+                }
+
+                return availableCount;
             }
         }
 
@@ -308,6 +338,162 @@ namespace Hecton8.Crafting
             return result[0] != 0;
         }
 
+        public static bool CanCraft(
+            RecipeData recipe,
+            Fabricator fabricator,
+            PlayerInventory inventory,
+            NativeArray<int2> availableItemCounts,
+            NativeArray<int2> recipeCosts,
+            NativeArray<byte> result,
+            NativeArray<int2> complexGraphNodes,
+            NativeArray<int2> complexGraphEdges,
+            NativeArray<int> complexGraphInDegrees,
+            NativeArray<int> complexGraphQueue,
+            NativeArray<int2> complexRawCosts,
+            NativeArray<int> complexRawCostCount,
+            NativeArray<byte> complexGraphStatus,
+            int recipeMultiplier = 1)
+        {
+            if (recipe == null ||
+                fabricator == null ||
+                inventory == null ||
+                !availableItemCounts.IsCreated ||
+                availableItemCounts.Length < MaxRecipeIngredientCount ||
+                !recipeCosts.IsCreated ||
+                recipeCosts.Length < MaxRecipeIngredientCount ||
+                !result.IsCreated ||
+                result.Length == 0 ||
+                !complexGraphNodes.IsCreated ||
+                complexGraphNodes.Length < MaxComplexRecipeNodeCount ||
+                !complexGraphEdges.IsCreated ||
+                complexGraphEdges.Length < MaxComplexRecipeEdgeCount ||
+                !complexGraphInDegrees.IsCreated ||
+                complexGraphInDegrees.Length < MaxComplexRecipeNodeCount ||
+                !complexGraphQueue.IsCreated ||
+                complexGraphQueue.Length < MaxComplexRecipeNodeCount ||
+                !complexRawCosts.IsCreated ||
+                complexRawCosts.Length < MaxRecipeIngredientCount ||
+                !complexRawCostCount.IsCreated ||
+                complexRawCostCount.Length == 0 ||
+                !complexGraphStatus.IsCreated ||
+                complexGraphStatus.Length == 0)
+            {
+                return false;
+            }
+
+            int safeMultiplier = math.max(1, recipeMultiplier);
+            ulong recipeResourceMask = recipe.RecipeMask;
+            bool recipeCostsBuilt = false;
+            int recipeCostCount = 0;
+
+            if (recipeResourceMask == 0UL)
+            {
+                if (!TryBuildRecipeCostBuffer(recipe, fabricator, recipeCosts, out recipeCostCount, safeMultiplier))
+                    return false;
+
+                recipeResourceMask = BuildRecipeResourceMask(recipeCosts, recipeCostCount);
+                recipeCostsBuilt = true;
+            }
+
+            if (!InventorySoAUtility.CanCraftFast(inventory.CurrentInventoryMask, recipeResourceMask) &&
+                fabricator.CurrentPowerGrid == null)
+            {
+                return false;
+            }
+
+            if (!recipeCostsBuilt &&
+                !TryBuildRecipeCostBuffer(recipe, fabricator, recipeCosts, out recipeCostCount, safeMultiplier))
+            {
+                return false;
+            }
+
+            if (!TryBuildAvailableItemCountPairs(
+                    fabricator,
+                    inventory,
+                    availableItemCounts,
+                    recipeCosts,
+                    recipeCostCount,
+                    out int availableItemCount,
+                    out ulong availableResourceMask))
+            {
+                return false;
+            }
+
+            recipeResourceMask = recipeResourceMask != 0UL ? recipeResourceMask : BuildRecipeResourceMask(recipeCosts, recipeCostCount);
+            if ((availableResourceMask & recipeResourceMask) != recipeResourceMask)
+            {
+                if (safeMultiplier <= 1)
+                    return false;
+            }
+            else
+            {
+                result[0] = 0;
+                new EvaluateRecipeAvailabilityLinearJob
+                {
+                    RecipeCosts = recipeCosts,
+                    AvailableItemCounts = availableItemCounts,
+                    Result = result,
+                    RecipeCostCount = recipeCostCount,
+                    AvailableItemCount = availableItemCount,
+                    AvailableResourceMask = availableResourceMask,
+                    RecipeResourceMask = recipeResourceMask
+                }.Execute();
+
+                if (result[0] != 0)
+                    return true;
+            }
+
+            if (safeMultiplier <= 1)
+                return false;
+
+            if (!TryBuildTotalRawCostBuffer(
+                    recipe,
+                    fabricator,
+                    inventory.ItemCatalog,
+                    complexGraphNodes,
+                    complexGraphEdges,
+                    complexGraphInDegrees,
+                    complexGraphQueue,
+                    complexRawCosts,
+                    complexRawCostCount,
+                    complexGraphStatus,
+                    safeMultiplier))
+            {
+                return false;
+            }
+
+            int rawCostCount = complexRawCostCount[0];
+            if (!TryBuildAvailableItemCountPairs(
+                    fabricator,
+                    inventory,
+                    availableItemCounts,
+                    complexRawCosts,
+                    rawCostCount,
+                    out int rawAvailableItemCount,
+                    out ulong rawAvailableResourceMask))
+            {
+                return false;
+            }
+
+            ulong rawRecipeResourceMask = BuildRecipeResourceMask(complexRawCosts, rawCostCount);
+            if ((rawAvailableResourceMask & rawRecipeResourceMask) != rawRecipeResourceMask)
+                return false;
+
+            result[0] = 0;
+            new EvaluateRecipeAvailabilityLinearJob
+            {
+                RecipeCosts = complexRawCosts,
+                AvailableItemCounts = availableItemCounts,
+                Result = result,
+                RecipeCostCount = rawCostCount,
+                AvailableItemCount = rawAvailableItemCount,
+                AvailableResourceMask = rawAvailableResourceMask,
+                RecipeResourceMask = rawRecipeResourceMask
+            }.Execute();
+
+            return result[0] != 0;
+        }
+
         public static bool TryBuildTotalRawCostBuffer(
             RecipeData recipe,
             Fabricator fabricator,
@@ -450,8 +636,9 @@ namespace Hecton8.Crafting
             if (depth >= MaxComplexRecipeDepth)
                 return true;
 
-            if (!Fabricator.TryResolveRecipeForResultHash(itemCatalog, parentItemHashId, out RecipeData subRecipe) ||
+            if (!fabricator.TryResolveOwnedRecipeForResultHash(itemCatalog, parentItemHashId, out RecipeData subRecipe) ||
                 subRecipe == null ||
+                !fabricator.CanUseRecipeAsRawCostExpansion(subRecipe) ||
                 subRecipe.ingredients == null ||
                 subRecipe.ingredients.Count == 0)
             {
@@ -649,6 +836,58 @@ namespace Hecton8.Crafting
         private static int ResolveResourceMaskBit(int itemHashId)
         {
             return InventoryMaterialMask.ResolveBitIndex(itemHashId);
+        }
+
+        private static bool TryBuildAvailableItemCountPairs(
+            Fabricator fabricator,
+            PlayerInventory inventory,
+            NativeArray<int2> availableItemCounts,
+            NativeArray<int2> recipeCosts,
+            int recipeCostCount,
+            out int availableItemCount,
+            out ulong availableResourceMask)
+        {
+            availableItemCount = 0;
+            availableResourceMask = 0UL;
+            if (fabricator == null ||
+                inventory == null ||
+                !availableItemCounts.IsCreated ||
+                !recipeCosts.IsCreated ||
+                recipeCostCount <= 0)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < availableItemCounts.Length; index++)
+                availableItemCounts[index] = int2.zero;
+
+            PowerGrid grid = fabricator.CurrentPowerGrid;
+            int safeRecipeCostCount = math.min(recipeCostCount, recipeCosts.Length);
+            for (int index = 0; index < safeRecipeCostCount; index++)
+            {
+                int2 cost = recipeCosts[index];
+                if (cost.x == 0 || cost.y <= 0)
+                    continue;
+
+                int availableCount = inventory.CountAvailableTotal(cost.x);
+                if (grid != null)
+                {
+                    int networkCount = BaseLogisticsNetwork.CountAccessibleItem(grid, cost.x);
+                    if (networkCount > 0)
+                        availableCount = availableCount > int.MaxValue - networkCount ? int.MaxValue : availableCount + networkCount;
+                }
+
+                if (availableCount <= 0)
+                    continue;
+
+                if (availableItemCount >= availableItemCounts.Length)
+                    return false;
+
+                availableItemCounts[availableItemCount++] = new int2(cost.x, availableCount);
+                availableResourceMask |= InventoryMaterialMask.ResolveBit(cost.x);
+            }
+
+            return true;
         }
 
         private static void MergeAccessibleNetworkCounts(

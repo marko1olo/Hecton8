@@ -80,24 +80,34 @@ Shader "Hecton8/UI/RetinaStressPulse"
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
+            float ResolveLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) / max(edge1 - edge0, 1e-5));
+            }
+
+            float ResolveLinearRampInv01(float edge0, float edge1, float value)
+            {
+                return 1.0 - ResolveLinearRamp01(edge0, edge1, value);
+            }
+
             fixed4 frag(v2f i) : SV_Target
             {
                 float2 screenUv = i.screenPos.xy / max(i.screenPos.w, 0.0001);
                 float2 centered = (screenUv * 2.0) - 1.0;
                 float radial = dot(centered, centered);
-                float edgeMask = smoothstep(0.28, 1.08, radial);
+                float edgeMask = ResolveLinearRamp01(0.28, 1.08, radial);
 
                 float beatPhase = frac(_Time.y * _PulseRate);
                 float triangleBeat = 1.0 - abs((beatPhase * 2.0) - 1.0);
                 float beat = triangleBeat * triangleBeat * (3.0 - (2.0 * triangleBeat));
 
                 float scanPhase = frac((screenUv.y * _LineDensity) + (_Time.y * 0.37));
-                float scan = smoothstep(0.48, 0.0, abs(scanPhase - 0.5));
+                float scan = ResolveLinearRampInv01(0.0, 0.48, abs(scanPhase - 0.5));
 
                 float2 glitchCell = floor(screenUv * float2(96.0, 54.0));
                 float glitchNoise = Hash21(glitchCell + floor(_Time.y * 24.0));
                 float glitchGate = step(0.986, glitchNoise);
-                float glitchBand = smoothstep(0.78, 1.0, frac((screenUv.y * 13.0) - (_Time.y * 3.1)));
+                float glitchBand = ResolveLinearRamp01(0.78, 1.0, frac((screenUv.y * 13.0) - (_Time.y * 3.1)));
 
                 float crush = edgeMask * _EdgeCrush;
                 float pulseAlpha = crush * beat * _PulseStrength;

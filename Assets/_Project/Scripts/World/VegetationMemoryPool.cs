@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Jobs;
@@ -10,6 +10,8 @@ namespace Hecton8.World
 {
     public sealed partial class HectonMapMagicVegetationBridge
     {
+        private static bool RuntimeNativePoolDefragEnabled => false;
+
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct PoolBlock
         {
@@ -20,6 +22,45 @@ namespace Hecton8.World
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct NativeChunkPool : IDisposable
         {
+            public VaultGenerationHandle<Matrix4x4> MatricesHandle;
+            public VaultGenerationHandle<HectonVegetationInstanceData> MetadataHandle;
+            public VaultGenerationHandle<int> TypesHandle;
+            public VaultGenerationHandle<int> SemanticTypesHandle;
+            public VaultGenerationHandle<byte> BiomeLayersHandle;
+            public VaultGenerationHandle<float> EdgeDistancesHandle;
+            public VaultGenerationHandle<Vector2> FlowDirectionsHandle;
+            public VaultGenerationHandle<Vector3> FlowVectorsHandle;
+            public int Capacity;
+            public bool IsCreated => MatricesHandle.BufferID != 0u ||
+                                     MetadataHandle.BufferID != 0u ||
+                                     TypesHandle.BufferID != 0u ||
+                                     SemanticTypesHandle.BufferID != 0u ||
+                                     BiomeLayersHandle.BufferID != 0u ||
+                                     EdgeDistancesHandle.BufferID != 0u ||
+                                     FlowDirectionsHandle.BufferID != 0u ||
+                                     FlowVectorsHandle.BufferID != 0u;
+
+            public void Dispose()
+            {
+                Dispose(default);
+            }
+
+            public void Dispose(JobHandle dependency)
+            {
+                MatricesHandle = default;
+                MetadataHandle = default;
+                TypesHandle = default;
+                SemanticTypesHandle = default;
+                BiomeLayersHandle = default;
+                EdgeDistancesHandle = default;
+                FlowDirectionsHandle = default;
+                FlowVectorsHandle = default;
+                Capacity = 0;
+            }
+        }
+
+        private ref struct NativeChunkPoolView
+        {
             public NativeArray<Matrix4x4> Matrices;
             public NativeArray<HectonVegetationInstanceData> Metadata;
             public NativeArray<int> Types;
@@ -29,51 +70,77 @@ namespace Hecton8.World
             public NativeArray<Vector2> FlowDirections;
             public NativeArray<Vector3> FlowVectors;
             public int Capacity;
-            public bool IsCreated => Matrices.IsCreated ||
-                                     Metadata.IsCreated ||
-                                     Types.IsCreated ||
-                                     SemanticTypes.IsCreated ||
-                                     BiomeLayers.IsCreated ||
-                                     EdgeDistances.IsCreated ||
-                                     FlowDirections.IsCreated ||
-                                     FlowVectors.IsCreated;
 
-            public void Dispose()
+            public NativeChunkPoolView(
+                NativeArray<Matrix4x4> matrices,
+                NativeArray<HectonVegetationInstanceData> metadata,
+                NativeArray<int> types,
+                NativeArray<int> semanticTypes,
+                NativeArray<byte> biomeLayers,
+                NativeArray<float> edgeDistances,
+                NativeArray<Vector2> flowDirections,
+                NativeArray<Vector3> flowVectors,
+                int capacity)
             {
-                Dispose(default);
+                Matrices = matrices;
+                Metadata = metadata;
+                Types = types;
+                SemanticTypes = semanticTypes;
+                BiomeLayers = biomeLayers;
+                EdgeDistances = edgeDistances;
+                FlowDirections = flowDirections;
+                FlowVectors = flowVectors;
+                Capacity = capacity;
             }
 
-            public void Dispose(JobHandle dependency)
-            {
-                DisposeNativeArray(ref Matrices, dependency);
-                DisposeNativeArray(ref Metadata, dependency);
-                DisposeNativeArray(ref Types, dependency);
-                DisposeNativeArray(ref SemanticTypes, dependency);
-                DisposeNativeArray(ref BiomeLayers, dependency);
-                DisposeNativeArray(ref EdgeDistances, dependency);
-                DisposeNativeArray(ref FlowDirections, dependency);
-                DisposeNativeArray(ref FlowVectors, dependency);
-                Capacity = 0;
-            }
+            public bool IsCreated => Matrices.IsCreated &&
+                                     Metadata.IsCreated &&
+                                     Types.IsCreated &&
+                                     SemanticTypes.IsCreated &&
+                                     BiomeLayers.IsCreated &&
+                                     EdgeDistances.IsCreated &&
+                                      FlowDirections.IsCreated &&
+                                      FlowVectors.IsCreated;
+        }
+
+        private struct NativeChunkPoolWriteLocks
+        {
+            public IDataVault MatricesVault;
+            public IDataVault MetadataVault;
+            public IDataVault TypesVault;
+            public IDataVault SemanticTypesVault;
+            public IDataVault BiomeLayersVault;
+            public IDataVault EdgeDistancesVault;
+            public IDataVault FlowDirectionsVault;
+            public IDataVault FlowVectorsVault;
+            public bool MatricesLocked;
+            public bool MetadataLocked;
+            public bool TypesLocked;
+            public bool SemanticTypesLocked;
+            public bool BiomeLayersLocked;
+            public bool EdgeDistancesLocked;
+            public bool FlowDirectionsLocked;
+            public bool FlowVectorsLocked;
         }
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ActiveAggregateNativeBufferSet : IDisposable
         {
-            public NativeArray<Matrix4x4> Matrices;
-            public NativeArray<HectonVegetationInstanceData> Metadata;
-            public NativeArray<int> Types;
-            public NativeArray<int> SemanticTypes;
-            public NativeArray<byte> BiomeLayers;
-            public NativeArray<Vector2> FlowDirections;
-            public NativeArray<Vector3> FlowVectors;
-            public bool IsCreated => Matrices.IsCreated ||
-                                     Metadata.IsCreated ||
-                                     Types.IsCreated ||
-                                     SemanticTypes.IsCreated ||
-                                     BiomeLayers.IsCreated ||
-                                     FlowDirections.IsCreated ||
-                                     FlowVectors.IsCreated;
+            public VaultGenerationHandle<Matrix4x4> MatricesHandle;
+            public VaultGenerationHandle<HectonVegetationInstanceData> MetadataHandle;
+            public VaultGenerationHandle<int> TypesHandle;
+            public VaultGenerationHandle<int> SemanticTypesHandle;
+            public VaultGenerationHandle<byte> BiomeLayersHandle;
+            public VaultGenerationHandle<Vector2> FlowDirectionsHandle;
+            public VaultGenerationHandle<Vector3> FlowVectorsHandle;
+            public int Capacity;
+            public bool IsCreated => MatricesHandle.BufferID != 0u ||
+                                     MetadataHandle.BufferID != 0u ||
+                                     TypesHandle.BufferID != 0u ||
+                                     SemanticTypesHandle.BufferID != 0u ||
+                                     BiomeLayersHandle.BufferID != 0u ||
+                                     FlowDirectionsHandle.BufferID != 0u ||
+                                     FlowVectorsHandle.BufferID != 0u;
 
             public void Dispose()
             {
@@ -82,88 +149,71 @@ namespace Hecton8.World
 
             public void Dispose(JobHandle dependency)
             {
-                DisposeNativeArray(ref Matrices, dependency);
-                DisposeNativeArray(ref Metadata, dependency);
-                DisposeNativeArray(ref Types, dependency);
-                DisposeNativeArray(ref SemanticTypes, dependency);
-                DisposeNativeArray(ref BiomeLayers, dependency);
-                DisposeNativeArray(ref FlowDirections, dependency);
-                DisposeNativeArray(ref FlowVectors, dependency);
+                MatricesHandle = default;
+                MetadataHandle = default;
+                TypesHandle = default;
+                SemanticTypesHandle = default;
+                BiomeLayersHandle = default;
+                FlowDirectionsHandle = default;
+                FlowVectorsHandle = default;
+                Capacity = 0;
             }
         }
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct VegetationNativeMemory : IDisposable
         {
-            public NativeArray<VegetationDensityChunkRecord> DensityQueryChunksNative;
-            public NativeArray<float3> DensityQueryGridNative;
-            public NativeArray<float2> ThreatAttractorGridNative;
-            public NativeArray<VegetationDensityChunkRecord> DensityQueryChunksScratchNative;
-            public NativeArray<float3> DensityQueryGridScratchNative;
-            public NativeArray<float2> ThreatAttractorGridScratchNative;
-            public NativeArray<VegetationDensityChunkRecord> ThreatSamplingChunksNative;
-            public NativeArray<float2> ThreatSamplingAttractorGridNative;
-            public NativeArray<float3> FlowSamplingDensityGridNative;
-            public NativeArray<float> FlowNavSupportGridNative;
-            public NativeArray<float> EcosystemThreatGridCurrentNative;
-            public NativeArray<float> EcosystemThreatGridNextNative;
-            public NativeArray<byte> EcosystemThreatGridCompressedCurrentNative;
-            public NativeArray<byte> EcosystemThreatGridCompressedNextNative;
-            public NativeArray<byte> EcosystemThreatVoxelCurrentNative;
-            public NativeArray<byte> EcosystemThreatVoxelNextNative;
-            public NativeArray<byte> EcosystemThreatEchoCurrentNative;
-            public NativeArray<byte> EcosystemThreatEchoNextNative;
-            public NativeArray<float2> EcosystemFlowFieldCurrentNative;
-            public NativeArray<float2> EcosystemFlowFieldNextNative;
-            public NativeArray<SwarmWakeImpulse> SwarmWakeImpulseNative;
-            public NativeArray<float> AbyssalThermalGridNative;
-            public NativeArray<float> AbyssalThermalGridNextNative;
-            public NativeArray<float3> AbyssalFlowVolumeCurrentNative;
-            public NativeArray<float3> AbyssalFlowVolumeNextNative;
-            public NativeArray<float> CanopyHeightGridNative;
-            public NativeArray<TerrainHoleRecord> TerrainHoleRecordsNative;
-            public NativeArray<TerrainHoleStreamingRecord> TerrainHoleStreamingRecordsNative;
-            public NativeArray<ArtificialStructureRecord> ArtificialStructureRecordsNative;
-            public NativeParallelMultiHashMap<int, int> ArtificialStructureHashFrontNative;
-            public NativeParallelMultiHashMap<int, int> ArtificialStructureHashBackNative;
-            public NativeParallelMultiHashMap<int, int> ThreatSamplingChunkHashFrontNative;
-            public NativeParallelMultiHashMap<int, int> ThreatSamplingChunkHashBackNative;
-            public NativeArray<Vector3> AbyssalAnchorPositionsNative;
-            public NativeArray<AbsoluteUniversePosition> AbyssalAnchorAupPositionsNative;
-            public NativeArray<Vector3> AbyssalNavNodeSnapshotNative;
-            public NativeArray<Vector3> AbyssalNavConduitVectorsSnapshotNative;
-            public NativeArray<float> AbyssalNavConduitStrengthSnapshotNative;
-            public NativeArray<byte> AbyssalNavNodeTypesSnapshotNative;
-            public NativeParallelMultiHashMap<int, int> AbyssalNavGraphHashNative;
-            public NativeList<Vector3> AbyssalNavNodes;
-            public NativeArray<Vector3> AbyssalPathSnapshotNative;
-            public NativeList<Vector3> AbyssalPathRawResultNative;
-            public NativeList<Vector3> AbyssalPathResultNative;
-            public NativeArray<int> AbyssalPathParentsNative;
-            public NativeArray<float> AbyssalPathGScoreNative;
-            public NativeArray<float> AbyssalPathFScoreNative;
-            public NativeArray<byte> AbyssalPathClosedFlagsNative;
-            public NativeArray<int> AbyssalPathHeapNodesNative;
-            public NativeArray<int> AbyssalPathHeapPositionsNative;
-            public NativeArray<PredatorFearNodeSnapshot> PredatorFearNodesSnapshotNative;
-            public NativeArray<HLODData> HlodRegistrySnapshotNative;
-            public NativeArray<HLODData> VisibleHlodSnapshotNative;
-            public NativeArray<byte> HlodVisibleFlagsNative;
-            public NativeArray<float4> HlodFrustumPlanesNative;
-            public NativeArray<ChunkSliceMoveRecord> SurfaceDefragMovesNative;
-            public NativeArray<ChunkSliceMoveRecord> UnderwaterDefragMovesNative;
-            public NativeArray<ActiveAggregateCopyRecord> SurfaceAggregateCopyRecordsNative;
-            public NativeArray<ActiveAggregateCopyRecord> UnderwaterAggregateCopyRecordsNative;
-            public NativeArray<MegaWreckStreamSection> MegaWreckStreamSnapshotNative;
-            public bool IsCreated => DensityQueryChunksNative.IsCreated ||
-                                     DensityQueryGridNative.IsCreated ||
-                                     ThreatAttractorGridNative.IsCreated ||
-                                     EcosystemThreatGridCurrentNative.IsCreated ||
-                                     EcosystemThreatGridNextNative.IsCreated ||
-                                     AbyssalFlowVolumeCurrentNative.IsCreated ||
-                                     AbyssalFlowVolumeNextNative.IsCreated ||
-                                     HlodRegistrySnapshotNative.IsCreated ||
-                                     MegaWreckStreamSnapshotNative.IsCreated;
+            public VaultGenerationHandle<VegetationDensityChunkRecord> DensityQueryChunksHandle;
+            public VaultGenerationHandle<float3> DensityQueryGridHandle;
+            public VaultGenerationHandle<float2> ThreatAttractorGridHandle;
+            public VaultGenerationHandle<float> EcosystemThreatGridHandle;
+            public VaultGenerationHandle<byte> EcosystemThreatGridCompressedHandle;
+            public VaultGenerationHandle<byte> EcosystemThreatVoxelHandle;
+            public VaultGenerationHandle<byte> EcosystemThreatEchoHandle;
+            public VaultGenerationHandle<float2> EcosystemFlowFieldHandle;
+            public VaultGenerationHandle<float> AbyssalThermalGridHandle;
+            public VaultGenerationHandle<float3> AbyssalFlowVolumeHandle;
+            public VaultGenerationHandle<float> CanopyHeightGridHandle;
+            public VaultGenerationHandle<TerrainHoleRecord> TerrainHoleRecordsHandle;
+            public VaultGenerationHandle<TerrainHoleStreamingRecord> TerrainHoleStreamingRecordsHandle;
+            public VaultGenerationHandle<ArtificialStructureRecord> ArtificialStructureRecordsHandle;
+            public VaultGenerationHandle<Vector3> AbyssalAnchorPositionsHandle;
+            public VaultGenerationHandle<AbsoluteUniversePosition> AbyssalAnchorAupPositionsHandle;
+            public VaultGenerationHandle<Vector3> AbyssalNavNodeSnapshotHandle;
+            public VaultGenerationHandle<Vector3> AbyssalNavConduitVectorsHandle;
+            public VaultGenerationHandle<float> AbyssalNavConduitStrengthsHandle;
+            public VaultGenerationHandle<byte> AbyssalNavNodeTypesHandle;
+            public VaultGenerationHandle<Vector3> AbyssalPathSnapshotHandle;
+            public VaultGenerationHandle<PredatorFearNodeSnapshot> PredatorFearNodesSnapshotHandle;
+            public VaultGenerationHandle<HLODData> HlodRegistrySnapshotHandle;
+            public VaultGenerationHandle<HLODData> VisibleHlodSnapshotHandle;
+            public VaultGenerationHandle<ChunkSliceMoveRecord> SurfaceDefragMovesHandle;
+            public VaultGenerationHandle<ChunkSliceMoveRecord> UnderwaterDefragMovesHandle;
+            public VaultGenerationHandle<ActiveAggregateCopyRecord> SurfaceAggregateCopyRecordsHandle;
+            public VaultGenerationHandle<ActiveAggregateCopyRecord> UnderwaterAggregateCopyRecordsHandle;
+            public VaultGenerationHandle<MegaWreckStreamSection> MegaWreckStreamSnapshotHandle;
+            public bool IsCreated => DensityQueryChunksHandle.BufferID != 0u ||
+                                     DensityQueryGridHandle.BufferID != 0u ||
+                                     ThreatAttractorGridHandle.BufferID != 0u ||
+                                     EcosystemThreatGridHandle.BufferID != 0u ||
+                                     EcosystemThreatGridCompressedHandle.BufferID != 0u ||
+                                     EcosystemThreatVoxelHandle.BufferID != 0u ||
+                                     EcosystemThreatEchoHandle.BufferID != 0u ||
+                                      EcosystemFlowFieldHandle.BufferID != 0u ||
+                                      AbyssalThermalGridHandle.BufferID != 0u ||
+                                      AbyssalFlowVolumeHandle.BufferID != 0u ||
+                                      CanopyHeightGridHandle.BufferID != 0u ||
+                                      TerrainHoleRecordsHandle.BufferID != 0u ||
+                                      ArtificialStructureRecordsHandle.BufferID != 0u ||
+                                      AbyssalAnchorPositionsHandle.BufferID != 0u ||
+                                      AbyssalAnchorAupPositionsHandle.BufferID != 0u ||
+                                      AbyssalNavNodeSnapshotHandle.BufferID != 0u ||
+                                      AbyssalNavConduitVectorsHandle.BufferID != 0u ||
+                                      AbyssalNavConduitStrengthsHandle.BufferID != 0u ||
+                                      AbyssalNavNodeTypesHandle.BufferID != 0u ||
+                                      AbyssalPathSnapshotHandle.BufferID != 0u ||
+                                     PredatorFearNodesSnapshotHandle.BufferID != 0u ||
+                                     HlodRegistrySnapshotHandle.BufferID != 0u;
 
             public void Dispose()
             {
@@ -172,66 +222,6 @@ namespace Hecton8.World
 
             public void Dispose(JobHandle dependency)
             {
-                DisposeNativeArray(ref DensityQueryChunksNative, dependency);
-                DisposeNativeArray(ref DensityQueryGridNative, dependency);
-                DisposeNativeArray(ref ThreatAttractorGridNative, dependency);
-                DisposeNativeArray(ref DensityQueryChunksScratchNative, dependency);
-                DisposeNativeArray(ref DensityQueryGridScratchNative, dependency);
-                DisposeNativeArray(ref ThreatAttractorGridScratchNative, dependency);
-                DisposeNativeArray(ref ThreatSamplingChunksNative, dependency);
-                DisposeNativeArray(ref ThreatSamplingAttractorGridNative, dependency);
-                DisposeNativeArray(ref FlowSamplingDensityGridNative, dependency);
-                DisposeNativeArray(ref FlowNavSupportGridNative, dependency);
-                DisposeNativeArray(ref EcosystemThreatGridCurrentNative, dependency);
-                DisposeNativeArray(ref EcosystemThreatGridNextNative, dependency);
-                DisposeNativeArray(ref EcosystemThreatGridCompressedCurrentNative, dependency);
-                DisposeNativeArray(ref EcosystemThreatGridCompressedNextNative, dependency);
-                DisposeNativeArray(ref EcosystemThreatVoxelCurrentNative, dependency);
-                DisposeNativeArray(ref EcosystemThreatVoxelNextNative, dependency);
-                DisposeNativeArray(ref EcosystemThreatEchoCurrentNative, dependency);
-                DisposeNativeArray(ref EcosystemThreatEchoNextNative, dependency);
-                DisposeNativeArray(ref EcosystemFlowFieldCurrentNative, dependency);
-                DisposeNativeArray(ref EcosystemFlowFieldNextNative, dependency);
-                DisposeNativeArray(ref SwarmWakeImpulseNative, dependency);
-                DisposeNativeArray(ref AbyssalThermalGridNative, dependency);
-                DisposeNativeArray(ref AbyssalThermalGridNextNative, dependency);
-                DisposeNativeArray(ref AbyssalFlowVolumeCurrentNative, dependency);
-                DisposeNativeArray(ref AbyssalFlowVolumeNextNative, dependency);
-                DisposeNativeArray(ref CanopyHeightGridNative, dependency);
-                DisposeNativeArray(ref TerrainHoleRecordsNative, dependency);
-                DisposeNativeArray(ref TerrainHoleStreamingRecordsNative, dependency);
-                DisposeNativeArray(ref ArtificialStructureRecordsNative, dependency);
-                DisposeNativeParallelMultiHashMap(ref ArtificialStructureHashFrontNative, dependency, nameof(ArtificialStructureHashFrontNative));
-                DisposeNativeParallelMultiHashMap(ref ArtificialStructureHashBackNative, dependency, nameof(ArtificialStructureHashBackNative));
-                DisposeNativeParallelMultiHashMap(ref ThreatSamplingChunkHashFrontNative, dependency, nameof(ThreatSamplingChunkHashFrontNative));
-                DisposeNativeParallelMultiHashMap(ref ThreatSamplingChunkHashBackNative, dependency, nameof(ThreatSamplingChunkHashBackNative));
-                DisposeNativeArray(ref AbyssalAnchorPositionsNative, dependency);
-                DisposeNativeArray(ref AbyssalAnchorAupPositionsNative, dependency);
-                DisposeNativeArray(ref AbyssalNavNodeSnapshotNative, dependency);
-                DisposeNativeArray(ref AbyssalNavConduitVectorsSnapshotNative, dependency);
-                DisposeNativeArray(ref AbyssalNavConduitStrengthSnapshotNative, dependency);
-                DisposeNativeArray(ref AbyssalNavNodeTypesSnapshotNative, dependency);
-                DisposeNativeParallelMultiHashMap(ref AbyssalNavGraphHashNative, dependency, nameof(AbyssalNavGraphHashNative));
-                DisposeNativeList(ref AbyssalNavNodes, dependency, nameof(AbyssalNavNodes));
-                DisposeNativeArray(ref AbyssalPathSnapshotNative, dependency);
-                DisposeNativeList(ref AbyssalPathRawResultNative, dependency, nameof(AbyssalPathRawResultNative));
-                DisposeNativeList(ref AbyssalPathResultNative, dependency, nameof(AbyssalPathResultNative));
-                DisposeNativeArray(ref AbyssalPathParentsNative, dependency);
-                DisposeNativeArray(ref AbyssalPathGScoreNative, dependency);
-                DisposeNativeArray(ref AbyssalPathFScoreNative, dependency);
-                DisposeNativeArray(ref AbyssalPathClosedFlagsNative, dependency);
-                DisposeNativeArray(ref AbyssalPathHeapNodesNative, dependency);
-                DisposeNativeArray(ref AbyssalPathHeapPositionsNative, dependency);
-                DisposeNativeArray(ref PredatorFearNodesSnapshotNative, dependency);
-                DisposeNativeArray(ref HlodRegistrySnapshotNative, dependency);
-                DisposeNativeArray(ref VisibleHlodSnapshotNative, dependency);
-                DisposeNativeArray(ref HlodVisibleFlagsNative, dependency);
-                DisposeNativeArray(ref HlodFrustumPlanesNative, dependency);
-                DisposeNativeArray(ref SurfaceDefragMovesNative, dependency);
-                DisposeNativeArray(ref UnderwaterDefragMovesNative, dependency);
-                DisposeNativeArray(ref SurfaceAggregateCopyRecordsNative, dependency);
-                DisposeNativeArray(ref UnderwaterAggregateCopyRecordsNative, dependency);
-                DisposeNativeArray(ref MegaWreckStreamSnapshotNative, dependency);
             }
         }
 
@@ -247,7 +237,7 @@ namespace Hecton8.World
         private long ComputeTileCacheUsedBytes()
         {
             long bytes = 0L;
-            Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+            FixedTileStateMap.Enumerator enumerator = _tileStates.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 TileRuntimeState state = enumerator.Current.Value;
@@ -264,12 +254,12 @@ namespace Hecton8.World
         private static long GetTileCacheBufferBytes(TileNativeCacheBuffer buffer)
         {
             long bytes = 0L;
-            if (buffer.SandMaskNative.IsCreated)
-                bytes += buffer.SandMaskNative.Length;
-            if (buffer.RockMaskNative.IsCreated)
-                bytes += buffer.RockMaskNative.Length;
-            if (buffer.HeightSamplesNative.IsCreated)
-                bytes += (long)buffer.HeightSamplesNative.Length * sizeof(ushort);
+            if (buffer.SandMaskHandle.BufferID != 0u)
+                bytes += math.max(0, buffer.SampleCount);
+            if (buffer.RockMaskHandle.BufferID != 0u)
+                bytes += math.max(0, buffer.SampleCount);
+            if (buffer.HeightSamplesHandle.BufferID != 0u)
+                bytes += (long)math.max(0, buffer.HeightSampleCount) * sizeof(ushort);
 
             return bytes;
         }
@@ -315,36 +305,20 @@ namespace Hecton8.World
 
         private void TryScheduleNativePoolDefrag()
         {
+            if (!RuntimeNativePoolDefragEnabled)
+            {
+                _idleNativePoolTimer = 0f;
+                return;
+            }
+
             if (_poolDefragScheduled ||
                 _idleNativePoolTimer < nativePoolDefragIdleSeconds ||
-                _chunkBuildJobs.Count > 0 ||
                 _activeSetDirty ||
                 ComputeNativePoolFragmentationPercent() < nativePoolDefragThresholdPercent)
             {
                 return;
             }
 
-            _surfaceDefragMoveCount = BuildPoolDefragPlan(_surfaceChunkPool, isSurface: true, ref _surfaceDefragKeys, ref _surfaceDefragOffsets, ref _nativeMemory.SurfaceDefragMovesNative, out _surfaceDefragCompactUsedCount);
-            _underwaterDefragMoveCount = BuildPoolDefragPlan(_underwaterChunkPool, isSurface: false, ref _underwaterDefragKeys, ref _underwaterDefragOffsets, ref _nativeMemory.UnderwaterDefragMovesNative, out _underwaterDefragCompactUsedCount);
-            if (_surfaceDefragMoveCount <= 0 && _underwaterDefragMoveCount <= 0)
-                return;
-
-            EnsureDefragScratchPoolCapacity(ref _surfaceDefragScratchPool, _surfaceChunkPool.Capacity);
-            EnsureDefragScratchPoolCapacity(ref _underwaterDefragScratchPool, _underwaterChunkPool.Capacity);
-            InitializeDefragScratchFreeList(
-                ref _surfaceDefragScratchFreeBlocks,
-                ref _surfaceDefragScratchFreeBlockCount,
-                _surfaceDefragScratchPool.Capacity,
-                _surfaceDefragCompactUsedCount);
-            InitializeDefragScratchFreeList(
-                ref _underwaterDefragScratchFreeBlocks,
-                ref _underwaterDefragScratchFreeBlockCount,
-                _underwaterDefragScratchPool.Capacity,
-                _underwaterDefragCompactUsedCount);
-
-            _surfacePoolDefragHandle = SchedulePoolDefrag(_surfaceChunkPool, _surfaceDefragScratchPool, _nativeMemory.SurfaceDefragMovesNative, _surfaceDefragMoveCount);
-            _underwaterPoolDefragHandle = SchedulePoolDefrag(_underwaterChunkPool, _underwaterDefragScratchPool, _nativeMemory.UnderwaterDefragMovesNative, _underwaterDefragMoveCount);
-            _poolDefragScheduled = true;
             _idleNativePoolTimer = 0f;
         }
 
@@ -401,6 +375,17 @@ namespace Hecton8.World
             _underwaterDefragMoveCount = 0;
             _surfaceDefragCompactUsedCount = 0;
             _underwaterDefragCompactUsedCount = 0;
+            RecordVegetationMemoryTelemetry(
+                VegetationMemorySovereigntyConstants.TelemetryRingBufferId,
+                _vegetationMemoryTelemetryHandle.Generation,
+                _surfaceChunkPool.Capacity + _underwaterChunkPool.Capacity,
+                _surfaceActiveCount + _underwaterActiveCount,
+                _surfaceActiveCount + _underwaterActiveCount,
+                0f,
+                VegetationMemoryTelemetryCode.DefragCompleted,
+                VegetationMemoryTelemetryPhase.Defrag,
+                VegetationMemorySovereigntyConstants.FlagDefrag,
+                default);
             if (isActiveAndEnabled)
                 _activeSetDirty = !RebuildAndBindActiveBuffers();
         }
@@ -410,77 +395,148 @@ namespace Hecton8.World
             bool isSurface,
             ref ChunkKey[] keys,
             ref int[] destinationOffsets,
-            ref NativeArray<ChunkSliceMoveRecord> movesNative,
-            out int compactUsedCount)
+            ref VaultGenerationHandle<ChunkSliceMoveRecord> movesHandle,
+            BufferID movesBufferId,
+            out int compactUsedCount,
+            out NativeArray<ChunkSliceMoveRecord> scheduledMoves)
         {
             compactUsedCount = 0;
-            if (!pool.Matrices.IsCreated || _chunkPayloads.Count <= 0)
+            scheduledMoves = default;
+            if (!pool.IsCreated || _chunkPayloads.Count <= 0)
                 return 0;
 
-            EnsureChunkKeyCapacity(ref keys, _chunkPayloads.Count);
-            EnsureIntCapacity(ref destinationOffsets, _chunkPayloads.Count);
-            EnsureNativeCapacity(ref movesNative, _chunkPayloads.Count);
+            int requiredMoveCapacity = _chunkPayloads.Count;
+            if (!HasPoolDefragStagingCapacity(keys, destinationOffsets, requiredMoveCapacity))
+            {
+                RecordVegetationMemoryTelemetry(
+                    movesBufferId,
+                    movesHandle.Generation,
+                    requiredMoveCapacity,
+                    ResolvePoolDefragStagingCapacity(keys, destinationOffsets),
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
+                    VegetationMemoryTelemetryPhase.Defrag,
+                    VegetationMemorySovereigntyConstants.FlagDefrag | VegetationMemorySovereigntyConstants.FlagCapacity,
+                    default);
+                return 0;
+            }
+
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref movesHandle,
+                    movesBufferId,
+                    requiredMoveCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<ChunkSliceMoveRecord> movesNative))
+            {
+                return 0;
+            }
 
             int moveCount = 0;
             int nextOffset = 0;
-            Dictionary<ChunkKey, ChunkPayload>.Enumerator enumerator = _chunkPayloads.GetEnumerator();
-            while (enumerator.MoveNext())
+            int actualScheduledLength = 0;
+            bool allocationFailed = false;
+            try
             {
-                ChunkKey key = enumerator.Current.Key;
-                ChunkPayload payload = enumerator.Current.Value;
-                int sourceOffset = isSurface ? payload.SurfaceOffset : payload.UnderwaterOffset;
-                int count = isSurface ? payload.SurfaceCount : payload.UnderwaterCount;
-                if (count <= 0)
-                    continue;
-
-                keys[moveCount] = key;
-                destinationOffsets[moveCount] = nextOffset;
-                movesNative[moveCount] = new ChunkSliceMoveRecord
+                scheduledMoves = H8Memory.Allocate<ChunkSliceMoveRecord>(
+                    requiredMoveCapacity,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                actualScheduledLength = scheduledMoves.IsCreated ? scheduledMoves.Length : 0;
+                if (!scheduledMoves.IsCreated ||
+                    scheduledMoves.Length < requiredMoveCapacity)
                 {
-                    SourceOffset = sourceOffset,
-                    DestinationOffset = nextOffset,
-                    Count = count
-                };
-                nextOffset += count;
-                moveCount++;
+                    allocationFailed = true;
+                    H8Memory.Release(ref scheduledMoves, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                }
+                else
+                {
+                    FixedChunkPayloadMap.Enumerator enumerator = _chunkPayloads.GetEnumerator();
+                    while (enumerator.MoveNext())
+                    {
+                        ChunkKey key = enumerator.Current.Key;
+                        ChunkPayload payload = enumerator.Current.Value;
+                        int sourceOffset = isSurface ? payload.SurfaceOffset : payload.UnderwaterOffset;
+                        int count = isSurface ? payload.SurfaceCount : payload.UnderwaterCount;
+                        if (count <= 0)
+                            continue;
+
+                        keys[moveCount] = key;
+                        destinationOffsets[moveCount] = nextOffset;
+                        ChunkSliceMoveRecord move = new ChunkSliceMoveRecord
+                        {
+                            SourceOffset = sourceOffset,
+                            DestinationOffset = nextOffset,
+                            Count = count
+                        };
+                        movesNative[moveCount] = move;
+                        scheduledMoves[moveCount] = move;
+                        nextOffset += count;
+                        moveCount++;
+                    }
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in movesHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+
+            if (allocationFailed)
+            {
+                RecordVegetationMemoryTelemetry(
+                    movesBufferId,
+                    movesHandle.Generation,
+                    requiredMoveCapacity,
+                    actualScheduledLength,
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.VaultResolveFailed,
+                    VegetationMemoryTelemetryPhase.Defrag,
+                    VegetationMemorySovereigntyConstants.FlagStaleHandle,
+                    default);
+                return 0;
             }
 
             compactUsedCount = nextOffset;
+            if (moveCount <= 0)
+                H8Memory.Release(ref scheduledMoves, VegetationMemorySovereigntyConstants.OwnerSystemId);
             return moveCount;
         }
 
-        private static JobHandle SchedulePoolDefrag(
-            NativeChunkPool sourcePool,
-            NativeChunkPool destinationPool,
+        private void EnsurePoolDefragStagingCapacity(int requiredCount)
+        {
+            EnsureChunkKeyCapacity(ref _surfaceDefragKeys, requiredCount);
+            EnsureIntCapacity(ref _surfaceDefragOffsets, requiredCount);
+            EnsureChunkKeyCapacity(ref _underwaterDefragKeys, requiredCount);
+            EnsureIntCapacity(ref _underwaterDefragOffsets, requiredCount);
+        }
+
+        private static bool HasPoolDefragStagingCapacity(ChunkKey[] keys, int[] destinationOffsets, int requiredCount)
+        {
+            return requiredCount > 0 &&
+                   keys != null &&
+                   destinationOffsets != null &&
+                   keys.Length >= requiredCount &&
+                   destinationOffsets.Length >= requiredCount;
+        }
+
+        private static int ResolvePoolDefragStagingCapacity(ChunkKey[] keys, int[] destinationOffsets)
+        {
+            int keyCapacity = keys != null ? keys.Length : 0;
+            int offsetCapacity = destinationOffsets != null ? destinationOffsets.Length : 0;
+            return math.min(keyCapacity, offsetCapacity);
+        }
+
+        private JobHandle SchedulePoolDefrag(
+            in NativeChunkPool sourcePool,
+            ref NativeChunkPool destinationPool,
             NativeArray<ChunkSliceMoveRecord> moves,
             int moveCount)
         {
-            if (moveCount <= 0)
-                return default;
-
-            var job = new DefragPoolJob
-            {
-                Moves = moves,
-                MoveCount = moveCount,
-                SourceMatrices = sourcePool.Matrices,
-                SourceMetadata = sourcePool.Metadata,
-                SourceTypes = sourcePool.Types,
-                SourceSemanticTypes = sourcePool.SemanticTypes,
-                SourceBiomeLayers = sourcePool.BiomeLayers,
-                SourceEdgeDistances = sourcePool.EdgeDistances,
-                SourceFlowDirections = sourcePool.FlowDirections,
-                SourceFlowVectors = sourcePool.FlowVectors,
-                DestinationMatrices = destinationPool.Matrices,
-                DestinationMetadata = destinationPool.Metadata,
-                DestinationTypes = destinationPool.Types,
-                DestinationSemanticTypes = destinationPool.SemanticTypes,
-                DestinationBiomeLayers = destinationPool.BiomeLayers,
-                DestinationEdgeDistances = destinationPool.EdgeDistances,
-                DestinationFlowDirections = destinationPool.FlowDirections,
-                DestinationFlowVectors = destinationPool.FlowVectors
-            };
-
-            return job.Schedule();
+            H8Memory.Release(ref moves, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            return default;
         }
 
         private void ApplyPoolDefragOffsets(ChunkKey[] keys, int[] offsets, int moveCount, bool isSurface)
@@ -496,14 +552,14 @@ namespace Hecton8.World
                 else
                     payload.UnderwaterOffset = offsets[i];
 
-                _chunkPayloads[key] = payload;
+                SetChunkPayload(key, payload);
             }
         }
 
-        private static int ComputeUsedCompactCount(Dictionary<ChunkKey, ChunkPayload> payloads, bool isSurface)
+        private static int ComputeUsedCompactCount(FixedChunkPayloadMap payloads, bool isSurface)
         {
             int maxUsed = 0;
-            Dictionary<ChunkKey, ChunkPayload>.Enumerator enumerator = payloads.GetEnumerator();
+            FixedChunkPayloadMap.Enumerator enumerator = payloads.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 ChunkPayload payload = enumerator.Current.Value;
@@ -541,17 +597,20 @@ namespace Hecton8.World
             ResetPoolFreeList(ref freeBlocks, ref freeBlockCount, capacity, compactUsedCount);
         }
 
-        private static void EnsureDefragScratchPoolCapacity(ref NativeChunkPool scratchPool, int capacity)
+        private void EnsureDefragScratchPoolCapacity(
+            ref NativeChunkPool scratchPool,
+            BufferID matrixBufferId,
+            int capacity)
         {
             if (capacity <= 0)
                 return;
 
-            if (scratchPool.Matrices.IsCreated && scratchPool.Capacity == capacity)
+            if (scratchPool.IsCreated && scratchPool.Capacity == capacity)
                 return;
 
             PoolBlock[] scratchBlocks = null;
             int scratchBlockCount = 0;
-            InitializeChunkPool(ref scratchPool, capacity, ref scratchBlocks, ref scratchBlockCount);
+            InitializeChunkPool(ref scratchPool, matrixBufferId, capacity, ref scratchBlocks, ref scratchBlockCount);
         }
 
         private static void SwapChunkPools(ref NativeChunkPool a, ref NativeChunkPool b)
@@ -574,7 +633,7 @@ namespace Hecton8.World
 
         private void ResetPayloadPoolSetFlags(bool isSurface)
         {
-            Dictionary<ChunkKey, ChunkPayload>.Enumerator enumerator = _chunkPayloads.GetEnumerator();
+            FixedChunkPayloadMap.Enumerator enumerator = _chunkPayloads.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 ChunkKey key = enumerator.Current.Key;
@@ -594,7 +653,7 @@ namespace Hecton8.World
                     payload.UnderwaterPoolSet = 0;
                 }
 
-                _chunkPayloads[key] = payload;
+                SetChunkPayload(key, payload);
             }
         }
     }

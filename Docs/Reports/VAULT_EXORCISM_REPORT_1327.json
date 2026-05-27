@@ -1,0 +1,214 @@
+{
+  "agentId": "1327",
+  "codename": "MEMORY_SOVEREIGN_FLORA_INTERACTION_EXORCIST",
+  "task": "13XX_PURGE",
+  "primaryTarget": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+  "generatedLocalDate": "2026-05-26",
+  "status": "STATIC_VERIFIED_GREEN_FOR_1327_GATES",
+  "compile": {
+    "status": "ATTEMPTED_FAILED_EXTERNAL_ERRORS_AFTER_PRIVATE_PADDING_FIX_ZERO_1327_ERRORS_VISIBLE",
+    "command": "dotnet build .\\Assembly-CSharp.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false -nologo -clp:ErrorsOnly -maxcpucount:1",
+    "elapsedSeconds": 95.61,
+    "errors": 69,
+    "warnings": 7,
+    "visibleExternalFiles": [
+      "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "Assets/_Project/Scripts/World/VegetationMemoryPool.cs",
+      "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "Assets/_Project/Scripts/HectonFluidEngine.cs"
+    ],
+    "visible1327ErrorLines": 0,
+    "captureLogStatus": "RETRY_2026_05_26_AFTER_PRIVATE_PADDING_FIX_FAILED_EXTERNAL_ONLY"
+  },
+  "prompt": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "agentPromptLengthChars": 22915,
+    "sha256": "adbf73df8eb4432da3489a5f88130b053cfcd8381038ea99194f0b48699313aa",
+    "authoritativeTaskCount": 20
+  },
+  "qualityGates": {
+    "nativeCollectionExorcism": {
+      "scanner": "Tools/VaultNativeAliasRoslynAudit",
+      "auditFile": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1327_REAUDIT_WORLD.json",
+      "auditHashSha256": "b1795864ae6eddcba7f6546097a8c23e7c9d2a6dae1992cf4ccf581dd7e3758b",
+      "scannedWorldFiles": 276,
+      "worldParseFailures": 0,
+      "worldForbiddenPersistentCandidatesOutside1327Scope": 293,
+      "touchedFileNativeFieldDeclarations": 14,
+      "transientJobFields": 14,
+      "persistentNativeFieldsRemaining": 0,
+      "collectionsInTouchedFiles": {
+        "NativeArray": 14,
+        "NativeList": 0,
+        "NativeQueue": 0,
+        "NativeParallelHashMap": 0,
+        "NativeParallelMultiHashMap": 0,
+        "UnsafeList": 0
+      }
+    },
+    "zeroGcHotPath": {
+      "scanner": "Tools/VoxelRuntimeHotPathAudit plus method-bound hot-path scanner",
+      "auditFile": "Docs/Reports/FLORA_INTERACTION_HOTPATH_AUDIT_1327_REAUDIT.json",
+      "auditHashSha256": "63493df7978b98c76a13c8befdb6989ef240697fb805cc006ce8fda34c7e9706",
+      "scannedFiles": 2,
+      "parseFailures": 0,
+      "nativeAllocations": 0,
+      "nativePersistentAllocations": 0,
+      "nativeTempJobAllocations": 0,
+      "stringFormatCalls": 0,
+      "toStringCalls": 0,
+      "linqCalls": 0,
+      "foreachStatements": 0,
+      "interpolatedStrings": 0,
+      "stringConcatSuspects": 0,
+      "hotMethodTryEnsureCalls": 0,
+      "hotMethodEnsureGenerationHandleCalls": 0,
+      "hotMethodCreateStructuredLockBufferCalls": 0,
+      "hotMethodNewBoolArrays": 0,
+      "hotMethodNewSpatialHash": 0,
+      "hotPathProhibitedHits": 0,
+      "coldOrFatalObjectCreationsExcluded": true
+    },
+    "aup": {
+      "directAbsoluteAupFloatCastsFound": 0,
+      "route": "ResolveAupLocalDelta performs double subtraction, double clamp, then float cast; submarine wash shader globals no longer cast GridX/GridY/GridZ to float."
+    },
+    "compactionLocks": {
+      "publicFenceRoute": "IDataVault.IsCompactionFenceActive => Volatile.Read(ref _compactionFence) != 0 in GlobalDataVault.cs",
+      "preAcquireFenceCheck": true,
+      "postAcquireFenceCheck": true,
+      "failClosedRelease": true,
+      "callerFinallyReleaseCoverage": true,
+      "writeAcquireAllocatesOrEnsures": false,
+      "telemetryAcquireAllocatesOrEnsures": false,
+      "holdsAcrossFrames": false
+    },
+    "noThrowHotPath": {
+      "throwNewInProductionHotPath": 0,
+      "catchExceptionInProductionHotPath": 0,
+      "editorFatalValidatorThrow": 1,
+      "coldSpecificIoCatches": 10
+    },
+    "innerLoopBranchAudit": [
+      { "startLine": 269, "ifCount": 0, "continueCount": 0, "ternaryCount": 0, "prohibitedHits": 0 },
+      { "startLine": 477, "ifCount": 0, "continueCount": 0, "ternaryCount": 0, "prohibitedHits": 0 },
+      { "startLine": 639, "ifCount": 0, "continueCount": 0, "ternaryCount": 0, "prohibitedHits": 0 }
+    ],
+    "solverSimplification": {
+      "cpuRealismAdded": false,
+      "visualCheatKept": "Branchless flora sway/cascade masks with continuous GlobalQualityWeight and shader-side visual field response.",
+      "nanPremaskPropagationFixed": true,
+      "outOfBoundsPhaseSeedWriteFixed": true,
+      "hotTemplateMaskRebuildsSplitToCold": true
+    }
+  },
+  "byteOffsetMaps": [
+    {
+      "structName": "FloraMemoryTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "Frame": "0:uint",
+        "EventHash": "4:uint",
+        "BufferID": "8:uint",
+        "SystemID": "12:uint",
+        "Generation": "16:uint",
+        "RequiredLength": "20:uint",
+        "ActualLength": "24:uint",
+        "Flags": "28:uint",
+        "ConsecutiveFailures": "32:uint",
+        "VaultGeneration": "36:uint",
+        "GlobalQualityWeight": "40:float",
+        "SystemStress01": "44:float",
+        "StateHash": "48:uint",
+        "AupShiftSequence": "52:uint",
+        "CpuMicroseconds": "56:uint",
+        "_reserved0": "60:uint"
+      }
+    },
+    {
+      "structName": "ParasiteNode",
+      "sizeBytes": 64,
+      "offsets": {
+        "BirthTimeSeconds": "0:double",
+        "PositionWS": "8:float3",
+        "HostModuleRuntimeId": "20:int",
+        "GrowthLevel": "24:float",
+        "PowerDrainWatts": "28:float",
+        "InfectionStrength": "32:float",
+        "RootDrainMultiplier": "36:float",
+        "RadiusMeters": "40:float",
+        "PulseFrequency": "44:float",
+        "ThermalGrowthFlag": "48:float",
+        "MatureAttachedSeconds": "52:float",
+        "AddedMassKilograms": "56:float",
+        "State": "60:byte",
+        "_pad0": "61:byte",
+        "_pad1": "62:byte",
+        "_pad2": "63:byte"
+      }
+    },
+    {
+      "structName": "FloraCascadeEventPayload",
+      "sizeBytes": 32,
+      "offsets": {
+        "Center": "0:float3",
+        "StartTimeSeconds": "12:float",
+        "RadiusMeters": "16:float",
+        "_pad0": "20:uint",
+        "_pad1": "24:uint",
+        "_pad2": "28:uint"
+      }
+    },
+    {
+      "structName": "FloraDisplacementDTO",
+      "sizeBytes": 16,
+      "offsets": {
+        "ForceVector": "0:float3",
+        "DecayTimer": "12:float"
+      }
+    },
+    {
+      "structName": "FloraSwayFieldTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "Frame": "0:uint",
+        "NonZeroCellsCount": "4:uint",
+        "Flags": "8:uint",
+        "FieldCenterWS": "12:float3",
+        "CellSize": "24:float",
+        "MaxMagnitude": "28:float",
+        "GlobalQualityWeight": "32:float",
+        "UpdateIntervalSeconds": "36:float",
+        "SystemStress01": "40:float",
+        "StateHash": "44:uint",
+        "DataVaultGeneration": "48:uint",
+        "AupShiftSequence": "52:uint",
+        "CpuMicroseconds": "56:uint",
+        "Resolution": "60:ushort",
+        "ActiveWakeSourcesCount": "62:ushort"
+      }
+    },
+    {
+      "structName": "FloraStiffnessRuleDTO",
+      "sizeBytes": 16,
+      "offsets": {
+        "PlantHash": "0:uint",
+        "Stiffness01": "4:float",
+        "Damping": "8:float",
+        "Flags": "12:uint"
+      }
+    }
+  ],
+  "sourceHashes": [
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "sha256": "1c6c8acb5d1f93f64a20b56a306214ecdda1799e65cb24a6dd80244f8e634f5f"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Editor/FloraInteractionMemorySovereigntyValidator1327.cs",
+      "sha256": "227eaccb953119554859a4cd95937dec51687a32aa058584466f2f7746d38d20"
+    }
+  ],
+  "combinedTouchedCSharpHashSha256": "7ed984c88104e2f3e4cc87fa83678d1e087de327b280818b862c3f907179bdf6"
+}

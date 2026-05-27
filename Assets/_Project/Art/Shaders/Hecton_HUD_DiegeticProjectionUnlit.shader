@@ -134,7 +134,7 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
             {
                 float2 centerUv = abs(input.uv - 0.5) * 2.0;
                 float edge = max(centerUv.x, centerUv.y);
-                float edgeFade = 1.0 - smoothstep(1.0 - _EdgeFade, 1.0, edge);
+                float edgeFade = 1.0 - saturate((edge - (1.0 - _EdgeFade)) * rcp(max(_EdgeFade, 0.0001)));
                 float frameMask = step(0.982, edge);
                 float powerLevel = saturate(_PanelPowerLevel);
                 if (powerLevel < 0.1)

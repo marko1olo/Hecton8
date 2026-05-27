@@ -17,9 +17,9 @@ from pathlib import Path
 
 
 ROOT = Path(".").resolve()
-OUTPUT = ROOT / "Docs" / "DEPENDENCY_GRAPH.md"
-JSON_OUTPUT = ROOT / "Docs" / "DEPENDENCY_GRAPH.json"
-SOURCE_CACHE_OUTPUT = ROOT / "Docs" / "DEPENDENCY_GRAPH.cache.json"
+OUTPUT = ROOT / "Docs" / "Generated" / "DEPENDENCY_GRAPH.md"
+JSON_OUTPUT = ROOT / "Docs" / "Generated" / "DEPENDENCY_GRAPH.json"
+SOURCE_CACHE_OUTPUT = ROOT / "Docs" / "Generated" / "DEPENDENCY_GRAPH.cache.json"
 SOURCE_CACHE_SCHEMA_VERSION = 1
 _FILE_LIST_CACHE: dict[tuple[str, ...], list[str]] = {}
 
@@ -43,7 +43,6 @@ STRUCT_RE = re.compile(
 SIGNAL_BUS_RE = re.compile(r"SignalBus\s*<\s*([^>]+?)\s*>\s*\.\s*(Push|Publish|GetFrameSnapshot)\s*\(")
 NAMESPACE_RE = re.compile(r"\bnamespace\s+([A-Za-z0-9_.]+)")
 GLOBAL_PUBLISH_RE = re.compile(r"GlobalSignals\.Publish\s*\(")
-SHERST_RE = re.compile(r"TODO|HACK|FIX LATER", re.IGNORECASE)
 
 
 def is_skipped(path: Path) -> bool:
@@ -210,8 +209,8 @@ def run_atlas_check_capture() -> dict[str, object]:
 def atlas_check_markdown_status(atlas_check: dict[str, object] | None) -> str:
     if atlas_check is None:
         return (
-            "- Current DOC_GLOBAL R51 AtlasCheck gate: not captured by this in-process render. "
-            "Run `python Tools/AtlasCheck.py` after generation; runtime proof remains absent."
+            "- AtlasCheck gate: not captured by this in-process render. "
+            "Run `python Tools/AtlasCheck.py` after generation; no runtime proof is implied."
         )
 
     status_line = str(atlas_check.get("status_line", "ATLAS_CHECK_UNKNOWN"))
@@ -219,12 +218,12 @@ def atlas_check_markdown_status(atlas_check: dict[str, object] | None) -> str:
     missing_summary = str(atlas_check.get("missing_summary", "not captured"))
     if status_line.startswith("ATLAS_CHECK_PASS"):
         return (
-            f"- Current DOC_GLOBAL R51 AtlasCheck gate: `python Tools/AtlasCheck.py` exits `{returncode}` "
+            f"- AtlasCheck gate: `python Tools/AtlasCheck.py` exits `{returncode}` "
             f"with `{status_line}`. This is static reference integrity only, not Unity/runtime proof."
         )
 
     return (
-        f"- Current DOC_GLOBAL R51 blocker: `python Tools/AtlasCheck.py` still exits `{returncode}` "
+        f"- AtlasCheck blocker: `python Tools/AtlasCheck.py` still exits `{returncode}` "
         f"with `{status_line}`; missing refs currently include {missing_summary} until the references "
         "are restored or the atlas check excludes that evidence class deliberately."
     )
@@ -276,6 +275,7 @@ def write_source_cache(files: dict[str, object]) -> None:
         "schema_version": SOURCE_CACHE_SCHEMA_VERSION,
         "files": files,
     }
+    SOURCE_CACHE_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     SOURCE_CACHE_OUTPUT.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
 
 
@@ -518,51 +518,12 @@ def load_vram() -> dict[str, object]:
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def scan_sherst() -> list[tuple[str, int, str]]:
-    root = ROOT / "Docs" / "AgentLogs"
-    if not root.exists():
-        return []
-
-    hits: list[tuple[str, int, str]] = []
-    for path in sorted(root.glob("*")):
-        if not path.is_file() or path.suffix.lower() not in (".md", ".txt"):
-            continue
-        try:
-            lines = read_text(path).splitlines()
-        except OSError:
-            continue
-        for index, line in enumerate(lines, start=1):
-            if not SHERST_RE.search(line):
-                continue
-            text = line.strip()
-            if len(text) > 180:
-                text = text[:177] + "..."
-            hits.append((rel(path), index, text))
-    return hits
-
-
-def scan_phi_logs() -> tuple[bool, list[str]]:
-    root = ROOT / "Docs" / "AgentLogs"
-    if not root.exists():
-        return False, []
-
-    exact_exists = (root / "Rationale_PHI_SYN.md").exists()
-    near = []
-    for path in sorted(root.glob("*")):
-        name = path.name.lower()
-        if path.is_file() and ("phi" in name or "syn" in name):
-            near.append(rel(path))
-    return exact_exists, near
-
-
 def collect_atlas_data() -> dict[str, object]:
     return {
         "asmdefs": load_asmdefs(),
         "source": scan_source(),
         "queue_lanes": parse_queue_lanes(),
         "vram": load_vram(),
-        "sherst": scan_sherst(),
-        "phi": scan_phi_logs(),
     }
 
 
@@ -570,20 +531,24 @@ def append_source_authority(out: list[str]) -> None:
     out.append("## Source Of Authority")
     for path in (
         "AGENTS.md",
-        "Docs/Tasks/CURRENT_BATCH.md",
+        "Docs/PROJECT_BASELINE.md",
+        "Docs/README.md",
+        "Docs/DOC_GOVERNANCE.md",
+        "Docs/PROJECT_ATLAS.md",
+        "Docs/DEPENDENCY_GRAPH.md",
         "Docs/Actual Domains of Project.txt",
+        "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
         "Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md",
         "Docs/Reports/VRAM_Budget_Audit.json",
         "Docs/Reports/VRAM_Budget_Audit_Summary.md",
         "Docs/Reports/VRAM_Remediation_Plan.md",
-        "Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md",
-        "Docs/AgentLogs/Rationale_VRAM_ASSET_SCOUT.md",
-        "Docs/DEPENDENCY_GRAPH.json",
-        "Docs/DEPENDENCY_GRAPH.cache.json",
+        "Docs/Generated/DEPENDENCY_GRAPH.md",
+        "Docs/Generated/DEPENDENCY_GRAPH.json",
+        "Docs/Generated/DEPENDENCY_GRAPH.cache.json",
         "Tools/BuildArchitectureAtlas.py",
         "Tools/AtlasCheck.py",
     ):
-        if path in ("Docs/DEPENDENCY_GRAPH.json", "Docs/DEPENDENCY_GRAPH.cache.json") or (ROOT / path).exists():
+        if path.startswith("Docs/Generated/DEPENDENCY_GRAPH.") or (ROOT / path).exists():
             out.append(f"- `{path}`")
     out.append("")
 
@@ -715,7 +680,7 @@ def append_vram(out: list[str], vram: dict[str, object]) -> None:
     )
     out.append("")
     if not vram:
-        out.append("No `Docs/Reports/VRAM_Budget_Audit.json` was found.")
+        out.append("No VRAM budget audit JSON was found under reports.")
         out.append("")
         return
 
@@ -769,34 +734,17 @@ def append_vram(out: list[str], vram: dict[str, object]) -> None:
         out.append("")
 
 
-def append_sherst(out: list[str], hits: list[tuple[str, int, str]]) -> None:
-    def sanitize_text_cell(text: str) -> str:
-        safe = text.replace("|", "/")
-        for prefix in ("Assets/", "Docs/", "Packages/", "ProjectSettings/", "Tools/", ".agents-skills/"):
-            safe = safe.replace(prefix, prefix.replace("/", "&#47;"))
-        return safe
-
-    out.append("## SHERST Wall Of Shame")
-    out.append("")
-    out.append(
-        "Pattern scan: active `Docs/AgentLogs/` only; terms: `TODO`, `HACK`, `FIX LATER`. "
-        "These are text hits, not proof of executable debt."
-    )
-    out.append("")
-    out.append("| File | Line | Text |")
-    out.append("|---|---:|---|")
-    if hits:
-        for path, line, text in hits:
-            out.append(f"| `{path}` | {line} | {sanitize_text_cell(text)} |")
-    else:
-        out.append("| none | 0 | no active matches |")
-    out.append("")
+def sanitize_text_cell(text: str) -> str:
+    safe = text.replace("|", "/")
+    for prefix in ("Assets/", "Docs/", "Packages/", "ProjectSettings/", "Tools/", ".agents-skills/"):
+        safe = safe.replace(prefix, prefix.replace("/", "&#47;"))
+    return safe
 
 
-def append_phi(out: list[str], source: dict[str, object], exact_exists: bool, near: list[str]) -> None:
+def append_signal_route_snapshot(out: list[str], source: dict[str, object]) -> None:
     signals = source["signals"]
     signal_uses = source["signal_uses"]
-    hphi_signals = (
+    selected_signals = (
         "PlayerActionProgressSignal",
         "PlayerActionCompletedSignal",
         "PlayerActionCancelledSignal",
@@ -808,24 +756,18 @@ def append_phi(out: list[str], source: dict[str, object], exact_exists: bool, ne
         "SystemHealthSignal",
     )
 
-    out.append("## PHI Self-Audit")
+    out.append("## Selected Signal Route Snapshot")
     out.append("")
-    if exact_exists:
-        out.append("Exact PHI_SYN rationale file is present in active logs.")
-    else:
-        out.append(
-            "Exact PHI_SYN rationale file is absent from active logs. Near-match H-Phi rationale files "
-            "were scanned as supporting evidence, but this is not treated as the exact requested artifact."
-        )
-    out.append("")
-    out.append("Near-match active logs:")
-    for path in near:
-        out.append(f"- `{path}`")
+    out.append(
+        "Static source view for high-value gameplay/UX signal lanes. "
+        "Task and agent-log folders are intentionally excluded: batch prompts and agent logs are process evidence, "
+        "not architecture authority."
+    )
     out.append("")
 
-    out.append("| H-Phi / UX signal | Declared at | Producers | Consumers |")
+    out.append("| Signal | Declared at | Producers | Consumers |")
     out.append("|---|---|---|---|")
-    for name in hphi_signals:
+    for name in selected_signals:
         decl = signals.get(name)
         declared = f"`{decl['path']}:{decl['line']}`" if decl else "not found"
         uses = signal_uses.get(name, {"producers": [], "consumers": []})
@@ -849,8 +791,6 @@ def build_markdown(
     source = data["source"]
     lanes = data["queue_lanes"]
     vram = data["vram"]
-    sherst = data["sherst"]
-    phi_exact, phi_near = data["phi"]
     first_party_asmdefs = [item for item in asmdefs if str(item["path"]).startswith("Assets/_Project/")]
 
     out: list[str] = []
@@ -864,40 +804,18 @@ def build_markdown(
         "No Unity Editor, Play Mode, Memory Profiler, Frame Debugger, or player build evidence is claimed here."
     )
     out.append("")
-    out.append("<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->")
-    out.append("## 2026-05-21 R51 Root/Architecture Actuality Boundary")
-    out.append("")
-    out.append("This document is active only where it agrees with:")
-    out.append("")
-    out.append("- `Docs/README.md`")
-    out.append("- `Docs/DOC_GOVERNANCE.md`")
-    out.append("- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`")
-    out.append("- current source files")
-    out.append("- fresh verification logs and artifacts")
+    out.append("## Authority Boundary")
     out.append("")
     out.append(
-        "No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, "
-        "Frame Debugger, player build, save/load route, or visual-route proof is implied unless "
-        "this document links a fresh evidence artifact. Historical counters and older version claims "
-        "inside this file are subordinate to the current authority spine above."
+        "Generated dependency detail is static source evidence only. "
+        "`Docs/PROJECT_BASELINE.md`, active architecture contracts, current source, "
+        "and fresh proof artifacts override dated generated claims."
     )
     out.append("")
     out.append(
-        "Current DOC_GLOBAL boundary (2026-05-21 R51): "
-        "`Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` "
-        "is the latest local static root/architecture encoding repair, boundary-gap, read-order, "
-        "route-card/static-contract, and source/AtlasCheck orientation correction. "
-        "R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, "
-        "and source-counter drift correction. "
-        "R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction; "
-        "R48 remains the prior date-rollover/AtlasCheck/source-counter correction; "
-        "R47 remains the prior authority-spine/runtime-wording/counter-drift correction; "
-        "R46 remains the prior interior-authority/route-field/proof-language correction; "
-        "R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; "
-        "R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. "
-        "AtlasCheck remains red and runtime proof is absent."
+        "No Unity import, Console, Play Mode, profiler, GC/memory, render, player-build, "
+        "save/load, platform, or visual proof is implied by this generated graph."
     )
-    out.append("<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->")
     out.append("")
 
     append_source_authority(out)
@@ -934,8 +852,7 @@ def build_markdown(
     append_signal_map(out, source)
     append_queue_lanes(out, lanes)
     append_vram(out, vram)
-    append_sherst(out, sherst)
-    append_phi(out, source, phi_exact, phi_near)
+    append_signal_route_snapshot(out, source)
 
     out.append("## Phi-Resonance Connectivity Model")
     out.append("")
@@ -982,7 +899,7 @@ def build_markdown(
         "- The signal producer map only resolves explicit `SignalBus<T>` calls. Legacy "
         "`GlobalSignals.Publish(...)` variable publishes require Roslyn-level dataflow to type-resolve fully."
     )
-    out.append("- Active logs can change while this atlas is being written because the workspace is multi-agent.")
+    out.append("- Task and agent-log folders are intentionally excluded from architecture authority sections.")
     out.append("")
 
     return "\n".join(out)
@@ -999,8 +916,6 @@ def build_json_payload(
     source = data["source"]
     lanes = data["queue_lanes"]
     vram = data["vram"]
-    sherst = data["sherst"]
-    phi_exact, phi_near = data["phi"]
     signals = source["signals"]
     signal_uses = source["signal_uses"]
 
@@ -1045,8 +960,6 @@ def build_json_payload(
             "core_family_dependent_count": len(core_family),
             "signal_count": len(source["all_signal_names"]),
             "queue_lane_count": len(lanes),
-            "sherst_hit_count": len(sherst),
-            "phi_exact_rationale_present": phi_exact,
         },
         "assemblies": {
             "exact_core_dependents": exact_core,
@@ -1066,15 +979,10 @@ def build_json_payload(
             for cells in lanes
         ],
         "vram": vram,
-        "sherst": [{"path": path, "line": line, "text": text} for path, line, text in sherst],
-        "phi": {
-            "exact_rationale_present": phi_exact,
-            "near_match_logs": phi_near,
-        },
         "artifacts": {
-            "markdown": "Docs/DEPENDENCY_GRAPH.md",
-            "json": "Docs/DEPENDENCY_GRAPH.json",
-            "source_cache": "Docs/DEPENDENCY_GRAPH.cache.json",
+            "markdown": "Docs/Generated/DEPENDENCY_GRAPH.md",
+            "json": "Docs/Generated/DEPENDENCY_GRAPH.json",
+            "source_cache": "Docs/Generated/DEPENDENCY_GRAPH.cache.json",
             "generator": "Tools/BuildArchitectureAtlas.py",
             "validator": "Tools/AtlasCheck.py",
             "tests": "Tools/test_architecture_atlas.py",
@@ -1083,6 +991,7 @@ def build_json_payload(
         "residual_risk": [
             "Unity import, runtime wiring, actual VRAM residency, profiler frame time, GC, build, and Play Mode remain PENDING VERIFICATION.",
             "Legacy GlobalSignals.Publish(...) variable publishes require Roslyn-level dataflow to type-resolve fully.",
+            "Task and agent-log folders are intentionally excluded from architecture authority sections.",
         ],
     }
 
@@ -1091,6 +1000,7 @@ def main() -> int:
     data = collect_atlas_data()
     generated_at = datetime.now()
     atlas_check: dict[str, object] | None = None
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
     for _ in range(3):
         OUTPUT.write_text(build_markdown(data, generated_at, atlas_check), encoding="utf-8")

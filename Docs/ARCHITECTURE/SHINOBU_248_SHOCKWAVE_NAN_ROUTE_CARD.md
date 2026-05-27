@@ -12,7 +12,7 @@ One fact: explosive shockwave force and cavitation presentation scalars.
 
 One owner: `AbyssalCavitationRuntime` under `SystemID.VehiclesPhysics`.
 
-Prior `SHINOBU_156_ABYSSAL_CAVITATION_ROUTE_CARD` is historical for original buffer range; this card supersedes live NaN/cavitation route delta.
+Prior `SHINOBU_156_ABYSSAL_CAVITATION_ROUTE_CARD` is historical for original buffer range and is archived at `Docs/DEPRECATED/Active_Doc_Deprecation_2026-05-26/Architecture/Superseded_Route_Cards/SHINOBU_156_ABYSSAL_CAVITATION_ROUTE_CARD.md`; this card supersedes live NaN/cavitation route delta.
 
 One route: GlobalDataVault DTO rows for shockwave/input/force/visual/telemetry, then `PhysicsApplySystem` drain and typed `SignalBus`.
 
@@ -40,7 +40,7 @@ Required proof route before GREEN: 300-entry `ShockwaveTelemetryEntry` ring, sta
 
 | Proof required before GREEN | Fresh Unity import, clean Console, Play Mode, profiler/GCMonitor, player build, 300-frame telemetry fault-path artifact, and fresh `Tools/Division_By_Zero_Scanner.py` output. |
 
-| Review disposition | PENDING VERIFICATION / STATIC_SOURCE only under R50. |
+| Review disposition | PENDING VERIFICATION / STATIC_SOURCE only under static-source review. |
 
 ## Vault Buffers
 

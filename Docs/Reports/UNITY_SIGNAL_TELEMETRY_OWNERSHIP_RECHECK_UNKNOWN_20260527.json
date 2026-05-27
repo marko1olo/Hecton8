@@ -1,0 +1,88 @@
+﻿{
+  "report": "UNITY_SIGNAL_TELEMETRY_OWNERSHIP_RECHECK_UNKNOWN_20260527",
+  "date": "2026-05-27",
+  "agentId": "UNKNOWN",
+  "status": "STATIC_AUDIT_VERIFIED_BUILD_FAILED_DOC_GATES_GREEN",
+  "domain": "Core and memory infrastructure / SignalBus contracts / zero-GC runtime architecture",
+  "sourceFilesChanged": [
+    "Assets/_Project/Scripts/UI/FontStreamingManager.cs",
+    "Tools/SignalBusContractAuditCli/Program.cs"
+  ],
+  "changes": [
+    "Cached TMP font material outside FontStreamingManager.ProcessSwapBatch.",
+    "Recognized VaultGenerationHandle NativeArray aliases as GlobalDataVault ownership in SignalBusContractAuditCli.",
+    "Recognized helper AllocateArray/RegisterNativeArray/DisposeArray NativeArray ownership routes.",
+    "Recognized bare AllocateArray<T>() helper assignment routes.",
+    "Recognized ref _fieldHandle plus _field = resolved Vault alias routes."
+  ],
+  "runtimeMicrosecondsSavedClaimed": 0,
+  "proof": {
+    "staticSourceProof": true,
+    "cliBuild": {
+      "first": "BUILD_UNKNOWN_SIGNAL_CLI_TELEMETRY_OWNERSHIP_RECHECK_20260527.log",
+      "second": "BUILD_UNKNOWN_SIGNAL_CLI_TELEMETRY_OWNERSHIP_RECHECK2_20260527.log",
+      "warnings": 0,
+      "errors": 0
+    },
+    "signalBusAudit": {
+      "json": "SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_TELEMETRY_OWNERSHIP_RECHECK2.json",
+      "markdown": "SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_TELEMETRY_OWNERSHIP_RECHECK2.md",
+      "files": 2441,
+      "shaders": 71,
+      "errors": 0,
+      "warnings": 166,
+      "infos": 832,
+      "confirmedErrors": 0,
+      "srpBatcherHotPathMaterialReview": 72,
+      "localNativeTelemetryRingDeclaredOnly": 1,
+      "localNativeTelemetryRingOwnerLocal": 3,
+      "localNativeTelemetryRingVaultAlias": 3
+    },
+    "deltaFromExecCarrierRecheck": {
+      "warnings": "171 -> 166",
+      "infos": "826 -> 832",
+      "srpBatcherHotPathMaterialReview": "73 -> 72",
+      "localNativeTelemetryRingDeclaredOnly": "5 -> 1",
+      "registeredLocalTelemetryRings": "10 -> 11"
+    },
+    "docValidation": {
+      "verifyDocStructure": {
+        "pass": true,
+        "activeDocCount": 688,
+        "encodingWithoutUtf8Sig": 0
+      },
+      "oopDocScanner": {
+        "finalPass": true,
+        "activeFileCount": 688,
+        "sourceSyncPass": true,
+        "wordReductionPercent": 34.132669128506585
+      }
+    },
+    "blocker": {
+      "fullSolutionBuild": {
+        "log": "BUILD_UNKNOWN_TELEMETRY_OWNERSHIP_FULL_SOLUTION_RECHECK_20260527.log",
+        "launched": true,
+        "guardCpuPercent": 8,
+        "guardCompilerProcessCount": 0,
+        "toolTimeoutSeconds": 604,
+        "errorLines": 350,
+        "warningLines": 0,
+        "touchedSourceFileErrorHits": 0,
+        "largestProjectBuckets": {
+          "Hecton8.Core.csproj": 132,
+          "MeshBakerCore.csproj": 70,
+          "Assembly-CSharp-Editor.csproj": 69,
+          "MapMagic.csproj": 21,
+          "AstarPathfindingProject.csproj": 21
+        }
+      }
+    }
+  },
+  "nonClaims": [
+    "No profiler proof.",
+    "No Play Mode proof.",
+    "No player build proof.",
+    "Full solution build is not green.",
+    "No claim that all NativeArray telemetry warnings are fixed."
+  ]
+}

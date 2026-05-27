@@ -9,8 +9,8 @@ namespace Hecton8.Lighting.Editor
     public static class OOP_Lighting_Scanner
     {
         private const string SharedReportRelativePath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
-        private const string DedicatedReportRelativePath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT_SHINOBU_347.json";
-        private const string SharedReportKey = "shinobu_347_day_night_gi_relay";
+        private const string DedicatedReportRelativePath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT_13KRA.json";
+        private const string SharedReportKey = "agent_13kra_day_night_gi_relay";
 
         [MenuItem("HECTON-8/Lighting/Run OOP Lighting Scanner")]
         public static void Run()
@@ -36,7 +36,7 @@ namespace Hecton8.Lighting.Editor
                     string path = files[i].Replace('\\', '/');
                     string text = File.ReadAllText(files[i]);
                     bool lightingDomain = path.Contains("/Lighting/") || path.Contains("/Environment/");
-                    bool shinobuRelayTarget =
+                    bool lightingRelayTarget =
                         path.EndsWith("/Lighting/HectonGIRelaySystem.cs", StringComparison.Ordinal) ||
                         path.EndsWith("/Lighting/HectonLightingRuntime_DayNightRelay.cs", StringComparison.Ordinal);
                     Count(ref result, text, ambientToken, ref result.RenderSettingsAmbientLight);
@@ -47,7 +47,7 @@ namespace Hecton8.Lighting.Editor
                     if (lightingDomain && text.Contains("void Update()"))
                         result.LightingUpdateMethods++;
 
-                    if (!shinobuRelayTarget)
+                    if (!lightingRelayTarget)
                         continue;
 
                     result.TargetShaderSetGlobalColor += CountToken(text, "Shader.SetGlobalColor");
@@ -90,7 +90,7 @@ namespace Hecton8.Lighting.Editor
 
             WriteDedicatedReport(dedicatedReportPath, BuildObjectJson(in result, 0));
             UpsertSharedReport(sharedReportPath, BuildSharedPropertyJson(in result));
-            Debug.Log("[SHINOBU_347] OOP lighting scanner wrote " + dedicatedReportPath);
+            Debug.Log("[13KRA] OOP lighting scanner wrote " + dedicatedReportPath);
         }
 
         private static void Count(ref ScanResult result, string text, string token, ref int field)
@@ -173,8 +173,8 @@ namespace Hecton8.Lighting.Editor
 
         private static void AppendReportFields(StringBuilder builder, string indent, in ScanResult result)
         {
-            builder.AppendLine(indent + "\"agent\": \"SHINOBU_347\",");
-            builder.AppendLine(indent + "\"domain\": \"ECHELON 7 Atmosphere & Celestial / Day-Night GI Relay\",");
+            builder.AppendLine(indent + "\"agent\": \"13KRA\",");
+            builder.AppendLine(indent + "\"domain\": \"Lighting / Underwater VFX / Depth Atmosphere / Caustics / Fog / God Rays / Graphics Quality Scaling\",");
             builder.AppendLine(indent + "\"renderSettingsAmbientLightHits\": " + result.RenderSettingsAmbientLight + ",");
             builder.AppendLine(indent + "\"renderSettingsFogHits\": " + result.RenderSettingsFog + ",");
             builder.AppendLine(indent + "\"dynamicGiUpdateEnvironmentHits\": " + result.DynamicGiUpdateEnvironment + ",");
@@ -211,7 +211,7 @@ namespace Hecton8.Lighting.Editor
             builder.AppendLine(indent + "\"materialBridgeGuard\": \"GI relay does not cache GlobalRegistry.UnderwaterVisuals and does not call HectonUnderwaterVisuals.ApplyGIRelaySurfaceEmission; surface emission remains CBuffer/SH-buffer driven\",");
             builder.AppendLine(indent + "\"cpuColorRelayGuard\": \"HectonGIRelaySystem contains no UnityEngine.Color interpolation and no Shader.SetGlobalColor relay path; scene colors are sourced from Burst-written EnvironmentLightingDTO lanes\",");
             builder.AppendLine(indent + "\"rollbackBoundary\": \"presentation-only VISUAL_SYNC; no save, Merkle, or StateRingBuffer ownership\",");
-            builder.AppendLine(indent + "\"blackBoxDump\": \"Docs/AgentLogs/Dump_SHINOBU_347.bin\",");
+            builder.AppendLine(indent + "\"blackBoxDump\": \"Docs/AgentLogs/Dump_13KRA.bin\",");
             builder.AppendLine(indent + "\"compileStatus\": \"NOT_RUN_BY_OOP_LIGHTING_SCANNER\",");
             builder.AppendLine(indent + "\"assessment\": \"scanner flags remaining legacy Unity global lighting mutation routes; HectonGIRelaySystem now uploads EnvironmentLightingDTO and SH coefficients without RenderSettings ambient mutation, CPU Color relay interpolation, duplicate registry registration, CBuffer vector fallback, or hot SH state vector globals\"");
         }

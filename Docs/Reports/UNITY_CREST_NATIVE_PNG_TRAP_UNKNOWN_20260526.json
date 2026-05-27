@@ -1,0 +1,59 @@
+﻿{
+  "agent": "UNKNOWN",
+  "date": "2026-05-26",
+  "evidenceClass": "STATIC_SOURCE_PLUS_OFFICIAL_UNITY_DOCS_PLUS_CLI_COMPILE",
+  "verdict": "Replace the project-owned Crest depth-cache forensic PNG Texture2D roundtrip with a NativeArray PNG encode route.",
+  "sourceFilesChanged": [
+    "Assets/_Project/Scripts/Plugins/Crest/HectonCrestOceanDepthCacheRuntimeBridge.cs",
+    "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+    "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+    "Assets/_Project/Scripts/World/VegetationMemoryPool.cs",
+    "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+    "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+    "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs"
+  ],
+  "crestFix": {
+    "removed": [
+      "temporary Texture2D allocation",
+      "Texture2D.SetPixelData roundtrip",
+      "Texture2D.Apply",
+      "Texture2D.EncodeToPNG",
+      "managed byte[] PNG staging",
+      "DestroyImmediate for temporary texture"
+    ],
+    "added": [
+      "AsyncGPUReadbackRequest.GetData<Color32>() native view",
+      "ImageConversion.EncodeNativeArrayToPNG",
+      "NativeArray<byte> disposal in finally",
+      "FileStream.Write(ReadOnlySpan<byte>) from encoded native buffer pointer"
+    ],
+    "runtimeScope": "UNITY_EDITOR || DEVELOPMENT_BUILD forensic dump path"
+  },
+  "vegetationCompileWall": {
+    "firstFailedLog": "Docs/Reports/BUILD_UNKNOWN_CREST_NATIVE_PNG_RECHECK_20260526.log",
+    "firstFailedErrors": 126,
+    "secondFailedLog": "Docs/Reports/BUILD_UNKNOWN_CREST_NATIVE_PNG_VEGETATION_POOL_RECHECK2_20260526.log",
+    "secondFailedErrors": 25,
+    "resolution": "Kept DataVault handle migration and repaired stale NativeChunkPool direct-field consumers through read/write views."
+  },
+  "postPatchCliBuildVerification": {
+    "finalLog": "Docs/Reports/BUILD_UNKNOWN_CREST_NATIVE_PNG_POOL_RECHECK3_20260526.log",
+    "command": "dotnet build .\\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false",
+    "exitCode": 0,
+    "warnings": 0,
+    "errors": 0,
+    "result": "Build succeeded"
+  },
+  "verificationMissing": [
+    "Unity Editor import",
+    "Unity Console",
+    "PlayMode",
+    "player build",
+    "profiler",
+    "GC allocation capture",
+    "shader variants",
+    "scene wiring",
+    "visual output"
+  ],
+  "runtimeMicrosecondsSavedClaimed": 0
+}

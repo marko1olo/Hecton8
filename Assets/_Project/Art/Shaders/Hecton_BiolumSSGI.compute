@@ -1,7 +1,9 @@
 #pragma kernel GatherBiolumSSGI
 #pragma kernel ResolveBiolumSSGI
 
+#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
 RWTexture2D<float4> _HectonBiolumSSGIGather;
 RWTexture2D<float4> _HectonBiolumSSGIResult;
@@ -54,26 +56,32 @@ float Luminance(float3 color)
     return ResolveFiniteOrDefault(dot(ResolveFiniteFloat3OrZero(color), float3(0.2126, 0.7152, 0.0722)), 0.0);
 }
 
-bool IsDepthValid(float rawDepth)
+float ResolveDepthValidMask(float rawDepth)
 {
-    if (!IsFiniteScalar(rawDepth))
-        return false;
-
+    float finiteMask = IsFiniteScalar(rawDepth) ? 1.0 : 0.0;
 #if defined(UNITY_REVERSED_Z)
-    return rawDepth > 0.0001;
+    return finiteMask * step(0.0001, rawDepth);
 #else
-    return rawDepth < 0.9999;
+    return finiteMask * step(rawDepth, 0.9999);
 #endif
+}
+
+int2 ResolveFoveatedSourcePixel(int2 linearPixel, int2 fullResSize)
+{
+    float2 safeSize = max((float2)fullResSize, float2(1.0, 1.0));
+    float2 linearUv = ((float2)linearPixel + 0.5) / safeSize;
+    float2 sourceUv = FoveatedRemapLinearToNonUniform(saturate(linearUv));
+    return clamp((int2)floor(sourceUv * safeSize), int2(0, 0), fullResSize - 1);
 }
 
 int2 ResolveSourcePixel(uint2 outputPixel, uint2 outputSize, int2 fullResSize)
 {
     fullResSize = max(fullResSize, int2(1, 1));
     int2 safeOutputSize = int2(max(1u, outputSize.x), max(1u, outputSize.y));
-    int2 resolvedPixel = int2(
+    int2 linearPixel = int2(
         (((int)outputPixel.x * fullResSize.x) + (safeOutputSize.x >> 1)) / safeOutputSize.x,
         (((int)outputPixel.y * fullResSize.y) + (safeOutputSize.y >> 1)) / safeOutputSize.y);
-    return clamp(resolvedPixel, int2(0, 0), fullResSize - 1);
+    return ResolveFoveatedSourcePixel(clamp(linearPixel, int2(0, 0), fullResSize - 1), fullResSize);
 }
 
 float4 EvaluateGatherPixel(uint2 outputPixel, uint2 outputSize)
@@ -85,7 +93,7 @@ float4 EvaluateGatherPixel(uint2 outputPixel, uint2 outputSize)
     int2 centerPixel = ResolveSourcePixel(outputPixel, outputSize, fullResSize);
 
     float centerDepth = _HectonSourceDepth.Load(int3(centerPixel, 0));
-    if (!IsDepthValid(centerDepth))
+    if (ResolveDepthValidMask(centerDepth) <= 0.5)
     {
         return 0.0;
     }
@@ -100,22 +108,17 @@ float4 EvaluateGatherPixel(uint2 outputPixel, uint2 outputSize)
     [unroll]
     for (int sampleIndex = 0; sampleIndex < 8; sampleIndex++)
     {
-        if (sampleIndex >= sampleCount)
-            break;
-
         int2 samplePixel = centerPixel + (kOffsets[sampleIndex] * radius);
         samplePixel = clamp(samplePixel, int2(0, 0), fullResSize - 1);
 
         float sampleDepth = _HectonSourceDepth.Load(int3(samplePixel, 0));
-        if (!IsDepthValid(sampleDepth))
-            continue;
+        float sampleActive = step((float)sampleIndex + 0.5, (float)sampleCount);
+        float depthValid = ResolveDepthValidMask(sampleDepth);
 
         float4 sampleColor = _HectonSourceColor.Load(int3(samplePixel, 0));
         sampleColor.rgb = ResolveFiniteFloat3OrZero(sampleColor.rgb);
         float sourceLuma = Luminance(sampleColor.rgb);
-        float sourceMask = saturate((sourceLuma - threshold) * 0.75);
-        if (sourceMask <= 0.0001)
-            continue;
+        float sourceMask = saturate((sourceLuma - threshold) * 0.75) * sampleActive * depthValid;
 
         float depthDelta = abs(sampleDepth - centerDepth);
         float depthWeight = rcp(max(1.0 + depthDelta * depthSigma, 0.001));
@@ -153,7 +156,7 @@ void ResolveBiolumSSGI(uint3 dispatchThreadId : SV_DispatchThreadID)
     int2 fullResSize = max((int2)_HectonSSGIInputSize.xy, int2(1, 1));
     int2 centerPixel = ResolveSourcePixel(dispatchThreadId.xy, outputSize, fullResSize);
     float centerDepth = _HectonSourceDepth.Load(int3(centerPixel, 0));
-    if (!IsDepthValid(centerDepth))
+    if (ResolveDepthValidMask(centerDepth) <= 0.5)
     {
         _HectonBiolumSSGIResult[dispatchThreadId.xy] = 0.0;
         return;
@@ -172,26 +175,22 @@ void ResolveBiolumSSGI(uint3 dispatchThreadId : SV_DispatchThreadID)
         [unroll]
         for (int offsetX = -1; offsetX <= 1; offsetX++)
         {
-            if (offsetX == 0 && offsetY == 0)
-                continue;
-
             int2 sampleOutputPixel = clamp(int2(dispatchThreadId.xy) + int2(offsetX, offsetY), int2(0, 0), int2(outputSize) - 1);
             float4 sampleGather = _HectonBiolumSSGIGatherInput.Load(int3(sampleOutputPixel, 0));
             sampleGather.rgb = ClampBiolumHdr(sampleGather.rgb);
             sampleGather.a = ResolveFiniteOrDefault(sampleGather.a, 0.0);
-            if (sampleGather.a <= 0.0001)
-                continue;
 
             int2 sampleSourcePixel = ResolveSourcePixel(sampleOutputPixel, outputSize, fullResSize);
             float sampleDepth = _HectonSourceDepth.Load(int3(sampleSourcePixel, 0));
-            if (!IsDepthValid(sampleDepth))
-                continue;
+            float sampleActive = step(0.5, (float)(abs(offsetX) + abs(offsetY)));
+            float depthValid = ResolveDepthValidMask(sampleDepth);
+            float alphaValid = step(0.0001, sampleGather.a);
 
             float depthDelta = abs(sampleDepth - centerDepth);
             float depthWeight = rcp(max(1.0 + depthDelta * depthSigma, 0.001));
             float spatialWeight = 0.24;
             float confidenceWeight = saturate(sampleGather.a);
-            float weight = depthWeight * spatialWeight * confidenceWeight;
+            float weight = depthWeight * spatialWeight * confidenceWeight * sampleActive * depthValid * alphaValid;
             accumulated += sampleGather.rgb * weight;
             weightSum += weight;
         }

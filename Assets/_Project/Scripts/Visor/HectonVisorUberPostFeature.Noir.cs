@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -35,7 +36,7 @@ namespace Hecton8.Visor
         private const int NoirTelemetryCapacity = 300;
         private const int NoirColorProfileCapacity = 32;
         private const int NoirCsvScratchBytes = 16 * 1024;
-        private const string NoirDumpFileName = "Dump_1309_VisorUberPostNoir.bin";
+        private const string NoirDumpFileName = "Dump_1335_VisorNoir.bin";
         private const string NoirColorCsvFileName = "noir_color_grading_profiles.csv";
         private const BufferID NoirConstantsVaultId = BufferID.Shinobu235NoirConstants;
         private const BufferID NoirInputVaultId = BufferID.Shinobu235NoirInput;
@@ -288,20 +289,14 @@ namespace Hecton8.Visor
                 vault.TryGetGenerationHandle<NoirPostProcessDTO>(
                     NoirConstantsVaultId,
                     out VaultGenerationHandle<NoirPostProcessDTO> handle) &&
-                IsNoirVaultHandle(in handle, NoirConstantsVaultId) &&
-                vault.TryLockBuffer(NoirConstantsVaultId, SystemID.GraphicsScalability))
+                !vault.IsCompactionFenceActive &&
+                IsNoirVaultHandle(in handle, NoirConstantsVaultId))
             {
-                try
+                if (TryReadNoirVaultBuffer(vault, in handle, NoirConstantsVaultId, 1, out NativeArray<NoirPostProcessDTO>.ReadOnly buffer) &&
+                    !vault.IsCompactionFenceActive)
                 {
-                    if (TryReadNoirVaultBuffer(vault, in handle, NoirConstantsVaultId, 1, out NativeArray<NoirPostProcessDTO> buffer))
-                    {
-                        constants = buffer[0];
-                        return true;
-                    }
-                }
-                finally
-                {
-                    vault.TryUnlockBuffer(NoirConstantsVaultId, SystemID.GraphicsScalability);
+                    constants = buffer[0];
+                    return !vault.IsCompactionFenceActive;
                 }
             }
 
@@ -319,7 +314,7 @@ namespace Hecton8.Visor
             if (!vault.TryGetGenerationHandle<NoirPostProcessTuningDTO>(NoirTuningVaultId, out handle) ||
                 !IsNoirVaultHandle(in handle, NoirTuningVaultId))
             {
-                if (vault.IsAllocationLocked)
+                if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                     return false;
 
                 handle = vault.EnsureGenerationHandle<NoirPostProcessTuningDTO>(
@@ -329,7 +324,8 @@ namespace Hecton8.Visor
                     NativeArrayOptions.UninitializedMemory);
             }
 
-            if (!IsNoirVaultHandle(in handle, NoirTuningVaultId) ||
+            if (vault.IsCompactionFenceActive ||
+                !IsNoirVaultHandle(in handle, NoirTuningVaultId) ||
                 !vault.TryAcquireWriteLock(in handle, SystemID.GraphicsScalability, out NativeArray<NoirPostProcessTuningDTO> tuningBuffer))
             {
                 return false;
@@ -337,7 +333,7 @@ namespace Hecton8.Visor
 
             try
             {
-                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                if (vault.IsCompactionFenceActive || !tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
                     return false;
 
                 tuningBuffer[0] = tuning;
@@ -680,8 +676,14 @@ namespace Hecton8.Visor
                 return false;
             }
 
-            if (TryReadNoirVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _))
+            if (TryReadNoirVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T>.ReadOnly _))
                 return true;
+
+            if (_dataVault.IsCompactionFenceActive || _dataVault.IsAllocationLocked)
+            {
+                handle = default;
+                return false;
+            }
 
             handle = _dataVault.EnsureGenerationHandle<T>(
                 bufferId,
@@ -689,7 +691,7 @@ namespace Hecton8.Visor
                 SystemID.GraphicsScalability,
                 options);
 
-            return TryReadNoirVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _);
+            return TryReadNoirVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T>.ReadOnly _);
         }
 
         private static void ReleaseNoirVaultHandle<T>(
@@ -704,50 +706,19 @@ namespace Hecton8.Visor
             handle = default;
         }
 
-        private static bool TryResolveNoirVaultBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> buffer)
-            where T : unmanaged
-        {
-            return TryOpenNoirVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: false, out buffer);
-        }
-
         private static bool TryReadNoirVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer)
-            where T : unmanaged
-        {
-            return TryOpenNoirVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: true, out buffer);
-        }
-
-        private static bool TryOpenNoirVaultBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            bool readOnly,
-            out NativeArray<T> buffer)
+            out NativeArray<T>.ReadOnly buffer)
             where T : unmanaged
         {
             buffer = default;
-            if (vault == null ||
-                requiredLength < 0 ||
-                !IsNoirVaultHandle(in handle, bufferId))
-            {
-                return false;
-            }
-
-            bool opened = readOnly
-                ? vault.TryReadHandle(in handle, out buffer)
-                : vault.TryResolveHandle(in handle, out buffer);
-
-            return opened &&
+            return vault != null &&
+                   requiredLength >= 0 &&
+                   IsNoirVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    (requiredLength == 0 || buffer.Length >= requiredLength);
         }
@@ -762,19 +733,10 @@ namespace Hecton8.Visor
 
         private unsafe bool TryUpdateNoirConstants()
         {
-            if (!NoirVaultHandlesReady())
+            IDataVault vault = _dataVault;
+            if (!NoirVaultHandlesReady() || vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!TryResolveNoirVaultBuffer(_dataVault, in _noirInputHandle, NoirInputVaultId, 1, out NativeArray<NoirPostProcessInputDTO> inputArray) ||
-                !TryResolveNoirVaultBuffer(_dataVault, in _noirTuningHandle, NoirTuningVaultId, 1, out NativeArray<NoirPostProcessTuningDTO> tuningArray) ||
-                !TryResolveNoirVaultBuffer(_dataVault, in _noirConstantsHandle, NoirConstantsVaultId, 1, out NativeArray<NoirPostProcessDTO> constantsArray))
-            {
-                return false;
-            }
-
-            void* inputPtr = inputArray.GetUnsafePtr();
-            void* tuningPtr = tuningArray.GetUnsafePtr();
-            void* constantsPtr = constantsArray.GetUnsafePtr();
             float quality01 = ResolveNoirQualityWeight01();
             uint frame = ResolveNoirFrameId();
             int frameIndex = NoirFrameToIndex(frame);
@@ -784,28 +746,64 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR
             ApplyEditorNoirInputOverride(ref input, quality01, wrappedTime, frame, ref hasRuntimeInput);
 #endif
-            if (hasRuntimeInput)
-            {
-                UnsafeUtility.AsRef<NoirPostProcessInputDTO>(inputPtr) = input;
-            }
-            else
-            {
+            if (!hasRuntimeInput)
                 input = BuildMockNoirInput(wrappedTime, quality01, frame);
-                UnsafeUtility.AsRef<NoirPostProcessInputDTO>(inputPtr) = input;
-            }
 
             NoirPostProcessTuningDTO tuning = BuildNoirTuning(settings, input);
-            UnsafeUtility.AsRef<NoirPostProcessTuningDTO>(tuningPtr) = tuning;
-
             NoirPostProcessDTO constants = CalculateNoirParameters(in input, in tuning);
-            UnsafeUtility.AsRef<NoirPostProcessDTO>(constantsPtr) = constants;
             bool validConstants = NoirConstantsFinite(in constants);
             if (!validConstants)
             {
                 constants = BuildNoirFailsafeConstants(quality01, wrappedTime);
-                UnsafeUtility.AsRef<NoirPostProcessDTO>(constantsPtr) = constants;
                 input.Flags |= NoirFlagInvalidMath;
+            }
+
+            NativeArray<NoirPostProcessInputDTO> inputArray = default;
+            NativeArray<NoirPostProcessTuningDTO> tuningArray = default;
+            NativeArray<NoirPostProcessDTO> constantsArray = default;
+            bool inputLocked = false;
+            bool tuningLocked = false;
+            bool constantsLocked = false;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _noirInputHandle, SystemID.GraphicsScalability, out inputArray))
+                    return false;
+                inputLocked = true;
+
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _noirTuningHandle, SystemID.GraphicsScalability, out tuningArray))
+                    return false;
+                tuningLocked = true;
+
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _noirConstantsHandle, SystemID.GraphicsScalability, out constantsArray))
+                    return false;
+                constantsLocked = true;
+
+                if (vault.IsCompactionFenceActive ||
+                    !inputArray.IsCreated || inputArray.Length <= 0 ||
+                    !tuningArray.IsCreated || tuningArray.Length <= 0 ||
+                    !constantsArray.IsCreated || constantsArray.Length <= 0)
+                {
+                    return false;
+                }
+
+                void* inputPtr = inputArray.GetUnsafePtr();
+                void* tuningPtr = tuningArray.GetUnsafePtr();
+                void* constantsPtr = constantsArray.GetUnsafePtr();
                 UnsafeUtility.AsRef<NoirPostProcessInputDTO>(inputPtr) = input;
+                UnsafeUtility.AsRef<NoirPostProcessTuningDTO>(tuningPtr) = tuning;
+                UnsafeUtility.AsRef<NoirPostProcessDTO>(constantsPtr) = constants;
+            }
+            finally
+            {
+                if (constantsLocked)
+                    vault.ReleaseWriteLock(in _noirConstantsHandle, SystemID.GraphicsScalability);
+                if (tuningLocked)
+                    vault.ReleaseWriteLock(in _noirTuningHandle, SystemID.GraphicsScalability);
+                if (inputLocked)
+                    vault.ReleaseWriteLock(in _noirInputHandle, SystemID.GraphicsScalability);
             }
 
             bool uploaded = UpdateNoirConstantsBuffer(in constants);
@@ -921,18 +919,41 @@ namespace Hecton8.Visor
 
             GraphicsBuffer target = (_noirBufferIndex & 1) == 0 ? _noirConstantsBufferA : _noirConstantsBufferB;
             _noirBufferIndex++;
-            NativeArray<NoirPostProcessDTO> mapped = target.LockBufferForWrite<NoirPostProcessDTO>(0, 1);
             try
             {
+                NativeArray<NoirPostProcessDTO> mapped = target.LockBufferForWrite<NoirPostProcessDTO>(0, 1);
                 NoirPostProcessDTO local = constants;
-                UnsafeUtility.MemCpy(
-                    mapped.GetUnsafePtr(),
-                    UnsafeUtility.AddressOf(ref local),
-                    NoirPostProcessDTO.SizeBytes);
+                try
+                {
+                    UnsafeUtility.MemCpy(
+                        mapped.GetUnsafePtr(),
+                        UnsafeUtility.AddressOf(ref local),
+                        NoirPostProcessDTO.SizeBytes);
+                }
+                finally
+                {
+                    target.UnlockBufferAfterWrite<NoirPostProcessDTO>(1);
+                }
             }
-            finally
+            catch (ObjectDisposedException)
             {
-                target.UnlockBufferAfterWrite<NoirPostProcessDTO>(1);
+                ClearNoirConstantsGpuPayload();
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                ClearNoirConstantsGpuPayload();
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                ClearNoirConstantsGpuPayload();
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                ClearNoirConstantsGpuPayload();
+                return false;
             }
 
             _lastNoirConstants = constants;
@@ -945,67 +966,168 @@ namespace Hecton8.Visor
             return true;
         }
 
+        private void ClearNoirConstantsGpuPayload()
+        {
+            _activeNoirConstantsBuffer = null;
+            _hasNoirConstants = false;
+        }
+
         private void RecordNoirTelemetry(
             in NoirPostProcessInputDTO input,
             in NoirPostProcessDTO constants,
             bool validConstants)
         {
+            IDataVault vault = _dataVault;
             if (!NoirVaultHandlesReady() ||
-                !TryResolveNoirVaultBuffer(_dataVault, in _noirTelemetryHandle, NoirTelemetryVaultId, NoirTelemetryCapacity, out NativeArray<NoirTelemetryEntry> telemetry))
+                vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireWriteLock(in _noirTelemetryHandle, SystemID.GraphicsScalability, out NativeArray<NoirTelemetryEntry> telemetry))
             {
                 return;
             }
 
-            int index = _noirTelemetryCursor;
-            _noirTelemetryCursor = (_noirTelemetryCursor + 1) % telemetry.Length;
-            if ((uint)index >= (uint)telemetry.Length)
-                index = 0;
+            try
+            {
+                if (vault.IsCompactionFenceActive || !telemetry.IsCreated || telemetry.Length <= 0)
+                    return;
 
-            NoirTelemetryEntry entry = default;
-            entry.Frame = input.FrameIndex;
-            entry.Flags = input.Flags | (validConstants ? 0u : NoirFlagInvalidMath);
-            entry.Stress01 = input.Stress01;
-            entry.DepthMeters = input.DepthMeters;
-            entry.Toxicity01 = input.Toxicity01;
-            entry.GlobalQualityWeight01 = input.GlobalQualityWeight01;
-            entry.Grain01 = constants.GrainParams.x;
-            entry.Glitch01 = constants.AberrationParams.y;
-            entry.Vignette01 = constants.AberrationParams.w;
-            entry.AbSplit01 = constants.QualityAndLimits.w;
-            entry.WrappedTimeSeconds = input.TimeSecondsWrapped;
-            entry.ParameterHash = HashNoirConstants(in constants);
-            entry.EstimatedGpuCostMs = EstimateNoirGpuCostMs(in constants);
-            entry.ActiveFeatureFlags = ResolveNoirFeatureFlags(in constants);
-            telemetry[index] = entry;
+                int index = _noirTelemetryCursor;
+                _noirTelemetryCursor = (_noirTelemetryCursor + 1) % telemetry.Length;
+                if ((uint)index >= (uint)telemetry.Length)
+                    index = 0;
+
+                NoirTelemetryEntry entry = default;
+                entry.Frame = input.FrameIndex;
+                entry.Flags = input.Flags | (validConstants ? 0u : NoirFlagInvalidMath);
+                entry.Stress01 = input.Stress01;
+                entry.DepthMeters = input.DepthMeters;
+                entry.Toxicity01 = input.Toxicity01;
+                entry.GlobalQualityWeight01 = input.GlobalQualityWeight01;
+                entry.Grain01 = constants.GrainParams.x;
+                entry.Glitch01 = constants.AberrationParams.y;
+                entry.Vignette01 = constants.AberrationParams.w;
+                entry.AbSplit01 = constants.QualityAndLimits.w;
+                entry.WrappedTimeSeconds = input.TimeSecondsWrapped;
+                entry.ParameterHash = HashNoirConstants(in constants);
+                entry.EstimatedGpuCostMs = EstimateNoirGpuCostMs(in constants);
+                entry.ActiveFeatureFlags = ResolveNoirFeatureFlags(in constants);
+                telemetry[index] = entry;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _noirTelemetryHandle, SystemID.GraphicsScalability);
+            }
         }
 
-        private unsafe bool TryDumpNoirTelemetry()
+        private bool TryDumpNoirTelemetry()
         {
             if (_dataVault == null ||
-                !TryReadNoirVaultBuffer(_dataVault, in _noirTelemetryHandle, NoirTelemetryVaultId, NoirTelemetryCapacity, out NativeArray<NoirTelemetryEntry> telemetry))
+                !TryGetNoirTelemetryEntryCount(out int entryCount) ||
+                entryCount <= 0)
+                return false;
+
+            try
+            {
+                string directory = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "AgentLogs");
+                Directory.CreateDirectory(directory);
+                string path = Path.Combine(directory, NoirDumpFileName);
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                {
+                    Span<byte> rowBytes = stackalloc byte[DrsContractLayout.NoirTelemetryEntryStrideBytes];
+                    for (int i = 0; i < entryCount; i++)
+                    {
+                        if (!TryReadNoirTelemetryEntry(i, out NoirTelemetryEntry entry))
+                            return false;
+
+                        WriteNoirTelemetryEntry(rowBytes, in entry);
+                        stream.Write(rowBytes);
+                    }
+                }
+
+                return true;
+            }
+            catch (IOException)
             {
                 return false;
             }
-
-            string directory = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "AgentLogs");
-            Directory.CreateDirectory(directory);
-            string path = Path.Combine(directory, NoirDumpFileName);
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            catch (UnauthorizedAccessException)
             {
-                byte* source = (byte*)telemetry.GetUnsafeReadOnlyPtr();
-                int totalBytes = telemetry.Length * UnsafeUtility.SizeOf<NoirTelemetryEntry>();
-                byte* chunk = stackalloc byte[1024];
-                int offset = 0;
-                while (offset < totalBytes)
-                {
-                    int count = math.min(1024, totalBytes - offset);
-                    UnsafeUtility.MemCpy(chunk, source + offset, count);
-                    stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(chunk), count));
-                    offset += count;
-                }
+                return false;
             }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+        }
 
-            return true;
+        private bool TryGetNoirTelemetryEntryCount(out int entryCount)
+        {
+            entryCount = 0;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive)
+                return false;
+
+            if (!TryReadNoirVaultBuffer(vault, in _noirTelemetryHandle, NoirTelemetryVaultId, NoirTelemetryCapacity, out NativeArray<NoirTelemetryEntry>.ReadOnly telemetry))
+                return false;
+
+            if (vault.IsCompactionFenceActive || !telemetry.IsCreated)
+                return false;
+
+            entryCount = math.min(telemetry.Length, NoirTelemetryCapacity);
+            return entryCount > 0;
+        }
+
+        private bool TryReadNoirTelemetryEntry(int index, out NoirTelemetryEntry entry)
+        {
+            entry = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                index < 0)
+                return false;
+
+            if (!TryReadNoirVaultBuffer(vault, in _noirTelemetryHandle, NoirTelemetryVaultId, NoirTelemetryCapacity, out NativeArray<NoirTelemetryEntry>.ReadOnly telemetry))
+                return false;
+
+            if (vault.IsCompactionFenceActive ||
+                !telemetry.IsCreated ||
+                (uint)index >= (uint)math.min(telemetry.Length, NoirTelemetryCapacity))
+                return false;
+
+            entry = telemetry[index];
+            return !vault.IsCompactionFenceActive;
+        }
+
+        private static void WriteNoirTelemetryEntry(Span<byte> destination, in NoirTelemetryEntry entry)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.Flags);
+            WriteFloatLittleEndian(destination.Slice(8, 4), entry.Stress01);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.DepthMeters);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.Toxicity01);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.GlobalQualityWeight01);
+            WriteFloatLittleEndian(destination.Slice(24, 4), entry.Grain01);
+            WriteFloatLittleEndian(destination.Slice(28, 4), entry.Glitch01);
+            WriteFloatLittleEndian(destination.Slice(32, 4), entry.Vignette01);
+            WriteFloatLittleEndian(destination.Slice(36, 4), entry.AbSplit01);
+            WriteFloatLittleEndian(destination.Slice(40, 4), entry.WrappedTimeSeconds);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(44, 4), entry.ParameterHash);
+            WriteFloatLittleEndian(destination.Slice(48, 4), entry.EstimatedGpuCostMs);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(52, 4), entry.ActiveFeatureFlags);
+            destination.Slice(56, 8).Clear();
         }
 
         private bool TrySelectNoirColorProfile(
@@ -1063,12 +1185,13 @@ namespace Hecton8.Visor
         }
 
 #if UNITY_EDITOR
-        private unsafe bool TryLoadNoirColorCsvCold()
+        private bool TryLoadNoirColorCsvCold()
         {
             if (_noirColorCsvLoaded || _noirColorCsvLoadAttempted)
                 return _noirColorCsvLoaded;
 
-            if (!EnsureNoirVaultHandles() || _dataVault == null)
+            IDataVault vault = _dataVault;
+            if (!EnsureNoirVaultHandles() || vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             string path = ResolveNoirColorCsvPath();
@@ -1076,56 +1199,86 @@ namespace Hecton8.Visor
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            if (!_dataVault.TryLockBuffer(NoirCsvScratchVaultId, SystemID.GraphicsScalability))
-            {
-                _noirColorCsvLoadAttempted = false;
-                return false;
-            }
-
-            bool profileLocked = false;
             try
             {
-                if (!_dataVault.TryLockBuffer(NoirColorProfilesVaultId, SystemID.GraphicsScalability))
+                Span<byte> csvBytes = stackalloc byte[NoirCsvScratchBytes];
+                int read = ReadCsvFileIntoSpan(path, csvBytes);
+                if (read <= 0)
+                    return false;
+
+                Span<NoirColorProfileDTO> parsedProfiles = stackalloc NoirColorProfileDTO[NoirColorProfileCapacity];
+                int parsed = ParseNoirColorCsv(csvBytes.Slice(0, read), parsedProfiles);
+
+                NativeArray<byte> scratch = default;
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _noirCsvScratchHandle, SystemID.GraphicsScalability, out scratch))
                 {
                     _noirColorCsvLoadAttempted = false;
                     return false;
                 }
-                profileLocked = true;
 
-                if (!TryResolveNoirVaultBuffer(_dataVault, in _noirCsvScratchHandle, NoirCsvScratchVaultId, NoirCsvScratchBytes, out NativeArray<byte> scratch) ||
-                    !TryResolveNoirVaultBuffer(_dataVault, in _noirColorProfileHandle, NoirColorProfilesVaultId, NoirColorProfileCapacity, out NativeArray<NoirColorProfileDTO> profiles))
+                try
                 {
+                    if (!scratch.IsCreated || scratch.Length <= 0)
+                        return false;
+
+                    CopyBytesToNativeArray(csvBytes.Slice(0, read), scratch);
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _noirCsvScratchHandle, SystemID.GraphicsScalability);
+                }
+
+                NativeArray<NoirColorProfileDTO> profiles = default;
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _noirColorProfileHandle, SystemID.GraphicsScalability, out profiles))
+                {
+                    _noirColorCsvLoadAttempted = false;
                     return false;
                 }
 
-                int read;
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan))
+                try
                 {
-                    int max = math.min(scratch.Length, NoirCsvScratchBytes);
-                    void* scratchPtr = scratch.GetUnsafePtr();
-                    read = stream.Read(MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(scratchPtr), max));
+                    if (!profiles.IsCreated || profiles.Length <= 0)
+                        return false;
+
+                    CopyNoirColorProfilesToNativeArray(parsedProfiles, parsed, profiles);
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _noirColorProfileHandle, SystemID.GraphicsScalability);
                 }
 
-                if (read <= 0)
-                    return false;
-
-                int parsed = ParseNoirColorCsv(scratch, read, profiles);
                 _noirColorCsvLoaded = parsed > 0;
-                CacheNoirColorProfiles(profiles, parsed);
+                CacheNoirColorProfiles(parsedProfiles, parsed);
                 _hasCachedNoirColorProfile = false;
                 _hasCachedNoirColorProfileLookup = false;
                 return _noirColorCsvLoaded;
             }
-            finally
+            catch (IOException)
             {
-                if (profileLocked)
-                    _dataVault.TryUnlockBuffer(NoirColorProfilesVaultId, SystemID.GraphicsScalability);
-                _dataVault.TryUnlockBuffer(NoirCsvScratchVaultId, SystemID.GraphicsScalability);
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
             }
         }
 
         private void CacheNoirColorProfiles(
-            NativeArray<NoirColorProfileDTO> profiles,
+            ReadOnlySpan<NoirColorProfileDTO> profiles,
             int parsed)
         {
             int count = math.min(math.max(0, parsed), math.min(profiles.Length, _noirColorProfileCache.Length));
@@ -1139,11 +1292,10 @@ namespace Hecton8.Visor
         }
 
         private static int ParseNoirColorCsv(
-            NativeArray<byte> bytes,
-            int length,
-            NativeArray<NoirColorProfileDTO> profiles)
+            ReadOnlySpan<byte> bytes,
+            Span<NoirColorProfileDTO> profiles)
         {
-            int limit = math.min(length, bytes.Length);
+            int limit = bytes.Length;
             int cursor = 0;
             int write = 0;
             while (cursor < limit && write < profiles.Length)
@@ -1466,13 +1618,4 @@ namespace Hecton8.Visor
         }
     }
 
-    internal static class RasterCommandBufferStaticTextureBridge
-    {
-        public static void SetGlobalTexture(this RasterCommandBuffer cmd, int nameId, Texture texture)
-        {
-            _ = cmd;
-            if (texture != null)
-                Shader.SetGlobalTexture(nameId, texture);
-        }
-    }
 }

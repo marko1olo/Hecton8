@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ProceduralFamily_family_coral_low
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
   familyId: family.coral.low
-  familyLabel: Coral Low
+  familyLabel: Carbonate Low
   defaultFidelity: 2
   budgetClass: 0
   expectsCollision: 0
@@ -34,7 +34,7 @@ MonoBehaviour:
   clusterCountMin: 4
   clusterCountMax: 10
   heatmapChannel: coral_density
-  proxyColor: {r: 0.92, g: 0.48, b: 0.42, a: 1}
+  proxyColor: {r: 0.44, g: 0.38, b: 0.32, a: 1}
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
   - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
@@ -96,4 +96,4 @@ MonoBehaviour:
     uniformScaleRange: {x: 0.92, y: 1.06}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Coral/Coral_Low
-  gameplayRole: Low coral scatter for seafloor color and local variety.
+  gameplayRole: Low carbonate scatter for seafloor break-up, route edges, and local wear.

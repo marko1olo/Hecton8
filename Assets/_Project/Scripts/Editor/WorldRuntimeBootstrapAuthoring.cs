@@ -856,8 +856,8 @@ namespace Hecton8.EditorTools
         private static void ConfigureSceneZones()
         {
             ConfigureZone("--- WORLD ---/Resource_FieldSources", "zone.resources.field", "Resource Field", WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneTier.Starter, 0, 105f, 160f, "Starter raw-resource pocket for scrap, ore, and basic organics.", false, EnsureZoneProfile("ZoneProfile_Resources_Starter.asset", "profile.resources.starter", "Resources Starter", 1.16f, 1.14f, 1.08f, 1.08f, 1.06f, 1.12f, "resources.pickups.near", "resources.clutter.mid", "resources.landmarks.far"), 5);
-            ConfigureZone(StarterReefFieldPath, "zone.resources.starter_reef", "Starter Reef Field", WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneTier.Starter, 1, 126f, 212f, "Starter flora-rich reef pocket for coral and kelp GPUI coverage near spawn.", false, EnsureZoneProfile("ZoneProfile_Resources_Starter.asset", "profile.resources.starter", "Resources Starter", 1.16f, 1.14f, 1.08f, 1.08f, 1.06f, 1.12f, "resources.pickups.near", "resources.clutter.mid", "resources.landmarks.far"), 5);
-            ConfigureZone("--- WORLD ---/Fabrication_Outpost", "zone.fabrication.outpost", "Fabrication Outpost", WorldZoneAnchor.ZoneKind.Fabrication, WorldZoneAnchor.ZoneTier.Early, 4, 92f, 156f, "Safe utility stop for crafting, route recovery, and logistic reset.", true, EnsureZoneProfile("ZoneProfile_Fabrication_Early.asset", "profile.fabrication.early", "Fabrication Early", 1.04f, 1.02f, 1.12f, 1.1f, 1.04f, 1.16f, "fabrication.usables.near", "fabrication.outpost.mid", "fabrication.outpost.far"), 6);
+            ConfigureZone(StarterReefFieldPath, "zone.resources.starter_reef", "Starter Fossil Shelf Field", WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneTier.Starter, 1, 126f, 212f, "Starter readable fossil-shelf pocket for carbonate and kelp GPUI coverage near spawn.", false, EnsureZoneProfile("ZoneProfile_Resources_Starter.asset", "profile.resources.starter", "Resources Starter", 1.16f, 1.14f, 1.08f, 1.08f, 1.06f, 1.12f, "resources.pickups.near", "resources.clutter.mid", "resources.landmarks.far"), 5);
+            ConfigureZone("--- WORLD ---/Fabrication_Outpost", "zone.fabrication.outpost", "Fabrication Outpost", WorldZoneAnchor.ZoneKind.Fabrication, WorldZoneAnchor.ZoneTier.Early, 4, 92f, 156f, "Controlled utility stop for crafting, route recovery, and logistic reset.", true, EnsureZoneProfile("ZoneProfile_Fabrication_Early.asset", "profile.fabrication.early", "Fabrication Early", 1.04f, 1.02f, 1.12f, 1.1f, 1.04f, 1.16f, "fabrication.usables.near", "fabrication.outpost.mid", "fabrication.outpost.far"), 6);
             ConfigureZone("--- WORLD ---/Tool_Staging/Tool_TrialRange", "zone.trial.range", "Tool Trial Range", WorldZoneAnchor.ZoneKind.Trial, WorldZoneAnchor.ZoneTier.Early, 1, 110f, 190f, "Compact authored proving ground for tools, flows, and future prefab replacement.", false, EnsureZoneProfile("ZoneProfile_Trial_Early.asset", "profile.trial.early", "Trial Early", 1.08f, 1.08f, 1.06f, 1.06f, 1.08f, 1.18f, "trial.interactive.near", "trial.structures.mid", "trial.readability.far"), 9);
             ConfigureZone("--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ConstructionOps", "zone.trial.construction", "Construction Ops", WorldZoneAnchor.ZoneKind.Construction, WorldZoneAnchor.ZoneTier.Mid, 2, 74f, 126f, "Construction socket, blocker, and placement-control lane.", false, EnsureZoneProfile("ZoneProfile_Construction_Mid.asset", "profile.construction.mid", "Construction Mid", 1.02f, 1.0f, 1.1f, 1.08f, 1.08f, 1.12f, "construction.sockets.near", "construction.frames.mid", "construction.spine.far"), 17);
             ConfigureZone("--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ServiceModules", "zone.trial.service", "Service Modules", WorldZoneAnchor.ZoneKind.Service, WorldZoneAnchor.ZoneTier.Mid, 2, 78f, 132f, "Repair, flooding, and maintenance lane for service gameplay.", false, EnsureZoneProfile("ZoneProfile_Service_Mid.asset", "profile.service.mid", "Service Mid", 1.04f, 1.02f, 1.1f, 1.1f, 1.06f, 1.14f, "service.targets.near", "service.frames.mid", "service.route.far"), 23);
@@ -872,7 +872,7 @@ namespace Hecton8.EditorTools
             ConfigureContentSocket("--- WORLD ---/Resource_FieldSources/Scrap_Field/Scrap_A", "socket.resources.scrap_a", "Scrap A", WorldContentSocket.ContentKind.ResourcePickup, WorldSliceAnchor.SliceState.Near, 4f, 2, "resource.scrap.titanium", "Starter loose scrap pickup.", EnsureContentProfile("ContentProfile_ResourcePickup.asset", "content.profile.resource_pickup", "Resource Pickup", WorldContentSocket.ContentKind.ResourcePickup, WorldZoneAnchor.ZoneKind.Resources, WorldSliceAnchor.SliceState.Near, "resource.pickup", "Loose collectible resource.", 2));
             ConfigureContentSocket("--- WORLD ---/Resource_FieldSources/Mineral_Pocket/Node_Copper_A", "socket.resources.copper_a", "Copper Node A", WorldContentSocket.ContentKind.ResourceNode, WorldSliceAnchor.SliceState.Near, 7f, 3, "resource.node.copper", "Starter copper extraction node.", EnsureContentProfile("ContentProfile_ResourceNode.asset", "content.profile.resource_node", "Resource Node", WorldContentSocket.ContentKind.ResourceNode, WorldZoneAnchor.ZoneKind.Resources, WorldSliceAnchor.SliceState.Near, "resource.node", "Breakable extractable resource node.", 3));
             ConfigureContentSocket("--- WORLD ---/Resource_FieldSources/Mineral_Pocket/Node_Silver_A", "socket.resources.silver_a", "Silver Node A", WorldContentSocket.ContentKind.ResourceNode, WorldSliceAnchor.SliceState.Near, 7f, 4, "resource.node.silver", "Higher-value starter electronics node.", EnsureContentProfile("ContentProfile_ResourceNode.asset", "content.profile.resource_node", "Resource Node", WorldContentSocket.ContentKind.ResourceNode, WorldZoneAnchor.ZoneKind.Resources, WorldSliceAnchor.SliceState.Near, "resource.node", "Breakable extractable resource node.", 3));
-            ConfigureContentSocket("--- WORLD ---/Fabrication_Outpost/Forward_Fabricator", "socket.fabrication.forward", "Forward Fabricator", WorldContentSocket.ContentKind.FabricationStation, WorldSliceAnchor.SliceState.Mid, 8f, 5, "station.fabricator.forward", "Safe fabrication station and recovery stop.", EnsureContentProfile("ContentProfile_FabricationStation.asset", "content.profile.fabrication_station", "Fabrication Station", WorldContentSocket.ContentKind.FabricationStation, WorldZoneAnchor.ZoneKind.Fabrication, WorldSliceAnchor.SliceState.Mid, "station.fabrication", "Crafting and recovery station.", 5));
+            ConfigureContentSocket("--- WORLD ---/Fabrication_Outpost/Forward_Fabricator", "socket.fabrication.forward", "Forward Fabricator", WorldContentSocket.ContentKind.FabricationStation, WorldSliceAnchor.SliceState.Mid, 8f, 5, "station.fabricator.forward", "Controlled fabrication station and recovery stop.", EnsureContentProfile("ContentProfile_FabricationStation.asset", "content.profile.fabrication_station", "Fabrication Station", WorldContentSocket.ContentKind.FabricationStation, WorldZoneAnchor.ZoneKind.Fabrication, WorldSliceAnchor.SliceState.Mid, "station.fabrication", "Crafting and recovery station.", 5));
             ConfigureContentSocket("--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ConstructionOps/Construct_SocketBase", "socket.construction.socket_base", "Construction Socket Base", WorldContentSocket.ContentKind.ConstructionPoint, WorldSliceAnchor.SliceState.Near, 8f, 3, "construction.socket.foundation", "Reliable snapped construction point.", EnsureContentProfile("ContentProfile_ConstructionPoint.asset", "content.profile.construction_point", "Construction Point", WorldContentSocket.ContentKind.ConstructionPoint, WorldZoneAnchor.ZoneKind.Construction, WorldSliceAnchor.SliceState.Near, "construction.point", "Socket or placement point for build flow.", 3));
             ConfigureContentSocket("--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_PowerOps/Power_CurrentTurbine", "socket.power.generator", "Current Turbine Point", WorldContentSocket.ContentKind.PowerPoint, WorldSliceAnchor.SliceState.Mid, 9f, 4, "power.generator.current_turbine", "Generator socket for power lane support.", EnsureContentProfile("ContentProfile_PowerPoint.asset", "content.profile.power_point", "Power Point", WorldContentSocket.ContentKind.PowerPoint, WorldZoneAnchor.ZoneKind.Power, WorldSliceAnchor.SliceState.Mid, "power.point", "Generation, relay, or load power point.", 4));
             ConfigureContentSocket("--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_PowerOps/Power_ServicePump", "socket.power.load", "Service Pump Load", WorldContentSocket.ContentKind.PowerPoint, WorldSliceAnchor.SliceState.Near, 8f, 4, "power.load.service_pump", "Powered service load target.", EnsureContentProfile("ContentProfile_PowerPoint.asset", "content.profile.power_point", "Power Point", WorldContentSocket.ContentKind.PowerPoint, WorldZoneAnchor.ZoneKind.Power, WorldSliceAnchor.SliceState.Mid, "power.point", "Generation, relay, or load power point.", 4));
@@ -982,14 +982,14 @@ namespace Hecton8.EditorTools
         {
             List<WorldPopulationRule> rules = new List<WorldPopulationRule>
             {
-                EnsurePopulationRule("PopulationRule_Resources_Starter.asset", "population.rule.resources.starter", "Starter Resource Pocket", WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneTier.Starter, WorldZoneAnchor.ZoneTier.Early, WorldContentSocket.ContentKind.ResourcePickup, "resource.pickup.cluster", "Starter loose resource pocket.", "Best in bright starter geology with clear gathering loops and obvious return lines.", 1.2f, 3, 2, 6, "biome.family.littoral_karst", "biome.family.sediment_drift", "biome.family.fossil_reef"),
+                EnsurePopulationRule("PopulationRule_Resources_Starter.asset", "population.rule.resources.starter", "Starter Resource Pocket", WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneTier.Starter, WorldZoneAnchor.ZoneTier.Early, WorldContentSocket.ContentKind.ResourcePickup, "resource.pickup.cluster", "Starter loose resource pocket.", "Best in readable starter geology with clear gathering loops and obvious return lines.", 1.2f, 3, 2, 6, "biome.family.littoral_karst", "biome.family.sediment_drift", "biome.family.fossil_reef"),
                 EnsurePopulationRule("PopulationRule_ResourceNode_Starter.asset", "population.rule.resource_node.starter", "Starter Resource Node", WorldZoneAnchor.ZoneKind.Resources, WorldZoneAnchor.ZoneTier.Starter, WorldZoneAnchor.ZoneTier.Mid, WorldContentSocket.ContentKind.ResourceNode, "resource.node.cluster", "Starter extractable node cluster.", "Best where readable stone forms hide mineral pockets without heavy combat pressure.", 1.15f, 2, 1, 3, "biome.family.littoral_karst", "biome.family.granite_escarpment", "biome.family.crystal_growth", "biome.family.fossil_reef"),
-                EnsurePopulationRule("PopulationRule_Fabrication_Outpost.asset", "population.rule.fabrication.outpost", "Fabrication Outpost Utility", WorldZoneAnchor.ZoneKind.Fabrication, WorldZoneAnchor.ZoneTier.Early, WorldZoneAnchor.ZoneTier.Mid, WorldContentSocket.ContentKind.FabricationStation, "station.fabrication.outpost", "Crafting/rest stop and support pocket.", "Fits calm, readable transition spaces that feel safe enough to regroup.", 0.8f, 1, 1, 1, "biome.family.sediment_drift", "biome.family.littoral_karst", "biome.family.crystal_growth"),
+                EnsurePopulationRule("PopulationRule_Fabrication_Outpost.asset", "population.rule.fabrication.outpost", "Fabrication Outpost Utility", WorldZoneAnchor.ZoneKind.Fabrication, WorldZoneAnchor.ZoneTier.Early, WorldZoneAnchor.ZoneTier.Mid, WorldContentSocket.ContentKind.FabricationStation, "station.fabrication.outpost", "Crafting/rest stop and support pocket.", "Fits readable transition spaces that are clear enough to regroup without implying comfort.", 0.8f, 1, 1, 1, "biome.family.sediment_drift", "biome.family.littoral_karst", "biome.family.crystal_growth"),
                 EnsurePopulationRule("PopulationRule_Construction_Mid.asset", "population.rule.construction.mid", "Construction Support Route", WorldZoneAnchor.ZoneKind.Construction, WorldZoneAnchor.ZoneTier.Mid, WorldZoneAnchor.ZoneTier.Endgame, WorldContentSocket.ContentKind.ConstructionPoint, "construction.support.route", "Sockets and blockers around construction flow.", "Works best in strong structural geology where frames, ledges, and route anchors read clearly.", 1.0f, 2, 1, 3, "biome.family.tectonic_spine", "biome.family.granite_escarpment", "biome.family.rift_spine"),
                 EnsurePopulationRule("PopulationRule_Power_Mid.asset", "population.rule.power.mid", "Power Support Chain", WorldZoneAnchor.ZoneKind.Power, WorldZoneAnchor.ZoneTier.Mid, WorldZoneAnchor.ZoneTier.Endgame, WorldContentSocket.ContentKind.PowerPoint, "power.support.chain", "Generation, relay, and service load chain.", "Best in hot, fractured, or chemical spaces where energy infrastructure feels necessary.", 1.0f, 2, 1, 3, "biome.family.volcanic_glass", "biome.family.chemosynthetic_brine", "biome.family.rift_spine", "biome.family.granite_escarpment"),
                 EnsurePopulationRule("PopulationRule_Service_Mid.asset", "population.rule.service.mid", "Service Recovery Target", WorldZoneAnchor.ZoneKind.Service, WorldZoneAnchor.ZoneTier.Mid, WorldZoneAnchor.ZoneTier.Endgame, WorldContentSocket.ContentKind.ServiceTarget, "service.recovery.target", "Flooded or damaged service recovery target.", "Best where pressure, silt, or corrosion make maintenance feel like real survival work.", 0.95f, 2, 1, 2, "biome.family.abyssal_silt", "biome.family.chemosynthetic_brine", "biome.family.tectonic_spine", "biome.family.granite_escarpment"),
                 EnsurePopulationRule("PopulationRule_Navigation_Mid.asset", "population.rule.navigation.mid", "Navigation Guide Chain", WorldZoneAnchor.ZoneKind.Generic, WorldZoneAnchor.ZoneTier.Early, WorldZoneAnchor.ZoneTier.Endgame, WorldContentSocket.ContentKind.NavigationMarker, "navigation.marker.chain", "Readable route markers and frontier guides.", "Best in spaces where the terrain itself teaches route memory and branch choice.", 0.9f, 3, 2, 4, "biome.family.granite_escarpment", "biome.family.tectonic_spine", "biome.family.sediment_drift"),
-                EnsurePopulationRule("PopulationRule_Combat_Mid.asset", "population.rule.combat.mid", "Combat Pressure Node", WorldZoneAnchor.ZoneKind.Combat, WorldZoneAnchor.ZoneTier.Mid, WorldZoneAnchor.ZoneTier.Endgame, WorldContentSocket.ContentKind.CombatPoint, "combat.pressure.node", "Hostile or controlling combat contact.", "Best in reefs, fractures, and hostile terrain that create short control fights instead of flat arenas.", 0.95f, 2, 1, 2, "biome.family.fossil_reef", "biome.family.rift_spine", "biome.family.volcanic_hadal", "biome.family.tectonic_spine"),
+                EnsurePopulationRule("PopulationRule_Combat_Mid.asset", "population.rule.combat.mid", "Combat Pressure Node", WorldZoneAnchor.ZoneKind.Combat, WorldZoneAnchor.ZoneTier.Mid, WorldZoneAnchor.ZoneTier.Endgame, WorldContentSocket.ContentKind.CombatPoint, "combat.pressure.node", "Hostile or controlling combat contact.", "Best in fossil shelves, fractures, and hostile terrain that create short control fights instead of flat arenas.", 0.95f, 2, 1, 2, "biome.family.fossil_reef", "biome.family.rift_spine", "biome.family.volcanic_hadal", "biome.family.tectonic_spine"),
                 EnsurePopulationRule("PopulationRule_Progression_Endgame.asset", "population.rule.progression.endgame", "Endgame Progression Route", WorldZoneAnchor.ZoneKind.Progression, WorldZoneAnchor.ZoneTier.Late, WorldZoneAnchor.ZoneTier.Endgame, WorldContentSocket.ContentKind.Landmark, "progression.route.landmark", "Late-game frontier landmark and route goal.", "Best in extreme late spaces where the landmark itself is a promise of major progress.", 0.85f, 1, 1, 2, "biome.family.volcanic_hadal", "biome.family.metallic_hadal", "biome.family.rift_void", "biome.family.abyssal_silt"),
                 EnsurePopulationRule("PopulationRule_Hazard_Generic.asset", "population.rule.hazard.generic", "Hazard Probe Logic", WorldZoneAnchor.ZoneKind.Generic, WorldZoneAnchor.ZoneTier.Starter, WorldZoneAnchor.ZoneTier.Endgame, WorldContentSocket.ContentKind.HazardPoint, "hazard.probe", "Probe or warning anchor in risky routes.", "Best where the terrain itself carries localized danger and forces a read before commitment.", 0.9f, 2, 1, 3, "biome.family.volcanic_glass", "biome.family.chemosynthetic_brine", "biome.family.rift_void", "biome.family.tectonic_spine", "biome.family.abyssal_silt")
             };
@@ -2036,9 +2036,9 @@ namespace Hecton8.EditorTools
             switch (zoneProfileId)
             {
                 case "profile.resources.starter":
-                    profile.entryBeat = "A bright shelf, arch, or scrap silhouette makes the water easy to read at first glance.";
+                    profile.entryBeat = "A readable shelf, arch, or scrap silhouette makes the water easy to read at first glance.";
                     profile.routineBeat = "Common materials are visible quickly without forcing one exact sweep.";
-                    profile.reliefBeat = "Short calm pockets let the player reorient and decide whether to keep wandering.";
+                    profile.reliefBeat = "Short reorientation pockets let the player reassess and decide whether to keep wandering.";
                     profile.pressureBeat = "Risk rises naturally as visibility drops and easy materials thin out.";
                     profile.payoffBeat = "A stronger node or denser material patch exists deeper in for players who feel like pushing.";
                     profile.exitBeat = "Leaving stays readable by memory of shape and light, not by a prescribed line.";
@@ -2047,9 +2047,9 @@ namespace Hecton8.EditorTools
                     profile.optionalDetourRule = "Side pockets should still teach the terrain and pay out a little value.";
                     profile.returnLogic = "Returning later should feel faster because the player remembers the shapes and material rhythm.";
                     profile.masteryLogic = "Mastery means building a personal quick-harvest loop, not following a designer path.";
-                    profile.playerPromise = "Readable early water with safe value, mild risk, and room to improvise.";
-                    profile.routeMemoryRule = "Memory should come from one strong silhouette and one reliable calm pocket.";
-                    profile.failureMode = "If shapes, safety, and value blur together, the area turns into mush.";
+                    profile.playerPromise = "Readable early water with recoverable value, mild risk, and room to improvise.";
+                    profile.routeMemoryRule = "Memory should come from one strong silhouette and one reliable reorientation pocket.";
+                    profile.failureMode = "If shapes, pressure, and value blur together, the area turns into mush.";
                     return;
                 case "profile.fabrication.early":
                     profile.entryBeat = "A visible outpost or fabrication stop reads as a reliable human foothold.";
@@ -2102,7 +2102,7 @@ namespace Hecton8.EditorTools
                 case "profile.progression.endgame":
                     profile.entryBeat = "A strong silhouette or environmental shift warns that this water is serious.";
                     profile.routineBeat = "Routine value is sparse; the area tells the player this is not a lazy farm pocket.";
-                    profile.reliefBeat = "Rare calm pockets matter because they create decision space before a deeper commitment.";
+                    profile.reliefBeat = "Rare reorientation pockets matter because they create decision space before a deeper commitment.";
                     profile.pressureBeat = "Risk ramps through depth, exposure, and uncertainty rather than a forced gate.";
                     profile.payoffBeat = "A rare high-value lure exists deeper in for players willing to bring preparation and nerve.";
                     profile.exitBeat = "Getting out should reward memory, restraint, and choosing when enough is enough.";
@@ -2150,7 +2150,7 @@ namespace Hecton8.EditorTools
                 default:
                     profile.entryBeat = "A readable landmark or contrast in the water invites first contact.";
                     profile.routineBeat = "Common value can be found without implying one correct sweep.";
-                    profile.reliefBeat = "At least one calm pocket gives the player space to think.";
+                    profile.reliefBeat = "At least one reorientation pocket gives the player space to think.";
                     profile.pressureBeat = "Risk grows naturally where depth, threat, or visibility turn harsher.";
                     profile.payoffBeat = "A stronger lure exists deeper in for players who choose to keep pushing.";
                     profile.exitBeat = "Returning stays readable through remembered shapes, not a prescribed line.";
@@ -2180,7 +2180,7 @@ namespace Hecton8.EditorTools
                     profile.optionalDetourRule = "Esli igrok ushel v storonu, on vse ravno dolzhen vzyat chto-to poleznoe i ponyat relef.";
                     profile.returnLogic = "Dazhe korotkiy vyhod iz zony dolzhen zapominatsya kak ponyatnyy sborochnyy karman.";
                     profile.masteryLogic = "Opytnyy igrok mozhet rezat startovye krugi ochen bystro, pochti bez ostanovok.";
-                    profile.playerPromise = "Ponyatnyy startovyy krug: bystro nashel, bystro ponyal, bezopasno vernulsya.";
+                    profile.playerPromise = "Ponyatnyy startovyy krug: bystro nashel, bystro ponyal, vernulsya po chitaemomu marshrutu.";
                     profile.routeMemoryRule = "Igrok dolzhen pomnit odin silnyy vhodnoy orientir i odin karman peredyshki.";
                     profile.failureMode = "Esli uyti slishkom gluboko bez yakorya marshruta, startovaya zona perestaet byt prostoy.";
                     break;
@@ -2188,7 +2188,7 @@ namespace Hecton8.EditorTools
                     profile.entryBeat = "Vhod cherez uznavaemyy forpost ili teh-ostanovku.";
                     profile.routineBeat = "Blizhayshiy krug — proverit kraft, logistiku i vosstanovit nabor.";
                     profile.reliefBeat = "Peredyshka tut glavnaya: igrok dolzhen chuvstvovat kontrol i reset.";
-                    profile.pressureBeat = "Sleduyuschee davlenie nachinaetsya uzhe posle vyhoda iz bezopasnogo kontura.";
+                    profile.pressureBeat = "Sleduyuschee davlenie nachinaetsya uzhe posle vyhoda iz korotkogo kontura peredyshki.";
                     profile.payoffBeat = "Glavnaya nagrada — ne lut, a podgotovka k sleduyuschemu zahodu.";
                     profile.exitBeat = "Vyhod dolzhen byt korotkim i ochevidnym.";
                     profile.playerFreedomRule = "Igrok volen ispolzovat forpost kogda hochet; sistema ne trebuet poseschat ego po taymeru.";
@@ -2321,7 +2321,7 @@ namespace Hecton8.EditorTools
                     profile.masteryRule = "Masterstvo zdes — znat korotkie resursoemkie krugi bez lishnego bluzhdaniya.";
                     profile.playerPromise = "Ponyatnaya startovaya voda s chestnym farmom i myagkim namekom na glubinu.";
                     profile.memoryRule = "Pamyat derzhitsya na arkah, stupenyah, pyatnah sveta i odnom horoshem orientire.";
-                    profile.dangerRule = "Opasnost rastet po mere udaleniya ot chitaemoy bezopasnoy vody.";
+                    profile.dangerRule = "Opasnost rastet po mere udaleniya ot chitaemoy vody i route anchor.";
                     break;
 
                 case "profile.power.mid":
@@ -2652,17 +2652,17 @@ namespace Hecton8.EditorTools
             {
                 "profile.resources.starter" => roleId switch
                 {
-                    "resource_pocket" => "Small readable loose-resource pocket close to a safe route line.",
+                    "resource_pocket" => "Small readable loose-resource pocket close to a stable route line.",
                     "node_cluster" => "A slightly deeper mineral cluster that asks for a small detour.",
-                    "safe_pocket" => "Short recovery nook behind stone cover or reef folds.",
+                    "safe_pocket" => "Short recovery nook behind stone cover or fossil folds.",
                     "route_anchor" => "A strong readable form that keeps beginner routes stable.",
                     "rare_objective" => "The best find of the pocket, one layer deeper than routine scrap.",
                     _ => "Not a major role for this zone."
                 },
                 "profile.fabrication.early" => roleId switch
                 {
-                    "safe_pocket" => "The trusted regroup and craft stop around the outpost.",
-                    "route_anchor" => "Approach marker that brings the player back to safety.",
+                    "safe_pocket" => "Controlled regroup and craft stop around the outpost.",
+                    "route_anchor" => "Approach marker that brings the player back to route clarity.",
                     "rare_objective" => "The memorable utility landmark that makes the stop worth revisiting.",
                     _ => "Not a major role for this zone."
                 },

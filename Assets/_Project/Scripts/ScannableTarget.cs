@@ -3,6 +3,7 @@ using UnityEngine;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Data;
+using Hecton8.Interaction;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -136,12 +137,15 @@ namespace Hecton8.Gameplay
             if (_spatialHandle == 0)
                 _spatialHandle = WorldSpatialHashGrid.RegisterScannable(this);
 
+            InteractableRegistry.RegisterTree(this);
+
             if (_loreRegistryIndex < 0)
                 _loreRegistryIndex = RegisterLoreEntity(this);
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             UnregisterLoreEntity(this);
             if (_spatialHandle == 0)
                 return;
@@ -152,6 +156,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             UnregisterLoreEntity(this);
             if (_spatialHandle == 0)
                 return;

@@ -1,0 +1,2947 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\VEGETATION_RUNTIME_HOTPATH_AUDIT_1316_LOOP78.json",
+  "auditHashSha256": "363813fba5f461592e52669bc28766e0800b4a8a3be291919b5467e7d213774b",
+  "summary": {
+    "scannedFiles": 5,
+    "parseFailures": 0,
+    "totalFindings": 364,
+    "objectCreations": 364,
+    "valueTypeCreations": 170,
+    "managedRiskCreations": 194,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\WorldSpatialHashGrid.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\Biolum\\HectonBiolumManager.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\FloraRegrowthDirector.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\FloraInteractionManager.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\SargassumMicroFaunaBoids.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 186,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.World.SpatialHashFacade.Query\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 187,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.World.SpatialHashFacade.Maintenance\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 188,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.World.SpatialHashFacade.Validation\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 189,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.World.SpatialHashFacade.FarUnload\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 190,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.World.SpatialHashFacade.AcousticDensity\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 830,
+      "owner": "TryGetNearestBioform",
+      "kind": "object_creation",
+      "detail": "SpatialQueryHit",
+      "snippet": "new SpatialQueryHit(                     candidateTransform,                     entry.Owner,                     position,                     candidateAup,                     ClampDistanceSqrToFloat(distanceSqr),                     entr"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 928,
+      "owner": "TryGetNearestAggressiveBioform",
+      "kind": "object_creation",
+      "detail": "SpatialQueryHit",
+      "snippet": "new SpatialQueryHit(                     candidateTransform,                     entry.Owner,                     position,                     candidateAup,                     ClampDistanceSqrToFloat(distanceSqr),                     entr"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 1082,
+      "owner": "BuildSonarSnapshot",
+      "kind": "object_creation",
+      "detail": "SpatialSonarSnapshot",
+      "snippet": "new SpatialSonarSnapshot(                  resourceCount,                 bioformCount,                 signalCount,                 hasNearestResource,                 hasNearestResource ? ClampDistanceToHud(nearestResourceDistanceMeters) "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 1189,
+      "owner": "CollectContactsNonAllocChecked",
+      "kind": "object_creation",
+      "detail": "SpatialQueryHit",
+      "snippet": "new SpatialQueryHit(                     candidateTransform,                     entry.Owner,                     position,                     candidateAup,                     ClampDistanceSqrToFloat(distanceSqr),                     entr"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 1345,
+      "owner": "TryGetAcousticDensityMap",
+      "kind": "object_creation",
+      "detail": "Vector3Int",
+      "snippet": "new Vector3Int(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 1417,
+      "owner": "QueryTemperatureGradient",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(gradientLocal.x, gradientLocal.y, gradientLocal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 1519,
+      "owner": "EnsureInitialized",
+      "kind": "object_creation",
+      "detail": "HectonSpatialHash",
+      "snippet": "new HectonSpatialHash(                     MaxSpatialMaintenanceEntryCapacity,                     MaxSpatialMaintenanceEntryCapacity * 4,                     CellSizeMeters,                     NativeMemoryLifetime)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 1563,
+      "owner": "Register",
+      "kind": "value_type_creation",
+      "detail": "Entry",
+      "snippet": "new Entry             {                 Transform = targetTransform,                 Owner = owner,                 Rigidbody = ResolveCachedRigidbody(owner, targetTransform),                 RuntimePosition = runtimePosition,              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 1743,
+      "owner": "IsFiniteAup",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.LocalX, position.LocalY, position.LocalZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 1763,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 1847,
+      "owner": "ScheduleValidation",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtime.x, runtime.y, runtime.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 1924,
+      "owner": "TryScheduleFarUnload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(refreshedRuntime.x, refreshedRuntime.y, refreshedRuntime.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 2037,
+      "owner": "BuildAcousticDensityMap",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(listenerRuntime.x, listenerRuntime.y, listenerRuntime.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 2053,
+      "owner": "BuildAcousticDensityMap",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 2090,
+      "owner": "TrackTransientSignal",
+      "kind": "value_type_creation",
+      "detail": "TransientSignalEntry",
+      "snippet": "new TransientSignalEntry             {                 RuntimePosition = runtimePosition,                 AbsolutePosition = positionAup,                 ExpireTimestamp = expirationTimestamp,                 SignalRole = signalRole,       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 175,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.62f, 0.94f, 1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 201,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(-1f, -1f, -1f, -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 202,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(-1f, -1f, -1f, -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 203,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(-1f, -1f, -1f, -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 204,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(-1f, -1f, -1f, -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 477,
+      "owner": "TryBuildAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 666,
+      "owner": "UpdateGlobalBiolumPhase",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_globalBiolumPhase, _masterPulse01, _flowFrequencyScale, _eclipseMask)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 667,
+      "owner": "UpdateGlobalBiolumPhase",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_masterIntensity, _predatorCurrentIntensity, _daylightMask, _activeTouchRippleCount)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 883,
+      "owner": "UpdateRippleDistanceOrder",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(observerPosition.x, observerPosition.y, observerPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 963,
+      "owner": "FlushTouchRippleBuffer",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                          writeCount,                          _pendingTouchRippleUploadBlend,                          _pendingTouchRippleQualityWeight,                          0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 1027,
+      "owner": "StageTouchRippleSlot",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(position.x, position.y, position.z, radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 1036,
+      "owner": "UpdatePredatorBlackout",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 1062,
+      "owner": "UpdatePredatorBlackout",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(predatorPosition.x, predatorPosition.y, predatorPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 1068,
+      "owner": "UpdatePredatorBlackout",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(predatorPosition.x, predatorPosition.y, predatorPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 1297,
+      "owner": "OnOriginShift",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 1313,
+      "owner": "RecordBiolumTelemetry",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 1340,
+      "owner": "RecordBiolumTelemetry",
+      "kind": "value_type_creation",
+      "detail": "BiolumTelemetryEntry",
+      "snippet": "new BiolumTelemetryEntry                  {                      Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,                      CameraPositionX = cameraPosition3.x,                      CameraPositionY = cameraPosition3.y,      "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 1397,
+      "owner": "DumpBiolumTelemetry",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 1398,
+      "owner": "DumpBiolumTelemetry",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 1437,
+      "owner": "FastLerpColor",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(                  from.r + ((to.r - from.r) * t),                  from.g + ((to.g - from.g) * t),                  from.b + ((to.b - from.b) * t),                  from.a + ((to.a - from.a) * t))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 1634,
+      "owner": "ResetFloraShaderGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(0f, 0.5f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 441,
+      "owner": "SyncMaturationStatesForPayload",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 458,
+      "owner": "SyncMaturationStatesForPayload",
+      "kind": "value_type_creation",
+      "detail": "FloraMaturationState",
+      "snippet": "new FloraMaturationState                  {                      InstanceUid = instanceUid,                      TemplateHash = templateHash,                      RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePos"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 462,
+      "owner": "SyncMaturationStatesForPayload",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 510,
+      "owner": "EvaluateMaturationState",
+      "kind": "object_creation",
+      "detail": "FloraMaturationResult",
+      "snippet": "new FloraMaturationResult             {                 InstanceUid = state.InstanceUid,                 Progress01 = progress01,                 GrowthMultiplier = ResolveLightStarvationGrowthMultiplier(in state, progress01),              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 586,
+      "owner": "TryRegisterSymbioticFungalNode",
+      "kind": "value_type_creation",
+      "detail": "SymbioticFungalNodeState",
+      "snippet": "new SymbioticFungalNodeState             {                 InstanceUid = state.InstanceUid,                 TemplateHash = state.TemplateHash,                 RuntimePosition = state.RuntimePosition,                 Active = 1,             "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 656,
+      "owner": "TryApplySymbioticFungalFertilizer",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 728,
+      "owner": "ApplySymbioticRadiusBuff",
+      "kind": "value_type_creation",
+      "detail": "SymbioticFungalBuffState",
+      "snippet": "new SymbioticFungalBuffState                  {                      InstanceUid = node.InstanceUid,                      ExpirePlayTimeSeconds = expireTime,                      GrowthMultiplier = growthMultiplier,                      Res"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 848,
+      "owner": "Tick",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(state.RuntimePosition.x, state.RuntimePosition.y, state.RuntimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 875,
+      "owner": "OnOriginShift",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(-shiftData.ShiftOffset.x, -shiftData.ShiftOffset.y, -shiftData.ShiftOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 926,
+      "owner": "SlowTick",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 946,
+      "owner": "SlowTick",
+      "kind": "value_type_creation",
+      "detail": "FloraRegrowthState",
+      "snippet": "new FloraRegrowthState                  {                      InstanceUid = deltaRecord.InstanceUid,                      TemplateHash = deltaRecord.ItemPersistentIdHash,                      RuntimePosition = new float3(runtimePosition.x,"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 950,
+      "owner": "SlowTick",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 993,
+      "owner": "SlowTick",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1006,
+      "owner": "SlowTick",
+      "kind": "value_type_creation",
+      "detail": "FloraRegrowthState",
+      "snippet": "new FloraRegrowthState                  {                      InstanceUid = deltaRecord.InstanceUid,                      TemplateHash = deltaRecord.ItemPersistentIdHash,                      RuntimePosition = new float3(runtimePosition.x,"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1010,
+      "owner": "SlowTick",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1049,
+      "owner": "UpdateSeedFlights",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(state.Position.x, state.Position.y, state.Position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1059,
+      "owner": "UpdateSeedFlights",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(seedPosition.x, seedPosition.y, seedPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1082,
+      "owner": "TryLandSeed",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(state.Position.x, state.Position.y, state.Position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1099,
+      "owner": "TryLandSeed",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(landingPosition.x, landingPosition.y, landingPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1131,
+      "owner": "TryEmitSargassumSeeds",
+      "kind": "value_type_creation",
+      "detail": "SeedFlightState",
+      "snippet": "new SeedFlightState                 {                      SeedInstanceUid = seedUid,                      TemplateHash = deltaRecord.ItemPersistentIdHash,                      Position = new float3(basePosition.x + lateralOffset.x, basePos"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1135,
+      "owner": "TryEmitSargassumSeeds",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(basePosition.x + lateralOffset.x, basePosition.y + lateralOffset.y, basePosition.z + lateralOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1221,
+      "owner": "ExtractTranslation",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(matrix.m03, matrix.m13, matrix.m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1255,
+      "owner": "ResolveSeedLateralOffset",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(direction.x * radius, 0.12f + (0.33f * NextSeed01(ref state)), direction.y * radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1263,
+      "owner": "ResolveSeedOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1265,
+      "owner": "ResolveSeedOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.70710677f, 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1267,
+      "owner": "ResolveSeedOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1269,
+      "owner": "ResolveSeedOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.70710677f, 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1271,
+      "owner": "ResolveSeedOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1273,
+      "owner": "ResolveSeedOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.70710677f, -0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1275,
+      "owner": "ResolveSeedOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1277,
+      "owner": "ResolveSeedOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.70710677f, -0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "line": 1373,
+      "owner": "ToRuntimePosition",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 265,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(Matrices[index].m03, Matrices[index].m13, Matrices[index].m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 290,
+      "owner": "BuildDeterministicFrameOffset",
+      "kind": "value_type_creation",
+      "detail": "uint3",
+      "snippet": "new uint3(                      (uint)math.max(0, instanceIndex),                      math.asuint(instanceData.Variation),                      math.asuint(instanceData.TemplateIndex))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 462,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      (x - halfIndex) * safeCellSize,                      (y - halfIndex) * safeCellSize,                      (z - halfIndex) * safeCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 537,
+      "owner": "ResolveAmbientCurrent",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.35f, 0.04f, 0.72f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 545,
+      "owner": "ResolveAmbientCurrent",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(n0 - 0.5f, (n2 - 0.5f) * 0.35f, n1 - 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 579,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      (x - halfIndex) * safeCellSize,                      (y - halfIndex) * safeCellSize,                      (z - halfIndex) * safeCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 586,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      (Triangle01(FramePhase * 0.31f) - 0.5f) * safeResolution * safeCellSize * 0.42f,                      (Triangle01(FramePhase * 0.19f + 0.27f) - 0.5f) * safeResolution * safeCellSize * 0.18f,                 "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 598,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.42f, -0.08f, 0.82f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 598,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 654,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(FieldCenterWS.x, FieldCenterWS.y, FieldCenterWS.z, CellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 655,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(Resolution, math.select(0f, 1f, maxMagnitude > 0.0001f), QualityWeight, maxMagnitude)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 656,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(NodeCount, UpdateIntervalSeconds, ActiveWakeCount, nonZeroCells)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 657,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                      math.max(0, FrameIndex),                      AupShiftSequence,                      math.max(0, BlackBoxCursor),                      outputFlags)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 736,
+      "owner": "ResolveAupLocalDelta",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(                  (((double)source.GridX - origin.GridX) * cellSize) + ((double)source.LocalX - origin.LocalX),                  (((double)source.GridY - origin.GridY) * cellSize) + ((double)source.LocalY - origin.LocalY),      "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 740,
+      "owner": "ResolveAupLocalDelta",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-maxLocalDeltaMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 740,
+      "owner": "ResolveAupLocalDelta",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(maxLocalDeltaMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 741,
+      "owner": "ResolveAupLocalDelta",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)delta.x, (float)delta.y, (float)delta.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2008,
+      "owner": "Tick",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  math.lerp(_smoothPosition.x, targetPosition.x, positionBlend),                  math.lerp(_smoothPosition.y, targetPosition.y, positionBlend),                  math.lerp(_smoothPosition.z, targetPosition.z, pos"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2033,
+      "owner": "Tick",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_smoothPosition.x, _smoothPosition.y, _smoothPosition.z, _smoothRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2120,
+      "owner": "RegisterExternalInteraction",
+      "kind": "object_creation",
+      "detail": "FloraInteractionPointGpuData",
+      "snippet": "new FloraInteractionPointGpuData              {                  PositionRadius = new Vector4(                      positionWS.x,                      positionWS.y,                      positionWS.z,                      safeRadius),       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2122,
+      "owner": "RegisterExternalInteraction",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      positionWS.x,                      positionWS.y,                      positionWS.z,                      safeRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2127,
+      "owner": "RegisterExternalInteraction",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      velocityWS.x,                      velocityWS.y,                      velocityWS.z,                      EstimateLength3D(velocityWS))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2483,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"__VegetationSedimentBursts\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2493,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(1.2f, 2.1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2494,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(0.15f, 1.1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2495,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(0.08f, 0.22f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2496,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxGradient",
+      "snippet": "new ParticleSystem.MinMaxGradient(new Color(0.58f, 0.64f, 0.56f, 0.34f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2496,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.58f, 0.64f, 0.56f, 0.34f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2497,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(-0.02f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2507,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(0.18f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2513,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(0.06f, 0.22f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2588,
+      "owner": "EmitSedimentBurst",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(velocityWS.x, 0f, velocityWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2600,
+      "owner": "EmitSedimentBurst",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.62f, 0.7f, 0.62f, 0.36f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2601,
+      "owner": "EmitSedimentBurst",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.55f, 0.6f, 0.54f, 0.28f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2617,
+      "owner": "AppendInteractionPoint",
+      "kind": "object_creation",
+      "detail": "FloraInteractionPointGpuData",
+      "snippet": "new FloraInteractionPointGpuData              {                  PositionRadius = new Vector4(                      position.x,                      position.y,                      position.z,                      Mathf.Max(0.05f, radius))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2619,
+      "owner": "AppendInteractionPoint",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      position.x,                      position.y,                      position.z,                      Mathf.Max(0.05f, radius))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2624,
+      "owner": "AppendInteractionPoint",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      velocity.x,                      velocity.y,                      velocity.z,                      EstimateLength3D(velocity))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2799,
+      "owner": "PublishEnvironmentGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(currentVector.x, currentVector.y, currentVector.z, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2802,
+      "owner": "PublishEnvironmentGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(currentVector.x, currentVector.y, currentVector.z, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2839,
+      "owner": "PublishLifecycleGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      bloomWeight,                      decayWeight,                      math.lerp(1f, _bloomEmissionBoost, bloomWeight),                      _decayWiltStrength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2852,
+      "owner": "PublishCascadeGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      GetCurrentSimulationTimeSeconds(),                      _cascadePulseDurationSeconds,                      _cascadeEmissionBoost,                      _cascadeReleaseDurationSeconds)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2915,
+      "owner": "FlushSubmarineWashGlobals",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(velocity.x, velocity.y, velocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2990,
+      "owner": "FlushSubmarineWashGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      worldCenterOfMass.x,                      worldCenterOfMass.y,                      worldCenterOfMass.z,                      radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2997,
+      "owner": "FlushSubmarineWashGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      safeVelocityDirection.x,                      safeVelocityDirection.y,                      safeVelocityDirection.z,                      speed)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3004,
+      "owner": "FlushSubmarineWashGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      -safeVelocityDirection.x,                      -safeVelocityDirection.y,                      -safeVelocityDirection.z,                      normalizedPropwashStrength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3011,
+      "owner": "FlushSubmarineWashGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      submarineAupDelta.x,                      submarineAupDelta.y,                      submarineAupDelta.z,                      AbsoluteUniversePosition.CellSizeMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3018,
+      "owner": "FlushSubmarineWashGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      0f,                      0f,                      0f,                      radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3152,
+      "owner": "PublishWakeGeneratedSignal",
+      "kind": "value_type_creation",
+      "detail": "WakeGeneratedSignal",
+      "snippet": "new WakeGeneratedSignal              {                  PositionAup = positionAup,                  Velocity = new float3(velocity.x, velocity.y, velocity.z),                  SourceFlags = sourceKind              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3155,
+      "owner": "PublishWakeGeneratedSignal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(velocity.x, velocity.y, velocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3202,
+      "owner": "QueueProceduralWake",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(velocity.x, velocity.y, velocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3323,
+      "owner": "ScheduleWakeDecayJob",
+      "kind": "value_type_creation",
+      "detail": "WakeDecayJob",
+      "snippet": "new WakeDecayJob              {                  WakeSources = wakeSources,                  DeltaTime = elapsedSeconds,                  DecayRate = WakeDecayPerSecond,                  SlotLimit = ResolveWakeSlotLimit()              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3390,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                          point.PositionWS.x,                          point.PositionWS.y,                          point.PositionWS.z,                          packedRadiusIntensity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3396,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                          point.PositionWS.x,                          point.PositionWS.y,                          point.PositionWS.z,                          point.Intensity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3401,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                          wakeDirection.x,                          wakeDirection.y,                          wakeDirection.z,                          point.Radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3409,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(globalWake.x, globalWake.y, globalWake.z, globalWake.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3411,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(globalWakeVector.x, globalWakeVector.y, globalWakeVector.z, globalWakeVector.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3450,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(publishedCount, MaxProceduralWakePoints, maxWakeIntensity, shearFoamAmount)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3453,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(slotLimit, ResolveWakeBudgetPressure01(), publishedCount, maxWakeIntensity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3687,
+      "owner": "ResolveFloraSwayCenterShiftCells",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  ResolveFloraSwayShiftCell(delta.x, safeCellSize),                  ResolveFloraSwayShiftCell(delta.y, safeCellSize),                  ResolveFloraSwayShiftCell(delta.z, safeCellSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3729,
+      "owner": "ResolveFloraSwayRingOffset",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  WrapFloraSwayGridCoordJob(currentOffset.x + centerShiftCells.x, safeResolution),                  WrapFloraSwayGridCoordJob(currentOffset.y + centerShiftCells.y, safeResolution),                  WrapFloraSwayGrid"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3767,
+      "owner": "ScheduleFloraSwayDisplacementField",
+      "kind": "value_type_creation",
+      "detail": "DecayFloraForcesJob",
+      "snippet": "new DecayFloraForcesJob              {                  FieldValues = fieldValues,                  NodeCount = nodeCount,                  Resolution = safeResolution,                  RingOffset = ringOffset,                  CenterShiftC"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3779,
+      "owner": "ScheduleFloraSwayDisplacementField",
+      "kind": "value_type_creation",
+      "detail": "AccumulateFloraForcesJob",
+      "snippet": "new AccumulateFloraForcesJob              {                  WakeSources = wakeSources,                  FieldValues = fieldValues,                  FieldCenterAup = fieldCenterAup,                  AmbientCurrentWS = ambientCurrent,       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3799,
+      "owner": "ScheduleFloraSwayDisplacementField",
+      "kind": "value_type_creation",
+      "detail": "MockDisplacementInjectorJob",
+      "snippet": "new MockDisplacementInjectorJob                  {                      FieldValues = fieldValues,                      Resolution = safeResolution,                      NodeCount = nodeCount,                      RingOffset = ringOffset,  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3811,
+      "owner": "ScheduleFloraSwayDisplacementField",
+      "kind": "value_type_creation",
+      "detail": "UploadDisplacementTextureJob",
+      "snippet": "new UploadDisplacementTextureJob              {                  FieldValues = fieldValues,                  FieldMeta = fieldMeta,                  Resolution = safeResolution,                  NodeCount = nodeCount,                  CellS"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3908,
+      "owner": "FinishFloraSwayFieldJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(_floraSwayFieldCenterWS.x, _floraSwayFieldCenterWS.y, _floraSwayFieldCenterWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3922,
+      "owner": "FinishFloraSwayFieldJob",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(fieldMeta[0].x, fieldMeta[0].y, fieldMeta[0].z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3938,
+      "owner": "FinishFloraSwayFieldJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(_floraSwayFieldCenterWS.x, _floraSwayFieldCenterWS.y, _floraSwayFieldCenterWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3950,
+      "owner": "ResolveFloraSwayAmbientCurrent",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(current.x, current.y, current.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3961,
+      "owner": "RecordDiscardedFloraSwayFieldUpload",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(_floraSwayFieldCenterWS.x, _floraSwayFieldCenterWS.y, _floraSwayFieldCenterWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3982,
+      "owner": "RecordDiscardedFloraSwayFieldUpload",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(meta0.x, meta0.y, meta0.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4261,
+      "owner": "BuildFloraStiffnessRule",
+      "kind": "value_type_creation",
+      "detail": "FloraStiffnessRuleDTO",
+      "snippet": "new FloraStiffnessRuleDTO              {                  PlantHash = plantHash,                  Stiffness01 = math.saturate(math.isfinite(stiffness) ? stiffness : 0.5f),                  Damping = math.max(0.01f, math.isfinite(damping) ? "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4483,
+      "owner": "FlushFloraSwayFieldGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_floraSwayFieldCenterWS.x, _floraSwayFieldCenterWS.y, _floraSwayFieldCenterWS.z, _floraSwayFieldCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4486,
+      "owner": "FlushFloraSwayFieldGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      _floraSwayFieldResolution,                      _floraSwayFieldActive ? 1f : 0f,                      _floraSwayFieldQualityWeight,                      _floraSwayFieldMaxMagnitude)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4493,
+      "owner": "FlushFloraSwayFieldGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_floraSwayFieldRingOffset.x, _floraSwayFieldRingOffset.y, _floraSwayFieldRingOffset.z, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4724,
+      "owner": "PublishWakeFluidImpulse",
+      "kind": "value_type_creation",
+      "detail": "FluidImpulseSignal",
+      "snippet": "new FluidImpulseSignal              {                  PositionAup = signal.PositionAup,                  Vector = signal.Velocity,                  Radius = math.max(0.5f, radius),                  Lifetime = math.lerp(0.35f, 1.4f, math.sa"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4808,
+      "owner": "DumpWakeBlackBoxOnce",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4959,
+      "owner": "DumpFloraSwayFieldBlackBoxOnce",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5737,
+      "owner": "AppendHeadlessParasiteNode",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(positionWS.x, positionWS.y, positionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5761,
+      "owner": "AppendHeadlessParasiteNode",
+      "kind": "object_creation",
+      "detail": "ParasiteNode",
+      "snippet": "new ParasiteNode                  {                      PositionWS = nextPosition,                      HostModuleRuntimeId = moduleRuntimeId,                      GrowthLevel = growth01,                      BirthTimeSeconds = birthTimeSe"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5803,
+      "owner": "ScheduleHeadlessParasiteSimulation",
+      "kind": "value_type_creation",
+      "detail": "ParasiteGrowthJob",
+      "snippet": "new ParasiteGrowthJob                  {                      Nodes = parasiteNodes,                      NodeCount = _parasiteNodeCount,                      DeltaTime = Mathf.Max(0f, deltaTime),                      CurrentTimeSeconds = T"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5890,
+      "owner": "ApplyHeadlessParasiteStateFromNodes",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(node.PositionWS.x, node.PositionWS.y, node.PositionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5946,
+      "owner": "AccumulateModuleParasiteState",
+      "kind": "value_type_creation",
+      "detail": "ModuleParasiteState",
+      "snippet": "new ModuleParasiteState             {                 PowerDrainWatts = Mathf.Max(0f, drainWatts),                 InfectionLevel = Mathf.Clamp01(infectionLevel),                 RootPowerDrainWatts = Mathf.Max(0f, rootDrainWatts),         "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5966,
+      "owner": "AppendParasiteAnchor",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  positionWS.x,                  positionWS.y,                  positionWS.z,                  Mathf.Max(0.25f, radiusMeters))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5971,
+      "owner": "AppendParasiteAnchor",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  Mathf.Clamp01(infectionLevel),                  Mathf.Max(0.01f, pulseFrequency),                  thermalGrowthFlag,                  0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5992,
+      "owner": "TryResolveNearestModuleParasite",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(anchorData.x, anchorData.y, anchorData.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 6016,
+      "owner": "TryResolveNearestModuleParasite",
+      "kind": "object_creation",
+      "detail": "ModuleParasiteTarget",
+      "snippet": "new ModuleParasiteTarget(resolvedHost, anchorPosition, anchorRadius, infectionLevel, criticalityWeight)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 6103,
+      "owner": "FlushDamageReactionGlobal",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_damageReactionPositionWS.x, _damageReactionPositionWS.y, _damageReactionPositionWS.z, strength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 6630,
+      "owner": "FlushParasiteInfectionGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      _publishedParasiteAnchorCount,                      GetCurrentSimulationTimeSeconds(),                      0.35f,                      1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 6655,
+      "owner": "RegisterDefensiveSporeBurst",
+      "kind": "value_type_creation",
+      "detail": "DefensiveSporeBurstState",
+      "snippet": "new DefensiveSporeBurstState              {                  PositionWS = positionWS,                  Radius = _defensiveSporeBurstRadius,                  Intensity = clampedIntensity,                  ExpireTimeSeconds = simulationTime +"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7042,
+      "owner": "RegisterCascadeEvent",
+      "kind": "object_creation",
+      "detail": "FloraCascadeEventPayload",
+      "snippet": "new FloraCascadeEventPayload                  {                      Center = new float3(centerWS.x, centerWS.y, centerWS.z),                      StartTimeSeconds = simulationTime,                      RadiusMeters = _cascadePropagationRad"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7044,
+      "owner": "RegisterCascadeEvent",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(centerWS.x, centerWS.y, centerWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7108,
+      "owner": "RecomputeCascadePhaseSeeds",
+      "kind": "value_type_creation",
+      "detail": "PopulateCascadePhaseSeedsJob",
+      "snippet": "new PopulateCascadePhaseSeedsJob                  {                      Matrices = matrices,                      Metadata = metadata,                      ReactiveTemplateMask = cascadeReactiveTemplateMask,                      Events = c"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7345,
+      "owner": "EnsureReactiveFloraHashCapacity",
+      "kind": "object_creation",
+      "detail": "HectonSpatialHash",
+      "snippet": "new HectonSpatialHash(safeCapacity, safeCapacity * 4)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7369,
+      "owner": "ResolveReactiveFloraHalfExtents",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(width, math.max(0.35f, height * 0.5f), width)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7688,
+      "owner": "ExtractTranslation",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(matrix.m03, matrix.m13, matrix.m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7728,
+      "owner": "PublishPredatorThreatGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(hit.Position.x, hit.Position.y, hit.Position.z, predatorDimRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7736,
+      "owner": "PublishPredatorThreatGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      threatExposure,                      predatorDimRadius,                      _predatorBiolumDimStrength,                      aggressiveBioformThreat)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7860,
+      "owner": "FlushFlowFieldGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_flowFieldCenterWS.x, _flowFieldCenterWS.y, _flowFieldCenterWS.z, _flowFieldCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7902,
+      "owner": "PublishPlayerRuntimePosition",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  playerRuntimePosition.x,                  playerRuntimePosition.y,                  playerRuntimePosition.z,                  Mathf.Max(0.05f, playerBendRadius))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7907,
+      "owner": "PublishPlayerRuntimePosition",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  playerSpeed,                  normalizedForce,                  _hasActiveScooterWake ? 1f : 0f,                  1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8159,
+      "owner": "RefreshWakeTrailWorldRect",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(anchorPosition.x, anchorPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8179,
+      "owner": "RefreshWakeTrailWorldRect",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  desiredCenterXZ.x - halfSize,                  desiredCenterXZ.y - halfSize,                  wakeTrailInvWorldSize,                  wakeTrailInvWorldSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8216,
+      "owner": "QueueWakeTrailStamp",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(                  (positionWS.x - _wakeTrailWorldRect.x) * _wakeTrailWorldRect.z,                  (positionWS.z - _wakeTrailWorldRect.y) * _wakeTrailWorldRect.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8219,
+      "owner": "QueueWakeTrailStamp",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(directionWS.x, directionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8229,
+      "owner": "QueueWakeTrailStamp",
+      "kind": "object_creation",
+      "detail": "WakeTrailStampCommand",
+      "snippet": "new WakeTrailStampCommand              {                  UvEllipse = new Vector4(uvCenter.x, uvCenter.y, uvRadius, uvLength),                  DirectionStrengthVertical = new Vector4(directionXZ.x, directionXZ.y, safeStrength, verticalImpu"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8231,
+      "owner": "QueueWakeTrailStamp",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(uvCenter.x, uvCenter.y, uvRadius, uvLength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8232,
+      "owner": "QueueWakeTrailStamp",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(directionXZ.x, directionXZ.y, safeStrength, verticalImpulse)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8272,
+      "owner": "ExecuteWakeTrailSimulation",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_pendingWakeTrailScrollUv.x, _pendingWakeTrailScrollUv.y, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8282,
+      "owner": "ExecuteWakeTrailSimulation",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      wakeTrailInvResolution,                      wakeTrailInvResolution,                      _wakeTrailRuntimeResolution,                      _wakeTrailRuntimeResolution)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8391,
+      "owner": "PublishWakeTrailGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      wakeTrailInvResolution,                      wakeTrailInvResolution,                      _wakeTrailRuntimeResolution,                      _wakeTrailRuntimeResolution)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8400,
+      "owner": "CreateWakeTrailTexture",
+      "kind": "object_creation",
+      "detail": "RenderTexture",
+      "snippet": "new RenderTexture(_wakeTrailRuntimeResolution, _wakeTrailRuntimeResolution, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear)              {                  name = textureName,                  wrapMode = TextureWrapMode.Clam"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8435,
+      "owner": "QuantizeWakeTrailCenter",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(                  Mathf.Round(centerXZ.x / stride) * stride,                  Mathf.Round(centerXZ.y / stride) * stride)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8513,
+      "owner": "ApplyRuntimeOffsetToCachedState",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(runtimeOffset.x, runtimeOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8521,
+      "owner": "ApplyRuntimeOffsetToCachedState",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8554,
+      "owner": "ApplyRuntimeOffsetToCachedState",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8622,
+      "owner": "FlushInteractionResetGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(0f, 0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 9482,
+      "owner": "RecordFloraMemoryTelemetry",
+      "kind": "value_type_creation",
+      "detail": "FloraMemoryTelemetryEntry",
+      "snippet": "new FloraMemoryTelemetryEntry                  {                      Frame = (uint)Time.frameCount,                      EventHash = eventHash,                      BufferID = (uint)bufferId,                      SystemID = (uint)SystemID."
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 9534,
+      "owner": "DumpFloraMemoryTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "MemoryStream",
+      "snippet": "new MemoryStream(8 + telemetry.Length * 64)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 9535,
+      "owner": "DumpFloraMemoryTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(memoryStream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 9560,
+      "owner": "DumpFloraMemoryTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "FloraMemoryTelemetryDumpWork",
+      "snippet": "new FloraMemoryTelemetryDumpWork                  {                      Path = fullPath,                      Payload = memoryStream.GetBuffer()                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 10044,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 256,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(boid.Position.x, boid.Position.y, boid.Position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 264,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "BoidKillSignal",
+      "snippet": "new BoidKillSignal                      {                          KillPositionWS = boidPosition,                          PredatorPositionWS = PredatorPositionWS,                          BoidId = i,                          PredatorId = P"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 549,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "LeviathanNodeData",
+      "snippet": "new LeviathanNodeData                      {                          Position = previousPoint,                          Distance01 = 0f,                          Tangent = new float3(0f, 0f, 1f),                          Radius = BodyRadiu"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 553,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 567,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 569,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 573,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "LeviathanNodeData",
+      "snippet": "new LeviathanNodeData                      {                          Position = nodePosition,                          Distance01 = distance01,                          Tangent = tangent,                          Radius = bodyRadius       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 1027,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(1f, 0.08f, 0.04f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 2067,
+      "owner": "EnsureBoidRuntimeMaterialReady",
+      "kind": "object_creation",
+      "detail": "Material",
+      "snippet": "new Material(source)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3123,
+      "owner": "EnsureBuffer",
+      "kind": "object_creation",
+      "detail": "GraphicsBuffer",
+      "snippet": "new GraphicsBuffer(                  GraphicsBuffer.Target.Structured,                  GraphicsBuffer.UsageFlags.LockBufferForWrite,                  count,                  stride)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3143,
+      "owner": "EnsureRawBuffer",
+      "kind": "object_creation",
+      "detail": "GraphicsBuffer",
+      "snippet": "new GraphicsBuffer(                  GraphicsBuffer.Target.Raw,                  GraphicsBuffer.UsageFlags.LockBufferForWrite,                  count,                  stride)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3270,
+      "owner": "TryDematerializeStatisticalPopulation",
+      "kind": "object_creation",
+      "detail": "PopulationDensityPoint",
+      "snippet": "new PopulationDensityPoint              {                  CenterCellId = BuildPopulationDensityCellId(in _statisticalPopulationCenterAup),                  Count = (ushort)math.clamp(statisticalMigrationPopulationCount, 0, ushort.MaxValue)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3540,
+      "owner": "BuildStatisticalRematerializedSpawnSet",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(radius, radius * 0.45f, radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3541,
+      "owner": "BuildStatisticalRematerializedSpawnSet",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(_fieldCenter, _fieldExtents * 2f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3552,
+      "owner": "BuildStatisticalRematerializedSpawnSet",
+      "kind": "object_creation",
+      "detail": "BoidData",
+      "snippet": "new BoidData                 {                     Position = spawnPosition,                     Velocity = velocity,                     Panic = 0f,                      StateFlags = DefaultBoidStateFlags                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3579,
+      "owner": "BuildStatisticalGrazingAnchors",
+      "kind": "object_creation",
+      "detail": "GrazingAnchorData",
+      "snippet": "new GrazingAnchorData                 {                     Position = center + offset,                     Radius = anchorRadius,                     Strength = 0.85f,                      Phase = HashToFloat01((uint)i, 0u, 0xA4093822u),  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3605,
+      "owner": "BuildSphericalFibonacciOffset",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(CheapCosSigned(theta) * ringRadius, y * 0.45f, CheapSinSigned(theta) * ringRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3787,
+      "owner": "BuildFormationData",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(resolvedLeaderFlow.x, resolvedLeaderFlow.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3790,
+      "owner": "BuildFormationData",
+      "kind": "object_creation",
+      "detail": "FormationBeaconData",
+      "snippet": "new FormationBeaconData                 {                      Position = beaconPosition,                      Radius = beaconRadius,                      Strength = 1f,                      Phase = HashToFloat01((uint)i, 0u, 0x55A1F13Du), "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3839,
+      "owner": "RefreshStaticObstacleCache",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                      math.abs(axisX.x) + math.abs(axisX.y) + math.abs(axisX.z),                      math.abs(axisY.x) + math.abs(axisY.y) + math.abs(axisY.z),                      math.abs(axisZ.x) + math.abs(axisZ.y) + math.a"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3847,
+      "owner": "RefreshStaticObstacleCache",
+      "kind": "object_creation",
+      "detail": "StaticObstacleData",
+      "snippet": "new StaticObstacleData(                      new float3(matrix.m03, matrix.m13, matrix.m23),                      new float3(extents.x, extents.y, extents.z),                      radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3848,
+      "owner": "RefreshStaticObstacleCache",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(matrix.m03, matrix.m13, matrix.m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3849,
+      "owner": "RefreshStaticObstacleCache",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(extents.x, extents.y, extents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3873,
+      "owner": "HarvestFormationObstacles",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(obstacle.Center.x, obstacle.Center.y, obstacle.Center.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3880,
+      "owner": "HarvestFormationObstacles",
+      "kind": "object_creation",
+      "detail": "FormationObstacleData",
+      "snippet": "new FormationObstacleData                 {                      Position = obstaclePosition,                      Radius = radius,                      Weight = 1f,                      Padding = Vector3.zero                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 3954,
+      "owner": "ScheduleLeviathanNodeBuild",
+      "kind": "value_type_creation",
+      "detail": "BuildLeviathanNodeJob",
+      "snippet": "new BuildLeviathanNodeJob              {                  SourcePath = leviathanPathScratch,                  SourceCount = safePathCount,                  OutputNodes = leviathanNodeBack,                  OutputCount = leviathanNodeCount, "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4047,
+      "owner": "TryResolveLeviathanHeadPose",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                      CheapCosSigned(ringAngle),                      ringPulse * (bodyRadius * 0.18f),                      CheapSinSigned(ringAngle))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4097,
+      "owner": "BuildLeviathanSpawnSet",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(radiusPadding, radiusPadding, radiusPadding)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4103,
+      "owner": "BuildLeviathanSpawnSet",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(2f, 2f, 2f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4104,
+      "owner": "BuildLeviathanSpawnSet",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(_fieldCenter, MaxVector3(boundsMax - boundsMin, new Vector3(4f, 4f, 4f)))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4104,
+      "owner": "BuildLeviathanSpawnSet",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(4f, 4f, 4f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4130,
+      "owner": "BuildLeviathanSpawnSet",
+      "kind": "object_creation",
+      "detail": "BoidData",
+      "snippet": "new BoidData                 {                     Position = spawnPosition,                     Velocity = tangentWS * cruiseSpeed,                     Panic = 0f,                      StateFlags = DefaultBoidStateFlags                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4164,
+      "owner": "BuildDeepSpawnSet",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(deepBaitBallRadius, deepBaitBallHeight, deepBaitBallRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4170,
+      "owner": "BuildDeepSpawnSet",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(2f, 1f, 2f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4171,
+      "owner": "BuildDeepSpawnSet",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(_fieldCenter, MaxVector3(boundsMax - boundsMin, new Vector3(4f, 2f, 4f)))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4171,
+      "owner": "BuildDeepSpawnSet",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(4f, 2f, 4f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4194,
+      "owner": "BuildDeepSpawnSet",
+      "kind": "object_creation",
+      "detail": "BoidData",
+      "snippet": "new BoidData                 {                     Position = spawnPosition,                     Velocity = toCenter * cruiseSpeed,                     Panic = 0f,                      StateFlags = DefaultBoidStateFlags                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4222,
+      "owner": "BuildDeepGrazingAnchors",
+      "kind": "object_creation",
+      "detail": "GrazingAnchorData",
+      "snippet": "new GrazingAnchorData                 {                      Position = zone.GetZonePosition(),                      Radius = deepBaitBallRadius,                      Strength = math.lerp(1.2f, 1.8f, math.saturate(_deepBiolumZoneScores[i]))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4248,
+      "owner": "BuildSpawnSet",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(minX + sizeX * 0.5f + driftOffset.x, (minY + maxY) * 0.5f, minZ + sizeZ * 0.5f + driftOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4251,
+      "owner": "BuildSpawnSet",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(sizeX * 0.5f, math.max(1f, maxDepthBelowSurface), sizeZ * 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4252,
+      "owner": "BuildSpawnSet",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(_fieldCenter, new Vector3(sizeX, math.max(2f, maxDepthBelowSurface + 2f), sizeZ))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4252,
+      "owner": "BuildSpawnSet",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(sizeX, math.max(2f, maxDepthBelowSurface + 2f), sizeZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4288,
+      "owner": "BuildSpawnSet",
+      "kind": "object_creation",
+      "detail": "BoidData",
+      "snippet": "new BoidData                 {                     Position = spawnPosition,                     Velocity = velocity,                     Panic = 0f,                      StateFlags = DefaultBoidStateFlags                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4323,
+      "owner": "BuildGrazingAnchors",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(minX + sizeX * 0.5f + driftOffset.x, math.lerp(minY, maxY, 0.32f), minZ + sizeZ * 0.5f + driftOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4356,
+      "owner": "BuildGrazingAnchors",
+      "kind": "object_creation",
+      "detail": "GrazingAnchorData",
+      "snippet": "new GrazingAnchorData                 {                      Position = anchorPosition,                      Radius = grazingRadius,                      Strength = math.lerp(0.8f, 1.25f, fieldSample.Density01),                      Phase ="
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4378,
+      "owner": "BuildInitialVelocity",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(1f, vertical, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4381,
+      "owner": "BuildInitialVelocity",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0.70710678f, vertical, 0.70710678f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4384,
+      "owner": "BuildInitialVelocity",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, vertical, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4387,
+      "owner": "BuildInitialVelocity",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(-0.70710678f, vertical, 0.70710678f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4390,
+      "owner": "BuildInitialVelocity",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(-1f, vertical, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4393,
+      "owner": "BuildInitialVelocity",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(-0.70710678f, vertical, -0.70710678f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4396,
+      "owner": "BuildInitialVelocity",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, vertical, -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4399,
+      "owner": "BuildInitialVelocity",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0.70710678f, vertical, -0.70710678f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4417,
+      "owner": "BuildStatisticalTangentVelocity",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(tangentX < 0f ? -1f : 1f, vertical, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4419,
+      "owner": "BuildStatisticalTangentVelocity",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, vertical, tangentZ < 0f ? -1f : 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4533,
+      "owner": "EnsureFallbackAbyssalFlowTexture",
+      "kind": "object_creation",
+      "detail": "Texture3D",
+      "snippet": "new Texture3D(1, 1, 1, TextureFormat.RGBAHalf, false)              {                  name = \"__HectonSargassumEmptyAbyssalFlow\",                  hideFlags = HideFlags.HideAndDontSave,                  wrapMode = TextureWrapMode.Clamp,    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4819,
+      "owner": "SanitizeBoidSensoryThreatSlots",
+      "kind": "value_type_creation",
+      "detail": "uint4",
+      "snippet": "new uint4(                          anomalyHash,                          HashThreatFloat4(threat),                          unchecked((uint)slot),                          BoidSensoryBlackBoxAnomalyNonFinite)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4866,
+      "owner": "WriteBoidSensoryThreatSlot",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                 shiftedRuntime.x,                 shiftedRuntime.y,                 shiftedRuntime.z,                  safeRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 4967,
+      "owner": "BindSimulationUniforms",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(resolvedAbyssalFlow.x, resolvedAbyssalFlow.y, resolvedAbyssalFlow.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5083,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(simulationDt, waterLevel, minDepthBelowSurface, maxDepthBelowSurface)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5084,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(cruiseSpeed, maxSpeed, panicSpeedBoost, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5085,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(perceptionRadius, separationRadius, boidBodyRadius, consumedCollapseSpeed)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5086,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(separationWeight, alignmentWeight, cohesionWeight, containmentWeight)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5087,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(panicWeight, noiseWeight, densityThreshold, windowThreshold)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5088,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(gradientWorldStep, panicThreshold, panicDecay, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5089,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(grazingWeight, grazingRadius, grazingRestSpeedScale, grazingRestHoldThreshold)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5090,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(_simulationTime, _simulationPhaseOffset, massiveThreatWeight, canopyAffinityWeight)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5091,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(_fieldCenter.x, _fieldCenter.y, _fieldCenter.z, hibernation01)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5092,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(_fieldExtents.x, _fieldExtents.y, _fieldExtents.z, _spatialGridCellSizeWS)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5093,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  _spatialGridOriginWS.x,                  _spatialGridOriginWS.y,                  _spatialGridOriginWS.z,                  cutMaskActive ? 1f : 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5098,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "int4",
+      "snippet": "new int4(                  _spatialGridResolution.x,                  _spatialGridResolution.y,                  _spatialGridResolution.z,                  SpatialGridMaxBoidsPerCell)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5103,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "int4",
+      "snippet": "new int4(                  _activeBoidCount,                  _activeGrazingAnchorCount,                  _activeMassiveThreatCount,                  _debugFormationBeaconCount)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5114,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "int4",
+      "snippet": "new int4(_debugFormationObstacleCount, _leviathanPathNodeCount, (int)simulationLodTier, pbdNeighbourCellRange)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5115,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(_densityWorldRect.x, _densityWorldRect.y, _densityWorldRect.z, _densityWorldRect.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5116,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(cutMaskWorldRect.x, cutMaskWorldRect.y, cutMaskWorldRect.z, cutMaskWorldRect.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5117,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(driftOffset.x, driftOffset.y, driftOffset.z, _deepModeActive ? 1f : 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5118,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(driftDelta.x, driftDelta.y, driftDelta.z, _deepModeActive ? deepClusterWeight : 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5119,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(playerPosition.x, playerPosition.y, playerPosition.z, playerSpeed)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5120,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(playerVelocity.x, playerVelocity.y, playerVelocity.z, panicPlayerSpeedThreshold)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5121,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(playerRight.x, playerRight.y, playerRight.z, panicPlayerRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5122,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(playerUp.x, playerUp.y, playerUp.z, panicPlayerRadiusScale)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5123,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(playerForward.x, playerForward.y, playerForward.z, headlightPanic01)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5124,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(cameraPosition.x, cameraPosition.y, cameraPosition.z, cameraAvoidRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5125,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  cameraAvoidWeight,                  _parasiteModeActive ? 1f : 0f,                  _parasiteModeActive ? parasiteAffinityWeight : 0f,                  parasiteAggression01)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5130,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  parasiteLatchRadius,                  _formationModeActive ? 1f : 0f,                  formationWeight,                  formationRingThickness)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5135,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  formationPulseAmplitude,                  formationPulseSpeed,                  formationBreakPanicThreshold,                  formationObstacleWeight)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5140,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  _leviathanModeActive ? 1f : 0f,                  leviathanBodyWeight,                  leviathanForwardWeight,                  leviathanWaveAmplitude)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5145,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  leviathanWaveFrequency,                  _leviathanThreatLevel,                  leviathanSurroundThreatThreshold,                  leviathanSurroundRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5150,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  leviathanSurroundWeight,                  leviathanSurroundSpinSpeed,                  _leviathanModeBlend,                  hibernationMinTimeScale)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5155,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(cameraPosition.x, cameraPosition.y, cameraPosition.z, shouldRender ? 1f : -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5156,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "int4",
+      "snippet": "new int4(                  _threatGridResolution,                  _threatGridDataValid ? 1 : 0,                  boidSensoryThreatCount,                  boidSensoryThreatFlags)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5164,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                 threatGridCenterWS.x,                 threatGridCenterWS.y,                 threatGridCenterWS.z,                 threatGridCellSizeWS)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5169,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "int4",
+      "snippet": "new int4(                  _threatVoxelDimensions.x,                  _threatVoxelDimensions.y,                  _threatVoxelDimensions.z,                  _threatVoxelSolidThreshold)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5178,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                 threatVoxelOriginWS.x,                 threatVoxelOriginWS.y,                 threatVoxelOriginWS.z,                 safeVoxelLookAheadDistance * math.lerp(1f, ecosystemSpeedScale, 0.5f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5183,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  _threatVoxelCellSizeWS.x,                  _threatVoxelCellSizeWS.y,                  _threatVoxelCellSizeWS.z,                  voxelAvoidanceWeight * ecosystemCamouflageScale)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5188,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  playerPosition.x,                  playerPosition.y,                  playerPosition.z,                  transportCapsuleRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5193,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  playerVelocity.x,                  playerVelocity.y,                  playerVelocity.z,                  transportCapsuleHalfLength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5198,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  submarineWakePosition.x,                  submarineWakePosition.y,                  submarineWakePosition.z,                  submarineWakeRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5203,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  submarineWakeVelocity.x,                  submarineWakeVelocity.y,                  submarineWakeVelocity.z,                  submarineWakeHalfLength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5208,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                 ClampFinite(fragmentationWeight, 0f, 12f) * ecosystemFitnessScale,                 sonarScatterStrength01,                 ClampFinite(activeSonarWaveBandWidth, 0.25f, 16f),                 ClampFinite(activeSona"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5213,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                 fragmentationCenterA.x,                 fragmentationCenterA.y,                 fragmentationCenterA.z,                 fragmentation01)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5218,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                 fragmentationCenterB.x,                 fragmentationCenterB.y,                 fragmentationCenterB.z,                 math.max(1f, fragmentationHalfDistance))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5223,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                 sonarScatterOrigin.x,                 sonarScatterOrigin.y,                 sonarScatterOrigin.z,                 _sonarScatterWaveFrontWS)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5228,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                 acousticPanicOrigin.x,                 acousticPanicOrigin.y,                 acousticPanicOrigin.z,                 acousticPanicStrength01 > 0f ? ClampFinite(_acousticPanicRadiusWS, 1f, SensoryAcousticPingMaxRa"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5233,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                 _acousticPanicSeed,                 acousticPanicStrength01,                 acousticPanicTimeRemaining,                 shouldCollectLatchStats ? 1f : 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5238,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  abyssalFlowWeatherCurrent.x,                  abyssalFlowWeatherCurrent.y,                  abyssalFlowWeatherCurrent.z,                  predatorAupThreatLoopCap)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5243,
+      "owner": "BindSimulationUniforms",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  playerDirection.x,                  playerDirection.y,                  playerDirection.z,                  predatorAupCount)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5539,
+      "owner": "HandleMassiveDisplacement",
+      "kind": "object_creation",
+      "detail": "MassiveThreatData",
+      "snippet": "new MassiveThreatData             {                 Position = signal.PositionWS,                 InnerRadius = safeSignalRadius,                 PanicRadius = panicRadius,                 Strength = 1f,                 EndTime = absoluteSi"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5631,
+      "owner": "RegisterLeviathanThreatPulse",
+      "kind": "object_creation",
+      "detail": "MassiveThreatData",
+      "snippet": "new MassiveThreatData             {                 Position = positionWS,                 InnerRadius = math.max(0.5f, boidBodyRadius * 2f),                 PanicRadius = safePanicRadius,                 Strength = 1f,                 EndT"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5705,
+      "owner": "RegisterPredatorFearBurst",
+      "kind": "object_creation",
+      "detail": "MassiveThreatData",
+      "snippet": "new MassiveThreatData             {                 Position = positionWS,                 InnerRadius = math.max(0.5f, boidBodyRadius * 1.5f),                 PanicRadius = safePanicRadius,                 Strength = clampedStrength01,    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5773,
+      "owner": "RegisterPredatorConsumptionBurst",
+      "kind": "value_type_creation",
+      "detail": "PredatorBoidConsumptionJob",
+      "snippet": "new PredatorBoidConsumptionJob              {                  Boids = boidState,                  KillSignals = killSignals,                  KillSignalCount = killSignalCount,                  PredatorPositionWS = new float3(predatorPosit"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5778,
+      "owner": "RegisterPredatorConsumptionBurst",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(predatorPositionWS.x, predatorPositionWS.y, predatorPositionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5779,
+      "owner": "RegisterPredatorConsumptionBurst",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(biteCenterWS.x, biteCenterWS.y, biteCenterWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5844,
+      "owner": "DrainPredatorKillSignals",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(killSignal.KillPositionWS.x, killSignal.KillPositionWS.y, killSignal.KillPositionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5866,
+      "owner": "DrainPredatorKillSignals",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(killSignal.PredatorPositionWS.x, killSignal.PredatorPositionWS.y, killSignal.PredatorPositionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5887,
+      "owner": "PublishPredatorKillDebris",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(boidId, Hecton8.Core.SystemDispatcher.CurrentFrameIndex)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5890,
+      "owner": "PublishPredatorKillDebris",
+      "kind": "value_type_creation",
+      "detail": "DebrisSpawnSignal",
+      "snippet": "new DebrisSpawnSignal                 {                     PositionAup = killAup,                     SpeciesHash = (uint)math.hash(new int2(boidId, (int)(sourceId & 0x7FFFFFFFu))),                     SourceEntityId = sourceId,           "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5893,
+      "owner": "PublishPredatorKillDebris",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(boidId, (int)(sourceId & 0x7FFFFFFFu))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5930,
+      "owner": "TryPublishFeedingFrenzyAcousticPing",
+      "kind": "value_type_creation",
+      "detail": "AcousticPingSignal",
+      "snippet": "new AcousticPingSignal             {                 PositionAup = centroidAup,                 RadiusMeters = FeedingFrenzyAcousticRadiusMeters,                 Intensity01 = math.saturate(_feedingFrenzyKillCount * PredatorKillSignalDrainL"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5935,
+      "owner": "TryPublishFeedingFrenzyAcousticPing",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(centroidWS.x, centroidWS.y, centroidWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5971,
+      "owner": "RegisterWhaleFallScavengerBurst",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(centerWS.x, centerWS.y, centerWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5976,
+      "owner": "RegisterWhaleFallScavengerBurst",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2((int)(safeSourceId & 0x7FFFFFFFu), i)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5980,
+      "owner": "RegisterWhaleFallScavengerBurst",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(CheapCosSigned(angle), 0f, CheapSinSigned(angle))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5981,
+      "owner": "RegisterWhaleFallScavengerBurst",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(-radial.z, 0f, radial.x)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5995,
+      "owner": "RegisterWhaleFallScavengerBurst",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(WhaleFallScavengerRadiusMeters * 1.35f, 2f, WhaleFallScavengerRadiusMeters * 1.35f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 5996,
+      "owner": "RegisterWhaleFallScavengerBurst",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(_fieldCenter, _fieldExtents * 2f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6109,
+      "owner": "RecordFoodChainTelemetry",
+      "kind": "value_type_creation",
+      "detail": "FoodChainTelemetryEntry",
+      "snippet": "new FoodChainTelemetryEntry              {                  FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,                  StateHash = math.hash(new uint4(                      unchecked((uint)math.max(0, _activeBoidCount)),   "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6112,
+      "owner": "RecordFoodChainTelemetry",
+      "kind": "value_type_creation",
+      "detail": "uint4",
+      "snippet": "new uint4(                      unchecked((uint)math.max(0, _activeBoidCount)),                      unchecked((uint)math.max(0, _debugConsumedBoidCount)),                      unchecked((uint)_lastSimulationLodTier),                      f"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6123,
+      "owner": "RecordFoodChainTelemetry",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(safeFieldCenter.x, safeFieldCenter.y, safeFieldCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6124,
+      "owner": "RecordFoodChainTelemetry",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(safeEventPosition.x, safeEventPosition.y, safeEventPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6155,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6195,
+      "owner": "TryDumpFoodChainTelemetry",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6196,
+      "owner": "TryDumpFoodChainTelemetry",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6262,
+      "owner": "RecordBoidSensoryBlackBox",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                  pingThreatA.w,                  pingThreatB.w,                  pingThreatC.w,                  (float)simulationLodTier)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6293,
+      "owner": "RecordBoidSensoryBlackBox",
+      "kind": "value_type_creation",
+      "detail": "uint4",
+      "snippet": "new uint4(                      anomalyHash,                      HashThreatFloat4(submarineThreat) ^ HashThreatFloat4(flashlightThreat),                      HashThreatFloat4(pingThreatA) ^ HashThreatFloat4(pingThreatB) ^ HashThreatFloat4("
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6313,
+      "owner": "RecordBoidSensoryBlackBox",
+      "kind": "value_type_creation",
+      "detail": "uint4",
+      "snippet": "new uint4(                  HashThreatFloat4(pingThreatA),                  HashThreatFloat4(pingThreatB),                  HashThreatFloat4(pingThreatC),                  unchecked((uint)(int)simulationLodTier))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6319,
+      "owner": "RecordBoidSensoryBlackBox",
+      "kind": "value_type_creation",
+      "detail": "BoidSensoryBlackBoxEntry",
+      "snippet": "new BoidSensoryBlackBoxEntry              {                  FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,                  StateHash = math.hash(new uint4(                      HashThreatFloat4(submarineThreat),               "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6322,
+      "owner": "RecordBoidSensoryBlackBox",
+      "kind": "value_type_creation",
+      "detail": "uint4",
+      "snippet": "new uint4(                      HashThreatFloat4(submarineThreat),                      HashThreatFloat4(flashlightThreat),                      pingHash,                      flags ^ unchecked((uint)math.max(0, activeThreatCount)))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6377,
+      "owner": "TryDumpBoidSensoryBlackBox",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6378,
+      "owner": "TryDumpBoidSensoryBlackBox",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6699,
+      "owner": "RefreshMaelstromThreats",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(maelstrom.x, maelstrom.y, maelstrom.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6800,
+      "owner": "TryPublishSwarmDispersedSignal",
+      "kind": "value_type_creation",
+      "detail": "SwarmDispersedSignal",
+      "snippet": "new SwarmDispersedSignal             {                 PositionAup = originAup,                 RadiusMeters = ClampFinite(radiusWS, 1f, SensoryAcousticPingMaxRadiusMeters),                 Intensity01 = SaturateFinite01(intensity01),      "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6864,
+      "owner": "UpdateParasiteLatchReadback",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                             latchData[LatchStatsLatchedSumXIndex] / divisor,                             latchData[LatchStatsLatchedSumYIndex] / divisor,                              latchData[LatchStatsLatchedSumZIndex] / divi"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6895,
+      "owner": "UpdateParasiteLatchReadback",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                              latchData[LatchStatsWakePosXIndex] / wakeDivisor,                              latchData[LatchStatsWakePosYIndex] / wakeDivisor,                              latchData[LatchStatsWakePosZIndex] / wak"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 6899,
+      "owner": "UpdateParasiteLatchReadback",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                              latchData[LatchStatsWakeVelXIndex] / wakeDivisor,                              latchData[LatchStatsWakeVelYIndex] / wakeDivisor,                              latchData[LatchStatsWakeVelZIndex] / wak"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7053,
+      "owner": "TryQueueLeviathanStrikeDamage",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(safeDirection.x, safeDirection.y, safeDirection.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7054,
+      "owner": "TryQueueLeviathanStrikeDamage",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7056,
+      "owner": "TryQueueLeviathanStrikeDamage",
+      "kind": "value_type_creation",
+      "detail": "CombatDamageRequest",
+      "snippet": "new CombatDamageRequest             {                 TargetId = targetId,                 SourceId = DamageSourceIds.FaunaLeviathanBite,                 Amount = damage,                 ImpulseMagnitude = math.max(0f, math.isfinite(impulse"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7069,
+      "owner": "TryQueueLeviathanStrikeDamage",
+      "kind": "object_creation",
+      "detail": "CombatDamageSignalDetail",
+      "snippet": "new CombatDamageSignalDetail             {                 LocalPoint = ResolveLeviathanStrikeLocalPoint(targetTransform, safeImpactPoint),                 ArmorNormal = -direction3,                 LocalTemperatureCelsius = 20f,           "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7105,
+      "owner": "ApplyLeviathanStrikeOwnerFallbackDamage",
+      "kind": "object_creation",
+      "detail": "DamagePacket",
+      "snippet": "new DamagePacket             {                 Channel = DamageChannel.Integrity,                 PreviousValue = 0f,                 NextValue = 0f,                 Magnitude = damage,                 LocalPoint = ResolveLeviathanStrikeLoc"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7127,
+      "owner": "ResolveLeviathanStrikeLocalPoint",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(localPoint.x, localPoint.y, localPoint.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7227,
+      "owner": "UpdateSpatialGridLayout",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  math.max(doubledExtents.x, baseCellSize),                  math.max(doubledExtents.y, baseCellSize),                  math.max(doubledExtents.z, baseCellSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7239,
+      "owner": "UpdateSpatialGridLayout",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  FloorToMultiple(fieldMin.x, _spatialGridCellSizeWS),                  FloorToMultiple(fieldMin.y, _spatialGridCellSizeWS),                  FloorToMultiple(fieldMin.z, _spatialGridCellSizeWS))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7247,
+      "owner": "UpdateSpatialGridLayout",
+      "kind": "object_creation",
+      "detail": "Vector3Int",
+      "snippet": "new Vector3Int(resolutionX, resolutionY, resolutionZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7398,
+      "owner": "BuildApproxViewPoseUncached",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(positionColumn.x, positionColumn.y, positionColumn.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7399,
+      "owner": "BuildApproxViewPoseUncached",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(forwardColumn.x, forwardColumn.y, forwardColumn.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7538,
+      "owner": "TryEnsureBoidIndirectArgsBufferCold",
+      "kind": "object_creation",
+      "detail": "GraphicsBuffer",
+      "snippet": "new GraphicsBuffer(                 GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,                 GraphicsBuffer.UsageFlags.LockBufferForWrite,                  1,                  GraphicsBuffer.IndirectDrawIndexedAr"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7565,
+      "owner": "UploadBoidIndirectArgs",
+      "kind": "object_creation",
+      "detail": "GraphicsBuffer.IndirectDrawIndexedArgs",
+      "snippet": "new GraphicsBuffer.IndirectDrawIndexedArgs                 {                     indexCountPerInstance = mesh.GetIndexCount(0),                     instanceCount = (uint)instanceCount,                     startIndex = mesh.GetIndexStart(0),"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7613,
+      "owner": "BindBoidRenderProperties",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_hitFlashOriginWS.x, _hitFlashOriginWS.y, _hitFlashOriginWS.z, hitFlashInvRadiusSq)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7646,
+      "owner": "RenderCurrentBuffer",
+      "kind": "object_creation",
+      "detail": "RenderParams",
+      "snippet": "new RenderParams(renderMaterial)             {                 worldBounds = _renderBounds,                 shadowCastingMode = shadowCastingMode,                 receiveShadows = false,                 layer = targetLayer,                 "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7884,
+      "owner": "PopulateFoveatedSimulationInput",
+      "kind": "object_creation",
+      "detail": "FoveatedSimulationInput",
+      "snippet": "new FoveatedSimulationInput             {                 FrameDeltaTime = ClampMinFinite(frameDeltaTime, 0f),                 CameraDistanceSq = ClampMinFinite(cameraDistanceSq, 0f),                 FullDistanceMeters = ClampFinite(hiberna"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7960,
+      "owner": "ToVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7965,
+      "owner": "MinVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(math.min(a.x, b.x), math.min(a.y, b.y), math.min(a.z, b.z))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7970,
+      "owner": "MaxVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(math.max(a.x, b.x), math.max(a.y, b.y), math.max(a.z, b.z))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7979,
+      "owner": "FastNormalizeVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(value.x * invLength, value.y * invLength, value.z * invLength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7986,
+      "owner": "FastNormalizeVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                      fallback.x * invFallbackLength,                      fallback.y * invFallbackLength,                      fallback.z * invFallbackLength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 8024,
+      "owner": "ResolveApproxRight",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(forward.z, 0f, -forward.x)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 8030,
+      "owner": "ResolveApproxUp",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  -forward.y * right.z,                  forward.z * right.x - forward.x * right.z,                  -forward.y * right.x)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 8255,
+      "owner": "HashBoidSensoryThreatUpload",
+      "kind": "value_type_creation",
+      "detail": "uint4",
+      "snippet": "new uint4(hash, slotHash, unchecked((uint)i), 0x9E3779B9u)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 8693,
+      "owner": "DispatchOriginShiftToLiveBoidBuffersVisualSync",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z, 0f)"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

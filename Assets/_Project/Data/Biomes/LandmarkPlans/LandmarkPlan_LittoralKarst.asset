@@ -19,5 +19,5 @@ MonoBehaviour:
   midReferenceShape: stack clusters and white shelf breaks
   farReferenceShape: clear spire skyline against surface light
   routeUse: Player should chain visible stacks and arches without needing UI help.
-  safePocketUse: Safe pockets hide on lee sides of stacks and under bright arches.
-  emotionalRead: Readable, inviting, and adventurous without feeling harmless.
+  safePocketUse: Reorientation pockets hide on lee sides of stacks and under readable arches.
+  emotionalRead: Readable, exposed, and navigable without feeling harmless.

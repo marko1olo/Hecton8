@@ -17,7 +17,7 @@ namespace Hecton8.Dev
     public sealed class VisualOmegaSmokeTester : MonoBehaviour
     {
         private const string TesterName = "VisualOmegaSmokeTester";
-        private const int ExpectedCheckCount = 32;
+        private const int ExpectedCheckCount = 36;
 
         [Header("Execution")]
         [Tooltip("Runs the cold source audit once when the component starts.")]
@@ -106,8 +106,9 @@ namespace Hecton8.Dev
             CheckNotContains(flashlightSource, "OverlapBoxNonAlloc", "flashlight-provider-physics-scan-evicted");
             CheckNotContains(flashlightSource, "RegisterUpdatable", "flashlight-provider-update-loop-evicted");
             CheckNotContains(atmosphereSource, "_instance", "atmosphere-static-instance-removed");
-            CheckNotContains(mapMagicSource, "_instance", "mapmagic-static-instance-removed");
-            CheckContains(mapMagicSource, "return GlobalRegistry.MapMagic;", "mapmagic-instance-globalregistry-facade");
+            CheckNotContains(mapMagicSource, "private static MapMagicBridge _instance", "mapmagic-legacy-static-instance-removed");
+            CheckContains(mapMagicSource, "private static MapMagicBridge s_activeRuntimeInstance;", "mapmagic-owner-local-active-instance");
+            CheckContains(mapMagicSource, "return s_activeRuntimeInstance;", "mapmagic-instance-owner-local-facade");
             CheckContains(registrySource, "RegisterMapMagicRuntime", "globalregistry-mapmagic-register");
             CheckContains(registrySource, "_mapMagicRuntime = null;", "globalregistry-mapmagic-reset");
             CheckContains(registryContractsSource, "MapMagicRuntime = 102", "globalregistry-mapmagic-slot");

@@ -55,7 +55,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
 
             if (!scene.IsValid() || !scene.isLoaded)
             {
-                failure = string.Concat("[SHINOBU_265] Unable to open bootstrap scene: ", BootstrapScenePath);
+                failure = string.Concat("[13KRA] Unable to open bootstrap scene: ", BootstrapScenePath);
                 return false;
             }
 
@@ -67,7 +67,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
                 if (!TryResolveOwnerHost(scene, out GameObject host))
                 {
                     failure = string.Concat(
-                        "[SHINOBU_265] Bootstrap scene has no root GameObject host for WaterOpticsRuntime: ",
+                        "[13KRA] Bootstrap scene has no root GameObject host for WaterOpticsRuntime: ",
                         BootstrapScenePath);
                     return false;
                 }
@@ -79,7 +79,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
 
                 if (saveScene && !EditorSceneManager.SaveScene(scene))
                 {
-                    failure = string.Concat("[SHINOBU_265] Failed to save bootstrap scene: ", BootstrapScenePath);
+                    failure = string.Concat("[13KRA] Failed to save bootstrap scene: ", BootstrapScenePath);
                     return false;
                 }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
@@ -9,6 +10,9 @@ using Hecton8.Gameplay;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.UI
 {
@@ -28,6 +32,9 @@ namespace Hecton8.UI
         private const float DegreesToHalfRadians = 0.008726646f;
         private const float Epsilon = 0.0001f;
         private const string DefaultShaderName = "Hecton8/UI/DiegeticVisorCurvedHUD";
+#if UNITY_EDITOR
+        private const string DefaultShaderPath = "Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader";
+#endif
 
         private static readonly int PanelPowerLevelId = Shader.PropertyToID("_PanelPowerLevel");
         private static readonly int DamageGlitchId = Shader.PropertyToID("_DamageGlitch");
@@ -46,6 +53,7 @@ namespace Hecton8.UI
 
         [Header("Render State")]
         [SerializeField] private Material sourceMaterial;
+        [SerializeField] private Shader fallbackShader;
         [SerializeField] private bool releaseRuntimeObjectsOnDisable;
         [SerializeField] private bool releaseBlackBoxOnDisable;
         [SerializeField] private int stencilReference = 17;
@@ -180,7 +188,7 @@ namespace Hecton8.UI
         {
         }
 
-        public void OnToolDepletedSignal(in ToolDepletedSignal signal)
+        public void OnToolDepletedSignal(in PlayerToolDepletedSignal signal)
         {
         }
 
@@ -466,10 +474,10 @@ namespace Hecton8.UI
                 }
             }
 
-            _runtimeMesh.vertices = _vertices;
-            _runtimeMesh.normals = _normals;
-            _runtimeMesh.uv = _uv;
-            _runtimeMesh.triangles = _indices;
+            _runtimeMesh.SetVertices(_vertices);
+            _runtimeMesh.SetNormals(_normals);
+            _runtimeMesh.SetUVs(0, _uv);
+            _runtimeMesh.SetTriangles(_indices, 0, false);
             _runtimeMesh.RecalculateBounds();
             _meshFilter.sharedMesh = _runtimeMesh;
             _meshQualityBucket = qualityBucket;
@@ -492,7 +500,18 @@ namespace Hecton8.UI
 
             if (sourceMaterial == null)
             {
-                Shader shader = Shader.Find(DefaultShaderName);
+                Shader shader = fallbackShader;
+#if UNITY_EDITOR
+                if (shader == null)
+                {
+                    shader = AssetDatabase.LoadAssetAtPath<Shader>(DefaultShaderPath);
+                    fallbackShader = shader;
+                }
+#endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (shader == null)
+                    shader = Shader.Find(DefaultShaderName);
+#endif
                 if (shader != null)
                     _runtimeMaterial = new Material(shader); // COLD ALLOC: Material[1] - fallback visor shader instance - owner: DiegeticVisorHudMesh
             }
@@ -589,10 +608,15 @@ namespace Hecton8.UI
             if (vault == null)
                 return;
 
-            if (IsVaultHandleCreated(in _blackBoxHandle) &&
+            if (!vault.IsCompactionFenceActive &&
+                IsVaultHandleCreated(in _blackBoxHandle) &&
                 vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<DiegeticHudTelemetryEntry>.ReadOnly blackBox) &&
+                !vault.IsCompactionFenceActive &&
                 blackBox.IsCreated &&
                 blackBox.Length >= BlackBoxCapacity)
+                return;
+
+            if (vault.IsCompactionFenceActive)
                 return;
 
             if (IsVaultHandleCreated(in _blackBoxHandle))
@@ -645,15 +669,21 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!vault.TryAcquireWriteLock(in _blackBoxHandle, VaultOwnerSystemId, out NativeArray<DiegeticHudTelemetryEntry> blackBox) ||
-                !blackBox.IsCreated ||
-                blackBox.Length < BlackBoxCapacity)
+            if (vault.IsCompactionFenceActive ||
+                !vault.TryAcquireWriteLock(in _blackBoxHandle, VaultOwnerSystemId, out NativeArray<DiegeticHudTelemetryEntry> blackBox))
             {
                 return;
             }
 
             try
             {
+                if (vault.IsCompactionFenceActive ||
+                    !blackBox.IsCreated ||
+                    blackBox.Length < BlackBoxCapacity)
+                {
+                    return;
+                }
+
                 blackBox[_blackBoxCursor] = new DiegeticHudTelemetryEntry
                 {
                     Frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
@@ -681,37 +711,96 @@ namespace Hecton8.UI
             IDataVault vault = _dataVault;
             if (_blackBoxDumped ||
                 vault == null ||
-                !IsVaultHandleCreated(in _blackBoxHandle) ||
-                !vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<DiegeticHudTelemetryEntry>.ReadOnly blackBox) ||
-                !blackBox.IsCreated)
+                !IsVaultHandleCreated(in _blackBoxHandle))
             {
                 return;
             }
 
             _blackBoxDumped = true;
-            string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string directory = Path.Combine(root, "Docs", "AgentLogs");
-            Directory.CreateDirectory(directory);
-            string path = Path.Combine(directory, "Dump_UI_DIEGETIC_HUD.bin");
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            try
             {
-                writer.Write(BlackBoxCapacity);
-                writer.Write(_blackBoxCursor);
-                for (int i = 0; i < blackBox.Length; i++)
+                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string directory = Path.Combine(root, "Docs", "AgentLogs");
+                Directory.CreateDirectory(directory);
+                string path = Path.Combine(directory, "Dump_UI_DIEGETIC_HUD.bin");
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    DiegeticHudTelemetryEntry entry = blackBox[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Power01);
-                    writer.Write(entry.Brownout01);
-                    writer.Write(entry.DamageGlitch01);
-                    writer.Write(entry.Humidity01);
-                    writer.Write(entry.LocalX);
-                    writer.Write(entry.LocalY);
-                    writer.Write(entry.LocalZ);
-                    writer.Write(entry.Flags);
+                    Span<byte> header = stackalloc byte[8];
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), BlackBoxCapacity);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), _blackBoxCursor);
+                    stream.Write(header);
+
+                    Span<byte> row = stackalloc byte[40];
+                    for (int i = 0; i < BlackBoxCapacity; i++)
+                    {
+                        if (!TryReadBlackBoxEntry(vault, i, out DiegeticHudTelemetryEntry entry))
+                            return;
+
+                        WriteDiegeticHudTelemetryEntry(row, in entry);
+                        stream.Write(row);
+                    }
                 }
             }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+        }
+
+        private bool TryReadBlackBoxEntry(
+            IDataVault vault,
+            int index,
+            out DiegeticHudTelemetryEntry entry)
+        {
+            entry = default;
+            if (vault == null ||
+                index < 0 ||
+                index >= BlackBoxCapacity ||
+                !IsVaultHandleCreated(in _blackBoxHandle) ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<DiegeticHudTelemetryEntry>.ReadOnly blackBox) ||
+                vault.IsCompactionFenceActive ||
+                !blackBox.IsCreated ||
+                blackBox.Length <= index)
+            {
+                return false;
+            }
+
+            entry = blackBox[index];
+            return true;
+        }
+
+        private static void WriteDiegeticHudTelemetryEntry(Span<byte> destination, in DiegeticHudTelemetryEntry entry)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            WriteFloatLittleEndian(destination.Slice(4, 4), entry.Power01);
+            WriteFloatLittleEndian(destination.Slice(8, 4), entry.Brownout01);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.DamageGlitch01);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.Humidity01);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.LocalX);
+            WriteFloatLittleEndian(destination.Slice(24, 4), entry.LocalY);
+            WriteFloatLittleEndian(destination.Slice(28, 4), entry.LocalZ);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(32, 4), entry.Flags);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(36, 4), 0u);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
         private void ReleaseRuntimeObjects()
@@ -779,6 +868,14 @@ namespace Hecton8.UI
         {
             return RationalTan(verticalDegrees * DegreesToHalfRadians) * distanceMeters;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (fallbackShader == null)
+                fallbackShader = AssetDatabase.LoadAssetAtPath<Shader>(DefaultShaderPath);
+        }
+#endif
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 40)]
@@ -793,6 +890,9 @@ namespace Hecton8.UI
         [FieldOffset(24)] public float LocalY;
         [FieldOffset(28)] public float LocalZ;
         [FieldOffset(32)] public uint Flags;
-        [FieldOffset(36)] public uint Reserved0;
+        [FieldOffset(36)] private byte _pad0;
+        [FieldOffset(37)] private byte _pad1;
+        [FieldOffset(38)] private byte _pad2;
+        [FieldOffset(39)] private byte _pad3;
     }
 }

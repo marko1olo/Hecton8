@@ -22,7 +22,7 @@ namespace Hecton8.AI.Pathfinding
         private const int MaxVoxelPathCsvScratchBytes = 65536;
 #endif
         private const int MaxVoxelPathProfileCapacity = 256;
-        private const string VoxelAStarDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_304.bin";
+        private const string VoxelAStarDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
 
         [Header("Voxel SDF A* Runtime")]
         [SerializeField, Min(2), Tooltip("Bounded native request ring for SHINOBU_304 voxel route requests.")]

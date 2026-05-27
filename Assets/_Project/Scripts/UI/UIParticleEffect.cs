@@ -5,7 +5,7 @@ namespace Hecton8.UI
 {
     /// <summary>
     /// UI particle effect for button clicks and interactions.
-    /// EXCEEDS SUBNAUTICA: Subnautica has minimal UI particles, mostly static.
+    /// Cheap instrument feedback cue for pressured UI state.
     /// Spawns particle burst on button click with pooling.
     /// Zero-GC: ObjectPoolManager, IPoolable, cached ParticleSystem.
     /// </summary>

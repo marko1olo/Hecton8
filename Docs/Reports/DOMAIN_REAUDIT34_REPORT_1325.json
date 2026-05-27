@@ -1,0 +1,206 @@
+﻿{
+    "schema":  "hecton8.domain_reaudit34.v1",
+    "agentId":  "1325",
+    "domain":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs + World AUP persistence bridge",
+    "promptSha256":  "EE975B109958AEF4F71A0B55FED9B9E339A88F3EED23829E64D2BA249AA61F94",
+    "taskCount":  20,
+    "touchedFiles":  [
+                         "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                         "Assets/_Project/Scripts/World/AUPMath.cs",
+                         "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                         "Assets/_Project/Scripts/SaveManager.cs"
+                     ],
+    "individualHashes":  [
+                             {
+                                 "path":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                                 "sha256":  "46D9C9B52A43677579521A55CAA4EF66B02C4C3746B7A321BC1BFB91616E7B8D"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                                 "sha256":  "848AF96D81EBFEC76840D7AB09F2569EE7DDB0AA3FE10EC72E9BD2D06AECA40F"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                                 "sha256":  "A7843A500349F810EE4493A309E90236B1B820D9CA26F8382CCAE0A324013D80"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                 "sha256":  "391D18D7BAFB2B9D550D04978CEFD5762F2B7AC90432C22EB4B9B0E07903623D"
+                             }
+                         ],
+    "verificationHashSha256":  "85B3EC8AFC06175736F677B3BF5C1077F8FBF476B00AFE2A651131EC73047419",
+    "sourceChanges":  [
+                          "AUPMath.ResolveCameraRelative and committed-offset ToRuntimeFloat3 now fail closed on invalid AUP/origin payloads before float output.",
+                          "AUP weighted centroid helpers reject non-finite weights instead of silently reinterpreting them as 1/3.",
+                          "Resident sector snapshot write path validates PersistentWorldDeltaRecord identity and sector ownership before native TempJob write.",
+                          "Entity-state temp block sentinel registration now matches Allocator.Temp lifetime."
+                      ],
+    "worldLedger":  "Docs\\Reports\\VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT34_WORLD.json",
+    "allScriptsLedger":  "Docs\\Reports\\VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT34_ALLSCRIPTS.json",
+    "zeroGcHotPathAudit":  "Docs\\Reports\\ZERO_GC_HOTPATH_AUDIT_1325_DEEP_REAUDIT34_RAW.json",
+    "aupAudit":  "Docs\\Reports\\AUP_DETERMINISM_AUDIT_1325_DEEP_REAUDIT34.json",
+    "asyncNativeAudit":  "Docs\\Reports\\ASYNC_NATIVE_LIFETIME_AUDIT_1325_DEEP_REAUDIT34.json",
+    "worldSummary":  {
+                         "scannedFiles":  276,
+                         "parseFailures":  0,
+                         "totalNativeFieldDeclarations":  1094,
+                         "forbiddenPersistentCandidates":  0,
+                         "forbiddenMonoBehaviourCandidates":  0,
+                         "jobTransientFields":  976,
+                         "stackOnlyRefStructViewFields":  118,
+                         "coreMemoryAllowedFields":  0,
+                         "rawPointerFields":  57
+                     },
+    "allScriptsSummary":  {
+                              "scannedFiles":  2441,
+                              "parseFailures":  0,
+                              "totalNativeFieldDeclarations":  6672,
+                              "forbiddenPersistentCandidates":  813,
+                              "forbiddenMonoBehaviourCandidates":  47,
+                              "jobTransientFields":  5497,
+                              "stackOnlyRefStructViewFields":  317,
+                              "coreMemoryAllowedFields":  45,
+                              "rawPointerFields":  864
+                          },
+    "primaryNativeFindings":  25,
+    "primaryForbiddenPersistentNativeFields":  0,
+    "saveManagerForbiddenNativeFields":  13,
+    "saveManagerForbiddenDetails":  [
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  148,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003cSaveLoadCandidate\u003e",
+                                            "name":  "_loadCandidateScratch",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        },
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  168,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003cSaveLoadCandidate\u003e",
+                                            "name":  "SaveLoadCandidateScratch",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        },
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  194,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003cbyte\u003e",
+                                            "name":  "_savePayloadBuffer",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        },
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  195,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003cbyte\u003e",
+                                            "name":  "_compressedSaveBuffer",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        },
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  196,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003cbyte\u003e",
+                                            "name":  "_saveStagingBuffer",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        },
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  197,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003cbyte\u003e",
+                                            "name":  "_wfcOutpostGrid",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        },
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  198,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003culong\u003e",
+                                            "name":  "_wfcOutpostPackedWords",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        },
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  199,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003culong\u003e",
+                                            "name":  "_wfcOutpostRestoreWords",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        },
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  200,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003cbyte\u003e",
+                                            "name":  "_wfcOutpostPayloadBuffer",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        },
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  201,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003cWfcOutpostSnapshotCacheEntry\u003e",
+                                            "name":  "_wfcOutpostSnapshotCache",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        },
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  202,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003cAsyncPersistenceTelemetryEntry\u003e",
+                                            "name":  "_saveTelemetryRing",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        },
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  203,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003cWfcOutpostTelemetryEntry\u003e",
+                                            "name":  "_wfcOutpostTelemetryRing",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        },
+                                        {
+                                            "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                            "line":  204,
+                                            "ownerType":  "SaveManager",
+                                            "collection":  "NativeArray",
+                                            "type":  "NativeArray\u003cWfcOutpostTelemetryEntry\u003e",
+                                            "name":  "_wfcOutpostEventTelemetryRing",
+                                            "classification":  "forbidden_persistent_native_alias_candidate"
+                                        }
+                                    ],
+    "selectedHotPathFindings":  0,
+    "absoluteAupCastsFound":  0,
+    "asyncNativePersistentWorldRegistryFindings":  0,
+    "asyncNativeSaveManagerFindings":  18,
+    "compile":  {
+                    "attempted":  true,
+                    "result":  "failed",
+                    "firstVisibleErrors":  [
+                                               "Assets/Candice AI for Games/Scripts/Libs/Candice Save System/Overrides/CandiceSQLiteProvider.cs(1,12): CS0234 Mono.Data namespace missing",
+                                               "Assets/Candice AI for Games/Scripts/Libs/Candice Save System/Overrides/CandiceSQLiteProvider.cs(489,60): CS0246 SqliteDataReader missing"
+                                           ],
+                    "touched1325ErrorsVisible":  0
+                },
+    "failedGates":  [
+                        "BOUNDARY_NATIVE_ALIAS_RESIDUALS_IN_SAVE_MANAGER_OUTSIDE_1325_PRIMARY_DOMAIN",
+                        "BOUNDARY_ASYNC_NATIVE_RESIDUALS_IN_SAVE_MANAGER_OUTSIDE_1325_PRIMARY_DOMAIN",
+                        "COMPILE_FAILED_EXTERNAL_CANDICE_SQLITE_MONO_DATA_DEPENDENCY"
+                    ],
+    "generatedAtUtc":  "2026-05-27T12:15:22.1180509Z"
+}

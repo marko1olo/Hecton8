@@ -19,5 +19,5 @@ MonoBehaviour:
   midReferenceShape: brine pool chain and active vent arc
   farReferenceShape: sunken bowl marked by luminous chemical haze
   routeUse: Player should move from hotspot to hotspot with clear risk spikes.
-  safePocketUse: Safe pockets sit just outside active chemistry, not inside it.
+  safePocketUse: Reorientation pockets sit just outside active chemistry, not inside it.
   emotionalRead: Alien, useful, and locally hostile.

@@ -70,7 +70,7 @@ namespace Hecton8.Tools
     /// <summary>
     /// Transient NativeArray views resolved from generation-checked Vault handles.
     /// </summary>
-    public struct UpgradeMatrixVaultViews
+    public ref struct UpgradeMatrixVaultViews
     {
         public NativeArray<UpgradeMaskDTO> Masks;
         public NativeArray<UpgradeStatVectorDTO> BaseStats;

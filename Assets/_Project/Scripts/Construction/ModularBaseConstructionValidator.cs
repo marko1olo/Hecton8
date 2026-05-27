@@ -8,6 +8,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace Hecton8.Construction
 {
@@ -45,11 +46,26 @@ namespace Hecton8.Construction
         [FieldOffset(24)] public int3 GridPos;
         [FieldOffset(36)] public uint ModuleHash;
         [FieldOffset(40)] public uint Rotation;
-        [FieldOffset(44)] public uint _pad0;
-        [FieldOffset(48)] public uint _pad1;
-        [FieldOffset(52)] public uint _pad2;
-        [FieldOffset(56)] public uint _pad3;
-        [FieldOffset(60)] public uint _pad4;
+        [FieldOffset(44)] private byte _pad0;
+        [FieldOffset(45)] private byte _pad1;
+        [FieldOffset(46)] private byte _pad2;
+        [FieldOffset(47)] private byte _pad3;
+        [FieldOffset(48)] private byte _pad4;
+        [FieldOffset(49)] private byte _pad5;
+        [FieldOffset(50)] private byte _pad6;
+        [FieldOffset(51)] private byte _pad7;
+        [FieldOffset(52)] private byte _pad8;
+        [FieldOffset(53)] private byte _pad9;
+        [FieldOffset(54)] private byte _pad10;
+        [FieldOffset(55)] private byte _pad11;
+        [FieldOffset(56)] private byte _pad12;
+        [FieldOffset(57)] private byte _pad13;
+        [FieldOffset(58)] private byte _pad14;
+        [FieldOffset(59)] private byte _pad15;
+        [FieldOffset(60)] private byte _pad16;
+        [FieldOffset(61)] private byte _pad17;
+        [FieldOffset(62)] private byte _pad18;
+        [FieldOffset(63)] private byte _pad19;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -71,7 +87,10 @@ namespace Hecton8.Construction
         [FieldOffset(16)] public uint Frame;
         [FieldOffset(20)] public uint CandidatePortMask;
         [FieldOffset(24)] public uint Flags;
-        [FieldOffset(28)] public uint _pad0;
+        [FieldOffset(28)] private byte _pad0;
+        [FieldOffset(29)] private byte _pad1;
+        [FieldOffset(30)] private byte _pad2;
+        [FieldOffset(31)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -82,7 +101,10 @@ namespace Hecton8.Construction
         [FieldOffset(16)] public uint PortMask;
         [FieldOffset(20)] public int NodeIndex;
         [FieldOffset(24)] public uint Flags;
-        [FieldOffset(28)] public uint _pad0;
+        [FieldOffset(28)] private byte _pad0;
+        [FieldOffset(29)] private byte _pad1;
+        [FieldOffset(30)] private byte _pad2;
+        [FieldOffset(31)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -94,8 +116,14 @@ namespace Hecton8.Construction
         [FieldOffset(12)] public float StructuralWarningRatio;
         [FieldOffset(16)] public uint BaseHash;
         [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] public uint _pad0;
-        [FieldOffset(28)] public uint _pad1;
+        [FieldOffset(24)] private byte _pad0;
+        [FieldOffset(25)] private byte _pad1;
+        [FieldOffset(26)] private byte _pad2;
+        [FieldOffset(27)] private byte _pad3;
+        [FieldOffset(28)] private byte _pad4;
+        [FieldOffset(29)] private byte _pad5;
+        [FieldOffset(30)] private byte _pad6;
+        [FieldOffset(31)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -109,7 +137,8 @@ namespace Hecton8.Construction
         [FieldOffset(20)] public float PressureRatio;
         [FieldOffset(24)] public byte IsValid;
         [FieldOffset(25)] public byte StructuralWarning;
-        [FieldOffset(26)] public ushort _pad0;
+        [FieldOffset(26)] private byte _pad0;
+        [FieldOffset(27)] private byte _pad1;
         [FieldOffset(28)] public uint ResultHash;
     }
 
@@ -124,7 +153,10 @@ namespace Hecton8.Construction
         [FieldOffset(40)] public uint Flags;
         [FieldOffset(44)] public float HardBlockRadiusMeters;
         [FieldOffset(48)] public float3 HardBlockCenterLocal;
-        [FieldOffset(60)] public uint _pad0;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float SampleDistance(float3 localPosition)
@@ -169,7 +201,10 @@ namespace Hecton8.Construction
         [FieldOffset(16)] public uint ModuleHash;
         [FieldOffset(20)] public uint PortMask;
         [FieldOffset(24)] public uint Flags;
-        [FieldOffset(28)] public uint _pad0;
+        [FieldOffset(28)] private byte _pad0;
+        [FieldOffset(29)] private byte _pad1;
+        [FieldOffset(30)] private byte _pad2;
+        [FieldOffset(31)] private byte _pad3;
     }
 
     public static unsafe class ModularBaseConstructionValidator
@@ -178,7 +213,7 @@ namespace Hecton8.Construction
         public const int BoundsOverrideCapacity = 512;
         public const int OccupancyHashTableCapacity = 4096;
         public const int EmergencyMockBoundsCount = 16;
-        public const string DefaultDumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_SHINOBU_228_ConstructionValidation.bin";
+        public const string DefaultDumpPath = "Docs/AgentLogs/Dump_1306_ConstructionValidation.bin";
         public const uint OccupancyFlagOccupied = 1u;
         public const int ConstructionRequestSizeBytes = 64;
         public const int StructuralBoundsSizeBytes = 32;
@@ -205,58 +240,95 @@ namespace Hecton8.Construction
         private static ConstructionRequestDTO s_LastRequest;
         private static StructuralBoundsDTO s_LastBounds;
         private static MockWorldSampler s_LastSampler;
+        private static IDataVault s_BoundVault;
         private static bool s_TelemetryDumped;
         private static VaultGenerationHandle<ConstructionValidationSettingsDTO> s_TuningHandle;
         private static VaultGenerationHandle<ConstructionTelemetryEntry> s_TelemetryHandle;
         private static VaultGenerationHandle<StructuralBoundsDTO> s_BoundsOverrideHandle;
         private static VaultGenerationHandle<BaseModuleOccupancyDTO> s_OccupancyHandle;
 
-        public static bool ValidateStructLayout()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
         {
-            return UnsafeUtility.SizeOf<ConstructionRequestDTO>() == ConstructionRequestSizeBytes &&
-                   UnsafeUtility.SizeOf<StructuralBoundsDTO>() == StructuralBoundsSizeBytes &&
-                   UnsafeUtility.SizeOf<ConstructionValidationSettingsDTO>() == ConstructionValidationSettingsSizeBytes &&
-                   UnsafeUtility.SizeOf<ConstructionValidationResultDTO>() == ConstructionValidationResultSizeBytes &&
-                   UnsafeUtility.SizeOf<BaseModuleOccupancyDTO>() == BaseModuleOccupancySizeBytes &&
-                   UnsafeUtility.SizeOf<ConstructionTelemetryEntry>() == TelemetryEntrySizeBytes &&
-                   UnsafeUtility.SizeOf<ConstructionPreviewSignal>() == ConstructionPreviewSignalSizeBytes &&
-                   UnsafeUtility.SizeOf<FloraExclusionSignal>() == FloraExclusionSignalSizeBytes &&
-                   UnsafeUtility.SizeOf<BuilderGhostStateDTO>() == BuilderGhostStateSizeBytes &&
-                   UnsafeUtility.SizeOf<BuilderGhostVisualDTO>() == BuilderGhostVisualSizeBytes &&
-                   UnsafeUtility.SizeOf<HolographyTelemetryEntry>() == HolographyTelemetrySizeBytes &&
-                   UnsafeUtility.SizeOf<BuilderGhostIndirectArgsDTO>() == BuilderGhostIndirectArgsSizeBytes &&
-                   ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.DearLieDampen)) == 96 &&
-                   ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.GlobalQualityWeight)) == 100 &&
-                   ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.DearLieWiggleSpeed)) == 104;
+            s_TunerSettings = CreateDefaultSettings(1f);
+            s_LastValidationResult = default;
+            s_LastRequest = default;
+            s_LastBounds = default;
+            s_LastSampler = default;
+            s_BoundVault = null;
+            s_TelemetryDumped = false;
+            ResetValidationVaultHandles();
         }
 
+        public static bool ValidateStructLayout()
+        {
+            if (UnsafeUtility.SizeOf<ConstructionRequestDTO>() != ConstructionRequestSizeBytes ||
+                UnsafeUtility.SizeOf<StructuralBoundsDTO>() != StructuralBoundsSizeBytes ||
+                UnsafeUtility.SizeOf<ConstructionValidationSettingsDTO>() != ConstructionValidationSettingsSizeBytes ||
+                UnsafeUtility.SizeOf<ConstructionValidationResultDTO>() != ConstructionValidationResultSizeBytes ||
+                UnsafeUtility.SizeOf<BaseModuleOccupancyDTO>() != BaseModuleOccupancySizeBytes ||
+                UnsafeUtility.SizeOf<ConstructionTelemetryEntry>() != TelemetryEntrySizeBytes ||
+                UnsafeUtility.SizeOf<ConstructionPreviewSignal>() != ConstructionPreviewSignalSizeBytes ||
+                UnsafeUtility.SizeOf<FloraExclusionSignal>() != FloraExclusionSignalSizeBytes ||
+                UnsafeUtility.SizeOf<BuilderGhostStateDTO>() != BuilderGhostStateSizeBytes ||
+                UnsafeUtility.SizeOf<BuilderGhostVisualDTO>() != BuilderGhostVisualSizeBytes ||
+                UnsafeUtility.SizeOf<HolographyTelemetryEntry>() != HolographyTelemetrySizeBytes ||
+                UnsafeUtility.SizeOf<BuilderGhostIndirectArgsDTO>() != BuilderGhostIndirectArgsSizeBytes)
+            {
+                return false;
+            }
+
+#if UNITY_EDITOR
+            return ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.DearLieDampen)) == 96 &&
+                   ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.GlobalQualityWeight)) == 100 &&
+                   ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.DearLieWiggleSpeed)) == 104;
+#else
+            return true;
+#endif
+        }
+
+#if UNITY_EDITOR
         private static int ResolveOffset<T>(string fieldName) where T : struct
         {
             return Marshal.OffsetOf<T>(fieldName).ToInt32();
         }
+#endif
 
         public static void InitializeVault(IDataVault vault)
         {
             if (vault == null)
                 return;
 
+            BindValidationVault(vault);
             if (TryReadTunerSettingsFromVault(vault, out ConstructionValidationSettingsDTO tunerSettings))
                 s_TunerSettings = tunerSettings;
             else
                 WriteTunerSettingsToVault(vault);
             EnsureTelemetryRing(vault, out _);
             EnsureOccupancyHashTable(vault, out _);
-            if (EnsureBoundsOverrideBuffer(vault, out NativeArray<StructuralBoundsDTO> boundsBuffer) &&
-                boundsBuffer.Length > 0 &&
-                boundsBuffer[0].BoundsHash == 0u)
+            if (TryAcquireValidationWriteBuffer(
+                    vault,
+                    BufferID.ConstructionBuilderBounds,
+                    BoundsOverrideCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    ref s_BoundsOverrideHandle,
+                    out NativeArray<StructuralBoundsDTO> boundsBuffer))
             {
-                GenerateEmergencyMockBounds(boundsBuffer, EmergencyMockBoundsCount, s_TunerSettings.GridSizeMeters);
+                try
+                {
+                    if (boundsBuffer.Length > 0 && boundsBuffer[0].BoundsHash == 0u)
+                        GenerateEmergencyMockBounds(boundsBuffer, EmergencyMockBoundsCount, s_TunerSettings.GridSizeMeters);
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in s_BoundsOverrideHandle, SystemID.Construction);
+                }
             }
         }
 
         public static ConstructionValidationSettingsDTO CreateDefaultSettings(float globalQualityWeight)
         {
-            ConstructionValidationSettingsDTO settings;
+            ConstructionValidationSettingsDTO settings = default;
             settings.GridSizeMeters = DefaultGridSizeMeters;
             settings.TerrainClearanceMargin = DefaultClearanceMarginMeters;
             settings.GlobalQualityWeight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
@@ -264,7 +336,6 @@ namespace Hecton8.Construction
             settings.Frame = 0u;
             settings.CandidatePortMask = ConstructionPortMask.AllCardinal;
             settings.Flags = 0u;
-            settings._pad0 = 0u;
             return settings;
         }
 
@@ -276,9 +347,10 @@ namespace Hecton8.Construction
         public static bool TryReadTunerSettingsFromVault(IDataVault vault, out ConstructionValidationSettingsDTO settings)
         {
             settings = default;
+            BindValidationVault(vault);
             if (vault == null ||
                 !vault.TryGetGenerationHandle<ConstructionValidationSettingsDTO>(BufferID.ConstructionBuilderTuning, out VaultGenerationHandle<ConstructionValidationSettingsDTO> handle) ||
-                !vault.TryResolveHandle(in handle, out NativeArray<ConstructionValidationSettingsDTO> buffer) ||
+                !vault.TryReadHandle(in handle, out NativeArray<ConstructionValidationSettingsDTO> buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length <= 0)
                 return false;
@@ -299,7 +371,8 @@ namespace Hecton8.Construction
             if (vault == null)
                 return;
 
-            if (!EnsureValidationBuffer(
+            BindValidationVault(vault);
+            if (!TryAcquireValidationWriteBuffer(
                     vault,
                     BufferID.ConstructionBuilderTuning,
                     1,
@@ -308,8 +381,15 @@ namespace Hecton8.Construction
                     out NativeArray<ConstructionValidationSettingsDTO> buffer))
                 return;
 
-            if (buffer.IsCreated && buffer.Length > 0)
-                buffer[0] = s_TunerSettings;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length > 0)
+                    buffer[0] = s_TunerSettings;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_TuningHandle, SystemID.Construction);
+            }
         }
 
         public static void SetTunerSettings(float gridSnapSize, float maxBaseBounds, float terrainClearanceMargin)
@@ -336,7 +416,7 @@ namespace Hecton8.Construction
 
         public static MockWorldSampler CreateMockWorldSampler(double3 rootAup, float planeLocalY, uint seed)
         {
-            MockWorldSampler sampler;
+            MockWorldSampler sampler = default;
             sampler.RootAUP = rootAup;
             sampler.PlaneLocalY = math.isfinite(planeLocalY) ? planeLocalY : 0f;
             sampler.RidgeAmplitudeMeters = 0f;
@@ -345,7 +425,6 @@ namespace Hecton8.Construction
             sampler.Flags = 0u;
             sampler.HardBlockRadiusMeters = 0f;
             sampler.HardBlockCenterLocal = float3.zero;
-            sampler._pad0 = 0u;
             return sampler;
         }
 
@@ -372,11 +451,6 @@ namespace Hecton8.Construction
             request.GridPos = grid;
             request.ModuleHash = moduleHash;
             request.Rotation = rotation & 3u;
-            request._pad0 = 0u;
-            request._pad1 = 0u;
-            request._pad2 = 0u;
-            request._pad3 = 0u;
-            request._pad4 = 0u;
             return true;
         }
 
@@ -527,26 +601,40 @@ namespace Hecton8.Construction
             out int writtenCount)
         {
             writtenCount = 0;
-            if (!EnsureBoundsOverrideBuffer(vault, out NativeArray<StructuralBoundsDTO> boundsBuffer))
+            BindValidationVault(vault);
+            if (!TryAcquireValidationWriteBuffer(
+                    vault,
+                    BufferID.ConstructionBuilderBounds,
+                    BoundsOverrideCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    ref s_BoundsOverrideHandle,
+                    out NativeArray<StructuralBoundsDTO> boundsBuffer))
                 return false;
 
-            for (int i = 0; i < boundsBuffer.Length; i++)
-                boundsBuffer[i] = default;
-
-            int lineStart = 0;
-            for (int i = 0; i <= csv.Length && writtenCount < boundsBuffer.Length; i++)
+            try
             {
-                if (i < csv.Length && csv[i] != (byte)'\n')
-                    continue;
+                for (int i = 0; i < boundsBuffer.Length; i++)
+                    boundsBuffer[i] = default;
 
-                int lineEnd = i;
-                if (lineEnd > lineStart && csv[lineEnd - 1] == (byte)'\r')
-                    lineEnd--;
+                int lineStart = 0;
+                for (int i = 0; i <= csv.Length && writtenCount < boundsBuffer.Length; i++)
+                {
+                    if (i < csv.Length && csv[i] != (byte)'\n')
+                        continue;
 
-                if (TryParseBoundsLine(csv.Slice(lineStart, lineEnd - lineStart), out StructuralBoundsDTO bounds))
-                    boundsBuffer[writtenCount++] = bounds;
+                    int lineEnd = i;
+                    if (lineEnd > lineStart && csv[lineEnd - 1] == (byte)'\r')
+                        lineEnd--;
 
-                lineStart = i + 1;
+                    if (TryParseBoundsLine(csv.Slice(lineStart, lineEnd - lineStart), out StructuralBoundsDTO bounds))
+                        boundsBuffer[writtenCount++] = bounds;
+
+                    lineStart = i + 1;
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_BoundsOverrideHandle, SystemID.Construction);
             }
 
             return writtenCount > 0;
@@ -558,8 +646,9 @@ namespace Hecton8.Construction
             out NativeArray<ConstructionTelemetryEntry>.ReadOnly telemetryRing)
         {
             telemetryRing = default;
+            BindValidationVault(vault);
             if (vault == null ||
-                !TryResolveCachedValidationBuffer(
+                !TryReadValidationBuffer(
                     vault,
                     in s_TelemetryHandle,
                     1,
@@ -575,14 +664,28 @@ namespace Hecton8.Construction
             uint frame,
             in ConstructionRequestDTO request,
             in ConstructionValidationResultDTO result,
-            float globalQualityWeight,
+            float validationComputeTimeMs,
             uint flags)
         {
-            if (!EnsureTelemetryRing(vault, out NativeArray<ConstructionTelemetryEntry> telemetryRing))
+            BindValidationVault(vault);
+            if (!TryAcquireValidationWriteBuffer(
+                    vault,
+                    BufferID.ConstructionBuilderTelemetry,
+                    TelemetryCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    ref s_TelemetryHandle,
+                    out NativeArray<ConstructionTelemetryEntry> telemetryRing))
                 return false;
 
-            WriteTelemetry(telemetryRing, frame, in request, in result, globalQualityWeight, flags);
-            return true;
+            try
+            {
+                WriteTelemetry(telemetryRing, frame, in request, in result, validationComputeTimeMs, flags);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_TelemetryHandle, SystemID.Construction);
+            }
         }
 
         private static bool EnsureTelemetryRing(
@@ -630,8 +733,9 @@ namespace Hecton8.Construction
             out NativeArray<BaseModuleOccupancyDTO>.ReadOnly occupancyTable)
         {
             occupancyTable = default;
+            BindValidationVault(vault);
             if (vault == null ||
-                !TryResolveCachedValidationBuffer(vault, in s_OccupancyHandle, 1, out NativeArray<BaseModuleOccupancyDTO> mutableOccupancyTable))
+                !TryReadValidationBuffer(vault, in s_OccupancyHandle, 1, out NativeArray<BaseModuleOccupancyDTO> mutableOccupancyTable))
                 return false;
 
             occupancyTable = mutableOccupancyTable.AsReadOnly();
@@ -666,7 +770,28 @@ namespace Hecton8.Construction
             ref VaultGenerationHandle<T> handle,
             out NativeArray<T> buffer) where T : struct
         {
-            if (TryResolveCachedValidationBuffer(vault, in handle, requiredLength, out buffer))
+            BindValidationVault(vault);
+            if (TryReadValidationBuffer(vault, in handle, requiredLength, out buffer))
+                return true;
+
+            if (!EnsureValidationHandle(vault, bufferId, requiredLength, options, ref handle))
+            {
+                buffer = default;
+                return false;
+            }
+
+            return TryReadValidationBuffer(vault, in handle, requiredLength, out buffer);
+        }
+
+        private static bool EnsureValidationHandle<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            BindValidationVault(vault);
+            if (TryReadValidationBuffer(vault, in handle, requiredLength, out _))
                 return true;
 
             if (vault == null)
@@ -678,21 +803,92 @@ namespace Hecton8.Construction
                 SystemID.Construction,
                 options);
 
-            return TryResolveCachedValidationBuffer(vault, in handle, requiredLength, out buffer);
+            return TryReadValidationBuffer(vault, in handle, requiredLength, out _);
         }
 
-        private static bool TryResolveCachedValidationBuffer<T>(
+        private static bool TryAcquireValidationWriteBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            ref VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            BindValidationVault(vault);
+            if (!EnsureValidationHandle(vault, bufferId, requiredLength, options, ref handle))
+                return false;
+
+            bool locked = vault != null && vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer);
+            if (!locked ||
+                !buffer.IsCreated ||
+                buffer.Length < math.max(1, requiredLength))
+            {
+                if (locked)
+                    vault.ReleaseWriteLock(in handle, SystemID.Construction);
+
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryReadValidationBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
+            BindValidationVault(vault);
             return vault != null &&
                    handle.BufferID != 0u &&
-                   vault.TryResolveHandle(in handle, out buffer) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= math.max(1, requiredLength);
+        }
+
+        private static void BindValidationVault(IDataVault vault)
+        {
+            if (ReferenceEquals(s_BoundVault, vault))
+                return;
+
+            ReleaseValidationVaultHandles(s_BoundVault);
+            s_BoundVault = vault;
+            s_TelemetryDumped = false;
+        }
+
+        private static void ReleaseValidationVaultHandles(IDataVault vault)
+        {
+            if (vault != null)
+            {
+                ReleaseValidationBuffer(vault, ref s_OccupancyHandle);
+                ReleaseValidationBuffer(vault, ref s_BoundsOverrideHandle);
+                ReleaseValidationBuffer(vault, ref s_TelemetryHandle);
+                ReleaseValidationBuffer(vault, ref s_TuningHandle);
+                return;
+            }
+
+            ResetValidationVaultHandles();
+        }
+
+        private static void ReleaseValidationBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static void ResetValidationVaultHandles()
+        {
+            s_TuningHandle = default;
+            s_TelemetryHandle = default;
+            s_BoundsOverrideHandle = default;
+            s_OccupancyHandle = default;
         }
 
         public static bool TryInsertOccupancyCell(
@@ -803,15 +999,30 @@ namespace Hecton8.Construction
 
             void* ptr = telemetryRing.GetUnsafeReadOnlyPtr();
             int byteLength = telemetryRing.Length * UnsafeUtility.SizeOf<ConstructionTelemetryEntry>();
+            string resolvedPath = ResolveDumpPath(absolutePath);
+            if (string.IsNullOrEmpty(resolvedPath))
+                return;
 
-            string directory = Path.GetDirectoryName(absolutePath);
+            string directory = Path.GetDirectoryName(resolvedPath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
 
-            using (FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (FileStream stream = new FileStream(resolvedPath, FileMode.Create, FileAccess.Write, FileShare.Read))
             {
                 stream.Write(new ReadOnlySpan<byte>(ptr, byteLength));
             }
+        }
+
+        private static string ResolveDumpPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
+
+            if (Path.IsPathRooted(path))
+                return path;
+
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            return Path.GetFullPath(Path.Combine(projectRoot, path));
         }
 
         internal static void ValidatePlacementCore(
@@ -892,7 +1103,6 @@ namespace Hecton8.Construction
             result.PressureRatio = pressureRatio;
             result.IsValid = (byte)((flags & ~((uint)ConstructionValidationFlags.StructuralWarning)) == 0u ? 1 : 0);
             result.StructuralWarning = (byte)((flags & (uint)ConstructionValidationFlags.StructuralWarning) != 0u ? 1 : 0);
-            result._pad0 = 0;
             result.ResultHash = HashResult(in request, flags, result.MinSdfDistance, probeCount);
         }
 

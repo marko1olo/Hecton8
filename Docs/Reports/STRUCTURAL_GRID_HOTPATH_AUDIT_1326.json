@@ -1,0 +1,583 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\STRUCTURAL_GRID_HOTPATH_AUDIT_1326.json",
+  "auditHashSha256": "b238b39fb731813c263ca7daeae1b153740fa02154e7b9ea0ab179bf6ee8ef38",
+  "summary": {
+    "scannedFiles": 1,
+    "parseFailures": 0,
+    "totalFindings": 69,
+    "objectCreations": 69,
+    "valueTypeCreations": 32,
+    "managedRiskCreations": 37,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\SubmarineStructuralGrid.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 35,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.Submarine.StructuralGrid.FixedTick\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 36,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.Submarine.StructuralGrid.Damage.Schedule\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 37,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.Submarine.StructuralGrid.Damage.Consume\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 38,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.Submarine.StructuralGrid.BreachRepair\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 178,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      GridWidth > 0 ? GridSizeLocal.x / GridWidth : 0f,                      GridHeight > 0 ? GridSizeLocal.y / GridHeight : 0f,                      GridDepth > 0 ? GridSizeLocal.z / GridDepth : 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 210,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(localX, localY, localZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 273,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                     GridWidth > 0 ? GridSizeLocal.x / GridWidth : 0f,                     GridHeight > 0 ? GridSizeLocal.y / GridHeight : 0f,                     GridDepth > 0 ? GridSizeLocal.z / GridDepth : 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 277,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(x + 0.5f, y + 0.5f, z + 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 386,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(breach.x, breach.y, breach.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 444,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(6f, 2.5f, 14f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 558,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(float.NaN, 0f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 559,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(float.NaN, 0f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 585,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<MonoBehaviour>",
+      "snippet": "new List<MonoBehaviour>(4)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 609,
+      "owner": "",
+      "kind": "value_type_creation",
+      "detail": "AutoResetEvent",
+      "snippet": "new AutoResetEvent(false)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 696,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "MaterialPropertyBlock",
+      "snippet": "new MaterialPropertyBlock()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 837,
+      "owner": "QueueImpactLocal",
+      "kind": "object_creation",
+      "detail": "ImpactCommand",
+      "snippet": "new ImpactCommand                     {                         LocalPoint = localPoint,                         RadiusMeters = radius,                         SigmaMeters = sigma,                         DamageBytes = damageBytes          "
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 870,
+      "owner": "QueueHullImpactDecalLocal",
+      "kind": "value_type_creation",
+      "detail": "HullImpactDecalRequest",
+      "snippet": "new HullImpactDecalRequest                 {                     LocalPoint = localPoint,                     LocalNormal = localNormal,                     ImpactSpeed = math.max(0f, impactSpeed),                     Severity01 = math.satu"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 886,
+      "owner": "QueueHullImpactDecalWorld",
+      "kind": "value_type_creation",
+      "detail": "HullImpactDecalRequest",
+      "snippet": "new HullImpactDecalRequest                 {                     WorldPoint = worldPoint,                     OutwardNormal = outwardNormal,                     ImpactSpeed = math.max(0f, impactSpeed),                     Severity01 = math."
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 928,
+      "owner": "SpawnHullImpactSparks",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(1f, 0.45f, 0.08f, 0.85f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 937,
+      "owner": "QueueHullImpactSparks",
+      "kind": "value_type_creation",
+      "detail": "HullImpactSparkRequest",
+      "snippet": "new HullImpactSparkRequest             {                 WorldPoint = worldPoint,                 OutwardNormal = outwardNormal,                 Severity01 = math.saturate(severity01)             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 972,
+      "owner": "FlushQueuedHullImpactDecals",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(request.LocalPoint.x, request.LocalPoint.y, request.LocalPoint.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 973,
+      "owner": "FlushQueuedHullImpactDecals",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(request.LocalNormal.x, request.LocalNormal.y, request.LocalNormal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1053,
+      "owner": "EnsureHullImpactSparkParticles",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"PFX_SubmarineHull_ImpactSparks\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1063,
+      "owner": "EnsureHullImpactSparkParticles",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(0.16f, 0.42f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1064,
+      "owner": "EnsureHullImpactSparkParticles",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(5f, 14f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1065,
+      "owner": "EnsureHullImpactSparkParticles",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(0.025f, 0.08f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1066,
+      "owner": "EnsureHullImpactSparkParticles",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxGradient",
+      "snippet": "new ParticleSystem.MinMaxGradient(                  new Color(1f, 0.38f, 0.06f, 0.9f),                  new Color(1f, 0.92f, 0.66f, 1f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1067,
+      "owner": "EnsureHullImpactSparkParticles",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(1f, 0.38f, 0.06f, 0.9f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1068,
+      "owner": "EnsureHullImpactSparkParticles",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(1f, 0.92f, 0.66f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1155,
+      "owner": "TryGetActiveBreach",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(breach.x, breach.y, breach.z, breach.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1212,
+      "owner": "TryQueueRepairHit",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(breach.x, breach.y, breach.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1284,
+      "owner": "AddOrRefreshBreachLocal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(breach.x, breach.y, breach.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1300,
+      "owner": "AddOrRefreshBreachLocal",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(localPoint, severity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1330,
+      "owner": "QueueDeferredBreachAdd",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(deferred.x, deferred.y, deferred.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1341,
+      "owner": "QueueDeferredBreachAdd",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(localPoint, severity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1359,
+      "owner": "QueueDeferredBreachAdd",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(localPoint, severity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1373,
+      "owner": "FlushDeferredBreachAdds",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(deferred.x, deferred.y, deferred.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1382,
+      "owner": "RegisterBreachScreenSpaceFeedback",
+      "kind": "value_type_creation",
+      "detail": "BreachPressureSprayRequest",
+      "snippet": "new BreachPressureSprayRequest             {                 LocalPoint = localPoint,                 Severity01 = math.saturate(severity01)             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1428,
+      "owner": "FlushQueuedBreachScreenSpaceFeedback",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(request.LocalPoint.x, request.LocalPoint.y, request.LocalPoint.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1489,
+      "owner": "ScheduleBreachRepairJob",
+      "kind": "value_type_creation",
+      "detail": "BreachRepairJob",
+      "snippet": "new BreachRepairJob                     {                         Breaches = breaches,                         SeveritySum = severitySum,                         ActiveCount = _activeBreachCount,                         LocalHitPoint = _pen"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1632,
+      "owner": "PublishLeakImpactSignal",
+      "kind": "value_type_creation",
+      "detail": "ImpactSignal",
+      "snippet": "new ImpactSignal              {                  PointAup = AbsoluteUniversePosition.FromAbsolutePosition(absolute),                  Force = math.max(0f, severitySum * ambientPressureKPa),                  Intensity = math.saturate(severit"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1665,
+      "owner": "PublishCriticalBreachWarning",
+      "kind": "value_type_creation",
+      "detail": "VocalWarningSignal",
+      "snippet": "new VocalWarningSignal              {                  WarningHash = VocalWarningHashes.HullBreach,                  SourceId = hullBody != null ? unchecked((uint)EntityId.ToULong(hullBody.GetEntityId())) : 0u,                  Severity01 ="
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1730,
+      "owner": "DispatchLeakPlumeCompute",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(LeakPlumeParticleCapacity, MaxActiveBreaches, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1795,
+      "owner": "RenderLeakPlumeParticles",
+      "kind": "object_creation",
+      "detail": "RenderParams",
+      "snippet": "new RenderParams(leakPlumeRenderMaterial)              {                  worldBounds = ResolveLeakPlumeRenderBounds(cachedTransform),                  matProps = _leakPlumeDrawProperties,                  shadowCastingMode = ShadowCastingM"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1812,
+      "owner": "ResolveLeakPlumeRenderBounds",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(cachedTransform.position, Vector3.one * 4f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 1928,
+      "owner": "WriteDamageControlTelemetry",
+      "kind": "value_type_creation",
+      "detail": "StructuralTelemetryEntry",
+      "snippet": "new StructuralTelemetryEntry                 {                     FirstBreachLocalSeverity = first,                     SeveritySum = math.isfinite(_activeBreachSeveritySum) ? _activeBreachSeveritySum : 0f,                     ActiveBreach"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2012,
+      "owner": "EnsureDamageControlTelemetryDumpWorker",
+      "kind": "object_creation",
+      "detail": "Thread",
+      "snippet": "new Thread(DamageControlTelemetryDumpWorkerLoop)             {                 IsBackground = true,                 Name = \"H8.StructuralGrid.BlackBoxDump1326\"             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2073,
+      "owner": "WriteDamageControlTelemetryDump",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2074,
+      "owner": "WriteDamageControlTelemetryDump",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2153,
+      "owner": "TryResolveLocalPointAup",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-AupLocalCastClampMeters, -AupLocalCastClampMeters, -AupLocalCastClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2154,
+      "owner": "TryResolveLocalPointAup",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(AupLocalCastClampMeters, AupLocalCastClampMeters, AupLocalCastClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2155,
+      "owner": "TryResolveLocalPointAup",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                 (float)relativeWorldDouble.x,                 (float)relativeWorldDouble.y,                 (float)relativeWorldDouble.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2171,
+      "owner": "TryResolveLocalPointAup",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(localVector.x, localVector.y, localVector.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2192,
+      "owner": "TryResolveLocalDirection",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(localVector.x, localVector.y, localVector.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2193,
+      "owner": "TryResolveLocalDirection",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2217,
+      "owner": "ConjugateUnitRotation",
+      "kind": "object_creation",
+      "detail": "Quaternion",
+      "snippet": "new Quaternion(-rotation.x, -rotation.y, -rotation.z, rotation.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2229,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2261,
+      "owner": "LerpColorClamped",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(                  math.lerp(from.r, to.r, clampedT),                  math.lerp(from.g, to.g, clampedT),                  math.lerp(from.b, to.b, clampedT),                  math.lerp(from.a, to.a, clampedT))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2270,
+      "owner": "ResolveOutwardHullNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(localGridCenter.x, localGridCenter.y, localGridCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2273,
+      "owner": "ResolveOutwardHullNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2369,
+      "owner": "FlushFakeCrushDepthGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                 center.x,                 center.y,                 center.z,                  math.max(0f, fakeCrushEffectRadiusMeters))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2374,
+      "owner": "FlushFakeCrushDepthGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  math.max(0f, depthMeters),                  math.max(1f, fakeCrushDepthMeters),                  math.max(0f, fakeCrushMaxVertexDisplacementMeters),                  math.max(0.001f, fakeCrushVoronoiScale))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2401,
+      "owner": "ResetFakeCrushDepthGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(float.NaN, 0f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2402,
+      "owner": "ResetFakeCrushDepthGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(float.NaN, 0f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2421,
+      "owner": "ResolveGridBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(localCenterAup.x, localCenterAup.y, localCenterAup.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2424,
+      "owner": "ResolveGridBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  math.max(math.abs(localExtents.x) * 2f, 0.5f),                  math.max(math.abs(localExtents.y) * 2f, 0.5f),                  math.max(math.abs(localExtents.z) * 2f, 0.5f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 2945,
+      "owner": "EnsureCompartmentMappingReady",
+      "kind": "value_type_creation",
+      "detail": "HullCompartmentMappingJob",
+      "snippet": "new HullCompartmentMappingJob                 {                     CompartmentCentroids = compartmentCentroids,                     CellCompartmentIndices = cellCompartmentIndices,                     CompartmentCount = compartmentCount,  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 3093,
+      "owner": "ScheduleFatigueJob",
+      "kind": "value_type_creation",
+      "detail": "HullFatigueCompartmentJob",
+      "snippet": "new HullFatigueCompartmentJob                 {                     CellCompartmentIndices = cellCompartmentIndices,                     CellIntegrityFront = cellIntegrityFront,                     CellIntegrityBack = cellIntegrityBack,    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "line": 3190,
+      "owner": "ScheduleDamageJob",
+      "kind": "value_type_creation",
+      "detail": "HullDamageDiffusionJob",
+      "snippet": "new HullDamageDiffusionJob                     {                         InputIntegrity = cellIntegrityFront,                         CellCompartmentIndices = cellCompartmentIndices,                         Impacts = scheduledImpactsForJob,"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

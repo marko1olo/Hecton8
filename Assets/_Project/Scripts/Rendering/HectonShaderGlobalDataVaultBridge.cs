@@ -104,7 +104,12 @@ namespace Hecton8.Core
 
         internal static void SetVisualSyncDispatcherActive(bool active)
         {
+            if (_visualSyncDispatcherActive == active)
+                return;
+
             _visualSyncDispatcherActive = active;
+            if (!active)
+                MarkFallbackShaderGlobalsDirty();
         }
 
         public static void PublishBiolumMasterPhase(Vector4 phaseVector)

@@ -1,0 +1,19 @@
+﻿{
+    "agentId":  "1330",
+    "task":  "1330_HOTPATH_RERUN17",
+    "status":  "VERIFIED_GREEN",
+    "generatedUtc":  "2026-05-26T18:24:16.4975740Z",
+    "scannedFiles":  4,
+    "parseFailures":  0,
+    "zeroGcHotPathHits":  0,
+    "focusedMethods":  [
+                           "H8CreatureSoAReconstructJob.Execute",
+                           "H8ItemSoAReconstructJob.Execute",
+                           "H8StaticDataArena.TryGetCreatureGenomeBlock",
+                           "H8StaticDataArena.TrySampleDepthPressure"
+                       ],
+    "rawColdFindings":  10,
+    "rawReport":  "Docs/Reports/DATA_MONOLITH_HOTPATH_AUDIT_1330_RERUN17_RAW.json",
+    "classification":  "Raw findings are cold boot/editor/URI staging/file I/O/value-type results outside Tick/SlowTick/LateFrameTick/job Execute allocation hot paths.",
+    "verificationHashSha256":  "1282372ce0f6e3eb10fc737f80cbdbf9b3c2d04b16bbb00e834fdc1870dcc692"
+}

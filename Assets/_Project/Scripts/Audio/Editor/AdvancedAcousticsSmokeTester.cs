@@ -520,7 +520,7 @@ namespace Hecton8.Audio.Editor
             {
                 string prologueLateFrame = ExtractMethodBody(prologueAcoustic, "public void LateFrameTick()");
                 string prologueColdRuntime = ExtractMethodBody(prologueAcoustic, "private void RefreshRuntimeServicesCold()");
-                string prologueColdPolicy = ExtractMethodBody(prologueAcoustic, "private void RefreshQualityPolicyCold()");
+                string prologueQualityPolicy = ExtractMethodBody(prologueAcoustic, "private void RefreshQualityPolicy()");
                 AssertContains(prologueAcoustic, "ResolveGlobalQualityWeight01()", "Prologue acoustic bridge derives presentation policy from continuous global quality", builder, ref failureCount);
                 AssertContains(prologueAcoustic, "ResolveQualityCurve01()", "Prologue acoustic bridge uses a smooth quality curve for granular plasma stress", builder, ref failureCount);
                 AssertNotContains(prologueAcoustic, "ConsumeScalabilitySignals();", "Prologue acoustic bridge no longer drains binary scalability changes", builder, ref failureCount);
@@ -531,8 +531,8 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(prologueAcoustic, "CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile)", "Prologue acoustic bridge does not cache low-memory policy from scalability payloads", builder, ref failureCount);
                 AssertContains(prologueColdRuntime, "GlobalRegistry.Audio", "Prologue acoustic bridge reads audio service only during cold runtime refresh", builder, ref failureCount);
                 AssertContains(prologueColdRuntime, "GlobalRegistry.TickDispatcher", "Prologue acoustic bridge reads tick dispatcher only during cold runtime refresh", builder, ref failureCount);
-                AssertContains(prologueColdPolicy, "ResolveQualityTierByte(ResolveGlobalQualityWeight01())", "Prologue acoustic bridge seeds continuous quality byte during cold cache refresh", builder, ref failureCount);
-                AssertNotContains(prologueColdPolicy, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic bridge does not seed low-memory policy during cold cache refresh", builder, ref failureCount);
+                AssertContains(prologueQualityPolicy, "ResolveQualityTierByte(ResolveGlobalQualityWeight01())", "Prologue acoustic bridge refreshes continuous quality byte without binary tier state", builder, ref failureCount);
+                AssertNotContains(prologueQualityPolicy, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic bridge does not seed low-memory policy during quality refresh", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.", "Prologue acoustic LateFrameTick does not poll registry services directly", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.ScalabilityTier", "Prologue acoustic LateFrameTick does not poll scalability tier registry directly", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.ScalabilityTierProfileByte", "Prologue acoustic LateFrameTick does not poll scalability profile byte directly", builder, ref failureCount);

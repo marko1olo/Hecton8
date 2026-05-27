@@ -45,7 +45,7 @@ namespace Hecton8.Physics
     public interface IBuoyancyObjectRegistry : ISystem
     {
         /// <summary>Registers one buoyancy body with the active fluid solve.</summary>
-        void Register(BuoyancyObject obj);
+        bool Register(BuoyancyObject obj);
 
         /// <summary>Unregisters one buoyancy body from the active fluid solve.</summary>
         void Unregister(BuoyancyObject obj);
@@ -56,6 +56,8 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton/Physics/Buoyancy Object")]
     public sealed class BuoyancyObject : MonoBehaviour, IFixedTickable, IGlobalRegistryHotSwapListener, IBuoyancyAirStateReadModel
     {
+        private const float AuthoritativeQualityWeight = 1f;
+
         private static int _WaterLayer = -1;
         private static bool _layerCacheInitialized;
 
@@ -409,6 +411,8 @@ namespace Hecton8.Physics
 
         private void Start()
         {
+            CacheRegistryServicesCold();
+            RebindFluidRuntime(_cachedFluidRuntime);
             TryRegisterToFixedTick();
         }
 
@@ -496,6 +500,13 @@ namespace Hecton8.Physics
                     RebindFluidRuntime(_cachedFluidRuntime);
                     break;
 
+                case GlobalRegistryServiceSlot.DataVault:
+                    if (isActiveAndEnabled && _registeredFluidRuntime == null)
+                    {
+                        RebindFluidRuntime(_cachedFluidRuntime);
+                    }
+                    break;
+
                 case GlobalRegistryServiceSlot.TerrainProviderRuntime:
                     _terrainProvider = currentService as ITerrainProvider;
                     break;
@@ -529,8 +540,8 @@ namespace Hecton8.Physics
             if (!isActiveAndEnabled || engine == null)
                 return;
 
-            engine.Register(this);
-            _registeredFluidRuntime = engine;
+            if (engine.Register(this))
+                _registeredFluidRuntime = engine;
         }
 
         private void UnregisterFromFluidRuntime()
@@ -684,10 +695,9 @@ namespace Hecton8.Physics
 
         private static float ResolveGroundSdfStepMeters(float range)
         {
-            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
             float coarse = math.max(0.12f, range * 0.35f);
             float fine = math.max(0.04f, range * 0.1f);
-            return math.lerp(coarse, fine, quality);
+            return math.lerp(coarse, fine, AuthoritativeQualityWeight);
         }
 
         private static bool IncludesAnyLayer(int queryMask, int requiredMask)

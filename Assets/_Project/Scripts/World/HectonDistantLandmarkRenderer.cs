@@ -78,6 +78,8 @@ namespace Hecton8.World
         private BatchMaterialID _batchMaterialId;
         private Mesh _registeredMesh;
         private Material _registeredMaterial;
+        private Material _runtimeMaterial;
+        private Shader _runtimeMaterialShader;
         private GraphicsBuffer _registeredBatchBuffer;
         private bool _hotSwapListenerRegistered;
 
@@ -165,9 +167,21 @@ namespace Hecton8.World
         /// <param name="drawBounds">World-space bounds that conservatively cover the published landmarks.</param>
         public void BindInstanceBuffer(GraphicsBuffer matrixBuffer, int instanceCount, Bounds drawBounds)
         {
+            if (matrixBuffer == null || !matrixBuffer.IsValid() || instanceCount <= 0 || !IsFiniteBounds(drawBounds))
+            {
+                ClearBinding();
+                return;
+            }
+
             _externalMatrixBuffer = matrixBuffer;
             _usingOwnedUploadBuffers = false;
-            _instanceCount = Mathf.Max(0, instanceCount);
+            _instanceCount = Mathf.Min(instanceCount, matrixBuffer.count);
+            if (_instanceCount <= 0)
+            {
+                ClearBinding();
+                return;
+            }
+
             _drawBounds = drawBounds;
             _hasBoundsOverride = true;
         }
@@ -193,35 +207,46 @@ namespace Hecton8.World
                 return;
             }
 
+            int validCount = 0;
             Bounds combinedBounds = default;
             bool hasCombinedBounds = false;
             for (int i = 0; i < landmarkCount; i++)
             {
                 Bounds landmark = landmarkBounds[i];
+                if (!IsFiniteBounds(landmark))
+                    continue;
+
                 Vector3 clampedSize = new Vector3(
                     Mathf.Max(0.5f, landmark.size.x),
                     Mathf.Max(0.5f, landmark.size.y),
                     Mathf.Max(0.5f, landmark.size.z));
 
-                _uploadedLandmarkMatrices[i] = Matrix4x4.TRS(landmark.center, Quaternion.identity, clampedSize);
-                _uploadedLandmarkFade[i] = new Vector4(1f, 0f, 0f, 0f);
+                Bounds safeBounds = new Bounds(landmark.center, clampedSize);
+                _uploadedLandmarkMatrices[validCount] = Matrix4x4.TRS(landmark.center, Quaternion.identity, clampedSize);
+                _uploadedLandmarkFade[validCount] = new Vector4(1f, 0f, 0f, 0f);
                 if (hasCombinedBounds)
-                    combinedBounds.Encapsulate(landmark);
+                    combinedBounds.Encapsulate(safeBounds);
                 else
                 {
-                    combinedBounds = landmark;
+                    combinedBounds = safeBounds;
                     hasCombinedBounds = true;
                 }
+
+                validCount++;
             }
 
-            PublishOwnedUploadBuffers(landmarkCount);
+            if (validCount <= 0)
+            {
+                ClearBinding();
+                return;
+            }
+
+            PublishOwnedUploadBuffers(validCount);
             _externalMatrixBuffer = null;
             _usingOwnedUploadBuffers = true;
-            _instanceCount = landmarkCount;
-            _drawBounds = hasCombinedBounds
-                ? combinedBounds
-                : new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
-            _hasBoundsOverride = hasCombinedBounds;
+            _instanceCount = validCount;
+            _drawBounds = combinedBounds;
+            _hasBoundsOverride = true;
         }
 
         /// <summary>
@@ -244,18 +269,25 @@ namespace Hecton8.World
                 return;
             }
 
+            int validCount = 0;
             Bounds combinedBounds = default;
             bool hasCombinedBounds = false;
             for (int i = 0; i < hlodCount; i++)
             {
                 HLODData entry = hlodEntries[i];
+                if (!IsFinite(entry.Center) || !IsFinite(entry.Size) || !float.IsFinite(entry.Fade01))
+                    continue;
+
                 Vector3 clampedSize = new Vector3(
                     Mathf.Max(0.5f, entry.Size.x),
                     Mathf.Max(0.5f, entry.Size.y),
                     Mathf.Max(0.5f, entry.Size.z));
                 Bounds bounds = new Bounds(entry.Center, clampedSize);
-                _uploadedLandmarkMatrices[i] = Matrix4x4.TRS(entry.Center, Quaternion.identity, clampedSize);
-                _uploadedLandmarkFade[i] = new Vector4(Mathf.Clamp01(entry.Fade01), 0f, 0f, 0f);
+                if (!IsFiniteBounds(bounds))
+                    continue;
+
+                _uploadedLandmarkMatrices[validCount] = Matrix4x4.TRS(entry.Center, Quaternion.identity, clampedSize);
+                _uploadedLandmarkFade[validCount] = new Vector4(Mathf.Clamp01(entry.Fade01), 0f, 0f, 0f);
                 if (hasCombinedBounds)
                     combinedBounds.Encapsulate(bounds);
                 else
@@ -263,21 +295,29 @@ namespace Hecton8.World
                     combinedBounds = bounds;
                     hasCombinedBounds = true;
                 }
+
+                validCount++;
             }
 
-            PublishOwnedUploadBuffers(hlodCount);
+            if (validCount <= 0)
+            {
+                ClearBinding();
+                return;
+            }
+
+            PublishOwnedUploadBuffers(validCount);
             _externalMatrixBuffer = null;
             _usingOwnedUploadBuffers = true;
-            _instanceCount = hlodCount;
-            _drawBounds = hasCombinedBounds
-                ? combinedBounds
-                : new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
-            _hasBoundsOverride = hasCombinedBounds;
+            _instanceCount = validCount;
+            _drawBounds = combinedBounds;
+            _hasBoundsOverride = true;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            if (!isActiveAndEnabled ||
+                !IsFinite(shiftData.ShiftOffset) ||
+                shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
                 return;
 
             Vector3 runtimeOffset = -shiftData.ShiftOffset;
@@ -470,21 +510,54 @@ namespace Hecton8.World
 
         private Material ResolveMaterial()
         {
-            return _material;
+            if (_material != null)
+                return _material;
+
+            Shader fallbackShader = ResolveFallbackShader();
+            if (fallbackShader == null)
+                return null;
+
+            if (_runtimeMaterial != null && _runtimeMaterialShader == fallbackShader)
+                return _runtimeMaterial;
+
+            ReleaseRuntimeMaterial();
+            _runtimeMaterial = new Material(fallbackShader)
+            {
+                name = "Hecton Distant Landmark Runtime Material",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            _runtimeMaterialShader = fallbackShader;
+            return _runtimeMaterial;
+        }
+
+        private Shader ResolveFallbackShader()
+        {
+            if (_silhouetteShader != null)
+                return _silhouetteShader;
+
+#if UNITY_EDITOR
+            Shader editorShader = AssetDatabase.LoadAssetAtPath<Shader>(SilhouetteShaderAssetPath);
+            if (editorShader != null)
+                return editorShader;
+#endif
+
+            return Shader.Find("Hidden/Hecton8/World/DistantLandmarkSilhouette");
         }
 
         private Bounds ResolveDrawBounds()
         {
             if (_hasBoundsOverride)
-                return _drawBounds;
+                return IsFiniteBounds(_drawBounds) ? _drawBounds : new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
 
-            return new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
+            Bounds fallbackBounds = new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
+            return IsFiniteBounds(fallbackBounds) ? fallbackBounds : new Bounds(transform.position, Vector3.one);
         }
 
         private void ReleaseResources()
         {
             _externalMatrixBuffer = null;
             _usingOwnedUploadBuffers = false;
+            ReleaseRuntimeMaterial();
 
             if (_batchRendererGroup != null)
             {
@@ -575,6 +648,39 @@ namespace Hecton8.World
 
             buffer.Release();
             buffer = null;
+        }
+
+        private void ReleaseRuntimeMaterial()
+        {
+            if (_runtimeMaterial == null)
+                return;
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                DestroyImmediate(_runtimeMaterial);
+            else
+#endif
+                Destroy(_runtimeMaterial);
+
+            _runtimeMaterial = null;
+            _runtimeMaterialShader = null;
+        }
+
+        private static bool IsFiniteBounds(Bounds bounds)
+        {
+            Vector3 extents = bounds.extents;
+            return IsFinite(bounds.center) &&
+                   IsFinite(extents) &&
+                   extents.x >= 0f &&
+                   extents.y >= 0f &&
+                   extents.z >= 0f;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
         }
     }
 }

@@ -1,0 +1,205 @@
+{
+  "agentId": "1335",
+  "domain": "VR_SOMATIC_COMFORT_AND_TUNNELING_VFX_DRIVER",
+  "task": "1335_DRS_VAULT_ABI_REAUDIT_LOOP63",
+  "status": "PATCHED_BUILD_BLOCKED_PROJECT_WIDE_ERRORS",
+  "prompt": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "lengthBytes": 18576,
+    "taskCount": 20,
+    "sha256": "CED5DA5188E0838802BA00938AFD9F382174FAA78453C32C78A6AE34BCB1C2E2"
+  },
+  "scannedFiles": 10,
+  "touchedFiles": [
+    "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+    "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs",
+    "Assets/_Project/Scripts/Core/Contracts/DrsContracts.cs",
+    "Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerRuntime.cs",
+    "Assets/_Project/Scripts/Rendering/BilateralDrs/BilateralDrsUpscalerContracts.cs",
+    "Assets/_Project/Scripts/Editor/UberNoirReconstructionTunerWindow.cs"
+  ],
+  "scannedScope": [
+    "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+    "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs",
+    "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs",
+    "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+    "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs",
+    "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+    "Assets/_Project/Scripts/Core/Contracts/DrsContracts.cs",
+    "Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerRuntime.cs",
+    "Assets/_Project/Scripts/Rendering/BilateralDrs/BilateralDrsUpscalerContracts.cs",
+    "Assets/_Project/Scripts/Editor/UberNoirReconstructionTunerWindow.cs"
+  ],
+  "failedGates": [
+    "DOTNET_BUILD_FAILED_PROJECT_WIDE_ERRORS_OUTSIDE_1335_PATCH_SCOPE"
+  ],
+  "fixes": [
+    "Converted Noir/DRS DTO tail padding from uint fields to explicit private byte fields.",
+    "Removed writes to padding fields; DTO locals now use default initialization when private pad fields exist.",
+    "Removed stale TryLockBuffer/TryUnlockBuffer/TryResolveHandle read routes from UberPost reconstruction and Noir telemetry/editor readers.",
+    "Removed the one-element GenerateMockDrsStateJob and replaced it with a deterministic owner-phase mock snapshot.",
+    "Changed Bilateral DRS tuning/profile job inputs to read-only Vault views."
+  ],
+  "staticScans": {
+    "oldDumpNames": 0,
+    "broadCatchThrowBinaryAsNative": 0,
+    "legacyMutableVaultReadApis": 0,
+    "publicOrWidePaddingFields": 0,
+    "tinyMockJobHits": 0,
+    "zeroGcHotPathHits": 0,
+    "absoluteAupCastsFound": 0,
+    "braceBalancedFiles": 10,
+    "gitDiffCheckErrors": 0,
+    "gitDiffCheckWarnings": "LF_TO_CRLF_ONLY"
+  },
+  "nativeCollections": {
+    "totalNativeFieldDeclarations": 9,
+    "persistentNativeFieldsRemaining": 0,
+    "transientJobViews": 3,
+    "transientRefStructViews": 6,
+    "transientVaultReadsTryReadOnlyHandle": 16,
+    "transientVaultWritesTryAcquireWriteLock": 26
+  },
+  "byteOffsetMaps": [
+    {
+      "structName": "NoirAestheticProfileDTO",
+      "sizeBytes": 64,
+      "offsets": {
+        "ProfileHash": "0:uint",
+        "Flags": "4:uint",
+        "DepthMinMeters": "8:float",
+        "DepthMaxMeters": "12:float",
+        "SanityMin01": "16:float",
+        "SanityMax01": "20:float",
+        "ReconstructionParams": "24:float4",
+        "OverkillParams": "40:float4",
+        "_pad0.._pad7": "56..63:byte"
+      }
+    },
+    {
+      "structName": "NoirPostProcessInputDTO",
+      "sizeBytes": 64,
+      "offsets": {
+        "Stress01": "0:float",
+        "DepthMeters": "4:float",
+        "Toxicity01": "8:float",
+        "Narcosis01": "12:float",
+        "Supersaturation01": "16:float",
+        "GlobalQualityWeight01": "20:float",
+        "TimeSecondsWrapped": "24:float",
+        "FrameIndex": "28:uint",
+        "AbSplit01": "32:float",
+        "VignetteOverride01": "36:float",
+        "Flags": "40:uint",
+        "SourceHash": "44:uint",
+        "_pad0.._pad15": "48..63:byte"
+      }
+    },
+    {
+      "structName": "NoirTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "Frame": "0:uint",
+        "Flags": "4:uint",
+        "Stress01": "8:float",
+        "DepthMeters": "12:float",
+        "Toxicity01": "16:float",
+        "GlobalQualityWeight01": "20:float",
+        "Grain01": "24:float",
+        "Glitch01": "28:float",
+        "Vignette01": "32:float",
+        "AbSplit01": "36:float",
+        "WrappedTimeSeconds": "40:float",
+        "ParameterHash": "44:uint",
+        "EstimatedGpuCostMs": "48:float",
+        "ActiveFeatureFlags": "52:uint",
+        "_pad0.._pad7": "56..63:byte"
+      }
+    },
+    {
+      "structName": "NoirColorProfileDTO",
+      "sizeBytes": 64,
+      "offsets": {
+        "ProfileHash": "0:uint",
+        "Flags": "4:uint",
+        "DepthMinMeters": "8:float",
+        "DepthMaxMeters": "12:float",
+        "StressMin01": "16:float",
+        "StressMax01": "20:float",
+        "GradeParams": "24:float4",
+        "ResponseParams": "40:float4",
+        "_pad0.._pad7": "56..63:byte"
+      }
+    },
+    {
+      "structName": "DrsStateDTO",
+      "sizeBytes": 16,
+      "offsets": {
+        "CurrentRenderScale": "0:float",
+        "TargetRenderScale": "4:float",
+        "UpscalerTypeHash": "8:uint",
+        "_pad0.._pad3": "12..15:byte"
+      }
+    },
+    {
+      "structName": "MockQualityWeightSignal",
+      "sizeBytes": 16,
+      "offsets": {
+        "GlobalQualityWeight": "0:float",
+        "FrameTimeMs": "4:float",
+        "Flags": "8:uint",
+        "_pad0.._pad3": "12..15:byte"
+      }
+    },
+    {
+      "structName": "MockReconstructionInputSignal",
+      "sizeBytes": 32,
+      "offsets": {
+        "RenderScale01": "0:float",
+        "GlobalQualityWeight01": "4:float",
+        "JitterPixels": "8:float",
+        "FrameTimeMs": "12:float",
+        "TemporalStress01": "16:float",
+        "Flags": "20:uint",
+        "_pad0.._pad7": "24..31:byte"
+      }
+    },
+    {
+      "structName": "ReconstructionTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "Frame": "0:uint",
+        "Flags": "4:uint",
+        "CurrentRenderScale01": "8:float",
+        "TargetRenderScale01": "12:float",
+        "SharpenIntensity01": "16:float",
+        "BilateralRadiusPixels": "20:float",
+        "HistoryWeight01": "24:float",
+        "GlobalQualityWeight01": "28:float",
+        "Grain01": "32:float",
+        "ChromaticAberration01": "36:float",
+        "Vignette01": "40:float",
+        "UpscalerModeHash": "44:uint",
+        "GpuComputeTimeMs": "48:float",
+        "JitterPixels": "52:float",
+        "_pad0.._pad7": "56..63:byte"
+      }
+    }
+  ],
+  "build": {
+    "attempted": true,
+    "command": "dotnet build .\\Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false",
+    "exitCode": 1,
+    "elapsedSeconds": 15.22,
+    "warnings": 82,
+    "errors": 132,
+    "reason": "Build gate opened, but Hecton8.Core.csproj failed on existing project-wide errors outside this patch scope.",
+    "observedExternalBlockers": [
+      "Missing Sirenix.OdinInspector attributes in BuoyancyProfile.cs, PlayerTransportPreset.cs, and HectonNarrativeDirector.cs.",
+      "Missing BufferID entries for World/Vegetation/Wreck/Voxel/Sargassum systems.",
+      "Duplicate HectonMapMagicVegetationBridge.InvalidateChunksForNewPermanentEchoes.",
+      "Duplicate source-file inclusions in Hecton8.Core.csproj."
+    ]
+  },
+  "verificationHashSha256": "751EC0B70F9EF44A0850F9281D57E2BD1ACAA6507BBB6658694462142F4C879C"
+}

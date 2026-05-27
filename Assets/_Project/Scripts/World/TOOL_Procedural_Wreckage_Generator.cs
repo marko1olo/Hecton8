@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Burst;
@@ -59,7 +58,7 @@ namespace Hecton8.World
             [FieldOffset(56)] private ulong _pad0;
         }
 
-        internal struct WfcState : IDisposable
+        internal ref struct WfcState
         {
             public NativeArray<GridCell> Grid;
             public NativeQueue<int3> PropagationQueue;

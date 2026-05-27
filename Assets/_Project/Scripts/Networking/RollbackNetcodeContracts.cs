@@ -274,24 +274,24 @@ namespace Hecton8.Networking
     {
         [FieldOffset(0)] public ulong LastFrameHash64;
         [FieldOffset(8)] public ulong LastRemoteHash64;
-        [FieldOffset(16)] public uint CurrentFrame;
-        [FieldOffset(20)] public uint LastRollbackFrame;
-        [FieldOffset(24)] public uint LastRemoteFrame;
-        [FieldOffset(28)] public uint LastMismatchFrame;
-        [FieldOffset(32)] public uint FramesResimulated;
-        [FieldOffset(36)] public uint RollbacksTriggered;
-        [FieldOffset(40)] public float ResimComputeTimeMs;
-        [FieldOffset(44)] public float GlobalQualityWeight;
-        [FieldOffset(48)] public float MismatchSeverity01;
-        [FieldOffset(52)] public uint Flags;
-        [FieldOffset(56)] public uint StateSnapshotBytes;
-        [FieldOffset(60)] public uint StateMemoryOffset;
-        [FieldOffset(64)] public uint DesyncCount;
-        [FieldOffset(68)] public uint DesyncRepairAttempts;
-        [FieldOffset(72)] public uint FirstMismatchBufferId;
-        [FieldOffset(76)] public uint FirstMismatchByteOffset;
-        [FieldOffset(80)] public ulong LastBranchHash64;
-        [FieldOffset(88)] public ulong LastRemoteBranchHash64;
+        [FieldOffset(16)] public ulong LastBranchHash64;
+        [FieldOffset(24)] public ulong LastRemoteBranchHash64;
+        [FieldOffset(32)] public uint CurrentFrame;
+        [FieldOffset(36)] public uint LastRollbackFrame;
+        [FieldOffset(40)] public uint LastRemoteFrame;
+        [FieldOffset(44)] public uint LastMismatchFrame;
+        [FieldOffset(48)] public uint FramesResimulated;
+        [FieldOffset(52)] public uint RollbacksTriggered;
+        [FieldOffset(56)] public float ResimComputeTimeMs;
+        [FieldOffset(60)] public float GlobalQualityWeight;
+        [FieldOffset(64)] public float MismatchSeverity01;
+        [FieldOffset(68)] public uint Flags;
+        [FieldOffset(72)] public uint StateSnapshotBytes;
+        [FieldOffset(76)] public uint StateMemoryOffset;
+        [FieldOffset(80)] public uint DesyncCount;
+        [FieldOffset(84)] public uint DesyncRepairAttempts;
+        [FieldOffset(88)] public uint FirstMismatchBufferId;
+        [FieldOffset(92)] public uint FirstMismatchByteOffset;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -430,30 +430,30 @@ namespace Hecton8.Networking
     public struct MockNetworkJitterPacket64
     {
         [FieldOffset(0)] public PredictedInputDTO Input;
-        [FieldOffset(32)] public uint SourceFrame;
-        [FieldOffset(36)] public uint ReleaseFrame;
-        [FieldOffset(40)] public uint Sequence;
-        [FieldOffset(44)] public uint Flags;
-        [FieldOffset(48)] public ulong HashSalt;
+        [FieldOffset(32)] public ulong HashSalt;
+        [FieldOffset(40)] public uint SourceFrame;
+        [FieldOffset(44)] public uint ReleaseFrame;
+        [FieldOffset(48)] public uint Sequence;
+        [FieldOffset(52)] public uint Flags;
         [FieldOffset(56)] public ulong _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MockNetworkJitterState64
     {
-        [FieldOffset(0)] public uint Head;
-        [FieldOffset(4)] public uint Tail;
-        [FieldOffset(8)] public uint Sequence;
-        [FieldOffset(12)] public uint DroppedPackets;
-        [FieldOffset(16)] public uint DuplicatedPackets;
-        [FieldOffset(20)] public uint PacketLossPermille;
-        [FieldOffset(24)] public uint DuplicatePermille;
-        [FieldOffset(28)] public uint DelayFrames;
-        [FieldOffset(32)] public uint Flags;
-        [FieldOffset(36)] public uint LastFrame;
-        [FieldOffset(40)] public ulong RngState;
-        [FieldOffset(48)] public ulong _pad0;
-        [FieldOffset(56)] public ulong _pad1;
+        [FieldOffset(0)] public ulong RngState;
+        [FieldOffset(8)] public ulong _pad0;
+        [FieldOffset(16)] public ulong _pad1;
+        [FieldOffset(24)] public uint Head;
+        [FieldOffset(28)] public uint Tail;
+        [FieldOffset(32)] public uint Sequence;
+        [FieldOffset(36)] public uint DroppedPackets;
+        [FieldOffset(40)] public uint DuplicatedPackets;
+        [FieldOffset(44)] public uint PacketLossPermille;
+        [FieldOffset(48)] public uint DuplicatePermille;
+        [FieldOffset(52)] public uint DelayFrames;
+        [FieldOffset(56)] public uint Flags;
+        [FieldOffset(60)] public uint LastFrame;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]

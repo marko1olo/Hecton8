@@ -1,12 +1,8 @@
 ﻿# Marketing KPI Dashboard Spec
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only as static documentation/source/platform-orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current official platform rules, current verification artifacts, and the latest DOC_GLOBAL reports.
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, public Steam page, public demo, wishlist performance, creator outreach readiness, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters, platform rules, dates, creator availability, contact routes, and marketing claims inside this file are subordinate to fresh official sources and current project proof.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 Status: tracking design / no live data yet
 
@@ -299,6 +295,86 @@ Top blocker:
 Next action:
 ```
 
+### Survey And Surface Scout Table
+
+Use this for polls, itch/DTF/Habr/wiki scouting, and platform-fit tests. These rows do not create public-route permission.
+
+| Field | Type | Notes |
+|---|---|---|
+| `scout_row_id` | text | Stable ID, e.g. `SCOUT-ITCH-YYYYMMDD-01`. |
+| `date_checked` | date | Same-day source/rule check date. |
+| `surface` | enum | `itch_io`, `dtf`, `habr`, `fandom`, `wiki_gg`, `pcgamingwiki`, `igdb`, `reddit`, `game_jolt`, `indiedb`, `moddb`, `steam_community`, `steam_news`, `steam_curator_connect`, `steam_playtest`, `steam_demo`, `steam_next_fest`, `steam_themed_sale`, `steam_broadcast`, `steam_utm_widget`, `steam_visibility`, `steam_deck`, `youtube`, `tiktok`, `twitch`, `kick`, `discord_official`, `external_discord`, `x`, `bluesky`, `instagram`, `threads`, `linkedin`, `mastodon`, `medium`, `hashnode`, `dev_to`, `substack`, `tigsource`, `gamedev_net`, `gamedev_ru`, `stopgame`, `pikabu`, `vc_ru`, `playground_ru`, `kanobu`, `vk_play`, `wegame`, `taptap`, `epic_games_store`, `gog`, `kickstarter`, `backerkit`, `idxbox`, `playstation_partners`, `nintendo_developer_portal`, `geforce_now`, `amazon_luna`, `green_man_gaming`, `kowloon_nights`, `epic_megagrants`, `outersloth`, `devolver_pitch`, `secret_mode`, `tinybuild_pitch`, `fellow_traveller`, `no_more_robots`, `hooded_horse`, `team17_pitch`, `games_press`, `game_press`, `pressengine`, `keymailer`, `lurkit`, `terminals_io`, `woovit`, `key_lynx`, `igf`, `digital_dragons`, `indigo_showcase`, `mdev_showcase`, `xp_game_summit`, `gamediscoverco`, `indiegames_press`, `indie_game_plus`, `future_games_show`, `pc_gaming_show`, `the_mix`, `day_of_the_devs`, `six_one_indie`, `indie_live_expo`, `wholesome_direct`, `develop_brighton`, `pitchyagame`, `indie_cup`, `indiecade`, `devgamm`, `gamescom`, `pax_rising`, `pax_aus_indie_showcase`, `bitsummit`, `tokyo_game_show`, `taipei_game_show`, `gamescom_indie_arena`, `home_of_indies`, `calgary_indie_game_bash`, `chinajoy_game_connection`, `nordic_game`, `reboot_develop`, `debug_indie_game_awards`, `bostonfig`, `indiegamebusiness_pitch_live`, `gdc_pitch`, `game_gauntlet`, `amaze_berlin`, `gamescom_latam_big`, `adventurex`, `ludonarracon`, `cerebral_puzzle_showcase`, `women_led_games`, `dreadxp_pitch`, `indie_horror_showcase`, `magfest_mivs`, `dreamhack_indie_playground`, `dreadxp`, `horror_game_awards`, `pc_gamer`, `gamesradar`, `pcgamesn`, `gamespot`, `pocket_gamer`, `mobygames`, `rawg`, `giant_bomb`, `steamgriddb`, `alpha_beta_gamer`, `gamingonlinux`, `product_hunt`, `neogaf`, `resetera`, `something_awful`, `other`. |
+| `official_source_url` | URL | Platform/help/rule URL checked before action. |
+| `route_class` | enum | `platform_page_feedback`, `no_link_feedback`, `subreddit_no_link_critique`, `technical_article_feedback`, `technical_article_hold`, `wiki_readiness_monitor`, `wiki_application_hold`, `technical_database_update`, `database_listing`, `artwork_database_hold`, `game_profile_page_hold`, `database_profile_page_hold`, `steam_owner_community_hold`, `steam_owner_announcement_hold`, `curator_connect_hold`, `steam_playtest_hold`, `next_fest_demo_hold`, `steam_event_registration_hold`, `steam_broadcast_hold`, `steam_measurement_hold`, `handheld_compatibility_hold`, `cloud_distribution_hold`, `cloud_platform_monitor`, `platform_holder_program_hold`, `owned_media_clip_test`, `creator_video_coverage_hold`, `creator_stream_coverage_hold`, `discord_open_hold`, `external_discord_critique_hold`, `social_micro_pitch_hold`, `social_short_video_hold`, `professional_business_post_hold`, `federated_social_hold`, `owned_newsletter_hold`, `devlog_forum_thread_hold`, `project_showcase_hold`, `ru_dev_forum_critique_hold`, `ru_media_blog_hold`, `ru_broad_community_hold`, `ru_business_article_hold`, `ru_paid_media_hold`, `ru_editorial_tip_hold`, `regional_storefront_hold`, `secondary_storefront_hold`, `reseller_distribution_hold`, `crowdfunding_hold`, `funding_pitch_hold`, `funding_pitch_monitor`, `grant_application_hold`, `publisher_fit_pitch_hold`, `publisher_fit_kill_by_default`, `pitch_resource_monitor`, `press_distribution_hold`, `presskit_distribution_hold`, `pr_tooling_hold`, `key_distribution_hold`, `creator_key_distribution_hold`, `market_data_monitor`, `industry_showcase_hold`, `major_award_submission_hold`, `hashtag_event_hold`, `showcase_media_nomination_hold`, `indie_showcase_submission_hold`, `showcase_submission_hold`, `physical_showcase_hold`, `regional_eligibility_kill_by_default`, `regional_indie_showcase_hold`, `regional_award_showcase_hold`, `regional_showcase_monitor`, `b2b_event_hold`, `physical_showcase_monitor`, `award_submission_hold`, `b2b_pitch_event_hold`, `accelerator_festival_hold`, `art_experimental_award_hold`, `digital_narrative_festival_hold`, `steam_genre_festival_kill_by_default`, `identity_eligibility_kill_by_default`, `publisher_pitch_hold`, `genre_showcase_hold`, `physical_indie_showcase_hold`, `physical_indie_showcase_monitor`, `horror_showcase_monitor`, `awards_monitor_only`, `demo_press_submission_hold`, `linux_press_hold`, `mainstream_press_tip_hold`, `niche_pc_press_tip_hold`, `platform_mismatch_hold`, `tone_mismatch_kill_by_default`, `non_game_launch_kill_by_default`, `high_risk_forum_monitor`, `forum_monitor_or_paid_ad_hold`, `monitor_only`. |
+| `permission_gate_source` | text | Exact internal gate or HOLD reason. |
+| `asset_or_artifact_id` | text | Exact screenshot/clip/build/page/mock/code/profiler artifact. |
+| `survey_packet` | enum | `SURVEY_ASSET_5SEC`, `SURVEY_CLIP_15SEC`, `SURVEY_PAGE_READ`, `SURVEY_SURFACE_FIT`, `SURVEY_DEMO_EXIT`, `none`. |
+| `consent_provenance` | text | Feedback-only, no-link critique, public comment, owned form, or explicit opt-in source. |
+| `shill_read` | int | Count of blind readers who call it ad/spam/shill. |
+| `useful_answer_count` | int | Count of answers naming a concrete asset/content/technical value. |
+| `confusion_count` | int | Count of answers with wrong genre/mode/platform/action read. |
+| `route_risk` | enum | `LOW`, `MEDIUM`, `HIGH`, `KILL`. |
+| `decision` | enum | `HOLD`, `PREP`, `READY_FOR_HUMAN_REVIEW`, `KILL`. |
+
+Decision rules:
+
+- Habr row is `KILL` if the artifact cannot stand as technical content without HECTON-8 branding.
+- Wiki rows stay `HOLD` until public/demo/EA content density and moderation owner exist.
+- itch.io row stays `HOLD` until a real playable artifact/page draft exists and metadata/platform claims are exact.
+- DTF row stays `HOLD` if the post needs a store link to have value.
+- Reddit row is `KILL` if the post cannot stand without an external link or the same asset was already posted to another subreddit that day.
+- Game Jolt, IndieDB, and ModDB rows stay `HOLD` until the page can be maintained with factual media/build/status and owner-controlled account custody.
+- Steam community/news rows stay `HOLD` until Steam page, support/moderation, and announcement gates allow the exact action.
+- Owned short-video rows stay `HOLD` unless the first 3 seconds show a readable action, not just mood.
+- Devlog/forum rows stay `HOLD` if they are one-off advertisements instead of a thread, project page, or technical critique with a reply owner.
+- RU broad/community rows stay `HOLD` unless the post has Russian-language owner coverage, no-link value, and no commercial/ad read.
+- PR/key-distribution rows stay `HOLD` until presskit, build/access, official inbox, private-access, disclosure, and tracking gates exist.
+- Showcase rows stay `HOLD` until current official deadlines, fees, required footage, and playable-build requirements are checked.
+- Database rows stay `HOLD` unless every field is sourced from public official facts, not marketing intent.
+- Steam-native rows stay `HOLD` until the exact Steam page/build/access/support/event gates exist; Playtest signup, demo availability, Curator Connect, and Next Fest are separate routes.
+- Secondary storefront rows stay `HOLD` until account custody, build/package truth, compliance/rating work, support route, and Steam-truth parity exist.
+- Creator stream/video rows stay `HOLD` until build/access, known issues, disclosure wording, support owner, and manual recipient fit exist.
+- Discord rows stay `HOLD` until moderation/support owners, rules, invite/access gates, and consent separation exist.
+- Social micro-pitch rows stay `HOLD` until account custody, real media, post gate, no-spam cadence, and CTA gate if linked exist.
+- Technical publishing/newsletter rows stay `HOLD` until the artifact can stand without selling the game and owned-audience consent is clean.
+- Kickstarter/BackerKit rows stay `HOLD` unless campaign budget, rewards, delivery, legal/account custody, and production proof exist.
+- High-risk forum rows stay `monitor_only` unless there is already a thread requiring one factual disclosed answer.
+- Steam themed event rows stay `HOLD` until the Steam page tags, store description, event eligibility, invite/registration source, and demo/upcoming/released state align.
+- Steam broadcast rows stay `HOLD` until broadcast permission, demo/build stability, moderation/support owner, and live/rebroadcast labeling exist.
+- Steam UTM/widget/visibility rows are measurement only and cannot report raw visits, stream views, or wishlists as demand proof.
+- Media-showcase rows stay `HOLD` until current trailer/gameplay, presskit, nomination route, deadline/source, and post-show owner exist.
+- Wholesome/tone-mismatch rows are `KILL` by default unless a human exception proves HECTON pressure/noir identity stays intact.
+- Mainstream press-tip rows stay `HOLD` until there is a real news beat, official inbox custody, presskit, footage/demo, and unsupported claims removed.
+- Platform-specific press rows stay `HOLD` unless the platform state is measured or otherwise publicly proven.
+- Physical/regional showcase rows stay `HOLD` until playable booth/demo proof, travel/booth/hardware/staffing owners, event deadline/source, and post-show follow-up owner exist.
+- Regional eligibility rows are `KILL` if location, language, legal, or local-partner requirements are not proven from current official rules.
+- B2B pitch/event rows stay `HOLD` until business deck, current demo/build, explicit ask, legal/business owner, target list, and CRM follow-up route exist.
+- Award submission rows stay `HOLD` until category fit, fee/deadline, eligibility, build/media proof, public-facts source, and disclosure requirements are checked; public selection claims are forbidden before acceptance.
+- Stale event-rule rows stay `monitor_only` until a current official application/submission source replaces old PDFs, archive pages, or third-party news.
+- Genre/direct rows are `KILL` if fit is theme-only, lore-only, opportunistic, or dishonest.
+- Digital narrative and Steam genre festival rows stay `HOLD` until narrative/puzzle mechanic proof, Steam/demo/build state, source/deadline, support owner, and CTA separation exist.
+- Horror publisher and horror showcase rows stay `HOLD` until build/deck/trailer, timeline, budget, team profile, deal boundaries, horror/noir fit proof, and disclosure requirements exist.
+- Art/experimental award rows stay `HOLD` until experimental interaction proof, fee/deadline, art statement, video, and onsite/online owner exist.
+- Identity eligibility rows are `KILL` if team/leadership/audience eligibility and owner approval are absent.
+- Physical local indie station rows stay `HOLD` until station stability, original-asset/content policy, hardware, staffing/travel, queue/crash plan, and acceptance-language proof exist.
+- Creator key hub rows stay `HOLD` until private-access gate, build/access truth, key batch cap, manual recipient approval, official inbox custody, disclosure, access log, support owner, and grey-market monitoring exist.
+- Presskit/tooling/newswire rows stay `HOLD` until a real news beat or demo-access truth, presskit URL, official inbox, release format, embargo state, claim lint, and spend decision are source-backed.
+- Major award/festival rows stay `HOLD` until playable/media/category/eligibility/fee/deadline proof exists; selection, finalist, nomination, exhibition, and award language are forbidden before acceptance proof.
+- B2B and industry-showcase rows stay `HOLD` until business ask, pitch deck, playable demo, target list, legal/business owner, and CRM follow-up route exist.
+- Market-data/newsletter rows are `monitor_only` unless a separate source-backed contact/submission route exists; data mentions cannot become public demand proof.
+- Platform-holder rows stay `HOLD` until company/legal owner, account custody, port budget, controller UX, certification/compliance owner, rating/content owner, support route, and platform approval boundaries exist.
+- Handheld compatibility rows stay `HOLD` until Steam app/build, device or Proton test, controller-only path, text-input path, UI/readability proof, performance capture, and public compatibility claim boundary exist.
+- Cloud distribution rows stay `HOLD` or `monitor_only` until store ownership, opt-in/application state, login/account-linking answer, cloud-save state, controller UX, support owner, and availability-claim proof exist.
+- Funding, grant, and publisher-fit rows stay `HOLD` until playable proof, deck/document, budget/timeline, business ask, legal/business owner, deal boundaries, and partner-fit reason exist.
+- Publisher-fit kill-by-default rows stay `KILL` unless the real build and partner catalogue fit are source-backed; logo exposure is not a valid reason.
+- Regional storefront rows stay `HOLD` until build/package, account custody, legal/payment/compliance owner, localization/support owner, and Steam/public truth parity exist.
+- Platform-mismatch rows stay `KILL` or `HOLD` unless the platform scope is real; mobile-only routes cannot be used for a PC-only game without mobile build and support proof.
+- RU media/community rows stay `HOLD` until RU owner coverage, current rules/source, disclosure/ad separation, one real artifact, and no-link/news/technical value exist.
+- Reseller/distribution rows stay `HOLD` until commercial owner, pricing/discount policy, key policy, support/refund owner, territory/currency answer, and store-truth parity exist.
+- Database/artwork catalog rows stay `HOLD` unless every field or image is sourced, neutral, rights-clean, duplicate-checked, and consistent with the public Steam/site truth.
+- Pitch resource rows are `monitor_only` or `HOLD` until they become a real partner route with playable build, deck, ask, legal owner, fit statement, and CRM follow-up.
+- Any row with blank `official_source_url`, `route_class`, `consent_provenance`, or `asset_or_artifact_id` is excluded from weekly signal.
+
 ## Weekly Report Format
 
 Title:
@@ -332,3 +408,5 @@ Sections:
 - Do not count key/access/playtest/demo outreach replies or claims unless `access_route_class`, `reply_consent_provenance`, and `agency_decision_field_source` are present where relevant.
 - Do not count creator, press, curator, support, public CTA, private access, or owned-audience rows whose permission gate/source is blank or whose route/provenance field is `unknown`.
 - Do not count imageboard signal as positive proof unless independently confirmed; use it primarily to revise, kill, or monitor.
+- Do not count key-hub, PR-tooling, newswire, B2B, award, or market-data rows as outreach, coverage, selection, or demand proof unless the matching gate/source fields are filled and the row is not `HOLD` or `monitor_only`.
+- Do not count platform-holder, handheld, cloud, publisher, fund, or grant rows as availability, funding, certification, publisher interest, or platform support unless approval/contract/proof artifacts exist.

@@ -3,31 +3,27 @@
 Date: 2026-05-19
 Status: ENVELOPE-ONLY MOD API SPEC / STATIC DOC UPDATE / PENDING RUNTIME VERIFICATION
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
-
-Evidence class: STATIC_SOURCE / STATIC_DOC  
-Owner prompt: MODDING_API_SCHEMA_BUILDER  
+Evidence class: STATIC_SOURCE / STATIC_DOC
+Owner domain: Modding API static contract
 Companion schema: `Docs/Modding/Signal_Schema.json`
 
 ## 2026-05-19 Current Runtime Authority
 
 This specification contains older source-audit material for the managed mod API. The active runtime boundary is now narrower:
 
-- `HectonAPI.Commands.RequestFuture(in FutureCommandEnvelope envelope)` is the only current command ingress for UGC.
-- `HectonAPI.Commands.Request`, `RequestAup`, and `RequestRenderInstance` return `false` while envelope-only mode is enforced.
+- `HectonAPI.Commands.RequestFuture(in FutureCommandEnvelope envelope)` is the only current public command ingress for UGC; it requires active `ModExecutionScope` and a matching `ModderSignature`.
+- `HectonAPI.Commands.Request`, `RequestAup`, and `RequestRenderInstance` require active `ModExecutionScope`, then return `false` while envelope-only mode is enforced.
+- `FutureCommandSandboxValidator` is internal engine/control-plane code with no public static control-plane method surface. `MockModQueue` also has no public queue handle or public instance control methods. Neither is a public SDK or runtime mod surface.
+- `HectonModHooks` and `IModCommandKernel` are internal first-party infrastructure, not modder extension points; their direct static/hook routes are not public SDK members.
 - Managed mod entry points, managed factories, projected managed events, direct resource proxy registration, filesystem content discovery, localization file injection, and direct asset loading are quarantined in envelope-only mode.
+- Canonical mod IDs are part of the package contract: loader and SDK builder require lowercase letters/digits separated by single `.`, `_`, or `-`, reject whitespace and reserved filesystem device segments, validate dependency IDs with the same rule, and restrict `EntryAssembly` to a package-local `.dll` file name only.
+- Scope owner proof is part of the public facade contract: `ModExecutionScope` rejects blank/anonymous owners and requires a non-zero owner hash before `HasActiveMod` can pass.
+- SaveState store owner proof is part of the loader/save contract: public mod save payloads require active `ModExecutionScope`; internal engine-owned payloads use explicit `hecton.internal.` keys instead of deriving an owner from arbitrary payload keys.
+- Engine-owned assembly identities are not mod identities. Loader and SDK builder reject managed DLLs named or metadata-identified as `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, or `netstandard`; the loader scans every top-level package DLL and the SDK builder deletes stale output DLLs. Friend assemblies such as `Hecton8.Plugins` remain first-party only.
 - Runtime UGC packages must not rely on `.dll`, `.bundle`, `lang_*.json`, raw PNG, prefab, material, mesh, texture, audio clip, `GameObject`, `Transform`, `NativeArray`, `NativeQueue`, `GlobalDataVault`, or first-party `SignalBus<T>` access.
 - Assets are referenced by approved hashes and CRC-checked envelope opcodes, not by loose files or Unity object handles.
 - Human-friendly modder work happens in the SDK authoring layer described in [SDK_Authoring_Interface_Plan.md](SDK_Authoring_Interface_Plan.md).
@@ -46,6 +42,8 @@ Legacy source-backed mod surfaces:
 - `HectonAPI.Commands.RequestFuture`, `Request`, `RequestAup`, and `RequestRenderInstance` for engine-validated writes.
 - `HectonAPI.SaveState` for mod-owned save payloads.
 
+Managed event access is a single-route facade: external mod code must route through `HectonAPI.Events`. `HectonEventBus` is internal first-party infrastructure with no public static bus member surface. `HectonGameEvents` legacy payload classes and members are internal-only first-party infrastructure, not SDK event DTOs; they must not expose `ItemData`, `BuildableData`, `HectonSurvivalSystem`, or survival records as mod handles. Public event subscription/publish methods require an active `ModExecutionScope` before envelope-only quarantine checks; unmanaged, native, and projected bridge routes plus private channel implementations reject anonymous subscribers before token creation; `Publish<TPayload>` rejects engine-owned command, result, projection, and lifecycle payload types when managed events are reopened; explicit `subscriberId` values must match the active mod id, `Unsubscribe` rejects tokens owned by a different active mod, and direct `HectonEventSubscription.Dispose()` validates active mod ownership for mod-owned tokens.
+
 Forbidden for mods:
 
 - Direct `SignalBus<T>.GetFrameSnapshot()` access.
@@ -62,11 +60,11 @@ Every currently mod-exposed `SignalBus<T>` lane is listed below. No other first-
 | `SignalBus<CombatDamageSignal>` | `CombatDamage` | `ModEventDto` | read-only projection | 10 low / 50 high per frame |
 | `SignalBus<WeatherChangedSignal>` | `WeatherChanged` | `ModEventDto` | read-only projection | 10 low / 50 high per frame |
 
-`InteractionEvents` and `CraftingEvents` are also exposed, but they are not `SignalBus<T>` projections. They are copied into `SubscribeNative` as immutable bytes for the callback duration.
+`InteractionEvents` and `CraftingEvents` are also exposed, but they are not `SignalBus<T>` projections. They are copied into `SubscribeNative` as immutable bytes for the callback duration. Native byte payloads are decoded by schema only: `InteractionEventPayload` is an explicit 32-byte source layout, and `CraftingEventPayload` is an explicit 64-byte source layout. Mods must not infer Unity object references, first-party queue handles, or lifetime beyond the callback span.
 
-Full source audit: [Signal_Audit_Matrix.md](Signal_Audit_Matrix.md) records 162 current `ISignal` structs in `GlobalSignals.cs`. Only 2 are projected for mods. The remaining 160 are denied by default.
+Full source audit: [Signal_Audit_Matrix.md](Signal_Audit_Matrix.md) records 173 current `ISignal` structs in `Core/Signals/GlobalSignalPayloads*.cs`. Only 2 are projected for mods. The remaining 171 are denied by default.
 
-R22 static closure: `Signal_Schema.json` schema revision `16` records the `162 / 2 / 160` signal split in both the source inventory and `staticValidation.lastStaticValidationSnapshot`, with `runtimeProof` set to `PENDING_VERIFICATION`. `Validate_Mod_API_Static.ps1` fails if that static snapshot block drifts behind the source inventory again. This is still static source/doc evidence only, not Unity runtime verification.
+Current static closure: `Signal_Schema.json` schema revision `57` records the `173 / 2 / 171` signal split, the public `HectonAPI` surface counts, the internal-only sandbox validator/constants/event hook/managed command kernel control plane, internal-only sandbox validator plus `MockModQueue` static methods, queue handle, and instance control methods, public `FutureCommandEnvelope.SizeBytes` as the only sandbox size constant, internal-only FutureCommand output SignalBus DTOs, internal-only loader diagnostics descriptors and their members, canonical mod/dependency id validation, EntryAssembly filename-only validation, active scope owner proof, explicit SaveState store owner proof for scoped mod payloads and `hecton.internal.` engine payloads, reserved subtitle cue aliases (`TriggerSubtitleCue` and `SubtitleCue`) outside the runtime allowlist/editor opcode tuner, reserved managed assembly identity blocking across all top-level package DLLs plus SDK stale-DLL cleanup, internal-only mod registry invalidation/settings UI DTOs, private listener adapters for public engine MonoBehaviours that consume internal registry invalidation, internal-only `ModWorldPersistenceManager` and `GlobalRegistry.ModWorldPersistence` routes, internal-only `HectonEventBus` with no public static bus member surface and no anonymous channel fallback, internal-only `HectonGameEvents` legacy managed payload classes and members, fixed explicit layout for public mod event/spatial payloads, schema-checked native byte payload layouts for `SubscribeNative`, engine-owned payload rejection in `Events.Publish<TPayload>`, active-scope ownership before envelope-only quarantine for public event facades, active-scope ownership for `RequestFuture` and legacy quarantined command facades, active-scope guards for resource, telemetry, localization, and save-state facades, resource registry owner-id match enforcement, smooth continuous projected event cap proof (`round(lerp(10, 50, smoothstep(saturate(GlobalQualityWeight01))))`), guarded public property routes, and owner-checked direct subscription `Dispose` with `runtimeProof` set to `PENDING_VERIFICATION`. `Validate_Mod_API_Static.ps1` fails if that static snapshot block drifts behind the source inventory again. This is still static source/doc evidence only, not Unity runtime verification.
 
 ## ModEventDto Contract
 
@@ -91,6 +89,8 @@ R22 static closure: `Signal_Schema.json` schema revision `16` records the `162 /
 
 Budget-capped samples set `ModEventDto.LowTierSampleFlag`. The flag means the bridge emitted a reduced cosmetic sample under continuous budget pressure; it must not change gameplay truth.
 
+Projected event enqueue and dispatch budgets use a continuous cap curve: `round(lerp(10,50,smoothstep(saturate(GlobalQualityWeight01))))`, clamped to `10..50`. This may scale callback cadence/fidelity only; it must not change event DTO layout, save identity, or gameplay authority.
+
 ## Native Byte Events
 
 `SubscribeNative` exposes immutable payload bytes for:
@@ -106,7 +106,8 @@ Event lifetime rules:
 
 - Every subscription returns `HectonEventSubscription`.
 - Tokens must be disposed from `IHectonMod.OnUnload`.
-- `HectonAPI.Events.Unsubscribe` is only a `Dispose` convenience wrapper.
+- Direct `HectonEventSubscription.Dispose()` validates active mod ownership for mod-owned tokens.
+- `HectonAPI.Events.Unsubscribe` is only an owner-checked `Dispose` convenience wrapper.
 - `DisableManagedMod` isolates native, unmanaged, and projected subscribers by subscriber id.
 - Dispatch recursion is capped at `5` and callback stalls are watched at `2.0 ms`.
 
@@ -118,11 +119,17 @@ Current allowed command API:
 
 - `RequestFuture(in FutureCommandEnvelope envelope)`
 
+`RequestFuture` is a mod-owned write request, not an anonymous packet pipe. The active execution scope must exist, and `FutureCommandEnvelope.ModderSignature` must equal `ModExecutionScope.CurrentModHash`; package loader and editor bulk routes use internal validator paths instead.
+
+The sandbox validator, bulk stream ingress, external queue drain, tuning, telemetry snapshot, opcode gate, approved-asset registration, CSV reload routes, direct command dispatcher helpers, event publication hooks, and legacy managed command kernels are first-party/editor tooling only. Mods do not call `FutureCommandSandboxValidator`, `MockModQueue`, `FutureCommandSandboxConstants`, `ModCommandDispatcher`, `HectonModHooks`, or `IModCommandKernel` directly, and they never receive a `MockModQueue` `NativeQueue` handle. The public binary size fact is `FutureCommandEnvelope.SizeBytes`; sandbox budgets and fault hashes are not SDK constants.
+
 Legacy command APIs, currently quarantined:
 
 - `Request(in ModCommand command)`
 - `RequestAup(in ModAupCommand command)`
 - `RequestRenderInstance(in ModRenderInstanceCommand command)`
+
+These legacy facades still require active `ModExecutionScope` before returning the quarantine `false` result. Anonymous calls must fail fast instead of silently probing command availability.
 
 ## SDK Authoring Contract
 
@@ -134,6 +141,7 @@ Required SDK surfaces:
 - manifest editor that emits `RequiredAPIVersion` and `ModPriority`;
 - capability selection mapped to opcode families;
 - command graph or preset authoring that proves max envelopes per frame;
+- graph compiler must reject reserved future kernels and aliases unless their hash appears in `allowed_opcodes.csv` and the static validator proves the runtime allowlist matches; `TriggerSubtitleCue` and `SubtitleCue` are reserved subtitle aliases and are not runtime-allowed command opcodes.
 - CRC asset importer and approved asset manifest writer;
 - local 300-frame sandbox simulator with quality, thermal, rollback, quota, and rejection modeling;
 - envelope inspector for advanced authors;
@@ -143,6 +151,7 @@ Required SDK surfaces:
 Forbidden SDK promises:
 
 - "drop a DLL into Mods and run it";
+- "name a DLL like an engine assembly to access internal APIs";
 - "patch any game method";
 - "subscribe to any engine event";
 - "load any bundle directly";
@@ -167,6 +176,7 @@ Full command audit: [Command_Audit_Matrix.md](Command_Audit_Matrix.md) records o
 
 Limits from source:
 
+- Future envelope size: 64 bytes (`FutureCommandEnvelope.SizeBytes`).
 - Command queue capacity: 4096.
 - Late-frame drain: 256.
 - Per-mod per-tick commands: 128.
@@ -288,28 +298,27 @@ JSON remains acceptable only for cold mod configuration or mod-owned save text u
 
 The public facade is the implementation boundary. Anything internal or first-party-only is not a mod right.
 
-Full facade audit: [API_Surface_Audit_Matrix.md](API_Surface_Audit_Matrix.md) records the current `HectonAPI.cs` public nested surfaces, public methods, public properties, and internal forbidden methods.
+Full facade audit: [API_Surface_Audit_Matrix.md](API_Surface_Audit_Matrix.md) records the current `HectonAPI.cs` public nested surfaces, public methods, public properties, and internal forbidden methods. Loader diagnostics remain internal: `ModRuntimeInfo` and its package-path/status members are engine UI descriptors, not SDK DTOs.
 Resource/content audit: [Resource_Content_Audit_Matrix.md](Resource_Content_Audit_Matrix.md) records hash-only resource resolution, cold content registration, registry capacities, raw texture caps, and forbidden Unity object returns.
 
 | Surface | Public methods | Classification | Hard rule |
 |---|---|---|---|
-| `HectonAPI.Events` | `Subscribe<TPayload>`, `SubscribeNative`, `SubscribeProjected`, `OnPlayerSpawned`, `OnBiomeChanged`, `Unsubscribe`, `Publish<TPayload>` | unmanaged event/read-only projection/mod-owned payload | No direct first-party `SignalBus<T>` or managed `HectonEvent` subscription for mods. |
-| `HectonAPI.Input` | `GetButtonMask`, `HasButtonMask` | read-only frame mask | No Input System objects or action references. |
-| `HectonAPI.Commands` | `RequestFuture`, `Request`, `RequestAup`, `RequestRenderInstance` | engine-validated write request | Mods request; first-party kernels execute or reject. |
-| `HectonAPI.Resources` | `Proxy`, `TryResolvePrefab`, `TryResolveAudioClip`, `TryResolveTexture` | hash-only resource resolution | No Unity asset reference leaves the engine. |
-| `HectonAPI.Telemetry` | `Publish` | mod marker write | Active mod execution scope required; hash plus scalar only. |
-| `HectonAPI.Items` | `RegisterCustomItem`, `TryFindItem` | cold catalog overlay | Runtime overlay only; no authored asset mutation. |
-| `HectonAPI.Crafting` | `RegisterRecipe`, `RegisterRecycleYield` | cold recipe overlay | Managed lists are cold registration data, not event payloads. |
-| `HectonAPI.Recycling` | `ProcessRecycle` | owner-arbitrated gameplay request | Official `ScrapManager` owns inventory mutation. |
-| `HectonAPI.Construction` | `RegisterBuildable`, `TryFindBuildable` | cold buildable overlay | Catalog injection is not scene spawning. |
-| `HectonAPI.Ecosystem` | `RegisterBiomeMutation` | deterministic overlay | Mods provide bias data, not fauna handles. |
-| `HectonAPI.Localization` | `InjectBabelEnvelope` | rejected binary Babel envelope seam | Runtime dictionary/string localization injection is disabled. |
-| `HectonAPI.UI` | `ShowInfo`, `ShowWarning`, `ShowCritical`, `RegisterSetting` | presentation/settings | UI must reflect engine acceptance, not assumed command success. |
-| `HectonAPI.World` | `IsGameReady`, `TryGetPlayerEntityHash` | read-only hash state | `GameObject`, `Transform`, spawn, and despawn methods are internal and throw. |
-| `HectonAPI.SaveState` | `SetModString`, `GetModString` | mod-owned cold save text | JSON allowed here only, never as event transport. |
-| `HectonAPI.Mods` | `GetLoadedMods` | diagnostics copy | Caller provides destination list. |
+| `HectonAPI.Events` | `Subscribe<TPayload>`, `SubscribeNative`, `SubscribeProjected`, `OnPlayerSpawned`, `OnBiomeChanged`, `Unsubscribe`, `Publish<TPayload>` | unmanaged event/read-only projection/mod-owned payload | Active mod scope required before envelope-only quarantine; `Publish<TPayload>` rejects engine-owned payload types when managed events are reopened; no direct first-party `SignalBus<T>`, `HectonEventBus`, `HectonGameEvents`, or managed `HectonEvent` subscription for mods. `HectonEventBus` has no public static bus methods. |
+| `HectonAPI.Input` | `GetButtonMask`, `HasButtonMask` | read-only frame mask | Active mod scope required; no Input System objects or action references. |
+| `HectonAPI.Commands` | `RequestFuture`, `Request`, `RequestAup`, `RequestRenderInstance` | engine-validated write request | Active mod scope required for every command facade; `RequestFuture` also requires `ModderSignature` to match the active mod hash. |
+| `HectonAPI.Resources` | `Proxy`, `TryResolvePrefab`, `TryResolveAudioClip`, `TryResolveTexture` | hash-only resource resolution | Active mod scope required for property and method routes; direct proxy methods use the same guard. No Unity asset reference leaves the engine. |
+| `HectonAPI.Telemetry` | `Publish` | mod marker write | Active mod execution scope required through the shared facade guard; hash plus scalar only. |
+| `HectonAPI.Items` | none public | internal forbidden ScriptableObject item accessors | No `ItemData` handle crosses the mod facade. |
+| `HectonAPI.Crafting` | none public | internal forbidden owner override | Recycle yield overrides need content manifest ownership and unload revocation before public exposure. |
+| `HectonAPI.Recycling` | none public | internal forbidden gameplay mutation | Direct recycling requests must use an engine-owned command route. |
+| `HectonAPI.Construction` | none public | internal forbidden ScriptableObject buildable accessors | No `BuildableData` handle crosses the mod facade. |
+| `HectonAPI.Ecosystem` | none public | internal forbidden owner overlay | Mutation overlays need mod ownership, unload revocation, and runtime proof before public exposure. |
+| `HectonAPI.Localization` | `InjectBabelEnvelope` | rejected binary Babel envelope seam | Active mod execution scope required before rejection. Runtime dictionary/string localization injection is disabled. |
+| `HectonAPI.UI` | `ShowInfo`, `ShowWarning`, `ShowCritical`, `RegisterSetting` | presentation/settings | Active mod scope required; setting `modId` must match the active scope. UI must reflect engine acceptance, not assumed command success. |
+| `HectonAPI.World` | `IsGameReady`, `TryGetPlayerEntityHash` | read-only hash state | Active mod scope required for readiness and player hash lookup; `GameObject`, `Transform`, spawn, and despawn methods are internal and throw. |
+| `HectonAPI.SaveState` | `SetModString`, `GetModString` | mod-owned cold save text | Active mod execution scope required. Store rejects scope-less mod payload access; engine-owned internal payloads use explicit `hecton.internal.` keys. JSON allowed here only, never as event transport. |
 
-`HectonAPI.Assets.LoadPrefab`, `LoadAudioClip`, and `LoadTexture` are internal and throw `IllegalContractException`. Modders must resolve hashes and submit commands.
+`HectonAPI.Assets.LoadPrefab`, `LoadAudioClip`, `LoadTexture`, `HectonAPI.Items.RegisterCustomItem`, `TryFindItem`, `HectonAPI.Crafting.RegisterRecipe`, `RegisterRecycleYield`, `HectonAPI.Recycling.ProcessRecycle`, `HectonAPI.Construction.RegisterBuildable`, `TryFindBuildable`, `HectonAPI.Ecosystem.RegisterBiomeMutation`, `HectonAPI.Mods.GetLoadedMods`, `ModRuntimeInfo`, `ModLoadStatus`, `ModRegistryEventType`, `ModRegistryEventPayload`, `IModRegistryEventListener`, `ModSettingKind`, `ModSettingView`, FutureCommand output signal DTOs, `FutureCommandSandboxValidator`, `ModCommandDispatcher`, `HectonModHooks`, and `IModCommandKernel` are internal. Public engine MonoBehaviours that need registry invalidation use private adapter classes and do not expose `IModRegistryEventListener` in public base lists. The object/authority paths throw `IllegalContractException`; loader diagnostics, registry invalidation, command dispatch helpers, and menu setting snapshots are engine UI/tooling only. Modders must resolve hashes and submit `FutureCommandEnvelope` packets instead of writing SignalBus lanes.
 
 ## Resource And Content Boundary
 
@@ -322,8 +331,9 @@ Current source-backed resource/content limits:
 | Public resource methods | `3` | `TryResolvePrefab`, `TryResolveAudioClip`, `TryResolveTexture`; hash ids only. |
 | Resource kinds | `3` | `Prefab`, `AudioClip`, `Texture`. |
 | Resource registry capacity | `256` | Engine owner resolves hash ids internally. |
-| Public content methods | `14` | Cold catalog/settings/localization/UI methods only. |
-| Internal asset loaders | `3` | Public facade throws for direct Unity object loads. |
+| Resource owner proof | active scope id match | Registry rejects forged `modId` values before hashing. |
+| Public content methods | `6` | Settings/localization/UI/plain DTO methods only. |
+| Internal asset/object/authority/diagnostic methods | `18` | Public facade blocks direct Unity object loads, ScriptableObject handles, unowned gameplay overlays, and all-package loader diagnostics. |
 | Raw PNG cap | `8388608` bytes / `2048` px | Cold fallback only; not hot-path event transport. |
 
 ## Loader And Save Boundary
@@ -337,16 +347,23 @@ Full loader/save audit: [Loader_Save_Audit_Matrix.md](Loader_Save_Audit_Matrix.m
 | Manifest file | `mod.json` | Package discovery starts from this file. |
 | Current API version | `2` | Mods requiring a newer version are disabled. |
 | Manifest fields | `9` | `Id`, `Name`, `Version`, `Author`, `Dependencies`, `EntryAssembly`, `EntryType`, `RequiredAPIVersion`, `ModPriority`. |
+| Canonical mod IDs | enforced | `Id` and dependencies use lowercase letters/digits separated by single `.`, `_`, or `-`; no path-ish separator-only ids, whitespace, or reserved filesystem device segments. |
 | `IHectonMod` callbacks | `3` | `OnLoad`, `OnInitialize`, and `OnUnload`; dispose every subscription from `OnUnload`. |
 | `ModMetadata` fields | `8` | Runtime diagnostics and dependency ordering use this descriptor. |
-| `ModRuntimeInfo` fields | `7` | UI copies this descriptor; loader internals stay private. |
+| `ModRuntimeInfo` fields | `7` | Internal engine UI descriptor; all-package loader diagnostics are not public mod API. |
+| Reserved managed assembly identities | blocked | `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, and `netstandard` are engine/runtime assembly names, not mod package names. |
+| Package DLL identity scan | all top-level `.dll` files | Loader identity-validates every top-level package DLL; SDK builder deletes stale output DLLs before writing the new manifest. |
+| EntryAssembly file name only | enforced | Explicit managed entry assembly names are package-local `.dll` file names only, not absolute or relative paths. |
+| Scope owner proof | enforced | Active `ModExecutionScope` cannot be anonymous/blank and must carry a non-zero owner hash before public facade guards pass. |
+| Event subscriber owner proof | enforced | Unmanaged, native, and projected event bridge routes plus private channel implementations reject anonymous subscribers before creating `HectonEventSubscription` tokens. |
 | SaveState public methods | `2` | `SetModString` and `GetModString`; active `ModExecutionScope` required. |
+| SaveState store owner proof | enforced | Public mod payloads require active scope; engine payloads use explicit `SetEngineString` / `GetEngineString` with `hecton.internal.` keys. |
 | Save storage prefix | `m8v1:` | Mod-owned keys are hashed/namespaced before persistence. |
 | Max MMF mod payload | `16352` bytes | Protected block `16384` minus `32` byte mod payload header. |
 
-`HectonAPI.SaveState` is not a general persistence escape hatch. Mods may store their own text payloads; they may not write first-party save owners, inventory truth, player physiology, world sectors, or DataVault-backed state.
+`HectonAPI.SaveState` is not a general persistence escape hatch. Mods may store their own text payloads; they may not write first-party save owners, inventory truth, player physiology, world sectors, or DataVault-backed state. The backing store must not create a mod owner from an arbitrary key when no active mod scope exists.
 
-SDK builder drift: `Assets/_Project/Scripts/Editor/ModdingSDK/ModBuilderWindow.cs` currently serializes only `Id`, `Name`, `Version`, `Author`, `Dependencies`, `EntryAssembly`, and `EntryType` into `mod.json`. Runtime loader source requires positive `RequiredAPIVersion` and consumes `ModPriority`; therefore a builder-created mod package is not proven loadable without manual manifest repair until the builder emits the full manifest or a Unity runtime smoke fixture proves a compatible fallback.
+SDK builder parity: `Assets/_Project/Scripts/Editor/ModdingSDK/ModBuilderWindow.cs` now serializes the full loader-required manifest shape, including `RequiredAPIVersion` and `ModPriority`, rejects non-canonical mod/dependency ids, writes the canonical trimmed mod id to the output path and manifest, rejects selected managed DLLs with reserved engine/runtime assembly identities before copy, and removes stale top-level DLLs that are not selected for the current build. `Validate_Mod_API_Static.ps1` extracts both source structs and fails if the builder manifest, id validation, stale-DLL cleanup, or reserved-identity gate drifts from `ModLoader`. This is static source proof only; Unity package smoke remains required before claiming runtime verification.
 
 ## Payload Layouts
 
@@ -359,12 +376,14 @@ Full payload audit: [Payload_Layout_Audit_Matrix.md](Payload_Layout_Audit_Matrix
 | `ModEventDto` | explicit | 64 bytes | Projected `CombatDamage` and `WeatherChanged` event metadata. |
 | `FutureCommandEnvelope` | explicit | 64 bytes | Active UGC runtime packet; opcode hash, mod signature, AUP, payload lanes, integrity hash, and padding. |
 | `ModCommand` | explicit | 64 bytes | Dormant legacy command packet; `Payload0` overlays `ModHash` low 32 bits and `RequestId` high 32 bits. |
-| `ModAupCommand` | sequential | source-defined | Position-changing command wrapper; dispatcher rebases AUP at drain time. |
-| `ModAupResponse` | sequential | 64 bytes | Async response for flow, voxel, and acoustic AUP requests. |
-| `ModRenderInstanceCommand` | sequential | source-defined | One mod instancing matrix request. |
-| `ModRaycastResultPayload` | sequential | source-defined | Next-frame result for proxied mod raycast requests. |
-| `ModInteractionRejectedPayload` | sequential | source-defined | Security gate rejection reason. |
-| `ModCriticalMemoryEvictionPayload` | sequential | source-defined | Heap quota eviction warning before quarantine. |
+| `ModPlayerSpawnedEvent` | explicit | 24 bytes | Read-only player spawn event payload; fixed offsets keep managed callback layout stable. |
+| `ModBiomeChangedEvent` | explicit | 24 bytes | Read-only biome transition event payload; explicit padding keeps size 8-byte aligned. |
+| `ModAupCommand` | explicit | 120 bytes | Position-changing command wrapper; dispatcher rebases AUP at drain time. |
+| `ModAupResponse` | explicit | 64 bytes | Async response for flow, voxel, and acoustic AUP requests. |
+| `ModRenderInstanceCommand` | explicit | 80 bytes | One mod instancing matrix request. |
+| `ModRaycastResultPayload` | explicit | 48 bytes | Next-frame result for proxied mod raycast requests. |
+| `ModInteractionRejectedPayload` | explicit | 16 bytes | Security gate rejection reason; legacy opcode fields overlay `OpcodeHash`. |
+| `ModCriticalMemoryEvictionPayload` | explicit | 24 bytes | Heap quota eviction warning before quarantine. |
 
 `ModEventDto` byte offsets are fixed in source: `EventHash` 0, `SubjectHash` 4, `ContextHash` 8, `SourceHash` 12, `Frame` 16, `RelativePosition` 20, `Direction` 32, `Scalar0` 44, `Scalar1` 48, `Kind` 52, `Flags` 54, `QualityTier` 56, `Reserved0` 57, `Sequence` 58, `Reserved1` 60. The `QualityTier` byte is an API compatibility field. New engine code must use continuous `GlobalQualityWeight` and may only write this byte as a deterministic projection for old mod readers.
 
@@ -397,7 +416,7 @@ rg --pcre2 -n "[^\x00-\x7F]" Docs/Modding Docs/Tasks/Status_MODDING_API_SCHEMA_B
 git diff --check -- Docs/Modding/Signal_Schema.json Docs/Modding/Mod_API_Specification.md Docs/Modding/Signal_Audit_Matrix.md Docs/Modding/Command_Audit_Matrix.md Docs/Modding/API_Surface_Audit_Matrix.md Docs/Modding/Payload_Layout_Audit_Matrix.md Docs/Modding/Loader_Save_Audit_Matrix.md Docs/Modding/Event_Subscription_Audit_Matrix.md Docs/Modding/Change_Control_Checklist.md Docs/Modding/Runtime_Verification_Playbook.md Docs/Modding/Validate_Mod_API_Static.ps1 Docs/Tasks/Status_MODDING_API_SCHEMA_BUILDER.md Docs/AgentLogs/Rationale_MODDING_API_SCHEMA_BUILDER.md Docs/AgentLogs/LOG_MODDING_API_SCHEMA_BUILDER.md
 ```
 
-`Validate_Mod_API_Static.ps1` is the static drift gate. It fails when the source `ISignal` count, schema inventory, projection bridge lanes, command opcodes, facade shape, event subscription contracts, payload byte layout, loader/save contracts, audit matrices, or runtime verification gate drift apart.
+`Validate_Mod_API_Static.ps1` is the static drift gate. It fails when the source `ISignal` count, schema inventory, projection bridge lanes, command opcodes, facade shape, event subscription contracts, internal-only `HectonGameEvents` payload rule, payload byte layout, loader/save contracts, audit matrices, or runtime verification gate drift apart.
 
 Runtime checks required before a future `VERIFIED` status:
 

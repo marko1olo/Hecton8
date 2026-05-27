@@ -58,12 +58,29 @@ namespace Hecton8.Scavenging
             [FieldOffset(4)] public ushort MinimumAmount;
             [FieldOffset(6)] public ushort MaximumAmount;
             [FieldOffset(8)] public byte Weight;
-            [FieldOffset(9)] public byte Reserved0;
-            [FieldOffset(10)] public ushort Reserved1;
-            [FieldOffset(12)] public uint Reserved2;
-            [FieldOffset(16)] public uint Reserved3;
-            [FieldOffset(20)] private uint _pad0;
-            [FieldOffset(24)] private ulong _pad1;
+            [FieldOffset(9)] private byte _pad0;
+            [FieldOffset(10)] private byte _pad1;
+            [FieldOffset(11)] private byte _pad2;
+            [FieldOffset(12)] private byte _pad3;
+            [FieldOffset(13)] private byte _pad4;
+            [FieldOffset(14)] private byte _pad5;
+            [FieldOffset(15)] private byte _pad6;
+            [FieldOffset(16)] private byte _pad7;
+            [FieldOffset(17)] private byte _pad8;
+            [FieldOffset(18)] private byte _pad9;
+            [FieldOffset(19)] private byte _pad10;
+            [FieldOffset(20)] private byte _pad11;
+            [FieldOffset(21)] private byte _pad12;
+            [FieldOffset(22)] private byte _pad13;
+            [FieldOffset(23)] private byte _pad14;
+            [FieldOffset(24)] private byte _pad15;
+            [FieldOffset(25)] private byte _pad16;
+            [FieldOffset(26)] private byte _pad17;
+            [FieldOffset(27)] private byte _pad18;
+            [FieldOffset(28)] private byte _pad19;
+            [FieldOffset(29)] private byte _pad20;
+            [FieldOffset(30)] private byte _pad21;
+            [FieldOffset(31)] private byte _pad22;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = HarvestableTemplateLayout.RuntimeDescriptorStrideBytes)]
@@ -75,9 +92,20 @@ namespace Hecton8.Scavenging
             [FieldOffset(12)] public int LootStartIndex;
             [FieldOffset(16)] public byte LootCount;
             [FieldOffset(17)] public byte MaterialClassId;
-            [FieldOffset(18)] public ushort Reserved0;
-            [FieldOffset(20)] public uint Reserved1;
-            [FieldOffset(24)] private ulong _pad0;
+            [FieldOffset(18)] private byte _pad0;
+            [FieldOffset(19)] private byte _pad1;
+            [FieldOffset(20)] private byte _pad2;
+            [FieldOffset(21)] private byte _pad3;
+            [FieldOffset(22)] private byte _pad4;
+            [FieldOffset(23)] private byte _pad5;
+            [FieldOffset(24)] private byte _pad6;
+            [FieldOffset(25)] private byte _pad7;
+            [FieldOffset(26)] private byte _pad8;
+            [FieldOffset(27)] private byte _pad9;
+            [FieldOffset(28)] private byte _pad10;
+            [FieldOffset(29)] private byte _pad11;
+            [FieldOffset(30)] private byte _pad12;
+            [FieldOffset(31)] private byte _pad13;
         }
 
         [Header("Identity")]
@@ -126,9 +154,7 @@ namespace Hecton8.Scavenging
                 ToolResistance = math.max(0.01f, toolResistance),
                 LootStartIndex = math.max(0, lootStartIndex),
                 LootCount = (byte)math.min(byte.MaxValue, lootTable != null ? lootTable.Length : 0),
-                MaterialClassId = (byte)materialClass,
-                Reserved0 = 0,
-                Reserved1 = 0u
+                MaterialClassId = (byte)materialClass
             };
         }
 
@@ -153,11 +179,7 @@ namespace Hecton8.Scavenging
                     ItemHashId = LocHash.Compute(source.item.PersistentId),
                     MinimumAmount = (ushort)math.max(1, (int)source.minimumAmount),
                     MaximumAmount = (ushort)math.max(math.max(1, (int)source.minimumAmount), (int)source.maximumAmount),
-                    Weight = (byte)math.max(1, (int)source.weight),
-                    Reserved0 = 0,
-                    Reserved1 = 0,
-                    Reserved2 = 0u,
-                    Reserved3 = 0u
+                    Weight = (byte)math.max(1, (int)source.weight)
                 });
                 copiedCount++;
             }

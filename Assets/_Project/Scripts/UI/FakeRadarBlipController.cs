@@ -870,6 +870,8 @@ namespace Hecton8.UI
             if (radarBlipShader == null)
                 radarBlipShader = AssetDatabase.LoadAssetAtPath<Shader>(RadarBlipShaderPath);
 #endif
+            if (radarBlipShader == null)
+                RuntimeShaderReferenceCatalog.TryGetRadarBlipInstancedShader(out radarBlipShader);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (radarBlipShader == null)
                 radarBlipShader = Shader.Find(RadarBlipShaderName);

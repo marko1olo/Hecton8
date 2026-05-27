@@ -29,11 +29,14 @@ namespace Hecton8.EditorValidation
     {
         private const string AgentId = "X_002";
         private const string AgentId1313 = "1313";
+        private const string AgentId1330 = "1330";
         private const string RuntimeRoot = "Assets/_Project/Scripts";
         private const string ReleaseReportPath = "Docs/Reports/DATA_MONOLITH_RELEASE_BUILD_GATE_X_002.json";
         private const string DevelopmentReportPath = "Docs/Reports/DATA_MONOLITH_DEVELOPMENT_BUILD_GATE_X_002.json";
         private const string ReleaseReportPath1313 = "Docs/Reports/DATA_MONOLITH_RELEASE_BUILD_GATE_1313.json";
         private const string DevelopmentReportPath1313 = "Docs/Reports/DATA_MONOLITH_DEVELOPMENT_BUILD_GATE_1313.json";
+        private const string ReleaseReportPath1330 = "Docs/Reports/DATA_MONOLITH_RELEASE_BUILD_GATE_1330.json";
+        private const string DevelopmentReportPath1330 = "Docs/Reports/DATA_MONOLITH_DEVELOPMENT_BUILD_GATE_1330.json";
         private const int MaxFindingsWritten = 256;
 
         [MenuItem("Hecton8/Data Monolith/Run Release Parser Build Gate")]
@@ -59,7 +62,10 @@ namespace Hecton8.EditorValidation
             ScanResult result = default;
             result.DevelopmentBuild = developmentBuild;
             result.TargetName = target.ToString();
-            result.TargetHasNativeMonolithPal = IsSupportedProductionMonolithTarget(target);
+            result.TargetHasProductionMonolithLoader = IsSupportedProductionMonolithTarget(target);
+            result.TargetHasNativeMonolithPal = IsNativeMonolithPalTarget(target);
+            if (!developmentBuild && !result.TargetHasNativeMonolithPal)
+                result.UnsupportedPlatformPalFindingCount++;
             StringBuilder findingsJson = new StringBuilder(32768);
 
             string root = Path.Combine(projectRoot, RuntimeRoot.Replace('/', Path.DirectorySeparatorChar));
@@ -74,16 +80,16 @@ namespace Hecton8.EditorValidation
                     ScanFile(projectRoot, files[i], target, ref result, findingsJson);
             }
 
-            if (!developmentBuild && !result.TargetHasNativeMonolithPal)
+            if (!developmentBuild && !result.TargetHasProductionMonolithLoader)
             {
-                result.UnsupportedPlatformPalFindingCount++;
+                result.UnsupportedPlatformLoaderFindingCount++;
                 AppendFinding(
                     findingsJson,
                     ref result,
                     "BUILD_TARGET:" + result.TargetName,
                     0,
-                    "unsupportedStaticDataMonolithPlatformPal",
-                    "Production target has no zero-GC static_data.h8bin native/PAL loader; current non-Windows runtime branch fails closed.");
+                    "unsupportedStaticDataMonolithPlatformLoader",
+                    "Production target has no proven static_data.h8bin loader. WebGL remains fail-closed until browser-side staging can hydrate the Vault without managed blob allocation.");
             }
 
             result.Status = result.BlockingFindingCount == 0
@@ -97,6 +103,7 @@ namespace Hecton8.EditorValidation
             {
                 WriteText(Path.Combine(projectRoot, reportPath), BuildReport(in result, findingsJson, AgentId));
                 WriteText(Path.Combine(projectRoot, GetReportPath1313(developmentBuild)), BuildReport(in result, findingsJson, AgentId1313));
+                WriteText(Path.Combine(projectRoot, GetReportPath1330(developmentBuild)), BuildReport(in result, findingsJson, AgentId1330));
             }
 
             if (blockOnFindings && result.BlockingFindingCount > 0)
@@ -122,6 +129,15 @@ namespace Hecton8.EditorValidation
 
         private static bool IsSupportedProductionMonolithTarget(BuildTarget target)
         {
+            return IsNativeMonolithPalTarget(target) ||
+                   target == BuildTarget.StandaloneLinux64 ||
+                   target == BuildTarget.StandaloneOSX ||
+                   target == BuildTarget.Android ||
+                   target == BuildTarget.iOS;
+        }
+
+        private static bool IsNativeMonolithPalTarget(BuildTarget target)
+        {
             return target == BuildTarget.StandaloneWindows ||
                    target == BuildTarget.StandaloneWindows64;
         }
@@ -144,7 +160,22 @@ namespace Hecton8.EditorValidation
             {
                 lines = File.ReadAllLines(absolutePath, Encoding.UTF8);
             }
-            catch (Exception exception)
+            catch (IOException exception)
+            {
+                AppendFinding(findingsJson, ref result, relativePath, 0, "sourceReadFailure", exception.GetType().Name);
+                return;
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                AppendFinding(findingsJson, ref result, relativePath, 0, "sourceReadFailure", exception.GetType().Name);
+                return;
+            }
+            catch (ArgumentException exception)
+            {
+                AppendFinding(findingsJson, ref result, relativePath, 0, "sourceReadFailure", exception.GetType().Name);
+                return;
+            }
+            catch (NotSupportedException exception)
             {
                 AppendFinding(findingsJson, ref result, relativePath, 0, "sourceReadFailure", exception.GetType().Name);
                 return;
@@ -380,10 +411,12 @@ namespace Hecton8.EditorValidation
             report.AppendLine("  \"agent\": \"" + agentId + "\",");
             report.AppendLine("  \"scanner\": \"H8DataMonolithReleaseParserScanner\",");
             report.AppendLine("  \"status\": \"" + result.Status + "\",");
-            report.AppendLine("  \"policy\": \"Non-editor player builds are scanned with the matching DEVELOPMENT_BUILD symbol. Non-development players are blocked on production static-data parser routes and on targets without a zero-GC native/PAL static_data.h8bin loader; development players emit warning evidence for editor-only CSV policy enforcement.\",");
+            report.AppendLine("  \"policy\": \"Non-editor player builds are scanned with the matching DEVELOPMENT_BUILD symbol. Non-development players are blocked on production static-data parser routes and on targets without a proven static_data.h8bin loader; development players emit warning evidence for editor-only CSV policy enforcement.\",");
             report.AppendLine("  \"developmentBuild\": " + LowerBool(result.DevelopmentBuild) + ",");
             report.AppendLine("  \"buildTarget\": \"" + Escape(result.TargetName) + "\",");
+            report.AppendLine("  \"targetHasProductionMonolithLoader\": " + LowerBool(result.TargetHasProductionMonolithLoader) + ",");
             report.AppendLine("  \"targetHasNativeMonolithPal\": " + LowerBool(result.TargetHasNativeMonolithPal) + ",");
+            report.AppendLine("  \"platformLoaderStatus\": \"" + Escape(GetPlatformLoaderStatus(in result)) + "\",");
             report.AppendLine("  \"platformPalStatus\": \"" + Escape(GetPlatformPalStatus(in result)) + "\",");
             report.AppendLine("  \"symbolModel\": \"UNITY_EDITOR=false, DEVELOPMENT_BUILD=" + LowerBool(result.DevelopmentBuild) + ", DEBUG=" + LowerBool(result.DevelopmentBuild) + ", platform_symbols=BuildTarget, unknown_symbols=true\",");
             report.AppendLine("  \"filesScanned\": " + result.FilesScanned + ",");
@@ -392,7 +425,9 @@ namespace Hecton8.EditorValidation
             report.AppendLine("  \"releaseInactiveLinesSkipped\": " + result.ReleaseInactiveLinesSkipped + ",");
             report.AppendLine("  \"missingRoots\": " + result.MissingRoots + ",");
             report.AppendLine("  \"blockingFindingCount\": " + result.BlockingFindingCount + ",");
+            report.AppendLine("  \"unsupportedPlatformLoaderFindingCount\": " + result.UnsupportedPlatformLoaderFindingCount + ",");
             report.AppendLine("  \"unsupportedPlatformPalFindingCount\": " + result.UnsupportedPlatformPalFindingCount + ",");
+            report.AppendLine("  \"unsupportedPlatformPalIsBlocking\": false,");
             report.AppendLine("  \"allowedPersistenceFindingCount\": " + result.AllowedPersistenceFindingCount + ",");
             report.AppendLine("  \"writtenFindingLimit\": " + MaxFindingsWritten + ",");
             report.AppendLine("  \"writtenFindingCount\": " + result.WrittenFindingCount + ",");
@@ -421,10 +456,28 @@ namespace Hecton8.EditorValidation
             return developmentBuild ? DevelopmentReportPath1313 : ReleaseReportPath1313;
         }
 
+        private static string GetReportPath1330(bool developmentBuild)
+        {
+            return developmentBuild ? DevelopmentReportPath1330 : ReleaseReportPath1330;
+        }
+
+        private static string GetPlatformLoaderStatus(in ScanResult result)
+        {
+            if (result.TargetHasProductionMonolithLoader)
+                return "PRODUCTION_MONOLITH_LOADER_PRESENT";
+
+            return result.DevelopmentBuild
+                ? "DEVELOPMENT_TARGET_NOT_RELEASE_PROOF"
+                : "FAIL_NO_PRODUCTION_MONOLITH_LOADER";
+        }
+
         private static string GetPlatformPalStatus(in ScanResult result)
         {
             if (result.TargetHasNativeMonolithPal)
                 return "NATIVE_MONOLITH_PAL_PRESENT";
+
+            if (result.TargetHasProductionMonolithLoader)
+                return "NO_NATIVE_PAL_PRODUCTION_LOADER_PRESENT";
 
             return result.DevelopmentBuild
                 ? "DEVELOPMENT_TARGET_NOT_RELEASE_PROOF"
@@ -584,6 +637,7 @@ namespace Hecton8.EditorValidation
             public string Status;
             public string TargetName;
             public bool DevelopmentBuild;
+            public bool TargetHasProductionMonolithLoader;
             public bool TargetHasNativeMonolithPal;
             public int FilesScanned;
             public int ProductionFilesScanned;
@@ -591,6 +645,7 @@ namespace Hecton8.EditorValidation
             public int ReleaseInactiveLinesSkipped;
             public int MissingRoots;
             public int BlockingFindingCount;
+            public int UnsupportedPlatformLoaderFindingCount;
             public int UnsupportedPlatformPalFindingCount;
             public int WrittenFindingCount;
             public int AllowedPersistenceFindingCount;

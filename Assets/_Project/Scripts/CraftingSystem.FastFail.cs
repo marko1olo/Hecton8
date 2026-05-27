@@ -29,32 +29,32 @@ namespace Hecton8.Crafting
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct RecipeRequirementDTO
     {
-        [FieldOffset(0)] public uint ResultItemHash;
-        [FieldOffset(4)] public uint IngredientHashA;
-        [FieldOffset(8)] public uint IngredientHashB;
-        [FieldOffset(12)] public uint IngredientHashC;
-        [FieldOffset(16)] public uint IngredientHashD;
-        [FieldOffset(20)] public uint QuantitiesPacked;
-        [FieldOffset(24)] public ulong BlueprintUnlockMask;
+        [FieldOffset(0)] public ulong BlueprintUnlockMask;
+        [FieldOffset(8)] public uint ResultItemHash;
+        [FieldOffset(12)] public uint IngredientHashA;
+        [FieldOffset(16)] public uint IngredientHashB;
+        [FieldOffset(20)] public uint IngredientHashC;
+        [FieldOffset(24)] public uint IngredientHashD;
+        [FieldOffset(28)] public uint QuantitiesPacked;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CraftingFastFailTelemetryEntry
     {
-        [FieldOffset(0)] public uint Frame;
-        [FieldOffset(4)] public uint RecipeWordIndex;
-        [FieldOffset(8)] public uint RecipesEvaluated;
-        [FieldOffset(12)] public uint UnlockCullCount;
-        [FieldOffset(16)] public uint MaskCullCount;
-        [FieldOffset(20)] public uint SimdSuccessCount;
-        [FieldOffset(24)] public float ScheduleMicroseconds;
-        [FieldOffset(28)] public float GlobalQualityWeight;
-        [FieldOffset(32)] public ulong RequirementMask;
-        [FieldOffset(40)] public ulong UnlockMask;
-        [FieldOffset(48)] public uint InventoryVersion;
-        [FieldOffset(52)] public uint UiPublicationBudget;
-        [FieldOffset(56)] public uint StateHash;
-        [FieldOffset(60)] public uint Flags;
+        [FieldOffset(0)] public ulong RequirementMask;
+        [FieldOffset(8)] public ulong UnlockMask;
+        [FieldOffset(16)] public uint Frame;
+        [FieldOffset(20)] public uint RecipeWordIndex;
+        [FieldOffset(24)] public uint RecipesEvaluated;
+        [FieldOffset(28)] public uint UnlockCullCount;
+        [FieldOffset(32)] public uint MaskCullCount;
+        [FieldOffset(36)] public uint SimdSuccessCount;
+        [FieldOffset(40)] public uint InventoryVersion;
+        [FieldOffset(44)] public uint UiPublicationBudget;
+        [FieldOffset(48)] public uint StateHash;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public float ScheduleMicroseconds;
+        [FieldOffset(60)] public float GlobalQualityWeight;
     }
 
     public static class CraftingFastFailValidator
@@ -62,13 +62,27 @@ namespace Hecton8.Crafting
         public const int MaxIngredientsPerRecipe = 4;
         public const int RecipeRequirementDtoSizeBytes = 32;
         public const int TelemetryEntrySizeBytes = 64;
-        public const int RecipeRequirementResultItemHashOffset = 0;
-        public const int RecipeRequirementIngredientHashAOffset = 4;
-        public const int RecipeRequirementIngredientHashBOffset = 8;
-        public const int RecipeRequirementIngredientHashCOffset = 12;
-        public const int RecipeRequirementIngredientHashDOffset = 16;
-        public const int RecipeRequirementQuantitiesPackedOffset = 20;
-        public const int RecipeRequirementBlueprintUnlockMaskOffset = 24;
+        public const int RecipeRequirementBlueprintUnlockMaskOffset = 0;
+        public const int RecipeRequirementResultItemHashOffset = 8;
+        public const int RecipeRequirementIngredientHashAOffset = 12;
+        public const int RecipeRequirementIngredientHashBOffset = 16;
+        public const int RecipeRequirementIngredientHashCOffset = 20;
+        public const int RecipeRequirementIngredientHashDOffset = 24;
+        public const int RecipeRequirementQuantitiesPackedOffset = 28;
+        public const int TelemetryRequirementMaskOffset = 0;
+        public const int TelemetryUnlockMaskOffset = 8;
+        public const int TelemetryFrameOffset = 16;
+        public const int TelemetryRecipeWordIndexOffset = 20;
+        public const int TelemetryRecipesEvaluatedOffset = 24;
+        public const int TelemetryUnlockCullCountOffset = 28;
+        public const int TelemetryMaskCullCountOffset = 32;
+        public const int TelemetrySimdSuccessCountOffset = 36;
+        public const int TelemetryInventoryVersionOffset = 40;
+        public const int TelemetryUiPublicationBudgetOffset = 44;
+        public const int TelemetryStateHashOffset = 48;
+        public const int TelemetryFlagsOffset = 52;
+        public const int TelemetryScheduleMicrosecondsOffset = 56;
+        public const int TelemetryGlobalQualityWeightOffset = 60;
         public const int TelemetryCapacity = 300;
         public const int RecipesPerWord = 64;
         public const float SlowFrameDumpThresholdMicroseconds = 200f;
@@ -82,13 +96,27 @@ namespace Hecton8.Crafting
         {
             return UnsafeUtility.SizeOf<RecipeRequirementDTO>() == RecipeRequirementDtoSizeBytes &&
                    UnsafeUtility.SizeOf<CraftingFastFailTelemetryEntry>() == TelemetryEntrySizeBytes &&
-                   RecipeRequirementResultItemHashOffset == 0 &&
-                   RecipeRequirementIngredientHashAOffset == 4 &&
-                   RecipeRequirementIngredientHashBOffset == 8 &&
-                   RecipeRequirementIngredientHashCOffset == 12 &&
-                   RecipeRequirementIngredientHashDOffset == 16 &&
-                   RecipeRequirementQuantitiesPackedOffset == 20 &&
-                   RecipeRequirementBlueprintUnlockMaskOffset == 24;
+                   Marshal.OffsetOf<RecipeRequirementDTO>(nameof(RecipeRequirementDTO.BlueprintUnlockMask)).ToInt32() == RecipeRequirementBlueprintUnlockMaskOffset &&
+                   Marshal.OffsetOf<RecipeRequirementDTO>(nameof(RecipeRequirementDTO.ResultItemHash)).ToInt32() == RecipeRequirementResultItemHashOffset &&
+                   Marshal.OffsetOf<RecipeRequirementDTO>(nameof(RecipeRequirementDTO.IngredientHashA)).ToInt32() == RecipeRequirementIngredientHashAOffset &&
+                   Marshal.OffsetOf<RecipeRequirementDTO>(nameof(RecipeRequirementDTO.IngredientHashB)).ToInt32() == RecipeRequirementIngredientHashBOffset &&
+                   Marshal.OffsetOf<RecipeRequirementDTO>(nameof(RecipeRequirementDTO.IngredientHashC)).ToInt32() == RecipeRequirementIngredientHashCOffset &&
+                   Marshal.OffsetOf<RecipeRequirementDTO>(nameof(RecipeRequirementDTO.IngredientHashD)).ToInt32() == RecipeRequirementIngredientHashDOffset &&
+                   Marshal.OffsetOf<RecipeRequirementDTO>(nameof(RecipeRequirementDTO.QuantitiesPacked)).ToInt32() == RecipeRequirementQuantitiesPackedOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.RequirementMask)).ToInt32() == TelemetryRequirementMaskOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.UnlockMask)).ToInt32() == TelemetryUnlockMaskOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.Frame)).ToInt32() == TelemetryFrameOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.RecipeWordIndex)).ToInt32() == TelemetryRecipeWordIndexOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.RecipesEvaluated)).ToInt32() == TelemetryRecipesEvaluatedOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.UnlockCullCount)).ToInt32() == TelemetryUnlockCullCountOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.MaskCullCount)).ToInt32() == TelemetryMaskCullCountOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.SimdSuccessCount)).ToInt32() == TelemetrySimdSuccessCountOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.InventoryVersion)).ToInt32() == TelemetryInventoryVersionOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.UiPublicationBudget)).ToInt32() == TelemetryUiPublicationBudgetOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.StateHash)).ToInt32() == TelemetryStateHashOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.Flags)).ToInt32() == TelemetryFlagsOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.ScheduleMicroseconds)).ToInt32() == TelemetryScheduleMicrosecondsOffset &&
+                   Marshal.OffsetOf<CraftingFastFailTelemetryEntry>(nameof(CraftingFastFailTelemetryEntry.GlobalQualityWeight)).ToInt32() == TelemetryGlobalQualityWeightOffset;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -454,6 +482,27 @@ namespace Hecton8.Crafting
             out CraftingFastFailStatus status,
             out uint simdLaneMask)
         {
+            return TryEvaluateRecipeAvailability(
+                in recipe,
+                inventoryHashes.IsCreated ? inventoryHashes.AsReadOnly() : default,
+                inventoryQuantities.IsCreated ? inventoryQuantities.AsReadOnly() : default,
+                inventoryCount,
+                currentInventoryMask,
+                playerUnlockMask,
+                out status,
+                out simdLaneMask);
+        }
+
+        public static bool TryEvaluateRecipeAvailability(
+            in RecipeRequirementDTO recipe,
+            NativeArray<uint>.ReadOnly inventoryHashes,
+            NativeArray<uint>.ReadOnly inventoryQuantities,
+            int inventoryCount,
+            ulong currentInventoryMask,
+            ulong playerUnlockMask,
+            out CraftingFastFailStatus status,
+            out uint simdLaneMask)
+        {
             simdLaneMask = 0u;
             status = CraftingFastFailStatus.InvalidInput;
             if (!inventoryHashes.IsCreated || !inventoryQuantities.IsCreated)
@@ -586,6 +635,34 @@ namespace Hecton8.Crafting
         internal static void ResolveAvailableQuantities4(
             NativeArray<uint> inventoryHashes,
             NativeArray<uint> inventoryQuantities,
+            int inventoryCount,
+            uint hashA,
+            uint hashB,
+            uint hashC,
+            uint hashD,
+            out uint haveA,
+            out uint haveB,
+            out uint haveC,
+            out uint haveD)
+        {
+            ResolveAvailableQuantities4(
+                inventoryHashes.AsReadOnly(),
+                inventoryQuantities.AsReadOnly(),
+                inventoryCount,
+                hashA,
+                hashB,
+                hashC,
+                hashD,
+                out haveA,
+                out haveB,
+                out haveC,
+                out haveD);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void ResolveAvailableQuantities4(
+            NativeArray<uint>.ReadOnly inventoryHashes,
+            NativeArray<uint>.ReadOnly inventoryQuantities,
             int inventoryCount,
             uint hashA,
             uint hashB,

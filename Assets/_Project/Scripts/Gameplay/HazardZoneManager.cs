@@ -364,11 +364,18 @@ namespace Hecton8.Gameplay
             public bool TryAcquireWriteLock(SystemID owner, out NativeArray<T> buffer)
             {
                 buffer = default;
-                return _vault != null &&
-                       IsVaultHandleCreated(in _handle) &&
-                       _vault.TryAcquireWriteLock(in _handle, owner, out buffer) &&
-                       buffer.IsCreated &&
-                       buffer.Length >= _requiredLength;
+                if (_vault == null || !IsVaultHandleCreated(in _handle))
+                    return false;
+
+                if (!_vault.TryAcquireWriteLock(in _handle, owner, out buffer))
+                    return false;
+
+                if (buffer.IsCreated && buffer.Length >= _requiredLength)
+                    return true;
+
+                _vault.ReleaseWriteLock(in _handle, owner);
+                buffer = default;
+                return false;
             }
 
             public void ReleaseWriteLock(SystemID owner)

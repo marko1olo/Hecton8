@@ -1,0 +1,92 @@
+{
+  "agentId": "1335",
+  "domain": "VR_SOMATIC_COMFORT_AND_TUNNELING_VFX_DRIVER",
+  "task": "BILATERAL_DRS_REAUDIT",
+  "status": "PATCHED_BUILD_FAILED_EXTERNAL_CANDICE_MONO_DATA",
+  "promptLength": 18576,
+  "promptTaskCount": 20,
+  "promptSha256": "CED5DA5188E0838802BA00938AFD9F382174FAA78453C32C78A6AE34BCB1C2E2",
+  "scannedFiles": 3,
+  "modifiedFiles": [
+    "Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerRuntime.cs",
+    "Assets/_Project/Art/Shaders/Hecton_BilateralUpsample.shader"
+  ],
+  "supportFilesScanned": [
+    "Assets/_Project/Scripts/Rendering/BilateralDrs/BilateralDrsUpscalerContracts.cs"
+  ],
+  "failedGates": [
+    "DOTNET_BUILD_EXTERNAL_DEPENDENCY_MONO_DATA"
+  ],
+  "totalNativeFieldDeclarations": 7,
+  "persistentNativeFieldsRemaining": 0,
+  "transientVaultViews": 36,
+  "transientJobViews": 7,
+  "byteOffsetMaps": [
+    {
+      "structName": "UpscalerParamsDTO",
+      "sizeBytes": 32,
+      "offsets": {
+        "ResolutionParams": "0:float4",
+        "FilterParams": "16:float4"
+      }
+    },
+    {
+      "structName": "UpscalerTuningDTO",
+      "sizeBytes": 64,
+      "offsets": {
+        "DepthColorRadiusSharpness": "0:float4",
+        "EdgeThresholds": "16:float4",
+        "ScaleQualityOverride": "32:float4",
+        "DebugAndFlags": "48:float4"
+      }
+    },
+    {
+      "structName": "UpscalerTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "FrameIndex": "0:uint",
+        "Flags": "4:uint",
+        "CurrentRenderScale01": "8:float",
+        "TargetRenderScale01": "12:float",
+        "QualityScalar": "16:float",
+        "BilateralRadiusPixels": "20:float",
+        "DepthWeight": "24:float",
+        "EstimatedGpuMicros": "28:float",
+        "ResolutionParams": "32:float4",
+        "FilterParams": "48:float4"
+      }
+    },
+    {
+      "structName": "UpscalerProfileDTO",
+      "sizeBytes": 32,
+      "offsets": {
+        "ProfileHash": "0:uint",
+        "MinScale01": "4:float",
+        "MaxScale01": "8:float",
+        "QualityBias01": "12:float",
+        "FilterParams": "16:float4"
+      }
+    }
+  ],
+  "zeroGcHotPathHits": 0,
+  "broadCatchHits": 0,
+  "binaryWriterHits": 0,
+  "tryLockBufferHits": 0,
+  "legacyReadResolveHits": 1,
+  "shaderExpensiveTermHits": 0,
+  "absoluteAupCastsFound": 0,
+  "dump13KraHits": 0,
+  "dump1335BilateralHits": 1,
+  "compactionAwareLocksProven": true,
+  "telemetryRingIntegrated": true,
+  "verificationHashSha256": "234A0E81767B4308C56CC7E3B1897EE6473012C3940BC2ADCEF734D4A076C13E",
+  "build": {
+    "command": "dotnet build .\\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false",
+    "attempted": true,
+    "result": "FAILED_EXTERNAL_DEPENDENCY",
+    "firstErrors": [
+      "Assets/Candice AI for Games/Scripts/Libs/Candice Save System/Overrides/CandiceSQLiteProvider.cs(1,12): CS0234 Mono.Data missing",
+      "Assets/Candice AI for Games/Scripts/Libs/Candice Save System/Overrides/CandiceSQLiteProvider.cs(489,60): CS0246 SqliteDataReader missing"
+    ]
+  }
+}

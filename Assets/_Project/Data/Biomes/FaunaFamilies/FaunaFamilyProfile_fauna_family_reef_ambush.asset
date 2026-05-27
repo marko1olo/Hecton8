@@ -13,15 +13,10 @@ MonoBehaviour:
   m_Name: FaunaFamilyProfile_fauna_family_reef_ambush
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonFaunaFamilyProfile
   familyId: fauna.family.reef_ambush
-  familyLabel: Reef Ambush
-  ambientLife: reef_filter_and_nest
+  familyLabel: Porous Shelf Ambush
+  ambientLife: carbonate_filter_and_nest
   threatStyle: medium
   signaturePredator: pocket_ambusher
   encounterRhythm: patchy_pressure
-  gameplaySummary: "\xD0\u0178\xD0\xBE\xD1\u20AC\xD0\xB8\xD1\x81\xD1\u201A\xD0\xB0\xD1\x8F
-    \xD1\x81\xD1\u20AC\xD0\xB5\xD0\xB4\xD0\xB0 \xD1\x81\xD0\xBE\xD0\xB7\xD0\xB4\xD0\xB0\xD1\u2018\xD1\u201A
-    \xD1\u0192\xD0\xBA\xD1\u20AC\xD1\u2039\xD1\u201A\xD0\xB8\xD1\x8F \xD0\xB8 \xD0\xBB\xD0\xBE\xD0\xBA\xD0\xB0\xD0\xBB\xD1\u0152\xD0\xBD\xD1\u2039\xD0\xB5
-    \xD0\xB7\xD0\xB0\xD1\x81\xD0\xB0\xD0\xB4\xD1\u2039."
-  ambienceSummary: "\xD0\u0153\xD0\xBD\xD0\xBE\xD0\xB3\xD0\xBE \xD0\xBA\xD0\xB0\xD1\u20AC\xD0\xBC\xD0\xB0\xD0\xBD\xD0\xBE\xD0\xB2
-    \xD0\xB6\xD0\xB8\xD0\xB7\xD0\xBD\xD0\xB8 \xD0\xB8 \xD1\u20AC\xD0\xB5\xD0\xB7\xD0\xBA\xD0\xB8\xD0\xB5
-    \xD0\xBA\xD0\xBE\xD1\u20AC\xD0\xBE\xD1\u201A\xD0\xBA\xD0\xB8\xD0\xB5 \xD1\u0192\xD0\xB3\xD1\u20AC\xD0\xBE\xD0\xB7\xD1\u2039."
+  gameplaySummary: Porous carbonate cover creates local ambush pockets without turning the biome into arena combat.
+  ambienceSummary: Many life pockets, short threat spikes, and unreliable shelter reads.

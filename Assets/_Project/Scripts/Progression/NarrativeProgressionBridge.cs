@@ -146,7 +146,7 @@ namespace Hecton8.Progression
             ShowNewArchiveDataMilestone();
         }
 
-        public void OnBaseIntegrityEvent(in BaseIntegrityEventPayload payload)
+        public void OnBaseIntegrityEvent(in UiBaseIntegrityEventPayload payload)
         {
             if ((BaseIntegrityEventType)payload.EventType != BaseIntegrityEventType.Breached || _hullFailureIssued)
                 return;

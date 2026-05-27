@@ -436,7 +436,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(56)] public ulong RouteHash;
     }
 
-    internal struct PlayerKinematicsHandPlacementSolver
+    internal ref struct PlayerKinematicsHandPlacementSolver
     {
         public const byte RuntimeFlagReducedProbeSet = 1 << 0;
         public const byte RuntimeFlagImpact = 1 << 1;
@@ -1150,6 +1150,9 @@ namespace Hecton8.Gameplay
             float3 sdfCellSize = float3.zero;
             float sdfRange = 0.0f;
             byte sdfSampleMode = ResolveSdfSampleMode(qualityWeight01, Hecton8.Core.SystemDispatcher.CurrentFrameId);
+            HectonVoxelVolume sdfLeaseVolume = null;
+            HectonVoxelVolume.PublishedSonarSdfReadLease sdfReadLease = default;
+            bool sdfReadLeaseLocked = false;
             float3 rawBodyPosition = ToFloat3(ResolveBodyRuntimePosition());
             float3 rawBodyVelocity = ReadVelocitySnapshot(float3.zero);
             float3 bodyPosition = SanitizeFloat3(rawBodyPosition, ReadLastValidPosition());
@@ -1172,85 +1175,95 @@ namespace Hecton8.Gameplay
                     out sdfOrigin,
                     out sdfCellSize,
                     out sdfRange,
-                    out sdfSampleMode);
+                    out sdfSampleMode,
+                    out sdfLeaseVolume,
+                    out sdfReadLease,
+                    out sdfReadLeaseLocked);
             }
-            SnapshotLadder(out byte ladderActive, out float3 ladderPoint);
-
-            _positions[0] = bodyPosition;
-            _velocities[0] = bodyVelocity;
-            _flowVelocity[0] = SanitizeFloat3(ResolveCurrentAdvection(safeBodyPosition), float3.zero);
-            SdfSqueezeResult sdfSqueezeResult;
-            if (TryApplySdfSqueeze(
-                    fixedDeltaTime,
-                    qualityWeight01,
-                    sdfTexture3D,
-                    sdfDimensions,
-                    sdfOrigin,
-                    sdfCellSize,
-                    sdfRange,
-                    sdfSampleMode,
-                    ref inSolid,
-                    ref sdfGradientProbeRequested,
-                    ref bodyPosition,
-                    ref bodyVelocity,
-                    ref safeBodyPosition,
-                    out sdfSqueezeResult))
+            SdfSqueezeResult sdfSqueezeResult = default;
+            try
             {
+                SnapshotLadder(out byte ladderActive, out float3 ladderPoint);
+
+                _positions[0] = bodyPosition;
+                _velocities[0] = bodyVelocity;
                 _flowVelocity[0] = SanitizeFloat3(ResolveCurrentAdvection(safeBodyPosition), float3.zero);
-            }
-            else if ((sdfSqueezeResult.Flags & SdfSqueezeResult.FlagNaNFallback) != 0u)
-            {
-                AddFaultFlag(FaultNaN);
-            }
+                if (TryApplySdfSqueeze(
+                        fixedDeltaTime,
+                        qualityWeight01,
+                        sdfTexture3D,
+                        sdfDimensions,
+                        sdfOrigin,
+                        sdfCellSize,
+                        sdfRange,
+                        sdfSampleMode,
+                        ref inSolid,
+                        ref sdfGradientProbeRequested,
+                        ref bodyPosition,
+                        ref bodyVelocity,
+                        ref safeBodyPosition,
+                        out sdfSqueezeResult))
+                {
+                    _flowVelocity[0] = SanitizeFloat3(ResolveCurrentAdvection(safeBodyPosition), float3.zero);
+                }
+                else if ((sdfSqueezeResult.Flags & SdfSqueezeResult.FlagNaNFallback) != 0u)
+                {
+                    AddFaultFlag(FaultNaN);
+                }
 
-            NativeArray<WhirlpoolFlow>.ReadOnly activeMaelstroms = default;
-            int activeMaelstromCount = 0;
-            IAnalyticalFlowReadModel analyticalFlow = _analyticalFlowReadModel;
-            if (analyticalFlow != null &&
-                analyticalFlow.TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow>.ReadOnly fluidMaelstroms, out int fluidMaelstromCount))
-            {
-                activeMaelstroms = fluidMaelstroms;
-                activeMaelstromCount = fluidMaelstromCount;
-            }
+                NativeArray<WhirlpoolFlow>.ReadOnly activeMaelstroms = default;
+                int activeMaelstromCount = 0;
+                IAnalyticalFlowReadModel analyticalFlow = _analyticalFlowReadModel;
+                if (analyticalFlow != null &&
+                    analyticalFlow.TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow>.ReadOnly fluidMaelstroms, out int fluidMaelstromCount))
+                {
+                    activeMaelstroms = fluidMaelstroms;
+                    activeMaelstromCount = fluidMaelstromCount;
+                }
 
-            var bodyJob = new PlayerKinematicsBodyJob
+                var bodyJob = new PlayerKinematicsBodyJob
+                {
+                    Positions = _positions,
+                    Velocities = _velocities,
+                    IntendedMovement = _intendedMovement,
+                    FlowVelocity = _flowVelocity,
+                    LastValidPositions = _lastValidPositions,
+                    ActiveMaelstroms = activeMaelstroms,
+                    VoxelSdfTexture3D = sdfTexture3D,
+                    Telemetry = _telemetry,
+                    TelemetryWriteIndex = _telemetryWriteIndex,
+                    FaultFlags = _faultFlags,
+                    ActiveMaelstromCount = activeMaelstromCount,
+                    VoxelSdfDimensions = sdfDimensions,
+                    DeltaTime = fixedDeltaTime,
+                    DragCoefficient = SanitizeNonNegative(dragCoefficient),
+                    WaterDensity = ResolveRuntimeWaterDensityScale(),
+                    EquipmentDragMultiplier = ResolveEquipmentDragMultiplier(),
+                    MaelstromVelocityClamp = MaelstromVelocityClamp,
+                    LadderSnapRadiusSq = LadderSnapRadius * LadderSnapRadius,
+                    LadderPoint = ladderPoint,
+                    VoxelSdfOrigin = sdfOrigin,
+                    VoxelSdfCellSize = sdfCellSize,
+                    TargetAup = bodyPosition,
+                    SolidDensity = solidDensity,
+                    VoxelSdfRange = sdfRange,
+                    SdfSampleStepMeters = ResolveSdfSampleStepMeters(sdfCellSize),
+                    LowMaelstromTier = IsReducedSdfSampleMode(sdfSampleMode) ? (byte)1 : (byte)0,
+                    SdfSampleMode = sdfSampleMode,
+                    SdfGradientProbeRequested = sdfGradientProbeRequested,
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                    RuntimeFlags = ResolveBodyFlags(ladderActive, inSolid) |
+                                   math.select(0u, BodyFlagMaelstromActive, activeMaelstromCount > 0) |
+                                  math.select(0u, BodyFlagSdfSqueezeIntervention, SdfSqueezeResult.IsResultActive(in sdfSqueezeResult))
+                };
+                // HOT SCALAR CONTROL KERNEL: one-player KCC truth is consumed this fixed tick.
+                // Direct Execute removes IJob.Run scheduler sync without the fake schedule-then-complete anti-pattern.
+                bodyJob.Execute();
+            }
+            finally
             {
-                Positions = _positions,
-                Velocities = _velocities,
-                IntendedMovement = _intendedMovement,
-                FlowVelocity = _flowVelocity,
-                LastValidPositions = _lastValidPositions,
-                ActiveMaelstroms = activeMaelstroms,
-                VoxelSdfTexture3D = sdfTexture3D,
-                Telemetry = _telemetry,
-                TelemetryWriteIndex = _telemetryWriteIndex,
-                FaultFlags = _faultFlags,
-                ActiveMaelstromCount = activeMaelstromCount,
-                VoxelSdfDimensions = sdfDimensions,
-                DeltaTime = fixedDeltaTime,
-                DragCoefficient = SanitizeNonNegative(dragCoefficient),
-                WaterDensity = ResolveRuntimeWaterDensityScale(),
-                EquipmentDragMultiplier = ResolveEquipmentDragMultiplier(),
-                MaelstromVelocityClamp = MaelstromVelocityClamp,
-                LadderSnapRadiusSq = LadderSnapRadius * LadderSnapRadius,
-                LadderPoint = ladderPoint,
-                VoxelSdfOrigin = sdfOrigin,
-                VoxelSdfCellSize = sdfCellSize,
-                TargetAup = bodyPosition,
-                SolidDensity = solidDensity,
-                VoxelSdfRange = sdfRange,
-                SdfSampleStepMeters = ResolveSdfSampleStepMeters(sdfCellSize),
-                LowMaelstromTier = IsReducedSdfSampleMode(sdfSampleMode) ? (byte)1 : (byte)0,
-                SdfSampleMode = sdfSampleMode,
-                SdfGradientProbeRequested = sdfGradientProbeRequested,
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                RuntimeFlags = ResolveBodyFlags(ladderActive, inSolid) |
-                               math.select(0u, BodyFlagMaelstromActive, activeMaelstromCount > 0) |
-                              math.select(0u, BodyFlagSdfSqueezeIntervention, SdfSqueezeResult.IsResultActive(in sdfSqueezeResult))
-            };
-            // HOT SCALAR CONTROL KERNEL: one-player KCC truth is consumed this fixed tick.
-            // Direct Execute removes IJob.Run scheduler sync without the fake schedule-then-complete anti-pattern.
-            bodyJob.Execute();
+                ReleasePublishedSdfPayloadLease(sdfLeaseVolume, ref sdfReadLease, ref sdfReadLeaseLocked);
+            }
             if (rawBodyStateInvalid)
                 AddFaultFlag(FaultNaN);
 
@@ -1962,7 +1975,10 @@ namespace Hecton8.Gameplay
             out float3 volumeOrigin,
             out float3 voxelCellSize,
             out float sdfRange,
-            out byte sampleMode)
+            out byte sampleMode,
+            out HectonVoxelVolume leaseVolume,
+            out HectonVoxelVolume.PublishedSonarSdfReadLease lease,
+            out bool leaseLocked)
         {
             sdfTexture3D = default;
             gridDimensions = default;
@@ -1970,61 +1986,82 @@ namespace Hecton8.Gameplay
             voxelCellSize = float3.zero;
             sdfRange = 0.0f;
             sampleMode = ResolveSdfSampleMode(ReadCachedGlobalQualityWeight01(), Hecton8.Core.SystemDispatcher.CurrentFrameId);
+            leaseVolume = null;
+            lease = default;
+            leaseLocked = false;
 
             if (_voxelEngine == null)
                 return;
 
             if (!_voxelEngine.TryGetNearestActiveVolume(targetRuntimePosition, out HectonVoxelVolume volume) ||
                 volume == null ||
-                !volume.TryGetPublishedSonarSdfPayload(
+                !volume.TryAcquirePublishedSonarSdfPayloadReadLease(
                     out NativeArray<byte>.ReadOnly publishedSdf,
                     out Vector3Int publishedDimensions,
                     out Vector3 publishedOrigin,
                     out Vector3 publishedCellSize,
                     out float publishedRange,
-                    out int _))
+                    out int _,
+                    out HectonVoxelVolume.PublishedSonarSdfReadLease publishedLease))
             {
                 return;
             }
 
-            int3 resolvedDimensions = new int3(publishedDimensions.x, publishedDimensions.y, publishedDimensions.z);
-            if (!PlayerKinematicsBodyJob.TryResolveSdfVoxelCount(resolvedDimensions, out int expectedLength) ||
-                publishedSdf.Length < expectedLength)
+            bool accepted = false;
+            try
             {
+                int3 resolvedDimensions = new int3(publishedDimensions.x, publishedDimensions.y, publishedDimensions.z);
+                if (!PlayerKinematicsBodyJob.TryResolveSdfVoxelCount(resolvedDimensions, out int expectedLength) ||
+                    publishedSdf.Length < expectedLength)
+                {
+                    return;
+                }
+
+                NativeArray<byte>.ReadOnly resolvedSdf = publishedSdf;
+
+                sdfTexture3D = resolvedSdf;
+                gridDimensions = resolvedDimensions;
+                float3 safeOrigin = ToFloat3(publishedOrigin);
+                float3 safeCellSize = ToFloat3(publishedCellSize);
+                float safeRange = SanitizeNonNegative(publishedRange);
+                if (!math.all(math.isfinite(safeOrigin)) ||
+                    !math.all(math.isfinite(safeCellSize)) ||
+                    math.any(math.abs(safeCellSize) <= new float3(0.0001f)) ||
+                    safeRange <= 0.0001f)
+                {
+                    sdfTexture3D = default;
+                    gridDimensions = default;
+                    return;
+                }
+
+                volumeOrigin = safeOrigin;
+                voxelCellSize = safeCellSize;
+                sdfRange = safeRange;
+                leaseVolume = volume;
+                lease = publishedLease;
+                leaseLocked = true;
+                accepted = true;
+            }
+            finally
+            {
+                if (!accepted)
+                    volume.ReleasePublishedSonarSdfPayloadReadLease(in publishedLease);
+            }
+        }
+
+        private static void ReleasePublishedSdfPayloadLease(
+            HectonVoxelVolume leaseVolume,
+            ref HectonVoxelVolume.PublishedSonarSdfReadLease lease,
+            ref bool leaseLocked)
+        {
+            if (!leaseLocked)
                 return;
-            }
 
-            NativeArray<byte>.ReadOnly resolvedSdf = publishedSdf;
-            var dataVault = _dataVault;
-            if (dataVault != null &&
-                TryReadExistingVaultView(
-                    dataVault,
-                    BufferID.VoxelSdfTexture3D,
-                    SystemID.WorldStreaming,
-                    expectedLength,
-                    out NativeArray<byte> vaultSdf))
-            {
-                resolvedSdf = vaultSdf.AsReadOnly();
-            }
+            if (leaseVolume != null)
+                leaseVolume.ReleasePublishedSonarSdfPayloadReadLease(in lease);
 
-            sdfTexture3D = resolvedSdf;
-            gridDimensions = resolvedDimensions;
-            float3 safeOrigin = ToFloat3(publishedOrigin);
-            float3 safeCellSize = ToFloat3(publishedCellSize);
-            float safeRange = SanitizeNonNegative(publishedRange);
-            if (!math.all(math.isfinite(safeOrigin)) ||
-                !math.all(math.isfinite(safeCellSize)) ||
-                math.any(math.abs(safeCellSize) <= new float3(0.0001f)) ||
-                safeRange <= 0.0001f)
-            {
-                sdfTexture3D = default;
-                gridDimensions = default;
-                return;
-            }
-
-            volumeOrigin = safeOrigin;
-            voxelCellSize = safeCellSize;
-            sdfRange = safeRange;
+            lease = default;
+            leaseLocked = false;
         }
 
         private bool TryApplySdfSqueeze(
@@ -2403,43 +2440,55 @@ namespace Hecton8.Gameplay
         private static bool IsInsidePublishedVoxelSdfBounds(HectonVoxelVolume volume, Vector3 runtimePosition)
         {
             if (volume == null ||
-                !volume.TryGetPublishedSonarSdfPayload(
+                !volume.TryAcquirePublishedSonarSdfPayloadReadLease(
                     out NativeArray<byte>.ReadOnly _,
                     out Vector3Int gridDimensions,
                     out Vector3 volumeOrigin,
                     out Vector3 voxelCellSize,
                     out float _,
-                    out int _) ||
-                gridDimensions.x <= 1 ||
-                gridDimensions.y <= 1 ||
-                gridDimensions.z <= 1)
+                    out int _,
+                    out HectonVoxelVolume.PublishedSonarSdfReadLease lease))
             {
                 return false;
             }
 
-            float3 sample = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
-            float3 origin = new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z);
-            float3 cellSize = new float3(
-                math.max(0.0001f, math.abs(voxelCellSize.x)),
-                math.max(0.0001f, math.abs(voxelCellSize.y)),
-                math.max(0.0001f, math.abs(voxelCellSize.z)));
-
-            if (!math.all(math.isfinite(sample)) ||
-                !math.all(math.isfinite(origin)) ||
-                !math.all(math.isfinite(cellSize)))
+            try
             {
-                return false;
+                if (gridDimensions.x <= 1 ||
+                    gridDimensions.y <= 1 ||
+                    gridDimensions.z <= 1)
+                {
+                    return false;
+                }
+
+                float3 sample = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                float3 origin = new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z);
+                float3 cellSize = new float3(
+                    math.max(0.0001f, math.abs(voxelCellSize.x)),
+                    math.max(0.0001f, math.abs(voxelCellSize.y)),
+                    math.max(0.0001f, math.abs(voxelCellSize.z)));
+
+                if (!math.all(math.isfinite(sample)) ||
+                    !math.all(math.isfinite(origin)) ||
+                    !math.all(math.isfinite(cellSize)))
+                {
+                    return false;
+                }
+
+                float3 min = origin - cellSize * 0.5f;
+                float3 max = origin + cellSize * new float3(
+                    gridDimensions.x - 0.5f,
+                    gridDimensions.y - 0.5f,
+                    gridDimensions.z - 0.5f);
+
+                return sample.x >= min.x && sample.x <= max.x &&
+                       sample.y >= min.y && sample.y <= max.y &&
+                       sample.z >= min.z && sample.z <= max.z;
             }
-
-            float3 min = origin - cellSize * 0.5f;
-            float3 max = origin + cellSize * new float3(
-                gridDimensions.x - 0.5f,
-                gridDimensions.y - 0.5f,
-                gridDimensions.z - 0.5f);
-
-            return sample.x >= min.x && sample.x <= max.x &&
-                   sample.y >= min.y && sample.y <= max.y &&
-                   sample.z >= min.z && sample.z <= max.z;
+            finally
+            {
+                volume.ReleasePublishedSonarSdfPayloadReadLease(in lease);
+            }
         }
 
         private void SnapshotLadder(out byte ladderActive, out float3 ladderPoint)

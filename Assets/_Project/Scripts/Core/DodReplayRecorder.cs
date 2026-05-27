@@ -378,20 +378,21 @@ namespace Hecton8.Core
 
         // COLD ALLOC: object[1] - writer monitor gate - owner: DodReplayRecorder
         private readonly object _writerGate = new object();
-        private NativeArray<NativeAllocationSnapshotSource> _sources;
-        private NativeArray<byte> _snapshotScratch;
-        private NativeArray<ReplaySourceHash> _sourceHashes;
-        private NativeArray<DodReplayInputEvent> _inputJournal;
-        private NativeArray<DodReplayJobProfileRecord> _jobProfiles;
-        private NativeArray<DodReplayBurstPanicRecord> _panicRecords;
-        private NativeArray<byte> _panicPayloadBytes;
-        private NativeArray<DodReplayAupDriftRecord> _aupDriftRecords;
-        private NativeArray<AupDriftState> _aupDriftStates;
-        private NativeArray<DodReplayEntityGhostRecord> _ghostRecords;
-        private NativeArray<DodReplayLogisticFlowRecord> _logisticFlowRecords;
-        private NativeArray<DodReplayAtmosphereCellRecord> _atmosphereRecords;
-        private NativeArray<DodReplayVramAllocationRecord> _vramRecords;
-        private NativeArray<DodReplayPhysicsSmokeRecord> _physicsSmokeRecords;
+        private DodReplayNativeBufferSet _nativeBuffers = new DodReplayNativeBufferSet();
+        private ref NativeArray<NativeAllocationSnapshotSource> _sources => ref _nativeBuffers.Sources;
+        private ref NativeArray<byte> _snapshotScratch => ref _nativeBuffers.SnapshotScratch;
+        private ref NativeArray<ReplaySourceHash> _sourceHashes => ref _nativeBuffers.SourceHashes;
+        private ref NativeArray<DodReplayInputEvent> _inputJournal => ref _nativeBuffers.InputJournal;
+        private ref NativeArray<DodReplayJobProfileRecord> _jobProfiles => ref _nativeBuffers.JobProfiles;
+        private ref NativeArray<DodReplayBurstPanicRecord> _panicRecords => ref _nativeBuffers.PanicRecords;
+        private ref NativeArray<byte> _panicPayloadBytes => ref _nativeBuffers.PanicPayloadBytes;
+        private ref NativeArray<DodReplayAupDriftRecord> _aupDriftRecords => ref _nativeBuffers.AupDriftRecords;
+        private ref NativeArray<AupDriftState> _aupDriftStates => ref _nativeBuffers.AupDriftStates;
+        private ref NativeArray<DodReplayEntityGhostRecord> _ghostRecords => ref _nativeBuffers.GhostRecords;
+        private ref NativeArray<DodReplayLogisticFlowRecord> _logisticFlowRecords => ref _nativeBuffers.LogisticFlowRecords;
+        private ref NativeArray<DodReplayAtmosphereCellRecord> _atmosphereRecords => ref _nativeBuffers.AtmosphereRecords;
+        private ref NativeArray<DodReplayVramAllocationRecord> _vramRecords => ref _nativeBuffers.VramRecords;
+        private ref NativeArray<DodReplayPhysicsSmokeRecord> _physicsSmokeRecords => ref _nativeBuffers.PhysicsSmokeRecords;
         private FileStream _replayStream;
         // COLD ALLOC: byte[65536] - portable replay file write staging - owner: DodReplayRecorder
         private readonly byte[] _replayFileWriteScratch = new byte[ReplayFileWriteScratchBytes];
@@ -1840,6 +1841,24 @@ namespace Hecton8.Core
             NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
             array = default;
+        }
+
+        private sealed class DodReplayNativeBufferSet
+        {
+            public NativeArray<NativeAllocationSnapshotSource> Sources;
+            public NativeArray<byte> SnapshotScratch;
+            public NativeArray<ReplaySourceHash> SourceHashes;
+            public NativeArray<DodReplayInputEvent> InputJournal;
+            public NativeArray<DodReplayJobProfileRecord> JobProfiles;
+            public NativeArray<DodReplayBurstPanicRecord> PanicRecords;
+            public NativeArray<byte> PanicPayloadBytes;
+            public NativeArray<DodReplayAupDriftRecord> AupDriftRecords;
+            public NativeArray<AupDriftState> AupDriftStates;
+            public NativeArray<DodReplayEntityGhostRecord> GhostRecords;
+            public NativeArray<DodReplayLogisticFlowRecord> LogisticFlowRecords;
+            public NativeArray<DodReplayAtmosphereCellRecord> AtmosphereRecords;
+            public NativeArray<DodReplayVramAllocationRecord> VramRecords;
+            public NativeArray<DodReplayPhysicsSmokeRecord> PhysicsSmokeRecords;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 24)]

@@ -10,8 +10,14 @@ namespace Hecton8.Tools.DataMonolithBakeCli
 {
     internal static class DataMonolithSourceInventoryProbe
     {
+        private const string AgentId = "X_002";
+        private const string AgentId1330 = "1330";
         private const string ReportRelativePath = "Docs/Reports/DATA_MONOLITH_SOURCE_INVENTORY_X_002.json";
+        private const string ReportRelativePath1330 = "Docs/Reports/DATA_MONOLITH_SOURCE_INVENTORY_1330.json";
         private const string BlobRelativePath = "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin";
+        private const int FileProbeOk = 0;
+        private const int FileProbeMissing = 1;
+        private const int FileProbeReadFailed = 2;
 
         public static bool Run(string projectRoot)
         {
@@ -26,7 +32,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             var report = new SourceInventoryReport
             {
                 Schema = "HECTON8_DATA_MONOLITH_SOURCE_INVENTORY_V5",
-                Agent = "X_002",
+                Agent = AgentId,
                 GeneratedUtc = DateTime.UtcNow.ToString("O"),
                 ActiveBlob = blob,
                 Totals = totals,
@@ -36,12 +42,16 @@ namespace Hecton8.Tools.DataMonolithBakeCli
 
             string reportPath = Path.Combine(projectRoot, ReportRelativePath);
             Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
+            string reportPath1330 = Path.Combine(projectRoot, ReportRelativePath1330);
+            Directory.CreateDirectory(Path.GetDirectoryName(reportPath1330)!);
             var options = new JsonSerializerOptions
             {
                 WriteIndented = true,
                 IncludeFields = false
             };
             File.WriteAllText(reportPath, JsonSerializer.Serialize(report, options));
+            report.Agent = AgentId1330;
+            File.WriteAllText(reportPath1330, JsonSerializer.Serialize(report, options));
             return blob.Exists && blob.HeaderValid && blob.DirectoryValid && blob.SectionTableValid;
         }
 
@@ -54,28 +64,45 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             };
 
             if (!blob.Exists)
+            {
+                blob.ReadFailureCode = FileProbeMissing;
+                return blob;
+            }
+
+            if (!TryGetFileLength(blobPath, out long blobLength, out int readFailureCode))
+            {
+                blob.ReadFailureCode = readFailureCode;
+                return blob;
+            }
+
+            blob.Readable = true;
+            blob.ReadFailureCode = FileProbeOk;
+            blob.Bytes = blobLength;
+            if (blobLength < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
                 return blob;
 
-            byte[] bytes = File.ReadAllBytes(blobPath);
-            blob.Bytes = bytes.LongLength;
-            if (bytes.Length < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
+            byte[] headerBuffer = new byte[H8DataLayoutConstants.HeaderSizeBytes];
+            if (!TryReadExact(blobPath, 0L, headerBuffer, out readFailureCode))
+            {
+                blob.ReadFailureCode = readFailureCode;
                 return blob;
+            }
 
-            ReadOnlySpan<byte> data = bytes;
-            uint magic = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(0, 4));
-            ushort format = BinaryPrimitives.ReadUInt16LittleEndian(data.Slice(4, 2));
-            ushort headerBytes = BinaryPrimitives.ReadUInt16LittleEndian(data.Slice(6, 2));
-            ulong checksum = BinaryPrimitives.ReadUInt64LittleEndian(data.Slice(8, 8));
-            uint blobBytes = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(16, 4));
-            uint directoryOffset = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(20, 4));
-            uint directoryBytes = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(24, 4));
-            uint sectionTableOffset = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(28, 4));
-            uint sectionCount = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(32, 4));
-            uint flags = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(36, 4));
-            uint schemaHash = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(48, 4));
-            uint reserved0 = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(52, 4));
-            uint reserved1 = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(56, 4));
-            uint reserved2 = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(60, 4));
+            ReadOnlySpan<byte> header = headerBuffer;
+            uint magic = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(0, 4));
+            ushort format = BinaryPrimitives.ReadUInt16LittleEndian(header.Slice(4, 2));
+            ushort headerBytes = BinaryPrimitives.ReadUInt16LittleEndian(header.Slice(6, 2));
+            ulong checksum = BinaryPrimitives.ReadUInt64LittleEndian(header.Slice(8, 8));
+            uint blobBytes = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(16, 4));
+            uint directoryOffset = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(20, 4));
+            uint directoryBytes = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(24, 4));
+            uint sectionTableOffset = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(28, 4));
+            uint sectionCount = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(32, 4));
+            uint flags = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(36, 4));
+            uint schemaHash = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(48, 4));
+            uint reserved0 = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(52, 4));
+            uint reserved1 = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(56, 4));
+            uint reserved2 = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(60, 4));
 
             blob.Header = new HeaderInventory
             {
@@ -100,7 +127,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 magic == H8DataLayoutConstants.BlobMagic &&
                 format == H8DataLayoutConstants.FormatVersion &&
                 headerBytes == H8DataLayoutConstants.HeaderSizeBytes &&
-                blobBytes == bytes.Length &&
+                blobBytes == blobLength &&
                 directoryOffset == H8DataLayoutConstants.HeaderSizeBytes &&
                 directoryBytes == H8DataLayoutConstants.DirectorySizeBytes &&
                 sectionTableOffset == H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes &&
@@ -110,10 +137,17 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 reserved1 == 0u &&
                 reserved2 == 0u;
 
-            if (directoryOffset + H8DataLayoutConstants.DirectorySizeBytes > bytes.Length)
+            if ((ulong)directoryOffset + H8DataLayoutConstants.DirectorySizeBytes > (ulong)blobLength)
                 return blob;
 
-            ReadOnlySpan<byte> directory = data.Slice((int)directoryOffset, H8DataLayoutConstants.DirectorySizeBytes);
+            byte[] directoryBuffer = new byte[H8DataLayoutConstants.DirectorySizeBytes];
+            if (!TryReadExact(blobPath, directoryOffset, directoryBuffer, out readFailureCode))
+            {
+                blob.ReadFailureCode = readFailureCode;
+                return blob;
+            }
+
+            ReadOnlySpan<byte> directory = directoryBuffer;
             uint directoryMagic = BinaryPrimitives.ReadUInt32LittleEndian(directory.Slice(0, 4));
             ushort directoryFormat = BinaryPrimitives.ReadUInt16LittleEndian(directory.Slice(4, 2));
             ushort directorySectionCount = BinaryPrimitives.ReadUInt16LittleEndian(directory.Slice(6, 2));
@@ -155,7 +189,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 directorySectionCount == sectionCount &&
                 directorySectionTableOffset == sectionTableOffset &&
                 directorySectionTableBytes == sectionCount * 16u &&
-                directoryBlobBytes == bytes.Length &&
+                directoryBlobBytes == blobLength &&
                 dataStart >= sectionTableOffset + directorySectionTableBytes &&
                 dataStart % H8DataLayoutConstants.SectionAlignmentBytes == 0u &&
                 directoryFlags == flags &&
@@ -166,19 +200,27 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 directoryReserved4 == 0u;
 
             ulong tableEnd = (ulong)sectionTableOffset + ((ulong)sectionCount * 16UL);
-            if (sectionTableOffset > bytes.Length || tableEnd > (ulong)bytes.Length)
+            if (sectionTableOffset > blobLength || tableEnd > (ulong)blobLength || sectionCount > 4096u)
                 return blob;
 
+            byte[] sectionTableBuffer = new byte[(int)sectionCount * 16];
+            if (sectionTableBuffer.Length > 0 && !TryReadExact(blobPath, sectionTableOffset, sectionTableBuffer, out readFailureCode))
+            {
+                blob.ReadFailureCode = readFailureCode;
+                return blob;
+            }
+
+            ReadOnlySpan<byte> sectionTable = sectionTableBuffer;
             uint expectedCursor = AlignUp(dataStart, H8DataLayoutConstants.SectionAlignmentBytes);
             bool sectionTableValid = true;
             var sections = new List<SectionInventory>((int)Math.Min(sectionCount, 256u));
             for (uint i = 0; i < sectionCount; i++)
             {
-                int entryOffset = (int)sectionTableOffset + ((int)i * 16);
-                uint sectionId = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(entryOffset, 4));
-                uint recordSize = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(entryOffset + 4, 4));
-                uint count = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(entryOffset + 8, 4));
-                uint offset = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(entryOffset + 12, 4));
+                int entryOffset = (int)i * 16;
+                uint sectionId = BinaryPrimitives.ReadUInt32LittleEndian(sectionTable.Slice(entryOffset, 4));
+                uint recordSize = BinaryPrimitives.ReadUInt32LittleEndian(sectionTable.Slice(entryOffset + 4, 4));
+                uint count = BinaryPrimitives.ReadUInt32LittleEndian(sectionTable.Slice(entryOffset + 8, 4));
+                uint offset = BinaryPrimitives.ReadUInt32LittleEndian(sectionTable.Slice(entryOffset + 12, 4));
                 ulong payloadBytes = (ulong)recordSize * count;
                 ulong end = (ulong)offset + payloadBytes;
                 bool emptySection = payloadBytes == 0UL;
@@ -187,7 +229,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                     sectionId == (uint)H8DataSectionId.LocalizationUtf8 ||
                     recordSize == 0u ||
                     recordSize % H8DataLayoutConstants.RecordAlignmentBytes == 0u;
-                bool rangeValid = end <= (ulong)bytes.Length;
+                bool rangeValid = end <= (ulong)blobLength;
                 bool canonical = emptySection ? offset == 0u : offset == expectedCursor;
 
                 if (!aligned64 || !recordAligned16 || !rangeValid || !canonical)
@@ -236,10 +278,12 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 CsvReferenceSummary references = FindCodeReferences(scriptFiles, fileName, projectRoot);
                 string classification = ClassifyCsv(relativePath, references);
                 string authority = ResolveAuthority(classification);
+                long bytes = GetFileLengthOrZero(csvPath, out int fileReadFailureCode);
                 entries.Add(new CsvEntry
                 {
                     Path = relativePath,
-                    Bytes = new FileInfo(csvPath).Length,
+                    Bytes = bytes,
+                    FileReadFailureCode = fileReadFailureCode,
                     Classification = classification,
                     Authority = authority,
                     CodeReferenceCount = references.AllReferenceCount,
@@ -575,6 +619,108 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                    relativePath.StartsWith(".codexbuild/", StringComparison.OrdinalIgnoreCase);
         }
 
+        private static bool TryGetFileLength(string path, out long length, out int failureCode)
+        {
+            length = 0L;
+            failureCode = FileProbeOk;
+            try
+            {
+                length = new FileInfo(path).Length;
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                failureCode = FileProbeReadFailed;
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                failureCode = FileProbeReadFailed;
+                return false;
+            }
+            catch (PathTooLongException)
+            {
+                failureCode = FileProbeReadFailed;
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                failureCode = FileProbeReadFailed;
+                return false;
+            }
+            catch (IOException)
+            {
+                failureCode = FileProbeReadFailed;
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                failureCode = FileProbeReadFailed;
+                return false;
+            }
+        }
+
+        private static long GetFileLengthOrZero(string path, out int failureCode)
+        {
+            return TryGetFileLength(path, out long length, out failureCode) ? length : 0L;
+        }
+
+        private static bool TryReadExact(string path, long offset, byte[] buffer, out int failureCode)
+        {
+            failureCode = FileProbeOk;
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                if (offset != 0L)
+                    stream.Seek(offset, SeekOrigin.Begin);
+
+                int total = 0;
+                while (total < buffer.Length)
+                {
+                    int read = stream.Read(buffer, total, buffer.Length - total);
+                    if (read <= 0)
+                    {
+                        failureCode = FileProbeReadFailed;
+                        return false;
+                    }
+
+                    total += read;
+                }
+
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                failureCode = FileProbeReadFailed;
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                failureCode = FileProbeReadFailed;
+                return false;
+            }
+            catch (PathTooLongException)
+            {
+                failureCode = FileProbeReadFailed;
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                failureCode = FileProbeReadFailed;
+                return false;
+            }
+            catch (IOException)
+            {
+                failureCode = FileProbeReadFailed;
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                failureCode = FileProbeReadFailed;
+                return false;
+            }
+        }
+
         private static uint AlignUp(uint value, int alignment)
         {
             uint mask = (uint)(alignment - 1);
@@ -611,6 +757,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
         {
             public string Path { get; set; } = string.Empty;
             public long Bytes { get; set; }
+            public int FileReadFailureCode { get; set; }
             public string Classification { get; set; } = string.Empty;
             public string Authority { get; set; } = string.Empty;
             public int CodeReferenceCount { get; set; }
@@ -637,6 +784,8 @@ namespace Hecton8.Tools.DataMonolithBakeCli
         {
             public string Path { get; set; } = BlobRelativePath;
             public bool Exists { get; set; }
+            public bool Readable { get; set; }
+            public int ReadFailureCode { get; set; }
             public long Bytes { get; set; }
             public bool HeaderValid { get; set; }
             public bool DirectoryValid { get; set; }

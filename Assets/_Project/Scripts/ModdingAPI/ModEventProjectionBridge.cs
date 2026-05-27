@@ -102,6 +102,15 @@ namespace Hecton8.Modding
             if (handler == null)
                 throw new IllegalContractException("Cannot subscribe a null projected mod event handler.");
 
+            if (!ModExecutionScope.HasActiveMod)
+                throw new IllegalContractException("ModEventProjectionBridge.SubscribeProjected requires an active mod execution scope.");
+
+            if (!string.IsNullOrWhiteSpace(subscriberId) &&
+                !string.Equals(subscriberId, ModExecutionScope.CurrentModId, StringComparison.Ordinal))
+            {
+                throw new IllegalContractException("ModEventProjectionBridge.SubscribeProjected subscriber id must match the active mod execution scope.");
+            }
+
             ModEventProjectionBridge bridge = GlobalRegistry.ModdingBridge as ModEventProjectionBridge;
             if (bridge == null)
             {
@@ -316,7 +325,7 @@ namespace Hecton8.Modding
                 ? ModExecutionScope.CurrentModId
                 : subscriberId;
             if (string.IsNullOrWhiteSpace(resolvedSubscriberId))
-                resolvedSubscriberId = "anonymous";
+                throw new IllegalContractException("Projected mod event subscriptions require a concrete mod subscriber id.");
 
             SubscriptionEntry entry = new SubscriptionEntry
             {
@@ -331,7 +340,7 @@ namespace Hecton8.Modding
 
             _subscriptions.Add(entry);
             _activeSubscriptionCount++;
-            return new HectonEventSubscription(this, entry.Id, entry.SubscriberId);
+            return new HectonEventSubscription(this, entry.Id, entry.SubscriberId, ModExecutionScope.HasActiveMod);
         }
 
         public void Unsubscribe(int subscriptionId)
@@ -450,7 +459,7 @@ namespace Hecton8.Modding
         private static int ResolveProjectionCap()
         {
             float qualityWeight01 = ResolveProjectionQualityWeight01();
-            float curve = qualityWeight01 * qualityWeight01 * (3f - (2f * qualityWeight01));
+            float curve = Smooth01(qualityWeight01);
             int cap = (int)math.round(math.lerp(LowTierProjectionCap, HighTierProjectionCap, curve));
             return math.clamp(cap, LowTierProjectionCap, HighTierProjectionCap);
         }

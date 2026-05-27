@@ -26,7 +26,7 @@ MonoBehaviour:
   rareRewardHook: 'Rare pull is modest: Iron Composite and Copper Wire.'
   landmarkIdentity: The Slab Wall reads through walls, fins, fissures, and giant
     vertical breaks. Landmarks should feel bright and readable.
-  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+  safePocketIdentity: Reorientation pockets are frequent. The player should often see a clear
     reset point nearby.
   riskSummary: 'Main failure mode: vertical trap geometry and hard commitment. Creature
     pressure stays medium.'

@@ -15,17 +15,17 @@ MonoBehaviour:
   profileId: biome.spatial_pattern.littoral_karst
   profileLabel: Littoral Karst Spatial Pattern
   resourcePocketPattern: Loose scrap and easy basics sit around the feet of arches,
-    stacks, and bright shelf lips.
+    stacks, and readable shelf lips.
   nodeClusterPattern: Small mineral nodes hide in short wall cuts and at the base
     of obvious limestone breaks.
-  safePocketPattern: Safe pockets appear often on the lee side of stacks and inside
-    shallow arch shadows.
+  safePocketPattern: Reorientation pockets appear often on the lee side of stacks
+    and inside shallow arch shadows.
   routeAnchorPattern: Routes chain from one big karst silhouette to the next without
     needing UI help.
-  rareObjectivePattern: Rare value sits one ring deeper than the comfortable starter
-    loop, still visible from a safe landmark.
+  rareObjectivePattern: Rare value sits one ring deeper than the readable starter
+    loop, still visible from a stable landmark.
   explorationLoop: Spot stack, clear pocket, grab one node, peek deeper, then return
     by the same silhouette chain.
   spatialRead: Very readable at all distances. Good first biome language.
-  playerMemoryHook: Remember the place by one arch, one stack, and the bright open
-    water between them.
+  playerMemoryHook: Remember the place by one arch, one stack, and the open water
+    pressure between them.

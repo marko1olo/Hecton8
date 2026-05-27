@@ -121,7 +121,7 @@ namespace Hecton8.Interaction
         [FieldOffset(120)] private ulong _pad2;
     }
 
-    public struct VRInteractionKinematicBridgeViews
+    public ref struct VRInteractionKinematicBridgeViews
     {
         public NativeArray<VRHandStateDTO> HandStates;
         public NativeArray<VRHandStateDTO> PreviousHandStates;

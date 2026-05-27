@@ -26,7 +26,7 @@ MonoBehaviour:
   rareRewardHook: 'Rare pull is modest: Electrolyte Salts and Sealant Pack.'
   landmarkIdentity: Pothole Fields reads through bowls, pools, domes, and hotspot
     basins. Landmarks should feel bright and readable.
-  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+  safePocketIdentity: Reorientation pockets are frequent. The player should often see a clear
     reset point nearby.
   riskSummary: 'Main failure mode: localized danger pockets and hostile basins. Creature
     pressure stays low_to_medium.'

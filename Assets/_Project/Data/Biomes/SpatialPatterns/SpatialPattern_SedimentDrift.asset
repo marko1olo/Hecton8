@@ -18,7 +18,7 @@ MonoBehaviour:
     sides of dunes.
   nodeClusterPattern: Nodes are sparse and low, usually found where soft terrain
     breaks against something harder.
-  safePocketPattern: Safe pockets are soft depressions and reverse slopes that briefly
+  safePocketPattern: Reorientation pockets are soft depressions and reverse slopes that briefly
     hide the player from open sightlines.
   routeAnchorPattern: Routes are taught by basin rims and flow direction more than
     by big unique objects.

@@ -20,6 +20,7 @@
 // ============================================================================
 
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
@@ -1567,6 +1568,7 @@ namespace Hecton8.Visor
         private const uint AupDiscoveryDiscoveredBit = 1u;
         private const int ActiveSonarGeoPingCapacity = 4;
         private const int ActiveSonarGeoTelemetryCapacity = 300;
+        private const int ActiveSonarGeoTelemetryEntrySizeBytes = 32;
         private const SystemID SpectrumVaultOwner = SystemID.UI;
         private const float ActiveSonarGeoSpeedMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         private const float ActiveSonarGeoMaxRangeMeters = 400f;
@@ -1698,7 +1700,15 @@ namespace Hecton8.Visor
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        public static SpectrumSystem Instance => GlobalRegistry.Spectrum;
+        private static SpectrumSystem s_activeRuntimeInstance;
+
+        public static SpectrumSystem Instance => s_activeRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRuntimeOwnerState()
+        {
+            s_activeRuntimeInstance = null;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -1857,8 +1867,7 @@ namespace Hecton8.Visor
 
         public bool TryGetAupDiscoveryGrid(out NativeArray<uint>.ReadOnly discoveryGrid, out int width, out int height, out float cellSizeMeters)
         {
-            bool resolved = TryResolveAupDiscoveryGrid(out NativeArray<uint> mutableDiscoveryGrid);
-            discoveryGrid = resolved ? mutableDiscoveryGrid.AsReadOnly() : default;
+            bool resolved = TryReadAupDiscoveryGrid(out discoveryGrid);
             width = _aupDiscoveryGridWidthRuntime;
             height = _aupDiscoveryGridHeightRuntime;
             cellSizeMeters = _aupDiscoveryCellSizeRuntime;
@@ -1871,7 +1880,7 @@ namespace Hecton8.Visor
 
         private void Awake()
         {
-            SpectrumSystem activeRuntime = GlobalRegistry.Spectrum;
+            SpectrumSystem activeRuntime = s_activeRuntimeInstance ?? GlobalRegistry.Spectrum;
             if (activeRuntime != null && activeRuntime != this) { Destroy(gameObject); return; }
             SonarGridOverlay.ApplyGlobals(
                 sonarGridIntensity,
@@ -1948,7 +1957,7 @@ namespace Hecton8.Visor
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            SpectrumSystem activeRuntime = GlobalRegistry.Spectrum;
+            SpectrumSystem activeRuntime = s_activeRuntimeInstance ?? GlobalRegistry.Spectrum;
             if (activeRuntime != null && activeRuntime != this)
             {
                 enabled = false;
@@ -1958,6 +1967,8 @@ namespace Hecton8.Visor
 
             GlobalRegistry.RegisterSpectrumRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Spectrum, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -1966,6 +1977,8 @@ namespace Hecton8.Visor
                 return;
 
             GlobalRegistry.UnregisterSpectrumRuntime(this);
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
             _serviceRegistered = false;
         }
 
@@ -2586,7 +2599,7 @@ namespace Hecton8.Visor
             if (!Application.isPlaying)
                 return;
 
-            if (TryResolveAupDiscoveryGrid(out _))
+            if (TryReadAupDiscoveryGrid(out _))
                 return;
 
             IDataVault vault = CacheDataVaultCold();
@@ -2614,16 +2627,35 @@ namespace Hecton8.Visor
 
         private void MarkAupDiscoveryCell(in AbsoluteUniversePosition aup, float strength01)
         {
-            if (!TryResolveAupDiscoveryGrid(out NativeArray<uint> discoveryGrid) ||
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                _aupDiscoveryGridHandle.BufferID == 0u ||
                 _aupDiscoveryGridWidthRuntime <= 0 ||
-                _aupDiscoveryGridHeightRuntime <= 0)
+                _aupDiscoveryGridHeightRuntime <= 0 ||
+                !vault.TryAcquireWriteLock(in _aupDiscoveryGridHandle, SpectrumVaultOwner, out NativeArray<uint> discoveryGrid))
+            {
                 return;
+            }
 
-            double3 absolute = aup.ToAbsoluteDouble3();
-            double invCellSize = 1.0 / math.max(1.0, (double)_aupDiscoveryCellSizeRuntime);
-            long cellX = (long)math.floor(absolute.x * invCellSize);
-            long cellZ = (long)math.floor(absolute.z * invCellSize);
-            MarkAupDiscoveryCellByCoord(discoveryGrid, cellX, cellZ, strength01);
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !discoveryGrid.IsCreated)
+                {
+                    return;
+                }
+
+                double3 absolute = aup.ToAbsoluteDouble3();
+                double invCellSize = 1.0 / math.max(1.0, (double)_aupDiscoveryCellSizeRuntime);
+                long cellX = (long)math.floor(absolute.x * invCellSize);
+                long cellZ = (long)math.floor(absolute.z * invCellSize);
+                MarkAupDiscoveryCellByCoord(discoveryGrid, cellX, cellZ, strength01);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _aupDiscoveryGridHandle, SpectrumVaultOwner);
+            }
         }
 
         private void MarkAupDiscoveryCellByCoord(NativeArray<uint> discoveryGrid, long cellX, long cellZ, float strength01)
@@ -2644,35 +2676,54 @@ namespace Hecton8.Visor
 
         private void MarkAupDiscoveryPulseShell(in AbsoluteUniversePosition originAup, float radius, float strength01)
         {
-            if (!TryResolveAupDiscoveryGrid(out NativeArray<uint> discoveryGrid) ||
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                _aupDiscoveryGridHandle.BufferID == 0u ||
                 _aupDiscoveryGridWidthRuntime <= 0 ||
-                _aupDiscoveryGridHeightRuntime <= 0)
+                _aupDiscoveryGridHeightRuntime <= 0 ||
+                !vault.TryAcquireWriteLock(in _aupDiscoveryGridHandle, SpectrumVaultOwner, out NativeArray<uint> discoveryGrid))
+            {
                 return;
+            }
 
-            double3 absolute = originAup.ToAbsoluteDouble3();
-            double invCellSize = 1.0 / math.max(1.0, (double)_aupDiscoveryCellSizeRuntime);
-            long originCellX = (long)math.floor(absolute.x * invCellSize);
-            long originCellZ = (long)math.floor(absolute.z * invCellSize);
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !discoveryGrid.IsCreated)
+                {
+                    return;
+                }
 
-            // Discovery is persistent sonar memory, not physics: stamp an octant shell directly in grid space.
-            float shellDistance = math.max(_aupDiscoveryCellSizeRuntime, radius);
-            long shellCellDelta = (long)math.ceil(shellDistance * invCellSize);
-            if (shellCellDelta < 1L)
-                shellCellDelta = 1L;
+                double3 absolute = originAup.ToAbsoluteDouble3();
+                double invCellSize = 1.0 / math.max(1.0, (double)_aupDiscoveryCellSizeRuntime);
+                long originCellX = (long)math.floor(absolute.x * invCellSize);
+                long originCellZ = (long)math.floor(absolute.z * invCellSize);
 
-            long diagonalCellDelta = (long)math.ceil((double)shellCellDelta * 0.7071067811865476d);
-            if (diagonalCellDelta < 1L)
-                diagonalCellDelta = 1L;
+                // Discovery is persistent sonar memory, not physics: stamp an octant shell directly in grid space.
+                float shellDistance = math.max(_aupDiscoveryCellSizeRuntime, radius);
+                long shellCellDelta = (long)math.ceil(shellDistance * invCellSize);
+                if (shellCellDelta < 1L)
+                    shellCellDelta = 1L;
 
-            MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX, originCellZ, strength01);
-            MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX + shellCellDelta, originCellZ, strength01);
-            MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX - shellCellDelta, originCellZ, strength01);
-            MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX, originCellZ + shellCellDelta, strength01);
-            MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX, originCellZ - shellCellDelta, strength01);
-            MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX + diagonalCellDelta, originCellZ + diagonalCellDelta, strength01);
-            MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX - diagonalCellDelta, originCellZ + diagonalCellDelta, strength01);
-            MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX + diagonalCellDelta, originCellZ - diagonalCellDelta, strength01);
-            MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX - diagonalCellDelta, originCellZ - diagonalCellDelta, strength01);
+                long diagonalCellDelta = (long)math.ceil((double)shellCellDelta * 0.7071067811865476d);
+                if (diagonalCellDelta < 1L)
+                    diagonalCellDelta = 1L;
+
+                MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX, originCellZ, strength01);
+                MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX + shellCellDelta, originCellZ, strength01);
+                MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX - shellCellDelta, originCellZ, strength01);
+                MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX, originCellZ + shellCellDelta, strength01);
+                MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX, originCellZ - shellCellDelta, strength01);
+                MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX + diagonalCellDelta, originCellZ + diagonalCellDelta, strength01);
+                MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX - diagonalCellDelta, originCellZ + diagonalCellDelta, strength01);
+                MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX + diagonalCellDelta, originCellZ - diagonalCellDelta, strength01);
+                MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX - diagonalCellDelta, originCellZ - diagonalCellDelta, strength01);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _aupDiscoveryGridHandle, SpectrumVaultOwner);
+            }
         }
 
         private IDataVault CacheDataVaultCold()
@@ -2684,21 +2735,27 @@ namespace Hecton8.Visor
             return _dataVault;
         }
 
-        private bool TryResolveAupDiscoveryGrid(out NativeArray<uint> discoveryGrid)
+        private bool TryReadAupDiscoveryGrid(out NativeArray<uint>.ReadOnly discoveryGrid)
         {
             discoveryGrid = default;
             IDataVault vault = _dataVault;
             return vault != null &&
-                   vault.TryResolveHandle(in _aupDiscoveryGridHandle, out discoveryGrid) &&
+                   !vault.IsCompactionFenceActive &&
+                   _aupDiscoveryGridHandle.BufferID != 0u &&
+                   vault.TryReadOnlyHandle(in _aupDiscoveryGridHandle, out discoveryGrid) &&
+                   !vault.IsCompactionFenceActive &&
                    discoveryGrid.IsCreated;
         }
 
-        private bool TryResolveActiveSonarGeoTelemetryRing(out NativeArray<ActiveSonarGeoTelemetryEntry> telemetryRing)
+        private bool TryReadActiveSonarGeoTelemetryRing(out NativeArray<ActiveSonarGeoTelemetryEntry>.ReadOnly telemetryRing)
         {
             telemetryRing = default;
             IDataVault vault = _dataVault;
             return vault != null &&
-                   vault.TryResolveHandle(in _activeSonarGeoTelemetryRingHandle, out telemetryRing) &&
+                   !vault.IsCompactionFenceActive &&
+                   _activeSonarGeoTelemetryRingHandle.BufferID != 0u &&
+                   vault.TryReadOnlyHandle(in _activeSonarGeoTelemetryRingHandle, out telemetryRing) &&
+                   !vault.IsCompactionFenceActive &&
                    telemetryRing.IsCreated;
         }
 
@@ -2747,7 +2804,13 @@ namespace Hecton8.Visor
             [FieldOffset(24)]
             public uint Flags;
             [FieldOffset(28)]
-            private uint _pad0;
+            private byte _pad0;
+            [FieldOffset(29)]
+            private byte _pad1;
+            [FieldOffset(30)]
+            private byte _pad2;
+            [FieldOffset(31)]
+            private byte _pad3;
         }
 
         private static bool NearlyEqual(float a, float b, float epsilon)
@@ -3241,7 +3304,7 @@ namespace Hecton8.Visor
 
         private void EnsureActiveSonarGeoTelemetryRing()
         {
-            if (!Application.isPlaying || TryResolveActiveSonarGeoTelemetryRing(out _))
+            if (!Application.isPlaying || TryReadActiveSonarGeoTelemetryRing(out _))
                 return;
 
             IDataVault vault = CacheDataVaultCold();
@@ -3265,23 +3328,42 @@ namespace Hecton8.Visor
 
         private void WriteActiveSonarGeoTelemetry()
         {
-            if (!TryResolveActiveSonarGeoTelemetryRing(out NativeArray<ActiveSonarGeoTelemetryEntry> telemetryRing) ||
-                telemetryRing.Length <= 0)
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                _activeSonarGeoTelemetryRingHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _activeSonarGeoTelemetryRingHandle, SpectrumVaultOwner, out NativeArray<ActiveSonarGeoTelemetryEntry> telemetryRing))
+            {
                 return;
+            }
 
-            int index = _activeSonarGeoTelemetryWriteIndex;
-            int capacity = math.min(ActiveSonarGeoTelemetryCapacity, telemetryRing.Length);
-            if ((uint)index >= (uint)capacity)
-                index = 0;
-            _activeSonarGeoTelemetryWriteIndex = (index + 1) % capacity;
-            Vector4 primary = _activeSonarGeoPingCount > 0 ? _activeSonarGeoCentersRadius[0] : Vector4.zero;
-            ActiveSonarGeoTelemetryEntry entry = default;
-            entry.Frame = SystemDispatcher.CurrentFrameId;
-            entry.ActiveRingCount = _activeSonarGeoPingCount;
-            entry.PrimaryRadius = primary.w;
-            entry.PrimaryCenter = MakeFloat3(primary.x, primary.y, primary.z);
-            entry.Flags = ResolveActiveSonarGeoQualityWeight() <= 0.15f ? 1u : 0u;
-            telemetryRing[index] = entry;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !telemetryRing.IsCreated ||
+                    telemetryRing.Length <= 0)
+                {
+                    return;
+                }
+
+                int index = _activeSonarGeoTelemetryWriteIndex;
+                int capacity = math.min(ActiveSonarGeoTelemetryCapacity, telemetryRing.Length);
+                if ((uint)index >= (uint)capacity)
+                    index = 0;
+                _activeSonarGeoTelemetryWriteIndex = (index + 1) % capacity;
+                Vector4 primary = _activeSonarGeoPingCount > 0 ? _activeSonarGeoCentersRadius[0] : Vector4.zero;
+                ActiveSonarGeoTelemetryEntry entry = default;
+                entry.Frame = SystemDispatcher.CurrentFrameId;
+                entry.ActiveRingCount = _activeSonarGeoPingCount;
+                entry.PrimaryRadius = primary.w;
+                entry.PrimaryCenter = MakeFloat3(primary.x, primary.y, primary.z);
+                entry.Flags = ResolveActiveSonarGeoQualityWeight() <= 0.15f ? 1u : 0u;
+                telemetryRing[index] = entry;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _activeSonarGeoTelemetryRingHandle, SpectrumVaultOwner);
+            }
         }
 
         private void HandleActiveSonarGeoNonFinite()
@@ -3296,7 +3378,7 @@ namespace Hecton8.Visor
 
         private void DumpActiveSonarGeoTelemetry()
         {
-            if (!TryResolveActiveSonarGeoTelemetryRing(out NativeArray<ActiveSonarGeoTelemetryEntry> telemetryRing))
+            if (!TryResolveActiveSonarGeoTelemetryCount(out int telemetryCount))
                 return;
 
             try
@@ -3305,26 +3387,103 @@ namespace Hecton8.Visor
                 Directory.CreateDirectory(directory);
                 string path = Path.Combine(directory, "Dump_ACTIVE_SONAR_ILLUMINATION.bin");
                 using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                for (int i = 0; i < telemetryRing.Length; i++)
+                Span<byte> row = stackalloc byte[ActiveSonarGeoTelemetryEntrySizeBytes];
+                for (int i = 0; i < telemetryCount; i++)
                 {
-                    ActiveSonarGeoTelemetryEntry entry = telemetryRing[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.ActiveRingCount);
-                    writer.Write(entry.PrimaryRadius);
-                    writer.Write(entry.PrimaryCenter.x);
-                    writer.Write(entry.PrimaryCenter.y);
-                    writer.Write(entry.PrimaryCenter.z);
-                    writer.Write(entry.Flags);
+                    if (!TryReadActiveSonarGeoTelemetryEntry(i, out ActiveSonarGeoTelemetryEntry entry))
+                        entry = default;
+
+                    WriteActiveSonarGeoTelemetryEntry(row, in entry);
+                    stream.Write(row);
                 }
             }
-            catch (Exception)
+            catch (IOException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(
                     _ActiveSonarGeoDumpFailureHash,
                     _ActiveSonarGeoSystemHash,
                     1f);
             }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _ActiveSonarGeoDumpFailureHash,
+                    _ActiveSonarGeoSystemHash,
+                    1f);
+            }
+            catch (ObjectDisposedException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _ActiveSonarGeoDumpFailureHash,
+                    _ActiveSonarGeoSystemHash,
+                    1f);
+            }
+            catch (InvalidOperationException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _ActiveSonarGeoDumpFailureHash,
+                    _ActiveSonarGeoSystemHash,
+                    1f);
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _ActiveSonarGeoDumpFailureHash,
+                    _ActiveSonarGeoSystemHash,
+                    1f);
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _ActiveSonarGeoDumpFailureHash,
+                    _ActiveSonarGeoSystemHash,
+                    1f);
+            }
+        }
+
+        private bool TryResolveActiveSonarGeoTelemetryCount(out int telemetryCount)
+        {
+            telemetryCount = 0;
+            if (!TryReadActiveSonarGeoTelemetryRing(out NativeArray<ActiveSonarGeoTelemetryEntry>.ReadOnly telemetryRing) ||
+                !telemetryRing.IsCreated)
+            {
+                return false;
+            }
+
+            telemetryCount = telemetryRing.Length;
+            return telemetryCount > 0;
+        }
+
+        private bool TryReadActiveSonarGeoTelemetryEntry(int index, out ActiveSonarGeoTelemetryEntry entry)
+        {
+            entry = default;
+            if (index < 0 ||
+                !TryReadActiveSonarGeoTelemetryRing(out NativeArray<ActiveSonarGeoTelemetryEntry>.ReadOnly telemetryRing) ||
+                !telemetryRing.IsCreated ||
+                index >= telemetryRing.Length)
+            {
+                return false;
+            }
+
+            entry = telemetryRing[index];
+            return true;
+        }
+
+        private static void WriteActiveSonarGeoTelemetryEntry(Span<byte> destination, in ActiveSonarGeoTelemetryEntry entry)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(4, 4), entry.ActiveRingCount);
+            WriteFloatLittleEndian(destination.Slice(8, 4), entry.PrimaryRadius);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.PrimaryCenter.x);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.PrimaryCenter.y);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.PrimaryCenter.z);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(24, 4), entry.Flags);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(28, 4), 0u);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
         private void PublishSonarReveal(

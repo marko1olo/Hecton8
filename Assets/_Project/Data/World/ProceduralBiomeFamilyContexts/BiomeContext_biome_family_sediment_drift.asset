@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralBiomeFamilyContextProfile
   biomeFamily: {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
   label: Sediment Drift Context
-  summary: Resource-friendly sediment water with rock floor, safe pockets and mixed
-    route traces.
+  summary: Resource-friendly sediment water with rock floor, reorientation pockets
+    and mixed route traces.
   groundBudgetScale: 1.06
   clusterBudgetScale: 1.08
   structureBudgetScale: 1.08

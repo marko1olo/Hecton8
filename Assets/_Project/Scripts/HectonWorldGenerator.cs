@@ -465,6 +465,9 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     private const int WorldGenerationAlgorithmVersionId = 1;
     private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.WorldGenerator.Tick");
     private static readonly ProfilerMarker _physicsBakeBatchProfilerMarker = new ProfilerMarker("H8.WorldGenerator.PhysicsBakeBatch");
+    private static HectonWorldGenerator s_activeWorldSeedProvider;
+    private static int s_activeRuntimeWorldSeed;
+    private static bool s_activeRuntimeWorldSeedValid;
     public bool IsInitialized => _registeredWorldSeedProvider;
     public int RuntimeWorldSeed => ComputeRuntimeWorldSeed();
     public int RuntimeWorldGenerationVersionId => WorldGenerationAlgorithmVersionId;
@@ -474,6 +477,21 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     {
         _deferredPhysicsBakeTeardowns.Clear();
         _deferredPhysicsBakeTeardownRegistered = false;
+        s_activeWorldSeedProvider = null;
+        s_activeRuntimeWorldSeed = 0;
+        s_activeRuntimeWorldSeedValid = false;
+    }
+
+    internal static bool TryGetActiveRuntimeWorldSeed(out int runtimeWorldSeed)
+    {
+        if (s_activeRuntimeWorldSeedValid && s_activeWorldSeedProvider != null)
+        {
+            runtimeWorldSeed = s_activeRuntimeWorldSeed;
+            return true;
+        }
+
+        runtimeWorldSeed = 0;
+        return false;
     }
 
     private int ComputeRuntimeWorldSeed()
@@ -849,12 +867,15 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         TryRegisterHotSwapListener();
         GlobalRegistry.RegisterWorldSeedProvider(this);
         _registeredWorldSeedProvider = ReferenceEquals(GlobalRegistry.WorldSeedProvider, this);
+        if (_registeredWorldSeedProvider)
+            PublishActiveRuntimeWorldSeed();
         StartStreaming();
         RegisterToTickManager();
     }
 
     void OnDisable()
     {
+        ClearActiveRuntimeWorldSeed();
         GlobalRegistry.UnregisterWorldSeedProvider(this);
         _registeredWorldSeedProvider = false;
 
@@ -863,6 +884,23 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
         if (Application.isPlaying || _streaming || _pendingChunks.Count > 0 || _lutsReady)
             StopStreaming();
+    }
+
+    private void PublishActiveRuntimeWorldSeed()
+    {
+        s_activeWorldSeedProvider = this;
+        s_activeRuntimeWorldSeed = ComputeRuntimeWorldSeed();
+        s_activeRuntimeWorldSeedValid = true;
+    }
+
+    private void ClearActiveRuntimeWorldSeed()
+    {
+        if (!ReferenceEquals(s_activeWorldSeedProvider, this))
+            return;
+
+        s_activeWorldSeedProvider = null;
+        s_activeRuntimeWorldSeed = 0;
+        s_activeRuntimeWorldSeedValid = false;
     }
 
     public void Tick(float deltaTime)
@@ -3180,6 +3218,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     void OnDestroy()
     {
+        ClearActiveRuntimeWorldSeed();
         GlobalRegistry.UnregisterWorldSeedProvider(this);
         _registeredWorldSeedProvider = false;
         TryUnregisterHotSwapListener();

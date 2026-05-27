@@ -19,5 +19,5 @@ MonoBehaviour:
   midReferenceShape: fan-shaped sediment flows
   farReferenceShape: broad dune silhouette with one strong basin edge
   routeUse: Player should read flow direction and basin rims to keep orientation.
-  safePocketUse: Safe pockets live behind basin lips and inside soft depressions.
+  safePocketUse: Reorientation pockets live behind basin lips and inside soft depressions.
   emotionalRead: Calm, open, and slightly deceptive.

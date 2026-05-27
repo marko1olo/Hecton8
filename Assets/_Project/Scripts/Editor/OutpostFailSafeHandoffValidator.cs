@@ -16,19 +16,18 @@ namespace Hecton8.Editor.Validation
     {
         private const string MenuPath = "Hecton-8/Validate Outpost Fail-Safe Handoff";
         private const string ExpectedSchema = "H8.OUTPOST.FAILSAFE.HANDOFF.V1";
-        private const string ExpectedAgent = "MISSION_FAIL_SAFE_ARCHITECT";
-        private const string ExpectedRole = "SCENARIO_DESIGNER";
+        private const string ExpectedAgent = "OUTPOST_FAILSAFE_STATIC_CONTRACT";
+        private const string ExpectedRole = "DESIGN_MISSIONS";
         private const string ExpectedEvidenceClass = "STATIC_DOC";
-        private const string ExpectedSourceBatch = "Docs/Tasks/CURRENT_BATCH.md";
-        private const string ExpectedRequestedBatch = "CURRENT_BATCH_OSHINO.md";
-        private const string ExpectedSourceAuthorityMatched = "ACTIVE_BATCH_MATCHED";
-        private const string ExpectedSourceAuthorityDrifted = "ACTIVE_BATCH_DRIFT_DETECTED";
+        private const string ExpectedSourceBatch = "Docs/Design/Missions/Outpost_Failure_Modes.md";
+        private const string ExpectedRequestedBatch = "NONE_STATIC_CONTRACT";
+        private const string ExpectedSourceAuthorityStatus = "STATIC_MISSION_CONTRACT";
         private const string ExpectedRuntimeLocalizationTable = "Assets/_Project/Scripts/English.json";
         private const string ExpectedHashAlgorithm = "FNV-1a 32-bit over UTF-16LE code units";
         private const string ExpectedHashRuntimeMatch = "Hecton.Localization.LocHash.Compute";
         private const string HandoffRelativePath = "Docs/Design/Missions/Outpost_FailSafe_Handoff.json";
         private const string MissionDocRelativePath = "Docs/Design/Missions/Outpost_Failure_Modes.md";
-        private const string StaleActivePromptExtractedPhrase = "The active prompt was extracted from";
+        private const string StaleBatchAuthorityToken = "ACTIVE_BATCH";
         private const string OutpostPrefix = "outpost.";
         private const string GasDynamicsRoomFlagPrefix = "GasDynamicsRoomFlags.";
         private const string LegacyRoomFlagPrefix = "roomflag.";
@@ -175,7 +174,7 @@ namespace Hecton8.Editor.Validation
                 errors.Add("Handoff requestedBatch must be '" + ExpectedRequestedBatch + "'.");
 
             if (root.requestedBatchPresent)
-                errors.Add("Handoff requestedBatchPresent must remain false unless the handoff is regenerated from the requested batch file.");
+                errors.Add("Handoff requestedBatchPresent must remain false for the static mission contract.");
         }
 
         private static void ValidateSourceAuthority(
@@ -212,14 +211,11 @@ namespace Hecton8.Editor.Validation
                 return;
             }
 
-            bool containsPrompt = FileContainsAll(sourceBatchPath, ExpectedAgent, ExpectedRole);
+            if (sourceAuthority.activeBatchContainsPrompt)
+                errors.Add("sourceAuthority.activeBatchContainsPrompt must remain false for the static mission contract.");
 
-            if (sourceAuthority.activeBatchContainsPrompt != containsPrompt)
-                errors.Add("sourceAuthority.activeBatchContainsPrompt does not match current sourceBatch contents.");
-
-            string expectedStatus = containsPrompt ? ExpectedSourceAuthorityMatched : ExpectedSourceAuthorityDrifted;
-            if (!StringEquals(sourceAuthority.status, expectedStatus))
-                errors.Add("sourceAuthority.status must be '" + expectedStatus + "' for the current sourceBatch contents.");
+            if (!StringEquals(sourceAuthority.status, ExpectedSourceAuthorityStatus))
+                errors.Add("sourceAuthority.status must be '" + ExpectedSourceAuthorityStatus + "'.");
         }
 
         private static void ValidateRuntimeAssetDecision(RuntimeAssetDecision runtimeAssetDecision, List<string> errors)
@@ -238,21 +234,6 @@ namespace Hecton8.Editor.Validation
 
             if (IsBlank(runtimeAssetDecision.reason))
                 errors.Add("runtimeAssetDecision.reason is missing.");
-        }
-
-        private static bool FileContainsAll(string path, string firstNeedle, string secondNeedle)
-        {
-            bool hasFirst = false;
-            bool hasSecond = false;
-            foreach (string line in File.ReadLines(path))
-            {
-                hasFirst |= line.IndexOf(firstNeedle, StringComparison.Ordinal) >= 0;
-                hasSecond |= line.IndexOf(secondNeedle, StringComparison.Ordinal) >= 0;
-                if (hasFirst && hasSecond)
-                    return true;
-            }
-
-            return false;
         }
 
         private static void ValidateHashContract(HashContract hashContract, List<string> errors)
@@ -586,16 +567,16 @@ namespace Hecton8.Editor.Validation
             SourceAuthority sourceAuthority,
             List<string> errors)
         {
-            if (missionDocText.IndexOf(StaleActivePromptExtractedPhrase, StringComparison.Ordinal) >= 0)
-                errors.Add(MissionDocRelativePath + " contains stale live-source wording: '" + StaleActivePromptExtractedPhrase + "'.");
+            if (missionDocText.IndexOf(StaleBatchAuthorityToken, StringComparison.Ordinal) >= 0)
+                errors.Add(MissionDocRelativePath + " contains stale batch authority token: '" + StaleBatchAuthorityToken + "'.");
 
             if (sourceAuthority == null)
                 return;
 
-            if (StringEquals(sourceAuthority.status, ExpectedSourceAuthorityDrifted) &&
-                missionDocText.IndexOf(ExpectedSourceAuthorityDrifted, StringComparison.Ordinal) < 0)
+            if (StringEquals(sourceAuthority.status, ExpectedSourceAuthorityStatus) &&
+                missionDocText.IndexOf(ExpectedSourceAuthorityStatus, StringComparison.Ordinal) < 0)
             {
-                errors.Add(MissionDocRelativePath + " must state '" + ExpectedSourceAuthorityDrifted + "' when the JSON sourceAuthority is drifted.");
+                errors.Add(MissionDocRelativePath + " must state '" + ExpectedSourceAuthorityStatus + "'.");
             }
         }
 

@@ -155,7 +155,7 @@ namespace Hecton8.Tools
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private JobHandle _equipmentIntegrationHandle;
 
-        private struct EquipmentVaultViews
+        private ref struct EquipmentVaultViews
         {
             public NativeArray<ToolState> ToolStates;
             public NativeArray<ToolRuntimeStats> ToolStats;

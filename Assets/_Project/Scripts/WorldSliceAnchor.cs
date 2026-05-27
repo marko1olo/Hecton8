@@ -7,8 +7,19 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldSliceAnchor : MonoBehaviour
     {
-        private static readonly List<WorldSliceAnchor> _ActiveAnchors = new List<WorldSliceAnchor>(32);
+        private const int ActiveAnchorCopyBudget = 64;
+        private static readonly WorldSliceAnchor[] _ActiveAnchors = new WorldSliceAnchor[ActiveAnchorCopyBudget];
         private static readonly List<WorldFidelityRoot> _FidelityRootScratch = new List<WorldFidelityRoot>(8);
+        private static int _ActiveAnchorCount;
+        private static int _ActiveAnchorVersion;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            System.Array.Clear(_ActiveAnchors, 0, _ActiveAnchors.Length);
+            _ActiveAnchorCount = 0;
+            _ActiveAnchorVersion = 0;
+        }
 
         public enum SliceState
         {
@@ -66,13 +77,14 @@ namespace Hecton8.World
             UnregisterActiveAnchor(this);
         }
 
-        public static void CopyActiveAnchorsTo(List<WorldSliceAnchor> destination)
+        public static int CopyActiveAnchorsTo(WorldSliceAnchor[] destination)
         {
-            if (destination == null)
-                return;
+            if (destination == null || destination.Length <= 0)
+                return 0;
 
-            destination.Clear();
-            for (int i = 0; i < _ActiveAnchors.Count; i++)
+            int writeCount = 0;
+            int safeCount = math.min(_ActiveAnchorCount, ActiveAnchorCopyBudget);
+            for (int i = 0; i < safeCount && writeCount < destination.Length; i++)
             {
                 WorldSliceAnchor anchor = _ActiveAnchors[i];
                 if (anchor == null)
@@ -82,14 +94,22 @@ namespace Hecton8.World
                 if (go == null || !go.scene.IsValid())
                     continue;
 
-                destination.Add(anchor);
+                destination[writeCount] = anchor;
+                writeCount++;
             }
+
+            for (int i = writeCount; i < destination.Length; i++)
+                destination[i] = null;
+
+            return writeCount;
         }
+
+        public static int ActiveAnchorVersion => _ActiveAnchorVersion;
 
         private void Awake()
         {
             ClampSettings();
-            RefreshFidelityRoots();
+            EnsureRuntimeFidelityRootCache();
             ApplyState(SliceState.Far, true);
         }
 
@@ -245,6 +265,28 @@ namespace Hecton8.World
             _FidelityRootScratch.Clear();
         }
 
+        private void EnsureRuntimeFidelityRootCache()
+        {
+            if (HasUsableFidelityRootCache())
+                return;
+
+            RefreshFidelityRoots();
+        }
+
+        private bool HasUsableFidelityRootCache()
+        {
+            if (fidelityRoots == null || fidelityRoots.Length == 0)
+                return false;
+
+            for (int i = 0; i < fidelityRoots.Length; i++)
+            {
+                if (fidelityRoots[i] == null)
+                    return false;
+            }
+
+            return true;
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -267,10 +309,12 @@ namespace Hecton8.World
 
         private static void RegisterActiveAnchor(WorldSliceAnchor anchor)
         {
-            if (anchor == null || _ActiveAnchors.Contains(anchor))
+            if (anchor == null || FindActiveAnchorIndex(anchor) >= 0 || _ActiveAnchorCount >= _ActiveAnchors.Length)
                 return;
 
-            _ActiveAnchors.Add(anchor);
+            _ActiveAnchors[_ActiveAnchorCount] = anchor;
+            _ActiveAnchorCount++;
+            _ActiveAnchorVersion++;
         }
 
         private static void UnregisterActiveAnchor(WorldSliceAnchor anchor)
@@ -278,7 +322,28 @@ namespace Hecton8.World
             if (anchor == null)
                 return;
 
-            _ActiveAnchors.Remove(anchor);
+            int index = FindActiveAnchorIndex(anchor);
+            if (index < 0)
+                return;
+
+            int lastIndex = _ActiveAnchorCount - 1;
+            if (index != lastIndex)
+                _ActiveAnchors[index] = _ActiveAnchors[lastIndex];
+
+            _ActiveAnchors[lastIndex] = null;
+            _ActiveAnchorCount--;
+            _ActiveAnchorVersion++;
+        }
+
+        private static int FindActiveAnchorIndex(WorldSliceAnchor anchor)
+        {
+            for (int i = 0; i < _ActiveAnchorCount; i++)
+            {
+                if (ReferenceEquals(_ActiveAnchors[i], anchor))
+                    return i;
+            }
+
+            return -1;
         }
     }
 }

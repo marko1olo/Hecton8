@@ -15,26 +15,26 @@ MonoBehaviour:
   matrixIndex: 12
   depthTier: 3
   region: 3
-  biomeName: Coral-Porous Walls
+  biomeName: Carbonate-Porous Walls
   minDepthMeters: 300
   maxDepthMeters: 600
-  shortDescription: Ancient fossilized reef walls honeycombed with holes and micro-caverns.
+  shortDescription: Ancient fossilized carbonate walls honeycombed with holes and micro-caverns.
   isPlaceholder: 0
   visitPurpose: Early exploration biome. Come here to learn routes, gather basics,
     and keep orientation in soft terrain and hunt hidden value.
   commonRewardHook: Common runs pay out in Fiber Kelp and Membrane Tissue.
   rareRewardHook: 'Rare pull is modest: Biolum Paste and Fiber Mesh.'
-  landmarkIdentity: Coral-Porous Walls reads through dunes, plains, void cuts, and
+  landmarkIdentity: Carbonate-Porous Walls reads through dunes, plains, void cuts, and
     shape changes in the floor. Landmarks should feel bright and readable.
-  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+  safePocketIdentity: Reorientation pockets are frequent. The player should often see a clear
     reset point nearby.
   riskSummary: 'Main failure mode: orientation loss and long empty recovery swims.
     Creature pressure stays medium.'
-  extractionFocus: 'Mixed salvage, harvest pockets, and risky reef-node peels. Early
+  extractionFocus: 'Mixed salvage, harvest pockets, and risky carbonate-node peels. Early
     tier: keep runs short and accept longer sweeps and weaker orientation during
     gathering.'
-  landmarkGuidance: Dominant landmark is reef crown or porous fossil wall. This slot
-    should read through coral windows and rib-like skeletons; use silhouette changes
+  landmarkGuidance: Dominant landmark is carbonate crown or porous fossil wall. This slot
+    should read through carbonate windows and rib-like skeletons; use silhouette changes
     to avoid getting lost in soft terrain.
   loosePickupBias: 5
   nodeExtractionBias: 3

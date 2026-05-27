@@ -20,6 +20,6 @@ MonoBehaviour:
   farReferenceShape: dark glass mass split by heat glow
   routeUse: Player should track heat lines and know where a quick extraction lane
     begins.
-  safePocketUse: Safe pockets are cool seams between hot structures, never broad
+  safePocketUse: Reorientation pockets are cool seams between hot structures, never broad
     comfort zones.
   emotionalRead: Sharp, risky, and high-value.

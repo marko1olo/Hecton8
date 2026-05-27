@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: ProceduralRule_rule_coral_brittle
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
   ruleId: rule.coral.brittle
-  ruleLabel: Brittle Hadal Coral
+  ruleLabel: Brittle Hadal Carbonate
   familyProfile: {fileID: 11400000, guid: 13e009e2d385dfb409f24405461cabdd, type: 2}
-  gameplayIntent: Deep brittle fan coral with pale mineral growth and localized biolum
+  gameplayIntent: Deep brittle mineral fans with pale deposits and localized biolum
     cavities.
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}

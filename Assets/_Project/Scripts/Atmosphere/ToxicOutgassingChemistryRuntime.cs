@@ -49,6 +49,8 @@ namespace Hecton8.Atmosphere
         private const byte TelemetryFlagMockChemistry = 1;
         private const float ToxicCorrosionStatusDurationSeconds = 2.0f;
         private const byte TelemetryFlagFallbackRadial = 2;
+        private const byte TelemetryFlagBinaryProbeFailure = 32;
+        private const byte TelemetryFlagDumpFailure = 64;
         private const byte TelemetryFlagNaN = 128;
         private const float DefaultQualityWeight = 1f;
         private const float NaNEpsilon = 0.0001f;
@@ -132,6 +134,7 @@ namespace Hecton8.Atmosphere
         private float _corrosionAccumulator;
         private float _lastQualityWeight;
         private float _lastCompleteMs;
+        private byte _pendingFailureFlags;
         private long _scheduledStartTicks;
         private double3 _gridOriginAup;
         private int3 _pendingRebaseCells;
@@ -252,7 +255,7 @@ namespace Hecton8.Atmosphere
         {
             if (!_nativeReady)
             {
-                EnsureNativeState();
+                return;
             }
 
             _simulationAccumulator += SlowTickDeltaSeconds;
@@ -313,7 +316,11 @@ namespace Hecton8.Atmosphere
 
         public bool TryUpsertSource(uint sourceId, double3 aup, float emissionRate, float density, uint chemicalHash)
         {
-            EnsureNativeState();
+            if (!EnsureNativeState())
+            {
+                return false;
+            }
+
             if (!TryOpenMutationWindow())
             {
                 return false;
@@ -388,7 +395,11 @@ namespace Hecton8.Atmosphere
 
         public bool TryUpsertEntity(uint entityId, double3 aup)
         {
-            EnsureNativeState();
+            if (!EnsureNativeState())
+            {
+                return false;
+            }
+
             if (!TryOpenMutationWindow())
             {
                 return false;
@@ -533,7 +544,11 @@ namespace Hecton8.Atmosphere
 
         public void GenerateEmergencyMockChemistry()
         {
-            EnsureNativeState();
+            if (!EnsureNativeState())
+            {
+                return;
+            }
+
             var constants = new ToxicOutgassingConstants
             {
                 BaseDiffusionRate = 0.17f,
@@ -560,7 +575,11 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
         public bool TryReloadCsvOverrides()
         {
-            EnsureNativeState();
+            if (!EnsureNativeState())
+            {
+                return false;
+            }
+
             try
             {
                 string path = Path.Combine(ProjectRootPath(), CsvRelativePath);
@@ -584,19 +603,29 @@ namespace Hecton8.Atmosphere
                 ParseChemicalCsv(csvBytes, length, ref constants);
                 return TryWriteConstants(in constants);
             }
-            catch (Exception ex)
+            catch (IOException)
             {
-                Hecton8.Core.H8Debug.LogWarning($"ToxicOutgassingChemistryRuntime ignored CSV override failure: {ex.Message}");
+                MarkFailure(TelemetryFlagBinaryProbeFailure);
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                MarkFailure(TelemetryFlagBinaryProbeFailure);
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                MarkFailure(TelemetryFlagBinaryProbeFailure);
                 return false;
             }
         }
 #endif
 
-        private void EnsureNativeState()
+        private bool EnsureNativeState()
         {
             if (_nativeReady)
             {
-                return;
+                return true;
             }
 
             _vault = EnsureVault();
@@ -630,7 +659,7 @@ namespace Hecton8.Atmosphere
             if (!AreNativeHandlesReady())
             {
                 _nativeReady = false;
-                return;
+                return false;
             }
 
             ClearAllNativeBuffersWithMemClear();
@@ -647,6 +676,7 @@ namespace Hecton8.Atmosphere
 #endif
             ProbeColdBinaryPayloads();
             UpdateGridHeader();
+            return true;
         }
 
         private bool AreNativeHandlesReady()
@@ -701,12 +731,17 @@ namespace Hecton8.Atmosphere
                 return _vault;
             }
 
-            throw new InvalidOperationException("ToxicOutgassingChemistryRuntime requires GlobalDataVault before boot.");
+            return null;
         }
 
         private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID id, int length) where T : struct
         {
             IDataVault vault = EnsureVault();
+            if (vault == null || vault.IsCompactionFenceActive)
+            {
+                return default;
+            }
+
             if (vault.IsAllocationLocked)
             {
                 return vault.TryGetGenerationHandle(id, out VaultGenerationHandle<T> existing)
@@ -725,8 +760,10 @@ namespace Hecton8.Atmosphere
         private bool TryOpenBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            IDataVault vault = EnsureVault();
+            IDataVault vault = _vault;
             return handle.BufferID != 0u &&
+                   vault != null &&
+                   !vault.IsCompactionFenceActive &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated;
         }
@@ -1194,8 +1231,15 @@ namespace Hecton8.Atmosphere
             }
 
             NativeArray<ToxicityGridTelemetryEntry> ring = OpenBuffer(in _telemetryRing);
+            if (!ring.IsCreated || ring.Length == 0)
+            {
+                return;
+            }
+
             ToxicityGridTelemetryEntry entry = scratch[0];
             entry.DiffusionCompleteMs = _lastCompleteMs;
+            entry.Flags = (byte)(entry.Flags | _pendingFailureFlags);
+            _pendingFailureFlags = 0;
             ring[_telemetryCursor] = entry;
             _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
             if (entry.NanDetected != 0)
@@ -1212,6 +1256,11 @@ namespace Hecton8.Atmosphere
             }
 
             NativeArray<ToxicityGridTelemetryEntry> ring = OpenBuffer(in _telemetryRing);
+            if (!ring.IsCreated || ring.Length == 0)
+            {
+                return;
+            }
+
             int index = _telemetryCursor - 1;
             if (index < 0)
             {
@@ -1276,9 +1325,21 @@ namespace Hecton8.Atmosphere
                     }
                 }
             }
-            catch (Exception ex)
+            catch (IOException)
             {
-                Hecton8.Core.H8Debug.LogError($"ToxicOutgassingChemistryRuntime failed to dump black box: {ex.Message}");
+                MarkFailure(TelemetryFlagDumpFailure);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                MarkFailure(TelemetryFlagDumpFailure);
+            }
+            catch (ArgumentException)
+            {
+                MarkFailure(TelemetryFlagDumpFailure);
+            }
+            catch (NotSupportedException)
+            {
+                MarkFailure(TelemetryFlagDumpFailure);
             }
         }
 
@@ -1300,10 +1361,23 @@ namespace Hecton8.Atmosphere
                     ReadBinaryProbe(daltonPath);
                 }
             }
-            catch (Exception ex)
+            catch (IOException)
             {
-                Hecton8.Core.H8Debug.LogWarning($"ToxicOutgassingChemistryRuntime ignored binary probe failure: {ex.Message}");
+                MarkFailure(TelemetryFlagBinaryProbeFailure);
             }
+            catch (UnauthorizedAccessException)
+            {
+                MarkFailure(TelemetryFlagBinaryProbeFailure);
+            }
+            catch (ArgumentException)
+            {
+                MarkFailure(TelemetryFlagBinaryProbeFailure);
+            }
+        }
+
+        private void MarkFailure(byte failureFlag)
+        {
+            _pendingFailureFlags = (byte)(_pendingFailureFlags | failureFlag);
         }
 
         private void ReadBinaryProbe(string path)
@@ -1891,13 +1965,16 @@ namespace Hecton8.Atmosphere
                 for (int i = 0; i < budget; i++)
                 {
                     ToxicitySourceDTO source = Sources[i];
-                    double3 aupDelta = source.AUP - GridOriginAup;
+                    double3 aupDelta = AupPrecisionMath.LocalDeltaDouble(source.AUP, GridOriginAup);
                     if (!math.all(math.isfinite(aupDelta)))
                     {
                         continue;
                     }
 
-                    float3 sourceLocal = (float3)aupDelta;
+                    float3 sourceLocal = AupPrecisionMath.DowncastLocalDeltaClamped(
+                        aupDelta,
+                        AupPrecisionMath.DefaultMaxLocalCastMeters,
+                        float3.zero);
                     float distSq = math.lengthsq(cellLocal - sourceLocal);
                     float falloff = math.saturate(1f - distSq / radiusSq);
                     falloff *= falloff * (3f - 2f * falloff);

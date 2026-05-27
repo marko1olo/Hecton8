@@ -121,8 +121,22 @@ namespace Hecton8.World
                 return min;
 
             int range = (max - min) + 1;
-            int safeHash = Mathf.Abs(stableHash);
+            int safeHash = NormalizeStableHash(stableHash);
             return min + (safeHash % range);
+        }
+
+        private static int NormalizeStableHash(int stableHash)
+        {
+            unchecked
+            {
+                uint h = (uint)stableHash;
+                h ^= h >> 16;
+                h *= 0x7feb352d;
+                h ^= h >> 15;
+                h *= 0x846ca68b;
+                h ^= h >> 16;
+                return (int)(h & 0x7FFFFFFFu);
+            }
         }
 
         private static float EvaluateRangeFit(Vector2 range, float value)

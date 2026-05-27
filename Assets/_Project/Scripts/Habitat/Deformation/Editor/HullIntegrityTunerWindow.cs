@@ -182,7 +182,7 @@ namespace Hecton8.Habitat.Deformation.Editor
 
             float radius = _dentRadius != null ? _dentRadius.value : 1.25f;
             float depth = _dentDepth != null ? _dentDepth.value : 0.18f;
-            runtime.InjectMockDamage(new MockCombatDamageSignal
+            runtime.InjectMockDamage(new HullMockCombatDamageSignal
             {
                 LocalPoint = new Unity.Mathematics.float3(0f, 0f, 0f),
                 LocalNormal = new Unity.Mathematics.float3(0f, 1f, 0f),

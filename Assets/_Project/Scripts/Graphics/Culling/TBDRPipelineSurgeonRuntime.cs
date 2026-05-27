@@ -17,6 +17,8 @@ namespace Hecton8.Graphics.Culling
         private const int DefaultSortCapacity = 150000;
         private const int RadixHistogramCapacity = 256;
         private const int TelemetryCapacity = 300;
+        private const string NativeMemoryOwner = nameof(TBDRPipelineSurgeonRuntime);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         [Header("Hard Limits")]
         [SerializeField, Min(1)]
@@ -41,17 +43,60 @@ namespace Hecton8.Graphics.Culling
         public bool EditorShowSorting;
 
         public TBDRVertexBudgetVault Vault;
-        public NativeArray<PoiTransformDTO> MockVisibleInstances;
-        public NativeArray<PoiTransformDTO> SortScratch;
-        public NativeArray<uint> MeshVertexCounts;
-        public NativeArray<int> RadixHistogram;
-        public NativeArray<int> VisibleCountOut;
-        public NativeArray<MockQualityWeightSignal> MockQualitySignal;
-        public NativeArray<MockCameraMatrix> MockCamera;
-        public NativeArray<float4> SourceFrustumPlanes;
-        public NativeArray<float4> SqueezedFrustumPlanes;
-        public NativeArray<int> HzbVisibilityMask;
-        public NativeArray<TBDRIndirectDrawArgsDTO> IndirectDrawArgs;
+        private readonly RuntimeBufferSet _buffers = new RuntimeBufferSet();
+
+        public NativeArray<PoiTransformDTO>.ReadOnly MockVisibleInstances =>
+            _buffers.MockVisibleInstances.IsCreated ? _buffers.MockVisibleInstances.AsReadOnly() : default;
+        public NativeArray<PoiTransformDTO>.ReadOnly SortScratch =>
+            _buffers.SortScratch.IsCreated ? _buffers.SortScratch.AsReadOnly() : default;
+        public NativeArray<uint>.ReadOnly MeshVertexCounts =>
+            _buffers.MeshVertexCounts.IsCreated ? _buffers.MeshVertexCounts.AsReadOnly() : default;
+        public NativeArray<int>.ReadOnly RadixHistogram =>
+            _buffers.RadixHistogram.IsCreated ? _buffers.RadixHistogram.AsReadOnly() : default;
+        public NativeArray<int>.ReadOnly VisibleCountOut =>
+            _buffers.VisibleCountOut.IsCreated ? _buffers.VisibleCountOut.AsReadOnly() : default;
+        public NativeArray<MockQualityWeightSignal>.ReadOnly MockQualitySignal =>
+            _buffers.MockQualitySignal.IsCreated ? _buffers.MockQualitySignal.AsReadOnly() : default;
+        public NativeArray<MockCameraMatrix>.ReadOnly MockCamera =>
+            _buffers.MockCamera.IsCreated ? _buffers.MockCamera.AsReadOnly() : default;
+        public NativeArray<float4>.ReadOnly SourceFrustumPlanes =>
+            _buffers.SourceFrustumPlanes.IsCreated ? _buffers.SourceFrustumPlanes.AsReadOnly() : default;
+        public NativeArray<float4>.ReadOnly SqueezedFrustumPlanes =>
+            _buffers.SqueezedFrustumPlanes.IsCreated ? _buffers.SqueezedFrustumPlanes.AsReadOnly() : default;
+        public NativeArray<int>.ReadOnly HzbVisibilityMask =>
+            _buffers.HzbVisibilityMask.IsCreated ? _buffers.HzbVisibilityMask.AsReadOnly() : default;
+        public NativeArray<TBDRIndirectDrawArgsDTO>.ReadOnly IndirectDrawArgs =>
+            _buffers.IndirectDrawArgs.IsCreated ? _buffers.IndirectDrawArgs.AsReadOnly() : default;
+
+        private sealed class RuntimeBufferSet
+        {
+            public NativeArray<PoiTransformDTO> MockVisibleInstances;
+            public NativeArray<PoiTransformDTO> SortScratch;
+            public NativeArray<uint> MeshVertexCounts;
+            public NativeArray<int> RadixHistogram;
+            public NativeArray<int> VisibleCountOut;
+            public NativeArray<MockQualityWeightSignal> MockQualitySignal;
+            public NativeArray<MockCameraMatrix> MockCamera;
+            public NativeArray<float4> SourceFrustumPlanes;
+            public NativeArray<float4> SqueezedFrustumPlanes;
+            public NativeArray<int> HzbVisibilityMask;
+            public NativeArray<TBDRIndirectDrawArgsDTO> IndirectDrawArgs;
+
+            public void Clear()
+            {
+                MockVisibleInstances = default;
+                SortScratch = default;
+                MeshVertexCounts = default;
+                RadixHistogram = default;
+                VisibleCountOut = default;
+                MockQualitySignal = default;
+                MockCamera = default;
+                SourceFrustumPlanes = default;
+                SqueezedFrustumPlanes = default;
+                HzbVisibilityMask = default;
+                IndirectDrawArgs = default;
+            }
+        }
 
         private IDataVault _dataVault;
         private VaultGenerationHandle<PoiTransformDTO> _mockVisibleHandle;
@@ -176,12 +221,12 @@ namespace Hecton8.Graphics.Culling
         public unsafe JobHandle ScheduleTBDRProtectionPass(int requestedInstanceCount, uint simulationFrame, JobHandle dependency)
         {
             Initialize();
-            int instanceCount = math.min(math.max(1, requestedInstanceCount), MockVisibleInstances.Length);
+            int instanceCount = math.min(math.max(1, requestedInstanceCount), _buffers.MockVisibleInstances.Length);
             _lastFrame = simulationFrame;
 
             JobHandle handle = new MockQualityWeightJob
             {
-                QualitySignal = MockQualitySignal,
+                QualitySignal = _buffers.MockQualitySignal,
                 Frame = _lastFrame,
                 SeedSalt = 0x9E3779B9u
             }.Schedule(dependency);
@@ -189,34 +234,34 @@ namespace Hecton8.Graphics.Culling
             handle = new DearLieFrustumSqueezeJob
             {
                 BudgetPtr = Vault.BudgetPtr(0),
-                QualitySignal = MockQualitySignal,
-                CameraData = MockCamera,
-                SourcePlanes = SourceFrustumPlanes,
-                SqueezedPlanes = SqueezedFrustumPlanes,
+                QualitySignal = _buffers.MockQualitySignal,
+                CameraData = _buffers.MockCamera,
+                SourcePlanes = _buffers.SourceFrustumPlanes,
+                SqueezedPlanes = _buffers.SqueezedFrustumPlanes,
                 MobileBaseVertexCap = _hardVertexCap,
                 MaxSqueezeDegrees = _frustumSqueezeAngle
             }.Schedule(handle);
 
             handle = new DearLieFrustumVisibilityJob
             {
-                Instances = MockVisibleInstances,
-                FrustumPlanes = SqueezedFrustumPlanes,
-                VisibilityMask = HzbVisibilityMask,
+                Instances = _buffers.MockVisibleInstances,
+                FrustumPlanes = _buffers.SqueezedFrustumPlanes,
+                VisibilityMask = _buffers.HzbVisibilityMask,
                 Count = instanceCount
             }.Schedule(instanceCount, 64, handle);
 
             handle = new BuildDistanceSortKeysJob
             {
-                Instances = MockVisibleInstances
+                Instances = _buffers.MockVisibleInstances
             }.Schedule(instanceCount, 64, handle);
 
             if (TBDRHardwarePipelineSwitch.ShouldRunEarlyZRadixSort())
             {
                 handle = new EarlyZRadixSortJob
                 {
-                    Source = MockVisibleInstances,
-                    Scratch = SortScratch,
-                    Histogram = RadixHistogram,
+                    Source = _buffers.MockVisibleInstances,
+                    Scratch = _buffers.SortScratch,
+                    Histogram = _buffers.RadixHistogram,
                     Count = instanceCount
                 }.Schedule(handle);
             }
@@ -225,17 +270,17 @@ namespace Hecton8.Graphics.Culling
             {
                 BudgetPtr = Vault.BudgetPtr(0),
                 TileWarningPtr = Vault.WarningPtr(0),
-                MeshVertexCounts = MeshVertexCounts,
+                MeshVertexCounts = _buffers.MeshVertexCounts,
                 VisibilityMask = default,
-                VisibleInstances = MockVisibleInstances,
-                VisibleCountOut = VisibleCountOut,
+                VisibleInstances = _buffers.MockVisibleInstances,
+                VisibleCountOut = _buffers.VisibleCountOut,
                 SourceCount = instanceCount
             }.Schedule(handle);
 
             handle = new BuildIndirectDrawArgsJob
             {
-                VisibleCountOut = VisibleCountOut,
-                ArgsOut = IndirectDrawArgs,
+                VisibleCountOut = _buffers.VisibleCountOut,
+                ArgsOut = _buffers.IndirectDrawArgs,
                 VertexCountPerInstance = 1u,
                 StartVertex = 0u,
                 StartInstance = 0u,
@@ -249,7 +294,7 @@ namespace Hecton8.Graphics.Culling
         {
             Initialize();
             _lastSortMs = math.isfinite(elapsedMs) ? math.max(0f, elapsedMs) : 0f;
-            _lastSortedCount = VisibleCountOut.IsCreated && VisibleCountOut.Length > 0 ? VisibleCountOut[0] : 0;
+            _lastSortedCount = _buffers.VisibleCountOut.IsCreated && _buffers.VisibleCountOut.Length > 0 ? _buffers.VisibleCountOut[0] : 0;
 
             VertexBudgetDTO budget = Vault.BudgetRef(0);
             TileSpillWarningDTO warning = Vault.TileWarnings[0];
@@ -358,9 +403,9 @@ namespace Hecton8.Graphics.Culling
 
         private float CurrentQualityWeight()
         {
-            if (MockQualitySignal.IsCreated && MockQualitySignal.Length > 0)
+            if (_buffers.MockQualitySignal.IsCreated && _buffers.MockQualitySignal.Length > 0)
             {
-                float quality = MockQualitySignal[0].GlobalQualityWeight;
+                float quality = _buffers.MockQualitySignal[0].GlobalQualityWeight;
                 if (math.isfinite(quality))
                     return math.saturate(quality);
             }
@@ -382,40 +427,10 @@ namespace Hecton8.Graphics.Culling
             if (!_initialized)
                 return;
 
-            if (!_usesVaultStorage && MockVisibleInstances.IsCreated)
-                MockVisibleInstances.Dispose();
-            if (!_usesVaultStorage && SortScratch.IsCreated)
-                SortScratch.Dispose();
-            if (!_usesVaultStorage && MeshVertexCounts.IsCreated)
-                MeshVertexCounts.Dispose();
-            if (!_usesVaultStorage && RadixHistogram.IsCreated)
-                RadixHistogram.Dispose();
-            if (!_usesVaultStorage && VisibleCountOut.IsCreated)
-                VisibleCountOut.Dispose();
-            if (!_usesVaultStorage && MockQualitySignal.IsCreated)
-                MockQualitySignal.Dispose();
-            if (!_usesVaultStorage && MockCamera.IsCreated)
-                MockCamera.Dispose();
-            if (!_usesVaultStorage && SourceFrustumPlanes.IsCreated)
-                SourceFrustumPlanes.Dispose();
-            if (!_usesVaultStorage && SqueezedFrustumPlanes.IsCreated)
-                SqueezedFrustumPlanes.Dispose();
-            if (!_usesVaultStorage && HzbVisibilityMask.IsCreated)
-                HzbVisibilityMask.Dispose();
-            if (!_usesVaultStorage && IndirectDrawArgs.IsCreated)
-                IndirectDrawArgs.Dispose();
+            if (!_usesVaultStorage)
+                DisposeFallbackBuffers();
 
-            MockVisibleInstances = default;
-            SortScratch = default;
-            MeshVertexCounts = default;
-            RadixHistogram = default;
-            VisibleCountOut = default;
-            MockQualitySignal = default;
-            MockCamera = default;
-            SourceFrustumPlanes = default;
-            SqueezedFrustumPlanes = default;
-            HzbVisibilityMask = default;
-            IndirectDrawArgs = default;
+            _buffers.Clear();
             ResetVaultHandles();
             Vault.Dispose();
             if (_telemetry != null)
@@ -453,33 +468,79 @@ namespace Hecton8.Graphics.Culling
             _usesVaultStorage = dataVault != null;
             if (_usesVaultStorage)
             {
-                _usesVaultStorage = TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _mockVisibleHandle, TBDRBufferIds.MockVisibleInstances, capacity, NativeArrayOptions.UninitializedMemory, out MockVisibleInstances) &&
-                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _sortScratchHandle, TBDRBufferIds.SortScratch, capacity, NativeArrayOptions.UninitializedMemory, out SortScratch) &&
-                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _meshVertexCountsHandle, TBDRBufferIds.MeshVertexCounts, 256, NativeArrayOptions.UninitializedMemory, out MeshVertexCounts) &&
-                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _radixHistogramHandle, TBDRBufferIds.RadixHistogram, RadixHistogramCapacity, NativeArrayOptions.UninitializedMemory, out RadixHistogram) &&
-                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _visibleCountOutHandle, TBDRBufferIds.VisibleCountOut, 1, NativeArrayOptions.UninitializedMemory, out VisibleCountOut) &&
-                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _mockQualitySignalHandle, TBDRBufferIds.MockQualitySignal, 1, NativeArrayOptions.UninitializedMemory, out MockQualitySignal) &&
-                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _mockCameraHandle, TBDRBufferIds.MockCamera, 1, NativeArrayOptions.UninitializedMemory, out MockCamera) &&
-                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _sourceFrustumPlanesHandle, TBDRBufferIds.SourceFrustumPlanes, 6, NativeArrayOptions.UninitializedMemory, out SourceFrustumPlanes) &&
-                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _squeezedFrustumPlanesHandle, TBDRBufferIds.SqueezedFrustumPlanes, 6, NativeArrayOptions.UninitializedMemory, out SqueezedFrustumPlanes) &&
-                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _hzbVisibilityMaskHandle, TBDRBufferIds.HzbVisibilityMask, capacity, NativeArrayOptions.UninitializedMemory, out HzbVisibilityMask) &&
-                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _indirectDrawArgsHandle, TBDRBufferIds.IndirectDrawArgs, 1, NativeArrayOptions.UninitializedMemory, out IndirectDrawArgs);
+                _usesVaultStorage = TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _mockVisibleHandle, TBDRBufferIds.MockVisibleInstances, capacity, NativeArrayOptions.UninitializedMemory, out _buffers.MockVisibleInstances) &&
+                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _sortScratchHandle, TBDRBufferIds.SortScratch, capacity, NativeArrayOptions.UninitializedMemory, out _buffers.SortScratch) &&
+                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _meshVertexCountsHandle, TBDRBufferIds.MeshVertexCounts, 256, NativeArrayOptions.UninitializedMemory, out _buffers.MeshVertexCounts) &&
+                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _radixHistogramHandle, TBDRBufferIds.RadixHistogram, RadixHistogramCapacity, NativeArrayOptions.UninitializedMemory, out _buffers.RadixHistogram) &&
+                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _visibleCountOutHandle, TBDRBufferIds.VisibleCountOut, 1, NativeArrayOptions.UninitializedMemory, out _buffers.VisibleCountOut) &&
+                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _mockQualitySignalHandle, TBDRBufferIds.MockQualitySignal, 1, NativeArrayOptions.UninitializedMemory, out _buffers.MockQualitySignal) &&
+                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _mockCameraHandle, TBDRBufferIds.MockCamera, 1, NativeArrayOptions.UninitializedMemory, out _buffers.MockCamera) &&
+                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _sourceFrustumPlanesHandle, TBDRBufferIds.SourceFrustumPlanes, 6, NativeArrayOptions.UninitializedMemory, out _buffers.SourceFrustumPlanes) &&
+                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _squeezedFrustumPlanesHandle, TBDRBufferIds.SqueezedFrustumPlanes, 6, NativeArrayOptions.UninitializedMemory, out _buffers.SqueezedFrustumPlanes) &&
+                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _hzbVisibilityMaskHandle, TBDRBufferIds.HzbVisibilityMask, capacity, NativeArrayOptions.UninitializedMemory, out _buffers.HzbVisibilityMask) &&
+                                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref _indirectDrawArgsHandle, TBDRBufferIds.IndirectDrawArgs, 1, NativeArrayOptions.UninitializedMemory, out _buffers.IndirectDrawArgs);
             }
 
             if (!_usesVaultStorage)
             {
-                MockVisibleInstances = new NativeArray<PoiTransformDTO>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                SortScratch = new NativeArray<PoiTransformDTO>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                MeshVertexCounts = new NativeArray<uint>(256, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                RadixHistogram = new NativeArray<int>(RadixHistogramCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                VisibleCountOut = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                MockQualitySignal = new NativeArray<MockQualityWeightSignal>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                MockCamera = new NativeArray<MockCameraMatrix>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                SourceFrustumPlanes = new NativeArray<float4>(6, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                SqueezedFrustumPlanes = new NativeArray<float4>(6, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                HzbVisibilityMask = new NativeArray<int>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                IndirectDrawArgs = new NativeArray<TBDRIndirectDrawArgsDTO>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                _buffers.MockVisibleInstances = new NativeArray<PoiTransformDTO>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                _buffers.SortScratch = new NativeArray<PoiTransformDTO>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                _buffers.MeshVertexCounts = new NativeArray<uint>(256, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                _buffers.RadixHistogram = new NativeArray<int>(RadixHistogramCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                _buffers.VisibleCountOut = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                _buffers.MockQualitySignal = new NativeArray<MockQualityWeightSignal>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                _buffers.MockCamera = new NativeArray<MockCameraMatrix>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                _buffers.SourceFrustumPlanes = new NativeArray<float4>(6, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                _buffers.SqueezedFrustumPlanes = new NativeArray<float4>(6, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                _buffers.HzbVisibilityMask = new NativeArray<int>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                _buffers.IndirectDrawArgs = new NativeArray<TBDRIndirectDrawArgsDTO>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                RegisterFallbackBuffers();
             }
+        }
+
+        private void RegisterFallbackBuffers()
+        {
+            RegisterFallbackNativeArray(_buffers.MockVisibleInstances, nameof(RuntimeBufferSet.MockVisibleInstances));
+            RegisterFallbackNativeArray(_buffers.SortScratch, nameof(RuntimeBufferSet.SortScratch));
+            RegisterFallbackNativeArray(_buffers.MeshVertexCounts, nameof(RuntimeBufferSet.MeshVertexCounts));
+            RegisterFallbackNativeArray(_buffers.RadixHistogram, nameof(RuntimeBufferSet.RadixHistogram));
+            RegisterFallbackNativeArray(_buffers.VisibleCountOut, nameof(RuntimeBufferSet.VisibleCountOut));
+            RegisterFallbackNativeArray(_buffers.MockQualitySignal, nameof(RuntimeBufferSet.MockQualitySignal));
+            RegisterFallbackNativeArray(_buffers.MockCamera, nameof(RuntimeBufferSet.MockCamera));
+            RegisterFallbackNativeArray(_buffers.SourceFrustumPlanes, nameof(RuntimeBufferSet.SourceFrustumPlanes));
+            RegisterFallbackNativeArray(_buffers.SqueezedFrustumPlanes, nameof(RuntimeBufferSet.SqueezedFrustumPlanes));
+            RegisterFallbackNativeArray(_buffers.HzbVisibilityMask, nameof(RuntimeBufferSet.HzbVisibilityMask));
+            RegisterFallbackNativeArray(_buffers.IndirectDrawArgs, nameof(RuntimeBufferSet.IndirectDrawArgs));
+        }
+
+        private void DisposeFallbackBuffers()
+        {
+            DisposeFallbackNativeArray(ref _buffers.MockVisibleInstances);
+            DisposeFallbackNativeArray(ref _buffers.SortScratch);
+            DisposeFallbackNativeArray(ref _buffers.MeshVertexCounts);
+            DisposeFallbackNativeArray(ref _buffers.RadixHistogram);
+            DisposeFallbackNativeArray(ref _buffers.VisibleCountOut);
+            DisposeFallbackNativeArray(ref _buffers.MockQualitySignal);
+            DisposeFallbackNativeArray(ref _buffers.MockCamera);
+            DisposeFallbackNativeArray(ref _buffers.SourceFrustumPlanes);
+            DisposeFallbackNativeArray(ref _buffers.SqueezedFrustumPlanes);
+            DisposeFallbackNativeArray(ref _buffers.HzbVisibilityMask);
+            DisposeFallbackNativeArray(ref _buffers.IndirectDrawArgs);
+        }
+
+        private static void RegisterFallbackNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        private static void DisposeFallbackNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private void ResetVaultHandles()
@@ -499,11 +560,11 @@ namespace Hecton8.Graphics.Culling
 
         private void SeedMockData()
         {
-            for (int i = 0; i < MeshVertexCounts.Length; i++)
-                MeshVertexCounts[i] = (uint)(300 + (i & 15) * 64);
+            for (int i = 0; i < _buffers.MeshVertexCounts.Length; i++)
+                _buffers.MeshVertexCounts[i] = (uint)(300 + (i & 15) * 64);
 
             float initialQuality = math.isfinite(_globalQualityWeight) ? math.saturate(_globalQualityWeight) : 1f;
-            MockQualitySignal[0] = new MockQualityWeightSignal
+            _buffers.MockQualitySignal[0] = new MockQualityWeightSignal
             {
                 GlobalQualityWeight = initialQuality,
                 Frame = 0u,
@@ -511,18 +572,18 @@ namespace Hecton8.Graphics.Culling
                 _pad0 = 0u
             };
 
-            for (int i = 0; i < MockVisibleInstances.Length; i++)
+            for (int i = 0; i < _buffers.MockVisibleInstances.Length; i++)
             {
                 float z = 4f + (i % 512) * 0.45f;
                 float x = ((i * 37) & 127) - 63.5f;
                 float y = ((i * 19) & 63) - 31.5f;
-                MockVisibleInstances[i] = new PoiTransformDTO
+                _buffers.MockVisibleInstances[i] = new PoiTransformDTO
                 {
                     LocalToWorld = float4x4.Translate(new float3(x, y, z)),
                     CameraRelativePositionRadius = new float4(x, y, z, 1f),
                     MeshId = (uint)(i & 255),
                     InstanceId = (uint)i,
-                    VertexCount = MeshVertexCounts[i & 255],
+                    VertexCount = _buffers.MeshVertexCounts[i & 255],
                     DistanceSq = x * x + y * y + z * z,
                     SortKey = math.asuint(x * x + y * y + z * z),
                     Flags = 0u,
@@ -531,10 +592,10 @@ namespace Hecton8.Graphics.Culling
                     _pad2 = 0ul
                 };
 
-                HzbVisibilityMask[i] = 1;
+                _buffers.HzbVisibilityMask[i] = 1;
             }
 
-            MockCamera[0] = new MockCameraMatrix
+            _buffers.MockCamera[0] = new MockCameraMatrix
             {
                 ViewProjection = float4x4.identity,
                 PositionRadius = new float4(0f, 0f, 0f, 1f),
@@ -544,34 +605,34 @@ namespace Hecton8.Graphics.Culling
                 _pad0 = 0ul
             };
 
-            SourceFrustumPlanes[0] = new float4(1f, 0f, 1f, 0f);
-            SourceFrustumPlanes[1] = new float4(-1f, 0f, 1f, 0f);
-            SourceFrustumPlanes[2] = new float4(0f, 1f, 1f, 0f);
-            SourceFrustumPlanes[3] = new float4(0f, -1f, 1f, 0f);
-            SourceFrustumPlanes[4] = new float4(0f, 0f, 1f, 0.1f);
-            SourceFrustumPlanes[5] = new float4(0f, 0f, -1f, 500f);
-            for (int i = 0; i < SqueezedFrustumPlanes.Length; i++)
-                SqueezedFrustumPlanes[i] = SourceFrustumPlanes[i];
+            _buffers.SourceFrustumPlanes[0] = new float4(1f, 0f, 1f, 0f);
+            _buffers.SourceFrustumPlanes[1] = new float4(-1f, 0f, 1f, 0f);
+            _buffers.SourceFrustumPlanes[2] = new float4(0f, 1f, 1f, 0f);
+            _buffers.SourceFrustumPlanes[3] = new float4(0f, -1f, 1f, 0f);
+            _buffers.SourceFrustumPlanes[4] = new float4(0f, 0f, 1f, 0.1f);
+            _buffers.SourceFrustumPlanes[5] = new float4(0f, 0f, -1f, 500f);
+            for (int i = 0; i < _buffers.SqueezedFrustumPlanes.Length; i++)
+                _buffers.SqueezedFrustumPlanes[i] = _buffers.SourceFrustumPlanes[i];
 
-            VisibleCountOut[0] = 0;
-            IndirectDrawArgs[0] = default;
+            _buffers.VisibleCountOut[0] = 0;
+            _buffers.IndirectDrawArgs[0] = default;
         }
 
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
-            if (!EditorShowSorting || !MockVisibleInstances.IsCreated)
+            if (!EditorShowSorting || !_buffers.MockVisibleInstances.IsCreated)
                 return;
 
-            int count = math.min(math.min(_lastSortedCount, MockVisibleInstances.Length), 128);
+            int count = math.min(math.min(_lastSortedCount, _buffers.MockVisibleInstances.Length), 128);
             if (count <= 1)
                 return;
 
             Gizmos.color = new Color(0.2f, 0.95f, 0.55f, 0.9f);
-            Vector3 previous = ToVector3(MockVisibleInstances[0].CameraRelativePositionRadius.xyz);
+            Vector3 previous = ToVector3(_buffers.MockVisibleInstances[0].CameraRelativePositionRadius.xyz);
             for (int i = 1; i < count; i++)
             {
-                Vector3 current = ToVector3(MockVisibleInstances[i].CameraRelativePositionRadius.xyz);
+                Vector3 current = ToVector3(_buffers.MockVisibleInstances[i].CameraRelativePositionRadius.xyz);
                 Gizmos.DrawLine(previous, current);
                 previous = current;
             }

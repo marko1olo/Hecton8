@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Daily Agent Marketing Task Loop
 
 Status: executable agent workflow
-Owner lane: SHINOBU_81 / agent operations
+Owner lane: Marketing / agent operations
 Runtime impact: none
 
 ## Purpose
@@ -32,11 +32,11 @@ One agent can hold multiple roles, but one output must exist per role before cla
 5. Pick one measurable output.
 6. Write output path before starting.
 
-## 2026-05-21 Current Cut
+## 2026-05-26 Current Cut
 
 The staged CRM-100 queue has 0 raw rows. Until the first real screenshot/clip packet exists, do not default to more lead verification. The bottleneck is asset proof, not lead volume.
 
-SN2 currentness: V6 on 2026-05-21 is the active same-day freshness row. Any SN2-derived pain bucket used for asset priority must name V6 or a newer same-day monitoring row in `pain_freshness_source`, fill `pain_freshness_checked_at`, and still require `viewer_named_decision` plus valid `capture_verdict` before it can affect Campaign 01, creator sends, Steam movement, spend, or public routes.
+SN2 currentness: V7 on 2026-05-26 is the active same-day freshness row. Any SN2-derived pain bucket or visual-gap priority used for asset priority must name V7 or a newer same-day monitoring row in `pain_freshness_source`, fill `pain_freshness_checked_at`, and still require `viewer_named_decision` plus valid `capture_verdict` before it can affect Campaign 01, creator sends, Steam movement, spend, or public routes.
 
 Current default lane order:
 
@@ -48,7 +48,7 @@ Current default lane order:
 
 Do not expand raw leads unless a human explicitly asks for another source-backed lead sprint.
 
-## 2026-05-21 Active Control Tower Loop V2
+## 2026-05-26 Active Control Tower Loop V3
 
 This loop prevents agent labor from becoming more documents. Use it until the first real screenshot pack exists.
 
@@ -163,7 +163,8 @@ Input:
 
 - `Data/UNIQUE_CREATOR_VERIFICATION_QUEUE_2026-05-18.csv`
 - `Data/PRIORITY_CREATOR_SHORTLIST_FROM_RAW_2026-05-18.csv`
-- `AgentOps/VerificationBatches_2026-05-19/VERIFY_BATCH_01.md` as the first existing batch file; other batch files in the same folder follow the same parked raw-sprint rule. Batch `TODO`, checked boxes, contact notes, public-index metrics, `Required asset`, and `Custom opener` fields are scratch values only; they do not promote a row to live CRM or send readiness.
+
+Archived reference only: old verification batch files live under `Docs/DEPRECATED/Active_Doc_Deprecation_2026-05-26/Marketing/AgentOps/VerificationBatches_2026-05-19/`. Do not use them as active input. If a future asset-proven segment gap justifies raw verification, create a fresh bounded sprint file and keep `TODO`, checked boxes, contact notes, public-index metrics, `Required asset`, and `Custom opener` out of live CRM/send readiness until the current CRM/asset/source-ledger trace passes.
 
 Steps:
 
@@ -357,7 +358,7 @@ Run this after any Marketing docs/data change. Do not run `dotnet build` for doc
 (Get-ChildItem -LiteralPath 'C:\hades\Hecton8\Docs\Marketing' -Recurse -File | Measure-Object).Count
 ```
 
-Expected: `100` unless the control tower explicitly approved a new file.
+Expected: `85` after the archived verification-batch folder, parked Priority 250 raw pitch sheet, parked raw lead seed queue, raw prospecting lists, and dated raw scrape summary were moved to `Docs/DEPRECATED/Active_Doc_Deprecation_2026-05-26/`; any increase requires the control tower anti-sprawl rule.
 
 ```powershell
 $files = Get-ChildItem -LiteralPath 'C:\hades\Hecton8\Docs\Marketing' -Recurse -Filter '*.csv' -File
@@ -472,10 +473,10 @@ Expected: `BACKTICK_PATH_AUDIT_OK`.
 
 ### Rationale Order Audit
 
-Run this after updating the SHINOBU_81 rationale file. If that file is absent and was not edited in the current change, do not create a placeholder; report the not-applicable result from the guard below.
+Run this only when the current change edits an active marketing rationale file. Do not create placeholder rationale files for docs/data-only cleanup.
 
 ```powershell
-$path = 'C:\hades\Hecton8\Docs\AgentLogs\Rationale_SHINOBU_81.md'
+$path = 'C:\hades\Hecton8\Docs\AgentLogs\Rationale_MARKETING.md'
 if (-not (Test-Path -LiteralPath $path)) {
   'RATIONALE_ORDER_AUDIT_NOT_APPLICABLE path_absent'
 } else {

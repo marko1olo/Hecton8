@@ -137,6 +137,7 @@ namespace Hecton8.Construction
             CompletePendingForTeardown();
             _uploadedSlotCount = 0;
             _drawBoundsValid = false;
+            ClearVaultCacheCold();
         }
 
         private void OnDestroy()
@@ -151,10 +152,7 @@ namespace Hecton8.Construction
             ReleaseGraphicsBuffer(ref _argsBufferB);
             _boundMatrixBuffer = null;
             _boundSurfaceBuffer = null;
-            _vault = null;
-            _encodedSdfHandle = default;
-            _vaultInitialized = false;
-            _encodedSdfHandleValid = false;
+            ClearVaultCacheCold();
 
             if (pylonMaterial != null && pylonMaterial.hideFlags == HideFlags.DontSave)
                 Destroy(pylonMaterial);
@@ -826,7 +824,7 @@ namespace Hecton8.Construction
 
         private void PublishStructuralWarning(double3 firstAup, in FoundationPylonFrameCounters counters, FoundationTuningDTO tuning)
         {
-            FoundationStructuralWarningSignal signal;
+            FoundationStructuralWarningSignal signal = default;
             signal.ModuleAup = firstAup;
             signal.ModuleHash = 0u;
             signal.WarningFlags = counters.Flags & WarningMask;
@@ -834,8 +832,6 @@ namespace Hecton8.Construction
             signal.MaxLengthMeters = tuning.MaxPylonLengthMeters;
             signal.Frame = CaptureFrameId();
             signal.ResultHash = counters.ResultHash;
-            signal._pad0 = 0ul;
-            signal._pad1 = 0ul;
             SignalBus<FoundationStructuralWarningSignal>.TryPushTracked(in signal, ref s_x001FoundationPylonGpuBatchSignalPushDropCount);
         }
 
@@ -852,6 +848,17 @@ namespace Hecton8.Construction
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                CompletePendingForTeardown();
+                ClearVaultCacheCold();
+                _vault = currentService as IDataVault;
+                ClearUploadedBatch();
+                if (isActiveAndEnabled)
+                    EnsureBuffersCold();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Player)
                 return;
 
@@ -870,6 +877,16 @@ namespace Hecton8.Construction
                    _argsBufferA != null &&
                    _argsBufferB != null &&
                    _capacityResolved >= ResolvePylonCapacity();
+        }
+
+        private void ClearVaultCacheCold()
+        {
+            FoundationSnappingCalculatorRuntime.UnbindDataVault(_vault);
+            _vault = null;
+            _encodedSdfHandle = default;
+            _vaultInitialized = false;
+            _encodedSdfHandleValid = false;
+            _pendingDiscard = false;
         }
 
         private int ResolveMaxModules()
@@ -1072,6 +1089,12 @@ namespace Hecton8.Construction
         private static Vector3 ToRuntime(double3 aup, double3 origin)
         {
             double3 local = aup - origin;
+            if (!math.all(math.isfinite(local)) ||
+                math.any(math.abs(local) > (double)float.MaxValue))
+            {
+                return Vector3.zero;
+            }
+
             return new Vector3((float)local.x, (float)local.y, (float)local.z);
         }
     }

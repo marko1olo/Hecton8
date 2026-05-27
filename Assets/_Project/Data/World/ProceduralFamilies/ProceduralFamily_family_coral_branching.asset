@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ProceduralFamily_family_coral_branching
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldPrefabFamilyProfile
   familyId: family.coral.branching
-  familyLabel: Coral Branching
+  familyLabel: Carbonate Branching
   defaultFidelity: 1
   budgetClass: 1
   expectsCollision: 0
@@ -34,7 +34,7 @@ MonoBehaviour:
   clusterCountMin: 3
   clusterCountMax: 7
   heatmapChannel: coral_density
-  proxyColor: {r: 1, g: 0.56, b: 0.48, a: 1}
+  proxyColor: {r: 0.42, g: 0.37, b: 0.32, a: 1}
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
   - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
@@ -96,4 +96,4 @@ MonoBehaviour:
     uniformScaleRange: {x: 0.94, y: 1.08}
   generativeGeologyProfile: {fileID: 0}
   futurePrefabRoot: World/Coral/Coral_Branching
-  gameplayRole: Readable branching coral clusters for reef identity.
+  gameplayRole: Readable branching carbonate scars for route silhouette and shelter memory.

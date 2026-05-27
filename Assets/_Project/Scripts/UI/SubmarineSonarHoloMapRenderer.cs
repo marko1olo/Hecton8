@@ -422,8 +422,10 @@ namespace Hecton8.UI
             if (sonarMapShader == null)
                 sonarMapShader = AssetDatabase.LoadAssetAtPath<Shader>(SonarMapShaderPath);
 #endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (sonarMapShader == null)
                 sonarMapShader = Shader.Find(SonarMapShaderName);
+#endif
 
             if (_runtimeMaterial == null && sonarMapShader != null)
             {
@@ -533,6 +535,8 @@ namespace Hecton8.UI
             displayRadiusMeters = math.max(0.02f, displayRadiusMeters);
             verticalExaggeration = math.clamp(verticalExaggeration, 0.02f, 1.25f);
             maxHeightDeltaMeters = math.max(1f, maxHeightDeltaMeters);
+            if (sonarMapShader == null)
+                sonarMapShader = AssetDatabase.LoadAssetAtPath<Shader>(SonarMapShaderPath);
             _materialPropertiesDirty = true;
         }
 #endif

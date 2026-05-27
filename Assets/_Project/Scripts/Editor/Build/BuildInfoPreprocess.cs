@@ -13,7 +13,7 @@ namespace Hecton8.Editor.Build
 {
     public sealed class BuildInfoPreprocess : IPreprocessBuildWithReport
     {
-        private const string AssetPath = "Assets/_Project/Resources/BuildInfo.asset";
+        private const string AssetPath = "Assets/_Project/Data/BuildInfo.asset";
 
         public int callbackOrder => -1000;
 

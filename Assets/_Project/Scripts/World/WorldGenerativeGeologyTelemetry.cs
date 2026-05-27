@@ -116,7 +116,7 @@ namespace Hecton8.World
             return true;
         }
 
-        [System.Obsolete("Use TryPublishTerrainSeamsBlended(int,int,bool) so telemetry suppression is visible.", true)]
+        [System.Obsolete("Use TryPublishTerrainSeamsBlended(int,int,float) so telemetry suppression is visible.", true)]
         internal static void PublishTerrainSeamsBlended(
             int patchSampleCount,
             int planCount,
@@ -130,10 +130,21 @@ namespace Hecton8.World
             int planCount,
             bool lowTierVisualOnly)
         {
+            return TryPublishTerrainSeamsBlended(
+                patchSampleCount,
+                planCount,
+                lowTierVisualOnly ? 0f : 1f);
+        }
+
+        internal static bool TryPublishTerrainSeamsBlended(
+            int patchSampleCount,
+            int planCount,
+            float seamExpensiveWeight)
+        {
             if (!Application.isPlaying)
                 return false;
 
-            float packed = patchSampleCount + planCount * 0.001f + (lowTierVisualOnly ? 0.0005f : 0f);
+            float packed = patchSampleCount + planCount * 0.001f + Mathf.Clamp01(seamExpensiveWeight) * 0.0005f;
             GlobalTelemetryBus.PublishPerformanceWarning(
                 TerrainSeamsBlendedHash,
                 TerrainSeamTelemetryContextHash,

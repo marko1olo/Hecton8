@@ -37,11 +37,29 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     if (id.x >= (uint)tileSize.x || id.y >= (uint)tileSize.y)
         return;
 
-    int safeViewIndex = max(0, _ViewIndex);
+    int totalViews = max(1, atlasGrid.x * atlasGrid.y);
+    int safeViewIndex = max(0, _ViewIndex) % totalViews;
     int tileX = safeViewIndex % atlasGrid.x;
     int tileY = safeViewIndex / atlasGrid.x;
-    int2 sourcePixel = int2(id.xy);
+    uint sourceAlbedoWidth;
+    uint sourceAlbedoHeight;
+    uint sourceNormalWidth;
+    uint sourceNormalHeight;
+    uint outputWidth;
+    uint outputHeight;
+    _SourceAlbedo.GetDimensions(sourceAlbedoWidth, sourceAlbedoHeight);
+    _SourceNormalDepth.GetDimensions(sourceNormalWidth, sourceNormalHeight);
+    _AtlasAlbedoDepth.GetDimensions(outputWidth, outputHeight);
+
+    if (sourceAlbedoWidth == 0u || sourceAlbedoHeight == 0u ||
+        sourceNormalWidth == 0u || sourceNormalHeight == 0u ||
+        outputWidth == 0u || outputHeight == 0u)
+        return;
+
+    int2 sourcePixel = min(int2(id.xy), int2((int)min(sourceAlbedoWidth, sourceNormalWidth), (int)min(sourceAlbedoHeight, sourceNormalHeight)) - int2(1, 1));
     int2 atlasPixel = int2(tileX * tileSize.x, tileY * tileSize.y) + sourcePixel;
+    if (atlasPixel.x < 0 || atlasPixel.y < 0 || atlasPixel.x >= (int)outputWidth || atlasPixel.y >= (int)outputHeight)
+        return;
 
     float4 albedo = HectonFiniteOr4(_SourceAlbedo.Load(int3(sourcePixel, 0)), float4(0.0, 0.0, 0.0, 0.0));
     float4 normalDepth = HectonFiniteOr4(_SourceNormalDepth.Load(int3(sourcePixel, 0)), float4(0.5, 0.5, 0.5, 0.0));

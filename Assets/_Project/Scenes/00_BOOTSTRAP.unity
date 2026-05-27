@@ -446,7 +446,7 @@ GameObject:
   - component: {fileID: 1469727543}
   - component: {fileID: 1469727542}
   m_Layer: 0
-  m_Name: SubnauticaSystemsDebugUI_Root
+  m_Name: HectonSystemsDebugUI_Root
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -463,7 +463,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46be80d17c774224b9ae34d72bccf74b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Hecton8.Core::Hecton8.UI.SubnauticaSystemsDebugUI
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.UI.HectonSystemsDebugUI
   logLifecycleDiagnostics: 0
   targetCanvas: {fileID: 0}
   fontAsset: {fileID: 0}
@@ -578,11 +578,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   shaderVariantCollections:
-  - {fileID: 20000000, guid: 232232232ca00147aa7d232232ca0014, type: 3}
-  - {fileID: 20000000, guid: 0e3d6c95b94344c7b864f17da3f25207, type: 3}
-  - {fileID: 20000000, guid: 27027027027027027027027027027027, type: 3}
-  - {fileID: 20000000, guid: 30530530530530530530530530530530, type: 3}
-  - {fileID: 20000000, guid: 34834834834834834834834834834834, type: 3}
+  - {fileID: 20000000, guid: b271bb14b4bd4c2b9e41e34d86af5336, type: 3}
+  shaderWarmupShaders:
+  - {fileID: 4800000, guid: 4cbb8fb5b0c14e57aa7d232232ca0007, type: 3}
+  - {fileID: 4800000, guid: 559786835a571e0428aa349084ff940b, type: 3}
+  - {fileID: 4800000, guid: 021ae9f459be4094b8800c25a19d5d9e, type: 3}
+  - {fileID: 4800000, guid: 93d4136c67d64c5bb944522bd67021a1, type: 3}
+  - {fileID: 4800000, guid: 83fe0f4ef4dc4260ae2b77e1e1e218b2, type: 3}
+  - {fileID: 4800000, guid: 0a2df57d7a4e4d44a95b1b4c4bfb2750, type: 3}
+  - {fileID: 4800000, guid: 8f60cfb6a5b944c481b829bb0a2d2b40, type: 3}
+  - {fileID: 4800000, guid: 2b2a9f18d90f4b35b8b4f9d1a8e23501, type: 3}
+  - {fileID: 4800000, guid: 0e3d6c95b94344c7b864f17da3f25205, type: 3}
+  - {fileID: 4800000, guid: af3b2017e12747bfa050b98c80d0876c, type: 3}
+  - {fileID: 4800000, guid: d8d506639f0b53a4b91a8eb8dbfe316e, type: 3}
+  - {fileID: 4800000, guid: ec43b88b57cf18044b7259539aec0873, type: 3}
+  - {fileID: 4800000, guid: 3c47099abfebebc4bb53df1e8ccc0483, type: 3}
+  - {fileID: 4800000, guid: 0d75901ecc6a479385541da8be342394, type: 3}
+  - {fileID: 4800000, guid: fdac643fbeb24374ba9ea1e341842908, type: 3}
+  runtimeShaderReferenceCatalog: {fileID: 11400000, guid: 66443d0a1f184aef87c6fd729fd8f401, type: 2}
+  shaderGraphicsStateCollectionPaths: []
 --- !u!1001 &3987986218543343561
 PrefabInstance:
   m_ObjectHideFlags: 0

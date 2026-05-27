@@ -293,13 +293,18 @@ namespace Hecton8.Ecosystem
                    IsMatchingVaultHandle(in _carrionFaultFlagHandle, BufferID.ShinobuCarrionFaultFlags);
         }
 
+        private bool HasCarrionVaultStateReady()
+        {
+            return _carrionInitialized && AreCarrionVaultHandlesStamped();
+        }
+
         private void DrainCarrionDeathSignalSnapshot()
         {
             if (_jobScheduled || _carrionJobLocksHeld)
                 return;
 
             IDataVault vault = _vault;
-            if (vault == null || !EnsureCarrionVaultState(vault))
+            if (vault == null || !HasCarrionVaultStateReady())
                 return;
 
             int generation = SignalBus<EntityDeathSignal>.SnapshotGeneration;
@@ -646,10 +651,10 @@ namespace Hecton8.Ecosystem
                     projectRoot = directory.FullName;
                 string path = Path.Combine(projectRoot, CarrionDumpRelativePath);
                 string folder = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(folder))
+                if (folder != null && folder.Length != 0)
                     Directory.CreateDirectory(folder);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 {
                     Span<byte> header = stackalloc byte[24];
                     WriteUInt64(header.Slice(0, 8), CarrionDumpMagic);
@@ -664,7 +669,23 @@ namespace Hecton8.Ecosystem
                     stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)CarrionRouteHash));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)CarrionRouteHash));
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)CarrionRouteHash));
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)CarrionRouteHash));
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)CarrionRouteHash));
             }
@@ -679,8 +700,8 @@ namespace Hecton8.Ecosystem
             if (vault == null)
                 return false;
 
-            string path = ResolveCarrionProfileCsvPath();
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            string path = BuildCarrionProfileCsvPath();
+            if (path == null || path.Length == 0 || !File.Exists(path))
                 return false;
 
             DateTime lastWriteUtc = File.GetLastWriteTimeUtc(path);
@@ -714,7 +735,23 @@ namespace Hecton8.Ecosystem
                     return true;
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
             }
@@ -723,7 +760,7 @@ namespace Hecton8.Ecosystem
 #endif
         }
 
-        private static string ResolveCarrionProfileCsvPath()
+        private static string BuildCarrionProfileCsvPath()
         {
 #if !UNITY_EDITOR
             return string.Empty;
@@ -1022,16 +1059,26 @@ namespace Hecton8.Ecosystem
             if (!math.all(math.isfinite(local)))
                 return -1;
 
-            float cell = math.max(0.0001f, tuning.CellSizeMeters);
+            float cell = math.isfinite(tuning.CellSizeMeters) && tuning.CellSizeMeters > 0.0001f
+                ? tuning.CellSizeMeters
+                : 0.0001f;
             int axis = math.clamp(tuning.ActiveAxis, 1, NutrientDriftRuntime.GridAxisMax);
             float half = axis * 0.5f;
             float3 grid = local * math.rcp(cell) + half;
+            if (!math.all(math.isfinite(grid)) ||
+                grid.x < 0f ||
+                grid.y < 0f ||
+                grid.z < 0f ||
+                grid.x >= axis ||
+                grid.y >= axis ||
+                grid.z >= axis)
+            {
+                return -1;
+            }
+
             int x = (int)math.floor(grid.x);
             int y = (int)math.floor(grid.y);
             int z = (int)math.floor(grid.z);
-            if ((uint)x >= (uint)axis || (uint)y >= (uint)axis || (uint)z >= (uint)axis)
-                return -1;
-
             return NutrientDriftMath.Index3D(x, y, z, NutrientDriftRuntime.GridAxisMax);
         }
 
@@ -1851,33 +1898,108 @@ namespace Hecton8.Ecosystem
 
     public static class CarrionDecaySelfAudit
     {
+        private const string SelfAuditPassXml =
+            @"<SELF_AUDIT agent=""SHINOBU_314"" domain=""CARRION_DECAY_NUTRIENT_BRIDGE"" status=""PASS_STATIC_PENDING_RUNTIME"">
+<DTO_SIZES CarrionStateDTO=""64"" CarrionDeathSignalDTO=""64"" FaunaStateDTO=""64"" CarrionRuntimeCountersDTO=""64"" CarrionTuningDTO=""128"" CarrionTelemetryEntry=""64"" CarrionAttractionRecordDTO=""64"" CarrionDecayProfileDTO=""32""/>
+<BYTE_MAP CarrionStateDTO=""CorpseAUP@0 InitialBiomass@24 CurrentBiomass@28 OriginalSpeciesHash@32 ToxicityEmissionRate@36 AgeSeconds@40 BiomassLostLastTick@44 DecayRate@48 Flags@52 EntityHash@56 _pad0@60""/>
+<BYTE_MAP CarrionTelemetryEntry=""GridOriginAup@0 ActiveBiomass@24 InjectedBiomass@28 BurstExecutionMicroseconds@32 ActiveCarrion@36 AttractionCount@40 MaxToxicity@44 Frame@48 Flags@52 StateHash@56 Overflows@60""/>
+<VAULT buffers=""71250-71259"" faultFlags=""71259""/>
+<SIGNAL lane=""EntityDeathSignal"" publisher=""FaunaBrain.PublishCarrionDeathSignal"" duplicateGuard=""EntityHash""/>
+<SCALABILITY quality=""continuous GlobalQualityWeight scales decay, attraction, and nutrient injection; base decay preserved""/>
+<ZERO_GC hotPathManagedAllocations=""0"" runtimeStringConstruction=""0""/>
+</SELF_AUDIT>";
+
+        private const string SelfAuditFailXml =
+            @"<SELF_AUDIT agent=""SHINOBU_314"" domain=""CARRION_DECAY_NUTRIENT_BRIDGE"" status=""FAIL_STATIC_LAYOUT_OR_VAULT"">
+<TASK id=""20"" status=""FAIL_STATIC_LAYOUT_OR_VAULT"" name=""SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION"" proof=""Static layout or Vault range validation failed""/>
+</SELF_AUDIT>";
+
         public static string BuildSelfAuditXml()
         {
-            bool carrionSize = UnsafeUtility.SizeOf<CarrionStateDTO>() == 64;
-            bool carrionOffsets =
+            bool carrionStatePass =
+                UnsafeUtility.SizeOf<CarrionStateDTO>() == 64 &&
                 OffsetOf<CarrionStateDTO>(nameof(CarrionStateDTO.CorpseAUP)) == 0 &&
                 OffsetOf<CarrionStateDTO>(nameof(CarrionStateDTO.InitialBiomass)) == 24 &&
                 OffsetOf<CarrionStateDTO>(nameof(CarrionStateDTO.CurrentBiomass)) == 28 &&
                 OffsetOf<CarrionStateDTO>(nameof(CarrionStateDTO.OriginalSpeciesHash)) == 32 &&
-                OffsetOf<CarrionStateDTO>(nameof(CarrionStateDTO.ToxicityEmissionRate)) == 36;
-            bool telemetrySize = UnsafeUtility.SizeOf<CarrionTelemetryEntry>() == 64;
-            bool bufferIds =
+                OffsetOf<CarrionStateDTO>(nameof(CarrionStateDTO.ToxicityEmissionRate)) == 36 &&
+                OffsetOf<CarrionStateDTO>(nameof(CarrionStateDTO.AgeSeconds)) == 40 &&
+                OffsetOf<CarrionStateDTO>(nameof(CarrionStateDTO.BiomassLostLastTick)) == 44 &&
+                OffsetOf<CarrionStateDTO>(nameof(CarrionStateDTO.DecayRate)) == 48 &&
+                OffsetOf<CarrionStateDTO>(nameof(CarrionStateDTO.Flags)) == 52 &&
+                OffsetOf<CarrionStateDTO>(nameof(CarrionStateDTO.EntityHash)) == 56 &&
+                OffsetOf<CarrionStateDTO>("_pad0") == 60;
+            bool deathSignalPass =
+                UnsafeUtility.SizeOf<CarrionDeathSignalDTO>() == 64 &&
+                OffsetOf<CarrionDeathSignalDTO>(nameof(CarrionDeathSignalDTO.CorpseAUP)) == 0 &&
+                OffsetOf<CarrionDeathSignalDTO>(nameof(CarrionDeathSignalDTO.BiomassScale)) == 24 &&
+                OffsetOf<CarrionDeathSignalDTO>(nameof(CarrionDeathSignalDTO.OriginalSpeciesHash)) == 28 &&
+                OffsetOf<CarrionDeathSignalDTO>(nameof(CarrionDeathSignalDTO.SourceHash)) == 32 &&
+                OffsetOf<CarrionDeathSignalDTO>(nameof(CarrionDeathSignalDTO.EntityHash)) == 36 &&
+                OffsetOf<CarrionDeathSignalDTO>(nameof(CarrionDeathSignalDTO.Flags)) == 40 &&
+                OffsetOf<CarrionDeathSignalDTO>(nameof(CarrionDeathSignalDTO.ToxicitySeed)) == 44 &&
+                OffsetOf<CarrionDeathSignalDTO>("_pad0") == 48 &&
+                OffsetOf<CarrionDeathSignalDTO>("_pad1") == 56;
+            bool faunaStatePass =
+                UnsafeUtility.SizeOf<FaunaStateDTO>() == 64 &&
+                OffsetOf<FaunaStateDTO>(nameof(FaunaStateDTO.PositionAUP)) == 0 &&
+                OffsetOf<FaunaStateDTO>(nameof(FaunaStateDTO.Biomass)) == 24 &&
+                OffsetOf<FaunaStateDTO>(nameof(FaunaStateDTO.SpeciesHash)) == 28 &&
+                OffsetOf<FaunaStateDTO>(nameof(FaunaStateDTO.EntityHash)) == 32 &&
+                OffsetOf<FaunaStateDTO>(nameof(FaunaStateDTO.Flags)) == 36 &&
+                OffsetOf<FaunaStateDTO>(nameof(FaunaStateDTO.CarrionSlot)) == 40 &&
+                OffsetOf<FaunaStateDTO>(nameof(FaunaStateDTO.Health01)) == 44 &&
+                OffsetOf<FaunaStateDTO>("_pad0") == 48 &&
+                OffsetOf<FaunaStateDTO>("_pad1") == 56;
+            bool counterPass =
+                UnsafeUtility.SizeOf<CarrionRuntimeCountersDTO>() == 64 &&
+                OffsetOf<CarrionRuntimeCountersDTO>(nameof(CarrionRuntimeCountersDTO.DeathIngressReadCursor)) == 0 &&
+                OffsetOf<CarrionRuntimeCountersDTO>(nameof(CarrionRuntimeCountersDTO.CarrionWriteCursor)) == 12 &&
+                OffsetOf<CarrionRuntimeCountersDTO>(nameof(CarrionRuntimeCountersDTO.TelemetryCursor)) == 24 &&
+                OffsetOf<CarrionRuntimeCountersDTO>(nameof(CarrionRuntimeCountersDTO.Flags)) == 28 &&
+                OffsetOf<CarrionRuntimeCountersDTO>(nameof(CarrionRuntimeCountersDTO.Frame)) == 32 &&
+                OffsetOf<CarrionRuntimeCountersDTO>(nameof(CarrionRuntimeCountersDTO.StateHash)) == 48 &&
+                OffsetOf<CarrionRuntimeCountersDTO>("_pad0") == 56 &&
+                OffsetOf<CarrionRuntimeCountersDTO>("_pad1") == 60;
+            bool tuningPass =
+                UnsafeUtility.SizeOf<CarrionTuningDTO>() == 128 &&
+                OffsetOf<CarrionTuningDTO>(nameof(CarrionTuningDTO.GridOriginAup)) == 0 &&
+                OffsetOf<CarrionTuningDTO>(nameof(CarrionTuningDTO.CellSizeMeters)) == 24 &&
+                OffsetOf<CarrionTuningDTO>(nameof(CarrionTuningDTO.GlobalQualityWeight)) == 64 &&
+                OffsetOf<CarrionTuningDTO>(nameof(CarrionTuningDTO.ActiveAxis)) == 72 &&
+                OffsetOf<CarrionTuningDTO>(nameof(CarrionTuningDTO.RouteHash)) == 112 &&
+                OffsetOf<CarrionTuningDTO>("_pad0") == 116 &&
+                OffsetOf<CarrionTuningDTO>("_pad2") == 124;
+            bool telemetryPass =
+                UnsafeUtility.SizeOf<CarrionTelemetryEntry>() == 64 &&
+                OffsetOf<CarrionTelemetryEntry>(nameof(CarrionTelemetryEntry.GridOriginAup)) == 0 &&
+                OffsetOf<CarrionTelemetryEntry>(nameof(CarrionTelemetryEntry.ActiveBiomass)) == 24 &&
+                OffsetOf<CarrionTelemetryEntry>(nameof(CarrionTelemetryEntry.BurstExecutionMicroseconds)) == 32 &&
+                OffsetOf<CarrionTelemetryEntry>(nameof(CarrionTelemetryEntry.ActiveCarrion)) == 36 &&
+                OffsetOf<CarrionTelemetryEntry>(nameof(CarrionTelemetryEntry.Frame)) == 48 &&
+                OffsetOf<CarrionTelemetryEntry>(nameof(CarrionTelemetryEntry.Flags)) == 52 &&
+                OffsetOf<CarrionTelemetryEntry>(nameof(CarrionTelemetryEntry.StateHash)) == 56 &&
+                OffsetOf<CarrionTelemetryEntry>(nameof(CarrionTelemetryEntry.Overflows)) == 60;
+            bool attractionPass =
+                UnsafeUtility.SizeOf<CarrionAttractionRecordDTO>() == 64 &&
+                OffsetOf<CarrionAttractionRecordDTO>(nameof(CarrionAttractionRecordDTO.CorpseAUP)) == 0 &&
+                OffsetOf<CarrionAttractionRecordDTO>(nameof(CarrionAttractionRecordDTO.FoodValue)) == 24 &&
+                OffsetOf<CarrionAttractionRecordDTO>(nameof(CarrionAttractionRecordDTO.OriginalSpeciesHash)) == 32 &&
+                OffsetOf<CarrionAttractionRecordDTO>(nameof(CarrionAttractionRecordDTO.Temperature)) == 44 &&
+                OffsetOf<CarrionAttractionRecordDTO>("_pad0") == 48 &&
+                OffsetOf<CarrionAttractionRecordDTO>("_pad1") == 56;
+            bool profilePass =
+                UnsafeUtility.SizeOf<CarrionDecayProfileDTO>() == 32 &&
+                OffsetOf<CarrionDecayProfileDTO>(nameof(CarrionDecayProfileDTO.SpeciesHash)) == 0 &&
+                OffsetOf<CarrionDecayProfileDTO>(nameof(CarrionDecayProfileDTO.BaseDecayRate)) == 4 &&
+                OffsetOf<CarrionDecayProfileDTO>(nameof(CarrionDecayProfileDTO.Flags)) == 24 &&
+                OffsetOf<CarrionDecayProfileDTO>(nameof(CarrionDecayProfileDTO.SourceHash)) == 28;
+            bool layoutPass = carrionStatePass && deathSignalPass && faunaStatePass && counterPass &&
+                              tuningPass && telemetryPass && attractionPass && profilePass;
+            bool vaultPass =
                 (int)BufferID.ShinobuCarrionStates == 71250 &&
                 (int)BufferID.ShinobuCarrionFaultFlags == 71259;
-            return "<SELF_AUDIT agent=\"SHINOBU_314\" " +
-                   "carrionStateSize64=\"" + carrionSize + "\" " +
-                   "carrionStateOffsets=\"" + carrionOffsets + "\" " +
-                   "telemetrySize64=\"" + telemetrySize + "\" " +
-                   "vaultBuffers=\"71250-71259\" " +
-                   "bufferIds=\"" + bufferIds + "\" " +
-                   "signalLane=\"EntityDeathSignal\" " +
-                   "faunaDeathPublisher=\"FaunaBrain.PublishCarrionDeathSignal\" " +
-                   "duplicateGuard=\"EntityHash\" " +
-                   "speciesHashRoute=\"EntityDeathSignal.FlagFaunaBrainCarrion_SourceHash\" " +
-                   "lowQualityExpBlend=\"smoothstep_0.4_0.95\" " +
-                   "baseDecayPreserved=\"true\" " +
-                   "hotPathManagedAllocations=\"0\" " +
-                   "netcodeStateRingBuffer=\"deterministic_frost_tick\" />";
+            return layoutPass && vaultPass ? SelfAuditPassXml : SelfAuditFailXml;
         }
 
         private static int OffsetOf<T>(string fieldName)

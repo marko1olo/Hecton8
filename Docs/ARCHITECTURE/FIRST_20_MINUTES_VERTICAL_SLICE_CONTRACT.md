@@ -62,7 +62,7 @@ integration blocker.
 
 |---|---|
 
-| Boot | `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD` works through production flow. |
+| Boot | New Game uses `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`; load-game resumes may still enter `02_HECTON_WORLD` directly from `01_MAIN_MENU`. |
 
 | World load | One selected biome/route loads with terrain, water, lighting, fog, HUD, audio, and spawn safety. |
 

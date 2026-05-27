@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Press Release And Email Templates
 
 Status: draft bank / not send ready
-Owner lane: SHINOBU_81 / press operations
+Owner lane: Marketing / press operations
 Runtime impact: none
 
 ## Public Release Permission Gate

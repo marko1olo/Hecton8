@@ -53,12 +53,30 @@ namespace Hecton8.Construction
         [FieldOffset(92)] public uint ValidationFlags;
         [FieldOffset(96)] public float AnimationPhase;
         [FieldOffset(100)] public uint ValidationStateHash;
-        [FieldOffset(104)] public uint _pad0;
-        [FieldOffset(108)] public uint _pad1;
-        [FieldOffset(112)] public uint _pad2;
-        [FieldOffset(116)] public uint _pad3;
-        [FieldOffset(120)] public uint _pad4;
-        [FieldOffset(124)] public uint _pad5;
+        [FieldOffset(104)] private byte _pad0;
+        [FieldOffset(105)] private byte _pad1;
+        [FieldOffset(106)] private byte _pad2;
+        [FieldOffset(107)] private byte _pad3;
+        [FieldOffset(108)] private byte _pad4;
+        [FieldOffset(109)] private byte _pad5;
+        [FieldOffset(110)] private byte _pad6;
+        [FieldOffset(111)] private byte _pad7;
+        [FieldOffset(112)] private byte _pad8;
+        [FieldOffset(113)] private byte _pad9;
+        [FieldOffset(114)] private byte _pad10;
+        [FieldOffset(115)] private byte _pad11;
+        [FieldOffset(116)] private byte _pad12;
+        [FieldOffset(117)] private byte _pad13;
+        [FieldOffset(118)] private byte _pad14;
+        [FieldOffset(119)] private byte _pad15;
+        [FieldOffset(120)] private byte _pad16;
+        [FieldOffset(121)] private byte _pad17;
+        [FieldOffset(122)] private byte _pad18;
+        [FieldOffset(123)] private byte _pad19;
+        [FieldOffset(124)] private byte _pad20;
+        [FieldOffset(125)] private byte _pad21;
+        [FieldOffset(126)] private byte _pad22;
+        [FieldOffset(127)] private byte _pad23;
     }
 
     [BinaryBlittableSafe]
@@ -73,8 +91,14 @@ namespace Hecton8.Construction
         [FieldOffset(32)] public float4 InvalidColor;
         [FieldOffset(48)] public uint Flags;
         [FieldOffset(52)] public uint Frame;
-        [FieldOffset(56)] public uint _pad0;
-        [FieldOffset(60)] public uint _pad1;
+        [FieldOffset(56)] private byte _pad0;
+        [FieldOffset(57)] private byte _pad1;
+        [FieldOffset(58)] private byte _pad2;
+        [FieldOffset(59)] private byte _pad3;
+        [FieldOffset(60)] private byte _pad4;
+        [FieldOffset(61)] private byte _pad5;
+        [FieldOffset(62)] private byte _pad6;
+        [FieldOffset(63)] private byte _pad7;
     }
 
     [BinaryBlittableSafe]
@@ -90,8 +114,14 @@ namespace Hecton8.Construction
         [FieldOffset(44)] public float MinSdfDistance;
         [FieldOffset(48)] public uint ValidationStateHash;
         [FieldOffset(52)] public float GlobalQualityWeight;
-        [FieldOffset(56)] public uint _pad0;
-        [FieldOffset(60)] public uint _pad1;
+        [FieldOffset(56)] private byte _pad0;
+        [FieldOffset(57)] private byte _pad1;
+        [FieldOffset(58)] private byte _pad2;
+        [FieldOffset(59)] private byte _pad3;
+        [FieldOffset(60)] private byte _pad4;
+        [FieldOffset(61)] private byte _pad5;
+        [FieldOffset(62)] private byte _pad6;
+        [FieldOffset(63)] private byte _pad7;
     }
 
     [BinaryBlittableSafe]
@@ -112,10 +142,22 @@ namespace Hecton8.Construction
         [FieldOffset(36)] public uint AllowedConnectionBitmask;
         [FieldOffset(40)] public uint ParentModuleHash;
         [FieldOffset(44)] public uint ConnectionStatus;
-        [FieldOffset(48)] public uint _pad0;
-        [FieldOffset(52)] public uint _pad1;
-        [FieldOffset(56)] public uint _pad2;
-        [FieldOffset(60)] public uint _pad3;
+        [FieldOffset(48)] private byte _pad0;
+        [FieldOffset(49)] private byte _pad1;
+        [FieldOffset(50)] private byte _pad2;
+        [FieldOffset(51)] private byte _pad3;
+        [FieldOffset(52)] private byte _pad4;
+        [FieldOffset(53)] private byte _pad5;
+        [FieldOffset(54)] private byte _pad6;
+        [FieldOffset(55)] private byte _pad7;
+        [FieldOffset(56)] private byte _pad8;
+        [FieldOffset(57)] private byte _pad9;
+        [FieldOffset(58)] private byte _pad10;
+        [FieldOffset(59)] private byte _pad11;
+        [FieldOffset(60)] private byte _pad12;
+        [FieldOffset(61)] private byte _pad13;
+        [FieldOffset(62)] private byte _pad14;
+        [FieldOffset(63)] private byte _pad15;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 96)]
@@ -179,7 +221,10 @@ namespace Hecton8.Construction
         [FieldOffset(16)] public uint ConnectionKind;
         [FieldOffset(20)] public uint Flags;
         [FieldOffset(24)] public uint ResultHash;
-        [FieldOffset(28)] public uint _pad0;
+        [FieldOffset(28)] private byte _pad0;
+        [FieldOffset(29)] private byte _pad1;
+        [FieldOffset(30)] private byte _pad2;
+        [FieldOffset(31)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -193,7 +238,10 @@ namespace Hecton8.Construction
         [FieldOffset(48)] public int SdfSampleCount;
         [FieldOffset(52)] public float ClearanceMeters;
         [FieldOffset(56)] public uint ResultHash;
-        [FieldOffset(60)] public uint _pad0;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -205,8 +253,14 @@ namespace Hecton8.Construction
         [FieldOffset(12)] public int SdfHitIndex;
         [FieldOffset(16)] public uint ResultHash;
         [FieldOffset(20)] public uint EvaluatedBounds;
-        [FieldOffset(24)] public uint _pad0;
-        [FieldOffset(28)] public uint _pad1;
+        [FieldOffset(24)] private byte _pad0;
+        [FieldOffset(25)] private byte _pad1;
+        [FieldOffset(26)] private byte _pad2;
+        [FieldOffset(27)] private byte _pad3;
+        [FieldOffset(28)] private byte _pad4;
+        [FieldOffset(29)] private byte _pad5;
+        [FieldOffset(30)] private byte _pad6;
+        [FieldOffset(31)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -225,9 +279,18 @@ namespace Hecton8.Construction
         [FieldOffset(40)] public uint Frame;
         [FieldOffset(44)] public uint Flags;
         [FieldOffset(48)] public float MagnetForce;
-        [FieldOffset(52)] public uint _pad1;
-        [FieldOffset(56)] public uint _pad2;
-        [FieldOffset(60)] public uint _pad3;
+        [FieldOffset(52)] private byte _pad0;
+        [FieldOffset(53)] private byte _pad1;
+        [FieldOffset(54)] private byte _pad2;
+        [FieldOffset(55)] private byte _pad3;
+        [FieldOffset(56)] private byte _pad4;
+        [FieldOffset(57)] private byte _pad5;
+        [FieldOffset(58)] private byte _pad6;
+        [FieldOffset(59)] private byte _pad7;
+        [FieldOffset(60)] private byte _pad8;
+        [FieldOffset(61)] private byte _pad9;
+        [FieldOffset(62)] private byte _pad10;
+        [FieldOffset(63)] private byte _pad11;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -246,7 +309,7 @@ namespace Hecton8.Construction
         [FieldOffset(60)] public uint TopologyVersion;
     }
 
-    public struct ConstructionSocketVaultViews
+    public ref struct ConstructionSocketVaultViews
     {
         public NativeArray<SocketStateDTO> SocketStates;
         public NativeArray<double3> SocketAups;
@@ -295,8 +358,8 @@ namespace Hecton8.Construction
         public const BufferID BuilderGhostMockStateBufferId = (BufferID)70943;
         public const BufferID BuilderGhostSdfSamplesBufferId = (BufferID)70944;
         public const BufferID BuilderGhostIndirectArgsBufferId = (BufferID)70945;
-        public const string DefaultDumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_SHINOBU_228.bin";
-        public const string HolographyDumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_SHINOBU_228_Holography.bin";
+        public const string DefaultDumpPath = "Docs/AgentLogs/Dump_1306_Construction_SocketTelemetry.bin";
+        public const string HolographyDumpPath = "Docs/AgentLogs/Dump_1306_Construction_Holography.bin";
 
         public const int SocketStateSizeBytes = 64;
         public const int GhostPreviewSizeBytes = 96;
@@ -315,7 +378,10 @@ namespace Hecton8.Construction
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
         private const uint UniversalCompatibilityHash24 = 0u;
+        private const int CounterMagicIndex = 7;
+        private const int CounterMagic = 0x534B5431;
         private static ConstructionSocketTuningDTO s_Tuning = CreateDefaultTuning(1f);
+        private static IDataVault s_BoundVault;
         private static bool s_TelemetryDumped;
         private static VaultGenerationHandle<SocketStateDTO> s_SocketStatesHandle;
         private static VaultGenerationHandle<double3> s_SocketAupHandle;
@@ -343,20 +409,25 @@ namespace Hecton8.Construction
 
         public static bool ValidateStructLayout()
         {
-            return UnsafeUtility.SizeOf<SocketStateDTO>() == SocketStateSizeBytes &&
-                   UnsafeUtility.SizeOf<GhostPreviewDTO>() == GhostPreviewSizeBytes &&
-                   UnsafeUtility.SizeOf<ConstructionSocketModuleDTO>() == ConstructionSocketModuleSizeBytes &&
-                   UnsafeUtility.SizeOf<SocketSnappingResultDTO>() == SocketSnappingResultSizeBytes &&
-                   UnsafeUtility.SizeOf<SocketConnectionPairDTO>() == SocketConnectionPairSizeBytes &&
-                   UnsafeUtility.SizeOf<SocketModuleBoundsDTO>() == SocketModuleBoundsSizeBytes &&
-                   UnsafeUtility.SizeOf<SocketBoundsResultDTO>() == SocketBoundsResultSizeBytes &&
-                   UnsafeUtility.SizeOf<ConstructionSocketTuningDTO>() == SocketTuningSizeBytes &&
-                   UnsafeUtility.SizeOf<ConstructionSocketTelemetryEntry>() == SocketTelemetrySizeBytes &&
-                   UnsafeUtility.SizeOf<BuilderGhostStateDTO>() == BuilderGhostStateSizeBytes &&
-                   UnsafeUtility.SizeOf<BuilderGhostVisualDTO>() == BuilderGhostVisualSizeBytes &&
-                   UnsafeUtility.SizeOf<HolographyTelemetryEntry>() == HolographyTelemetrySizeBytes &&
-                   UnsafeUtility.SizeOf<BuilderGhostIndirectArgsDTO>() == BuilderGhostIndirectArgsSizeBytes &&
-                   ResolveOffset<SocketStateDTO>(nameof(SocketStateDTO.LocalOffset)) == 0 &&
+            if (UnsafeUtility.SizeOf<SocketStateDTO>() != SocketStateSizeBytes ||
+                UnsafeUtility.SizeOf<GhostPreviewDTO>() != GhostPreviewSizeBytes ||
+                UnsafeUtility.SizeOf<ConstructionSocketModuleDTO>() != ConstructionSocketModuleSizeBytes ||
+                UnsafeUtility.SizeOf<SocketSnappingResultDTO>() != SocketSnappingResultSizeBytes ||
+                UnsafeUtility.SizeOf<SocketConnectionPairDTO>() != SocketConnectionPairSizeBytes ||
+                UnsafeUtility.SizeOf<SocketModuleBoundsDTO>() != SocketModuleBoundsSizeBytes ||
+                UnsafeUtility.SizeOf<SocketBoundsResultDTO>() != SocketBoundsResultSizeBytes ||
+                UnsafeUtility.SizeOf<ConstructionSocketTuningDTO>() != SocketTuningSizeBytes ||
+                UnsafeUtility.SizeOf<ConstructionSocketTelemetryEntry>() != SocketTelemetrySizeBytes ||
+                UnsafeUtility.SizeOf<BuilderGhostStateDTO>() != BuilderGhostStateSizeBytes ||
+                UnsafeUtility.SizeOf<BuilderGhostVisualDTO>() != BuilderGhostVisualSizeBytes ||
+                UnsafeUtility.SizeOf<HolographyTelemetryEntry>() != HolographyTelemetrySizeBytes ||
+                UnsafeUtility.SizeOf<BuilderGhostIndirectArgsDTO>() != BuilderGhostIndirectArgsSizeBytes)
+            {
+                return false;
+            }
+
+#if UNITY_EDITOR
+            return ResolveOffset<SocketStateDTO>(nameof(SocketStateDTO.LocalOffset)) == 0 &&
                    ResolveOffset<SocketStateDTO>(nameof(SocketStateDTO.NormalDirection)) == 24 &&
                    ResolveOffset<SocketStateDTO>(nameof(SocketStateDTO.AllowedConnectionBitmask)) == 36 &&
                    ResolveOffset<SocketStateDTO>(nameof(SocketStateDTO.ParentModuleHash)) == 40 &&
@@ -367,12 +438,17 @@ namespace Hecton8.Construction
                    ResolveOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.ValidationFlags)) == 92 &&
                    ResolveOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.AnimationPhase)) == 96 &&
                    ResolveOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.ValidationStateHash)) == 100;
+#else
+            return true;
+#endif
         }
 
+#if UNITY_EDITOR
         public static int ResolveOffset<T>(string fieldName) where T : struct
         {
             return Marshal.OffsetOf<T>(fieldName).ToInt32();
         }
+#endif
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref SocketStateDTO SocketRef(NativeArray<SocketStateDTO> sockets, int index)
@@ -383,7 +459,7 @@ namespace Hecton8.Construction
 
         public static ConstructionSocketTuningDTO CreateDefaultTuning(float globalQualityWeight)
         {
-            ConstructionSocketTuningDTO tuning;
+            ConstructionSocketTuningDTO tuning = default;
             tuning.SnappingRadius = 1f;
             tuning.UnsnapRadius = 1.25f;
             tuning.AlignmentDotThreshold = 0.82f;
@@ -397,9 +473,6 @@ namespace Hecton8.Construction
             tuning.Frame = 0u;
             tuning.Flags = 0u;
             tuning.MagnetForce = 1f;
-            tuning._pad1 = 0u;
-            tuning._pad2 = 0u;
-            tuning._pad3 = 0u;
             return tuning;
         }
 
@@ -425,6 +498,7 @@ namespace Hecton8.Construction
             if (vault == null)
                 return false;
 
+            ResetVaultDescriptorsIfOwnerChanged(vault);
             bool resetCounters = ShouldResetCounterLane(vault);
             s_Tuning.GlobalQualityWeight = ResolveGlobalQualityWeight();
             s_SocketStatesHandle = EnsureVaultHandle(vault, BufferID.ConstructionSocketStates, MockSocketCount, ref s_SocketStatesHandle);
@@ -448,21 +522,62 @@ namespace Hecton8.Construction
             s_BuilderGhostSdfSamplesHandle = EnsureVaultHandle(vault, BuilderGhostSdfSamplesBufferId, BuilderGhostSdfSampleCapacity, ref s_BuilderGhostSdfSamplesHandle);
             s_BuilderGhostIndirectArgsHandle = EnsureVaultHandle(vault, BuilderGhostIndirectArgsBufferId, 1, ref s_BuilderGhostIndirectArgsHandle);
 
-            if (vault.TryResolveHandle(in s_CountersHandle, out NativeArray<int> counters) &&
-                counters.IsCreated &&
-                resetCounters)
+            if (resetCounters &&
+                TryAcquireWriteLane(vault, in s_CountersHandle, out NativeArray<int> counters))
             {
-                ClearCounterLane(counters);
+                try
+                {
+                    ClearCounterLane(counters);
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in s_CountersHandle, SystemID.Construction);
+                }
             }
 
-            if (vault.TryResolveHandle(in s_TuningHandle, out NativeArray<ConstructionSocketTuningDTO> tuningBuffer) &&
-                tuningBuffer.IsCreated &&
-                tuningBuffer.Length > 0)
+            if (TryAcquireWriteLane(vault, in s_TuningHandle, out NativeArray<ConstructionSocketTuningDTO> tuningBuffer))
             {
-                tuningBuffer[0] = s_Tuning;
+                try
+                {
+                    tuningBuffer[0] = s_Tuning;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in s_TuningHandle, SystemID.Construction);
+                }
             }
 
             return ValidateStructLayout();
+        }
+
+        private static void ResetVaultDescriptorsIfOwnerChanged(IDataVault vault)
+        {
+            if (ReferenceEquals(s_BoundVault, vault))
+                return;
+
+            s_BoundVault = vault;
+            s_TelemetryDumped = false;
+            s_HolographyTelemetryDumped = false;
+            s_SocketStatesHandle = default;
+            s_SocketAupHandle = default;
+            s_GhostSocketStatesHandle = default;
+            s_GhostSocketAupHandle = default;
+            s_GhostPreviewHandle = default;
+            s_SocketCsrRangesHandle = default;
+            s_SocketCsrTargetIndicesHandle = default;
+            s_SnapResultsHandle = default;
+            s_TelemetryHandle = default;
+            s_TuningHandle = default;
+            s_ModuleHandle = default;
+            s_CountersHandle = default;
+            s_BoundsHandle = default;
+            s_ConnectionsHandle = default;
+            s_BuilderGhostStateHandle = default;
+            s_BuilderGhostVisualHandle = default;
+            s_HolographyTelemetryHandle = default;
+            s_BuilderGhostMockStateHandle = default;
+            s_BuilderGhostSdfSamplesHandle = default;
+            s_BuilderGhostIndirectArgsHandle = default;
         }
 
         public static bool TryResolveVaultViews(IDataVault vault, out ConstructionSocketVaultViews views)
@@ -572,77 +687,93 @@ namespace Hecton8.Construction
             try
             {
                 InitializeVault(vault);
-                if (!vault.TryResolveHandle(in s_ModuleHandle, out NativeArray<ConstructionSocketModuleDTO> modules) ||
-                    !vault.TryResolveHandle(in s_SocketStatesHandle, out NativeArray<SocketStateDTO> sockets) ||
-                    !vault.TryResolveHandle(in s_SocketAupHandle, out NativeArray<double3> socketAups) ||
-                    !vault.TryResolveHandle(in s_CountersHandle, out NativeArray<int> counters))
+                bool modulesLocked = false;
+                bool socketsLocked = false;
+                bool socketAupsLocked = false;
+                bool countersLocked = false;
+                bool csrRangesLocked = false;
+                bool csrTargetIndicesLocked = false;
+                try
                 {
-                    return false;
-                }
+                    if (!TryAcquireWriteLane(vault, in s_ModuleHandle, out NativeArray<ConstructionSocketModuleDTO> modules))
+                        return false;
+                    modulesLocked = true;
+                    if (!TryAcquireWriteLane(vault, in s_SocketStatesHandle, out NativeArray<SocketStateDTO> sockets))
+                        return false;
+                    socketsLocked = true;
+                    if (!TryAcquireWriteLane(vault, in s_SocketAupHandle, out NativeArray<double3> socketAups))
+                        return false;
+                    socketAupsLocked = true;
+                    if (!TryAcquireWriteLane(vault, in s_CountersHandle, out NativeArray<int> counters))
+                        return false;
+                    countersLocked = true;
+                    if (!TryAcquireWriteLane(vault, in s_SocketCsrRangesHandle, out NativeArray<int2> csrRanges))
+                        return false;
+                    csrRangesLocked = true;
+                    if (!TryAcquireWriteLane(vault, in s_SocketCsrTargetIndicesHandle, out NativeArray<int> csrTargetIndices))
+                        return false;
+                    csrTargetIndicesLocked = true;
 
-                int moduleCount = math.min(MockModuleCount, modules.Length);
-                int socketCapacity = math.min(MockSocketCount, math.min(sockets.Length, socketAups.Length));
-                const float spacing = 6f;
+                    int moduleCount = math.min(MockModuleCount, modules.Length);
+                    int socketCapacity = math.min(MockSocketCount, math.min(sockets.Length, socketAups.Length));
+                    const float spacing = 6f;
 
-                ClearCounterLane(counters);
+                    ClearCounterLane(counters);
 
-                for (int i = 0; i < moduleCount; i++)
-                {
-                    int gridX = i % 25;
-                    int gridZ = i / 25;
-                    double3 root = new double3(gridX * spacing, -40.0, gridZ * spacing);
-                    int socketStart = i * MockSocketsPerModule;
-                    ConstructionSocketModuleDTO module;
-                    module.RootAup = root;
-                    module.Rotation = quaternion.identity;
-                    module.BoundsCenter = float3.zero;
-                    module.BoundsExtents = new float3(2f, 1.5f, 2f);
-                    module.ModuleHash = 0x53484E00u + (uint)i;
-                    module.SocketStart = socketStart;
-                    module.SocketCount = socketStart + MockSocketsPerModule <= socketCapacity ? MockSocketsPerModule : 0;
-                    module.Flags = 0u;
-                    module.TopologyVersion = 1u;
-                    module.DearLieDampen = 0f;
-                    module.ConnectedMask = 0u;
-                    module.SceneModuleListIndex = -1;
-                    modules[i] = module;
-
-                    for (int s = 0; s < module.SocketCount; s++)
+                    for (int i = 0; i < moduleCount; i++)
                     {
-                        int socketIndex = socketStart + s;
-                        byte direction = (byte)s;
-                        float3 normal = DirectionToNormal(direction);
-                        double3 local = new double3(normal.x * 2.0, normal.y * 1.5, normal.z * 2.0);
-                        SocketStateDTO socket;
-                        socket.LocalOffset = local;
-                        socket.NormalDirection = normal;
-                        socket.AllowedConnectionBitmask = PackAllowedConnectionBitmask(direction, UniversalCompatibilityHash24);
-                        socket.ParentModuleHash = module.ModuleHash;
-                        socket.ConnectionStatus = 0u;
-                        socket._pad0 = 0u;
-                        socket._pad1 = 0u;
-                        socket._pad2 = 0u;
-                        socket._pad3 = 0u;
-                        sockets[socketIndex] = socket;
-                        socketAups[socketIndex] = root + local;
+                        int gridX = i % 25;
+                        int gridZ = i / 25;
+                        double3 root = new double3(gridX * spacing, -40.0, gridZ * spacing);
+                        int socketStart = i * MockSocketsPerModule;
+                        ConstructionSocketModuleDTO module;
+                        module.RootAup = root;
+                        module.Rotation = quaternion.identity;
+                        module.BoundsCenter = float3.zero;
+                        module.BoundsExtents = new float3(2f, 1.5f, 2f);
+                        module.ModuleHash = 0x53484E00u + (uint)i;
+                        module.SocketStart = socketStart;
+                        module.SocketCount = socketStart + MockSocketsPerModule <= socketCapacity ? MockSocketsPerModule : 0;
+                        module.Flags = 0u;
+                        module.TopologyVersion = 1u;
+                        module.DearLieDampen = 0f;
+                        module.ConnectedMask = 0u;
+                        module.SceneModuleListIndex = -1;
+                        modules[i] = module;
+
+                        for (int s = 0; s < module.SocketCount; s++)
+                        {
+                            int socketIndex = socketStart + s;
+                            byte direction = (byte)s;
+                            float3 normal = DirectionToNormal(direction);
+                            double3 local = new double3(normal.x * 2.0, normal.y * 1.5, normal.z * 2.0);
+                            SocketStateDTO socket = default;
+                            socket.LocalOffset = local;
+                            socket.NormalDirection = normal;
+                            socket.AllowedConnectionBitmask = PackAllowedConnectionBitmask(direction, UniversalCompatibilityHash24);
+                            socket.ParentModuleHash = module.ModuleHash;
+                            socket.ConnectionStatus = 0u;
+                            sockets[socketIndex] = socket;
+                            socketAups[socketIndex] = root + local;
+                        }
                     }
-                }
 
-                if (counters.Length >= 4)
-                {
-                    counters[0] = moduleCount;
-                    counters[1] = math.min(moduleCount * MockSocketsPerModule, socketCapacity);
-                    counters[2] = 1;
-                    counters[3] = 0;
-                }
+                    if (counters.Length >= 4)
+                    {
+                        counters[0] = moduleCount;
+                        counters[1] = math.min(moduleCount * MockSocketsPerModule, socketCapacity);
+                        counters[2] = 1;
+                        counters[3] = 0;
+                        if (counters.Length > CounterMagicIndex)
+                            counters[CounterMagicIndex] = CounterMagic;
+                    }
 
-                if (vault.TryResolveHandle(in s_SocketCsrRangesHandle, out NativeArray<int2> csrRanges) &&
-                    vault.TryResolveHandle(in s_SocketCsrTargetIndicesHandle, out NativeArray<int> csrTargetIndices))
-                {
                     return BuildSocketDirectionCsr(sockets, math.min(moduleCount * MockSocketsPerModule, socketCapacity), csrRanges, csrTargetIndices);
                 }
-
-                return true;
+                finally
+                {
+                    ReleaseGenerateMockWriteLocks(vault, csrTargetIndicesLocked, csrRangesLocked, countersLocked, socketAupsLocked, socketsLocked, modulesLocked);
+                }
             }
             finally
             {
@@ -727,9 +858,9 @@ namespace Hecton8.Construction
         private static bool ShouldResetCounterLane(IDataVault vault)
         {
             if (!vault.TryGetGenerationHandle<int>(BufferID.ConstructionSocketCounters, out VaultGenerationHandle<int> existingHandle) ||
-                !vault.TryResolveHandle(in existingHandle, out NativeArray<int> counters) ||
+                !vault.TryReadHandle(in existingHandle, out NativeArray<int> counters) ||
                 !counters.IsCreated ||
-                counters.Length <= 4)
+                counters.Length <= CounterMagicIndex)
             {
                 return true;
             }
@@ -737,7 +868,8 @@ namespace Hecton8.Construction
             int moduleCapacity = MockModuleCount;
             int socketCapacity = MockSocketCount;
             int connectionCapacity = MockSocketCount;
-            return counters[0] < 0 ||
+            return counters[CounterMagicIndex] != CounterMagic ||
+                   counters[0] < 0 ||
                    counters[0] > moduleCapacity ||
                    counters[1] < 0 ||
                    counters[1] > socketCapacity ||
@@ -752,6 +884,56 @@ namespace Hecton8.Construction
 
             for (int i = 0; i < counters.Length; i++)
                 counters[i] = 0;
+
+            if (counters.Length > CounterMagicIndex)
+                counters[CounterMagicIndex] = CounterMagic;
+        }
+
+        private static bool TryAcquireWriteLane<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, SystemID.Construction);
+            buffer = default;
+            return false;
+        }
+
+        private static void ReleaseGenerateMockWriteLocks(
+            IDataVault vault,
+            bool csrTargetIndicesLocked,
+            bool csrRangesLocked,
+            bool countersLocked,
+            bool socketAupsLocked,
+            bool socketsLocked,
+            bool modulesLocked)
+        {
+            if (vault == null)
+                return;
+
+            if (csrTargetIndicesLocked)
+                vault.ReleaseWriteLock(in s_SocketCsrTargetIndicesHandle, SystemID.Construction);
+            if (csrRangesLocked)
+                vault.ReleaseWriteLock(in s_SocketCsrRangesHandle, SystemID.Construction);
+            if (countersLocked)
+                vault.ReleaseWriteLock(in s_CountersHandle, SystemID.Construction);
+            if (socketAupsLocked)
+                vault.ReleaseWriteLock(in s_SocketAupHandle, SystemID.Construction);
+            if (socketsLocked)
+                vault.ReleaseWriteLock(in s_SocketStatesHandle, SystemID.Construction);
+            if (modulesLocked)
+                vault.ReleaseWriteLock(in s_ModuleHandle, SystemID.Construction);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -827,7 +1009,7 @@ namespace Hecton8.Construction
                 return;
 
             int index = (int)(frame % (uint)math.min(telemetryRing.Length, TelemetryCapacity));
-            HolographyTelemetryEntry entry;
+            HolographyTelemetryEntry entry = default;
             entry.AUP_TargetPosition = targetAup;
             entry.Frame = frame;
             entry.PrefabHashID = prefabHash;
@@ -837,8 +1019,6 @@ namespace Hecton8.Construction
             entry.MinSdfDistance = math.isfinite(minSdfDistance) ? minSdfDistance : -9999f;
             entry.ValidationStateHash = validationStateHash;
             entry.GlobalQualityWeight = SanitizeQuality(globalQualityWeight);
-            entry._pad0 = 0u;
-            entry._pad1 = 0u;
             telemetryRing[index] = entry;
 
             bool fault = !math.all(math.isfinite(targetAup)) ||
@@ -865,15 +1045,30 @@ namespace Hecton8.Construction
 
             void* ptr = telemetryRing.GetUnsafeReadOnlyPtr();
             int byteLength = telemetryRing.Length * UnsafeUtility.SizeOf<T>();
+            string resolvedPath = ResolveDumpPath(absolutePath);
+            if (string.IsNullOrEmpty(resolvedPath))
+                return;
 
-            string directory = Path.GetDirectoryName(absolutePath);
+            string directory = Path.GetDirectoryName(resolvedPath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
 
-            using (FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (FileStream stream = new FileStream(resolvedPath, FileMode.Create, FileAccess.Write, FileShare.Read))
             {
                 stream.Write(new ReadOnlySpan<byte>(ptr, byteLength));
             }
+        }
+
+        private static string ResolveDumpPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
+
+            if (Path.IsPathRooted(path))
+                return path;
+
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            return Path.GetFullPath(Path.Combine(projectRoot, path));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1096,7 +1291,7 @@ namespace Hecton8.Construction
             ref VaultGenerationHandle<T> handle) where T : struct
         {
             if (handle.BufferID != 0u &&
-                vault.TryResolveHandle(in handle, out NativeArray<T> existing) &&
+                vault.TryReadHandle(in handle, out NativeArray<T> existing) &&
                 existing.IsCreated &&
                 existing.Length >= requiredLength)
             {

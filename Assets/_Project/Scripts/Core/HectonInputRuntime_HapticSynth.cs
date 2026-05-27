@@ -92,7 +92,9 @@ namespace Hecton8.Core
         {
             _hapticSynthesisScheduledForPostSimulation = false;
             _hapticSynthesisScheduledTelemetryIndex = -1;
-            EnsureDeterministicInputNativeBuffers();
+            if (!_deterministicVaultBuffersReady)
+                return dependsOn;
+
             uint schemeHash = _currentInputSchemeHash != 0u ? _currentInputSchemeHash : ResolveCurrentInputSchemeHash();
             if (schemeHash == InputSchemeHashKeyboardMouse)
                 return dependsOn;
@@ -111,8 +113,15 @@ namespace Hecton8.Core
             if (schemeHash == InputSchemeHashKeyboardMouse)
                 return dependsOn;
 
-            if (!EnsureHapticSynthesisNativeBuffers())
+            if (!TryResolveHapticSynthesisRequiredBuffers(
+                    out NativeArray<HapticTuningDTO> tuningBuffer,
+                    out NativeArray<HapticPulseSignal> finalPulse,
+                    out NativeArray<HapticTelemetryEntry> telemetryRing,
+                    out NativeArray<HapticPulseSignal> pulses,
+                    out NativeArray<HapticProfileDTO> profiles))
+            {
                 return dependsOn;
+            }
 
             uint frame = frameId != 0u ? frameId : Hecton8.Core.SystemDispatcher.CurrentFrameId;
             if (!TryResolvePlayerHapticAup(out double3 playerAup))
@@ -123,13 +132,6 @@ namespace Hecton8.Core
 
             float homeostasisQuality = HomeostasisBrain.GlobalQualityWeight;
             float quality = math.saturate(math.isfinite(homeostasisQuality) ? homeostasisQuality : 1f);
-            if (!TryResolveInputBuffer(in _hapticSynthesisTuningHandle, 1, out NativeArray<HapticTuningDTO> tuningBuffer) ||
-                !TryResolveInputBuffer(in _hapticSynthesisFinalPulseHandle, 1, out NativeArray<HapticPulseSignal> finalPulse) ||
-                !TryResolveInputBuffer(in _hapticSynthesisTelemetryRingHandle, HapticSynthesisMath.TelemetryCapacity, out NativeArray<HapticTelemetryEntry> telemetryRing))
-            {
-                return dependsOn;
-            }
-
             HapticTuningDTO tuning = tuningBuffer[0];
             tuning.GlobalQualityWeight = quality;
             tuning.TickIntervalSeconds = HapticSynthesisMath.ResolveTickInterval(quality);
@@ -157,12 +159,6 @@ namespace Hecton8.Core
                 mockJob.Seed = seed;
                 chain = mockJob.Schedule(chain);
                 mockCount = math.min(51, mockImpulses.Length);
-            }
-
-            if (!TryResolveInputBuffer(in _hapticSynthesisPulsesHandle, HapticSynthesisMath.PulseCapacity, out NativeArray<HapticPulseSignal> pulses) ||
-                !TryResolveInputBuffer(in _hapticSynthesisProfilesHandle, HapticSynthesisMath.ProfileCapacity, out NativeArray<HapticProfileDTO> profiles))
-            {
-                return chain;
             }
 
             EvaluateHapticSynthesisJob evaluateJob = default;
@@ -274,8 +270,15 @@ namespace Hecton8.Core
         private bool TryRunHapticSynthesisTranslator(float deltaTime, in InputProfileDTO inputProfile, out HapticPulseSignal pulse)
         {
             pulse = default;
-            if (!EnsureHapticSynthesisNativeBuffers())
+            if (!TryResolveHapticSynthesisRequiredBuffers(
+                    out NativeArray<HapticTuningDTO> tuningBuffer,
+                    out NativeArray<HapticPulseSignal> finalPulse,
+                    out NativeArray<HapticTelemetryEntry> telemetryRing,
+                    out NativeArray<HapticPulseSignal> pulses,
+                    out NativeArray<HapticProfileDTO> profiles))
+            {
                 return false;
+            }
 
             if (!TryResolvePlayerHapticAup(out double3 playerAup))
             {
@@ -285,13 +288,6 @@ namespace Hecton8.Core
 
             float homeostasisQuality = HomeostasisBrain.GlobalQualityWeight;
             float quality = math.saturate(math.isfinite(homeostasisQuality) ? homeostasisQuality : 1f);
-            if (!TryResolveInputBuffer(in _hapticSynthesisTuningHandle, 1, out NativeArray<HapticTuningDTO> tuningBuffer) ||
-                !TryResolveInputBuffer(in _hapticSynthesisFinalPulseHandle, 1, out NativeArray<HapticPulseSignal> finalPulse) ||
-                !TryResolveInputBuffer(in _hapticSynthesisTelemetryRingHandle, HapticSynthesisMath.TelemetryCapacity, out NativeArray<HapticTelemetryEntry> telemetryRing))
-            {
-                return false;
-            }
-
             HapticTuningDTO tuning = tuningBuffer[0];
             tuning.GlobalQualityWeight = quality;
             tuning.TickIntervalSeconds = HapticSynthesisMath.ResolveTickInterval(quality);
@@ -318,12 +314,6 @@ namespace Hecton8.Core
                 mockJob.Seed = seed;
                 mockJob.Run();
                 mockCount = math.min(51, mockImpulses.Length);
-            }
-
-            if (!TryResolveInputBuffer(in _hapticSynthesisPulsesHandle, HapticSynthesisMath.PulseCapacity, out NativeArray<HapticPulseSignal> pulses) ||
-                !TryResolveInputBuffer(in _hapticSynthesisProfilesHandle, HapticSynthesisMath.ProfileCapacity, out NativeArray<HapticProfileDTO> profiles))
-            {
-                return false;
             }
 
             long startTicks = Stopwatch.GetTimestamp();
@@ -385,6 +375,26 @@ namespace Hecton8.Core
 
             SignalBus<HapticPulseSignal>.TryPushTracked(in pulse, ref s_x001HectonInputRuntimeHapticSynthSignalPushDropCount);
             return true;
+        }
+
+        private bool TryResolveHapticSynthesisRequiredBuffers(
+            out NativeArray<HapticTuningDTO> tuningBuffer,
+            out NativeArray<HapticPulseSignal> finalPulse,
+            out NativeArray<HapticTelemetryEntry> telemetryRing,
+            out NativeArray<HapticPulseSignal> pulses,
+            out NativeArray<HapticProfileDTO> profiles)
+        {
+            tuningBuffer = default;
+            finalPulse = default;
+            telemetryRing = default;
+            pulses = default;
+            profiles = default;
+            return _hapticSynthesisInitialized &&
+                   TryResolveInputBuffer(in _hapticSynthesisTuningHandle, 1, out tuningBuffer) &&
+                   TryResolveInputBuffer(in _hapticSynthesisFinalPulseHandle, 1, out finalPulse) &&
+                   TryResolveInputBuffer(in _hapticSynthesisTelemetryRingHandle, HapticSynthesisMath.TelemetryCapacity, out telemetryRing) &&
+                   TryResolveInputBuffer(in _hapticSynthesisPulsesHandle, HapticSynthesisMath.PulseCapacity, out pulses) &&
+                   TryResolveInputBuffer(in _hapticSynthesisProfilesHandle, HapticSynthesisMath.ProfileCapacity, out profiles);
         }
 
         private bool EnsureHapticSynthesisNativeBuffers()

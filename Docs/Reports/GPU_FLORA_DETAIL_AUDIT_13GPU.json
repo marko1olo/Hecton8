@@ -1,0 +1,205 @@
+{
+  "agent": "13GPU",
+  "date": "2026-05-27",
+  "status": "STATIC_VERIFIED_COMPILE_NOT_RELAUNCHED_DUE_ACTIVE_DOTNET_PROCESS",
+  "batchPromptFound": false,
+  "domain": "GPU instancing, flora, rocks, micro-detail optimization, visual scalability",
+  "touchedFiles": [
+    {
+      "path": "Assets/_Project/Scripts/ScatterBudgetController.cs",
+      "sha256": "FCBF0263F285036B0D7A71C7CA7B7FB2F1FAEE802C8C6FEB99659E39A9528D1A",
+      "change": "Replaced abrupt depth-band budget selection with hysteresis, smooth profile blending, and continuous GlobalQualityWeight scaling."
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonBatchRendererGroupUtility.cs",
+      "sha256": "2A3D7C0FF1D3BA66CF0B63185A7B678B72D7DC6A39470897162D3C20674875FA",
+      "change": "Added fail-closed finite guards for BRG matrix culling, culling planes, sphere visibility, and bounds visibility."
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonHLODRenderer.cs",
+      "sha256": "53E09753AC1C5CE353BAD232FB81D64071E96F0BB9251B778130802A1105B36F",
+      "change": "Compacts valid HLOD instances during upload, rejects invalid matrices/bounds/fades/origin-shift inputs, and provides a cached fallback runtime material from the assigned or hidden shader."
+    },
+    {
+      "path": "Assets/_Project/Scripts/WorldProceduralScatterWorkingMemory.cs",
+      "sha256": "75BA6CF7EC4514A2EE3E58F3BC0084AD09D0ADD05FB00D974EC23019E7C30553",
+      "change": "Rejects non-finite scatter placement positions and negative/non-finite spacing before native spatial bucket insertion."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/InstanceCulling.compute",
+      "sha256": "DF19A96074741AFF1A4F8C08585DD02C5797F87CFBA39B4810FA629EA07A5339",
+      "change": "Adds fail-closed finite guards for GPU culling constants, matrices, planes, bounds radius, voxel SDF coordinates, and sampled SDF values."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_Impostor.hlsl",
+      "sha256": "CC3EBB32BB1726F4A62A4A1F2C10C5A8AAD351D0849E12102343AA34008BF8C6",
+      "change": "Sanitizes impostor atlas grid addressing by deriving inverse grid scale from columns/rows and wrapping view index by total cell count."
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonDistantLandmarkRenderer.cs",
+      "sha256": "FF49A293B03AD1B563A1D435CD8C632A9DA8D1862E3685E6FE1F4D3568AEF921",
+      "change": "Adds fail-closed validation/compaction for distant landmark native bounds and HLOD payloads, validates external buffers, guards origin-shift bounds, and implements cached fallback silhouette material."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/PackImpostorAtlas.compute",
+      "sha256": "C82BA3F97D9571C5F6F280FFDA08AAB75BBAAC0960FE589C77DFC472E4D23231",
+      "change": "Wraps atlas view index by total grid cells and guards source/output texture dimensions before impostor atlas writes."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_GpuScatter.compute",
+      "sha256": "E8E821F842283E377485788C1DC3A43CDA00D80ED578A182AA76FCB5D691B02D",
+      "change": "Clamps scatter generation and compaction to the real grid cell count and clears stale visibility for published candidates outside the valid grid window."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/DilateImpostorEdges.compute",
+      "sha256": "9FBB8A09783E3327AA3F2C2C0462551E903225EB1F9C0FC1A0A9B4186D1CA26B",
+      "change": "Clamps impostor edge dilation to the minimum real source/mask/output texture dimensions before sampling or writing atlas pixels."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_KelpMaster_GPUI.shader",
+      "sha256": "5844F77C3A3CD501082B3EC32DA937965A7FCBCF8999C57ACC0CDC831B594F80",
+      "change": "Adds finite ingress guards for kelp vertex/global motion data and smooth _H8GlobalQualityWeight gates for sway, interaction deformation, MX350 motion cap, and high-quality parallax."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_CoralMaster_GPUI.shader",
+      "sha256": "7E6C153CB833A6760C4A785CCBF0B258498DC4F9B7C89DA67958A17587CF88CD",
+      "change": "Adds sanitized touch-ripple count/vector guards and smooth _H8GlobalQualityWeight gates for coral ripple overkill and high-quality parallax."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_GeologyImpostorBillboard.shader",
+      "sha256": "FE5EE6B5CA52C90464A86875BEE617BE71BCCF2B7ED82B6C9E4A585346BB1DFB",
+      "change": "Adds finite guards for geology impostor vertex position, UV, atlas sample, base color, alpha clip threshold, ambient floor, and fail-closed color output."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_VoxelSSAO.compute",
+      "sha256": "460E30EF3DED02069087B6C46A2B7CFA76D6F437A57EFEF06B2DD3713246677C",
+      "change": "Adds finite fallbacks for SSAO projection/radius/intensity/sigma and float2-to-int rounding before sample offset generation."
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader",
+      "sha256": "DC6692A28DCC69F409509772D675220CB732A841902DC3E679010B33AF53DD35",
+      "change": "Adds finite guards for voxel rock vertex/absolute positions, origin offset, biome grid casts, volume/cut/damage mask sampling, and caustic/noise data."
+    }
+  ],
+  "confirmedProblems": [
+    {
+      "id": "SCATTER_BUDGET_DEPTH_FLIP",
+      "severity": "medium",
+      "evidence": "Pre-patch ScatterBudgetController selected Surface/MidDepth/Deep profile directly by depth thresholds and skipped only when the enum matched.",
+      "fix": "Stable band uses hysteresis; effective runtime profile uses smooth interpolation around threshold windows."
+    },
+    {
+      "id": "SCATTER_BUDGET_NO_GLOBAL_QUALITY_WEIGHT",
+      "severity": "medium",
+      "evidence": "Pre-patch budget code did not read HomeostasisBrain.GlobalQualityWeight.",
+      "fix": "Scavenge radius, spawn cadence, collider radius, and collider operation cadence now scale continuously from survival to visual overkill."
+    },
+    {
+      "id": "BRG_CULLING_INVALID_INPUT_VISIBLE",
+      "severity": "high",
+      "evidence": "Pre-patch BRG culling accepted matrix axes, centers, culling planes, bounds, and radii without finite checks.",
+      "fix": "Invalid culling inputs now return invisible or write a zero visibility byte before draw command output."
+    },
+    {
+      "id": "HLOD_UPLOAD_POISONED_BY_ONE_INSTANCE",
+      "severity": "high",
+      "evidence": "Pre-patch HLOD upload copied every instance and merged bounds without validating LocalToWorld, LocalBounds, Fade01, or origin-shift input.",
+      "fix": "Invalid HLOD records are skipped while valid records are compacted and uploaded contiguously."
+    },
+    {
+      "id": "SCATTER_SPATIAL_CACHE_ACCEPTS_INVALID_PLACEMENT",
+      "severity": "medium",
+      "evidence": "Pre-patch scatter placement registration inserted Position and EffectiveSpacing into native spatial buckets without finite/non-negative validation.",
+      "fix": "Invalid position or spacing is rejected before capacity growth and bucket insertion."
+    },
+    {
+      "id": "COMPUTE_CULLING_TRUSTS_MALFORMED_DATA",
+      "severity": "high",
+      "evidence": "Pre-patch compute culling used cull distance, instance radius, matrix rows, frustum planes, voxel SDF transform, UVW coordinates, and sampled SDF values without complete finite validation.",
+      "fix": "Invalid GPU culling inputs now fail closed before visibility writes, distance branches, voxel casts, or sampled SDF decisions."
+    },
+    {
+      "id": "IMPOSTOR_ATLAS_TRUSTS_INCONSISTENT_CELL_SCALE",
+      "severity": "medium",
+      "evidence": "Pre-patch HectonImpostorAtlasUv used atlasGrid.zw for UV cell scale even when atlasGrid.xy columns/rows were the authoritative grid.",
+      "fix": "Cell scale is derived from sanitized columns/rows and view index is wrapped within total cell count."
+    },
+    {
+      "id": "HLOD_FALLBACK_SHADER_CONTRACT_NOT_IMPLEMENTED",
+      "severity": "medium",
+      "evidence": "Pre-patch HectonHLODRenderer serialized a shader and documented Hidden/Hecton/HLOD fallback, but ResolveMaterial returned only an assigned Material.",
+      "fix": "ResolveMaterial now creates and reuses one hidden runtime material from the assigned shader or fallback shader."
+    },
+    {
+      "id": "DISTANT_LANDMARK_INVALID_BRG_PAYLOAD",
+      "severity": "high",
+      "evidence": "Pre-patch HectonDistantLandmarkRenderer accepted external buffers, native Bounds, native HLODData, origin shifts, and draw bounds without finite validation.",
+      "fix": "Invalid payloads now clear binding or are skipped while valid native entries are compacted into contiguous upload buffers."
+    },
+    {
+      "id": "DISTANT_LANDMARK_FALLBACK_SHADER_CONTRACT_NOT_IMPLEMENTED",
+      "severity": "medium",
+      "evidence": "Pre-patch HectonDistantLandmarkRenderer serialized _silhouetteShader and documented hidden fallback material behavior, but ResolveMaterial returned only _material.",
+      "fix": "ResolveMaterial now creates and reuses one hidden runtime material from assigned or Hidden/Hecton8/World/DistantLandmarkSilhouette shader."
+    },
+    {
+      "id": "IMPOSTOR_ATLAS_PACK_OUT_OF_CELL_WRITE",
+      "severity": "medium",
+      "evidence": "Pre-patch PackImpostorAtlas.compute clamped _ViewIndex only to non-negative and did not guard source/output texture dimensions.",
+      "fix": "View index is wrapped by atlasGrid.x * atlasGrid.y; source pixels are clamped to source dimensions and output pixels outside target dimensions are rejected."
+    },
+    {
+      "id": "GPU_SCATTER_CANDIDATE_COUNT_EXCEEDS_GRID",
+      "severity": "high",
+      "evidence": "Pre-patch Hecton_GpuScatter.compute used _HectonScatterCandidateCount for generate/compact bounds without clamping to _HectonScatterGridResolution squared.",
+      "fix": "Generate and compact kernels now use ResolveGridCandidateCount and clear stale visibility for candidate indices outside the valid grid-cell window."
+    },
+    {
+      "id": "IMPOSTOR_DILATION_TRUSTS_AUTHORED_ATLAS_SIZE",
+      "severity": "medium",
+      "evidence": "Pre-patch DilateImpostorEdges.compute used _AtlasSize for source, mask, and output texture access without checking actual texture dimensions.",
+      "fix": "Dilation now reads real source/mask/output dimensions and clamps the working atlas size to their shared valid area."
+    },
+    {
+      "id": "KELP_GPUI_RAW_MOTION_INPUT_AND_BINARY_DETAIL",
+      "severity": "medium",
+      "evidence": "Pre-patch Hecton_KelpMaster_GPUI.shader used raw vertex positions/normals, _TotalUniverseOffset, sway constants, _Time, UV height, and vertex color seeds in forward/shadow/depth motion, while MX350/high-quality paths had fixed behavior inside the active variant.",
+      "fix": "Kelp motion now sanitizes finite ingress data and consumes _H8GlobalQualityWeight through smooth gates for sway, interaction deformation, MX350 motion cap, and high parallax."
+    },
+    {
+      "id": "CORAL_GPUI_UNCHECKED_RIPPLE_PAYLOAD_AND_BINARY_DETAIL",
+      "severity": "medium",
+      "evidence": "Pre-patch Hecton_CoralMaster_GPUI.shader cast _BiolumTouchRippleParams.x directly and consumed _BiolumTouchRipples entries without finite validation; touch ripple and high parallax were not continuously quality-gated.",
+      "fix": "Coral ripple count and entries are sanitized before use, and ripple energy plus high parallax now consume smooth _H8GlobalQualityWeight gates."
+    },
+    {
+      "id": "GEOLOGY_IMPOSTOR_UNCHECKED_ATLAS_INPUTS",
+      "severity": "medium",
+      "evidence": "Pre-patch Hecton_GeologyImpostorBillboard.shader sampled the atlas and clipped alpha from raw vertex UV/material values without finite guards.",
+      "fix": "The billboard shader now sanitizes vertex position, UV, base color, atlas sample, alpha clip threshold, ambient floor, and final color."
+    },
+    {
+      "id": "VOXEL_SSAO_UNCHECKED_PARAMS_BEFORE_INT_ROUND",
+      "severity": "medium",
+      "evidence": "Pre-patch Hecton_VoxelSSAO.compute derived radiusPixels and sample offsets from raw _HectonVoxelSSAOParamsA values before float-to-int rounding.",
+      "fix": "SSAO projection/radius/intensity/sigma and rounded float2 offsets now use finite fallbacks before texture loads."
+    },
+    {
+      "id": "ABYSSAL_VOXEL_ROCK_UNCHECKED_CASTS_AND_SAMPLES",
+      "severity": "high",
+      "evidence": "Pre-patch Hecton_AbyssalVoxelRock.shader used unchecked positions, origin offsets, biome grid params, mask rects, damage volume params, and caustic layer/time data before int casts, texture samples, and displacement/noise math.",
+      "fix": "Voxel rock now sanitizes scalar/vector ingress and fails closed around biome grid casts, carve masks, damage volume masks, displacement, and caustic/noise inputs."
+    }
+  ],
+  "staticChecks": {
+    "addedSetDataOrGetData": false,
+    "addedDrawMeshInstanced": false,
+    "addedLinq": false,
+    "addedHotPathArrayAllocation": false,
+    "diffCheck": "PASS_CRLF_WARNINGS_ONLY",
+    "compile": "NOT_RELAUNCHED_LATEST_GATE_CPU_73_THEN_77_AFTER_30S_NO_ACTIVE_DOTNET_CSC; CPU_ABOVE_50_FORBIDS_BUILD; EARLIER_BLOCKERS_CANDICE_SQLITE_MISSING_MONO_DATA_AND_PROJECT_GRAPH_RESOLVEPROJECTREFERENCES_CYCLE_MISSING_TEMP_SHADERGRAPH_EDITOR_DLL",
+    "shaderCompile": "NOT_RUN_UNITY_SHADER_COMPILER_UNAVAILABLE"
+  },
+  "runtimeProof": "absent",
+  "estimatedMicrosecondsSaved": "35-80 during depth threshold churn; 15-40 corrupt BRG cull containment; 20-60 poisoned HLOD batch containment; 10-30 invalid scatter spacing containment; 20-50 corrupt compute cull containment; 5-20 bad impostor material fallback containment; 15-45 corrupt distant landmark/HLOD payload containment; 10-35 malformed GPU scatter dispatch containment; 8-25 corrupt kelp payload containment; 5-18 corrupt coral ripple payload containment; 3-8 malformed geology impostor payload containment; 5-15 malformed voxel SSAO dispatch containment; 12-40 corrupt abyssal rock/geology payload containment. HLOD and landmark fallback materials are visual correctness, atlas guards are corruption containment, normal kelp/coral/geology/rock changes are continuous visual scaling or fail-closed safety, not profiler-backed saving claims. Pending profiler capture."
+}

@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Atmosphere;
 using Hecton8.Celestial;
 using Hecton8.Construction;
@@ -34,6 +34,14 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-105)]
     public sealed class FloraInteractionManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IProceduralSwayDirector, IGlobalRegistryHotSwapListener
     {
+        private static readonly WaitCallback s_floraMemoryTelemetryDumpCallback = WriteFloraMemoryTelemetryDumpQueued;
+
+        private sealed class FloraMemoryTelemetryDumpWork
+        {
+            public string Path;
+            public byte[] Payload;
+        }
+
         private static int s_x001FloraInteractionManagerSignalPushDropCount;
         private const int MaxModuleParentResolveDepth = 16;
         private const uint KccVelocityFloraInteractionMaxAgeFrames = 12u;
@@ -76,33 +84,56 @@ namespace Hecton8.World
         private struct FloraSwayFieldTelemetryEntry
         {
             [FieldOffset(0)] public uint Frame;
-            [FieldOffset(4)] public ushort Resolution;
-            [FieldOffset(6)] public ushort ActiveWakeSourcesCount;
-            [FieldOffset(8)] public uint NonZeroCellsCount;
-            [FieldOffset(12)] public uint Flags;
-            [FieldOffset(16)] public float3 FieldCenterWS;
-            [FieldOffset(28)] public float CellSize;
-            [FieldOffset(32)] public float MaxMagnitude;
-            [FieldOffset(36)] public float GlobalQualityWeight;
-            [FieldOffset(40)] public float UpdateIntervalSeconds;
-            [FieldOffset(44)] public float SystemStress01;
-            [FieldOffset(48)] public uint StateHash;
-            [FieldOffset(52)] public uint DataVaultGeneration;
-            [FieldOffset(56)] public uint AupShiftSequence;
-            [FieldOffset(60)] public uint CpuMicroseconds;
+            [FieldOffset(4)] public uint NonZeroCellsCount;
+            [FieldOffset(8)] public uint Flags;
+            [FieldOffset(12)] public float3 FieldCenterWS;
+            [FieldOffset(24)] public float CellSize;
+            [FieldOffset(28)] public float MaxMagnitude;
+            [FieldOffset(32)] public float GlobalQualityWeight;
+            [FieldOffset(36)] public float UpdateIntervalSeconds;
+            [FieldOffset(40)] public float SystemStress01;
+            [FieldOffset(44)] public uint StateHash;
+            [FieldOffset(48)] public uint DataVaultGeneration;
+            [FieldOffset(52)] public uint AupShiftSequence;
+            [FieldOffset(56)] public uint CpuMicroseconds;
+            [FieldOffset(60)] public ushort Resolution;
+            [FieldOffset(62)] public ushort ActiveWakeSourcesCount;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        private struct FloraMemoryTelemetryEntry
+        {
+            [FieldOffset(0)] public uint Frame;
+            [FieldOffset(4)] public uint EventHash;
+            [FieldOffset(8)] public uint BufferID;
+            [FieldOffset(12)] public uint SystemID;
+            [FieldOffset(16)] public uint Generation;
+            [FieldOffset(20)] public uint RequiredLength;
+            [FieldOffset(24)] public uint ActualLength;
+            [FieldOffset(28)] public uint Flags;
+            [FieldOffset(32)] public uint ConsecutiveFailures;
+            [FieldOffset(36)] public uint VaultGeneration;
+            [FieldOffset(40)] public float GlobalQualityWeight;
+            [FieldOffset(44)] public float SystemStress01;
+            [FieldOffset(48)] public uint StateHash;
+            [FieldOffset(52)] public uint AupShiftSequence;
+            [FieldOffset(56)] public uint CpuMicroseconds;
+            [FieldOffset(60)] private uint _reserved0;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 40)]
         private struct ModuleParasiteState
         {
-            public float PowerDrainWatts;
-            public float InfectionLevel;
-            public float RootPowerDrainWatts;
-            public float RootInfectionLevel;
-            public float MaxMatureAttachedSeconds;
-            public float AddedMassKilograms;
-            public float ThermalInsulation01;
-            public float BioReactorOverheatMultiplier;
-            public int ParasiteCount;
+            [FieldOffset(0)] public float PowerDrainWatts;
+            [FieldOffset(4)] public float InfectionLevel;
+            [FieldOffset(8)] public float RootPowerDrainWatts;
+            [FieldOffset(12)] public float RootInfectionLevel;
+            [FieldOffset(16)] public float MaxMatureAttachedSeconds;
+            [FieldOffset(20)] public float AddedMassKilograms;
+            [FieldOffset(24)] public float ThermalInsulation01;
+            [FieldOffset(28)] public float BioReactorOverheatMultiplier;
+            [FieldOffset(32)] public int ParasiteCount;
+            [FieldOffset(36)] private uint _pad0;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -135,11 +166,11 @@ namespace Hecton8.World
             [FieldOffset(60)]
             public byte State;
             [FieldOffset(61)]
-            public byte Padding0;
+            private byte _pad0;
             [FieldOffset(62)]
-            public byte Padding1;
+            private byte _pad1;
             [FieldOffset(63)]
-            public byte Padding2;
+            private byte _pad2;
         }
 
         internal readonly struct ModuleParasiteTarget
@@ -166,9 +197,9 @@ namespace Hecton8.World
             [FieldOffset(0)] public float3 Center;
             [FieldOffset(12)] public float StartTimeSeconds;
             [FieldOffset(16)] public float RadiusMeters;
-            [FieldOffset(20)] public float Padding0;
-            [FieldOffset(24)] public float Padding1;
-            [FieldOffset(28)] public float Padding2;
+            [FieldOffset(20)] private uint _pad0;
+            [FieldOffset(24)] private uint _pad1;
+            [FieldOffset(28)] private uint _pad2;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -178,8 +209,8 @@ namespace Hecton8.World
             [FieldOffset(12)] public float Radius;
             [FieldOffset(16)] public float Intensity;
             [FieldOffset(20)] public float ExpireTimeSeconds;
-            [FieldOffset(24)] public float Padding0;
-            [FieldOffset(28)] public float Padding1;
+            [FieldOffset(24)] private uint _pad0;
+            [FieldOffset(28)] private uint _pad1;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -199,6 +230,12 @@ namespace Hecton8.World
 
             public void Execute(int index)
             {
+                if (!PhaseSeeds.IsCreated ||
+                    (uint)index >= (uint)PhaseSeeds.Length)
+                {
+                    return;
+                }
+
                 if (!Metadata.IsCreated ||
                     !ReactiveTemplateMask.IsCreated ||
                     index < 0 ||
@@ -234,25 +271,18 @@ namespace Hecton8.World
                 {
                     FloraCascadeEventPayload cascadeEvent = Events[eventIndex];
                     float radius = cascadeEvent.RadiusMeters;
-                    if (radius < 0f)
-                        continue;
-
                     float3 cascadeDelta = position - cascadeEvent.Center;
                     float distanceSq = math.lengthsq(cascadeDelta);
                     float radiusSq = radius * radius;
-                    if (distanceSq > radiusSq)
-                        continue;
+                    bool valid = radius >= 0f & math.isfinite(distanceSq) & distanceSq <= radiusSq;
 
                     float distance = distanceSq * math.rsqrt(math.max(distanceSq, 0.000001f));
                     float activationTime = cascadeEvent.StartTimeSeconds + (distance / safeSpeed);
-                    if (!found || activationTime < bestSeed)
-                    {
-                        bestSeed = activationTime;
-                        found = true;
-                    }
+                    bestSeed = math.select(bestSeed, math.min(bestSeed, activationTime), valid);
+                    found |= valid;
                 }
 
-                PhaseSeeds[index] = found ? bestSeed + BuildDeterministicFrameOffset(index, instanceData) : InactiveSeed;
+                PhaseSeeds[index] = math.select(InactiveSeed, bestSeed + BuildDeterministicFrameOffset(index, instanceData), found);
             }
 
             private static float BuildDeterministicFrameOffset(int instanceIndex, HectonVegetationInstanceData instanceData)
@@ -379,28 +409,16 @@ namespace Hecton8.World
                 if ((uint)physicalIndex >= (uint)NodeCount || physicalIndex >= FieldValues.Length)
                     return;
 
-                if (ResetField != 0 || IsFloraSwayWrappedCellNewJob(x, y, z, CenterShiftCells, safeResolution))
-                {
-                    FieldValues[physicalIndex] = default;
-                    return;
-                }
-
                 FloraDisplacementDTO value = FieldValues[physicalIndex];
-                float safeDeltaTime = math.isfinite(DeltaTime) ? math.clamp(DeltaTime, 0f, 0.2f) : 0f;
-                float safeDecayRate = math.isfinite(DecayRate) ? math.max(0f, DecayRate) : 0f;
+                bool resetCell = ResetField != 0 || IsFloraSwayWrappedCellNewJob(x, y, z, CenterShiftCells, safeResolution);
+                float safeDeltaTime = math.select(0f, math.clamp(DeltaTime, 0f, 0.2f), math.isfinite(DeltaTime));
+                float safeDecayRate = math.select(0f, math.max(0f, DecayRate), math.isfinite(DecayRate));
                 float decay = MathLodApproximation.ApproxExpNegPade33Wide40(safeDeltaTime * safeDecayRate);
                 float3 force = math.select(float3.zero, value.ForceVector * decay, math.all(math.isfinite(value.ForceVector)));
                 float magnitudeSq = math.lengthsq(force);
-                if (!math.isfinite(magnitudeSq) || magnitudeSq <= 0.0000001f)
-                {
-                    value.ForceVector = float3.zero;
-                    value.DecayTimer = 0f;
-                }
-                else
-                {
-                    value.ForceVector = force;
-                    value.DecayTimer = math.saturate(value.DecayTimer * decay);
-                }
+                bool active = !resetCell & math.isfinite(magnitudeSq) & magnitudeSq > 0.0000001f;
+                value.ForceVector = math.select(float3.zero, force, active);
+                value.DecayTimer = math.select(0f, math.saturate(value.DecayTimer * decay), active);
 
                 FieldValues[physicalIndex] = value;
             }
@@ -460,53 +478,50 @@ namespace Hecton8.World
                 for (int sourceIndex = 0; sourceIndex < safeSourceLimit; sourceIndex++)
                 {
                     WakeSource source = WakeSources[sourceIndex];
-                    if (source.Active == 0 ||
-                        source.Intensity <= WakeMinimumPublishedIntensity ||
-                        source.Radius <= 0.01f ||
-                        !math.all(math.isfinite(source.VelocityWS)) ||
-                        !math.isfinite(source.Radius) ||
-                        !math.isfinite(source.Intensity))
-                    {
-                        continue;
-                    }
+                    bool radiusFinite = math.isfinite(source.Radius);
+                    bool intensityFinite = math.isfinite(source.Intensity);
+                    bool velocityFinite = math.all(math.isfinite(source.VelocityWS));
+                    float safeRadius = math.max(0.001f, math.select(0f, source.Radius, radiusFinite));
+                    float safeIntensity = math.max(0f, math.select(0f, source.Intensity, intensityFinite));
+                    float3 safeVelocity = math.select(float3.zero, source.VelocityWS, velocityFinite);
+                    bool sourceValid = source.Active != 0 &
+                                       safeIntensity > WakeMinimumPublishedIntensity &
+                                       safeRadius > 0.01f &
+                                       velocityFinite &
+                                       radiusFinite &
+                                       intensityFinite;
 
                     AbsoluteUniversePosition sourceAup = source.PositionAup;
                     float3 sourceLocal = ResolveAupLocalDelta(in sourceAup, in FieldCenterAup);
-                    if (!math.all(math.isfinite(sourceLocal)))
-                        continue;
-
-                    float radius = math.max(source.Radius, 0.001f);
-                    float3 delta = sampleLocal - sourceLocal;
+                    bool sourceLocalFinite = math.all(math.isfinite(sourceLocal));
+                    float3 safeSourceLocal = math.select(sampleLocal, sourceLocal, sourceLocalFinite);
+                    float3 delta = sampleLocal - safeSourceLocal;
                     delta.y *= 0.55f;
                     float distanceSq = math.lengthsq(delta);
-                    float radiusSq = radius * radius;
-                    if (!math.isfinite(distanceSq) || distanceSq >= radiusSq)
-                        continue;
+                    float radiusSq = safeRadius * safeRadius;
+                    bool valid = sourceValid & sourceLocalFinite & math.isfinite(distanceSq) & distanceSq < radiusSq;
+                    float validWeight = math.select(0f, 1f, valid);
 
-                    float falloff = 1f - SmoothStepJob(distanceSq / math.max(radiusSq, 0.0001f));
-                    float3 wakeDirection = ResolveSafeDirectionJob(source.VelocityWS, float3.zero);
+                    float falloff = validWeight * (1f - SmoothStepJob(distanceSq / math.max(radiusSq, 0.0001f)));
+                    float3 wakeDirection = ResolveSafeDirectionJob(safeVelocity, float3.zero);
                     float3 radialDirection = ResolveSafeDirectionJob(delta, -wakeDirection);
                     float3 bendDirection = ResolveSafeDirectionJob(wakeDirection * 0.72f + radialDirection * 0.28f, radialDirection);
-                    float speedGain = math.saturate(EstimateLengthJob(source.VelocityWS) * 0.075f + 0.22f);
+                    float speedGain = math.saturate(EstimateLengthJob(safeVelocity) * 0.075f + 0.22f);
                     float sourceGain = ResolveSourceGainJob(source.SourceKind) * math.max(0f, EntityMassMultiplier);
-                    float strength = falloff * math.saturate(source.Intensity) * sourceGain * speedGain * math.lerp(0.42f, 0.96f, qualityCurve);
+                    float strength = falloff * math.saturate(safeIntensity) * sourceGain * speedGain * math.lerp(0.42f, 0.96f, qualityCurve);
                     displacement += bendDirection * (strength * maxDisplacement);
                     displacement.y -= strength * math.lerp(0.025f, 0.085f, qualityCurve) * falloff;
-                    energy = math.max(energy, falloff * math.saturate(source.Intensity));
+                    energy = math.max(energy, falloff * math.saturate(safeIntensity));
                 }
 
                 float magnitudeSq = math.lengthsq(displacement);
                 float maxDisplacementSq = maxDisplacement * maxDisplacement;
-                if (!math.isfinite(magnitudeSq))
-                {
-                    displacement = float3.zero;
-                    energy = 0f;
-                }
-                else if (magnitudeSq > maxDisplacementSq)
-                {
-                    displacement *= maxDisplacement * math.rsqrt(math.max(magnitudeSq, 0.0001f));
-                    magnitudeSq = maxDisplacementSq;
-                }
+                bool magnitudeFinite = math.isfinite(magnitudeSq);
+                bool magnitudeOverCap = magnitudeFinite & magnitudeSq > maxDisplacementSq;
+                float3 cappedDisplacement = displacement * (maxDisplacement * math.rsqrt(math.max(magnitudeSq, 0.0001f)));
+                displacement = math.select(float3.zero, math.select(displacement, cappedDisplacement, magnitudeOverCap), magnitudeFinite);
+                energy = math.select(0f, energy, magnitudeFinite);
+                magnitudeSq = math.select(magnitudeSq, maxDisplacementSq, magnitudeOverCap);
 
                 value.ForceVector = displacement;
                 value.DecayTimer = math.saturate(energy);
@@ -515,12 +530,13 @@ namespace Hecton8.World
 
             private static float3 ResolveAmbientCurrent(float3 sampleLocal, float3 currentWS, float qualityCurve, float influence, float framePhase)
             {
-                float safeInfluence = math.saturate(math.isfinite(influence) ? influence : 0f);
+                float safeInfluence = math.saturate(math.select(0f, influence, math.isfinite(influence)));
                 float3 current = math.select(float3.zero, currentWS, math.all(math.isfinite(currentWS)));
                 float currentMagnitudeSq = math.lengthsq(current);
-                float3 currentDirection = currentMagnitudeSq > 0.000001f
-                    ? current * math.rsqrt(math.max(currentMagnitudeSq, 0.000001f))
-                    : new float3(0.35f, 0.04f, 0.72f);
+                float3 currentDirection = math.select(
+                    new float3(0.35f, 0.04f, 0.72f),
+                    current * math.rsqrt(math.max(currentMagnitudeSq, 0.000001f)),
+                    currentMagnitudeSq > 0.000001f);
                 float currentMagnitude = math.min(1.75f, currentMagnitudeSq * math.rsqrt(math.max(currentMagnitudeSq, 0.0001f)));
                 float noiseScale = math.lerp(0.032f, 0.074f, qualityCurve);
                 float n0 = Triangle01(sampleLocal.x * noiseScale + sampleLocal.z * 0.013f + framePhase);
@@ -575,28 +591,24 @@ namespace Hecton8.World
                 delta.y *= 0.55f;
                 float distanceSq = math.lengthsq(delta);
                 float radiusSq = math.max(fieldRadius * fieldRadius, 0.0001f);
-                if (!math.isfinite(distanceSq) || distanceSq >= radiusSq)
-                    return;
+                bool validSample = math.isfinite(distanceSq) & distanceSq < radiusSq;
+                float validWeight = math.select(0f, 1f, validSample);
 
                 float falloff = 1f - SmoothStepJob(distanceSq / radiusSq);
                 float3 direction = ResolveSafeDirectionJob(new float3(0.42f, -0.08f, 0.82f), new float3(1f, 0f, 0f));
                 FloraDisplacementDTO value = FieldValues[physicalIndex];
                 value.ForceVector = math.select(float3.zero, value.ForceVector, math.all(math.isfinite(value.ForceVector)));
                 value.DecayTimer = math.select(0f, math.saturate(value.DecayTimer), math.isfinite(value.DecayTimer));
-                value.ForceVector += direction * (falloff * math.lerp(0.08f, 0.24f, q));
-                value.DecayTimer = math.max(value.DecayTimer, falloff * 0.72f);
+                value.ForceVector += direction * (validWeight * falloff * math.lerp(0.08f, 0.24f, q));
+                value.DecayTimer = math.max(value.DecayTimer, validWeight * falloff * 0.72f);
                 float maxDisplacement = math.lerp(0.28f, FloraSwayFieldMaxDisplacementMeters, q);
                 float magnitudeSq = math.lengthsq(value.ForceVector);
                 float maxDisplacementSq = maxDisplacement * maxDisplacement;
-                if (!math.isfinite(magnitudeSq))
-                {
-                    value.ForceVector = float3.zero;
-                    value.DecayTimer = 0f;
-                }
-                else if (magnitudeSq > maxDisplacementSq)
-                {
-                    value.ForceVector *= maxDisplacement * math.rsqrt(math.max(magnitudeSq, 0.0001f));
-                }
+                bool magnitudeFinite = math.isfinite(magnitudeSq);
+                bool magnitudeOverCap = magnitudeFinite & magnitudeSq > maxDisplacementSq;
+                float3 cappedForce = value.ForceVector * (maxDisplacement * math.rsqrt(math.max(magnitudeSq, 0.0001f)));
+                value.ForceVector = math.select(float3.zero, math.select(value.ForceVector, cappedForce, magnitudeOverCap), magnitudeFinite);
+                value.DecayTimer = math.select(0f, value.DecayTimer, magnitudeFinite);
 
                 FieldValues[physicalIndex] = value;
             }
@@ -629,24 +641,18 @@ namespace Hecton8.World
                 {
                     FloraDisplacementDTO value = FieldValues[i];
                     float magnitudeSq = math.lengthsq(value.ForceVector);
-                    if (!math.isfinite(magnitudeSq))
-                    {
-                        outputFlags |= FloraSwayFieldNaNFlag;
-                        continue;
-                    }
-
-                    if (magnitudeSq > 0.0000001f)
-                    {
-                        nonZeroCells++;
-                        maxMagnitude = math.max(maxMagnitude, math.sqrt(magnitudeSq));
-                    }
+                    bool finite = math.isfinite(magnitudeSq);
+                    bool nonZero = finite & magnitudeSq > 0.0000001f;
+                    outputFlags |= math.select(0u, FloraSwayFieldNaNFlag, !finite);
+                    nonZeroCells += math.select(0u, 1u, nonZero);
+                    maxMagnitude = math.max(maxMagnitude, math.select(0f, math.sqrt(math.max(magnitudeSq, 0f)), nonZero));
                 }
 
                 if (!FieldMeta.IsCreated || FieldMeta.Length < FloraSwayFieldMetaVectorCount)
                     return;
 
                 FieldMeta[0] = new float4(FieldCenterWS.x, FieldCenterWS.y, FieldCenterWS.z, CellSize);
-                FieldMeta[1] = new float4(Resolution, maxMagnitude > 0.0001f ? 1f : 0f, QualityWeight, maxMagnitude);
+                FieldMeta[1] = new float4(Resolution, math.select(0f, 1f, maxMagnitude > 0.0001f), QualityWeight, maxMagnitude);
                 FieldMeta[2] = new float4(NodeCount, UpdateIntervalSeconds, ActiveWakeCount, nonZeroCells);
                 FieldMeta[3] = new float4(
                     math.max(0, FrameIndex),
@@ -658,7 +664,7 @@ namespace Hecton8.World
 
         private static float SmoothStepJob(float value)
         {
-            float t = math.saturate(math.isfinite(value) ? value : 0f);
+            float t = math.saturate(math.select(0f, value, math.isfinite(value)));
             return t * t * (3f - 2f * t);
         }
 
@@ -681,31 +687,26 @@ namespace Hecton8.World
 
         private static float ResolveSourceGainJob(byte sourceKind)
         {
-            return sourceKind == WakeSourceVehicle
-                ? 1.22f
-                : sourceKind == WakeSourceApexPredator
-                    ? 1.05f
-                    : 0.72f;
+            float gain = math.select(0.72f, 1.05f, sourceKind == WakeSourceApexPredator);
+            return math.select(gain, 1.22f, sourceKind == WakeSourceVehicle);
         }
 
         private static float3 ResolveSafeDirectionJob(float3 value, float3 fallback)
         {
             float lengthSq = math.lengthsq(value);
-            if (math.isfinite(lengthSq) && lengthSq > 0.000001f)
-                return value * math.rsqrt(math.max(lengthSq, 0.000001f));
-
             float fallbackLengthSq = math.lengthsq(fallback);
-            if (math.isfinite(fallbackLengthSq) && fallbackLengthSq > 0.000001f)
-                return fallback * math.rsqrt(math.max(fallbackLengthSq, 0.000001f));
-
-            return float3.zero;
+            bool valueValid = math.isfinite(lengthSq) & lengthSq > 0.000001f;
+            bool fallbackValid = math.isfinite(fallbackLengthSq) & fallbackLengthSq > 0.000001f;
+            float3 valueDirection = value * math.rsqrt(math.max(lengthSq, 0.000001f));
+            float3 fallbackDirection = fallback * math.rsqrt(math.max(fallbackLengthSq, 0.000001f));
+            return math.select(math.select(float3.zero, fallbackDirection, fallbackValid), valueDirection, valueValid);
         }
 
         private static int WrapFloraSwayGridCoordJob(int value, int resolution)
         {
             int safeResolution = math.max(1, resolution);
             int wrapped = value % safeResolution;
-            return wrapped < 0 ? wrapped + safeResolution : wrapped;
+            return wrapped + math.select(0, safeResolution, wrapped < 0);
         }
 
         private static int ResolveFloraSwayFieldIndexJob(int x, int y, int z, int3 ringOffset, int resolution)
@@ -731,12 +732,14 @@ namespace Hecton8.World
         private static float3 ResolveAupLocalDelta(in AbsoluteUniversePosition source, in AbsoluteUniversePosition origin)
         {
             const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+            const double maxLocalDeltaMeters = 1048576d;
             double3 delta = new double3(
                 (((double)source.GridX - origin.GridX) * cellSize) + ((double)source.LocalX - origin.LocalX),
                 (((double)source.GridY - origin.GridY) * cellSize) + ((double)source.LocalY - origin.LocalY),
                 (((double)source.GridZ - origin.GridZ) * cellSize) + ((double)source.LocalZ - origin.LocalZ));
+            delta = math.clamp(delta, new double3(-maxLocalDeltaMeters), new double3(maxLocalDeltaMeters));
             float3 result = new float3((float)delta.x, (float)delta.y, (float)delta.z);
-            return math.all(math.isfinite(result)) ? result : float3.zero;
+            return math.select(float3.zero, result, math.all(math.isfinite(result)));
         }
 
         private const int MaxPublishedInteractionPoints = 12;
@@ -745,18 +748,24 @@ namespace Hecton8.World
         private const int MinProceduralWakeSlotLimit = 4;
         private const int WakeBlackBoxCapacity = 300;
         private const int FloraSwayFieldBlackBoxCapacity = 300;
+        private const int FloraMemoryTelemetryCapacity = 300;
+        private const int FloraMemoryTelemetryDumpFailureThreshold = 3;
         private const int MaxWakeSignalsPerFrame = 64;
         private const int MaxModuleQueryHits = 32;
         private const int MaxPredatorThreatQueryHits = 16;
         private const int MaxParasiteAnchors = 16;
+        private const int MaxTrackedModuleParasiteStates = 512;
+        private const int MaxTrackedThermophileDwellModules = 512;
         private const int DefaultHeadlessParasiteCapacity = 256;
         private const int MaxCascadeEvents = 4;
         private const int MaxDefensiveSporeBursts = 6;
+        private const int ReactiveFloraHandleCapacity = 64;
         private const int InteractionPointStride = 32;
         private const int FlowFieldStride = sizeof(float) * 2;
         private const int FloraSwayFieldMinResolution = 16;
         private const int FloraSwayFieldMaxResolution = 64;
         private const int FloraSwayFieldMaxNodeCount = FloraSwayFieldMaxResolution * FloraSwayFieldMaxResolution * FloraSwayFieldMaxResolution;
+        private const int CascadePhaseSeedCapacity = FloraSwayFieldMaxNodeCount;
         private const int FloraSwayFieldMetaVectorCount = 4;
         private const int FloraSwayFieldJobBatchSize = 64;
         private const int FloraStiffnessRuleCapacity = 16;
@@ -773,6 +782,7 @@ namespace Hecton8.World
         private const float FloraSwayFieldMaxDisplacementMeters = 1.35f;
         private const int WakeTrailStampCommandCapacity = 4;
         private const int WakeTrailThreadGroupSize = 8;
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
         private const byte WakeSourcePlayer = 1;
         private const byte WakeSourceVehicle = 2;
         private const byte WakeSourceApexPredator = 3;
@@ -793,13 +803,40 @@ namespace Hecton8.World
         private const uint FloraSwayFieldWrappedShiftFlag = 1u << 5;
         private const uint FloraSwayFieldFullResetFlag = 1u << 6;
         private const uint FloraSwayFieldDiscardedUploadFlag = 1u << 7;
+        private const uint FloraMemoryTelemetryMissingVaultFlag = 1u << 0;
+        private const uint FloraMemoryTelemetryInvalidLengthFlag = 1u << 1;
+        private const uint FloraMemoryTelemetryCompactionFenceFlag = 1u << 2;
+        private const uint FloraMemoryTelemetryHandleMismatchFlag = 1u << 3;
+        private const uint FloraMemoryTelemetryResolveFailedFlag = 1u << 4;
+        private const uint FloraMemoryTelemetryInvalidBufferFlag = 1u << 5;
+        private const uint FloraMemoryTelemetryWriteLockFailedFlag = 1u << 6;
+        private const uint FloraMemoryTelemetryNaNFlag = 1u << 7;
         private const uint WakeFluidImpulseSourceHash = 0x57414B45u;
         private const uint FloraSwayFieldSourceHash = 0x46535759u;
+        private const uint FloraMemoryTelemetryEventResolve = 0x46525652u;
+        private const uint FloraMemoryTelemetryEventWriteLock = 0x4652574Cu;
+        private const uint FloraMemoryTelemetryEventNaN = 0x46524E41u;
+        private const string FloraMemoryTelemetryDumpPath = "Docs/AgentLogs/Dump_1327_FloraInteraction.bin";
         private const BufferID FloraSwayDisplacementFieldBufferId = (BufferID)71650;
         private const BufferID FloraSwayFieldMetaBufferId = (BufferID)71651;
         private const BufferID FloraSwayFieldBlackBoxBufferId = (BufferID)71652;
         private const BufferID FloraStiffnessRulesBufferId = (BufferID)71653;
         private const BufferID FloraStiffnessCsvScratchBufferId = (BufferID)71654;
+        private const BufferID FloraOceanFlowSamplePositionsBufferId = (BufferID)71655;
+        private const BufferID FloraOceanFlowSampleResultsBufferId = (BufferID)71656;
+        private const BufferID FloraParasiteNodesBufferId = (BufferID)71657;
+        private const BufferID FloraCascadeReactiveTemplateMaskBufferId = (BufferID)71658;
+        private const BufferID FloraDefensiveSporeTemplateMaskBufferId = (BufferID)71659;
+        private const BufferID FloraBloodKelpTemplateMaskBufferId = (BufferID)71660;
+        private const BufferID FloraGhostWeedTemplateMaskBufferId = (BufferID)71661;
+        private const BufferID FloraSurfaceCascadePhaseSeedsBufferId = (BufferID)71662;
+        private const BufferID FloraUnderwaterCascadePhaseSeedsBufferId = (BufferID)71663;
+        private const BufferID FloraSurfaceCascadeEventsBufferId = (BufferID)71664;
+        private const BufferID FloraUnderwaterCascadeEventsBufferId = (BufferID)71665;
+        private const BufferID FloraSurfaceReactiveHandlesBufferId = (BufferID)71666;
+        private const BufferID FloraUnderwaterReactiveHandlesBufferId = (BufferID)71667;
+        private const BufferID FloraReactiveQueryHandlesBufferId = (BufferID)71668;
+        private const BufferID FloraMemoryTelemetryBufferId = (BufferID)71669;
         private const float ApexPredatorWakeMinSpeed = 3f;
         private const float DefaultPlayerWakeRadius = 2.4f;
         private const float DefaultMaxBendRadius = 2.9f;
@@ -827,14 +864,6 @@ namespace Hecton8.World
         private const byte ParasiteNodeStateDead = 2;
         private const float DamageReactionDurationSeconds = 0.55f;
         private const float DamageReactionDurationReciprocal = 1.8181819f;
-        private const string NativeMemoryOwner = nameof(FloraInteractionManager);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
-        private const Allocator DataVaultExemptOceanFlowSampleAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptReactiveFloraSpatialAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptCascadeEventAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptParasiteStateAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptTemplateMaskAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptCascadePhaseSeedAllocator = Allocator.Persistent;
 #if UNITY_EDITOR
         private const string WakeTrailSimulationComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_VegetationWakeTrailSim.compute";
 #endif
@@ -1360,6 +1389,7 @@ namespace Hecton8.World
         private IAtmosphereReadModel _atmosphereReadModel;
         private IConstructionParasiteGraphService _constructionParasiteGraph;
         private ISaveService _saveService;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private Transform _activeScooterTransform;
         private Vector3 _lastPlayerPosition;
         private Vector3 _lastPublishedPlayerVelocity;
@@ -1485,6 +1515,8 @@ namespace Hecton8.World
         private int _wakeTrailRuntimeResolution;
         private int _wakeTrailQualityLevel = -1;
         private int _wakeTrailSimulationKernel = -1;
+        private int _wakeTrailThreadGroupSizeX;
+        private int _wakeTrailThreadGroupSizeY;
         private int _flowFieldResolution;
         private int _floraSwayFieldResolution;
         private int _floraSwayFieldNodeCount;
@@ -1510,8 +1542,8 @@ namespace Hecton8.World
         private AbsoluteUniversePosition _lastUploadedFloraSwayFieldCenterAup;
         private AbsoluteUniversePosition _floraSwayFieldPendingCenterAup;
         private bool _floraSwayFieldCenterAupValid;
-        private NativeArray<Vector3> _oceanFlowSamplePositions;
-        private NativeArray<Vector3> _oceanFlowSampleResults;
+        private VaultGenerationHandle<Vector3> _oceanFlowSamplePositionsHandle;
+        private VaultGenerationHandle<Vector3> _oceanFlowSampleResultsHandle;
         private ParticleSystem.EmitParams _sedimentEmitParams;
         private bool[] _toxicSporeTemplateMask = Array.Empty<bool>();
         private int _cachedToxicSporeTemplateCount = -1;
@@ -1531,11 +1563,16 @@ namespace Hecton8.World
         private readonly Vector4[] _parasiteAnchorData = new Vector4[MaxParasiteAnchors];
         private readonly Vector4[] _parasiteAnchorParams = new Vector4[MaxParasiteAnchors];
         private int _publishedParasiteAnchorCount;
-        private Dictionary<BaseModule, ModuleParasiteState> _moduleParasiteStateFront = new Dictionary<BaseModule, ModuleParasiteState>(16);
-        private Dictionary<BaseModule, ModuleParasiteState> _moduleParasiteStateBack = new Dictionary<BaseModule, ModuleParasiteState>(16);
-        private readonly Dictionary<BaseModule, float> _thermophileDwellSeconds = new Dictionary<BaseModule, float>(8);
-        private readonly List<BaseModule> _staleParasiticModules = new List<BaseModule>(16);
-        private NativeArray<ParasiteNode> _parasiteNodes;
+        private BaseModule[] _moduleParasiteStateFrontModules = new BaseModule[MaxTrackedModuleParasiteStates];
+        private ModuleParasiteState[] _moduleParasiteStateFrontValues = new ModuleParasiteState[MaxTrackedModuleParasiteStates];
+        private int _moduleParasiteStateFrontCount;
+        private BaseModule[] _moduleParasiteStateBackModules = new BaseModule[MaxTrackedModuleParasiteStates];
+        private ModuleParasiteState[] _moduleParasiteStateBackValues = new ModuleParasiteState[MaxTrackedModuleParasiteStates];
+        private int _moduleParasiteStateBackCount;
+        private readonly BaseModule[] _thermophileDwellModules = new BaseModule[MaxTrackedThermophileDwellModules];
+        private readonly float[] _thermophileDwellSeconds = new float[MaxTrackedThermophileDwellModules];
+        private int _thermophileDwellCount;
+        private VaultGenerationHandle<ParasiteNode> _parasiteNodesHandle;
         private JobHandle _parasiteGrowthHandle;
         private JobHandle _wakeDecayHandle;
         private int _parasiteNodeCount;
@@ -1553,17 +1590,23 @@ namespace Hecton8.World
         private int _lastUnderwaterCascadeSourcePayloadIndex = -1;
         private int _lastSurfacePlayerContactPayloadIndex = -1;
         private int _lastUnderwaterPlayerContactPayloadIndex = -1;
-        private NativeArray<byte> _cascadeReactiveTemplateMask;
-        private NativeArray<byte> _defensiveSporeBurstTemplateMask;
-        private NativeArray<byte> _allelopathicBloodKelpTemplateMask;
-        private NativeArray<byte> _allelopathicGhostWeedTemplateMask;
-        private NativeArray<float> _surfaceCascadePhaseSeeds;
-        private NativeArray<float> _underwaterCascadePhaseSeeds;
-        private NativeArray<FloraCascadeEventPayload> _surfaceCascadeEvents;
-        private NativeArray<FloraCascadeEventPayload> _underwaterCascadeEvents;
-        private NativeList<int> _surfaceReactiveFloraHandles;
-        private NativeList<int> _underwaterReactiveFloraHandles;
-        private NativeList<int> _reactiveFloraQueryHandles;
+        private VaultGenerationHandle<byte> _cascadeReactiveTemplateMaskHandle;
+        private VaultGenerationHandle<byte> _defensiveSporeBurstTemplateMaskHandle;
+        private VaultGenerationHandle<byte> _allelopathicBloodKelpTemplateMaskHandle;
+        private VaultGenerationHandle<byte> _allelopathicGhostWeedTemplateMaskHandle;
+        private VaultGenerationHandle<float> _surfaceCascadePhaseSeedsHandle;
+        private VaultGenerationHandle<float> _underwaterCascadePhaseSeedsHandle;
+        private VaultGenerationHandle<FloraCascadeEventPayload> _surfaceCascadeEventsHandle;
+        private VaultGenerationHandle<FloraCascadeEventPayload> _underwaterCascadeEventsHandle;
+        private VaultGenerationHandle<int> _surfaceReactiveFloraHandlesHandle;
+        private VaultGenerationHandle<int> _underwaterReactiveFloraHandlesHandle;
+        private VaultGenerationHandle<int> _reactiveFloraQueryHandlesHandle;
+        private VaultGenerationHandle<FloraMemoryTelemetryEntry> _floraMemoryTelemetryHandle;
+        private int _surfaceReactiveFloraHandleCount;
+        private int _underwaterReactiveFloraHandleCount;
+        private int _floraMemoryTelemetryCursor;
+        private int _floraMemoryConsecutiveFailureCount;
+        private bool _floraMemoryTelemetryDumped;
         private HectonSpatialHash _surfaceReactiveFloraHash;
         private HectonSpatialHash _underwaterReactiveFloraHash;
         private GraphicsBuffer _surfaceCascadePhaseSeedBuffer;
@@ -1635,11 +1678,13 @@ namespace Hecton8.World
         private static void ResetStaticState()
         {
             s_ActiveRuntimeInstance = null;
+            DroneFleetManager.ClearFloraInteractionManager(null);
         }
 
         private void Awake()
         {
             s_ActiveRuntimeInstance = this;
+            DroneFleetManager.BindFloraInteractionManager(this);
             _maxInteractionPoints = Mathf.Clamp(_maxInteractionPoints, 1, MaxPublishedInteractionPoints);
             _wakeTrailWorldSize = ClampFinite(_wakeTrailWorldSize, 128f, 64f, 192f);
             _wakeTrailFadeSeconds = ClampFinite(_wakeTrailFadeSeconds, 12f, 0.1f, 16f);
@@ -1707,8 +1752,15 @@ namespace Hecton8.World
             CacheStableHashIds(_defensiveSporeBurstStableIds, ref _defensiveSporeBurstStableHashIds);
             CacheEnvironmentRuntimeServicesCold();
             TryAutoAssignWakeTrailSimulationCompute();
-            if (_wakeTrailSimulationCompute != null)
-                _wakeTrailSimulationKernel = _wakeTrailSimulationCompute.FindKernel("SimulateWakeTrail");
+            if (_wakeTrailSimulationCompute != null && SystemInfo.supportsComputeShaders)
+            {
+                _wakeTrailSimulationKernel = ResolveKernel(_wakeTrailSimulationCompute, "SimulateWakeTrail");
+                ResolveKernelThreadGroupSizes(
+                    _wakeTrailSimulationCompute,
+                    _wakeTrailSimulationKernel,
+                    out _wakeTrailThreadGroupSizeX,
+                    out _wakeTrailThreadGroupSizeY);
+            }
 
             // COLD ALLOC: FloraInteractionPointGpuData[_maxInteractionPoints] - global vegetation interaction payload - owner: FloraInteractionManager
             _interactionPoints = new FloraInteractionPointGpuData[_maxInteractionPoints];
@@ -1727,32 +1779,26 @@ namespace Hecton8.World
             _interactionBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FloraInteractionPointGpuData>(_maxInteractionPoints); // COLD ALLOC: GraphicsBuffer[_maxInteractionPoints] A - global vegetation interaction StructuredBuffer - owner: FloraInteractionManager
             _interactionBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FloraInteractionPointGpuData>(_maxInteractionPoints); // COLD ALLOC: GraphicsBuffer[_maxInteractionPoints] B - global vegetation interaction StructuredBuffer - owner: FloraInteractionManager
             _activeInteractionBuffer = _interactionBufferA;
-            // COLD ALLOC: NativeArray<Vector3>[1] - caller-owned ocean provider sample positions for vegetation flow publishing - owner: FloraInteractionManager
-            _oceanFlowSamplePositions = new NativeArray<Vector3>(1, DataVaultExemptOceanFlowSampleAllocator, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<Vector3>[1] - caller-owned ocean provider sample results for vegetation flow publishing - owner: FloraInteractionManager
-            _oceanFlowSampleResults = new NativeArray<Vector3>(1, DataVaultExemptOceanFlowSampleAllocator, NativeArrayOptions.ClearMemory);
             ResolveProceduralWakeVaultBuffer(clearExisting: true);
             ResolveFloraSwayFieldVaultBuffer(clearExisting: false);
+            ResolveFloraAuxiliaryVaultBuffers(clearExisting: true);
             GenerateEmergencyMockStiffness();
             EnsureFloraSwayFieldGraphicsBuffers();
-            _reactiveFloraQueryHandles = new NativeList<int>(64, DataVaultExemptReactiveFloraSpatialAllocator); // COLD ALLOC: NativeList<int>[64] - shared reactive flora spatial-query handle staging - owner: FloraInteractionManager
-            _surfaceReactiveFloraHandles = new NativeList<int>(64, DataVaultExemptReactiveFloraSpatialAllocator); // COLD ALLOC: NativeList<int>[64] - registered surface reactive-flora spatial handles - owner: FloraInteractionManager
-            _underwaterReactiveFloraHandles = new NativeList<int>(64, DataVaultExemptReactiveFloraSpatialAllocator); // COLD ALLOC: NativeList<int>[64] - registered underwater reactive-flora spatial handles - owner: FloraInteractionManager
-            _surfaceCascadeEvents = new NativeArray<FloraCascadeEventPayload>(MaxCascadeEvents, DataVaultExemptCascadeEventAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FloraCascadeEventPayload>[4] - bounded active surface cascade wavefront descriptors - owner: FloraInteractionManager
-            _underwaterCascadeEvents = new NativeArray<FloraCascadeEventPayload>(MaxCascadeEvents, DataVaultExemptCascadeEventAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FloraCascadeEventPayload>[4] - bounded active underwater cascade wavefront descriptors - owner: FloraInteractionManager
-            _parasiteNodes = new NativeArray<ParasiteNode>(_headlessParasiteCapacity, DataVaultExemptParasiteStateAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ParasiteNode>[_headlessParasiteCapacity] - headless module parasite simulation state - owner: FloraInteractionManager
+            EnsureStructuredFloatBuffer(ref _surfaceCascadePhaseSeedBuffer, CascadePhaseSeedCapacity);
+            EnsureStructuredFloatBuffer(ref _underwaterCascadePhaseSeedBuffer, CascadePhaseSeedCapacity);
+            EnsureReactiveFloraHashCapacity(ref _surfaceReactiveFloraHash, ReactiveFloraHandleCapacity, allowCreate: true);
+            EnsureReactiveFloraHashCapacity(ref _underwaterReactiveFloraHash, ReactiveFloraHandleCapacity, allowCreate: true);
             _defensiveSporeBursts = new DefensiveSporeBurstState[MaxDefensiveSporeBursts]; // COLD ALLOC: DefensiveSporeBurstState[6] - bounded active toxicity cloud descriptors - owner: FloraInteractionManager
-            RegisterNativeMemorySentinel();
 
             Shader.SetGlobalBuffer(_InteractionBufferId, _activeInteractionBuffer);
             PublishFlowFieldGlobals();
             PublishFloraSwayFieldGlobals(forceUpload: true);
             CreateWakeTrailResources();
             EnsureSedimentParticleSystem();
-            RefreshToxicSporeTemplateMask(force: true);
-            RefreshCascadeTemplateMask(force: true);
-            RefreshDefensiveSporeBurstTemplateMask(force: true);
-            RefreshAllelopathicTemplateMasks(force: true);
+            RebuildToxicSporeTemplateMaskColdFromCurrentBridge();
+            RebuildCascadeTemplateMaskColdFromCurrentBridge();
+            RebuildDefensiveSporeBurstTemplateMaskColdFromCurrentBridge();
+            RebuildAllelopathicTemplateMasksColdFromCurrentBridge();
             ResetInteractionGlobals();
             PublishEnvironmentGlobals(Vector3.zero);
             PublishParasiteInfectionGlobals();
@@ -1761,6 +1807,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             s_ActiveRuntimeInstance = this;
+            DroneFleetManager.BindFloraInteractionManager(this);
 
             if (_activeInteractionBuffer != null)
                 Shader.SetGlobalBuffer(_InteractionBufferId, _activeInteractionBuffer);
@@ -1770,8 +1817,13 @@ namespace Hecton8.World
             CacheEnvironmentRuntimeServicesCold();
             ResolveProceduralWakeVaultBuffer(clearExisting: false);
             ResolveFloraSwayFieldVaultBuffer(clearExisting: false);
+            ResolveFloraAuxiliaryVaultBuffers(clearExisting: false);
             EnsureFloraSwayFieldGraphicsBuffers();
-            RefreshInstanceCullingService();
+            EnsureStructuredFloatBuffer(ref _surfaceCascadePhaseSeedBuffer, CascadePhaseSeedCapacity);
+            EnsureStructuredFloatBuffer(ref _underwaterCascadePhaseSeedBuffer, CascadePhaseSeedCapacity);
+            EnsureReactiveFloraHashCapacity(ref _surfaceReactiveFloraHash, ReactiveFloraHandleCapacity, allowCreate: true);
+            EnsureReactiveFloraHashCapacity(ref _underwaterReactiveFloraHash, ReactiveFloraHandleCapacity, allowCreate: true);
+            CacheInstanceCullingServiceCold();
             TryRegisterCullingHotSwapListener();
             RefreshCachedSubmarineContext();
             PublishFlowFieldGlobals();
@@ -1787,6 +1839,7 @@ namespace Hecton8.World
             if (s_ActiveRuntimeInstance == this)
                 s_ActiveRuntimeInstance = null;
 
+            DroneFleetManager.ClearFloraInteractionManager(this);
             HectonFloatingOrigin.UnregisterListener(this);
             GlobalRegistry.UnregisterWakeDisplacementService(this);
             TryUnregisterCullingHotSwapListener();
@@ -1801,6 +1854,8 @@ namespace Hecton8.World
             _atmosphereReadModel = null;
             _constructionParasiteGraph = null;
             _saveService = null;
+            _oceanKinematicsService = null;
+            _oceanKinematicsProvider = null;
             TryUnregister();
             ClearToxicSporeHazard();
             ClearDefensiveSporeHazard();
@@ -1815,6 +1870,7 @@ namespace Hecton8.World
             if (s_ActiveRuntimeInstance == this)
                 s_ActiveRuntimeInstance = null;
 
+            DroneFleetManager.ClearFloraInteractionManager(this);
             HectonFloatingOrigin.UnregisterListener(this);
             GlobalRegistry.UnregisterWakeDisplacementService(this);
             TryUnregisterCullingHotSwapListener();
@@ -1829,6 +1885,8 @@ namespace Hecton8.World
             _atmosphereReadModel = null;
             _constructionParasiteGraph = null;
             _saveService = null;
+            _oceanKinematicsService = null;
+            _oceanKinematicsProvider = null;
             TryUnregister();
             ClearToxicSporeHazard();
             ClearDefensiveSporeHazard();
@@ -1837,8 +1895,7 @@ namespace Hecton8.World
             ResetInteractionGlobals();
             ClearReactiveFloraSpatialState(forceCompleteJobs: true);
 
-            DisposeNativeArray(ref _oceanFlowSamplePositions);
-            DisposeNativeArray(ref _oceanFlowSampleResults);
+            ReleaseFloraAuxiliaryVaultBuffers();
             _proceduralWakePointsHandle = default;
             _globalWakeBufferHandle = default;
             _globalWakeVectorBufferHandle = default;
@@ -1848,20 +1905,29 @@ namespace Hecton8.World
             _floraSwayFieldBlackBoxHandle = default;
             _floraStiffnessRulesHandle = default;
             _floraStiffnessCsvScratchHandle = default;
+            _oceanFlowSamplePositionsHandle = default;
+            _oceanFlowSampleResultsHandle = default;
+            _parasiteNodesHandle = default;
+            _cascadeReactiveTemplateMaskHandle = default;
+            _defensiveSporeBurstTemplateMaskHandle = default;
+            _allelopathicBloodKelpTemplateMaskHandle = default;
+            _allelopathicGhostWeedTemplateMaskHandle = default;
+            _surfaceCascadePhaseSeedsHandle = default;
+            _underwaterCascadePhaseSeedsHandle = default;
+            _surfaceCascadeEventsHandle = default;
+            _underwaterCascadeEventsHandle = default;
+            _surfaceReactiveFloraHandlesHandle = default;
+            _underwaterReactiveFloraHandlesHandle = default;
+            _reactiveFloraQueryHandlesHandle = default;
+            _floraMemoryTelemetryHandle = default;
             _wakeDataVault = null;
 
-            DisposeNativeArray(ref _cascadeReactiveTemplateMask);
-            DisposeNativeArray(ref _defensiveSporeBurstTemplateMask);
-            DisposeNativeArray(ref _allelopathicBloodKelpTemplateMask);
-            DisposeNativeArray(ref _allelopathicGhostWeedTemplateMask);
-            DisposeNativeArray(ref _surfaceCascadePhaseSeeds);
-            DisposeNativeArray(ref _underwaterCascadePhaseSeeds);
-            DisposeNativeArray(ref _surfaceCascadeEvents);
-            DisposeNativeArray(ref _underwaterCascadeEvents);
-            DisposeParasiteNodeArray();
-            DisposeNativeList(ref _reactiveFloraQueryHandles, nameof(_reactiveFloraQueryHandles));
-            DisposeNativeList(ref _surfaceReactiveFloraHandles, nameof(_surfaceReactiveFloraHandles));
-            DisposeNativeList(ref _underwaterReactiveFloraHandles, nameof(_underwaterReactiveFloraHandles));
+            _parasiteNodeCount = 0;
+            _surfaceReactiveFloraHandleCount = 0;
+            _underwaterReactiveFloraHandleCount = 0;
+            _floraMemoryTelemetryCursor = 0;
+            _floraMemoryConsecutiveFailureCount = 0;
+            _floraMemoryTelemetryDumped = false;
             ReleaseGraphicsBuffer(ref _surfaceCascadePhaseSeedBuffer);
             ReleaseGraphicsBuffer(ref _underwaterCascadePhaseSeedBuffer);
 
@@ -2074,27 +2140,35 @@ namespace Hecton8.World
             density01 = 0f;
             bendRadiusMeters = 0f;
             if (_underwaterReactiveFloraHash == null ||
-                !_reactiveFloraQueryHandles.IsCreated ||
                 !IsFiniteVector3(positionWS) ||
                 !float.IsFinite(radiusMeters))
                 return false;
 
-            float safeRadius = Mathf.Max(0.5f, radiusMeters);
-            _reactiveFloraQueryHandles.Clear();
-            if (!TryResolveAupFromRuntimeOrigin(positionWS, out AbsoluteUniversePosition queryAup))
+            if (!TryAcquireReactiveFloraQueryHandles(out NativeArray<int> queryHandles))
                 return false;
 
-            int queryCount = _underwaterReactiveFloraHash.CollectSphere(
-                queryAup,
-                safeRadius,
-                ReactiveFloraKindMask,
-                _reactiveFloraQueryHandles);
-            if (queryCount <= 0)
-                return false;
+            try
+            {
+                float safeRadius = Mathf.Max(0.5f, radiusMeters);
+                if (!TryResolveAupFromRuntimeOrigin(positionWS, out AbsoluteUniversePosition queryAup))
+                    return false;
 
-            density01 = Mathf.Clamp01(queryCount / Mathf.Max(1f, safeRadius * safeRadius));
-            bendRadiusMeters = safeRadius;
-            return density01 > 0.001f;
+                int queryCount = _underwaterReactiveFloraHash.CollectSphere(
+                    queryAup,
+                    safeRadius,
+                    ReactiveFloraKindMask,
+                    queryHandles);
+                if (queryCount <= 0)
+                    return false;
+
+                density01 = Mathf.Clamp01(queryCount / Mathf.Max(1f, safeRadius * safeRadius));
+                bendRadiusMeters = safeRadius;
+                return density01 > 0.001f;
+            }
+            finally
+            {
+                ReleaseReactiveFloraQueryHandlesWriteLock();
+            }
         }
 
         private Transform ResolveRuntimePlayerTransform()
@@ -2887,6 +2961,18 @@ namespace Hecton8.World
                 return;
             }
 
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in runtimeOriginAup))
+            {
+                Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarinePropwashId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarineWashAupGridId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
+                return;
+            }
+
+            float3 submarineAupDelta = ResolveAupLocalDelta(in submarineAup, in runtimeOriginAup);
             float3 safeVelocityDirection = velocityVector * math.rsqrt(math.max(speedSq, 0.000001f));
             float submarineRadius = ClampFinite(
                 _wakeTrailSubmarineRadius,
@@ -2923,16 +3009,16 @@ namespace Hecton8.World
             Shader.SetGlobalVector(
                 _SubmarineWashAupGridId,
                 new Vector4(
-                    (float)submarineAup.GridX,
-                    (float)submarineAup.GridY,
-                    (float)submarineAup.GridZ,
+                    submarineAupDelta.x,
+                    submarineAupDelta.y,
+                    submarineAupDelta.z,
                     AbsoluteUniversePosition.CellSizeMeters));
             Shader.SetGlobalVector(
                 _SubmarineWashAupLocalId,
                 new Vector4(
-                    submarineAup.LocalX,
-                    submarineAup.LocalY,
-                    submarineAup.LocalZ,
+                    0f,
+                    0f,
+                    0f,
                     radius));
         }
 
@@ -3101,7 +3187,8 @@ namespace Hecton8.World
                 return;
             }
 
-            float3 position = signal.PositionAup.ToRuntimeFloat3();
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            float3 position = AUPMath.ResolveCameraRelative(in signal.PositionAup, in runtimeOriginAup);
             if (!math.all(math.isfinite(position)))
             {
                 RecordWakeBlackBox(0, ResolveWakeSlotLimit(), 0f, 0f, float3.zero, velocity, WakeBlackBoxInvalidInputFlag | WakeBlackBoxNaNFlag);
@@ -3555,7 +3642,8 @@ namespace Hecton8.World
             }
 
             fieldCenterAup = QuantizeFloraSwayAup(rawAup, cellSize);
-            fieldCenter = fieldCenterAup.ToRuntimeFloat3();
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            fieldCenter = AUPMath.ResolveCameraRelative(in fieldCenterAup, in runtimeOriginAup);
             return math.all(math.isfinite(fieldCenter));
         }
 
@@ -3662,7 +3750,7 @@ namespace Hecton8.World
             bool resetField)
         {
             if (!TryResolveFloraSwayFieldBuffers(out NativeArray<FloraDisplacementDTO> fieldValues, out NativeArray<float4> fieldMeta) ||
-                !EnsureFloraSwayFieldGraphicsBuffers())
+                !EnsureFloraSwayFieldGraphicsBuffers(allowCreate: false))
             {
                 RecordFloraSwayFieldBlackBox(activeWakeCount, 0, resolution, cellSize, qualityWeight, updateInterval, 0f, fieldCenter, flags | FloraSwayFieldVaultMissingFlag);
                 return;
@@ -3801,7 +3889,7 @@ namespace Hecton8.World
 
             if (!TryResolveFloraSwayFieldBuffers(out NativeArray<FloraDisplacementDTO> fieldValues, out NativeArray<float4> fieldMeta) ||
                 fieldMeta.Length < FloraSwayFieldMetaVectorCount ||
-                !EnsureFloraSwayFieldGraphicsBuffers())
+                !EnsureFloraSwayFieldGraphicsBuffers(allowCreate: false))
             {
                 _floraSwayFieldBuildHandle = default;
                 return true;
@@ -3943,10 +4031,66 @@ namespace Hecton8.World
             return size == 16 && forceOffset == 0 && decayOffset == 12;
         }
 
-        public static bool ValidateFloraSwayTelemetryLayout(out int size)
+        public static bool ValidateFloraStiffnessRuleDtoLayout(out int size, out int plantHashOffset, out int flagsOffset)
+        {
+            size = UnsafeUtility.SizeOf<FloraStiffnessRuleDTO>();
+            plantHashOffset = ResolveFieldOffset(typeof(FloraStiffnessRuleDTO), nameof(FloraStiffnessRuleDTO.PlantHash));
+            flagsOffset = ResolveFieldOffset(typeof(FloraStiffnessRuleDTO), nameof(FloraStiffnessRuleDTO.Flags));
+            return size == 16 &&
+                   plantHashOffset == 0 &&
+                   flagsOffset == 12;
+        }
+
+        public static bool ValidateFloraSwayTelemetryLayout(
+            out int size,
+            out int fieldCenterOffset,
+            out int cpuMicrosecondsOffset,
+            out int resolutionOffset)
         {
             size = UnsafeUtility.SizeOf<FloraSwayFieldTelemetryEntry>();
-            return size == 64;
+            fieldCenterOffset = ResolveFieldOffset(typeof(FloraSwayFieldTelemetryEntry), nameof(FloraSwayFieldTelemetryEntry.FieldCenterWS));
+            cpuMicrosecondsOffset = ResolveFieldOffset(typeof(FloraSwayFieldTelemetryEntry), nameof(FloraSwayFieldTelemetryEntry.CpuMicroseconds));
+            resolutionOffset = ResolveFieldOffset(typeof(FloraSwayFieldTelemetryEntry), nameof(FloraSwayFieldTelemetryEntry.Resolution));
+            return size == 64 &&
+                   fieldCenterOffset == 12 &&
+                   cpuMicrosecondsOffset == 56 &&
+                   resolutionOffset == 60;
+        }
+
+        public static bool ValidateFloraMemoryTelemetryLayout(
+            out int size,
+            out int bufferIdOffset,
+            out int flagsOffset,
+            out int cpuMicrosecondsOffset)
+        {
+            size = UnsafeUtility.SizeOf<FloraMemoryTelemetryEntry>();
+            bufferIdOffset = ResolveFieldOffset(typeof(FloraMemoryTelemetryEntry), nameof(FloraMemoryTelemetryEntry.BufferID));
+            flagsOffset = ResolveFieldOffset(typeof(FloraMemoryTelemetryEntry), nameof(FloraMemoryTelemetryEntry.Flags));
+            cpuMicrosecondsOffset = ResolveFieldOffset(typeof(FloraMemoryTelemetryEntry), nameof(FloraMemoryTelemetryEntry.CpuMicroseconds));
+            return size == 64 &&
+                   bufferIdOffset == 8 &&
+                   flagsOffset == 28 &&
+                   cpuMicrosecondsOffset == 56;
+        }
+
+        public static bool ValidateParasiteNodeLayout(out int size, out int birthOffset, out int stateOffset)
+        {
+            size = UnsafeUtility.SizeOf<ParasiteNode>();
+            birthOffset = ResolveFieldOffset(typeof(ParasiteNode), nameof(ParasiteNode.BirthTimeSeconds));
+            stateOffset = ResolveFieldOffset(typeof(ParasiteNode), nameof(ParasiteNode.State));
+            return size == 64 &&
+                   birthOffset == 0 &&
+                   stateOffset == 60;
+        }
+
+        public static bool ValidateFloraCascadeEventPayloadLayout(out int size, out int centerOffset, out int radiusOffset)
+        {
+            size = UnsafeUtility.SizeOf<FloraCascadeEventPayload>();
+            centerOffset = ResolveFieldOffset(typeof(FloraCascadeEventPayload), nameof(FloraCascadeEventPayload.Center));
+            radiusOffset = ResolveFieldOffset(typeof(FloraCascadeEventPayload), nameof(FloraCascadeEventPayload.RadiusMeters));
+            return size == 32 &&
+                   centerOffset == 0 &&
+                   radiusOffset == 16;
         }
 
         public static bool ValidateConsumedWakeSourceLayout(
@@ -4780,6 +4924,17 @@ namespace Hecton8.World
                 cursor = 0;
             _floraSwayFieldBlackBoxCursor = cursor;
 
+            if ((flags & FloraSwayFieldNaNFlag) != 0u)
+            {
+                RecordFloraMemoryTelemetry(
+                    FloraMemoryTelemetryEventNaN,
+                    FloraSwayFieldBlackBoxBufferId,
+                    _floraSwayFieldBlackBoxHandle.Generation,
+                    FloraSwayFieldBlackBoxCapacity,
+                    blackBox.Length,
+                    FloraMemoryTelemetryNaNFlag);
+            }
+
             if ((flags & (FloraSwayFieldInvalidInputFlag | FloraSwayFieldNaNFlag | FloraSwayFieldUploadStallFlag)) != 0u)
                 DumpFloraSwayFieldBlackBoxOnce();
         }
@@ -5033,13 +5188,28 @@ namespace Hecton8.World
 
             FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
             int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
-            if (!force &&
-                _cachedToxicSporeTemplateCount == templateCount &&
+            if (force)
+                return;
+
+            if (_cachedToxicSporeTemplateCount == templateCount &&
                 ((_vegetationBridge == null && templateCount == 0) || templateCount == _toxicSporeTemplateMask.Length))
             {
                 return;
             }
+        }
 
+        private void RebuildToxicSporeTemplateMaskColdFromCurrentBridge()
+        {
+            if (_vegetationBridge == null)
+                _vegetationBridge = ResolveVegetationBridge();
+
+            FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
+            int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
+            RebuildToxicSporeTemplateMaskCold(floraTemplates, templateCount);
+        }
+
+        private void RebuildToxicSporeTemplateMaskCold(FloraDataTemplate[] floraTemplates, int templateCount)
+        {
             _cachedToxicSporeTemplateCount = templateCount;
             if (templateCount <= 0 || _toxicSporeStableHashId == 0)
             {
@@ -5138,8 +5308,9 @@ namespace Hecton8.World
 
         private void EmitAllelopathicToxinsAndSuppressLane(bool underwater)
         {
-            if (!_allelopathicBloodKelpTemplateMask.IsCreated ||
-                !_allelopathicGhostWeedTemplateMask.IsCreated ||
+            if (!TryResolveAllelopathicTemplateMasks(
+                    out NativeArray<byte> bloodKelpTemplateMask,
+                    out NativeArray<byte> ghostWeedTemplateMask) ||
                 _bloodKelpToxinDosePerSlowTick <= 0f)
             {
                 return;
@@ -5170,7 +5341,7 @@ namespace Hecton8.World
                 if (!IsLiveFloraInstance(instanceData))
                     continue;
 
-                if (!IsTemplateInMask(instanceData, _allelopathicBloodKelpTemplateMask))
+                if (!IsTemplateInMask(instanceData, bloodKelpTemplateMask))
                     continue;
 
                 ChemicalInfluenceGrid.QueueToxicityBurst(ExtractTranslation(matrices[i]), _bloodKelpToxinDosePerSlowTick);
@@ -5182,7 +5353,7 @@ namespace Hecton8.World
                 if (!IsLiveFloraInstance(instanceData))
                     continue;
 
-                if (!IsTemplateInMask(instanceData, _allelopathicGhostWeedTemplateMask))
+                if (!IsTemplateInMask(instanceData, ghostWeedTemplateMask))
                     continue;
 
                 Vector3 instancePositionWS = ExtractTranslation(matrices[i]);
@@ -5210,41 +5381,97 @@ namespace Hecton8.World
 
             FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
             int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
-            if (!force &&
-                _cachedAllelopathicTemplateCount == templateCount &&
-                _allelopathicBloodKelpTemplateMask.IsCreated &&
-                _allelopathicGhostWeedTemplateMask.IsCreated &&
-                _allelopathicBloodKelpTemplateMask.Length == templateCount &&
-                _allelopathicGhostWeedTemplateMask.Length == templateCount)
+            if (force)
+                return;
+
+            if (_cachedAllelopathicTemplateCount == templateCount &&
+                TryResolveAllelopathicTemplateMasks(
+                    out NativeArray<byte> existingBloodKelpTemplateMask,
+                    out NativeArray<byte> existingGhostWeedTemplateMask) &&
+                existingBloodKelpTemplateMask.Length == templateCount &&
+                existingGhostWeedTemplateMask.Length == templateCount)
             {
                 return;
             }
+        }
 
+        private void RebuildAllelopathicTemplateMasksColdFromCurrentBridge()
+        {
+            if (_vegetationBridge == null)
+                _vegetationBridge = ResolveVegetationBridge();
+
+            FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
+            int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
+            RebuildAllelopathicTemplateMasksCold(floraTemplates, templateCount);
+        }
+
+        private void RebuildAllelopathicTemplateMasksCold(FloraDataTemplate[] floraTemplates, int templateCount)
+        {
             _cachedAllelopathicTemplateCount = templateCount;
             if (templateCount <= 0 || _bloodKelpAllelopathyStableHashId == 0 || _ghostWeedAllelopathyStableHashId == 0)
             {
-                DisposeNativeArray(ref _allelopathicBloodKelpTemplateMask);
-                DisposeNativeArray(ref _allelopathicGhostWeedTemplateMask);
+                ReleaseFloraVaultBuffer(ref _allelopathicBloodKelpTemplateMaskHandle);
+                ReleaseFloraVaultBuffer(ref _allelopathicGhostWeedTemplateMaskHandle);
                 return;
             }
 
-            EnsureByteNativeArray(ref _allelopathicBloodKelpTemplateMask, templateCount, nameof(_allelopathicBloodKelpTemplateMask));
-            EnsureByteNativeArray(ref _allelopathicGhostWeedTemplateMask, templateCount, nameof(_allelopathicGhostWeedTemplateMask));
-            for (int i = 0; i < templateCount; i++)
+            if (!TryEnsureFloraVaultBuffer(
+                    _wakeDataVault,
+                    ref _allelopathicBloodKelpTemplateMaskHandle,
+                    FloraBloodKelpTemplateMaskBufferId,
+                    templateCount,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<byte> _) ||
+                !TryEnsureFloraVaultBuffer(
+                    _wakeDataVault,
+                    ref _allelopathicGhostWeedTemplateMaskHandle,
+                    FloraGhostWeedTemplateMaskBufferId,
+                    templateCount,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<byte> _))
             {
-                _allelopathicBloodKelpTemplateMask[i] = 0;
-                _allelopathicGhostWeedTemplateMask[i] = 0;
+                return;
             }
 
-            for (int i = 0; i < templateCount; i++)
+            if (!TryAcquireFloraVaultWriteBuffer(
+                    ref _allelopathicBloodKelpTemplateMaskHandle,
+                    FloraBloodKelpTemplateMaskBufferId,
+                    templateCount,
+                    out NativeArray<byte> bloodKelpTemplateMask) ||
+                !TryAcquireFloraVaultWriteBuffer(
+                    ref _allelopathicGhostWeedTemplateMaskHandle,
+                    FloraGhostWeedTemplateMaskBufferId,
+                    templateCount,
+                    out NativeArray<byte> ghostWeedTemplateMask))
             {
-                FloraDataTemplate template = floraTemplates[i];
-                if (template == null || string.IsNullOrWhiteSpace(template.StableId))
-                    continue;
+                ReleaseFloraVaultWriteLock(in _allelopathicBloodKelpTemplateMaskHandle);
+                ReleaseFloraVaultWriteLock(in _allelopathicGhostWeedTemplateMaskHandle);
+                return;
+            }
 
-                int stableHash = LocHash.Compute(template.StableId);
-                _allelopathicBloodKelpTemplateMask[i] = stableHash == _bloodKelpAllelopathyStableHashId ? (byte)1 : (byte)0;
-                _allelopathicGhostWeedTemplateMask[i] = stableHash == _ghostWeedAllelopathyStableHashId ? (byte)1 : (byte)0;
+            try
+            {
+                for (int i = 0; i < templateCount; i++)
+                {
+                    bloodKelpTemplateMask[i] = 0;
+                    ghostWeedTemplateMask[i] = 0;
+                }
+
+                for (int i = 0; i < templateCount; i++)
+                {
+                    FloraDataTemplate template = floraTemplates[i];
+                    if (template == null || string.IsNullOrWhiteSpace(template.StableId))
+                        continue;
+
+                    int stableHash = LocHash.Compute(template.StableId);
+                    bloodKelpTemplateMask[i] = stableHash == _bloodKelpAllelopathyStableHashId ? (byte)1 : (byte)0;
+                    ghostWeedTemplateMask[i] = stableHash == _ghostWeedAllelopathyStableHashId ? (byte)1 : (byte)0;
+                }
+            }
+            finally
+            {
+                ReleaseFloraVaultWriteLock(in _allelopathicGhostWeedTemplateMaskHandle);
+                ReleaseFloraVaultWriteLock(in _allelopathicBloodKelpTemplateMaskHandle);
             }
         }
 
@@ -5305,7 +5532,7 @@ namespace Hecton8.World
 
             float scanDeltaTime = Mathf.Max(0.1f, _moduleParasiteScanIntervalSeconds - _moduleParasiteScanTimer);
             _moduleParasiteScanTimer = Mathf.Max(0.1f, _moduleParasiteScanIntervalSeconds);
-            _moduleParasiteStateBack.Clear();
+            ClearModuleParasiteStateBack();
             _publishedParasiteAnchorCount = 0;
             _parasiteNodeCount = 0;
 
@@ -5381,28 +5608,23 @@ namespace Hecton8.World
             int activeModuleCount = BaseModule.ActiveModuleCount;
             if (activeModuleCount == 0)
             {
-                _thermophileDwellSeconds.Clear();
+                ClearThermophileDwell();
                 return;
             }
 
             FloraDataTemplate template = ResolveThermalTubewormTemplate();
             if (template == null || !template.IsThermophilicModuleGrowth)
             {
-                _thermophileDwellSeconds.Clear();
+                ClearThermophileDwell();
                 return;
             }
 
-            _staleParasiticModules.Clear();
-            Dictionary<BaseModule, float>.Enumerator dwellEnumerator = _thermophileDwellSeconds.GetEnumerator();
-            while (dwellEnumerator.MoveNext())
+            for (int i = _thermophileDwellCount - 1; i >= 0; i--)
             {
-                BaseModule module = dwellEnumerator.Current.Key;
+                BaseModule module = _thermophileDwellModules[i];
                 if (module == null || !module.isActiveAndEnabled)
-                    _staleParasiticModules.Add(module);
+                    RemoveThermophileDwellAt(i);
             }
-
-            for (int i = 0; i < _staleParasiticModules.Count; i++)
-                _thermophileDwellSeconds.Remove(_staleParasiticModules[i]);
 
             float validationRadiusSq = _thermophileReactorValidationRadius * _thermophileReactorValidationRadius;
             float thresholdTemperature = template.ThermalActivationTemperatureCelsius;
@@ -5412,7 +5634,7 @@ namespace Hecton8.World
                 BaseModule module = BaseModule.GetActiveModuleAt(i);
                 if (module == null || !module.isActiveAndEnabled || !module.TryGetHostedBioReactor(out BioReactor reactor) || reactor == null)
                 {
-                    _thermophileDwellSeconds.Remove(module);
+                    RemoveThermophileDwell(module);
                     continue;
                 }
 
@@ -5421,22 +5643,24 @@ namespace Hecton8.World
                 if (reactor.PowerRating <= 0.0001f ||
                     (reactorPosition - modulePosition).sqrMagnitude > validationRadiusSq)
                 {
-                    _thermophileDwellSeconds.Remove(module);
+                    RemoveThermophileDwell(module);
                     continue;
                 }
 
                 float roomTemperature = module.ResolveHostRoomTemperatureCelsius();
                 if (roomTemperature < thresholdTemperature)
                 {
-                    _thermophileDwellSeconds.Remove(module);
+                    RemoveThermophileDwell(module);
                     continue;
                 }
 
                 float nextDwellSeconds = scanDeltaTime;
-                if (_thermophileDwellSeconds.TryGetValue(module, out float accumulatedDwellSeconds))
+                if (TryGetThermophileDwell(module, out float accumulatedDwellSeconds))
                     nextDwellSeconds += accumulatedDwellSeconds;
 
-                _thermophileDwellSeconds[module] = nextDwellSeconds;
+                if (!SetThermophileDwell(module, nextDwellSeconds))
+                    continue;
+
                 if (nextDwellSeconds < dwellThresholdSeconds)
                     continue;
 
@@ -5492,64 +5716,77 @@ namespace Hecton8.World
             float pulseFrequency,
             float thermalGrowthFlag)
         {
-            if (module == null || !_parasiteNodes.IsCreated || _parasiteNodeCount >= _parasiteNodes.Length)
-                return;
-
-            int moduleRuntimeId = ResolveModuleRuntimeId(module);
-            if (moduleRuntimeId == 0)
-                return;
-
-            int writeIndex = _parasiteNodeCount;
-            ParasiteNode previous = _parasiteNodes[writeIndex];
-            float growth01 = Mathf.Clamp01(authoredGrowth01);
-            byte state = ParasiteNodeStateAlive;
-            float3 nextPosition = new float3(positionWS.x, positionWS.y, positionWS.z);
-            float matureAttachedSeconds = 0f;
-            double currentTimeSeconds = Time.timeAsDouble;
-            double growthDurationSeconds = ResolveParasiteScaleGrowthSecondsDouble();
-            double birthTimeSeconds = currentTimeSeconds - (growth01 * growthDurationSeconds);
-            if (previous.HostModuleRuntimeId == moduleRuntimeId &&
-                math.lengthsq(previous.PositionWS - nextPosition) <= 0.25f)
+            if (module == null ||
+                !TryAcquireParasiteNodes(out NativeArray<ParasiteNode> parasiteNodes) ||
+                _parasiteNodeCount >= parasiteNodes.Length)
             {
-                growth01 = Mathf.Max(growth01, Mathf.Clamp01(previous.GrowthLevel));
-                matureAttachedSeconds = Mathf.Max(0f, previous.MatureAttachedSeconds);
-                birthTimeSeconds = IsFiniteDouble(previous.BirthTimeSeconds) && previous.BirthTimeSeconds > 0d
-                    ? previous.BirthTimeSeconds
-                    : currentTimeSeconds - (growth01 * growthDurationSeconds);
-                if (previous.State == ParasiteNodeStateDead)
-                    state = ParasiteNodeStateDead;
+                ReleaseFloraVaultWriteLock(in _parasiteNodesHandle);
+                return;
             }
 
-            if (growth01 < MatureParasiteGrowthThreshold)
-                matureAttachedSeconds = 0f;
-
-            float resolvedRadius = Mathf.Max(0.25f, radiusMeters);
-            float addedMassKilograms = resolvedRadius * resolvedRadius * resolvedRadius *
-                                       Mathf.Max(0f, _parasiteAddedMassKilogramsPerRadiusCubic);
-
-            _parasiteNodes[writeIndex] = new ParasiteNode
+            try
             {
-                PositionWS = nextPosition,
-                HostModuleRuntimeId = moduleRuntimeId,
-                GrowthLevel = growth01,
-                BirthTimeSeconds = birthTimeSeconds,
-                PowerDrainWatts = Mathf.Max(0f, drainWatts),
-                InfectionStrength = Mathf.Clamp01(infectionLevel),
-                RootDrainMultiplier = Mathf.Max(1f, _matureParasiteRootDrainMultiplier),
-                RadiusMeters = resolvedRadius,
-                PulseFrequency = Mathf.Max(0.01f, pulseFrequency),
-                ThermalGrowthFlag = Mathf.Clamp01(thermalGrowthFlag),
-                MatureAttachedSeconds = matureAttachedSeconds,
-                AddedMassKilograms = addedMassKilograms,
-                State = state
-            };
-            _parasiteNodeCount++;
+                int moduleRuntimeId = ResolveModuleRuntimeId(module);
+                if (moduleRuntimeId == 0)
+                    return;
+
+                int writeIndex = _parasiteNodeCount;
+                ParasiteNode previous = parasiteNodes[writeIndex];
+                float growth01 = Mathf.Clamp01(authoredGrowth01);
+                byte state = ParasiteNodeStateAlive;
+                float3 nextPosition = new float3(positionWS.x, positionWS.y, positionWS.z);
+                float matureAttachedSeconds = 0f;
+                double currentTimeSeconds = Time.timeAsDouble;
+                double growthDurationSeconds = ResolveParasiteScaleGrowthSecondsDouble();
+                double birthTimeSeconds = currentTimeSeconds - (growth01 * growthDurationSeconds);
+                if (previous.HostModuleRuntimeId == moduleRuntimeId &&
+                    math.lengthsq(previous.PositionWS - nextPosition) <= 0.25f)
+                {
+                    growth01 = Mathf.Max(growth01, Mathf.Clamp01(previous.GrowthLevel));
+                    matureAttachedSeconds = Mathf.Max(0f, previous.MatureAttachedSeconds);
+                    birthTimeSeconds = IsFiniteDouble(previous.BirthTimeSeconds) && previous.BirthTimeSeconds > 0d
+                        ? previous.BirthTimeSeconds
+                        : currentTimeSeconds - (growth01 * growthDurationSeconds);
+                    if (previous.State == ParasiteNodeStateDead)
+                        state = ParasiteNodeStateDead;
+                }
+
+                if (growth01 < MatureParasiteGrowthThreshold)
+                    matureAttachedSeconds = 0f;
+
+                float resolvedRadius = Mathf.Max(0.25f, radiusMeters);
+                float addedMassKilograms = resolvedRadius * resolvedRadius * resolvedRadius *
+                                           Mathf.Max(0f, _parasiteAddedMassKilogramsPerRadiusCubic);
+
+                parasiteNodes[writeIndex] = new ParasiteNode
+                {
+                    PositionWS = nextPosition,
+                    HostModuleRuntimeId = moduleRuntimeId,
+                    GrowthLevel = growth01,
+                    BirthTimeSeconds = birthTimeSeconds,
+                    PowerDrainWatts = Mathf.Max(0f, drainWatts),
+                    InfectionStrength = Mathf.Clamp01(infectionLevel),
+                    RootDrainMultiplier = Mathf.Max(1f, _matureParasiteRootDrainMultiplier),
+                    RadiusMeters = resolvedRadius,
+                    PulseFrequency = Mathf.Max(0.01f, pulseFrequency),
+                    ThermalGrowthFlag = Mathf.Clamp01(thermalGrowthFlag),
+                    MatureAttachedSeconds = matureAttachedSeconds,
+                    AddedMassKilograms = addedMassKilograms,
+                    State = state
+                };
+                _parasiteNodeCount++;
+            }
+            finally
+            {
+                ReleaseFloraVaultWriteLock(in _parasiteNodesHandle);
+            }
         }
 
         private void ScheduleHeadlessParasiteSimulation(float deltaTime)
         {
-            if (!_parasiteNodes.IsCreated || _parasiteNodeCount <= 0)
+            if (!TryAcquireParasiteNodes(out NativeArray<ParasiteNode> parasiteNodes) || _parasiteNodeCount <= 0)
             {
+                ReleaseFloraVaultWriteLock(in _parasiteNodesHandle);
                 ApplyHeadlessParasiteStateFromNodes();
                 return;
             }
@@ -5561,22 +5798,29 @@ namespace Hecton8.World
                 out float3 origin,
                 out float3 cellSize);
 
-            _parasiteGrowthHandle = new ParasiteGrowthJob
+            try
             {
-                Nodes = _parasiteNodes,
-                NodeCount = _parasiteNodeCount,
-                DeltaTime = Mathf.Max(0f, deltaTime),
-                CurrentTimeSeconds = Time.timeAsDouble,
-                GrowthPerSecond = ResolveHeadlessParasiteGrowthPerSecond(),
-                DefoliantKillThreshold = Mathf.Max(0.01f, _headlessParasiteDefoliantKillThreshold),
-                MatureGrowthThreshold = MatureParasiteGrowthThreshold,
-                ChemicalFrontGrid = frontGrid,
-                ChemicalOverlayGrid = overlayGrid,
-                ChemicalDimensions = dimensions,
-                ChemicalOrigin = origin,
-                ChemicalCellSize = cellSize
-            }.Schedule(_parasiteNodeCount, 32);
-            _parasiteGrowthScheduled = true;
+                _parasiteGrowthHandle = new ParasiteGrowthJob
+                {
+                    Nodes = parasiteNodes,
+                    NodeCount = _parasiteNodeCount,
+                    DeltaTime = Mathf.Max(0f, deltaTime),
+                    CurrentTimeSeconds = Time.timeAsDouble,
+                    GrowthPerSecond = ResolveHeadlessParasiteGrowthPerSecond(),
+                    DefoliantKillThreshold = Mathf.Max(0.01f, _headlessParasiteDefoliantKillThreshold),
+                    MatureGrowthThreshold = MatureParasiteGrowthThreshold,
+                    ChemicalFrontGrid = frontGrid,
+                    ChemicalOverlayGrid = overlayGrid,
+                    ChemicalDimensions = dimensions,
+                    ChemicalOrigin = origin,
+                    ChemicalCellSize = cellSize
+                }.Schedule(_parasiteNodeCount, 32);
+                _parasiteGrowthScheduled = true;
+            }
+            finally
+            {
+                ReleaseFloraVaultWriteLock(in _parasiteNodesHandle);
+            }
         }
 
         private void TryFinalizeHeadlessParasiteSimulation()
@@ -5593,59 +5837,66 @@ namespace Hecton8.World
 
         private void ApplyHeadlessParasiteStateFromNodes()
         {
-            _moduleParasiteStateBack.Clear();
+            ClearModuleParasiteStateBack();
             _publishedParasiteAnchorCount = 0;
 
-            if (_parasiteNodes.IsCreated)
+            if (TryAcquireParasiteNodes(out NativeArray<ParasiteNode> parasiteNodes))
             {
-                int safeCount = math.min(_parasiteNodeCount, _parasiteNodes.Length);
-                for (int i = 0; i < safeCount; i++)
+                try
                 {
-                    ParasiteNode node = _parasiteNodes[i];
-                    if (node.State == ParasiteNodeStateDead || node.GrowthLevel <= 0.001f)
-                        continue;
-
-                    BaseModule module = ResolveBaseModuleByRuntimeId(node.HostModuleRuntimeId);
-                    if (module == null ||
-                        !module.isActiveAndEnabled ||
-                        module.HasImploded ||
-                        module.IntegrityState == BaseModuleIntegrityState.Ruptured)
+                    int safeCount = math.min(_parasiteNodeCount, parasiteNodes.Length);
+                    for (int i = 0; i < safeCount; i++)
                     {
-                        node.GrowthLevel = 0f;
-                        node.BirthTimeSeconds = 0d;
-                        node.MatureAttachedSeconds = 0f;
-                        node.State = ParasiteNodeStateDead;
-                        _parasiteNodes[i] = node;
-                        continue;
-                    }
+                        ParasiteNode node = parasiteNodes[i];
+                        if (node.State == ParasiteNodeStateDead || node.GrowthLevel <= 0.001f)
+                            continue;
 
-                    float growth01 = Mathf.Clamp01(node.GrowthLevel);
-                    float scale01 = ResolveParasiteScale01(node.BirthTimeSeconds);
-                    float rootDrainWatts = growth01 >= MatureParasiteGrowthThreshold
-                        ? node.PowerDrainWatts * Mathf.Max(1f, node.RootDrainMultiplier)
-                        : 0f;
-                    float infection01 = Mathf.Clamp01(node.InfectionStrength * scale01);
-                    float thermalInsulation01 = Mathf.Clamp01(growth01 * infection01 * _parasiteThermalInsulationAtFullInfection);
-                    float overheatMultiplier = math.lerp(
-                        1f,
-                        Mathf.Max(1f, _parasiteBioReactorOverheatMultiplier),
-                        math.saturate(growth01 * infection01));
-                    AccumulateModuleParasiteState(
-                        module,
-                        node.PowerDrainWatts * scale01,
-                        infection01,
-                        rootDrainWatts * scale01,
-                        growth01,
-                        node.MatureAttachedSeconds,
-                        node.AddedMassKilograms * growth01,
-                        thermalInsulation01,
-                        overheatMultiplier);
-                    AppendParasiteAnchor(
-                        new Vector3(node.PositionWS.x, node.PositionWS.y, node.PositionWS.z),
-                        node.RadiusMeters * scale01,
-                        infection01,
-                        node.PulseFrequency,
-                        node.ThermalGrowthFlag);
+                        BaseModule module = ResolveBaseModuleByRuntimeId(node.HostModuleRuntimeId);
+                        if (module == null ||
+                            !module.isActiveAndEnabled ||
+                            module.HasImploded ||
+                            module.IntegrityState == BaseModuleIntegrityState.Ruptured)
+                        {
+                            node.GrowthLevel = 0f;
+                            node.BirthTimeSeconds = 0d;
+                            node.MatureAttachedSeconds = 0f;
+                            node.State = ParasiteNodeStateDead;
+                            parasiteNodes[i] = node;
+                            continue;
+                        }
+
+                        float growth01 = Mathf.Clamp01(node.GrowthLevel);
+                        float scale01 = ResolveParasiteScale01(node.BirthTimeSeconds);
+                        float rootDrainWatts = growth01 >= MatureParasiteGrowthThreshold
+                            ? node.PowerDrainWatts * Mathf.Max(1f, node.RootDrainMultiplier)
+                            : 0f;
+                        float infection01 = Mathf.Clamp01(node.InfectionStrength * scale01);
+                        float thermalInsulation01 = Mathf.Clamp01(growth01 * infection01 * _parasiteThermalInsulationAtFullInfection);
+                        float overheatMultiplier = math.lerp(
+                            1f,
+                            Mathf.Max(1f, _parasiteBioReactorOverheatMultiplier),
+                            math.saturate(growth01 * infection01));
+                        AccumulateModuleParasiteState(
+                            module,
+                            node.PowerDrainWatts * scale01,
+                            infection01,
+                            rootDrainWatts * scale01,
+                            growth01,
+                            node.MatureAttachedSeconds,
+                            node.AddedMassKilograms * growth01,
+                            thermalInsulation01,
+                            overheatMultiplier);
+                        AppendParasiteAnchor(
+                            new Vector3(node.PositionWS.x, node.PositionWS.y, node.PositionWS.z),
+                            node.RadiusMeters * scale01,
+                            infection01,
+                            node.PulseFrequency,
+                            node.ThermalGrowthFlag);
+                    }
+                }
+                finally
+                {
+                    ReleaseFloraVaultWriteLock(in _parasiteNodesHandle);
                 }
             }
 
@@ -5668,8 +5919,10 @@ namespace Hecton8.World
             if (module == null)
                 return;
 
-            if (_moduleParasiteStateBack.TryGetValue(module, out ModuleParasiteState state))
+            int stateIndex = FindModuleIndex(_moduleParasiteStateBackModules, _moduleParasiteStateBackCount, module);
+            if (stateIndex >= 0)
             {
+                ModuleParasiteState state = _moduleParasiteStateBackValues[stateIndex];
                 state.PowerDrainWatts += Mathf.Max(0f, drainWatts);
                 state.InfectionLevel = Mathf.Clamp01(Mathf.Max(state.InfectionLevel, infectionLevel));
                 state.RootPowerDrainWatts += Mathf.Max(0f, rootDrainWatts);
@@ -5681,11 +5934,16 @@ namespace Hecton8.World
                     Mathf.Max(1f, state.BioReactorOverheatMultiplier),
                     Mathf.Max(1f, bioReactorOverheatMultiplier));
                 state.ParasiteCount++;
-                _moduleParasiteStateBack[module] = state;
+                _moduleParasiteStateBackValues[stateIndex] = state;
                 return;
             }
 
-            _moduleParasiteStateBack[module] = new ModuleParasiteState
+            if (_moduleParasiteStateBackCount >= _moduleParasiteStateBackModules.Length)
+                return;
+
+            int writeIndex = _moduleParasiteStateBackCount;
+            _moduleParasiteStateBackModules[writeIndex] = module;
+            _moduleParasiteStateBackValues[writeIndex] = new ModuleParasiteState
             {
                 PowerDrainWatts = Mathf.Max(0f, drainWatts),
                 InfectionLevel = Mathf.Clamp01(infectionLevel),
@@ -5697,6 +5955,7 @@ namespace Hecton8.World
                 BioReactorOverheatMultiplier = Mathf.Max(1f, bioReactorOverheatMultiplier),
                 ParasiteCount = 1
             };
+            _moduleParasiteStateBackCount++;
         }
 
         private void AppendParasiteAnchor(Vector3 positionWS, float radiusMeters, float infectionLevel, float pulseFrequency, float thermalGrowthFlag)
@@ -5866,21 +6125,28 @@ namespace Hecton8.World
             }
 
             bool killed = false;
-            if (_parasiteNodes.IsCreated)
+            if (TryAcquireParasiteNodes(out NativeArray<ParasiteNode> parasiteNodes))
             {
-                int safeCount = math.min(_parasiteNodeCount, _parasiteNodes.Length);
-                for (int i = 0; i < safeCount; i++)
+                try
                 {
-                    ParasiteNode node = _parasiteNodes[i];
-                    if (node.HostModuleRuntimeId != moduleRuntimeId || node.State == ParasiteNodeStateDead)
-                        continue;
+                    int safeCount = math.min(_parasiteNodeCount, parasiteNodes.Length);
+                    for (int i = 0; i < safeCount; i++)
+                    {
+                        ParasiteNode node = parasiteNodes[i];
+                        if (node.HostModuleRuntimeId != moduleRuntimeId || node.State == ParasiteNodeStateDead)
+                            continue;
 
-                    node.GrowthLevel = 0f;
-                    node.BirthTimeSeconds = 0d;
-                    node.MatureAttachedSeconds = 0f;
-                    node.State = ParasiteNodeStateDead;
-                    _parasiteNodes[i] = node;
-                    killed = true;
+                        node.GrowthLevel = 0f;
+                        node.BirthTimeSeconds = 0d;
+                        node.MatureAttachedSeconds = 0f;
+                        node.State = ParasiteNodeStateDead;
+                        parasiteNodes[i] = node;
+                        killed = true;
+                    }
+                }
+                finally
+                {
+                    ReleaseFloraVaultWriteLock(in _parasiteNodesHandle);
                 }
             }
 
@@ -6032,21 +6298,20 @@ namespace Hecton8.World
 
         private void ApplyFungalMindSpreadFromCurrentState()
         {
-            if (!_parasiteNodes.IsCreated || _parasiteNodeCount >= _parasiteNodes.Length)
+            if (!TryResolveParasiteNodes(out NativeArray<ParasiteNode> parasiteNodes) || _parasiteNodeCount >= parasiteNodes.Length)
                 return;
 
             IConstructionParasiteGraphService constructionParasiteGraph = _constructionParasiteGraph;
             if (constructionParasiteGraph == null)
                 return;
 
-            Dictionary<BaseModule, ModuleParasiteState>.Enumerator enumerator = _moduleParasiteStateBack.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int i = 0; i < _moduleParasiteStateBackCount; i++)
             {
-                BaseModule sourceModule = enumerator.Current.Key;
+                BaseModule sourceModule = _moduleParasiteStateBackModules[i];
                 if (sourceModule == null || !sourceModule.isActiveAndEnabled)
                     continue;
 
-                ModuleParasiteState state = enumerator.Current.Value;
+                ModuleParasiteState state = _moduleParasiteStateBackValues[i];
                 if (state.RootPowerDrainWatts <= 0.01f || state.MaxMatureAttachedSeconds <= 0.001f)
                     continue;
 
@@ -6081,13 +6346,13 @@ namespace Hecton8.World
 
         private bool HasAliveParasiteForModule(int moduleRuntimeId)
         {
-            if (moduleRuntimeId == 0 || !_parasiteNodes.IsCreated)
+            if (moduleRuntimeId == 0 || !TryResolveParasiteNodes(out NativeArray<ParasiteNode> parasiteNodes))
                 return false;
 
-            int safeCount = math.min(_parasiteNodeCount, _parasiteNodes.Length);
+            int safeCount = math.min(_parasiteNodeCount, parasiteNodes.Length);
             for (int i = 0; i < safeCount; i++)
             {
-                ParasiteNode node = _parasiteNodes[i];
+                ParasiteNode node = parasiteNodes[i];
                 if (node.HostModuleRuntimeId == moduleRuntimeId &&
                     node.State != ParasiteNodeStateDead &&
                     node.GrowthLevel > 0.001f)
@@ -6101,35 +6366,25 @@ namespace Hecton8.World
 
         private void ApplyModuleParasiteStateDiff()
         {
-            _staleParasiticModules.Clear();
-            Dictionary<BaseModule, ModuleParasiteState>.Enumerator previousEnumerator = _moduleParasiteStateFront.GetEnumerator();
-            while (previousEnumerator.MoveNext())
+            for (int i = 0; i < _moduleParasiteStateFrontCount; i++)
             {
-                BaseModule module = previousEnumerator.Current.Key;
-                if (module == null || !_moduleParasiteStateBack.ContainsKey(module))
-                    _staleParasiticModules.Add(module);
-            }
-
-            for (int i = 0; i < _staleParasiticModules.Count; i++)
-            {
-                BaseModule staleModule = _staleParasiticModules[i];
-                if (staleModule != null)
+                BaseModule module = _moduleParasiteStateFrontModules[i];
+                if (module != null && FindModuleIndex(_moduleParasiteStateBackModules, _moduleParasiteStateBackCount, module) < 0)
                 {
-                    staleModule.SetParasiteInfestation(0f, 0f, 0f, 0f, 0);
-                    staleModule.SetParasiteStructuralEffects(0f, 0f, 1f);
-                    Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState(staleModule);
+                    module.SetParasiteInfestation(0f, 0f, 0f, 0f, 0);
+                    module.SetParasiteStructuralEffects(0f, 0f, 1f);
+                    Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState(module);
                 }
             }
 
-            Dictionary<BaseModule, ModuleParasiteState>.Enumerator nextEnumerator = _moduleParasiteStateBack.GetEnumerator();
-            while (nextEnumerator.MoveNext())
+            for (int i = 0; i < _moduleParasiteStateBackCount; i++)
             {
-                BaseModule module = nextEnumerator.Current.Key;
+                BaseModule module = _moduleParasiteStateBackModules[i];
                 if (module == null)
                     continue;
 
-                ModuleParasiteState nextState = nextEnumerator.Current.Value;
-                if (!_moduleParasiteStateFront.TryGetValue(module, out ModuleParasiteState previousState) ||
+                ModuleParasiteState nextState = _moduleParasiteStateBackValues[i];
+                if (!TryGetModuleState(_moduleParasiteStateFrontModules, _moduleParasiteStateFrontValues, _moduleParasiteStateFrontCount, module, out ModuleParasiteState previousState) ||
                     !AreEquivalentParasiteStates(in previousState, in nextState))
                 {
                     module.SetParasiteInfestation(
@@ -6151,10 +6406,177 @@ namespace Hecton8.World
                     nextState.AddedMassKilograms);
             }
 
-            Dictionary<BaseModule, ModuleParasiteState> swap = _moduleParasiteStateFront;
-            _moduleParasiteStateFront = _moduleParasiteStateBack;
-            _moduleParasiteStateBack = swap;
-            _moduleParasiteStateBack.Clear();
+            SwapModuleParasiteStateBuffers();
+        }
+
+        private void SwapModuleParasiteStateBuffers()
+        {
+            BaseModule[] previousFrontModules = _moduleParasiteStateFrontModules;
+            ModuleParasiteState[] previousFrontValues = _moduleParasiteStateFrontValues;
+            int previousFrontCount = _moduleParasiteStateFrontCount;
+
+            _moduleParasiteStateFrontModules = _moduleParasiteStateBackModules;
+            _moduleParasiteStateFrontValues = _moduleParasiteStateBackValues;
+            _moduleParasiteStateFrontCount = _moduleParasiteStateBackCount;
+
+            _moduleParasiteStateBackModules = previousFrontModules;
+            _moduleParasiteStateBackValues = previousFrontValues;
+            _moduleParasiteStateBackCount = previousFrontCount;
+            ClearModuleParasiteStateBack();
+        }
+
+        private void ClearModuleParasiteStateFront()
+        {
+            ClearModuleStateBuffer(
+                _moduleParasiteStateFrontModules,
+                _moduleParasiteStateFrontValues,
+                ref _moduleParasiteStateFrontCount);
+        }
+
+        private void ClearModuleParasiteStateBack()
+        {
+            ClearModuleStateBuffer(
+                _moduleParasiteStateBackModules,
+                _moduleParasiteStateBackValues,
+                ref _moduleParasiteStateBackCount);
+        }
+
+        private static void ClearModuleStateBuffer(BaseModule[] modules, ModuleParasiteState[] states, ref int count)
+        {
+            int safeCapacity = modules != null && states != null ? math.min(modules.Length, states.Length) : 0;
+            int safeCount = math.min(math.max(0, count), safeCapacity);
+            for (int i = 0; i < safeCount; i++)
+            {
+                modules[i] = null;
+                states[i] = default;
+            }
+
+            count = 0;
+        }
+
+        private static bool TryGetModuleState(
+            BaseModule[] modules,
+            ModuleParasiteState[] states,
+            int count,
+            BaseModule module,
+            out ModuleParasiteState state)
+        {
+            if (states == null)
+            {
+                state = default;
+                return false;
+            }
+
+            int index = FindModuleIndex(modules, count, module);
+            if (index >= 0)
+            {
+                state = states[index];
+                return true;
+            }
+
+            state = default;
+            return false;
+        }
+
+        private static int FindModuleIndex(BaseModule[] modules, int count, BaseModule module)
+        {
+            if (module == null || modules == null)
+                return -1;
+
+            int safeCount = math.min(math.max(0, count), modules.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (ReferenceEquals(modules[i], module))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void ClearThermophileDwell()
+        {
+            int safeCount = math.min(math.max(0, _thermophileDwellCount), _thermophileDwellModules.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                _thermophileDwellModules[i] = null;
+                _thermophileDwellSeconds[i] = 0f;
+            }
+
+            _thermophileDwellCount = 0;
+        }
+
+        private bool TryGetThermophileDwell(BaseModule module, out float dwellSeconds)
+        {
+            int index = FindThermophileDwellIndex(module);
+            if (index >= 0)
+            {
+                dwellSeconds = _thermophileDwellSeconds[index];
+                return true;
+            }
+
+            dwellSeconds = 0f;
+            return false;
+        }
+
+        private bool SetThermophileDwell(BaseModule module, float dwellSeconds)
+        {
+            if (module == null)
+                return false;
+
+            int index = FindThermophileDwellIndex(module);
+            if (index >= 0)
+            {
+                _thermophileDwellSeconds[index] = Mathf.Max(0f, dwellSeconds);
+                return true;
+            }
+
+            if (_thermophileDwellCount >= _thermophileDwellModules.Length)
+                return false;
+
+            int writeIndex = _thermophileDwellCount;
+            _thermophileDwellModules[writeIndex] = module;
+            _thermophileDwellSeconds[writeIndex] = Mathf.Max(0f, dwellSeconds);
+            _thermophileDwellCount++;
+            return true;
+        }
+
+        private void RemoveThermophileDwell(BaseModule module)
+        {
+            int index = FindThermophileDwellIndex(module);
+            if (index >= 0)
+                RemoveThermophileDwellAt(index);
+        }
+
+        private void RemoveThermophileDwellAt(int index)
+        {
+            if ((uint)index >= (uint)_thermophileDwellCount)
+                return;
+
+            int lastIndex = _thermophileDwellCount - 1;
+            if (index != lastIndex)
+            {
+                _thermophileDwellModules[index] = _thermophileDwellModules[lastIndex];
+                _thermophileDwellSeconds[index] = _thermophileDwellSeconds[lastIndex];
+            }
+
+            _thermophileDwellModules[lastIndex] = null;
+            _thermophileDwellSeconds[lastIndex] = 0f;
+            _thermophileDwellCount--;
+        }
+
+        private int FindThermophileDwellIndex(BaseModule module)
+        {
+            if (module == null)
+                return -1;
+
+            int safeCount = math.min(math.max(0, _thermophileDwellCount), _thermophileDwellModules.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (ReferenceEquals(_thermophileDwellModules[i], module))
+                    return i;
+            }
+
+            return -1;
         }
 
         private static bool AreEquivalentParasiteStates(in ModuleParasiteState lhs, in ModuleParasiteState rhs)
@@ -6172,10 +6594,9 @@ namespace Hecton8.World
 
         private void ClearModuleParasiteState()
         {
-            Dictionary<BaseModule, ModuleParasiteState>.Enumerator frontEnumerator = _moduleParasiteStateFront.GetEnumerator();
-            while (frontEnumerator.MoveNext())
+            for (int i = 0; i < _moduleParasiteStateFrontCount; i++)
             {
-                BaseModule module = frontEnumerator.Current.Key;
+                BaseModule module = _moduleParasiteStateFrontModules[i];
                 if (module != null)
                 {
                     module.SetParasiteInfestation(0f, 0f, 0f, 0f, 0);
@@ -6184,9 +6605,9 @@ namespace Hecton8.World
                 }
             }
 
-            _moduleParasiteStateFront.Clear();
-            _moduleParasiteStateBack.Clear();
-            _thermophileDwellSeconds.Clear();
+            ClearModuleParasiteStateFront();
+            ClearModuleParasiteStateBack();
+            ClearThermophileDwell();
             _publishedParasiteAnchorCount = 0;
             PublishParasiteInfectionGlobals();
         }
@@ -6350,7 +6771,9 @@ namespace Hecton8.World
             if (_vegetationBridge == null)
                 _vegetationBridge = ResolveVegetationBridge();
 
-            if (_vegetationBridge == null || !_cascadeReactiveTemplateMask.IsCreated || _cascadeReactiveTemplateMask.Length == 0)
+            if (_vegetationBridge == null ||
+                !TryResolveCascadeReactiveTemplateMask(out NativeArray<byte> cascadeReactiveTemplateMask) ||
+                cascadeReactiveTemplateMask.Length == 0)
                 return;
 
             _cascadeSpatialRefreshTimer -= deltaTime;
@@ -6384,194 +6807,218 @@ namespace Hecton8.World
                 : _vegetationBridge.TryGetActiveSurfaceNativePayload(out matrices, out metadata, out types, out count);
 
             HectonSpatialHash spatialHash = underwater ? _underwaterReactiveFloraHash : _surfaceReactiveFloraHash;
-            NativeList<int> registeredHandles = underwater ? _underwaterReactiveFloraHandles : _surfaceReactiveFloraHandles;
-            int eventCount = underwater ? _underwaterCascadeEventCount : _surfaceCascadeEventCount;
-
-            EnsureReactiveFloraHashCapacity(ref spatialHash, count);
-            ClearRegisteredReactiveFloraHandles(spatialHash, registeredHandles);
-
-            if (!hasPayload || !matrices.IsCreated || !metadata.IsCreated || count <= 0)
-            {
-                QueueCascadePhaseSeedRelease(underwater);
-                if (underwater)
-                    _underwaterReactiveFloraHash = spatialHash;
-                else
-                    _surfaceReactiveFloraHash = spatialHash;
+            if (!TryAcquireRegisteredReactiveFloraHandles(underwater, out NativeArray<int> registeredHandles))
                 return;
-            }
 
-            int safeCount = math.min(count, math.min(matrices.Length, metadata.Length));
-            for (int i = 0; i < safeCount; i++)
+            try
             {
-                if (!IsReactiveCascadeTemplate(metadata[i]))
-                    continue;
+                int registeredHandleCount = underwater ? _underwaterReactiveFloraHandleCount : _surfaceReactiveFloraHandleCount;
+                int eventCount = underwater ? _underwaterCascadeEventCount : _surfaceCascadeEventCount;
 
-                if (metadata[i].RuntimeState >= HectonVegetationInstanceData.RuntimeStateDying - 0.01f ||
-                    math.abs(metadata[i].HeightScale) <= 0.0001f)
+                EnsureReactiveFloraHashCapacity(ref spatialHash, count, allowCreate: false);
+                if (spatialHash == null)
+                    return;
+
+                ClearRegisteredReactiveFloraHandles(spatialHash, registeredHandles, registeredHandleCount);
+                registeredHandleCount = 0;
+
+                if (!hasPayload || !matrices.IsCreated || !metadata.IsCreated || count <= 0)
                 {
-                    continue;
+                    QueueCascadePhaseSeedRelease(underwater);
+                    if (underwater)
+                        _underwaterReactiveFloraHash = spatialHash;
+                    else
+                        _surfaceReactiveFloraHash = spatialHash;
+                    return;
                 }
 
-                if (registeredHandles.Length >= registeredHandles.Capacity)
-                    break;
+                int safeCount = math.min(count, math.min(matrices.Length, metadata.Length));
+                for (int i = 0; i < safeCount; i++)
+                {
+                    if (!IsReactiveCascadeTemplate(metadata[i]))
+                        continue;
 
-                Vector3 positionWS = ExtractTranslation(matrices[i]);
-                if (!IsFiniteVector3(positionWS))
-                    continue;
+                    if (metadata[i].RuntimeState >= HectonVegetationInstanceData.RuntimeStateDying - 0.01f ||
+                        math.abs(metadata[i].HeightScale) <= 0.0001f)
+                    {
+                        continue;
+                    }
 
-                float3 halfExtents = ResolveReactiveFloraHalfExtents(
-                    metadata[i],
-                    types.IsCreated && i < types.Length ? types[i] : 0);
-                if (!math.all(math.isfinite(halfExtents)))
-                    continue;
+                    if (registeredHandleCount >= registeredHandles.Length)
+                        break;
 
-                if (!TryResolveAupFromRuntimeOrigin(positionWS, out AbsoluteUniversePosition positionAup))
-                    continue;
+                    Vector3 positionWS = ExtractTranslation(matrices[i]);
+                    if (!IsFiniteVector3(positionWS))
+                        continue;
 
-                int handle = spatialHash.Register(
-                    positionAup,
-                    halfExtents,
-                    ReactiveFloraKindMask,
-                    0u,
-                    i);
-                if (handle > 0)
-                    registeredHandles.AddNoResize(handle);
+                    float3 halfExtents = ResolveReactiveFloraHalfExtents(
+                        metadata[i],
+                        types.IsCreated && i < types.Length ? types[i] : 0);
+                    if (!math.all(math.isfinite(halfExtents)))
+                        continue;
+
+                    if (!TryResolveAupFromRuntimeOrigin(positionWS, out AbsoluteUniversePosition positionAup))
+                        continue;
+
+                    int handle = spatialHash.Register(
+                        positionAup,
+                        halfExtents,
+                        ReactiveFloraKindMask,
+                        0u,
+                        i);
+                    if (handle > 0)
+                        registeredHandles[registeredHandleCount++] = handle;
+                }
+
+                if (underwater)
+                {
+                    _underwaterReactiveFloraHash = spatialHash;
+                    _underwaterReactiveFloraHandleCount = registeredHandleCount;
+                }
+                else
+                {
+                    _surfaceReactiveFloraHash = spatialHash;
+                    _surfaceReactiveFloraHandleCount = registeredHandleCount;
+                }
+
+                if (!EnsureCascadePhaseSeedResources(underwater, safeCount))
+                    return;
+
+                if (eventCount > 0)
+                {
+                    RecomputeCascadePhaseSeeds(underwater, matrices, metadata, safeCount);
+                }
+                else
+                {
+                    ClearCascadePhaseSeeds(underwater, safeCount);
+                    QueueCascadePhaseSeedUpload(underwater, safeCount);
+                }
             }
-
-            if (underwater)
-                _underwaterReactiveFloraHash = spatialHash;
-            else
-                _surfaceReactiveFloraHash = spatialHash;
-
-            if (!EnsureCascadePhaseSeedResources(underwater, safeCount))
-                return;
-
-            if (eventCount > 0)
+            finally
             {
-                RecomputeCascadePhaseSeeds(underwater, matrices, metadata, safeCount);
-            }
-            else
-            {
-                ClearCascadePhaseSeeds(underwater, safeCount);
-                QueueCascadePhaseSeedUpload(underwater, safeCount);
+                ReleaseRegisteredReactiveFloraHandlesWriteLock(underwater);
             }
         }
 
         private void TryTriggerCascadeInLane(Vector3 playerPositionWS, bool underwater)
         {
-            if (_reactiveFloraQueryHandles.IsCreated)
-                _reactiveFloraQueryHandles.Clear();
-
             if (!IsFiniteVector3(playerPositionWS))
                 return;
 
             HectonSpatialHash spatialHash = underwater ? _underwaterReactiveFloraHash : _surfaceReactiveFloraHash;
-            if (spatialHash == null || !_reactiveFloraQueryHandles.IsCreated)
+            if (spatialHash == null || !TryAcquireReactiveFloraQueryHandles(out NativeArray<int> queryHandles))
                 return;
 
-            NativeArray<Matrix4x4> matrices;
-            NativeArray<HectonVegetationInstanceData> metadata;
-            NativeArray<int> types;
-            int count;
-            bool hasPayload = underwater
-                ? _vegetationBridge.TryGetActiveUnderwaterNativePayload(out matrices, out metadata, out types, out count)
-                : _vegetationBridge.TryGetActiveSurfaceNativePayload(out matrices, out metadata, out types, out count);
-            if (!hasPayload || !matrices.IsCreated || !metadata.IsCreated || count <= 0)
-                return;
-
-            if (!TryResolveAupFromRuntimeOrigin(playerPositionWS, out AbsoluteUniversePosition playerPositionAup))
-                return;
-
-            int queryCount = spatialHash.CollectSphere(
-                playerPositionAup,
-                _cascadeContactRadius,
-                ReactiveFloraKindMask,
-                _reactiveFloraQueryHandles);
-
-            int lastContactPayloadIndex = underwater ? _lastUnderwaterPlayerContactPayloadIndex : _lastSurfacePlayerContactPayloadIndex;
-            int nearestPayloadIndex = -1;
-            float nearestDistanceSq = float.MaxValue;
-            for (int i = 0; i < queryCount; i++)
+            try
             {
-                if (!spatialHash.TryGetEntry(_reactiveFloraQueryHandles[i], out HectonSpatialHash.SpatialEntry entry))
-                    continue;
+                NativeArray<Matrix4x4> matrices;
+                NativeArray<HectonVegetationInstanceData> metadata;
+                NativeArray<int> types;
+                int count;
+                bool hasPayload = underwater
+                    ? _vegetationBridge.TryGetActiveUnderwaterNativePayload(out matrices, out metadata, out types, out count)
+                    : _vegetationBridge.TryGetActiveSurfaceNativePayload(out matrices, out metadata, out types, out count);
+                if (!hasPayload || !matrices.IsCreated || !metadata.IsCreated || count <= 0)
+                    return;
 
-                int payloadIndex = entry.PayloadId;
-                if (payloadIndex < 0 || payloadIndex >= count || payloadIndex >= matrices.Length || payloadIndex >= metadata.Length)
-                    continue;
+                if (!TryResolveAupFromRuntimeOrigin(playerPositionWS, out AbsoluteUniversePosition playerPositionAup))
+                    return;
 
-                Vector3 positionWS = ExtractTranslation(matrices[payloadIndex]);
-                if (!IsFiniteVector3(positionWS))
-                    continue;
+                int queryCount = spatialHash.CollectSphere(
+                    playerPositionAup,
+                    _cascadeContactRadius,
+                    ReactiveFloraKindMask,
+                    queryHandles);
 
-                float distanceSq = (positionWS - playerPositionWS).sqrMagnitude;
-                if (distanceSq >= nearestDistanceSq)
-                    continue;
+                int lastContactPayloadIndex = underwater ? _lastUnderwaterPlayerContactPayloadIndex : _lastSurfacePlayerContactPayloadIndex;
+                int nearestPayloadIndex = -1;
+                float nearestDistanceSq = float.MaxValue;
+                for (int i = 0; i < queryCount; i++)
+                {
+                    if (!spatialHash.TryGetEntry(queryHandles[i], out HectonSpatialHash.SpatialEntry entry))
+                        continue;
 
-                nearestDistanceSq = distanceSq;
-                nearestPayloadIndex = payloadIndex;
-            }
+                    int payloadIndex = entry.PayloadId;
+                    if (payloadIndex < 0 || payloadIndex >= count || payloadIndex >= matrices.Length || payloadIndex >= metadata.Length)
+                        continue;
 
-            if (nearestPayloadIndex < 0)
-            {
-                if (lastContactPayloadIndex >= 0 && lastContactPayloadIndex < metadata.Length)
+                    Vector3 positionWS = ExtractTranslation(matrices[payloadIndex]);
+                    if (!IsFiniteVector3(positionWS))
+                        continue;
+
+                    float distanceSq = (positionWS - playerPositionWS).sqrMagnitude;
+                    if (distanceSq >= nearestDistanceSq)
+                        continue;
+
+                    nearestDistanceSq = distanceSq;
+                    nearestPayloadIndex = payloadIndex;
+                }
+
+                if (nearestPayloadIndex < 0)
+                {
+                    if (lastContactPayloadIndex >= 0 && lastContactPayloadIndex < metadata.Length)
+                        SetPlayerContactRuntimeFlag(metadata, lastContactPayloadIndex, false);
+
+                    if (underwater)
+                        _lastUnderwaterPlayerContactPayloadIndex = -1;
+                    else
+                        _lastSurfacePlayerContactPayloadIndex = -1;
+                    return;
+                }
+
+                if (lastContactPayloadIndex >= 0 &&
+                    lastContactPayloadIndex != nearestPayloadIndex &&
+                    lastContactPayloadIndex < metadata.Length)
+                {
                     SetPlayerContactRuntimeFlag(metadata, lastContactPayloadIndex, false);
+                }
+
+                SetPlayerContactRuntimeFlag(metadata, nearestPayloadIndex, true);
+                if (underwater)
+                    _lastUnderwaterPlayerContactPayloadIndex = nearestPayloadIndex;
+                else
+                    _lastSurfacePlayerContactPayloadIndex = nearestPayloadIndex;
+
+                float simulationTime = GetCurrentSimulationTimeSeconds();
+                float lastTriggerTime = underwater ? _lastUnderwaterCascadeTriggerTime : _lastSurfaceCascadeTriggerTime;
+                int lastSourcePayloadIndex = underwater ? _lastUnderwaterCascadeSourcePayloadIndex : _lastSurfaceCascadeSourcePayloadIndex;
+                if (nearestPayloadIndex == lastSourcePayloadIndex &&
+                    simulationTime < lastTriggerTime + _cascadeRetriggerCooldownSeconds)
+                {
+                    return;
+                }
+
+                Vector3 sourcePositionWS = ExtractTranslation(matrices[nearestPayloadIndex]);
+                if (!IsFiniteVector3(sourcePositionWS))
+                    return;
+
+                if (!TryResolveAupFromRuntimeOrigin(sourcePositionWS, out AbsoluteUniversePosition sourcePositionAup))
+                    return;
+
+                spatialHash.CollectSphere(
+                    sourcePositionAup,
+                    _cascadePropagationRadius,
+                    ReactiveFloraKindMask,
+                    queryHandles);
+                if (!RegisterCascadeEvent(underwater, sourcePositionWS, simulationTime))
+                    return;
+
+                RecomputeCascadePhaseSeeds(underwater, matrices, metadata, count);
 
                 if (underwater)
-                    _lastUnderwaterPlayerContactPayloadIndex = -1;
+                {
+                    _lastUnderwaterCascadeTriggerTime = simulationTime;
+                    _lastUnderwaterCascadeSourcePayloadIndex = nearestPayloadIndex;
+                }
                 else
-                    _lastSurfacePlayerContactPayloadIndex = -1;
-                return;
+                {
+                    _lastSurfaceCascadeTriggerTime = simulationTime;
+                    _lastSurfaceCascadeSourcePayloadIndex = nearestPayloadIndex;
+                }
             }
-
-            if (lastContactPayloadIndex >= 0 &&
-                lastContactPayloadIndex != nearestPayloadIndex &&
-                lastContactPayloadIndex < metadata.Length)
+            finally
             {
-                SetPlayerContactRuntimeFlag(metadata, lastContactPayloadIndex, false);
-            }
-
-            SetPlayerContactRuntimeFlag(metadata, nearestPayloadIndex, true);
-            if (underwater)
-                _lastUnderwaterPlayerContactPayloadIndex = nearestPayloadIndex;
-            else
-                _lastSurfacePlayerContactPayloadIndex = nearestPayloadIndex;
-
-            float simulationTime = GetCurrentSimulationTimeSeconds();
-            float lastTriggerTime = underwater ? _lastUnderwaterCascadeTriggerTime : _lastSurfaceCascadeTriggerTime;
-            int lastSourcePayloadIndex = underwater ? _lastUnderwaterCascadeSourcePayloadIndex : _lastSurfaceCascadeSourcePayloadIndex;
-            if (nearestPayloadIndex == lastSourcePayloadIndex &&
-                simulationTime < lastTriggerTime + _cascadeRetriggerCooldownSeconds)
-            {
-                return;
-            }
-
-            Vector3 sourcePositionWS = ExtractTranslation(matrices[nearestPayloadIndex]);
-            if (!IsFiniteVector3(sourcePositionWS))
-                return;
-
-            if (!TryResolveAupFromRuntimeOrigin(sourcePositionWS, out AbsoluteUniversePosition sourcePositionAup))
-                return;
-
-            spatialHash.CollectSphere(
-                sourcePositionAup,
-                _cascadePropagationRadius,
-                ReactiveFloraKindMask,
-                _reactiveFloraQueryHandles);
-            if (!RegisterCascadeEvent(underwater, sourcePositionWS, simulationTime))
-                return;
-
-            RecomputeCascadePhaseSeeds(underwater, matrices, metadata, count);
-
-            if (underwater)
-            {
-                _lastUnderwaterCascadeTriggerTime = simulationTime;
-                _lastUnderwaterCascadeSourcePayloadIndex = nearestPayloadIndex;
-            }
-            else
-            {
-                _lastSurfaceCascadeTriggerTime = simulationTime;
-                _lastSurfaceCascadeSourcePayloadIndex = nearestPayloadIndex;
+                ReleaseReactiveFloraQueryHandlesWriteLock();
             }
         }
 
@@ -6580,31 +7027,37 @@ namespace Hecton8.World
             if (HasPendingCascadePhaseSeedJob(underwater))
                 return false;
 
-            NativeArray<FloraCascadeEventPayload> cascadeEvents = underwater ? _underwaterCascadeEvents : _surfaceCascadeEvents;
+            if (!TryAcquireCascadeEvents(underwater, out NativeArray<FloraCascadeEventPayload> cascadeEvents))
+                return false;
+
             int eventCount = underwater ? _underwaterCascadeEventCount : _surfaceCascadeEventCount;
-            CompactCascadeEvents(cascadeEvents, ref eventCount, simulationTime, _cascadeReleaseDurationSeconds);
-
-            int writeIndex = eventCount < cascadeEvents.Length
-                ? eventCount
-                : FindOldestCascadeEventIndex(cascadeEvents, eventCount);
-
-            cascadeEvents[writeIndex] = new FloraCascadeEventPayload
+            try
             {
-                Center = new float3(centerWS.x, centerWS.y, centerWS.z),
-                StartTimeSeconds = simulationTime,
-                RadiusMeters = _cascadePropagationRadius,
-                Padding0 = 0f,
-                Padding1 = 0f,
-                Padding2 = 0f
-            };
+                CompactCascadeEvents(cascadeEvents, ref eventCount, simulationTime, _cascadeReleaseDurationSeconds);
 
-            eventCount = Mathf.Min(cascadeEvents.Length, Mathf.Max(eventCount, writeIndex + 1));
-            if (underwater)
-                _underwaterCascadeEventCount = eventCount;
-            else
-                _surfaceCascadeEventCount = eventCount;
+                int writeIndex = eventCount < cascadeEvents.Length
+                    ? eventCount
+                    : FindOldestCascadeEventIndex(cascadeEvents, eventCount);
 
-            return true;
+                cascadeEvents[writeIndex] = new FloraCascadeEventPayload
+                {
+                    Center = new float3(centerWS.x, centerWS.y, centerWS.z),
+                    StartTimeSeconds = simulationTime,
+                    RadiusMeters = _cascadePropagationRadius
+                };
+
+                eventCount = Mathf.Min(cascadeEvents.Length, Mathf.Max(eventCount, writeIndex + 1));
+                if (underwater)
+                    _underwaterCascadeEventCount = eventCount;
+                else
+                    _surfaceCascadeEventCount = eventCount;
+
+                return true;
+            }
+            finally
+            {
+                ReleaseCascadeEventsWriteLock(underwater);
+            }
         }
 
         private void RecomputeCascadePhaseSeeds(
@@ -6613,48 +7066,67 @@ namespace Hecton8.World
             NativeArray<HectonVegetationInstanceData> metadata,
             int count)
         {
-            NativeArray<float> phaseSeeds = underwater ? _underwaterCascadePhaseSeeds : _surfaceCascadePhaseSeeds;
-            NativeArray<FloraCascadeEventPayload> cascadeEvents = underwater ? _underwaterCascadeEvents : _surfaceCascadeEvents;
-            int eventCount = underwater ? _underwaterCascadeEventCount : _surfaceCascadeEventCount;
-            if (HasPendingCascadePhaseSeedJob(underwater))
-                return;
-
-            if (!phaseSeeds.IsCreated || count <= 0)
-                return;
-
-            CompactCascadeEvents(cascadeEvents, ref eventCount, GetCurrentSimulationTimeSeconds(), _cascadeReleaseDurationSeconds);
-            if (underwater)
-                _underwaterCascadeEventCount = eventCount;
-            else
-                _surfaceCascadeEventCount = eventCount;
-
-            if (eventCount <= 0)
+            if (!TryAcquireCascadePhaseSeeds(underwater, count, out NativeArray<float> phaseSeeds) ||
+                !TryAcquireCascadeEvents(underwater, out NativeArray<FloraCascadeEventPayload> cascadeEvents) ||
+                !TryResolveCascadeReactiveTemplateMask(out NativeArray<byte> cascadeReactiveTemplateMask))
             {
-                ClearCascadePhaseSeeds(underwater, count);
-                QueueCascadePhaseSeedUpload(underwater, count);
+                ReleaseCascadeEventsWriteLock(underwater);
+                ReleaseCascadePhaseSeedsWriteLock(underwater);
                 return;
             }
 
-            PopulateCascadePhaseSeedsJob job = new PopulateCascadePhaseSeedsJob
+            int eventCount = underwater ? _underwaterCascadeEventCount : _surfaceCascadeEventCount;
+            if (HasPendingCascadePhaseSeedJob(underwater))
             {
-                Matrices = matrices,
-                Metadata = metadata,
-                ReactiveTemplateMask = _cascadeReactiveTemplateMask,
-                Events = cascadeEvents,
-                EventCount = eventCount,
-                PropagationSpeedMetersPerSecond = _cascadePropagationSpeed,
-                InactiveSeed = InactiveCascadeSeed,
-                PhaseSeeds = phaseSeeds
-            };
-            ScheduleCascadePhaseSeedJob(underwater, job, count);
+                ReleaseCascadeEventsWriteLock(underwater);
+                ReleaseCascadePhaseSeedsWriteLock(underwater);
+                return;
+            }
+
+            try
+            {
+                if (!phaseSeeds.IsCreated)
+                    return;
+
+                int safeCount = math.min(count, phaseSeeds.Length);
+                if (safeCount <= 0)
+                    return;
+
+                CompactCascadeEvents(cascadeEvents, ref eventCount, GetCurrentSimulationTimeSeconds(), _cascadeReleaseDurationSeconds);
+                if (underwater)
+                    _underwaterCascadeEventCount = eventCount;
+                else
+                    _surfaceCascadeEventCount = eventCount;
+
+                if (eventCount <= 0)
+                {
+                    ClearCascadePhaseSeeds(phaseSeeds, safeCount);
+                    QueueCascadePhaseSeedUpload(underwater, safeCount);
+                    return;
+                }
+
+                PopulateCascadePhaseSeedsJob job = new PopulateCascadePhaseSeedsJob
+                {
+                    Matrices = matrices,
+                    Metadata = metadata,
+                    ReactiveTemplateMask = cascadeReactiveTemplateMask,
+                    Events = cascadeEvents,
+                    EventCount = eventCount,
+                    PropagationSpeedMetersPerSecond = _cascadePropagationSpeed,
+                    InactiveSeed = InactiveCascadeSeed,
+                    PhaseSeeds = phaseSeeds
+                };
+                ScheduleCascadePhaseSeedJob(underwater, job, safeCount);
+            }
+            finally
+            {
+                ReleaseCascadeEventsWriteLock(underwater);
+                ReleaseCascadePhaseSeedsWriteLock(underwater);
+            }
         }
 
-        private void ClearCascadePhaseSeeds(bool underwater, int count)
+        private static void ClearCascadePhaseSeeds(NativeArray<float> phaseSeeds, int count)
         {
-            if (HasPendingCascadePhaseSeedJob(underwater))
-                return;
-
-            NativeArray<float> phaseSeeds = underwater ? _underwaterCascadePhaseSeeds : _surfaceCascadePhaseSeeds;
             if (!phaseSeeds.IsCreated)
                 return;
 
@@ -6663,23 +7135,32 @@ namespace Hecton8.World
                 phaseSeeds[i] = InactiveCascadeSeed;
         }
 
+        private void ClearCascadePhaseSeeds(bool underwater, int count)
+        {
+            if (!TryAcquireCascadePhaseSeeds(underwater, count, out NativeArray<float> phaseSeeds))
+                return;
+
+            try
+            {
+                ClearCascadePhaseSeeds(phaseSeeds, count);
+            }
+            finally
+            {
+                ReleaseCascadePhaseSeedsWriteLock(underwater);
+            }
+        }
+
         private void UploadCascadePhaseSeedBuffer(bool underwater, int count)
         {
-            NativeArray<float> phaseSeeds = underwater ? _underwaterCascadePhaseSeeds : _surfaceCascadePhaseSeeds;
-            if (!phaseSeeds.IsCreated || count <= 0)
+            if (!TryResolveCascadePhaseSeeds(underwater, out NativeArray<float> phaseSeeds) || count <= 0)
             {
                 ReleaseCascadePhaseSeedChannel(underwater);
                 return;
             }
 
             int safeCount = math.min(count, phaseSeeds.Length);
-            if (underwater)
-                EnsureStructuredFloatBuffer(ref _underwaterCascadePhaseSeedBuffer, safeCount);
-            else
-                EnsureStructuredFloatBuffer(ref _surfaceCascadePhaseSeedBuffer, safeCount);
-
             GraphicsBuffer phaseSeedBuffer = underwater ? _underwaterCascadePhaseSeedBuffer : _surfaceCascadePhaseSeedBuffer;
-            if (phaseSeedBuffer == null)
+            if (phaseSeedBuffer == null || phaseSeedBuffer.count < safeCount)
                 return;
 
             GraphicsBufferUploadUtility.UploadNativeArray(phaseSeedBuffer, phaseSeeds, safeCount);
@@ -6697,14 +7178,9 @@ namespace Hecton8.World
                 return true;
             }
 
-            if (underwater)
-            {
-                EnsureFloatNativeArray(ref _underwaterCascadePhaseSeeds, count, nameof(_underwaterCascadePhaseSeeds));
-                return true;
-            }
-
-            EnsureFloatNativeArray(ref _surfaceCascadePhaseSeeds, count, nameof(_surfaceCascadePhaseSeeds));
-            return true;
+            int safeCount = math.min(count, CascadePhaseSeedCapacity);
+            return TryResolveCascadePhaseSeeds(underwater, out NativeArray<float> phaseSeeds) &&
+                   phaseSeeds.Length >= safeCount;
         }
 
         private void QueueCascadePhaseSeedUpload(bool underwater, int count)
@@ -6789,13 +7265,9 @@ namespace Hecton8.World
 
             if (underwater)
             {
-                DisposeNativeArray(ref _underwaterCascadePhaseSeeds);
-                ReleaseGraphicsBuffer(ref _underwaterCascadePhaseSeedBuffer);
                 return true;
             }
 
-            DisposeNativeArray(ref _surfaceCascadePhaseSeeds);
-            ReleaseGraphicsBuffer(ref _surfaceCascadePhaseSeedBuffer);
             return true;
         }
 
@@ -6861,24 +7333,29 @@ namespace Hecton8.World
             return true;
         }
 
-        private void EnsureReactiveFloraHashCapacity(ref HectonSpatialHash spatialHash, int count)
+        private void EnsureReactiveFloraHashCapacity(ref HectonSpatialHash spatialHash, int count, bool allowCreate)
         {
             int safeCapacity = Mathf.NextPowerOfTwo(Mathf.Max(16, count));
             if (spatialHash != null)
                 return;
 
+            if (!allowCreate)
+                return;
+
             spatialHash = new HectonSpatialHash(safeCapacity, safeCapacity * 4);
         }
 
-        private static void ClearRegisteredReactiveFloraHandles(HectonSpatialHash spatialHash, NativeList<int> registeredHandles)
+        private static void ClearRegisteredReactiveFloraHandles(
+            HectonSpatialHash spatialHash,
+            NativeArray<int> registeredHandles,
+            int registeredHandleCount)
         {
             if (spatialHash == null || !registeredHandles.IsCreated)
                 return;
 
-            for (int i = 0; i < registeredHandles.Length; i++)
+            int safeCount = math.min(math.max(0, registeredHandleCount), registeredHandles.Length);
+            for (int i = 0; i < safeCount; i++)
                 spatialHash.Unregister(registeredHandles[i]);
-
-            registeredHandles.Clear();
         }
 
         private static float3 ResolveReactiveFloraHalfExtents(HectonVegetationInstanceData instanceData, int instanceType)
@@ -6894,32 +7371,32 @@ namespace Hecton8.World
 
         private bool IsReactiveCascadeTemplate(HectonVegetationInstanceData instanceData)
         {
-            if (!_cascadeReactiveTemplateMask.IsCreated)
+            if (!TryResolveCascadeReactiveTemplateMask(out NativeArray<byte> cascadeReactiveTemplateMask))
                 return false;
 
             int templateIndex = Mathf.RoundToInt(instanceData.TemplateIndex);
             return templateIndex >= 0 &&
-                   templateIndex < _cascadeReactiveTemplateMask.Length &&
-                   _cascadeReactiveTemplateMask[templateIndex] != 0;
+                   templateIndex < cascadeReactiveTemplateMask.Length &&
+                   cascadeReactiveTemplateMask[templateIndex] != 0;
         }
 
         private bool IsDefensiveSporeBurstTemplate(HectonVegetationInstanceData instanceData)
         {
-            if (!_defensiveSporeBurstTemplateMask.IsCreated)
+            if (!TryResolveDefensiveSporeBurstTemplateMask(out NativeArray<byte> defensiveSporeBurstTemplateMask))
                 return false;
 
             int templateIndex = Mathf.RoundToInt(instanceData.TemplateIndex);
             return templateIndex >= 0 &&
-                   templateIndex < _defensiveSporeBurstTemplateMask.Length &&
-                   _defensiveSporeBurstTemplateMask[templateIndex] != 0;
+                   templateIndex < defensiveSporeBurstTemplateMask.Length &&
+                   defensiveSporeBurstTemplateMask[templateIndex] != 0;
         }
 
         internal bool IsDefensiveSporeBurstTemplateIndex(int templateIndex)
         {
-            return _defensiveSporeBurstTemplateMask.IsCreated &&
+            return TryResolveDefensiveSporeBurstTemplateMask(out NativeArray<byte> defensiveSporeBurstTemplateMask) &&
                    templateIndex >= 0 &&
-                   templateIndex < _defensiveSporeBurstTemplateMask.Length &&
-                   _defensiveSporeBurstTemplateMask[templateIndex] != 0;
+                   templateIndex < defensiveSporeBurstTemplateMask.Length &&
+                   defensiveSporeBurstTemplateMask[templateIndex] != 0;
         }
 
         private void RefreshCascadeTemplateMask(bool force)
@@ -6927,30 +7404,70 @@ namespace Hecton8.World
             if (_vegetationBridge == null)
                 _vegetationBridge = ResolveVegetationBridge();
 
+            FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
+            int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
+            if (force)
+                return;
+
+            if (_cachedCascadeReactiveTemplateCount == templateCount &&
+                TryResolveCascadeReactiveTemplateMask(out NativeArray<byte> cascadeReactiveTemplateMask) &&
+                cascadeReactiveTemplateMask.Length == templateCount)
+                return;
+        }
+
+        private void RebuildCascadeTemplateMaskColdFromCurrentBridge()
+        {
+            if (_vegetationBridge == null)
+                _vegetationBridge = ResolveVegetationBridge();
+
             CacheStableHashIds(_cascadeReactiveStableIds, ref _cascadeReactiveStableHashIds);
             FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
             int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
-            if (!force && _cachedCascadeReactiveTemplateCount == templateCount && _cascadeReactiveTemplateMask.IsCreated && _cascadeReactiveTemplateMask.Length == templateCount)
-                return;
+            RebuildCascadeTemplateMaskCold(floraTemplates, templateCount);
+        }
 
+        private void RebuildCascadeTemplateMaskCold(FloraDataTemplate[] floraTemplates, int templateCount)
+        {
             _cachedCascadeReactiveTemplateCount = templateCount;
             if (templateCount <= 0 || _cascadeReactiveStableHashIds.Length == 0)
             {
-                DisposeNativeArray(ref _cascadeReactiveTemplateMask);
+                ReleaseFloraVaultBuffer(ref _cascadeReactiveTemplateMaskHandle);
                 return;
             }
 
-            EnsureByteNativeArray(ref _cascadeReactiveTemplateMask, templateCount, nameof(_cascadeReactiveTemplateMask));
-            for (int i = 0; i < _cascadeReactiveTemplateMask.Length; i++)
-                _cascadeReactiveTemplateMask[i] = 0;
+            if (!TryEnsureFloraVaultBuffer(
+                    _wakeDataVault,
+                    ref _cascadeReactiveTemplateMaskHandle,
+                    FloraCascadeReactiveTemplateMaskBufferId,
+                    templateCount,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<byte> _))
+                return;
 
-            for (int i = 0; i < templateCount; i++)
+            if (!TryAcquireFloraVaultWriteBuffer(
+                    ref _cascadeReactiveTemplateMaskHandle,
+                    FloraCascadeReactiveTemplateMaskBufferId,
+                    templateCount,
+                    out NativeArray<byte> cascadeReactiveTemplateMask))
+                return;
+
+            try
             {
-                FloraDataTemplate template = floraTemplates[i];
-                if (template == null || string.IsNullOrWhiteSpace(template.StableId))
-                    continue;
+                for (int i = 0; i < cascadeReactiveTemplateMask.Length; i++)
+                    cascadeReactiveTemplateMask[i] = 0;
 
-                _cascadeReactiveTemplateMask[i] = MatchesStableHash(LocHash.Compute(template.StableId), _cascadeReactiveStableHashIds) ? (byte)1 : (byte)0;
+                for (int i = 0; i < templateCount; i++)
+                {
+                    FloraDataTemplate template = floraTemplates[i];
+                    if (template == null || string.IsNullOrWhiteSpace(template.StableId))
+                        continue;
+
+                    cascadeReactiveTemplateMask[i] = MatchesStableHash(LocHash.Compute(template.StableId), _cascadeReactiveStableHashIds) ? (byte)1 : (byte)0;
+                }
+            }
+            finally
+            {
+                ReleaseFloraVaultWriteLock(in _cascadeReactiveTemplateMaskHandle);
             }
         }
 
@@ -6959,30 +7476,70 @@ namespace Hecton8.World
             if (_vegetationBridge == null)
                 _vegetationBridge = ResolveVegetationBridge();
 
+            FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
+            int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
+            if (force)
+                return;
+
+            if (_cachedDefensiveSporeBurstTemplateCount == templateCount &&
+                TryResolveDefensiveSporeBurstTemplateMask(out NativeArray<byte> defensiveSporeBurstTemplateMask) &&
+                defensiveSporeBurstTemplateMask.Length == templateCount)
+                return;
+        }
+
+        private void RebuildDefensiveSporeBurstTemplateMaskColdFromCurrentBridge()
+        {
+            if (_vegetationBridge == null)
+                _vegetationBridge = ResolveVegetationBridge();
+
             CacheStableHashIds(_defensiveSporeBurstStableIds, ref _defensiveSporeBurstStableHashIds);
             FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
             int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
-            if (!force && _cachedDefensiveSporeBurstTemplateCount == templateCount && _defensiveSporeBurstTemplateMask.IsCreated && _defensiveSporeBurstTemplateMask.Length == templateCount)
-                return;
+            RebuildDefensiveSporeBurstTemplateMaskCold(floraTemplates, templateCount);
+        }
 
+        private void RebuildDefensiveSporeBurstTemplateMaskCold(FloraDataTemplate[] floraTemplates, int templateCount)
+        {
             _cachedDefensiveSporeBurstTemplateCount = templateCount;
             if (templateCount <= 0 || _defensiveSporeBurstStableHashIds.Length == 0)
             {
-                DisposeNativeArray(ref _defensiveSporeBurstTemplateMask);
+                ReleaseFloraVaultBuffer(ref _defensiveSporeBurstTemplateMaskHandle);
                 return;
             }
 
-            EnsureByteNativeArray(ref _defensiveSporeBurstTemplateMask, templateCount, nameof(_defensiveSporeBurstTemplateMask));
-            for (int i = 0; i < _defensiveSporeBurstTemplateMask.Length; i++)
-                _defensiveSporeBurstTemplateMask[i] = 0;
+            if (!TryEnsureFloraVaultBuffer(
+                    _wakeDataVault,
+                    ref _defensiveSporeBurstTemplateMaskHandle,
+                    FloraDefensiveSporeTemplateMaskBufferId,
+                    templateCount,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<byte> _))
+                return;
 
-            for (int i = 0; i < templateCount; i++)
+            if (!TryAcquireFloraVaultWriteBuffer(
+                    ref _defensiveSporeBurstTemplateMaskHandle,
+                    FloraDefensiveSporeTemplateMaskBufferId,
+                    templateCount,
+                    out NativeArray<byte> defensiveSporeBurstTemplateMask))
+                return;
+
+            try
             {
-                FloraDataTemplate template = floraTemplates[i];
-                if (template == null || string.IsNullOrWhiteSpace(template.StableId))
-                    continue;
+                for (int i = 0; i < defensiveSporeBurstTemplateMask.Length; i++)
+                    defensiveSporeBurstTemplateMask[i] = 0;
 
-                _defensiveSporeBurstTemplateMask[i] = MatchesStableHash(LocHash.Compute(template.StableId), _defensiveSporeBurstStableHashIds) ? (byte)1 : (byte)0;
+                for (int i = 0; i < templateCount; i++)
+                {
+                    FloraDataTemplate template = floraTemplates[i];
+                    if (template == null || string.IsNullOrWhiteSpace(template.StableId))
+                        continue;
+
+                    defensiveSporeBurstTemplateMask[i] = MatchesStableHash(LocHash.Compute(template.StableId), _defensiveSporeBurstStableHashIds) ? (byte)1 : (byte)0;
+                }
+            }
+            finally
+            {
+                ReleaseFloraVaultWriteLock(in _defensiveSporeBurstTemplateMaskHandle);
             }
         }
 
@@ -7077,10 +7634,19 @@ namespace Hecton8.World
 
         private void ClearReactiveFloraSpatialState(bool forceCompleteJobs)
         {
-            if (_surfaceReactiveFloraHandles.IsCreated && _surfaceReactiveFloraHash != null)
-                ClearRegisteredReactiveFloraHandles(_surfaceReactiveFloraHash, _surfaceReactiveFloraHandles);
-            if (_underwaterReactiveFloraHandles.IsCreated && _underwaterReactiveFloraHash != null)
-                ClearRegisteredReactiveFloraHandles(_underwaterReactiveFloraHash, _underwaterReactiveFloraHandles);
+            if (_surfaceReactiveFloraHash != null &&
+                TryResolveRegisteredReactiveFloraHandles(underwater: false, out NativeArray<int> surfaceHandles))
+            {
+                ClearRegisteredReactiveFloraHandles(_surfaceReactiveFloraHash, surfaceHandles, _surfaceReactiveFloraHandleCount);
+                _surfaceReactiveFloraHandleCount = 0;
+            }
+
+            if (_underwaterReactiveFloraHash != null &&
+                TryResolveRegisteredReactiveFloraHandles(underwater: true, out NativeArray<int> underwaterHandles))
+            {
+                ClearRegisteredReactiveFloraHandles(_underwaterReactiveFloraHash, underwaterHandles, _underwaterReactiveFloraHandleCount);
+                _underwaterReactiveFloraHandleCount = 0;
+            }
 
             ReleaseCascadePhaseSeedChannel(underwater: false, forceCompleteJobs);
             ReleaseCascadePhaseSeedChannel(underwater: true, forceCompleteJobs);
@@ -7091,38 +7657,6 @@ namespace Hecton8.World
             _lastSurfacePlayerContactPayloadIndex = -1;
             _lastUnderwaterPlayerContactPayloadIndex = -1;
             _defensiveSporeBurstCount = 0;
-        }
-
-        private static void EnsureByteNativeArray(ref NativeArray<byte> array, int requiredCount, string label)
-        {
-            if (requiredCount <= 0)
-            {
-                DisposeNativeArray(ref array);
-                return;
-            }
-
-            if (array.IsCreated && array.Length == requiredCount)
-                return;
-
-            DisposeNativeArray(ref array);
-            array = new NativeArray<byte>(requiredCount, DataVaultExemptTemplateMaskAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[templateCount] - reactive flora template membership mask - owner: FloraInteractionManager
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
-        }
-
-        private static void EnsureFloatNativeArray(ref NativeArray<float> array, int requiredCount, string label)
-        {
-            if (requiredCount <= 0)
-            {
-                DisposeNativeArray(ref array);
-                return;
-            }
-
-            if (array.IsCreated && array.Length == requiredCount)
-                return;
-
-            DisposeNativeArray(ref array);
-            array = new NativeArray<float>(requiredCount, DataVaultExemptCascadePhaseSeedAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[instanceCount] - per-instance cascade phase seed staging - owner: FloraInteractionManager
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
         private static void EnsureStructuredFloatBuffer(ref GraphicsBuffer buffer, int requiredCount)
@@ -7138,60 +7672,6 @@ namespace Hecton8.World
 
             ReleaseGraphicsBuffer(ref buffer);
             buffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(requiredCount); // COLD ALLOC: GraphicsBuffer[instanceCount] - per-instance cascade phase seed GPU buffer - owner: FloraInteractionManager
-        }
-
-        private void RegisterNativeMemorySentinel()
-        {
-            NativeMemorySentinel.RegisterNativeArray(_oceanFlowSamplePositions, NativeMemoryOwner, nameof(_oceanFlowSamplePositions), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_oceanFlowSampleResults, NativeMemoryOwner, nameof(_oceanFlowSampleResults), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_reactiveFloraQueryHandles, NativeMemoryOwner, nameof(_reactiveFloraQueryHandles), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_surfaceReactiveFloraHandles, NativeMemoryOwner, nameof(_surfaceReactiveFloraHandles), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_underwaterReactiveFloraHandles, NativeMemoryOwner, nameof(_underwaterReactiveFloraHandles), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_surfaceCascadeEvents, NativeMemoryOwner, nameof(_surfaceCascadeEvents), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_underwaterCascadeEvents, NativeMemoryOwner, nameof(_underwaterCascadeEvents), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_parasiteNodes, NativeMemoryOwner, nameof(_parasiteNodes), NativeMemoryLifetime);
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
-        }
-
-        private void DisposeParasiteNodeArray()
-        {
-            if (!_parasiteNodes.IsCreated)
-                return;
-
-            if (_parasiteGrowthScheduled)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_parasiteNodes);
-                _parasiteNodes.Dispose(_parasiteGrowthHandle);
-                _parasiteGrowthScheduled = false;
-                _parasiteGrowthHandle = default;
-                _parasiteNodeCount = 0;
-                _parasiteNodes = default;
-                return;
-            }
-
-            NativeMemorySentinel.UnregisterNativeArray(_parasiteNodes);
-            _parasiteNodes.Dispose();
-            _parasiteNodeCount = 0;
-            _parasiteNodes = default;
-        }
-
-        private static void DisposeNativeList<T>(ref NativeList<T> list, string label) where T : unmanaged
-        {
-            if (!list.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
-            list.Dispose();
-            list = default;
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
@@ -7446,19 +7926,36 @@ namespace Hecton8.World
 
         private Vector3 ResolveGlobalOceanFlow(Vector3 samplePositionWS, IFluidSurfaceCurrentReadModel fluidReadModel)
         {
-            IHectonOceanKinematicsService oceanKinematics = GlobalRegistry.OceanKinematics;
-            IHectonOceanKinematics provider = oceanKinematics != null ? oceanKinematics.ActiveProvider : null;
-            _oceanKinematicsProvider = provider;
+            IHectonOceanKinematics provider = _oceanKinematicsProvider;
             if (provider != null &&
                 provider.IsAvailable &&
-                _oceanFlowSamplePositions.IsCreated &&
-                _oceanFlowSampleResults.IsCreated &&
-                _oceanFlowSamplePositions.Length > 0 &&
-                _oceanFlowSampleResults.Length > 0)
+                TryAcquireFloraVaultWriteBuffer(
+                    ref _oceanFlowSamplePositionsHandle,
+                    FloraOceanFlowSamplePositionsBufferId,
+                    1,
+                    out NativeArray<Vector3> oceanFlowSamplePositions) &&
+                TryAcquireFloraVaultWriteBuffer(
+                    ref _oceanFlowSampleResultsHandle,
+                    FloraOceanFlowSampleResultsBufferId,
+                    1,
+                    out NativeArray<Vector3> oceanFlowSampleResults))
             {
-                _oceanFlowSamplePositions[0] = samplePositionWS;
-                if (provider.GetSurfaceFlow(_oceanFlowSamplePositions, 1, 1f, _oceanFlowSampleResults))
-                    return _oceanFlowSampleResults[0];
+                try
+                {
+                    oceanFlowSamplePositions[0] = samplePositionWS;
+                    if (provider.GetSurfaceFlow(oceanFlowSamplePositions, 1, 1f, oceanFlowSampleResults))
+                        return oceanFlowSampleResults[0];
+                }
+                finally
+                {
+                    ReleaseFloraVaultWriteLock(in _oceanFlowSampleResultsHandle);
+                    ReleaseFloraVaultWriteLock(in _oceanFlowSamplePositionsHandle);
+                }
+            }
+            else
+            {
+                ReleaseFloraVaultWriteLock(in _oceanFlowSampleResultsHandle);
+                ReleaseFloraVaultWriteLock(in _oceanFlowSamplePositionsHandle);
             }
 
             return fluidReadModel != null ? fluidReadModel.CurrentVector : Vector3.zero;
@@ -7496,7 +7993,14 @@ namespace Hecton8.World
             }
 
             if (_wakeTrailSimulationKernel < 0)
-                _wakeTrailSimulationKernel = _wakeTrailSimulationCompute.FindKernel("SimulateWakeTrail");
+            {
+                _wakeTrailSimulationKernel = ResolveKernel(_wakeTrailSimulationCompute, "SimulateWakeTrail");
+                ResolveKernelThreadGroupSizes(
+                    _wakeTrailSimulationCompute,
+                    _wakeTrailSimulationKernel,
+                    out _wakeTrailThreadGroupSizeX,
+                    out _wakeTrailThreadGroupSizeY);
+            }
 
             RefreshWakeTrailWorldRect(Vector3.zero, forceClear: true);
             QueueWakeTrailGlobals();
@@ -7518,6 +8022,8 @@ namespace Hecton8.World
             _queuedWakeTrailStampCount = 0;
             _wakeTrailDispatchSerial = 0u;
             _lastWakeTrailDispatchSerial = 0u;
+            _wakeTrailThreadGroupSizeX = 0;
+            _wakeTrailThreadGroupSizeY = 0;
 
             QueueWakeTrailGlobals();
         }
@@ -7741,6 +8247,11 @@ namespace Hecton8.World
                 return;
             }
 
+            int groupCountX = CeilDividePositive(_wakeTrailRuntimeResolution, _wakeTrailThreadGroupSizeX);
+            int groupCountY = CeilDividePositive(_wakeTrailRuntimeResolution, _wakeTrailThreadGroupSizeY);
+            if (groupCountX <= 0 || groupCountY <= 0)
+                return;
+
             if (_queuedWakeTrailStampCount > 0 && TryResolveWakeTrailStampCommands(out NativeArray<WakeTrailStampCommand> stampCommands))
             {
                 GraphicsBuffer stampWriteBuffer = (_wakeTrailStampCommandUploadBufferIndex & 1) == 0
@@ -7774,8 +8285,7 @@ namespace Hecton8.World
                     _wakeTrailRuntimeResolution,
                     _wakeTrailRuntimeResolution));
 
-            int groupCount = (_wakeTrailRuntimeResolution + WakeTrailThreadGroupSize - 1) / WakeTrailThreadGroupSize;
-            _wakeTrailSimulationCompute.Dispatch(_wakeTrailSimulationKernel, Mathf.Max(1, groupCount), Mathf.Max(1, groupCount), 1);
+            _wakeTrailSimulationCompute.Dispatch(_wakeTrailSimulationKernel, groupCountX, groupCountY, 1);
 
             RenderTexture temp = _wakeTrailRead;
             _wakeTrailRead = _wakeTrailWrite;
@@ -7800,6 +8310,48 @@ namespace Hecton8.World
 
             _pendingWakeTrailScrollUv.x += uvOffsetX;
             _pendingWakeTrailScrollUv.y += uvOffsetY;
+        }
+
+        private static int ResolveKernel(ComputeShader computeShader, string kernelName)
+        {
+            if (computeShader == null || !SystemInfo.supportsComputeShaders || !computeShader.HasKernel(kernelName))
+                return -1;
+
+            int kernel = computeShader.FindKernel(kernelName);
+            return kernel >= 0 && computeShader.IsSupported(kernel) ? kernel : -1;
+        }
+
+        private static void ResolveKernelThreadGroupSizes(
+            ComputeShader compute,
+            int kernel,
+            out int sizeX,
+            out int sizeY)
+        {
+            sizeX = 0;
+            sizeY = 0;
+            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+                return;
+
+            compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            if (queryX == 0u || queryY == 0u || queryZ != 1u || queryX > int.MaxValue || queryY > int.MaxValue)
+                return;
+
+            ulong totalThreads = queryX * (ulong)queryY * queryZ;
+            if (totalThreads > PortableMaxComputeThreadsPerGroup)
+                return;
+
+            sizeX = (int)queryX;
+            sizeY = (int)queryY;
+        }
+
+        private static int CeilDividePositive(int value, int divisor)
+        {
+            const int MaxDispatchGroupsPerDimension = 65535;
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private void ClearWakeTrailTextures()
@@ -7995,15 +8547,22 @@ namespace Hecton8.World
                 PublishParasiteInfectionGlobals();
             }
 
-            if (!_parasiteGrowthScheduled && _parasiteNodes.IsCreated && _parasiteNodeCount > 0)
+            if (!_parasiteGrowthScheduled && _parasiteNodeCount > 0 && TryAcquireParasiteNodes(out NativeArray<ParasiteNode> parasiteNodes))
             {
-                float3 offset = new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z);
-                int safeCount = math.min(_parasiteNodeCount, _parasiteNodes.Length);
-                for (int i = 0; i < safeCount; i++)
+                try
                 {
-                    ParasiteNode node = _parasiteNodes[i];
-                    node.PositionWS += offset;
-                    _parasiteNodes[i] = node;
+                    float3 offset = new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z);
+                    int safeCount = math.min(_parasiteNodeCount, parasiteNodes.Length);
+                    for (int i = 0; i < safeCount; i++)
+                    {
+                        ParasiteNode node = parasiteNodes[i];
+                        node.PositionWS += offset;
+                        parasiteNodes[i] = node;
+                    }
+                }
+                finally
+                {
+                    ReleaseFloraVaultWriteLock(in _parasiteNodesHandle);
                 }
             }
 
@@ -8110,6 +8669,12 @@ namespace Hecton8.World
             if (_saveService == null)
                 _saveService = GlobalRegistry.Save;
 
+            if (_oceanKinematicsService == null)
+            {
+                _oceanKinematicsService = GlobalRegistry.OceanKinematics;
+                _oceanKinematicsProvider = _oceanKinematicsService != null ? _oceanKinematicsService.ActiveProvider : null;
+            }
+
             RefreshCachedSubmarineContext();
         }
 
@@ -8118,6 +8683,7 @@ namespace Hecton8.World
             if (ReferenceEquals(_wakeDataVault, dataVault))
                 return;
 
+            ReleaseFloraAuxiliaryVaultBuffers();
             _wakeDataVault = dataVault;
             ClearFloraVaultHandles();
         }
@@ -8134,9 +8700,57 @@ namespace Hecton8.World
             _floraSwayFieldBlackBoxHandle = default;
             _floraStiffnessRulesHandle = default;
             _floraStiffnessCsvScratchHandle = default;
+            _oceanFlowSamplePositionsHandle = default;
+            _oceanFlowSampleResultsHandle = default;
+            _parasiteNodesHandle = default;
+            _cascadeReactiveTemplateMaskHandle = default;
+            _defensiveSporeBurstTemplateMaskHandle = default;
+            _allelopathicBloodKelpTemplateMaskHandle = default;
+            _allelopathicGhostWeedTemplateMaskHandle = default;
+            _surfaceCascadePhaseSeedsHandle = default;
+            _underwaterCascadePhaseSeedsHandle = default;
+            _surfaceCascadeEventsHandle = default;
+            _underwaterCascadeEventsHandle = default;
+            _surfaceReactiveFloraHandlesHandle = default;
+            _underwaterReactiveFloraHandlesHandle = default;
+            _reactiveFloraQueryHandlesHandle = default;
+            _floraMemoryTelemetryHandle = default;
+            _parasiteNodeCount = 0;
+            _surfaceReactiveFloraHandleCount = 0;
+            _underwaterReactiveFloraHandleCount = 0;
+            _floraMemoryTelemetryCursor = 0;
+            _floraMemoryConsecutiveFailureCount = 0;
+            _floraMemoryTelemetryDumped = false;
         }
 
-        private void RefreshInstanceCullingService()
+        private void ReleaseFloraAuxiliaryVaultBuffers()
+        {
+            ReleaseFloraVaultBuffer(ref _oceanFlowSamplePositionsHandle);
+            ReleaseFloraVaultBuffer(ref _oceanFlowSampleResultsHandle);
+            ReleaseFloraVaultBuffer(ref _parasiteNodesHandle);
+            ReleaseFloraVaultBuffer(ref _cascadeReactiveTemplateMaskHandle);
+            ReleaseFloraVaultBuffer(ref _defensiveSporeBurstTemplateMaskHandle);
+            ReleaseFloraVaultBuffer(ref _allelopathicBloodKelpTemplateMaskHandle);
+            ReleaseFloraVaultBuffer(ref _allelopathicGhostWeedTemplateMaskHandle);
+            ReleaseFloraVaultBuffer(ref _surfaceCascadePhaseSeedsHandle);
+            ReleaseFloraVaultBuffer(ref _underwaterCascadePhaseSeedsHandle);
+            ReleaseFloraVaultBuffer(ref _surfaceCascadeEventsHandle);
+            ReleaseFloraVaultBuffer(ref _underwaterCascadeEventsHandle);
+            ReleaseFloraVaultBuffer(ref _surfaceReactiveFloraHandlesHandle);
+            ReleaseFloraVaultBuffer(ref _underwaterReactiveFloraHandlesHandle);
+            ReleaseFloraVaultBuffer(ref _reactiveFloraQueryHandlesHandle);
+            ReleaseFloraVaultBuffer(ref _floraMemoryTelemetryHandle);
+            _parasiteNodeCount = 0;
+            _surfaceCascadeEventCount = 0;
+            _underwaterCascadeEventCount = 0;
+            _surfaceReactiveFloraHandleCount = 0;
+            _underwaterReactiveFloraHandleCount = 0;
+            _floraMemoryTelemetryCursor = 0;
+            _floraMemoryConsecutiveFailureCount = 0;
+            _floraMemoryTelemetryDumped = false;
+        }
+
+        private void CacheInstanceCullingServiceCold()
         {
             _instanceCullingService = GlobalRegistry.InstanceCulling;
         }
@@ -8269,12 +8883,12 @@ namespace Hecton8.World
                 !IsFloraVaultHandle(in _floraSwayFieldMetaHandle, FloraSwayFieldMetaBufferId) ||
                 !IsFloraVaultHandle(in _floraSwayFieldBlackBoxHandle, FloraSwayFieldBlackBoxBufferId))
             {
-                if (!ResolveFloraSwayFieldVaultBuffer(clearExisting: false))
-                    return false;
+                return false;
             }
 
             return TryResolveFloraSwayFieldBuffers(out _, out _) &&
-                   EnsureFloraSwayFieldGraphicsBuffers();
+                   _floraSwayFieldBufferA != null &&
+                   _floraSwayFieldBufferB != null;
         }
 
         private bool ResolveFloraSwayFieldVaultBuffer(bool clearExisting)
@@ -8383,16 +8997,638 @@ namespace Hecton8.World
                 out blackBox);
         }
 
-        private bool EnsureFloraSwayFieldGraphicsBuffers()
+        private bool ResolveFloraAuxiliaryVaultBuffers(bool clearExisting)
+        {
+            IDataVault dataVault = _wakeDataVault;
+            if (dataVault == null)
+            {
+                ClearFloraVaultHandles();
+                return false;
+            }
+
+            NativeArrayOptions options = clearExisting
+                ? NativeArrayOptions.ClearMemory
+                : NativeArrayOptions.UninitializedMemory;
+            if (!TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _oceanFlowSamplePositionsHandle,
+                    FloraOceanFlowSamplePositionsBufferId,
+                    1,
+                    options,
+                    out NativeArray<Vector3> oceanFlowSamplePositions) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _oceanFlowSampleResultsHandle,
+                    FloraOceanFlowSampleResultsBufferId,
+                    1,
+                    options,
+                    out NativeArray<Vector3> oceanFlowSampleResults) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _parasiteNodesHandle,
+                    FloraParasiteNodesBufferId,
+                    _headlessParasiteCapacity,
+                    options,
+                    out NativeArray<ParasiteNode> parasiteNodes) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _surfaceCascadeEventsHandle,
+                    FloraSurfaceCascadeEventsBufferId,
+                    MaxCascadeEvents,
+                    options,
+                    out NativeArray<FloraCascadeEventPayload> surfaceCascadeEvents) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _underwaterCascadeEventsHandle,
+                    FloraUnderwaterCascadeEventsBufferId,
+                    MaxCascadeEvents,
+                    options,
+                    out NativeArray<FloraCascadeEventPayload> underwaterCascadeEvents) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _surfaceCascadePhaseSeedsHandle,
+                    FloraSurfaceCascadePhaseSeedsBufferId,
+                    CascadePhaseSeedCapacity,
+                    options,
+                    out NativeArray<float> surfaceCascadePhaseSeeds) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _underwaterCascadePhaseSeedsHandle,
+                    FloraUnderwaterCascadePhaseSeedsBufferId,
+                    CascadePhaseSeedCapacity,
+                    options,
+                    out NativeArray<float> underwaterCascadePhaseSeeds) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _surfaceReactiveFloraHandlesHandle,
+                    FloraSurfaceReactiveHandlesBufferId,
+                    ReactiveFloraHandleCapacity,
+                    options,
+                    out NativeArray<int> surfaceReactiveHandles) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _underwaterReactiveFloraHandlesHandle,
+                    FloraUnderwaterReactiveHandlesBufferId,
+                    ReactiveFloraHandleCapacity,
+                    options,
+                    out NativeArray<int> underwaterReactiveHandles) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _reactiveFloraQueryHandlesHandle,
+                    FloraReactiveQueryHandlesBufferId,
+                    ReactiveFloraHandleCapacity,
+                    options,
+                    out NativeArray<int> reactiveQueryHandles) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _floraMemoryTelemetryHandle,
+                    FloraMemoryTelemetryBufferId,
+                    FloraMemoryTelemetryCapacity,
+                    options,
+                    out NativeArray<FloraMemoryTelemetryEntry> floraMemoryTelemetry))
+            {
+                return false;
+            }
+
+            if (clearExisting)
+            {
+                oceanFlowSamplePositions[0] = default;
+                oceanFlowSampleResults[0] = default;
+                for (int i = 0; i < parasiteNodes.Length; i++)
+                    parasiteNodes[i] = default;
+                for (int i = 0; i < surfaceCascadeEvents.Length; i++)
+                    surfaceCascadeEvents[i] = default;
+                for (int i = 0; i < underwaterCascadeEvents.Length; i++)
+                    underwaterCascadeEvents[i] = default;
+                for (int i = 0; i < surfaceCascadePhaseSeeds.Length; i++)
+                    surfaceCascadePhaseSeeds[i] = InactiveCascadeSeed;
+                for (int i = 0; i < underwaterCascadePhaseSeeds.Length; i++)
+                    underwaterCascadePhaseSeeds[i] = InactiveCascadeSeed;
+                for (int i = 0; i < surfaceReactiveHandles.Length; i++)
+                    surfaceReactiveHandles[i] = 0;
+                for (int i = 0; i < underwaterReactiveHandles.Length; i++)
+                    underwaterReactiveHandles[i] = 0;
+                for (int i = 0; i < reactiveQueryHandles.Length; i++)
+                    reactiveQueryHandles[i] = 0;
+                for (int i = 0; i < floraMemoryTelemetry.Length; i++)
+                    floraMemoryTelemetry[i] = default;
+
+                _parasiteNodeCount = 0;
+                _surfaceCascadeEventCount = 0;
+                _underwaterCascadeEventCount = 0;
+                _surfaceReactiveFloraHandleCount = 0;
+                _underwaterReactiveFloraHandleCount = 0;
+                _floraMemoryTelemetryCursor = 0;
+                _floraMemoryConsecutiveFailureCount = 0;
+                _floraMemoryTelemetryDumped = false;
+            }
+
+            return true;
+        }
+
+        private bool TryAcquireReactiveFloraQueryHandles(out NativeArray<int> queryHandles)
+        {
+            return TryAcquireFloraVaultWriteBuffer(
+                ref _reactiveFloraQueryHandlesHandle,
+                FloraReactiveQueryHandlesBufferId,
+                ReactiveFloraHandleCapacity,
+                out queryHandles);
+        }
+
+        private void ReleaseReactiveFloraQueryHandlesWriteLock()
+        {
+            ReleaseFloraVaultWriteLock(in _reactiveFloraQueryHandlesHandle);
+        }
+
+        private bool TryAcquireRegisteredReactiveFloraHandles(bool underwater, out NativeArray<int> registeredHandles)
+        {
+            if (underwater)
+            {
+                return TryAcquireFloraVaultWriteBuffer(
+                    ref _underwaterReactiveFloraHandlesHandle,
+                    FloraUnderwaterReactiveHandlesBufferId,
+                    ReactiveFloraHandleCapacity,
+                    out registeredHandles);
+            }
+
+            return TryAcquireFloraVaultWriteBuffer(
+                ref _surfaceReactiveFloraHandlesHandle,
+                FloraSurfaceReactiveHandlesBufferId,
+                ReactiveFloraHandleCapacity,
+                out registeredHandles);
+        }
+
+        private void ReleaseRegisteredReactiveFloraHandlesWriteLock(bool underwater)
+        {
+            if (underwater)
+            {
+                ReleaseFloraVaultWriteLock(in _underwaterReactiveFloraHandlesHandle);
+                return;
+            }
+
+            ReleaseFloraVaultWriteLock(in _surfaceReactiveFloraHandlesHandle);
+        }
+
+        private bool TryResolveRegisteredReactiveFloraHandles(bool underwater, out NativeArray<int> registeredHandles)
+        {
+            registeredHandles = default;
+            if (underwater)
+            {
+                return TryResolveFloraVaultBuffer(
+                    _wakeDataVault,
+                    in _underwaterReactiveFloraHandlesHandle,
+                    FloraUnderwaterReactiveHandlesBufferId,
+                    ReactiveFloraHandleCapacity,
+                    out registeredHandles);
+            }
+
+            return TryResolveFloraVaultBuffer(
+                _wakeDataVault,
+                in _surfaceReactiveFloraHandlesHandle,
+                FloraSurfaceReactiveHandlesBufferId,
+                ReactiveFloraHandleCapacity,
+                out registeredHandles);
+        }
+
+        private bool TryAcquireParasiteNodes(out NativeArray<ParasiteNode> parasiteNodes)
+        {
+            return TryAcquireFloraVaultWriteBuffer(
+                ref _parasiteNodesHandle,
+                FloraParasiteNodesBufferId,
+                _headlessParasiteCapacity,
+                out parasiteNodes);
+        }
+
+        private bool TryResolveParasiteNodes(out NativeArray<ParasiteNode> parasiteNodes)
+        {
+            parasiteNodes = default;
+            return TryResolveFloraVaultBuffer(
+                _wakeDataVault,
+                in _parasiteNodesHandle,
+                FloraParasiteNodesBufferId,
+                _headlessParasiteCapacity,
+                out parasiteNodes);
+        }
+
+        private bool TryResolveAllelopathicTemplateMasks(
+            out NativeArray<byte> bloodKelpTemplateMask,
+            out NativeArray<byte> ghostWeedTemplateMask)
+        {
+            bloodKelpTemplateMask = default;
+            ghostWeedTemplateMask = default;
+            return TryResolveFloraVaultBuffer(
+                       _wakeDataVault,
+                       in _allelopathicBloodKelpTemplateMaskHandle,
+                       FloraBloodKelpTemplateMaskBufferId,
+                       1,
+                       out bloodKelpTemplateMask) &&
+                   TryResolveFloraVaultBuffer(
+                       _wakeDataVault,
+                       in _allelopathicGhostWeedTemplateMaskHandle,
+                       FloraGhostWeedTemplateMaskBufferId,
+                       1,
+                       out ghostWeedTemplateMask);
+        }
+
+        private bool TryResolveCascadeReactiveTemplateMask(out NativeArray<byte> cascadeReactiveTemplateMask)
+        {
+            cascadeReactiveTemplateMask = default;
+            return TryResolveFloraVaultBuffer(
+                _wakeDataVault,
+                in _cascadeReactiveTemplateMaskHandle,
+                FloraCascadeReactiveTemplateMaskBufferId,
+                1,
+                out cascadeReactiveTemplateMask);
+        }
+
+        private bool TryResolveDefensiveSporeBurstTemplateMask(out NativeArray<byte> defensiveSporeBurstTemplateMask)
+        {
+            defensiveSporeBurstTemplateMask = default;
+            return TryResolveFloraVaultBuffer(
+                _wakeDataVault,
+                in _defensiveSporeBurstTemplateMaskHandle,
+                FloraDefensiveSporeTemplateMaskBufferId,
+                1,
+                out defensiveSporeBurstTemplateMask);
+        }
+
+        private bool TryAcquireCascadeEvents(bool underwater, out NativeArray<FloraCascadeEventPayload> cascadeEvents)
+        {
+            if (underwater)
+            {
+                return TryAcquireFloraVaultWriteBuffer(
+                    ref _underwaterCascadeEventsHandle,
+                    FloraUnderwaterCascadeEventsBufferId,
+                    MaxCascadeEvents,
+                    out cascadeEvents);
+            }
+
+            return TryAcquireFloraVaultWriteBuffer(
+                ref _surfaceCascadeEventsHandle,
+                FloraSurfaceCascadeEventsBufferId,
+                MaxCascadeEvents,
+                out cascadeEvents);
+        }
+
+        private bool TryAcquireCascadePhaseSeeds(bool underwater, int requiredLength, out NativeArray<float> phaseSeeds)
+        {
+            int safeLength = math.clamp(requiredLength, 1, CascadePhaseSeedCapacity);
+            if (underwater)
+            {
+                return TryAcquireFloraVaultWriteBuffer(
+                    ref _underwaterCascadePhaseSeedsHandle,
+                    FloraUnderwaterCascadePhaseSeedsBufferId,
+                    safeLength,
+                    out phaseSeeds);
+            }
+
+            return TryAcquireFloraVaultWriteBuffer(
+                ref _surfaceCascadePhaseSeedsHandle,
+                FloraSurfaceCascadePhaseSeedsBufferId,
+                safeLength,
+                out phaseSeeds);
+        }
+
+        private bool TryResolveCascadePhaseSeeds(bool underwater, out NativeArray<float> phaseSeeds)
+        {
+            phaseSeeds = default;
+            if (underwater)
+            {
+                return TryResolveFloraVaultBuffer(
+                    _wakeDataVault,
+                    in _underwaterCascadePhaseSeedsHandle,
+                    FloraUnderwaterCascadePhaseSeedsBufferId,
+                    1,
+                    out phaseSeeds);
+            }
+
+            return TryResolveFloraVaultBuffer(
+                _wakeDataVault,
+                in _surfaceCascadePhaseSeedsHandle,
+                FloraSurfaceCascadePhaseSeedsBufferId,
+                1,
+                out phaseSeeds);
+        }
+
+        private void ReleaseCascadeEventsWriteLock(bool underwater)
+        {
+            if (underwater)
+            {
+                ReleaseFloraVaultWriteLock(in _underwaterCascadeEventsHandle);
+                return;
+            }
+
+            ReleaseFloraVaultWriteLock(in _surfaceCascadeEventsHandle);
+        }
+
+        private void ReleaseCascadePhaseSeedsWriteLock(bool underwater)
+        {
+            if (underwater)
+            {
+                ReleaseFloraVaultWriteLock(in _underwaterCascadePhaseSeedsHandle);
+                return;
+            }
+
+            ReleaseFloraVaultWriteLock(in _surfaceCascadePhaseSeedsHandle);
+        }
+
+        private bool TryAcquireFloraVaultWriteBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault dataVault = _wakeDataVault;
+            if (!TryResolveFloraVaultBuffer(dataVault, in handle, bufferId, requiredLength, out _, recordFailure: true))
+                return false;
+
+            if (dataVault.IsCompactionFenceActive)
+            {
+                RecordFloraMemoryTelemetry(
+                    FloraMemoryTelemetryEventWriteLock,
+                    bufferId,
+                    handle.Generation,
+                    requiredLength,
+                    0,
+                    FloraMemoryTelemetryCompactionFenceFlag);
+                return false;
+            }
+
+            if (!dataVault.TryAcquireWriteLock(in handle, SystemID.Vfx, out buffer))
+            {
+                RecordFloraMemoryTelemetry(
+                    FloraMemoryTelemetryEventWriteLock,
+                    bufferId,
+                    handle.Generation,
+                    requiredLength,
+                    0,
+                    FloraMemoryTelemetryWriteLockFailedFlag);
+                buffer = default;
+                return false;
+            }
+
+            if (dataVault.IsCompactionFenceActive)
+            {
+                dataVault.ReleaseWriteLock(in handle, SystemID.Vfx);
+                RecordFloraMemoryTelemetry(
+                    FloraMemoryTelemetryEventWriteLock,
+                    bufferId,
+                    handle.Generation,
+                    requiredLength,
+                    buffer.IsCreated ? buffer.Length : 0,
+                    FloraMemoryTelemetryCompactionFenceFlag);
+                buffer = default;
+                return false;
+            }
+
+            if (!buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                dataVault.ReleaseWriteLock(in handle, SystemID.Vfx);
+                RecordFloraMemoryTelemetry(
+                    FloraMemoryTelemetryEventWriteLock,
+                    bufferId,
+                    handle.Generation,
+                    requiredLength,
+                    buffer.IsCreated ? buffer.Length : 0,
+                    FloraMemoryTelemetryInvalidBufferFlag);
+                buffer = default;
+                return false;
+            }
+
+            _floraMemoryConsecutiveFailureCount = 0;
+            return true;
+        }
+
+        private void ReleaseFloraVaultWriteLock<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            IDataVault dataVault = _wakeDataVault;
+            if (dataVault == null || handle.Generation == 0u)
+                return;
+
+            dataVault.ReleaseWriteLock(in handle, SystemID.Vfx);
+        }
+
+        private void ReleaseFloraVaultBuffer<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            IDataVault dataVault = _wakeDataVault;
+            if (dataVault != null && handle.Generation != 0u)
+                dataVault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private bool TryAcquireFloraMemoryTelemetry(out NativeArray<FloraMemoryTelemetryEntry> telemetry)
+        {
+            telemetry = default;
+            IDataVault dataVault = _wakeDataVault;
+            if (!TryResolveFloraVaultBuffer(
+                    dataVault,
+                    in _floraMemoryTelemetryHandle,
+                    FloraMemoryTelemetryBufferId,
+                    FloraMemoryTelemetryCapacity,
+                    out NativeArray<FloraMemoryTelemetryEntry> _,
+                    recordFailure: false))
+            {
+                return false;
+            }
+
+            if (dataVault.IsCompactionFenceActive)
+                return false;
+
+            bool telemetryLockAcquired = dataVault.TryAcquireWriteLock(in _floraMemoryTelemetryHandle, SystemID.Vfx, out telemetry);
+            if (!telemetryLockAcquired ||
+                dataVault.IsCompactionFenceActive ||
+                !telemetry.IsCreated ||
+                telemetry.Length < FloraMemoryTelemetryCapacity)
+            {
+                if (telemetryLockAcquired)
+                    dataVault.ReleaseWriteLock(in _floraMemoryTelemetryHandle, SystemID.Vfx);
+
+                telemetry = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryResolveFloraMemoryTelemetryReadOnly(out NativeArray<FloraMemoryTelemetryEntry>.ReadOnly telemetry)
+        {
+            telemetry = default;
+            IDataVault dataVault = _wakeDataVault;
+            return dataVault != null &&
+                   !dataVault.IsCompactionFenceActive &&
+                   IsFloraVaultHandle(in _floraMemoryTelemetryHandle, FloraMemoryTelemetryBufferId) &&
+                   dataVault.TryReadOnlyHandle(in _floraMemoryTelemetryHandle, out telemetry) &&
+                   telemetry.IsCreated &&
+                   telemetry.Length >= FloraMemoryTelemetryCapacity &&
+                   !dataVault.IsCompactionFenceActive;
+        }
+
+        private void RecordFloraMemoryTelemetry(
+            uint eventHash,
+            BufferID bufferId,
+            uint generation,
+            int requiredLength,
+            int actualLength,
+            uint flags)
+        {
+            if (!TryAcquireFloraMemoryTelemetry(out NativeArray<FloraMemoryTelemetryEntry> telemetry))
+                return;
+
+            try
+            {
+                int cursor = _floraMemoryTelemetryCursor;
+                if ((uint)cursor >= (uint)telemetry.Length)
+                    cursor = 0;
+
+                if ((flags & (FloraMemoryTelemetryResolveFailedFlag |
+                              FloraMemoryTelemetryWriteLockFailedFlag |
+                              FloraMemoryTelemetryInvalidBufferFlag |
+                              FloraMemoryTelemetryNaNFlag)) != 0u)
+                {
+                    _floraMemoryConsecutiveFailureCount = math.min(
+                        _floraMemoryConsecutiveFailureCount + 1,
+                        FloraMemoryTelemetryCapacity);
+                }
+                else
+                {
+                    _floraMemoryConsecutiveFailureCount = 0;
+                }
+
+                telemetry[cursor] = new FloraMemoryTelemetryEntry
+                {
+                    Frame = (uint)Time.frameCount,
+                    EventHash = eventHash,
+                    BufferID = (uint)bufferId,
+                    SystemID = (uint)SystemID.Vfx,
+                    Generation = generation,
+                    RequiredLength = (uint)math.max(0, requiredLength),
+                    ActualLength = (uint)math.max(0, actualLength),
+                    Flags = flags,
+                    ConsecutiveFailures = (uint)_floraMemoryConsecutiveFailureCount,
+                    VaultGeneration = _wakeDataVault != null ? _wakeDataVault.VaultGenerationID : 0u,
+                    GlobalQualityWeight = Mathf.Clamp01(HomeostasisBrain.GlobalQualityWeight),
+                    SystemStress01 = HomeostasisBrain.SystemHealthIndex01,
+                    StateHash = eventHash ^ (uint)bufferId ^ generation ^ flags,
+                    AupShiftSequence = HectonFloatingOrigin.CurrentShiftSequence,
+                    CpuMicroseconds = 0u
+                };
+
+                cursor++;
+                if (cursor >= telemetry.Length)
+                    cursor = 0;
+                _floraMemoryTelemetryCursor = cursor;
+            }
+            finally
+            {
+                ReleaseFloraVaultWriteLock(in _floraMemoryTelemetryHandle);
+            }
+
+            if ((flags & FloraMemoryTelemetryNaNFlag) != 0u ||
+                _floraMemoryConsecutiveFailureCount >= FloraMemoryTelemetryDumpFailureThreshold)
+            {
+                DumpFloraMemoryTelemetryOnce();
+            }
+        }
+
+        private void DumpFloraMemoryTelemetryOnce()
+        {
+            if (_floraMemoryTelemetryDumped ||
+                !TryResolveFloraMemoryTelemetryReadOnly(out NativeArray<FloraMemoryTelemetryEntry>.ReadOnly telemetry))
+            {
+                return;
+            }
+
+            _floraMemoryTelemetryDumped = true;
+            try
+            {
+                string fullPath = Path.Combine(Application.dataPath, "..", FloraMemoryTelemetryDumpPath);
+                string directory = Path.GetDirectoryName(fullPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using MemoryStream memoryStream = new MemoryStream(8 + telemetry.Length * 64);
+                using BinaryWriter writer = new BinaryWriter(memoryStream);
+                writer.Write(telemetry.Length);
+                writer.Write(_floraMemoryTelemetryCursor);
+                for (int i = 0; i < telemetry.Length; i++)
+                {
+                    FloraMemoryTelemetryEntry entry = telemetry[i];
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.EventHash);
+                    writer.Write(entry.BufferID);
+                    writer.Write(entry.SystemID);
+                    writer.Write(entry.Generation);
+                    writer.Write(entry.RequiredLength);
+                    writer.Write(entry.ActualLength);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.ConsecutiveFailures);
+                    writer.Write(entry.VaultGeneration);
+                    writer.Write(entry.GlobalQualityWeight);
+                    writer.Write(entry.SystemStress01);
+                    writer.Write(entry.StateHash);
+                    writer.Write(entry.AupShiftSequence);
+                    writer.Write(entry.CpuMicroseconds);
+                    writer.Write(0u);
+                }
+
+                writer.Flush();
+                FloraMemoryTelemetryDumpWork work = new FloraMemoryTelemetryDumpWork
+                {
+                    Path = fullPath,
+                    Payload = memoryStream.GetBuffer()
+                };
+
+                if (!ThreadPool.QueueUserWorkItem(s_floraMemoryTelemetryDumpCallback, work))
+                    File.WriteAllBytes(fullPath, work.Payload);
+            }
+            catch (IOException)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+        }
+
+        private static void WriteFloraMemoryTelemetryDumpQueued(object state)
+        {
+            FloraMemoryTelemetryDumpWork work = state as FloraMemoryTelemetryDumpWork;
+            if (work == null || string.IsNullOrEmpty(work.Path) || work.Payload == null)
+                return;
+
+            try
+            {
+                File.WriteAllBytes(work.Path, work.Payload);
+            }
+            catch (IOException)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+        }
+
+        private bool EnsureFloraSwayFieldGraphicsBuffers(bool allowCreate = true)
         {
             if (_floraSwayFieldBufferA == null || _floraSwayFieldBufferA.count != FloraSwayFieldMaxNodeCount)
             {
+                if (!allowCreate)
+                    return false;
+
                 ReleaseGraphicsBuffer(ref _floraSwayFieldBufferA);
                 _floraSwayFieldBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FloraDisplacementDTO>(FloraSwayFieldMaxNodeCount); // COLD ALLOC: GraphicsBuffer[262144 x 16B] - Vault-backed 3D flora displacement field upload A - owner: FloraInteractionManager
             }
 
             if (_floraSwayFieldBufferB == null || _floraSwayFieldBufferB.count != FloraSwayFieldMaxNodeCount)
             {
+                if (!allowCreate)
+                    return false;
+
                 ReleaseGraphicsBuffer(ref _floraSwayFieldBufferB);
                 _floraSwayFieldBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FloraDisplacementDTO>(FloraSwayFieldMaxNodeCount); // COLD ALLOC: GraphicsBuffer[262144 x 16B] - Vault-backed 3D flora displacement field upload B - owner: FloraInteractionManager
             }
@@ -8447,23 +9683,65 @@ namespace Hecton8.World
                 out stampCommands);
         }
 
-        private static bool TryEnsureFloraVaultBuffer<T>(
+        private bool TryEnsureFloraVaultBuffer<T>(
             IDataVault dataVault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer,
+            bool recordFailure = true) where T : struct
         {
             buffer = default;
-            if (dataVault == null ||
-                requiredLength <= 0 ||
-                dataVault.IsCompactionFenceActive)
+            if (dataVault == null)
             {
+                if (recordFailure)
+                {
+                    RecordFloraMemoryTelemetry(
+                        FloraMemoryTelemetryEventResolve,
+                        bufferId,
+                        handle.Generation,
+                        requiredLength,
+                        0,
+                        FloraMemoryTelemetryMissingVaultFlag);
+                }
+
                 return false;
             }
 
-            if (!TryResolveFloraVaultBuffer(dataVault, in handle, bufferId, requiredLength, out buffer))
+            if (requiredLength <= 0)
+            {
+                if (recordFailure)
+                {
+                    RecordFloraMemoryTelemetry(
+                        FloraMemoryTelemetryEventResolve,
+                        bufferId,
+                        handle.Generation,
+                        requiredLength,
+                        0,
+                        FloraMemoryTelemetryInvalidLengthFlag);
+                }
+
+                return false;
+            }
+
+            if (dataVault.IsCompactionFenceActive)
+            {
+                if (recordFailure)
+                {
+                    RecordFloraMemoryTelemetry(
+                        FloraMemoryTelemetryEventResolve,
+                        bufferId,
+                        handle.Generation,
+                        requiredLength,
+                        0,
+                        FloraMemoryTelemetryCompactionFenceFlag);
+                }
+
+                return false;
+            }
+
+            if (!TryResolveFloraVaultBuffer(dataVault, in handle, bufferId, requiredLength, out buffer, recordFailure: false))
             {
                 handle = dataVault.EnsureGenerationHandle<T>(
                     bufferId,
@@ -8472,7 +9750,7 @@ namespace Hecton8.World
                     options);
             }
 
-            if (!TryResolveFloraVaultBuffer(dataVault, in handle, bufferId, requiredLength, out buffer))
+            if (!TryResolveFloraVaultBuffer(dataVault, in handle, bufferId, requiredLength, out buffer, recordFailure))
             {
                 handle = default;
                 buffer = default;
@@ -8482,26 +9760,82 @@ namespace Hecton8.World
             return true;
         }
 
-        private static bool TryResolveFloraVaultBuffer<T>(
+        private bool TryResolveFloraVaultBuffer<T>(
             IDataVault dataVault,
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer,
+            bool recordFailure = true) where T : struct
         {
             buffer = default;
-            if (dataVault == null ||
-                requiredLength <= 0 ||
-                dataVault.IsCompactionFenceActive ||
-                !IsFloraVaultHandle(in handle, bufferId) ||
-                !dataVault.TryResolveHandle(in handle, out buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < requiredLength)
+            if (dataVault == null)
             {
+                if (recordFailure)
+                    RecordFloraMemoryTelemetry(FloraMemoryTelemetryEventResolve, bufferId, handle.Generation, requiredLength, 0, FloraMemoryTelemetryMissingVaultFlag);
+
+                return false;
+            }
+
+            if (requiredLength <= 0)
+            {
+                if (recordFailure)
+                    RecordFloraMemoryTelemetry(FloraMemoryTelemetryEventResolve, bufferId, handle.Generation, requiredLength, 0, FloraMemoryTelemetryInvalidLengthFlag);
+
+                return false;
+            }
+
+            if (dataVault.IsCompactionFenceActive)
+            {
+                if (recordFailure)
+                    RecordFloraMemoryTelemetry(FloraMemoryTelemetryEventResolve, bufferId, handle.Generation, requiredLength, 0, FloraMemoryTelemetryCompactionFenceFlag);
+
+                return false;
+            }
+
+            if (!IsFloraVaultHandle(in handle, bufferId))
+            {
+                if (recordFailure)
+                    RecordFloraMemoryTelemetry(FloraMemoryTelemetryEventResolve, bufferId, handle.Generation, requiredLength, 0, FloraMemoryTelemetryHandleMismatchFlag);
+
+                return false;
+            }
+
+            if (!dataVault.TryResolveHandle(in handle, out buffer))
+            {
+                if (recordFailure)
+                    RecordFloraMemoryTelemetry(FloraMemoryTelemetryEventResolve, bufferId, handle.Generation, requiredLength, 0, FloraMemoryTelemetryResolveFailedFlag);
+
+                return false;
+            }
+
+            if (dataVault.IsCompactionFenceActive)
+            {
+                if (recordFailure)
+                    RecordFloraMemoryTelemetry(FloraMemoryTelemetryEventResolve, bufferId, handle.Generation, requiredLength, buffer.IsCreated ? buffer.Length : 0, FloraMemoryTelemetryCompactionFenceFlag);
+
                 buffer = default;
                 return false;
             }
 
+            if (!buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                if (recordFailure)
+                {
+                    RecordFloraMemoryTelemetry(
+                        FloraMemoryTelemetryEventResolve,
+                        bufferId,
+                        handle.Generation,
+                        requiredLength,
+                        buffer.IsCreated ? buffer.Length : 0,
+                        FloraMemoryTelemetryInvalidBufferFlag);
+                }
+
+                buffer = default;
+                return false;
+            }
+
+            _floraMemoryConsecutiveFailureCount = 0;
             return true;
         }
 
@@ -8571,6 +9905,10 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Save:
                     _saveService = currentService as ISaveService;
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    _oceanKinematicsProvider = _oceanKinematicsService != null ? _oceanKinematicsService.ActiveProvider : null;
                     break;
             }
         }

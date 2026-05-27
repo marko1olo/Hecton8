@@ -3,6 +3,7 @@ namespace Hecton8.Gameplay
     using System;
     using Hecton8.Construction;
     using Hecton8.Core;
+    using Hecton8.Interaction;
     using Hecton8.Tools;
     using Unity.Mathematics;
     using UnityEngine;
@@ -94,14 +95,14 @@ namespace Hecton8.Gameplay
             if (!TryBeginToolUse(deltaTime, true))
                 return;
 
-            if (!TryResolveTargetModule(out BaseModule targetModule))
+            if (!TryResolveTargetModule(out BaseModule targetModule, out ModuleMarker targetMarker))
             {
                 PublishWarning(InvalidTargetMessage);
                 _state = _selectedSource != null ? SpannerState.SourceArmed : SpannerState.Idle;
                 return;
             }
 
-            int targetModuleHashId = ResolveModuleHashId(targetModule);
+            int targetModuleHashId = ResolveModuleHashId(targetMarker);
             if (targetModuleHashId == 0)
             {
                 PublishWarning(InvalidTargetMessage);
@@ -232,15 +233,16 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private bool TryResolveTargetModule(out BaseModule module)
+        private bool TryResolveTargetModule(out BaseModule module, out ModuleMarker marker)
         {
             if (!TryResolveActionRay(out Vector3 origin, out Vector3 direction))
             {
                 module = null;
+                marker = null;
                 return false;
             }
 
-            if (!TryResolvePrimarySurfaceHit(
+            if (!RequestPrimarySurfaceHit(
                     origin,
                     direction,
                     GetRuntimeMaxRange(wiringRange),
@@ -249,25 +251,20 @@ namespace Hecton8.Gameplay
                     out InteractionSurfaceHit hit))
             {
                 module = null;
+                marker = null;
                 return false;
             }
 
             module = null;
+            marker = null;
             if (hit.collider == null)
                 return false;
 
-            if (hit.collider.TryGetComponent(out module))
-                return module != null;
-
-            Transform current = hit.collider.transform.parent;
-            while (current != null)
+            if (InteractableRegistry.TryResolve(hit.collider, out InteractableRegistry.TargetInfo targetInfo))
             {
-                if (current.TryGetComponent(out module))
-                    return module != null;
-
-                current = current.parent;
+                module = targetInfo.BaseModule;
+                marker = targetInfo.ModuleMarker;
             }
-
             return module != null;
         }
 
@@ -301,12 +298,9 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private static int ResolveModuleHashId(BaseModule module)
+        private static int ResolveModuleHashId(ModuleMarker marker)
         {
-            if (module != null &&
-                module.TryGetComponent(out ModuleMarker marker) &&
-                marker != null &&
-                marker.Data != null)
+            if (marker != null && marker.Data != null)
             {
                 return marker.Data.ModuleHashId;
             }

@@ -101,16 +101,21 @@ namespace Hecton8.Construction
         }
 
         // COLD ALLOC: List<StorageEndpoint>[16] — logistics storage registry — owner: BaseLogisticsNetwork
-        private static readonly List<StorageEndpoint> s_StorageEndpoints = new List<StorageEndpoint>(16);
+        private const int StorageEndpointCapacity = 64;
+        private const int FabricatorEndpointCapacity = 32;
+        private const int RecyclerEndpointCapacity = 32;
+        private static readonly List<StorageEndpoint> s_StorageEndpoints = new List<StorageEndpoint>(StorageEndpointCapacity);
         // COLD ALLOC: List<FabricatorEndpoint>[8] — fabrication endpoint registry — owner: BaseLogisticsNetwork
-        private static readonly List<FabricatorEndpoint> s_FabricatorEndpoints = new List<FabricatorEndpoint>(8);
+        private static readonly List<FabricatorEndpoint> s_FabricatorEndpoints = new List<FabricatorEndpoint>(FabricatorEndpointCapacity);
         // COLD ALLOC: List<RecyclerEndpoint>[8] — recycler endpoint registry — owner: BaseLogisticsNetwork
-        private static readonly List<RecyclerEndpoint> s_RecyclerEndpoints = new List<RecyclerEndpoint>(8);
+        private static readonly List<RecyclerEndpoint> s_RecyclerEndpoints = new List<RecyclerEndpoint>(RecyclerEndpointCapacity);
         private const int ReservationPoolCapacity = 64;
         // COLD ALLOC: LogisticsReservation[64] â€” fixed logistics reservation token pool â€” owner: BaseLogisticsNetwork
         private static readonly LogisticsReservation[] s_ReservationPool = CreateReservationPool();
         private static int s_ReservationPoolCount = ReservationPoolCapacity;
         private static int s_NextReservationId = 1;
+        private static IDataVault s_DataVault;
+
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -119,7 +124,17 @@ namespace Hecton8.Construction
             s_RecyclerEndpoints.Clear();
             ResetReservationPool();
             s_NextReservationId = 1;
-            LogisticsRouteScratchMemory.Dispose();
+            LogisticsRouteScratchMemory.Dispose(s_DataVault);
+            s_DataVault = null;
+        }
+
+        internal static void BindDataVault(IDataVault vault)
+        {
+            if (ReferenceEquals(s_DataVault, vault))
+                return;
+
+            LogisticsRouteScratchMemory.Dispose(s_DataVault);
+            s_DataVault = vault;
         }
 
         public static void RegisterStorage(StorageCrate crate, PowerNode node)
@@ -132,6 +147,9 @@ namespace Hecton8.Construction
                 if (ReferenceEquals(s_StorageEndpoints[i].Crate, crate))
                     return;
             }
+
+            if (s_StorageEndpoints.Count >= StorageEndpointCapacity)
+                return;
 
             s_StorageEndpoints.Add(new StorageEndpoint
             {
@@ -207,6 +225,9 @@ namespace Hecton8.Construction
                     return;
             }
 
+            if (s_FabricatorEndpoints.Count >= FabricatorEndpointCapacity)
+                return;
+
             s_FabricatorEndpoints.Add(new FabricatorEndpoint
             {
                 Fabricator = fabricator,
@@ -233,6 +254,9 @@ namespace Hecton8.Construction
                 if (ReferenceEquals(s_RecyclerEndpoints[i].Recycler, recycler))
                     return;
             }
+
+            if (s_RecyclerEndpoints.Count >= RecyclerEndpointCapacity)
+                return;
 
             s_RecyclerEndpoints.Add(new RecyclerEndpoint
             {
@@ -370,7 +394,7 @@ namespace Hecton8.Construction
                 return TryResolveFirstStorageEndpoint(grid, out endpointIndex);
 
             int edgeCount = CountTopologyEdges(grid, topologyNodes, nodeCount);
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = s_DataVault;
             if (!LogisticsRouteScratchMemory.TryAcquireWriteBuffers(
                     vault,
                     nodeCount,
@@ -383,7 +407,7 @@ namespace Hecton8.Construction
                     out NativeArray<int> queue,
                     out NativeArray<int> resultNodeIndex))
             {
-                return false;
+                return TryResolveFirstStorageEndpoint(grid, out endpointIndex);
             }
 
             int targetNodeIndex;

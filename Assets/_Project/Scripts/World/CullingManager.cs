@@ -10,7 +10,7 @@
 //   • Hysteresis to prevent activation thrashing
 //
 // ARCHITECTURE:
-//   • GlobalRegistry.Culling is the authoritative runtime lookup.
+//   • Owner-local Instance is the runtime lookup; GlobalRegistry is cold registration.
 //   • ISlowTickable — runs ~0.5s interval (not per-frame)
 //   • Zero-GC — pre-allocated collections, struct-based data
 //   • O(1) operations where possible
@@ -25,7 +25,6 @@
 //   • Camera.layerCullDistances for layer-based culling
 // ============================================================================
 
-using System.Collections.Generic;
 using UnityEngine;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -58,7 +57,14 @@ namespace Hecton8.World
         /// <summary>
         /// Singleton instance. Null if not initialized.
         /// </summary>
-        public static CullingManager Instance => GlobalRegistry.Culling;
+        private static CullingManager s_activeRuntimeInstance;
+        public static CullingManager Instance => s_activeRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_activeRuntimeInstance = null;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR SETTINGS
@@ -105,13 +111,15 @@ namespace Hecton8.World
         private static readonly int _propsLayer = MissingLayerIndex;
         private static readonly int _floraLayer = MissingLayerIndex;
         private static readonly int _terrainLayer = MissingLayerIndex;
+        private const int MaxTrackedCullableObjects = 1000;
+        private const int MaxRendererScratch = 64;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Cullable object data. Struct for zero-GC storage in List.
+        /// Cullable object data. Struct for zero-GC fixed-array storage.
         /// </summary>
         private struct CullableObject
         {
@@ -127,19 +135,19 @@ namespace Hecton8.World
             public bool PendingForceRenderingOff;
         }
 
-        // COLD ALLOC: List<CullableObject>[1000] — registered cullable objects — owner: CullingManager
-        private readonly List<CullableObject> _cullableObjects = new List<CullableObject>(1000);
+        // COLD ALLOC: CullableObject[1000] - registered cullable objects - owner: CullingManager
+        private readonly CullableObject[] _cullableObjects = new CullableObject[MaxTrackedCullableObjects];
+        private int _cullableObjectCount;
 
-        // COLD ALLOC: HashSet<GameObject>[1000] — O(1) duplicate check — owner: CullingManager
-        private readonly HashSet<GameObject> _registeredObjects = new HashSet<GameObject>(1000);
+        // COLD ALLOC: Renderer[64] - reusable renderer scan buffer for cold registration paths - owner: CullingManager
+        private readonly Renderer[] _rendererScratch = new Renderer[MaxRendererScratch];
+        private int _rendererScratchCount;
 
         // COLD ALLOC: Plane[6] — frustum planes — owner: CullingManager
         private readonly Plane[] _frustumPlanes = new Plane[6];
 
         // COLD ALLOC: float[32] — layer cull distances — owner: CullingManager
         private readonly float[] _layerCullDistances = new float[32];
-        // COLD ALLOC: List<Renderer>[32] — reusable renderer scan buffer for cold registration paths — owner: CullingManager
-        private readonly List<Renderer> _rendererScratch = new List<Renderer>(32);
 
         private Camera _mainCamera;
         private IPlayerRuntimeContext _playerRuntimeContext;
@@ -173,7 +181,7 @@ namespace Hecton8.World
         /// <summary>
         /// Count of registered cullable objects.
         /// </summary>
-        public int RegisteredObjectCount => _cullableObjects.Count;
+        public int RegisteredObjectCount => _cullableObjectCount;
 
         /// <summary>
         /// SlowTick CPU time in milliseconds (last execution).
@@ -294,6 +302,8 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterCullingRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Culling, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -303,6 +313,9 @@ namespace Hecton8.World
 
             if (ReferenceEquals(GlobalRegistry.Culling, this))
                 GlobalRegistry.UnregisterCullingRuntime(this);
+
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
 
             _serviceRegistered = false;
         }
@@ -406,7 +419,7 @@ namespace Hecton8.World
             int frustumCulled = 0;
 
             // Process distance culling with hysteresis
-            for (int i = 0; i < _cullableObjects.Count; i++)
+            for (int i = 0; i < _cullableObjectCount; i++)
             {
                 CullableObject obj = _cullableObjects[i];
                 Transform objTransform = obj.Transform;
@@ -467,7 +480,7 @@ namespace Hecton8.World
                 ApplyLayerCullDistances();
             }
 
-            for (int i = 0; i < _cullableObjects.Count; i++)
+            for (int i = 0; i < _cullableObjectCount; i++)
             {
                 CullableObject obj = _cullableObjects[i];
                 if (obj.GameObject != null)
@@ -524,8 +537,11 @@ namespace Hecton8.World
         {
             if (obj == null) return;
 
-            // O(1) duplicate check via HashSet
-            if (_registeredObjects.Contains(obj)) return;
+            if (FindCullableObjectIndex(obj) >= 0)
+                return;
+
+            if (_cullableObjectCount >= _cullableObjects.Length)
+                return;
 
             if (!TryCacheManagedRenderers(obj, renderer, out Renderer[] managedRenderers, out bool[] originalForceRenderingOffStates))
             {
@@ -575,8 +591,8 @@ namespace Hecton8.World
                 IsActive = obj.activeSelf
             };
 
-            _cullableObjects.Add(cullableObj);
-            _registeredObjects.Add(obj);
+            _cullableObjects[_cullableObjectCount] = cullableObj;
+            _cullableObjectCount++;
         }
 
         /// <summary>
@@ -587,28 +603,42 @@ namespace Hecton8.World
         {
             if (obj == null) return;
 
-            // O(1) check via HashSet
-            if (!_registeredObjects.Remove(obj)) return;
+            int index = FindCullableObjectIndex(obj);
+            if (index < 0)
+                return;
 
-            // Find and remove from list (O(n) but only if HashSet confirmed presence)
-            for (int i = _cullableObjects.Count - 1; i >= 0; i--)
+            RemoveCullableObjectAt(index, restoreState: true);
+        }
+
+        private int FindCullableObjectIndex(GameObject obj)
+        {
+            if (obj == null)
+                return -1;
+
+            for (int i = 0; i < _cullableObjectCount; i++)
             {
-                if (_cullableObjects[i].GameObject == obj)
-                {
-                    CullableObject cullableObject = _cullableObjects[i];
-                    RestoreCullState(ref cullableObject);
-                    _cullableObjects[i] = cullableObject;
-
-                    // Swap-remove pattern for O(1) removal
-                    int lastIndex = _cullableObjects.Count - 1;
-                    if (i != lastIndex)
-                    {
-                        _cullableObjects[i] = _cullableObjects[lastIndex];
-                    }
-                    _cullableObjects.RemoveAt(lastIndex);
-                    break;
-                }
+                if (ReferenceEquals(_cullableObjects[i].GameObject, obj))
+                    return i;
             }
+
+            return -1;
+        }
+
+        private void RemoveCullableObjectAt(int index, bool restoreState)
+        {
+            if ((uint)index >= (uint)_cullableObjectCount)
+                return;
+
+            CullableObject cullableObject = _cullableObjects[index];
+            if (restoreState)
+                RestoreCullState(ref cullableObject);
+
+            int lastIndex = _cullableObjectCount - 1;
+            if (index != lastIndex)
+                _cullableObjects[index] = _cullableObjects[lastIndex];
+
+            _cullableObjects[lastIndex] = default;
+            _cullableObjectCount--;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -740,11 +770,11 @@ namespace Hecton8.World
                 return true;
             }
 
-            _rendererScratch.Clear();
-            obj.GetComponentsInChildren(true, _rendererScratch);
+            ClearRendererScratch();
+            CollectRenderersNonAlloc(obj.transform);
 
             int validRendererCount = 0;
-            for (int i = 0; i < _rendererScratch.Count; i++)
+            for (int i = 0; i < _rendererScratchCount; i++)
             {
                 if (_rendererScratch[i] != null)
                     validRendererCount++;
@@ -757,7 +787,7 @@ namespace Hecton8.World
             originalForceRenderingOffStates = new bool[validRendererCount];
 
             int writeIndex = 0;
-            for (int i = 0; i < _rendererScratch.Count; i++)
+            for (int i = 0; i < _rendererScratchCount; i++)
             {
                 Renderer managedRenderer = _rendererScratch[i];
                 if (managedRenderer == null)
@@ -769,6 +799,42 @@ namespace Hecton8.World
             }
 
             return true;
+        }
+
+        private void ClearRendererScratch()
+        {
+            for (int i = 0; i < _rendererScratchCount; i++)
+                _rendererScratch[i] = null;
+
+            _rendererScratchCount = 0;
+        }
+
+        private void CollectRenderersNonAlloc(Transform root)
+        {
+            if (root == null || _rendererScratchCount >= _rendererScratch.Length)
+                return;
+
+            if (root.TryGetComponent(out Renderer renderer))
+                AppendRendererScratch(renderer);
+
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount && _rendererScratchCount < _rendererScratch.Length; i++)
+                CollectRenderersNonAlloc(root.GetChild(i));
+        }
+
+        private void AppendRendererScratch(Renderer renderer)
+        {
+            if (renderer == null || _rendererScratchCount >= _rendererScratch.Length)
+                return;
+
+            for (int i = 0; i < _rendererScratchCount; i++)
+            {
+                if (ReferenceEquals(_rendererScratch[i], renderer))
+                    return;
+            }
+
+            _rendererScratch[_rendererScratchCount] = renderer;
+            _rendererScratchCount++;
         }
 
         private static void SetCullState(ref CullableObject obj, bool isCulled)
@@ -816,7 +882,7 @@ namespace Hecton8.World
 
         private void RestoreTrackedCullStates()
         {
-            for (int i = 0; i < _cullableObjects.Count; i++)
+            for (int i = 0; i < _cullableObjectCount; i++)
             {
                 CullableObject obj = _cullableObjects[i];
                 if (obj.GameObject == null)

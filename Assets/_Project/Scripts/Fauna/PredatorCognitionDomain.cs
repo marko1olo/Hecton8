@@ -662,6 +662,7 @@ namespace Hecton8.AI
         private const BufferID MesofaunaCsvScratchBufferId = BufferID.ShinobuMesofaunaCsvScratch;
         private const string ApexCortexBehaviorCsvName = "ai_behavior_overrides.csv";
         private const string MesofaunaSpeciesProfilesCsvName = "mesofauna_species_profiles.csv";
+        private const string AgentBlackBoxDumpFileName = "Dump_13AI.bin";
 
         private unsafe struct VaultArray<T> where T : struct
         {
@@ -803,6 +804,8 @@ namespace Hecton8.AI
         private static float3 _threatVoxelCellSize;
         private static byte _threatVoxelSolidThreshold = SolidThreatVoxel;
         private static bool _threatVoxelUsesSignedDistanceEncoding;
+        private static HectonMapMagicVegetationBridge _vegetationThreatVoxelSource;
+        private static HectonCaveVoxelLightingVolume _caveVoxelLightingSource;
         private static NativeArray<float4>.ReadOnly _chemicalFrontGrid;
         private static NativeArray<float4>.ReadOnly _chemicalOverlayGrid;
         private static int3 _chemicalGridDimensions;
@@ -1478,10 +1481,11 @@ namespace Hecton8.AI
             ClearPredatorSpeciesTargets();
 
             float3 swarmBoundsMin = ComputeSwarmBoundsMin();
-            float mesofaunaQualityWeight = ResolveMesofaunaGlobalQualityWeight();
-            int mesofaunaSliceModulo = ResolveMesofaunaSliceModulo(mesofaunaQualityWeight);
-            float mesofaunaVisionRadiusMeters = ResolveMesofaunaVisionRadius(mesofaunaQualityWeight);
-            MesofaunaTuningDTO mesofaunaTuning = ResolveMesofaunaRuntimeTuning(mesofaunaQualityWeight);
+            float mesofaunaBehaviorQualityWeight = ResolveMesofaunaGlobalQualityWeight();
+            float mesofaunaCadenceQualityWeight = ResolveMesofaunaCadenceQualityWeight();
+            int mesofaunaSliceModulo = ResolveMesofaunaSliceModulo(mesofaunaCadenceQualityWeight);
+            float mesofaunaVisionRadiusMeters = ResolveMesofaunaVisionRadius(mesofaunaBehaviorQualityWeight);
+            MesofaunaTuningDTO mesofaunaTuning = ResolveMesofaunaRuntimeTuning(mesofaunaBehaviorQualityWeight);
             RebuildPredatorTargetSpatialHash(swarmBoundsMin);
             NativeArray<int> targetHashBucketHeads = ResolvePredatorTargetHashBucketHeads();
             NativeArray<int> targetHashNext = ResolvePredatorTargetHashNext();
@@ -1617,7 +1621,7 @@ namespace Hecton8.AI
                 Inputs = _inputs,
                 MockTargets = _mesofaunaMockTargets,
                 FrameId = frameId,
-                GlobalQualityWeight = mesofaunaQualityWeight
+                GlobalQualityWeight = mesofaunaBehaviorQualityWeight
             };
             JobHandle mesofaunaMockHandle = mesofaunaMockJob.Schedule(_activeSlotCount, EvaluationJobBatchSize, default);
             var mesofaunaHashJob = new BuildMesofaunaTargetSpatialHashJob
@@ -1663,7 +1667,7 @@ namespace Hecton8.AI
                 TargetHashBucketMask = MesofaunaTargetSpatialHashBucketMask,
                 FrameId = frameId,
                 SliceModulo = mesofaunaSliceModulo,
-                GlobalQualityWeight = mesofaunaQualityWeight,
+                GlobalQualityWeight = mesofaunaBehaviorQualityWeight,
                 VisionRadiusMeters = mesofaunaVisionRadiusMeters,
                 Tuning = mesofaunaTuning
             };
@@ -1676,7 +1680,7 @@ namespace Hecton8.AI
             {
                 _scheduledEvaluationHandle = mesofaunaHandle;
                 _mesofaunaEvaluationJobScheduled = true;
-                _mesofaunaLastQualityWeight = mesofaunaQualityWeight;
+                _mesofaunaLastQualityWeight = mesofaunaCadenceQualityWeight;
                 _mesofaunaLastSliceModulo = mesofaunaSliceModulo;
             }
             else
@@ -1842,6 +1846,8 @@ namespace Hecton8.AI
             _threatVoxelCellSize = new float3(1f, 1f, 1f);
             _threatVoxelSolidThreshold = SolidThreatVoxel;
             _threatVoxelUsesSignedDistanceEncoding = false;
+            _vegetationThreatVoxelSource = null;
+            _caveVoxelLightingSource = null;
             _chemicalBreadcrumbs = default;
             _chemicalBreadcrumbCount = 0;
             _chemicalBreadcrumbFollowStepMeters = 12f;
@@ -1883,6 +1889,56 @@ namespace Hecton8.AI
             _acousticSdfLastChainMicroseconds = 0f;
             _acousticSdfPendingStimulusRetry = false;
             _acousticSdfDumpPath = null;
+        }
+
+        internal static void BindVegetationThreatVoxelSource(HectonMapMagicVegetationBridge source)
+        {
+            if (source == null)
+                return;
+
+            _vegetationThreatVoxelSource = source;
+            _lastThreatVoxelBindFrame = -1;
+        }
+
+        internal static void ClearVegetationThreatVoxelSource(HectonMapMagicVegetationBridge source)
+        {
+            if (source == null)
+            {
+                _vegetationThreatVoxelSource = null;
+                _lastThreatVoxelBindFrame = -1;
+                return;
+            }
+
+            if (!ReferenceEquals(_vegetationThreatVoxelSource, source))
+                return;
+
+            _vegetationThreatVoxelSource = null;
+            _lastThreatVoxelBindFrame = -1;
+        }
+
+        internal static void BindCaveVoxelLightingSource(HectonCaveVoxelLightingVolume source)
+        {
+            if (source == null)
+                return;
+
+            _caveVoxelLightingSource = source;
+            _lastThreatVoxelBindFrame = -1;
+        }
+
+        internal static void ClearCaveVoxelLightingSource(HectonCaveVoxelLightingVolume source)
+        {
+            if (source == null)
+            {
+                _caveVoxelLightingSource = null;
+                _lastThreatVoxelBindFrame = -1;
+                return;
+            }
+
+            if (!ReferenceEquals(_caveVoxelLightingSource, source))
+                return;
+
+            _caveVoxelLightingSource = null;
+            _lastThreatVoxelBindFrame = -1;
         }
 
         private static void EnsureInitialized()
@@ -2621,6 +2677,12 @@ namespace Hecton8.AI
         private static float ResolveMesofaunaGlobalQualityWeight()
         {
             return AuthoritativeCognitionQualityWeight;
+        }
+
+        private static float ResolveMesofaunaCadenceQualityWeight()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(AuthoritativeCognitionQualityWeight, quality, math.isfinite(quality)));
         }
 
         private static int ResolveMesofaunaSliceModulo(float qualityWeight)
@@ -3829,7 +3891,11 @@ namespace Hecton8.AI
         private static bool PrepareEvaluationDueFlags()
         {
             bool hasDueEvaluations = false;
-            bool lowTierRetina = ResolveRetinalLowCadenceMode();
+            float retinalCadenceQualityWeight = ResolveRetinalCadenceQualityWeight();
+            float predatorRetinalInterval = math.lerp(
+                RetinalLowTierEvaluationIntervalSeconds,
+                PredatorUtilityEvaluationIntervalSeconds,
+                retinalCadenceQualityWeight);
             for (int i = 0; i < _activeSlotCount; i++)
             {
                 int slot = _activeSlots[i];
@@ -3846,7 +3912,7 @@ namespace Hecton8.AI
                 bool alphaLeviathan = predatorRole && (input.Flags & (int)CognitionInputFlags.UseAlphaLeviathanCognition) != 0;
                 float interval = predatorRole
                     ? math.select(
-                        math.select(PredatorUtilityEvaluationIntervalSeconds, RetinalLowTierEvaluationIntervalSeconds, lowTierRetina),
+                        predatorRetinalInterval,
                         AlphaLeviathanSlowTickIntervalSeconds,
                         alphaLeviathan)
                     : ResolveEvaluationInterval(input.ImportanceScore);
@@ -3870,9 +3936,11 @@ namespace Hecton8.AI
             return hasDueEvaluations;
         }
 
-        private static bool ResolveRetinalLowCadenceMode()
+        private static float ResolveRetinalCadenceQualityWeight()
         {
-            return false;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.select(AuthoritativeCognitionQualityWeight, quality, math.isfinite(quality));
+            return math.saturate(quality);
         }
 
         private static void ProcessSubmarineLightSignals(int frameId)
@@ -4191,8 +4259,7 @@ namespace Hecton8.AI
                 string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
-                WriteRetinalBlackBoxFile(Path.Combine(logDirectory, "Dump_FAUNA_RETINAL_ADAPTATION.bin"), frameId);
-                WriteRetinalBlackBoxFile(Path.Combine(logDirectory, "Dump_FAUNA_RETINAL_ADAPTATION.h8dump"), frameId);
+                WriteRetinalBlackBoxFile(Path.Combine(logDirectory, AgentBlackBoxDumpFileName), frameId);
             }
             catch (System.Exception)
             {
@@ -4258,7 +4325,7 @@ namespace Hecton8.AI
                 PackedCognitionOutput output = _outputs[slot];
                 byte phase = _stalkingPhases[slot];
                 byte flags = 0;
-                bool highTierSmoothSteering = true;
+                bool highTierSmoothSteering = (input.Flags & (int)CognitionInputFlags.HighTierSmoothSteering) != 0;
                 bool hasPlayerTarget = (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0;
                 if (!highTierSmoothSteering)
                     flags |= AlphaLeviathanTelemetryFlags.SurvivalRadialFallback;
@@ -4427,8 +4494,7 @@ namespace Hecton8.AI
                 string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
-                WriteAlphaLeviathanBlackBoxFile(Path.Combine(logDirectory, "Dump_LEVIATHAN_CORTEX.bin"), frameId);
-                WriteAlphaLeviathanBlackBoxFile(Path.Combine(logDirectory, "Dump_LEVIATHAN_CORTEX.h8dump"), frameId);
+                WriteAlphaLeviathanBlackBoxFile(Path.Combine(logDirectory, AgentBlackBoxDumpFileName), frameId);
             }
             catch (System.Exception)
             {
@@ -4603,8 +4669,7 @@ namespace Hecton8.AI
                 string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
-                WriteMesofaunaBlackBoxFile(Path.Combine(logDirectory, "Dump_MESOFAUNA_DIRECTOR.bin"), frameId);
-                WriteMesofaunaBlackBoxFile(Path.Combine(logDirectory, "Dump_MESOFAUNA_DIRECTOR.h8dump"), frameId);
+                WriteMesofaunaBlackBoxFile(Path.Combine(logDirectory, AgentBlackBoxDumpFileName), frameId);
             }
             catch (System.Exception)
             {
@@ -4673,7 +4738,7 @@ namespace Hecton8.AI
                 return;
             }
 
-            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge bridge = _vegetationThreatVoxelSource;
             if (bridge != null &&
                 bridge.TryGetEcosystemThreatVoxelPayload(out NativeArray<byte>.ReadOnly threatVoxels, out Vector3Int gridDimensions, out Vector3 gridOrigin, out Vector3 voxelCellSize))
             {
@@ -4686,7 +4751,7 @@ namespace Hecton8.AI
                 return;
             }
 
-            HectonCaveVoxelLightingVolume caveLightingVolume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
+            HectonCaveVoxelLightingVolume caveLightingVolume = _caveVoxelLightingSource;
             if (caveLightingVolume != null &&
                 caveLightingVolume.TryGetPublishedSignedDistanceVoxelPayload(out NativeArray<byte>.ReadOnly signedDistanceVoxels, out Vector3Int caveSdfDimensions, out Vector3 caveSdfOrigin, out Vector3 caveSdfCellSize))
             {
@@ -5679,7 +5744,7 @@ namespace Hecton8.AI
                 bool isFlocking = (input.Flags & (int)CognitionInputFlags.IsFlocking) != 0;
                 bool hasVisualPlayerHint = (input.Flags & (int)CognitionInputFlags.HasVisualPlayerHint) != 0;
                 bool isApexPredator = (input.Flags & (int)CognitionInputFlags.IsApexPredator) != 0;
-                bool useHighTierSmoothSteering = true;
+                bool useHighTierSmoothSteering = (input.Flags & (int)CognitionInputFlags.HighTierSmoothSteering) != 0;
 
                 bool playerVisible = hasPlayerTarget && hasVisualPlayerHint && ResolveThreatVisibility(resolvedInput.Position, resolvedInput.PlayerPosition, resolvedInput.ImportanceScore);
                 bool threatVisible = hasThreatTarget && ResolveThreatVisibility(resolvedInput.Position, resolvedInput.ThreatPosition, resolvedInput.ImportanceScore);

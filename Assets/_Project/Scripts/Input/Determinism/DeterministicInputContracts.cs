@@ -9,10 +9,10 @@ namespace Hecton8.Input.Determinism
         public const int InputStateStrideBytes = 32;
         public const int HapticCommandStrideBytes = 16;
         public const int InputProfileStrideBytes = 64;
-        public const int TelemetryEntryStrideBytes = 64;
-        public const int MockCollisionSignalStrideBytes = 16;
-        public const int MockToolEquipSignalStrideBytes = 16;
-        public const int MockPlayerKinematicsSignalStrideBytes = 32;
+        public const int DeterministicTelemetryEntryStrideBytes = 64;
+        public const int DeterministicMockCollisionSignalStrideBytes = 16;
+        public const int DeterministicMockToolEquipSignalStrideBytes = 16;
+        public const int DeterministicMockPlayerKinematicsSignalStrideBytes = 32;
         public const int StateContractStrideBytes = 32;
     }
 
@@ -85,8 +85,8 @@ namespace Hecton8.Input.Determinism
     /// <summary>
     /// Three hundred frame black-box record for input latency and haptic load postmortems.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.TelemetryEntryStrideBytes)]
-    public struct InputTelemetryEntryDTO
+    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.DeterministicTelemetryEntryStrideBytes)]
+    public struct DeterministicInputTelemetryEntryDTO
     {
         [FieldOffset(0)] public double InputSystemTimeSeconds;
         [FieldOffset(8)] public uint Frame;
@@ -103,8 +103,8 @@ namespace Hecton8.Input.Determinism
         [FieldOffset(56)] private ulong _pad3;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.MockCollisionSignalStrideBytes)]
-    public struct MockCollisionSignal
+    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.DeterministicMockCollisionSignalStrideBytes)]
+    public struct DeterministicMockCollisionSignal
     {
         [FieldOffset(0)] public float Magnitude01;
         [FieldOffset(4)] public uint Frame;
@@ -112,8 +112,8 @@ namespace Hecton8.Input.Determinism
         [FieldOffset(12)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.MockToolEquipSignalStrideBytes)]
-    public struct MockToolEquipSignal
+    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.DeterministicMockToolEquipSignalStrideBytes)]
+    public struct DeterministicMockToolEquipSignal
     {
         [FieldOffset(0)] public uint ToolHash;
         [FieldOffset(4)] public uint Slot;
@@ -121,8 +121,8 @@ namespace Hecton8.Input.Determinism
         [FieldOffset(12)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.MockPlayerKinematicsSignalStrideBytes)]
-    public struct MockPlayerKinematicsSignal
+    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.DeterministicMockPlayerKinematicsSignalStrideBytes)]
+    public struct DeterministicMockPlayerKinematicsSignal
     {
         [FieldOffset(0)] public double2 AupLocalCell;
         [FieldOffset(16)] public uint Frame;

@@ -26,6 +26,7 @@ namespace Hecton8.Dev
         private static bool _startupLogged;
         private static readonly Dictionary<string, string> _lastMessageByChannel = new Dictionary<string, string>(8);
         private static readonly Dictionary<string, int> _suppressedDuplicateCountByChannel = new Dictionary<string, int>(8);
+        private static readonly List<string> _suppressedDuplicateFlushChannels = new List<string>(8);
         private static readonly char[] _invalidFileNameChars = Path.GetInvalidFileNameChars();
 
         /// <summary>
@@ -50,6 +51,7 @@ namespace Hecton8.Dev
                 _startupLogged = false;
                 _lastMessageByChannel.Clear();
                 _suppressedDuplicateCountByChannel.Clear();
+                _suppressedDuplicateFlushChannels.Clear();
             }
         }
 
@@ -102,6 +104,7 @@ namespace Hecton8.Dev
                 _startupLogged = false;
                 _lastMessageByChannel.Clear();
                 _suppressedDuplicateCountByChannel.Clear();
+                _suppressedDuplicateFlushChannels.Clear();
             }
         }
 
@@ -131,6 +134,7 @@ namespace Hecton8.Dev
                     _startupLogged = false;
                     _lastMessageByChannel.Clear();
                     _suppressedDuplicateCountByChannel.Clear();
+                    _suppressedDuplicateFlushChannels.Clear();
                 }
             }
         }
@@ -194,9 +198,19 @@ namespace Hecton8.Dev
             if (_suppressedDuplicateCountByChannel.Count == 0)
                 return;
 
-            List<string> channels = new List<string>(_suppressedDuplicateCountByChannel.Keys);
-            for (int i = 0; i < channels.Count; i++)
-                FlushSuppressedDuplicatesForChannel(channels[i]);
+            _suppressedDuplicateFlushChannels.Clear();
+            Dictionary<string, int>.Enumerator enumerator = _suppressedDuplicateCountByChannel.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<string, int> pair = enumerator.Current;
+                if (pair.Value > 0)
+                    _suppressedDuplicateFlushChannels.Add(pair.Key);
+            }
+
+            for (int i = 0; i < _suppressedDuplicateFlushChannels.Count; i++)
+                FlushSuppressedDuplicatesForChannel(_suppressedDuplicateFlushChannels[i]);
+
+            _suppressedDuplicateFlushChannels.Clear();
         }
 
         private static void FlushSuppressedDuplicatesForChannel(string channel)

@@ -1296,7 +1296,7 @@ namespace Hecton8.World
         private void ResolveColdRegistryDependencies()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
+            _thermodynamicsService = AbyssalThermalManager.ActiveRuntimeInstance;
             if (Application.isPlaying && !_registeredHotSwap)
                 _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }

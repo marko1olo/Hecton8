@@ -281,7 +281,7 @@ namespace Hecton8.World.ShinobuBiomimetic
     /// <summary>
     /// Pointer-backed ref access for native POI arrays. This avoids CS1612 struct-copy mutation traps.
     /// </summary>
-    public unsafe struct PoiTransformBufferRef
+    public unsafe ref struct PoiTransformBufferRef
     {
         public void* Ptr;
         public int Length;

@@ -256,7 +256,12 @@ namespace Hecton8.PDA
 
         private bool TryCreateOrUpdateMarker(uint markerHashId, string markerId, in AbsoluteUniversePosition positionAup, MarkerIconType iconType, uint titleHashId, string title, out PDAMarkerSnapshot marker)
         {
-            Vector3 runtimePosition = ToRuntimePosition(in positionAup);
+            if (!TryResolveRuntimePosition(in positionAup, out Vector3 runtimePosition))
+            {
+                marker = default;
+                return false;
+            }
+
             return TryCreateOrUpdateMarker(markerHashId, markerId, runtimePosition, in positionAup, iconType, titleHashId, title, true, out marker);
         }
 
@@ -539,6 +544,9 @@ namespace Hecton8.PDA
                         continue;
                     }
 
+                    if (!TryResolveRuntimePosition(in positionAup, out Vector3 runtimePosition))
+                        continue;
+
                     MarkerRecord record = new MarkerRecord
                     {
                         markerHashId = markerHashId,
@@ -548,7 +556,7 @@ namespace Hecton8.PDA
                             : ComputeMarkerHash(stableTitle),
                         title = stableTitle,
                         positionAup = positionAup,
-                        runtimePosition = ToRuntimePosition(in positionAup),
+                        runtimePosition = runtimePosition,
                         iconType = (MarkerIconType)math.clamp(entry.iconType, 0, (int)MarkerIconType.Beacon),
                         flags = ResolveMarkerFlags(entry.visibleOnHud)
                     };
@@ -578,7 +586,15 @@ namespace Hecton8.PDA
             for (int i = 0; i < _markerCount; i++)
             {
                 MarkerRecord record = _markers[i];
-                record.runtimePosition = ToRuntimePosition(in record.positionAup);
+                if (TryResolveRuntimePosition(in record.positionAup, out Vector3 runtimePosition))
+                {
+                    record.runtimePosition = runtimePosition;
+                }
+                else
+                {
+                    SetVisibleOnHud(ref record, false);
+                }
+
                 _markers[i] = record;
             }
 
@@ -777,10 +793,28 @@ namespace Hecton8.PDA
                 record.flags &= ~MarkerFlagVisibleOnHud;
         }
 
-        private static Vector3 ToRuntimePosition(in AbsoluteUniversePosition position)
+        private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)
         {
-            float3 runtime = position.ToRuntimeFloat3();
-            return new Vector3(runtime.x, runtime.y, runtime.z);
+            runtimePosition = default;
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            double3 localDelta = AupPrecisionMath.LocalDeltaDouble(
+                targetAup.ToAbsoluteDouble3(),
+                originAup.ToAbsoluteDouble3());
+
+            if (!math.all(math.isfinite(localDelta)))
+                return false;
+
+            double maxLocalCastMeters = AupPrecisionMath.DefaultMaxLocalCastMeters;
+            double3 clampedDelta = math.clamp(
+                localDelta,
+                new double3(-maxLocalCastMeters, -maxLocalCastMeters, -maxLocalCastMeters),
+                new double3(maxLocalCastMeters, maxLocalCastMeters, maxLocalCastMeters));
+            float3 local = new float3((float)clampedDelta.x, (float)clampedDelta.y, (float)clampedDelta.z);
+            if (!math.all(math.isfinite(local)))
+                return false;
+
+            runtimePosition = new Vector3(local.x, local.y, local.z);
+            return true;
         }
 
         private static bool IsFiniteVector(Vector3 value)

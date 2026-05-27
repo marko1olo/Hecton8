@@ -315,6 +315,13 @@ namespace Hecton8.World
                     return false;
                 }
 
+                if (!IsFinite(placement.Position) ||
+                    !float.IsFinite(placement.EffectiveSpacing) ||
+                    placement.EffectiveSpacing < 0f)
+                {
+                    return false;
+                }
+
                 int requiredCapacity = GridPlacementSpatialMetadata.Length + 1;
                 if (!EnsureGridPlacementSpatialCapacity(requiredCapacity))
                     return false;
@@ -580,6 +587,13 @@ namespace Hecton8.World
                     return;
 
                 map.Init(capacity * 2, DataVaultExemptScatterCandidateScratchAllocator);
+            }
+
+            private static bool IsFinite(Vector3 value)
+            {
+                return float.IsFinite(value.x) &&
+                       float.IsFinite(value.y) &&
+                       float.IsFinite(value.z);
             }
 
             private void ReleaseFloraGpuiMatrices()

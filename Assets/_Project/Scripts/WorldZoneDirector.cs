@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Environment;
 using UnityEngine;
@@ -25,6 +24,7 @@ namespace Hecton8.World
         private const string MidZoneTierLabel = "Mid";
         private const string LateZoneTierLabel = "Late";
         private const string EndgameZoneTierLabel = "Endgame";
+        private const int MaxZoneAnchorSnapshotCount = 64;
 
         internal static WorldZoneDirector ActiveRuntimeInstance { get; private set; }
 
@@ -138,7 +138,9 @@ namespace Hecton8.World
         [SerializeField] private int _debugZoneCount;
         [SerializeField] private bool _debugApplied;
 
-        private readonly List<WorldZoneAnchor> _anchors = new List<WorldZoneAnchor>(32);
+        private readonly WorldZoneAnchor[] _anchors = new WorldZoneAnchor[MaxZoneAnchorSnapshotCount];
+        private int _anchorCount;
+        private int _lastAnchorVersion = -1;
         private bool _registeredToTickManager;
         private WorldZoneAnchor _currentZone;
         private WorldZoneAnchor _secondaryZone;
@@ -243,14 +245,16 @@ namespace Hecton8.World
 
         public void RefreshAnchors()
         {
-            WorldZoneAnchor.CopyActiveAnchorsTo(_anchors);
-            _debugZoneCount = _anchors.Count;
+            _anchorCount = WorldZoneAnchor.CopyActiveAnchorsTo(_anchors, MaxZoneAnchorSnapshotCount);
+            _lastAnchorVersion = WorldZoneAnchor.ActiveAnchorVersion;
+            _debugZoneCount = _anchorCount;
         }
 
         private void EvaluateZones(bool forceRefresh)
         {
             ResolvePlayer();
-            if (forceRefresh || _anchors.Count == 0)
+            int activeAnchorVersion = WorldZoneAnchor.ActiveAnchorVersion;
+            if (forceRefresh || _anchorCount == 0 || activeAnchorVersion != _lastAnchorVersion)
                 RefreshAnchors();
 
             if (playerTransform == null)
@@ -269,7 +273,7 @@ namespace Hecton8.World
             WorldZoneAnchor secondaryCandidate = null;
             float secondaryCandidateWeight = 0f;
 
-            for (int i = 0; i < _anchors.Count; i++)
+            for (int i = 0; i < _anchorCount; i++)
             {
                 WorldZoneAnchor anchor = _anchors[i];
                 if (anchor == null)
@@ -535,7 +539,7 @@ namespace Hecton8.World
 
         private void UpdateDiagnostics()
         {
-            _debugZoneCount = _anchors.Count;
+            _debugZoneCount = _anchorCount;
 
             if (_currentZone == null)
             {
@@ -763,8 +767,8 @@ namespace Hecton8.World
             if (zone == null || biome == null)
                 return 1f;
 
-            float extractionPressure = Average(biome.loosePickupBias, biome.nodeExtractionBias, biome.salvageBias);
-            float rewardPressure = Average(biome.commonResourceBias, biome.uncommonResourceBias, biome.rareResourceBias);
+            float extractionPressure = Average3(biome.loosePickupBias, biome.nodeExtractionBias, biome.salvageBias);
+            float rewardPressure = Average3(biome.commonResourceBias, biome.uncommonResourceBias, biome.rareResourceBias);
 
             if (zone.Kind == WorldZoneAnchor.ZoneKind.Resources)
                 return Mathf.Lerp(0.9f, 1.16f, Mathf.InverseLerp(1f, 5f, Mathf.Max(extractionPressure, rewardPressure)));
@@ -786,7 +790,7 @@ namespace Hecton8.World
                 WorldZoneAnchor.ZoneKind.Progression => Mathf.Max(biome.rareResourceBias, biome.rewardPull),
                 WorldZoneAnchor.ZoneKind.Navigation => Mathf.Max(biome.landmarkStrength, 6 - biome.routePressure),
                 WorldZoneAnchor.ZoneKind.Combat => Mathf.Max(biome.survivalPressure, biome.routePressure),
-                _ => Average(biome.commonResourceBias, biome.rewardPull)
+                _ => Average2(biome.commonResourceBias, biome.rewardPull)
             };
 
             return Mathf.Lerp(0.9f, 1.14f, Mathf.InverseLerp(1f, 5f, value));
@@ -954,10 +958,7 @@ namespace Hecton8.World
             if (blendFactor >= 0.68f)
                 return secondary;
 
-            if (primary == secondary)
-                return primary;
-
-            return $"{primary} | Podmeshivaetsya: {secondary}";
+            return blendFactor < 0.5f ? primary : secondary;
         }
 
         private static string BuildBlendedDescriptor(string primary, string secondary, float blendFactor)
@@ -971,10 +972,7 @@ namespace Hecton8.World
             if (blendFactor >= 0.68f)
                 return secondary;
 
-            if (primary == secondary)
-                return primary;
-
-            return $"{primary} -> {secondary}";
+            return blendFactor < 0.5f ? primary : secondary;
         }
 
         private static string GetItemLabel(Hecton8.Items.ItemData item)
@@ -985,16 +983,14 @@ namespace Hecton8.World
             return string.IsNullOrWhiteSpace(item.itemName) ? item.name : item.itemName;
         }
 
-        private static float Average(params int[] values)
+        private static float Average2(int a, int b)
         {
-            if (values == null || values.Length == 0)
-                return 0f;
+            return (a + b) * 0.5f;
+        }
 
-            int total = 0;
-            for (int i = 0; i < values.Length; i++)
-                total += values[i];
-
-            return total / (float)values.Length;
+        private static float Average3(int a, int b, int c)
+        {
+            return (a + b + c) * 0.33333334f;
         }
 
         private enum DensityBand

@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: LandmarkPlan_FossilReef
   m_EditorClassIdentifier: Assembly-CSharp:Hecton8.Environment:HectonBiomeLandmarkPlanProfile
   profileId: biome.landmark_plan.fossil_reef
-  profileLabel: Fossil Reef Landmark Plan
-  dominantLandmarkRole: reef crown or porous fossil wall
-  nearReferenceShape: coral windows and rib-like skeletons
-  midReferenceShape: branching reef crown or fossil gallows
-  farReferenceShape: ornate porous silhouette with clear negative space
-  routeUse: Player should remember routes by unusual reef silhouettes and openings.
-  safePocketUse: Safe pockets hide inside porous chambers and behind fossil ribs.
-  emotionalRead: Beautiful, alive, and quietly dangerous.
+  profileLabel: Fossil Carbonate Shelf Landmark Plan
+  dominantLandmarkRole: carbonate crown or porous fossil wall
+  nearReferenceShape: carbonate windows and rib-like skeletons
+  midReferenceShape: branching fossil crown or fossil gallows
+  farReferenceShape: severe porous silhouette with clear negative space
+  routeUse: Player should remember routes by unusual carbonate silhouettes and openings.
+  safePocketUse: Reorientation pockets hide inside porous chambers and behind fossil ribs.
+  emotionalRead: Valuable, alive, and quietly dangerous.

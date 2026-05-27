@@ -1,0 +1,65 @@
+﻿{
+    "schema":  "hecton8.domain_reaudit.1325.v25",
+    "agentId":  "1325",
+    "status":  "DOMAIN_GREEN_EXTERNAL_RESIDUALS_DECLARED",
+    "prompt":  {
+                   "path":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "tag":  "AGENT_PROMPT id=\"1325\"",
+                   "taskCount":  20,
+                   "sha256":  "EE975B109958AEF4F71A0B55FED9B9E339A88F3EED23829E64D2BA249AA61F94"
+               },
+    "changes":  [
+                    "Canonicalized AbsoluteUniversePosition aligned/grid-local imports via FromGridLocal and FromAlignedBlit.",
+                    "Canonicalized FromAbsolutePosition float local carry so local offsets stay in [0, CellSizeMeters).",
+                    "PoolSlotData readback now resolves through FromGridLocal instead of raw finite-only reconstruction.",
+                    "Indexed persistent-world sector and override loads/writes now reject invalid or cross-sector delta records.",
+                    "Compact persistent-world delta reads now reject invalid reconstructed records.",
+                    "Restore pre-registration and restore loop now fail closed on invalid loaded deltas."
+                ],
+    "sourceReports":  {
+                          "worldNativeAliasLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT25_WORLD.json",
+                          "allScriptsNativeAliasLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT25_ALLSCRIPTS.json",
+                          "hotPathAudit":  "Docs/Reports/ZERO_GC_HOTPATH_AUDIT_1325_DEEP_REAUDIT25_RAW.json"
+                      },
+    "domainNativeAliasProof":  {
+                                   "scannedWorldFiles":  276,
+                                   "parseFailures":  0,
+                                   "persistentWorldRegistryNativeFields":  0,
+                                   "broaderWorldForbiddenCandidates":  1,
+                                   "broaderWorldResidual":  "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs:705 NativeArray\u003cNavObstaclePrimitive\u003e PendingDynamicObstacleSnapshot"
+                               },
+    "touchedBoundaryNativeAliasScan":  {
+                                           "scannedAllScriptFiles":  2441,
+                                           "touchedNativeFieldDeclarations":  40,
+                                           "broadScannerForbiddenTouchedCandidates":  27,
+                                           "saveManagerPersistentNativeFields":  13,
+                                           "saveBinaryStorageTransientHandleOrMappingCandidates":  14,
+                                           "status":  "declared_not_exorcised_cross_domain_boundary"
+                                       },
+    "hotPathProof":  {
+                         "scannedFiles":  6,
+                         "parseFailures":  0,
+                         "rawManagedRiskCreations":  158,
+                         "stringFormatCalls":  0,
+                         "linqCalls":  0,
+                         "foreachStatements":  0,
+                         "selectedSimulationHotPathManagedGcHits":  0,
+                         "rawAuditHash":  "810b1a7010cc7ef0b0e32fafb538a0de767e94f83b1b175379fcafb9a408d1c2"
+                     },
+    "hashes":  {
+                   "PersistentWorldRegistry":  "BB94248E2D6FD25D92754D469E0892B4D29820822680EC4F41CB59543EBD9AC1",
+                   "AUPMath":  "3868E1955CC5EAD8B4C070AB92EDFEE845D267C592905C0510DAD7B655B9EC11",
+                   "SaveManager":  "13FD0472DCBEE8053E012E778E7DC8B44CABF3F94F3E1857305170C4C197E1FD",
+                   "SaveBinaryStorage":  "4DB59808915A5E276613EF6FCB17B6BBC0F15BD4DB288A7A81C1FDBA202D4949",
+                   "PlayerExplorationTracker":  "DA468001524EAB00B8310188D9A5C55236CE983B3DD40769734E11EDF7E8EFDB",
+                   "BinaryLayoutManifest":  "89C2591778B649605E553A8C9AE4F8F4AE2701AA5231D4B0A8D2221A174915AB",
+                   "primaryWorldCombined":  "1B25F17FA1D143891053FCEBEE8DD65986AD0637DE1C3C6F92AABA85AF451FA2",
+                   "fullTouchedIncludingBoundaries":  "E5B457D12929CB8956F41BBC164BC336964BF11AABABA8E241D2091F1208164B"
+               },
+    "buildGuard":  {
+                       "buildLaunched":  false,
+                       "cpuPercent":  17.9258994786032,
+                       "activeCompilerProcessCount":  1,
+                       "reason":  "AGENTS build guard: active dotnet process 19552; dotnet build not launched."
+                   }
+}

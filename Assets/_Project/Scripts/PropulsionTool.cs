@@ -716,7 +716,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            return TryResolvePrimarySurfaceHit(origin, forward, range, targetMask.value, QueryTriggerInteraction.Ignore, out hit);
+            return RequestPrimarySurfaceHit(origin, forward, range, targetMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
         private bool TryResolveToolPose(out Vector3 origin, out Vector3 forward)

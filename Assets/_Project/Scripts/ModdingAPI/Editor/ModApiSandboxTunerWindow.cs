@@ -16,8 +16,7 @@ namespace Hecton8.EditorTools
             FutureCommandOpcodes.ModMemoryRead,
             FutureCommandOpcodes.ModMemoryWrite,
             FutureCommandOpcodes.FaunaAcousticStimulus,
-            FutureCommandOpcodes.FaunaDamageStimulus,
-            FutureCommandOpcodes.TriggerSubtitleCue
+            FutureCommandOpcodes.FaunaDamageStimulus
         };
 
         private readonly string[] _opcodeLabels =
@@ -29,8 +28,7 @@ namespace Hecton8.EditorTools
             "MOD_MEMORY_READ_OP",
             "MOD_MEMORY_WRITE_OP",
             "FAUNA_ACOUSTIC_STIMULUS_OP",
-            "FAUNA_DAMAGE_STIMULUS_OP",
-            "TRIGGER_SUBTITLE_CUE_OP"
+            "FAUNA_DAMAGE_STIMULUS_OP"
         };
 
         private Vector2 _scroll;

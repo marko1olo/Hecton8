@@ -26,6 +26,7 @@ namespace Hecton8.Power
         private const int MaxDirectedEdges = WfcOutpostGridConstants.MaxDirectedEdges;
         private const int TelemetryCapacity = WfcOutpostGridConstants.TelemetryFrames;
         private const int TelemetryEntrySizeBytes = 64;
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1319_WfcOutpostPowerBoot.bin";
         private const uint DumpMagic = 0x4F504257u; // OPBW
         private const int DumpVersion = 1;
         private const SystemID LogisticsGridSystemId = (SystemID)512;
@@ -60,13 +61,17 @@ namespace Hecton8.Power
         private const uint ReactorClockFaultFlag = 1u << 3;
 
         private readonly LogisticsNetworkGraph _graph; // COLD ALLOC: LogisticsNetworkGraph[1] - WFC outpost power evaluator - owner: WfcOutpostPowerBootRuntime
-        private NativeArray<WfcOutpostPowerNode> _nodes;
-        private NativeArray<int> _cellToNode;
-        private NativeArray<int> _counts;
-        private NativeArray<int> _generatorNodeIndex;
-        private NativeArray<WfcOutpostPowerBootTelemetryEntry> _blackBox;
-        private NativeParallelMultiHashMap<int, int> _powerEdges;
+        private VaultGenerationHandle<WfcOutpostPowerNode> _nodesHandle;
+        private VaultGenerationHandle<int> _cellToNodeHandle;
+        private VaultGenerationHandle<int> _countsHandle;
+        private VaultGenerationHandle<int> _generatorNodeIndexHandle;
+        private VaultGenerationHandle<WfcOutpostPowerBootTelemetryEntry> _blackBoxHandle;
+        private VaultGenerationHandle<int2> _powerEdgesHandle;
+        private IDataVault _dataVault;
         private JobHandle _translationHandle;
+        private BufferID _translationGridLeaseBufferId;
+        private SystemID _translationGridLeaseSystemId;
+        private byte _translationBufferLockMask;
         private IGasDynamicsSolver _gasDynamics;
         private WfcOutpostGridDescriptor _activeDescriptor;
         private WfcOutpostGridDescriptor _pendingDescriptor;
@@ -87,6 +92,13 @@ namespace Hecton8.Power
         private bool _hasActiveGraph;
         private bool _gasSeedPending;
         private bool _faultDumped;
+
+        private NativeArray<WfcOutpostPowerNode> _nodes => ResolveBuffer(in _nodesHandle);
+        private NativeArray<int> _cellToNode => ResolveBuffer(in _cellToNodeHandle);
+        private NativeArray<int> _counts => ResolveBuffer(in _countsHandle);
+        private NativeArray<int> _generatorNodeIndex => ResolveBuffer(in _generatorNodeIndexHandle);
+        private NativeArray<WfcOutpostPowerBootTelemetryEntry> _blackBox => ResolveBuffer(in _blackBoxHandle);
+        private NativeArray<int2> _powerEdges => ResolveBuffer(in _powerEdgesHandle);
 
         [StructLayout(LayoutKind.Explicit, Size = TelemetryEntrySizeBytes)]
         private struct WfcOutpostPowerBootTelemetryEntry
@@ -137,17 +149,8 @@ namespace Hecton8.Power
             if (_initialized)
                 return;
 
-            _nodes = H8Memory.Allocate<WfcOutpostPowerNode>(MaxCells, LogisticsGridSystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<WfcOutpostPowerNode>[500] - WFC outpost node SOA - owner: WfcOutpostPowerBootRuntime
-            _cellToNode = H8Memory.Allocate<int>(MaxCells, LogisticsGridSystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[500] - WFC cell-to-node map - owner: WfcOutpostPowerBootRuntime
-            _counts = H8Memory.Allocate<int>(WfcOutpostGraphCountSlots.Count, LogisticsGridSystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[5] - WFC graph counters - owner: WfcOutpostPowerBootRuntime
-            _generatorNodeIndex = H8Memory.Allocate<int>(1, LogisticsGridSystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - WFC generator node index - owner: WfcOutpostPowerBootRuntime
-            _blackBox = H8Memory.Allocate<WfcOutpostPowerBootTelemetryEntry>(TelemetryCapacity, LogisticsGridSystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<WfcOutpostPowerBootTelemetryEntry>[300] - WFC power blackbox - owner: WfcOutpostPowerBootRuntime
-            _powerEdges = new NativeParallelMultiHashMap<int, int>(MaxDirectedEdges, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[3000] - logical WFC power adjacency - owner: WfcOutpostPowerBootRuntime
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(
-                _powerEdges,
-                OwnerName,
-                nameof(_powerEdges),
-                NativeAllocationLifetime.Session);
+            _dataVault = GlobalRegistry.DataVault;
+            EnsureBuffers();
             SignalCorridorRuntime.EnsureInitialized();
 
             _initialized = _nodes.IsCreated &&
@@ -156,6 +159,137 @@ namespace Hecton8.Power
                            _generatorNodeIndex.IsCreated &&
                            _blackBox.IsCreated &&
                            _powerEdges.IsCreated;
+        }
+
+        private void EnsureBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            _nodesHandle = vault.EnsureGenerationHandle<WfcOutpostPowerNode>((BufferID)731640, MaxCells, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
+            _cellToNodeHandle = vault.EnsureGenerationHandle<int>((BufferID)731641, MaxCells, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
+            _countsHandle = vault.EnsureGenerationHandle<int>((BufferID)731642, WfcOutpostGraphCountSlots.Count, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
+            _generatorNodeIndexHandle = vault.EnsureGenerationHandle<int>((BufferID)731643, 1, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
+            _blackBoxHandle = vault.EnsureGenerationHandle<WfcOutpostPowerBootTelemetryEntry>((BufferID)731644, TelemetryCapacity, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
+            _powerEdgesHandle = vault.EnsureGenerationHandle<int2>((BufferID)731645, MaxDirectedEdges, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
+        }
+
+        private NativeArray<T> ResolveBuffer<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || handle.BufferID == 0u)
+                return default;
+
+            return vault.TryResolveHandle(in handle, out NativeArray<T> buffer) && buffer.IsCreated
+                ? buffer
+                : default;
+        }
+
+        private void ReleaseBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                ReleaseBuffer(vault, ref _nodesHandle);
+                ReleaseBuffer(vault, ref _cellToNodeHandle);
+                ReleaseBuffer(vault, ref _countsHandle);
+                ReleaseBuffer(vault, ref _generatorNodeIndexHandle);
+                ReleaseBuffer(vault, ref _blackBoxHandle);
+                ReleaseBuffer(vault, ref _powerEdgesHandle);
+            }
+
+            _dataVault = null;
+        }
+
+        private static void ReleaseBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private bool TryLockTranslationBuffers(out byte lockMask)
+        {
+            lockMask = 0;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            bool locked =
+                TryLockRuntimeBuffer(vault, in _nodesHandle, 0, ref lockMask) &&
+                TryLockRuntimeBuffer(vault, in _cellToNodeHandle, 1, ref lockMask) &&
+                TryLockRuntimeBuffer(vault, in _countsHandle, 2, ref lockMask) &&
+                TryLockRuntimeBuffer(vault, in _generatorNodeIndexHandle, 3, ref lockMask) &&
+                TryLockRuntimeBuffer(vault, in _powerEdgesHandle, 4, ref lockMask);
+
+            if (locked)
+                return true;
+
+            UnlockTranslationBuffers(lockMask);
+            lockMask = 0;
+            return false;
+        }
+
+        private static bool TryLockRuntimeBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int bit,
+            ref byte lockMask) where T : struct
+        {
+            if (handle.BufferID == 0u)
+                return true;
+
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryLockBuffer((BufferID)handle.BufferID, LogisticsGridSystemId))
+                return false;
+
+            lockMask = (byte)(lockMask | (1 << bit));
+            return true;
+        }
+
+        private void UnlockTranslationBuffers(byte lockMask)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || lockMask == 0)
+                return;
+
+            UnlockRuntimeBuffer(vault, in _powerEdgesHandle, 4, lockMask);
+            UnlockRuntimeBuffer(vault, in _generatorNodeIndexHandle, 3, lockMask);
+            UnlockRuntimeBuffer(vault, in _countsHandle, 2, lockMask);
+            UnlockRuntimeBuffer(vault, in _cellToNodeHandle, 1, lockMask);
+            UnlockRuntimeBuffer(vault, in _nodesHandle, 0, lockMask);
+        }
+
+        private static void UnlockRuntimeBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int bit,
+            byte lockMask) where T : struct
+        {
+            if ((lockMask & (1 << bit)) != 0 && handle.BufferID != 0u)
+                vault.TryUnlockBuffer((BufferID)handle.BufferID, LogisticsGridSystemId);
+        }
+
+        private void ClearPowerEdges()
+        {
+            NativeArray<int2> edges = _powerEdges;
+            if (!edges.IsCreated)
+                return;
+
+            for (int i = 0; i < edges.Length; i++)
+                edges[i] = default;
+        }
+
+        private static void WriteNative<T>(NativeArray<T> buffer, int index, T value)
+            where T : struct
+        {
+            buffer[index] = value;
         }
 
         public void BindGasDynamics(IGasDynamicsSolver gasDynamics)
@@ -198,7 +332,14 @@ namespace Hecton8.Power
                     return true;
 
                 _translationPending = false;
-                CommitTranslation(now);
+                try
+                {
+                    CommitTranslation(now);
+                }
+                finally
+                {
+                    ReleasePendingTranslationLocks();
+                }
             }
 
             if (!_graphEvaluationPending)
@@ -226,19 +367,9 @@ namespace Hecton8.Power
             _graphEvaluationPending = false;
 
             _graph.Dispose();
-            NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(OwnerName, nameof(_powerEdges));
-
-            if (_powerEdges.IsCreated)
-            {
-                dependency = _powerEdges.Dispose(dependency);
-                _powerEdges = default;
-            }
-
-            dependency = H8Memory.Release(ref _nodes, dependency, LogisticsGridSystemId);
-            dependency = H8Memory.Release(ref _cellToNode, dependency, LogisticsGridSystemId);
-            dependency = H8Memory.Release(ref _counts, dependency, LogisticsGridSystemId);
-            dependency = H8Memory.Release(ref _generatorNodeIndex, dependency, LogisticsGridSystemId);
-            dependency = H8Memory.Release(ref _blackBox, dependency, LogisticsGridSystemId);
+            DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
+            ReleasePendingTranslationLocks();
+            ReleaseBuffers();
             JobHandle.ScheduleBatchedJobs();
 
             _initialized = false;
@@ -275,29 +406,70 @@ namespace Hecton8.Power
             if (IsActiveGraphCurrent(in signal) || IsKnownFatalGraphCurrent(in signal))
                 return false;
 
+            if (_translationBufferLockMask != 0 || _translationGridLeaseBufferId != BufferID.Unknown)
+                return false;
+
             if (!WfcOutpostGridRegistry.TryGetGrid(signal.GridHandle, out WfcOutpostGridLease lease))
                 return false;
 
-            _powerEdges.Clear();
-            _pendingDescriptor = lease.Descriptor;
-            _pendingGridHandle = signal.GridHandle;
-            _lastGraphFaultFlags = 0;
-            _faultDumped = false;
-
-            WfcOutpostGraphTranslationJob job = new WfcOutpostGraphTranslationJob
+            if (!TryLockTranslationBuffers(out byte lockMask))
             {
-                Cells = lease.Cells,
-                Descriptor = lease.Descriptor,
-                Nodes = _nodes,
-                CellToNode = _cellToNode,
-                PowerEdges = _powerEdges,
-                Counts = _counts,
-                GeneratorNodeIndex = _generatorNodeIndex
-            };
+                WfcOutpostGridRegistry.ReleaseGridLease(in lease);
+                return false;
+            }
 
-            _translationHandle = job.Schedule();
-            _translationPending = true;
-            return true;
+            bool scheduled = false;
+            try
+            {
+                ClearPowerEdges();
+                _pendingDescriptor = lease.Descriptor;
+                _pendingGridHandle = signal.GridHandle;
+                _lastGraphFaultFlags = 0;
+                _faultDumped = false;
+
+                WfcOutpostGraphTranslationJob job = new WfcOutpostGraphTranslationJob
+                {
+                    Cells = lease.Cells,
+                    Descriptor = lease.Descriptor,
+                    Nodes = _nodes,
+                    CellToNode = _cellToNode,
+                    PowerEdges = _powerEdges,
+                    Counts = _counts,
+                    GeneratorNodeIndex = _generatorNodeIndex
+                };
+
+                _translationHandle = job.Schedule();
+                _translationPending = true;
+                _translationBufferLockMask = lockMask;
+                _translationGridLeaseBufferId = lease.BufferId;
+                _translationGridLeaseSystemId = lease.SystemId;
+                scheduled = true;
+                return true;
+            }
+            finally
+            {
+                if (!scheduled)
+                {
+                    UnlockTranslationBuffers(lockMask);
+                    WfcOutpostGridRegistry.ReleaseGridLease(in lease);
+                }
+            }
+        }
+
+        private void ReleasePendingTranslationLocks()
+        {
+            if (_translationBufferLockMask != 0)
+            {
+                UnlockTranslationBuffers(_translationBufferLockMask);
+                _translationBufferLockMask = 0;
+            }
+
+            if (_translationGridLeaseBufferId != BufferID.Unknown)
+            {
+                WfcOutpostGridRegistry.ReleaseGridLease(_translationGridLeaseBufferId, _translationGridLeaseSystemId);
+                _translationGridLeaseBufferId = BufferID.Unknown;
+                _translationGridLeaseSystemId = SystemID.Unknown;
+            }
         }
 
         private bool IsActiveGraphCurrent(in WfcOutpostGeneratedSignal signal)
@@ -382,17 +554,11 @@ namespace Hecton8.Power
                 _graph.AddNode(node.NodeId, NodeCapacityWatts, NodeResistance, node.PriorityTier, flags, node.Kind);
             }
 
-            for (int sourceNode = 0; sourceNode < nodeCount; sourceNode++)
+            for (int edgeIndex = 0; edgeIndex < edgeCount; edgeIndex++)
             {
-                if (!_powerEdges.TryGetFirstValue(sourceNode, out int destinationNode, out NativeParallelMultiHashMapIterator<int> iterator))
-                    continue;
-
-                do
-                {
-                    if ((uint)destinationNode < (uint)nodeCount)
-                        _graph.AddEdge(sourceNode, destinationNode, EdgeResistance);
-                }
-                while (_powerEdges.TryGetNextValue(out destinationNode, ref iterator));
+                int2 edge = _powerEdges[edgeIndex];
+                if ((uint)edge.x < (uint)nodeCount && (uint)edge.y < (uint)nodeCount)
+                    _graph.AddEdge(edge.x, edge.y, EdgeResistance);
             }
 
             if ((uint)_activeGeneratorNodeIndex < (uint)nodeCount)
@@ -417,18 +583,17 @@ namespace Hecton8.Power
             IGasDynamicsSolver gas = _gasDynamics;
             if (gas == null || !gas.IsInitialized)
             {
-                _graph.TryBindBaseAwakeState(default, 0);
+                _graph.TryBindBaseAwakeStateValue(1);
                 return;
             }
 
-            NativeArray<byte>.ReadOnly awakeState = gas.BaseAwakeState;
-            if (!awakeState.IsCreated)
+            if (!gas.TryGetBaseHibernationSnapshot(0, out GasBaseHibernationSnapshot snapshot))
             {
-                _graph.TryBindBaseAwakeState(default, 0);
+                _graph.TryBindBaseAwakeStateValue(1);
                 return;
             }
 
-            _graph.TryBindBaseAwakeState(awakeState, 0);
+            _graph.TryBindBaseAwakeStateValue(snapshot.Awake ? (byte)1 : (byte)0);
         }
 
         private void UpdateReactorDecay(float now)
@@ -672,42 +837,60 @@ namespace Hecton8.Power
 
         private void WriteBlackBox(uint flags, float supplyRatio, float severity01)
         {
-            if (!_blackBox.IsCreated || _blackBox.Length == 0)
-                return;
-
-            if (!math.isfinite(supplyRatio) || !math.isfinite(severity01) || !math.isfinite(_reactorOutput01))
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                _blackBoxHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _blackBoxHandle, LogisticsGridSystemId, out NativeArray<WfcOutpostPowerBootTelemetryEntry> blackBox))
             {
-                flags |= FaultFlag;
-                supplyRatio = 0f;
-                severity01 = 1f;
-                _reactorOutput01 = 0f;
+                return;
             }
 
-            int length = _blackBox.Length;
-            int index = _blackBoxCursor;
-            if ((uint)index >= (uint)length)
-                index = 0;
-
-            _blackBox[index] = new WfcOutpostPowerBootTelemetryEntry
+            bool dumpRequired = false;
+            try
             {
-                Frame = CurrentFrameU32(),
-                GridHandle = _activeGridHandle,
-                SectorHash = _activeDescriptor.SectorHash,
-                NodeCount = _activeNodeCount,
-                DirectedEdgeCount = _activeDirectedEdgeCount,
-                DoorCount = _activeDoorCount,
-                RoomCount = _activeRoomCount,
-                GeneratorNodeIndex = _activeGeneratorNodeIndex,
-                ReactorOutput01 = math.saturate(_reactorOutput01),
-                SupplyRatio = math.saturate(supplyRatio),
-                BrownoutSeverity01 = math.saturate(severity01),
-                Flags = flags,
-                GraphHash = _activeDescriptor.GridHash
-            };
-            index++;
-            _blackBoxCursor = index >= length ? 0 : index;
+                if (!blackBox.IsCreated || blackBox.Length == 0)
+                    return;
 
-            if ((flags & FaultFlag) != 0)
+                if (!math.isfinite(supplyRatio) || !math.isfinite(severity01) || !math.isfinite(_reactorOutput01))
+                {
+                    flags |= FaultFlag;
+                    supplyRatio = 0f;
+                    severity01 = 1f;
+                    _reactorOutput01 = 0f;
+                }
+
+                int length = blackBox.Length;
+                int index = _blackBoxCursor;
+                if ((uint)index >= (uint)length)
+                    index = 0;
+
+                WriteNative(blackBox, index, new WfcOutpostPowerBootTelemetryEntry
+                {
+                    Frame = CurrentFrameU32(),
+                    GridHandle = _activeGridHandle,
+                    SectorHash = _activeDescriptor.SectorHash,
+                    NodeCount = _activeNodeCount,
+                    DirectedEdgeCount = _activeDirectedEdgeCount,
+                    DoorCount = _activeDoorCount,
+                    RoomCount = _activeRoomCount,
+                    GeneratorNodeIndex = _activeGeneratorNodeIndex,
+                    ReactorOutput01 = math.saturate(_reactorOutput01),
+                    SupplyRatio = math.saturate(supplyRatio),
+                    BrownoutSeverity01 = math.saturate(severity01),
+                    Flags = flags,
+                    GraphHash = _activeDescriptor.GridHash
+                });
+                index++;
+                _blackBoxCursor = index >= length ? 0 : index;
+                dumpRequired = (flags & FaultFlag) != 0;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _blackBoxHandle, LogisticsGridSystemId);
+            }
+
+            if (dumpRequired)
                 DumpBlackBox(flags);
         }
 
@@ -719,7 +902,11 @@ namespace Hecton8.Power
             _faultDumped = true;
             try
             {
-                string path = Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_MARAUDER_OUTPOST_ARCHITECT.bin");
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
                 using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
                 using BinaryWriter writer = new BinaryWriter(stream);
                 writer.Write(DumpMagic);
@@ -754,7 +941,19 @@ namespace Hecton8.Power
                     writer.Write(entry.GraphHash);
                 }
             }
-            catch (Exception exception)
+            catch (IOException exception)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(FaultTelemetryHash, WfcPowerBootContextHash, exception.HResult);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(FaultTelemetryHash, WfcPowerBootContextHash, exception.HResult);
+            }
+            catch (ArgumentException exception)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(FaultTelemetryHash, WfcPowerBootContextHash, exception.HResult);
+            }
+            catch (NotSupportedException exception)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(FaultTelemetryHash, WfcPowerBootContextHash, exception.HResult);
             }

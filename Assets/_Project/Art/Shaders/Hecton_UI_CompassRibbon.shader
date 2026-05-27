@@ -75,6 +75,16 @@ Shader "Hecton8/UI/CompassRibbon"
                 return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
             }
 
+            float ResolveLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) / max(edge1 - edge0, 0.000001));
+            }
+
+            float ResolveLinearRampInv01(float edge0, float edge1, float value)
+            {
+                return 1.0 - ResolveLinearRamp01(edge0, edge1, value);
+            }
+
             float HectonDitherCoverage(float2 positionCS)
             {
                 float2 pixel = floor(positionCS);
@@ -100,17 +110,17 @@ Shader "Hecton8/UI/CompassRibbon"
                 float2 uv = input.uv;
                 float scrollX = frac(uv.x + _CompassOffset);
 
-                float minorTick = 1.0 - smoothstep(0.010, 0.026, abs(frac(scrollX * _TickDensity) - 0.5));
-                float majorTick = 1.0 - smoothstep(0.012, 0.040, abs(frac(scrollX * 4.0) - 0.5));
-                float centerBand = smoothstep(0.18, 0.42, uv.y) * (1.0 - smoothstep(0.58, 0.82, uv.y));
-                float centerNotch = 1.0 - smoothstep(0.015, 0.055, abs(uv.x - 0.5));
+                float minorTick = ResolveLinearRampInv01(0.010, 0.026, abs(frac(scrollX * _TickDensity) - 0.5));
+                float majorTick = ResolveLinearRampInv01(0.012, 0.040, abs(frac(scrollX * 4.0) - 0.5));
+                float centerBand = ResolveLinearRamp01(0.18, 0.42, uv.y) * ResolveLinearRampInv01(0.58, 0.82, uv.y);
+                float centerNotch = ResolveLinearRampInv01(0.015, 0.055, abs(uv.x - 0.5));
                 float scanline = lerp(1.0, 0.82 + 0.18 * step(0.5, frac(uv.y * 96.0 + _Time.y)), _ScanlineStrength);
                 float mask = saturate((minorTick * 0.24 + majorTick * 0.78 + centerNotch * 0.7) * centerBand);
-                float pulseWindow = 1.0 - smoothstep(0.0, 0.42, abs(uv.x - 0.5));
+                float pulseWindow = ResolveLinearRampInv01(0.0, 0.42, abs(uv.x - 0.5));
                 float pulse = FastTrianglePulse01(_Time.y * 5.7 + scrollX * 37.0) * pulseWindow * _PulseStrength;
                 float sweepCenter = frac(_Time.y * 0.17 + _CompassOffset);
                 float sweepDelta = abs(frac((uv.x - sweepCenter) + 0.5) - 0.5);
-                float sweepPulse = (1.0 - smoothstep(0.0, 0.065, sweepDelta)) * centerBand * _PulseStrength;
+                float sweepPulse = ResolveLinearRampInv01(0.0, 0.065, sweepDelta) * centerBand * _PulseStrength;
                 if (max(mask, pulse + sweepPulse) <= 0.0001)
                 {
                     clip(-1.0);

@@ -78,7 +78,8 @@ namespace Hecton8.Inventory
 
             int safeSlotCapacity = math.max(SoaInventoryQueryEngine.DefaultSlotCapacity, slotCapacity);
             _soaQueryVaultHandles = SoaInventoryQueryEngine.EnsureVaultBuffers(vault, safeSlotCapacity);
-            _soaQueryVaultSlotCapacity = _soaQueryVaultHandles.ItemHashIDs.Handle.Generation != 0u ? safeSlotCapacity : 0;
+            VaultGenerationHandle<uint> itemHashLane = _soaQueryVaultHandles.ItemHashIDs.ToHandle<uint>();
+            _soaQueryVaultSlotCapacity = itemHashLane.Generation != 0u ? safeSlotCapacity : 0;
         }
 
         public JobHandle ScheduleSoaInventoryQuery(
@@ -362,8 +363,8 @@ namespace Hecton8.Inventory
         }
 
         public bool TryReadFastFailInventorySoA(
-            out NativeArray<uint> itemHashIds,
-            out NativeArray<uint> quantities,
+            out NativeArray<uint>.ReadOnly itemHashIds,
+            out NativeArray<uint>.ReadOnly quantities,
             out int activeSlotCount,
             out ulong currentInventoryMask)
         {
@@ -389,11 +390,9 @@ namespace Hecton8.Inventory
 
             int capacity = math.min(buffers.ItemHashIDs.Length, quantityView.Length);
             int active = math.clamp(buffers.ActiveSlotCount[0], 0, capacity);
-            if (active <= 0)
-                return false;
 
-            itemHashIds = buffers.ItemHashIDs;
-            quantities = quantityView;
+            itemHashIds = buffers.ItemHashIDs.AsReadOnly();
+            quantities = quantityView.AsReadOnly();
             activeSlotCount = active;
             return true;
         }
@@ -447,8 +446,12 @@ namespace Hecton8.Inventory
                 if (itemHash == 0u)
                     continue;
 
+                int availableQuantity = math.max(0, math.max(1, (int)_stackCounts[anchorIndex]) - GetReservedCraftCount(anchorIndex));
+                if (availableQuantity <= 0)
+                    continue;
+
                 buffers.ItemHashIDs[active] = itemHash;
-                buffers.Quantities[active] = math.max(1, (int)_stackCounts[anchorIndex]);
+                buffers.Quantities[active] = availableQuantity;
                 buffers.Durabilities[active] = math.saturate(_itemDurability[anchorIndex]);
                 active++;
             }

@@ -245,6 +245,11 @@ namespace Hecton8.Gameplay
             BaseLogisticsNetwork.UnregisterStorage(this);
         }
 
+        private void OnDestroy()
+        {
+            InteractableRegistry.InvalidateTree(this);
+        }
+
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
         {
             switch (serviceSlot)

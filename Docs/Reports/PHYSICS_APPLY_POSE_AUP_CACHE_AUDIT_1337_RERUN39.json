@@ -1,0 +1,86 @@
+﻿{
+    "schema":  "hecton8.physics_apply_pose_aup_cache_audit_1337.rerun39.v1",
+    "agentId":  "1337",
+    "task":  "PHYSICS_APPLY_POSE_AUP_CACHE_RERUN39",
+    "status":  "STATIC_GREEN_BUILD_BLOCKED_BY_HOST_GATE",
+    "promptHashSha256":  "3e605cefcb2f812e4e2febd79f1e87c3d527fb27627de85b3f5c8ffa05c01387",
+    "scannedFiles":  6,
+    "changedFiles":  [
+                         "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                         "Docs/Tasks/Status_1337.md",
+                         "Docs/AgentLogs/Rationale_1337.md",
+                         "Docs/AgentLogs/LOG_1337.md"
+                     ],
+    "defect":  {
+                   "id":  "PHYS_APPLY_POSE_PRECOMMIT_AUP_CACHE",
+                   "location":  "Assets/_Project/Scripts/PhysicsApplySystem.cs:1959",
+                   "before":  "QueuePoseSet cached sanitized target position before enqueue/validation/application success.",
+                   "after":  "QueuePoseSet caches current Rigidbody position; target AUP is cached only after FlushValidatedFrontBuffer applies MovePosition.",
+                   "failureMode":  "Saturated or rejected pose packet could poison last-finite fallback with a future pose that never executed."
+               },
+    "scannerReports":  {
+                           "nativeAlias":  {
+                                               "path":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN39.json",
+                                               "totalFields":  18,
+                                               "persistent":  0,
+                                               "jobTransient":  18,
+                                               "hash":  "8308985904da5025592efc412d9a6b027abfd76ab4d2948ddeafdc7102402536"
+                                           },
+                           "zeroGcHotpath":  {
+                                                 "path":  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN39.json",
+                                                 "scannedHotMethods":  25,
+                                                 "hits":  0,
+                                                 "hash":  "0f2d5e666aa8ad269f6257f61a85c6c3b8f1d25515eb4e8f3923ed7491defaef"
+                                             },
+                           "branch":  {
+                                          "path":  "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN39.json",
+                                          "jobExecuteIfStatements":  5,
+                                          "failClosedGuardIfStatements":  5,
+                                          "jobExecuteNonGuardIfStatements":  0,
+                                          "distanceSolverDecisionIfStatements":  0,
+                                          "hash":  "dda7d8b8b6c89dee67bcffdcdbdf8c20233a7ed78547f4acb3144ca6c3149b7c"
+                                      },
+                           "directToken":  {
+                                               "path":  "Docs/Reports/PHYSICS_APPLY_DIRECT_TOKEN_AUDIT_1337_RERUN39.json",
+                                               "counts":  {
+                                                              "nativeArrayAlloc":  0,
+                                                              "nativeListAlloc":  0,
+                                                              "nativeQueueAlloc":  0,
+                                                              "nativeParallelHashMapAlloc":  0,
+                                                              "nativeParallelMultiHashMapAlloc":  0,
+                                                              "unsafeListAlloc":  0,
+                                                              "throwNew":  0,
+                                                              "catchException":  0,
+                                                              "cameraMain":  0,
+                                                              "vector3Distance":  0,
+                                                              "toArray":  0,
+                                                              "toList":  0,
+                                                              "enumerableNamespace":  0,
+                                                              "whereCall":  0,
+                                                              "stringFormat":  0,
+                                                              "interpolatedString":  0,
+                                                              "hiddenComplete":  0,
+                                                              "directFloat3AbsoluteAup":  0,
+                                                              "widePadding":  0
+                                                          }
+                                           }
+                       },
+    "buildGate":  {
+                      "attempted":  false,
+                      "reason":  "CPU \u003e 50%",
+                      "cpuPercent":  82,
+                      "dotnetProcesses":  0,
+                      "cscProcesses":  0
+                  },
+    "verificationHashInput":  [
+                                  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                                  "Docs/Tasks/Status_1337.md",
+                                  "Docs/AgentLogs/Rationale_1337.md",
+                                  "Docs/AgentLogs/LOG_1337.md",
+                                  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN39.json",
+                                  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN39.json",
+                                  "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN39.json",
+                                  "Docs/Reports/PHYSICS_APPLY_DIRECT_TOKEN_AUDIT_1337_RERUN39.json"
+                              ],
+    "verificationHashSha256":  "4258486bfb95c7b51f0d32ebb22bf22980566d7e046e2150c0ad8479b38226a0"
+}

@@ -14,11 +14,15 @@ Shader "Hidden/Hecton8/NoirDepthFog"
         ZTest Always
 
         HLSLINCLUDE
-        #pragma target 4.5
+        #pragma target 3.5
+        #pragma multi_compile_instancing
+        #pragma instancing_options assumeuniformscaling
         #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
         #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
+        #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
         #include "Hecton_WaterExtinction.hlsl"
 
@@ -26,7 +30,7 @@ Shader "Hidden/Hecton8/NoirDepthFog"
             float4 _HectonNoirDepthFogShallowColor;
             float4 _HectonNoirDepthFogAbyssColor;
             float4 _HectonNoirDepthFogParamsA; // x=visual density, y=start meters, z=max meters, w=reserved
-            float4 _HectonNoirDepthFogParamsB; // x/y/z=reserved, w=dither strength
+            float4 _HectonNoirDepthFogParamsB; // x=quality, y=surface fog weight, z=reserved, w=dither strength
         CBUFFER_END
 
         TEXTURE2D_X(_BlitTexture);
@@ -36,11 +40,14 @@ Shader "Hidden/Hecton8/NoirDepthFog"
 
         struct Attributes
         {
+            UNITY_VERTEX_INPUT_INSTANCE_ID
             uint vertexID : SV_VertexID;
         };
 
         struct Varyings
         {
+            UNITY_VERTEX_INPUT_INSTANCE_ID
+            UNITY_VERTEX_OUTPUT_STEREO
             float4 positionCS : SV_POSITION;
             float2 screenUV : TEXCOORD0;
         };
@@ -48,12 +55,20 @@ Shader "Hidden/Hecton8/NoirDepthFog"
         Varyings Vert(Attributes input)
         {
             Varyings output;
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_TRANSFER_INSTANCE_ID(input, output);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
             output.screenUV = float2((input.vertexID << 1) & 2, input.vertexID & 2);
             output.positionCS = float4(output.screenUV * 2.0 - 1.0, 0.0, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
             output.screenUV.y = 1.0 - output.screenUV.y;
         #endif
             return output;
+        }
+
+        float2 ResolveFoveatedSourceUV(float2 uv)
+        {
+            return FoveatedRemapLinearToNonUniform(uv);
         }
 
         float ResolveRawDepthValidity(float rawDepth)
@@ -113,8 +128,12 @@ Shader "Hidden/Hecton8/NoirDepthFog"
 
         half4 Frag(Varyings input) : SV_Target
         {
-            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
-            float rawDepth = SampleSceneDepth(input.screenUV);
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+            float2 cameraTextureUv = ResolveFoveatedSourceUV(input.screenUV);
+            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, cameraTextureUv);
+            float rawDepth = SampleSceneDepth(cameraTextureUv);
             float depthValid = ResolveRawDepthValidity(rawDepth);
             [branch]
             if (depthValid <= 0.5)
@@ -128,6 +147,13 @@ Shader "Hidden/Hecton8/NoirDepthFog"
             if (depth01 <= 0.0001h)
                 return sourceColor;
 
+            float quality01 = saturate(HectonNoirDepthFogFinite(_HectonNoirDepthFogParamsB.x, 1.0));
+            float qualityCurve = quality01 * quality01 * (3.0 - 2.0 * quality01);
+            half surfaceFogWeight = (half)saturate(HectonNoirDepthFogFinite(_HectonNoirDepthFogParamsB.y, 1.0));
+            [branch]
+            if (surfaceFogWeight <= 0.0001h)
+                return sourceColor;
+
             float fogDepthMeters = max(0.0, linearEyeDepth - fogStartMeters);
             float visualDensity = max(HectonNoirDepthFogFinite(_HectonNoirDepthFogParamsA.x, 0.0), 0.000001);
             half fogRaw = (half)(1.0 - FastNegativeExp(fogDepthMeters * visualDensity));
@@ -135,9 +161,11 @@ Shader "Hidden/Hecton8/NoirDepthFog"
             half depthSq = depth01 * depth01;
             fogFactor = saturate(fogFactor * lerp(0.62h, 1.08h, depth01));
             fogFactor = saturate(fogFactor + (half)SampleMarineSnowFogDensity(input.screenUV));
+            fogFactor = saturate(fogFactor * (half)lerp(0.92, 1.08, qualityCurve) * surfaceFogWeight);
 
             half transitionEdge = saturate(1.0h - abs(fogFactor - 0.5h) * 2.0h);
-            half dither = (half)(ResolveTaaDitherPhaseNoise(input.screenUV) - 0.5) * saturate((half)_HectonNoirDepthFogParamsB.w) * lerp(0.0039215686h, 0.015625h, transitionEdge);
+            half ditherStrength = saturate((half)_HectonNoirDepthFogParamsB.w) * (half)lerp(0.35, 1.0, qualityCurve) * surfaceFogWeight;
+            half dither = (half)(ResolveTaaDitherPhaseNoise(input.screenUV) - 0.5) * ditherStrength * lerp(0.0039215686h, 0.015625h, transitionEdge);
             fogFactor = saturate(fogFactor + dither);
 
             half3 fogColor = (half3)lerp(

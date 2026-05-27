@@ -1,0 +1,124 @@
+﻿{
+  "agent": "UNKNOWN",
+  "date": "2026-05-26",
+  "status": "source_fixed_compile_reclosed",
+  "topic": "Unity Awaitable Task.Factory and Task.Run runtime trap",
+  "sources": [
+    {
+      "type": "official_unity",
+      "url": "https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Awaitable.html",
+      "use": "Awaitable class, pooled, usually preferable to Task for Unity async code"
+    },
+    {
+      "type": "official_unity",
+      "url": "https://docs.unity3d.com/6000.0/Documentation/Manual/async-awaitable-introduction.html",
+      "use": "Task versus Awaitable limitations and thread/update-loop aware scheduling"
+    },
+    {
+      "type": "official_unity",
+      "url": "https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Awaitable.BackgroundThreadAsync.html",
+      "use": "background thread switch"
+    },
+    {
+      "type": "official_unity",
+      "url": "https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Awaitable.MainThreadAsync.html",
+      "use": "main thread switch"
+    },
+    {
+      "type": "reddit_signal_only",
+      "url": "https://www.reddit.com/r/Unity3D/comments/1j0zlri/unity_6_async_new_vs_cysharp/",
+      "use": "community smoke only, not authority"
+    }
+  ],
+  "scan": {
+    "pattern": "Task.Run|Task.Factory.StartNew|private Task|System.Threading.Tasks",
+    "runtime_first_party_hits_after_patch": [],
+    "remaining_hits_scope": "editor_only_scanners_and_compiler_tools",
+    "fixed_hits": [
+      {
+        "path": "Assets/_Project/Scripts/World/FloraGenomics/FloraGenomeVaultRuntime.cs",
+        "finding": "Task.Factory.StartNew plus Task<int> pending state",
+        "decision": "fixed"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+        "finding": "Task.Run in dormant public helper",
+        "decision": "fixed"
+      }
+    ]
+  },
+  "changed_files": [
+    "Assets/_Project/Scripts/World/FloraGenomics/FloraGenomeVaultRuntime.cs",
+    "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+    "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+    "Assets/_Project/Scripts/World/VegetationThreatAndStructureService.cs",
+    "Docs/Tasks/Status_UNKNOWN.md",
+    "Docs/AgentLogs/Rationale_UNKNOWN.md",
+    "Docs/AgentLogs/LOG_UNKNOWN.md",
+    "Docs/Reports/UNITY_AWAITABLE_TASK_FACTORY_TRAP_UNKNOWN_20260526.md",
+    "Docs/Reports/UNITY_AWAITABLE_TASK_FACTORY_TRAP_UNKNOWN_20260526.json"
+  ],
+  "removed": [
+    "System.Threading",
+    "System.Threading.Tasks",
+    "Task<int> _pendingBinaryRead",
+    "BinaryReadRequest",
+    "Task.Factory.StartNew",
+    "CancellationToken.None",
+    "TaskCreationOptions.LongRunning",
+    "TaskScheduler.Default",
+    "Task.Run",
+    "Task<int> loadTask"
+  ],
+  "added": [
+    "_pendingBinaryReadActive",
+    "_pendingBinaryReadCompleted",
+    "_pendingBinaryReadByteCount",
+    "RunGenomeBinaryLoadAsync",
+    "ReadCatalogBytesIntoNativeArrayAsync",
+    "Awaitable<int> loadTask",
+    "Awaitable.BackgroundThreadAsync",
+    "Awaitable.MainThreadAsync"
+  ],
+  "validation": {
+    "static_diff_check": "pass_with_line_ending_warning_only",
+    "doc_structure": {
+      "pass": true,
+      "activeDocCount": 697,
+      "encodingWithoutUtf8Sig": 0
+    },
+    "oop_doc_scanner": {
+      "finalPass": true,
+      "activeFileCount": 697,
+      "sourceSyncPass": true
+    },
+    "build": {
+      "status": "pass",
+      "failed_logs": [
+        {
+          "path": "Docs/Reports/BUILD_UNKNOWN_AWAITABLE_VEGETATION_WALL_RECHECK_20260526.log",
+          "errors": 2,
+          "warnings": 0,
+          "primary_blocker": "VegetationFlowFieldIntegrator definite-assignment compile wall"
+        },
+        {
+          "path": "Docs/Reports/BUILD_UNKNOWN_AWAITABLE_VEGETATION_WALL_RECHECK2_20260526.log",
+          "errors": 65,
+          "warnings": 0,
+          "primary_blocker": "stale VegetationNativeMemory threat native aliases after handle migration"
+        }
+      ],
+      "final_log": "Docs/Reports/BUILD_UNKNOWN_AWAITABLE_THREAT_HANDLE_RECHECK_20260526.log",
+      "exit_code": 0,
+      "warnings": 0,
+      "errors": 0,
+      "scope": "CLI_COMPILE_ONLY"
+    },
+    "runtime": "not_run"
+  },
+  "microseconds_saved_claimed": 0,
+  "residual": [
+    "No Unity import, PlayMode, player, profiler, GCMonitor, shader variant, scene wiring, visual, or platform proof claimed",
+    "WebGL policy for background binary archaeology routes still needs an owner decision if WebGL is supported"
+  ]
+}

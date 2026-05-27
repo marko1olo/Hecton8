@@ -1,0 +1,113 @@
+{
+  "date": "2026-05-26",
+  "agent": "UNKNOWN",
+  "status": "source_fix_strm_residual_cleared_in_current_source_build_boundary",
+  "evidenceClass": [
+    "STATIC_SOURCE",
+    "STATIC_POLICY",
+    "BUILD_GUARD"
+  ],
+  "changedFiles": [
+    "Assets/_Project/Scripts/Gameplay/DebrisManager.cs",
+    "Assets/_Project/Scripts/Editor/UnityApiTrapDetector.cs"
+  ],
+  "fixed": [
+    {
+      "file": "Assets/_Project/Scripts/Gameplay/DebrisManager.cs",
+      "issue": "OrganicDebrisProfile collider cache used GetComponentsInChildren<Collider>(true) array overload",
+      "resolution": "replaced discovery with owner List<Collider> scratch and one explicit cache array copy"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/UnityApiTrapDetector.cs",
+      "issue": "detector accepted COLD ALLOC waivers for hidden copied-array Unity APIs",
+      "resolution": "hard-flags Renderer.sharedMaterials, Mesh.vertices getter, and generic GetComponents array overloads"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/UnityApiTrapDetector.cs",
+      "issue": "detector could inspect tooltip and string literal contents",
+      "resolution": "strips string literals before removing line comments"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/UnityApiTrapDetector.cs",
+      "issue": "runtime Resources.Load was not part of this trap detector",
+      "resolution": "added runtime Resources.Load trap rule"
+    }
+  ],
+  "staticProof": {
+    "debrisColliderArrayOverloadHits": 0,
+    "runtimeResourcesLoadHits": 0,
+    "runtimeMeshPropertySetterHits": 0,
+    "removeAtZeroHits": 1,
+    "removeAtZeroOnlyEditorFile": "Assets/_Project/Scripts/Editor/LODStatisticsWindow.cs",
+    "releaseRuntimeShaderFindHits": 0,
+    "diffCheck": "pass_with_line_ending_warnings_only"
+  },
+  "residuals": [],
+  "clearedResiduals": [
+    {
+      "file": "Assets/_Project/Scripts/Core/RuntimeShaderReferenceCatalog.cs",
+      "issue": "runtime Resources.Load bootstrap",
+      "verdict": "cleared_in_current_source",
+      "proof": [
+        "runtime Resources.Load scan reports 0 hits",
+        "GameBootstrapper has serialized RuntimeShaderReferenceCatalog field",
+        "GameBootstrapper registers and unregisters RuntimeShaderReferenceCatalog",
+        "Assets/_Project/Scenes/00_BOOTSTRAP.unity references catalog GUID 66443d0a1f184aef87c6fd729fd8f401"
+      ],
+      "attribution": "concurrent source changed during pass; not claimed as UNKNOWN-authored source fix"
+    }
+  ],
+  "build": {
+    "initialLog": "Docs/Reports/BUILD_UNKNOWN_RUNTIME_TRAP_DEEPER_PASS_20260526.log",
+    "retryLog": "Docs/Reports/BUILD_UNKNOWN_RUNTIME_TRAP_DEEPER_PASS_RETRY_20260526.log",
+    "finalGuardLog": "Docs/Reports/BUILD_UNKNOWN_RUNTIME_TRAP_DEEPER_PASS_FINAL_GUARD_20260526.log",
+    "launched": false,
+    "reason": "BUILD_GUARD_BLOCKED_CPU_ABOVE_50_PERCENT",
+    "attempts": 40,
+    "compilerProcessCount": 0,
+    "postScannerRecheckLog": "Docs/Reports/BUILD_UNKNOWN_RUNTIME_TRAP_DEEPER_PASS_POST_SCANNER_RECHECK_20260526.log",
+    "postScannerLaunched": true,
+    "postScannerCpuPercent": 48,
+    "postScannerCompilerProcessCount": 0,
+    "postScannerExitCode": 1,
+    "postScannerErrors": 62,
+    "postScannerFailure": "MSB3202 missing Unity-generated .csproj files; build did not reach C# compilation"
+  },
+  "documentationGate": {
+    "verifyDocStructurePass": true,
+    "verifyDocStructureActiveDocCount": 666,
+    "oopDocScannerFinalPass": true,
+    "oopDocScannerActiveFileCount": 666,
+    "oopDocScannerMissingFileRaceSkip": true,
+    "oopDocScannerMissingFileRaceSkipScope": [
+      "inventory",
+      "extract_constant",
+      "archived_word_counts",
+      "root_anchor_word_counts",
+      "active_file_word_counts",
+      "architecture_checks"
+    ],
+    "architectureParagraphsReshaped": [
+      "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+      "Docs/ARCHITECTURE/UNCLAIMED_FUTURE_SYSTEM_SEAMS.md"
+    ],
+    "encodingRepaired": [
+      "Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md",
+      "Docs/Marketing/Data/SOURCE_LEDGER.md"
+    ]
+  },
+  "runtimeProofMissing": [
+    "Unity import",
+    "Console",
+    "Play Mode",
+    "player build",
+    "shader import",
+    "profiler",
+    "GCMonitor",
+    "Memory Profiler",
+    "scene wiring",
+    "visual",
+    "platform"
+  ],
+  "runtimeMicrosecondsSavedClaimed": 0
+}

@@ -251,7 +251,6 @@ namespace Hecton8.Physics
         [NativeDisableParallelForRestriction] public NativeArray<int> IncursionWriterBudget;
         public int CompartmentCount;
         public float DeltaTime;
-        public float GlobalQualityWeight;
         public float DischargeCoefficient;
         public float MaxIngressPerSecondNormalized;
         public AbsoluteUniversePositionBlit ExternalWaterlineAup;

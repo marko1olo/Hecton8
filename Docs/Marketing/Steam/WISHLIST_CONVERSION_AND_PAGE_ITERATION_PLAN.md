@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Wishlist Conversion And Steam Page Iteration Plan
 
 Status: pre-page conversion plan
-Owner lane: SHINOBU_81 / Steam conversion
+Owner lane: Marketing / Steam conversion
 Runtime impact: none
 
 ## Steam Page Publish Gate

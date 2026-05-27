@@ -29,14 +29,16 @@ Shader "Hecton8/VFX/FlashlightConeSilt"
             Tags { "LightMode" = "UniversalForward" }
 
             HLSLPROGRAM
-            #pragma target 4.5
+            #pragma target 3.5
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
             #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -75,6 +77,16 @@ Shader "Hecton8/VFX/FlashlightConeSilt"
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
+            float HectonLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) * rcp(max(0.0001, edge1 - edge0)));
+            }
+
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(saturate(uv));
+            }
+
             float ResolveFlashlightFailureFlicker(float3 positionOS, float2 positionCS)
             {
                 float battery01 = saturate(_HectonFlashlightFailureState.x);
@@ -109,16 +121,16 @@ Shader "Hecton8/VFX/FlashlightConeSilt"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                float2 screenUV = input.screenPos.xy * rcp(max(input.screenPos.w, 0.0001));
-                float rawDepth = SampleSceneDepth(screenUV);
+                float2 screenUV = UnityStereoTransformScreenSpaceTex(input.screenPos.xy * rcp(max(input.screenPos.w, 0.0001)));
+                float rawDepth = SampleSceneDepth(ResolveFoveatedSourceUV(screenUV));
                 float sceneEyeDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
                 float coneEyeDepth = -TransformWorldToView(input.positionWS).z;
                 float depthFade = saturate((sceneEyeDepth - coneEyeDepth) * max(_BeamParams.w, 0.01));
 
                 float axial01 = saturate(input.positionOS.z);
                 float radialSq = saturate(dot(input.positionOS.xy, input.positionOS.xy));
-                float nearFade = smoothstep(_BeamShape.x, _BeamShape.x + 0.12, axial01);
-                float tipFade = 1.0 - smoothstep(_BeamShape.y, 1.0, axial01);
+                float nearFade = HectonLinearRamp01(_BeamShape.x, _BeamShape.x + 0.12, axial01);
+                float tipFade = 1.0 - HectonLinearRamp01(_BeamShape.y, 1.0, axial01);
                 float edge01 = saturate(1.0 - radialSq);
                 float edgeFade = edge01 * edge01;
                 float axialFade = axial01 * (2.0 - axial01);

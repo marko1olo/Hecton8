@@ -1,0 +1,89 @@
+﻿{
+  "agent": "UNKNOWN",
+  "date": "2026-05-27",
+  "status": "SOURCE_PATCHED_STATIC_PROOF_PASSED_BUILD_BOUNDARY_BLOCKED_BEFORE_CSHARP",
+  "evidenceClass": [
+    "STATIC_SOURCE",
+    "CLI_BUILD_BOUNDARY",
+    "DOC_VALIDATION"
+  ],
+  "changedFiles": [
+    "Assets/_Project/Scripts/WorldFidelityRoot.cs",
+    "Assets/_Project/Scripts/InteractionHighlighter.cs",
+    "Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistry.cs",
+    "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs",
+    "Assets/_Project/Scripts/Gameplay/SuitUpgradeManager.cs",
+    "Assets/_Project/Scripts/HectonSurvivalSystem.cs",
+    "Assets/_Project/Scripts/Gameplay/PlayerExpressionManager.cs",
+    "Assets/_Project/Scripts/Quest/QuestManager.cs"
+  ],
+  "targetedTrapScan": {
+    "pattern": "\\.ToArray\\(|GetComponentsInChildren<Renderer>\\(true\\)|\\.sharedMaterials\\b",
+    "hitsAfterPatch": 0
+  },
+  "firstPartyRuntimeScan": {
+    "resourcesLoadHits": 0,
+    "releaseReachableShaderFindHits": 0,
+    "objectFindApiHits": 0,
+    "inputTouchesHits": 0,
+    "allocatingPhysicsQueryHits": 0,
+    "rendererSharedMaterialsHits": 0
+  },
+  "residuals": {
+    "runtimeToArrayTextHits": 2,
+    "runtimeToArrayTextResidualFiles": [
+      "Assets/_Project/Scripts/WorldSliceAnchor.cs",
+      "Assets/_Project/Scripts/Core/Data/H8DataBaker.cs"
+    ],
+    "directGlobalDataVaultTryGetLatestCreatedHits": 3,
+    "realRuntimeCompleteSites": 2,
+    "compileProof": {
+      "log": "Docs/Reports/BUILD_UNKNOWN_RUNTIME_ALLOC_ROUTE_PASS_20260527.log",
+      "guard": {
+        "initialCpuPercent": 51,
+        "initialCompilerProcessCount": 0,
+        "initialLaunched": false,
+        "initialReason": "CPU_GT_50",
+        "retryLaunchAttempt": 4,
+        "retryLaunchCpuPercent": 38,
+        "retryLaunchCompilerProcessCount": 0
+      },
+      "command": "dotnet build Hecton8.slnx /m:1 /nr:false /p:UseSharedCompilation=false",
+      "exitCode": 1,
+      "warnings": 0,
+      "errors": 62,
+      "failureClass": "MSB3202_MISSING_UNITY_GENERATED_CSPROJ",
+      "rootCsprojCount": 0,
+      "reachedCSharpCompilation": false
+    },
+    "compileProofAfterFollowupEdits": {
+      "log": "Docs/Reports/BUILD_UNKNOWN_RUNTIME_ALLOC_ROUTE_PASS2_20260527.log",
+      "guard": {
+        "launchAttempt": 1,
+        "launchCpuPercent": 34,
+        "launchCompilerProcessCount": 0
+      },
+      "command": "dotnet build Hecton8.slnx /m:1 /nr:false /p:UseSharedCompilation=false",
+      "exitCode": 1,
+      "warnings": 0,
+      "errors": 62,
+      "failureClass": "MSB3202_MISSING_UNITY_GENERATED_CSPROJ",
+      "rootCsprojCount": 0,
+      "reachedCSharpCompilation": false
+    },
+    "documentationValidation": {
+      "verifyDocStructure": {
+        "pass": true,
+        "activeDocCount": 666,
+        "encodingWithoutUtf8Sig": 0
+      },
+      "oopDocScanner": {
+        "finalPass": true,
+        "activeFileCount": 666,
+        "sourceSyncPass": true,
+        "wordReductionPercent": 50.90540174249758
+      },
+      "firstOopRerunIssue": "one overlong structured line in Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md shortened without changing facts"
+    }
+  }
+}

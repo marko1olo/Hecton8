@@ -84,7 +84,7 @@ Why direct caller/owner interface is insufficient: Jobs need raw native buffers,
 
 Instrument: GlobalDataVault / IDataVault; Black-box/telemetry route.
 
-R48 exact HFI route-card fields:
+HFI route-card fields:
 
 Producer/consumer phase: FixedTick/POST_FIXED producers write Vault state and bridge packets; PostFixed physics/audio and VISUAL_SYNC render/editor consumers read snapshots/signals in owned phases.
 

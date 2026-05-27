@@ -1,0 +1,35 @@
+﻿{
+    "schema":  "hecton8.inner_loop_branch_scan.v1",
+    "agentId":  "1317",
+    "ranges":  [
+                   {
+                       "end":  205,
+                       "name":  "InventoryMassVolumeJob.Execute",
+                       "start":  190
+                   },
+                   {
+                       "end":  284,
+                       "name":  "InventoryRadioactiveHalfLifeKernel.WithConversions",
+                       "start":  254
+                   },
+                   {
+                       "end":  313,
+                       "name":  "InventoryRadioactiveHalfLifeKernel.NoConversions",
+                       "start":  289
+                   },
+                   {
+                       "end":  395,
+                       "name":  "InventoryReactiveChemistryKernel.WithPairs",
+                       "start":  365
+                   },
+                   {
+                       "end":  405,
+                       "name":  "InventoryReactiveChemistryKernel.NoPairs",
+                       "start":  400
+                   }
+               ],
+    "totalHits":  0,
+    "hits":  [
+
+             ]
+}

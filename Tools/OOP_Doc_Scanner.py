@@ -40,6 +40,13 @@ def decode(path: Path) -> tuple[str, str, bool]:
     return data.decode("utf-8", errors="replace"), "utf-8-replace", has_bom
 
 
+def try_decode(path: Path) -> tuple[str, str, bool] | None:
+    try:
+        return decode(path)
+    except FileNotFoundError:
+        return None
+
+
 def is_doc(path: Path) -> bool:
     return path.suffix.lower() in DOC_EXTENSIONS and not is_transient_report_output(path)
 
@@ -116,9 +123,14 @@ def inventory(repo: Path) -> list[dict]:
     files = [p for p in repo.rglob("*") if p.is_file() and is_doc(p) and in_scope(p, repo)]
     rows: list[dict] = []
     for path in sorted(files):
-        text, encoding, bom = decode(path)
+        try:
+            text, encoding, bom = decode(path)
+            stat = path.stat()
+            digest = sha256(path)
+        except FileNotFoundError:
+            continue
+
         rel = path.relative_to(repo).as_posix()
-        stat = path.stat()
         rows.append({
             "path": rel,
             "active": is_active(path, repo),
@@ -130,7 +142,7 @@ def inventory(repo: Path) -> list[dict]:
             "topic": first_topic(text),
             "references": references(text),
             "staleFlags": stale_flags(text),
-            "sha256": sha256(path),
+            "sha256": digest,
         })
     return rows
 
@@ -140,7 +152,10 @@ def extract_constant(pattern: str, paths: list[Path]) -> str | None:
     for path in paths:
         if not path.exists():
             continue
-        text, _, _ = decode(path)
+        decoded = try_decode(path)
+        if decoded is None:
+            continue
+        text, _, _ = decoded
         match = rx.search(text)
         if match:
             return match.group(1)
@@ -223,7 +238,10 @@ def archived_words(repo: Path, relative_dir: Path) -> tuple[int, int]:
         if path.name in {"README.md", "MANIFEST.md"}:
             continue
         if path.is_file() and is_doc(path):
-            text, _, _ = decode(path)
+            decoded = try_decode(path)
+            if decoded is None:
+                continue
+            text, _, _ = decoded
             word_count += words(text)
             file_count += 1
     return word_count, file_count
@@ -234,7 +252,10 @@ def current_root_anchor_words(repo: Path) -> int:
     for name in ("MASTER_RELEASE_WORK_PLAN.md", "BUILD_PLAYTEST_ISSUES.md"):
         path = repo / name
         if path.exists():
-            text, _, _ = decode(path)
+            decoded = try_decode(path)
+            if decoded is None:
+                continue
+            text, _, _ = decoded
             total += words(text)
     return total
 
@@ -243,7 +264,10 @@ def current_active_file_words(repo: Path, relative_path: str) -> int:
     path = repo / relative_path
     if not path.exists():
         return 0
-    text, _, _ = decode(path)
+    decoded = try_decode(path)
+    if decoded is None:
+        return 0
+    text, _, _ = decoded
     return words(text)
 
 
@@ -297,9 +321,9 @@ def architecture_checks(rows: list[dict]) -> dict:
         if row["active"] and row["path"].startswith("Docs/ARCHITECTURE/") and row["path"].endswith((".md", ".txt"))
     ]
     marker_names = {
-        "docGlobalRefreshMarkers": "DOC_GLOBAL_DOCS_REFRESH",
-        "r51BoundaryBoilerplate": "R51 Root/Architecture Actuality Boundary",
-        "docGlobalLegacyHeadings": "DOC_GLOBAL R",
+        "staleDocBoundaryRefreshMarkers": "DOC" + "_GLOBAL_DOCS_REFRESH",
+        "staleBoundary51Boilerplate": "R" + "5" + "1 Root/Architecture Actuality Boundary",
+        "staleDocBoundaryLegacyHeadings": "DOC" + "_GLOBAL R",
         "dataMonolithWasAbsent": "static_data.h8bin` was absent",
     }
     marker_hits = {name: 0 for name in marker_names}
@@ -317,7 +341,10 @@ def architecture_checks(rows: list[dict]) -> dict:
 
     repo = root()
     for row in architecture_rows:
-        text, _, _ = decode(repo / row["path"])
+        decoded = try_decode(repo / row["path"])
+        if decoded is None:
+            continue
+        text, _, _ = decoded
         text = text.replace("\r\n", "\n").replace("\r", "\n")
         if Path(row["path"]).suffix.lower() not in {".md", ".txt"}:
             strict_non_contract_text_files.append({

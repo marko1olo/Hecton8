@@ -27,7 +27,7 @@ MonoBehaviour:
   rareRewardHook: 'The reason to risk the trip is: Sulfur Clumps and Pump Rotor.'
   landmarkIdentity: Hydrothermal Spires reads through bowls, pools, domes, and hotspot
     basins. Landmarks should feel scarce but memorable.
-  safePocketIdentity: 'Safe pockets are short-lived and mostly procedural: a lee
+  safePocketIdentity: 'Reorientation pockets are short-lived and mostly procedural: a lee
     side, a bowl edge, a dead current seam.'
   riskSummary: 'Main failure mode: localized danger pockets and hostile basins, depth
     stress, and expensive hesitation. Creature pressure stays high.'

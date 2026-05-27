@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text;
 using UnityEngine;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Mathematics;
 
 namespace Hecton8.Tools
@@ -37,8 +38,20 @@ namespace Hecton8.Tools
         [SerializeField, Tooltip("Enable automatic throttling when budget exceeded")]
         private bool _enableThrottling = true;
 
-        [SerializeField, Tooltip("Throttle multiplier when over budget (0.5 = half performance)")]
+        [Range(0f, 1f), SerializeField, Tooltip("Minimum continuous performance scalar under full pressure")]
         private float _throttleMultiplier = 0.5f;
+
+        [Range(0f, 1f), SerializeField, Tooltip("How strongly GlobalQualityWeight constrains managed systems")]
+        private float _globalQualityInfluence = 1f;
+
+        [SerializeField, Tooltip("Maximum performance scalar loss per second under pressure")]
+        private float _performanceDropRate = 3f;
+
+        [SerializeField, Tooltip("Maximum performance scalar recovery per second")]
+        private float _performanceRecoverRate = 0.75f;
+
+        [SerializeField, Tooltip("Frame-time deadband around the target before pressure changes")]
+        private float _frameTimeHysteresisMs = 1.25f;
 
         [SerializeField, Tooltip("Frames to average for budget calculation")]
         private int _budgetAverageFrames = 10;
@@ -47,6 +60,8 @@ namespace Hecton8.Tools
 
         // COLD ALLOC: Dictionary<string,int>[32] - system-name to dense budget index map - owner: PerformanceBudgetController
         private readonly Dictionary<string, int> _systemBudgetIndices = new Dictionary<string, int>(MaxTrackedBudgetSystems);
+        // COLD ALLOC: Dictionary<string,SystemBudgetInfo>[32] - legacy status snapshot cache for allocation-free GetBudgetStatus compatibility - owner: PerformanceBudgetController
+        private readonly Dictionary<string, SystemBudgetInfo> _budgetStatusSnapshot = new Dictionary<string, SystemBudgetInfo>(MaxTrackedBudgetSystems);
         // COLD ALLOC: SystemBudget[32] - dense budget rows for cache-friendly Tick traversal - owner: PerformanceBudgetController
         private readonly SystemBudget[] _systemBudgets = new SystemBudget[MaxTrackedBudgetSystems];
         private int _systemBudgetCount;
@@ -57,6 +72,8 @@ namespace Hecton8.Tools
         private int _recentFrameCount;
         private float _recentFrameSum;
         private float _currentFrameTimeAverage;
+        private float _currentPerformanceLevel = 1f;
+        private float _budgetPressure01;
         private float _nextBudgetStatusLogTime;
         private bool _registeredToTickManager;
         private bool _hotSwapRegistered;
@@ -67,6 +84,9 @@ namespace Hecton8.Tools
 
         private const float BudgetStatusLogIntervalSeconds = 5f;
         private const float OverBudgetLogIntervalSeconds = 5f;
+        private const float PerformanceApplyEpsilon = 0.0025f;
+        private const float RestoredPerformanceThreshold = 0.995f;
+        private const float MaxSmoothingDeltaSeconds = 0.1f;
 
         private void Awake()
         {
@@ -90,6 +110,7 @@ namespace Hecton8.Tools
         {
             OnDisable();
             _systemBudgetIndices.Clear();
+            _budgetStatusSnapshot.Clear();
             _systemBudgetCount = 0;
         }
 
@@ -101,8 +122,9 @@ namespace Hecton8.Tools
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            TryUnregisterUpdatable();
-            TryRegisterUpdatable();
+            _registeredToTickManager = false;
+            if (currentService != null)
+                TryRegisterUpdatable();
         }
 
         private void TryRegisterUpdatable()
@@ -141,12 +163,16 @@ namespace Hecton8.Tools
 
         public void Tick(float dt)
         {
-            UpdateFrameTimeAverage(math.max(0f, dt) * 1000f);
+            float safeDeltaTime = SanitizeDeltaSeconds(dt);
+            UpdateFrameTimeAverage(safeDeltaTime * 1000f);
 
-            // Check budgets and apply throttling if needed
             if (_enableThrottling)
             {
-                CheckAndApplyThrottling();
+                UpdateContinuousPerformanceLevel(safeDeltaTime);
+            }
+            else
+            {
+                ApplyPerformanceLevel(1f);
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -189,12 +215,17 @@ namespace Hecton8.Tools
                 SystemName = systemName,
                 System = system,
                 BudgetMs = budgetMs,
-                IsThrottled = 0
+                PerformanceLevel = _currentPerformanceLevel,
+                IsThrottled = _currentPerformanceLevel < RestoredPerformanceThreshold ? (byte)1 : (byte)0
             };
+            if (_currentPerformanceLevel < RestoredPerformanceThreshold)
+                system.SetPerformanceLevel(_currentPerformanceLevel);
+
             int index = _systemBudgetCount;
             _systemBudgets[index] = budget;
             _systemBudgetIndices[systemName] = index;
             _systemBudgetCount = index + 1;
+            UpdateBudgetStatusSnapshot(in budget);
 
             LogSystemRegistered(systemName, budgetMs);
         }
@@ -244,23 +275,16 @@ namespace Hecton8.Tools
             }
 
             _systemBudgets[index] = budget;
+            UpdateBudgetStatusSnapshot(in budget);
         }
 
         /// <summary>
         /// Gets the current budget status for all systems.
+        /// Returns an owner-reused snapshot; prefer CopyBudgetStatusNonAlloc for hot or retained reads.
         /// </summary>
-        public Dictionary<string, SystemBudgetInfo> GetBudgetStatus()
+        public IReadOnlyDictionary<string, SystemBudgetInfo> GetBudgetStatus()
         {
-            var status = new Dictionary<string, SystemBudgetInfo>(_systemBudgetCount);
-            int budgetCount = _systemBudgetCount;
-            for (int i = 0; i < budgetCount; i++)
-            {
-                SystemBudget budget = _systemBudgets[i];
-
-                status[budget.SystemName] = CreateBudgetInfo(in budget);
-            }
-
-            return status;
+            return _budgetStatusSnapshot;
         }
 
         /// <summary>
@@ -306,6 +330,10 @@ namespace Hecton8.Tools
             statusBuilder.Append(throttledCount);
             statusBuilder.Append(" overBudget=");
             statusBuilder.Append(overBudgetCount);
+            statusBuilder.Append(" level=");
+            AppendPercent0(statusBuilder, _currentPerformanceLevel);
+            statusBuilder.Append(" pressure=");
+            AppendPercent0(statusBuilder, _budgetPressure01);
 
             if (_systemBudgetCount == 0)
             {
@@ -328,7 +356,8 @@ namespace Hecton8.Tools
                 AppendFixed2(statusBuilder, budget.BudgetMs);
                 statusBuilder.Append("ms(");
                 AppendPercent0(statusBuilder, budgetUsage);
-                statusBuilder.Append(budget.IsThrottled != 0 ? ",throttled" : ",ok");
+                statusBuilder.Append(budget.IsThrottled != 0 ? ",reduced@" : ",ok@");
+                AppendPercent0(statusBuilder, budget.PerformanceLevel);
                 statusBuilder.Append(')');
             }
 
@@ -360,40 +389,104 @@ namespace Hecton8.Tools
             return math.max(0f, totalBudget - allocated) * 0.5f;
         }
 
-        private void CheckAndApplyThrottling()
+        private void UpdateContinuousPerformanceLevel(float deltaTime)
         {
-            if (_currentFrameTimeAverage > _maxFrameTimeMs)
+            float targetLevel = ResolveTargetPerformanceLevel();
+            float rate = targetLevel < _currentPerformanceLevel ? _performanceDropRate : _performanceRecoverRate;
+            float maxDelta = math.max(0f, rate) * deltaTime;
+            ApplyPerformanceLevel(MoveTowards(_currentPerformanceLevel, targetLevel, maxDelta));
+        }
+
+        private float ResolveTargetPerformanceLevel()
+        {
+            float floor = math.saturate(_throttleMultiplier);
+            float pressureLevel = math.lerp(1f, floor, ResolveFramePressure01());
+            float quality = ResolveGlobalQualityWeight01();
+            float qualityLevel = math.lerp(floor, 1f, Smooth01(quality));
+            float globalQualityLevel = math.lerp(1f, qualityLevel, math.saturate(_globalQualityInfluence));
+            return math.clamp(math.min(pressureLevel, globalQualityLevel), floor, 1f);
+        }
+
+        private float ResolveFramePressure01()
+        {
+            float safeAverage = math.isfinite(_currentFrameTimeAverage) ? math.max(0f, _currentFrameTimeAverage) : _maxFrameTimeMs;
+            float upperBand = _targetFrameTimeMs + _frameTimeHysteresisMs;
+            float lowerBand = math.max(0f, _targetFrameTimeMs - _frameTimeHysteresisMs);
+            float pressureRange = math.max(0.001f, _maxFrameTimeMs - upperBand);
+
+            if (safeAverage > upperBand)
             {
-                // Frame time is too high, throttle systems
-                int budgetCount = _systemBudgetCount;
-                for (int i = 0; i < budgetCount; i++)
-                {
-                    SystemBudget budget = _systemBudgets[i];
-                    if (budget.IsThrottled == 0)
-                    {
-                        budget.System?.SetPerformanceLevel(_throttleMultiplier);
-                        budget.IsThrottled = 1;
-                        LogSystemThrottled(budget.SystemName, _currentFrameTimeAverage, _maxFrameTimeMs);
-                        _systemBudgets[i] = budget;
-                    }
-                }
+                _budgetPressure01 = Smooth01(math.saturate((safeAverage - upperBand) / pressureRange));
             }
-            else if (_currentFrameTimeAverage < _targetFrameTimeMs)
+            else if (safeAverage < lowerBand)
             {
-                // Frame time is good, restore full performance
-                int budgetCount = _systemBudgetCount;
-                for (int i = 0; i < budgetCount; i++)
-                {
-                    SystemBudget budget = _systemBudgets[i];
-                    if (budget.IsThrottled != 0)
-                    {
-                        budget.System?.SetPerformanceLevel(1f);
-                        budget.IsThrottled = 0;
-                        LogSystemRestored(budget.SystemName);
-                        _systemBudgets[i] = budget;
-                    }
-                }
+                _budgetPressure01 = 0f;
             }
+
+            return _budgetPressure01;
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float quality = SignalBusRegistry.GlobalQualityWeight01;
+            return math.saturate(math.isfinite(quality) ? quality : 1f);
+        }
+
+        private void ApplyPerformanceLevel(float performanceLevel)
+        {
+            float safeLevel = math.saturate(math.isfinite(performanceLevel) ? performanceLevel : 1f);
+            if (math.abs(safeLevel - _currentPerformanceLevel) <= PerformanceApplyEpsilon)
+                return;
+
+            _currentPerformanceLevel = safeLevel;
+            byte reduced = safeLevel < RestoredPerformanceThreshold ? (byte)1 : (byte)0;
+
+            int budgetCount = _systemBudgetCount;
+            for (int i = 0; i < budgetCount; i++)
+            {
+                SystemBudget budget = _systemBudgets[i];
+                bool wasReduced = budget.IsThrottled != 0;
+                if (math.abs(budget.PerformanceLevel - safeLevel) > PerformanceApplyEpsilon)
+                {
+                    budget.System?.SetPerformanceLevel(safeLevel);
+                    budget.PerformanceLevel = safeLevel;
+                }
+
+                budget.IsThrottled = reduced;
+                if (!wasReduced && reduced != 0)
+                    LogSystemThrottled(budget.SystemName, _currentFrameTimeAverage, _maxFrameTimeMs, safeLevel);
+                else if (wasReduced && reduced == 0)
+                    LogSystemRestored(budget.SystemName);
+
+                _systemBudgets[i] = budget;
+                UpdateBudgetStatusSnapshot(in budget);
+            }
+        }
+
+        private static float MoveTowards(float current, float target, float maxDelta)
+        {
+            current = math.saturate(math.isfinite(current) ? current : 1f);
+            target = math.saturate(math.isfinite(target) ? target : 1f);
+            maxDelta = math.max(0f, math.isfinite(maxDelta) ? maxDelta : 0f);
+            float delta = target - current;
+            if (math.abs(delta) <= maxDelta)
+                return target;
+
+            return delta > 0f ? current + maxDelta : current - maxDelta;
+        }
+
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(math.isfinite(value) ? value : 0f);
+            return t * t * (3f - 2f * t);
+        }
+
+        private static float SanitizeDeltaSeconds(float deltaTime)
+        {
+            if (!math.isfinite(deltaTime) || deltaTime < 0f)
+                return 0f;
+
+            return math.min(deltaTime, MaxSmoothingDeltaSeconds);
         }
 
         private void LogBudgetStatus()
@@ -419,7 +512,18 @@ namespace Hecton8.Tools
             _systemBudgets[lastIndex] = default;
             _systemBudgetCount = lastIndex;
             if (!string.IsNullOrEmpty(removedName))
+            {
                 _systemBudgetIndices.Remove(removedName);
+                _budgetStatusSnapshot.Remove(removedName);
+            }
+        }
+
+        private void UpdateBudgetStatusSnapshot(in SystemBudget budget)
+        {
+            if (string.IsNullOrEmpty(budget.SystemName))
+                return;
+
+            _budgetStatusSnapshot[budget.SystemName] = CreateBudgetInfo(in budget);
         }
 
         private int CountThrottledSystems()
@@ -489,6 +593,7 @@ namespace Hecton8.Tools
                 BudgetMs = budget.BudgetMs,
                 AverageTimeMs = avgTime,
                 BudgetUsage = budgetUsage,
+                PerformanceLevel = budget.PerformanceLevel,
                 IsThrottled = budget.IsThrottled,
                 OverBudgetCount = budget.OverBudgetCount
             };
@@ -573,11 +678,13 @@ namespace Hecton8.Tools
                 budgetMs.ToString("F2", CultureInfo.InvariantCulture) + "ms");
         }
 
-        private void LogSystemThrottled(string systemName, float frameTimeMs, float maxFrameTimeMs)
+        private void LogSystemThrottled(string systemName, float frameTimeMs, float maxFrameTimeMs, float performanceLevel)
         {
-            Hecton8.Core.H8Debug.Log("[PerformanceBudgetController] Throttling system '" + systemName +
-                "' due to high frame time (" +
-                frameTimeMs.ToString("F2", CultureInfo.InvariantCulture) + "ms > " +
+            Hecton8.Core.H8Debug.Log("[PerformanceBudgetController] Reducing system '" + systemName +
+                "' performance to " +
+                performanceLevel.ToString("F2", CultureInfo.InvariantCulture) +
+                " (avg frame " +
+                frameTimeMs.ToString("F2", CultureInfo.InvariantCulture) + "ms, max " +
                 maxFrameTimeMs.ToString("F2", CultureInfo.InvariantCulture) + "ms)");
         }
 
@@ -597,7 +704,7 @@ namespace Hecton8.Tools
         private void LogSystemRegistered(string systemName, float budgetMs) { }
         private void LogSystemUnregistered(string systemName) { }
         private void LogSystemOverBudget(string systemName, float timeUsedMs, float budgetMs) { }
-        private void LogSystemThrottled(string systemName, float frameTimeMs, float maxFrameTimeMs) { }
+        private void LogSystemThrottled(string systemName, float frameTimeMs, float maxFrameTimeMs, float performanceLevel) { }
         private void LogSystemRestored(string systemName) { }
         private void LogBudgetStatusInternal() { }
 #endif
@@ -606,6 +713,15 @@ namespace Hecton8.Tools
         {
             if (_budgetAverageFrames < 1)
                 _budgetAverageFrames = 1;
+
+            if (_maxFrameTimeMs < _targetFrameTimeMs + 0.1f)
+                _maxFrameTimeMs = _targetFrameTimeMs + 0.1f;
+
+            _throttleMultiplier = math.saturate(_throttleMultiplier);
+            _globalQualityInfluence = math.saturate(_globalQualityInfluence);
+            _performanceDropRate = math.max(0f, _performanceDropRate);
+            _performanceRecoverRate = math.max(0f, _performanceRecoverRate);
+            _frameTimeHysteresisMs = math.max(0f, _frameTimeHysteresisMs);
         }
     }
 
@@ -630,6 +746,7 @@ namespace Hecton8.Tools
         public float BudgetMs;
         public float LastFrameTimeMs;
         public float TotalTimeMs;
+        public float PerformanceLevel;
         public int FrameCount;
         public int OverBudgetCount;
         public byte IsThrottled;
@@ -645,6 +762,7 @@ namespace Hecton8.Tools
         public float BudgetMs;
         public float AverageTimeMs;
         public float BudgetUsage; // 0-1 (1 = at budget limit)
+        public float PerformanceLevel;
         public byte IsThrottled;
         public int OverBudgetCount;
     }

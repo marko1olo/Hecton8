@@ -431,6 +431,8 @@
             {
                 if (o2ScrubberSocket == null)
                     o2ScrubberSocket = GetComponentInChildren<PhysicalBatteryCompartment>(true);
+                if (o2ScrubberSocket != null)
+                    o2ScrubberSocket.RefreshBatteryToolCacheCold();
                 _coldReferenceSearchMask |= ColdReferenceScrubberSocket;
             }
 

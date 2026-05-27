@@ -36,6 +36,8 @@ namespace Hecton8.Crest.Bridge
             float globalQualityWeight,
             JobHandle inputDeps)
         {
+            _ = globalQualityWeight;
+
             if (!requests.IsCreated || !results.IsCreated || requestCount <= 0)
                 return inputDeps;
 
@@ -52,10 +54,8 @@ namespace Hecton8.Crest.Bridge
             {
                 Requests = requests,
                 Results = results,
-                RequestCount = count,
                 OceanRootAUP = oceanRootAUP,
-                SeaLevel = waterLevel,
-                GlobalQualityWeight = math.saturate(math.select(0f, globalQualityWeight, math.isfinite(globalQualityWeight)))
+                SeaLevel = waterLevel
             };
             return job.Schedule(count, ResolveInnerLoopBatchCount(count), inputDeps);
         }
@@ -112,9 +112,7 @@ namespace Hecton8.Crest.Bridge
             [ReadOnly, NoAlias] public NativeArray<Fluids.OceanSampleRequestDTO> Requests;
             [WriteOnly, NoAlias] public NativeArray<Fluids.OceanSampleResultDTO> Results;
             public double3 OceanRootAUP;
-            public int RequestCount;
             public float SeaLevel;
-            public float GlobalQualityWeight;
 
             public void Execute(int index)
             {
@@ -123,22 +121,13 @@ namespace Hecton8.Crest.Bridge
                 bool finite = math.all(math.isfinite(localDouble));
                 float3 local = finite ? (float3)localDouble : float3.zero;
 
-                float quality = math.saturate(GlobalQualityWeight);
-                float budgetCurve = math.smoothstep(0.05f, 1f, quality);
-                int budget = math.max(1, (int)math.ceil(RequestCount * math.lerp(0.03f, 1f, budgetCurve)));
-                bool simplified = index >= budget;
-
                 float2 xz = local.xz;
                 float phase = math.dot(xz, new float2(0.0027f, -0.0036f));
-                float amplitude = math.lerp(0.03f, 0.85f, quality * quality);
+                const float amplitude = 0.85f;
                 MathLodApproximation.ApproxSinCosBhaskara(phase, out float phaseSin, out float phaseCos);
                 float height = SeaLevel + phaseSin * amplitude;
-                if (!simplified)
-                {
-                    float detailWeight = math.smoothstep(0.35f, 0.95f, quality);
-                    float detailPhase = math.dot(xz, new float2(0.0071f, 0.0053f)) + 2.4f;
-                    height += MathLodApproximation.ApproxSinBhaskara(detailPhase) * amplitude * 0.22f * detailWeight;
-                }
+                float detailPhase = math.dot(xz, new float2(0.0071f, 0.0053f)) + 2.4f;
+                height += MathLodApproximation.ApproxSinBhaskara(detailPhase) * amplitude * 0.22f;
 
                 float slopeX = phaseCos * 0.0027f * amplitude;
                 float slopeZ = -phaseCos * 0.0036f * amplitude;
@@ -146,8 +135,6 @@ namespace Hecton8.Crest.Bridge
                 float3 velocity = new float3(-slopeZ, 0f, slopeX);
 
                 uint flags = (uint)(Fluids.OceanSampleStatus.Valid | Fluids.OceanSampleStatus.DelayedOneToThreeFrames);
-                if (simplified)
-                    flags |= (uint)Fluids.OceanSampleStatus.SimplifiedByQualityBudget;
                 if (!finite)
                     flags |= (uint)Fluids.OceanSampleStatus.NonFiniteInput;
 
@@ -156,7 +143,7 @@ namespace Hecton8.Crest.Bridge
                 result.WaterHeight = math.select(height, SeaLevel, !math.isfinite(height));
                 result.SurfaceVelocity = math.select(velocity, float3.zero, !finite);
                 result.WaveNormal = math.select(normal, new float3(0f, 1f, 0f), !finite);
-                result.LatencyMilliseconds = simplified ? 3f : 1f;
+                result.LatencyMilliseconds = 1f;
                 result.StatusFlags = flags;
                 Results[index] = result;
             }

@@ -29,9 +29,9 @@ namespace Hecton8.Core
         private const int RingCapacityMask = RingCapacity - 1;
         private const int ExportSnapshotEntries = 1000;
         private const int ExportCooldownFrames = 30;
-        private const int TelemetryEntrySizeBytes = 64;
+        private const int CrashTelemetryEntrySizeBytes = 64;
         private const int CrashExportHeaderSizeBytes = 16;
-        private const int ExportScratchSizeBytes = CrashExportHeaderSizeBytes + (ExportSnapshotEntries * TelemetryEntrySizeBytes);
+        private const int ExportScratchSizeBytes = CrashExportHeaderSizeBytes + (ExportSnapshotEntries * CrashTelemetryEntrySizeBytes);
         private const int ExportStateIdle = 0;
         private const int ExportStateQueued = 1;
         private const int LiveTelemetryStateIdle = 0;
@@ -216,8 +216,8 @@ namespace Hecton8.Core
             public uint StructSizeBytes;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = TelemetryEntrySizeBytes)]
-        private struct TelemetryEntry
+        [StructLayout(LayoutKind.Explicit, Size = CrashTelemetryEntrySizeBytes)]
+        private struct CrashTelemetryEntry
         {
             [FieldOffset(0)]
             public uint FrameIndex;
@@ -327,8 +327,8 @@ namespace Hecton8.Core
         }
 
         private IDataVault _dataVault;
-        private VaultArray<TelemetryEntry> _ringBuffer;
-        private VaultArray<TelemetryEntry> _exportSnapshot;
+        private VaultArray<CrashTelemetryEntry> _ringBuffer;
+        private VaultArray<CrashTelemetryEntry> _exportSnapshot;
         private Transform _playerTransform;
         private HectonPlayerMovement _playerMovement;
         private HectonSurvivalSystem _survivalSystem;
@@ -1065,7 +1065,7 @@ namespace Hecton8.Core
             for (int i = 0; i < committedEntries; i++)
             {
                 int ringIndex = (int)(startCursor + i) & RingCapacityMask;
-                TelemetryEntry entry = _ringBuffer[ringIndex];
+                CrashTelemetryEntry entry = _ringBuffer[ringIndex];
                 destination.Add(new EditorSnapshotEntry(
                     entry.FrameIndex,
                     entry.SystemMask,
@@ -1239,7 +1239,7 @@ namespace Hecton8.Core
                 uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
                 int writeIndex = ReserveTelemetryWriteIndex();
 
-                TelemetryEntry entry = default;
+                CrashTelemetryEntry entry = default;
                 entry.FrameIndex = frameIndex;
                 entry.SystemMask = systemMask;
                 entry.DeltaTime = dt;
@@ -1327,7 +1327,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Bootstrap;
             entry.DeltaTime = 0f;
@@ -1361,7 +1361,7 @@ namespace Hecton8.Core
             uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.OriginShift;
             entry.DeltaTime = 0f;
@@ -1385,7 +1385,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1411,7 +1411,7 @@ namespace Hecton8.Core
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
             uint errorFlags = droppedCount > 0 ? (uint)ErrorBits.BusCongestionWarning : 0u;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1437,7 +1437,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frame;
             entry.SystemMask = (uint)SystemBits.Input;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1461,7 +1461,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Vfx;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1516,7 +1516,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Scheduler;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1540,7 +1540,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Scheduler;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1564,7 +1564,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Scheduler;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1592,7 +1592,7 @@ namespace Hecton8.Core
             if (!math.all(math.isfinite(absolutePosition)) || !math.all(math.isfinite(deltaVelocity3)))
                 return;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Physics;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1618,7 +1618,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Rendering | (uint)SystemBits.WorldStreaming;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1652,7 +1652,7 @@ namespace Hecton8.Core
                                         (invalidFinite.y ? 0u : 2u) |
                                         (invalidFinite.z ? 0u : 4u);
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Physics | (uint)SystemBits.OriginShift;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1678,7 +1678,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1708,7 +1708,7 @@ namespace Hecton8.Core
                 ? math.max(0f, frameState.JitterVarianceMs)
                 : 0f;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Scheduler;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1740,7 +1740,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1766,7 +1766,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Input | (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1791,7 +1791,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.WorldStreaming;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1817,7 +1817,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1841,7 +1841,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Memory;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1865,7 +1865,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Memory;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1889,7 +1889,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Memory;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1913,7 +1913,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Memory;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1937,7 +1937,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Memory;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1961,7 +1961,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Audio;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -1988,7 +1988,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Audio | (uint)SystemBits.Voxel;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -2017,7 +2017,7 @@ namespace Hecton8.Core
             uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Bootstrap;
             entry.DeltaTime = (float)math.max(0d, bootElapsedSeconds);
@@ -2040,7 +2040,7 @@ namespace Hecton8.Core
             uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Bootstrap;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -2063,7 +2063,7 @@ namespace Hecton8.Core
             uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -2090,7 +2090,7 @@ namespace Hecton8.Core
             uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Memory;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -2116,7 +2116,7 @@ namespace Hecton8.Core
             float safeStress = math.isfinite(stress01) ? math.saturate(stress01) : 0f;
             float safeO2Drain = math.isfinite(o2DrainMultiplier) ? math.saturate(o2DrainMultiplier * 0.4f) : 0f;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Physiology;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -2142,7 +2142,7 @@ namespace Hecton8.Core
             float safeStress = math.isfinite(stress01) ? math.saturate(stress01) : 0f;
             float safeO2Drain = math.isfinite(o2DrainMultiplier) ? math.saturate(o2DrainMultiplier * 0.4f) : 0f;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Physiology;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -2166,7 +2166,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Physics;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -2191,7 +2191,7 @@ namespace Hecton8.Core
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
             float safeMaxDriftError = math.isfinite(maxDriftErrorMeters) ? math.max(0f, maxDriftErrorMeters) : float.MaxValue;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Physics | (uint)SystemBits.OriginShift;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -2219,7 +2219,7 @@ namespace Hecton8.Core
                 ? float.MaxValue
                 : SanitizeMilliseconds((float)tickOverheadMilliseconds);
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.TimeDilation;
             entry.DeltaTime = SystemDispatcher.CurrentFrameDeltaTime;
@@ -2310,9 +2310,9 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (!UnsafeUtility.IsBlittable<TelemetryEntry>() ||
+            if (!UnsafeUtility.IsBlittable<CrashTelemetryEntry>() ||
                 UnsafeUtility.SizeOf<CrashExportHeader>() != CrashExportHeaderSizeBytes ||
-                UnsafeUtility.SizeOf<TelemetryEntry>() != TelemetryEntrySizeBytes)
+                UnsafeUtility.SizeOf<CrashTelemetryEntry>() != CrashTelemetryEntrySizeBytes)
             {
                 enabled = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -2331,16 +2331,16 @@ namespace Hecton8.Core
                 return;
             }
 
-            _ringBuffer = VaultArray<TelemetryEntry>.Create(
+            _ringBuffer = VaultArray<CrashTelemetryEntry>.Create(
                 vault,
-                vault.EnsureGenerationHandle<TelemetryEntry>(
+                vault.EnsureGenerationHandle<CrashTelemetryEntry>(
                     RingBufferId,
                     RingCapacity,
                     SystemID.CoreDiagnostics,
                     NativeArrayOptions.ClearMemory));
-            _exportSnapshot = VaultArray<TelemetryEntry>.Create(
+            _exportSnapshot = VaultArray<CrashTelemetryEntry>.Create(
                 vault,
-                vault.EnsureGenerationHandle<TelemetryEntry>(
+                vault.EnsureGenerationHandle<CrashTelemetryEntry>(
                     ExportSnapshotBufferId,
                     ExportSnapshotEntries,
                     SystemID.CoreDiagnostics,
@@ -2371,8 +2371,8 @@ namespace Hecton8.Core
             InitializeCrashTelemetryFile();
             MemoryBudgetTracker.Register(
                 MemoryBudgetOwnerName,
-                ((long)_ringBuffer.Length * TelemetryEntrySizeBytes) +
-                ((long)_exportSnapshot.Length * TelemetryEntrySizeBytes) +
+                ((long)_ringBuffer.Length * CrashTelemetryEntrySizeBytes) +
+                ((long)_exportSnapshot.Length * CrashTelemetryEntrySizeBytes) +
                 _exportScratch.Length,
                 PersistentMemoryBudgetBytes);
             GlobalTelemetryBus.Initialize();
@@ -2968,7 +2968,7 @@ namespace Hecton8.Core
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
-            TelemetryEntry entry = default;
+            CrashTelemetryEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -3373,8 +3373,8 @@ namespace Hecton8.Core
 
         private int SnapshotRecentEntries(ExportReason exportReason)
         {
-            NativeArray<TelemetryEntry> ringBuffer = _ringBuffer;
-            NativeArray<TelemetryEntry> exportSnapshot = _exportSnapshot;
+            NativeArray<CrashTelemetryEntry> ringBuffer = _ringBuffer;
+            NativeArray<CrashTelemetryEntry> exportSnapshot = _exportSnapshot;
             if (!ringBuffer.IsCreated || !exportSnapshot.IsCreated)
                 return 0;
 
@@ -3394,14 +3394,14 @@ namespace Hecton8.Core
                 byte* sourceBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ringBuffer);
                 byte* destinationBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exportSnapshot);
                 int firstCopyCount = math.min(entryCount, RingCapacity - sourceStart);
-                int firstCopyBytes = firstCopyCount * TelemetryEntrySizeBytes;
-                int totalCopyBytes = entryCount * TelemetryEntrySizeBytes;
-                int destinationBytes = exportSnapshot.Length * TelemetryEntrySizeBytes;
+                int firstCopyBytes = firstCopyCount * CrashTelemetryEntrySizeBytes;
+                int totalCopyBytes = entryCount * CrashTelemetryEntrySizeBytes;
+                int destinationBytes = exportSnapshot.Length * CrashTelemetryEntrySizeBytes;
 
                 if (!UnsafeMemoryCopyGuard.TryMemCpy(
                         destinationBase,
                         destinationBytes,
-                        sourceBase + (sourceStart * TelemetryEntrySizeBytes),
+                        sourceBase + (sourceStart * CrashTelemetryEntrySizeBytes),
                         firstCopyBytes))
                 {
                     UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
@@ -3427,7 +3427,7 @@ namespace Hecton8.Core
         private int BuildExportScratch(int snapshotCount)
         {
             NativeArray<byte> exportScratch = _exportScratch;
-            NativeArray<TelemetryEntry> exportSnapshot = _exportSnapshot;
+            NativeArray<CrashTelemetryEntry> exportSnapshot = _exportSnapshot;
             if (snapshotCount <= 0 || !exportScratch.IsCreated || !exportSnapshot.IsCreated)
                 return 0;
 
@@ -3436,9 +3436,9 @@ namespace Hecton8.Core
                 CrashExportHeader header = default;
                 header.Magic = BinaryMagic;
                 header.EntryCount = unchecked((uint)snapshotCount);
-                header.StructSizeBytes = TelemetryEntrySizeBytes;
+                header.StructSizeBytes = CrashTelemetryEntrySizeBytes;
 
-                int entryBytes = snapshotCount * TelemetryEntrySizeBytes;
+                int entryBytes = snapshotCount * CrashTelemetryEntrySizeBytes;
                 int totalBytes = CrashExportHeaderSizeBytes + entryBytes;
 
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exportScratch);

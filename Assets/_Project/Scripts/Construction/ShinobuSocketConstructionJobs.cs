@@ -141,7 +141,9 @@ namespace Hecton8.Construction
                 quaternion alignedRotation = FromToRotation(ghostNormal, -targetNormal);
                 alignedRotation = math.mul(alignedRotation, GhostRootRotation);
                 double3 ghostLocalOffset = ghostSocket.LocalOffset;
-                if (!math.all(math.isfinite(ghostLocalOffset)) || !math.all(math.isfinite(alignedRotation.value)))
+                if (!math.all(math.isfinite(ghostLocalOffset)) ||
+                    math.any(math.abs(ghostLocalOffset) > (double)float.MaxValue) ||
+                    !math.all(math.isfinite(alignedRotation.value)))
                 {
                     best.Flags |= ConstructionSocketFlags.NonFinite;
                     continue;
@@ -457,10 +459,7 @@ namespace Hecton8.Construction
             int index = math.clamp(StateIndex, 0, States.Length - 1);
             double3 snappedAup = SnapAup(TargetAup, GridSizeMeters);
             double3 runtimeDouble = snappedAup - RuntimeOriginAup;
-            float3 runtimePosition = new float3(
-                (float)runtimeDouble.x,
-                (float)runtimeDouble.y,
-                (float)runtimeDouble.z);
+            bool runtimeValid = TryCastLocalDelta(runtimeDouble, out float3 runtimePosition);
             float3 safeScale = math.max(BoundsScale, new float3(0.001f));
             uint flags = ValidationFlags |
                          BuilderGhostValidationFlags.Active |
@@ -468,11 +467,9 @@ namespace Hecton8.Construction
                          BuilderGhostValidationFlags.RollbackExcluded;
 
             if (!math.all(math.isfinite(snappedAup)) ||
-                !math.all(math.isfinite(runtimeDouble)) ||
-                !math.all(math.isfinite(runtimePosition)) ||
+                !runtimeValid ||
                 !math.all(math.isfinite(Rotation.value)) ||
-                !math.all(math.isfinite(safeScale)) ||
-                math.any(math.abs(runtimeDouble) > (double)float.MaxValue))
+                !math.all(math.isfinite(safeScale)))
             {
                 flags &= ~BuilderGhostValidationFlags.Valid;
                 flags |= BuilderGhostValidationFlags.NonFinite;
@@ -481,24 +478,18 @@ namespace Hecton8.Construction
                 safeScale = new float3(0.001f);
             }
 
-            BuilderGhostStateDTO state;
+            BuilderGhostStateDTO state = default;
             state.LocalToWorld = float4x4.TRS(runtimePosition, Rotation, safeScale);
             state.AUP_TargetPosition = snappedAup;
             state.PrefabHashID = PrefabHashID;
             state.ValidationFlags = flags;
             state.AnimationPhase = math.isfinite(AnimationPhase) ? AnimationPhase : 0f;
             state.ValidationStateHash = MakeBuilderGhostHash(PrefabHashID, flags, state.AnimationPhase, Frame);
-            state._pad0 = 0u;
-            state._pad1 = 0u;
-            state._pad2 = 0u;
-            state._pad3 = 0u;
-            state._pad4 = 0u;
-            state._pad5 = 0u;
             States[index] = state;
 
             if (Visuals.IsCreated && (uint)index < (uint)Visuals.Length)
             {
-                BuilderGhostVisualDTO visual;
+                BuilderGhostVisualDTO visual = default;
                 visual.GlobalQualityWeight = ShinobuSocketConstructionRuntime.SanitizeQuality(GlobalQualityWeight);
                 visual.DearLieDampen = math.clamp(math.isfinite(DearLieDampen) ? DearLieDampen : 0f, 0f, 1f);
                 visual.DearLieWiggleSpeed = math.isfinite(DearLieWiggleSpeed) && DearLieWiggleSpeed > 0f ? DearLieWiggleSpeed : 18f;
@@ -507,8 +498,6 @@ namespace Hecton8.Construction
                 visual.InvalidColor = InvalidColor;
                 visual.Flags = flags;
                 visual.Frame = Frame;
-                visual._pad0 = 0u;
-                visual._pad1 = 0u;
                 Visuals[index] = visual;
             }
         }
@@ -529,6 +518,19 @@ namespace Hecton8.Construction
             hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(phase));
             hash = ShinobuSocketConstructionRuntime.FoldHash(hash, frame);
             return hash;
+        }
+
+        private static bool TryCastLocalDelta(double3 localDelta, out float3 runtime)
+        {
+            runtime = default;
+            if (!math.all(math.isfinite(localDelta)) ||
+                math.any(math.abs(localDelta) > (double)float.MaxValue))
+            {
+                return false;
+            }
+
+            runtime = new float3((float)localDelta.x, (float)localDelta.y, (float)localDelta.z);
+            return math.all(math.isfinite(runtime));
         }
     }
 
@@ -695,31 +697,42 @@ namespace Hecton8.Construction
             int z = index / 100;
             double3 aup = new double3(x * GridSizeMeters, -40.0d, z * GridSizeMeters);
             double3 runtimeDouble = aup - RuntimeOriginAup;
-            float3 runtime = new float3((float)runtimeDouble.x, (float)runtimeDouble.y, (float)runtimeDouble.z);
+            bool runtimeValid = TryCastLocalDelta(runtimeDouble, out float3 runtime);
             float terrainFake = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((x * 0.173f) + (z * 0.097f));
             uint flags = BuilderGhostValidationFlags.Active |
                          BuilderGhostValidationFlags.PresentationOnly |
                          BuilderGhostValidationFlags.RollbackExcluded |
                          BuilderGhostValidationFlags.GridSnapped;
-            if (terrainFake < -0.72f)
+            if (!runtimeValid)
+                flags |= BuilderGhostValidationFlags.NonFinite;
+            else if (terrainFake < -0.72f)
                 flags |= BuilderGhostValidationFlags.SdfBlocked;
             else
                 flags |= BuilderGhostValidationFlags.Valid;
 
-            BuilderGhostStateDTO state;
-            state.LocalToWorld = float4x4.TRS(runtime, quaternion.identity, new float3(4f, 3f, 4f));
+            BuilderGhostStateDTO state = default;
+            state.LocalToWorld = runtimeValid
+                ? float4x4.TRS(runtime, quaternion.identity, new float3(4f, 3f, 4f))
+                : float4x4.TRS(float3.zero, quaternion.identity, new float3(0.001f));
             state.AUP_TargetPosition = aup;
             state.PrefabHashID = BasePrefabHash + (uint)index;
             state.ValidationFlags = flags;
             state.AnimationPhase = math.frac((Frame * 0.013f) + (index * 0.001f));
             state.ValidationStateHash = ShinobuSocketConstructionRuntime.MakeResultHash(state.PrefabHashID, flags, (uint)index, Frame);
-            state._pad0 = 0u;
-            state._pad1 = 0u;
-            state._pad2 = 0u;
-            state._pad3 = 0u;
-            state._pad4 = 0u;
-            state._pad5 = 0u;
             States[index] = state;
+        }
+
+        private static bool TryCastLocalDelta(double3 localDelta, out float3 runtime)
+        {
+            runtime = default;
+            if (!math.all(math.isfinite(localDelta)) ||
+                math.any(math.abs(localDelta) > (double)float.MaxValue))
+            {
+                return false;
+            }
+
+            runtime = new float3((float)localDelta.x, (float)localDelta.y, (float)localDelta.z);
+            return math.all(math.isfinite(runtime));
         }
     }
 
@@ -848,25 +861,19 @@ namespace Hecton8.Construction
 
         private void WriteState(int index, double3 aup, float4x4 matrix, uint flags, float quality)
         {
-            BuilderGhostStateDTO state;
+            BuilderGhostStateDTO state = default;
             state.LocalToWorld = matrix;
             state.AUP_TargetPosition = aup;
             state.PrefabHashID = PrefabHashID;
             state.ValidationFlags = flags;
             state.AnimationPhase = math.frac((Frame * 0.017f) + (index * 0.03125f));
             state.ValidationStateHash = ShinobuSocketConstructionRuntime.MakeResultHash(PrefabHashID, flags, (uint)index, Frame);
-            state._pad0 = 0u;
-            state._pad1 = 0u;
-            state._pad2 = 0u;
-            state._pad3 = 0u;
-            state._pad4 = 0u;
-            state._pad5 = 0u;
             States[index] = state;
 
             if (!Visuals.IsCreated || (uint)index >= (uint)Visuals.Length)
                 return;
 
-            BuilderGhostVisualDTO visual;
+            BuilderGhostVisualDTO visual = default;
             visual.GlobalQualityWeight = quality;
             visual.DearLieDampen = math.clamp(math.isfinite(DearLieDampen) ? DearLieDampen : 0.2f, 0f, 1f);
             visual.DearLieWiggleSpeed = math.isfinite(DearLieWiggleSpeed) && DearLieWiggleSpeed > 0f ? DearLieWiggleSpeed : 18f;
@@ -875,8 +882,6 @@ namespace Hecton8.Construction
             visual.InvalidColor = InvalidColor;
             visual.Flags = flags;
             visual.Frame = Frame;
-            visual._pad0 = 0u;
-            visual._pad1 = 0u;
             Visuals[index] = visual;
         }
 

@@ -1,10 +1,11 @@
 // ============================================================================
 // HECTON-8 - GameStartContext.cs
-// Game session initialization context passed from menu to world.
+// Game session initialization context passed from menu to prologue/world.
 //
 // PURPOSE:
 //   - Single container for game-session parameters passed between
-//     00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD.
+//     New Game: 00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD.
+//     Load Game: 00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD.
 //   - Replaces scattered static TargetSaveSlot strings and PlayerPrefs handoff.
 //   - Stores start mode, save slot, spawn mode, and intro context.
 //
@@ -54,7 +55,7 @@ namespace Hecton8.Core
     }
 
     /// <summary>
-    /// Game startup context passed from menu to world.
+    /// Game startup context passed from menu to prologue/world.
     /// </summary>
     [Serializable]
     public struct GameStartContext

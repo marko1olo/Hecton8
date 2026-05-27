@@ -1,0 +1,81 @@
+{
+  "date": "2026-05-26",
+  "agent": "UNKNOWN",
+  "evidenceClass": "STATIC_SOURCE + OFFICIAL_UNITY_DOCS + CLI_COMPILE",
+  "domain": "Unity runtime hidden-allocation/API trap cleanup",
+  "changedFiles": [
+    "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+    "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs",
+    "Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs",
+    "Assets/_Project/Scripts/Plugins/MapMagic/MapMagicRuntimeBridge.cs",
+    "Assets/_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs",
+    "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs",
+    "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+    "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs",
+    "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
+    "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+    "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+    "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+    "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs",
+    "Assets/_Project/Scripts/World/ScatterEvaluator.cs",
+    "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+    "Docs/ARCHITECTURE/DATA_MONOLITH_H8BIN_SPEC.md"
+  ],
+  "fixes": [
+    "Fallback procedural meshes use Mesh.SetVertices/SetUVs/SetTriangles or SetIndices instead of mesh property setters in clean files.",
+    "Inline fallback geometry arrays moved to static readonly owner arrays in clean files.",
+    "MapMagicRuntimeBridge terrain tile cache now uses a pre-sized List<TerrainTile> and the supplied-list GetComponentsInChildren overload."
+  ],
+  "staticResults": {
+    "touchedFileMeshPropertySetterHits": 0,
+    "cameraMainRuntimeHits": 0,
+    "objectFindRuntimeHits": 0,
+    "allocatingPhysicsQueryRuntimeHits": 0,
+    "dirtyMeshSetterResidualFiles": [
+      "Assets/_Project/Scripts/Fabricator.cs",
+      "Assets/_Project/Scripts/UI/DiegeticVisorHudMesh.cs",
+      "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
+      "Assets/_Project/Scripts/UI/PDAMapTab.cs"
+    ],
+    "getComponentsArrayResiduals": [
+      "Assets/_Project/Scripts/Gameplay/DebrisManager.cs",
+      "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+      "Assets/_Project/Scripts/Core/Bridge/H8PrefabRegistry.cs",
+      "Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs"
+    ]
+  },
+  "build": {
+    "launched": true,
+    "cpuGuard": "Final build launched at guard attempt 9 with CPU 33.3% and compilerProcessCount 0.",
+    "command": "dotnet build .\\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false",
+    "log": "Docs/Reports/BUILD_UNKNOWN_MESH_COMPONENT_CACHE_TRAP_RECHECK3_20260526.log",
+    "exitCode": 0,
+    "warnings": 0,
+    "errors": 0,
+    "diffCheck": "passed with LF/CRLF warnings only"
+  },
+  "documentation": {
+    "verifyDocStructure": {
+      "pass": true,
+      "activeDocCount": 701,
+      "encodingWithoutUtf8Sig": 0
+    },
+    "oopDocScanner": {
+      "finalPass": true,
+      "activeFileCount": 701,
+      "sourceSyncPass": true
+    }
+  },
+  "runtimeMicrosecondsSavedClaimed": 0,
+  "residual": [
+    "No Unity Play Mode proof.",
+    "No profiler proof.",
+    "Dirty residual mesh setter files were not edited.",
+    "Unity Play Mode, runtime profiler, player build, and visual proof remain pending."
+  ],
+  "sourceUrls": [
+    "https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Mesh-vertices.html",
+    "https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Mesh.SetVertices.html",
+    "https://docs.unity3d.com/6000.0/Documentation/ScriptReference/GameObject.GetComponentsInChildren.html"
+  ]
+}

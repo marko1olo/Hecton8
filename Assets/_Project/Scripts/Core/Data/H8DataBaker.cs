@@ -1213,19 +1213,23 @@ namespace Hecton8.Core.Data
                 return new H8CsvTable(Array.Empty<string>(), new List<string[]>(0));
 
             string[] headers = rows[0];
+            int dataRowCapacity = rows.Count > 1 ? rows.Count - 1 : 0;
+            List<string[]> dataRows = new List<string[]>(dataRowCapacity);
             for (int i = 1; i < rows.Count; i++)
             {
-                if (rows[i].Length != headers.Length)
+                string[] row = rows[i];
+                if (row.Length != headers.Length)
                 {
                     throw new InvalidDataException(
                         "Row " + (i + 1).ToString(CultureInfo.InvariantCulture) +
-                        " has " + rows[i].Length.ToString(CultureInfo.InvariantCulture) +
+                        " has " + row.Length.ToString(CultureInfo.InvariantCulture) +
                         " cells; expected " + headers.Length.ToString(CultureInfo.InvariantCulture) + ".");
                 }
+
+                dataRows.Add(row);
             }
 
-            rows.RemoveAt(0);
-            return new H8CsvTable(headers, rows);
+            return new H8CsvTable(headers, dataRows);
         }
 
         private static void FinishRow(List<string[]> rows, List<string> cells, StringBuilder cell)

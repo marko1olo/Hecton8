@@ -1,0 +1,86 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_PURGE_AUDIT_RERUN21_V1",
+    "agentId":  "1330",
+    "task":  "1330_PURGE_RERUN21",
+    "status":  "VERIFIED_GREEN_STATIC_PENDING_UNITY_IMPORT_AND_BUILD",
+    "scannedFiles":  14,
+    "failedGates":  [
+
+                    ],
+    "totalNativeFieldDeclarations":  17,
+    "persistentNativeFieldsRemaining":  0,
+    "transientVaultViews":  31,
+    "transientJobViews":  17,
+    "zeroGcHotPathHits":  0,
+    "absoluteAupCastsFound":  0,
+    "compactionAwareLocksProven":  true,
+    "telemetryRingIntegrated":  true,
+    "editorHotReloadManagedRollbackBlobAllocations":  0,
+    "editorHotReloadRollbackRoute":  "streamed_temp_h8bin_snapshot_from_resident_native_span",
+    "h8binValidatorStatus":  "PASS",
+    "h8binFilesChecked":  2,
+    "h8binDataMonolithBytes":  1100480,
+    "h8binValidatorCacheWriteFailOpen":  true,
+    "restoredUnityGeneratedProject":  "Hecton8.Core.csproj",
+    "slnxMissingProjectsBeforeRestore":  61,
+    "buildStatus":  "FIRST_BUILD_FAILED_ON_GENERATED_PROJECT_SCOPE_THEN_BLOCKED_BY_HOST_CPU_GATE_AFTER_CSPROJ_REFINEMENT_CPU_59_100_PERCENT",
+    "parseFailures":  0,
+    "verificationHashSha256":  "9aca2b62fc15afec102048b59b234b4a1cf9545589b7a58899b0a56795daf30d",
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "H8DataBlobDirectory",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Magic":  "0:uint",
+                                               "FormatVersion":  "4:ushort",
+                                               "SectionCount":  "6:ushort",
+                                               "SectionTableOffset":  "8:uint",
+                                               "SectionTableBytes":  "12:uint",
+                                               "BlobBytes":  "16:uint",
+                                               "DataStartOffset":  "20:uint",
+                                               "LocalizationOffset":  "24:uint",
+                                               "LocalizationBytes":  "28:uint",
+                                               "Flags":  "32:uint",
+                                               "WorldSeed":  "36:uint",
+                                               "AppVersionHash":  "40:uint",
+                                               "Reserved0":  "44:uint",
+                                               "Reserved1":  "48:uint",
+                                               "Reserved2":  "52:uint",
+                                               "Reserved3":  "56:uint",
+                                               "Reserved4":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8DataBlobHeader",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Magic":  "0:uint",
+                                               "FormatVersion":  "4:ushort",
+                                               "HeaderBytes":  "6:ushort",
+                                               "Checksum64":  "8:ulong",
+                                               "BlobBytes":  "16:uint",
+                                               "DirectoryOffset":  "20:uint",
+                                               "DirectoryBytes":  "24:uint",
+                                               "SectionTableOffset":  "28:uint",
+                                               "SectionCount":  "32:uint",
+                                               "Flags":  "36:uint",
+                                               "WorldSeed":  "40:uint",
+                                               "AppVersionHash":  "44:uint",
+                                               "SchemaHash":  "48:uint",
+                                               "Reserved0":  "52:uint",
+                                               "Reserved1":  "56:uint",
+                                               "Reserved2":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "H8DataSectionEntry",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "SectionId":  "0:uint",
+                                               "RecordSize":  "4:uint",
+                                               "Count":  "8:uint",
+                                               "OffsetBytes":  "12:uint"
+                                           }
+                           }
+                       ]
+}

@@ -1,0 +1,144 @@
+﻿{
+    "schema":  "hecton8.async_native_lifetime_1325_reaudit31.v1",
+    "agentId":  "1325",
+    "scannedFiles":  3,
+    "asyncMethods":  [
+                         {
+                             "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                             "startLine":  4813,
+                             "endLine":  4903,
+                             "signature":  "private async Awaitable RunIndexedSectorPagingAsync(int2 centerSector)"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                             "startLine":  5001,
+                             "endLine":  5031,
+                             "signature":  "private async Awaitable AwaitSectorPrefabPrewarmAsync(PersistentWorldDeltaRecord[] stagedRecords)"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                             "startLine":  5781,
+                             "endLine":  5935,
+                             "signature":  "private async Awaitable\u003cbool\u003e SnapshotResidentSectorOverridesAsync(PagedSectorHashWindow desiredSectorHashes)"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                             "startLine":  6345,
+                             "endLine":  6413,
+                             "signature":  "private async Awaitable RunSectorOverrideCommitAsync()"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                             "startLine":  2043,
+                             "endLine":  2118,
+                             "signature":  "private async Awaitable FlushWfcOutpostDirtyPayloadAsync(ulong sectorHash, ulong payloadHash, uint frame)"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                             "startLine":  2859,
+                             "endLine":  3253,
+                             "signature":  "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                             "startLine":  3595,
+                             "endLine":  3956,
+                             "signature":  "public async Awaitable LoadGameAsync(string slotName)"
+                         }
+                     ],
+    "asyncMethodCount":  7,
+    "findings":  [
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  2913,
+                         "signature":  "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)",
+                         "text":  "NativeArray\u003cPersistentWorldDeltaRecord\u003e.ReadOnly persistentWorldDeltaSnapshot = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  2914,
+                         "signature":  "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)",
+                         "text":  "NativeArray\u003cPersistentWorldDeltaRecord\u003e persistentWorldDeltaSnapshotOwner = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  2915,
+                         "signature":  "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)",
+                         "text":  "NativeArray\u003cEcosystemSectorSaveRecord\u003e.ReadOnly ecosystemSectorSnapshot = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  2916,
+                         "signature":  "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)",
+                         "text":  "NativeArray\u003cEcosystemSectorSaveRecord\u003e ecosystemSectorSnapshotOwner = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  2917,
+                         "signature":  "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)",
+                         "text":  "NativeArray\u003cuint\u003e packedQuestStateSnapshot = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  2919,
+                         "signature":  "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)",
+                         "text":  "NativeArray\u003cbyte\u003e voxelDeltaSnapshot = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  3022,
+                         "signature":  "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)",
+                         "text":  "persistentWorldDeltaSnapshotOwner = new NativeArray\u003cPersistentWorldDeltaRecord\u003e("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  3056,
+                         "signature":  "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)",
+                         "text":  "NativeArray\u003cPersistentWorldDeltaRecord\u003e copiedView = copiedPersistentWorldDeltas \u003c persistentWorldDeltaSnapshotOwner.Length"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  3068,
+                         "signature":  "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)",
+                         "text":  "NativeArray\u003cEcosystemSectorSaveRecord\u003e.ReadOnly ecosystemView = ecosystemDirector.GetSaveSnapshotArray();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  3071,
+                         "signature":  "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)",
+                         "text":  "ecosystemSectorSnapshotOwner = new NativeArray\u003cEcosystemSectorSaveRecord\u003e("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  3092,
+                         "signature":  "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)",
+                         "text":  "packedQuestStateSnapshot = new NativeArray\u003cuint\u003e("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  3639,
+                         "signature":  "public async Awaitable LoadGameAsync(string slotName)",
+                         "text":  "NativeArray\u003cbyte\u003e loadedVoxelDeltaSnapshot = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  3640,
+                         "signature":  "public async Awaitable LoadGameAsync(string slotName)",
+                         "text":  "NativeArray\u003cSaveLoadCandidate\u003e candidates = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  3675,
+                         "signature":  "public async Awaitable LoadGameAsync(string slotName)",
+                         "text":  "out NativeArray\u003cbyte\u003e candidateVoxelDeltaSnapshot,"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "line":  3742,
+                         "signature":  "public async Awaitable LoadGameAsync(string slotName)",
+                         "text":  "out NativeArray\u003cbyte\u003e recoveryVoxelDeltaSnapshot,"
+                     }
+                 ],
+    "findingCount":  15,
+    "generatedAtUtc":  "2026-05-27T08:35:48.1393155Z"
+}

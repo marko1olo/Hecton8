@@ -75,6 +75,14 @@ Shader "Hecton8/Submarine/SonarHoloMapStencil"
                 return 1.0 - abs(frac(value) * 2.0 - 1.0);
             }
 
+            float ApproxRadialLength(float2 value)
+            {
+                float2 a = abs(value);
+                float majorAxis = max(a.x, a.y);
+                float minorAxis = min(a.x, a.y);
+                return majorAxis + minorAxis * 0.375;
+            }
+
             float LowPowerFlicker01(float2 positionOS)
             {
                 float lowPower = saturate((0.15 - _SubInteriorLightingState.z) * 6.666667);
@@ -97,7 +105,7 @@ Shader "Hecton8/Submarine/SonarHoloMapStencil"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-                float radial = length(input.positionOS.xz);
+                float radial = ApproxRadialLength(input.positionOS.xz);
                 float sweep = TrianglePulse01(radial * 9.0 - _HectonSubOsSonarSweep.x * 2.5);
                 float emergency = saturate(_SubInteriorLightingState.y);
                 float gate = max(sweep * saturate(_HectonSubOsSonarSweep.y + 0.18), 0.18);

@@ -33,7 +33,6 @@ namespace Hecton8.Atmosphere
         private const float ExponentialBlendCompletion = 0.99f;
         private const float ExponentialBlendRateScale = 4.6051702f;
         private const float ResolveRetryInterval = 2f;
-        private const float LightningFlashSeconds = 0.1f;
         private const float SpeedOfSoundMetersPerSecond = HectonPhysicsContract.SoundSpeedAirMetersPerSecondConst;
         private const float ThunderAcousticShockMinRadiusMeters = 72f;
         private const float ThunderAcousticShockMaxRadiusMeters = 240f;
@@ -297,7 +296,10 @@ namespace Hecton8.Atmosphere
         private Transform _playerTransform;
         private IBuoyancyAirStateReadModel _playerBuoyancy;
 
+        private IFluidSurfaceCurrentReadModel _fluidSurfaceCurrent;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private IHectonOceanKinematics _oceanKinematics;
+        private IAudioService _audioRuntime;
         private HectonOceanSurfaceWeatherState _oceanSurfaceDefaults = new HectonOceanSurfaceWeatherState
         {
             FoamStrength = 1f,
@@ -344,10 +346,18 @@ namespace Hecton8.Atmosphere
         private bool _weatherJobPrimed;
         private int _nextSurfaceWeatherPerformanceWarningFrame;
 
+        private static HectonSurfaceWeatherDirector s_activeRuntimeInstance;
+
         /// <summary>
         /// Active surface weather director instance for the loaded world scene.
         /// </summary>
-        public static HectonSurfaceWeatherDirector Instance => GlobalRegistry.SurfaceWeather;
+        public static HectonSurfaceWeatherDirector Instance => s_activeRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_activeRuntimeInstance = null;
+        }
 
         /// <summary>
         /// Weather family currently targeted by the director.
@@ -392,6 +402,9 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
             TryAssignEditorAuthoringDefaults();
 #endif
+            if (!Application.isPlaying)
+                return;
+
             CacheDataVaultCold();
             CachePlayerRuntimeContext(Hecton8.Core.GlobalRegistry.Player);
             TryResolveDependencies(true);
@@ -400,6 +413,9 @@ namespace Hecton8.Atmosphere
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
             CacheDataVaultCold();
             CachePlayerRuntimeContext(Hecton8.Core.GlobalRegistry.Player);
             TryRegisterService();
@@ -415,6 +431,12 @@ namespace Hecton8.Atmosphere
 
         private void OnDisable()
         {
+            if (!Application.isPlaying)
+            {
+                ClearEditorRuntimeResidue();
+                return;
+            }
+
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterTickManagers();
             TryUnregisterHotSwapListener();
@@ -422,6 +444,7 @@ namespace Hecton8.Atmosphere
             RefreshPlayerMovementSubscription(null);
             _playerRuntimeContext = null;
             _stormEquipmentPulseTimer = 0f;
+            DisposeWeatherMathBuffers(forceCompletePendingJob: true);
             ClearWeatherBindings();
             FlushWeatherShaderGlobals();
             TryUnregisterService();
@@ -429,14 +452,36 @@ namespace Hecton8.Atmosphere
 
         private void OnDestroy()
         {
+            if (!Application.isPlaying)
+            {
+                ClearEditorRuntimeResidue();
+                return;
+            }
+
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterTickManagers();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
             RefreshPlayerMovementSubscription(null);
             _stormEquipmentPulseTimer = 0f;
-            DisposeWeatherMathBuffers();
+            DisposeWeatherMathBuffers(forceCompletePendingJob: true);
 
+        }
+
+        private void ClearEditorRuntimeResidue()
+        {
+            HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterTickManagers();
+            TryUnregisterHotSwapListener();
+            TryUnregisterService();
+            RefreshPlayerMovementSubscription(null);
+            _playerRuntimeContext = null;
+            _stormEquipmentPulseTimer = 0f;
+            DisposeWeatherMathBuffers(forceCompletePendingJob: true);
+            _runtimeStateInitialized = false;
+            _weatherShaderDirty = false;
+            _weatherShaderClearPending = false;
+            _bindingsApplied = false;
         }
 
         public void Tick(float deltaTime)
@@ -541,6 +586,8 @@ namespace Hecton8.Atmosphere
 
             GlobalRegistry.RegisterSurfaceWeatherRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.SurfaceWeather, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -549,6 +596,8 @@ namespace Hecton8.Atmosphere
                 return;
 
             GlobalRegistry.UnregisterSurfaceWeatherRuntime(this);
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
             _serviceRegistered = false;
         }
 
@@ -557,12 +606,31 @@ namespace Hecton8.Atmosphere
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Player)
-                return;
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                RefreshPlayerMovementReference();
+                RefreshPlayerMovementSubscription();
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
+            {
+                _fluidSurfaceCurrent = currentService as IFluidSurfaceCurrentReadModel;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                RefreshOceanKinematicsBinding();
+                _cachedOceanDefaults = false;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+            {
+                _audioRuntime = currentService as IAudioService;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
+            {
+                celestialEngine = currentService as HectonCelestialEngine;
+            }
 
-            CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
-            ResolvePlayerMovementReference();
-            RefreshPlayerMovementSubscription();
             _ = previousService;
         }
 
@@ -577,18 +645,21 @@ namespace Hecton8.Atmosphere
 
             _nextResolveTime = now + ResolveRetryInterval;
 
-            ResolvePlayerMovementReference();
-            ResolveSceneOwnedReferences();
-            ResolveOceanKinematics();
+            CacheFluidRuntimeCold();
+            CacheOceanKinematicsServiceCold();
+            CacheAudioRuntimeCold();
+            RefreshPlayerMovementReference();
+            RefreshSceneOwnedReferences();
+            RefreshOceanKinematicsBinding();
 
             if (weatherVfxRig == null)
-                ResolveOwnedWeatherVfxRig();
+                RefreshOwnedWeatherVfxRig();
 
             RefreshPlayerMovementSubscription();
             CacheOceanDefaults();
         }
 
-        private void ResolvePlayerMovementReference()
+        private void RefreshPlayerMovementReference()
         {
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null && playerContext.PlayerMovement != null)
@@ -620,7 +691,7 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        private IHectonOceanKinematics ResolveOceanKinematics()
+        private IHectonOceanKinematics RefreshOceanKinematicsBinding()
         {
             if (oceanKinematicsProvider is IHectonOceanKinematics assignedProvider)
             {
@@ -628,14 +699,34 @@ namespace Hecton8.Atmosphere
                 return _oceanKinematics;
             }
 
-            IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
             _oceanKinematics = oceanKinematicsService != null
                 ? oceanKinematicsService.ActiveProvider
                 : null;
             return _oceanKinematics;
         }
 
-        private void ResolveSceneOwnedReferences()
+        private IHectonOceanKinematics ReadCachedOceanKinematics()
+        {
+            return _oceanKinematics;
+        }
+
+        private void CacheFluidRuntimeCold()
+        {
+            _fluidSurfaceCurrent = GlobalRegistry.FluidSurfaceCurrent;
+        }
+
+        private void CacheOceanKinematicsServiceCold()
+        {
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
+        }
+
+        private void CacheAudioRuntimeCold()
+        {
+            _audioRuntime = GlobalRegistry.Audio;
+        }
+
+        private void RefreshSceneOwnedReferences()
         {
             if (underwaterVisuals == null)
                 TryGetComponent(out underwaterVisuals);
@@ -647,7 +738,7 @@ namespace Hecton8.Atmosphere
                 TryGetComponent(out acousticZoneController);
 
             if (weatherVfxRig == null)
-                ResolveOwnedWeatherVfxRig();
+                RefreshOwnedWeatherVfxRig();
 
             if (_playerTransform != null)
             {
@@ -665,7 +756,7 @@ namespace Hecton8.Atmosphere
             celestialEngine = GlobalRegistry.CelestialEngine;
         }
 
-        private void ResolveOwnedWeatherVfxRig()
+        private void RefreshOwnedWeatherVfxRig()
         {
             Transform rigTransform = transform.Find("SurfaceWeatherVfxRig");
             if (rigTransform != null)
@@ -699,7 +790,7 @@ namespace Hecton8.Atmosphere
             if (_cachedOceanDefaults)
                 return;
 
-            IHectonOceanKinematics oceanKinematics = ResolveOceanKinematics();
+            IHectonOceanKinematics oceanKinematics = ReadCachedOceanKinematics();
             if (oceanKinematics == null || !oceanKinematics.TryGetSurfaceWeatherState(out _oceanSurfaceDefaults))
                 return;
 
@@ -717,6 +808,7 @@ namespace Hecton8.Atmosphere
             if (_runtimeStateInitialized)
                 return;
 
+            WeatherEvents.PrepareCold();
             if (!EnsureWeatherMathBuffers())
                 return;
             RuntimeWeatherProfile initialProfile;
@@ -751,18 +843,19 @@ namespace Hecton8.Atmosphere
             return TryOpenWeatherJobOutput(out _);
         }
 
-        private void DisposeWeatherMathBuffers()
+        private bool DisposeWeatherMathBuffers(bool forceCompletePendingJob)
         {
             if (_weatherJobScheduled &&
-                !DispatcherJobSwap.TryComplete(ref _weatherJobHandle, forceComplete: false))
+                !DispatcherJobSwap.TryComplete(ref _weatherJobHandle, forceComplete: forceCompletePendingJob))
             {
-                return;
+                return false;
             }
 
             ReleaseWeatherJobOutputHandle(_dataVault);
             _weatherJobOutputHandle = default;
             _weatherJobScheduled = false;
             _weatherJobPrimed = false;
+            return true;
         }
 
         private void RunWeatherMathJobCold()
@@ -770,7 +863,7 @@ namespace Hecton8.Atmosphere
             if (!_runtimeStateInitialized)
                 return;
 
-            if (!TryOpenOrAcquireWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
+            if (!TryOpenWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
                 return;
 
             SurfaceWeatherMathJob job = new SurfaceWeatherMathJob
@@ -793,7 +886,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             _weatherJobScheduled = false;
-            if (!TryOpenOrAcquireWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
+            if (!TryOpenWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
                 return;
 
             CommitWeatherMathOutput(weatherJobOutput[0]);
@@ -805,7 +898,7 @@ namespace Hecton8.Atmosphere
             if (!_runtimeStateInitialized || _weatherJobScheduled)
                 return;
 
-            if (!TryOpenOrAcquireWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
+            if (!TryOpenWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
                 return;
 
             SurfaceWeatherMathJob job = new SurfaceWeatherMathJob
@@ -816,15 +909,6 @@ namespace Hecton8.Atmosphere
 
             _weatherJobHandle = job.Schedule();
             _weatherJobScheduled = true;
-        }
-
-        private bool TryOpenOrAcquireWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput)
-        {
-            weatherJobOutput = default;
-            if (!EnsureWeatherMathBuffers())
-                return false;
-
-            return TryOpenWeatherJobOutput(out weatherJobOutput);
         }
 
         private bool TryOpenWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput)
@@ -1147,7 +1231,7 @@ namespace Hecton8.Atmosphere
 
         private float ResolveSurfaceY(Vector3 followPosition)
         {
-            IFluidSurfaceCurrentReadModel fluidSurface = GlobalRegistry.FluidSurfaceCurrent;
+            IFluidSurfaceCurrentReadModel fluidSurface = _fluidSurfaceCurrent;
             if (fluidSurface != null)
                 return fluidSurface.CurrentWaterLevelY;
 
@@ -1207,7 +1291,7 @@ namespace Hecton8.Atmosphere
 
         private void TriggerLightning(float electricalActivity)
         {
-            float flashDuration = LightningFlashSeconds;
+            float flashDuration = SurfaceThunderMath.ResolveLightningFlashDurationSeconds(_currentState.lightningFlashDuration);
             float flashBase = math.max(0f, _currentState.lightningFlashIntensity);
             float flashVariance = math.lerp(0.7f, 1f, NextRandom01());
             float unscaledTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
@@ -1398,7 +1482,12 @@ namespace Hecton8.Atmosphere
             float stormBoost = math.lerp(0.65f, 1f, electricalActivity);
 
             _pendingThunderPosition = strikePosition;
-            _pendingThunderDelay = thunderDistance / SpeedOfSoundMetersPerSecond;
+            _pendingThunderDelay = SurfaceThunderMath.ResolveThunderDelaySeconds(
+                thunderDistance,
+                SpeedOfSoundMetersPerSecond,
+                _currentState.thunderDelayMin,
+                _currentState.thunderDelayMax,
+                _currentState.thunderPropagationDistanceScale);
             _pendingThunderVolume = loudness * stormBoost;
             _pendingThunderPitch = math.lerp(
                 _currentState.thunderPitchMin,
@@ -1763,15 +1852,15 @@ namespace Hecton8.Atmosphere
                     math.max(0f, bindings.localRainDensityMultiplier),
                     math.max(0.1f, bindings.localRainAreaScale),
                     math.saturate(bindings.localRainExposure)));
-            if (GlobalRegistry.CelestialEngine == null)
+            if (celestialEngine == null)
                 Shader.SetGlobalFloat(_LightningFlashId, math.saturate(_lightningFlashStrength));
             _debugScreenSpaceRainShed = shedScreenSpaceRain && surfaceVfxActive;
         }
 
-        private static void PublishClearedWeatherShaderGlobals()
+        private void PublishClearedWeatherShaderGlobals()
         {
             Shader.SetGlobalFloat(_RainIntensityId, 0f);
-            if (GlobalRegistry.CelestialEngine == null)
+            if (celestialEngine == null)
                 Shader.SetGlobalFloat(_LightningFlashId, 0f);
             Shader.SetGlobalFloat(_ScreenSpaceRainEnabledId, 0f);
             Shader.SetGlobalVector(_ScreenSpaceRainParamsId, Vector4.zero);
@@ -1803,7 +1892,7 @@ namespace Hecton8.Atmosphere
             if (!_cachedOceanDefaults)
                 return;
 
-            IHectonOceanKinematics oceanKinematics = ResolveOceanKinematics();
+            IHectonOceanKinematics oceanKinematics = ReadCachedOceanKinematics();
             if (oceanKinematics == null)
                 return;
 
@@ -1825,7 +1914,7 @@ namespace Hecton8.Atmosphere
             if (!_cachedOceanDefaults)
                 return;
 
-            IHectonOceanKinematics oceanKinematics = ResolveOceanKinematics();
+            IHectonOceanKinematics oceanKinematics = ReadCachedOceanKinematics();
             if (oceanKinematics == null)
                 return;
 
@@ -1889,7 +1978,7 @@ namespace Hecton8.Atmosphere
             if (thunderClips == null || thunderClips.Length == 0)
                 return;
 
-            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            IAudioService audioManager = _audioRuntime;
             if (audioManager == null)
                 return;
 
@@ -2573,7 +2662,7 @@ namespace Hecton8.Atmosphere
                 acousticZoneController = GetComponent<AcousticZoneController>();
 
             if (weatherVfxRig == null)
-                ResolveOwnedWeatherVfxRig();
+                RefreshOwnedWeatherVfxRig();
 
             if (celestialEngine == null)
                 celestialEngine = GlobalRegistry.CelestialEngine;
@@ -2581,7 +2670,7 @@ namespace Hecton8.Atmosphere
 
         private void Reset()
         {
-            if (EditorApplication.isCompiling || !Application.isPlaying)
+            if (EditorApplication.isCompiling)
                 return;
 
             TryAssignEditorAuthoringDefaults();
@@ -2590,7 +2679,7 @@ namespace Hecton8.Atmosphere
 
         private void OnValidate()
         {
-            if (EditorApplication.isCompiling || !Application.isPlaying)
+            if (EditorApplication.isCompiling)
                 return;
 
             TryAssignEditorAuthoringDefaults();

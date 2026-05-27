@@ -1,0 +1,358 @@
+﻿{
+    "schema":  "hecton8.logistics_primary_native_alias_ledger.v1",
+    "agentId":  "1319",
+    "path":  "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+    "totalForbiddenFields":  50,
+    "fields":  [
+                   {
+                       "line":  1496,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cLogisticsNode\u003e",
+                       "name":  "_nodeBuffer",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1497,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_edgeOffsets",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1498,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_edgeDestinations",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1499,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_edgeConductance",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1500,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_edgeCapacity",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1501,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_edgeWriteCursor",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1502,
+                       "collection":  "NativeList",
+                       "type":  "NativeList\u003cTopologyEdgeRecord\u003e",
+                       "name":  "_topologyEdgeList",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1503,
+                       "collection":  "NativeList",
+                       "type":  "NativeList\u003cProducerRecord\u003e",
+                       "name":  "_producers",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1504,
+                       "collection":  "NativeList",
+                       "type":  "NativeList\u003cConsumerRecord\u003e",
+                       "name":  "_consumers",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1505,
+                       "collection":  "NativeParallelHashMap",
+                       "type":  "NativeParallelHashMap\u003cint, float\u003e",
+                       "name":  "_producerMap",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1506,
+                       "collection":  "NativeParallelHashMap",
+                       "type":  "NativeParallelHashMap\u003cint, float\u003e",
+                       "name":  "_consumerMap",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1507,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_parents",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1508,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_ranks",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1509,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_componentIds",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1510,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_componentSizes",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1511,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_rootToComponent",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1512,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_traversalQueue",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1513,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cbyte\u003e",
+                       "name":  "_visited",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1514,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cbyte\u003e",
+                       "name":  "_consumerStates",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1515,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_nodeNetInjection",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1516,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_nodeServedDemand",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1517,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_nodeVoltageSupplyRatio",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1518,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_nodeSourcePotential",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1519,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_nodeConductanceSum",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1520,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_nodeConductanceInverseSum",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1521,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_potentialFront",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1522,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_potentialBack",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1523,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_powerCapacities",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1524,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cbyte\u003e",
+                       "name":  "_powerNodeFlags",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1525,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cbyte\u003e.ReadOnly",
+                       "name":  "_baseAwakeState",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1526,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_edgeFlow",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1527,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cbyte\u003e",
+                       "name":  "_edgeStates",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1528,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint2\u003e",
+                       "name":  "_edgeKeys",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1529,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_runtimeConductiveEdgeCount",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1530,
+                       "collection":  "NativeParallelMultiHashMap",
+                       "type":  "NativeParallelMultiHashMap\u003cint, int\u003e",
+                       "name":  "_powerConnections",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1531,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_componentGeneration",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1532,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_componentDemand",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1533,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_componentServedDemand",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1534,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_componentRemainingSupply",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1535,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_componentSupplyRatio",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1536,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cfloat\u003e",
+                       "name":  "_componentResidualInjection",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1537,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_componentAnchorNode",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1538,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cbyte\u003e",
+                       "name":  "_componentBrownoutTier",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1539,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cTopologySummary\u003e",
+                       "name":  "_scheduledTopologySummary",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1540,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cDistributionSummary\u003e",
+                       "name":  "_scheduledDistributionSummary",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1541,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cushort\u003e",
+                       "name":  "_publishedNodeStates",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1542,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cushort\u003e",
+                       "name":  "_publishedNodeStatesBack",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1546,
+                       "collection":  "NativeParallelHashMap",
+                       "type":  "NativeParallelHashMap\u003cuint, ushort\u003e",
+                       "name":  "_publishedNodeStateMap",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1547,
+                       "collection":  "NativeParallelHashMap",
+                       "type":  "NativeParallelHashMap\u003cuint, ushort\u003e",
+                       "name":  "_publishedNodeStateBackMap",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   },
+                   {
+                       "line":  1548,
+                       "collection":  "NativeQueue",
+                       "type":  "NativeQueue\u003cint\u003e",
+                       "name":  "_bfsQueue",
+                       "ownerType":  "LogisticsNetworkGraph"
+                   }
+               ]
+}

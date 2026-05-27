@@ -13,7 +13,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Mod registry event discriminator for <see cref="ModRegistryEventPayload"/>.
     /// </summary>
-    public enum ModRegistryEventType : ushort
+    internal enum ModRegistryEventType : ushort
     {
         RuntimeRegistryChanged = 1,
         SettingsRegistryChanged = 2,
@@ -25,7 +25,7 @@ namespace Hecton8.Modding
     /// Deferred unmanaged payload for mod registry invalidation events.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = ModRegistryEventLayout.PayloadStrideBytes)]
-    public struct ModRegistryEventPayload
+    internal struct ModRegistryEventPayload
     {
         [FieldOffset(0)]
         public uint Frame;
@@ -46,7 +46,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Listener contract for deferred mod registry events.
     /// </summary>
-    public interface IModRegistryEventListener
+    internal interface IModRegistryEventListener
     {
         /// <summary>
         /// Called during the dispatcher late-frame event flush.

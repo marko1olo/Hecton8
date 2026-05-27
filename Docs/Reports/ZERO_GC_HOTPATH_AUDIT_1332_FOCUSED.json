@@ -1,0 +1,26 @@
+{
+  "schema": "hecton8.roslyn_hot_path_1332.v1",
+  "agentId": "1332",
+  "scannedFiles": 7,
+  "parseFailures": 0,
+  "hotMethods": [
+    "AccessibilitySettings.PreSimulationTick",
+    "AccessibilitySettings.ScheduleSimulation",
+    "AccessibilitySettings.PostSimulationTick",
+    "AccessibilitySettings.VisualSyncTick"
+  ],
+  "zeroGcHotPathHits": 0,
+  "bannedConstructs": [
+    "managed reference new",
+    "implicit new",
+    "interpolated string",
+    "string.Format",
+    ".ToString",
+    "LINQ Select/Where/Any/ToList",
+    "foreach",
+    "string concat suspect"
+  ],
+  "scannerHashSha256": "4eb86ab54f66884e133e3575195d1119134755231c727f41bc7f02fc3d71ed3b",
+  "verifiedAt": "2026-05-26T16:36:33+04:00",
+  "hits": []
+}

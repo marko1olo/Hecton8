@@ -133,12 +133,12 @@ namespace Hecton8.Rendering.Scatter
         private const int DoubleBufferCount = 2;
         private const int FrustumPlaneCount = 6;
         private const int TelemetryCapacity = 300;
-        private const int FallbackThreadGroupSize = 64;
         private const int BurstAuditBatchSize = 64;
         private const int VisibleCountReadbackFrameStride = 60;
         private const int IndirectArgsInstanceCountIndex = 1;
         private const int MissingRegistryRefreshStrideFrames = 120;
-        private const uint MetalMaxThreadsPerThreadGroup = 512u;
+        private const uint PortableMaxThreadsPerThreadGroup = 256u;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const float DefaultFallbackAspect = 1.7777778f;
         private const float CullingHysteresisMeters = 5f;
         private const float CullingHysteresisSeconds = 2f;
@@ -318,6 +318,7 @@ namespace Hecton8.Rendering.Scatter
         private Plane[] _cameraPlanes;
         private Vector4[] _frustumPlaneUpload;
         private readonly ScatterFrameConstants[] _frameConstantsUpload = new ScatterFrameConstants[1]; // COLD ALLOC: ScatterFrameConstants[1] - packed compute constant upload lane - owner: GpuScatterLodManager
+        private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _indirectArgsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] - cached indirect draw args initialization upload - owner: GpuScatterLodManager
         private IDataVault _registryDataVault;
         private IDataVault _dataVault;
         private VaultGenerationHandle<Matrix4x4> _vaultMatricesHandle;
@@ -350,7 +351,7 @@ namespace Hecton8.Rendering.Scatter
         private int _gpuBufferIndex;
         private int _frameConstantsUploadIndex;
         private int _scatterCullKernel = -1;
-        private int _dispatchThreadGroupSizeX = FallbackThreadGroupSize;
+        private int _dispatchThreadGroupSizeX;
         private int _blackBoxCursor;
         private int _frameIndex;
         private int _lastVisibleFloraCount;
@@ -719,7 +720,10 @@ namespace Hecton8.Rendering.Scatter
                 return true;
 
             _gpuReady = false;
-            if (scatterCullCompute == null || floraMesh == null || !HasAnyConfiguredMaterial())
+            if (scatterCullCompute == null ||
+                !SystemInfo.supportsComputeShaders ||
+                floraMesh == null ||
+                !HasAnyConfiguredMaterial())
                 return false;
 
             RefreshMissingRegistryServicesIfNeeded();
@@ -1066,7 +1070,7 @@ namespace Hecton8.Rendering.Scatter
             ReleaseBuffer(ref _frameConstantsBufferB);
             _activeFrameConstantsBuffer = null;
             InvalidateIndirectArgsCache();
-            _dispatchThreadGroupSizeX = FallbackThreadGroupSize;
+            _dispatchThreadGroupSizeX = 0;
             _visibleCountReadbackPending = false;
             _visibleStateDirty = false;
             _gpuReady = false;
@@ -1105,22 +1109,15 @@ namespace Hecton8.Rendering.Scatter
                 return;
             }
 
-            var argsWrite = _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            try
+            _indirectArgsUpload[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
-                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
-                {
-                    indexCountPerInstance = indexCount,
-                    instanceCount = 0u,
-                    startIndex = startIndex,
-                    baseVertexIndex = baseVertex,
-                    startInstance = 0u
-                };
-            }
-            finally
-            {
-                _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
-            }
+                indexCountPerInstance = indexCount,
+                instanceCount = 0u,
+                startIndex = startIndex,
+                baseVertexIndex = baseVertex,
+                startInstance = 0u
+            };
+            _argsBuffer.SetData(_indirectArgsUpload, 0, 0, 1);
 
             _boundMesh = mesh;
             _boundIndexCount = indexCount;
@@ -1312,6 +1309,13 @@ namespace Hecton8.Rendering.Scatter
 
         private void DispatchCull(int activeCount)
         {
+            int dispatchGroups = ResolveDispatchGroups(activeCount, _dispatchThreadGroupSizeX);
+            if (dispatchGroups <= 0)
+            {
+                RecordBlackBox(BlackBoxFlagInvalidThreadGroup, activeCount);
+                return;
+            }
+
             _visibleIndexBuffer.SetCounterValue(0u);
             _visibleMatrixBuffer.SetCounterValue(0u);
 
@@ -1326,8 +1330,8 @@ namespace Hecton8.Rendering.Scatter
                 cullDistance * cullDistance,
                 ResolveSafeLocalBoundsCenter(),
                 ResolveSafeLocalBoundsExtents());
-            int threadGroupSizeX = math.max(1, _dispatchThreadGroupSizeX);
-            scatterCullCompute.Dispatch(_scatterCullKernel, math.max(1, (activeCount + threadGroupSizeX - 1) / threadGroupSizeX), 1, 1);
+
+            scatterCullCompute.Dispatch(_scatterCullKernel, dispatchGroups, 1, 1);
             GraphicsBuffer.CopyCount(_visibleMatrixBuffer, _argsBuffer, sizeof(uint));
             _visibleStateDirty = true;
         }
@@ -2069,28 +2073,45 @@ namespace Hecton8.Rendering.Scatter
 
         private static int ResolveKernel(ComputeShader compute, string kernelName)
         {
-            if (compute == null || !compute.HasKernel(kernelName))
+            if (compute == null || !SystemInfo.supportsComputeShaders || !compute.HasKernel(kernelName))
                 return -1;
 
-            return compute.FindKernel(kernelName);
+            int kernel = compute.FindKernel(kernelName);
+            return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
         }
 
         private bool TryResolveDispatchThreadGroupSize()
         {
-            if (scatterCullCompute == null || _scatterCullKernel < 0)
+            if (scatterCullCompute == null ||
+                _scatterCullKernel < 0 ||
+                !SystemInfo.supportsComputeShaders ||
+                !scatterCullCompute.IsSupported(_scatterCullKernel))
                 return false;
 
             scatterCullCompute.GetKernelThreadGroupSizes(_scatterCullKernel, out uint groupX, out uint groupY, out uint groupZ);
             ulong totalThreads = (ulong)groupX * groupY * groupZ;
-            if (groupX == 0u || groupY == 0u || groupZ == 0u || totalThreads > MetalMaxThreadsPerThreadGroup)
+            if (groupX == 0u ||
+                groupY != 1u ||
+                groupZ != 1u ||
+                totalThreads > PortableMaxThreadsPerThreadGroup ||
+                groupX > int.MaxValue)
             {
-                _dispatchThreadGroupSizeX = FallbackThreadGroupSize;
+                _dispatchThreadGroupSizeX = 0;
                 RecordBlackBox(BlackBoxFlagInvalidThreadGroup, ResolveSafeActiveCount());
                 return false;
             }
 
-            _dispatchThreadGroupSizeX = groupX > 2147483647u ? FallbackThreadGroupSize : (int)groupX;
+            _dispatchThreadGroupSizeX = (int)groupX;
             return true;
+        }
+
+        private static int ResolveDispatchGroups(int count, int threadGroupSize)
+        {
+            if (count <= 0 || threadGroupSize <= 0)
+                return 0;
+
+            long groups = ((long)count + threadGroupSize - 1L) / threadGroupSize;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private static bool IsHighQuality(float qualityWeight01)

@@ -3,21 +3,11 @@
 Date: 2026-05-19
 Status: ENVELOPE-ONLY RUNTIME PLAYBOOK / NOT EXECUTED IN THIS PASS
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
-
-Owner prompt: MODDING_API_SCHEMA_BUILDER  
+Owner domain: Modding API static contract
 Companion files:
 
 - `Docs/Modding/Signal_Schema.json`
@@ -78,16 +68,26 @@ Required evidence:
 
 - `Validate_Mod_API_Static.ps1` reports `PASS` or records a precise static failure.
 - Package manifest includes `RequiredAPIVersion` and `ModPriority`.
+- Package manifest uses canonical mod id and dependency ids: lowercase letter/digit segments separated by single `.`, `_`, or `-`; no whitespace, separator-only ids, path-ish ids, or reserved filesystem device names.
+- Explicit `EntryAssembly`, when present for legacy-source audit fixtures, is a package-local `.dll` file name only.
+- Blank or anonymous execution scope cannot satisfy public facade owner guards; active scope requires a non-empty mod id and non-zero owner hash.
 - Package declares capabilities that match emitted opcode families.
 - No managed entry path is declared.
+- Package DLL file names and assembly metadata identities do not use reserved engine/runtime names: `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, or `netstandard`; the cold gate scans every top-level package DLL and the SDK builder has removed stale output DLLs.
 - No loose runtime asset/content file is discovered as a runtime ingress path.
+- Public `HectonAPI.Events` subscribe/publish calls outside active `ModExecutionScope` throw `IllegalContractException` before reporting envelope-only quarantine status.
+- `SubscribeNative` native byte payload sources have explicit schema-checked layouts: `InteractionEventPayload = 32` bytes and `CraftingEventPayload = 64` bytes.
+- Public `RequestFuture` calls outside active `ModExecutionScope` or with mismatched `ModderSignature` throw `IllegalContractException`.
+- Public legacy command facade calls (`Request`, `RequestAup`, `RequestRenderInstance`) outside active `ModExecutionScope` throw `IllegalContractException`; inside active scope they return quarantine `false`.
+- Resource hash registration rejects any `modId` that does not match the active `ModExecutionScope`.
+- Public `HectonAPI.Events.Publish<TPayload>` rejects engine-owned payload types when managed event bridges are exercised by a first-party harness.
 
 ### Step E2 - Unity Load Gate
 
 Start Unity and load:
 
 ```text
-00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD
+00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD
 ```
 
 Required evidence:
@@ -100,7 +100,7 @@ Required evidence:
 
 ### Step E3 - Valid Envelope Gate
 
-Submit a small deterministic stream of valid envelopes through `RequestFuture`, `RequestRawEnvelopeStream`, or `RequestFromExternalQueue`.
+Submit a small deterministic stream of valid envelopes through public `HectonAPI.Commands.RequestFuture` and, in a separate first-party harness only, through internal loader bulk-ingress routes.
 
 Required evidence:
 
@@ -206,9 +206,20 @@ Source-backed hooks:
 - `HectonAPI.Events.Subscribe<TPayload>`
 - `HectonAPI.Events.OnPlayerSpawned`
 - `HectonAPI.Events.OnBiomeChanged`
+- `HectonAPI.Events` active `ModExecutionScope` and subscriber owner guards
+- `HectonAPI.Commands.RequestFuture`
+- FutureCommand output SignalBus DTOs are internal first-party lanes
+- Mod registry invalidation and mod menu setting snapshot DTOs are internal engine UI lanes
 - `HectonAPI.Commands.Request`
 - `HectonAPI.Commands.RequestAup`
 - `HectonAPI.Commands.RequestRenderInstance`
+- `HectonAPI.Resources.TryResolvePrefab`
+- `HectonAPI.Resources.TryResolveAudioClip`
+- `HectonAPI.Resources.TryResolveTexture`
+- `HectonAPI.Resources.Proxy` property active-scope guard
+- `HectonAPI.World.IsGameReady` property active-scope guard
+- `HectonAPI.Telemetry.Publish`
+- `HectonAPI.Localization.InjectBabelEnvelope`
 - `HectonAPI.SaveState.SetModString`
 - `HectonAPI.SaveState.GetModString`
 - `ModEventProjectionBridge.ProjectPostSimulation`
@@ -219,7 +230,7 @@ Source-backed hooks:
 Source-backed limits:
 
 - Current mod API version: 2.
-- Projected event cap: `round(lerp(10, 50, GlobalQualityWeight))`, before backlog and thermal-pressure reductions.
+- Projected event cap: `round(lerp(10, 50, smoothstep(saturate(GlobalQualityWeight01))))`, clamped to `10..50`, before backlog and thermal-pressure reductions.
 - Command drain cap: 256 per late frame.
 - Per-mod command cap: 128 per tick.
 - Raycast result cap: 128.
@@ -229,7 +240,7 @@ Source-backed limits:
 - Manifest file: `mod.json`.
 - Manifest field count: 9.
 - `ModMetadata` field count: 8.
-- `ModRuntimeInfo` field count: 7.
+- Internal `ModRuntimeInfo` field count: 7.
 - `IHectonMod` lifecycle method count: 3.
 - Mod save payload cap: 16352 bytes.
 - Public event method count: 7.
@@ -257,8 +268,10 @@ Required behavior:
    - `OnBiomeChanged`
 3. `OnInitialize` records `HectonAPI.World.IsGameReady` and `TryGetPlayerEntityHash`.
 4. `OnInitialize` writes and reads one namespaced `HectonAPI.SaveState` key.
-5. `OnUnload` disposes every `HectonEventSubscription` and clears mod-owned counters.
+5. `OnUnload` disposes every `HectonEventSubscription` under the owning mod execution scope and clears mod-owned counters.
 6. No callback may allocate known managed collections, use reflection, call `GameObject.Find`, or store `ReadOnlySpan<byte>` from `SubscribeNative`.
+
+7. `SubscribeNative` Interaction callbacks must receive 32-byte `InteractionEventPayload` copies; Crafting callbacks must receive 64-byte `CraftingEventPayload` copies. Decode only by schema offsets and discard the span before callback return.
 
 Test mod counters must be primitive fields only:
 
@@ -291,46 +304,89 @@ powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_AP
 Required result:
 
 - `Status = PASS`
-- `SourceSignals = 162`
+- `SourceSignals = 173`
 - `AllowedProjectedSignals = 2`
-- `DeniedByDefaultSignals = 160`
+- `DeniedByDefaultSignals = 171`
 - `ProjectionBridgeSignals = CombatDamageSignal,WeatherChangedSignal`
 - `AcceptedCommandOpcodes = 8`
+- `FutureCommandAllowedOpcodeCount = 8`
+- `KernelTuningProfileCount = 3`
 - `CommandRejectReasons = 19`
-- `PublicApiSurfaces = 16`
-- `PublicApiMethods = 35`
+- `PublicApiSurfaces = 15`
+- `PublicApiMethods = 26`
 - `PublicApiProperties = 2`
+- `InternalForbiddenApiMethods = 18`
 - `ModEventDtoSizeBytes = 64`
 - `ModEventDtoFieldOffsets = 15`
 - `ModCommandSizeBytes = 64`
+- `ModPlayerSpawnedEventSizeBytes = 24`
+- `ModBiomeChangedEventSizeBytes = 24`
+- `NativeBytePayloadLayoutsChecked = True`
+- `NativeInteractionEventPayloadSizeBytes = 32`
+- `NativeCraftingEventPayloadSizeBytes = 64`
+- `ModAupCommandSizeBytes = 120`
 - `ModAupResponseSizeBytes = 64`
+- `ModRenderInstanceCommandSizeBytes = 80`
+- `ModRaycastResultPayloadSizeBytes = 48`
+- `ModInteractionRejectedPayloadSizeBytes = 16`
+- `ModCriticalMemoryEvictionPayloadSizeBytes = 24`
 - `CurrentApiVersion = 2`
 - `ManifestFieldCount = 9`
+- `SdkBuilderManifestFieldCount = 9`
+- `SdkBuilderManifestMatchesLoader = True`
+- `ManagedAssemblyIdentityReservedNamesBlocked = True`
 - `ModMetadataFieldCount = 8`
 - `ModRuntimeInfoFieldCount = 7`
 - `LifecycleMethodCount = 3`
 - `SaveStatePublicMethods = 2`
+- `SaveStateStoreRequiresScopedOrEngineOwner = True`
 - `ModPayloadMaxBytes = 16352`
 - `PublicEventMethodCount = 7`
 - `NativeEventKindCount = 2`
+- `NativeBytePayloadLayoutsChecked = True`
 - `ProjectedEventKindCountIncludingNone = 3`
 - `NativeQueueBridgePublishLaneCount = 2`
 - `MaxEventDispatchDepth = 5`
 - `CallbackWatchdogMilliseconds = 2`
+- `PublishRejectsEngineOwnedPayloads = True`
+- `PublicEventFacadesRequireScopeBeforeEnvelopeOnly = True`
+- `HectonEventBusPublicStaticMembersForbidden = True`
+- `FutureCommandSandboxPublicStaticMembersForbidden = True`
+- `MockModQueueMembersInternalOnly = True`
+- `HectonModHooksPublicStaticMembersForbidden = True`
+- `ModCommandDispatcherPublicStaticMembersForbidden = True`
+- `ProjectedEventBridgeRejectsAnonymousSubscribers = True`
+- `EventChannelsRejectAnonymousSubscribers = True`
+- `ProjectedEventCapUsesSmoothContinuousCurve = True`
+- `GameEventPayloadMembersInternalOnly = True`
+- `EngineOwnedPublishForbiddenPayloadCount = 11`
+- `FutureCommandSandboxConstantsPublic = False`
+- `FutureCommandEnvelopeExposesSizeBytes = True`
+- `FutureSubtitleCueAliasesReserved = True`
+- `ModRuntimeInfoMembersInternalOnly = True`
+- `LegacyCommandFacadesRequireActiveScope = True`
+- `ModRegistryListenersUsePrivateAdapters = True`
 - `ChangeControlChecklistPath = Docs/Modding/Change_Control_Checklist.md`
 - `PublicResourceMethodCount = 3`
 - `ResourceKindCount = 3`
 - `ResourceRegistryCapacity = 256`
-- `PublicContentMethodCount = 14`
+- `ResourceRegistryRejectsForgedOwner = True`
+- `PublicContentMethodCount = 6`
 - `RawTextureMaxBytes = 8388608`
 - `RawTextureMaxDimension = 2048`
+
+Static opcode evidence: `TriggerSubtitleCue` and `SubtitleCue` are reserved subtitle aliases. They must be absent from `allowed_opcodes.csv`, `GenerateEmergencyMockOpcodes()`, and the editor runtime opcode tuner until localization owner proof exists.
+
+Static loader-diagnostic evidence: `ModRuntimeInfo` and every member in it must remain internal-only. No public DTO may expose `DirectoryPath`, `AssetBundlePath`, load status, or loader failure text.
+
+Static managed-event evidence: `HectonGameEvents` must remain internal-only legacy first-party payload infrastructure. No public constructor or member may expose `ItemData`, `BuildableData`, `HectonSurvivalSystem`, or survival records as mod API handles.
 
 ### Step 2 - Unity Load Gate
 
 Start Unity and load the normal scene flow:
 
 ```text
-00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD
+00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD
 ```
 
 Required evidence:
@@ -353,7 +409,7 @@ Required evidence:
 - Test mod receives `ModEventDto.EventHash = 0x43444D47` for combat damage.
 - Test mod receives `ModEventDto.EventHash = 0x57454154` for weather change.
 - `UnexpectedEventHashCount = 0`.
-- No other `GlobalSignals.cs` `ISignal` type reaches `SubscribeProjected`.
+- No other `GlobalSignalPayloads*.cs` `ISignal` type reaches `SubscribeProjected`.
 - Minimum-budget pressure sets the mod-facing sampled-event flag when capped.
 - Maximum-quality projection does not exceed 50 projected events per frame.
 
@@ -416,7 +472,10 @@ Required evidence:
 - `SetModString` then `GetModString` returns the same payload.
 - Stored payload is mod-owned text, not first-party save truth.
 - Payloads larger than 16352 bytes are rejected from the MMF mod payload commit path.
-- Calling SaveState outside an active `ModExecutionScope` throws `IllegalContractException`.
+- Calling SaveState, resource resolution, telemetry publish, or localization injection outside an active `ModExecutionScope` throws `IllegalContractException`.
+- Direct scope-less `ModSaveStateStore.SetModString` / `GetModString` calls throw; engine-owned mod-world payloads use `SetEngineString` / `GetEngineString` with `hecton.internal.` keys.
+- Calling direct `HectonEventSubscription.Dispose()` outside the owning active `ModExecutionScope` throws `IllegalContractException` for mod-owned tokens.
+- Managed mod/API test code cannot access `GlobalRegistry.ModWorldPersistence`, `RegisterModWorldPersistenceRuntime`, or `ModWorldPersistenceManager` as public SDK routes.
 
 ### Step 9 - Teardown Gate
 
@@ -429,6 +488,7 @@ Required evidence:
 - No callback from the unloaded mod fires on the next projected/native/unmanaged event.
 - No command from the unloaded mod is accepted.
 - `HectonEventSubscription.IsActive` is false after disposal.
+- Direct `Dispose` from the owning `OnUnload` scope succeeds; direct `Dispose` outside that scope rejects for a mod-owned token.
 
 ### Step 10 - GC/Profiler Gate
 

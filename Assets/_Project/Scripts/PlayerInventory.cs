@@ -22,10 +22,8 @@ namespace Hecton8.Inventory
     using Hecton8.Items;
     using Hecton8.SaveSystem;
     using Hecton8.World;
-    using Unity.Burst;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
-    using Unity.Jobs;
     using Unity.Mathematics;
     using Unity.Profiling;
     using UnityEngine;
@@ -69,27 +67,13 @@ namespace Hecton8.Inventory
         private const float HeavyBulkTransferAudioThresholdKg = 50f;
         private const int InventoryBlackBoxCapacity = 300;
         private const int InventoryBlackBoxEntrySizeBytes = 64;
-        private const string InventoryBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_INVENTORY_SOA_BLITTER.bin";
+        private const string InventoryBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1317_Inventory.bin";
         private const float SalinityCorrosionFrostTickSeconds = 5f;
         private const float SalinityCorrosionDegradationRatePerFrostTick = 0.00325f;
         private const float EquipmentFailingThreshold01 = 0.2f;
         private const float EquipmentFailingResetThreshold01 = 0.25f;
         private const int SalinityCorrosionBlackBoxEntrySizeBytes = 32;
         private const string SalinityCorrosionBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SALINITY_CORROSION_SYSTEM.bin";
-        private const string BulkTransferValidationTempLabel = "BulkTransferValidationTemp";
-        private const string BulkTransferFailureTempLabel = "BulkTransferFailureTemp";
-        private const string BulkTransferCompactionResultTempLabel = "BulkTransferCompactionResultTemp";
-        private const string BulkTransferCompactionHashTempLabel = "BulkTransferCompactionHashTemp";
-        private const string BulkTransferCompactionCountTempLabel = "BulkTransferCompactionCountTemp";
-        private const string BulkTransferCompactionConditionTempLabel = "BulkTransferCompactionConditionTemp";
-        private const string BulkTransferCompactionStateTempLabel = "BulkTransferCompactionStateTemp";
-        private const string BulkTransferCompactionGeneticsTempLabel = "BulkTransferCompactionGeneticsTemp";
-        private const string BulkTransferCompactionQualityTempLabel = "BulkTransferCompactionQualityTemp";
-        private const string BulkTransferCompactionDurabilityTempLabel = "BulkTransferCompactionDurabilityTemp";
-        private const string BulkTransferCompactionTimestampTempLabel = "BulkTransferCompactionTimestampTemp";
-        private const string BulkTransferCompactionMassTempLabel = "BulkTransferCompactionMassTemp";
-        private const string BulkTransferCompactionVolumeTempLabel = "BulkTransferCompactionVolumeTemp";
-        private const string BulkTransferCompactionRadiationTempLabel = "BulkTransferCompactionRadiationTemp";
         private const string NativeMemoryOwner = nameof(PlayerInventory);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int InventoryShadowBufferBytes = 16 * 1024;
@@ -174,8 +158,7 @@ namespace Hecton8.Inventory
             [FieldOffset(28)] public int Flags;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct InventoryMassVolumeJob : IJob
+        private ref struct InventoryMassVolumeKernel
         {
             [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
             [ReadOnly] public NativeArray<ushort> StackCounts;
@@ -196,23 +179,23 @@ namespace Hecton8.Inventory
 
                 for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
                 {
-                    if (AnchorHashIds[anchorIndex] == 0)
-                        continue;
-
+                    float active = math.select(1f, 0f, AnchorHashIds[anchorIndex] == 0);
                     int stackCount = math.max(1, (int)StackCounts[anchorIndex]);
-                    totalMassKg += AnchorUnitMassKg[anchorIndex] * stackCount;
-                    totalVolumeM3 += AnchorUnitVolumeM3[anchorIndex] * stackCount;
-                    totalRadiationSv += AnchorUnitRadiationSv[anchorIndex] * stackCount;
+                    float weightedStackCount = stackCount * active;
+                    totalMassKg += AnchorUnitMassKg[anchorIndex] * weightedStackCount;
+                    totalVolumeM3 += AnchorUnitVolumeM3[anchorIndex] * weightedStackCount;
+                    totalRadiationSv += AnchorUnitRadiationSv[anchorIndex] * weightedStackCount;
                 }
 
-                Totals[0] = new float3(
-                    math.max(0f, totalMassKg),
-                    math.max(0f, totalVolumeM3),
-                    math.max(0f, totalRadiationSv));
+                float3 totals = default;
+                totals.x = math.max(0f, totalMassKg);
+                totals.y = math.max(0f, totalVolumeM3);
+                totals.z = math.max(0f, totalRadiationSv);
+                Totals[0] = totals;
             }
         }
 
-        private struct InventoryRadioactiveHalfLifeKernel
+        private ref struct InventoryRadioactiveHalfLifeKernel
         {
             [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
             [ReadOnly] public NativeArray<ushort> StackCounts;
@@ -246,42 +229,72 @@ namespace Hecton8.Inventory
                 int changed = 0;
                 float safeBaseHalfLifeSeconds = math.max(1f, BaseHalfLifeSeconds);
                 float inverseBaseHalfLifeSeconds = math.rcp(safeBaseHalfLifeSeconds);
+                int conversionCapacity = ConversionAnchorIndices.Length;
 
-                for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
+                if (conversionCapacity > 0)
                 {
-                    if (AnchorHashIds[anchorIndex] == 0 || StackCounts[anchorIndex] == 0)
-                        continue;
-
-                    float radiationSv = AnchorUnitRadiationSv[anchorIndex];
-                    if (!(radiationSv > 0f))
-                        continue;
-
-                    ushort currentFlags = (ushort)(ItemStateFlags[anchorIndex] | RadioactiveMask);
-                    ushort currentQualityMilli = QualityMilli[anchorIndex] > 0 ? QualityMilli[anchorIndex] : DefaultQuality;
-                    float currentQuality = math.clamp(currentQualityMilli * 0.001f, 0f, 1f);
-                    float radiationFactor = math.max(0.001f, radiationSv) * inverseBaseHalfLifeSeconds;
-                    float decayFactor = ApproximateExpNegPositiveInput(Ln2 * radiationFactor * DeltaSeconds);
-                    float nextQuality = math.clamp(currentQuality * decayFactor, 0f, 1f);
-                    ushort nextQualityMilli = (ushort)math.clamp((int)math.round(nextQuality * 1000f), 0, 1000);
-
-                    if (nextQualityMilli < DegradedThreshold)
-                        currentFlags = (ushort)(currentFlags | DegradedMask);
-
-                    if (nextQualityMilli <= 0)
+                    for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
                     {
-                        currentFlags = (ushort)(currentFlags | DegradedMask);
-                        if (conversionCount < ConversionAnchorIndices.Length)
-                            ConversionAnchorIndices[conversionCount++] = anchorIndex;
-                    }
+                        ushort originalFlags = ItemStateFlags[anchorIndex];
+                        ushort originalQualityMilli = QualityMilli[anchorIndex];
+                        float radiationSv = AnchorUnitRadiationSv[anchorIndex];
+                        bool active = AnchorHashIds[anchorIndex] != 0 &
+                                      StackCounts[anchorIndex] != 0 &
+                                      radiationSv > 0f;
+                        ushort effectiveQualityMilli = (ushort)math.select((int)DefaultQuality, (int)originalQualityMilli, originalQualityMilli > 0);
+                        float currentQuality = math.clamp(effectiveQualityMilli * 0.001f, 0f, 1f);
+                        float radiationFactor = math.max(0.001f, radiationSv) * inverseBaseHalfLifeSeconds;
+                        float decayFactor = ApproximateExpNegPositiveInput(Ln2 * radiationFactor * DeltaSeconds);
+                        float nextQuality = math.clamp(currentQuality * decayFactor, 0f, 1f);
+                        ushort decayedQualityMilli = (ushort)math.clamp((int)math.round(nextQuality * 1000f), 0, 1000);
+                        ushort nextQualityMilli = (ushort)math.select((int)originalQualityMilli, (int)decayedQualityMilli, active);
+                        ushort radioactiveFlags = (ushort)(originalFlags | RadioactiveMask);
+                        bool degraded = active & nextQualityMilli < DegradedThreshold;
+                        bool depleted = active & nextQualityMilli == 0;
+                        ushort degradedFlags = (ushort)(radioactiveFlags | DegradedMask);
+                        ushort nextFlags = (ushort)math.select((int)radioactiveFlags, (int)degradedFlags, degraded | depleted);
+                        nextFlags = (ushort)math.select((int)originalFlags, (int)nextFlags, active);
+                        bool didChange = active & (nextFlags != originalFlags | nextQualityMilli != originalQualityMilli);
+                        ItemStateFlags[anchorIndex] = (ushort)math.select((int)originalFlags, (int)nextFlags, didChange);
+                        QualityMilli[anchorIndex] = (ushort)math.select((int)originalQualityMilli, (int)nextQualityMilli, didChange);
 
-                    if (currentFlags != ItemStateFlags[anchorIndex] || nextQualityMilli != currentQualityMilli)
-                    {
-                        ItemStateFlags[anchorIndex] = currentFlags;
-                        QualityMilli[anchorIndex] = nextQualityMilli;
-                        changed = 1;
+                        bool canWriteConversion = depleted & conversionCount < conversionCapacity;
+                        int conversionIndex = math.min(conversionCount, conversionCapacity - 1);
+                        int previousConversion = ConversionAnchorIndices[conversionIndex];
+                        ConversionAnchorIndices[conversionIndex] = math.select(previousConversion, anchorIndex, canWriteConversion);
+                        conversionCount += math.select(0, 1, canWriteConversion);
+                        changed |= math.select(0, 1, didChange);
                     }
                 }
-
+                else
+                {
+                    for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
+                    {
+                        ushort originalFlags = ItemStateFlags[anchorIndex];
+                        ushort originalQualityMilli = QualityMilli[anchorIndex];
+                        float radiationSv = AnchorUnitRadiationSv[anchorIndex];
+                        bool active = AnchorHashIds[anchorIndex] != 0 &
+                                      StackCounts[anchorIndex] != 0 &
+                                      radiationSv > 0f;
+                        ushort effectiveQualityMilli = (ushort)math.select((int)DefaultQuality, (int)originalQualityMilli, originalQualityMilli > 0);
+                        float currentQuality = math.clamp(effectiveQualityMilli * 0.001f, 0f, 1f);
+                        float radiationFactor = math.max(0.001f, radiationSv) * inverseBaseHalfLifeSeconds;
+                        float decayFactor = ApproximateExpNegPositiveInput(Ln2 * radiationFactor * DeltaSeconds);
+                        float nextQuality = math.clamp(currentQuality * decayFactor, 0f, 1f);
+                        ushort decayedQualityMilli = (ushort)math.clamp((int)math.round(nextQuality * 1000f), 0, 1000);
+                        ushort nextQualityMilli = (ushort)math.select((int)originalQualityMilli, (int)decayedQualityMilli, active);
+                        ushort radioactiveFlags = (ushort)(originalFlags | RadioactiveMask);
+                        bool degraded = active & nextQualityMilli < DegradedThreshold;
+                        bool depleted = active & nextQualityMilli == 0;
+                        ushort degradedFlags = (ushort)(radioactiveFlags | DegradedMask);
+                        ushort nextFlags = (ushort)math.select((int)radioactiveFlags, (int)degradedFlags, degraded | depleted);
+                        nextFlags = (ushort)math.select((int)originalFlags, (int)nextFlags, active);
+                        bool didChange = active & (nextFlags != originalFlags | nextQualityMilli != originalQualityMilli);
+                        ItemStateFlags[anchorIndex] = (ushort)math.select((int)originalFlags, (int)nextFlags, didChange);
+                        QualityMilli[anchorIndex] = (ushort)math.select((int)originalQualityMilli, (int)nextQualityMilli, didChange);
+                        changed |= math.select(0, 1, didChange);
+                    }
+                }
                 if (Counters.Length >= 2)
                 {
                     Counters[0] = conversionCount;
@@ -290,7 +303,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        private struct InventoryReactiveChemistryKernel
+        private ref struct InventoryReactiveChemistryKernel
         {
             [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
             [ReadOnly] public NativeArray<ushort> StackCounts;
@@ -319,7 +332,6 @@ namespace Hecton8.Inventory
                     math.min(math.min(AnchorHashIds.Length, StackCounts.Length), CraftLockedCounts.Length),
                     math.min(ItemStateFlags.Length, ThermalRunawayByAnchor.Length));
                 int safeColumns = math.max(1, Columns);
-                int safeRows = math.max(1, Rows);
                 if (slotCount <= 0 || !(DeltaSeconds > 0f))
                     return;
 
@@ -327,43 +339,52 @@ namespace Hecton8.Inventory
                 int changed = 0;
                 float heatDelta = math.max(0f, RunawayPerSecond) * DeltaSeconds;
                 float cooldownDelta = math.max(0f, CooldownPerSecond) * DeltaSeconds;
+                int runawayCapacity = RunawayPairs.Length;
 
-                for (int anchorIndex = 0; anchorIndex < slotCount; anchorIndex++)
+                if (runawayCapacity > 0)
                 {
-                    if (!IsReactiveCandidate(anchorIndex, slotCount))
+                    for (int anchorIndex = 0; anchorIndex < slotCount; anchorIndex++)
                     {
-                        if (ThermalRunawayByAnchor[anchorIndex] > 0f)
-                        {
-                            ThermalRunawayByAnchor[anchorIndex] = math.max(0f, ThermalRunawayByAnchor[anchorIndex] - cooldownDelta);
-                            changed = 1;
-                        }
-
-                        continue;
-                    }
-
-                    int adjacentAnchor = FindAdjacentReactivePartner(anchorIndex, slotCount, safeColumns, safeRows);
-                    if (adjacentAnchor < 0)
-                    {
-                        if (ThermalRunawayByAnchor[anchorIndex] > 0f)
-                        {
-                            ThermalRunawayByAnchor[anchorIndex] = math.max(0f, ThermalRunawayByAnchor[anchorIndex] - cooldownDelta);
-                            changed = 1;
-                        }
-
-                        continue;
-                    }
-
-                    float previousRunaway = ThermalRunawayByAnchor[anchorIndex];
-                    float nextRunaway = previousRunaway + heatDelta;
-                    float storedRunaway = math.min(1.25f, nextRunaway);
-                    if (storedRunaway != previousRunaway)
-                    {
+                        bool active = IsReactiveCandidateBranchless(anchorIndex, slotCount);
+                        int rightCandidate = math.min(anchorIndex + 1, slotCount - 1);
+                        int downCandidate = math.min(anchorIndex + safeColumns, slotCount - 1);
+                        bool rightInRow = (anchorIndex % safeColumns) < (safeColumns - 1);
+                        bool hasRight = active &
+                                        rightInRow &
+                                        rightCandidate != anchorIndex &
+                                        IsReactivePairBranchless(anchorIndex, rightCandidate, slotCount);
+                        bool hasDown = active &
+                                       downCandidate != anchorIndex &
+                                       IsReactivePairBranchless(anchorIndex, downCandidate, slotCount);
+                        bool hasPair = hasRight | hasDown;
+                        int adjacentAnchor = math.select(downCandidate, rightCandidate, hasRight);
+                        float previousRunaway = ThermalRunawayByAnchor[anchorIndex];
+                        float heatedRunaway = previousRunaway + heatDelta;
+                        float cooledRunaway = math.max(0f, previousRunaway - cooldownDelta);
+                        float nextRunaway = math.select(cooledRunaway, heatedRunaway, hasPair);
+                        float storedRunaway = math.min(1.25f, nextRunaway);
                         ThermalRunawayByAnchor[anchorIndex] = storedRunaway;
-                        changed = 1;
+                        bool didChange = storedRunaway != previousRunaway;
+                        bool canWritePair = hasPair & nextRunaway > 1f & pairCount < runawayCapacity;
+                        int pairIndex = math.min(pairCount, runawayCapacity - 1);
+                        int2 previousPair = RunawayPairs[pairIndex];
+                        int2 nextPair = default;
+                        nextPair.x = anchorIndex;
+                        nextPair.y = adjacentAnchor;
+                        RunawayPairs[pairIndex] = math.select(previousPair, nextPair, canWritePair);
+                        pairCount += math.select(0, 1, canWritePair);
+                        changed |= math.select(0, 1, didChange);
                     }
-
-                    if (nextRunaway > 1f && anchorIndex < adjacentAnchor && pairCount < RunawayPairs.Length)
-                        RunawayPairs[pairCount++] = new int2(anchorIndex, adjacentAnchor);
+                }
+                else
+                {
+                    for (int anchorIndex = 0; anchorIndex < slotCount; anchorIndex++)
+                    {
+                        float previousRunaway = ThermalRunawayByAnchor[anchorIndex];
+                        float storedRunaway = math.max(0f, previousRunaway - cooldownDelta);
+                        ThermalRunawayByAnchor[anchorIndex] = storedRunaway;
+                        changed |= math.select(0, 1, storedRunaway != previousRunaway);
+                    }
                 }
 
                 if (Counters.Length >= 2)
@@ -373,66 +394,31 @@ namespace Hecton8.Inventory
                 }
             }
 
-            private bool IsReactiveCandidate(int anchorIndex, int slotCount)
+            private bool IsReactiveCandidateBranchless(int anchorIndex, int slotCount)
             {
-                return (uint)anchorIndex < (uint)slotCount &&
-                       AnchorHashIds[anchorIndex] != 0 &&
-                       StackCounts[anchorIndex] > 0 &&
-                       CraftLockedCounts[anchorIndex] == 0 &&
+                return (uint)anchorIndex < (uint)slotCount &
+                       AnchorHashIds[anchorIndex] != 0 &
+                       StackCounts[anchorIndex] > 0 &
+                       CraftLockedCounts[anchorIndex] == 0 &
                        ((ItemStateFlags[anchorIndex] & (RadioactiveMask | FlammableMask)) != 0);
             }
 
-            private int FindAdjacentReactivePartner(int anchorIndex, int slotCount, int safeColumns, int safeRows)
+            private bool IsReactivePairBranchless(int sourceIndex, int candidateIndex, int slotCount)
             {
-                if (anchorIndex < 0 || anchorIndex >= slotCount)
-                    return -1;
-
-                ushort flags = ItemStateFlags[anchorIndex];
-                bool isRadioactive = (flags & RadioactiveMask) != 0;
-                bool isFlammable = (flags & FlammableMask) != 0;
-                if (!isRadioactive && !isFlammable)
-                    return -1;
-
-                int x = anchorIndex % safeColumns;
-                int y = anchorIndex / safeColumns;
-                int partner = FindReactivePartnerAt(x - 1, y, slotCount, safeColumns, safeRows, isRadioactive, isFlammable);
-                if (partner >= 0)
-                    return partner;
-
-                partner = FindReactivePartnerAt(x + 1, y, slotCount, safeColumns, safeRows, isRadioactive, isFlammable);
-                if (partner >= 0)
-                    return partner;
-
-                partner = FindReactivePartnerAt(x, y - 1, slotCount, safeColumns, safeRows, isRadioactive, isFlammable);
-                if (partner >= 0)
-                    return partner;
-
-                return FindReactivePartnerAt(x, y + 1, slotCount, safeColumns, safeRows, isRadioactive, isFlammable);
-            }
-
-            private int FindReactivePartnerAt(
-                int x,
-                int y,
-                int slotCount,
-                int safeColumns,
-                int safeRows,
-                bool sourceRadioactive,
-                bool sourceFlammable)
-            {
-                if (x < 0 || x >= safeColumns || y < 0 || y >= safeRows)
-                    return -1;
-
-                int candidateIndex = y * safeColumns + x;
-                if (!IsReactiveCandidate(candidateIndex, slotCount))
-                    return -1;
-
-                ushort flags = ItemStateFlags[candidateIndex];
-                bool candidateRadioactive = (flags & RadioactiveMask) != 0;
-                bool candidateFlammable = (flags & FlammableMask) != 0;
-                if ((sourceRadioactive && candidateFlammable) || (sourceFlammable && candidateRadioactive))
-                    return candidateIndex;
-
-                return -1;
+                bool inBounds = (uint)candidateIndex < (uint)slotCount;
+                int safeCandidateIndex = math.min(math.max(candidateIndex, 0), math.max(0, slotCount - 1));
+                ushort sourceFlags = ItemStateFlags[sourceIndex];
+                ushort candidateFlags = ItemStateFlags[safeCandidateIndex];
+                bool sourceRadioactive = (sourceFlags & RadioactiveMask) != 0;
+                bool sourceFlammable = (sourceFlags & FlammableMask) != 0;
+                bool candidateRadioactive = (candidateFlags & RadioactiveMask) != 0;
+                bool candidateFlammable = (candidateFlags & FlammableMask) != 0;
+                bool candidateActive = inBounds &
+                                       AnchorHashIds[safeCandidateIndex] != 0 &
+                                       StackCounts[safeCandidateIndex] != 0 &
+                                       CraftLockedCounts[safeCandidateIndex] == 0;
+                return candidateActive &
+                       ((sourceRadioactive & candidateFlammable) | (sourceFlammable & candidateRadioactive));
             }
         }
 
@@ -449,7 +435,16 @@ namespace Hecton8.Inventory
             public int ItemHashId;
 
             [FieldOffset(12)]
-            public int _pad0;
+            private byte _pad0;
+
+            [FieldOffset(13)]
+            private byte _pad1;
+
+            [FieldOffset(14)]
+            private byte _pad2;
+
+            [FieldOffset(15)]
+            private byte _pad3;
         }
 
         public readonly struct ScavengeAttemptResult
@@ -521,64 +516,57 @@ namespace Hecton8.Inventory
         [SerializeField, Min(0f)] private float radiationTraumaThresholdSv = 0.5f;
 
         private InventoryGrid _grid;
-        private NativeArray<uint> _itemHashes;
-        private NativeArray<ushort> _stackCounts;
-        private NativeArray<float> _itemCondition;
-        private NativeArray<float> _itemDurability;
-        private NativeArray<ushort> _craftLockedCounts;
-        private NativeArray<ushort> _anchorStateFlags;
-        private NativeArray<ushort> _itemStateFlags;
-        private NativeArray<byte> _itemGenetics;
-        private NativeArray<ushort> _qualityMilli;
-        private NativeArray<byte> _durabilities;
-        private NativeArray<uint> _lastUpdateUnixSeconds;
-        private NativeArray<ushort> _scavengeSimStackCounts;
-        private NativeArray<byte> _simulationOccupiedCells;
-        private NativeArray<float> _anchorUnitMassKg;
-        private NativeArray<float> _anchorUnitVolumeM3;
-        private NativeArray<float> _anchorUnitRadiationSv;
-        private NativeArray<int> _massAnchorHashSnapshot;
-        private NativeArray<ushort> _massStackCountSnapshot;
-        private NativeArray<float> _massUnitMassSnapshot;
-        private NativeArray<float> _massUnitVolumeSnapshot;
-        private NativeArray<float> _massUnitRadiationSnapshot;
-        private NativeArray<float3> _derivedMassVolumeScratch;
-        private NativeArray<int> _radioactiveConversionAnchors;
-        private NativeArray<int> _radioactiveHalfLifeCounters;
-        private NativeArray<float> _thermalRunawayByAnchor;
-        private NativeArray<int2> _thermalRunawayPairs;
-        private NativeArray<int> _thermalRunawayCounters;
-        private NativeArray<byte> _inventoryShadowBuffer;
-        private NativeArray<InventoryTelemetryEntry> _inventoryBlackBox;
-        private NativeArray<int> _salinityCorrosionJobResult;
-        private NativeArray<uint> _salinityBrokenItemHashes;
-        private NativeArray<SalinityCorrosionTelemetryEntry> _salinityCorrosionBlackBox;
-        private NativeArray<int> _defragItemHashes;
-        private NativeArray<ushort> _defragItemCounts;
-        private NativeArray<byte> _defragCategories;
-        private NativeArray<ushort> _defragMaxStacks;
-        private NativeArray<byte> _defragRarities;
-        private NativeArray<byte> _defragWidths;
-        private NativeArray<byte> _defragHeights;
-        private NativeArray<byte> _defragFlags;
-        private NativeArray<ushort> _defragStateFlags;
-        private NativeArray<byte> _defragGenetics;
-        private NativeArray<ushort> _defragQualityMilli;
-        private NativeArray<byte> _defragDurabilities;
-        private NativeArray<uint> _defragLastUpdateUnixSeconds;
-        private NativeArray<float> _defragUnitMassKg;
-        private NativeArray<float> _defragUnitVolumeM3;
-        private NativeArray<float> _defragUnitRadiationSv;
-        private NativeArray<int> _defragResult;
+        private InventoryVaultLane<uint> _itemHashes;
+        private InventoryVaultLane<ushort> _stackCounts;
+        private InventoryVaultLane<float> _itemCondition;
+        private InventoryVaultLane<float> _itemDurability;
+        private InventoryVaultLane<ushort> _craftLockedCounts;
+        private InventoryVaultLane<ushort> _anchorStateFlags;
+        private InventoryVaultLane<ushort> _itemStateFlags;
+        private InventoryVaultLane<byte> _itemGenetics;
+        private InventoryVaultLane<ushort> _qualityMilli;
+        private InventoryVaultLane<byte> _durabilities;
+        private InventoryVaultLane<uint> _lastUpdateUnixSeconds;
+        private InventoryVaultLane<ushort> _scavengeSimStackCounts;
+        private InventoryVaultLane<byte> _simulationOccupiedCells;
+        private InventoryVaultLane<float> _anchorUnitMassKg;
+        private InventoryVaultLane<float> _anchorUnitVolumeM3;
+        private InventoryVaultLane<float> _anchorUnitRadiationSv;
+        private InventoryVaultLane<float3> _derivedMassVolumeScratch;
+        private InventoryVaultLane<int> _radioactiveConversionAnchors;
+        private InventoryVaultLane<int> _radioactiveHalfLifeCounters;
+        private InventoryVaultLane<float> _thermalRunawayByAnchor;
+        private InventoryVaultLane<int2> _thermalRunawayPairs;
+        private InventoryVaultLane<int> _thermalRunawayCounters;
+        private InventoryVaultLane<byte> _inventoryShadowBuffer;
+        private InventoryVaultLane<InventoryTelemetryEntry> _inventoryBlackBox;
+        private InventoryVaultLane<int> _salinityCorrosionJobResult;
+        private InventoryVaultLane<uint> _salinityBrokenItemHashes;
+        private InventoryVaultLane<SalinityCorrosionTelemetryEntry> _salinityCorrosionBlackBox;
+        private InventoryVaultLane<int> _defragItemHashes;
+        private InventoryVaultLane<ushort> _defragItemCounts;
+        private InventoryVaultLane<byte> _defragCategories;
+        private InventoryVaultLane<ushort> _defragMaxStacks;
+        private InventoryVaultLane<byte> _defragRarities;
+        private InventoryVaultLane<byte> _defragWidths;
+        private InventoryVaultLane<byte> _defragHeights;
+        private InventoryVaultLane<byte> _defragFlags;
+        private InventoryVaultLane<ushort> _defragStateFlags;
+        private InventoryVaultLane<byte> _defragGenetics;
+        private InventoryVaultLane<ushort> _defragQualityMilli;
+        private InventoryVaultLane<byte> _defragDurabilities;
+        private InventoryVaultLane<uint> _defragLastUpdateUnixSeconds;
+        private InventoryVaultLane<float> _defragUnitMassKg;
+        private InventoryVaultLane<float> _defragUnitVolumeM3;
+        private InventoryVaultLane<float> _defragUnitRadiationSv;
+        private InventoryVaultLane<int> _defragResult;
         private ItemPlacement[] _sortBuffer;
-        private JobHandle _massVolumeJobHandle;
+        private ushort[] _bulkCompactionMaxStackBuffer;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
         private float _pendingEquipmentRustShaderScalar;
         private bool _hasPendingEquipmentRustShaderScalar;
-        private bool _massVolumeJobScheduled;
         private bool _massCacheDirty = true;
-        private int _massVolumeJobInventoryVersion;
         private TraumaDispatcher _traumaDispatcher;
         private int _pressurizedContainerProtectionCount;
         private InventoryDTO _lastCommittedInventoryDto;
@@ -619,6 +607,429 @@ namespace Hecton8.Inventory
         private bool _physicsImpactRegistered;
         private bool _hotSwapListenerRegistered;
         private bool _saveRegistered;
+        private int _vaultBufferBase;
+
+        private const SystemID PlayerInventoryVaultOwner = SystemID.GameplayPlayer;
+        private const int PlayerInventoryVaultBufferBase = 410000;
+        private const int PlayerInventoryVaultBufferStride = 64;
+        private const int PlayerInventoryVaultBufferInstanceMask = 0x3ff;
+
+        internal struct InventoryVaultLane<T> where T : struct
+        {
+            private IDataVault _vault;
+            private SystemID _owner;
+            private int _expectedLength;
+            private BufferID _expectedBufferId;
+
+            public VaultGenerationHandle<T> Handle;
+
+            public int Length => TryResolve(out NativeArray<T> buffer) ? buffer.Length : 0;
+            public bool IsCreated => TryResolve(out NativeArray<T> buffer) && buffer.IsCreated;
+            public uint BufferId => Handle.BufferID;
+            public uint Generation => Handle.Generation;
+
+            public T this[int index]
+            {
+                get
+                {
+                    if (!TryResolve(out NativeArray<T> buffer) || (uint)index >= (uint)buffer.Length)
+                        return default;
+
+                    return buffer[index];
+                }
+                set
+                {
+                    if (!TryAcquireWriteLock(out NativeArray<T> buffer))
+                        return;
+
+                    try
+                    {
+                        if ((uint)index < (uint)buffer.Length)
+                            buffer[index] = value;
+                    }
+                    finally
+                    {
+                        ReleaseWriteLock();
+                    }
+                }
+            }
+
+            public bool Bind(
+                IDataVault vault,
+                BufferID bufferId,
+                int expectedLength,
+                SystemID owner,
+                NativeArrayOptions options)
+            {
+                _vault = vault;
+                _owner = owner;
+                _expectedBufferId = bufferId;
+                _expectedLength = expectedLength;
+                Handle = default;
+
+                if (vault == null || expectedLength <= 0 || owner == SystemID.Unknown || bufferId == BufferID.Unknown)
+                    return false;
+
+                Handle = vault.EnsureGenerationHandle<T>(bufferId, expectedLength, owner, options);
+                return ValidateDescriptor() && TryResolve(out NativeArray<T> buffer) && buffer.Length >= expectedLength;
+            }
+
+            public void RebindVault(IDataVault vault)
+            {
+                _vault = vault;
+            }
+
+            public void Release()
+            {
+                IDataVault vault = _vault;
+                if (vault != null && Handle.BufferID != 0u)
+                    vault.ReleaseBuffer(in Handle);
+
+                this = default;
+            }
+
+            public bool TryResolve(out NativeArray<T> buffer)
+            {
+                buffer = default;
+                IDataVault vault = _vault;
+                if (vault == null || !ValidateDescriptor())
+                    return false;
+
+                return vault.TryResolveHandle(in Handle, out buffer) &&
+                       buffer.IsCreated &&
+                       buffer.Length >= _expectedLength;
+            }
+
+            public bool TryReadOnly(out NativeArray<T>.ReadOnly buffer)
+            {
+                buffer = default;
+                IDataVault vault = _vault;
+                if (vault == null || !ValidateDescriptor())
+                    return false;
+
+                return vault.TryReadOnlyHandle(in Handle, out buffer) &&
+                       buffer.Length >= _expectedLength;
+            }
+
+            public bool TryAcquireWriteLock(out NativeArray<T> buffer)
+            {
+                buffer = default;
+                IDataVault vault = _vault;
+                if (vault == null || !ValidateDescriptor())
+                    return false;
+
+                if (!vault.TryAcquireWriteLock(in Handle, _owner, out buffer))
+                    return false;
+
+                if (buffer.IsCreated && buffer.Length >= _expectedLength)
+                    return true;
+
+                vault.ReleaseWriteLock(in Handle, _owner);
+                buffer = default;
+                return false;
+            }
+
+            public bool ReleaseWriteLock()
+            {
+                IDataVault vault = _vault;
+                return vault != null && ValidateDescriptor() && vault.ReleaseWriteLock(in Handle, _owner);
+            }
+
+            public NativeArray<T> Resolve()
+            {
+                return TryResolve(out NativeArray<T> buffer) ? buffer : default;
+            }
+
+            public NativeArray<T>.ReadOnly AsReadOnly()
+            {
+                return TryReadOnly(out NativeArray<T>.ReadOnly buffer) ? buffer : default;
+            }
+
+            public static implicit operator NativeArray<T>(InventoryVaultLane<T> lane)
+            {
+                return lane.Resolve();
+            }
+
+            private bool ValidateDescriptor()
+            {
+                return Handle.BufferID == (uint)_expectedBufferId &&
+                       Handle.SystemID == (uint)_owner &&
+                       Handle.Generation != 0u &&
+                       _expectedLength > 0;
+            }
+        }
+
+        private BufferID ResolvePlayerInventoryVaultBufferId(int ordinal)
+        {
+            if (_vaultBufferBase == 0)
+            {
+                int instanceBucket = GetInstanceID() & PlayerInventoryVaultBufferInstanceMask;
+                _vaultBufferBase = PlayerInventoryVaultBufferBase + (instanceBucket * PlayerInventoryVaultBufferStride);
+            }
+
+            return (BufferID)(_vaultBufferBase + ordinal);
+        }
+
+        private bool BindPlayerInventoryVaultBuffers(int cellCount)
+        {
+            if (_cachedDataVault == null || cellCount <= 0)
+                return false;
+
+            bool success =
+                BindVaultLane(ref _itemHashes, 0, cellCount) &&
+                BindVaultLane(ref _stackCounts, 1, cellCount) &&
+                BindVaultLane(ref _itemCondition, 2, cellCount) &&
+                BindVaultLane(ref _itemDurability, 3, cellCount) &&
+                BindVaultLane(ref _craftLockedCounts, 4, cellCount) &&
+                BindVaultLane(ref _anchorStateFlags, 5, cellCount) &&
+                BindVaultLane(ref _itemStateFlags, 6, cellCount) &&
+                BindVaultLane(ref _itemGenetics, 7, cellCount) &&
+                BindVaultLane(ref _qualityMilli, 8, cellCount) &&
+                BindVaultLane(ref _durabilities, 9, cellCount) &&
+                BindVaultLane(ref _lastUpdateUnixSeconds, 10, cellCount) &&
+                BindVaultLane(ref _scavengeSimStackCounts, 11, cellCount) &&
+                BindVaultLane(ref _simulationOccupiedCells, 12, cellCount) &&
+                BindVaultLane(ref _anchorUnitMassKg, 13, cellCount) &&
+                BindVaultLane(ref _anchorUnitVolumeM3, 14, cellCount) &&
+                BindVaultLane(ref _anchorUnitRadiationSv, 15, cellCount) &&
+                BindVaultLane(ref _derivedMassVolumeScratch, 21, 1) &&
+                BindVaultLane(ref _radioactiveConversionAnchors, 22, cellCount) &&
+                BindVaultLane(ref _radioactiveHalfLifeCounters, 23, 2) &&
+                BindVaultLane(ref _thermalRunawayByAnchor, 24, cellCount) &&
+                BindVaultLane(ref _thermalRunawayPairs, 25, cellCount) &&
+                BindVaultLane(ref _thermalRunawayCounters, 26, 2) &&
+                BindVaultLane(ref _inventoryShadowBuffer, 27, InventoryShadowBufferBytes) &&
+                BindVaultLane(ref _inventoryBlackBox, 28, InventoryBlackBoxCapacity) &&
+                BindVaultLane(ref _salinityCorrosionJobResult, 29, InventoryCorrosionConstants.ResultRequiredLength) &&
+                BindVaultLane(ref _salinityBrokenItemHashes, 30, cellCount) &&
+                BindVaultLane(ref _salinityCorrosionBlackBox, 31, InventoryBlackBoxCapacity) &&
+                BindVaultLane(ref _defragItemHashes, 32, cellCount) &&
+                BindVaultLane(ref _defragItemCounts, 33, cellCount) &&
+                BindVaultLane(ref _defragCategories, 34, cellCount) &&
+                BindVaultLane(ref _defragMaxStacks, 35, cellCount) &&
+                BindVaultLane(ref _defragRarities, 36, cellCount) &&
+                BindVaultLane(ref _defragWidths, 37, cellCount) &&
+                BindVaultLane(ref _defragHeights, 38, cellCount) &&
+                BindVaultLane(ref _defragFlags, 39, cellCount) &&
+                BindVaultLane(ref _defragStateFlags, 40, cellCount) &&
+                BindVaultLane(ref _defragGenetics, 41, cellCount) &&
+                BindVaultLane(ref _defragQualityMilli, 42, cellCount) &&
+                BindVaultLane(ref _defragDurabilities, 43, cellCount) &&
+                BindVaultLane(ref _defragLastUpdateUnixSeconds, 44, cellCount) &&
+                BindVaultLane(ref _defragUnitMassKg, 45, cellCount) &&
+                BindVaultLane(ref _defragUnitVolumeM3, 46, cellCount) &&
+                BindVaultLane(ref _defragUnitRadiationSv, 47, cellCount) &&
+                BindVaultLane(ref _defragResult, 48, InventoryDefragResultSlots.RequiredLength);
+
+            if (!success)
+                ReleasePlayerInventoryVaultBuffers();
+
+            return success;
+        }
+
+        private bool BindVaultLane<T>(
+            ref InventoryVaultLane<T> lane,
+            int ordinal,
+            int length,
+            NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct
+        {
+            return lane.Bind(_cachedDataVault, ResolvePlayerInventoryVaultBufferId(ordinal), length, PlayerInventoryVaultOwner, options);
+        }
+
+        private void RebindPlayerInventoryVaultReferences(IDataVault vault)
+        {
+            _itemHashes.RebindVault(vault);
+            _stackCounts.RebindVault(vault);
+            _itemCondition.RebindVault(vault);
+            _itemDurability.RebindVault(vault);
+            _craftLockedCounts.RebindVault(vault);
+            _anchorStateFlags.RebindVault(vault);
+            _itemStateFlags.RebindVault(vault);
+            _itemGenetics.RebindVault(vault);
+            _qualityMilli.RebindVault(vault);
+            _durabilities.RebindVault(vault);
+            _lastUpdateUnixSeconds.RebindVault(vault);
+            _scavengeSimStackCounts.RebindVault(vault);
+            _simulationOccupiedCells.RebindVault(vault);
+            _anchorUnitMassKg.RebindVault(vault);
+            _anchorUnitVolumeM3.RebindVault(vault);
+            _anchorUnitRadiationSv.RebindVault(vault);
+            _derivedMassVolumeScratch.RebindVault(vault);
+            _radioactiveConversionAnchors.RebindVault(vault);
+            _radioactiveHalfLifeCounters.RebindVault(vault);
+            _thermalRunawayByAnchor.RebindVault(vault);
+            _thermalRunawayPairs.RebindVault(vault);
+            _thermalRunawayCounters.RebindVault(vault);
+            _inventoryShadowBuffer.RebindVault(vault);
+            _inventoryBlackBox.RebindVault(vault);
+            _salinityCorrosionJobResult.RebindVault(vault);
+            _salinityBrokenItemHashes.RebindVault(vault);
+            _salinityCorrosionBlackBox.RebindVault(vault);
+            _defragItemHashes.RebindVault(vault);
+            _defragItemCounts.RebindVault(vault);
+            _defragCategories.RebindVault(vault);
+            _defragMaxStacks.RebindVault(vault);
+            _defragRarities.RebindVault(vault);
+            _defragWidths.RebindVault(vault);
+            _defragHeights.RebindVault(vault);
+            _defragFlags.RebindVault(vault);
+            _defragStateFlags.RebindVault(vault);
+            _defragGenetics.RebindVault(vault);
+            _defragQualityMilli.RebindVault(vault);
+            _defragDurabilities.RebindVault(vault);
+            _defragLastUpdateUnixSeconds.RebindVault(vault);
+            _defragUnitMassKg.RebindVault(vault);
+            _defragUnitVolumeM3.RebindVault(vault);
+            _defragUnitRadiationSv.RebindVault(vault);
+            _defragResult.RebindVault(vault);
+        }
+
+        private void ClearPlayerInventoryVaultBuffersCold()
+        {
+            ClearNativeArray(_itemHashes);
+            ClearNativeArray(_stackCounts);
+            ClearNativeArray(_itemCondition);
+            ClearNativeArray(_itemDurability);
+            ClearNativeArray(_craftLockedCounts);
+            ClearNativeArray(_anchorStateFlags);
+            ClearNativeArray(_itemStateFlags);
+            ClearNativeArray(_itemGenetics);
+            ClearNativeArray(_qualityMilli);
+            ClearNativeArray(_durabilities);
+            ClearNativeArray(_lastUpdateUnixSeconds);
+            ClearNativeArray(_scavengeSimStackCounts);
+            ClearNativeArray(_simulationOccupiedCells);
+            ClearNativeArray(_anchorUnitMassKg);
+            ClearNativeArray(_anchorUnitVolumeM3);
+            ClearNativeArray(_anchorUnitRadiationSv);
+            ClearNativeArray(_derivedMassVolumeScratch);
+            ClearNativeArray(_radioactiveConversionAnchors);
+            ClearNativeArray(_radioactiveHalfLifeCounters);
+            ClearNativeArray(_thermalRunawayByAnchor);
+            ClearNativeArray(_thermalRunawayPairs);
+            ClearNativeArray(_thermalRunawayCounters);
+            ClearNativeArray(_inventoryShadowBuffer);
+            ClearNativeArray(_inventoryBlackBox);
+            ClearNativeArray(_salinityCorrosionJobResult);
+            ClearNativeArray(_salinityBrokenItemHashes);
+            ClearNativeArray(_salinityCorrosionBlackBox);
+            ClearNativeArray(_defragItemHashes);
+            ClearNativeArray(_defragItemCounts);
+            ClearNativeArray(_defragCategories);
+            ClearNativeArray(_defragMaxStacks);
+            ClearNativeArray(_defragRarities);
+            ClearNativeArray(_defragWidths);
+            ClearNativeArray(_defragHeights);
+            ClearNativeArray(_defragFlags);
+            ClearNativeArray(_defragStateFlags);
+            ClearNativeArray(_defragGenetics);
+            ClearNativeArray(_defragQualityMilli);
+            ClearNativeArray(_defragDurabilities);
+            ClearNativeArray(_defragLastUpdateUnixSeconds);
+            ClearNativeArray(_defragUnitMassKg);
+            ClearNativeArray(_defragUnitVolumeM3);
+            ClearNativeArray(_defragUnitRadiationSv);
+            ClearNativeArray(_defragResult);
+        }
+
+        private void ReleasePlayerInventoryVaultBuffers()
+        {
+            _itemHashes.Release();
+            _stackCounts.Release();
+            _itemCondition.Release();
+            _itemDurability.Release();
+            _craftLockedCounts.Release();
+            _anchorStateFlags.Release();
+            _itemStateFlags.Release();
+            _itemGenetics.Release();
+            _qualityMilli.Release();
+            _durabilities.Release();
+            _lastUpdateUnixSeconds.Release();
+            _scavengeSimStackCounts.Release();
+            _simulationOccupiedCells.Release();
+            _anchorUnitMassKg.Release();
+            _anchorUnitVolumeM3.Release();
+            _anchorUnitRadiationSv.Release();
+            _derivedMassVolumeScratch.Release();
+            _radioactiveConversionAnchors.Release();
+            _radioactiveHalfLifeCounters.Release();
+            _thermalRunawayByAnchor.Release();
+            _thermalRunawayPairs.Release();
+            _thermalRunawayCounters.Release();
+            _inventoryShadowBuffer.Release();
+            _inventoryBlackBox.Release();
+            _salinityCorrosionJobResult.Release();
+            _salinityBrokenItemHashes.Release();
+            _salinityCorrosionBlackBox.Release();
+            _defragItemHashes.Release();
+            _defragItemCounts.Release();
+            _defragCategories.Release();
+            _defragMaxStacks.Release();
+            _defragRarities.Release();
+            _defragWidths.Release();
+            _defragHeights.Release();
+            _defragFlags.Release();
+            _defragStateFlags.Release();
+            _defragGenetics.Release();
+            _defragQualityMilli.Release();
+            _defragDurabilities.Release();
+            _defragLastUpdateUnixSeconds.Release();
+            _defragUnitMassKg.Release();
+            _defragUnitVolumeM3.Release();
+            _defragUnitRadiationSv.Release();
+            _defragResult.Release();
+        }
+
+#if UNITY_EDITOR
+        private static bool ValidateInventoryMemorySovereigntyLayouts1317()
+        {
+            uint failures = 0u;
+            ValidateLayoutSize<InventoryTelemetryEntry>(InventoryBlackBoxEntrySizeBytes, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.Frame), 0, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.Version), 4, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.WeightKg), 8, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.VolumeLiters), 12, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.Load01), 16, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.InventoryMaskLow), 20, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.OccupiedCells), 24, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.Flags), 28, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.MaxWeightKg), 32, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.MaxVolumeLiters), 36, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.ShadowHash), 40, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.ShadowPayloadLength), 44, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.RadiationSv), 48, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.Columns), 52, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.Rows), 56, ref failures);
+            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.DefragTimeMicroseconds), 60, ref failures);
+
+            ValidateLayoutSize<SalinityCorrosionTelemetryEntry>(SalinityCorrosionBlackBoxEntrySizeBytes, ref failures);
+            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.Frame), 0, ref failures);
+            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.InventoryVersion), 4, ref failures);
+            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.AverageEquipmentDurability01), 8, ref failures);
+            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.RustScalar01), 12, ref failures);
+            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.SalinityFactor), 16, ref failures);
+            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.CurrentBiomeHash), 20, ref failures);
+            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.InventoryMaskLow), 24, ref failures);
+            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.Flags), 28, ref failures);
+
+            ValidateLayoutSize<VaultGenerationHandle<uint>>(16, ref failures);
+            return failures == 0u;
+        }
+
+        private static void ValidateLayoutSize<T>(int expectedSize, ref uint failures) where T : struct
+        {
+            int size = UnsafeUtility.SizeOf<T>();
+            if (size != expectedSize || (size & 7) != 0)
+                failures |= 1u;
+        }
+
+        private static void ValidateOffset<T>(string fieldName, int expectedOffset, ref uint failures) where T : struct
+        {
+            int offset = (int)Marshal.OffsetOf<T>(fieldName);
+            if (offset != expectedOffset)
+                failures |= 2u;
+        }
+#endif
 
         public float TotalWeight { get; private set; }
         public float TotalMassKg => _currentWeightKg;
@@ -670,73 +1081,30 @@ namespace Hecton8.Inventory
 
         private void Awake()
         {
+#if UNITY_EDITOR
+            if (!ValidateInventoryMemorySovereigntyLayouts1317())
+            {
+                enabled = false;
+                return;
+            }
+#endif
             _grid = new InventoryGrid(columns, rows);
-            // COLD ALLOC: uint[columns * rows] - hash-only SOA mirror for zero-GC crafting/UI reads - owner: PlayerInventory
-            _itemHashes = new NativeArray<uint>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: ushort[columns * rows] — anchor stack counts — owner: PlayerInventory
-            _stackCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: float[columns * rows] - normalized item condition SOA mirror for FrostTick decay/UI reads - owner: PlayerInventory
-            _itemCondition = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: float[columns * rows] - salinity equipment durability SOA mirror mapped 1:1 with _itemHashes - owner: PlayerInventory
-            _itemDurability = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: ushort[columns * rows] — craft reservations per anchor — owner: PlayerInventory
-            _craftLockedCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: ushort[columns * rows] — per-anchor state flags — owner: PlayerInventory
-            _anchorStateFlags = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: ushort[columns * rows] — persistent per-anchor item-state flags — owner: PlayerInventory
-            _itemStateFlags = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _itemGenetics = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - compressed per-anchor item genetics flags - owner: PlayerInventory
-            // COLD ALLOC: ushort[columns * rows] — persistent per-anchor quality values (0-1000) — owner: PlayerInventory
-            _qualityMilli = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: uint[columns * rows] — persistent per-anchor last update timestamps — owner: PlayerInventory
-            _durabilities = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - direct UI durability SOA mirror (0-100) - owner: PlayerInventory
-            _lastUpdateUnixSeconds = new NativeArray<uint>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: ushort[columns * rows] — stack simulation scratch — owner: PlayerInventory
-            _scavengeSimStackCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: byte[columns * rows] — occupancy simulation scratch — owner: PlayerInventory
-            _simulationOccupiedCells = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: ItemPlacement[columns * rows] — placement snapshot buffer — owner: PlayerInventory
-            _anchorUnitMassKg = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] â€” per-anchor unit mass cache for Burst-derived carry totals â€” owner: PlayerInventory
-            _anchorUnitVolumeM3 = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] â€” per-anchor unit volume cache for Burst-derived carry totals â€” owner: PlayerInventory
-            _anchorUnitRadiationSv = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] — per-anchor inventory radiation cache for Burst half-life and trauma totals — owner: PlayerInventory
-            _massAnchorHashSnapshot = new NativeArray<int>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[columns * rows] - SlowTick mass job hash snapshot - owner: PlayerInventory
-            _massStackCountSnapshot = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: ushort[columns * rows] - SlowTick mass job stack snapshot - owner: PlayerInventory
-            _massUnitMassSnapshot = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - SlowTick mass job mass snapshot - owner: PlayerInventory
-            _massUnitVolumeSnapshot = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - SlowTick mass job volume snapshot - owner: PlayerInventory
-            _massUnitRadiationSnapshot = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - SlowTick mass job radiation snapshot - owner: PlayerInventory
-            _derivedMassVolumeScratch = new NativeArray<float3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float3[1] - Burst-derived mass/volume/radiation totals scratch - owner: PlayerInventory
-            _radioactiveConversionAnchors = new NativeArray<int>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[columns * rows] — radioactive half-life conversion anchor scratch — owner: PlayerInventory
-            _radioactiveHalfLifeCounters = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[2] — radioactive half-life changed/conversion counters — owner: PlayerInventory
-            _thermalRunawayByAnchor = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] — reactive chemistry thermal runaway cache — owner: PlayerInventory
-            _thermalRunawayPairs = new NativeArray<int2>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int2[columns * rows] — reactive chemistry explosion pair scratch — owner: PlayerInventory
-            _thermalRunawayCounters = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[2] — reactive chemistry pair/change counters — owner: PlayerInventory
-            _inventoryShadowBuffer = new NativeArray<byte>(InventoryShadowBufferBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[16KB] - persistent inventory dehydration shadow payload - owner: PlayerInventory
-            _inventoryBlackBox = new NativeArray<InventoryTelemetryEntry>(InventoryBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: InventoryTelemetryEntry[300] - fixed inventory black-box ring - owner: PlayerInventory
-            _salinityCorrosionJobResult = new NativeArray<int>(InventoryCorrosionConstants.ResultRequiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[5] - salinity corrosion job summary - owner: PlayerInventory
-            _salinityBrokenItemHashes = new NativeArray<uint>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: uint[columns * rows] - FrostTick break event hashes - owner: PlayerInventory
-            _salinityCorrosionBlackBox = new NativeArray<SalinityCorrosionTelemetryEntry>(InventoryBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: SalinityCorrosionTelemetryEntry[300] - equipment corrosion black-box ring - owner: PlayerInventory
-            _defragItemHashes = new NativeArray<int>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[columns * rows] - native defrag hash stream - owner: PlayerInventory
-            _defragItemCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: ushort[columns * rows] - native defrag count stream - owner: PlayerInventory
-            _defragCategories = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag category stream - owner: PlayerInventory
-            _defragMaxStacks = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: ushort[columns * rows] - native defrag max-stack stream - owner: PlayerInventory
-            _defragRarities = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag rarity stream - owner: PlayerInventory
-            _defragWidths = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag width stream - owner: PlayerInventory
-            _defragHeights = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag height stream - owner: PlayerInventory
-            _defragFlags = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag flags stream - owner: PlayerInventory
-            _defragStateFlags = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: ushort[columns * rows] - native defrag state stream - owner: PlayerInventory
-            _defragGenetics = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag genetics stream - owner: PlayerInventory
-            _defragQualityMilli = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: ushort[columns * rows] - native defrag quality stream - owner: PlayerInventory
-            _defragDurabilities = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[columns * rows] - native defrag durability stream - owner: PlayerInventory
-            _defragLastUpdateUnixSeconds = new NativeArray<uint>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: uint[columns * rows] - native defrag timestamp stream - owner: PlayerInventory
-            _defragUnitMassKg = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - native defrag mass stream - owner: PlayerInventory
-            _defragUnitVolumeM3 = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - native defrag volume stream - owner: PlayerInventory
-            _defragUnitRadiationSv = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - native defrag radiation stream - owner: PlayerInventory
-            _defragResult = new NativeArray<int>(InventoryDefragResultSlots.RequiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[4] - native defrag result scratch - owner: PlayerInventory
+            CacheRegistryServicesCold();
+            int cellCount = columns * rows;
+            if (!BindPlayerInventoryVaultBuffers(cellCount))
+            {
+                enabled = false;
+                return;
+            }
+
+            ClearPlayerInventoryVaultBuffersCold();
             RegisterNativeMemorySentinel();
             _sortBuffer = new ItemPlacement[columns * rows];
-            TryGetComponent(out _traumaDispatcher);
-            CacheRegistryServicesCold();
-            InitializeSoaQueryEngine(columns * rows);
+            // COLD ALLOC: ushort[cellCount] - bulk transfer merge-cap scratch - owner: PlayerInventory
+            _bulkCompactionMaxStackBuffer = new ushort[cellCount];
+            if (_traumaDispatcher == null)
+                TryGetComponent(out _traumaDispatcher);
+            InitializeSoaQueryEngine(cellCount);
         }
 
         private void OnEnable()
@@ -756,7 +1124,6 @@ namespace Hecton8.Inventory
             TryUnregisterSlowTick();
             TryUnregisterLateFrameTick();
             TryUnregisterHotSwapListener();
-            CompleteInventoryMassRecomputeJob(forceComplete: true);
         }
 
         private void OnDestroy()
@@ -765,7 +1132,6 @@ namespace Hecton8.Inventory
             TryUnregisterSaveParticipant();
             TryUnregisterLateFrameTick();
             TryUnregisterHotSwapListener();
-            CompleteInventoryMassRecomputeJob(forceComplete: true);
 
             if (_grid != null)
             {
@@ -773,55 +1139,7 @@ namespace Hecton8.Inventory
                 _grid = null;
             }
 
-            DisposeNativeArray(ref _itemHashes);
-            DisposeNativeArray(ref _stackCounts);
-            DisposeNativeArray(ref _itemCondition);
-            DisposeNativeArray(ref _itemDurability);
-            DisposeNativeArray(ref _craftLockedCounts);
-            DisposeNativeArray(ref _anchorStateFlags);
-            DisposeNativeArray(ref _itemStateFlags);
-            DisposeNativeArray(ref _itemGenetics);
-            DisposeNativeArray(ref _qualityMilli);
-            DisposeNativeArray(ref _durabilities);
-            DisposeNativeArray(ref _lastUpdateUnixSeconds);
-            DisposeNativeArray(ref _scavengeSimStackCounts);
-            DisposeNativeArray(ref _simulationOccupiedCells);
-            DisposeNativeArray(ref _anchorUnitMassKg);
-            DisposeNativeArray(ref _anchorUnitVolumeM3);
-            DisposeNativeArray(ref _anchorUnitRadiationSv);
-            DisposeNativeArray(ref _massAnchorHashSnapshot);
-            DisposeNativeArray(ref _massStackCountSnapshot);
-            DisposeNativeArray(ref _massUnitMassSnapshot);
-            DisposeNativeArray(ref _massUnitVolumeSnapshot);
-            DisposeNativeArray(ref _massUnitRadiationSnapshot);
-            DisposeNativeArray(ref _derivedMassVolumeScratch);
-            DisposeNativeArray(ref _radioactiveConversionAnchors);
-            DisposeNativeArray(ref _radioactiveHalfLifeCounters);
-            DisposeNativeArray(ref _thermalRunawayByAnchor);
-            DisposeNativeArray(ref _thermalRunawayPairs);
-            DisposeNativeArray(ref _thermalRunawayCounters);
-            DisposeNativeArray(ref _inventoryShadowBuffer);
-            DisposeNativeArray(ref _inventoryBlackBox);
-            DisposeNativeArray(ref _salinityCorrosionJobResult);
-            DisposeNativeArray(ref _salinityBrokenItemHashes);
-            DisposeNativeArray(ref _salinityCorrosionBlackBox);
-            DisposeNativeArray(ref _defragItemHashes);
-            DisposeNativeArray(ref _defragItemCounts);
-            DisposeNativeArray(ref _defragCategories);
-            DisposeNativeArray(ref _defragMaxStacks);
-            DisposeNativeArray(ref _defragRarities);
-            DisposeNativeArray(ref _defragWidths);
-            DisposeNativeArray(ref _defragHeights);
-            DisposeNativeArray(ref _defragFlags);
-            DisposeNativeArray(ref _defragStateFlags);
-            DisposeNativeArray(ref _defragGenetics);
-            DisposeNativeArray(ref _defragQualityMilli);
-            DisposeNativeArray(ref _defragDurabilities);
-            DisposeNativeArray(ref _defragLastUpdateUnixSeconds);
-            DisposeNativeArray(ref _defragUnitMassKg);
-            DisposeNativeArray(ref _defragUnitVolumeM3);
-            DisposeNativeArray(ref _defragUnitRadiationSv);
-            DisposeNativeArray(ref _defragResult);
+            ReleasePlayerInventoryVaultBuffers();
             DisposeSoaQueryEngine();
 
         }
@@ -837,7 +1155,7 @@ namespace Hecton8.Inventory
                     _cachedPersistentWorldRegistry = currentService as IPersistentDroppedItemRegistry;
                     break;
                 case GlobalRegistryServiceSlot.Player:
-                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     _cachedAudioService = currentService as IAudioService;
@@ -849,6 +1167,7 @@ namespace Hecton8.Inventory
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     _cachedDataVault = currentService as IDataVault;
+                    RebindPlayerInventoryVaultReferences(_cachedDataVault);
                     TryBindSoaQueryVault(_cachedDataVault, columns * rows);
                     PublishSoaQueryVaultSnapshotOwnerPhase();
                     break;
@@ -878,14 +1197,19 @@ namespace Hecton8.Inventory
         private void CacheRegistryServicesCold()
         {
             _cachedPersistentWorldRegistry = GlobalRegistry.PersistentDroppedItems;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (!ReferenceEquals(_cachedPlayerContext, playerContext))
-                _cachedPlayerContext = playerContext;
-
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            if (_traumaDispatcher == null)
+                TryGetComponent(out _traumaDispatcher);
             _cachedAudioService = GlobalRegistry.Audio;
             _cachedSaveService = GlobalRegistry.Save;
             _cachedDataVault = GlobalRegistry.DataVault;
             _cachedPhysicsStateEvents = GlobalRegistry.PhysicsStateEvents;
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _cachedPlayerContext = playerContext;
+            _traumaDispatcher = playerContext != null ? playerContext.TraumaDispatcher : null;
         }
 
         private void TryRegisterPhysicsImpactListener()
@@ -956,55 +1280,7 @@ namespace Hecton8.Inventory
 
         private void RegisterNativeMemorySentinel()
         {
-            NativeMemorySentinel.RegisterNativeArray(_itemHashes, NativeMemoryOwner, nameof(_itemHashes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_stackCounts, NativeMemoryOwner, nameof(_stackCounts), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_itemCondition, NativeMemoryOwner, nameof(_itemCondition), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_itemDurability, NativeMemoryOwner, nameof(_itemDurability), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_craftLockedCounts, NativeMemoryOwner, nameof(_craftLockedCounts), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorStateFlags, NativeMemoryOwner, nameof(_anchorStateFlags), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_itemStateFlags, NativeMemoryOwner, nameof(_itemStateFlags), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_itemGenetics, NativeMemoryOwner, nameof(_itemGenetics), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_qualityMilli, NativeMemoryOwner, nameof(_qualityMilli), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_durabilities, NativeMemoryOwner, nameof(_durabilities), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_lastUpdateUnixSeconds, NativeMemoryOwner, nameof(_lastUpdateUnixSeconds), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_scavengeSimStackCounts, NativeMemoryOwner, nameof(_scavengeSimStackCounts), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_simulationOccupiedCells, NativeMemoryOwner, nameof(_simulationOccupiedCells), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorUnitMassKg, NativeMemoryOwner, nameof(_anchorUnitMassKg), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorUnitVolumeM3, NativeMemoryOwner, nameof(_anchorUnitVolumeM3), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorUnitRadiationSv, NativeMemoryOwner, nameof(_anchorUnitRadiationSv), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_massAnchorHashSnapshot, NativeMemoryOwner, nameof(_massAnchorHashSnapshot), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_massStackCountSnapshot, NativeMemoryOwner, nameof(_massStackCountSnapshot), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_massUnitMassSnapshot, NativeMemoryOwner, nameof(_massUnitMassSnapshot), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_massUnitVolumeSnapshot, NativeMemoryOwner, nameof(_massUnitVolumeSnapshot), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_massUnitRadiationSnapshot, NativeMemoryOwner, nameof(_massUnitRadiationSnapshot), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_derivedMassVolumeScratch, NativeMemoryOwner, nameof(_derivedMassVolumeScratch), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_radioactiveConversionAnchors, NativeMemoryOwner, nameof(_radioactiveConversionAnchors), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_radioactiveHalfLifeCounters, NativeMemoryOwner, nameof(_radioactiveHalfLifeCounters), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_thermalRunawayByAnchor, NativeMemoryOwner, nameof(_thermalRunawayByAnchor), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_thermalRunawayPairs, NativeMemoryOwner, nameof(_thermalRunawayPairs), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_thermalRunawayCounters, NativeMemoryOwner, nameof(_thermalRunawayCounters), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_inventoryShadowBuffer, NativeMemoryOwner, nameof(_inventoryShadowBuffer), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_inventoryBlackBox, NativeMemoryOwner, nameof(_inventoryBlackBox), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_salinityCorrosionJobResult, NativeMemoryOwner, nameof(_salinityCorrosionJobResult), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_salinityBrokenItemHashes, NativeMemoryOwner, nameof(_salinityBrokenItemHashes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_salinityCorrosionBlackBox, NativeMemoryOwner, nameof(_salinityCorrosionBlackBox), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragItemHashes, NativeMemoryOwner, nameof(_defragItemHashes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragItemCounts, NativeMemoryOwner, nameof(_defragItemCounts), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragCategories, NativeMemoryOwner, nameof(_defragCategories), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragMaxStacks, NativeMemoryOwner, nameof(_defragMaxStacks), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragRarities, NativeMemoryOwner, nameof(_defragRarities), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragWidths, NativeMemoryOwner, nameof(_defragWidths), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragHeights, NativeMemoryOwner, nameof(_defragHeights), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragFlags, NativeMemoryOwner, nameof(_defragFlags), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragStateFlags, NativeMemoryOwner, nameof(_defragStateFlags), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragGenetics, NativeMemoryOwner, nameof(_defragGenetics), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragQualityMilli, NativeMemoryOwner, nameof(_defragQualityMilli), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragDurabilities, NativeMemoryOwner, nameof(_defragDurabilities), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragLastUpdateUnixSeconds, NativeMemoryOwner, nameof(_defragLastUpdateUnixSeconds), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragUnitMassKg, NativeMemoryOwner, nameof(_defragUnitMassKg), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragUnitVolumeM3, NativeMemoryOwner, nameof(_defragUnitVolumeM3), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragUnitRadiationSv, NativeMemoryOwner, nameof(_defragUnitRadiationSv), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_defragResult, NativeMemoryOwner, nameof(_defragResult), NativeMemoryLifetime);
+            // PlayerInventory stores generation descriptors only. GlobalDataVault owns native allocation telemetry.
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
@@ -1014,21 +1290,6 @@ namespace Hecton8.Inventory
 
             NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose(default);
-            array = default;
-        }
-
-        private static void RegisterTempJobArray<T>(NativeArray<T> array, string label) where T : struct
-        {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
-        }
-
-        private static void DisposeTempJobArray<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
             array = default;
         }
 
@@ -1463,7 +1724,7 @@ namespace Hecton8.Inventory
                 ApplyInventoryDepthPressureCrush();
                 DispatchInventoryRadiationTrauma();
                 if (_massCacheDirty)
-                    ScheduleInventoryMassRecomputeJob();
+                    RefreshDerivedMassAndSurvivalLoad();
             }
         }
 
@@ -1472,7 +1733,6 @@ namespace Hecton8.Inventory
             DrainScavengingLootOracleSignals();
             ConsumeInventoryCommandSignals();
             FlushEquipmentRustShaderScalar();
-            CompleteInventoryMassRecomputeJob(forceComplete: false);
             WriteSoaQueryTelemetryOwnerPhase();
         }
 
@@ -2197,7 +2457,7 @@ namespace Hecton8.Inventory
             long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             using (_defragProfilerMarker.Auto())
             {
-                JobHandle sortHandle = new InventoryDefragJob
+                InventoryDefragCommand sortCommand = new InventoryDefragCommand
                 {
                     ItemHashes = _defragItemHashes,
                     ItemCounts = _defragItemCounts,
@@ -2217,10 +2477,8 @@ namespace Hecton8.Inventory
                     UnitRadiationSv = _defragUnitRadiationSv,
                     Result = _defragResult,
                     SlotCount = count
-                }.Schedule();
-
-                // COLD SYNC JOB: explicit user sort command; no Tick/SlowTick barrier.
-                DispatcherJobSwap.TryComplete(ref sortHandle, forceComplete: true);
+                };
+                sortCommand.Execute();
             }
 
             int sortedCount = _defragResult.IsCreated && _defragResult.Length > InventoryDefragResultSlots.OccupiedCount
@@ -2876,12 +3134,11 @@ namespace Hecton8.Inventory
                 return false;
             }
 
-            return InventorySoAUtility.TryBulkCopySlice(_inventoryShadowBuffer, 0, destination, 0, payloadLength);
+            return TryBulkCopyLaneToNative(in _inventoryShadowBuffer, 0, destination, 0, payloadLength);
         }
 
         private void PrepareBulkTransferCaches()
         {
-            CompleteInventoryMassRecomputeJob(forceComplete: true);
             RefreshInventorySoAMirrorsAndMask();
             PublishSoaQueryVaultSnapshotOwnerPhase();
             MarkMassCacheDirty();
@@ -3064,54 +3321,99 @@ namespace Hecton8.Inventory
             out InventorySoAUtility.BulkTransferResult result)
         {
             result = InventorySoAUtility.BulkTransferResult.Failed(InventorySoAUtility.TransferFailureCode.InvalidInput);
-            NativeArray<float4> validationResult = default;
-            NativeArray<byte> failureCode = default;
-            try
-            {
-                validationResult = new NativeArray<float4>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                failureCode = new NativeArray<byte>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                RegisterTempJobArray(validationResult, BulkTransferValidationTempLabel);
-                RegisterTempJobArray(failureCode, BulkTransferFailureTempLabel);
 
-                JobHandle validationHandle = new InventorySoAUtility.InventoryTransferValidationJob
+            if (targetInventory == null ||
+                !_itemHashes.TryResolve(out NativeArray<uint> sourceHashes) ||
+                !_stackCounts.TryResolve(out NativeArray<ushort> sourceCounts) ||
+                !_anchorUnitMassKg.TryResolve(out NativeArray<float> sourceUnitMassKg) ||
+                !_anchorUnitVolumeM3.TryResolve(out NativeArray<float> sourceUnitVolumeM3) ||
+                !targetInventory._itemHashes.TryResolve(out NativeArray<uint> targetHashes) ||
+                !targetInventory._stackCounts.TryResolve(out NativeArray<ushort> targetCounts) ||
+                sourceStartIndex < 0 ||
+                targetStartIndex < 0 ||
+                slotCount <= 0 ||
+                sourceStartIndex + slotCount > sourceHashes.Length ||
+                sourceStartIndex + slotCount > sourceCounts.Length ||
+                sourceStartIndex + slotCount > sourceUnitMassKg.Length ||
+                sourceStartIndex + slotCount > sourceUnitVolumeM3.Length ||
+                targetStartIndex + slotCount > targetHashes.Length ||
+                targetStartIndex + slotCount > targetCounts.Length)
+            {
+                return false;
+            }
+
+            float transferWeightKg = 0f;
+            float transferVolumeLiters = 0f;
+            int movedSlotCount = 0;
+            int movedStackCount = 0;
+
+            for (int offset = 0; offset < slotCount; offset++)
+            {
+                int sourceIndex = sourceStartIndex + offset;
+                uint hash = sourceHashes[sourceIndex];
+                ushort count = sourceCounts[sourceIndex];
+                if (hash == 0u || count == 0)
+                    continue;
+
+                int targetIndex = targetStartIndex + offset;
+                if (targetHashes[targetIndex] != 0u ||
+                    targetCounts[targetIndex] != 0)
                 {
-                    SourceHashes = _itemHashes,
-                    SourceCounts = _stackCounts,
-                    SourceUnitMassKg = _anchorUnitMassKg,
-                    SourceUnitVolumeM3 = _anchorUnitVolumeM3,
-                    TargetHashes = targetInventory._itemHashes,
-                    TargetCounts = targetInventory._stackCounts,
-                    Result = validationResult,
-                    FailureCode = failureCode,
-                    SourceStartIndex = sourceStartIndex,
-                    TargetStartIndex = targetStartIndex,
-                    SlotCount = slotCount,
-                    TargetCurrentWeightKg = targetInventory._currentWeightKg,
-                    TargetCurrentVolumeLiters = targetInventory._currentVolumeLiters,
-                    TargetMaxWeightKg = targetInventory.MaxWeightKg,
-                    TargetMaxVolumeLiters = targetInventory.MaxVolumeLiters
-                }.Schedule();
+                    result = InventorySoAUtility.BulkTransferResult.Failed(InventorySoAUtility.TransferFailureCode.TargetOccupied);
+                    return false;
+                }
 
-                // COLD SYNC JOB: explicit inventory bulk transfer command; no Tick/SlowTick barrier.
-                DispatcherJobSwap.TryComplete(ref validationHandle, forceComplete: true);
-
-                float4 totals = validationResult[0];
-                InventorySoAUtility.TransferFailureCode resolvedFailureCode = (InventorySoAUtility.TransferFailureCode)failureCode[0];
-                result = new InventorySoAUtility.BulkTransferResult(
-                    resolvedFailureCode,
-                    (int)totals.w,
-                    (int)totals.z,
-                    totals.x,
-                    totals.y,
-                    targetInventory._currentWeightKg + totals.x,
-                    targetInventory._currentVolumeLiters + totals.y);
-                return result.Succeeded;
+                float unitMassKg = math.max(0f, sourceUnitMassKg[sourceIndex]);
+                float unitVolumeLiters = math.max(0f, sourceUnitVolumeM3[sourceIndex]) * 1000f;
+                transferWeightKg += unitMassKg * count;
+                transferVolumeLiters += unitVolumeLiters * count;
+                movedSlotCount++;
+                movedStackCount += count;
             }
-            finally
+
+            if (movedSlotCount == 0)
             {
-                DisposeTempJobArray(ref failureCode);
-                DisposeTempJobArray(ref validationResult);
+                result = InventorySoAUtility.BulkTransferResult.Failed(InventorySoAUtility.TransferFailureCode.SourceEmpty);
+                return false;
             }
+
+            float nextWeightKg = targetInventory._currentWeightKg + transferWeightKg;
+            if (targetInventory.MaxWeightKg >= 0f && nextWeightKg > targetInventory.MaxWeightKg)
+            {
+                result = new InventorySoAUtility.BulkTransferResult(
+                    InventorySoAUtility.TransferFailureCode.WeightLimit,
+                    movedSlotCount,
+                    movedStackCount,
+                    transferWeightKg,
+                    transferVolumeLiters,
+                    nextWeightKg,
+                    targetInventory._currentVolumeLiters + transferVolumeLiters);
+                return false;
+            }
+
+            float nextVolumeLiters = targetInventory._currentVolumeLiters + transferVolumeLiters;
+            if (targetInventory.MaxVolumeLiters >= 0f && nextVolumeLiters > targetInventory.MaxVolumeLiters)
+            {
+                result = new InventorySoAUtility.BulkTransferResult(
+                    InventorySoAUtility.TransferFailureCode.VolumeLimit,
+                    movedSlotCount,
+                    movedStackCount,
+                    transferWeightKg,
+                    transferVolumeLiters,
+                    nextWeightKg,
+                    nextVolumeLiters);
+                return false;
+            }
+
+            result = new InventorySoAUtility.BulkTransferResult(
+                InventorySoAUtility.TransferFailureCode.None,
+                movedSlotCount,
+                movedStackCount,
+                transferWeightKg,
+                transferVolumeLiters,
+                nextWeightKg,
+                nextVolumeLiters);
+            return true;
         }
 
         private bool TryPlaceBulkTransferSlice(
@@ -3149,17 +3451,17 @@ namespace Hecton8.Inventory
             int targetStartIndex,
             int slotCount)
         {
-            return InventorySoAUtility.TryBulkCopySlice(_itemHashes, sourceStartIndex, targetInventory._itemHashes, targetStartIndex, slotCount) &&
-                   InventorySoAUtility.TryBulkCopySlice(_stackCounts, sourceStartIndex, targetInventory._stackCounts, targetStartIndex, slotCount) &&
-                   InventorySoAUtility.TryBulkCopySlice(_itemCondition, sourceStartIndex, targetInventory._itemCondition, targetStartIndex, slotCount) &&
-                   InventorySoAUtility.TryBulkCopySlice(_itemStateFlags, sourceStartIndex, targetInventory._itemStateFlags, targetStartIndex, slotCount) &&
-                   InventorySoAUtility.TryBulkCopySlice(_itemGenetics, sourceStartIndex, targetInventory._itemGenetics, targetStartIndex, slotCount) &&
-                   InventorySoAUtility.TryBulkCopySlice(_qualityMilli, sourceStartIndex, targetInventory._qualityMilli, targetStartIndex, slotCount) &&
-                   InventorySoAUtility.TryBulkCopySlice(_durabilities, sourceStartIndex, targetInventory._durabilities, targetStartIndex, slotCount) &&
-                   InventorySoAUtility.TryBulkCopySlice(_lastUpdateUnixSeconds, sourceStartIndex, targetInventory._lastUpdateUnixSeconds, targetStartIndex, slotCount) &&
-                   InventorySoAUtility.TryBulkCopySlice(_anchorUnitMassKg, sourceStartIndex, targetInventory._anchorUnitMassKg, targetStartIndex, slotCount) &&
-                   InventorySoAUtility.TryBulkCopySlice(_anchorUnitVolumeM3, sourceStartIndex, targetInventory._anchorUnitVolumeM3, targetStartIndex, slotCount) &&
-                   InventorySoAUtility.TryBulkCopySlice(_anchorUnitRadiationSv, sourceStartIndex, targetInventory._anchorUnitRadiationSv, targetStartIndex, slotCount);
+            return TryBulkCopyLaneToLane(in _itemHashes, sourceStartIndex, ref targetInventory._itemHashes, targetStartIndex, slotCount) &&
+                   TryBulkCopyLaneToLane(in _stackCounts, sourceStartIndex, ref targetInventory._stackCounts, targetStartIndex, slotCount) &&
+                   TryBulkCopyLaneToLane(in _itemCondition, sourceStartIndex, ref targetInventory._itemCondition, targetStartIndex, slotCount) &&
+                   TryBulkCopyLaneToLane(in _itemStateFlags, sourceStartIndex, ref targetInventory._itemStateFlags, targetStartIndex, slotCount) &&
+                   TryBulkCopyLaneToLane(in _itemGenetics, sourceStartIndex, ref targetInventory._itemGenetics, targetStartIndex, slotCount) &&
+                   TryBulkCopyLaneToLane(in _qualityMilli, sourceStartIndex, ref targetInventory._qualityMilli, targetStartIndex, slotCount) &&
+                   TryBulkCopyLaneToLane(in _durabilities, sourceStartIndex, ref targetInventory._durabilities, targetStartIndex, slotCount) &&
+                   TryBulkCopyLaneToLane(in _lastUpdateUnixSeconds, sourceStartIndex, ref targetInventory._lastUpdateUnixSeconds, targetStartIndex, slotCount) &&
+                   TryBulkCopyLaneToLane(in _anchorUnitMassKg, sourceStartIndex, ref targetInventory._anchorUnitMassKg, targetStartIndex, slotCount) &&
+                   TryBulkCopyLaneToLane(in _anchorUnitVolumeM3, sourceStartIndex, ref targetInventory._anchorUnitVolumeM3, targetStartIndex, slotCount) &&
+                   TryBulkCopyLaneToLane(in _anchorUnitRadiationSv, sourceStartIndex, ref targetInventory._anchorUnitRadiationSv, targetStartIndex, slotCount);
         }
 
         private void SyncBulkTransferPhysicalMetadata(int startIndex, int slotCount)
@@ -3187,193 +3489,25 @@ namespace Hecton8.Inventory
                 }
             }
 
-            InventorySoAUtility.TryClearSlice(_itemHashes, startIndex, slotCount);
-            InventorySoAUtility.TryClearSlice(_stackCounts, startIndex, slotCount);
-            InventorySoAUtility.TryClearSlice(_itemCondition, startIndex, slotCount);
-            InventorySoAUtility.TryClearSlice(_craftLockedCounts, startIndex, slotCount);
-            InventorySoAUtility.TryClearSlice(_anchorStateFlags, startIndex, slotCount);
-            InventorySoAUtility.TryClearSlice(_itemStateFlags, startIndex, slotCount);
-            InventorySoAUtility.TryClearSlice(_itemGenetics, startIndex, slotCount);
-            InventorySoAUtility.TryClearSlice(_qualityMilli, startIndex, slotCount);
-            InventorySoAUtility.TryClearSlice(_durabilities, startIndex, slotCount);
-            InventorySoAUtility.TryClearSlice(_lastUpdateUnixSeconds, startIndex, slotCount);
-            InventorySoAUtility.TryClearSlice(_anchorUnitMassKg, startIndex, slotCount);
-            InventorySoAUtility.TryClearSlice(_anchorUnitVolumeM3, startIndex, slotCount);
-            InventorySoAUtility.TryClearSlice(_anchorUnitRadiationSv, startIndex, slotCount);
+            TryClearLaneSlice(ref _itemHashes, startIndex, slotCount);
+            TryClearLaneSlice(ref _stackCounts, startIndex, slotCount);
+            TryClearLaneSlice(ref _itemCondition, startIndex, slotCount);
+            TryClearLaneSlice(ref _craftLockedCounts, startIndex, slotCount);
+            TryClearLaneSlice(ref _anchorStateFlags, startIndex, slotCount);
+            TryClearLaneSlice(ref _itemStateFlags, startIndex, slotCount);
+            TryClearLaneSlice(ref _itemGenetics, startIndex, slotCount);
+            TryClearLaneSlice(ref _qualityMilli, startIndex, slotCount);
+            TryClearLaneSlice(ref _durabilities, startIndex, slotCount);
+            TryClearLaneSlice(ref _lastUpdateUnixSeconds, startIndex, slotCount);
+            TryClearLaneSlice(ref _anchorUnitMassKg, startIndex, slotCount);
+            TryClearLaneSlice(ref _anchorUnitVolumeM3, startIndex, slotCount);
+            TryClearLaneSlice(ref _anchorUnitRadiationSv, startIndex, slotCount);
         }
 
         private bool TryCompactIdenticalHashesAfterBulkTransfer()
         {
-            if (_grid == null ||
-                !_itemHashes.IsCreated ||
-                !_stackCounts.IsCreated ||
-                !_itemCondition.IsCreated ||
-                !_itemStateFlags.IsCreated ||
-                !_itemGenetics.IsCreated ||
-                !_qualityMilli.IsCreated ||
-                !_durabilities.IsCreated ||
-                !_lastUpdateUnixSeconds.IsCreated ||
-                !_anchorUnitMassKg.IsCreated ||
-                !_anchorUnitVolumeM3.IsCreated ||
-                !_anchorUnitRadiationSv.IsCreated)
-            {
+            if (!TryBuildBulkCompactedPlacements(out int placementCount))
                 return false;
-            }
-
-            int compactionCapacity = ResolveBulkCompactionCapacity();
-            if (compactionCapacity <= 0)
-                return false;
-
-            NativeArray<uint> itemHashes = default;
-            NativeArray<ushort> itemCounts = default;
-            NativeArray<float> itemCondition = default;
-            NativeArray<ushort> itemStateFlags = default;
-            NativeArray<byte> itemGenetics = default;
-            NativeArray<ushort> qualityMilli = default;
-            NativeArray<byte> durabilities = default;
-            NativeArray<uint> lastUpdateUnixSeconds = default;
-            NativeArray<float> unitMassKg = default;
-            NativeArray<float> unitVolumeM3 = default;
-            NativeArray<float> unitRadiationSv = default;
-            NativeArray<int> resultCount = default;
-            try
-            {
-                itemHashes = new NativeArray<uint>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                itemCounts = new NativeArray<ushort>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                itemCondition = new NativeArray<float>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                itemStateFlags = new NativeArray<ushort>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                itemGenetics = new NativeArray<byte>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                qualityMilli = new NativeArray<ushort>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                durabilities = new NativeArray<byte>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                lastUpdateUnixSeconds = new NativeArray<uint>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                unitMassKg = new NativeArray<float>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                unitVolumeM3 = new NativeArray<float>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                unitRadiationSv = new NativeArray<float>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                resultCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                RegisterTempJobArray(itemHashes, BulkTransferCompactionHashTempLabel);
-                RegisterTempJobArray(itemCounts, BulkTransferCompactionCountTempLabel);
-                RegisterTempJobArray(itemCondition, BulkTransferCompactionConditionTempLabel);
-                RegisterTempJobArray(itemStateFlags, BulkTransferCompactionStateTempLabel);
-                RegisterTempJobArray(itemGenetics, BulkTransferCompactionGeneticsTempLabel);
-                RegisterTempJobArray(qualityMilli, BulkTransferCompactionQualityTempLabel);
-                RegisterTempJobArray(durabilities, BulkTransferCompactionDurabilityTempLabel);
-                RegisterTempJobArray(lastUpdateUnixSeconds, BulkTransferCompactionTimestampTempLabel);
-                RegisterTempJobArray(unitMassKg, BulkTransferCompactionMassTempLabel);
-                RegisterTempJobArray(unitVolumeM3, BulkTransferCompactionVolumeTempLabel);
-                RegisterTempJobArray(unitRadiationSv, BulkTransferCompactionRadiationTempLabel);
-                RegisterTempJobArray(resultCount, BulkTransferCompactionResultTempLabel);
-
-                if (!InventorySoAUtility.TryBulkCopySlice(_itemHashes, 0, itemHashes, 0, compactionCapacity) ||
-                    !InventorySoAUtility.TryBulkCopySlice(_stackCounts, 0, itemCounts, 0, compactionCapacity) ||
-                    !InventorySoAUtility.TryBulkCopySlice(_itemCondition, 0, itemCondition, 0, compactionCapacity) ||
-                    !InventorySoAUtility.TryBulkCopySlice(_itemStateFlags, 0, itemStateFlags, 0, compactionCapacity) ||
-                    !InventorySoAUtility.TryBulkCopySlice(_itemGenetics, 0, itemGenetics, 0, compactionCapacity) ||
-                    !InventorySoAUtility.TryBulkCopySlice(_qualityMilli, 0, qualityMilli, 0, compactionCapacity) ||
-                    !InventorySoAUtility.TryBulkCopySlice(_durabilities, 0, durabilities, 0, compactionCapacity) ||
-                    !InventorySoAUtility.TryBulkCopySlice(_lastUpdateUnixSeconds, 0, lastUpdateUnixSeconds, 0, compactionCapacity) ||
-                    !InventorySoAUtility.TryBulkCopySlice(_anchorUnitMassKg, 0, unitMassKg, 0, compactionCapacity) ||
-                    !InventorySoAUtility.TryBulkCopySlice(_anchorUnitVolumeM3, 0, unitVolumeM3, 0, compactionCapacity) ||
-                    !InventorySoAUtility.TryBulkCopySlice(_anchorUnitRadiationSv, 0, unitRadiationSv, 0, compactionCapacity))
-                {
-                    return false;
-                }
-
-                JobHandle compactionHandle = new InventorySoAUtility.InventoryCompactionJob
-                {
-                    ItemHashes = itemHashes,
-                    ItemCounts = itemCounts,
-                    ItemCondition = itemCondition,
-                    ItemStateFlags = itemStateFlags,
-                    ItemGenetics = itemGenetics,
-                    QualityMilli = qualityMilli,
-                    Durabilities = durabilities,
-                    LastUpdateUnixSeconds = lastUpdateUnixSeconds,
-                    UnitMassKg = unitMassKg,
-                    UnitVolumeM3 = unitVolumeM3,
-                    UnitRadiationSv = unitRadiationSv,
-                    MaxStackCounts = _grid.AnchorMaxStacks,
-                    ResultCount = resultCount
-                }.Schedule();
-
-                // COLD SYNC JOB: command-path inventory compaction after bulk transfer; no Tick/SlowTick barrier.
-                DispatcherJobSwap.TryComplete(ref compactionHandle, forceComplete: true);
-                return TryRepackCompactedSoA(
-                    itemHashes,
-                    itemCounts,
-                    itemCondition,
-                    itemStateFlags,
-                    itemGenetics,
-                    qualityMilli,
-                    durabilities,
-                    lastUpdateUnixSeconds,
-                    unitMassKg,
-                    unitVolumeM3,
-                    unitRadiationSv,
-                    resultCount[0]);
-            }
-            finally
-            {
-                DisposeTempJobArray(ref resultCount);
-                DisposeTempJobArray(ref unitRadiationSv);
-                DisposeTempJobArray(ref unitVolumeM3);
-                DisposeTempJobArray(ref unitMassKg);
-                DisposeTempJobArray(ref lastUpdateUnixSeconds);
-                DisposeTempJobArray(ref durabilities);
-                DisposeTempJobArray(ref qualityMilli);
-                DisposeTempJobArray(ref itemGenetics);
-                DisposeTempJobArray(ref itemStateFlags);
-                DisposeTempJobArray(ref itemCondition);
-                DisposeTempJobArray(ref itemCounts);
-                DisposeTempJobArray(ref itemHashes);
-            }
-        }
-
-        private int ResolveBulkCompactionCapacity()
-        {
-            int count = _itemHashes.Length;
-            count = math.min(count, _stackCounts.Length);
-            count = math.min(count, _itemCondition.Length);
-            count = math.min(count, _itemStateFlags.Length);
-            count = math.min(count, _itemGenetics.Length);
-            count = math.min(count, _qualityMilli.Length);
-            count = math.min(count, _durabilities.Length);
-            count = math.min(count, _lastUpdateUnixSeconds.Length);
-            count = math.min(count, _anchorUnitMassKg.Length);
-            count = math.min(count, _anchorUnitVolumeM3.Length);
-            return math.min(count, _anchorUnitRadiationSv.Length);
-        }
-
-        private bool TryRepackCompactedSoA(
-            NativeArray<uint> itemHashes,
-            NativeArray<ushort> itemCounts,
-            NativeArray<float> itemCondition,
-            NativeArray<ushort> itemStateFlags,
-            NativeArray<byte> itemGenetics,
-            NativeArray<ushort> qualityMilli,
-            NativeArray<byte> durabilities,
-            NativeArray<uint> lastUpdateUnixSeconds,
-            NativeArray<float> unitMassKg,
-            NativeArray<float> unitVolumeM3,
-            NativeArray<float> unitRadiationSv,
-            int compactedCount)
-        {
-            if (!TryBuildCompactedPlacements(
-                    itemHashes,
-                    itemCounts,
-                    itemCondition,
-                    itemStateFlags,
-                    itemGenetics,
-                    qualityMilli,
-                    durabilities,
-                    lastUpdateUnixSeconds,
-                    unitMassKg,
-                    unitVolumeM3,
-                    unitRadiationSv,
-                    compactedCount,
-                    out int placementCount))
-            {
-                return false;
-            }
 
             if (!CanApplyPlacementsFirstFit(_sortBuffer, placementCount))
                 return false;
@@ -3381,40 +3515,29 @@ namespace Hecton8.Inventory
             return TryApplyPlacementsFirstFit(_sortBuffer, placementCount);
         }
 
-        private bool TryBuildCompactedPlacements(
-            NativeArray<uint> itemHashes,
-            NativeArray<ushort> itemCounts,
-            NativeArray<float> itemCondition,
-            NativeArray<ushort> itemStateFlags,
-            NativeArray<byte> itemGenetics,
-            NativeArray<ushort> qualityMilli,
-            NativeArray<byte> durabilities,
-            NativeArray<uint> lastUpdateUnixSeconds,
-            NativeArray<float> unitMassKg,
-            NativeArray<float> unitVolumeM3,
-            NativeArray<float> unitRadiationSv,
-            int compactedCount,
-            out int placementCount)
+        private bool TryBuildBulkCompactedPlacements(out int placementCount)
         {
             placementCount = 0;
-            if (_sortBuffer == null ||
-                compactedCount < 0 ||
-                !itemHashes.IsCreated ||
-                !itemCounts.IsCreated ||
-                !itemCondition.IsCreated ||
-                !itemStateFlags.IsCreated ||
-                !itemGenetics.IsCreated ||
-                !qualityMilli.IsCreated ||
-                !durabilities.IsCreated ||
-                !lastUpdateUnixSeconds.IsCreated ||
-                !unitMassKg.IsCreated ||
-                !unitVolumeM3.IsCreated ||
-                !unitRadiationSv.IsCreated)
+            if (_grid == null ||
+                _sortBuffer == null ||
+                _bulkCompactionMaxStackBuffer == null ||
+                !_itemHashes.TryReadOnly(out NativeArray<uint>.ReadOnly itemHashes) ||
+                !_stackCounts.TryReadOnly(out NativeArray<ushort>.ReadOnly itemCounts) ||
+                !_itemCondition.TryReadOnly(out NativeArray<float>.ReadOnly itemCondition) ||
+                !_itemStateFlags.TryReadOnly(out NativeArray<ushort>.ReadOnly itemStateFlags) ||
+                !_itemGenetics.TryReadOnly(out NativeArray<byte>.ReadOnly itemGenetics) ||
+                !_qualityMilli.TryReadOnly(out NativeArray<ushort>.ReadOnly qualityMilli) ||
+                !_durabilities.TryReadOnly(out NativeArray<byte>.ReadOnly durabilities) ||
+                !_lastUpdateUnixSeconds.TryReadOnly(out NativeArray<uint>.ReadOnly lastUpdateUnixSeconds) ||
+                !_anchorUnitMassKg.TryReadOnly(out NativeArray<float>.ReadOnly unitMassKg) ||
+                !_anchorUnitVolumeM3.TryReadOnly(out NativeArray<float>.ReadOnly unitVolumeM3) ||
+                !_anchorUnitRadiationSv.TryReadOnly(out NativeArray<float>.ReadOnly unitRadiationSv))
             {
                 return false;
             }
 
-            int count = math.min(compactedCount, itemHashes.Length);
+            NativeArray<ushort>.ReadOnly maxStackCounts = _grid.AnchorMaxStacks;
+            int count = itemHashes.Length;
             count = math.min(count, itemCounts.Length);
             count = math.min(count, itemCondition.Length);
             count = math.min(count, itemStateFlags.Length);
@@ -3425,7 +3548,11 @@ namespace Hecton8.Inventory
             count = math.min(count, unitMassKg.Length);
             count = math.min(count, unitVolumeM3.Length);
             count = math.min(count, unitRadiationSv.Length);
-            for (int index = 0; index < count && placementCount < _sortBuffer.Length; index++)
+            if (maxStackCounts.IsCreated)
+                count = math.min(count, maxStackCounts.Length);
+
+            int scratchCapacity = math.min(_sortBuffer.Length, _bulkCompactionMaxStackBuffer.Length);
+            for (int index = 0; index < count && placementCount < scratchCapacity; index++)
             {
                 uint hash = itemHashes[index];
                 ushort stackCount = itemCounts[index];
@@ -3457,9 +3584,106 @@ namespace Hecton8.Inventory
                     rarity = descriptor.Rarity,
                     stackable = descriptor.Stackable
                 };
+                _bulkCompactionMaxStackBuffer[placementCount - 1] = ResolveBulkMergeMaxStack(maxStackCounts, index);
             }
 
+            placementCount = CompactBulkTransferPlacements(_sortBuffer, _bulkCompactionMaxStackBuffer, placementCount);
             return true;
+        }
+
+        private static ushort ResolveBulkMergeMaxStack(NativeArray<ushort>.ReadOnly maxStackCounts, int index)
+        {
+            if (!maxStackCounts.IsCreated || (uint)index >= (uint)maxStackCounts.Length)
+                return ushort.MaxValue;
+
+            ushort maxStack = maxStackCounts[index];
+            return maxStack == 0 ? (ushort)1 : maxStack;
+        }
+
+        private static int CompactBulkTransferPlacements(ItemPlacement[] placements, ushort[] mergeMaxStacks, int placementCount)
+        {
+            if (placements == null ||
+                mergeMaxStacks == null ||
+                placementCount <= 0)
+            {
+                return 0;
+            }
+
+            int count = math.min(placementCount, math.min(placements.Length, mergeMaxStacks.Length));
+            for (int primary = 0; primary < count; primary++)
+            {
+                ItemPlacement primaryPlacement = placements[primary];
+                int hash = primaryPlacement.itemHashId;
+                ushort primaryCount = primaryPlacement.stackCount;
+                ushort maxStack = mergeMaxStacks[primary];
+                if (hash == 0 || primaryCount == 0 || maxStack <= 1)
+                    continue;
+
+                for (int candidate = primary + 1; candidate < count && primaryCount < maxStack; candidate++)
+                {
+                    ItemPlacement candidatePlacement = placements[candidate];
+                    if (!CanMergeBulkTransferPlacement(in primaryPlacement, in candidatePlacement, mergeMaxStacks[candidate], hash))
+                        continue;
+
+                    ushort candidateCount = candidatePlacement.stackCount;
+                    int capacity = math.max(0, maxStack - primaryCount);
+                    int transfer = math.min(capacity, candidateCount);
+                    if (transfer <= 0)
+                        continue;
+
+                    primaryCount = (ushort)(primaryCount + transfer);
+                    candidateCount = (ushort)(candidateCount - transfer);
+                    primaryPlacement.stackCount = primaryCount;
+                    candidatePlacement.stackCount = candidateCount;
+                    primaryPlacement.qualityMilli = (ushort)math.max((int)primaryPlacement.qualityMilli, (int)candidatePlacement.qualityMilli);
+                    primaryPlacement.durability = (byte)math.max((int)primaryPlacement.durability, (int)candidatePlacement.durability);
+                    primaryPlacement.lastUpdateUnixSeconds = math.max(primaryPlacement.lastUpdateUnixSeconds, candidatePlacement.lastUpdateUnixSeconds);
+                    placements[primary] = primaryPlacement;
+
+                    if (candidateCount == 0)
+                    {
+                        candidatePlacement = default;
+                        mergeMaxStacks[candidate] = 0;
+                    }
+                    placements[candidate] = candidatePlacement;
+                }
+            }
+
+            int writeIndex = 0;
+            for (int readIndex = 0; readIndex < count; readIndex++)
+            {
+                ItemPlacement placement = placements[readIndex];
+                if (placement.itemHashId == 0 || placement.stackCount == 0)
+                    continue;
+
+                if (writeIndex != readIndex)
+                {
+                    placements[writeIndex] = placement;
+                    mergeMaxStacks[writeIndex] = mergeMaxStacks[readIndex];
+                    placements[readIndex] = default;
+                    mergeMaxStacks[readIndex] = 0;
+                }
+
+                writeIndex++;
+            }
+
+            for (int clearIndex = writeIndex; clearIndex < count; clearIndex++)
+            {
+                placements[clearIndex] = default;
+                mergeMaxStacks[clearIndex] = 0;
+            }
+
+            return writeIndex;
+        }
+
+        private static bool CanMergeBulkTransferPlacement(in ItemPlacement primary, in ItemPlacement candidate, ushort candidateMergeMaxStack, int hash)
+        {
+            return candidate.itemHashId == hash &&
+                   candidate.stackCount > 0 &&
+                   candidateMergeMaxStack > 1 &&
+                   candidate.stateFlags == primary.stateFlags &&
+                   candidate.geneticsMask == primary.geneticsMask &&
+                   candidate.qualityMilli == primary.qualityMilli;
         }
 
         private bool CanApplyPlacementsFirstFit(ItemPlacement[] placements, int placementCount)
@@ -3547,7 +3771,9 @@ namespace Hecton8.Inventory
 
         private static bool IsFiniteRuntimePosition(Vector3 runtimePosition)
         {
-            return math.all(math.isfinite(new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)));
+            return math.isfinite(runtimePosition.x) &&
+                   math.isfinite(runtimePosition.y) &&
+                   math.isfinite(runtimePosition.z);
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
@@ -3705,35 +3931,6 @@ namespace Hecton8.Inventory
             return _grid != null ? _grid.AnchorHashIds : default;
         }
 
-        public unsafe void* GetItemIDsUnsafeReadOnlyPtr(out int length)
-        {
-            if (_grid == null)
-            {
-                length = 0;
-                return null;
-            }
-
-            return _grid.GetAnchorHashIdsUnsafeReadOnlyPtr(out length);
-        }
-
-        public unsafe void* GetItemHashesUnsafeReadOnlyPtr(out int length)
-        {
-            length = _itemHashes.IsCreated ? _itemHashes.Length : 0;
-            return length > 0 ? NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_itemHashes) : null;
-        }
-
-        public unsafe void* GetItemCountsUnsafeReadOnlyPtr(out int length)
-        {
-            length = _stackCounts.IsCreated ? _stackCounts.Length : 0;
-            return length > 0 ? NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_stackCounts) : null;
-        }
-
-        public unsafe void* GetItemConditionUnsafeReadOnlyPtr(out int length)
-        {
-            length = _itemCondition.IsCreated ? _itemCondition.Length : 0;
-            return length > 0 ? NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_itemCondition) : null;
-        }
-
         public NativeArray<ushort>.ReadOnly GetQuantitiesReadOnly()
         {
             return GetStackCountsReadOnly();
@@ -3741,7 +3938,6 @@ namespace Hecton8.Inventory
 
         public NativeArray<byte>.ReadOnly GetDurabilitiesReadOnly()
         {
-            SyncDurabilityBytesFromQuality();
             return _durabilities.IsCreated ? _durabilities.AsReadOnly() : default;
         }
 
@@ -4442,7 +4638,9 @@ namespace Hecton8.Inventory
 
         private void NotifyInventoryChanged(bool markDirty = true, bool massDirty = true)
         {
+            _durabilitySnapshotDirty = true;
             RefreshInventorySoAMirrorsAndMask();
+            SyncDurabilityBytesFromQuality();
             PublishSoaQueryVaultSnapshotOwnerPhase();
 
             if (markDirty)
@@ -4457,7 +4655,6 @@ namespace Hecton8.Inventory
             if (_massCacheDirty)
                 RefreshDerivedMassAndSurvivalLoad();
 
-            _durabilitySnapshotDirty = true;
             PublishEncumbranceChanged();
             InventoryVersion++;
             InventoryEvents.TryNotifyInventoryChanged();
@@ -5024,16 +5221,15 @@ namespace Hecton8.Inventory
             }
             else
             {
-                // ZERO-GC INLINE KERNEL: mutation seam refresh keeps public totals current before notifications.
-                new InventoryMassVolumeJob
-                {
-                    AnchorHashIds = _grid.AnchorHashIds,
-                    StackCounts = _stackCounts,
-                    AnchorUnitMassKg = _anchorUnitMassKg,
-                    AnchorUnitVolumeM3 = _anchorUnitVolumeM3,
-                    AnchorUnitRadiationSv = _anchorUnitRadiationSv,
-                    Totals = _derivedMassVolumeScratch
-                }.Execute();
+                // ZERO-GC INLINE KERNEL: owner-phase refresh keeps public totals current before notifications.
+                InventoryMassVolumeKernel massVolumeKernel = default;
+                massVolumeKernel.AnchorHashIds = _grid.AnchorHashIds;
+                massVolumeKernel.StackCounts = _stackCounts;
+                massVolumeKernel.AnchorUnitMassKg = _anchorUnitMassKg;
+                massVolumeKernel.AnchorUnitVolumeM3 = _anchorUnitVolumeM3;
+                massVolumeKernel.AnchorUnitRadiationSv = _anchorUnitRadiationSv;
+                massVolumeKernel.Totals = _derivedMassVolumeScratch;
+                massVolumeKernel.Execute();
 
                 ApplyDerivedMassTotals(_derivedMassVolumeScratch[0]);
             }
@@ -5063,7 +5259,7 @@ namespace Hecton8.Inventory
                 DumpInventoryBlackBoxOnce();
         }
 
-        private void WriteInventoryBlackBoxFrame(int flags)
+        private void WriteInventoryBlackBoxFrame(int flags, uint faultBufferId = 0u, uint faultGeneration = 0u)
         {
             if (!_inventoryBlackBox.IsCreated || _inventoryBlackBox.Length == 0)
                 return;
@@ -5075,11 +5271,11 @@ namespace Hecton8.Inventory
             _inventoryBlackBox[index] = new InventoryTelemetryEntry
             {
                 Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Version = unchecked((uint)InventoryVersion),
+                Version = faultGeneration != 0u ? faultGeneration : unchecked((uint)InventoryVersion),
                 WeightKg = _currentWeightKg,
                 VolumeLiters = _currentVolumeLiters,
                 Load01 = CachedInventoryLoad01,
-                InventoryMaskLow = unchecked((uint)CurrentInventoryMask),
+                InventoryMaskLow = faultBufferId != 0u ? faultBufferId : unchecked((uint)CurrentInventoryMask),
                 OccupiedCells = _grid != null ? _grid.OccupiedCells : 0,
                 Flags = flags,
                 MaxWeightKg = MaxWeightKg,
@@ -5095,6 +5291,11 @@ namespace Hecton8.Inventory
             _inventoryBlackBoxCursor = index + 1;
             if (_inventoryBlackBoxCursor >= _inventoryBlackBox.Length)
                 _inventoryBlackBoxCursor = 0;
+        }
+
+        private void WriteInventoryVaultFaultFrame<T>(in InventoryVaultLane<T> lane, int flags) where T : struct
+        {
+            WriteInventoryBlackBoxFrame(flags | 0x100, lane.BufferId, lane.Generation);
         }
 
         private void DumpInventoryBlackBoxOnce()
@@ -5136,89 +5337,6 @@ namespace Hecton8.Inventory
                     writer.Write(entry.DefragTimeMicroseconds);
                 }
             }
-        }
-
-        private void ScheduleInventoryMassRecomputeJob()
-        {
-            if (_massVolumeJobScheduled ||
-                !_massCacheDirty ||
-                !_derivedMassVolumeScratch.IsCreated)
-            {
-                return;
-            }
-
-            if (!TryBuildMassVolumeSnapshot())
-                return;
-
-            _massVolumeJobInventoryVersion = InventoryVersion;
-            _massVolumeJobHandle = new InventoryMassVolumeJob
-            {
-                AnchorHashIds = _massAnchorHashSnapshot.AsReadOnly(),
-                StackCounts = _massStackCountSnapshot,
-                AnchorUnitMassKg = _massUnitMassSnapshot,
-                AnchorUnitVolumeM3 = _massUnitVolumeSnapshot,
-                AnchorUnitRadiationSv = _massUnitRadiationSnapshot,
-                Totals = _derivedMassVolumeScratch
-            }.Schedule();
-            _massVolumeJobScheduled = true;
-        }
-
-        private bool TryBuildMassVolumeSnapshot()
-        {
-            if (_grid == null ||
-                !_stackCounts.IsCreated ||
-                !_anchorUnitMassKg.IsCreated ||
-                !_anchorUnitVolumeM3.IsCreated ||
-                !_anchorUnitRadiationSv.IsCreated ||
-                !_massAnchorHashSnapshot.IsCreated ||
-                !_massStackCountSnapshot.IsCreated ||
-                !_massUnitMassSnapshot.IsCreated ||
-                !_massUnitVolumeSnapshot.IsCreated ||
-                !_massUnitRadiationSnapshot.IsCreated)
-            {
-                return false;
-            }
-
-            NativeArray<int>.ReadOnly anchorHashIds = _grid.AnchorHashIds;
-            int count = math.min(
-                math.min(math.min(anchorHashIds.Length, _stackCounts.Length), math.min(_anchorUnitMassKg.Length, _anchorUnitVolumeM3.Length)),
-                math.min(_anchorUnitRadiationSv.Length, _massAnchorHashSnapshot.Length));
-            count = math.min(
-                count,
-                math.min(math.min(_massStackCountSnapshot.Length, _massUnitMassSnapshot.Length), math.min(_massUnitVolumeSnapshot.Length, _massUnitRadiationSnapshot.Length)));
-            if (count <= 0)
-                return false;
-
-            for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
-            {
-                _massAnchorHashSnapshot[anchorIndex] = anchorHashIds[anchorIndex];
-                _massStackCountSnapshot[anchorIndex] = _stackCounts[anchorIndex];
-                _massUnitMassSnapshot[anchorIndex] = _anchorUnitMassKg[anchorIndex];
-                _massUnitVolumeSnapshot[anchorIndex] = _anchorUnitVolumeM3[anchorIndex];
-                _massUnitRadiationSnapshot[anchorIndex] = _anchorUnitRadiationSv[anchorIndex];
-            }
-
-            return true;
-        }
-
-        private bool CompleteInventoryMassRecomputeJob(bool forceComplete)
-        {
-            if (!_massVolumeJobScheduled)
-                return true;
-
-            if (!DispatcherJobSwap.TryComplete(ref _massVolumeJobHandle, forceComplete))
-                return false;
-
-            _massVolumeJobScheduled = false;
-            if (_massVolumeJobInventoryVersion == InventoryVersion &&
-                _derivedMassVolumeScratch.IsCreated &&
-                _derivedMassVolumeScratch.Length > 0)
-            {
-                ApplyDerivedMassTotals(_derivedMassVolumeScratch[0]);
-                _massCacheDirty = false;
-            }
-
-            return true;
         }
 
         private bool ApplyEnvironmentalDegradation(
@@ -5335,22 +5453,21 @@ namespace Hecton8.Inventory
             // ZERO-GC INLINE KERNEL: bounded inventory SlowTick pass mutates only preallocated SOA state.
             using (_radioactiveHalfLifeProfilerMarker.Auto())
             {
-                new InventoryRadioactiveHalfLifeKernel
-                {
-                    AnchorHashIds = _grid.AnchorHashIds,
-                    StackCounts = _stackCounts,
-                    AnchorUnitRadiationSv = _anchorUnitRadiationSv,
-                    ItemStateFlags = _itemStateFlags,
-                    QualityMilli = _qualityMilli,
-                    ConversionAnchorIndices = _radioactiveConversionAnchors,
-                    Counters = _radioactiveHalfLifeCounters,
-                    DeltaSeconds = SlowTickIntervalSeconds,
-                    BaseHalfLifeSeconds = RadioactiveHalfLifeBaseSeconds,
-                    DefaultQuality = DefaultQualityMilli,
-                    RadioactiveMask = RadioactiveItemStateMask,
-                    DegradedMask = DegradedItemStateMask,
-                    DegradedThreshold = DegradedQualityMilliThreshold
-                }.Execute();
+                InventoryRadioactiveHalfLifeKernel halfLifeKernel = default;
+                halfLifeKernel.AnchorHashIds = _grid.AnchorHashIds;
+                halfLifeKernel.StackCounts = _stackCounts;
+                halfLifeKernel.AnchorUnitRadiationSv = _anchorUnitRadiationSv;
+                halfLifeKernel.ItemStateFlags = _itemStateFlags;
+                halfLifeKernel.QualityMilli = _qualityMilli;
+                halfLifeKernel.ConversionAnchorIndices = _radioactiveConversionAnchors;
+                halfLifeKernel.Counters = _radioactiveHalfLifeCounters;
+                halfLifeKernel.DeltaSeconds = SlowTickIntervalSeconds;
+                halfLifeKernel.BaseHalfLifeSeconds = RadioactiveHalfLifeBaseSeconds;
+                halfLifeKernel.DefaultQuality = DefaultQualityMilli;
+                halfLifeKernel.RadioactiveMask = RadioactiveItemStateMask;
+                halfLifeKernel.DegradedMask = DegradedItemStateMask;
+                halfLifeKernel.DegradedThreshold = DegradedQualityMilliThreshold;
+                halfLifeKernel.Execute();
             }
 
             if (_radioactiveHalfLifeCounters.Length < 2 || _radioactiveHalfLifeCounters[1] == 0)
@@ -5379,23 +5496,22 @@ namespace Hecton8.Inventory
             // ZERO-GC INLINE KERNEL: bounded SOA slot-adjacency pass mutates only preallocated thermal cache.
             using (_reactiveChemistryProfilerMarker.Auto())
             {
-                new InventoryReactiveChemistryKernel
-                {
-                    AnchorHashIds = _grid.AnchorHashIds,
-                    StackCounts = _stackCounts,
-                    CraftLockedCounts = _craftLockedCounts,
-                    ItemStateFlags = _itemStateFlags,
-                    ThermalRunawayByAnchor = _thermalRunawayByAnchor,
-                    RunawayPairs = _thermalRunawayPairs,
-                    Counters = _thermalRunawayCounters,
-                    Columns = columns,
-                    Rows = rows,
-                    DeltaSeconds = SlowTickIntervalSeconds,
-                    RunawayPerSecond = ThermalRunawayPerSecond,
-                    CooldownPerSecond = ThermalRunawayCooldownPerSecond,
-                    RadioactiveMask = RadioactiveItemStateMask,
-                    FlammableMask = FlammableItemStateMask
-                }.Execute();
+                InventoryReactiveChemistryKernel chemistryKernel = default;
+                chemistryKernel.AnchorHashIds = _grid.AnchorHashIds;
+                chemistryKernel.StackCounts = _stackCounts;
+                chemistryKernel.CraftLockedCounts = _craftLockedCounts;
+                chemistryKernel.ItemStateFlags = _itemStateFlags;
+                chemistryKernel.ThermalRunawayByAnchor = _thermalRunawayByAnchor;
+                chemistryKernel.RunawayPairs = _thermalRunawayPairs;
+                chemistryKernel.Counters = _thermalRunawayCounters;
+                chemistryKernel.Columns = columns;
+                chemistryKernel.Rows = rows;
+                chemistryKernel.DeltaSeconds = SlowTickIntervalSeconds;
+                chemistryKernel.RunawayPerSecond = ThermalRunawayPerSecond;
+                chemistryKernel.CooldownPerSecond = ThermalRunawayCooldownPerSecond;
+                chemistryKernel.RadioactiveMask = RadioactiveItemStateMask;
+                chemistryKernel.FlammableMask = FlammableItemStateMask;
+                chemistryKernel.Execute();
             }
 
             if (_thermalRunawayCounters.Length < 2)
@@ -5696,15 +5812,6 @@ namespace Hecton8.Inventory
 
         private TraumaDispatcher ResolveTraumaDispatcher()
         {
-            if (_traumaDispatcher != null)
-                return _traumaDispatcher;
-
-            if (survival != null)
-                survival.TryGetComponent(out _traumaDispatcher);
-
-            if (_traumaDispatcher == null)
-                TryGetComponent(out _traumaDispatcher);
-
             return _traumaDispatcher;
         }
 
@@ -6231,6 +6338,104 @@ namespace Hecton8.Inventory
             UnsafeUtility.MemClear(destinationPtr, array.Length * UnsafeUtility.SizeOf<float>());
         }
 
+        private unsafe void ClearNativeArray<T>(InventoryVaultLane<T> lane) where T : struct
+        {
+            if (!lane.TryAcquireWriteLock(out NativeArray<T> array))
+            {
+                WriteInventoryVaultFaultFrame(in lane, 0x10);
+                return;
+            }
+
+            try
+            {
+                if (!array.IsCreated)
+                    return;
+
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(array);
+                UnsafeUtility.MemClear(destinationPtr, array.Length * UnsafeUtility.SizeOf<T>());
+            }
+            finally
+            {
+                lane.ReleaseWriteLock();
+            }
+        }
+
+        private bool TryBulkCopyLaneToNative<T>(
+            in InventoryVaultLane<T> source,
+            int sourceStartIndex,
+            NativeArray<T> destination,
+            int destinationStartIndex,
+            int length) where T : struct
+        {
+            if (!source.TryResolve(out NativeArray<T> sourceArray))
+            {
+                WriteInventoryVaultFaultFrame(in source, 0x20);
+                return false;
+            }
+
+            return InventorySoAUtility.TryBulkCopySlice(
+                sourceArray,
+                sourceStartIndex,
+                destination,
+                destinationStartIndex,
+                length);
+        }
+
+        private bool TryBulkCopyLaneToLane<T>(
+            in InventoryVaultLane<T> source,
+            int sourceStartIndex,
+            ref InventoryVaultLane<T> destination,
+            int destinationStartIndex,
+            int length) where T : struct
+        {
+            if (!source.TryResolve(out NativeArray<T> sourceArray))
+            {
+                WriteInventoryVaultFaultFrame(in source, 0x20);
+                return false;
+            }
+
+            if (!destination.TryAcquireWriteLock(out NativeArray<T> destinationArray))
+            {
+                WriteInventoryVaultFaultFrame(in destination, 0x10);
+                return false;
+            }
+
+            try
+            {
+                return InventorySoAUtility.TryBulkCopySlice(
+                    sourceArray,
+                    sourceStartIndex,
+                    destinationArray,
+                    destinationStartIndex,
+                    length);
+            }
+            finally
+            {
+                destination.ReleaseWriteLock();
+            }
+        }
+
+        private bool TryClearLaneSlice<T>(
+            ref InventoryVaultLane<T> lane,
+            int startIndex,
+            int length) where T : struct
+        {
+            if (!lane.TryAcquireWriteLock(out NativeArray<T> array))
+            {
+                WriteInventoryVaultFaultFrame(in lane, 0x10);
+                return false;
+            }
+
+            try
+            {
+                return InventorySoAUtility.TryClearSlice(array, startIndex, length);
+            }
+            finally
+            {
+                lane.ReleaseWriteLock();
+            }
+        }
+
         private static unsafe void CopyNativeArray(NativeArray<ushort> source, NativeArray<ushort> destination)
         {
             if (!source.IsCreated || !destination.IsCreated)
@@ -6246,6 +6451,85 @@ namespace Hecton8.Inventory
             int destinationBytes = destination.Length * UnsafeUtility.SizeOf<ushort>();
             if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
                 UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(PlayerInventory));
+        }
+
+        private void CopyNativeArray(InventoryVaultLane<ushort> source, InventoryVaultLane<ushort> destination)
+        {
+            if (!source.TryResolve(out NativeArray<ushort> sourceArray))
+            {
+                WriteInventoryVaultFaultFrame(in source, 0x20);
+                return;
+            }
+
+            if (!destination.TryAcquireWriteLock(out NativeArray<ushort> destinationArray))
+            {
+                WriteInventoryVaultFaultFrame(in destination, 0x10);
+                return;
+            }
+
+            try
+            {
+                CopyNativeArray(sourceArray, destinationArray);
+            }
+            finally
+            {
+                destination.ReleaseWriteLock();
+            }
+        }
+
+        private void SwapAnchorState<T>(InventoryVaultLane<T> lane, int firstIndex, int secondIndex) where T : struct
+        {
+            if (!lane.TryAcquireWriteLock(out NativeArray<T> values))
+            {
+                WriteInventoryVaultFaultFrame(in lane, 0x10);
+                return;
+            }
+
+            try
+            {
+                if (!values.IsCreated ||
+                    firstIndex == secondIndex ||
+                    (uint)firstIndex >= (uint)values.Length ||
+                    (uint)secondIndex >= (uint)values.Length)
+                {
+                    return;
+                }
+
+                T temp = values[firstIndex];
+                values[firstIndex] = values[secondIndex];
+                values[secondIndex] = temp;
+            }
+            finally
+            {
+                lane.ReleaseWriteLock();
+            }
+        }
+
+        private void MoveAnchorStateValue<T>(InventoryVaultLane<T> lane, int sourceIndex, int destinationIndex) where T : struct
+        {
+            if (!lane.TryAcquireWriteLock(out NativeArray<T> values))
+            {
+                WriteInventoryVaultFaultFrame(in lane, 0x10);
+                return;
+            }
+
+            try
+            {
+                if (!values.IsCreated ||
+                    sourceIndex == destinationIndex ||
+                    (uint)sourceIndex >= (uint)values.Length ||
+                    (uint)destinationIndex >= (uint)values.Length)
+                {
+                    return;
+                }
+
+                values[destinationIndex] = values[sourceIndex];
+                values[sourceIndex] = default;
+            }
+            finally
+            {
+                lane.ReleaseWriteLock();
+            }
         }
     }
 }

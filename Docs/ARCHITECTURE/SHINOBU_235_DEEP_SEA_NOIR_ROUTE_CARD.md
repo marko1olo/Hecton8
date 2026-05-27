@@ -210,7 +210,7 @@ Status: ACCEPTED_STATIC_SOURCE / RUNTIME_PENDING
 
 - Binary ledger: `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`
 
-- Architecture note: `Docs/ARCHITECTURE/DEEP_SEA_NOIR_POST_PROCESSOR_SHINOBU_235.md`
+- Archived non-authoritative implementation note: `Docs/DEPRECATED/Active_Doc_Deprecation_2026-05-26/Architecture/Unindexed_Process_Notes/DEEP_SEA_NOIR_POST_PROCESSOR_SHINOBU_235.md`
 
 - Status: `Docs/Tasks/Status_SHINOBU_235.md`
 

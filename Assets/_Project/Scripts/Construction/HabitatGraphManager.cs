@@ -253,8 +253,8 @@ namespace Hecton8.Construction
         private const uint FloodBlackBoxTraversalOverflowFlag = 1u << 2;
         private const uint FloodBlackBoxTopologyInvalidFlag = 1u << 3;
         private const uint FloodBlackBoxModuleStressInvalidFlag = 1u << 4;
-        private const string FloodBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_HABITAT_INTEGRITY.bin";
-        private const string ModuleStressBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_VOLUMETRIC_PRESSURE_SOLVER.bin";
+        private const string FloodBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1306_Construction_HabitatIntegrity.bin";
+        private const string ModuleStressBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1306_Construction_ModuleStress.bin";
         private const float SiegeVulnerableIntegrityThreshold01 = 0.72f;
         private static readonly int CarbonFilterItemHashId = LocHash.Compute("Data_CarbonFilter");
         private static readonly uint RuptureCascadeEventHash = unchecked((uint)LocHash.Compute("HabitatGraphManager.RuptureCascade"));
@@ -291,6 +291,8 @@ namespace Hecton8.Construction
         private readonly List<uint> _ruptureCascadeAppliedNodeIds;
         private readonly Dictionary<uint, int> _moduleIndexByNodeId;
         private readonly Dictionary<SocketKey, SocketMatchEntry> _socketLookup;
+        private readonly int _moduleIndexCapacity;
+        private readonly int _socketLookupCapacity;
 
         private VaultGenerationHandle<LogisticsNetworkGraph.LogisticsNode> _nodesHandle;
         private VaultGenerationHandle<int> _edgeOffsetsHandle;
@@ -385,7 +387,7 @@ namespace Hecton8.Construction
         private IFluidDecalPresentationSink _fluidDecals;
         private IDataVault _dataVault;
 
-        private struct HabitatGraphWriteViews
+        private ref struct HabitatGraphWriteViews
         {
             internal NativeArray<LogisticsNetworkGraph.LogisticsNode> Nodes;
             internal NativeArray<int> EdgeOffsets;
@@ -398,7 +400,7 @@ namespace Hecton8.Construction
             internal NativeArray<byte> EdgeFlags;
         }
 
-        private struct HabitatFloodGraphJobViews
+        private ref struct HabitatFloodGraphJobViews
         {
             internal NativeArray<int> EdgeOffsets;
             internal NativeArray<int> EdgeDestinations;
@@ -406,8 +408,9 @@ namespace Hecton8.Construction
             internal NativeArray<byte> EdgeFlags;
         }
 
-        internal HabitatGraphManager(int initialModuleCapacity)
+        internal HabitatGraphManager(int initialModuleCapacity, IDataVault dataVault)
         {
+            _dataVault = dataVault;
             int safeModuleCapacity = math.max(1, initialModuleCapacity);
             // COLD ALLOC: List<ModuleRecord>[64] — reusable module staging buffer for CSR rebuilds — owner: HabitatGraphManager
             _moduleBuffer = new List<ModuleRecord>(safeModuleCapacity);
@@ -427,6 +430,8 @@ namespace Hecton8.Construction
             _moduleIndexByNodeId = new Dictionary<uint, int>(safeModuleCapacity);
             // COLD ALLOC: Dictionary<SocketKey,SocketMatchEntry>[128] — quantized socket lookup for zero-GC adjacency assembly — owner: HabitatGraphManager
             _socketLookup = new Dictionary<SocketKey, SocketMatchEntry>(InitialEdgeCapacity);
+            _moduleIndexCapacity = safeModuleCapacity;
+            _socketLookupCapacity = InitialEdgeCapacity;
 
             _graph = new LogisticsNetworkGraph(safeModuleCapacity, InitialEdgeCapacity * 2, 0);
             AllocateNativeBuffers(safeModuleCapacity, InitialEdgeCapacity * 2);
@@ -587,6 +592,43 @@ namespace Hecton8.Construction
             _fluidDecals = null;
             _dataVault = null;
             _graph.Dispose();
+        }
+
+        internal void SetDataVault(IDataVault dataVault)
+        {
+            _dataVault = dataVault;
+        }
+
+        internal void SetRuntimeServices(
+            IAtmosphereReadModel atmosphereReadModel,
+            IAmbientCurrentReadModel ambientCurrentReadModel,
+            IAudioService audioService,
+            IFluidDecalPresentationSink fluidDecals)
+        {
+            _atmosphereReadModel = atmosphereReadModel;
+            _ambientCurrentReadModel = ambientCurrentReadModel;
+            _audioService = audioService;
+            _fluidDecals = fluidDecals;
+        }
+
+        internal void SetAtmosphereReadModel(IAtmosphereReadModel atmosphereReadModel)
+        {
+            _atmosphereReadModel = atmosphereReadModel;
+        }
+
+        internal void SetAmbientCurrentReadModel(IAmbientCurrentReadModel ambientCurrentReadModel)
+        {
+            _ambientCurrentReadModel = ambientCurrentReadModel;
+        }
+
+        internal void SetAudioService(IAudioService audioService)
+        {
+            _audioService = audioService;
+        }
+
+        internal void SetFluidDecalPresentation(IFluidDecalPresentationSink fluidDecals)
+        {
+            _fluidDecals = fluidDecals;
         }
 
         internal int TemporaryBypassCount => _temporaryBypassBuffer.Count;
@@ -954,7 +996,7 @@ namespace Hecton8.Construction
         private float ResolveAnalyticalLocalCurrentScale(float3 runtimePosition, float depthMeters)
         {
             Vector3 current = Vector3.zero;
-            IAmbientCurrentReadModel ambientCurrentReadModel = ResolveAmbientCurrentReadModel();
+            IAmbientCurrentReadModel ambientCurrentReadModel = GetCachedAmbientCurrentReadModel();
             if (ambientCurrentReadModel != null)
             {
                 ambientCurrentReadModel.TrySampleCombinedCurrent(
@@ -998,27 +1040,19 @@ namespace Hecton8.Construction
 
         private float ResolveRuntimeSeaLevelY()
         {
-            IAtmosphereReadModel atmosphereReadModel = ResolveAtmosphereReadModel();
+            IAtmosphereReadModel atmosphereReadModel = GetCachedAtmosphereReadModel();
             return atmosphereReadModel != null && math.isfinite(atmosphereReadModel.SeaLevelY)
                 ? atmosphereReadModel.SeaLevelY
                 : 0f;
         }
 
-        private IAtmosphereReadModel ResolveAtmosphereReadModel()
+        private IAtmosphereReadModel GetCachedAtmosphereReadModel()
         {
-            if (_atmosphereReadModel != null)
-                return _atmosphereReadModel;
-
-            _atmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
             return _atmosphereReadModel;
         }
 
-        private IAmbientCurrentReadModel ResolveAmbientCurrentReadModel()
+        private IAmbientCurrentReadModel GetCachedAmbientCurrentReadModel()
         {
-            if (_ambientCurrentReadModel != null)
-                return _ambientCurrentReadModel;
-
-            _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;
             return _ambientCurrentReadModel;
         }
 
@@ -2020,19 +2054,15 @@ namespace Hecton8.Construction
                 pressureDelta,
                 depthMeters,
                 pitchScale);
-            IAudioService audioService = ResolveAudioService();
+            IAudioService audioService = GetCachedAudioService();
             if (audioService != null && audioService.QueueHullStressSignal(in signal))
                 return;
 
             ProceduralAudioEvents.TryRaiseHullStressSignal(in signal);
         }
 
-        private IAudioService ResolveAudioService()
+        private IAudioService GetCachedAudioService()
         {
-            if (_audioService != null)
-                return _audioService;
-
-            _audioService = GlobalRegistry.Audio;
             return _audioService;
         }
 
@@ -2281,17 +2311,32 @@ namespace Hecton8.Construction
                 Result = floodPropagationSummary
             };
 
-            _floodPropagationHandle = job.Schedule();
-            _floodPropagationPending = true;
-            _floodPropagationSummaryWriteLockHeld = true;
-            _floodPropagationSummaryWriteLockVault = floodPropagationSummaryVault;
-            _floodPropagationRoomWriteLockHeld = true;
-            _floodPropagationRoomWriteLockVault = floodRoomVault;
-            _floodPropagationGraphWriteLockHeld = true;
-            _floodPropagationGraphWriteLockVault = floodGraphVault;
-            _pendingFloodPropagationModuleCount = moduleCount;
-            H8Memory.RegisterActiveJob(SystemID.Construction, _floodPropagationHandle);
-            return finalizedChanged;
+            bool scheduled = false;
+            try
+            {
+                JobHandle pendingHandle = job.Schedule();
+                _floodPropagationHandle = pendingHandle;
+                _floodPropagationPending = true;
+                _floodPropagationSummaryWriteLockHeld = true;
+                _floodPropagationSummaryWriteLockVault = floodPropagationSummaryVault;
+                _floodPropagationRoomWriteLockHeld = true;
+                _floodPropagationRoomWriteLockVault = floodRoomVault;
+                _floodPropagationGraphWriteLockHeld = true;
+                _floodPropagationGraphWriteLockVault = floodGraphVault;
+                _pendingFloodPropagationModuleCount = moduleCount;
+                scheduled = true;
+                H8Memory.RegisterActiveJob(SystemID.Construction, pendingHandle);
+                return finalizedChanged;
+            }
+            finally
+            {
+                if (!scheduled)
+                {
+                    floodPropagationSummaryVault.ReleaseWriteLock(in _floodPropagationSummaryHandle, SystemID.Construction);
+                    ReleaseFloodRoomWriteLocks(floodRoomVault);
+                    ReleaseFloodGraphWriteLocks(floodGraphVault, 4);
+                }
+            }
         }
 
         private bool TryFinalizeFloodPropagationJobNoWait()
@@ -3056,8 +3101,8 @@ namespace Hecton8.Construction
 
         internal bool TryValidateDeconstructionRollback(
             BaseModule targetModule,
-            NativeList<long> dfsStack,
-            NativeParallelHashSet<long> dfsVisited,
+            NativeArray<int> dfsStack,
+            NativeArray<byte> dfsVisited,
             NativeArray<int> dfsResult,
             out byte rejectReason)
         {
@@ -3086,15 +3131,26 @@ namespace Hecton8.Construction
                     return false;
                 }
 
-                if (!dfsStack.IsCreated || !dfsVisited.IsCreated || !dfsResult.IsCreated || dfsResult.Length < 3)
+                int nodeCount = math.min(_nodeCount, math.min(_moduleBuffer.Count, graph.EdgeOffsets.Length - 1));
+                if (!dfsStack.IsCreated ||
+                    !dfsVisited.IsCreated ||
+                    !dfsResult.IsCreated ||
+                    dfsStack.Length < nodeCount ||
+                    dfsVisited.Length < nodeCount ||
+                    dfsResult.Length < 3)
                 {
                     rejectReason = 3;
                     return false;
                 }
 
-                int nodeCount = math.min(_nodeCount, math.min(_moduleBuffer.Count, graph.EdgeOffsets.Length - 1));
                 if (nodeCount <= 2)
+                {
+                    int expectedCount = math.max(0, nodeCount - 1);
+                    dfsResult[0] = 1;
+                    dfsResult[1] = expectedCount;
+                    dfsResult[2] = expectedCount;
                     return true;
+                }
 
                 DeconstructionDfsValidationJob job = new DeconstructionDfsValidationJob
                 {
@@ -3599,7 +3655,7 @@ namespace Hecton8.Construction
             if (_ruptureCascadeAppliedNodeIds.Capacity >= safeCapacity)
                 return;
 
-            _ruptureCascadeAppliedNodeIds.Capacity = safeCapacity;
+            WriteFloodBlackBoxSample(FloodBlackBoxOverflowClampedFlag | FloodBlackBoxTopologyInvalidFlag);
         }
 
         private bool HasRuptureCascadeBeenApplied(uint nodeId)
@@ -3859,10 +3915,10 @@ namespace Hecton8.Construction
         private void PopulateModuleBuffer(IReadOnlyList<GameObject> modules)
         {
             int count = modules.Count;
-            if (_moduleBuffer.Capacity < count)
-                _moduleBuffer.Capacity = count;
+            if (count > _moduleBuffer.Capacity)
+                WriteFloodBlackBoxSample(FloodBlackBoxOverflowClampedFlag | FloodBlackBoxTopologyInvalidFlag);
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < count && _moduleBuffer.Count < _moduleBuffer.Capacity; i++)
             {
                 GameObject moduleObject = modules[i];
                 if (moduleObject == null)
@@ -3876,6 +3932,12 @@ namespace Hecton8.Construction
                 EntityId entityId = moduleObject.GetEntityId();
                 uint nodeId = unchecked((uint)EntityId.ToULong(entityId));
                 Vector3 modulePosition = moduleObject.transform.position;
+                bool insertingNodeIndex = !_moduleIndexByNodeId.ContainsKey(nodeId);
+                if (insertingNodeIndex && _moduleIndexByNodeId.Count >= _moduleIndexCapacity)
+                {
+                    WriteFloodBlackBoxSample(FloodBlackBoxOverflowClampedFlag | FloodBlackBoxTopologyInvalidFlag);
+                    return;
+                }
 
                 _moduleBuffer.Add(new ModuleRecord
                 {
@@ -3919,8 +3981,8 @@ namespace Hecton8.Construction
             if (sourceNodeId == 0u || destinationNodeId == 0u || sourceNodeId == destinationNodeId)
                 return false;
 
-            sourceModuleHashId = ResolveTemporaryBypassModuleHashId(sourceModule, sourceModuleHashId);
-            destinationModuleHashId = ResolveTemporaryBypassModuleHashId(destinationModule, destinationModuleHashId);
+            sourceModuleHashId = CaptureTemporaryBypassModuleHashId(sourceModule, sourceModuleHashId);
+            destinationModuleHashId = CaptureTemporaryBypassModuleHashId(destinationModule, destinationModuleHashId);
             if (sourceModuleHashId == 0 || destinationModuleHashId == 0)
                 return false;
 
@@ -3959,7 +4021,7 @@ namespace Hecton8.Construction
             return false;
         }
 
-        private static int ResolveTemporaryBypassModuleHashId(GameObject module, int capturedModuleHashId)
+        private static int CaptureTemporaryBypassModuleHashId(GameObject module, int capturedModuleHashId)
         {
             if (capturedModuleHashId != 0)
                 return capturedModuleHashId;
@@ -4093,7 +4155,7 @@ namespace Hecton8.Construction
         private void BuildSocketAdjacency()
         {
             int quantizationScale = math.max(1, (int)math.round(1f / DefaultSocketQuantization));
-            IDataVault catalogVault = GlobalRegistry.DataVault;
+            IDataVault catalogVault = ResolveHabitatDataVaultForColdPath();
             for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
                 IndexSockets(moduleIndex, _moduleBuffer[moduleIndex], quantizationScale, catalogVault);
         }
@@ -4157,6 +4219,12 @@ namespace Hecton8.Construction
                     BaseModuleCatalogRuntime.AreSocketMasksCompatible(existing.CompatibilityMask, socket.AllowedConnectionsMask) &&
                     Vector3.Dot(existing.Forward, socketForward) <= OppositeDirectionDotThreshold)
                 {
+                    if (_edgeBuffer.Count >= _edgeBuffer.Capacity)
+                    {
+                        WriteFloodBlackBoxSample(FloodBlackBoxOverflowClampedFlag | FloodBlackBoxTopologyInvalidFlag);
+                        return;
+                    }
+
                     _edgeBuffer.Add(new EdgeRecord
                     {
                         SourceIndex = existing.ModuleIndex,
@@ -4173,6 +4241,12 @@ namespace Hecton8.Construction
             }
 
             SocketKey ownKey = SocketKey.Create(socketAup, axis, quantizationScale);
+            if (!_socketLookup.ContainsKey(ownKey) && _socketLookup.Count >= _socketLookupCapacity)
+            {
+                WriteFloodBlackBoxSample(FloodBlackBoxOverflowClampedFlag | FloodBlackBoxTopologyInvalidFlag);
+                return;
+            }
+
             _socketLookup[ownKey] = new SocketMatchEntry(moduleIndex, socket.AllowedConnectionsMask, socketPosition, socketForward);
         }
 
@@ -4193,27 +4267,39 @@ namespace Hecton8.Construction
             if (!math.all(math.isfinite(socket.LocalOffset)) || !math.all(math.isfinite(worldNormal)))
                 return false;
 
-            if (!TryResolveAbsoluteFromRuntimeOrigin(rootPosition, out double3 rootAup))
+            if (!TryResolveAbsoluteFromRuntimeOrigin(rootPosition, out double3 rootAup, out double3 originAup))
                 return false;
 
             socketAup = BaseModuleCatalogRuntime.ResolveSocketAup(rootAup, rotation, in socket);
             if (!math.all(math.isfinite(socketAup)))
                 return false;
 
-            runtimePosition = HectonFloatingOrigin.ToRuntimePosition(socketAup);
+            double3 localDelta = socketAup - originAup;
+            if (!math.all(math.isfinite(localDelta)) ||
+                math.any(math.abs(localDelta) > (double)float.MaxValue))
+            {
+                return false;
+            }
+
+            runtimePosition = new Vector3((float)localDelta.x, (float)localDelta.y, (float)localDelta.z);
             socketForward = new Vector3(worldNormal.x, worldNormal.y, worldNormal.z);
             return true;
         }
 
-        private static bool TryResolveAbsoluteFromRuntimeOrigin(Vector3 runtimePosition, out double3 absolutePosition)
+        private static bool TryResolveAbsoluteFromRuntimeOrigin(Vector3 runtimePosition, out double3 absolutePosition, out double3 originAupDouble)
         {
             absolutePosition = default;
+            originAupDouble = default;
             float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
             AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
+                return false;
+
+            originAupDouble = originAup.ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(originAupDouble)))
                 return false;
 
             absolutePosition = AbsoluteUniversePosition.OffsetAbsoluteMeters(
@@ -4646,7 +4732,7 @@ namespace Hecton8.Construction
             if (_emittedRuptureEdgeVfxLookup.Contains(linkId))
                 return;
 
-            IFluidDecalPresentationSink fluidDecals = ResolveFluidDecalManager();
+            IFluidDecalPresentationSink fluidDecals = GetCachedFluidDecalPresentation();
             if (fluidDecals == null || _emittedRuptureEdgeVfxKeys.Count >= _emittedRuptureEdgeVfxKeys.Capacity)
                 return;
 
@@ -4662,12 +4748,8 @@ namespace Hecton8.Construction
             _emittedRuptureEdgeVfxLookup.Add(linkId);
         }
 
-        private IFluidDecalPresentationSink ResolveFluidDecalManager()
+        private IFluidDecalPresentationSink GetCachedFluidDecalPresentation()
         {
-            if (_fluidDecals != null)
-                return _fluidDecals;
-
-            _fluidDecals = Hecton8.Core.GlobalRegistry.FluidDecalPresentation;
             return _fluidDecals;
         }
 
@@ -5345,11 +5427,14 @@ namespace Hecton8.Construction
         private void PublishVisualLinks()
         {
             int edgeCount = _edgeBuffer.Count;
-            if (_submittedLinkIds.Capacity < edgeCount)
-                _submittedLinkIds.Capacity = edgeCount;
+            if (edgeCount > _submittedLinkIds.Capacity)
+                WriteFloodBlackBoxSample(FloodBlackBoxOverflowClampedFlag);
 
             for (int edgeIndex = 0; edgeIndex < edgeCount; edgeIndex++)
             {
+                if (_submittedLinkIds.Count >= _submittedLinkIds.Capacity)
+                    return;
+
                 EdgeRecord edge = _edgeBuffer[edgeIndex];
                 long linkId = ComposeLinkId(_moduleBuffer[edge.SourceIndex].NodeId, _moduleBuffer[edge.DestinationIndex].NodeId);
                 SplineDescriptor descriptor = LogisticsPipeBuilder.CreateSocketDescriptor(
@@ -6488,10 +6573,6 @@ namespace Hecton8.Construction
 
         private IDataVault ResolveHabitatDataVaultForColdPath()
         {
-            if (_dataVault != null)
-                return _dataVault;
-
-            _dataVault = GlobalRegistry.DataVault;
             return _dataVault;
         }
 
@@ -6558,7 +6639,7 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            return vault.TryResolveHandle(in handle, out buffer) &&
+            return vault.TryReadHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
@@ -6618,8 +6699,8 @@ namespace Hecton8.Construction
         {
             [ReadOnly] [NoAlias] public NativeArray<int> EdgeOffsets;
             [ReadOnly] [NoAlias] public NativeArray<int> EdgeDestinations;
-            [NoAlias] public NativeList<long> Stack;
-            [NoAlias] public NativeParallelHashSet<long> Visited;
+            [NoAlias] public NativeArray<int> Stack;
+            [NoAlias] public NativeArray<byte> Visited;
             [NoAlias] public NativeArray<int> Result;
             public int NodeCount;
             public int RemovedNodeIndex;
@@ -6630,8 +6711,12 @@ namespace Hecton8.Construction
                 Result[0] = 0;
                 Result[1] = 0;
                 Result[2] = math.max(0, NodeCount - 1);
-                Stack.Clear();
-                Visited.Clear();
+                int boundedNodeCount = math.min(NodeCount, math.min(Stack.IsCreated ? Stack.Length : 0, Visited.IsCreated ? Visited.Length : 0));
+                for (int i = 0; i < boundedNodeCount; i++)
+                    Visited[i] = 0;
+
+                if (boundedNodeCount < NodeCount || Result.Length < 3)
+                    return;
 
                 if (NodeCount <= 2)
                 {
@@ -6657,14 +6742,14 @@ namespace Hecton8.Construction
                 }
 
                 long startNodeKey = startNode;
-                Stack.Add(startNodeKey);
-                Visited.Add(startNodeKey);
+                int stackLength = 0;
+                int visitedCount = 1;
+                Stack[stackLength++] = (int)startNodeKey;
+                Visited[startNode] = 1;
 
-                while (Stack.Length > 0)
+                while (stackLength > 0)
                 {
-                    int lastIndex = Stack.Length - 1;
-                    long currentKey = Stack[lastIndex];
-                    Stack.RemoveAtSwapBack(lastIndex);
+                    int currentKey = Stack[--stackLength];
 
                     int currentNode = (int)currentKey;
                     if (currentNode < 0 || currentNode >= NodeCount || currentNode + 1 >= EdgeOffsets.Length)
@@ -6679,16 +6764,23 @@ namespace Hecton8.Construction
                         if (neighborNode < 0 || neighborNode >= NodeCount || neighborNode == RemovedNodeIndex)
                             continue;
 
-                        long neighborKey = neighborNode;
-                        if (Visited.Contains(neighborKey))
+                        if (Visited[neighborNode] != 0)
                             continue;
 
-                        Visited.Add(neighborKey);
-                        Stack.Add(neighborKey);
+                        Visited[neighborNode] = 1;
+                        visitedCount++;
+                        if (stackLength >= Stack.Length)
+                        {
+                            Result[0] = 0;
+                            Result[1] = visitedCount;
+                            Result[2] = math.max(0, NodeCount - 1);
+                            return;
+                        }
+
+                        Stack[stackLength++] = neighborNode;
                     }
                 }
 
-                int visitedCount = Visited.Count();
                 int expectedCount = math.max(0, NodeCount - 1);
                 Result[0] = visitedCount == expectedCount ? 1 : 0;
                 Result[1] = visitedCount;

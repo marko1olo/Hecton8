@@ -37,6 +37,7 @@ namespace Hecton8.World
         // COLD ALLOC: float[128] — normalized local ecological strain values per tracked sector — owner: EnvironmentalStrainManager
         private readonly float[] _sectorStrainValues = new float[MaxTrackedSectorStrainSlots];
         private int _trackedSectorStrainCount;
+        private static EnvironmentalStrainManager s_activeRuntimeInstance;
 
         [SerializeField] private float _microplasticStrain;
         [SerializeField] private float _generalPollution;
@@ -46,7 +47,7 @@ namespace Hecton8.World
         /// <summary>
         /// Active runtime owner while the gameplay scene is loaded.
         /// </summary>
-        public static EnvironmentalStrainManager Instance => GlobalRegistry.EnvironmentalStrain;
+        public static EnvironmentalStrainManager Instance => s_activeRuntimeInstance;
 
         /// <summary>
         /// Save priority keeps environmental state in the world band before player-facing consumers.
@@ -75,7 +76,7 @@ namespace Hecton8.World
         {
             get
             {
-                EnvironmentalStrainManager registered = GlobalRegistry.EnvironmentalStrain;
+                EnvironmentalStrainManager registered = s_activeRuntimeInstance;
                 return registered != null ? registered.GetPredatorAggressionScale() : 1f;
             }
         }
@@ -85,7 +86,7 @@ namespace Hecton8.World
         /// </summary>
         public static bool TryGetSectorStrain01(Vector3 worldPosition, out float strain01)
         {
-            EnvironmentalStrainManager registered = GlobalRegistry.EnvironmentalStrain;
+            EnvironmentalStrainManager registered = s_activeRuntimeInstance;
             if (registered != null)
                 return registered.TryResolveSectorStrain(worldPosition, out strain01);
 
@@ -101,9 +102,15 @@ namespace Hecton8.World
             return TryGetSectorStrain01(worldPosition, out float strain01) && strain01 >= EcologicalCollapseThreshold;
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_activeRuntimeInstance = null;
+        }
+
         private void Awake()
         {
-            EnvironmentalStrainManager registered = GlobalRegistry.EnvironmentalStrain;
+            EnvironmentalStrainManager registered = s_activeRuntimeInstance;
             if (registered != null && registered != this)
             {
                 SuppressDuplicateService();
@@ -176,6 +183,8 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterEnvironmentalStrainRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.EnvironmentalStrain, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void SuppressDuplicateService()
@@ -193,6 +202,8 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.UnregisterEnvironmentalStrainRuntime(this);
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
             _serviceRegistered = false;
         }
 

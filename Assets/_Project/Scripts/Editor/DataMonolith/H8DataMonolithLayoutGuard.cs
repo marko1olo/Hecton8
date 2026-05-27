@@ -84,7 +84,15 @@ namespace Hecton8.EditorValidation
 
                 ExpectAllDeclaredLayouts();
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
+            {
+                throw new FatalArchitectureException("[H8DataMonolithLayoutGuard] " + ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new FatalArchitectureException("[H8DataMonolithLayoutGuard] " + ex.Message);
+            }
+            catch (NotSupportedException ex)
             {
                 throw new FatalArchitectureException("[H8DataMonolithLayoutGuard] " + ex.Message);
             }
@@ -159,6 +167,12 @@ namespace Hecton8.EditorValidation
             StructLayoutAttribute layout = type.StructLayoutAttribute;
             if (layout == null || layout.Value != LayoutKind.Explicit)
                 throw new InvalidOperationException(type.Name + " must use explicit layout.");
+
+            if (layout.Pack == 1)
+            {
+                throw new InvalidOperationException(
+                    type.Name + " must not use StructLayout Pack=1 in runtime-view Data Monolith DTOs; explicit FieldOffset/Size own the ABI.");
+            }
 
             int observedSize = UnsafeUtility.SizeOf<T>();
             if (observedSize != expectedSize)

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: FloraDataTemplate_IronCoral
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.FloraDataTemplate
   stableId: flora.iron_coral
-  displayName: Iron Coral
+  displayName: Iron Carbonate
   vegetationType: 0
   category: 2
   semanticType: 4

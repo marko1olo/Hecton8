@@ -10,6 +10,7 @@ namespace Hecton8.Core.Contracts
     {
         internal const int VoxelSonarSdfRaycastHitStrideBytes = 64;
         internal const int VoxelSdfPayloadDescriptorStrideBytes = 80;
+        internal const int VoxelSonarSdfReadLeaseStrideBytes = 24;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = GroundRadarLayout.VoxelSonarSdfRaycastHitStrideBytes)]
@@ -50,6 +51,20 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(76)] private uint _pad0;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = GroundRadarLayout.VoxelSonarSdfReadLeaseStrideBytes)]
+    public struct VoxelSonarSdfReadLease
+    {
+        public const uint FlagValid = 1u << 0;
+
+        [FieldOffset(0)] public uint SdfGeneration;
+        [FieldOffset(4)] public uint AudioMaterialGeneration;
+        [FieldOffset(8)] public int Version;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] private ulong _pad0;
+
+        public bool IsValid => (Flags & FlagValid) != 0u && SdfGeneration != 0u && Version > 0;
+    }
+
     /// <summary>
     /// Registry-facing voxel SDF read model for sonar/GPR consumers.
     /// Implementations own the voxel volume list and publish immutable SDF snapshots.
@@ -80,6 +95,24 @@ namespace Hecton8.Core.Contracts
             float3 runtimePosition,
             out float density,
             out float density01);
+    }
+
+    /// <summary>
+    /// Optional paired lifetime contract for consumers that schedule work over voxel SDF views.
+    /// Callers must release the lease after the last scheduled reader completes.
+    /// </summary>
+    public interface IVoxelSonarSdfReadLeaseModel
+    {
+        bool TryAcquireNearestSonarSdfReadLease(
+            float3 runtimeOrigin,
+            out NativeArray<byte>.ReadOnly encodedSdf,
+            out int3 gridDimensions,
+            out float3 volumeOrigin,
+            out float3 cellSize,
+            out float sdfRange,
+            out VoxelSonarSdfReadLease lease);
+
+        void ReleaseNearestSonarSdfReadLease(in VoxelSonarSdfReadLease lease);
     }
 
     /// <summary>
@@ -174,24 +207,43 @@ namespace Hecton8.Core.Contracts
                     out sdfRange);
             }
 
-            return readModel.TryReadNearestSonarSdf(
-                       runtimeOrigin,
-                       out encodedSdf,
-                       out gridDimensions,
-                       out volumeOrigin,
-                       out cellSize,
-                       out sdfRange) &&
-                   TryRaymarchEncodedSdf(
-                       encodedSdf,
-                       gridDimensions,
-                       volumeOrigin,
-                       cellSize,
-                       sdfRange,
-                       runtimeOrigin,
-                       runtimeDirection,
-                       maxDistance,
-                       stepMeters,
-                       out hit);
+            if (readModel is not IVoxelSonarSdfReadLeaseModel leaseModel)
+                return false;
+
+            VoxelSonarSdfReadLease lease = default;
+            bool leaseLocked = false;
+            try
+            {
+                if (!leaseModel.TryAcquireNearestSonarSdfReadLease(
+                        runtimeOrigin,
+                        out encodedSdf,
+                        out gridDimensions,
+                        out volumeOrigin,
+                        out cellSize,
+                        out sdfRange,
+                        out lease))
+                {
+                    return false;
+                }
+
+                leaseLocked = true;
+                return TryRaymarchEncodedSdf(
+                    encodedSdf,
+                    gridDimensions,
+                    volumeOrigin,
+                    cellSize,
+                    sdfRange,
+                    runtimeOrigin,
+                    runtimeDirection,
+                    maxDistance,
+                    stepMeters,
+                    out hit);
+            }
+            finally
+            {
+                if (leaseLocked && lease.IsValid)
+                    leaseModel.ReleaseNearestSonarSdfReadLease(in lease);
+            }
         }
 
         public static bool TryRaymarchEncodedSdf(

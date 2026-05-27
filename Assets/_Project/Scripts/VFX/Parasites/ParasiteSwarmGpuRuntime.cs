@@ -17,6 +17,8 @@ namespace Hecton8.VFX.Parasites
     public sealed unsafe class ParasiteSwarmGpuRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int ThreadGroupSize = 64;
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const uint VisualPhaseTickMask = 4095u;
         private const float FaultGpuDumpThresholdMicroseconds = 1500f;
         private const float SimulationTickDeltaSeconds = 1f / 60f;
@@ -48,6 +50,7 @@ namespace Hecton8.VFX.Parasites
         private uint _lastRebaseFrame;
         private uint _visualFrameCounter;
         private float3 _pendingAupShift;
+        private string _dumpRootPath;
         private bool _targetSelectionPending;
         private bool _targetWriteLocksHeld;
         private JobHandle _targetSelectionHandle;
@@ -60,6 +63,11 @@ namespace Hecton8.VFX.Parasites
         private int _advectKernel = -1;
         private int _rebaseKernel = -1;
         private int _cullKernel = -1;
+        private int _initThreadGroupSizeX;
+        private int _clearArgsThreadGroupSizeX;
+        private int _advectThreadGroupSizeX;
+        private int _rebaseThreadGroupSizeX;
+        private int _cullThreadGroupSizeX;
 
         private GraphicsBuffer _particleBufferA;
         private GraphicsBuffer _particleBufferB;
@@ -110,6 +118,7 @@ namespace Hecton8.VFX.Parasites
             if (_vault == null)
                 return;
 
+            _dumpRootPath = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             CachePlayerContext(GlobalRegistry.Player);
 
             ParasiteSwarmContracts.EnsureVaultBuffers(_vault);
@@ -222,7 +231,7 @@ namespace Hecton8.VFX.Parasites
                     {
                         _dumpSequence++;
                         int dumpCursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : _telemetryCursor;
-                        _blackBoxDumped = ParasiteSwarmContracts.TryWriteTelemetryDump(Application.dataPath + "/..", telemetry, dumpCursor);
+                        _blackBoxDumped = ParasiteSwarmContracts.TryWriteTelemetryDump(_dumpRootPath, telemetry, dumpCursor);
                     }
                 }
                 finally
@@ -330,18 +339,17 @@ namespace Hecton8.VFX.Parasites
                 1,
                 ParasiteSwarmContracts.MaxGpuParticleCapacity);
 
-            _particleBufferA ??= CreateStructuredBuffer<ParasiteGpuParticleDTO>(capacity);
-            _particleBufferB ??= CreateStructuredBuffer<ParasiteGpuParticleDTO>(capacity);
-            _targetBufferA ??= CreateStructuredBuffer<ParasiteTargetDTO>(ParasiteSwarmContracts.MaxTargetCount);
-            _targetBufferB ??= CreateStructuredBuffer<ParasiteTargetDTO>(ParasiteSwarmContracts.MaxTargetCount);
-            _visibleIndicesBuffer ??= CreateStructuredBuffer<uint>(capacity);
-            _drawParamsBufferA ??= CreateStructuredBuffer<float4>(1);
-            _drawParamsBufferB ??= CreateStructuredBuffer<float4>(1);
-            _frameParamsBufferA ??= CreateStructuredBuffer<ParasiteFrameParamsDTO>(1);
-            _frameParamsBufferB ??= CreateStructuredBuffer<ParasiteFrameParamsDTO>(1);
+            _particleBufferA ??= CreateGpuWriteStructuredBuffer<ParasiteGpuParticleDTO>(capacity);
+            _particleBufferB ??= CreateGpuWriteStructuredBuffer<ParasiteGpuParticleDTO>(capacity);
+            _targetBufferA ??= CreateStructuredLockBuffer<ParasiteTargetDTO>(ParasiteSwarmContracts.MaxTargetCount);
+            _targetBufferB ??= CreateStructuredLockBuffer<ParasiteTargetDTO>(ParasiteSwarmContracts.MaxTargetCount);
+            _visibleIndicesBuffer ??= CreateGpuWriteStructuredBuffer<uint>(capacity);
+            _drawParamsBufferA ??= CreateStructuredLockBuffer<float4>(1);
+            _drawParamsBufferB ??= CreateStructuredLockBuffer<float4>(1);
+            _frameParamsBufferA ??= CreateStructuredLockBuffer<ParasiteFrameParamsDTO>(1);
+            _frameParamsBufferB ??= CreateStructuredLockBuffer<ParasiteFrameParamsDTO>(1);
             _indirectArgsBuffer ??= new GraphicsBuffer(
                 GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
-                GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 1,
                 UnsafeUtility.SizeOf<ParasiteIndirectArgsDTO>()); // COLD ALLOC: GraphicsBuffer[1] - compute-written parasite indirect args - owner: SHINOBU_313
 
@@ -387,18 +395,27 @@ namespace Hecton8.VFX.Parasites
             material.SetPass(0);
         }
 
-        private static GraphicsBuffer CreateStructuredBuffer<T>(int count) where T : unmanaged
+        private static GraphicsBuffer CreateGpuWriteStructuredBuffer<T>(int count) where T : unmanaged
+        {
+            return new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                math.max(1, count),
+                UnsafeUtility.SizeOf<T>()); // COLD ALLOC: persistent parasite GPU-write lane - owner: SHINOBU_313
+        }
+
+        private static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : unmanaged
         {
             return new GraphicsBuffer(
                 GraphicsBuffer.Target.Structured,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 math.max(1, count),
-                UnsafeUtility.SizeOf<T>()); // COLD ALLOC: persistent parasite GPU lane - owner: SHINOBU_313
+                UnsafeUtility.SizeOf<T>()); // COLD ALLOC: persistent parasite CPU-upload lane - owner: SHINOBU_313
         }
 
         private void ResolveComputeKernels()
         {
-            if (parasiteCompute == null)
+            ResetComputeKernelState();
+            if (parasiteCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
                 return;
 
             _initKernel = TryFindKernel(parasiteCompute, "CS_InitParasites");
@@ -406,11 +423,34 @@ namespace Hecton8.VFX.Parasites
             _advectKernel = TryFindKernel(parasiteCompute, "CS_AdvectParasites");
             _rebaseKernel = TryFindKernel(parasiteCompute, "CS_RebaseParasites");
             _cullKernel = TryFindKernel(parasiteCompute, "CS_CullParasites");
+            _initThreadGroupSizeX = ResolveKernelThreadGroupSizeX(parasiteCompute, _initKernel);
+            _clearArgsThreadGroupSizeX = ResolveKernelThreadGroupSizeX(parasiteCompute, _clearArgsKernel);
+            _advectThreadGroupSizeX = ResolveKernelThreadGroupSizeX(parasiteCompute, _advectKernel);
+            _rebaseThreadGroupSizeX = ResolveKernelThreadGroupSizeX(parasiteCompute, _rebaseKernel);
+            _cullThreadGroupSizeX = ResolveKernelThreadGroupSizeX(parasiteCompute, _cullKernel);
+        }
+
+        private void ResetComputeKernelState()
+        {
+            _initKernel = -1;
+            _clearArgsKernel = -1;
+            _advectKernel = -1;
+            _rebaseKernel = -1;
+            _cullKernel = -1;
+            _initThreadGroupSizeX = 0;
+            _clearArgsThreadGroupSizeX = 0;
+            _advectThreadGroupSizeX = 0;
+            _rebaseThreadGroupSizeX = 0;
+            _cullThreadGroupSizeX = 0;
         }
 
         private static int TryFindKernel(ComputeShader shader, string kernelName)
         {
-            return shader != null && shader.HasKernel(kernelName) ? shader.FindKernel(kernelName) : -1;
+            if (shader == null || !HardwareTierDetector.AllowHighResourceComputeShaders || !shader.HasKernel(kernelName))
+                return -1;
+
+            int kernel = shader.FindKernel(kernelName);
+            return kernel >= 0 && shader.IsSupported(kernel) ? kernel : -1;
         }
 
         private void InitializeGpuParticles()
@@ -419,7 +459,10 @@ namespace Hecton8.VFX.Parasites
                 return;
 
             int capacity = math.min(_particleBufferA.count, _particleBufferB.count);
-            int groups = ResolveDispatchGroups(capacity);
+            int groups = ResolveDispatchGroups(capacity, _initThreadGroupSizeX);
+            if (groups <= 0)
+                return;
+
             ParasiteSwarmTuningDTO defaultTuning = ParasiteSwarmContracts.DefaultTuning();
             if (!UploadFrameParams(0f, 0f, capacity, 0, 0f, in defaultTuning, out GraphicsBuffer frameParamsBuffer))
                 return;
@@ -744,10 +787,15 @@ namespace Hecton8.VFX.Parasites
                 _advectKernel < 0 ||
                 _clearArgsKernel < 0 ||
                 _rebaseKernel < 0 ||
-                _cullKernel < 0)
+                _cullKernel < 0 ||
+                _clearArgsThreadGroupSizeX <= 0)
             {
                 flags |= ParasiteSwarmContracts.TelemetryFlagNoCompute;
             }
+
+            int clearArgsGroups = ResolveDispatchGroups(1, _clearArgsThreadGroupSizeX);
+            if (clearArgsGroups <= 0)
+                flags |= ParasiteSwarmContracts.TelemetryFlagNoCompute;
 
             if ((flags & ParasiteSwarmContracts.TelemetryFlagNoCompute) == 0u)
             {
@@ -759,13 +807,25 @@ namespace Hecton8.VFX.Parasites
                 _commandBuffer.Clear();
                 _commandBuffer.BeginSample(ComputeSampleName);
                 _commandBuffer.SetComputeBufferParam(parasiteCompute, _clearArgsKernel, ParasiteIndirectArgsId, _indirectArgsBuffer);
-                _commandBuffer.DispatchCompute(parasiteCompute, _clearArgsKernel, 1, 1, 1);
+                _commandBuffer.DispatchCompute(parasiteCompute, _clearArgsKernel, clearArgsGroups, 1, 1);
 
                 if (targetCount <= 0 || particleBudget <= 0)
                 {
                     _commandBuffer.EndSample(ComputeSampleName);
                     UnityEngine.Graphics.ExecuteCommandBuffer(_commandBuffer);
                     return flags;
+                }
+
+                int rebaseGroups = ResolveDispatchGroups(particleBudget, _rebaseThreadGroupSizeX);
+                int advectGroups = ResolveDispatchGroups(particleBudget, _advectThreadGroupSizeX);
+                int cullGroups = ResolveDispatchGroups(particleBudget, _cullThreadGroupSizeX);
+                if (advectGroups <= 0 ||
+                    cullGroups <= 0 ||
+                    (math.lengthsq(_pendingAupShift) > 0.000001f && rebaseGroups <= 0))
+                {
+                    _commandBuffer.EndSample(ComputeSampleName);
+                    UnityEngine.Graphics.ExecuteCommandBuffer(_commandBuffer);
+                    return flags | ParasiteSwarmContracts.TelemetryFlagNoCompute;
                 }
 
                 if (!UploadFrameParams(SimulationTickDeltaSeconds, visualPhaseRadians, particleBudget, targetCount, quality, in tuning, out GraphicsBuffer frameParamsBuffer))
@@ -775,15 +835,13 @@ namespace Hecton8.VFX.Parasites
                     return flags | ParasiteSwarmContracts.TelemetryFlagNoCompute;
                 }
 
-                int groups = ResolveDispatchGroups(particleBudget);
-
                 if (math.lengthsq(_pendingAupShift) > 0.000001f && _rebaseKernel >= 0)
                 {
                     _commandBuffer.SetComputeVectorParam(parasiteCompute, ParasiteAupShiftDeltaId, new Vector4(_pendingAupShift.x, _pendingAupShift.y, _pendingAupShift.z, 0f));
                     _commandBuffer.SetComputeBufferParam(parasiteCompute, _rebaseKernel, ParasiteReadId, read);
                     _commandBuffer.SetComputeBufferParam(parasiteCompute, _rebaseKernel, ParasiteWriteId, write);
                     _commandBuffer.SetComputeBufferParam(parasiteCompute, _rebaseKernel, ParasiteFrameParamsId, frameParamsBuffer);
-                    _commandBuffer.DispatchCompute(parasiteCompute, _rebaseKernel, groups, 1, 1);
+                    _commandBuffer.DispatchCompute(parasiteCompute, _rebaseKernel, rebaseGroups, 1, 1);
                     GraphicsBuffer rebased = write;
                     write = read;
                     read = rebased;
@@ -796,13 +854,13 @@ namespace Hecton8.VFX.Parasites
                 _commandBuffer.SetComputeBufferParam(parasiteCompute, _advectKernel, ParasiteTargetsId, ResolveCurrentTargetBuffer());
                 _commandBuffer.SetComputeBufferParam(parasiteCompute, _advectKernel, ParasiteFrameParamsId, frameParamsBuffer);
                 _commandBuffer.SetComputeTextureParam(parasiteCompute, _advectKernel, AbyssalFlowFieldId, flowTexture);
-                _commandBuffer.DispatchCompute(parasiteCompute, _advectKernel, groups, 1, 1);
+                _commandBuffer.DispatchCompute(parasiteCompute, _advectKernel, advectGroups, 1, 1);
 
                 _commandBuffer.SetComputeBufferParam(parasiteCompute, _cullKernel, ParasiteReadId, write);
                 _commandBuffer.SetComputeBufferParam(parasiteCompute, _cullKernel, ParasiteVisibleIndicesId, _visibleIndicesBuffer);
                 _commandBuffer.SetComputeBufferParam(parasiteCompute, _cullKernel, ParasiteIndirectArgsId, _indirectArgsBuffer);
                 _commandBuffer.SetComputeBufferParam(parasiteCompute, _cullKernel, ParasiteFrameParamsId, frameParamsBuffer);
-                _commandBuffer.DispatchCompute(parasiteCompute, _cullKernel, groups, 1, 1);
+                _commandBuffer.DispatchCompute(parasiteCompute, _cullKernel, cullGroups, 1, 1);
                 _commandBuffer.EndSample(ComputeSampleName);
                 UnityEngine.Graphics.ExecuteCommandBuffer(_commandBuffer);
                 _bufferParity ^= 1;
@@ -1061,9 +1119,30 @@ namespace Hecton8.VFX.Parasites
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int ResolveDispatchGroups(int activeCount)
+        private static int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel)
         {
-            return math.max(1, (activeCount + ThreadGroupSize - 1) / ThreadGroupSize);
+            if (compute == null ||
+                kernel < 0 ||
+                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !compute.IsSupported(kernel))
+                return 0;
+
+            compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
+            if (sizeX == 0u || sizeY != 1u || sizeZ != 1u || sizeX > int.MaxValue)
+                return 0;
+
+            ulong totalThreads = sizeX * (ulong)sizeY * sizeZ;
+            return totalThreads <= PortableMaxComputeThreadsPerGroup ? (int)sizeX : 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ResolveDispatchGroups(int activeCount, int threadGroupSizeX)
+        {
+            if (activeCount <= 0 || threadGroupSizeX <= 0)
+                return 0;
+
+            long groups = ((long)activeCount + threadGroupSizeX - 1L) / threadGroupSizeX;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private GraphicsBuffer ResolveCurrentTargetBuffer()

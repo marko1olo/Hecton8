@@ -736,7 +736,7 @@ namespace Hecton8.AI.Ecosystem
             MathLodApproximation.ApproxSinCosBhaskara(angleF, out float angleSin, out float angleCos);
             double3 absolute = CenterAbsolute + clusterCenter + new double3(angleCos * spread, height, angleSin * spread);
             AbsoluteUniversePosition aup = ShinobuEcosystemBalancer.FromAbsoluteDouble3(absolute);
-            float3 local = (float3)(absolute - CenterAbsolute);
+            float3 local = ShinobuEcosystemBalancer.ToFiniteLocalFloat3(absolute - CenterAbsolute);
             uint species = (index % 5) == 0 ? 0x4341524Eu : 0x48455242u;
             float3 tangent = ShinobuEcosystemBalancer.SafeNormalize(new float3(-local.z, 0f, local.x), new float3(0f, 0f, 1f));
             float speed = math.lerp(2.5f, 7.5f, q);
@@ -1081,8 +1081,7 @@ namespace Hecton8.AI.Ecosystem
                     (gridCell.X + 0.5d) * cell,
                     (gridCell.Y + 0.5d) * cell,
                     (gridCell.Z + 0.5d) * cell);
-                float3 centerLocal = (float3)(absoluteCenter - CenterAbsolute);
-                if (!math.all(math.isfinite(centerLocal)))
+                if (!ShinobuEcosystemBalancer.TryToFiniteLocalFloat3(absoluteCenter - CenterAbsolute, out float3 centerLocal))
                     continue;
 
                 DebugCells[debugCount++] = new ShinobuSpatialHashDebugCell
@@ -1424,7 +1423,8 @@ namespace Hecton8.AI.Ecosystem
             IDataVault vault,
             in VaultGenerationHandle<byte> snapshotHandle)
         {
-            if (string.IsNullOrEmpty(projectRoot) ||
+            if (projectRoot == null ||
+                projectRoot.Length == 0 ||
                 vault == null ||
                 !ValidateSnapshotHandle(in snapshotHandle))
                 return false;
@@ -1455,10 +1455,10 @@ namespace Hecton8.AI.Ecosystem
                 s_ownerDumpPath = Path.Combine(projectRoot, ShinobuSpatialGridConstants.DumpRelativePath);
                 s_agentDumpPath = Path.Combine(projectRoot, ShinobuSpatialGridConstants.Agent1301DumpRelativePath);
                 string ownerDirectory = Path.GetDirectoryName(s_ownerDumpPath);
-                if (!string.IsNullOrEmpty(ownerDirectory))
+                if (ownerDirectory != null && ownerDirectory.Length != 0)
                     Directory.CreateDirectory(ownerDirectory);
                 string agentDirectory = Path.GetDirectoryName(s_agentDumpPath);
-                if (!string.IsNullOrEmpty(agentDirectory))
+                if (agentDirectory != null && agentDirectory.Length != 0)
                     Directory.CreateDirectory(agentDirectory);
 
                 Volatile.Write(ref s_stopRequested, 0);
@@ -1695,7 +1695,8 @@ namespace Hecton8.AI.Ecosystem
             int byteCount = Volatile.Read(ref s_pendingByteCount);
             NativeArray<byte> snapshot = default;
             bool snapshotLocked = false;
-            if (string.IsNullOrEmpty(path) ||
+            if (path == null ||
+                path.Length == 0 ||
                 byteCount <= DumpHeaderBytes ||
                 byteCount > DumpSnapshotBytes)
             {

@@ -1291,7 +1291,10 @@ namespace Hecton8.Narrative
             if (loadedLogs.Count <= 0 || loadedLogs.Count == previousCount)
                 return;
 
-            allLogs = loadedLogs.ToArray();
+            if (allLogs == null || allLogs.Length != loadedLogs.Count)
+                allLogs = new AudioLogData[loadedLogs.Count];
+
+            loadedLogs.CopyTo(allLogs);
             EditorUtility.SetDirty(this);
         }
 #endif

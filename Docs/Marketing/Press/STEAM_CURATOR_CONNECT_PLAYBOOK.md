@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Steam Curator Connect Playbook
 
 Status: pre-Curator-Connect plan / no copies ready
-Owner lane: SHINOBU_81 / Steam curator ops
+Owner lane: Marketing / Steam curator ops
 Runtime impact: none
 
 ## Source Boundary

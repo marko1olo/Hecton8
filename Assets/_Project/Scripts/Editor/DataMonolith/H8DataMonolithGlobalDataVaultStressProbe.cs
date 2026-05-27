@@ -18,8 +18,10 @@ namespace Hecton8.EditorValidation
     {
         private const string AgentId = "X_002";
         private const string AgentId1313 = "1313";
+        private const string AgentId1330 = "1330";
         private const string ReportPath = "Docs/Reports/DATA_MONOLITH_UNITY_GLOBAL_DATA_VAULT_STRESS_X_002.json";
         private const string ReportPath1313 = "Docs/Reports/DATA_MONOLITH_UNITY_GLOBAL_DATA_VAULT_STRESS_1313.json";
+        private const string ReportPath1330 = "Docs/Reports/DATA_MONOLITH_UNITY_GLOBAL_DATA_VAULT_STRESS_1330.json";
         private const string BlobAssetPath = "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin";
         private const int ResidentLoadIterations = 96;
         private const double ResidentMeanTargetMicroseconds = 1000.0d;
@@ -28,13 +30,13 @@ namespace Hecton8.EditorValidation
         private static void RunFromMenu()
         {
             bool passed = Run();
-            Debug.Log("[H8DataMonolithGlobalDataVaultStressProbe] passed=" + passed + " report=" + ReportPath + " report1313=" + ReportPath1313);
+            Debug.Log("[H8DataMonolithGlobalDataVaultStressProbe] passed=" + passed + " report=" + ReportPath + " report1313=" + ReportPath1313 + " report1330=" + ReportPath1330);
         }
 
         public static void RunBatch()
         {
             bool passed = Run();
-            Debug.Log("[H8DataMonolithGlobalDataVaultStressProbe] batch passed=" + passed + " report=" + ReportPath + " report1313=" + ReportPath1313);
+            Debug.Log("[H8DataMonolithGlobalDataVaultStressProbe] batch passed=" + passed + " report=" + ReportPath + " report1313=" + ReportPath1313 + " report1330=" + ReportPath1330);
             if (Application.isBatchMode)
                 EditorApplication.Exit(passed ? 0 : 1);
         }
@@ -57,7 +59,12 @@ namespace Hecton8.EditorValidation
                 return false;
             }
 
-            byte[] baseline = File.ReadAllBytes(blobPath);
+            if (!TryReadManagedFixtureBlob(blobPath, out byte[] baseline, out string fixtureReadError))
+            {
+                WriteReport(projectRoot, BuildMissingReport(fixtureReadError));
+                return false;
+            }
+
             HeaderSnapshot header = ReadHeaderSnapshot(baseline);
             using GlobalDataVault vault = GlobalDataVault.Create();
 
@@ -65,6 +72,7 @@ namespace Hecton8.EditorValidation
             bool fileLoadOk = RunFileLoadProof(vault, blobPath, out H8DataBlobLoadStatus fileStatus, out double fileLoadMicroseconds, out long fileLoadManagedBytes);
             bool vaultResolved = ResolvePayloadBuffer(vault, baseline.Length, out int payloadLength, out long vaultAllocatedBytes, out long vaultArenaBytes);
             bool lockedReloadOk = RunLockedReloadBlockProof(vault, baseline, out string lockedReloadJson);
+            bool editorHotReloadRollbackOk = RunEditorHotReloadRollbackProof(vault, baseline, out string editorHotReloadRollbackJson);
             bool sectionProofOk = ResolveRequestedSections(out string sectionJson);
             bool corruptBootOk = RunColdCorruptBootProof(vault, baseline, out string corruptCasesJson, out int corruptCaseCount, out int corruptPassCount);
             ResidentLoadMetrics residentMetrics = RunResidentMemoryLoadMetrics(vault, baseline);
@@ -78,6 +86,7 @@ namespace Hecton8.EditorValidation
                           vaultResolved &&
                           sectionProofOk &&
                           lockedReloadOk &&
+                          editorHotReloadRollbackOk &&
                           corruptBootOk &&
                           residentZeroGcOk &&
                           (residentMetrics.Pass || releaseCliTiming.Pass) &&
@@ -104,6 +113,7 @@ namespace Hecton8.EditorValidation
             AppendJsonNumber(json, "vaultArenaBytes", vaultArenaBytes, comma: true, indent: 1);
             AppendHeader(json, header);
             json.AppendLine("  \"lockedCorruptReload\": " + lockedReloadJson + ",");
+            json.AppendLine("  \"editorHotReloadRollback\": " + editorHotReloadRollbackJson + ",");
             json.AppendLine("  \"coldCorruptBoot\": {");
             AppendJsonBool(json, "passed", corruptBootOk, comma: true, indent: 2);
             AppendJsonNumber(json, "caseCount", corruptCaseCount, comma: true, indent: 2);
@@ -123,6 +133,100 @@ namespace Hecton8.EditorValidation
 
             WriteReport(projectRoot, json.ToString());
             return passed;
+        }
+
+        private static bool RunEditorHotReloadRollbackProof(
+            GlobalDataVault vault,
+            byte[] baseline,
+            out string json)
+        {
+            string tempPath = string.Empty;
+            try
+            {
+                H8StaticDataArena.Shutdown();
+                fixed (byte* baselinePtr = baseline)
+                {
+                    if (!H8StaticDataArena.TryInitializeFromMemory(vault, baselinePtr, baseline.Length, 0u, 0u, out H8DataBlobLoadStatus baselineStatus))
+                    {
+                        json = "{\"passed\":false,\"stage\":\"baselineLoad\",\"baselineStatus\":\"" + baselineStatus + "\"}";
+                        return false;
+                    }
+                }
+
+                ulong baselineChecksum = H8StaticDataArena.Header.Checksum64;
+                uint baselineBlobBytes = H8StaticDataArena.Header.BlobBytes;
+                bool baselineItemsReadable = H8StaticDataArena.TryGetSection(H8DataSectionId.Items, out H8DataSectionEntry baselineItems) &&
+                                             baselineItems.Count > 0u;
+
+                byte[] corrupt = MutateStoredChecksum(baseline);
+                tempPath = Path.Combine(
+                    Path.GetTempPath(),
+                    "h8_dm_hot_reload_rollback_" + Guid.NewGuid().ToString("N") + ".h8bin");
+                if (!TryWriteBytesToFile(tempPath, corrupt, out string writeError))
+                {
+                    json = BuildEditorHotReloadRollbackErrorJson("write", writeError);
+                    return false;
+                }
+
+                bool hotReloadOk = H8StaticDataArena.EditorHotReloadFromFile(tempPath, out H8DataBlobLoadStatus reloadStatus);
+                bool itemsStillReadable = H8StaticDataArena.TryGetSection(H8DataSectionId.Items, out H8DataSectionEntry currentItems) &&
+                                          currentItems.Count == baselineItems.Count &&
+                                          currentItems.RecordSize == baselineItems.RecordSize &&
+                                          currentItems.OffsetBytes == baselineItems.OffsetBytes;
+                bool checksumStable = H8StaticDataArena.Header.Checksum64 == baselineChecksum;
+                bool sizeStable = H8StaticDataArena.Header.BlobBytes == baselineBlobBytes;
+                bool passed = baselineItemsReadable &&
+                              !hotReloadOk &&
+                              reloadStatus == H8DataBlobLoadStatus.BadChecksum &&
+                              H8StaticDataArena.IsLoaded &&
+                              checksumStable &&
+                              sizeStable &&
+                              itemsStillReadable;
+
+                json =
+                    "{" +
+                    "\"passed\":" + JsonBool(passed) + "," +
+                    "\"attemptResult\":" + JsonBool(hotReloadOk) + "," +
+                    "\"status\":\"" + reloadStatus + "\"," +
+                    "\"baselineChecksumHex\":\"0x" + baselineChecksum.ToString("X16", CultureInfo.InvariantCulture) + "\"," +
+                    "\"currentChecksumHex\":\"0x" + H8StaticDataArena.Header.Checksum64.ToString("X16", CultureInfo.InvariantCulture) + "\"," +
+                    "\"baselineBlobBytes\":" + baselineBlobBytes.ToString(CultureInfo.InvariantCulture) + "," +
+                    "\"currentBlobBytes\":" + H8StaticDataArena.Header.BlobBytes.ToString(CultureInfo.InvariantCulture) + "," +
+                    "\"itemsStillReadable\":" + JsonBool(itemsStillReadable) +
+                    "}";
+                return passed;
+            }
+            catch (IOException ex)
+            {
+                json = BuildEditorHotReloadRollbackErrorJson("io", ex.Message);
+                return false;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                json = BuildEditorHotReloadRollbackErrorJson("access", ex.Message);
+                return false;
+            }
+            catch (ArgumentException ex)
+            {
+                json = BuildEditorHotReloadRollbackErrorJson("argument", ex.Message);
+                return false;
+            }
+            catch (NotSupportedException ex)
+            {
+                json = BuildEditorHotReloadRollbackErrorJson("unsupported", ex.Message);
+                return false;
+            }
+            catch (System.Security.SecurityException ex)
+            {
+                json = BuildEditorHotReloadRollbackErrorJson("security", ex.Message);
+                return false;
+            }
+            finally
+            {
+                TryDeleteTempFile(tempPath);
+                if (H8StaticDataArena.IsLoaded)
+                    H8StaticDataArena.LockReady();
+            }
         }
 
         private static bool RunFileLoadProof(
@@ -208,6 +312,11 @@ namespace Hecton8.EditorValidation
                 "\"itemsStillReadable\":" + JsonBool(itemsStillReadable) +
                 "}";
             return passed;
+        }
+
+        private static string BuildEditorHotReloadRollbackErrorJson(string stage, string message)
+        {
+            return "{\"passed\":false,\"stage\":\"" + EscapeJson(stage) + "\",\"error\":\"" + EscapeJson(message) + "\"}";
         }
 
         private static bool RunColdCorruptBootProof(
@@ -634,13 +743,88 @@ namespace Hecton8.EditorValidation
                                 snapshot.NativeResidentLoadEstimateMicroseconds > 0d &&
                                 snapshot.NativeResidentLoadEstimateMicroseconds <= snapshot.TargetLoadMicroseconds;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                snapshot = default;
+                snapshot.Status = "UNREADABLE";
+            }
+            catch (UnauthorizedAccessException)
+            {
+                snapshot = default;
+                snapshot.Status = "UNREADABLE";
+            }
+            catch (ArgumentException)
+            {
+                snapshot = default;
+                snapshot.Status = "UNREADABLE";
+            }
+            catch (NotSupportedException)
             {
                 snapshot = default;
                 snapshot.Status = "UNREADABLE";
             }
 
             return snapshot;
+        }
+
+        private static bool TryReadManagedFixtureBlob(string path, out byte[] bytes, out string error)
+        {
+            bytes = Array.Empty<byte>();
+            error = string.Empty;
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 64 * 1024, FileOptions.SequentialScan);
+                if (stream.Length <= 0L || stream.Length > int.MaxValue)
+                {
+                    error = "invalid fixture blob length: " + stream.Length.ToString(CultureInfo.InvariantCulture);
+                    return false;
+                }
+
+                bytes = new byte[(int)stream.Length]; // COLD ALLOC: byte[blobBytes] - editor-only in-memory load stress fixture - owner: H8DataMonolithGlobalDataVaultStressProbe
+                int total = 0;
+                while (total < bytes.Length)
+                {
+                    int read = stream.Read(bytes, total, bytes.Length - total);
+                    if (read <= 0)
+                        break;
+
+                    total += read;
+                }
+
+                if (total == bytes.Length)
+                    return true;
+
+                error = "fixture blob read incomplete: " + total.ToString(CultureInfo.InvariantCulture) + "/" + bytes.Length.ToString(CultureInfo.InvariantCulture);
+                bytes = Array.Empty<byte>();
+                return false;
+            }
+            catch (IOException ex) { return FailFixtureFile("read", ex.Message, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFixtureFile("read", ex.Message, out error); }
+            catch (ArgumentException ex) { return FailFixtureFile("read", ex.Message, out error); }
+            catch (NotSupportedException ex) { return FailFixtureFile("read", ex.Message, out error); }
+            catch (System.Security.SecurityException ex) { return FailFixtureFile("read", ex.Message, out error); }
+        }
+
+        private static bool TryWriteBytesToFile(string path, byte[] bytes, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+                stream.Write(bytes, 0, bytes.Length);
+                return true;
+            }
+            catch (IOException ex) { return FailFixtureFile("write", ex.Message, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFixtureFile("write", ex.Message, out error); }
+            catch (ArgumentException ex) { return FailFixtureFile("write", ex.Message, out error); }
+            catch (NotSupportedException ex) { return FailFixtureFile("write", ex.Message, out error); }
+            catch (System.Security.SecurityException ex) { return FailFixtureFile("write", ex.Message, out error); }
+        }
+
+        private static bool FailFixtureFile(string stage, string message, out string error)
+        {
+            error = stage + ": " + message;
+            return false;
         }
 
         private static string BuildMissingReport(string setupError)
@@ -670,6 +854,13 @@ namespace Hecton8.EditorValidation
             File.WriteAllText(
                 absolutePath1313,
                 text.Replace("\"agent\": \"" + AgentId + "\"", "\"agent\": \"" + AgentId1313 + "\""),
+                Encoding.UTF8);
+
+            string absolutePath1330 = Path.Combine(projectRoot, ReportPath1330.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(absolutePath1330));
+            File.WriteAllText(
+                absolutePath1330,
+                text.Replace("\"agent\": \"" + AgentId + "\"", "\"agent\": \"" + AgentId1330 + "\""),
                 Encoding.UTF8);
         }
 
@@ -785,6 +976,33 @@ namespace Hecton8.EditorValidation
         private static string NormalizePath(string path)
         {
             return path.Replace('\\', '/');
+        }
+
+        private static void TryDeleteTempFile(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (System.Security.SecurityException)
+            {
+            }
         }
 
         private static string ExtractJsonString(string json, string key)

@@ -236,7 +236,7 @@ def main() -> int:
     quarantine_report_path = ROOT / "Docs/Reports/CREST_QUARANTINE_REPORT.json"
     quarantine_report = {}
     if quarantine_report_path.exists():
-        quarantine_report = json.loads(quarantine_report_path.read_text(encoding="utf-8"))
+        quarantine_report = json.loads(quarantine_report_path.read_text(encoding="utf-8-sig"))
     archive_records = {
         record.get("label"): record
         for record in quarantine_report.get("archives", [])
@@ -275,8 +275,8 @@ def main() -> int:
     add_check(
         checks,
         "root_init_test_scenes_no_waveharmonic_crest",
-        len(init_test_scene_texts) > 0 and not any("WaveHarmonic.Crest" in text for text in init_test_scene_texts),
-        "Root InitTestScene YAML files no longer ask Unity TestRunner to load WaveHarmonic Crest assemblies.",
+        not any("WaveHarmonic.Crest" in text for text in init_test_scene_texts),
+        "Active root InitTestScene YAML files are absent or no longer ask Unity TestRunner to load WaveHarmonic Crest assemblies.",
     )
 
     visual_bridge_contract = read_text("Assets/_Project/Scripts/Core/IOceanVisualBridge.cs")
@@ -599,7 +599,7 @@ def main() -> int:
     dependency_report_path = ROOT / "Docs" / "Reports" / "ARCHITECTURE_OPTIMIZATION_REPORT.json"
     dependency_report = {}
     if dependency_report_path.exists():
-        dependency_report = json.loads(dependency_report_path.read_text(encoding="utf-8"))
+        dependency_report = json.loads(dependency_report_path.read_text(encoding="utf-8-sig"))
     add_check(
         checks,
         "dependency_scanner_last_report_zero_breaches",

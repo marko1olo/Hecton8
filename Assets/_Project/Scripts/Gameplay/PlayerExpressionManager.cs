@@ -546,7 +546,9 @@ namespace Hecton8.Gameplay
         private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(160); // COLD ALLOC: char[160] - identity HUD notification staging buffer - owner: PlayerExpressionManager
 
         /// <summary>Registry-owned instance for the active scene/runtime.</summary>
-        public static PlayerExpressionManager Instance => GlobalRegistry.PlayerExpression;
+        private static PlayerExpressionManager s_activeRuntimeInstance;
+
+        public static PlayerExpressionManager Instance => s_activeRuntimeInstance;
 
         /// <summary>The currently active expression profile.</summary>
         public static PlayerExpressionProfile ActiveProfile => _activeProfile;
@@ -572,11 +574,12 @@ namespace Hecton8.Gameplay
             _activeProfile = null;
             _activeHudProfileOverride = null;
             _activeSuitLabelOverride = null;
+            s_activeRuntimeInstance = null;
         }
 
         private void Awake()
         {
-            PlayerExpressionManager registered = GlobalRegistry.PlayerExpression;
+            PlayerExpressionManager registered = s_activeRuntimeInstance ?? GlobalRegistry.PlayerExpression;
             if (registered != null && registered != this)
             {
                 Destroy(gameObject);
@@ -641,12 +644,14 @@ namespace Hecton8.Gameplay
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            PlayerExpressionManager registered = GlobalRegistry.PlayerExpression;
+            PlayerExpressionManager registered = s_activeRuntimeInstance ?? GlobalRegistry.PlayerExpression;
             if (registered != null && registered != this)
                 return;
 
             GlobalRegistry.RegisterPlayerExpressionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PlayerExpression, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -655,6 +660,8 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.UnregisterPlayerExpressionRuntime(this);
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
             _serviceRegistered = false;
         }
 
@@ -704,7 +711,10 @@ namespace Hecton8.Gameplay
                 return;
 
             profiles.Sort(CompareProfiles);
-            authoredProfiles = profiles.ToArray();
+            if (authoredProfiles == null || authoredProfiles.Length != profiles.Count)
+                authoredProfiles = new PlayerExpressionProfile[profiles.Count];
+
+            profiles.CopyTo(authoredProfiles);
             EditorUtility.SetDirty(this);
         }
 

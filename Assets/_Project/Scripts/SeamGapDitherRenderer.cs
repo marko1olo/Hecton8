@@ -106,6 +106,8 @@ namespace Hecton8.World
         private GraphicsBuffer _argsBufferB;
         private GraphicsBuffer _activeArgsBuffer;
         private Mesh _quadMesh;
+        // COLD ALLOC: MaterialPropertyBlock - per-draw seam dither parameters without mutating the shared/runtime material.
+        private readonly MaterialPropertyBlock _drawPropertyBlock = new MaterialPropertyBlock();
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IAmbientCurrentReadModel _ambientCurrentReadModel;
         private bool _registeredToDispatcher;
@@ -225,10 +227,11 @@ namespace Hecton8.World
             _visualUploadBufferIndex ^= 1;
 
             Material drawMaterial = ResolveMaterial();
-            drawMaterial.SetBuffer(_MatrixBufferId, _activeMatrixBuffer);
-            drawMaterial.SetBuffer(_ColorBufferId, _activeColorBuffer);
-            drawMaterial.SetVector(_CameraPositionId, ResolveCameraRuntimePosition(targetCamera));
-            drawMaterial.SetFloat(_MaxCameraDistanceId, Mathf.Max(0.5f, maxCameraDistance));
+            _drawPropertyBlock.Clear();
+            _drawPropertyBlock.SetBuffer(_MatrixBufferId, _activeMatrixBuffer);
+            _drawPropertyBlock.SetBuffer(_ColorBufferId, _activeColorBuffer);
+            _drawPropertyBlock.SetVector(_CameraPositionId, ResolveCameraRuntimePosition(targetCamera));
+            _drawPropertyBlock.SetFloat(_MaxCameraDistanceId, Mathf.Max(0.5f, maxCameraDistance));
 
             UnityEngine.Graphics.DrawMeshInstancedIndirect(
                 _quadMesh,
@@ -237,7 +240,7 @@ namespace Hecton8.World
                 _debugDrawBounds,
                 _activeArgsBuffer,
                 0,
-                null,
+                _drawPropertyBlock,
                 ShadowCastingMode.Off,
                 false,
                 gameObject.layer,

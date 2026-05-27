@@ -1,6 +1,6 @@
 # Flora Final Bake Intake
 
-> Legacy note: use [Docs/Flora_Pipeline/AI_FLORA_EXECUTION_BRIEF.md](/c:/hades/Hecton8/Docs/Flora_Pipeline/AI_FLORA_EXECUTION_BRIEF.md) as the short agent entry point. This README stays as the baked-finals intake contract and folder-local source of truth.
+> Baseline note: use [Docs/PROJECT_BASELINE.md](/c:/hades/Hecton8/Docs/PROJECT_BASELINE.md) and [FLOODED_TERRESTRIAL_GEOGRAPHY.md](/c:/hades/Hecton8/Docs/ARCHITECTURE/FLOODED_TERRESTRIAL_GEOGRAPHY.md) for project-level context. This README stays as the baked-finals intake contract and folder-local source of truth.
 
 Source of truth for real flora final prefabs.
 

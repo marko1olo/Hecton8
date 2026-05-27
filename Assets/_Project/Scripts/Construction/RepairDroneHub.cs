@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -25,13 +24,21 @@ namespace Hecton8.Construction
         private const int SupplyOverlapCapacity = 24;
         private const int SupplyCrateLookupCacheCapacity = SupplyOverlapCapacity;
         private const int MaxMainThreadSupplyScanCount = 64;
+        private const int ActiveHubCapacity = 32;
         private const float SupplyRescanInterval = 5f;
-        private static readonly List<RepairDroneHub> s_ActiveHubs = new List<RepairDroneHub>(8);
+        private static readonly int DefaultRepairSupplyHashId = Hecton.Localization.LocHash.Compute(DefaultRepairSupplyItemId);
+        private static readonly int LegacyRepairSupplyHashId = Hecton.Localization.LocHash.Compute(LegacyRepairSupplyItemId);
+        // COLD ALLOC: RepairDroneHub[32] - fixed active hub registry, no managed List growth - owner: RepairDroneHub
+        private static readonly RepairDroneHub[] s_ActiveHubs = new RepairDroneHub[ActiveHubCapacity];
+        private static int s_ActiveHubCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            s_ActiveHubs.Clear();
+            for (int i = 0; i < s_ActiveHubCount; i++)
+                s_ActiveHubs[i] = null;
+
+            s_ActiveHubCount = 0;
         }
 
         [Header("Drone Bay")]
@@ -96,6 +103,7 @@ namespace Hecton8.Construction
         [SerializeField] private int _debugActiveDroneCount;
         [SerializeField] private int _debugSupplyCrateCount;
         [SerializeField] private string _debugCurrentTargetName;
+        [SerializeField] private int _debugCurrentTargetId;
         [SerializeField] private float _debugLastAssignmentScore;
         [SerializeField] private int _debugLastAssignedSupplyUnits;
 
@@ -125,6 +133,8 @@ namespace Hecton8.Construction
         private int _supplyCrateLookupWriteCursor;
         private int _launchCountTotal;
         private IPlayerInventoryService _cachedPlayerInventoryService;
+        private ItemData _cachedRepairSupplyHashItem;
+        private int _cachedRepairSupplyHashId;
         private bool _hotSwapRegistered;
 
         /// <summary>Hub power draw scales with the number of active sorties.</summary>
@@ -136,7 +146,7 @@ namespace Hecton8.Construction
         /// <summary>Cached grid availability propagated by PowerGrid.UpdateBalance.</summary>
         public bool HasPower => _hasPower;
 
-        internal static int ActiveHubCount => s_ActiveHubs.Count;
+        internal static int ActiveHubCount => s_ActiveHubCount;
         internal int ActiveDroneCount => ActiveDroneCountInternal;
         internal int TotalLaunchCount => _launchCountTotal;
         internal Vector3 DockPosition => ResolvedDockSocketPosition;
@@ -167,7 +177,7 @@ namespace Hecton8.Construction
 
         internal static RepairDroneHub GetActiveHubAt(int index)
         {
-            return index >= 0 && index < s_ActiveHubs.Count ? s_ActiveHubs[index] : null;
+            return index >= 0 && index < s_ActiveHubCount ? s_ActiveHubs[index] : null;
         }
 
         public void OnPowerStatusChanged(bool hasPower)
@@ -185,6 +195,7 @@ namespace Hecton8.Construction
         {
             _cachedTransform = transform;
             TryGetComponent(out _powerNode);
+            CacheDockingAirlockCold();
 
             int capacity = Mathf.Max(1, maxConcurrentDrones);
             _activeDroneIds = new int[capacity]; // COLD ALLOC: int[capacity] - active headless drone ids by hub slot - owner: RepairDroneHub
@@ -197,6 +208,7 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            CacheDockingAirlockCold();
             CacheRegistryServices();
             RegisterHubInstance();
             TryRegister();
@@ -217,6 +229,7 @@ namespace Hecton8.Construction
             _debugHasPower = true;
             DroneFleetManager.ConfigureHeadlessRenderSource(dronePrefab);
             DroneFleetManager.ConfigurePhantomSwarm(phantomDroneCompute, phantomDroneMaterial);
+            CacheDockingAirlockCold();
             CacheRegistryServices();
             ResolveRepairSupplyItem();
             ClearSupplyLookupCache();
@@ -233,7 +246,10 @@ namespace Hecton8.Construction
             TryUnregisterHotSwapListener();
             _hasPower = true;
             _debugHasPower = true;
+            _debugCurrentTargetId = 0;
+#if UNITY_EDITOR
             _debugCurrentTargetName = string.Empty;
+#endif
             _debugActiveDroneCount = 0;
             ClearSupplyLookupCache();
             _cachedPlayerInventoryService = null;
@@ -330,7 +346,12 @@ namespace Hecton8.Construction
         private void ResolveRepairSupplyItem()
         {
             if (repairSupplyItem != null)
+            {
+                if (!ReferenceEquals(_cachedRepairSupplyHashItem, repairSupplyItem))
+                    RefreshRepairSupplyHash();
+
                 return;
+            }
 
             IPlayerInventoryService inventoryService = _cachedPlayerInventoryService;
             PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
@@ -343,6 +364,9 @@ namespace Hecton8.Construction
                 if (repairSupplyItem == null)
                     repairSupplyItem = catalog.FindById(LegacyRepairSupplyItemId);
             }
+
+            if (!ReferenceEquals(_cachedRepairSupplyHashItem, repairSupplyItem))
+                RefreshRepairSupplyHash();
         }
 
         private void CacheRegistryServices()
@@ -539,29 +563,43 @@ namespace Hecton8.Construction
 
             _activeDroneIds[freeSlot] = droneId;
             _activeTargetIds[freeSlot] = GetModuleRuntimeId(task.Module);
+            _debugCurrentTargetId = _activeTargetIds[freeSlot];
             _launchCountTotal++;
+#if UNITY_EDITOR
             _debugCurrentTargetName = task.Module != null ? task.Module.name : string.Empty;
+#endif
             _debugLastAssignmentScore = assignmentScore;
             _debugLastAssignedSupplyUnits = requiredSupplyUnits;
         }
 
         private void RegisterHubInstance()
         {
-            for (int i = 0; i < s_ActiveHubs.Count; i++)
+            for (int i = 0; i < s_ActiveHubCount; i++)
             {
                 if (ReferenceEquals(s_ActiveHubs[i], this))
                     return;
             }
 
-            s_ActiveHubs.Add(this);
+            if (s_ActiveHubCount >= s_ActiveHubs.Length)
+                return;
+
+            s_ActiveHubs[s_ActiveHubCount++] = this;
         }
 
         private void UnregisterHubInstance()
         {
-            for (int i = s_ActiveHubs.Count - 1; i >= 0; i--)
+            for (int i = s_ActiveHubCount - 1; i >= 0; i--)
             {
-                if (ReferenceEquals(s_ActiveHubs[i], this))
-                    s_ActiveHubs.RemoveAt(i);
+                if (!ReferenceEquals(s_ActiveHubs[i], this))
+                    continue;
+
+                int lastIndex = s_ActiveHubCount - 1;
+                for (int shiftIndex = i; shiftIndex < lastIndex; shiftIndex++)
+                    s_ActiveHubs[shiftIndex] = s_ActiveHubs[shiftIndex + 1];
+
+                s_ActiveHubs[lastIndex] = null;
+                s_ActiveHubCount = lastIndex;
+                return;
             }
         }
 
@@ -858,20 +896,34 @@ namespace Hecton8.Construction
             if (dockingAirlock != null)
                 return dockingAirlock;
 
-            if (_cachedDockingAirlock == null)
+            return _cachedDockingAirlock;
+        }
+
+        private void CacheDockingAirlockCold()
+        {
+            if (dockingAirlock != null)
             {
-                if (!TryGetComponent(out _cachedDockingAirlock))
-                    _cachedDockingAirlock = GetComponentInParent<BaseAirlock>();
+                _cachedDockingAirlock = dockingAirlock;
+                return;
             }
 
-            return _cachedDockingAirlock;
+            if (_cachedDockingAirlock != null)
+                return;
+
+            if (!TryGetComponent(out _cachedDockingAirlock))
+                _cachedDockingAirlock = GetComponentInParent<BaseAirlock>();
         }
 
         private void RefreshDiagnostics()
         {
             _debugActiveDroneCount = ActiveDroneCountInternal;
             if (_debugActiveDroneCount <= 0)
+            {
+                _debugCurrentTargetId = 0;
+#if UNITY_EDITOR
                 _debugCurrentTargetName = string.Empty;
+#endif
+            }
 
             _debugSupplyCrateCount = (supplyCrates != null ? supplyCrates.Length : 0) + _discoveredSupplyCount;
         }
@@ -928,7 +980,16 @@ namespace Hecton8.Construction
 
         private int ResolveRepairSupplyHashId()
         {
-            return repairSupplyItem != null && !string.IsNullOrWhiteSpace(repairSupplyItem.PersistentId)
+            if (!ReferenceEquals(_cachedRepairSupplyHashItem, repairSupplyItem))
+                RefreshRepairSupplyHash();
+
+            return _cachedRepairSupplyHashId;
+        }
+
+        private void RefreshRepairSupplyHash()
+        {
+            _cachedRepairSupplyHashItem = repairSupplyItem;
+            _cachedRepairSupplyHashId = repairSupplyItem != null && !string.IsNullOrWhiteSpace(repairSupplyItem.PersistentId)
                 ? Hecton.Localization.LocHash.Compute(repairSupplyItem.PersistentId)
                 : 0;
         }
@@ -940,12 +1001,12 @@ namespace Hecton8.Construction
 
             int primaryHashId = ResolveRepairSupplyHashId();
             if (primaryHashId == 0)
-                primaryHashId = Hecton.Localization.LocHash.Compute(DefaultRepairSupplyItemId);
+                primaryHashId = DefaultRepairSupplyHashId;
 
             if (primaryHashId != 0 && BaseLogisticsNetwork.CountAccessibleItem(grid, primaryHashId) >= requiredUnits)
                 return primaryHashId;
 
-            int legacyHashId = Hecton.Localization.LocHash.Compute(LegacyRepairSupplyItemId);
+            int legacyHashId = LegacyRepairSupplyHashId;
             if (legacyHashId != 0 && legacyHashId != primaryHashId && BaseLogisticsNetwork.CountAccessibleItem(grid, legacyHashId) >= requiredUnits)
                 return legacyHashId;
 

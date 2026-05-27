@@ -1,0 +1,95 @@
+{
+  "agent": "UNKNOWN",
+  "date": "2026-05-26",
+  "evidenceClass": "STATIC_SOURCE_PLUS_LOCAL_UNITY_IL",
+  "unityVersion": "6000.4.1f1",
+  "verdict": "Do not add project-wide CopyFromFast or Il2CppSetOption-based native-array copy optimization.",
+  "needsImplementationNow": false,
+  "implementedSourceChange": {
+    "file": "Assets/_Project/Scripts/ProximityColliderSystem.cs",
+    "line": 612,
+    "previous": "prevStatus.CopyFrom(_prevStatus)",
+    "current": "NativeArray<byte>.Copy(_prevStatus, 0, prevStatus, 0, _pointCount)",
+    "reason": "DataVault buffer acceptance is length >= requiredCount while CopyFrom requires equal length in editor/development managed assemblies."
+  },
+  "projectSearchCounts": {
+    "copyFrom": 7,
+    "copyTo": 149,
+    "nativeArrayCopy": 1,
+    "gcHandleAlloc": 0,
+    "il2CppSetOption": 0,
+    "unsafeUtilityMemCpy": 197,
+    "unsafeUtilityMemMove": 8,
+    "nativeArrayUnsafeUtilityGetUnsafePtr": 659,
+    "nativeArrayUnsafeUtilityGetUnsafeReadOnlyPtr": 521,
+    "getUnsafeBufferPointerWithoutChecks": 576
+  },
+  "nativeArrayCopyFromCallSites": [
+    {
+      "file": "Assets/_Project/Scripts/Editor/EconomyRecipeTunerWindow.cs",
+      "line": 229,
+      "source": "binary.CopyFrom(managedBytes)",
+      "classification": "editor_only",
+      "action": "leave"
+    },
+    {
+      "file": "Assets/_Project/Scripts/ProximityColliderSystem.cs",
+      "line": 294,
+      "source": "positions.CopyFrom(worldPositions)",
+      "classification": "nativearray_to_nativearray_init",
+      "action": "leave"
+    },
+    {
+      "file": "Assets/_Project/Scripts/ProximityColliderSystem.cs",
+      "line": 612,
+      "source": "NativeArray<byte>.Copy(_prevStatus, 0, prevStatus, 0, _pointCount)",
+      "classification": "runtime_managed_array_to_nativearray",
+      "action": "range_copy_applied; native_truth_only_if_profiler_requires"
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveManager.cs",
+      "line": 5058,
+      "source": "persistentWorldItemBuffer.CopyFrom(persistentWorldItems)",
+      "classification": "cold_save_staging",
+      "action": "leave"
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveManager.cs",
+      "line": 5069,
+      "source": "ecosystemSectorBuffer.CopyFrom(ecosystemSectorStates)",
+      "classification": "cold_save_staging",
+      "action": "leave"
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveManager.cs",
+      "line": 5080,
+      "source": "packedQuestStateBuffer.CopyFrom(packedQuestStateWords)",
+      "classification": "cold_save_staging",
+      "action": "leave"
+    }
+  ],
+  "unityLocalIlProof": {
+    "editorCoreModule": "CopyFrom(T[]) -> Copy(T[], NativeArray<T>) -> CheckCopyLengths -> CopySafe -> GCHandle.Alloc(Pinned) -> UnsafeUtility.MemCpy -> GCHandle.Free",
+    "windowsIl2CppCoreModule": "CopyFrom(T[]) -> Copy(T[], NativeArray<T>) -> CopySafe -> GCHandle.Alloc(Pinned) -> UnsafeUtility.MemCpy -> GCHandle.Free",
+    "perElementManagedLoopFound": false
+  },
+  "profitAssessment": {
+    "oldIl2CppSetOptionCopyFromFast": "negligible_or_negative",
+    "reason": "Unity 6 already uses bulk pinned MemCpy for managed-array NativeArray copy; only one repeated runtime managed-array CopyFrom candidate exists.",
+    "runtimeMicrosecondsSavedClaimed": 0
+  },
+  "postPatchCliBuildVerification": {
+    "initialLog": "Docs/Reports/BUILD_UNKNOWN_COPYFROMFAST_PATCH_20260526.log",
+    "initialResult": "Build succeeded with 7 CS0420 warnings in PlayerCriticalProceduralAudioRenderer.cs.",
+    "warningFix": "Replaced Volatile.Read(ref _targetGranularMaxVoiceCount) on an already volatile int with direct volatile field reads.",
+    "finalLog": "Docs/Reports/BUILD_UNKNOWN_COPYFROMFAST_PATCH_RECHECK_20260526.log",
+    "finalResult": "Build succeeded; 0 Warning(s); 0 Error(s).",
+    "finalProofLines": "66-68"
+  },
+  "verificationMissing": [
+    "Unity player build",
+    "IL2CPP generated C++ diff",
+    "Profiler capture",
+    "GC allocation capture for ProximityColliderSystem"
+  ]
+}

@@ -21,6 +21,7 @@
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -188,6 +189,7 @@ namespace Hecton8.Gameplay
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            InteractableRegistry.RegisterTree(this);
             RegisterLateFrame();
 
             // Register for tick if any segments are regrowing
@@ -196,6 +198,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
             UnregisterFromTick();
             UnregisterLateFrame();
@@ -203,6 +206,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
             UnregisterFromTick();
             UnregisterLateFrame();

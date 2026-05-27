@@ -26,6 +26,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
             #include "Assets/_Project/Art/Shaders/Post/Hecton_SnellRefractionCore.hlsl"
@@ -132,6 +134,23 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
 #endif
             }
 
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+#if defined(SUPPORTS_FOVEATED_RENDERING_NON_UNIFORM_RASTER)
+                return FoveatedRemapLinearToNonUniform(uv);
+#else
+                return uv;
+#endif
+            }
+
+            float ResolveLinearRamp01(float lowEdge, float highEdge, float value)
+            {
+                float range = highEdge - lowEdge;
+                float signRange = lerp(-1.0, 1.0, step(0.0, range));
+                float safeRange = max(abs(range), 0.00001) * signRange;
+                return saturate((value - lowEdge) * rcp(safeRange));
+            }
+
             float Hash21(float2 p)
             {
                 p = frac(p * float2(123.34, 456.21));
@@ -208,10 +227,10 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float2 dropletDelta = cellUV * float2(1.0, 1.45);
                 float dropletRadiusSq = dot(dropletDelta, dropletDelta);
                 float radiusSq = radius * radius;
-                float droplet = (1.0 - smoothstep(radiusSq * 0.3844, radiusSq, dropletRadiusSq)) * activeCell;
+                float droplet = (1.0 - ResolveLinearRamp01(radiusSq * 0.3844, radiusSq, dropletRadiusSq)) * activeCell;
                 float streakWidth = lerp(0.016, 0.052, seed);
-                float streak = (1.0 - smoothstep(streakWidth, streakWidth * 3.0, abs(cellUV.x)))
-                    * smoothstep(0.48, -0.36, cellUV.y)
+                float streak = (1.0 - ResolveLinearRamp01(streakWidth, streakWidth * 3.0, abs(cellUV.x)))
+                    * ResolveLinearRamp01(0.48, -0.36, cellUV.y)
                     * activeCell;
 
                 float hullFilm = 0.0;
@@ -225,7 +244,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                         ValueNoise(uv * float2(11.0, 19.0) - flowDirection * (_Time.y * 0.12) + hullStress * 2.0) -
                         (0.72 - hullStress * 0.18));
                 }
-                float topBias = smoothstep(0.08, 1.0, uv.y);
+                float topBias = ResolveLinearRamp01(0.08, 1.0, uv.y);
                 return saturate((droplet * 0.86 + streak * 0.74 + hullFilm + condensationMask * hullStress * 0.55) * topBias);
             }
 
@@ -237,10 +256,10 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float2 safeUv = saturate(HectonFinite2(uv, float2(0.5, 0.5)));
                 float2 screenParams = max(HectonFinite4(_ScreenParams, float4(1.0, 1.0, 1.0, 1.0)).xy, float2(1.0, 1.0));
                 float ignNoise = ResolveInterleavedGradientNoise(safeUv, float2(0.0, 0.0));
-                float specks = smoothstep(1.0 - ambientReveal * 0.62, 1.0 - ambientReveal * 0.18, ignNoise);
+                float specks = ResolveLinearRamp01(1.0 - ambientReveal * 0.62, 1.0 - ambientReveal * 0.18, ignNoise);
                 float scratchNoise = Hash21(floor(safeUv * screenParams * 0.18) + float2(7.0, 19.0));
-                float scratch = smoothstep(0.72, 0.97, scratchNoise) * ambientReveal;
-                float centerProtection = smoothstep(0.0, 0.22, abs(safeUv.x - 0.5) + abs(safeUv.y - 0.5));
+                float scratch = ResolveLinearRamp01(0.72, 0.97, scratchNoise) * ambientReveal;
+                float centerProtection = ResolveLinearRamp01(0.0, 0.22, abs(safeUv.x - 0.5) + abs(safeUv.y - 0.5));
                 return saturate((specks * (0.32 + edgeMask * 0.68) + scratch * 0.35) * centerProtection);
             }
 
@@ -257,8 +276,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float seed = Hash21(cell + floor(_Time.y * 0.03125));
                 float2 axis = float2(seed - 0.5, Hash21(cell + 19.17) - 0.5);
                 axis *= rcp(max(0.001, abs(axis.x) + abs(axis.y)));
-                float ridge = 1.0 - smoothstep(0.011, 0.052, abs(dot(crystalLocal, axis)));
-                float branch = 1.0 - smoothstep(0.012, 0.064, abs(dot(crystalLocal, axis.yx * float2(-1.0, 1.0))));
+                float ridge = 1.0 - ResolveLinearRamp01(0.011, 0.052, abs(dot(crystalLocal, axis)));
+                float branch = 1.0 - ResolveLinearRamp01(0.012, 0.064, abs(dot(crystalLocal, axis.yx * float2(-1.0, 1.0))));
                 float growth = saturate(frac(_Time.y * 0.047 + seed) * 1.7 - 0.34);
                 float active = step(0.88 - overkill * 0.08, seed);
                 return saturate((ridge * 0.78 + ridge * branch * 0.42) * active * growth * crystalDrive);
@@ -280,7 +299,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float slowSwirl = ValueNoise(safeUv * float2(8.0, 13.0) + flow * (_Time.y * 0.37));
                 float2 siltUV = safeUv * lerp(float2(46.0, 88.0), float2(84.0, 148.0), overkill);
                 siltUV += float2(slowSwirl * 0.21, -slowSwirl * 0.13) + flow * _Time.y;
-                float filament = 1.0 - smoothstep(0.11, 0.41, abs(frac(siltUV.y + slowSwirl * 0.31) - 0.5));
+                float filament = 1.0 - ResolveLinearRamp01(0.11, 0.41, abs(frac(siltUV.y + slowSwirl * 0.31) - 0.5));
                 float speckSeed = Hash21(floor(safeUv * screenParams * lerp(0.07, 0.145, overkill)) + floor(_Time.y * 3.0));
                 float speck = step(0.965 - overkill * 0.035, speckSeed);
                 return saturate((filament * 0.32 + speck * 0.86) * siltDrive);
@@ -356,8 +375,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float seed = Hash21(cell);
                 float lane = abs(frac(rainUV.x + seed * 0.37) - 0.5);
                 float drop = frac(rainUV.y + seed);
-                float streak = smoothstep(0.5, 0.0, lane * (10.0 + rainIntensity * densityScale * 24.0));
-                streak *= smoothstep(0.98, 0.64, drop) * smoothstep(0.02, 0.18, drop);
+                float streak = ResolveLinearRamp01(0.5, 0.0, lane * (10.0 + rainIntensity * densityScale * 24.0));
+                streak *= ResolveLinearRamp01(0.98, 0.64, drop) * ResolveLinearRamp01(0.02, 0.18, drop);
                 streak *= step(1.0 - saturate(rainIntensity * densityScale * 0.85), seed);
 
                 float mistNoise = saturate(ValueNoise(uv * float2(18.0, 32.0) + float2(_Time.y * windDir.x, -_Time.y * 1.7)) - 0.54);
@@ -397,6 +416,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float lensDarkness = HectonFinite01(lensParams1.w);
                 float lensSilt = HectonFinite01(lensParams2.y);
                 float lensMaskBlend = HectonFinite01(_HectonVisorFluidLensMaskActive) * HectonFinite01(_HectonVisorFluidLensMaskBlend);
+                float2 cameraTextureUv = ResolveFoveatedSourceUV(screenUV);
                 float4 lensComputeMask = float4(0.0, 0.0, 0.0, 0.0);
                 [branch]
                 if (lensMaskBlend > 0.001)
@@ -429,11 +449,11 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float fluidActivity = HectonFinite01(max(wetness, hullStress) * intensity * (1.0 - thermalMotionCull));
                 float rainIntensity = HectonFinite01(max(_RainIntensity, lensSurfaceWash * 0.35));
                 float lightningFlash = HectonFinite01(_HectonLightningFlash);
-                float rawSceneDepth = HectonFiniteSceneRawDepth(SampleSceneDepth(screenUV));
+                float rawSceneDepth = HectonFiniteSceneRawDepth(SampleSceneDepth(cameraTextureUv));
                 float sceneDepthValid = HectonSceneDepthValid01(rawSceneDepth);
                 float linearSceneDepth = HectonFiniteNonNegative(LinearEyeDepth(rawSceneDepth, zBufferParams), 0.0);
                 float depthSoftness = HectonFiniteNonNegative(_HectonVisorFluidDepthSoftness, 0.0);
-                float depthRefractionMask = sceneDepthValid * smoothstep(0.12, max(0.13, depthSoftness + 0.12), linearSceneDepth);
+                float depthRefractionMask = sceneDepthValid * ResolveLinearRamp01(0.12, max(0.13, depthSoftness + 0.12), linearSceneDepth);
 
                 [branch]
                 if (fluidActivity <= 0.001 &&
@@ -442,7 +462,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     rainIntensity <= 0.001 &&
                     lightningFlash <= 0.0001)
                 {
-                    return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, screenUV);
+                    return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, cameraTextureUv);
                 }
 
                 [branch]
@@ -503,11 +523,12 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     refractedUV = saturate(screenUV + refractionOffset * depthRefractionMask * inverseDirtRefraction * refractionWeight);
                 }
 
-                half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, screenUV);
+                float2 refractedCameraTextureUv = ResolveFoveatedSourceUV(refractedUV);
+                half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, cameraTextureUv);
                 [branch]
                 if (combinedMask > 0.0001 && refractionWeight > 0.001)
                 {
-                    half3 refractedColor = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV).rgb;
+                    half3 refractedColor = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedCameraTextureUv).rgb;
                     color.rgb = lerp(color.rgb, refractedColor, (half)saturate(combinedMask * 0.82 * refractionWeight));
                 }
                 [branch]
@@ -515,8 +536,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 {
                     float chromaDrive = saturate((combinedMask + hullStress * 0.35) * depthRefractionMask * inverseDirtRefraction * qualityPressureMode);
                     float2 chromaOffset = HectonClampUvOffset(float2(0.0012 + hullStress * 0.0022, 0.0) * chromaDrive, 0.004);
-                    half red = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV + chromaOffset)).r;
-                    half blue = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV - chromaOffset)).b;
+                    half red = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, ResolveFoveatedSourceUV(saturate(screenUV + chromaOffset))).r;
+                    half blue = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, ResolveFoveatedSourceUV(saturate(screenUV - chromaOffset))).b;
                     color.r = lerp(color.r, red, (half)chromaDrive);
                     color.b = lerp(color.b, blue, (half)chromaDrive);
                 }
@@ -526,8 +547,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     float2 chromaOffset = float2(
                         (ValueNoise(screenUV * float2(91.0, 47.0) + _Time.y * 3.2) - 0.5) * 0.0035 * glitchAmount,
                         (ValueNoise(screenUV * float2(53.0, 29.0) - _Time.y * 2.4) - 0.5) * 0.0018 * glitchAmount);
-                    half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV + chromaOffset)).r;
-                    half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV - chromaOffset)).b;
+                    half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(saturate(refractedUV + chromaOffset))).r;
+                    half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(saturate(refractedUV - chromaOffset))).b;
                     color.r = red;
                     color.b = blue;
 
@@ -558,8 +579,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 {
                     float crackNoise = ValueNoise(screenUV * float2(38.0, 22.0) + float2(lensCrack * 2.1, lensAnomaly * 1.7));
                     float diagonal = abs(frac((screenUV.x + screenUV.y * 0.73) * (13.0 + lensCrack * 19.0)) - 0.5);
-                    float crackRidge = 1.0 - smoothstep(0.018, 0.082, diagonal);
-                    float crackMask = HectonFinite01((smoothstep(0.76 - lensCrack * 0.28, 0.98, crackNoise) * 0.58 + crackRidge * 0.42) * lensCrack);
+                    float crackRidge = 1.0 - ResolveLinearRamp01(0.018, 0.082, diagonal);
+                    float crackMask = HectonFinite01((ResolveLinearRamp01(0.76 - lensCrack * 0.28, 0.98, crackNoise) * 0.58 + crackRidge * 0.42) * lensCrack);
                     crackMask = lerp(crackMask, max(crackMask, lensComputeMask.y), lensMaskBlend);
                     color.rgb += half3(0.08h, 0.11h, 0.12h) * (half)(crackMask * (0.22 + lensDarkness * 0.18));
                     color.rgb = lerp(color.rgb, color.rgb * half3(0.82h, 0.88h, 0.92h), (half)(crackMask * 0.18));
@@ -605,7 +626,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     [branch]
                     if (rainMask > 0.0001)
                     {
-                        half3 rainRefracted = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(screenUV + rainOverlay.normalOffset)).rgb;
+                        half3 rainRefracted = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(saturate(screenUV + rainOverlay.normalOffset))).rgb;
                         half3 rainTint = half3(0.48h, 0.58h, 0.68h);
                         color.rgb = lerp(color.rgb, rainRefracted, (half)(rainMask * 0.36));
                         color.rgb += rainTint * (half)(rainMask * 0.22);
@@ -615,7 +636,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 if (lightningFlash > 0.0001)
                 {
                     float2 lightningCenter = screenUV * 2.0 - 1.0;
-                    float whiteVignette = smoothstep(0.18, 1.15, dot(lightningCenter, lightningCenter));
+                    float whiteVignette = ResolveLinearRamp01(0.18, 1.15, dot(lightningCenter, lightningCenter));
                     color.rgb += (half)lightningFlash * half3(1.0h, 1.0h, 1.0h) * (half)(0.10 + whiteVignette * 0.72);
                 }
 
@@ -625,7 +646,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 {
                     float bandSeed = Hash21(floor(screenUV * float2(11.0, 19.0)));
                     float voltageBand = abs(frac(screenUV.y * 22.0 - _Time.y * 3.1 + bandSeed) - 0.5);
-                    float voltagePulse = smoothstep(0.035, 0.0, voltageBand) * stormVoltage;
+                    float voltagePulse = ResolveLinearRamp01(0.035, 0.0, voltageBand) * stormVoltage;
                     color.rgb += half3(0.025h, 0.045h, 0.065h) * (half)voltagePulse;
                 }
                 return color;

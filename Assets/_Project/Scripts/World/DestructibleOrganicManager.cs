@@ -29,27 +29,30 @@ namespace Hecton8.World
     public readonly struct FloraHarvestInteractionPoint
     {
         [FieldOffset(0)]
-        public readonly uint InstanceUid;
-        [FieldOffset(4)]
-        private readonly uint _pad0;
-        [FieldOffset(8)]
         public readonly AbsoluteUniversePosition AnchorAup;
-        [FieldOffset(56)]
+        [FieldOffset(48)]
         public readonly Vector3 RuntimePosition;
-        [FieldOffset(68)]
+        [FieldOffset(60)]
         public readonly Vector3 SurfaceNormal;
-        [FieldOffset(80)]
-        public readonly HarvestableTemplate.MaterialClass MaterialClass;
-        [FieldOffset(81)]
-        private readonly byte _pad1;
-        [FieldOffset(82)]
-        private readonly ushort _pad2;
-        [FieldOffset(84)]
+        [FieldOffset(72)]
+        public readonly uint InstanceUid;
+        [FieldOffset(76)]
         public readonly int TemplateIndex;
-        [FieldOffset(88)]
+        [FieldOffset(80)]
         public readonly float BlendWeight;
-        [FieldOffset(92)]
-        private readonly uint _pad3;
+        [FieldOffset(84)]
+        public readonly HarvestableTemplate.MaterialClass MaterialClass;
+        [FieldOffset(85)] private readonly byte _pad0;
+        [FieldOffset(86)] private readonly byte _pad1;
+        [FieldOffset(87)] private readonly byte _pad2;
+        [FieldOffset(88)] private readonly byte _pad3;
+        [FieldOffset(89)] private readonly byte _pad4;
+        [FieldOffset(90)] private readonly byte _pad5;
+        [FieldOffset(91)] private readonly byte _pad6;
+        [FieldOffset(92)] private readonly byte _pad7;
+        [FieldOffset(93)] private readonly byte _pad8;
+        [FieldOffset(94)] private readonly byte _pad9;
+        [FieldOffset(95)] private readonly byte _pad10;
 
         public FloraHarvestInteractionPoint(
             uint instanceUid,
@@ -60,17 +63,24 @@ namespace Hecton8.World
             int templateIndex,
             float blendWeight)
         {
-            InstanceUid = instanceUid;
-            _pad0 = 0u;
             AnchorAup = anchorAup;
             RuntimePosition = runtimePosition;
             SurfaceNormal = surfaceNormal;
-            MaterialClass = materialClass;
-            _pad1 = 0;
-            _pad2 = 0;
+            InstanceUid = instanceUid;
             TemplateIndex = templateIndex;
             BlendWeight = blendWeight;
-            _pad3 = 0u;
+            MaterialClass = materialClass;
+            _pad0 = 0;
+            _pad1 = 0;
+            _pad2 = 0;
+            _pad3 = 0;
+            _pad4 = 0;
+            _pad5 = 0;
+            _pad6 = 0;
+            _pad7 = 0;
+            _pad8 = 0;
+            _pad9 = 0;
+            _pad10 = 0;
         }
     }
 
@@ -91,6 +101,13 @@ namespace Hecton8.World
         private const int DefaultPendingYieldCapacity = 1024;
         private const int DefaultDropBufferCapacity = 256;
         private const int MaxOrganicDropRecordsPerFrame = 256;
+        private const int MaxOrganicDropDrainStackBatch = 8;
+        private const int MaxOrganicYieldNavDispatchStackBatch = 4;
+        private const int MaxOrganicPassiveDecompositionStackBatch = 8;
+        private const int DropBudgetRemainingIndex = 0;
+        private const int DropBudgetDroppedIndex = 1;
+        private const int DropBudgetLength = 2;
+        private const int MaxOrganicCacheSyncRegistryBatch = 8;
         private const float HiddenInstanceWorldY = -100000f;
         private const float MinimumSearchRadius = 0.8f;
         private const float KelpRadiusBias = 0.65f;
@@ -114,10 +131,20 @@ namespace Hecton8.World
         private const float AllelopathicDeathThreshold01 = 0.85f;
         private const float OvergrowthUntouchedSeconds = 3f * 24f * 60f * 60f;
         private const float OvergrowthExpansionMeters = 2f;
-        private const int OvergrowthScanBudgetPerSlowTick = 64;
+        private const int OvergrowthMinChecksPerSlowTick = 8;
+        private const int OvergrowthMaxChecksPerSlowTick = 64;
+        private const int OrganicVisualMinChecksPerTick = 96;
+        private const int OrganicVisualMaxChecksPerTick = 512;
+        private const int MatureSporeMinChecksPerTick = 8;
+        private const int AllelopathicMinCoralChecksPerSlowTick = 4;
+        private const int AllelopathicMaxCoralChecksPerSlowTick = 24;
+        private const int AllelopathicMinKelpChecksPerCoral = 24;
+        private const int AllelopathicMaxKelpChecksPerCoral = 128;
         private const float TitanRootMoundRadiusMeters = 5f;
         private const float TitanRootMoundStrengthMeters = 2.25f;
         private const float TitanRootMoundMatureThreshold01 = 0.999f;
+        private const byte TitanRootMoundPending = 1;
+        private const byte TitanRootMoundApplied = 2;
         private const byte FloraRuntimeFlagHasParasite = (byte)HectonVegetationRuntimeFlags.Parasite;
         private const byte FloraRuntimeFlagDead = 1 << 6;
         private const int DefaultCorpseNodeCapacity = 96;
@@ -125,6 +152,7 @@ namespace Hecton8.World
         private const float CorpseDiseaseActivationSeconds = 120f;
         private const float CorpseDiseaseRadiusMeters = 22f;
         private const float CorpseDiseaseSeverity = 1f;
+        private const double CorpseNodeIdCollisionDistanceSq = 0.000001d;
         private const int MaterialClassCount = 5;
         private const int DearLieMaxDamageSignalsPerFrame = 128;
         private const int DearLieMockDamageSignalCount = 100;
@@ -136,6 +164,7 @@ namespace Hecton8.World
         private const float DearLieQueryRadiusMeters = 2.25f;
         private const float DearLieSpatialCellSizeMeters = 3f;
         private const float DearLieRegenerationDelaySeconds = 300f;
+        private const float DearLieRegenerationRetryDelaySeconds = 1f;
         private const float DearLieMinimumMagnitude = 0.001f;
         private const double OrganicClockMaxSeconds = 16777215d;
         private const uint DearLieSignalHashFlora = 0x464C4F52u; // FLOR
@@ -152,16 +181,58 @@ namespace Hecton8.World
         private const BufferID DearLieSurfaceBucketNextBufferId = (BufferID)72988;
         private const BufferID DearLieUnderwaterBucketHeadsBufferId = (BufferID)72989;
         private const BufferID DearLieUnderwaterBucketNextBufferId = (BufferID)72990;
-        private const int DearLieVaultJobBufferCount = 11;
+        private const BufferID OrganicSurfaceInstanceUidsBufferId = (BufferID)72991;
+        private const BufferID OrganicUnderwaterInstanceUidsBufferId = (BufferID)72992;
+        private const BufferID OrganicSurfaceMaterialClassesBufferId = (BufferID)72993;
+        private const BufferID OrganicUnderwaterMaterialClassesBufferId = (BufferID)72994;
+        private const BufferID OrganicSurfaceHealthBufferId = (BufferID)72995;
+        private const BufferID OrganicUnderwaterHealthBufferId = (BufferID)72996;
+        private const BufferID OrganicHealthByUidBufferId = (BufferID)72997;
+        private const BufferID OrganicDestroyedByUidBufferId = (BufferID)72998;
+        private const BufferID OrganicPendingWiltEndTimeByUidBufferId = (BufferID)72999;
+        private const BufferID OrganicDamageVisualProgressByUidBufferId = (BufferID)73000;
+        private const BufferID OrganicDecompositionStartTimeByUidBufferId = (BufferID)73001;
+        private const BufferID OrganicRegrowthProgressByUidBufferId = (BufferID)73002;
+        private const BufferID OrganicRegrowthPositionByUidBufferId = (BufferID)73003;
+        private const BufferID OrganicMaturationScaleByUidBufferId = (BufferID)73004;
+        private const BufferID OrganicMaturationYieldByUidBufferId = (BufferID)73005;
+        private const BufferID OrganicNextSporeAcousticTimeByUidBufferId = (BufferID)73006;
+        private const BufferID OrganicBaseScaleByUidBufferId = (BufferID)73007;
+        private const BufferID OrganicRuntimeFlagsByUidBufferId = (BufferID)73008;
+        private const BufferID OrganicLastTouchTimeByUidBufferId = (BufferID)73009;
+        private const BufferID OrganicOvergrownByUidBufferId = (BufferID)73010;
+        private const BufferID OrganicRootMoundAppliedByUidBufferId = (BufferID)73011;
+        private const BufferID OrganicDestroyedFloraScratchBufferId = (BufferID)73012;
+        private const BufferID OrganicFloraStateOverrideScratchBufferId = (BufferID)73013;
+        private const BufferID OrganicPersistedHealth01ByUidBufferId = (BufferID)73014;
+        private const BufferID OrganicPersistedHeightScale01ByUidBufferId = (BufferID)73015;
+        private const BufferID OrganicPendingYieldEventsBufferId = (BufferID)73016;
+        private const BufferID OrganicYieldJobInputBufferId = (BufferID)73017;
+        private const BufferID OrganicTemplateDescriptorsBufferId = (BufferID)73018;
+        private const BufferID OrganicLootEntriesBufferId = (BufferID)73019;
+        private const BufferID OrganicYieldMaterialLutBufferId = (BufferID)73020;
+        private const BufferID OrganicDropDebugScratchBufferId = (BufferID)73021;
+        private const BufferID OrganicDropOutputBufferId = (BufferID)73022;
+        private const BufferID OrganicDropBudgetBufferId = (BufferID)73023;
+        private const int DearLieVaultJobBufferCount = 33;
+        private const int OrganicRegrowthMutationBufferCount = 21;
+        private const int OrganicMaturationMutationBufferCount = 3;
+        private const int OrganicOvergrowthMutationBufferCount = 11;
+        private const int OrganicParasiteExposureReadBufferCount = 5;
+        private const int OrganicLifecycleReadBufferCount = 9;
+        private const int YieldJobBufferCount = 7;
+        private const int DearLieMaxPendingDebrisSignalsPerFrame = 16;
+        private const int ParasiteExposureMinScanBudgetPerLane = 16;
+        private const int ParasiteExposureMaxScanBudgetPerLane = 96;
+        private const float ParasiteExposureMinRefreshIntervalSeconds = 0.05f;
+        private const float ParasiteExposureMaxRefreshIntervalSeconds = 0.25f;
+        private const float ParasiteExposureHoldSeconds = 0.45f;
+        private const float ParasiteExposureQueryResetDistanceSq = 2.25f;
+        private const SystemID OrganicVaultSystemId = SystemID.FloraGenomics;
         private const string NativeMemoryOwner = nameof(DestructibleOrganicManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
-        private const Allocator DataVaultExemptOrganicHealthStateAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptOrganicDestroyedStateAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptOrganicScratchAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptOrganicYieldQueueAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptOrganicDropAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptHarvestTemplateAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptYieldMaterialAllocator = Allocator.Persistent;
+        private const string TemplateLootBuildScratchLabel = nameof(TemplateLootBuildScratchLabel);
+        private const string TemplateLootCountScratchLabel = nameof(TemplateLootCountScratchLabel);
 
         private enum HarvestState : byte
         {
@@ -191,14 +262,14 @@ namespace Hecton8.World
         {
             [FieldOffset(0)] public double3 ImpactAUP;
             [FieldOffset(24)] public uint FloraTypeHash;
-            [FieldOffset(28)] public uint _pad0;
+            [FieldOffset(28)] public uint MagnitudeBits;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 128)]
         private struct FloraDearLieDestructionResult
         {
-            [FieldOffset(0)] public Matrix4x4 OriginalMatrix;
-            [FieldOffset(64)] public double3 ImpactAUP;
+            [FieldOffset(0)] public double3 ImpactAUP;
+            [FieldOffset(24)] public Matrix4x4 OriginalMatrix;
             [FieldOffset(88)] public uint InstanceUid;
             [FieldOffset(92)] public int ActiveIndex;
             [FieldOffset(96)] public uint FloraTypeHash;
@@ -206,37 +277,158 @@ namespace Hecton8.World
             [FieldOffset(104)] public ushort VfxQuantity;
             [FieldOffset(106)] public byte EmitVfx;
             [FieldOffset(107)] public byte MaterialClass;
-            [FieldOffset(108)] private uint _pad0;
-            [FieldOffset(112)] private ulong _pad1;
-            [FieldOffset(120)] private ulong _pad2;
+            [FieldOffset(108)] private byte _pad0;
+            [FieldOffset(109)] private byte _pad1;
+            [FieldOffset(110)] private byte _pad2;
+            [FieldOffset(111)] private byte _pad3;
+            [FieldOffset(112)] private byte _pad4;
+            [FieldOffset(113)] private byte _pad5;
+            [FieldOffset(114)] private byte _pad6;
+            [FieldOffset(115)] private byte _pad7;
+            [FieldOffset(116)] private byte _pad8;
+            [FieldOffset(117)] private byte _pad9;
+            [FieldOffset(118)] private byte _pad10;
+            [FieldOffset(119)] private byte _pad11;
+            [FieldOffset(120)] private byte _pad12;
+            [FieldOffset(121)] private byte _pad13;
+            [FieldOffset(122)] private byte _pad14;
+            [FieldOffset(123)] private byte _pad15;
+            [FieldOffset(124)] private byte _pad16;
+            [FieldOffset(125)] private byte _pad17;
+            [FieldOffset(126)] private byte _pad18;
+            [FieldOffset(127)] private byte _pad19;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct FloraDearLieCounter64
         {
             [FieldOffset(0)] public int Value;
-            [FieldOffset(4)] private uint _pad0;
-            [FieldOffset(8)] private ulong _pad1;
-            [FieldOffset(16)] private ulong _pad2;
-            [FieldOffset(24)] private ulong _pad3;
-            [FieldOffset(32)] private ulong _pad4;
-            [FieldOffset(40)] private ulong _pad5;
-            [FieldOffset(48)] private ulong _pad6;
-            [FieldOffset(56)] private ulong _pad7;
+            [FieldOffset(4)] private byte _pad0;
+            [FieldOffset(5)] private byte _pad1;
+            [FieldOffset(6)] private byte _pad2;
+            [FieldOffset(7)] private byte _pad3;
+            [FieldOffset(8)] private byte _pad4;
+            [FieldOffset(9)] private byte _pad5;
+            [FieldOffset(10)] private byte _pad6;
+            [FieldOffset(11)] private byte _pad7;
+            [FieldOffset(12)] private byte _pad8;
+            [FieldOffset(13)] private byte _pad9;
+            [FieldOffset(14)] private byte _pad10;
+            [FieldOffset(15)] private byte _pad11;
+            [FieldOffset(16)] private byte _pad12;
+            [FieldOffset(17)] private byte _pad13;
+            [FieldOffset(18)] private byte _pad14;
+            [FieldOffset(19)] private byte _pad15;
+            [FieldOffset(20)] private byte _pad16;
+            [FieldOffset(21)] private byte _pad17;
+            [FieldOffset(22)] private byte _pad18;
+            [FieldOffset(23)] private byte _pad19;
+            [FieldOffset(24)] private byte _pad20;
+            [FieldOffset(25)] private byte _pad21;
+            [FieldOffset(26)] private byte _pad22;
+            [FieldOffset(27)] private byte _pad23;
+            [FieldOffset(28)] private byte _pad24;
+            [FieldOffset(29)] private byte _pad25;
+            [FieldOffset(30)] private byte _pad26;
+            [FieldOffset(31)] private byte _pad27;
+            [FieldOffset(32)] private byte _pad28;
+            [FieldOffset(33)] private byte _pad29;
+            [FieldOffset(34)] private byte _pad30;
+            [FieldOffset(35)] private byte _pad31;
+            [FieldOffset(36)] private byte _pad32;
+            [FieldOffset(37)] private byte _pad33;
+            [FieldOffset(38)] private byte _pad34;
+            [FieldOffset(39)] private byte _pad35;
+            [FieldOffset(40)] private byte _pad36;
+            [FieldOffset(41)] private byte _pad37;
+            [FieldOffset(42)] private byte _pad38;
+            [FieldOffset(43)] private byte _pad39;
+            [FieldOffset(44)] private byte _pad40;
+            [FieldOffset(45)] private byte _pad41;
+            [FieldOffset(46)] private byte _pad42;
+            [FieldOffset(47)] private byte _pad43;
+            [FieldOffset(48)] private byte _pad44;
+            [FieldOffset(49)] private byte _pad45;
+            [FieldOffset(50)] private byte _pad46;
+            [FieldOffset(51)] private byte _pad47;
+            [FieldOffset(52)] private byte _pad48;
+            [FieldOffset(53)] private byte _pad49;
+            [FieldOffset(54)] private byte _pad50;
+            [FieldOffset(55)] private byte _pad51;
+            [FieldOffset(56)] private byte _pad52;
+            [FieldOffset(57)] private byte _pad53;
+            [FieldOffset(58)] private byte _pad54;
+            [FieldOffset(59)] private byte _pad55;
+            [FieldOffset(60)] private byte _pad56;
+            [FieldOffset(61)] private byte _pad57;
+            [FieldOffset(62)] private byte _pad58;
+            [FieldOffset(63)] private byte _pad59;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct FloraDearLieClaim64
         {
             [FieldOffset(0)] public int Claimed;
-            [FieldOffset(4)] private uint _pad0;
-            [FieldOffset(8)] private ulong _pad1;
-            [FieldOffset(16)] private ulong _pad2;
-            [FieldOffset(24)] private ulong _pad3;
-            [FieldOffset(32)] private ulong _pad4;
-            [FieldOffset(40)] private ulong _pad5;
-            [FieldOffset(48)] private ulong _pad6;
-            [FieldOffset(56)] private ulong _pad7;
+            [FieldOffset(4)] private byte _pad0;
+            [FieldOffset(5)] private byte _pad1;
+            [FieldOffset(6)] private byte _pad2;
+            [FieldOffset(7)] private byte _pad3;
+            [FieldOffset(8)] private byte _pad4;
+            [FieldOffset(9)] private byte _pad5;
+            [FieldOffset(10)] private byte _pad6;
+            [FieldOffset(11)] private byte _pad7;
+            [FieldOffset(12)] private byte _pad8;
+            [FieldOffset(13)] private byte _pad9;
+            [FieldOffset(14)] private byte _pad10;
+            [FieldOffset(15)] private byte _pad11;
+            [FieldOffset(16)] private byte _pad12;
+            [FieldOffset(17)] private byte _pad13;
+            [FieldOffset(18)] private byte _pad14;
+            [FieldOffset(19)] private byte _pad15;
+            [FieldOffset(20)] private byte _pad16;
+            [FieldOffset(21)] private byte _pad17;
+            [FieldOffset(22)] private byte _pad18;
+            [FieldOffset(23)] private byte _pad19;
+            [FieldOffset(24)] private byte _pad20;
+            [FieldOffset(25)] private byte _pad21;
+            [FieldOffset(26)] private byte _pad22;
+            [FieldOffset(27)] private byte _pad23;
+            [FieldOffset(28)] private byte _pad24;
+            [FieldOffset(29)] private byte _pad25;
+            [FieldOffset(30)] private byte _pad26;
+            [FieldOffset(31)] private byte _pad27;
+            [FieldOffset(32)] private byte _pad28;
+            [FieldOffset(33)] private byte _pad29;
+            [FieldOffset(34)] private byte _pad30;
+            [FieldOffset(35)] private byte _pad31;
+            [FieldOffset(36)] private byte _pad32;
+            [FieldOffset(37)] private byte _pad33;
+            [FieldOffset(38)] private byte _pad34;
+            [FieldOffset(39)] private byte _pad35;
+            [FieldOffset(40)] private byte _pad36;
+            [FieldOffset(41)] private byte _pad37;
+            [FieldOffset(42)] private byte _pad38;
+            [FieldOffset(43)] private byte _pad39;
+            [FieldOffset(44)] private byte _pad40;
+            [FieldOffset(45)] private byte _pad41;
+            [FieldOffset(46)] private byte _pad42;
+            [FieldOffset(47)] private byte _pad43;
+            [FieldOffset(48)] private byte _pad44;
+            [FieldOffset(49)] private byte _pad45;
+            [FieldOffset(50)] private byte _pad46;
+            [FieldOffset(51)] private byte _pad47;
+            [FieldOffset(52)] private byte _pad48;
+            [FieldOffset(53)] private byte _pad49;
+            [FieldOffset(54)] private byte _pad50;
+            [FieldOffset(55)] private byte _pad51;
+            [FieldOffset(56)] private byte _pad52;
+            [FieldOffset(57)] private byte _pad53;
+            [FieldOffset(58)] private byte _pad54;
+            [FieldOffset(59)] private byte _pad55;
+            [FieldOffset(60)] private byte _pad56;
+            [FieldOffset(61)] private byte _pad57;
+            [FieldOffset(62)] private byte _pad58;
+            [FieldOffset(63)] private byte _pad59;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 96)]
@@ -249,8 +441,12 @@ namespace Hecton8.World
             [FieldOffset(76)] public float3 RuntimePosition;
             [FieldOffset(88)] public byte Underwater;
             [FieldOffset(89)] private byte _pad0;
-            [FieldOffset(90)] private ushort _pad1;
-            [FieldOffset(92)] private uint _pad2;
+            [FieldOffset(90)] private byte _pad1;
+            [FieldOffset(91)] private byte _pad2;
+            [FieldOffset(92)] private byte _pad3;
+            [FieldOffset(93)] private byte _pad4;
+            [FieldOffset(94)] private byte _pad5;
+            [FieldOffset(95)] private byte _pad6;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -269,71 +465,660 @@ namespace Hecton8.World
             [FieldOffset(40)] public float GlobalQualityWeight;
             [FieldOffset(44)] public uint Hash;
             [FieldOffset(48)] public uint LastInstanceUid;
-            [FieldOffset(52)] public byte Flags;
-            [FieldOffset(53)] private byte _pad0;
-            [FieldOffset(54)] private ushort _pad1;
-            [FieldOffset(56)] public float QueryMicroseconds;
-            [FieldOffset(60)] private uint _pad2;
+            [FieldOffset(52)] public float QueryMicroseconds;
+            [FieldOffset(56)] public byte Flags;
+            [FieldOffset(57)] private byte _pad0;
+            [FieldOffset(58)] private byte _pad1;
+            [FieldOffset(59)] private byte _pad2;
+            [FieldOffset(60)] private byte _pad3;
+            [FieldOffset(61)] private byte _pad4;
+            [FieldOffset(62)] private byte _pad5;
+            [FieldOffset(63)] private byte _pad6;
         }
 
-        private readonly struct SporeAcousticEvent
+        private struct SporeAcousticEvent
         {
-            public readonly AbsoluteUniversePosition PositionAup;
-            public readonly Vector3 RuntimePosition;
-            public readonly AudioClip Clip;
-            public readonly float PulseFrequencyHz;
-            public readonly float Volume;
-            public readonly float Pitch;
-            public readonly float SimulationTimeSeconds;
-            public readonly float PhaseOffset01;
-            public readonly bool HasAup;
+            public AbsoluteUniversePosition PositionAup;
+            public Vector3 RuntimePosition;
+            public AudioClip Clip;
+            public float PulseFrequencyHz;
+            public float Volume;
+            public float Pitch;
+            public float SimulationTimeSeconds;
+            public float PhaseOffset01;
+            public bool HasAup;
+        }
 
-            public SporeAcousticEvent(
-                AbsoluteUniversePosition positionAup,
-                Vector3 runtimePosition,
-                AudioClip clip,
-                float pulseFrequencyHz,
-                float volume,
-                float pitch,
-                float simulationTimeSeconds,
-                float phaseOffset01,
-                bool hasAup)
+        private struct HarvestAudioEvent
+        {
+            public AbsoluteUniversePosition PositionAup;
+            public Vector3 RuntimePosition;
+            public AudioClip Clip;
+            public float Volume;
+            public float Pitch;
+            public bool HasAup;
+        }
+
+        private struct PassiveDecompositionCandidate
+        {
+            public byte Underwater;
+            public int ActiveIndex;
+            public uint InstanceUid;
+            public HarvestableTemplate.MaterialClass MaterialClass;
+            public int TemplateIndex;
+            public Vector3 RuntimePosition;
+        }
+
+        private interface IOrganicUidMapEntry<TValue>
+            where TValue : unmanaged
+        {
+            uint Key { get; set; }
+            TValue Value { get; set; }
+            byte State { get; set; }
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        private struct OrganicHalfMapEntry : IOrganicUidMapEntry<Unity.Mathematics.half>
+        {
+            [FieldOffset(0)] private uint _key;
+            [FieldOffset(4)] private Unity.Mathematics.half _value;
+            [FieldOffset(6)] private byte _state;
+            [FieldOffset(7)] private byte _pad0;
+            [FieldOffset(8)] private byte _pad1;
+            [FieldOffset(9)] private byte _pad2;
+            [FieldOffset(10)] private byte _pad3;
+            [FieldOffset(11)] private byte _pad4;
+            [FieldOffset(12)] private byte _pad5;
+            [FieldOffset(13)] private byte _pad6;
+            [FieldOffset(14)] private byte _pad7;
+            [FieldOffset(15)] private byte _pad8;
+
+            public uint Key { get => _key; set => _key = value; }
+            public Unity.Mathematics.half Value { get => _value; set => _value = value; }
+            public byte State { get => _state; set => _state = value; }
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        private struct OrganicByteMapEntry : IOrganicUidMapEntry<byte>
+        {
+            [FieldOffset(0)] private uint _key;
+            [FieldOffset(4)] private byte _value;
+            [FieldOffset(5)] private byte _state;
+            [FieldOffset(6)] private byte _pad0;
+            [FieldOffset(7)] private byte _pad1;
+            [FieldOffset(8)] private byte _pad2;
+            [FieldOffset(9)] private byte _pad3;
+            [FieldOffset(10)] private byte _pad4;
+            [FieldOffset(11)] private byte _pad5;
+            [FieldOffset(12)] private byte _pad6;
+            [FieldOffset(13)] private byte _pad7;
+            [FieldOffset(14)] private byte _pad8;
+            [FieldOffset(15)] private byte _pad9;
+
+            public uint Key { get => _key; set => _key = value; }
+            public byte Value { get => _value; set => _value = value; }
+            public byte State { get => _state; set => _state = value; }
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        private struct OrganicFloatMapEntry : IOrganicUidMapEntry<float>
+        {
+            [FieldOffset(0)] private uint _key;
+            [FieldOffset(4)] private float _value;
+            [FieldOffset(8)] private byte _state;
+            [FieldOffset(9)] private byte _pad0;
+            [FieldOffset(10)] private byte _pad1;
+            [FieldOffset(11)] private byte _pad2;
+            [FieldOffset(12)] private byte _pad3;
+            [FieldOffset(13)] private byte _pad4;
+            [FieldOffset(14)] private byte _pad5;
+            [FieldOffset(15)] private byte _pad6;
+
+            public uint Key { get => _key; set => _key = value; }
+            public float Value { get => _value; set => _value = value; }
+            public byte State { get => _state; set => _state = value; }
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        private struct OrganicFloat2MapEntry : IOrganicUidMapEntry<float2>
+        {
+            [FieldOffset(0)] private uint _key;
+            [FieldOffset(4)] private float2 _value;
+            [FieldOffset(12)] private byte _state;
+            [FieldOffset(13)] private byte _pad0;
+            [FieldOffset(14)] private byte _pad1;
+            [FieldOffset(15)] private byte _pad2;
+
+            public uint Key { get => _key; set => _key = value; }
+            public float2 Value { get => _value; set => _value = value; }
+            public byte State { get => _state; set => _state = value; }
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
+        private struct OrganicFloat3MapEntry : IOrganicUidMapEntry<float3>
+        {
+            [FieldOffset(0)] private uint _key;
+            [FieldOffset(4)] private float3 _value;
+            [FieldOffset(16)] private byte _state;
+            [FieldOffset(17)] private byte _pad0;
+            [FieldOffset(18)] private byte _pad1;
+            [FieldOffset(19)] private byte _pad2;
+            [FieldOffset(20)] private byte _pad3;
+            [FieldOffset(21)] private byte _pad4;
+            [FieldOffset(22)] private byte _pad5;
+            [FieldOffset(23)] private byte _pad6;
+
+            public uint Key { get => _key; set => _key = value; }
+            public float3 Value { get => _value; set => _value = value; }
+            public byte State { get => _state; set => _state = value; }
+        }
+
+        private struct VaultArray<T>
+            where T : struct
+        {
+            private IDataVault _vault;
+            private VaultGenerationHandle<T> _handle;
+            private BufferID _bufferId;
+            private SystemID _owner;
+            private int _requestedLength;
+
+            public bool IsCreated => TryResolve(out NativeArray<T> buffer) && buffer.IsCreated;
+
+            public int Length
             {
-                PositionAup = positionAup;
-                RuntimePosition = runtimePosition;
-                Clip = clip;
-                PulseFrequencyHz = pulseFrequencyHz;
-                Volume = volume;
-                Pitch = pitch;
-                SimulationTimeSeconds = simulationTimeSeconds;
-                PhaseOffset01 = phaseOffset01;
-                HasAup = hasAup;
+                get
+                {
+                    return TryResolve(out NativeArray<T> buffer) && buffer.IsCreated ? buffer.Length : 0;
+                }
+            }
+
+            public T this[int index]
+            {
+                get
+                {
+                    return TryResolve(out NativeArray<T> buffer) && index >= 0 && index < buffer.Length
+                        ? buffer[index]
+                        : default;
+                }
+                set
+                {
+                    if (TryResolve(out NativeArray<T> buffer) && index >= 0 && index < buffer.Length)
+                        buffer[index] = value;
+                }
+            }
+
+            public bool Ensure(IDataVault vault, BufferID bufferId, int requiredLength, SystemID owner, NativeArrayOptions options)
+            {
+                if (vault == null || requiredLength <= 0)
+                    return false;
+
+                _vault = vault;
+                _bufferId = bufferId;
+                _owner = owner;
+                _requestedLength = math.max(_requestedLength, requiredLength);
+
+                if (_handle.BufferID != 0u &&
+                    vault.TryResolveHandle(in _handle, out NativeArray<T> existing) &&
+                    existing.IsCreated &&
+                    existing.Length >= requiredLength)
+                {
+                    return true;
+                }
+
+                _handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, owner, options);
+                return TryResolve(out NativeArray<T> resolved) && resolved.IsCreated && resolved.Length >= requiredLength;
+            }
+
+            public bool TryResolve(out NativeArray<T> buffer)
+            {
+                buffer = default;
+                return _vault != null &&
+                       _handle.BufferID != 0u &&
+                       _handle.SystemID == (uint)_owner &&
+                       _handle.BufferID == unchecked((uint)(int)_bufferId) &&
+                       _vault.TryResolveHandle(in _handle, out buffer) &&
+                       buffer.IsCreated;
+            }
+
+            public bool TryReadOnly(out NativeArray<T>.ReadOnly buffer)
+            {
+                buffer = default;
+                return _vault != null &&
+                       _handle.BufferID != 0u &&
+                       _handle.SystemID == (uint)_owner &&
+                       _handle.BufferID == unchecked((uint)(int)_bufferId) &&
+                       _vault.TryReadOnlyHandle(in _handle, out buffer);
+            }
+
+            public void Clear()
+            {
+                if (!TryResolve(out NativeArray<T> buffer))
+                    return;
+
+                for (int i = 0; i < buffer.Length; i++)
+                    buffer[i] = default;
+            }
+
+            public void Release()
+            {
+                if (_vault != null && _handle.BufferID != 0u)
+                    _vault.ReleaseBuffer(in _handle);
+
+                _handle = default;
+                _vault = null;
+                _bufferId = default;
+                _owner = SystemID.Unknown;
+                _requestedLength = 0;
+            }
+
+            public static implicit operator NativeArray<T>(VaultArray<T> array)
+            {
+                return array.TryResolve(out NativeArray<T> buffer) ? buffer : default;
             }
         }
 
-        private readonly struct HarvestAudioEvent
+        private struct VaultList<T>
+            where T : struct
         {
-            public readonly AbsoluteUniversePosition PositionAup;
-            public readonly Vector3 RuntimePosition;
-            public readonly AudioClip Clip;
-            public readonly float Volume;
-            public readonly float Pitch;
-            public readonly bool HasAup;
+            private VaultArray<T> _array;
+            private int _length;
+            private int _capacity;
 
-            public HarvestAudioEvent(
-                AbsoluteUniversePosition positionAup,
-                Vector3 runtimePosition,
-                AudioClip clip,
-                float volume,
-                float pitch,
-                bool hasAup)
+            public bool IsCreated => _array.IsCreated;
+            public int Length => _length;
+            public int Capacity => _capacity;
+
+            public T this[int index]
             {
-                PositionAup = positionAup;
-                RuntimePosition = runtimePosition;
-                Clip = clip;
-                Volume = volume;
-                Pitch = pitch;
-                HasAup = hasAup;
+                get => index >= 0 && index < _length ? _array[index] : default;
+                set
+                {
+                    if (index >= 0 && index < _length)
+                        _array[index] = value;
+                }
+            }
+
+            public bool Ensure(IDataVault vault, BufferID bufferId, int capacity, SystemID owner, NativeArrayOptions options)
+            {
+                _capacity = math.max(1, capacity);
+                if (!_array.Ensure(vault, bufferId, _capacity, owner, options))
+                {
+                    _length = 0;
+                    return false;
+                }
+
+                if (_length > _capacity)
+                    _length = _capacity;
+
+                return true;
+            }
+
+            public void Clear()
+            {
+                _length = 0;
+            }
+
+            public void AddNoResize(T value)
+            {
+                if (_length < 0 || _length >= _capacity)
+                    return;
+
+                _array[_length] = value;
+                _length++;
+            }
+
+            public void ResizeUninitialized(int length)
+            {
+                _length = math.clamp(length, 0, _capacity);
+            }
+
+            public bool TryResolveArray(out NativeArray<T> buffer)
+            {
+                return _array.TryResolve(out buffer);
+            }
+
+            public void Release()
+            {
+                _array.Release();
+                _length = 0;
+                _capacity = 0;
+            }
+        }
+
+        private struct VaultUidMap<TEntry, TValue>
+            where TEntry : struct, IOrganicUidMapEntry<TValue>
+            where TValue : unmanaged
+        {
+            private const byte EntryStateEmpty = 0;
+            private const byte EntryStateOccupied = 1;
+            private const byte EntryStateTombstone = 2;
+
+            private VaultArray<TEntry> _entries;
+            private int _capacity;
+            private int _count;
+
+            public bool IsCreated => _entries.IsCreated;
+            public int Count => _count;
+
+            public bool Ensure(IDataVault vault, BufferID bufferId, int capacity, SystemID owner, NativeArrayOptions options)
+            {
+                _capacity = math.max(1, math.ceilpow2(capacity));
+                if (!_entries.Ensure(vault, bufferId, _capacity, owner, options))
+                {
+                    _count = 0;
+                    return false;
+                }
+
+                Recount();
+                return true;
+            }
+
+            public bool ContainsKey(uint key)
+            {
+                return TryFindIndex(key, out _, out _);
+            }
+
+            public bool TryGetValue(uint key, out TValue value)
+            {
+                value = default;
+                if (!TryFindIndex(key, out int index, out NativeArray<TEntry> entries))
+                    return false;
+
+                value = entries[index].Value;
+                return true;
+            }
+
+            public bool TryAdd(uint key, TValue value)
+            {
+                if (key == 0u || !_entries.TryResolve(out NativeArray<TEntry> entries) || entries.Length <= 0)
+                    return false;
+
+                int mask = entries.Length - 1;
+                int start = (int)(HashKey(key) & (uint)mask);
+                int firstTombstone = -1;
+                for (int probe = 0; probe < entries.Length; probe++)
+                {
+                    int index = (start + probe) & mask;
+                    TEntry entry = entries[index];
+                    if (entry.State == EntryStateOccupied)
+                    {
+                        if (entry.Key == key)
+                            return false;
+
+                        continue;
+                    }
+
+                    if (entry.State == EntryStateTombstone)
+                    {
+                        if (firstTombstone < 0)
+                            firstTombstone = index;
+
+                        continue;
+                    }
+
+                    int writeIndex = firstTombstone >= 0 ? firstTombstone : index;
+                    WriteEntry(entries, writeIndex, key, value);
+                    _count++;
+                    return true;
+                }
+
+                if (firstTombstone >= 0)
+                {
+                    WriteEntry(entries, firstTombstone, key, value);
+                    _count++;
+                    return true;
+                }
+
+                return false;
+            }
+
+            public bool TryPut(uint key, TValue value)
+            {
+                if (key == 0u)
+                    return false;
+
+                if (TryFindIndex(key, out int index, out NativeArray<TEntry> entries))
+                {
+                    TEntry entry = entries[index];
+                    entry.Value = value;
+                    entry.State = EntryStateOccupied;
+                    entries[index] = entry;
+                    return true;
+                }
+
+                return TryAdd(key, value);
+            }
+
+            public bool Remove(uint key)
+            {
+                if (!TryFindIndex(key, out int index, out NativeArray<TEntry> entries))
+                    return false;
+
+                TEntry entry = entries[index];
+                entry.Key = 0u;
+                entry.Value = default;
+                entry.State = EntryStateTombstone;
+                entries[index] = entry;
+                _count = math.max(0, _count - 1);
+                return true;
+            }
+
+            public void Clear()
+            {
+                if (!_entries.TryResolve(out NativeArray<TEntry> entries))
+                {
+                    _count = 0;
+                    return;
+                }
+
+                for (int i = 0; i < entries.Length; i++)
+                    entries[i] = default;
+
+                _count = 0;
+            }
+
+            public void Release()
+            {
+                _entries.Release();
+                _capacity = 0;
+                _count = 0;
+            }
+
+            private void Recount()
+            {
+                _count = 0;
+                if (!_entries.TryResolve(out NativeArray<TEntry> entries))
+                    return;
+
+                for (int i = 0; i < entries.Length; i++)
+                {
+                    if (entries[i].State == EntryStateOccupied)
+                        _count++;
+                }
+            }
+
+            private bool TryFindIndex(uint key, out int index, out NativeArray<TEntry> entries)
+            {
+                index = -1;
+                entries = default;
+                if (key == 0u || !_entries.TryResolve(out entries) || entries.Length <= 0)
+                    return false;
+
+                int mask = entries.Length - 1;
+                int start = (int)(HashKey(key) & (uint)mask);
+                for (int probe = 0; probe < entries.Length; probe++)
+                {
+                    int candidate = (start + probe) & mask;
+                    TEntry entry = entries[candidate];
+                    if (entry.State == EntryStateEmpty)
+                        return false;
+
+                    if (entry.State == EntryStateOccupied && entry.Key == key)
+                    {
+                        index = candidate;
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            private static void WriteEntry(NativeArray<TEntry> entries, int index, uint key, TValue value)
+            {
+                TEntry entry = default;
+                entry.Key = key;
+                entry.Value = value;
+                entry.State = EntryStateOccupied;
+                entries[index] = entry;
+            }
+
+            private static uint HashKey(uint key)
+            {
+                uint value = key;
+                value ^= value >> 16;
+                value *= 2246822519u;
+                value ^= value >> 13;
+                value *= 3266489917u;
+                value ^= value >> 16;
+                return value;
+            }
+        }
+
+        private readonly struct BridgeMatrixLane
+        {
+            private readonly DestructibleOrganicManager _owner;
+            private readonly bool _underwater;
+
+            public BridgeMatrixLane(DestructibleOrganicManager owner, bool underwater)
+            {
+                _owner = owner;
+                _underwater = underwater;
+            }
+
+            public bool IsCreated => TryResolve(out NativeArray<Matrix4x4> buffer) && buffer.IsCreated;
+            public int Length => TryResolve(out NativeArray<Matrix4x4> buffer) && buffer.IsCreated ? buffer.Length : 0;
+
+            public Matrix4x4 this[int index]
+            {
+                get => TryResolve(out NativeArray<Matrix4x4> buffer) && index >= 0 && index < buffer.Length ? buffer[index] : default;
+                set
+                {
+                    if (TryResolve(out NativeArray<Matrix4x4> buffer) && index >= 0 && index < buffer.Length)
+                        buffer[index] = value;
+                }
+            }
+
+            public bool TryResolve(out NativeArray<Matrix4x4> buffer)
+            {
+                buffer = default;
+                return _owner != null &&
+                       _owner.TryResolveVegetationBridgePayload(_underwater, out buffer, out _, out _, out _, out _, out _);
+            }
+
+            public static implicit operator NativeArray<Matrix4x4>(BridgeMatrixLane lane)
+            {
+                return lane.TryResolve(out NativeArray<Matrix4x4> buffer) ? buffer : default;
+            }
+        }
+
+        private readonly struct BridgeMetadataLane
+        {
+            private readonly DestructibleOrganicManager _owner;
+            private readonly bool _underwater;
+
+            public BridgeMetadataLane(DestructibleOrganicManager owner, bool underwater)
+            {
+                _owner = owner;
+                _underwater = underwater;
+            }
+
+            public bool IsCreated => TryResolve(out NativeArray<HectonVegetationInstanceData> buffer) && buffer.IsCreated;
+            public int Length => TryResolve(out NativeArray<HectonVegetationInstanceData> buffer) && buffer.IsCreated ? buffer.Length : 0;
+
+            public HectonVegetationInstanceData this[int index]
+            {
+                get => TryResolve(out NativeArray<HectonVegetationInstanceData> buffer) && index >= 0 && index < buffer.Length ? buffer[index] : default;
+                set
+                {
+                    if (TryResolve(out NativeArray<HectonVegetationInstanceData> buffer) && index >= 0 && index < buffer.Length)
+                        buffer[index] = value;
+                }
+            }
+
+            public bool TryResolve(out NativeArray<HectonVegetationInstanceData> buffer)
+            {
+                buffer = default;
+                return _owner != null &&
+                       _owner.TryResolveVegetationBridgePayload(_underwater, out _, out buffer, out _, out _, out _, out _);
+            }
+
+            public static implicit operator NativeArray<HectonVegetationInstanceData>(BridgeMetadataLane lane)
+            {
+                return lane.TryResolve(out NativeArray<HectonVegetationInstanceData> buffer) ? buffer : default;
+            }
+        }
+
+        private readonly struct BridgeTypeLane
+        {
+            private readonly DestructibleOrganicManager _owner;
+            private readonly bool _underwater;
+
+            public BridgeTypeLane(DestructibleOrganicManager owner, bool underwater)
+            {
+                _owner = owner;
+                _underwater = underwater;
+            }
+
+            public bool IsCreated => TryResolve(out NativeArray<int> buffer) && buffer.IsCreated;
+            public int Length => TryResolve(out NativeArray<int> buffer) && buffer.IsCreated ? buffer.Length : 0;
+
+            public int this[int index]
+            {
+                get => TryResolve(out NativeArray<int> buffer) && index >= 0 && index < buffer.Length ? buffer[index] : default;
+            }
+
+            public bool TryResolve(out NativeArray<int> buffer)
+            {
+                buffer = default;
+                return _owner != null &&
+                       _owner.TryResolveVegetationBridgePayload(_underwater, out _, out _, out buffer, out _, out _, out _);
+            }
+
+            public static implicit operator NativeArray<int>(BridgeTypeLane lane)
+            {
+                return lane.TryResolve(out NativeArray<int> buffer) ? buffer : default;
+            }
+        }
+
+        private readonly struct BridgeSemanticTypeLane
+        {
+            private readonly DestructibleOrganicManager _owner;
+            private readonly bool _underwater;
+
+            public BridgeSemanticTypeLane(DestructibleOrganicManager owner, bool underwater)
+            {
+                _owner = owner;
+                _underwater = underwater;
+            }
+
+            public bool IsCreated => TryResolve(out NativeArray<int>.ReadOnly buffer) && buffer.IsCreated;
+            public int Length => TryResolve(out NativeArray<int>.ReadOnly buffer) && buffer.IsCreated ? buffer.Length : 0;
+
+            public int this[int index]
+            {
+                get => TryResolve(out NativeArray<int>.ReadOnly buffer) && index >= 0 && index < buffer.Length ? buffer[index] : default;
+            }
+
+            public bool TryResolve(out NativeArray<int>.ReadOnly buffer)
+            {
+                buffer = default;
+                return _owner != null &&
+                       _owner.TryResolveVegetationBridgePayload(_underwater, out _, out _, out _, out buffer, out _, out _);
+            }
+
+            public static implicit operator NativeArray<int>.ReadOnly(BridgeSemanticTypeLane lane)
+            {
+                return lane.TryResolve(out NativeArray<int>.ReadOnly buffer) ? buffer : default;
             }
         }
 
@@ -345,82 +1130,201 @@ namespace Hecton8.World
 
         private void EvaluateAggressiveOvergrowthInLane(bool underwater, float currentTime, ref int cursor)
         {
-            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
-            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
-            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
-            NativeArray<int>.ReadOnly semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
-            NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
-            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
-            NativeArray<Unity.Mathematics.half> health = underwater ? _underwaterHealth : _surfaceHealth;
-            int count = underwater ? _underwaterCount : _surfaceCount;
-            if (!matrices.IsCreated ||
-                !metadata.IsCreated ||
-                !types.IsCreated ||
-                !semanticTypes.IsCreated ||
-                !instanceUids.IsCreated ||
-                !materialClasses.IsCreated ||
-                !health.IsCreated ||
-                !_lastOrganicTouchTimeByInstanceUid.IsCreated ||
-                !_overgrownByInstanceUid.IsCreated ||
-                count <= 0)
-            {
-                cursor = 0;
-                return;
-            }
-
-            int safeCount = math.min(
-                count,
-                math.min(
-                    math.min(matrices.Length, metadata.Length),
-                    math.min(
-                        math.min(types.Length, semanticTypes.Length),
-                        math.min(instanceUids.Length, math.min(materialClasses.Length, health.Length)))));
-            if (safeCount <= 0)
-            {
-                cursor = 0;
-                return;
-            }
-
-            cursor = math.clamp(cursor, 0, safeCount - 1);
-            int checks = math.min(OvergrowthScanBudgetPerSlowTick, safeCount);
+            int checks = ResolveOvergrowthScanBudget(ResolveDearLieGlobalQualityWeight());
             for (int step = 0; step < checks; step++)
             {
-                int activeIndex = (cursor + step) % safeCount;
-                uint instanceUid = instanceUids[activeIndex];
-                if (instanceUid == 0u ||
-                    (float)health[activeIndex] <= 0.0001f ||
-                    (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)) ||
-                    (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid)) ||
-                    _overgrownByInstanceUid.ContainsKey(instanceUid))
+                if (!TryEvaluateAggressiveOvergrowthStep(
+                        underwater,
+                        currentTime,
+                        ref cursor,
+                        out int safeCount,
+                        out bool laneUnavailable,
+                        out uint instanceUid,
+                        out bool overgrowthMarked,
+                        out float3 navObstacleCenter,
+                        out float3 navObstacleExtents,
+                        out bool applyTitanRootMound,
+                        out Vector3 titanRootMoundPosition))
                 {
+                    if (laneUnavailable)
+                        return;
+
+                    if (safeCount > 0 && step + 1 >= safeCount)
+                        return;
+
                     continue;
                 }
+
+                if (overgrowthMarked)
+                {
+                    VoxelDynamicNavGridRuntime.EnqueueDynamicObstacleGrowth(
+                        navObstacleCenter,
+                        navObstacleExtents,
+                        OvergrowthExpansionMeters);
+                }
+
+                if (applyTitanRootMound)
+                    TryApplyPreparedTitanRootMound(instanceUid, titanRootMoundPosition);
+
+                if (safeCount > 0 && step + 1 >= safeCount)
+                    return;
+            }
+        }
+
+        private bool TryEvaluateAggressiveOvergrowthStep(
+            bool underwater,
+            float currentTime,
+            ref int cursor,
+            out int safeCount,
+            out bool laneUnavailable,
+            out uint instanceUid,
+            out bool overgrowthMarked,
+            out float3 navObstacleCenter,
+            out float3 navObstacleExtents,
+            out bool applyTitanRootMound,
+            out Vector3 titanRootMoundPosition)
+        {
+            safeCount = 0;
+            laneUnavailable = false;
+            instanceUid = 0u;
+            overgrowthMarked = false;
+            navObstacleCenter = float3.zero;
+            navObstacleExtents = float3.zero;
+            applyTitanRootMound = false;
+            titanRootMoundPosition = default;
+
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicOvergrowthMutationBuffers(vault, out int lockedMask))
+            {
+                laneUnavailable = true;
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
+                return false;
+            }
+
+            bool touchPrimeFailed = false;
+            bool overgrowthWriteFailed = false;
+            bool titanRootMoundWriteFailed = false;
+            try
+            {
+                NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+                NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
+                NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
+                NativeArray<int>.ReadOnly semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
+                NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
+                NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
+                NativeArray<Unity.Mathematics.half> health = underwater ? _underwaterHealth : _surfaceHealth;
+                int count = underwater ? _underwaterCount : _surfaceCount;
+                if (!matrices.IsCreated ||
+                    !metadata.IsCreated ||
+                    !types.IsCreated ||
+                    !semanticTypes.IsCreated ||
+                    !instanceUids.IsCreated ||
+                    !materialClasses.IsCreated ||
+                    !health.IsCreated ||
+                    !_lastOrganicTouchTimeByInstanceUid.IsCreated ||
+                    !_overgrownByInstanceUid.IsCreated ||
+                    count <= 0)
+                {
+                    cursor = 0;
+                    laneUnavailable = true;
+                    return false;
+                }
+
+                safeCount = math.min(
+                    count,
+                    math.min(
+                        math.min(matrices.Length, metadata.Length),
+                        math.min(
+                            math.min(types.Length, semanticTypes.Length),
+                            math.min(instanceUids.Length, math.min(materialClasses.Length, health.Length)))));
+                if (safeCount <= 0)
+                {
+                    cursor = 0;
+                    laneUnavailable = true;
+                    return false;
+                }
+
+                if ((uint)cursor >= (uint)safeCount)
+                    cursor = 0;
+
+                int activeIndex = cursor;
+                cursor++;
+                if (cursor >= safeCount)
+                    cursor = 0;
+
+                instanceUid = instanceUids[activeIndex];
+                if (instanceUid == 0u || (float)health[activeIndex] <= 0.0001f)
+                    return false;
 
                 HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[activeIndex];
                 if (!IsConsumableFloraMaterialClass(materialClass))
-                    continue;
+                    return false;
+
+                bool alreadyOvergrown = _overgrownByInstanceUid.ContainsKey(instanceUid);
+                bool pendingTitanRootMound =
+                    alreadyOvergrown &&
+                    _rootMoundAppliedByInstanceUid.IsCreated &&
+                    _rootMoundAppliedByInstanceUid.TryGetValue(instanceUid, out byte rootMoundState) &&
+                    rootMoundState == TitanRootMoundPending;
+                bool skipInstance =
+                    (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)) ||
+                    (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid)) ||
+                    (alreadyOvergrown && !pendingTitanRootMound);
+                if (skipInstance)
+                    return false;
 
                 if (!_lastOrganicTouchTimeByInstanceUid.TryGetValue(instanceUid, out float lastTouchTime))
                 {
-                    _lastOrganicTouchTimeByInstanceUid.TryAdd(instanceUid, currentTime);
-                    continue;
+                    if (!_lastOrganicTouchTimeByInstanceUid.TryAdd(instanceUid, currentTime))
+                        touchPrimeFailed = true;
                 }
-
-                if (currentTime - lastTouchTime < OvergrowthUntouchedSeconds)
-                    continue;
-
-                if (!TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out float3 navObstacleCenter, out float3 navObstacleExtents))
-                    continue;
-
-                VoxelDynamicNavGridRuntime.EnqueueDynamicObstacleGrowth(
-                    navObstacleCenter,
-                    navObstacleExtents,
-                    OvergrowthExpansionMeters);
-                _overgrownByInstanceUid.TryAdd(instanceUid, 1);
-                TryApplyTitanRootMound(underwater, activeIndex, instanceUid);
+                else if (currentTime - lastTouchTime >= OvergrowthUntouchedSeconds &&
+                         TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out navObstacleCenter, out navObstacleExtents))
+                {
+                    alreadyOvergrown = _overgrownByInstanceUid.ContainsKey(instanceUid);
+                    if (!alreadyOvergrown)
+                    {
+                        if (_overgrownByInstanceUid.TryAdd(instanceUid, 1))
+                        {
+                            overgrowthMarked = true;
+                            applyTitanRootMound = TryPrepareTitanRootMoundRequest(underwater, activeIndex, instanceUid, out titanRootMoundPosition, out titanRootMoundWriteFailed);
+                        }
+                        else
+                        {
+                            overgrowthWriteFailed = true;
+                        }
+                    }
+                    else if (_rootMoundAppliedByInstanceUid.IsCreated &&
+                             _rootMoundAppliedByInstanceUid.TryGetValue(instanceUid, out rootMoundState) &&
+                             rootMoundState == TitanRootMoundPending)
+                    {
+                        applyTitanRootMound = TryPrepareTitanRootMoundRequest(underwater, activeIndex, instanceUid, out titanRootMoundPosition, out titanRootMoundWriteFailed);
+                    }
+                }
+            }
+            finally
+            {
+                UnlockOrganicOvergrowthMutationBuffers(vault, lockedMask);
             }
 
-            cursor = (cursor + checks) % safeCount;
+            if (touchPrimeFailed)
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 128);
+
+            if (overgrowthWriteFailed)
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 128);
+
+            if (titanRootMoundWriteFailed)
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 128);
+
+            return overgrowthMarked || applyTitanRootMound;
+        }
+
+        private static int ResolveOvergrowthScanBudget(float qualityWeight)
+        {
+            float q = math.saturate(qualityWeight);
+            return math.max(
+                OvergrowthMinChecksPerSlowTick,
+                (int)math.round(math.lerp(OvergrowthMinChecksPerSlowTick, OvergrowthMaxChecksPerSlowTick, q * q)));
         }
 
         [Header("Runtime Wiring")]
@@ -486,7 +1390,7 @@ namespace Hecton8.World
         private AudioClip organicHarvestClip;
 
         [SerializeField]
-        [Tooltip("Brittle snap/crack clip used when coral-like flora changes harvest state.")]
+        [Tooltip("Brittle snap/crack clip used when carbonate-like flora changes harvest state.")]
         private AudioClip brittleHarvestClip;
 
         [SerializeField]
@@ -541,64 +1445,52 @@ namespace Hecton8.World
         [Tooltip("-1 uses HomeostasisBrain.GlobalQualityWeight. 0..1 overrides Dear Lie VFX gating for editor stress tests.")]
         private float dearLieQualityOverride = -1f;
 
-        private NativeArray<uint> _surfaceInstanceUids;
-        private NativeArray<uint> _underwaterInstanceUids;
-        private NativeArray<byte> _surfaceMaterialClasses;
-        private NativeArray<byte> _underwaterMaterialClasses;
-        private NativeArray<Unity.Mathematics.half> _surfaceHealth;
-        private NativeArray<Unity.Mathematics.half> _underwaterHealth;
-        private NativeArray<int> _surfaceDearLieBucketHeads;
-        private NativeArray<int> _surfaceDearLieBucketNext;
-        private NativeArray<int> _underwaterDearLieBucketHeads;
-        private NativeArray<int> _underwaterDearLieBucketNext;
-        private NativeArray<FloraDearLieClaim64> _surfaceDearLieClaims;
-        private NativeArray<FloraDearLieClaim64> _underwaterDearLieClaims;
-        private NativeArray<FloraDestructionEventDTO> _dearLieDamageEvents;
-        private NativeArray<FloraDearLieDestructionResult> _dearLieResults;
-        private NativeArray<FloraDearLieCounter64> _dearLieCounters;
-        private NativeArray<FloraDearLieRegenRecord> _dearLieRegenRecords;
-        private NativeArray<FloraDearLieTelemetryEntry> _dearLieTelemetryRing;
+        private VaultArray<uint> _surfaceInstanceUids;
+        private VaultArray<uint> _underwaterInstanceUids;
+        private VaultArray<byte> _surfaceMaterialClasses;
+        private VaultArray<byte> _underwaterMaterialClasses;
+        private VaultArray<Unity.Mathematics.half> _surfaceHealth;
+        private VaultArray<Unity.Mathematics.half> _underwaterHealth;
+        private VaultArray<int> _surfaceDearLieBucketHeads;
+        private VaultArray<int> _surfaceDearLieBucketNext;
+        private VaultArray<int> _underwaterDearLieBucketHeads;
+        private VaultArray<int> _underwaterDearLieBucketNext;
+        private VaultArray<FloraDearLieClaim64> _surfaceDearLieClaims;
+        private VaultArray<FloraDearLieClaim64> _underwaterDearLieClaims;
+        private VaultArray<FloraDestructionEventDTO> _dearLieDamageEvents;
+        private VaultArray<FloraDearLieDestructionResult> _dearLieResults;
+        private VaultArray<FloraDearLieCounter64> _dearLieCounters;
+        private VaultArray<FloraDearLieRegenRecord> _dearLieRegenRecords;
+        private VaultArray<FloraDearLieTelemetryEntry> _dearLieTelemetryRing;
         private IDataVault _dearLieVault;
-        private VaultGenerationHandle<FloraDearLieClaim64> _surfaceDearLieClaimsHandle;
-        private VaultGenerationHandle<FloraDearLieClaim64> _underwaterDearLieClaimsHandle;
-        private VaultGenerationHandle<FloraDestructionEventDTO> _dearLieDamageEventsHandle;
-        private VaultGenerationHandle<FloraDearLieDestructionResult> _dearLieResultsHandle;
-        private VaultGenerationHandle<FloraDearLieCounter64> _dearLieCountersHandle;
-        private VaultGenerationHandle<FloraDearLieRegenRecord> _dearLieRegenRecordsHandle;
-        private VaultGenerationHandle<FloraDearLieTelemetryEntry> _dearLieTelemetryRingHandle;
-        private VaultGenerationHandle<int> _surfaceDearLieBucketHeadsHandle;
-        private VaultGenerationHandle<int> _surfaceDearLieBucketNextHandle;
-        private VaultGenerationHandle<int> _underwaterDearLieBucketHeadsHandle;
-        private VaultGenerationHandle<int> _underwaterDearLieBucketNextHandle;
-        private NativeHashMap<uint, Unity.Mathematics.half> _healthByInstanceUid;
-        private NativeHashMap<uint, byte> _destroyedByInstanceUid;
-        private NativeHashMap<uint, float> _pendingWiltEndTimeByInstanceUid;
-        private NativeHashMap<uint, float> _damageVisualProgressByInstanceUid;
-        private NativeHashMap<uint, float> _decompositionStartTimeByInstanceUid;
-        private NativeHashMap<uint, float> _regrowthProgressByInstanceUid;
-        private NativeHashMap<uint, float3> _regrowthPositionByInstanceUid;
-        private NativeHashMap<uint, Unity.Mathematics.half> _maturationScaleByInstanceUid;
-        private NativeHashMap<uint, Unity.Mathematics.half> _maturationYieldByInstanceUid;
-        private NativeHashMap<uint, float> _nextSporeAcousticTimeByInstanceUid;
-        private NativeHashMap<uint, float2> _baseScaleByInstanceUid;
-        private NativeHashMap<uint, byte> _runtimeFlagsByInstanceUid;
-        private NativeHashMap<uint, float> _lastOrganicTouchTimeByInstanceUid;
-        private NativeHashMap<uint, byte> _overgrownByInstanceUid;
-        private NativeHashMap<uint, byte> _rootMoundAppliedByInstanceUid;
-        private NativeList<PersistentWorldDeltaRecord> _destroyedFloraScratch;
-        private NativeList<PersistentWorldDeltaRecord> _floraStateOverrideScratch;
-        private NativeHashMap<uint, Unity.Mathematics.half> _persistedHealth01ByInstanceUid;
-        private NativeHashMap<uint, Unity.Mathematics.half> _persistedHeightScale01ByInstanceUid;
-        private NativeList<DestroyedOrganicEvent> _pendingYieldEvents;
-        private NativeArray<DestroyedOrganicEvent> _yieldJobInput;
-        private DropBuffer _dropBuffer;
-        private NativeArray<HarvestableTemplate.RuntimeDescriptor> _templateDescriptors;
-        private NativeArray<HarvestableTemplate.LootRuntimeEntry> _lootEntries;
-        private NativeArray<EntropyYieldMaterialLutEntry> _yieldMaterialLut;
-        private NativeArray<Vector3> _dropDebugScratch;
-        private JobHandle _yieldJobHandle;
+        private VaultUidMap<OrganicHalfMapEntry, Unity.Mathematics.half> _healthByInstanceUid;
+        private VaultUidMap<OrganicByteMapEntry, byte> _destroyedByInstanceUid;
+        private VaultUidMap<OrganicFloatMapEntry, float> _pendingWiltEndTimeByInstanceUid;
+        private VaultUidMap<OrganicFloatMapEntry, float> _damageVisualProgressByInstanceUid;
+        private VaultUidMap<OrganicFloatMapEntry, float> _decompositionStartTimeByInstanceUid;
+        private VaultUidMap<OrganicFloatMapEntry, float> _regrowthProgressByInstanceUid;
+        private VaultUidMap<OrganicFloat3MapEntry, float3> _regrowthPositionByInstanceUid;
+        private VaultUidMap<OrganicHalfMapEntry, Unity.Mathematics.half> _maturationScaleByInstanceUid;
+        private VaultUidMap<OrganicHalfMapEntry, Unity.Mathematics.half> _maturationYieldByInstanceUid;
+        private VaultUidMap<OrganicFloatMapEntry, float> _nextSporeAcousticTimeByInstanceUid;
+        private VaultUidMap<OrganicFloat2MapEntry, float2> _baseScaleByInstanceUid;
+        private VaultUidMap<OrganicByteMapEntry, byte> _runtimeFlagsByInstanceUid;
+        private VaultUidMap<OrganicFloatMapEntry, float> _lastOrganicTouchTimeByInstanceUid;
+        private VaultUidMap<OrganicByteMapEntry, byte> _overgrownByInstanceUid;
+        private VaultUidMap<OrganicByteMapEntry, byte> _rootMoundAppliedByInstanceUid;
+        private VaultList<PersistentWorldDeltaRecord> _destroyedFloraScratch;
+        private VaultList<PersistentWorldDeltaRecord> _floraStateOverrideScratch;
+        private VaultUidMap<OrganicHalfMapEntry, Unity.Mathematics.half> _persistedHealth01ByInstanceUid;
+        private VaultUidMap<OrganicHalfMapEntry, Unity.Mathematics.half> _persistedHeightScale01ByInstanceUid;
+        private VaultList<DestroyedOrganicEvent> _pendingYieldEvents;
+        private VaultArray<DestroyedOrganicEvent> _yieldJobInput;
+        private VaultArray<ItemDropData> _dropOutput;
+        private VaultArray<int> _dropBudget;
+        private VaultArray<HarvestableTemplate.RuntimeDescriptor> _templateDescriptors;
+        private VaultArray<HarvestableTemplate.LootRuntimeEntry> _lootEntries;
+        private VaultArray<EntropyYieldMaterialLutEntry> _yieldMaterialLut;
+        private VaultArray<Vector3> _dropDebugScratch;
         private JobHandle _dearLieJobHandle;
-        private int _scheduledYieldCount;
         private int _dearLieScheduledDamageCount;
         private int _dearLieJobScheduleFrame = -1;
         private double _dearLieJobStartTimeSeconds;
@@ -622,20 +1514,21 @@ namespace Hecton8.World
         private bool _slowTickRegistered;
         private bool _lateFrameTickRegistered;
         private bool _originShiftListenerRegistered;
-        private bool _yieldScheduled;
         private bool _dearLieJobScheduled;
         private bool _dearLieVaultReady;
         private bool _dearLieVaultJobLocksHeld;
+        private bool _templateCacheReady;
+        private bool _yieldMaterialLutReady;
         private int _dearLieVaultJobLockCount;
 
-        private NativeArray<Matrix4x4> _surfaceMatrices;
-        private NativeArray<HectonVegetationInstanceData> _surfaceMetadata;
-        private NativeArray<int> _surfaceTypes;
-        private NativeArray<int>.ReadOnly _surfaceSemanticTypes;
-        private NativeArray<Matrix4x4> _underwaterMatrices;
-        private NativeArray<HectonVegetationInstanceData> _underwaterMetadata;
-        private NativeArray<int> _underwaterTypes;
-        private NativeArray<int>.ReadOnly _underwaterSemanticTypes;
+        private BridgeMatrixLane _surfaceMatrices;
+        private BridgeMetadataLane _surfaceMetadata;
+        private BridgeTypeLane _surfaceTypes;
+        private BridgeSemanticTypeLane _surfaceSemanticTypes;
+        private BridgeMatrixLane _underwaterMatrices;
+        private BridgeMetadataLane _underwaterMetadata;
+        private BridgeTypeLane _underwaterTypes;
+        private BridgeSemanticTypeLane _underwaterSemanticTypes;
 
         private int[] _templateIndexByMaterialClass;
         private int[] _harvestDescriptorIndexByFloraTemplateIndex = Array.Empty<int>();
@@ -647,18 +1540,46 @@ namespace Hecton8.World
         private AudioClip[] _sporeAcousticClipByDescriptorIndex = Array.Empty<AudioClip>();
         private float[] _sporePulseFrequencyByDescriptorIndex = Array.Empty<float>();
         private float[] _sporeAcousticVolumeByDescriptorIndex = Array.Empty<float>();
+        private int _surfaceRegrowthVisualScanCursor;
+        private int _underwaterRegrowthVisualScanCursor;
+        private int _surfaceDecompositionVisualScanCursor;
+        private int _underwaterDecompositionVisualScanCursor;
+        private int _surfaceDamageVisualScanCursor;
+        private int _underwaterDamageVisualScanCursor;
+        private int _surfaceWiltVisualScanCursor;
+        private int _underwaterWiltVisualScanCursor;
         private int _surfaceMatureSporeScanCursor;
         private int _underwaterMatureSporeScanCursor;
         private int _surfaceOvergrowthScanCursor;
         private int _underwaterOvergrowthScanCursor;
+        private int _underwaterAllelopathicCoralScanCursor;
+        private int _underwaterAllelopathicKelpScanCursor;
+        private int _surfaceParasiteExposureScanCursor;
+        private int _underwaterParasiteExposureScanCursor;
+        private float _nextParasiteExposureSampleTime;
+        private float _lastParasiteExposureSampleTime;
+        private float _lastParasiteExposure01;
+        private Vector3 _lastParasiteExposureQueryPosition;
         private IPlayerInventoryService _playerInventoryService;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private IAudioService _audioService;
         private ISpatialAudioHarvestPlaybackSink _harvestAudioSink;
+        // COLD ALLOC: DebrisSpawnSignal[16] - bounded Dear Lie debris signal staging flushed after Vault unlock - owner: DestructibleOrganicManager
+        private readonly DebrisSpawnSignal[] _pendingDearLieDebrisSignals = new DebrisSpawnSignal[DearLieMaxPendingDebrisSignalsPerFrame];
+        // COLD ALLOC: FloraDearLieTelemetryEntry[300] - crash-only dump snapshot copied under lock, serialized after unlock - owner: DestructibleOrganicManager
+        private readonly FloraDearLieTelemetryEntry[] _dearLieTelemetryDumpSnapshot = new FloraDearLieTelemetryEntry[DearLieTelemetryFrameCount];
+        // COLD ALLOC: bounded registry publish staging for cache-sync defoliant kills flushed after organic locks release - owner: DestructibleOrganicManager
+        private readonly uint[] _cacheSyncDestroyedRegistryUids = new uint[MaxOrganicCacheSyncRegistryBatch];
+        private readonly ulong[] _cacheSyncDestroyedRegistryHashes = new ulong[MaxOrganicCacheSyncRegistryBatch];
+        private readonly Vector3[] _cacheSyncDestroyedRegistryPositions = new Vector3[MaxOrganicCacheSyncRegistryBatch];
+        private readonly uint[] _staleDestroyedRegistryClearUids = new uint[16];
+        private readonly uint[] _staleFloraStateRegistryClearUids = new uint[16];
         // COLD ALLOC: HarvestAudioEvent[8] - bounded VISUAL_SYNC audio queue for harvest transitions - owner: DestructibleOrganicManager
         private readonly HarvestAudioEvent[] _pendingHarvestAudioEvents = new HarvestAudioEvent[MaxPendingHarvestAudioEvents];
         // COLD ALLOC: SporeAcousticEvent[8] - bounded VISUAL_SYNC audio queue for mature spore pulses - owner: DestructibleOrganicManager
         private readonly SporeAcousticEvent[] _pendingSporeAcousticEvents = new SporeAcousticEvent[MaxPendingSporeAcousticEvents];
+        private int _pendingDearLieDebrisSignalCount;
+        private int _pendingDearLieDebrisOverflowCount;
         private int _pendingHarvestAudioEventCount;
         private int _pendingSporeAcousticEventCount;
         private bool _hotSwapRegistered;
@@ -712,9 +1633,10 @@ namespace Hecton8.World
             if (!_dearLieTelemetryRing.IsCreated || _dearLieTelemetryRing.Length == 0)
                 return 0;
 
-            int copyCount = math.min(_dearLieTelemetryCursor, _dearLieTelemetryRing.Length);
+            int telemetryCursor = math.max(0, _dearLieTelemetryCursor);
+            int copyCount = math.min(telemetryCursor, _dearLieTelemetryRing.Length);
             copyCount = math.min(copyCount, math.min(frameIndices.Length, math.min(destroyedCounts.Length, math.min(vfxCounts.Length, regenCounts.Length))));
-            int start = _dearLieTelemetryCursor - copyCount;
+            int start = telemetryCursor - copyCount;
             for (int i = 0; i < copyCount; i++)
             {
                 int ringIndex = (start + i) % _dearLieTelemetryRing.Length;
@@ -752,7 +1674,8 @@ namespace Hecton8.World
 
         internal bool RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, int speciesId, float capacityUnits, uint contaminatedItemHash)
         {
-            Vector3 runtimePosition = positionAup.ToRuntimeFloat3();
+            double3 committedOriginOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            Vector3 runtimePosition = (Vector3)AUPMath.ToRuntimeFloat3(in positionAup, committedOriginOffset);
             return RegisterCorpseResourceNode(in positionAup, runtimePosition, speciesId, capacityUnits, contaminatedItemHash);
         }
 
@@ -779,20 +1702,22 @@ namespace Hecton8.World
 
             float initialUnits = Mathf.Max(0.25f, capacityUnits);
             float currentTime = ResolveOrganicClockSeconds();
-            CorpseResourceNodeRecord record = new CorpseResourceNodeRecord
-            {
-                NodeId = (uint)(PersistentWorldRegistry.ComputeResourceNodeTombstoneId(in positionAup) & uint.MaxValue),
-                ContaminatedItemHash = contaminatedItemHash,
-                SpeciesId = speciesId,
-                PositionAup = positionAup,
-                Position = worldPosition,
-                InitialUnits = initialUnits,
-                RemainingUnits = initialUnits,
-                BloodIntensity = DefaultCorpseBloodIntensity,
-                SpawnTime = currentTime,
-                ExpireTime = currentTime + OrganicDecompositionDurationSeconds,
-                Active = 1
-            };
+            uint nodeId = ComputeUniqueCorpseNodeId(in positionAup, speciesId, writeIndex);
+            if (nodeId == 0u)
+                return false;
+
+            CorpseResourceNodeRecord record = default;
+            record.NodeId = nodeId;
+            record.ContaminatedItemHash = contaminatedItemHash;
+            record.SpeciesId = speciesId;
+            record.PositionAup = positionAup;
+            record.Position = worldPosition;
+            record.InitialUnits = initialUnits;
+            record.RemainingUnits = initialUnits;
+            record.BloodIntensity = DefaultCorpseBloodIntensity;
+            record.SpawnTime = currentTime;
+            record.ExpireTime = currentTime + OrganicDecompositionDurationSeconds;
+            record.Active = 1;
             _corpseResourceNodes[writeIndex] = record;
             if (writeIndex >= _corpseResourceNodeCount)
                 _corpseResourceNodeCount = writeIndex + 1;
@@ -961,6 +1886,14 @@ namespace Hecton8.World
         private void Awake()
         {
             _activeRuntimeInstance = this;
+            _surfaceMatrices = new BridgeMatrixLane(this, underwater: false);
+            _surfaceMetadata = new BridgeMetadataLane(this, underwater: false);
+            _surfaceTypes = new BridgeTypeLane(this, underwater: false);
+            _surfaceSemanticTypes = new BridgeSemanticTypeLane(this, underwater: false);
+            _underwaterMatrices = new BridgeMatrixLane(this, underwater: true);
+            _underwaterMetadata = new BridgeMetadataLane(this, underwater: true);
+            _underwaterTypes = new BridgeTypeLane(this, underwater: true);
+            _underwaterSemanticTypes = new BridgeSemanticTypeLane(this, underwater: true);
 
             if (vegetationBridge == null)
                 vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
@@ -979,57 +1912,9 @@ namespace Hecton8.World
             sporeAcousticMinimumIntervalSeconds = Mathf.Max(0.05f, sporeAcousticMinimumIntervalSeconds);
             matureSporeAcousticScanBudgetPerTick = Mathf.Max(1, matureSporeAcousticScanBudgetPerTick);
 
-            // COLD ALLOC: NativeHashMap<uint,half>[4096] - persistent per-instance harvest health state keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _healthByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,byte>[2048] - persistent destroyed flora tombstone set keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _destroyedByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicDestroyedStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,float>[2048] - active wilt-to-hide timers keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _pendingWiltEndTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicDestroyedStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,float>[2048] - persistent partial-damage wilt progress keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _damageVisualProgressByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicDestroyedStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,float>[2048] - persistent decomposition start time keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _decompositionStartTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicDestroyedStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,float>[2048] - active flora regrowth progress keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _regrowthProgressByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicDestroyedStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,float3>[2048] - flora regrowth position overrides keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _regrowthPositionByInstanceUid = new NativeHashMap<uint, float3>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicDestroyedStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,half>[4096] - live flora maturation scale multipliers keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _maturationScaleByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,half>[4096] - live flora maturation resource-yield multipliers keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _maturationYieldByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,float>[4096] - mature spore acoustic cadence keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _nextSporeAcousticTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,float2>[4096] - baseline height/width scales keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _baseScaleByInstanceUid = new NativeHashMap<uint, float2>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,byte>[4096] - runtime flora bit-mask flags keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _runtimeFlagsByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,float>[4096] - untouched flora clock keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _lastOrganicTouchTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,byte>[4096] - macro-flora overgrowth obstacle state keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _overgrownByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,byte>[4096] - one-shot Titan root SDF mound state keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _rootMoundAppliedByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
-            // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[2048] - destroyed flora tombstone restore scratch - owner: DestructibleOrganicManager
-            _destroyedFloraScratch = new NativeList<PersistentWorldDeltaRecord>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicScratchAllocator);
-            // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[4096] - partial flora-state restore scratch - owner: DestructibleOrganicManager
-            _floraStateOverrideScratch = new NativeList<PersistentWorldDeltaRecord>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicScratchAllocator);
-            // COLD ALLOC: NativeHashMap<uint,half>[4096] - persisted normalized flora health overrides keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _persistedHealth01ByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
-            // COLD ALLOC: NativeHashMap<uint,half>[4096] - persisted normalized flora height overrides keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _persistedHeightScale01ByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
-            // COLD ALLOC: NativeList<DestroyedOrganicEvent>[128] - pending entropy yield event queue - owner: DestructibleOrganicManager
-            _pendingYieldEvents = new NativeList<DestroyedOrganicEvent>(DefaultPendingYieldCapacity, DataVaultExemptOrganicYieldQueueAllocator);
-            _dropBuffer = new DropBuffer(DefaultDropBufferCapacity, DataVaultExemptOrganicDropAllocator);
-            // COLD ALLOC: Vector3[1] - bounded debug scratch for future runtime diagnostics - owner: DestructibleOrganicManager
-            _dropDebugScratch = new NativeArray<Vector3>(1, DataVaultExemptOrganicDropAllocator, NativeArrayOptions.ClearMemory);
-            // VAULT ROUTE: Dear Lie transient visual lanes are acquired from GlobalDataVault during OnEnable; Awake keeps no private Dear Lie native-container ownership.
-            RegisterNativeMemorySentinel();
             // COLD ALLOC: CorpseResourceNodeRecord[96] - bounded ecological corpse-resource nodes used by scavenger AI and blood-scent routing - owner: DestructibleOrganicManager
             _corpseResourceNodes = new CorpseResourceNodeRecord[DefaultCorpseNodeCapacity];
             _corpseResourceNodeCount = 0;
-
-            BuildTemplateCaches();
-            BuildYieldMaterialLut();
         }
 
         private void OnEnable()
@@ -1039,6 +1924,9 @@ namespace Hecton8.World
 
             CacheRegistryServicesCold();
             TryBootstrapDearLieVault(clearExisting: true);
+            EnsureOrganicVaultBuffers(clearExisting: true);
+            BuildTemplateCaches();
+            BuildYieldMaterialLut();
             TryRegisterHotSwapListener();
             RegisterOriginShiftListener();
             TryRegisterOrganicToolHitService();
@@ -1088,10 +1976,10 @@ namespace Hecton8.World
             }
 
             CompleteDearLieJobIfNeeded(ResolveOrganicClockSeconds());
-            CompleteYieldJobIfNeeded();
             UnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
             TryUnregisterOrganicToolHitService();
+            ReleaseOrganicVaultBuffers(_dearLieVault);
             ReleaseDearLieVaultBuffers(_dearLieVault);
             ClearCachedRegistryServices();
         }
@@ -1102,47 +1990,12 @@ namespace Hecton8.World
                 _activeRuntimeInstance = null;
 
             CompleteDearLieJobIfNeeded(ResolveOrganicClockSeconds());
-            CompleteYieldJobIfNeeded();
             UnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
             TryUnregisterOrganicToolHitService();
+            ReleaseOrganicVaultBuffers(_dearLieVault);
             ReleaseDearLieVaultBuffers(_dearLieVault);
             ClearCachedRegistryServices();
-            DisposeNativeArray(ref _surfaceInstanceUids);
-            DisposeNativeArray(ref _underwaterInstanceUids);
-            DisposeNativeArray(ref _surfaceMaterialClasses);
-            DisposeNativeArray(ref _underwaterMaterialClasses);
-            DisposeNativeArray(ref _surfaceHealth);
-            DisposeNativeArray(ref _underwaterHealth);
-            DisposeNativeArray(ref _yieldJobInput);
-            DisposeNativeArray(ref _templateDescriptors);
-            DisposeNativeArray(ref _lootEntries);
-            DisposeNativeArray(ref _yieldMaterialLut);
-            DisposeNativeArray(ref _dropDebugScratch);
-
-            if (_dropBuffer.IsCreated)
-                _dropBuffer.Dispose();
-
-            DisposeNativeHashMap(ref _healthByInstanceUid, nameof(_healthByInstanceUid));
-            DisposeNativeHashMap(ref _destroyedByInstanceUid, nameof(_destroyedByInstanceUid));
-            DisposeNativeHashMap(ref _persistedHealth01ByInstanceUid, nameof(_persistedHealth01ByInstanceUid));
-            DisposeNativeHashMap(ref _persistedHeightScale01ByInstanceUid, nameof(_persistedHeightScale01ByInstanceUid));
-            DisposeNativeHashMap(ref _pendingWiltEndTimeByInstanceUid, nameof(_pendingWiltEndTimeByInstanceUid));
-            DisposeNativeHashMap(ref _damageVisualProgressByInstanceUid, nameof(_damageVisualProgressByInstanceUid));
-            DisposeNativeHashMap(ref _maturationScaleByInstanceUid, nameof(_maturationScaleByInstanceUid));
-            DisposeNativeHashMap(ref _maturationYieldByInstanceUid, nameof(_maturationYieldByInstanceUid));
-            DisposeNativeHashMap(ref _nextSporeAcousticTimeByInstanceUid, nameof(_nextSporeAcousticTimeByInstanceUid));
-            DisposeNativeHashMap(ref _decompositionStartTimeByInstanceUid, nameof(_decompositionStartTimeByInstanceUid));
-            DisposeNativeHashMap(ref _regrowthProgressByInstanceUid, nameof(_regrowthProgressByInstanceUid));
-            DisposeNativeHashMap(ref _regrowthPositionByInstanceUid, nameof(_regrowthPositionByInstanceUid));
-            DisposeNativeHashMap(ref _baseScaleByInstanceUid, nameof(_baseScaleByInstanceUid));
-            DisposeNativeHashMap(ref _runtimeFlagsByInstanceUid, nameof(_runtimeFlagsByInstanceUid));
-            DisposeNativeHashMap(ref _lastOrganicTouchTimeByInstanceUid, nameof(_lastOrganicTouchTimeByInstanceUid));
-            DisposeNativeHashMap(ref _overgrownByInstanceUid, nameof(_overgrownByInstanceUid));
-            DisposeNativeHashMap(ref _rootMoundAppliedByInstanceUid, nameof(_rootMoundAppliedByInstanceUid));
-            DisposeNativeList(ref _destroyedFloraScratch, nameof(_destroyedFloraScratch));
-            DisposeNativeList(ref _floraStateOverrideScratch, nameof(_floraStateOverrideScratch));
-            DisposeNativeList(ref _pendingYieldEvents, nameof(_pendingYieldEvents));
         }
 
         /// <summary>
@@ -1163,7 +2016,7 @@ namespace Hecton8.World
                     continue;
 
                 float3 runtimePosition = AUPMath.ToRuntimeFloat3(in record.PositionAup, committedOriginOffset);
-                record.Position = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                record.Position = ToRuntimeVector3(runtimePosition);
                 _corpseResourceNodes[i] = record;
             }
         }
@@ -1207,16 +2060,25 @@ namespace Hecton8.World
                     if (currentVault != null && ReferenceEquals(_dearLieVault, currentVault))
                     {
                         TryBootstrapDearLieVault(clearExisting: false);
+                        EnsureOrganicVaultBuffers(clearExisting: false);
                         break;
                     }
 
                     if (_dearLieVault != null)
+                    {
+                        ReleaseOrganicVaultBuffers(_dearLieVault);
                         ReleaseDearLieVaultBuffers(_dearLieVault);
+                    }
 
                     _dearLieVault = currentVault;
                     _dearLieVaultReady = false;
                     if (_dearLieVault != null)
+                    {
                         TryBootstrapDearLieVault(clearExisting: true);
+                        EnsureOrganicVaultBuffers(clearExisting: true);
+                        BuildTemplateCaches();
+                        BuildYieldMaterialLut();
+                    }
                     break;
             }
         }
@@ -1263,7 +2125,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             _playerInventoryService = GlobalRegistry.PlayerInventory;
-            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            _persistentWorldRegistry = PersistentWorldRegistry.Instance;
             _dearLieVault = GlobalRegistry.DataVault;
             CacheAudioService(GlobalRegistry.Audio);
             CacheDearLieFallbackQualityWeightCold();
@@ -1285,38 +2147,189 @@ namespace Hecton8.World
             return _dearLieVaultReady;
         }
 
+        private bool EnsureOrganicVaultBuffers(bool clearExisting)
+        {
+            IDataVault vault = _dearLieVault;
+            if (vault == null)
+                return false;
+
+            NativeArrayOptions options = clearExisting ? NativeArrayOptions.ClearMemory : NativeArrayOptions.UninitializedMemory;
+            bool ok =
+                _healthByInstanceUid.Ensure(vault, OrganicHealthByUidBufferId, DefaultTrackedHealthCapacity, OrganicVaultSystemId, options) &&
+                _destroyedByInstanceUid.Ensure(vault, OrganicDestroyedByUidBufferId, DefaultTrackedDestroyedCapacity, OrganicVaultSystemId, options) &&
+                _pendingWiltEndTimeByInstanceUid.Ensure(vault, OrganicPendingWiltEndTimeByUidBufferId, DefaultTrackedDestroyedCapacity, OrganicVaultSystemId, options) &&
+                _damageVisualProgressByInstanceUid.Ensure(vault, OrganicDamageVisualProgressByUidBufferId, DefaultTrackedDestroyedCapacity, OrganicVaultSystemId, options) &&
+                _decompositionStartTimeByInstanceUid.Ensure(vault, OrganicDecompositionStartTimeByUidBufferId, DefaultTrackedDestroyedCapacity, OrganicVaultSystemId, options) &&
+                _regrowthProgressByInstanceUid.Ensure(vault, OrganicRegrowthProgressByUidBufferId, DefaultTrackedDestroyedCapacity, OrganicVaultSystemId, options) &&
+                _regrowthPositionByInstanceUid.Ensure(vault, OrganicRegrowthPositionByUidBufferId, DefaultTrackedDestroyedCapacity, OrganicVaultSystemId, options) &&
+                _maturationScaleByInstanceUid.Ensure(vault, OrganicMaturationScaleByUidBufferId, DefaultTrackedHealthCapacity, OrganicVaultSystemId, options) &&
+                _maturationYieldByInstanceUid.Ensure(vault, OrganicMaturationYieldByUidBufferId, DefaultTrackedHealthCapacity, OrganicVaultSystemId, options) &&
+                _nextSporeAcousticTimeByInstanceUid.Ensure(vault, OrganicNextSporeAcousticTimeByUidBufferId, DefaultTrackedHealthCapacity, OrganicVaultSystemId, options) &&
+                _baseScaleByInstanceUid.Ensure(vault, OrganicBaseScaleByUidBufferId, DefaultTrackedHealthCapacity, OrganicVaultSystemId, options) &&
+                _runtimeFlagsByInstanceUid.Ensure(vault, OrganicRuntimeFlagsByUidBufferId, DefaultTrackedHealthCapacity, OrganicVaultSystemId, options) &&
+                _lastOrganicTouchTimeByInstanceUid.Ensure(vault, OrganicLastTouchTimeByUidBufferId, DefaultTrackedHealthCapacity, OrganicVaultSystemId, options) &&
+                _overgrownByInstanceUid.Ensure(vault, OrganicOvergrownByUidBufferId, DefaultTrackedHealthCapacity, OrganicVaultSystemId, options) &&
+                _rootMoundAppliedByInstanceUid.Ensure(vault, OrganicRootMoundAppliedByUidBufferId, DefaultTrackedHealthCapacity, OrganicVaultSystemId, options) &&
+                _destroyedFloraScratch.Ensure(vault, OrganicDestroyedFloraScratchBufferId, DefaultTrackedDestroyedCapacity, OrganicVaultSystemId, options) &&
+                _floraStateOverrideScratch.Ensure(vault, OrganicFloraStateOverrideScratchBufferId, DefaultTrackedHealthCapacity, OrganicVaultSystemId, options) &&
+                _persistedHealth01ByInstanceUid.Ensure(vault, OrganicPersistedHealth01ByUidBufferId, DefaultTrackedHealthCapacity, OrganicVaultSystemId, options) &&
+                _persistedHeightScale01ByInstanceUid.Ensure(vault, OrganicPersistedHeightScale01ByUidBufferId, DefaultTrackedHealthCapacity, OrganicVaultSystemId, options) &&
+                _pendingYieldEvents.Ensure(vault, OrganicPendingYieldEventsBufferId, DefaultPendingYieldCapacity, OrganicVaultSystemId, options) &&
+                _yieldJobInput.Ensure(vault, OrganicYieldJobInputBufferId, DefaultPendingYieldCapacity, OrganicVaultSystemId, NativeArrayOptions.UninitializedMemory) &&
+                _dropOutput.Ensure(vault, OrganicDropOutputBufferId, DefaultDropBufferCapacity, OrganicVaultSystemId, NativeArrayOptions.ClearMemory) &&
+                _dropBudget.Ensure(vault, OrganicDropBudgetBufferId, DropBudgetLength, OrganicVaultSystemId, NativeArrayOptions.ClearMemory) &&
+                _dropDebugScratch.Ensure(vault, OrganicDropDebugScratchBufferId, 1, OrganicVaultSystemId, NativeArrayOptions.ClearMemory);
+
+            if (clearExisting)
+            {
+                _healthByInstanceUid.Clear();
+                _destroyedByInstanceUid.Clear();
+                _pendingWiltEndTimeByInstanceUid.Clear();
+                _damageVisualProgressByInstanceUid.Clear();
+                _decompositionStartTimeByInstanceUid.Clear();
+                _regrowthProgressByInstanceUid.Clear();
+                _regrowthPositionByInstanceUid.Clear();
+                _maturationScaleByInstanceUid.Clear();
+                _maturationYieldByInstanceUid.Clear();
+                _nextSporeAcousticTimeByInstanceUid.Clear();
+                _baseScaleByInstanceUid.Clear();
+                _runtimeFlagsByInstanceUid.Clear();
+                _lastOrganicTouchTimeByInstanceUid.Clear();
+                _overgrownByInstanceUid.Clear();
+                _rootMoundAppliedByInstanceUid.Clear();
+                _destroyedFloraScratch.Clear();
+                _floraStateOverrideScratch.Clear();
+                _persistedHealth01ByInstanceUid.Clear();
+                _persistedHeightScale01ByInstanceUid.Clear();
+                _pendingYieldEvents.Clear();
+                _dropOutput.Clear();
+                ResetDropOutputBudget();
+            }
+
+            return ok;
+        }
+
+        private void ReleaseOrganicVaultBuffers(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            _surfaceInstanceUids.Release();
+            _underwaterInstanceUids.Release();
+            _surfaceMaterialClasses.Release();
+            _underwaterMaterialClasses.Release();
+            _surfaceHealth.Release();
+            _underwaterHealth.Release();
+            _healthByInstanceUid.Release();
+            _destroyedByInstanceUid.Release();
+            _pendingWiltEndTimeByInstanceUid.Release();
+            _damageVisualProgressByInstanceUid.Release();
+            _decompositionStartTimeByInstanceUid.Release();
+            _regrowthProgressByInstanceUid.Release();
+            _regrowthPositionByInstanceUid.Release();
+            _maturationScaleByInstanceUid.Release();
+            _maturationYieldByInstanceUid.Release();
+            _nextSporeAcousticTimeByInstanceUid.Release();
+            _baseScaleByInstanceUid.Release();
+            _runtimeFlagsByInstanceUid.Release();
+            _lastOrganicTouchTimeByInstanceUid.Release();
+            _overgrownByInstanceUid.Release();
+            _rootMoundAppliedByInstanceUid.Release();
+            _destroyedFloraScratch.Release();
+            _floraStateOverrideScratch.Release();
+            _persistedHealth01ByInstanceUid.Release();
+            _persistedHeightScale01ByInstanceUid.Release();
+            _pendingYieldEvents.Release();
+            _yieldJobInput.Release();
+            _dropOutput.Release();
+            _dropBudget.Release();
+            _templateDescriptors.Release();
+            _lootEntries.Release();
+            _yieldMaterialLut.Release();
+            _dropDebugScratch.Release();
+            _templateCacheReady = false;
+            _yieldMaterialLutReady = false;
+        }
+
+        private bool TryResolveVegetationBridgePayload(
+            bool underwater,
+            out NativeArray<Matrix4x4> matrices,
+            out NativeArray<HectonVegetationInstanceData> metadata,
+            out NativeArray<int> types,
+            out NativeArray<int>.ReadOnly semanticTypes,
+            out int count,
+            out int semanticCount)
+        {
+            matrices = default;
+            metadata = default;
+            types = default;
+            semanticTypes = default;
+            count = 0;
+            semanticCount = 0;
+
+            HectonMapMagicVegetationBridge bridge = vegetationBridge;
+            if (bridge == null)
+                return false;
+
+            bool nativeOk;
+            bool semanticOk;
+            if (underwater)
+            {
+                nativeOk = bridge.TryGetActiveUnderwaterNativePayload(out matrices, out metadata, out types, out count);
+                semanticOk = bridge.TryGetActiveUnderwaterSemanticPayload(out semanticTypes, out _, out semanticCount);
+            }
+            else
+            {
+                nativeOk = bridge.TryGetActiveSurfaceNativePayload(out matrices, out metadata, out types, out count);
+                semanticOk = bridge.TryGetActiveSurfaceSemanticPayload(out semanticTypes, out _, out semanticCount);
+            }
+
+            return nativeOk &&
+                   semanticOk &&
+                   count > 0 &&
+                   semanticCount >= count &&
+                   matrices.IsCreated &&
+                   metadata.IsCreated &&
+                   types.IsCreated &&
+                   matrices.Length >= count &&
+                   metadata.Length >= count &&
+                   types.Length >= count &&
+                   semanticTypes.Length >= count;
+        }
+
         private bool EnsureDearLieVaultBuffers(IDataVault vault, bool clearExisting)
         {
             if (vault == null)
                 return false;
 
             NativeArrayOptions fixedOptions = clearExisting ? NativeArrayOptions.ClearMemory : NativeArrayOptions.UninitializedMemory;
-            return EnsureDearLieVaultBuffer(vault, DearLieSurfaceClaimsBufferId, DearLieSpatialHashCapacity, ref _surfaceDearLieClaimsHandle, out _surfaceDearLieClaims, fixedOptions) &&
-                   EnsureDearLieVaultBuffer(vault, DearLieUnderwaterClaimsBufferId, DearLieSpatialHashCapacity, ref _underwaterDearLieClaimsHandle, out _underwaterDearLieClaims, fixedOptions) &&
-                   EnsureDearLieVaultBuffer(vault, DearLieDamageEventsBufferId, DearLieMaxDamageSignalsPerFrame, ref _dearLieDamageEventsHandle, out _dearLieDamageEvents, fixedOptions) &&
-                   EnsureDearLieVaultBuffer(vault, DearLieResultsBufferId, DearLieMaxResultsPerFrame, ref _dearLieResultsHandle, out _dearLieResults, fixedOptions) &&
-                   EnsureDearLieVaultBuffer(vault, DearLieCountersBufferId, 8, ref _dearLieCountersHandle, out _dearLieCounters, NativeArrayOptions.ClearMemory) &&
-                   EnsureDearLieVaultBuffer(vault, DearLieRegenRecordsBufferId, DearLieMaxRegenRecords, ref _dearLieRegenRecordsHandle, out _dearLieRegenRecords, fixedOptions) &&
-                   EnsureDearLieVaultBuffer(vault, DearLieTelemetryRingBufferId, DearLieTelemetryFrameCount, ref _dearLieTelemetryRingHandle, out _dearLieTelemetryRing, NativeArrayOptions.ClearMemory) &&
-                   EnsureDearLieVaultBuffer(vault, DearLieSurfaceBucketHeadsBufferId, DearLieSpatialHashCapacity, ref _surfaceDearLieBucketHeadsHandle, out _surfaceDearLieBucketHeads, fixedOptions) &&
-                   EnsureDearLieVaultBuffer(vault, DearLieSurfaceBucketNextBufferId, DearLieSpatialHashCapacity, ref _surfaceDearLieBucketNextHandle, out _surfaceDearLieBucketNext, fixedOptions) &&
-                   EnsureDearLieVaultBuffer(vault, DearLieUnderwaterBucketHeadsBufferId, DearLieSpatialHashCapacity, ref _underwaterDearLieBucketHeadsHandle, out _underwaterDearLieBucketHeads, fixedOptions) &&
-                   EnsureDearLieVaultBuffer(vault, DearLieUnderwaterBucketNextBufferId, DearLieSpatialHashCapacity, ref _underwaterDearLieBucketNextHandle, out _underwaterDearLieBucketNext, fixedOptions);
+            return _surfaceDearLieClaims.Ensure(vault, DearLieSurfaceClaimsBufferId, DearLieSpatialHashCapacity, OrganicVaultSystemId, fixedOptions) &&
+                   _underwaterDearLieClaims.Ensure(vault, DearLieUnderwaterClaimsBufferId, DearLieSpatialHashCapacity, OrganicVaultSystemId, fixedOptions) &&
+                   _dearLieDamageEvents.Ensure(vault, DearLieDamageEventsBufferId, DearLieMaxDamageSignalsPerFrame, OrganicVaultSystemId, fixedOptions) &&
+                   _dearLieResults.Ensure(vault, DearLieResultsBufferId, DearLieMaxResultsPerFrame, OrganicVaultSystemId, fixedOptions) &&
+                   _dearLieCounters.Ensure(vault, DearLieCountersBufferId, 8, OrganicVaultSystemId, NativeArrayOptions.ClearMemory) &&
+                   _dearLieRegenRecords.Ensure(vault, DearLieRegenRecordsBufferId, DearLieMaxRegenRecords, OrganicVaultSystemId, fixedOptions) &&
+                   _dearLieTelemetryRing.Ensure(vault, DearLieTelemetryRingBufferId, DearLieTelemetryFrameCount, OrganicVaultSystemId, NativeArrayOptions.ClearMemory) &&
+                   _surfaceDearLieBucketHeads.Ensure(vault, DearLieSurfaceBucketHeadsBufferId, DearLieSpatialHashCapacity, OrganicVaultSystemId, fixedOptions) &&
+                   _surfaceDearLieBucketNext.Ensure(vault, DearLieSurfaceBucketNextBufferId, DearLieSpatialHashCapacity, OrganicVaultSystemId, fixedOptions) &&
+                   _underwaterDearLieBucketHeads.Ensure(vault, DearLieUnderwaterBucketHeadsBufferId, DearLieSpatialHashCapacity, OrganicVaultSystemId, fixedOptions) &&
+                   _underwaterDearLieBucketNext.Ensure(vault, DearLieUnderwaterBucketNextBufferId, DearLieSpatialHashCapacity, OrganicVaultSystemId, fixedOptions);
         }
 
         private bool TryResolveDearLieVaultBuffers(IDataVault vault)
         {
-            return TryResolveDearLieVaultBuffer(vault, in _surfaceDearLieClaimsHandle, DearLieSpatialHashCapacity, out _surfaceDearLieClaims) &&
-                   TryResolveDearLieVaultBuffer(vault, in _underwaterDearLieClaimsHandle, DearLieSpatialHashCapacity, out _underwaterDearLieClaims) &&
-                   TryResolveDearLieVaultBuffer(vault, in _dearLieDamageEventsHandle, DearLieMaxDamageSignalsPerFrame, out _dearLieDamageEvents) &&
-                   TryResolveDearLieVaultBuffer(vault, in _dearLieResultsHandle, DearLieMaxResultsPerFrame, out _dearLieResults) &&
-                   TryResolveDearLieVaultBuffer(vault, in _dearLieCountersHandle, 8, out _dearLieCounters) &&
-                   TryResolveDearLieVaultBuffer(vault, in _dearLieRegenRecordsHandle, DearLieMaxRegenRecords, out _dearLieRegenRecords) &&
-                   TryResolveDearLieVaultBuffer(vault, in _dearLieTelemetryRingHandle, DearLieTelemetryFrameCount, out _dearLieTelemetryRing) &&
-                   TryResolveDearLieVaultBuffer(vault, in _surfaceDearLieBucketHeadsHandle, DearLieSpatialHashCapacity, out _surfaceDearLieBucketHeads) &&
-                   TryResolveDearLieVaultBuffer(vault, in _surfaceDearLieBucketNextHandle, DearLieSpatialHashCapacity, out _surfaceDearLieBucketNext) &&
-                   TryResolveDearLieVaultBuffer(vault, in _underwaterDearLieBucketHeadsHandle, DearLieSpatialHashCapacity, out _underwaterDearLieBucketHeads) &&
-                   TryResolveDearLieVaultBuffer(vault, in _underwaterDearLieBucketNextHandle, DearLieSpatialHashCapacity, out _underwaterDearLieBucketNext);
+            return vault != null &&
+                   _surfaceDearLieClaims.Length >= DearLieSpatialHashCapacity &&
+                   _underwaterDearLieClaims.Length >= DearLieSpatialHashCapacity &&
+                   _dearLieDamageEvents.Length >= DearLieMaxDamageSignalsPerFrame &&
+                   _dearLieResults.Length >= DearLieMaxResultsPerFrame &&
+                   _dearLieCounters.Length >= 8 &&
+                   _dearLieRegenRecords.Length >= DearLieMaxRegenRecords &&
+                   _dearLieTelemetryRing.Length >= DearLieTelemetryFrameCount &&
+                   _surfaceDearLieBucketHeads.Length >= DearLieSpatialHashCapacity &&
+                   _surfaceDearLieBucketNext.Length >= DearLieSpatialHashCapacity &&
+                   _underwaterDearLieBucketHeads.Length >= DearLieSpatialHashCapacity &&
+                   _underwaterDearLieBucketNext.Length >= DearLieSpatialHashCapacity;
         }
 
         private bool EnsureDearLieVaultLaneCapacity(bool underwater, int requiredCount)
@@ -1331,55 +2344,14 @@ namespace Hecton8.World
             int requiredCapacity = math.max(DearLieSpatialHashCapacity, math.ceilpow2(requiredCount));
             if (underwater)
             {
-                return EnsureDearLieVaultBuffer(vault, DearLieUnderwaterClaimsBufferId, requiredCapacity, ref _underwaterDearLieClaimsHandle, out _underwaterDearLieClaims, NativeArrayOptions.UninitializedMemory) &&
-                       EnsureDearLieVaultBuffer(vault, DearLieUnderwaterBucketHeadsBufferId, requiredCapacity, ref _underwaterDearLieBucketHeadsHandle, out _underwaterDearLieBucketHeads, NativeArrayOptions.UninitializedMemory) &&
-                       EnsureDearLieVaultBuffer(vault, DearLieUnderwaterBucketNextBufferId, requiredCapacity, ref _underwaterDearLieBucketNextHandle, out _underwaterDearLieBucketNext, NativeArrayOptions.UninitializedMemory);
+                return _underwaterDearLieClaims.Ensure(vault, DearLieUnderwaterClaimsBufferId, requiredCapacity, OrganicVaultSystemId, NativeArrayOptions.UninitializedMemory) &&
+                       _underwaterDearLieBucketHeads.Ensure(vault, DearLieUnderwaterBucketHeadsBufferId, requiredCapacity, OrganicVaultSystemId, NativeArrayOptions.UninitializedMemory) &&
+                       _underwaterDearLieBucketNext.Ensure(vault, DearLieUnderwaterBucketNextBufferId, requiredCapacity, OrganicVaultSystemId, NativeArrayOptions.UninitializedMemory);
             }
 
-            return EnsureDearLieVaultBuffer(vault, DearLieSurfaceClaimsBufferId, requiredCapacity, ref _surfaceDearLieClaimsHandle, out _surfaceDearLieClaims, NativeArrayOptions.UninitializedMemory) &&
-                   EnsureDearLieVaultBuffer(vault, DearLieSurfaceBucketHeadsBufferId, requiredCapacity, ref _surfaceDearLieBucketHeadsHandle, out _surfaceDearLieBucketHeads, NativeArrayOptions.UninitializedMemory) &&
-                   EnsureDearLieVaultBuffer(vault, DearLieSurfaceBucketNextBufferId, requiredCapacity, ref _surfaceDearLieBucketNextHandle, out _surfaceDearLieBucketNext, NativeArrayOptions.UninitializedMemory);
-        }
-
-        private static bool EnsureDearLieVaultBuffer<T>(
-            IDataVault vault,
-            BufferID bufferId,
-            int requiredLength,
-            ref VaultGenerationHandle<T> handle,
-            out NativeArray<T> buffer,
-            NativeArrayOptions options) where T : struct
-        {
-            buffer = default;
-            if (vault == null || requiredLength <= 0)
-                return false;
-
-            if (handle.BufferID != 0u &&
-                vault.TryResolveHandle(in handle, out buffer) &&
-                buffer.IsCreated &&
-                buffer.Length >= requiredLength)
-            {
-                return true;
-            }
-
-            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.FloraGenomics, options);
-            return handle.BufferID != 0u &&
-                   vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
-        }
-
-        private static bool TryResolveDearLieVaultBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            return vault != null &&
-                   handle.BufferID != 0u &&
-                   vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+            return _surfaceDearLieClaims.Ensure(vault, DearLieSurfaceClaimsBufferId, requiredCapacity, OrganicVaultSystemId, NativeArrayOptions.UninitializedMemory) &&
+                   _surfaceDearLieBucketHeads.Ensure(vault, DearLieSurfaceBucketHeadsBufferId, requiredCapacity, OrganicVaultSystemId, NativeArrayOptions.UninitializedMemory) &&
+                   _surfaceDearLieBucketNext.Ensure(vault, DearLieSurfaceBucketNextBufferId, requiredCapacity, OrganicVaultSystemId, NativeArrayOptions.UninitializedMemory);
         }
 
         private void ClearDearLieVaultRuntimeState()
@@ -1468,15 +2440,680 @@ namespace Hecton8.World
                 case 5:
                     return DearLieRegenRecordsBufferId;
                 case 6:
-                    return DearLieTelemetryRingBufferId;
-                case 7:
                     return DearLieSurfaceBucketHeadsBufferId;
-                case 8:
+                case 7:
                     return DearLieSurfaceBucketNextBufferId;
-                case 9:
+                case 8:
                     return DearLieUnderwaterBucketHeadsBufferId;
-                case 10:
+                case 9:
                     return DearLieUnderwaterBucketNextBufferId;
+                case 10:
+                    return OrganicSurfaceInstanceUidsBufferId;
+                case 11:
+                    return OrganicUnderwaterInstanceUidsBufferId;
+                case 12:
+                    return OrganicSurfaceMaterialClassesBufferId;
+                case 13:
+                    return OrganicUnderwaterMaterialClassesBufferId;
+                case 14:
+                    return OrganicSurfaceHealthBufferId;
+                case 15:
+                    return OrganicUnderwaterHealthBufferId;
+                case 16:
+                    return OrganicHealthByUidBufferId;
+                case 17:
+                    return OrganicDestroyedByUidBufferId;
+                case 18:
+                    return OrganicPendingWiltEndTimeByUidBufferId;
+                case 19:
+                    return OrganicDamageVisualProgressByUidBufferId;
+                case 20:
+                    return OrganicDecompositionStartTimeByUidBufferId;
+                case 21:
+                    return OrganicRegrowthProgressByUidBufferId;
+                case 22:
+                    return OrganicRegrowthPositionByUidBufferId;
+                case 23:
+                    return OrganicRuntimeFlagsByUidBufferId;
+                case 24:
+                    return OrganicLastTouchTimeByUidBufferId;
+                case 25:
+                    return OrganicOvergrownByUidBufferId;
+                case 26:
+                    return OrganicRootMoundAppliedByUidBufferId;
+                case 27:
+                    return OrganicBaseScaleByUidBufferId;
+                case 28:
+                    return OrganicPersistedHealth01ByUidBufferId;
+                case 29:
+                    return OrganicPersistedHeightScale01ByUidBufferId;
+                case 30:
+                    return OrganicMaturationScaleByUidBufferId;
+                case 31:
+                    return OrganicMaturationYieldByUidBufferId;
+                case 32:
+                    return OrganicNextSporeAcousticTimeByUidBufferId;
+                default:
+                    return default;
+            }
+        }
+
+        private bool TryLockOrganicLifecycleMutationBuffers(IDataVault vault, out int lockedMask)
+        {
+            lockedMask = 0;
+            if (!TryLockOrganicRegrowthMutationBuffers(vault, out int regrowthMask))
+                return false;
+
+            if (!TryLockOrganicMaturationMutationBuffers(vault, out int maturationMask))
+            {
+                UnlockOrganicRegrowthMutationBuffers(vault, regrowthMask);
+                return false;
+            }
+
+            lockedMask = regrowthMask | (maturationMask << OrganicRegrowthMutationBufferCount);
+            return true;
+        }
+
+        private uint ComputeUniqueCorpseNodeId(in AbsoluteUniversePosition positionAup, int speciesId, int replacementIndex)
+        {
+            ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(in positionAup);
+            uint candidate = ComputeNonZeroCorpseNodeId(tombstoneId);
+            uint salt = unchecked((uint)speciesId * 2246822519u);
+            for (int attempt = 0; attempt < 8; attempt++)
+            {
+                if (!HasActiveCorpseNodeIdCollision(candidate, in positionAup, replacementIndex))
+                    return candidate;
+
+                candidate = MixDearLieHash(
+                    candidate ^ (uint)(tombstoneId >> 32),
+                    unchecked(salt ^ ((uint)(attempt + 1) * 0x9E3779B9u)));
+                if (candidate == 0u)
+                    candidate = 0xC0A5E001u ^ (uint)(attempt + 1);
+            }
+
+            return HasActiveCorpseNodeIdCollision(candidate, in positionAup, replacementIndex) ? 0u : candidate;
+        }
+
+        private static uint ComputeNonZeroCorpseNodeId(ulong tombstoneId)
+        {
+            uint candidate = (uint)tombstoneId;
+            if (candidate != 0u)
+                return candidate;
+
+            candidate = (uint)(tombstoneId >> 32);
+            return candidate != 0u ? candidate : 0xC0A5E001u;
+        }
+
+        private bool HasActiveCorpseNodeIdCollision(uint nodeId, in AbsoluteUniversePosition positionAup, int replacementIndex)
+        {
+            if (nodeId == 0u || _corpseResourceNodes == null || _corpseResourceNodeCount <= 0)
+                return nodeId == 0u;
+
+            int safeCount = math.min(_corpseResourceNodeCount, _corpseResourceNodes.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (i == replacementIndex)
+                    continue;
+
+                CorpseResourceNodeRecord record = _corpseResourceNodes[i];
+                if (record.Active == 0 || record.NodeId != nodeId)
+                    continue;
+
+                if (AbsoluteUniversePosition.DistanceSq(in record.PositionAup, in positionAup) <= CorpseNodeIdCollisionDistanceSq)
+                    continue;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void UnlockOrganicLifecycleMutationBuffers(IDataVault vault, int lockedMask)
+        {
+            int regrowthMask = lockedMask & ((1 << OrganicRegrowthMutationBufferCount) - 1);
+            int maturationMask = (lockedMask >> OrganicRegrowthMutationBufferCount) & ((1 << OrganicMaturationMutationBufferCount) - 1);
+            UnlockOrganicMaturationMutationBuffers(vault, maturationMask);
+            UnlockOrganicRegrowthMutationBuffers(vault, regrowthMask);
+        }
+
+        private bool TryLockOrganicPersistenceMutationBuffers(IDataVault vault, out int lifecycleMask, out int scratchMask)
+        {
+            lifecycleMask = 0;
+            scratchMask = 0;
+            if (!TryLockOrganicLifecycleMutationBuffers(vault, out lifecycleMask))
+                return false;
+
+            if (_destroyedFloraScratch.IsCreated)
+            {
+                if (vault == null || !vault.TryLockBuffer(OrganicDestroyedFloraScratchBufferId, OrganicVaultSystemId))
+                {
+                    UnlockOrganicLifecycleMutationBuffers(vault, lifecycleMask);
+                    lifecycleMask = 0;
+                    return false;
+                }
+
+                scratchMask |= 1;
+            }
+
+            if (_floraStateOverrideScratch.IsCreated)
+            {
+                if (vault == null || !vault.TryLockBuffer(OrganicFloraStateOverrideScratchBufferId, OrganicVaultSystemId))
+                {
+                    UnlockOrganicPersistenceMutationBuffers(vault, lifecycleMask, scratchMask);
+                    lifecycleMask = 0;
+                    scratchMask = 0;
+                    return false;
+                }
+
+                scratchMask |= 2;
+            }
+
+            return true;
+        }
+
+        private static void UnlockOrganicPersistenceMutationBuffers(IDataVault vault, int lifecycleMask, int scratchMask)
+        {
+            if (vault != null)
+            {
+                if ((scratchMask & 2) != 0)
+                    vault.TryUnlockBuffer(OrganicFloraStateOverrideScratchBufferId, OrganicVaultSystemId);
+                if ((scratchMask & 1) != 0)
+                    vault.TryUnlockBuffer(OrganicDestroyedFloraScratchBufferId, OrganicVaultSystemId);
+            }
+
+            UnlockOrganicLifecycleMutationBuffers(vault, lifecycleMask);
+        }
+
+        private bool TryLockOrganicRegrowthMutationBuffers(IDataVault vault, out int lockedMask)
+        {
+            lockedMask = 0;
+            if (vault == null)
+                return false;
+
+            for (int i = 0; i < OrganicRegrowthMutationBufferCount; i++)
+            {
+                if (!ShouldLockOrganicRegrowthMutationBuffer(i))
+                    continue;
+
+                BufferID bufferId = GetOrganicRegrowthMutationBufferId(i);
+                if (!vault.TryLockBuffer(bufferId, OrganicVaultSystemId))
+                {
+                    UnlockOrganicRegrowthMutationBuffers(vault, lockedMask);
+                    lockedMask = 0;
+                    return false;
+                }
+
+                lockedMask |= 1 << i;
+            }
+
+            return true;
+        }
+
+        private static void UnlockOrganicRegrowthMutationBuffers(IDataVault vault, int lockedMask)
+        {
+            if (vault == null)
+                return;
+
+            for (int i = OrganicRegrowthMutationBufferCount - 1; i >= 0; i--)
+            {
+                if ((lockedMask & (1 << i)) == 0)
+                    continue;
+
+                BufferID bufferId = GetOrganicRegrowthMutationBufferId(i);
+                if (bufferId != default)
+                    vault.TryUnlockBuffer(bufferId, OrganicVaultSystemId);
+            }
+        }
+
+        private bool ShouldLockOrganicRegrowthMutationBuffer(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return _surfaceHealth.IsCreated;
+                case 1:
+                    return _underwaterHealth.IsCreated;
+                case 2:
+                    return _healthByInstanceUid.IsCreated;
+                case 3:
+                    return _destroyedByInstanceUid.IsCreated;
+                case 4:
+                    return _pendingWiltEndTimeByInstanceUid.IsCreated;
+                case 5:
+                    return _damageVisualProgressByInstanceUid.IsCreated;
+                case 6:
+                    return _decompositionStartTimeByInstanceUid.IsCreated;
+                case 7:
+                    return _regrowthProgressByInstanceUid.IsCreated;
+                case 8:
+                    return _regrowthPositionByInstanceUid.IsCreated;
+                case 9:
+                    return _runtimeFlagsByInstanceUid.IsCreated;
+                case 10:
+                    return _lastOrganicTouchTimeByInstanceUid.IsCreated;
+                case 11:
+                    return _overgrownByInstanceUid.IsCreated;
+                case 12:
+                    return _rootMoundAppliedByInstanceUid.IsCreated;
+                case 13:
+                    return _baseScaleByInstanceUid.IsCreated;
+                case 14:
+                    return _persistedHealth01ByInstanceUid.IsCreated;
+                case 15:
+                    return _persistedHeightScale01ByInstanceUid.IsCreated;
+                case 16:
+                    return _surfaceInstanceUids.IsCreated;
+                case 17:
+                    return _underwaterInstanceUids.IsCreated;
+                case 18:
+                    return _surfaceMaterialClasses.IsCreated;
+                case 19:
+                    return _underwaterMaterialClasses.IsCreated;
+                case 20:
+                    return _templateDescriptors.IsCreated;
+                default:
+                    return false;
+            }
+        }
+
+        private static BufferID GetOrganicRegrowthMutationBufferId(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return OrganicSurfaceHealthBufferId;
+                case 1:
+                    return OrganicUnderwaterHealthBufferId;
+                case 2:
+                    return OrganicHealthByUidBufferId;
+                case 3:
+                    return OrganicDestroyedByUidBufferId;
+                case 4:
+                    return OrganicPendingWiltEndTimeByUidBufferId;
+                case 5:
+                    return OrganicDamageVisualProgressByUidBufferId;
+                case 6:
+                    return OrganicDecompositionStartTimeByUidBufferId;
+                case 7:
+                    return OrganicRegrowthProgressByUidBufferId;
+                case 8:
+                    return OrganicRegrowthPositionByUidBufferId;
+                case 9:
+                    return OrganicRuntimeFlagsByUidBufferId;
+                case 10:
+                    return OrganicLastTouchTimeByUidBufferId;
+                case 11:
+                    return OrganicOvergrownByUidBufferId;
+                case 12:
+                    return OrganicRootMoundAppliedByUidBufferId;
+                case 13:
+                    return OrganicBaseScaleByUidBufferId;
+                case 14:
+                    return OrganicPersistedHealth01ByUidBufferId;
+                case 15:
+                    return OrganicPersistedHeightScale01ByUidBufferId;
+                case 16:
+                    return OrganicSurfaceInstanceUidsBufferId;
+                case 17:
+                    return OrganicUnderwaterInstanceUidsBufferId;
+                case 18:
+                    return OrganicSurfaceMaterialClassesBufferId;
+                case 19:
+                    return OrganicUnderwaterMaterialClassesBufferId;
+                case 20:
+                    return OrganicTemplateDescriptorsBufferId;
+                default:
+                    return default;
+            }
+        }
+
+        private bool TryLockOrganicMaturationMutationBuffers(IDataVault vault, out int lockedMask)
+        {
+            lockedMask = 0;
+            if (vault == null)
+                return false;
+
+            for (int i = 0; i < OrganicMaturationMutationBufferCount; i++)
+            {
+                if (!ShouldLockOrganicMaturationMutationBuffer(i))
+                    continue;
+
+                BufferID bufferId = GetOrganicMaturationMutationBufferId(i);
+                if (!vault.TryLockBuffer(bufferId, OrganicVaultSystemId))
+                {
+                    UnlockOrganicMaturationMutationBuffers(vault, lockedMask);
+                    lockedMask = 0;
+                    return false;
+                }
+
+                lockedMask |= 1 << i;
+            }
+
+            return true;
+        }
+
+        private static void UnlockOrganicMaturationMutationBuffers(IDataVault vault, int lockedMask)
+        {
+            if (vault == null)
+                return;
+
+            for (int i = OrganicMaturationMutationBufferCount - 1; i >= 0; i--)
+            {
+                if ((lockedMask & (1 << i)) == 0)
+                    continue;
+
+                BufferID bufferId = GetOrganicMaturationMutationBufferId(i);
+                if (bufferId != default)
+                    vault.TryUnlockBuffer(bufferId, OrganicVaultSystemId);
+            }
+        }
+
+        private bool ShouldLockOrganicMaturationMutationBuffer(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return _maturationScaleByInstanceUid.IsCreated;
+                case 1:
+                    return _maturationYieldByInstanceUid.IsCreated;
+                case 2:
+                    return _nextSporeAcousticTimeByInstanceUid.IsCreated;
+                default:
+                    return false;
+            }
+        }
+
+        private static BufferID GetOrganicMaturationMutationBufferId(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return OrganicMaturationScaleByUidBufferId;
+                case 1:
+                    return OrganicMaturationYieldByUidBufferId;
+                case 2:
+                    return OrganicNextSporeAcousticTimeByUidBufferId;
+                default:
+                    return default;
+            }
+        }
+
+        private bool TryLockOrganicOvergrowthMutationBuffers(IDataVault vault, out int lockedMask)
+        {
+            lockedMask = 0;
+            if (vault == null)
+                return false;
+
+            for (int i = 0; i < OrganicOvergrowthMutationBufferCount; i++)
+            {
+                if (!ShouldLockOrganicOvergrowthMutationBuffer(i))
+                    continue;
+
+                BufferID bufferId = GetOrganicOvergrowthMutationBufferId(i);
+                if (!vault.TryLockBuffer(bufferId, OrganicVaultSystemId))
+                {
+                    UnlockOrganicOvergrowthMutationBuffers(vault, lockedMask);
+                    lockedMask = 0;
+                    return false;
+                }
+
+                lockedMask |= 1 << i;
+            }
+
+            return true;
+        }
+
+        private static void UnlockOrganicOvergrowthMutationBuffers(IDataVault vault, int lockedMask)
+        {
+            if (vault == null)
+                return;
+
+            for (int i = OrganicOvergrowthMutationBufferCount - 1; i >= 0; i--)
+            {
+                if ((lockedMask & (1 << i)) == 0)
+                    continue;
+
+                BufferID bufferId = GetOrganicOvergrowthMutationBufferId(i);
+                if (bufferId != default)
+                    vault.TryUnlockBuffer(bufferId, OrganicVaultSystemId);
+            }
+        }
+
+        private bool ShouldLockOrganicOvergrowthMutationBuffer(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return _destroyedByInstanceUid.IsCreated;
+                case 1:
+                    return _regrowthProgressByInstanceUid.IsCreated;
+                case 2:
+                    return _lastOrganicTouchTimeByInstanceUid.IsCreated;
+                case 3:
+                    return _overgrownByInstanceUid.IsCreated;
+                case 4:
+                    return _rootMoundAppliedByInstanceUid.IsCreated;
+                case 5:
+                    return _surfaceInstanceUids.IsCreated;
+                case 6:
+                    return _underwaterInstanceUids.IsCreated;
+                case 7:
+                    return _surfaceMaterialClasses.IsCreated;
+                case 8:
+                    return _underwaterMaterialClasses.IsCreated;
+                case 9:
+                    return _surfaceHealth.IsCreated;
+                case 10:
+                    return _underwaterHealth.IsCreated;
+                default:
+                    return false;
+            }
+        }
+
+        private static BufferID GetOrganicOvergrowthMutationBufferId(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return OrganicDestroyedByUidBufferId;
+                case 1:
+                    return OrganicRegrowthProgressByUidBufferId;
+                case 2:
+                    return OrganicLastTouchTimeByUidBufferId;
+                case 3:
+                    return OrganicOvergrownByUidBufferId;
+                case 4:
+                    return OrganicRootMoundAppliedByUidBufferId;
+                case 5:
+                    return OrganicSurfaceInstanceUidsBufferId;
+                case 6:
+                    return OrganicUnderwaterInstanceUidsBufferId;
+                case 7:
+                    return OrganicSurfaceMaterialClassesBufferId;
+                case 8:
+                    return OrganicUnderwaterMaterialClassesBufferId;
+                case 9:
+                    return OrganicSurfaceHealthBufferId;
+                case 10:
+                    return OrganicUnderwaterHealthBufferId;
+                default:
+                    return default;
+            }
+        }
+
+        private bool TryLockOrganicParasiteExposureReadBuffers(IDataVault vault, out int lockedMask)
+        {
+            lockedMask = 0;
+            if (vault == null)
+                return false;
+
+            for (int i = 0; i < OrganicParasiteExposureReadBufferCount; i++)
+            {
+                if (!ShouldLockOrganicParasiteExposureReadBuffer(i))
+                    continue;
+
+                BufferID bufferId = GetOrganicParasiteExposureReadBufferId(i);
+                if (!vault.TryLockBuffer(bufferId, OrganicVaultSystemId))
+                {
+                    UnlockOrganicParasiteExposureReadBuffers(vault, lockedMask);
+                    lockedMask = 0;
+                    return false;
+                }
+
+                lockedMask |= 1 << i;
+            }
+
+            return true;
+        }
+
+        private static void UnlockOrganicParasiteExposureReadBuffers(IDataVault vault, int lockedMask)
+        {
+            if (vault == null)
+                return;
+
+            for (int i = OrganicParasiteExposureReadBufferCount - 1; i >= 0; i--)
+            {
+                if ((lockedMask & (1 << i)) == 0)
+                    continue;
+
+                BufferID bufferId = GetOrganicParasiteExposureReadBufferId(i);
+                if (bufferId != default)
+                    vault.TryUnlockBuffer(bufferId, OrganicVaultSystemId);
+            }
+        }
+
+        private bool ShouldLockOrganicParasiteExposureReadBuffer(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return _surfaceInstanceUids.IsCreated;
+                case 1:
+                    return _underwaterInstanceUids.IsCreated;
+                case 2:
+                    return _surfaceHealth.IsCreated;
+                case 3:
+                    return _underwaterHealth.IsCreated;
+                case 4:
+                    return _runtimeFlagsByInstanceUid.IsCreated;
+                default:
+                    return false;
+            }
+        }
+
+        private static BufferID GetOrganicParasiteExposureReadBufferId(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return OrganicSurfaceInstanceUidsBufferId;
+                case 1:
+                    return OrganicUnderwaterInstanceUidsBufferId;
+                case 2:
+                    return OrganicSurfaceHealthBufferId;
+                case 3:
+                    return OrganicUnderwaterHealthBufferId;
+                case 4:
+                    return OrganicRuntimeFlagsByUidBufferId;
+                default:
+                    return default;
+            }
+        }
+
+        private bool TryLockOrganicLifecycleReadBuffers(IDataVault vault, out int lockedMask)
+        {
+            lockedMask = 0;
+            for (int i = 0; i < OrganicLifecycleReadBufferCount; i++)
+            {
+                if (!ShouldLockOrganicLifecycleReadBuffer(i))
+                    continue;
+
+                if (vault == null)
+                {
+                    UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+                    lockedMask = 0;
+                    return false;
+                }
+
+                BufferID bufferId = GetOrganicLifecycleReadBufferId(i);
+                if (!vault.TryLockBuffer(bufferId, OrganicVaultSystemId))
+                {
+                    UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+                    lockedMask = 0;
+                    return false;
+                }
+
+                lockedMask |= 1 << i;
+            }
+
+            return true;
+        }
+
+        private static void UnlockOrganicLifecycleReadBuffers(IDataVault vault, int lockedMask)
+        {
+            if (vault == null)
+                return;
+
+            for (int i = OrganicLifecycleReadBufferCount - 1; i >= 0; i--)
+            {
+                if ((lockedMask & (1 << i)) == 0)
+                    continue;
+
+                BufferID bufferId = GetOrganicLifecycleReadBufferId(i);
+                if (bufferId != default)
+                    vault.TryUnlockBuffer(bufferId, OrganicVaultSystemId);
+            }
+        }
+
+        private bool ShouldLockOrganicLifecycleReadBuffer(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return _destroyedByInstanceUid.IsCreated;
+                case 1:
+                    return _regrowthProgressByInstanceUid.IsCreated;
+                case 2:
+                    return _surfaceInstanceUids.IsCreated;
+                case 3:
+                    return _underwaterInstanceUids.IsCreated;
+                case 4:
+                    return _surfaceMaterialClasses.IsCreated;
+                case 5:
+                    return _underwaterMaterialClasses.IsCreated;
+                case 6:
+                    return _surfaceHealth.IsCreated;
+                case 7:
+                    return _underwaterHealth.IsCreated;
+                case 8:
+                    return _baseScaleByInstanceUid.IsCreated;
+                default:
+                    return false;
+            }
+        }
+
+        private static BufferID GetOrganicLifecycleReadBufferId(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return OrganicDestroyedByUidBufferId;
+                case 1:
+                    return OrganicRegrowthProgressByUidBufferId;
+                case 2:
+                    return OrganicSurfaceInstanceUidsBufferId;
+                case 3:
+                    return OrganicUnderwaterInstanceUidsBufferId;
+                case 4:
+                    return OrganicSurfaceMaterialClassesBufferId;
+                case 5:
+                    return OrganicUnderwaterMaterialClassesBufferId;
+                case 6:
+                    return OrganicSurfaceHealthBufferId;
+                case 7:
+                    return OrganicUnderwaterHealthBufferId;
+                case 8:
+                    return OrganicBaseScaleByUidBufferId;
                 default:
                     return default;
             }
@@ -1490,44 +3127,21 @@ namespace Hecton8.World
             if (_dearLieVaultJobLocksHeld)
                 UnlockDearLieVaultJobBuffers();
 
-            if (vault != null)
-            {
-                ReleaseDearLieVaultBuffer(vault, ref _surfaceDearLieClaimsHandle);
-                ReleaseDearLieVaultBuffer(vault, ref _underwaterDearLieClaimsHandle);
-                ReleaseDearLieVaultBuffer(vault, ref _dearLieDamageEventsHandle);
-                ReleaseDearLieVaultBuffer(vault, ref _dearLieResultsHandle);
-                ReleaseDearLieVaultBuffer(vault, ref _dearLieCountersHandle);
-                ReleaseDearLieVaultBuffer(vault, ref _dearLieRegenRecordsHandle);
-                ReleaseDearLieVaultBuffer(vault, ref _dearLieTelemetryRingHandle);
-                ReleaseDearLieVaultBuffer(vault, ref _surfaceDearLieBucketHeadsHandle);
-                ReleaseDearLieVaultBuffer(vault, ref _surfaceDearLieBucketNextHandle);
-                ReleaseDearLieVaultBuffer(vault, ref _underwaterDearLieBucketHeadsHandle);
-                ReleaseDearLieVaultBuffer(vault, ref _underwaterDearLieBucketNextHandle);
-            }
-
-            _surfaceDearLieClaims = default;
-            _underwaterDearLieClaims = default;
-            _dearLieDamageEvents = default;
-            _dearLieResults = default;
-            _dearLieCounters = default;
-            _dearLieRegenRecords = default;
-            _dearLieTelemetryRing = default;
-            _surfaceDearLieBucketHeads = default;
-            _surfaceDearLieBucketNext = default;
-            _underwaterDearLieBucketHeads = default;
-            _underwaterDearLieBucketNext = default;
+            _surfaceDearLieClaims.Release();
+            _underwaterDearLieClaims.Release();
+            _dearLieDamageEvents.Release();
+            _dearLieResults.Release();
+            _dearLieCounters.Release();
+            _dearLieRegenRecords.Release();
+            _dearLieTelemetryRing.Release();
+            _surfaceDearLieBucketHeads.Release();
+            _surfaceDearLieBucketNext.Release();
+            _underwaterDearLieBucketHeads.Release();
+            _underwaterDearLieBucketNext.Release();
             _dearLieVault = null;
             _dearLieVaultReady = false;
             _dearLieVaultJobLocksHeld = false;
             _dearLieVaultJobLockCount = 0;
-        }
-
-        private static void ReleaseDearLieVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
-        {
-            if (vault != null && handle.BufferID != 0u)
-                vault.ReleaseBuffer(in handle);
-
-            handle = default;
         }
 
         private void CacheDearLieFallbackQualityWeightCold()
@@ -1582,31 +3196,41 @@ namespace Hecton8.World
             if (_dearLieJobScheduled)
                 return;
 
-            RefreshActiveCachesIfNeeded(force: false);
-            ProcessDearLieDestructionSignals(currentTime);
-            if (_dearLieJobScheduled)
+            if (!RefreshActiveCachesIfNeeded(force: false, allowMutation: false))
                 return;
 
-            ProcessDearLieRegeneration(currentTime);
-            UpdateDecompositionVisuals(currentTime);
-            UpdateRegrowthVisuals();
-            UpdateMatureSporeAcoustics(currentTime);
-            UpdateDamageVisuals(currentTime);
-            UpdateWiltInstances(currentTime);
-            bool dropBufferDrained = !_yieldScheduled && DrainDropBuffer();
-            if (dropBufferDrained && _deferredYieldScheduleFrame < 0)
-                ScheduleYieldJobIfNeeded();
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
+            {
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
+                return;
+            }
+
+            try
+            {
+                UpdateDecompositionVisuals(currentTime);
+                UpdateRegrowthVisuals();
+                UpdateMatureSporeAcoustics(currentTime);
+                UpdateDamageVisuals(currentTime);
+                UpdateWiltInstances(currentTime);
+            }
+            finally
+            {
+                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+            }
 
             VoxelDynamicNavGridRuntime.SchedulePendingDynamicObstacleUpdates();
         }
 
         public void LateFrameTick()
         {
+            float currentTime = ResolveOrganicClockSeconds();
             DispatcherJobSwap.BeginLateFrameSwapWindow();
             try
             {
-                CompleteDearLieJobIfNeeded(ResolveOrganicClockSeconds(), force: false);
-                CompleteYieldJobIfNeeded(force: false);
+                ProcessDearLieDestructionSignals(currentTime);
+                CompleteDearLieJobIfNeeded(currentTime, force: true);
+                ProcessDearLieRegeneration(currentTime);
             }
             finally
             {
@@ -1616,16 +3240,22 @@ namespace Hecton8.World
             FlushPendingHarvestAudioEvents();
             FlushPendingSporeAcousticEvents();
 
-            if (_yieldScheduled)
-                return;
-
             bool dropBufferDrained = DrainDropBuffer();
             if (dropBufferDrained &&
-                _deferredYieldScheduleFrame >= 0 &&
-                Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _deferredYieldScheduleFrame)
+                (_deferredYieldScheduleFrame < 0 ||
+                 Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _deferredYieldScheduleFrame))
             {
                 _deferredYieldScheduleFrame = -1;
-                ScheduleYieldJobIfNeeded();
+                DispatcherJobSwap.BeginLateFrameSwapWindow();
+                try
+                {
+                    ProcessYieldBatchIfNeeded();
+                }
+                finally
+                {
+                    DispatcherJobSwap.EndLateFrameSwapWindow();
+                }
+
                 VoxelDynamicNavGridRuntime.SchedulePendingDynamicObstacleUpdates();
             }
         }
@@ -1638,9 +3268,9 @@ namespace Hecton8.World
             if (_dearLieJobScheduled)
                 return;
 
-            SyncDestroyedFloraFromPersistence();
-            SyncFloraStateOverridesFromPersistence();
-            RefreshActiveCachesIfNeeded(force: true);
+            bool destroyedSyncChanged = SyncDestroyedFloraFromPersistence();
+            bool floraStateSyncChanged = SyncFloraStateOverridesFromPersistence();
+            RefreshActiveCachesIfNeeded(force: destroyedSyncChanged || floraStateSyncChanged);
             float currentTime = ResolveOrganicClockSeconds();
             RefreshCorpseResourceNodes(currentTime);
             EvaluateAllelopathicRelease();
@@ -1676,27 +3306,60 @@ namespace Hecton8.World
                 return;
             }
 
-            ClearDearLieCounters();
-
-            int damageCount = StageDearLieDamageEvents(out JobHandle stageHandle);
-            if (damageCount <= 0)
+            bool scheduled = false;
+            bool recordStageTelemetry = false;
+            bool dumpStageTelemetry = false;
+            int stageRejectedCount = 0;
+            int stageNanRejectCount = 0;
+            byte stageTelemetryFlags = 0;
+            try
             {
-                int rejectedOnlyCount = math.max(0, ReadDearLieCounter(4));
-                int nanOnlyCount = math.max(0, ReadDearLieCounter(5));
-                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, rejectedOnlyCount, nanOnlyCount, 0f, 0u, nanOnlyCount > 0 ? (byte)1 : (byte)0);
-                if (nanOnlyCount > 0)
-                    DumpDearLieTelemetry();
-                UnlockDearLieVaultJobBuffers();
-                return;
+                ClearDearLieCounters();
+
+                int damageCount = StageDearLieDamageEvents(out JobHandle stageHandle);
+                if (damageCount <= 0)
+                {
+                    stageRejectedCount = math.max(0, ReadDearLieCounter(4));
+                    stageNanRejectCount = math.max(0, ReadDearLieCounter(5));
+                    stageTelemetryFlags = stageNanRejectCount > 0 ? (byte)1 : (byte)0;
+                    dumpStageTelemetry = stageNanRejectCount > 0;
+                    recordStageTelemetry = true;
+                }
+                else
+                {
+                    JobHandle surfaceHandle = ScheduleDearLieLane(false, damageCount, stageHandle);
+                    JobHandle underwaterHandle = ScheduleDearLieLane(true, damageCount, stageHandle);
+                    _dearLieJobHandle = JobHandle.CombineDependencies(stageHandle, JobHandle.CombineDependencies(surfaceHandle, underwaterHandle));
+                    _dearLieScheduledDamageCount = damageCount;
+                    _dearLieJobScheduleFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+                    _dearLieJobStartTimeSeconds = Time.realtimeSinceStartupAsDouble;
+                    _dearLieJobScheduled = true;
+                    scheduled = true;
+                    CompleteDearLieJobIfNeeded(currentTime, force: true);
+                }
+            }
+            finally
+            {
+                if (!scheduled)
+                    UnlockDearLieVaultJobBuffers();
             }
 
-            JobHandle surfaceHandle = ScheduleDearLieLane(false, damageCount, stageHandle);
-            JobHandle underwaterHandle = ScheduleDearLieLane(true, damageCount, stageHandle);
-            _dearLieJobHandle = JobHandle.CombineDependencies(stageHandle, JobHandle.CombineDependencies(surfaceHandle, underwaterHandle));
-            _dearLieScheduledDamageCount = damageCount;
-            _dearLieJobScheduleFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            _dearLieJobStartTimeSeconds = Time.realtimeSinceStartupAsDouble;
-            _dearLieJobScheduled = true;
+            if (recordStageTelemetry)
+            {
+                RecordDearLieTelemetry(
+                    Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
+                    0,
+                    0,
+                    0,
+                    0,
+                    stageRejectedCount,
+                    stageNanRejectCount,
+                    0f,
+                    0u,
+                    stageTelemetryFlags);
+                if (dumpStageTelemetry)
+                    DumpDearLieTelemetry();
+            }
         }
 
         private static bool HasAnyAuthoritativeDearLieDamageSignal()
@@ -1762,14 +3425,27 @@ namespace Hecton8.World
             _dearLieJobStartTimeSeconds = 0d;
             int damageCount = math.max(0, _dearLieScheduledDamageCount);
             _dearLieScheduledDamageCount = 0;
+            bool flushDearLieDebrisSignals = false;
+            bool recordCompletionTelemetry = false;
+            bool dumpCompletionTelemetry = false;
+            int telemetryDamageCount = damageCount;
+            int telemetryDestroyedCount = 0;
+            int telemetryVfxCount = 0;
+            int telemetryRejectedCount = 0;
+            int telemetryNanRejectCount = 0;
+            float telemetryQueryMicroseconds = queryMicroseconds;
+            uint telemetryLastInstanceUid = 0u;
+            byte telemetryFlags = 0;
             try
             {
                 int destroyedCount = ApplyDearLieDestructionResults(currentTime, out uint lastInstanceUid, out int vfxCount);
+                int stagedDebrisOverflowCount = math.max(0, _pendingDearLieDebrisOverflowCount);
+                flushDearLieDebrisSignals = _pendingDearLieDebrisSignalCount > 0;
                 _dearLieLastDamageFrame = currentFrame;
                 _dearLieLastDestroyedCount = destroyedCount;
                 _dearLieLastVfxCount = vfxCount;
 
-                int overflowCount = math.max(0, ReadDearLieCounter(6));
+                int overflowCount = math.max(0, ReadDearLieCounter(6)) + stagedDebrisOverflowCount;
                 int rejectedCount = math.max(0, ReadDearLieCounter(4)) + overflowCount;
                 int nanRejectCount = math.max(0, ReadDearLieCounter(5));
                 byte flags = 0;
@@ -1781,14 +3457,39 @@ namespace Hecton8.World
                     flags |= 8;
                 if (overflowCount > 0)
                     flags |= 16;
-                RecordDearLieTelemetry(currentFrame, damageCount, destroyedCount, vfxCount, 0, rejectedCount, nanRejectCount, queryMicroseconds, lastInstanceUid, flags);
-                if (nanRejectCount > 0 || overflowCount > 0 || (sameFrameCompletion && queryMicroseconds > 500f))
-                    DumpDearLieTelemetry();
+                telemetryDestroyedCount = destroyedCount;
+                telemetryVfxCount = vfxCount;
+                telemetryRejectedCount = rejectedCount;
+                telemetryNanRejectCount = nanRejectCount;
+                telemetryLastInstanceUid = lastInstanceUid;
+                telemetryFlags = flags;
+                dumpCompletionTelemetry = nanRejectCount > 0 || overflowCount > 0 || (sameFrameCompletion && queryMicroseconds > 500f);
+                recordCompletionTelemetry = true;
             }
             finally
             {
                 UnlockDearLieVaultJobBuffers();
             }
+
+            if (recordCompletionTelemetry)
+            {
+                RecordDearLieTelemetry(
+                    currentFrame,
+                    telemetryDamageCount,
+                    telemetryDestroyedCount,
+                    telemetryVfxCount,
+                    0,
+                    telemetryRejectedCount,
+                    telemetryNanRejectCount,
+                    telemetryQueryMicroseconds,
+                    telemetryLastInstanceUid,
+                    telemetryFlags);
+                if (dumpCompletionTelemetry)
+                    DumpDearLieTelemetry();
+            }
+
+            if (flushDearLieDebrisSignals)
+                FlushPendingDearLieDebrisSignals();
 
             return true;
         }
@@ -1821,7 +3522,7 @@ namespace Hecton8.World
                 dearLieGenerateMockDamageBurst = false;
                 int mockCount = math.min(DearLieMockDamageSignalCount, DearLieMaxDamageSignalsPerFrame - writeCount);
                 double3 originAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-                double3 centerAup = originAup + new double3(dearLieMockDamageCenter.x, dearLieMockDamageCenter.y, dearLieMockDamageCenter.z);
+                double3 centerAup = originAup + ToDouble3(dearLieMockDamageCenter);
                 var mockJob = new GenerateMockFloraDamageJob
                 {
                     Events = _dearLieDamageEvents,
@@ -1869,7 +3570,7 @@ namespace Hecton8.World
             {
                 ImpactAUP = signal.ImpactAup,
                 FloraTypeHash = signal.TargetHash == 0u ? DearLieSignalHashFlora : signal.TargetHash,
-                _pad0 = math.asuint(math.saturate(signal.Magnitude))
+                MagnitudeBits = math.asuint(math.saturate(signal.Magnitude))
             };
             return true;
         }
@@ -1962,6 +3663,8 @@ namespace Hecton8.World
         {
             lastInstanceUid = 0u;
             vfxCount = 0;
+            _pendingDearLieDebrisSignalCount = 0;
+            _pendingDearLieDebrisOverflowCount = 0;
             if (!_dearLieResults.IsCreated ||
                 !_dearLieCounters.IsCreated ||
                 !_destroyedByInstanceUid.IsCreated)
@@ -1975,10 +3678,14 @@ namespace Hecton8.World
             {
                 FloraDearLieDestructionResult result = _dearLieResults[i];
                 uint instanceUid = result.InstanceUid;
-                if (instanceUid == 0u || _destroyedByInstanceUid.ContainsKey(instanceUid))
+                if (instanceUid == 0u ||
+                    _destroyedByInstanceUid.ContainsKey(instanceUid) ||
+                    (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid)))
+                {
                     continue;
+                }
 
-                if (!TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
+                if (!TryFindActiveInstanceByUidPinned(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
                     continue;
 
                 NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
@@ -1989,7 +3696,8 @@ namespace Hecton8.World
                 if (!IsFiniteVector(runtimePosition))
                     runtimePosition = ExtractTranslation(matrices[activeIndex]);
 
-                Vector3 impactRuntimePosition = (Vector3)AbsoluteUniversePosition.FromAbsolutePosition(result.ImpactAUP).ToRuntimeFloat3();
+                AbsoluteUniversePosition impactAup = AbsoluteUniversePosition.FromAbsolutePosition(result.ImpactAUP);
+                Vector3 impactRuntimePosition = (Vector3)AUPMath.ToRuntimeFloat3(in impactAup, HectonFloatingOrigin.CurrentTotalOffsetDouble);
                 if (IsFiniteVector(impactRuntimePosition) && IsFiniteVector(runtimePosition))
                 {
                     _dearLieLastImpactRuntimePosition = impactRuntimePosition;
@@ -1997,12 +3705,14 @@ namespace Hecton8.World
                     _dearLieHasLastDebugHit = 1;
                 }
 
-                _destroyedByInstanceUid.TryAdd(instanceUid, 1);
-                if (_healthByInstanceUid.IsCreated)
+                if (!_destroyedByInstanceUid.TryAdd(instanceUid, 1))
                 {
-                    _healthByInstanceUid.Remove(instanceUid);
-                    _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)0f);
+                    _pendingDearLieDebrisOverflowCount++;
+                    continue;
                 }
+
+                if (_healthByInstanceUid.IsCreated)
+                    _healthByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)0f);
 
                 ClearOrganicLifecycleState(instanceUid);
                 PrimeDecompositionState(instanceUid, currentTime);
@@ -2012,11 +3722,12 @@ namespace Hecton8.World
                 if (_damageVisualProgressByInstanceUid.IsCreated)
                     _damageVisualProgressByInstanceUid.Remove(instanceUid);
 
+                ClearPersistedFloraStateOverride(instanceUid);
                 byte runtimeFlags = MarkDeadRuntimeFlag(instanceUid);
                 ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
                 ApplyDearLieMatrixScaleZeroToLaneInstance(underwater, activeIndex);
                 QueueDearLieRegeneration(instanceUid, underwater, activeIndex, runtimePosition, currentTime + ResolveDearLieRegenerationDelaySeconds(), in result.OriginalMatrix);
-                if (TryPublishDearLieDebris(in result))
+                if (TryQueueDearLieDebrisSignal(in result))
                     vfxCount++;
                 appliedCount++;
                 lastInstanceUid = instanceUid;
@@ -2025,7 +3736,7 @@ namespace Hecton8.World
             return appliedCount;
         }
 
-        private static bool TryPublishDearLieDebris(in FloraDearLieDestructionResult result)
+        private bool TryQueueDearLieDebrisSignal(in FloraDearLieDestructionResult result)
         {
             if (result.EmitVfx == 0 || result.InstanceUid == 0u || result.VfxQuantity == 0)
                 return false;
@@ -2044,7 +3755,27 @@ namespace Hecton8.World
                 Flags = DebrisSpawnSignal.FlagComputeShard,
                 Quantity = result.VfxQuantity
             };
-            return SignalBus<DebrisSpawnSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_DestructibleOrganicManager);
+            if (_pendingDearLieDebrisSignalCount >= _pendingDearLieDebrisSignals.Length)
+            {
+                _pendingDearLieDebrisOverflowCount++;
+                return false;
+            }
+
+            _pendingDearLieDebrisSignals[_pendingDearLieDebrisSignalCount++] = signal;
+            return true;
+        }
+
+        private void FlushPendingDearLieDebrisSignals()
+        {
+            int count = math.min(_pendingDearLieDebrisSignalCount, _pendingDearLieDebrisSignals.Length);
+            for (int i = 0; i < count; i++)
+            {
+                DebrisSpawnSignal signal = _pendingDearLieDebrisSignals[i];
+                SignalBus<DebrisSpawnSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_DestructibleOrganicManager);
+                _pendingDearLieDebrisSignals[i] = default;
+            }
+
+            _pendingDearLieDebrisSignalCount = 0;
         }
 
         private void QueueDearLieRegeneration(uint instanceUid, bool underwater, int activeIndex, Vector3 runtimePosition, float restoreTimeSeconds, in Matrix4x4 originalMatrix)
@@ -2052,15 +3783,14 @@ namespace Hecton8.World
             if (!_dearLieRegenRecords.IsCreated || instanceUid == 0u || _dearLieRegenCount >= _dearLieRegenRecords.Length)
                 return;
 
-            _dearLieRegenRecords[_dearLieRegenCount++] = new FloraDearLieRegenRecord
-            {
-                OriginalMatrix = originalMatrix,
-                InstanceUid = instanceUid,
-                ActiveIndex = activeIndex,
-                RestoreTimeSeconds = restoreTimeSeconds,
-                RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
-                Underwater = underwater ? (byte)1 : (byte)0
-            };
+            FloraDearLieRegenRecord record = default;
+            record.OriginalMatrix = originalMatrix;
+            record.InstanceUid = instanceUid;
+            record.ActiveIndex = activeIndex;
+            record.RestoreTimeSeconds = restoreTimeSeconds;
+            record.RuntimePosition = ToFloat3(runtimePosition);
+            record.Underwater = underwater ? (byte)1 : (byte)0;
+            _dearLieRegenRecords[_dearLieRegenCount++] = record;
         }
 
         private void ProcessDearLieRegeneration(float currentTime)
@@ -2069,81 +3799,116 @@ namespace Hecton8.World
                 return;
 
             int recoveredCount = 0;
-            for (int i = _dearLieRegenCount - 1; i >= 0; i--)
+            bool popLockFailed = false;
+            bool anyLockFailed = false;
+            bool requeueFailed = false;
+            while (TryPopReadyDearLieRegeneration(currentTime, out FloraDearLieRegenRecord record, out popLockFailed))
             {
-                FloraDearLieRegenRecord record = _dearLieRegenRecords[i];
-                if (record.InstanceUid == 0u || currentTime < record.RestoreTimeSeconds)
-                    continue;
-
-                Vector3 runtimePosition = new Vector3(record.RuntimePosition.x, record.RuntimePosition.y, record.RuntimePosition.z);
+                Vector3 runtimePosition = ToRuntimeVector3(record.RuntimePosition);
                 if (!IsFiniteVector(runtimePosition) && IsFiniteMatrix(in record.OriginalMatrix))
                     runtimePosition = ExtractTranslation(record.OriginalMatrix);
 
                 if (!IsFiniteVector(runtimePosition) &&
-                    TryResolveActiveInstanceByUid(record.InstanceUid, out bool underwater, out int activeIndex, out _) &&
-                    TryResolveMatrixForLane(underwater, activeIndex, out Matrix4x4 matrix))
+                    TrySnapshotActiveInstanceByUidWithLock(
+                        record.InstanceUid,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out Matrix4x4 matrix,
+                        out _,
+                        out _))
                 {
                     runtimePosition = ExtractTranslation(matrix);
                 }
 
-                TryRestoreDearLieOriginalMatrix(in record);
+                if (!IsFiniteVector(runtimePosition) || !IsFiniteMatrix(in record.OriginalMatrix))
+                    continue;
 
-                if (IsFiniteVector(runtimePosition) && TrySetRegrowthProgress(record.InstanceUid, runtimePosition, 1f))
+                if (TrySetRegrowthProgress(record.InstanceUid, runtimePosition, 1f, true, in record.OriginalMatrix, out bool regrowthLockFailed))
+                {
                     recoveredCount++;
-
-                int lastIndex = _dearLieRegenCount - 1;
-                _dearLieRegenRecords[i] = _dearLieRegenRecords[lastIndex];
-                _dearLieRegenRecords[lastIndex] = default;
-                _dearLieRegenCount = lastIndex;
+                }
+                else if (regrowthLockFailed)
+                {
+                    anyLockFailed = true;
+                    float retryTimeSeconds = (float)math.min(OrganicClockMaxSeconds, (double)currentTime + DearLieRegenerationRetryDelaySeconds);
+                    requeueFailed |= !TryRequeueDearLieRegeneration(in record, retryTimeSeconds);
+                }
             }
+
+            anyLockFailed |= popLockFailed;
+            if (anyLockFailed)
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
+
+            if (requeueFailed)
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 128);
 
             if (recoveredCount > 0)
                 RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, recoveredCount, 0, 0, 0f, 0u, 4);
         }
 
-        private bool TryRestoreDearLieOriginalMatrix(in FloraDearLieRegenRecord record)
+        private bool TryPopReadyDearLieRegeneration(float currentTime, out FloraDearLieRegenRecord record, out bool lockFailed)
         {
-            if (record.InstanceUid == 0u || !IsFiniteMatrix(in record.OriginalMatrix))
+            record = default;
+            lockFailed = false;
+            if (!_dearLieRegenRecords.IsCreated || _dearLieRegenCount <= 0)
                 return false;
 
-            bool recordUnderwater = record.Underwater != 0;
-            bool underwater = recordUnderwater;
-            int activeIndex = record.ActiveIndex;
-            if (!TryResolveActiveInstanceByUid(record.InstanceUid, out underwater, out activeIndex, out _))
+            IDataVault vault = _dearLieVault;
+            if (vault == null || !vault.TryLockBuffer(DearLieRegenRecordsBufferId, OrganicVaultSystemId))
             {
-                underwater = recordUnderwater;
-                activeIndex = record.ActiveIndex;
-                NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
-                int count = underwater ? _underwaterCount : _surfaceCount;
-                if (!instanceUids.IsCreated ||
-                    activeIndex < 0 ||
-                    activeIndex >= count ||
-                    activeIndex >= instanceUids.Length ||
-                    instanceUids[activeIndex] != record.InstanceUid)
-                {
-                    return false;
-                }
+                lockFailed = true;
+                return false;
             }
 
-            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
-            if (!matrices.IsCreated || activeIndex < 0 || activeIndex >= matrices.Length)
-                return false;
+            try
+            {
+                for (int i = _dearLieRegenCount - 1; i >= 0; i--)
+                {
+                    FloraDearLieRegenRecord candidate = _dearLieRegenRecords[i];
+                    if (candidate.InstanceUid == 0u || currentTime < candidate.RestoreTimeSeconds)
+                        continue;
 
-            matrices[activeIndex] = record.OriginalMatrix;
-            return true;
+                    int lastIndex = _dearLieRegenCount - 1;
+                    _dearLieRegenRecords[i] = _dearLieRegenRecords[lastIndex];
+                    _dearLieRegenRecords[lastIndex] = default;
+                    _dearLieRegenCount = lastIndex;
+                    record = candidate;
+                    return true;
+                }
+
+                return false;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(DearLieRegenRecordsBufferId, OrganicVaultSystemId);
+            }
         }
 
-        private bool TryResolveMatrixForLane(bool underwater, int activeIndex, out Matrix4x4 matrix)
+        private bool TryRequeueDearLieRegeneration(in FloraDearLieRegenRecord record, float restoreTimeSeconds)
         {
-            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
-            if (!matrices.IsCreated || activeIndex < 0 || activeIndex >= matrices.Length)
-            {
-                matrix = default;
+            if (!_dearLieRegenRecords.IsCreated || record.InstanceUid == 0u)
                 return false;
-            }
 
-            matrix = matrices[activeIndex];
-            return true;
+            IDataVault vault = _dearLieVault;
+            if (vault == null || !vault.TryLockBuffer(DearLieRegenRecordsBufferId, OrganicVaultSystemId))
+                return false;
+
+            try
+            {
+                if (_dearLieRegenCount >= _dearLieRegenRecords.Length)
+                    return false;
+
+                FloraDearLieRegenRecord retryRecord = record;
+                retryRecord.RestoreTimeSeconds = restoreTimeSeconds;
+                _dearLieRegenRecords[_dearLieRegenCount++] = retryRecord;
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(DearLieRegenRecordsBufferId, OrganicVaultSystemId);
+            }
         }
 
         private void RecordDearLieTelemetry(
@@ -2158,60 +3923,97 @@ namespace Hecton8.World
             uint lastInstanceUid,
             byte flags)
         {
-            if (!_dearLieTelemetryRing.IsCreated || _dearLieTelemetryRing.Length == 0)
+            IDataVault vault = _dearLieVault;
+            if (vault == null || !vault.TryLockBuffer(DearLieTelemetryRingBufferId, SystemID.FloraGenomics))
                 return;
 
-            int index = _dearLieTelemetryCursor++ % _dearLieTelemetryRing.Length;
-            float qualityWeight = ResolveDearLieGlobalQualityWeight();
-            _dearLieLastQualityWeight = qualityWeight;
-            uint hash = 2166136261u;
-            hash = MixDearLieHash(hash, (uint)frameIndex);
-            hash = MixDearLieHash(hash, (uint)damageSignalCount);
-            hash = MixDearLieHash(hash, (uint)destroyedCount);
-            hash = MixDearLieHash(hash, lastInstanceUid);
-            hash = MixDearLieHash(hash, math.asuint(math.select(0f, queryMicroseconds, math.isfinite(queryMicroseconds))));
-            _dearLieTelemetryRing[index] = new FloraDearLieTelemetryEntry
+            try
             {
-                FrameIndex = frameIndex,
-                SurfaceCount = _surfaceCount,
-                UnderwaterCount = _underwaterCount,
-                DamageSignalCount = damageSignalCount,
-                DestroyedCount = destroyedCount,
-                VfxSignalCount = vfxSignalCount,
-                RegenQueuedCount = _dearLieRegenCount,
-                RecoveredCount = recoveredCount,
-                RejectedSignalCount = rejectedSignalCount,
-                NanRejectCount = nanRejectCount,
-                GlobalQualityWeight = qualityWeight,
-                Hash = hash,
-                LastInstanceUid = lastInstanceUid,
-                Flags = flags,
-                QueryMicroseconds = math.select(0f, queryMicroseconds, math.isfinite(queryMicroseconds))
-            };
+                if (!_dearLieTelemetryRing.IsCreated || _dearLieTelemetryRing.Length == 0)
+                    return;
+
+                int telemetryCursor = math.max(0, _dearLieTelemetryCursor);
+                int index = telemetryCursor % _dearLieTelemetryRing.Length;
+                _dearLieTelemetryCursor = telemetryCursor >= int.MaxValue - 1
+                    ? _dearLieTelemetryRing.Length
+                    : telemetryCursor + 1;
+                float qualityWeight = ResolveDearLieGlobalQualityWeight();
+                _dearLieLastQualityWeight = qualityWeight;
+                float safeQueryMicroseconds = math.select(0f, queryMicroseconds, math.isfinite(queryMicroseconds));
+                uint hash = 2166136261u;
+                hash = MixDearLieHash(hash, (uint)frameIndex);
+                hash = MixDearLieHash(hash, (uint)damageSignalCount);
+                hash = MixDearLieHash(hash, (uint)destroyedCount);
+                hash = MixDearLieHash(hash, lastInstanceUid);
+                hash = MixDearLieHash(hash, math.asuint(safeQueryMicroseconds));
+                FloraDearLieTelemetryEntry entry = default;
+                entry.FrameIndex = frameIndex;
+                entry.SurfaceCount = _surfaceCount;
+                entry.UnderwaterCount = _underwaterCount;
+                entry.DamageSignalCount = damageSignalCount;
+                entry.DestroyedCount = destroyedCount;
+                entry.VfxSignalCount = vfxSignalCount;
+                entry.RegenQueuedCount = _dearLieRegenCount;
+                entry.RecoveredCount = recoveredCount;
+                entry.RejectedSignalCount = rejectedSignalCount;
+                entry.NanRejectCount = nanRejectCount;
+                entry.GlobalQualityWeight = qualityWeight;
+                entry.Hash = hash;
+                entry.LastInstanceUid = lastInstanceUid;
+                entry.Flags = flags;
+                entry.QueryMicroseconds = safeQueryMicroseconds;
+                _dearLieTelemetryRing[index] = entry;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(DearLieTelemetryRingBufferId, SystemID.FloraGenomics);
+            }
         }
 
         private unsafe void DumpDearLieTelemetry()
         {
-            if (!_dearLieTelemetryRing.IsCreated)
+            IDataVault vault = _dearLieVault;
+            if (vault == null || !vault.TryLockBuffer(DearLieTelemetryRingBufferId, SystemID.FloraGenomics))
                 return;
 
-            string path = global::System.IO.Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_SHINOBU_268.bin");
+            int snapshotCount = 0;
+            try
+            {
+                if (_dearLieTelemetryRing.IsCreated)
+                {
+                    snapshotCount = math.min(_dearLieTelemetryRing.Length, _dearLieTelemetryDumpSnapshot.Length);
+                    for (int i = 0; i < snapshotCount; i++)
+                        _dearLieTelemetryDumpSnapshot[i] = _dearLieTelemetryRing[i];
+                }
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(DearLieTelemetryRingBufferId, SystemID.FloraGenomics);
+            }
+
+            if (snapshotCount <= 0)
+                return;
+
+            string path = global::System.IO.Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_1318_Organics.bin");
             try
             {
                 using (global::System.IO.FileStream stream = new global::System.IO.FileStream(path, global::System.IO.FileMode.Create, global::System.IO.FileAccess.Write, global::System.IO.FileShare.Read))
                 {
                     int stride = UnsafeUtility.SizeOf<FloraDearLieTelemetryEntry>();
                     byte* scratchPtr = stackalloc byte[stride];
-                    for (int i = 0; i < _dearLieTelemetryRing.Length; i++)
+                    for (int i = 0; i < snapshotCount; i++)
                     {
-                        FloraDearLieTelemetryEntry entry = _dearLieTelemetryRing[i];
+                        FloraDearLieTelemetryEntry entry = _dearLieTelemetryDumpSnapshot[i];
                         UnsafeUtility.MemCpy(scratchPtr, UnsafeUtility.AddressOf(ref entry), stride);
                         for (int byteIndex = 0; byteIndex < stride; byteIndex++)
                             stream.WriteByte(scratchPtr[byteIndex]);
                     }
                 }
             }
-            catch (Exception)
+            catch (global::System.IO.IOException)
+            {
+            }
+            catch (global::System.UnauthorizedAccessException)
             {
             }
         }
@@ -2250,6 +4052,27 @@ namespace Hecton8.World
             return t * t * (3f - (2f * t));
         }
 
+        private static float2 MakeFloat2(float x, float y)
+        {
+            float2 value = default;
+            value.x = x;
+            value.y = y;
+            return value;
+        }
+
+        private static float2 UnitFloat2()
+        {
+            float2 value = default;
+            value.x = 1f;
+            value.y = 1f;
+            return value;
+        }
+
+        private static bool AreHalfValuesEquivalent(Unity.Mathematics.half a, Unity.Mathematics.half b)
+        {
+            return math.abs((float)a - (float)b) <= 0.0001f;
+        }
+
         private static uint MixDearLieHash(uint hash, uint value)
         {
             hash ^= value;
@@ -2281,7 +4104,11 @@ namespace Hecton8.World
 
         private static double3 ExtractMatrixTranslationDouble(Matrix4x4 matrix)
         {
-            return new double3(matrix.m03, matrix.m13, matrix.m23);
+            double3 result = default;
+            result.x = matrix.m03;
+            result.y = matrix.m13;
+            result.z = matrix.m23;
+            return result;
         }
 
         private static float Hash01(uint value)
@@ -2410,7 +4237,7 @@ namespace Hecton8.World
                     return;
 
                 FloraDestructionEventDTO damageEvent = Events[eventIndex];
-                float magnitude01 = math.asfloat(damageEvent._pad0);
+                float magnitude01 = math.asfloat(damageEvent.MagnitudeBits);
                 if (!math.all(math.isfinite(damageEvent.ImpactAUP)) || !math.isfinite(magnitude01))
                 {
                     IncrementCounter(5);
@@ -2460,7 +4287,14 @@ namespace Hecton8.World
                                     continue;
 
                                 double3 localDeltaAup = candidateAup - damageEvent.ImpactAUP;
-                                float3 localDelta = new float3((float)localDeltaAup.x, (float)localDeltaAup.y, (float)localDeltaAup.z);
+                                double floatCastClampMeters = math.max((double)queryRadius * 4d, 1d);
+                                localDeltaAup.x = math.clamp(localDeltaAup.x, -floatCastClampMeters, floatCastClampMeters);
+                                localDeltaAup.y = math.clamp(localDeltaAup.y, -floatCastClampMeters, floatCastClampMeters);
+                                localDeltaAup.z = math.clamp(localDeltaAup.z, -floatCastClampMeters, floatCastClampMeters);
+                                float3 localDelta = default;
+                                localDelta.x = (float)localDeltaAup.x;
+                                localDelta.y = (float)localDeltaAup.y;
+                                localDelta.z = (float)localDeltaAup.z;
                                 if (!math.all(math.isfinite(localDelta)))
                                     continue;
 
@@ -2507,18 +4341,17 @@ namespace Hecton8.World
                 }
 
                 ResolveDebrisEmission(in damageEvent, instanceUid, bestIndex, out byte emitVfx, out ushort vfxQuantity, out byte materialClass);
-                Results[resultIndex] = new FloraDearLieDestructionResult
-                {
-                    OriginalMatrix = originalMatrix,
-                    ImpactAUP = damageEvent.ImpactAUP,
-                    InstanceUid = instanceUid,
-                    ActiveIndex = bestIndex,
-                    FloraTypeHash = damageEvent.FloraTypeHash,
-                    MagnitudeBits = damageEvent._pad0,
-                    VfxQuantity = vfxQuantity,
-                    EmitVfx = emitVfx,
-                    MaterialClass = materialClass
-                };
+                FloraDearLieDestructionResult result = default;
+                result.ImpactAUP = damageEvent.ImpactAUP;
+                result.OriginalMatrix = originalMatrix;
+                result.InstanceUid = instanceUid;
+                result.ActiveIndex = bestIndex;
+                result.FloraTypeHash = damageEvent.FloraTypeHash;
+                result.MagnitudeBits = damageEvent.MagnitudeBits;
+                result.VfxQuantity = vfxQuantity;
+                result.EmitVfx = emitVfx;
+                result.MaterialClass = materialClass;
+                Results[resultIndex] = result;
             }
 
             private bool TryClaim(int index)
@@ -2544,7 +4377,7 @@ namespace Hecton8.World
                 emitVfx = 0;
                 quantity = 0;
                 float q = math.saturate(GlobalQualityWeight);
-                float intensity = math.saturate(math.asfloat(damageEvent._pad0));
+                float intensity = math.saturate(math.asfloat(damageEvent.MagnitudeBits));
                 materialClass = activeIndex >= 0 && activeIndex < MaterialClasses.Length ? MaterialClasses[activeIndex] : (byte)0;
                 float emissionProbability = math.saturate((0.12f + (q * 0.88f)) * math.max(0.2f, intensity));
                 uint hash = instanceUid ^ Frame ^ LaneSalt ^ ((uint)materialClass * 2654435761u);
@@ -2574,13 +4407,15 @@ namespace Hecton8.World
                 float angle = Hash01(h) * 6.28318530718f;
                 float radius = math.sqrt(Hash01(h ^ 0x9E3779B9u)) * 7f;
                 MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
-                double3 offset = new double3(cos * radius, math.lerp(-0.8f, 0.8f, Hash01(h ^ 0x85EBCA6Bu)), sin * radius);
-                Events[Offset + index] = new FloraDestructionEventDTO
-                {
-                    ImpactAUP = CenterAUP + offset,
-                    FloraTypeHash = DearLieSignalHashFlora,
-                    _pad0 = math.asuint(math.lerp(0.35f, 1f, Hash01(h ^ 0xC2B2AE35u)))
-                };
+                double3 offset = default;
+                offset.x = cos * radius;
+                offset.y = math.lerp(-0.8f, 0.8f, Hash01(h ^ 0x85EBCA6Bu));
+                offset.z = sin * radius;
+                FloraDestructionEventDTO eventDto = default;
+                eventDto.ImpactAUP = CenterAUP + offset;
+                eventDto.FloraTypeHash = DearLieSignalHashFlora;
+                eventDto.MagnitudeBits = math.asuint(math.lerp(0.35f, 1f, Hash01(h ^ 0xC2B2AE35u)));
+                Events[Offset + index] = eventDto;
             }
         }
 
@@ -2598,11 +4433,12 @@ namespace Hecton8.World
             if (_dearLieJobScheduled ||
                 deliveredDamage <= 0f ||
                 vegetationBridge == null ||
-                _templateDescriptors.Length <= 0)
+                !_templateCacheReady)
                 return false;
 
-            RefreshActiveCachesIfNeeded(force: false);
-            if (!TryResolveNearestHarvestTarget(
+            if (!RefreshActiveCachesIfNeeded(force: false))
+                return false;
+            if (!TrySnapshotNearestHarvestTargetWithLock(
                 hitPoint,
                 Mathf.Max(hitSearchRadius, interactionBurstRadius),
                 toolCapabilityMask,
@@ -2612,62 +4448,135 @@ namespace Hecton8.World
                 out HarvestableTemplate.MaterialClass materialClass,
                 out int templateIndex,
                 out Matrix4x4 instanceMatrix,
-                out Vector3 instancePosition))
+                out Vector3 instancePosition,
+                out _,
+                out _,
+                out _,
+                out _))
             {
                 return false;
             }
 
-            if (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid))
+            if (!TrySnapshotTemplateDescriptorWithLock(templateIndex, out HarvestableTemplate.RuntimeDescriptor hitTemplateDescriptor))
                 return false;
 
-            float baseHealth = Mathf.Max(0.1f, _templateDescriptors[templateIndex].BaseHealth);
-            float currentHealth = GetLaneHealth(underwater, activeIndex);
-            float toolResistance = math.max(0.01f, _templateDescriptors[templateIndex].ToolResistance);
-            float nextHealth = Mathf.Max(0f, currentHealth - (deliveredDamage / toolResistance));
-            float previousNormalizedHealth = math.saturate(currentHealth / math.max(0.0001f, baseHealth));
-            float previousHeightScale = ResolveCurrentNormalizedHeightScale(underwater, activeIndex, instanceUid, previousNormalizedHealth);
-            HarvestState previousHarvestState = ResolveHarvestState(templateIndex, baseHealth, currentHealth, previousHeightScale);
-            float nextHeightScale = ResolveNormalizedHeightScale(templateIndex, baseHealth, nextHealth);
-            HarvestState nextHarvestState = nextHealth > 0.0001f
-                ? ResolveHarvestState(templateIndex, baseHealth, nextHealth, nextHeightScale)
-                : HarvestState.Dead;
-            if (ShouldDetonateDefensiveSporeBurst(templateIndex, toolCapabilityMask))
-            {
-                floraInteractionManager?.RegisterDefensiveSporeBurst(instancePosition, Mathf.Max(0.35f, normalizedPower));
-                nextHealth = 0f;
-                nextHeightScale = ResolveNormalizedHeightScale(templateIndex, baseHealth, nextHealth);
-                nextHarvestState = HarvestState.Dead;
-            }
-
-            SetLaneHealth(underwater, activeIndex, nextHealth);
-            _healthByInstanceUid.Remove(instanceUid);
-            _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)nextHealth);
+            float baseHealth = Mathf.Max(0.1f, hitTemplateDescriptor.BaseHealth);
+            float toolResistance = math.max(0.01f, hitTemplateDescriptor.ToolResistance);
+            float damageAmount = deliveredDamage / toolResistance;
+            bool emitDefensiveSporeBurst = ShouldDetonateDefensiveSporeBurst(templateIndex, toolCapabilityMask);
             float currentTime = ResolveOrganicClockSeconds();
-            MarkOrganicTouched(instanceUid, currentTime);
+            bool harvestStateChanged = false;
+            bool destroyAfterHealthRecheck = false;
+            HarvestState previousHarvestState = HarvestState.Pristine;
+            HarvestState nextHarvestState = HarvestState.Pristine;
+            bool hasStateOverrideRequest = false;
+            bool clearStateOverrideRequest = false;
+            float stateOverrideNormalizedHealth = 0f;
+            byte stateOverrideHarvestState = 0;
 
-            PublishExternalInteraction(hitPoint, direction * Mathf.Max(0.25f, normalizedPower * OrganicBurstVelocityScale), interactionBurstRadius);
-            bool harvestStateChanged = previousHarvestState != nextHarvestState;
-            ApplyDamageVisualState(instanceUid, underwater, activeIndex, templateIndex, baseHealth, nextHealth, nextHeightScale, harvestStateChanged, currentTime);
-            if (harvestStateChanged)
-                DispatchHarvestAudioTransition(instanceUid, templateIndex, previousHarvestState, nextHarvestState, instancePosition);
-
-            if (nextHealth > 0.0001f)
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
             {
-                PersistFloraStateOverride(instanceUid, templateIndex, instancePosition, underwater, activeIndex, baseHealth, nextHealth);
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
+                return false;
+            }
+
+            try
+            {
+                if ((_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid)) ||
+                    (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)))
+                {
+                    return false;
+                }
+
+                if (!IsPinnedActiveLaneSlot(instanceUid, underwater, activeIndex))
+                    return false;
+
+                float pinnedCurrentHealth = GetLaneHealth(underwater, activeIndex);
+                if (pinnedCurrentHealth <= 0.0001f)
+                    return false;
+
+                float previousHeightScale = ResolveCurrentNormalizedHeightScale(
+                    underwater,
+                    activeIndex,
+                    instanceUid,
+                    math.saturate(pinnedCurrentHealth / math.max(0.0001f, baseHealth)));
+                previousHarvestState = ResolveHarvestState(templateIndex, baseHealth, pinnedCurrentHealth, previousHeightScale);
+                float nextHealth = emitDefensiveSporeBurst
+                    ? 0f
+                    : Mathf.Max(0f, pinnedCurrentHealth - damageAmount);
+                float nextHeightScale = ResolveNormalizedHeightScale(templateIndex, baseHealth, nextHealth);
+                nextHarvestState = nextHealth > 0.0001f
+                    ? ResolveHarvestState(templateIndex, baseHealth, nextHealth, nextHeightScale)
+                    : HarvestState.Dead;
+                harvestStateChanged = previousHarvestState != nextHarvestState;
+                if (nextHealth <= 0.0001f)
+                {
+                    destroyAfterHealthRecheck = true;
+                }
+                else
+                {
+                    SetLaneHealth(underwater, activeIndex, nextHealth);
+                    _healthByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)nextHealth);
+                    MarkOrganicTouched(instanceUid, currentTime);
+                    ApplyDamageVisualState(instanceUid, underwater, activeIndex, templateIndex, baseHealth, nextHealth, nextHeightScale, harvestStateChanged, currentTime);
+                    hasStateOverrideRequest = TryCacheFloraStateOverride(
+                        instanceUid,
+                        templateIndex,
+                        underwater,
+                        activeIndex,
+                        baseHealth,
+                        nextHealth,
+                        out stateOverrideNormalizedHealth,
+                        out stateOverrideHarvestState,
+                        out clearStateOverrideRequest);
+                }
+            }
+            finally
+            {
+                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+            }
+
+            if (destroyAfterHealthRecheck)
+            {
+                bool destroyed = DestroyResolvedInstance(
+                    underwater,
+                    activeIndex,
+                    instanceUid,
+                    materialClass,
+                    templateIndex,
+                    instanceMatrix,
+                    instancePosition,
+                    hitPoint,
+                    hitNormal,
+                    normalizedPower);
+                if (!destroyed)
+                    return false;
+
+                if (emitDefensiveSporeBurst)
+                    floraInteractionManager?.RegisterDefensiveSporeBurst(instancePosition, Mathf.Max(0.35f, normalizedPower));
+
+                if (harvestStateChanged)
+                    DispatchHarvestAudioTransition(instanceUid, templateIndex, previousHarvestState, nextHarvestState, instancePosition);
+
                 return true;
             }
 
-            DestroyResolvedInstance(
-                underwater,
-                activeIndex,
-                instanceUid,
-                materialClass,
-                templateIndex,
-                instanceMatrix,
-                instancePosition,
-                hitPoint,
-                hitNormal,
-                normalizedPower);
+            PublishExternalInteraction(hitPoint, direction * Mathf.Max(0.25f, normalizedPower * OrganicBurstVelocityScale), interactionBurstRadius);
+            if (harvestStateChanged)
+                DispatchHarvestAudioTransition(instanceUid, templateIndex, previousHarvestState, nextHarvestState, instancePosition);
+
+            if (hasStateOverrideRequest)
+            {
+                PublishFloraStateOverride(
+                    instanceUid,
+                    templateIndex,
+                    instancePosition,
+                    stateOverrideNormalizedHealth,
+                    stateOverrideHarvestState,
+                    clearStateOverrideRequest);
+            }
+
             return true;
         }
 
@@ -2677,11 +4586,12 @@ namespace Hecton8.World
         internal bool TryConsumeFloraAtPosition(Vector3 worldPosition, float searchRadius, out uint instanceUid)
         {
             instanceUid = 0u;
-            if (_dearLieJobScheduled || vegetationBridge == null || _templateDescriptors.Length <= 0)
+            if (_dearLieJobScheduled || vegetationBridge == null || !_templateCacheReady)
                 return false;
 
-            RefreshActiveCachesIfNeeded(force: false);
-            if (!TryResolveNearestHarvestTarget(
+            if (!RefreshActiveCachesIfNeeded(force: false))
+                return false;
+            if (!TrySnapshotNearestHarvestTargetWithLock(
                 worldPosition,
                 Mathf.Max(MinimumSearchRadius, searchRadius),
                 0u,
@@ -2691,22 +4601,27 @@ namespace Hecton8.World
                 out HarvestableTemplate.MaterialClass materialClass,
                 out int templateIndex,
                 out _,
-                out Vector3 instancePosition))
+                out Vector3 instancePosition,
+                out _,
+                out _,
+                out _,
+                out _))
             {
                 return false;
             }
 
-            if (materialClass == HarvestableTemplate.MaterialClass.None ||
-                (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid)) ||
-                (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)))
+            if (materialClass == HarvestableTemplate.MaterialClass.None)
             {
                 instanceUid = 0u;
                 return false;
             }
 
-            byte runtimeFlags = MarkDeadRuntimeFlag(instanceUid);
-            ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
-            ApplyPassiveDecomposition(underwater, activeIndex, instanceUid, materialClass, templateIndex, instancePosition);
+            if (!ApplyPassiveDecomposition(underwater, activeIndex, instanceUid, materialClass, templateIndex, instancePosition))
+            {
+                instanceUid = 0u;
+                return false;
+            }
+
             PublishExternalInteraction(instancePosition, Vector3.up * 0.15f, interactionBurstRadius);
             return true;
         }
@@ -2720,12 +4635,10 @@ namespace Hecton8.World
                 return 0;
 
             if (vegetationBridge == null)
-                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
-
-            if (vegetationBridge == null)
                 return 0;
 
-            RefreshActiveCachesIfNeeded(force: false);
+            if (!RefreshActiveCachesIfNeeded(force: false))
+                return 0;
             double3 universePosition = HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3(runtimePosition);
             double radiusSq = (double)radiusMeters * radiusMeters;
             int decomposedCount = 0;
@@ -2743,12 +4656,10 @@ namespace Hecton8.World
                 return 0;
 
             if (vegetationBridge == null)
-                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
-
-            if (vegetationBridge == null)
                 return 0;
 
-            RefreshActiveCachesIfNeeded(force: false);
+            if (!RefreshActiveCachesIfNeeded(force: false))
+                return 0;
             double3 universePosition = HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3(runtimePosition);
             double radiusSq = (double)radiusMeters * radiusMeters;
             int killedCount = 0;
@@ -2769,84 +4680,157 @@ namespace Hecton8.World
 
         private void EvaluateAllelopathicRelease()
         {
-            NativeArray<Matrix4x4> matrices = _underwaterMatrices;
-            NativeArray<HectonVegetationInstanceData> metadata = _underwaterMetadata;
-            NativeArray<int> types = _underwaterTypes;
-            NativeArray<int>.ReadOnly semanticTypes = _underwaterSemanticTypes;
-            NativeArray<uint> instanceUids = _underwaterInstanceUids;
-            NativeArray<byte> materialClasses = _underwaterMaterialClasses;
-            int count = _underwaterCount;
-            if (!matrices.IsCreated ||
-                !metadata.IsCreated ||
-                !types.IsCreated ||
-                !semanticTypes.IsCreated ||
-                !instanceUids.IsCreated ||
-                !materialClasses.IsCreated ||
-                count <= 0)
+            Span<PassiveDecompositionCandidate> candidates = stackalloc PassiveDecompositionCandidate[MaxOrganicPassiveDecompositionStackBatch];
+            int candidateCount = 0;
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
             {
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
                 return;
             }
 
-            float radiusSq = allelopathicCellRadius * allelopathicCellRadius;
-            int overcrowdingThreshold = Mathf.Max(1, Mathf.CeilToInt(allelopathicKelpCapacity * allelopathicThreshold01));
-            int safeCount = math.min(
-                count,
-                math.min(
-                    math.min(matrices.Length, metadata.Length),
-                    math.min(
-                        math.min(types.Length, semanticTypes.Length),
-                        math.min(instanceUids.Length, materialClasses.Length))));
-
-            for (int coralIndex = 0; coralIndex < safeCount; coralIndex++)
+            try
             {
-                uint instanceUid = instanceUids[coralIndex];
-                if (instanceUid == 0u ||
-                    (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)) ||
-                    metadata[coralIndex].RuntimeState >= HectonVegetationInstanceData.RuntimeStateDying - 0.01f)
+                NativeArray<Matrix4x4> matrices = _underwaterMatrices;
+                NativeArray<HectonVegetationInstanceData> metadata = _underwaterMetadata;
+                NativeArray<int> types = _underwaterTypes;
+                NativeArray<int>.ReadOnly semanticTypes = _underwaterSemanticTypes;
+                NativeArray<uint> instanceUids = _underwaterInstanceUids;
+                NativeArray<byte> materialClasses = _underwaterMaterialClasses;
+                int count = _underwaterCount;
+                if (!matrices.IsCreated ||
+                    !metadata.IsCreated ||
+                    !types.IsCreated ||
+                    !semanticTypes.IsCreated ||
+                    !instanceUids.IsCreated ||
+                    !materialClasses.IsCreated ||
+                    count <= 0)
                 {
-                    continue;
+                    _underwaterAllelopathicCoralScanCursor = 0;
+                    _underwaterAllelopathicKelpScanCursor = 0;
+                    return;
                 }
 
-                HectonMapMagicVegetationBridge.VegetationSemanticType semanticType =
-                    (HectonMapMagicVegetationBridge.VegetationSemanticType)semanticTypes[coralIndex];
-                if (!HectonMapMagicVegetationBridge.IsColonyCoralSemanticType(semanticType))
-                    continue;
-
-                Vector3 coralPosition = ExtractTranslation(matrices[coralIndex]);
-                int kelpCount = 0;
-                for (int kelpIndex = 0; kelpIndex < safeCount; kelpIndex++)
+                int safeCount = math.min(
+                    count,
+                    math.min(
+                        math.min(matrices.Length, metadata.Length),
+                        math.min(
+                            math.min(types.Length, semanticTypes.Length),
+                            math.min(instanceUids.Length, materialClasses.Length))));
+                if (safeCount <= 0)
                 {
-                    if (types[kelpIndex] != (int)HectonVegetationInstanceType.GiantKelp ||
-                        metadata[kelpIndex].RuntimeState >= HectonVegetationInstanceData.RuntimeStateDying - 0.01f ||
-                        math.abs(metadata[kelpIndex].HeightScale) <= 0.0001f)
+                    _underwaterAllelopathicCoralScanCursor = 0;
+                    _underwaterAllelopathicKelpScanCursor = 0;
+                    return;
+                }
+
+                if ((uint)_underwaterAllelopathicCoralScanCursor >= (uint)safeCount)
+                    _underwaterAllelopathicCoralScanCursor = 0;
+                if ((uint)_underwaterAllelopathicKelpScanCursor >= (uint)safeCount)
+                    _underwaterAllelopathicKelpScanCursor = 0;
+
+                float qualityWeight = ResolveDearLieGlobalQualityWeight();
+                int coralBudget = math.min(safeCount, ResolveAllelopathicCoralScanBudget(qualityWeight));
+                int overcrowdingThreshold = Mathf.Max(1, Mathf.CeilToInt(allelopathicKelpCapacity * allelopathicThreshold01));
+                int kelpBudget = math.min(safeCount, math.max(overcrowdingThreshold, ResolveAllelopathicKelpScanBudget(qualityWeight)));
+                float radiusSq = allelopathicCellRadius * allelopathicCellRadius;
+                for (int checkedCorals = 0; checkedCorals < coralBudget; checkedCorals++)
+                {
+                    int coralIndex = _underwaterAllelopathicCoralScanCursor;
+                    _underwaterAllelopathicCoralScanCursor++;
+                    if (_underwaterAllelopathicCoralScanCursor >= safeCount)
+                        _underwaterAllelopathicCoralScanCursor = 0;
+
+                    uint instanceUid = instanceUids[coralIndex];
+                    if (IsLifecycleReadBlocked(instanceUid) ||
+                        metadata[coralIndex].RuntimeState >= HectonVegetationInstanceData.RuntimeStateDying - 0.01f)
                     {
                         continue;
                     }
 
-                    Vector3 kelpPosition = ExtractTranslation(matrices[kelpIndex]);
-                    Vector2 planarDelta = new Vector2(kelpPosition.x - coralPosition.x, kelpPosition.z - coralPosition.z);
-                    if (planarDelta.sqrMagnitude > radiusSq)
+                    HectonMapMagicVegetationBridge.VegetationSemanticType semanticType =
+                        (HectonMapMagicVegetationBridge.VegetationSemanticType)semanticTypes[coralIndex];
+                    if (!HectonMapMagicVegetationBridge.IsColonyCoralSemanticType(semanticType))
                         continue;
 
-                    kelpCount++;
-                    if (kelpCount < overcrowdingThreshold)
-                        continue;
+                    Vector3 coralPosition = ExtractTranslation(matrices[coralIndex]);
+                    int kelpCount = 0;
+                    for (int checkedKelp = 0; checkedKelp < kelpBudget; checkedKelp++)
+                    {
+                        int kelpIndex = _underwaterAllelopathicKelpScanCursor;
+                        _underwaterAllelopathicKelpScanCursor++;
+                        if (_underwaterAllelopathicKelpScanCursor >= safeCount)
+                            _underwaterAllelopathicKelpScanCursor = 0;
 
-                    HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[coralIndex];
-                    int templateIndex = ResolveTemplateIndex(metadata[coralIndex], materialClass);
-                    ApplyPassiveDecomposition(true, coralIndex, instanceUid, materialClass, templateIndex, coralPosition);
-                    break;
+                        if (kelpIndex == coralIndex)
+                            continue;
+
+                        uint kelpInstanceUid = instanceUids[kelpIndex];
+                        if (IsLifecycleReadBlocked(kelpInstanceUid) ||
+                            types[kelpIndex] != (int)HectonVegetationInstanceType.GiantKelp ||
+                            metadata[kelpIndex].RuntimeState >= HectonVegetationInstanceData.RuntimeStateDying - 0.01f ||
+                            math.abs(metadata[kelpIndex].HeightScale) <= 0.0001f)
+                        {
+                            continue;
+                        }
+
+                        Vector3 kelpPosition = ExtractTranslation(matrices[kelpIndex]);
+                        float deltaX = kelpPosition.x - coralPosition.x;
+                        float deltaZ = kelpPosition.z - coralPosition.z;
+                        if (deltaX * deltaX + deltaZ * deltaZ > radiusSq)
+                            continue;
+
+                        kelpCount++;
+                        if (kelpCount < overcrowdingThreshold)
+                            continue;
+
+                        HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[coralIndex];
+                        if (materialClass == HarvestableTemplate.MaterialClass.None)
+                            break;
+
+                        PassiveDecompositionCandidate candidate = default;
+                        candidate.Underwater = 1;
+                        candidate.ActiveIndex = coralIndex;
+                        candidate.InstanceUid = instanceUid;
+                        candidate.MaterialClass = materialClass;
+                        candidate.TemplateIndex = ResolveTemplateIndex(metadata[coralIndex], materialClass);
+                        candidate.RuntimePosition = coralPosition;
+                        candidates[candidateCount] = candidate;
+                        candidateCount++;
+                        break;
+                    }
+
+                    if (candidateCount >= candidates.Length)
+                        break;
                 }
             }
+            finally
+            {
+                UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+            }
+
+            ApplyPassiveDecompositionCandidates(candidates, candidateCount);
+        }
+
+        private static int ResolveAllelopathicCoralScanBudget(float qualityWeight)
+        {
+            float q = math.saturate(qualityWeight);
+            return math.max(
+                AllelopathicMinCoralChecksPerSlowTick,
+                (int)math.round(math.lerp(AllelopathicMinCoralChecksPerSlowTick, AllelopathicMaxCoralChecksPerSlowTick, q)));
+        }
+
+        private static int ResolveAllelopathicKelpScanBudget(float qualityWeight)
+        {
+            float q = math.saturate(qualityWeight);
+            return math.max(
+                AllelopathicMinKelpChecksPerCoral,
+                (int)math.round(math.lerp(AllelopathicMinKelpChecksPerCoral, AllelopathicMaxKelpChecksPerCoral, q * q)));
         }
 
         private void BuildTemplateCaches()
         {
-            // COLD ALLOC: int[MaterialClassCount] - material-class to template-index lookup table - owner: DestructibleOrganicManager
-            _templateIndexByMaterialClass = new int[MaterialClassCount];
-            for (int i = 0; i < _templateIndexByMaterialClass.Length; i++)
-                _templateIndexByMaterialClass[i] = -1;
-
             FloraDataTemplate[] floraTemplates = vegetationBridge != null ? vegetationBridge.FloraTemplates : null;
             bool hasFloraTemplates = floraTemplates != null && floraTemplates.Length > 0;
             int validTemplateCount = 0;
@@ -2878,245 +4862,422 @@ namespace Hecton8.World
                 }
             }
 
-            DisposeNativeArray(ref _templateDescriptors);
-            DisposeNativeArray(ref _lootEntries);
-            _templateDescriptors = new NativeArray<HarvestableTemplate.RuntimeDescriptor>(
-                math.max(1, validTemplateCount),
-                DataVaultExemptHarvestTemplateAllocator,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: RuntimeDescriptor[templateCount] - flora-resolved harvest runtime table - owner: DestructibleOrganicManager
-            _lootEntries = new NativeArray<HarvestableTemplate.LootRuntimeEntry>(
-                math.max(1, totalLootEntries),
-                DataVaultExemptHarvestTemplateAllocator,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: LootRuntimeEntry[totalLootEntries] - flattened harvest loot runtime table - owner: DestructibleOrganicManager
-            NativeMemorySentinel.RegisterNativeArray(_templateDescriptors, NativeMemoryOwner, nameof(_templateDescriptors), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_lootEntries, NativeMemoryOwner, nameof(_lootEntries), NativeMemoryLifetime);
-            _descriptorHarvestTemplates = new HarvestableTemplate[math.max(1, validTemplateCount)]; // COLD ALLOC: HarvestableTemplate[templateCount] - descriptor-to-authoring lookup for flora template harvest routing - owner: DestructibleOrganicManager
-            _floraCategoryByDescriptorIndex = new byte[math.max(1, validTemplateCount)]; // COLD ALLOC: byte[templateCount] - flora-category cache used by harvest-state thresholds - owner: DestructibleOrganicManager
-            _audioMaterialByDescriptorIndex = new byte[math.max(1, validTemplateCount)]; // COLD ALLOC: byte[templateCount] - flora audio-material routing cache used by harvest-state audio dispatch - owner: DestructibleOrganicManager
-            _growthTimeSecondsByDescriptorIndex = new float[math.max(1, validTemplateCount)]; // COLD ALLOC: float[templateCount] - authored flora growth durations - owner: DestructibleOrganicManager
-            _sporeAcousticEmitterByDescriptorIndex = new byte[math.max(1, validTemplateCount)]; // COLD ALLOC: byte[templateCount] - mature spore acoustic emitter flags - owner: DestructibleOrganicManager
-            _sporeAcousticClipByDescriptorIndex = new AudioClip[math.max(1, validTemplateCount)]; // COLD ALLOC: AudioClip[templateCount] - mature spore acoustic clip refs - owner: DestructibleOrganicManager
-            _sporePulseFrequencyByDescriptorIndex = new float[math.max(1, validTemplateCount)]; // COLD ALLOC: float[templateCount] - mature spore pulse cadence copied from VAT authoring - owner: DestructibleOrganicManager
-            _sporeAcousticVolumeByDescriptorIndex = new float[math.max(1, validTemplateCount)]; // COLD ALLOC: float[templateCount] - mature spore acoustic volume per descriptor - owner: DestructibleOrganicManager
-            _harvestDescriptorIndexByFloraTemplateIndex = hasFloraTemplates
+            IDataVault vault = _dearLieVault;
+            NativeArray<HarvestableTemplate.RuntimeDescriptor> existingTemplateDescriptors = default;
+            NativeArray<HarvestableTemplate.LootRuntimeEntry> existingLootEntries = default;
+            bool existingReady =
+                _templateCacheReady &&
+                _templateDescriptors.TryResolve(out existingTemplateDescriptors) &&
+                existingTemplateDescriptors.IsCreated &&
+                _lootEntries.TryResolve(out existingLootEntries) &&
+                existingLootEntries.IsCreated;
+
+            int descriptorCapacity = math.max(1, validTemplateCount);
+            int lootCapacity = math.max(1, totalLootEntries);
+            bool descriptorsLargeEnough = existingReady && existingTemplateDescriptors.Length >= descriptorCapacity;
+            bool lootLargeEnough = existingReady && existingLootEntries.Length >= lootCapacity;
+            bool canPreserveExistingCache = existingReady && descriptorsLargeEnough && lootLargeEnough;
+            if (!canPreserveExistingCache)
+                _templateCacheReady = false;
+
+            if (validTemplateCount <= 0)
+            {
+                _templateCacheReady = false;
+                _templateIndexByMaterialClass = Array.Empty<int>();
+                _descriptorHarvestTemplates = Array.Empty<HarvestableTemplate>();
+                _floraCategoryByDescriptorIndex = Array.Empty<byte>();
+                _audioMaterialByDescriptorIndex = Array.Empty<byte>();
+                _growthTimeSecondsByDescriptorIndex = Array.Empty<float>();
+                _sporeAcousticEmitterByDescriptorIndex = Array.Empty<byte>();
+                _sporeAcousticClipByDescriptorIndex = Array.Empty<AudioClip>();
+                _sporePulseFrequencyByDescriptorIndex = Array.Empty<float>();
+                _sporeAcousticVolumeByDescriptorIndex = Array.Empty<float>();
+                _harvestDescriptorIndexByFloraTemplateIndex = Array.Empty<int>();
+
+                return;
+            }
+
+            if (vault == null)
+            {
+                _templateCacheReady = canPreserveExistingCache;
+                return;
+            }
+
+            if (!_templateDescriptors.Ensure(vault, OrganicTemplateDescriptorsBufferId, descriptorCapacity, OrganicVaultSystemId, NativeArrayOptions.ClearMemory) ||
+                !_lootEntries.Ensure(vault, OrganicLootEntriesBufferId, lootCapacity, OrganicVaultSystemId, NativeArrayOptions.ClearMemory))
+            {
+                _templateCacheReady = false;
+                return;
+            }
+
+            int[] nextTemplateIndexByMaterialClass = new int[MaterialClassCount]; // COLD ALLOC: int[MaterialClassCount] - material-class to template-index lookup table - owner: DestructibleOrganicManager
+            for (int i = 0; i < nextTemplateIndexByMaterialClass.Length; i++)
+                nextTemplateIndexByMaterialClass[i] = -1;
+
+            HarvestableTemplate[] nextDescriptorHarvestTemplates = new HarvestableTemplate[descriptorCapacity]; // COLD ALLOC: HarvestableTemplate[templateCount] - descriptor-to-authoring lookup for flora template harvest routing - owner: DestructibleOrganicManager
+            byte[] nextFloraCategoryByDescriptorIndex = new byte[descriptorCapacity]; // COLD ALLOC: byte[templateCount] - flora-category cache used by harvest-state thresholds - owner: DestructibleOrganicManager
+            byte[] nextAudioMaterialByDescriptorIndex = new byte[descriptorCapacity]; // COLD ALLOC: byte[templateCount] - flora audio-material routing cache used by harvest-state audio dispatch - owner: DestructibleOrganicManager
+            float[] nextGrowthTimeSecondsByDescriptorIndex = new float[descriptorCapacity]; // COLD ALLOC: float[templateCount] - authored flora growth durations - owner: DestructibleOrganicManager
+            byte[] nextSporeAcousticEmitterByDescriptorIndex = new byte[descriptorCapacity]; // COLD ALLOC: byte[templateCount] - mature spore acoustic emitter flags - owner: DestructibleOrganicManager
+            AudioClip[] nextSporeAcousticClipByDescriptorIndex = new AudioClip[descriptorCapacity]; // COLD ALLOC: AudioClip[templateCount] - mature spore acoustic clip refs - owner: DestructibleOrganicManager
+            float[] nextSporePulseFrequencyByDescriptorIndex = new float[descriptorCapacity]; // COLD ALLOC: float[templateCount] - mature spore pulse cadence copied from VAT authoring - owner: DestructibleOrganicManager
+            float[] nextSporeAcousticVolumeByDescriptorIndex = new float[descriptorCapacity]; // COLD ALLOC: float[templateCount] - mature spore acoustic volume per descriptor - owner: DestructibleOrganicManager
+            int[] nextHarvestDescriptorIndexByFloraTemplateIndex = hasFloraTemplates
                 ? new int[floraTemplates.Length]
                 : Array.Empty<int>(); // COLD ALLOC: int[floraTemplates.Length] - flora-template to descriptor mapping - owner: DestructibleOrganicManager
 
             if (hasFloraTemplates)
             {
-                for (int i = 0; i < _harvestDescriptorIndexByFloraTemplateIndex.Length; i++)
-                    _harvestDescriptorIndexByFloraTemplateIndex[i] = -1;
+                for (int i = 0; i < nextHarvestDescriptorIndexByFloraTemplateIndex.Length; i++)
+                    nextHarvestDescriptorIndexByFloraTemplateIndex[i] = -1;
             }
 
-            if (validTemplateCount <= 0)
+            if (!vault.TryLockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId))
+            {
+                _templateCacheReady = canPreserveExistingCache;
                 return;
+            }
 
+            bool descriptorLockHeld = true;
+            if (!vault.TryLockBuffer(OrganicLootEntriesBufferId, OrganicVaultSystemId))
+            {
+                vault.TryUnlockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId);
+                _templateCacheReady = canPreserveExistingCache;
+                return;
+            }
+
+            bool lootLockHeld = true;
+            bool cacheBuilt = false;
             int descriptorWriteIndex = 0;
             int lootWriteIndex = 0;
             NativeList<HarvestableTemplate.LootRuntimeEntry> lootScratch =
-                new NativeList<HarvestableTemplate.LootRuntimeEntry>(math.max(1, totalLootEntries), Allocator.Temp);
+                new NativeList<HarvestableTemplate.LootRuntimeEntry>(byte.MaxValue, Allocator.Temp);
+            NativeMemorySentinel.RegisterNativeList(
+                lootScratch,
+                NativeMemoryOwner,
+                TemplateLootBuildScratchLabel,
+                NativeAllocationLifetime.Temp);
             try
             {
-                if (hasFloraTemplates)
+                if (!_templateDescriptors.TryResolve(out NativeArray<HarvestableTemplate.RuntimeDescriptor> templateDescriptors) ||
+                    !_lootEntries.TryResolve(out NativeArray<HarvestableTemplate.LootRuntimeEntry> lootEntries) ||
+                    !templateDescriptors.IsCreated ||
+                    !lootEntries.IsCreated ||
+                    templateDescriptors.Length < descriptorCapacity ||
+                    lootEntries.Length < lootCapacity)
                 {
-                    for (int i = 0; i < floraTemplates.Length; i++)
-                    {
-                        FloraDataTemplate floraTemplate = floraTemplates[i];
-                        HarvestableTemplate template = floraTemplate != null ? floraTemplate.HarvestTemplate : null;
-                        if (floraTemplate == null || template == null)
-                            continue;
-
-                        int lootStartIndex = lootWriteIndex;
-                        lootScratch.Clear();
-                        template.CopyLootTableNonAlloc(lootScratch);
-                        for (int lootIndex = 0; lootIndex < lootScratch.Length && lootWriteIndex < _lootEntries.Length; lootIndex++)
-                        {
-                            _lootEntries[lootWriteIndex] = lootScratch[lootIndex];
-                            lootWriteIndex++;
-                        }
-
-                        if (descriptorWriteIndex >= _templateDescriptors.Length)
-                            continue;
-
-                        HarvestableTemplate.RuntimeDescriptor descriptor = template.BuildRuntimeDescriptor(lootStartIndex);
-                        FloraDataTemplate.RuntimeDescriptor floraRuntimeDescriptor = floraTemplate.BuildRuntimeDescriptor();
-                        descriptor.StableHashId = floraRuntimeDescriptor.StableHashId;
-                        descriptor.BaseHealth = floraTemplate.MaxHealth;
-                        _templateDescriptors[descriptorWriteIndex] = descriptor;
-                        _descriptorHarvestTemplates[descriptorWriteIndex] = template;
-                        _floraCategoryByDescriptorIndex[descriptorWriteIndex] = (byte)floraTemplate.Category;
-                        _audioMaterialByDescriptorIndex[descriptorWriteIndex] = floraTemplate.AudioMaterialID;
-                        _growthTimeSecondsByDescriptorIndex[descriptorWriteIndex] = floraTemplate.GrowthTimeSeconds;
-                        _sporeAcousticEmitterByDescriptorIndex[descriptorWriteIndex] = floraTemplate.EmitsMatureSporeAcoustic ? (byte)1 : (byte)0;
-                        _sporeAcousticClipByDescriptorIndex[descriptorWriteIndex] = floraTemplate.MatureSporeAcousticClip;
-                        _sporePulseFrequencyByDescriptorIndex[descriptorWriteIndex] = floraTemplate.PulseFrequency;
-                        _sporeAcousticVolumeByDescriptorIndex[descriptorWriteIndex] = floraTemplate.MatureSporeAcousticVolume;
-                        _harvestDescriptorIndexByFloraTemplateIndex[i] = descriptorWriteIndex;
-
-                        int materialIndex = descriptor.MaterialClassId;
-                        if ((uint)materialIndex < (uint)_templateIndexByMaterialClass.Length && _templateIndexByMaterialClass[materialIndex] < 0)
-                            _templateIndexByMaterialClass[materialIndex] = descriptorWriteIndex;
-
-                        descriptorWriteIndex++;
-                    }
+                    cacheBuilt = false;
                 }
-                else if (harvestTemplates != null)
+                else
                 {
-                    for (int i = 0; i < harvestTemplates.Length; i++)
+                    for (int i = 0; i < templateDescriptors.Length; i++)
+                        templateDescriptors[i] = default;
+
+                    for (int i = 0; i < lootEntries.Length; i++)
+                        lootEntries[i] = default;
+
+                    if (hasFloraTemplates)
                     {
-                        HarvestableTemplate template = harvestTemplates[i];
-                        if (template == null)
-                            continue;
-
-                        int lootStartIndex = lootWriteIndex;
-                        lootScratch.Clear();
-                        template.CopyLootTableNonAlloc(lootScratch);
-                        for (int lootIndex = 0; lootIndex < lootScratch.Length && lootWriteIndex < _lootEntries.Length; lootIndex++)
+                        for (int i = 0; i < floraTemplates.Length; i++)
                         {
-                            _lootEntries[lootWriteIndex] = lootScratch[lootIndex];
-                            lootWriteIndex++;
+                            FloraDataTemplate floraTemplate = floraTemplates[i];
+                            HarvestableTemplate template = floraTemplate != null ? floraTemplate.HarvestTemplate : null;
+                            if (floraTemplate == null || template == null)
+                                continue;
+
+                            int lootStartIndex = lootWriteIndex;
+                            lootScratch.Clear();
+                            template.CopyLootTableNonAlloc(lootScratch);
+                            for (int lootIndex = 0; lootIndex < lootScratch.Length && lootWriteIndex < lootEntries.Length; lootIndex++)
+                            {
+                                lootEntries[lootWriteIndex] = lootScratch[lootIndex];
+                                lootWriteIndex++;
+                            }
+                            int copiedLootCount = lootWriteIndex - lootStartIndex;
+
+                            if (descriptorWriteIndex >= templateDescriptors.Length)
+                                continue;
+
+                            HarvestableTemplate.RuntimeDescriptor descriptor = template.BuildRuntimeDescriptor(lootStartIndex);
+                            FloraDataTemplate.RuntimeDescriptor floraRuntimeDescriptor = floraTemplate.BuildRuntimeDescriptor();
+                            descriptor.StableHashId = floraRuntimeDescriptor.StableHashId;
+                            descriptor.BaseHealth = floraTemplate.MaxHealth;
+                            descriptor.LootCount = (byte)math.min(byte.MaxValue, copiedLootCount);
+                            templateDescriptors[descriptorWriteIndex] = descriptor;
+                            nextDescriptorHarvestTemplates[descriptorWriteIndex] = template;
+                            nextFloraCategoryByDescriptorIndex[descriptorWriteIndex] = (byte)floraTemplate.Category;
+                            nextAudioMaterialByDescriptorIndex[descriptorWriteIndex] = floraTemplate.AudioMaterialID;
+                            nextGrowthTimeSecondsByDescriptorIndex[descriptorWriteIndex] = floraTemplate.GrowthTimeSeconds;
+                            nextSporeAcousticEmitterByDescriptorIndex[descriptorWriteIndex] = floraTemplate.EmitsMatureSporeAcoustic ? (byte)1 : (byte)0;
+                            nextSporeAcousticClipByDescriptorIndex[descriptorWriteIndex] = floraTemplate.MatureSporeAcousticClip;
+                            nextSporePulseFrequencyByDescriptorIndex[descriptorWriteIndex] = floraTemplate.PulseFrequency;
+                            nextSporeAcousticVolumeByDescriptorIndex[descriptorWriteIndex] = floraTemplate.MatureSporeAcousticVolume;
+                            nextHarvestDescriptorIndexByFloraTemplateIndex[i] = descriptorWriteIndex;
+
+                            int materialIndex = descriptor.MaterialClassId;
+                            if ((uint)materialIndex < (uint)nextTemplateIndexByMaterialClass.Length && nextTemplateIndexByMaterialClass[materialIndex] < 0)
+                                nextTemplateIndexByMaterialClass[materialIndex] = descriptorWriteIndex;
+
+                            descriptorWriteIndex++;
                         }
-
-                        if (descriptorWriteIndex >= _templateDescriptors.Length)
-                            continue;
-
-                        HarvestableTemplate.RuntimeDescriptor descriptor = template.BuildRuntimeDescriptor(lootStartIndex);
-                        _templateDescriptors[descriptorWriteIndex] = descriptor;
-                        _descriptorHarvestTemplates[descriptorWriteIndex] = template;
-                        _floraCategoryByDescriptorIndex[descriptorWriteIndex] = (byte)InferCategoryFromMaterialClass(template.TemplateMaterialClass);
-                        _growthTimeSecondsByDescriptorIndex[descriptorWriteIndex] = 480f;
-
-                        int materialIndex = descriptor.MaterialClassId;
-                        if ((uint)materialIndex < (uint)_templateIndexByMaterialClass.Length && _templateIndexByMaterialClass[materialIndex] < 0)
-                            _templateIndexByMaterialClass[materialIndex] = descriptorWriteIndex;
-
-                        descriptorWriteIndex++;
                     }
+                    else if (harvestTemplates != null)
+                    {
+                        for (int i = 0; i < harvestTemplates.Length; i++)
+                        {
+                            HarvestableTemplate template = harvestTemplates[i];
+                            if (template == null)
+                                continue;
+
+                            int lootStartIndex = lootWriteIndex;
+                            lootScratch.Clear();
+                            template.CopyLootTableNonAlloc(lootScratch);
+                            for (int lootIndex = 0; lootIndex < lootScratch.Length && lootWriteIndex < lootEntries.Length; lootIndex++)
+                            {
+                                lootEntries[lootWriteIndex] = lootScratch[lootIndex];
+                                lootWriteIndex++;
+                            }
+                            int copiedLootCount = lootWriteIndex - lootStartIndex;
+
+                            if (descriptorWriteIndex >= templateDescriptors.Length)
+                                continue;
+
+                            HarvestableTemplate.RuntimeDescriptor descriptor = template.BuildRuntimeDescriptor(lootStartIndex);
+                            descriptor.LootCount = (byte)math.min(byte.MaxValue, copiedLootCount);
+                            templateDescriptors[descriptorWriteIndex] = descriptor;
+                            nextDescriptorHarvestTemplates[descriptorWriteIndex] = template;
+                            nextFloraCategoryByDescriptorIndex[descriptorWriteIndex] = (byte)InferCategoryFromMaterialClass(template.TemplateMaterialClass);
+                            nextGrowthTimeSecondsByDescriptorIndex[descriptorWriteIndex] = 480f;
+
+                            int materialIndex = descriptor.MaterialClassId;
+                            if ((uint)materialIndex < (uint)nextTemplateIndexByMaterialClass.Length && nextTemplateIndexByMaterialClass[materialIndex] < 0)
+                                nextTemplateIndexByMaterialClass[materialIndex] = descriptorWriteIndex;
+
+                            descriptorWriteIndex++;
+                        }
+                    }
+
+                    cacheBuilt = descriptorWriteIndex > 0;
                 }
             }
             finally
             {
+                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, TemplateLootBuildScratchLabel);
+
                 if (lootScratch.IsCreated)
                     lootScratch.Dispose();
+
+                if (lootLockHeld)
+                    vault.TryUnlockBuffer(OrganicLootEntriesBufferId, OrganicVaultSystemId);
+
+                if (descriptorLockHeld)
+                    vault.TryUnlockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId);
             }
+
+            if (!cacheBuilt)
+            {
+                _templateCacheReady = canPreserveExistingCache;
+                return;
+            }
+
+            _templateIndexByMaterialClass = nextTemplateIndexByMaterialClass;
+            _descriptorHarvestTemplates = nextDescriptorHarvestTemplates;
+            _floraCategoryByDescriptorIndex = nextFloraCategoryByDescriptorIndex;
+            _audioMaterialByDescriptorIndex = nextAudioMaterialByDescriptorIndex;
+            _growthTimeSecondsByDescriptorIndex = nextGrowthTimeSecondsByDescriptorIndex;
+            _sporeAcousticEmitterByDescriptorIndex = nextSporeAcousticEmitterByDescriptorIndex;
+            _sporeAcousticClipByDescriptorIndex = nextSporeAcousticClipByDescriptorIndex;
+            _sporePulseFrequencyByDescriptorIndex = nextSporePulseFrequencyByDescriptorIndex;
+            _sporeAcousticVolumeByDescriptorIndex = nextSporeAcousticVolumeByDescriptorIndex;
+            _harvestDescriptorIndexByFloraTemplateIndex = nextHarvestDescriptorIndexByFloraTemplateIndex;
+            _templateCacheReady = true;
         }
 
         private int ApplyConstructionDecompositionInLane(bool underwater, double3 centerUniversePosition, double radiusSq)
         {
-            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
-            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
-            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
-            NativeArray<int>.ReadOnly semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
-            NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
-            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
-            int count = underwater ? _underwaterCount : _surfaceCount;
-            if (!matrices.IsCreated ||
-                !metadata.IsCreated ||
-                !types.IsCreated ||
-                !semanticTypes.IsCreated ||
-                !instanceUids.IsCreated ||
-                !materialClasses.IsCreated ||
-                count <= 0)
-            {
-                return 0;
-            }
-
+            Span<PassiveDecompositionCandidate> candidates = stackalloc PassiveDecompositionCandidate[MaxOrganicPassiveDecompositionStackBatch];
             int decomposedCount = 0;
-            int safeCount = math.min(
-                count,
-                math.min(
-                    math.min(matrices.Length, metadata.Length),
-                    math.min(
-                        math.min(types.Length, semanticTypes.Length),
-                        math.min(instanceUids.Length, materialClasses.Length))));
-            for (int i = 0; i < safeCount; i++)
+            int startIndex = 0;
+            while (true)
             {
-                uint instanceUid = instanceUids[i];
-                if (instanceUid == 0u)
-                    continue;
+                int candidateCount = 0;
+                int safeCount = 0;
+                IDataVault vault = _dearLieVault;
+                if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+                {
+                    RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
+                    return decomposedCount;
+                }
 
-                HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[i];
-                if (materialClass == HarvestableTemplate.MaterialClass.None)
-                    continue;
+                try
+                {
+                    NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+                    NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
+                    NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
+                    NativeArray<int>.ReadOnly semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
+                    NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
+                    NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
+                    int count = underwater ? _underwaterCount : _surfaceCount;
+                    if (!matrices.IsCreated ||
+                        !metadata.IsCreated ||
+                        !types.IsCreated ||
+                        !semanticTypes.IsCreated ||
+                        !instanceUids.IsCreated ||
+                        !materialClasses.IsCreated ||
+                        count <= 0)
+                    {
+                        return decomposedCount;
+                    }
 
-                if (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid))
-                    continue;
+                    safeCount = math.min(
+                        count,
+                        math.min(
+                            math.min(matrices.Length, metadata.Length),
+                            math.min(
+                                math.min(types.Length, semanticTypes.Length),
+                                math.min(instanceUids.Length, materialClasses.Length))));
+                    if (startIndex >= safeCount)
+                        return decomposedCount;
 
-                Vector3 rootPosition = ExtractTranslation(matrices[i]);
-                double distanceSq = ResolveConstructionDistanceSq(centerUniversePosition, rootPosition, metadata[i], types[i]);
-                if (distanceSq > radiusSq)
-                    continue;
+                    for (int i = startIndex; i < safeCount; i++)
+                    {
+                        startIndex = i + 1;
+                        uint instanceUid = instanceUids[i];
+                        if (IsLifecycleReadBlocked(instanceUid))
+                            continue;
 
-                int templateIndex = ResolveTemplateIndex(metadata[i], materialClass);
-                ApplyPassiveDecomposition(underwater, i, instanceUid, materialClass, templateIndex, rootPosition);
-                decomposedCount++;
+                        HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[i];
+                        if (materialClass == HarvestableTemplate.MaterialClass.None)
+                            continue;
+
+                        Vector3 rootPosition = ExtractTranslation(matrices[i]);
+                        double distanceSq = ResolveConstructionDistanceSq(centerUniversePosition, rootPosition, metadata[i], types[i]);
+                        if (distanceSq > radiusSq)
+                            continue;
+
+                        PassiveDecompositionCandidate candidate = default;
+                        candidate.Underwater = underwater ? (byte)1 : (byte)0;
+                        candidate.ActiveIndex = i;
+                        candidate.InstanceUid = instanceUid;
+                        candidate.MaterialClass = materialClass;
+                        candidate.TemplateIndex = ResolveTemplateIndex(metadata[i], materialClass);
+                        candidate.RuntimePosition = rootPosition;
+                        candidates[candidateCount] = candidate;
+                        candidateCount++;
+                        if (candidateCount >= candidates.Length)
+                            break;
+                    }
+                }
+                finally
+                {
+                    UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+                }
+
+                if (candidateCount <= 0)
+                    return decomposedCount;
+
+                decomposedCount += ApplyPassiveDecompositionCandidates(candidates, candidateCount);
+                if (startIndex >= safeCount)
+                    return decomposedCount;
             }
-
-            return decomposedCount;
         }
 
         private int ApplyDefoliantDeadZoneInLane(bool underwater, double3 centerUniversePosition, double radiusSq)
         {
-            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
-            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
-            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
-            NativeArray<int>.ReadOnly semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
-            NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
-            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
-            int count = underwater ? _underwaterCount : _surfaceCount;
-            if (!matrices.IsCreated ||
-                !metadata.IsCreated ||
-                !types.IsCreated ||
-                !semanticTypes.IsCreated ||
-                !instanceUids.IsCreated ||
-                !materialClasses.IsCreated ||
-                count <= 0)
-            {
-                return 0;
-            }
-
+            Span<PassiveDecompositionCandidate> candidates = stackalloc PassiveDecompositionCandidate[MaxOrganicPassiveDecompositionStackBatch];
             int killedCount = 0;
-            int safeCount = math.min(
-                count,
-                math.min(
-                    math.min(matrices.Length, metadata.Length),
-                    math.min(
-                        math.min(types.Length, semanticTypes.Length),
-                        math.min(instanceUids.Length, materialClasses.Length))));
-            for (int i = 0; i < safeCount; i++)
+            int startIndex = 0;
+            while (true)
             {
-                uint instanceUid = instanceUids[i];
-                if (instanceUid == 0u)
-                    continue;
+                int candidateCount = 0;
+                int safeCount = 0;
+                IDataVault vault = _dearLieVault;
+                if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+                {
+                    RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
+                    return killedCount;
+                }
 
-                HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[i];
-                if (!IsConsumableFloraMaterialClass(materialClass))
-                    continue;
+                try
+                {
+                    NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+                    NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
+                    NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
+                    NativeArray<int>.ReadOnly semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
+                    NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
+                    NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
+                    int count = underwater ? _underwaterCount : _surfaceCount;
+                    if (!matrices.IsCreated ||
+                        !metadata.IsCreated ||
+                        !types.IsCreated ||
+                        !semanticTypes.IsCreated ||
+                        !instanceUids.IsCreated ||
+                        !materialClasses.IsCreated ||
+                        count <= 0)
+                    {
+                        return killedCount;
+                    }
 
-                if (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid))
-                    continue;
+                    safeCount = math.min(
+                        count,
+                        math.min(
+                            math.min(matrices.Length, metadata.Length),
+                            math.min(
+                                math.min(types.Length, semanticTypes.Length),
+                                math.min(instanceUids.Length, materialClasses.Length))));
+                    if (startIndex >= safeCount)
+                        return killedCount;
 
-                Vector3 rootPosition = ExtractTranslation(matrices[i]);
-                if (math.lengthsq(ToDouble3(rootPosition) - centerUniversePosition) > radiusSq)
-                    continue;
+                    for (int i = startIndex; i < safeCount; i++)
+                    {
+                        startIndex = i + 1;
+                        uint instanceUid = instanceUids[i];
+                        if (IsLifecycleReadBlocked(instanceUid))
+                            continue;
 
-                int templateIndex = ResolveTemplateIndex(metadata[i], materialClass);
-                ApplyPassiveDecomposition(underwater, i, instanceUid, materialClass, templateIndex, rootPosition);
-                PrimeDecompositionState(instanceUid, ResolveOrganicClockSeconds() - OrganicDecompositionDurationSeconds);
-                ApplyDecompositionToLaneInstance(underwater, i, instanceUid, 1f);
-                killedCount++;
+                        HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[i];
+                        if (!IsConsumableFloraMaterialClass(materialClass))
+                            continue;
+
+                        Vector3 rootPosition = ExtractTranslation(matrices[i]);
+                        if (!IsFiniteVector(rootPosition))
+                            continue;
+
+                        double3 rootUniversePosition = HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3(rootPosition);
+                        if (math.lengthsq(rootUniversePosition - centerUniversePosition) > radiusSq)
+                            continue;
+
+                        PassiveDecompositionCandidate candidate = default;
+                        candidate.Underwater = underwater ? (byte)1 : (byte)0;
+                        candidate.ActiveIndex = i;
+                        candidate.InstanceUid = instanceUid;
+                        candidate.MaterialClass = materialClass;
+                        candidate.TemplateIndex = ResolveTemplateIndex(metadata[i], materialClass);
+                        candidate.RuntimePosition = rootPosition;
+                        candidates[candidateCount] = candidate;
+                        candidateCount++;
+                        if (candidateCount >= candidates.Length)
+                            break;
+                    }
+                }
+                finally
+                {
+                    UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+                }
+
+                if (candidateCount <= 0)
+                    return killedCount;
+
+                killedCount += ApplyPassiveDecompositionCandidates(candidates, candidateCount);
+                if (startIndex >= safeCount)
+                    return killedCount;
             }
-
-            return killedCount;
         }
 
         private void BuildFloraTemplateHarvestMap()
         {
             if (_harvestDescriptorIndexByFloraTemplateIndex != null && _harvestDescriptorIndexByFloraTemplateIndex.Length > 0)
                 return;
-
-            if (vegetationBridge == null)
-                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
 
             FloraDataTemplate[] floraTemplateAssets = vegetationBridge != null ? vegetationBridge.FloraTemplates : null;
             if (floraTemplateAssets == null || floraTemplateAssets.Length == 0)
@@ -3168,71 +5329,127 @@ namespace Hecton8.World
 
         private void BuildYieldMaterialLut()
         {
-            DisposeNativeArray(ref _yieldMaterialLut);
-            _yieldMaterialLut = new NativeArray<EntropyYieldMaterialLutEntry>(
-                math.max(1, MaterialClassCount),
-                DataVaultExemptYieldMaterialAllocator,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: EntropyYieldMaterialLutEntry[MaterialClassCount] - deterministic density/unit-mass lookup for burst flora yield - owner: DestructibleOrganicManager
-            NativeMemorySentinel.RegisterNativeArray(_yieldMaterialLut, NativeMemoryOwner, nameof(_yieldMaterialLut), NativeMemoryLifetime);
+            IDataVault vault = _dearLieVault;
+            if (vault == null)
+            {
+                _yieldMaterialLutReady = _yieldMaterialLutReady &&
+                    _yieldMaterialLut.TryResolve(out NativeArray<EntropyYieldMaterialLutEntry> existingWithoutVault) &&
+                    existingWithoutVault.IsCreated &&
+                    existingWithoutVault.Length >= MaterialClassCount;
+                return;
+            }
 
-            WriteYieldMaterialLut(HarvestableTemplate.MaterialClass.None, 1000f, 1f, 0.5f, 0f);
-            WriteYieldMaterialLut(HarvestableTemplate.MaterialClass.Kelp, 460f, 1.2f, 0.58f, 0.08f);
-            WriteYieldMaterialLut(HarvestableTemplate.MaterialClass.Coral, 1320f, 2.5f, 0.65f, 0.16f);
-            WriteYieldMaterialLut(HarvestableTemplate.MaterialClass.TitaniumOutcrop, 4480f, 4.5f, 0.78f, 0.22f);
-            WriteYieldMaterialLut(HarvestableTemplate.MaterialClass.Sargassum, 310f, 1.0f, 0.52f, 0.05f);
+            bool existingReady =
+                _yieldMaterialLutReady &&
+                _yieldMaterialLut.TryResolve(out NativeArray<EntropyYieldMaterialLutEntry> existingMaterialLut) &&
+                existingMaterialLut.IsCreated &&
+                existingMaterialLut.Length >= MaterialClassCount;
+
+            if (!_yieldMaterialLut.Ensure(vault, OrganicYieldMaterialLutBufferId, math.max(1, MaterialClassCount), OrganicVaultSystemId, NativeArrayOptions.ClearMemory))
+            {
+                _yieldMaterialLutReady = false;
+                return;
+            }
+
+            if (!vault.TryLockBuffer(OrganicYieldMaterialLutBufferId, OrganicVaultSystemId))
+            {
+                _yieldMaterialLutReady = existingReady;
+                return;
+            }
+
+            bool built = false;
+            try
+            {
+                if (!_yieldMaterialLut.TryResolve(out NativeArray<EntropyYieldMaterialLutEntry> materialLut))
+                {
+                    built = false;
+                }
+                else
+                {
+                    for (int i = 0; i < materialLut.Length; i++)
+                        materialLut[i] = default;
+
+                    WriteYieldMaterialLut(materialLut, HarvestableTemplate.MaterialClass.None, 1000f, 1f, 0.5f, 0f);
+                    WriteYieldMaterialLut(materialLut, HarvestableTemplate.MaterialClass.Kelp, 460f, 1.2f, 0.58f, 0.08f);
+                    WriteYieldMaterialLut(materialLut, HarvestableTemplate.MaterialClass.Coral, 1320f, 2.5f, 0.65f, 0.16f);
+                    WriteYieldMaterialLut(materialLut, HarvestableTemplate.MaterialClass.TitaniumOutcrop, 4480f, 4.5f, 0.78f, 0.22f);
+                    WriteYieldMaterialLut(materialLut, HarvestableTemplate.MaterialClass.Sargassum, 310f, 1.0f, 0.52f, 0.05f);
+                    built = true;
+                }
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(OrganicYieldMaterialLutBufferId, OrganicVaultSystemId);
+            }
+
+            _yieldMaterialLutReady = built;
         }
 
-        private void WriteYieldMaterialLut(
+        private static void WriteYieldMaterialLut(
+            NativeArray<EntropyYieldMaterialLutEntry> materialLut,
             HarvestableTemplate.MaterialClass materialClass,
             float densityKgPerM3,
             float unitItemMassKg,
             float minimumRecovery,
             float qualityBias)
         {
-            if (!_yieldMaterialLut.IsCreated)
+            if (!materialLut.IsCreated)
                 return;
 
             int materialIndex = (int)materialClass;
-            if (materialIndex < 0 || materialIndex >= _yieldMaterialLut.Length)
+            if (materialIndex < 0 || materialIndex >= materialLut.Length)
                 return;
 
-            _yieldMaterialLut[materialIndex] = new EntropyYieldMaterialLutEntry
-            {
-                DensityKgPerM3 = Mathf.Max(0.01f, densityKgPerM3),
-                UnitItemMassKg = Mathf.Max(0.01f, unitItemMassKg),
-                MinimumRecovery = Mathf.Clamp01(minimumRecovery),
-                QualityBias = Mathf.Clamp01(qualityBias)
-            };
+            EntropyYieldMaterialLutEntry entry = default;
+            entry.DensityKgPerM3 = Mathf.Max(0.01f, densityKgPerM3);
+            entry.UnitItemMassKg = Mathf.Max(0.01f, unitItemMassKg);
+            entry.MinimumRecovery = Mathf.Clamp01(minimumRecovery);
+            entry.QualityBias = Mathf.Clamp01(qualityBias);
+            materialLut[materialIndex] = entry;
         }
 
         private static int CountTemplateLootEntries(HarvestableTemplate template)
         {
             NativeList<HarvestableTemplate.LootRuntimeEntry> scratch =
-                new NativeList<HarvestableTemplate.LootRuntimeEntry>(32, Allocator.Temp);
+                new NativeList<HarvestableTemplate.LootRuntimeEntry>(byte.MaxValue, Allocator.Temp);
+            NativeMemorySentinel.RegisterNativeList(
+                scratch,
+                NativeMemoryOwner,
+                TemplateLootCountScratchLabel,
+                NativeAllocationLifetime.Temp);
             try
             {
                 return template != null ? template.CopyLootTableNonAlloc(scratch) : 0;
             }
             finally
             {
+                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, TemplateLootCountScratchLabel);
+
                 if (scratch.IsCreated)
                     scratch.Dispose();
             }
         }
 
-        private void RefreshActiveCachesIfNeeded(bool force)
+        private bool RefreshActiveCachesIfNeeded(bool force, bool allowMutation = true)
         {
             if (vegetationBridge == null)
-                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
+                return false;
 
-            if (vegetationBridge == null)
-                return;
+            bool syncSurface = force || _surfaceRevision != vegetationBridge.ActiveSurfaceAggregateRevision;
+            bool syncUnderwater = force || _underwaterRevision != vegetationBridge.ActiveUnderwaterAggregateRevision;
+            if (!syncSurface && !syncUnderwater)
+                return true;
 
-            if (force || _surfaceRevision != vegetationBridge.ActiveSurfaceAggregateRevision)
+            if (!allowMutation)
+                return false;
+
+            if (syncSurface)
                 SyncLane(false);
 
-            if (force || _underwaterRevision != vegetationBridge.ActiveUnderwaterAggregateRevision)
+            if (syncUnderwater)
                 SyncLane(true);
+
+            return true;
         }
 
         private void SyncLane(bool underwater)
@@ -3256,182 +5473,316 @@ namespace Hecton8.World
                 hasSemanticPayload = vegetationBridge.TryGetActiveSurfaceSemanticPayload(out semanticTypes, out _, out semanticCount);
             }
 
-            if (!hasNativePayload || !hasSemanticPayload || count <= 0 || semanticCount < count)
+            int safeCount = hasNativePayload && hasSemanticPayload && count > 0
+                ? math.min(
+                    count,
+                    math.min(
+                        math.min(matrices.Length, metadata.Length),
+                        math.min(types.Length, math.min(semanticTypes.Length, semanticCount))))
+                : 0;
+            if (!hasNativePayload || !hasSemanticPayload || count <= 0 || safeCount != count)
             {
                 if (underwater)
                 {
-                    _underwaterMatrices = default;
-                    _underwaterMetadata = default;
-                    _underwaterTypes = default;
-                    _underwaterSemanticTypes = default;
                     _underwaterCount = 0;
                     _underwaterRevision = vegetationBridge.ActiveUnderwaterAggregateRevision;
                 }
                 else
                 {
-                    _surfaceMatrices = default;
-                    _surfaceMetadata = default;
-                    _surfaceTypes = default;
-                    _surfaceSemanticTypes = default;
                     _surfaceCount = 0;
                     _surfaceRevision = vegetationBridge.ActiveSurfaceAggregateRevision;
                 }
+
+                if (count > 0 && safeCount != count)
+                    RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, math.max(1, count - math.max(0, safeCount)), 0, 0f, 0u, 128);
 
                 return;
             }
 
             NativeArray<uint> instanceUids = underwater
-                ? EnsureLaneCapacity(ref _underwaterInstanceUids, count, nameof(_underwaterInstanceUids))
-                : EnsureLaneCapacity(ref _surfaceInstanceUids, count, nameof(_surfaceInstanceUids));
+                ? EnsureLaneCapacity(ref _underwaterInstanceUids, OrganicUnderwaterInstanceUidsBufferId, safeCount, nameof(_underwaterInstanceUids))
+                : EnsureLaneCapacity(ref _surfaceInstanceUids, OrganicSurfaceInstanceUidsBufferId, safeCount, nameof(_surfaceInstanceUids));
             NativeArray<byte> materialClasses = underwater
-                ? EnsureLaneCapacity(ref _underwaterMaterialClasses, count, nameof(_underwaterMaterialClasses))
-                : EnsureLaneCapacity(ref _surfaceMaterialClasses, count, nameof(_surfaceMaterialClasses));
+                ? EnsureLaneCapacity(ref _underwaterMaterialClasses, OrganicUnderwaterMaterialClassesBufferId, safeCount, nameof(_underwaterMaterialClasses))
+                : EnsureLaneCapacity(ref _surfaceMaterialClasses, OrganicSurfaceMaterialClassesBufferId, safeCount, nameof(_surfaceMaterialClasses));
             NativeArray<Unity.Mathematics.half> health = underwater
-                ? EnsureLaneCapacity(ref _underwaterHealth, count, nameof(_underwaterHealth))
-                : EnsureLaneCapacity(ref _surfaceHealth, count, nameof(_surfaceHealth));
-            if (underwater)
+                ? EnsureLaneCapacity(ref _underwaterHealth, OrganicUnderwaterHealthBufferId, safeCount, nameof(_underwaterHealth))
+                : EnsureLaneCapacity(ref _surfaceHealth, OrganicSurfaceHealthBufferId, safeCount, nameof(_surfaceHealth));
+            bool dearLieLaneReady = underwater
+                ? EnsureDearLieVaultLaneCapacity(true, safeCount)
+                : EnsureDearLieVaultLaneCapacity(false, safeCount);
+            if (!dearLieLaneReady ||
+                !instanceUids.IsCreated ||
+                !materialClasses.IsCreated ||
+                !health.IsCreated ||
+                instanceUids.Length < safeCount ||
+                materialClasses.Length < safeCount ||
+                health.Length < safeCount)
             {
-                EnsureDearLieVaultLaneCapacity(true, count);
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
+                return;
             }
-            else
+
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
             {
-                EnsureDearLieVaultLaneCapacity(false, count);
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
+                return;
             }
-            float currentTime = ResolveOrganicClockSeconds();
 
-            for (int i = 0; i < count; i++)
+            int defoliantRegistryCount = 0;
+            int defoliantRegistryOverflow = 0;
+            try
             {
-                uint instanceUid = ComputeStableInstanceUid(matrices[i], metadata[i], types[i], semanticTypes[i]);
-                HarvestableTemplate.MaterialClass fallbackMaterialClass = ResolveMaterialClass(types[i], semanticTypes[i]);
-                int templateIndex = ResolveTemplateIndex(metadata[i], fallbackMaterialClass);
-                HarvestableTemplate.MaterialClass materialClass = templateIndex >= 0 && templateIndex < _templateDescriptors.Length
-                    ? (HarvestableTemplate.MaterialClass)_templateDescriptors[templateIndex].MaterialClassId
-                    : fallbackMaterialClass;
-                instanceUids[i] = instanceUid;
-                materialClasses[i] = (byte)materialClass;
-                CacheBaseScale(instanceUid, metadata[i]);
-                PrimeUntouchedClock(instanceUid, currentTime);
-                byte runtimeFlags = ResolveRuntimeFlags(instanceUid, materialClass, semanticTypes[i], metadata[i].RuntimeFlags);
-                ApplyRuntimeFlags(ref metadata, i, runtimeFlags);
-                SetRuntimeState(ref metadata, i, HectonVegetationInstanceData.RuntimeStateIdle);
-                float defaultHealth = templateIndex >= 0 ? _templateDescriptors[templateIndex].BaseHealth : 0f;
-                float resolvedHealth = defaultHealth;
-                bool hasPersistedFloraState = TryResolvePersistedFloraState(instanceUid, out float persistedHealth01, out float persistedHeightScale01);
-                bool isDestroyed = _destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid);
-                bool isDefoliantSuppressed = !isDestroyed &&
-                                             IsConsumableFloraMaterialClass(materialClass) &&
-                                             ChemicalInfluenceGrid.IsInsidePermanentDefoliantDeadZoneAbsolute(ExtractTranslation(matrices[i]));
-                if (isDefoliantSuppressed)
-                {
-                    RegisterDefoliantDestroyedInstance(instanceUid, templateIndex, ExtractTranslation(matrices[i]));
-                    ApplyRuntimeFlags(ref metadata, i, MarkDeadRuntimeFlag(instanceUid));
-                    isDestroyed = true;
-                }
-                float regrowthProgress = 0f;
-                bool isRegrowing = _regrowthProgressByInstanceUid.IsCreated &&
-                                   _regrowthProgressByInstanceUid.TryGetValue(instanceUid, out regrowthProgress);
-                if (_healthByInstanceUid.IsCreated && _healthByInstanceUid.TryGetValue(instanceUid, out Unity.Mathematics.half savedHealth))
-                    resolvedHealth = math.max(0f, (float)savedHealth);
-                else if (hasPersistedFloraState && templateIndex >= 0)
-                    resolvedHealth = Mathf.Max(0f, defaultHealth * Mathf.Clamp01(persistedHealth01));
+                float currentTime = ResolveOrganicClockSeconds();
 
-                if (_healthByInstanceUid.IsCreated)
+                for (int i = 0; i < safeCount; i++)
                 {
-                    _healthByInstanceUid.Remove(instanceUid);
-                    _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)resolvedHealth);
-                }
+                    uint instanceUid = ComputeStableInstanceUid(matrices[i], metadata[i], types[i], semanticTypes[i]);
+                    HarvestableTemplate.MaterialClass fallbackMaterialClass = ResolveMaterialClass(types[i], semanticTypes[i]);
+                    int templateIndex = ResolveTemplateIndex(metadata[i], fallbackMaterialClass);
+                    bool hasLaneDescriptor = TryCopyPinnedTemplateDescriptor(templateIndex, out HarvestableTemplate.RuntimeDescriptor laneDescriptor);
+                    HarvestableTemplate.MaterialClass materialClass = hasLaneDescriptor
+                        ? (HarvestableTemplate.MaterialClass)laneDescriptor.MaterialClassId
+                        : fallbackMaterialClass;
+                    instanceUids[i] = instanceUid;
+                    materialClasses[i] = (byte)materialClass;
+                    CacheBaseScale(instanceUid, metadata[i]);
+                    PrimeUntouchedClock(instanceUid, currentTime);
+                    byte runtimeFlags = EnsureRuntimeFlags(instanceUid, materialClass, semanticTypes[i], metadata[i].RuntimeFlags);
+                    ApplyRuntimeFlags(ref metadata, i, runtimeFlags);
+                    SetRuntimeState(ref metadata, i, HectonVegetationInstanceData.RuntimeStateIdle);
+                    float defaultHealth = hasLaneDescriptor
+                        ? Mathf.Max(0.1f, laneDescriptor.BaseHealth)
+                        : 1f;
+                    float resolvedHealth = defaultHealth;
+                    bool hasPersistedFloraState = TryResolvePersistedFloraState(instanceUid, out float persistedHealth01, out float persistedHeightScale01);
+                    Vector3 rootPosition = ExtractTranslation(matrices[i]);
+                    float regrowthProgress = 0f;
+                    bool isRegrowing = _regrowthProgressByInstanceUid.IsCreated &&
+                                       _regrowthProgressByInstanceUid.TryGetValue(instanceUid, out regrowthProgress);
+                    bool isDestroyed = _destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid);
+                    bool isDefoliantSuppressed = !isDestroyed &&
+                                                 !isRegrowing &&
+                                                 IsConsumableFloraMaterialClass(materialClass) &&
+                                                 ChemicalInfluenceGrid.IsInsidePermanentDefoliantDeadZone(rootPosition);
+                    if (isDefoliantSuppressed)
+                    {
+                        bool defoliantRegistered = false;
+                        if (TryRegisterDefoliantDestroyedInstance(instanceUid, templateIndex, out ulong defoliantTemplateHash, out bool defoliantDestroyedMapWriteFailed))
+                        {
+                            defoliantRegistered = true;
+                            if (defoliantRegistryCount < MaxOrganicCacheSyncRegistryBatch)
+                            {
+                                _cacheSyncDestroyedRegistryUids[defoliantRegistryCount] = instanceUid;
+                                _cacheSyncDestroyedRegistryHashes[defoliantRegistryCount] = defoliantTemplateHash;
+                                _cacheSyncDestroyedRegistryPositions[defoliantRegistryCount] = rootPosition;
+                                defoliantRegistryCount++;
+                            }
+                            else
+                            {
+                                defoliantRegistryOverflow++;
+                            }
+                        }
+                        else if (defoliantDestroyedMapWriteFailed)
+                        {
+                            defoliantRegistryOverflow++;
+                        }
 
-                health[i] = (Unity.Mathematics.half)resolvedHealth;
-                if (isRegrowing)
-                {
-                    if (_damageVisualProgressByInstanceUid.IsCreated)
+                        if (defoliantRegistered)
+                        {
+                            ApplyRuntimeFlags(ref metadata, i, MarkDeadRuntimeFlag(instanceUid));
+                            isDestroyed = true;
+                        }
+                    }
+                    if (_healthByInstanceUid.IsCreated && _healthByInstanceUid.TryGetValue(instanceUid, out Unity.Mathematics.half savedHealth))
+                        resolvedHealth = math.max(0f, (float)savedHealth);
+                    else if (hasPersistedFloraState && templateIndex >= 0)
+                        resolvedHealth = Mathf.Max(0f, defaultHealth * Mathf.Clamp01(persistedHealth01));
+
+                    if (isDestroyed && !isRegrowing)
+                        resolvedHealth = 0f;
+
+                    if (_healthByInstanceUid.IsCreated)
+                        _healthByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)resolvedHealth);
+
+                    health[i] = (Unity.Mathematics.half)resolvedHealth;
+                    if (isRegrowing)
+                    {
+                        if (_damageVisualProgressByInstanceUid.IsCreated)
+                            _damageVisualProgressByInstanceUid.Remove(instanceUid);
+
+                        ApplyRegrowthVisualToLaneInstance(underwater, i, instanceUid, regrowthProgress);
+                    }
+                    else if (isDestroyed || resolvedHealth <= 0.0001f)
+                    {
+                        if (_damageVisualProgressByInstanceUid.IsCreated)
+                            _damageVisualProgressByInstanceUid.Remove(instanceUid);
+                        float entropy01 = EnsureDecompositionProgress(instanceUid, currentTime);
+                        ApplyDearLieMatrixScaleZero(ref matrices, i);
+                        ApplyDecompositionMetadata(ref metadata, i, instanceUid, entropy01);
+                    }
+                    else if (templateIndex >= 0 && resolvedHealth < defaultHealth)
+                    {
+                        float damage01 = ResolveDamageProgress(defaultHealth, resolvedHealth);
+                        UpdateDamageProgressCache(instanceUid, damage01);
+                        float normalizedHeightScale = hasPersistedFloraState
+                            ? Mathf.Clamp01(persistedHeightScale01)
+                            : ResolveNormalizedHeightScale(templateIndex, defaultHealth, resolvedHealth);
+                        ApplyPersistedDamageMetadata(ref metadata, i, instanceUid, templateIndex, persistedHealth01, normalizedHeightScale, damage01, currentTime);
+                    }
+                    else if (_damageVisualProgressByInstanceUid.IsCreated)
+                    {
                         _damageVisualProgressByInstanceUid.Remove(instanceUid);
+                    }
 
-                    ApplyRegrowthVisualToLaneInstance(underwater, i, instanceUid, regrowthProgress);
-                }
-                else if (isDestroyed || resolvedHealth <= 0.0001f)
-                {
-                    if (_damageVisualProgressByInstanceUid.IsCreated)
-                        _damageVisualProgressByInstanceUid.Remove(instanceUid);
-                    float entropy01 = ResolveOrPrimeDecompositionProgress(instanceUid, currentTime);
-                    ApplyDearLieMatrixScaleZero(ref matrices, i);
-                    ApplyDecompositionMetadata(ref metadata, i, instanceUid, entropy01);
-                }
-                else if (templateIndex >= 0 && resolvedHealth < defaultHealth)
-                {
-                    float damage01 = ResolveDamageProgress(defaultHealth, resolvedHealth);
-                    UpdateDamageProgressCache(instanceUid, damage01);
-                    float normalizedHeightScale = hasPersistedFloraState
-                        ? Mathf.Clamp01(persistedHeightScale01)
-                        : ResolveNormalizedHeightScale(templateIndex, defaultHealth, resolvedHealth);
-                    ApplyPersistedDamageMetadata(ref metadata, i, instanceUid, templateIndex, persistedHealth01, normalizedHeightScale, damage01, currentTime);
-                }
-                else if (_damageVisualProgressByInstanceUid.IsCreated)
-                {
-                    _damageVisualProgressByInstanceUid.Remove(instanceUid);
+                    if (!isRegrowing && !isDestroyed && resolvedHealth > 0.0001f)
+                    {
+                        float maturationScale = ResolveMaturationScaleMultiplier(instanceUid);
+                        if (maturationScale < 0.9999f)
+                            ApplyMaturationVisualToLaneInstance(underwater, i, instanceUid, ResolveMaturationYieldMultiplier(instanceUid), maturationScale);
+                    }
                 }
 
-                if (!isRegrowing && !isDestroyed && resolvedHealth > 0.0001f)
+                if (underwater)
                 {
-                    float maturationScale = ResolveMaturationScaleMultiplier(instanceUid);
-                    if (maturationScale < 0.9999f)
-                        ApplyMaturationVisualToLaneInstance(underwater, i, instanceUid, ResolveMaturationYieldMultiplier(instanceUid), maturationScale);
+                    _underwaterCount = safeCount;
+                    _underwaterRevision = vegetationBridge.ActiveUnderwaterAggregateRevision;
+                }
+                else
+                {
+                    _surfaceCount = safeCount;
+                    _surfaceRevision = vegetationBridge.ActiveSurfaceAggregateRevision;
                 }
             }
-
-            if (underwater)
+            finally
             {
-                _underwaterMatrices = matrices;
-                _underwaterMetadata = metadata;
-                _underwaterTypes = types;
-                _underwaterSemanticTypes = semanticTypes;
-                _underwaterCount = count;
-                _underwaterRevision = vegetationBridge.ActiveUnderwaterAggregateRevision;
+                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
             }
-            else
+
+            FlushCacheSyncDestroyedRegistry(defoliantRegistryCount);
+            if (defoliantRegistryOverflow > 0)
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, defoliantRegistryOverflow, 0, 0f, 0u, 128);
+        }
+
+        private void FlushCacheSyncDestroyedRegistry(int count)
+        {
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
+            int safeCount = math.min(math.max(0, count), _cacheSyncDestroyedRegistryUids.Length);
+            for (int i = 0; i < safeCount; i++)
             {
-                _surfaceMatrices = matrices;
-                _surfaceMetadata = metadata;
-                _surfaceTypes = types;
-                _surfaceSemanticTypes = semanticTypes;
-                _surfaceCount = count;
-                _surfaceRevision = vegetationBridge.ActiveSurfaceAggregateRevision;
+                uint instanceUid = _cacheSyncDestroyedRegistryUids[i];
+                if (registry != null && instanceUid != 0u)
+                {
+                    registry.TryClearFloraStateOverride(instanceUid);
+                    registry.TryRegisterDestroyedFlora(_cacheSyncDestroyedRegistryHashes[i], instanceUid, _cacheSyncDestroyedRegistryPositions[i]);
+                }
+
+                _cacheSyncDestroyedRegistryUids[i] = 0u;
+                _cacheSyncDestroyedRegistryHashes[i] = 0UL;
+                _cacheSyncDestroyedRegistryPositions[i] = default;
             }
         }
 
-        private void SyncDestroyedFloraFromPersistence()
+        private bool SyncDestroyedFloraFromPersistence()
         {
             PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null || !_destroyedFloraScratch.IsCreated || !_destroyedByInstanceUid.IsCreated)
-                return;
+                return false;
 
-            _destroyedByInstanceUid.Clear();
-            _destroyedFloraScratch.Clear();
-            registry.CopyDestroyedFloraDeltas(_destroyedFloraScratch);
-            for (int i = 0; i < _destroyedFloraScratch.Length; i++)
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicPersistenceMutationBuffers(vault, out int lifecycleMask, out int scratchMask))
             {
-                PersistentWorldDeltaRecord record = _destroyedFloraScratch[i];
-                if (record.InstanceUid == 0u)
-                    continue;
-
-                if (ResolveDescriptorIndexByPersistentIdHash(record.ItemPersistentIdHash) < 0)
-                {
-                    registry.TryClearDestroyedFlora(record.InstanceUid);
-                    continue;
-                }
-
-                if (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(record.InstanceUid))
-                    continue;
-
-                _destroyedByInstanceUid.TryAdd(record.InstanceUid, 1);
-                ClearOrganicLifecycleState(record.InstanceUid);
-                PrimeDecompositionState(record.InstanceUid, ResolveOrganicClockSeconds() - OrganicDecompositionDurationSeconds);
-                _healthByInstanceUid.Remove(record.InstanceUid);
-                _healthByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)0f);
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
+                return false;
             }
+
+            int staleDestroyedCount = 0;
+            int staleDestroyedOverflow = 0;
+            bool destroyedStateChanged = false;
+            try
+            {
+                _destroyedFloraScratch.Clear();
+                if (!_destroyedFloraScratch.TryResolveArray(out NativeArray<PersistentWorldDeltaRecord> destroyedFloraCopy))
+                    return false;
+
+                int copiedDestroyedCount = registry.CopyDestroyedFloraDeltas(destroyedFloraCopy, _destroyedFloraScratch.Capacity);
+                _destroyedFloraScratch.ResizeUninitialized(copiedDestroyedCount);
+                bool destroyedScratchSaturated = copiedDestroyedCount >= _destroyedFloraScratch.Capacity;
+                if (destroyedScratchSaturated)
+                    staleDestroyedOverflow++;
+
+                for (int i = 0; i < _destroyedFloraScratch.Length; i++)
+                {
+                    PersistentWorldDeltaRecord record = _destroyedFloraScratch[i];
+                    if (record.InstanceUid == 0u)
+                        continue;
+
+                    if (!TryFindPinnedTemplateDescriptorByPersistentHash(record.ItemPersistentIdHash, out _, out _))
+                    {
+                        if (staleDestroyedCount < _staleDestroyedRegistryClearUids.Length)
+                            _staleDestroyedRegistryClearUids[staleDestroyedCount++] = record.InstanceUid;
+                        else
+                            staleDestroyedOverflow++;
+                        continue;
+                    }
+
+                    if (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(record.InstanceUid))
+                    {
+                        if (staleDestroyedCount < _staleDestroyedRegistryClearUids.Length)
+                            _staleDestroyedRegistryClearUids[staleDestroyedCount++] = record.InstanceUid;
+                        else
+                            staleDestroyedOverflow++;
+                        continue;
+                    }
+
+                    if (destroyedScratchSaturated)
+                        continue;
+
+                    bool hadPersistedOverride =
+                        (_persistedHealth01ByInstanceUid.IsCreated && _persistedHealth01ByInstanceUid.ContainsKey(record.InstanceUid)) ||
+                        (_persistedHeightScale01ByInstanceUid.IsCreated && _persistedHeightScale01ByInstanceUid.ContainsKey(record.InstanceUid));
+                    if (hadPersistedOverride)
+                    {
+                        ClearPersistedFloraStateOverride(record.InstanceUid);
+                        destroyedStateChanged = true;
+                    }
+
+                    if (!_destroyedByInstanceUid.ContainsKey(record.InstanceUid))
+                    {
+                        if (!_destroyedByInstanceUid.TryAdd(record.InstanceUid, 1))
+                        {
+                            staleDestroyedOverflow++;
+                            continue;
+                        }
+
+                        destroyedStateChanged = true;
+                        ClearOrganicLifecycleState(record.InstanceUid);
+                        PrimeDecompositionState(record.InstanceUid, ResolveOrganicClockSeconds() - OrganicDecompositionDurationSeconds);
+                    }
+
+                    if (!_healthByInstanceUid.TryPut(record.InstanceUid, (Unity.Mathematics.half)0f))
+                        staleDestroyedOverflow++;
+                }
+            }
+            finally
+            {
+                UnlockOrganicPersistenceMutationBuffers(vault, lifecycleMask, scratchMask);
+            }
+
+            for (int i = 0; i < staleDestroyedCount; i++)
+            {
+                registry.TryClearDestroyedFlora(_staleDestroyedRegistryClearUids[i]);
+                _staleDestroyedRegistryClearUids[i] = 0u;
+            }
+
+            if (staleDestroyedOverflow > 0)
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, staleDestroyedOverflow, 0, 0f, 0u, 128);
+
+            return destroyedStateChanged;
         }
 
-        private void SyncFloraStateOverridesFromPersistence()
+        private bool SyncFloraStateOverridesFromPersistence()
         {
             PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null ||
@@ -3439,132 +5790,521 @@ namespace Hecton8.World
                 !_persistedHealth01ByInstanceUid.IsCreated ||
                 !_persistedHeightScale01ByInstanceUid.IsCreated)
             {
-                return;
+                return false;
             }
 
-            _floraStateOverrideScratch.Clear();
-            _persistedHealth01ByInstanceUid.Clear();
-            _persistedHeightScale01ByInstanceUid.Clear();
-            registry.CopyFloraStateOverrideDeltas(_floraStateOverrideScratch);
-            for (int i = 0; i < _floraStateOverrideScratch.Length; i++)
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicPersistenceMutationBuffers(vault, out int lifecycleMask, out int scratchMask))
             {
-                PersistentWorldDeltaRecord record = _floraStateOverrideScratch[i];
-                if (record.InstanceUid == 0u)
-                    continue;
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
+                return false;
+            }
 
-                if ((_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(record.InstanceUid)) ||
-                    (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(record.InstanceUid)))
+            int staleOverrideCount = 0;
+            int staleOverrideOverflow = 0;
+            bool overrideStateChanged = false;
+            try
+            {
+                _floraStateOverrideScratch.Clear();
+                if (!_floraStateOverrideScratch.TryResolveArray(out NativeArray<PersistentWorldDeltaRecord> floraStateOverrideCopy))
+                    return false;
+
+                int copiedOverrideCount = registry.CopyFloraStateOverrideDeltas(floraStateOverrideCopy, _floraStateOverrideScratch.Capacity);
+                _floraStateOverrideScratch.ResizeUninitialized(copiedOverrideCount);
+                bool overrideScratchSaturated = copiedOverrideCount >= _floraStateOverrideScratch.Capacity;
+                if (overrideScratchSaturated)
+                    staleOverrideOverflow++;
+
+                for (int i = 0; i < _floraStateOverrideScratch.Length; i++)
                 {
-                    continue;
+                    PersistentWorldDeltaRecord record = _floraStateOverrideScratch[i];
+                    if (record.InstanceUid == 0u)
+                        continue;
+
+                    if ((_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(record.InstanceUid)) ||
+                        (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(record.InstanceUid)))
+                    {
+                        bool hadBlockedOverride =
+                            _persistedHealth01ByInstanceUid.ContainsKey(record.InstanceUid) ||
+                            _persistedHeightScale01ByInstanceUid.ContainsKey(record.InstanceUid);
+                        ClearPersistedFloraStateOverride(record.InstanceUid);
+                        if (hadBlockedOverride)
+                            overrideStateChanged = true;
+
+                        if (staleOverrideCount < _staleFloraStateRegistryClearUids.Length)
+                            _staleFloraStateRegistryClearUids[staleOverrideCount++] = record.InstanceUid;
+                        else
+                            staleOverrideOverflow++;
+                        continue;
+                    }
+
+                    if (!TryFindPinnedTemplateDescriptorByPersistentHash(record.ItemPersistentIdHash, out int descriptorIndex, out _))
+                    {
+                        if (staleOverrideCount < _staleFloraStateRegistryClearUids.Length)
+                            _staleFloraStateRegistryClearUids[staleOverrideCount++] = record.InstanceUid;
+                        else
+                            staleOverrideOverflow++;
+                        continue;
+                    }
+
+                    PersistentWorldRegistry.UnpackFloraStateOverride(record.Quantity, out float persistedHealth01, out byte persistedHarvestState);
+                    float normalizedHealth = math.saturate(persistedHealth01);
+                    float normalizedHeightScale = ResolveNormalizedHeightScaleFromHarvestState(
+                        descriptorIndex,
+                        normalizedHealth,
+                        ResolvePersistedHarvestState(persistedHarvestState));
+                    Unity.Mathematics.half nextHealth = (Unity.Mathematics.half)normalizedHealth;
+                    Unity.Mathematics.half nextHeight = (Unity.Mathematics.half)math.saturate(normalizedHeightScale);
+                    if (overrideScratchSaturated)
+                        continue;
+
+                    if (!_persistedHealth01ByInstanceUid.TryGetValue(record.InstanceUid, out Unity.Mathematics.half existingHealth) ||
+                        !_persistedHeightScale01ByInstanceUid.TryGetValue(record.InstanceUid, out Unity.Mathematics.half existingHeight) ||
+                        !AreHalfValuesEquivalent(existingHealth, nextHealth) ||
+                        !AreHalfValuesEquivalent(existingHeight, nextHeight))
+                    {
+                        bool hadHealth = _persistedHealth01ByInstanceUid.TryGetValue(record.InstanceUid, out Unity.Mathematics.half previousHealth);
+                        bool hadHeight = _persistedHeightScale01ByInstanceUid.TryGetValue(record.InstanceUid, out Unity.Mathematics.half previousHeight);
+                        bool healthStored = _persistedHealth01ByInstanceUid.TryPut(record.InstanceUid, nextHealth);
+                        bool heightStored = _persistedHeightScale01ByInstanceUid.TryPut(record.InstanceUid, nextHeight);
+                        if (!healthStored || !heightStored)
+                        {
+                            RestorePersistedFloraStateOverridePair(record.InstanceUid, hadHealth, previousHealth, hadHeight, previousHeight);
+                            staleOverrideOverflow++;
+                            continue;
+                        }
+
+                        overrideStateChanged = true;
+                    }
+                }
+            }
+            finally
+            {
+                UnlockOrganicPersistenceMutationBuffers(vault, lifecycleMask, scratchMask);
+            }
+
+            for (int i = 0; i < staleOverrideCount; i++)
+            {
+                registry.TryClearFloraStateOverride(_staleFloraStateRegistryClearUids[i]);
+                _staleFloraStateRegistryClearUids[i] = 0u;
+            }
+
+            if (staleOverrideOverflow > 0)
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, staleOverrideOverflow, 0, 0f, 0u, 128);
+
+            return overrideStateChanged;
+        }
+
+        private void ProcessYieldBatchIfNeeded()
+        {
+            IDataVault vault = _dearLieVault;
+            int lockedCount = 0;
+            if (!TryLockYieldJobBuffers(vault, out lockedCount))
+                return;
+
+            Span<DestroyedOrganicEvent> navDispatchEvents = stackalloc DestroyedOrganicEvent[MaxOrganicYieldNavDispatchStackBatch];
+            int navDispatchCount = 0;
+            try
+            {
+                if (!_pendingYieldEvents.TryResolveArray(out NativeArray<DestroyedOrganicEvent> pendingEvents))
+                    return;
+
+                int pendingCount = math.min(_pendingYieldEvents.Length, pendingEvents.Length);
+                if (pendingCount <= 0)
+                    return;
+
+                int eventCount = math.min(
+                    pendingCount,
+                    math.min(MaxOrganicYieldNavDispatchStackBatch, math.min(DefaultDropBufferCapacity, MaxOrganicDropRecordsPerFrame)));
+
+                NativeArray<DestroyedOrganicEvent> yieldJobInput = _yieldJobInput;
+                NativeArray<HarvestableTemplate.RuntimeDescriptor> templateDescriptors = _templateDescriptors;
+                NativeArray<HarvestableTemplate.LootRuntimeEntry> lootEntries = _lootEntries;
+                NativeArray<EntropyYieldMaterialLutEntry> materialLut = _yieldMaterialLut;
+                NativeArray<ItemDropData> dropOutput = _dropOutput;
+                NativeArray<int> dropBudget = _dropBudget;
+                if (!_templateCacheReady ||
+                    !_yieldMaterialLutReady ||
+                    !yieldJobInput.IsCreated ||
+                    yieldJobInput.Length < eventCount ||
+                    !templateDescriptors.IsCreated ||
+                    !lootEntries.IsCreated ||
+                    !materialLut.IsCreated ||
+                    !dropOutput.IsCreated ||
+                    !dropBudget.IsCreated ||
+                    dropOutput.Length <= 0 ||
+                    dropBudget.Length < DropBudgetLength)
+                    return;
+
+                if (ResolveDropOutputCount(dropBudget, dropOutput.Length) > 0)
+                    return;
+
+                ResetDropOutputBudget(dropBudget, dropOutput.Length);
+                for (int i = 0; i < eventCount; i++)
+                {
+                    DestroyedOrganicEvent pendingEvent = pendingEvents[i];
+                    yieldJobInput[i] = pendingEvent;
+                    navDispatchEvents[i] = pendingEvent;
                 }
 
-                int descriptorIndex = ResolveDescriptorIndexByPersistentIdHash(record.ItemPersistentIdHash);
-                if (descriptorIndex < 0)
+                int remainderCount = pendingCount - eventCount;
+                if (remainderCount > 0)
                 {
-                    registry.TryClearFloraStateOverride(record.InstanceUid);
-                    continue;
+                    for (int i = 0; i < remainderCount; i++)
+                        pendingEvents[i] = pendingEvents[eventCount + i];
+
+                    _pendingYieldEvents.ResizeUninitialized(remainderCount);
+                    _deferredYieldScheduleFrame = math.max(_deferredYieldScheduleFrame, Hecton8.Core.SystemDispatcher.CurrentFrameIndex + 1);
+                }
+                else
+                {
+                    _pendingYieldEvents.Clear();
+                    _deferredYieldScheduleFrame = -1;
                 }
 
-                PersistentWorldRegistry.UnpackFloraStateOverride(record.Quantity, out float persistedHealth01, out byte persistedHarvestState);
-                float normalizedHealth = math.saturate(persistedHealth01);
-                float normalizedHeightScale = ResolveNormalizedHeightScaleFromHarvestState(
-                    descriptorIndex,
-                    normalizedHealth,
-                    ResolvePersistedHarvestState(persistedHarvestState));
-                _persistedHealth01ByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)normalizedHealth);
-                _persistedHeightScale01ByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)math.saturate(normalizedHeightScale));
+                EntropyYieldJob yieldJob = default;
+                yieldJob.Events = yieldJobInput;
+                yieldJob.TemplateDescriptors = templateDescriptors;
+                yieldJob.LootEntries = lootEntries;
+                yieldJob.MaterialLut = materialLut;
+                yieldJob.DropOutput = dropOutput;
+                yieldJob.DropBudget = dropBudget;
+                yieldJob.EventCount = eventCount;
+
+                for (int i = 0; i < eventCount; i++)
+                    yieldJob.Execute(i);
+
+                navDispatchCount = eventCount;
+            }
+            finally
+            {
+                UnlockYieldJobBuffers(vault, lockedCount);
+            }
+
+            if (navDispatchCount > 0)
+                VoxelDynamicNavGridRuntime.EnqueueDestroyedOrganicEvents(navDispatchEvents.Slice(0, navDispatchCount));
+        }
+
+        private static bool TryLockYieldJobBuffers(IDataVault vault, out int lockedCount)
+        {
+            lockedCount = 0;
+            if (vault == null)
+                return false;
+
+            for (int i = 0; i < YieldJobBufferCount; i++)
+            {
+                BufferID bufferId = GetYieldJobBufferId(i);
+                if (!vault.TryLockBuffer(bufferId, OrganicVaultSystemId))
+                {
+                    UnlockYieldJobBuffers(vault, lockedCount);
+                    lockedCount = 0;
+                    return false;
+                }
+
+                lockedCount++;
+            }
+
+            return true;
+        }
+
+        private static void UnlockYieldJobBuffers(IDataVault vault, int lockedCount)
+        {
+            if (vault == null || lockedCount <= 0)
+                return;
+
+            for (int i = lockedCount - 1; i >= 0; i--)
+            {
+                BufferID bufferId = GetYieldJobBufferId(i);
+                if (bufferId != default)
+                    vault.TryUnlockBuffer(bufferId, OrganicVaultSystemId);
             }
         }
 
-        private void CompleteYieldJobIfNeeded(bool force = true)
+        private static BufferID GetYieldJobBufferId(int index)
         {
-            if (!_yieldScheduled)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _yieldJobHandle, force))
-                return;
-
-            _yieldScheduled = false;
-            _scheduledYieldCount = 0;
+            switch (index)
+            {
+                case 0:
+                    return OrganicPendingYieldEventsBufferId;
+                case 1:
+                    return OrganicYieldJobInputBufferId;
+                case 2:
+                    return OrganicTemplateDescriptorsBufferId;
+                case 3:
+                    return OrganicLootEntriesBufferId;
+                case 4:
+                    return OrganicYieldMaterialLutBufferId;
+                case 5:
+                    return OrganicDropOutputBufferId;
+                case 6:
+                    return OrganicDropBudgetBufferId;
+                default:
+                    return default;
+            }
         }
 
-        private void ScheduleYieldJobIfNeeded()
+        private void ResetDropOutputBudget()
         {
-            if (_yieldScheduled ||
-                !_pendingYieldEvents.IsCreated ||
-                _pendingYieldEvents.Length <= 0 ||
-                !_dropBuffer.IsCreated ||
-                !_dropBuffer.IsEmpty ||
-                !_yieldMaterialLut.IsCreated)
+            NativeArray<int> dropBudget = _dropBudget;
+            NativeArray<ItemDropData> dropOutput = _dropOutput;
+            if (dropBudget.IsCreated && dropOutput.IsCreated)
+                ResetDropOutputBudget(dropBudget, dropOutput.Length);
+        }
+
+        private static void ResetDropOutputBudget(NativeArray<int> dropBudget, int capacity)
+        {
+            if (!dropBudget.IsCreated || dropBudget.Length < DropBudgetLength)
                 return;
 
-            int pendingCount = _pendingYieldEvents.Length;
-            int eventCount = math.min(pendingCount, math.min(_dropBuffer.Capacity, MaxOrganicDropRecordsPerFrame));
-            EnsureNativeCapacity(ref _yieldJobInput, eventCount, nameof(_yieldJobInput));
-            for (int i = 0; i < eventCount; i++)
-            {
-                _yieldJobInput[i] = _pendingYieldEvents[i];
-            }
+            dropBudget[DropBudgetRemainingIndex] = math.max(0, capacity);
+            dropBudget[DropBudgetDroppedIndex] = 0;
+        }
 
-            VoxelDynamicNavGridRuntime.EnqueueDestroyedOrganicEvents(_yieldJobInput, eventCount);
+        private static int ResolveDropOutputCount(NativeArray<int> dropBudget, int capacity)
+        {
+            if (!dropBudget.IsCreated || dropBudget.Length < DropBudgetLength || capacity <= 0)
+                return 0;
 
-            int remainderCount = pendingCount - eventCount;
-            if (remainderCount > 0)
-            {
-                for (int i = 0; i < remainderCount; i++)
-                    _pendingYieldEvents[i] = _pendingYieldEvents[eventCount + i];
+            return math.clamp(capacity - math.max(0, dropBudget[DropBudgetRemainingIndex]), 0, capacity);
+        }
 
-                _pendingYieldEvents.ResizeUninitialized(remainderCount);
-                _deferredYieldScheduleFrame = math.max(_deferredYieldScheduleFrame, Hecton8.Core.SystemDispatcher.CurrentFrameIndex + 1);
-            }
-            else
-            {
-                _pendingYieldEvents.Clear();
-                _deferredYieldScheduleFrame = -1;
-            }
+        private static void SetDropOutputCount(NativeArray<int> dropBudget, int capacity, int count)
+        {
+            if (!dropBudget.IsCreated || dropBudget.Length < DropBudgetLength)
+                return;
 
-            _scheduledYieldCount = eventCount;
-            _yieldJobHandle = _dropBuffer.ScheduleEntropyYieldJob(
-                _yieldJobInput,
-                _templateDescriptors,
-                _lootEntries,
-                _yieldMaterialLut,
-                eventCount,
-                8);
-            _yieldScheduled = true;
+            int clampedCount = math.clamp(count, 0, math.max(0, capacity));
+            dropBudget[DropBudgetRemainingIndex] = math.max(0, capacity - clampedCount);
+            dropBudget[DropBudgetDroppedIndex] = 0;
         }
 
         private bool DrainDropBuffer()
         {
-            if (!_dropBuffer.IsCreated)
-                return true;
-
             IPlayerInventoryService playerInventoryService = _playerInventoryService;
             PlayerInventory playerInventory = playerInventoryService != null ? playerInventoryService.Inventory : null;
             Hecton8.SaveSystem.ItemCatalog itemCatalog = playerInventory != null ? playerInventory.ItemCatalog : null;
             PersistentWorldRegistry registry = _persistentWorldRegistry;
-            int remainingBudget = math.min(_dropBuffer.Capacity, MaxOrganicDropRecordsPerFrame);
-            while (remainingBudget-- > 0 && _dropBuffer.TryDequeue(out ItemDropData drop))
+            bool hasLosslessDropRoute = playerInventory != null && registry != null && itemCatalog != null;
+            if (!hasLosslessDropRoute)
             {
-                if (drop.ItemHashId == 0 || drop.Quantity == 0)
-                    continue;
-
-                int rejectedQuantity = drop.Quantity;
-                if (playerInventory != null)
+                if (!TrySnapshotDropOutputStateWithLock(out int producedCount, out int droppedCount))
                 {
-                    PlayerInventory.ScavengeAttemptResult result =
-                        playerInventory.ScavengeAttempt(drop.ItemHashId, drop.Quantity, playerInventory.transform);
-                    rejectedQuantity = result.RejectedQuantity;
+                    RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 64);
+                    return false;
                 }
 
-                if (rejectedQuantity > 0 && registry != null && itemCatalog != null)
+                if (droppedCount > 0)
+                    RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, droppedCount, 0, 0f, 0u, 128);
+
+                if (producedCount > 0)
                 {
-                    Vector3 runtimePosition = new Vector3(drop.Position.x, drop.Position.y, drop.Position.z);
-                    registry.TryRegisterDroppedItem(drop.ItemHashId, itemCatalog, rejectedQuantity, runtimePosition);
+                    RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, producedCount, 0, 0f, 0u, 128);
+                    return false;
                 }
+
+                return true;
             }
 
-            return _dropBuffer.IsEmpty;
+            Span<ItemDropData> drainedDrops = stackalloc ItemDropData[MaxOrganicDropDrainStackBatch];
+            int processedCount = 0;
+            int remainingCount = 0;
+            bool routeFailure = false;
+            while (processedCount < MaxOrganicDropRecordsPerFrame)
+            {
+                int batchLimit = math.min(MaxOrganicDropDrainStackBatch, MaxOrganicDropRecordsPerFrame - processedCount);
+                if (!TryDrainDropBatch(drainedDrops, batchLimit, out int drainCount, out remainingCount, out int droppedCount))
+                {
+                    RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 64);
+                    return false;
+                }
+
+                if (droppedCount > 0)
+                    RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, droppedCount, 0, 0f, 0u, 128);
+
+                if (drainCount <= 0)
+                    return remainingCount <= 0;
+
+                processedCount += drainCount;
+                for (int i = 0; i < drainCount; i++)
+                {
+                    ItemDropData drop = drainedDrops[i];
+                    if (drop.ItemHashId == 0 || drop.Quantity == 0)
+                        continue;
+
+                    int rejectedQuantity = drop.Quantity;
+                    if (playerInventory != null)
+                    {
+                        PlayerInventory.ScavengeAttemptResult result =
+                            playerInventory.ScavengeAttempt(drop.ItemHashId, drop.Quantity, playerInventory.transform);
+                        rejectedQuantity = result.RejectedQuantity;
+                    }
+
+                    if (rejectedQuantity > 0 && registry != null && itemCatalog != null)
+                    {
+                        Vector3 runtimePosition = ToRuntimeVector3(drop.Position);
+                        if (!registry.TryRegisterDroppedItem(drop.ItemHashId, itemCatalog, rejectedQuantity, runtimePosition))
+                        {
+                            ItemDropData rejectedDrop = drop;
+                            rejectedDrop.Quantity = (ushort)math.clamp(rejectedQuantity, 0, (int)ushort.MaxValue);
+                            routeFailure = true;
+                            if (!TryReturnDropToOutput(rejectedDrop))
+                                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, rejectedQuantity, 0, 0f, 0u, 128);
+                            else
+                                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 128);
+                        }
+                    }
+                }
+
+                if (routeFailure)
+                    return false;
+
+                if (remainingCount <= 0)
+                    return true;
+            }
+
+            return !routeFailure && remainingCount <= 0;
+        }
+
+        private bool TrySnapshotDropOutputStateWithLock(out int producedCount, out int droppedCount)
+        {
+            producedCount = 0;
+            droppedCount = 0;
+            IDataVault vault = _dearLieVault;
+            int lockedCount = 0;
+            if (!TryLockDropDrainBuffers(vault, out lockedCount))
+                return false;
+
+            try
+            {
+                NativeArray<ItemDropData> dropOutput = _dropOutput;
+                NativeArray<int> dropBudget = _dropBudget;
+                if (!dropOutput.IsCreated || !dropBudget.IsCreated || dropBudget.Length < DropBudgetLength)
+                    return true;
+
+                producedCount = ResolveDropOutputCount(dropBudget, dropOutput.Length);
+                droppedCount = ResolveDropDroppedCount(dropBudget);
+                return true;
+            }
+            finally
+            {
+                UnlockDropDrainBuffers(vault, lockedCount);
+            }
+        }
+
+        private bool TryReturnDropToOutput(ItemDropData drop)
+        {
+            if (drop.ItemHashId == 0 || drop.Quantity == 0)
+                return true;
+
+            IDataVault vault = _dearLieVault;
+            int lockedCount = 0;
+            if (!TryLockDropDrainBuffers(vault, out lockedCount))
+                return false;
+
+            try
+            {
+                NativeArray<ItemDropData> dropOutput = _dropOutput;
+                NativeArray<int> dropBudget = _dropBudget;
+                if (!dropOutput.IsCreated || !dropBudget.IsCreated || dropBudget.Length < DropBudgetLength)
+                    return false;
+
+                int producedCount = ResolveDropOutputCount(dropBudget, dropOutput.Length);
+                if (producedCount < 0 || producedCount >= dropOutput.Length)
+                    return false;
+
+                dropOutput[producedCount] = drop;
+                SetDropOutputCount(dropBudget, dropOutput.Length, producedCount + 1);
+                return true;
+            }
+            finally
+            {
+                UnlockDropDrainBuffers(vault, lockedCount);
+            }
+        }
+
+        private bool TryDrainDropBatch(
+            Span<ItemDropData> destination,
+            int maxDrainCount,
+            out int drainCount,
+            out int remainingCount,
+            out int droppedCount)
+        {
+            drainCount = 0;
+            remainingCount = 0;
+            droppedCount = 0;
+            if (maxDrainCount <= 0 || destination.Length <= 0)
+                return true;
+
+            IDataVault vault = _dearLieVault;
+            int lockedCount = 0;
+            if (!TryLockDropDrainBuffers(vault, out lockedCount))
+                return false;
+
+            try
+            {
+                NativeArray<ItemDropData> dropOutput = _dropOutput;
+                NativeArray<int> dropBudget = _dropBudget;
+                if (!dropOutput.IsCreated || !dropBudget.IsCreated || dropBudget.Length < DropBudgetLength)
+                    return true;
+
+                int producedCount = ResolveDropOutputCount(dropBudget, dropOutput.Length);
+                droppedCount = ResolveDropDroppedCount(dropBudget);
+                drainCount = math.min(producedCount, math.min(maxDrainCount, destination.Length));
+                int tailStart = producedCount - drainCount;
+                for (int i = 0; i < drainCount; i++)
+                    destination[i] = dropOutput[tailStart + i];
+
+                remainingCount = producedCount - drainCount;
+                for (int i = remainingCount; i < producedCount; i++)
+                    dropOutput[i] = default;
+
+                SetDropOutputCount(dropBudget, dropOutput.Length, remainingCount);
+                return true;
+            }
+            finally
+            {
+                UnlockDropDrainBuffers(vault, lockedCount);
+            }
+        }
+
+        private static int ResolveDropDroppedCount(NativeArray<int> dropBudget)
+        {
+            if (!dropBudget.IsCreated || dropBudget.Length < DropBudgetLength)
+                return 0;
+
+            return math.max(0, dropBudget[DropBudgetDroppedIndex]);
+        }
+
+        private static bool TryLockDropDrainBuffers(IDataVault vault, out int lockedCount)
+        {
+            lockedCount = 0;
+            if (vault == null)
+                return false;
+
+            if (!vault.TryLockBuffer(OrganicDropOutputBufferId, OrganicVaultSystemId))
+                return false;
+
+            lockedCount = 1;
+            if (!vault.TryLockBuffer(OrganicDropBudgetBufferId, OrganicVaultSystemId))
+            {
+                UnlockDropDrainBuffers(vault, lockedCount);
+                lockedCount = 0;
+                return false;
+            }
+
+            lockedCount = 2;
+            return true;
+        }
+
+        private static void UnlockDropDrainBuffers(IDataVault vault, int lockedCount)
+        {
+            if (vault == null || lockedCount <= 0)
+                return;
+
+            if (lockedCount >= 2)
+                vault.TryUnlockBuffer(OrganicDropBudgetBufferId, OrganicVaultSystemId);
+            if (lockedCount >= 1)
+                vault.TryUnlockBuffer(OrganicDropOutputBufferId, OrganicVaultSystemId);
         }
 
         private void RefreshCorpseResourceNodes(float currentTime)
@@ -3631,15 +6371,32 @@ namespace Hecton8.World
 
         internal bool TryResolveNearestConsumableFlora(Vector3 runtimePosition, float searchRadius, out Vector3 floraPosition, out uint instanceUid)
         {
+            return TrySnapshotNearestConsumableFloraWithLock(runtimePosition, searchRadius, out floraPosition, out instanceUid);
+        }
+
+        internal bool TrySnapshotNearestConsumableFloraWithLock(Vector3 runtimePosition, float searchRadius, out Vector3 floraPosition, out uint instanceUid)
+        {
             floraPosition = Vector3.zero;
             instanceUid = 0u;
             if (_dearLieJobScheduled)
                 return false;
 
             float bestDistanceSq = searchRadius * searchRadius;
-            bool found = TryResolveNearestConsumableFloraInLane(runtimePosition, true, ref bestDistanceSq, ref floraPosition, ref instanceUid);
-            if (TryResolveNearestConsumableFloraInLane(runtimePosition, false, ref bestDistanceSq, ref floraPosition, ref instanceUid))
-                found = true;
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+                return false;
+
+            bool found;
+            try
+            {
+                found = TryFindNearestConsumableFloraInPinnedLane(runtimePosition, true, ref bestDistanceSq, ref floraPosition, ref instanceUid);
+                if (TryFindNearestConsumableFloraInPinnedLane(runtimePosition, false, ref bestDistanceSq, ref floraPosition, ref instanceUid))
+                    found = true;
+            }
+            finally
+            {
+                UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+            }
 
             return found;
         }
@@ -3654,35 +6411,24 @@ namespace Hecton8.World
             if (_dearLieJobScheduled)
                 return false;
 
-            if (vegetationBridge == null)
-                vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-
-            if (searchRadius <= 0f || vegetationBridge == null || _templateDescriptors.Length <= 0)
+            if (searchRadius <= 0f || vegetationBridge == null || !_templateCacheReady)
                 return false;
 
-            RefreshActiveCachesIfNeeded(force: false);
-            if (!TryResolveNearestHarvestTarget(
+            if (!TrySnapshotNearestHarvestTargetWithLock(
                 handRuntimePosition,
                 Mathf.Max(MinimumSearchRadius, searchRadius),
                 toolCapabilityMask,
-                out bool underwater,
-                out int activeIndex,
+                out _,
+                out _,
                 out uint instanceUid,
                 out HarvestableTemplate.MaterialClass materialClass,
                 out int templateIndex,
                 out _,
-                out Vector3 instancePosition))
-            {
-                return false;
-            }
-
-            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
-            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
-            if (!metadata.IsCreated ||
-                !types.IsCreated ||
-                activeIndex < 0 ||
-                activeIndex >= metadata.Length ||
-                activeIndex >= types.Length)
+                out Vector3 instancePosition,
+                out HectonVegetationInstanceData instanceMetadata,
+                out int instanceType,
+                out _,
+                out _))
             {
                 return false;
             }
@@ -3690,8 +6436,8 @@ namespace Hecton8.World
             Vector3 snapPosition = ResolveHarvestSnapPosition(
                 handRuntimePosition,
                 instancePosition,
-                metadata[activeIndex],
-                types[activeIndex]);
+                instanceMetadata,
+                instanceType);
             Vector3 normal = handRuntimePosition - snapPosition;
             normal = NormalizeVector3Fast(normal, Vector3.up);
 
@@ -3733,9 +6479,21 @@ namespace Hecton8.World
             for (int i = 0; i < boundedCapacity; i++)
                 bestDistanceSq[i] = float.MaxValue;
 
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+                return 0;
+
             int collectedCount = 0;
-            CollectNearestConsumableFloraInLane(runtimePosition, searchRadius, true, instanceUids, positions, bestDistanceSq, boundedCapacity, ref collectedCount);
-            CollectNearestConsumableFloraInLane(runtimePosition, searchRadius, false, instanceUids, positions, bestDistanceSq, boundedCapacity, ref collectedCount);
+            try
+            {
+                CollectNearestConsumableFloraInLane(runtimePosition, searchRadius, true, instanceUids, positions, bestDistanceSq, boundedCapacity, ref collectedCount);
+                CollectNearestConsumableFloraInLane(runtimePosition, searchRadius, false, instanceUids, positions, bestDistanceSq, boundedCapacity, ref collectedCount);
+            }
+            finally
+            {
+                UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+            }
+
             return collectedCount;
         }
 
@@ -3744,20 +6502,30 @@ namespace Hecton8.World
             if (instanceUids == null || trackedCount <= 0)
                 return false;
 
-            if (!_destroyedByInstanceUid.IsCreated)
+            if (!_destroyedByInstanceUid.IsCreated || _dearLieVault == null)
+                return false;
+
+            if (!_dearLieVault.TryLockBuffer(OrganicDestroyedByUidBufferId, OrganicVaultSystemId))
                 return false;
 
             int upperBound = math.min(trackedCount, instanceUids.Length);
             bool hasTrackedInstance = false;
-            for (int i = 0; i < upperBound; i++)
+            try
             {
-                uint instanceUid = instanceUids[i];
-                if (instanceUid == 0u)
-                    continue;
+                for (int i = 0; i < upperBound; i++)
+                {
+                    uint instanceUid = instanceUids[i];
+                    if (instanceUid == 0u)
+                        continue;
 
-                hasTrackedInstance = true;
-                if (!_destroyedByInstanceUid.ContainsKey(instanceUid))
-                    return false;
+                    hasTrackedInstance = true;
+                    if (!_destroyedByInstanceUid.ContainsKey(instanceUid))
+                        return false;
+                }
+            }
+            finally
+            {
+                _dearLieVault.TryUnlockBuffer(OrganicDestroyedByUidBufferId, OrganicVaultSystemId);
             }
 
             return hasTrackedInstance;
@@ -3766,33 +6534,24 @@ namespace Hecton8.World
         internal bool TryConsumeFlora(uint instanceUid)
         {
             if (_dearLieJobScheduled ||
-                instanceUid == 0u ||
-                !TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
+                !TrySnapshotActiveInstanceByUidWithLock(
+                    instanceUid,
+                    out bool underwater,
+                    out int activeIndex,
+                    out int templateIndex,
+                    out HarvestableTemplate.MaterialClass materialClass,
+                    out _,
+                    out Vector3 instancePosition,
+                    out float currentHealth))
                 return false;
 
-            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
-            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
-            int count = underwater ? _underwaterCount : _surfaceCount;
-            if (!matrices.IsCreated ||
-                !materialClasses.IsCreated ||
-                activeIndex < 0 ||
-                activeIndex >= count ||
-                activeIndex >= matrices.Length ||
-                activeIndex >= materialClasses.Length)
-            {
-                return false;
-            }
-
-            HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[activeIndex];
-            if (!IsConsumableFloraMaterialClass(materialClass))
+            if (!IsConsumableFloraMaterialClass(materialClass) || currentHealth <= 0.0001f)
                 return false;
 
-            Vector3 instancePosition = ExtractTranslation(matrices[activeIndex]);
-            ApplyPassiveDecomposition(underwater, activeIndex, instanceUid, materialClass, templateIndex, instancePosition);
-            return true;
+            return ApplyPassiveDecomposition(underwater, activeIndex, instanceUid, materialClass, templateIndex, instancePosition);
         }
 
-        private bool TryResolveNearestHarvestTarget(
+        private bool TrySnapshotNearestHarvestTargetWithLock(
             Vector3 hitPoint,
             float searchRadius,
             uint toolCapabilityMask,
@@ -3802,7 +6561,11 @@ namespace Hecton8.World
             out HarvestableTemplate.MaterialClass materialClass,
             out int templateIndex,
             out Matrix4x4 instanceMatrix,
-            out Vector3 instancePosition)
+            out Vector3 instancePosition,
+            out HectonVegetationInstanceData instanceMetadata,
+            out int instanceType,
+            out float instanceHealth,
+            out float instanceNormalizedHeightScale)
         {
             underwater = false;
             activeIndex = -1;
@@ -3811,53 +6574,84 @@ namespace Hecton8.World
             templateIndex = -1;
             instanceMatrix = Matrix4x4.identity;
             instancePosition = Vector3.zero;
+            instanceMetadata = default;
+            instanceType = 0;
+            instanceHealth = 0f;
+            instanceNormalizedHeightScale = 1f;
+
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+                return false;
 
             float bestDistanceSq = float.MaxValue;
-            if (TryResolveNearestHarvestTargetInLane(
-                hitPoint,
-                searchRadius,
-                toolCapabilityMask,
-                true,
-                ref bestDistanceSq,
-                ref activeIndex,
-                ref instanceUid,
-                ref materialClass,
-                ref templateIndex,
-                ref instanceMatrix,
-                ref instancePosition))
+            try
             {
-                underwater = true;
-            }
+                if (TryFindNearestHarvestTargetInPinnedLane(
+                    hitPoint,
+                    searchRadius,
+                    toolCapabilityMask,
+                    true,
+                    ref bestDistanceSq,
+                    ref activeIndex,
+                    ref instanceUid,
+                    ref materialClass,
+                    ref templateIndex,
+                    ref instanceMatrix,
+                    ref instancePosition,
+                    ref instanceMetadata,
+                    ref instanceType,
+                    ref instanceHealth,
+                    ref instanceNormalizedHeightScale))
+                {
+                    underwater = true;
+                }
 
-            int surfaceIndex = -1;
-            uint surfaceUid = 0u;
-            HarvestableTemplate.MaterialClass surfaceMaterial = HarvestableTemplate.MaterialClass.None;
-            int surfaceTemplateIndex = -1;
-            Matrix4x4 surfaceMatrix = Matrix4x4.identity;
-            Vector3 surfacePosition = Vector3.zero;
-            if (TryResolveNearestHarvestTargetInLane(
-                hitPoint,
-                searchRadius,
-                toolCapabilityMask,
-                false,
-                ref bestDistanceSq,
-                ref surfaceIndex,
-                ref surfaceUid,
-                ref surfaceMaterial,
-                ref surfaceTemplateIndex,
-                ref surfaceMatrix,
-                ref surfacePosition))
+                int surfaceIndex = -1;
+                uint surfaceUid = 0u;
+                HarvestableTemplate.MaterialClass surfaceMaterial = HarvestableTemplate.MaterialClass.None;
+                int surfaceTemplateIndex = -1;
+                Matrix4x4 surfaceMatrix = Matrix4x4.identity;
+                Vector3 surfacePosition = Vector3.zero;
+                HectonVegetationInstanceData surfaceMetadata = default;
+                int surfaceType = 0;
+                float surfaceHealth = 0f;
+                float surfaceNormalizedHeightScale = 1f;
+                if (TryFindNearestHarvestTargetInPinnedLane(
+                    hitPoint,
+                    searchRadius,
+                    toolCapabilityMask,
+                    false,
+                    ref bestDistanceSq,
+                    ref surfaceIndex,
+                    ref surfaceUid,
+                    ref surfaceMaterial,
+                    ref surfaceTemplateIndex,
+                    ref surfaceMatrix,
+                    ref surfacePosition,
+                    ref surfaceMetadata,
+                    ref surfaceType,
+                    ref surfaceHealth,
+                    ref surfaceNormalizedHeightScale))
+                {
+                    underwater = false;
+                    activeIndex = surfaceIndex;
+                    instanceUid = surfaceUid;
+                    materialClass = surfaceMaterial;
+                    templateIndex = surfaceTemplateIndex;
+                    instanceMatrix = surfaceMatrix;
+                    instancePosition = surfacePosition;
+                    instanceMetadata = surfaceMetadata;
+                    instanceType = surfaceType;
+                    instanceHealth = surfaceHealth;
+                    instanceNormalizedHeightScale = surfaceNormalizedHeightScale;
+                }
+
+                return activeIndex >= 0 && instanceUid != 0u && templateIndex >= 0;
+            }
+            finally
             {
-                underwater = false;
-                activeIndex = surfaceIndex;
-                instanceUid = surfaceUid;
-                materialClass = surfaceMaterial;
-                templateIndex = surfaceTemplateIndex;
-                instanceMatrix = surfaceMatrix;
-                instancePosition = surfacePosition;
+                UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
             }
-
-            return activeIndex >= 0 && instanceUid != 0u && templateIndex >= 0;
         }
 
         private static Vector3 ResolveHarvestSnapPosition(
@@ -3881,7 +6675,7 @@ namespace Hecton8.World
             return rootPosition + Vector3.up * verticalBias;
         }
 
-        private bool TryResolveNearestConsumableFloraInLane(
+        private bool TryFindNearestConsumableFloraInPinnedLane(
             Vector3 runtimePosition,
             bool underwater,
             ref float bestDistanceSq,
@@ -3907,9 +6701,7 @@ namespace Hecton8.World
             for (int i = 0; i < upperBound; i++)
             {
                 uint candidateUid = instanceUids[i];
-                if (candidateUid == 0u ||
-                    (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(candidateUid)) ||
-                    (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(candidateUid)))
+                if (IsLifecycleReadBlocked(candidateUid))
                 {
                     continue;
                 }
@@ -3964,9 +6756,7 @@ namespace Hecton8.World
             for (int i = 0; i < upperBound; i++)
             {
                 uint candidateUid = instanceUids[i];
-                if (candidateUid == 0u ||
-                    (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(candidateUid)) ||
-                    (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(candidateUid)))
+                if (IsLifecycleReadBlocked(candidateUid))
                 {
                     continue;
                 }
@@ -4037,7 +6827,14 @@ namespace Hecton8.World
             collectedCount = math.min(collectedCount + 1, capacity);
         }
 
-        private bool TryResolveNearestHarvestTargetInLane(
+        private bool IsLifecycleReadBlocked(uint instanceUid)
+        {
+            return instanceUid == 0u ||
+                   (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)) ||
+                   (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid));
+        }
+
+        private bool TryFindNearestHarvestTargetInPinnedLane(
             Vector3 hitPoint,
             float searchRadius,
             uint toolCapabilityMask,
@@ -4048,7 +6845,11 @@ namespace Hecton8.World
             ref HarvestableTemplate.MaterialClass bestMaterialClass,
             ref int bestTemplateIndex,
             ref Matrix4x4 bestMatrix,
-            ref Vector3 bestPosition)
+            ref Vector3 bestPosition,
+            ref HectonVegetationInstanceData bestMetadata,
+            ref int bestType,
+            ref float bestHealth,
+            ref float bestNormalizedHeightScale)
         {
             NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
@@ -4062,10 +6863,15 @@ namespace Hecton8.World
 
             float searchRadiusSq = searchRadius * searchRadius;
             bool found = false;
-            for (int i = 0; i < count; i++)
+            int safeCount = math.min(
+                count,
+                math.min(
+                    math.min(matrices.Length, metadata.Length),
+                    math.min(types.Length, math.min(instanceUids.Length, math.min(materialClasses.Length, health.Length)))));
+            for (int i = 0; i < safeCount; i++)
             {
                 uint instanceUid = instanceUids[i];
-                if (instanceUid == 0u || (float)health[i] <= 0.0001f)
+                if (IsLifecycleReadBlocked(instanceUid) || (float)health[i] <= 0.0001f)
                     continue;
 
                 HectonVegetationInstanceData instanceMetadata = metadata[i];
@@ -4090,12 +6896,16 @@ namespace Hecton8.World
                 bestTemplateIndex = templateIndex;
                 bestMatrix = matrices[i];
                 bestPosition = rootPosition;
+                bestMetadata = instanceMetadata;
+                bestType = types[i];
+                bestHealth = (float)health[i];
+                bestNormalizedHeightScale = ResolveRuntimeNormalizedHeightScale(instanceUid, instanceMetadata);
             }
 
             return found;
         }
 
-        private void DestroyResolvedInstance(
+        private bool DestroyResolvedInstance(
             bool underwater,
             int activeIndex,
             uint instanceUid,
@@ -4107,30 +6917,77 @@ namespace Hecton8.World
             Vector3 hitNormal,
             float normalizedPower)
         {
-            if (!_destroyedByInstanceUid.IsCreated)
-                return;
+            if (!_destroyedByInstanceUid.IsCreated || instanceUid == 0u)
+                return false;
 
-            if (_destroyedByInstanceUid.ContainsKey(instanceUid))
-                return;
+            bool hasNavObstacleBounds = false;
+            float3 navObstacleCenter = float3.zero;
+            float3 navObstacleExtents = float3.zero;
+            float parentMassKg = 0f;
+            bool applied = false;
+            bool registerDestroyedFlora = false;
+            bool destroyedMapInsertFailed = false;
+            ulong templateStableHash = 0UL;
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
+            {
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
+                return false;
+            }
 
-            bool hasNavObstacleBounds = TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out float3 navObstacleCenter, out float3 navObstacleExtents);
-            byte runtimeFlags = MarkDeadRuntimeFlag(instanceUid);
-            ClearOrganicLifecycleState(instanceUid);
+            try
+            {
+                if (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid))
+                    return false;
 
-            _destroyedByInstanceUid.TryAdd(instanceUid, 1);
-            _healthByInstanceUid.Remove(instanceUid);
-            _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)0f);
-            if (_damageVisualProgressByInstanceUid.IsCreated)
-                _damageVisualProgressByInstanceUid.Remove(instanceUid);
-            PrimeDecompositionState(instanceUid, ResolveOrganicClockSeconds());
-            SetLaneHealth(underwater, activeIndex, 0f);
-            if (_pendingWiltEndTimeByInstanceUid.IsCreated)
-                _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
+                if (_destroyedByInstanceUid.ContainsKey(instanceUid))
+                    return false;
 
-            float parentMassKg = ResolveParentMassKg(underwater, activeIndex, materialClass, templateIndex);
-            ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
-            ApplyDearLieMatrixScaleZeroToLaneInstance(underwater, activeIndex);
-            ApplyDecompositionToLaneInstance(underwater, activeIndex, instanceUid, 0f);
+                if (!IsPinnedActiveLaneSlot(instanceUid, underwater, activeIndex))
+                    return false;
+
+                if (!_destroyedByInstanceUid.TryAdd(instanceUid, 1))
+                {
+                    destroyedMapInsertFailed = true;
+                }
+                else
+                {
+                    byte runtimeFlags = MarkDeadRuntimeFlag(instanceUid);
+                    ClearOrganicLifecycleState(instanceUid);
+
+                    _healthByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)0f);
+                    if (_damageVisualProgressByInstanceUid.IsCreated)
+                        _damageVisualProgressByInstanceUid.Remove(instanceUid);
+                    PrimeDecompositionState(instanceUid, ResolveOrganicClockSeconds());
+                    SetLaneHealth(underwater, activeIndex, 0f);
+                    if (_pendingWiltEndTimeByInstanceUid.IsCreated)
+                        _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
+
+                    parentMassKg = ComputePinnedParentMassKg(underwater, activeIndex, instanceUid, materialClass, templateIndex);
+                    ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
+                    ApplyDearLieMatrixScaleZeroToLaneInstance(underwater, activeIndex);
+                    ApplyDecompositionToLaneInstance(underwater, activeIndex, instanceUid, 0f);
+                    ClearPersistedFloraStateOverride(instanceUid);
+                    if (TryCopyPinnedTemplateDescriptor(templateIndex, out HarvestableTemplate.RuntimeDescriptor destructionDescriptor))
+                    {
+                        registerDestroyedFlora = true;
+                        templateStableHash = (ulong)(uint)destructionDescriptor.StableHashId;
+                    }
+
+                    hasNavObstacleBounds = TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out navObstacleCenter, out navObstacleExtents);
+                    applied = true;
+                }
+            }
+            finally
+            {
+                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+            }
+
+            if (destroyedMapInsertFailed)
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 128);
+
+            if (!applied)
+                return false;
 
             PublishExternalInteraction(instancePosition, NormalizeVector3Fast(hitNormal, Vector3.up) * (normalizedPower * OrganicBurstVelocityScale), interactionBurstRadius * 1.25f);
             SpawnDebris(materialClass, instanceMatrix, instancePosition, hitPoint, hitNormal, normalizedPower, instanceUid);
@@ -4149,12 +7006,35 @@ namespace Hecton8.World
             if (registry != null)
                 registry.TryClearFloraStateOverride(instanceUid);
 
-            ClearPersistedFloraStateOverride(instanceUid);
-            if (registry != null && templateIndex >= 0 && templateIndex < _templateDescriptors.Length)
-                registry.TryRegisterDestroyedFlora((ulong)(uint)_templateDescriptors[templateIndex].StableHashId, instanceUid, instancePosition);
+            if (registry != null && registerDestroyedFlora)
+                registry.TryRegisterDestroyedFlora(templateStableHash, instanceUid, instancePosition);
+
+            return true;
         }
 
-        private void ApplyPassiveDecomposition(
+        private int ApplyPassiveDecompositionCandidates(ReadOnlySpan<PassiveDecompositionCandidate> candidates, int candidateCount)
+        {
+            int appliedCount = 0;
+            int upperBound = math.min(candidateCount, candidates.Length);
+            for (int i = 0; i < upperBound; i++)
+            {
+                PassiveDecompositionCandidate candidate = candidates[i];
+                if (ApplyPassiveDecomposition(
+                    candidate.Underwater != 0,
+                    candidate.ActiveIndex,
+                    candidate.InstanceUid,
+                    candidate.MaterialClass,
+                    candidate.TemplateIndex,
+                    candidate.RuntimePosition))
+                {
+                    appliedCount++;
+                }
+            }
+
+            return appliedCount;
+        }
+
+        private bool ApplyPassiveDecomposition(
             bool underwater,
             int activeIndex,
             uint instanceUid,
@@ -4162,39 +7042,84 @@ namespace Hecton8.World
             int templateIndex,
             Vector3 instancePosition)
         {
-            if (!_destroyedByInstanceUid.IsCreated || instanceUid == 0u || _destroyedByInstanceUid.ContainsKey(instanceUid))
-                return;
+            if (!_destroyedByInstanceUid.IsCreated || instanceUid == 0u)
+                return false;
 
-            bool hasNavObstacleBounds = TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out float3 navObstacleCenter, out float3 navObstacleExtents);
-            byte runtimeFlags = MarkDeadRuntimeFlag(instanceUid);
-            ClearOrganicLifecycleState(instanceUid);
+            bool hasNavObstacleBounds = false;
+            float3 navObstacleCenter = float3.zero;
+            float3 navObstacleExtents = float3.zero;
+            float parentMassKg = 0f;
+            bool applied = false;
+            bool registerDestroyedFlora = false;
+            bool destroyedMapInsertFailed = false;
+            ulong templateStableHash = 0UL;
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
+            {
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
+                return false;
+            }
 
-            _destroyedByInstanceUid.TryAdd(instanceUid, 1);
-            _healthByInstanceUid.Remove(instanceUid);
-            _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)0f);
-            if (_damageVisualProgressByInstanceUid.IsCreated)
-                _damageVisualProgressByInstanceUid.Remove(instanceUid);
-            if (_pendingWiltEndTimeByInstanceUid.IsCreated)
-                _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
-            if (_regrowthProgressByInstanceUid.IsCreated)
-                _regrowthProgressByInstanceUid.Remove(instanceUid);
-            if (_regrowthPositionByInstanceUid.IsCreated)
-                _regrowthPositionByInstanceUid.Remove(instanceUid);
+            try
+            {
+                if (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid))
+                    return false;
 
-            PrimeDecompositionState(instanceUid, ResolveOrganicClockSeconds());
-            SetLaneHealth(underwater, activeIndex, 0f);
-            float parentMassKg = ResolveParentMassKg(underwater, activeIndex, materialClass, templateIndex);
-            ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
-            ApplyDearLieMatrixScaleZeroToLaneInstance(underwater, activeIndex);
-            ApplyDecompositionToLaneInstance(underwater, activeIndex, instanceUid, 0f);
+                if (_destroyedByInstanceUid.ContainsKey(instanceUid))
+                    return false;
+
+                if (!IsPinnedActiveLaneSlot(instanceUid, underwater, activeIndex))
+                    return false;
+
+                if (!_destroyedByInstanceUid.TryAdd(instanceUid, 1))
+                {
+                    destroyedMapInsertFailed = true;
+                }
+                else
+                {
+                    byte runtimeFlags = MarkDeadRuntimeFlag(instanceUid);
+                    ClearOrganicLifecycleState(instanceUid);
+
+                    _healthByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)0f);
+                    if (_damageVisualProgressByInstanceUid.IsCreated)
+                        _damageVisualProgressByInstanceUid.Remove(instanceUid);
+                    if (_pendingWiltEndTimeByInstanceUid.IsCreated)
+                        _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
+
+                    PrimeDecompositionState(instanceUid, ResolveOrganicClockSeconds());
+                    SetLaneHealth(underwater, activeIndex, 0f);
+                    parentMassKg = ComputePinnedParentMassKg(underwater, activeIndex, instanceUid, materialClass, templateIndex);
+                    ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
+                    ApplyDearLieMatrixScaleZeroToLaneInstance(underwater, activeIndex);
+                    ApplyDecompositionToLaneInstance(underwater, activeIndex, instanceUid, 0f);
+                    ClearPersistedFloraStateOverride(instanceUid);
+                    if (TryCopyPinnedTemplateDescriptor(templateIndex, out HarvestableTemplate.RuntimeDescriptor passiveDescriptor))
+                    {
+                        registerDestroyedFlora = true;
+                        templateStableHash = (ulong)(uint)passiveDescriptor.StableHashId;
+                    }
+
+                    hasNavObstacleBounds = TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out navObstacleCenter, out navObstacleExtents);
+                    applied = true;
+                }
+            }
+            finally
+            {
+                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+            }
+
+            if (destroyedMapInsertFailed)
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 128);
+
+            if (!applied)
+                return false;
 
             PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null)
                 registry.TryClearFloraStateOverride(instanceUid);
 
-            ClearPersistedFloraStateOverride(instanceUid);
-            if (registry != null && templateIndex >= 0 && templateIndex < _templateDescriptors.Length)
-                registry.TryRegisterDestroyedFlora((ulong)(uint)_templateDescriptors[templateIndex].StableHashId, instanceUid, instancePosition);
+            if (registry != null && registerDestroyedFlora)
+                registry.TryRegisterDestroyedFlora(templateStableHash, instanceUid, instancePosition);
 
             QueueYieldEvent(
                 instancePosition,
@@ -4206,6 +7131,7 @@ namespace Hecton8.World
                 0f,
                 hasNavObstacleBounds ? navObstacleCenter : float3.zero,
                 hasNavObstacleBounds ? navObstacleExtents : float3.zero);
+            return true;
         }
 
         private void SpawnDebris(
@@ -4221,14 +7147,14 @@ namespace Hecton8.World
             if (profile == null || !profile.IsValid)
                 return;
 
-            float3 spawnPosition = new float3(hitPoint.x, hitPoint.y, hitPoint.z);
+            float3 spawnPosition = ToFloat3(hitPoint);
             if (!math.all(math.isfinite(spawnPosition)))
-                spawnPosition = new float3(instancePosition.x, instancePosition.y, instancePosition.z);
+                spawnPosition = ToFloat3(instancePosition);
 
             if (!math.all(math.isfinite(spawnPosition)))
                 return;
 
-            Vector3 debrisRuntimePosition = new Vector3(spawnPosition.x, spawnPosition.y, spawnPosition.z);
+            Vector3 debrisRuntimePosition = ToRuntimeVector3(spawnPosition);
             if (!TryResolveAupFromRuntimeOrigin(debrisRuntimePosition, out AbsoluteUniversePosition debrisAup))
                 return;
 
@@ -4257,28 +7183,35 @@ namespace Hecton8.World
             float3 navObstacleCenter,
             float3 navObstacleExtents)
         {
-            if (!_pendingYieldEvents.IsCreated || _pendingYieldEvents.Length >= _pendingYieldEvents.Capacity)
+            IDataVault vault = _dearLieVault;
+            if (vault == null || !vault.TryLockBuffer(OrganicPendingYieldEventsBufferId, OrganicVaultSystemId))
                 return;
 
-            _pendingYieldEvents.AddNoResize(new DestroyedOrganicEvent
+            try
             {
-                Position = new float3(instancePosition.x, instancePosition.y, instancePosition.z),
-                NavObstacleCenter = navObstacleCenter,
-                NavObstacleExtents = navObstacleExtents,
-                ToolPower = Mathf.Max(0.1f, normalizedPower),
-                ParentMassKg = parentMassKg <= 0.0001f ? 0f : Mathf.Max(0.05f, parentMassKg),
-                Damage01 = Mathf.Clamp01(damage01),
-                InstanceUid = instanceUid,
-                TemplateIndex = templateIndex,
-                MaterialClassId = (int)materialClass
-            });
+                if (!_pendingYieldEvents.IsCreated || _pendingYieldEvents.Length >= _pendingYieldEvents.Capacity)
+                    return;
+
+                DestroyedOrganicEvent organicEvent = default;
+                organicEvent.Position = ToFloat3(instancePosition);
+                organicEvent.NavObstacleCenter = navObstacleCenter;
+                organicEvent.NavObstacleExtents = navObstacleExtents;
+                organicEvent.ToolPower = Mathf.Max(0.1f, normalizedPower);
+                organicEvent.ParentMassKg = parentMassKg <= 0.0001f ? 0f : Mathf.Max(0.05f, parentMassKg);
+                organicEvent.Damage01 = Mathf.Clamp01(damage01);
+                organicEvent.InstanceUid = instanceUid;
+                organicEvent.TemplateIndex = templateIndex;
+                organicEvent.MaterialClassId = (int)materialClass;
+                _pendingYieldEvents.AddNoResize(organicEvent);
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(OrganicPendingYieldEventsBufferId, OrganicVaultSystemId);
+            }
         }
 
         private void PublishExternalInteraction(Vector3 positionWS, Vector3 velocityWS, float radius)
         {
-            if (floraInteractionManager == null)
-                floraInteractionManager = GetComponent<FloraInteractionManager>();
-
             floraInteractionManager?.RegisterExternalInteraction(positionWS, velocityWS, radius);
         }
 
@@ -4297,7 +7230,10 @@ namespace Hecton8.World
         private int ResolveTemplateIndex(HarvestableTemplate.MaterialClass materialClass)
         {
             int materialIndex = (int)materialClass;
-            if (_templateIndexByMaterialClass == null || materialIndex < 0 || materialIndex >= _templateIndexByMaterialClass.Length)
+            if (!_templateCacheReady ||
+                _templateIndexByMaterialClass == null ||
+                materialIndex < 0 ||
+                materialIndex >= _templateIndexByMaterialClass.Length)
                 return -1;
 
             return _templateIndexByMaterialClass[materialIndex];
@@ -4316,6 +7252,95 @@ namespace Hecton8.World
             }
 
             return ResolveTemplateIndex(fallbackMaterialClass);
+        }
+
+        private bool TrySnapshotTemplateDescriptorWithLock(int templateIndex, out HarvestableTemplate.RuntimeDescriptor descriptor)
+        {
+            descriptor = default;
+            if (!_templateCacheReady || templateIndex < 0)
+                return false;
+
+            IDataVault vault = _dearLieVault;
+            if (vault == null || !vault.TryLockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId))
+                return false;
+
+            try
+            {
+                return TryCopyPinnedTemplateDescriptor(templateIndex, out descriptor);
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId);
+            }
+        }
+
+        private bool TryCopyPinnedTemplateDescriptor(int templateIndex, out HarvestableTemplate.RuntimeDescriptor descriptor)
+        {
+            descriptor = default;
+            if (!_templateCacheReady || templateIndex < 0)
+                return false;
+
+            if (!_templateDescriptors.TryResolve(out NativeArray<HarvestableTemplate.RuntimeDescriptor> descriptors) ||
+                !descriptors.IsCreated ||
+                templateIndex >= descriptors.Length)
+            {
+                return false;
+            }
+
+            descriptor = descriptors[templateIndex];
+            return true;
+        }
+
+        private bool TryFindTemplateDescriptorByPersistentHashWithLock(
+            ulong floraPersistentIdHash,
+            out int descriptorIndex,
+            out HarvestableTemplate.RuntimeDescriptor descriptor)
+        {
+            descriptorIndex = -1;
+            descriptor = default;
+            if (!_templateCacheReady)
+                return false;
+
+            IDataVault vault = _dearLieVault;
+            if (vault == null || !vault.TryLockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId))
+                return false;
+
+            try
+            {
+                return TryFindPinnedTemplateDescriptorByPersistentHash(floraPersistentIdHash, out descriptorIndex, out descriptor);
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId);
+            }
+        }
+
+        private bool TryFindPinnedTemplateDescriptorByPersistentHash(
+            ulong floraPersistentIdHash,
+            out int descriptorIndex,
+            out HarvestableTemplate.RuntimeDescriptor descriptor)
+        {
+            descriptorIndex = -1;
+            descriptor = default;
+            if (!_templateCacheReady ||
+                !_templateDescriptors.TryResolve(out NativeArray<HarvestableTemplate.RuntimeDescriptor> descriptors) ||
+                !descriptors.IsCreated)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < descriptors.Length; i++)
+            {
+                HarvestableTemplate.RuntimeDescriptor candidate = descriptors[i];
+                if ((ulong)(uint)candidate.StableHashId != floraPersistentIdHash)
+                    continue;
+
+                descriptorIndex = i;
+                descriptor = candidate;
+                return true;
+            }
+
+            return false;
         }
 
         private bool IsToolCompatible(HectonVegetationInstanceData metadata, uint toolCapabilityMask)
@@ -4337,7 +7362,7 @@ namespace Hecton8.World
 
             _baseScaleByInstanceUid.TryAdd(
                 instanceUid,
-                new float2(
+                MakeFloat2(
                     Mathf.Max(MinimumDecomposedHeightScale, Mathf.Abs(metadata.HeightScale)),
                     Mathf.Max(MinimumDecomposedWidthScale, Mathf.Clamp01(Mathf.Abs(metadata.WidthScale)))));
         }
@@ -4355,8 +7380,9 @@ namespace Hecton8.World
             if (instanceUid == 0u || !_lastOrganicTouchTimeByInstanceUid.IsCreated)
                 return;
 
-            _lastOrganicTouchTimeByInstanceUid.Remove(instanceUid);
-            _lastOrganicTouchTimeByInstanceUid.TryAdd(instanceUid, currentTime);
+            if (!_lastOrganicTouchTimeByInstanceUid.TryPut(instanceUid, currentTime))
+                return;
+
             if (_overgrownByInstanceUid.IsCreated)
                 _overgrownByInstanceUid.Remove(instanceUid);
         }
@@ -4372,29 +7398,46 @@ namespace Hecton8.World
                 _overgrownByInstanceUid.Remove(instanceUid);
             if (_rootMoundAppliedByInstanceUid.IsCreated)
                 _rootMoundAppliedByInstanceUid.Remove(instanceUid);
+            if (_maturationScaleByInstanceUid.IsCreated)
+                _maturationScaleByInstanceUid.Remove(instanceUid);
+            if (_maturationYieldByInstanceUid.IsCreated)
+                _maturationYieldByInstanceUid.Remove(instanceUid);
+            if (_nextSporeAcousticTimeByInstanceUid.IsCreated)
+                _nextSporeAcousticTimeByInstanceUid.Remove(instanceUid);
         }
 
-        private void RegisterDefoliantDestroyedInstance(uint instanceUid, int templateIndex, Vector3 instancePosition)
+        private bool TryRegisterDefoliantDestroyedInstance(uint instanceUid, int templateIndex, out ulong templateStableHash, out bool destroyedMapInsertFailed)
         {
+            templateStableHash = 0UL;
+            destroyedMapInsertFailed = false;
             if (instanceUid == 0u || !_destroyedByInstanceUid.IsCreated)
-                return;
+                return false;
 
-            _destroyedByInstanceUid.TryAdd(instanceUid, 1);
-            _healthByInstanceUid.Remove(instanceUid);
-            _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)0f);
+            if (!TryCopyPinnedTemplateDescriptor(templateIndex, out HarvestableTemplate.RuntimeDescriptor descriptor))
+                return false;
+
+            if (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid))
+                return false;
+
+            if (_destroyedByInstanceUid.ContainsKey(instanceUid))
+                return false;
+
+            templateStableHash = (ulong)(uint)descriptor.StableHashId;
+            if (!_destroyedByInstanceUid.TryAdd(instanceUid, 1))
+            {
+                destroyedMapInsertFailed = true;
+                return false;
+            }
+
+            _healthByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)0f);
             PrimeDecompositionState(instanceUid, ResolveOrganicClockSeconds() - OrganicDecompositionDurationSeconds);
             ClearOrganicLifecycleState(instanceUid);
 
-            PersistentWorldRegistry registry = _persistentWorldRegistry;
-            if (registry != null)
-                registry.TryClearFloraStateOverride(instanceUid);
-
             ClearPersistedFloraStateOverride(instanceUid);
-            if (registry != null && templateIndex >= 0 && templateIndex < _templateDescriptors.Length)
-                registry.TryRegisterDestroyedFlora((ulong)(uint)_templateDescriptors[templateIndex].StableHashId, instanceUid, instancePosition);
+            return true;
         }
 
-        private byte ResolveRuntimeFlags(uint instanceUid, HarvestableTemplate.MaterialClass materialClass, int semanticType, float existingRuntimeFlags)
+        private byte EnsureRuntimeFlags(uint instanceUid, HarvestableTemplate.MaterialClass materialClass, int semanticType, float existingRuntimeFlags)
         {
             if (!_runtimeFlagsByInstanceUid.IsCreated || instanceUid == 0u)
                 return HectonVegetationRuntimeFlagEncoding.ExtractPackedFlags(existingRuntimeFlags);
@@ -4426,6 +7469,12 @@ namespace Hecton8.World
             metadata[activeIndex] = flaggedMetadata;
         }
 
+        private static void ApplyRuntimeFlags(ref BridgeMetadataLane metadata, int activeIndex, byte runtimeFlags)
+        {
+            NativeArray<HectonVegetationInstanceData> buffer = metadata;
+            ApplyRuntimeFlags(ref buffer, activeIndex, runtimeFlags);
+        }
+
         private void ApplyRuntimeFlagsToLaneInstance(bool underwater, int activeIndex, byte runtimeFlags)
         {
             if (underwater)
@@ -4442,8 +7491,7 @@ namespace Hecton8.World
             byte runtimeFlags = 0;
             _runtimeFlagsByInstanceUid.TryGetValue(instanceUid, out runtimeFlags);
             runtimeFlags |= FloraRuntimeFlagDead;
-            _runtimeFlagsByInstanceUid.Remove(instanceUid);
-            _runtimeFlagsByInstanceUid.TryAdd(instanceUid, runtimeFlags);
+            _runtimeFlagsByInstanceUid.TryPut(instanceUid, runtimeFlags);
             return runtimeFlags;
         }
 
@@ -4456,8 +7504,13 @@ namespace Hecton8.World
                 return;
 
             runtimeFlags &= unchecked((byte)~FloraRuntimeFlagDead);
+            if (runtimeFlags != 0)
+            {
+                _runtimeFlagsByInstanceUid.TryPut(instanceUid, runtimeFlags);
+                return;
+            }
+
             _runtimeFlagsByInstanceUid.Remove(instanceUid);
-            _runtimeFlagsByInstanceUid.TryAdd(instanceUid, runtimeFlags);
         }
 
         private bool TryResolveNavObstacleForLaneInstance(bool underwater, int activeIndex, out float3 center, out float3 extents)
@@ -4505,11 +7558,10 @@ namespace Hecton8.World
             if (!_decompositionStartTimeByInstanceUid.IsCreated || instanceUid == 0u)
                 return;
 
-            _decompositionStartTimeByInstanceUid.Remove(instanceUid);
-            _decompositionStartTimeByInstanceUid.TryAdd(instanceUid, decompositionStartTime);
+            _decompositionStartTimeByInstanceUid.TryPut(instanceUid, decompositionStartTime);
         }
 
-        private float ResolveOrPrimeDecompositionProgress(uint instanceUid, float currentTime)
+        private float EnsureDecompositionProgress(uint instanceUid, float currentTime)
         {
             if (!_decompositionStartTimeByInstanceUid.IsCreated || instanceUid == 0u)
                 return 1f;
@@ -4534,14 +7586,97 @@ namespace Hecton8.World
         internal bool TryEvaluateParasiteExposure(Vector3 runtimePosition, out float exposure01)
         {
             exposure01 = 0f;
-            if (_dearLieJobScheduled)
+            if (_dearLieJobScheduled ||
+                !IsFiniteVector(runtimePosition) ||
+                !_runtimeFlagsByInstanceUid.IsCreated)
+            {
                 return false;
+            }
+
+            float currentTime = ResolveOrganicClockSeconds();
+            if (_lastParasiteExposureSampleTime > 0f)
+            {
+                Vector3 queryDelta = runtimePosition - _lastParasiteExposureQueryPosition;
+                if (queryDelta.sqrMagnitude > ParasiteExposureQueryResetDistanceSq)
+                {
+                    _surfaceParasiteExposureScanCursor = 0;
+                    _underwaterParasiteExposureScanCursor = 0;
+                    _lastParasiteExposure01 = 0f;
+                    _lastParasiteExposureSampleTime = 0f;
+                    _nextParasiteExposureSampleTime = currentTime;
+                }
+            }
+
+            if (currentTime < _nextParasiteExposureSampleTime)
+            {
+                exposure01 = Mathf.Clamp01(_lastParasiteExposure01);
+                return exposure01 > 0.0001f;
+            }
+
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicParasiteExposureReadBuffers(vault, out int lockedMask))
+            {
+                if (_lastParasiteExposure01 > 0.0001f &&
+                    currentTime - _lastParasiteExposureSampleTime <= ParasiteExposureHoldSeconds)
+                {
+                    exposure01 = Mathf.Clamp01(_lastParasiteExposure01);
+                    return true;
+                }
+
+                return false;
+            }
 
             float bestExposure = 0f;
-            EvaluateParasiteExposureInLane(runtimePosition, false, ref bestExposure);
-            EvaluateParasiteExposureInLane(runtimePosition, true, ref bestExposure);
-            exposure01 = Mathf.Clamp01(bestExposure);
+            float qualityWeight = ResolveDearLieGlobalQualityWeight();
+            int scanBudgetPerLane = ResolveParasiteExposureScanBudgetPerLane(qualityWeight);
+            try
+            {
+                EvaluateParasiteExposureInLane(runtimePosition, false, scanBudgetPerLane, ref _surfaceParasiteExposureScanCursor, ref bestExposure);
+                EvaluateParasiteExposureInLane(runtimePosition, true, scanBudgetPerLane, ref _underwaterParasiteExposureScanCursor, ref bestExposure);
+            }
+            finally
+            {
+                UnlockOrganicParasiteExposureReadBuffers(vault, lockedMask);
+            }
+
+            if (bestExposure > 0.0001f)
+            {
+                _lastParasiteExposure01 = Mathf.Clamp01(bestExposure);
+                _lastParasiteExposureSampleTime = currentTime;
+                _lastParasiteExposureQueryPosition = runtimePosition;
+            }
+            else if (_lastParasiteExposure01 > 0.0001f &&
+                     currentTime - _lastParasiteExposureSampleTime > ParasiteExposureHoldSeconds)
+            {
+                _lastParasiteExposure01 = 0f;
+                _lastParasiteExposureSampleTime = currentTime;
+                _lastParasiteExposureQueryPosition = runtimePosition;
+            }
+            else if (_lastParasiteExposureSampleTime <= 0f)
+            {
+                _lastParasiteExposureSampleTime = currentTime;
+                _lastParasiteExposureQueryPosition = runtimePosition;
+            }
+
+            _nextParasiteExposureSampleTime = currentTime + ResolveParasiteExposureRefreshIntervalSeconds(qualityWeight);
+            exposure01 = Mathf.Clamp01(_lastParasiteExposure01);
             return exposure01 > 0.0001f;
+        }
+
+        private static int ResolveParasiteExposureScanBudgetPerLane(float qualityWeight)
+        {
+            float q = math.saturate(qualityWeight);
+            return math.max(
+                ParasiteExposureMinScanBudgetPerLane,
+                (int)math.round(math.lerp(ParasiteExposureMinScanBudgetPerLane, ParasiteExposureMaxScanBudgetPerLane, q * q)));
+        }
+
+        private static float ResolveParasiteExposureRefreshIntervalSeconds(float qualityWeight)
+        {
+            return math.lerp(
+                ParasiteExposureMaxRefreshIntervalSeconds,
+                ParasiteExposureMinRefreshIntervalSeconds,
+                math.saturate(qualityWeight));
         }
 
         private void ApplyDamageVisualState(
@@ -4572,9 +7707,13 @@ namespace Hecton8.World
             if (!_damageVisualProgressByInstanceUid.IsCreated || instanceUid == 0u)
                 return;
 
-            _damageVisualProgressByInstanceUid.Remove(instanceUid);
             if (damage01 > 0.0001f)
-                _damageVisualProgressByInstanceUid.TryAdd(instanceUid, damage01);
+            {
+                _damageVisualProgressByInstanceUid.TryPut(instanceUid, damage01);
+                return;
+            }
+
+            _damageVisualProgressByInstanceUid.Remove(instanceUid);
         }
 
         private static float ResolveDamageProgress(float baseHealth, float currentHealth)
@@ -4720,9 +7859,9 @@ namespace Hecton8.World
             Vector3 instancePosition)
         {
             if (templateIndex < 0 ||
-                templateIndex >= _templateDescriptors.Length ||
                 instanceUid == 0u ||
-                previousState == nextState)
+                previousState == nextState ||
+                !_templateCacheReady)
             {
                 return;
             }
@@ -4733,14 +7872,23 @@ namespace Hecton8.World
 
             float volume = ResolveHarvestAudioVolume(nextState);
             float pitch = ResolveHarvestAudioPitch(nextState);
+            HarvestAudioEvent audioEvent = default;
+            audioEvent.RuntimePosition = instancePosition;
+            audioEvent.Clip = clip;
+            audioEvent.Volume = volume;
+            audioEvent.Pitch = pitch;
             if (TryResolveAupFromRuntimeOrigin(instancePosition, out AbsoluteUniversePosition soundAup) &&
                 _harvestAudioSink != null)
             {
-                QueueHarvestAudioEvent(new HarvestAudioEvent(soundAup, instancePosition, clip, volume, pitch, true));
+                audioEvent.PositionAup = soundAup;
+                audioEvent.HasAup = true;
+                QueueHarvestAudioEvent(in audioEvent);
                 return;
             }
 
-            QueueHarvestAudioEvent(new HarvestAudioEvent(default, instancePosition, clip, volume, pitch, false));
+            audioEvent.PositionAup = default;
+            audioEvent.HasAup = false;
+            QueueHarvestAudioEvent(in audioEvent);
         }
 
         private AudioClip ResolveHarvestAudioClip(byte audioMaterialId, HarvestState harvestState)
@@ -4820,7 +7968,7 @@ namespace Hecton8.World
             if (!_nextSporeAcousticTimeByInstanceUid.TryGetValue(instanceUid, out float nextAllowedTime))
             {
                 nextAllowedTime = ResolveNextSporePulseTime(currentTime, pulseFrequency, phaseOffset01);
-                _nextSporeAcousticTimeByInstanceUid.TryAdd(instanceUid, nextAllowedTime);
+                _nextSporeAcousticTimeByInstanceUid.TryPut(instanceUid, nextAllowedTime);
                 if (currentTime < nextAllowedTime)
                     return;
             }
@@ -4831,36 +7979,28 @@ namespace Hecton8.World
 
             float volume = ResolveMatureSporeAcousticVolume(templateIndex);
             float pitch = ResolveMatureSporeAcousticPitch(pulseFrequency);
+            SporeAcousticEvent acousticEvent = default;
+            acousticEvent.RuntimePosition = instancePosition;
+            acousticEvent.Clip = clip;
+            acousticEvent.PulseFrequencyHz = pulseFrequency;
+            acousticEvent.Volume = volume;
+            acousticEvent.Pitch = pitch;
+            acousticEvent.SimulationTimeSeconds = nextAllowedTime;
+            acousticEvent.PhaseOffset01 = phaseOffset01;
             if (TryResolveAupFromRuntimeOrigin(instancePosition, out AbsoluteUniversePosition soundAup))
             {
-                SporeAcousticEvent acousticEvent = new SporeAcousticEvent(
-                    soundAup,
-                    instancePosition,
-                    clip,
-                    pulseFrequency,
-                    volume,
-                    pitch,
-                    nextAllowedTime,
-                    phaseOffset01,
-                    true);
+                acousticEvent.PositionAup = soundAup;
+                acousticEvent.HasAup = true;
                 QueueSporeAcousticEvent(in acousticEvent);
             }
             else
             {
-                QueueSporeAcousticEvent(new SporeAcousticEvent(
-                    default,
-                    instancePosition,
-                    clip,
-                    pulseFrequency,
-                    volume,
-                    pitch,
-                    nextAllowedTime,
-                    phaseOffset01,
-                    false));
+                acousticEvent.PositionAup = default;
+                acousticEvent.HasAup = false;
+                QueueSporeAcousticEvent(in acousticEvent);
             }
 
-            _nextSporeAcousticTimeByInstanceUid.Remove(instanceUid);
-            _nextSporeAcousticTimeByInstanceUid.TryAdd(instanceUid, ResolveNextSporePulseTime(currentTime + 0.0001f, pulseFrequency, phaseOffset01));
+            _nextSporeAcousticTimeByInstanceUid.TryPut(instanceUid, ResolveNextSporePulseTime(currentTime + 0.0001f, pulseFrequency, phaseOffset01));
         }
 
         private void DispatchSporeAcousticEvent(in SporeAcousticEvent acousticEvent)
@@ -4912,7 +8052,7 @@ namespace Hecton8.World
 
         private void FlushPendingHarvestAudioEvents()
         {
-            int count = _pendingHarvestAudioEventCount;
+            int count = math.min(_pendingHarvestAudioEventCount, _pendingHarvestAudioEvents.Length);
             if (count <= 0)
                 return;
 
@@ -4935,7 +8075,7 @@ namespace Hecton8.World
 
         private void FlushPendingSporeAcousticEvents()
         {
-            int count = _pendingSporeAcousticEventCount;
+            int count = math.min(_pendingSporeAcousticEventCount, _pendingSporeAcousticEvents.Length);
             if (count <= 0)
                 return;
 
@@ -5078,37 +8218,115 @@ namespace Hecton8.World
             float baseHealth,
             float currentHealth)
         {
-            if (instanceUid == 0u || templateIndex < 0 || templateIndex >= _templateDescriptors.Length)
-                return;
+            if (TryCacheFloraStateOverride(
+                    instanceUid,
+                    templateIndex,
+                    underwater,
+                    activeIndex,
+                    baseHealth,
+                    currentHealth,
+                    out float normalizedHealth,
+                    out byte harvestState,
+                    out bool clearOverride))
+            {
+                PublishFloraStateOverride(instanceUid, templateIndex, instancePosition, normalizedHealth, harvestState, clearOverride);
+            }
+        }
 
-            float normalizedHealth = math.saturate(currentHealth / math.max(0.0001f, baseHealth));
+        private bool TryCacheFloraStateOverride(
+            uint instanceUid,
+            int templateIndex,
+            bool underwater,
+            int activeIndex,
+            float baseHealth,
+            float currentHealth,
+            out float normalizedHealth,
+            out byte harvestState,
+            out bool clearOverride)
+        {
+            normalizedHealth = 0f;
+            harvestState = 0;
+            clearOverride = false;
+            if (instanceUid == 0u || !_templateCacheReady || templateIndex < 0)
+                return false;
+
+            normalizedHealth = math.saturate(currentHealth / math.max(0.0001f, baseHealth));
             float normalizedHeightScale = ResolveCurrentNormalizedHeightScale(underwater, activeIndex, instanceUid, normalizedHealth);
-            HarvestState harvestState = ResolveHarvestState(templateIndex, baseHealth, currentHealth, normalizedHeightScale);
+            HarvestState resolvedHarvestState = ResolveHarvestState(templateIndex, baseHealth, currentHealth, normalizedHeightScale);
+            harvestState = (byte)resolvedHarvestState;
             if (PersistentWorldRegistry.IsPristineFloraState(normalizedHealth, normalizedHeightScale))
             {
-                _persistentWorldRegistry?.TryClearFloraStateOverride(instanceUid);
                 ClearPersistedFloraStateOverride(instanceUid);
-                return;
+                clearOverride = true;
+                return true;
             }
 
+            if (!_persistedHealth01ByInstanceUid.IsCreated || !_persistedHeightScale01ByInstanceUid.IsCreated)
+                return false;
+
+            bool hadHealth = _persistedHealth01ByInstanceUid.TryGetValue(instanceUid, out Unity.Mathematics.half previousHealth);
+            bool hadHeight = _persistedHeightScale01ByInstanceUid.TryGetValue(instanceUid, out Unity.Mathematics.half previousHeight);
+            bool healthAdded = _persistedHealth01ByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)normalizedHealth);
+            bool heightAdded = _persistedHeightScale01ByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)normalizedHeightScale);
+            if (!healthAdded || !heightAdded)
+            {
+                RestorePersistedFloraStateOverridePair(instanceUid, hadHealth, previousHealth, hadHeight, previousHeight);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void RestorePersistedFloraStateOverridePair(
+            uint instanceUid,
+            bool hadHealth,
+            Unity.Mathematics.half previousHealth,
+            bool hadHeight,
+            Unity.Mathematics.half previousHeight)
+        {
             if (_persistedHealth01ByInstanceUid.IsCreated)
             {
-                _persistedHealth01ByInstanceUid.Remove(instanceUid);
-                _persistedHealth01ByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)normalizedHealth);
+                if (hadHealth)
+                    _persistedHealth01ByInstanceUid.TryPut(instanceUid, previousHealth);
+                else
+                    _persistedHealth01ByInstanceUid.Remove(instanceUid);
             }
 
             if (_persistedHeightScale01ByInstanceUid.IsCreated)
             {
-                _persistedHeightScale01ByInstanceUid.Remove(instanceUid);
-                _persistedHeightScale01ByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)normalizedHeightScale);
+                if (hadHeight)
+                    _persistedHeightScale01ByInstanceUid.TryPut(instanceUid, previousHeight);
+                else
+                    _persistedHeightScale01ByInstanceUid.Remove(instanceUid);
             }
+        }
 
+        private void PublishFloraStateOverride(
+            uint instanceUid,
+            int templateIndex,
+            Vector3 instancePosition,
+            float normalizedHealth,
+            byte harvestState,
+            bool clearOverride)
+        {
             PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null)
                 return;
 
+            if (clearOverride)
+            {
+                registry.TryClearFloraStateOverride(instanceUid);
+                return;
+            }
+
+            if (instanceUid == 0u ||
+                !TrySnapshotTemplateDescriptorWithLock(templateIndex, out HarvestableTemplate.RuntimeDescriptor descriptor))
+            {
+                return;
+            }
+
             registry.TryRegisterFloraStateOverride(
-                (ulong)(uint)_templateDescriptors[templateIndex].StableHashId,
+                (ulong)(uint)descriptor.StableHashId,
                 instanceUid,
                 instancePosition,
                 normalizedHealth,
@@ -5181,24 +8399,43 @@ namespace Hecton8.World
             if (!_regrowthProgressByInstanceUid.IsCreated || _regrowthProgressByInstanceUid.Count <= 0)
                 return;
 
-            UpdateRegrowthLane(false);
-            UpdateRegrowthLane(true);
+            UpdateRegrowthLane(false, ref _surfaceRegrowthVisualScanCursor);
+            UpdateRegrowthLane(true, ref _underwaterRegrowthVisualScanCursor);
         }
 
-        private void UpdateRegrowthLane(bool underwater)
+        private void UpdateRegrowthLane(bool underwater, ref int scanCursor)
         {
             NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
             int count = underwater ? _underwaterCount : _surfaceCount;
             if (!instanceUids.IsCreated || count <= 0)
-                return;
-
-            for (int i = 0; i < count; i++)
             {
-                uint instanceUid = instanceUids[i];
+                scanCursor = 0;
+                return;
+            }
+
+            int safeCount = math.min(count, instanceUids.Length);
+            if (safeCount <= 0)
+            {
+                scanCursor = 0;
+                return;
+            }
+
+            if ((uint)scanCursor >= (uint)safeCount)
+                scanCursor = 0;
+
+            int budget = ResolveOrganicVisualScanBudget(safeCount);
+            for (int checkedCount = 0; checkedCount < budget; checkedCount++)
+            {
+                int activeIndex = scanCursor;
+                scanCursor++;
+                if (scanCursor >= safeCount)
+                    scanCursor = 0;
+
+                uint instanceUid = instanceUids[activeIndex];
                 if (instanceUid == 0u || !_regrowthProgressByInstanceUid.TryGetValue(instanceUid, out float progress01))
                     continue;
 
-                ApplyRegrowthVisualToLaneInstance(underwater, i, instanceUid, progress01);
+                ApplyRegrowthVisualToLaneInstance(underwater, activeIndex, instanceUid, progress01);
             }
         }
 
@@ -5237,7 +8474,7 @@ namespace Hecton8.World
             if ((uint)scanCursor >= (uint)safeCount)
                 scanCursor = 0;
 
-            int budget = math.min(Mathf.Max(1, matureSporeAcousticScanBudgetPerTick), safeCount);
+            int budget = ResolveMatureSporeAcousticScanBudget(safeCount);
             for (int checkedCount = 0; checkedCount < budget; checkedCount++)
             {
                 int activeIndex = scanCursor;
@@ -5269,26 +8506,71 @@ namespace Hecton8.World
             }
         }
 
+        private int ResolveMatureSporeAcousticScanBudget(int safeCount)
+        {
+            if (safeCount <= 0)
+                return 0;
+
+            int maxBudget = math.max(1, matureSporeAcousticScanBudgetPerTick);
+            int minBudget = math.min(maxBudget, MatureSporeMinChecksPerTick);
+            float q = ResolveDearLieGlobalQualityWeight();
+            int resolvedBudget = math.max(
+                minBudget,
+                (int)math.round(math.lerp(minBudget, maxBudget, q * q)));
+            return math.min(safeCount, resolvedBudget);
+        }
+
+        private int ResolveOrganicVisualScanBudget(int safeCount)
+        {
+            if (safeCount <= 0)
+                return 0;
+
+            float q = ResolveDearLieGlobalQualityWeight();
+            int resolvedBudget = math.max(
+                OrganicVisualMinChecksPerTick,
+                (int)math.round(math.lerp(OrganicVisualMinChecksPerTick, OrganicVisualMaxChecksPerTick, q * q)));
+            return math.min(safeCount, resolvedBudget);
+        }
+
         private void UpdateDecompositionVisuals(float currentTime)
         {
             if (!_decompositionStartTimeByInstanceUid.IsCreated || _decompositionStartTimeByInstanceUid.Count <= 0)
                 return;
 
-            UpdateDecompositionLane(false, currentTime);
-            UpdateDecompositionLane(true, currentTime);
+            UpdateDecompositionLane(false, currentTime, ref _surfaceDecompositionVisualScanCursor);
+            UpdateDecompositionLane(true, currentTime, ref _underwaterDecompositionVisualScanCursor);
         }
 
-        private void UpdateDecompositionLane(bool underwater, float currentTime)
+        private void UpdateDecompositionLane(bool underwater, float currentTime, ref int scanCursor)
         {
             NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
             int count = underwater ? _underwaterCount : _surfaceCount;
             if (!instanceUids.IsCreated || !metadata.IsCreated || count <= 0)
-                return;
-
-            for (int i = 0; i < count; i++)
             {
-                uint instanceUid = instanceUids[i];
+                scanCursor = 0;
+                return;
+            }
+
+            int safeCount = math.min(count, math.min(instanceUids.Length, metadata.Length));
+            if (safeCount <= 0)
+            {
+                scanCursor = 0;
+                return;
+            }
+
+            if ((uint)scanCursor >= (uint)safeCount)
+                scanCursor = 0;
+
+            int budget = ResolveOrganicVisualScanBudget(safeCount);
+            for (int checkedCount = 0; checkedCount < budget; checkedCount++)
+            {
+                int activeIndex = scanCursor;
+                scanCursor++;
+                if (scanCursor >= safeCount)
+                    scanCursor = 0;
+
+                uint instanceUid = instanceUids[activeIndex];
                 if (instanceUid == 0u ||
                     (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid)) ||
                     !_destroyedByInstanceUid.IsCreated ||
@@ -5297,8 +8579,8 @@ namespace Hecton8.World
                     continue;
                 }
 
-                float entropy01 = ResolveOrPrimeDecompositionProgress(instanceUid, currentTime);
-                ApplyDecompositionMetadata(ref metadata, i, instanceUid, entropy01);
+                float entropy01 = EnsureDecompositionProgress(instanceUid, currentTime);
+                ApplyDecompositionMetadata(ref metadata, activeIndex, instanceUid, entropy01);
             }
         }
 
@@ -5307,22 +8589,41 @@ namespace Hecton8.World
             if (!_damageVisualProgressByInstanceUid.IsCreated || _damageVisualProgressByInstanceUid.Count <= 0)
                 return;
 
-            UpdateDamageLane(false, currentTime);
-            UpdateDamageLane(true, currentTime);
+            UpdateDamageLane(false, currentTime, ref _surfaceDamageVisualScanCursor);
+            UpdateDamageLane(true, currentTime, ref _underwaterDamageVisualScanCursor);
         }
 
-        private void UpdateDamageLane(bool underwater, float currentTime)
+        private void UpdateDamageLane(bool underwater, float currentTime, ref int scanCursor)
         {
             NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
             NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
             int count = underwater ? _underwaterCount : _surfaceCount;
             if (!instanceUids.IsCreated || !metadata.IsCreated || !materialClasses.IsCreated || count <= 0)
-                return;
-
-            for (int i = 0; i < count; i++)
             {
-                uint instanceUid = instanceUids[i];
+                scanCursor = 0;
+                return;
+            }
+
+            int safeCount = math.min(count, math.min(instanceUids.Length, math.min(metadata.Length, materialClasses.Length)));
+            if (safeCount <= 0)
+            {
+                scanCursor = 0;
+                return;
+            }
+
+            if ((uint)scanCursor >= (uint)safeCount)
+                scanCursor = 0;
+
+            int budget = ResolveOrganicVisualScanBudget(safeCount);
+            for (int checkedCount = 0; checkedCount < budget; checkedCount++)
+            {
+                int activeIndex = scanCursor;
+                scanCursor++;
+                if (scanCursor >= safeCount)
+                    scanCursor = 0;
+
+                uint instanceUid = instanceUids[activeIndex];
                 if (instanceUid == 0u ||
                     (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid)) ||
                     (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)) ||
@@ -5334,16 +8635,16 @@ namespace Hecton8.World
 
                 float normalizedHeightScale = ResolvePersistedNormalizedHeightScale(instanceUid);
                 if (normalizedHeightScale <= 0.0001f)
-                    normalizedHeightScale = ResolveRuntimeNormalizedHeightScale(instanceUid, metadata[i]);
+                    normalizedHeightScale = ResolveRuntimeNormalizedHeightScale(instanceUid, metadata[activeIndex]);
 
-                int templateIndex = ResolveTemplateIndex(metadata[i], (HarvestableTemplate.MaterialClass)materialClasses[i]);
-                float baseHealth = templateIndex >= 0 && templateIndex < _templateDescriptors.Length
-                    ? Mathf.Max(0.1f, _templateDescriptors[templateIndex].BaseHealth)
+                int templateIndex = ResolveTemplateIndex(metadata[activeIndex], (HarvestableTemplate.MaterialClass)materialClasses[activeIndex]);
+                float baseHealth = TryCopyPinnedTemplateDescriptor(templateIndex, out HarvestableTemplate.RuntimeDescriptor damageDescriptor)
+                    ? Mathf.Max(0.1f, damageDescriptor.BaseHealth)
                     : 1f;
                 float normalizedHealth = _healthByInstanceUid.IsCreated && _healthByInstanceUid.TryGetValue(instanceUid, out Unity.Mathematics.half trackedHealth)
                     ? Mathf.Clamp01((float)trackedHealth / baseHealth)
                     : Mathf.Clamp01(1f - (damage01 * 0.5f));
-                ApplyPersistedDamageMetadata(ref metadata, i, instanceUid, templateIndex, normalizedHealth, normalizedHeightScale, damage01, currentTime);
+                ApplyPersistedDamageMetadata(ref metadata, activeIndex, instanceUid, templateIndex, normalizedHealth, normalizedHeightScale, damage01, currentTime);
             }
         }
 
@@ -5352,32 +8653,51 @@ namespace Hecton8.World
             if (!_pendingWiltEndTimeByInstanceUid.IsCreated || _pendingWiltEndTimeByInstanceUid.Count <= 0)
                 return;
 
-            UpdateWiltLane(false, currentTime);
-            UpdateWiltLane(true, currentTime);
+            UpdateWiltLane(false, currentTime, ref _surfaceWiltVisualScanCursor);
+            UpdateWiltLane(true, currentTime, ref _underwaterWiltVisualScanCursor);
         }
 
-        private void UpdateWiltLane(bool underwater, float currentTime)
+        private void UpdateWiltLane(bool underwater, float currentTime, ref int scanCursor)
         {
             NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
             int count = underwater ? _underwaterCount : _surfaceCount;
             if (!instanceUids.IsCreated || !metadata.IsCreated || count <= 0)
-                return;
-
-            for (int i = 0; i < count; i++)
             {
-                uint instanceUid = instanceUids[i];
+                scanCursor = 0;
+                return;
+            }
+
+            int safeCount = math.min(count, math.min(instanceUids.Length, metadata.Length));
+            if (safeCount <= 0)
+            {
+                scanCursor = 0;
+                return;
+            }
+
+            if ((uint)scanCursor >= (uint)safeCount)
+                scanCursor = 0;
+
+            int budget = ResolveOrganicVisualScanBudget(safeCount);
+            for (int checkedCount = 0; checkedCount < budget; checkedCount++)
+            {
+                int activeIndex = scanCursor;
+                scanCursor++;
+                if (scanCursor >= safeCount)
+                    scanCursor = 0;
+
+                uint instanceUid = instanceUids[activeIndex];
                 if (instanceUid == 0u || !_pendingWiltEndTimeByInstanceUid.TryGetValue(instanceUid, out float wiltEndTime))
                     continue;
 
                 if (currentTime >= wiltEndTime)
                 {
-                    SuppressActiveInstance(underwater, i);
+                    SuppressActiveInstance(underwater, activeIndex);
                     _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
                     continue;
                 }
 
-                ApplyWiltMetadata(ref metadata, i, wiltEndTime - OrganicWiltDurationSeconds);
+                ApplyWiltMetadata(ref metadata, activeIndex, wiltEndTime - OrganicWiltDurationSeconds);
             }
         }
 
@@ -5406,6 +8726,16 @@ namespace Hecton8.World
             metadata[activeIndex] = hiddenMetadata;
         }
 
+        private static void SuppressActiveInstance(
+            ref BridgeMatrixLane matrices,
+            ref BridgeMetadataLane metadata,
+            int activeIndex)
+        {
+            NativeArray<Matrix4x4> matrixBuffer = matrices;
+            NativeArray<HectonVegetationInstanceData> metadataBuffer = metadata;
+            SuppressActiveInstance(ref matrixBuffer, ref metadataBuffer, activeIndex);
+        }
+
         private void ApplyDearLieMatrixScaleZeroToLaneInstance(bool underwater, int activeIndex)
         {
             if (underwater)
@@ -5422,6 +8752,12 @@ namespace Hecton8.World
             Matrix4x4 matrix = matrices[activeIndex];
             ScaleMatrixColumnsToZero(ref matrix);
             matrices[activeIndex] = matrix;
+        }
+
+        private static void ApplyDearLieMatrixScaleZero(ref BridgeMatrixLane matrices, int activeIndex)
+        {
+            NativeArray<Matrix4x4> buffer = matrices;
+            ApplyDearLieMatrixScaleZero(ref buffer, activeIndex);
         }
 
         private static void ScaleMatrixColumnsToZero(ref Matrix4x4 matrix)
@@ -5453,6 +8789,15 @@ namespace Hecton8.World
             metadata[activeIndex] = wiltMetadata;
         }
 
+        private static void ApplyWiltMetadata(
+            ref BridgeMetadataLane metadata,
+            int activeIndex,
+            float wiltStartTime)
+        {
+            NativeArray<HectonVegetationInstanceData> buffer = metadata;
+            ApplyWiltMetadata(ref buffer, activeIndex, wiltStartTime);
+        }
+
         private void ApplyDecompositionMetadata(
             ref NativeArray<HectonVegetationInstanceData> metadata,
             int activeIndex,
@@ -5464,7 +8809,7 @@ namespace Hecton8.World
 
             float2 baseScale = _baseScaleByInstanceUid.IsCreated && _baseScaleByInstanceUid.TryGetValue(instanceUid, out float2 cachedBaseScale)
                 ? cachedBaseScale
-                : new float2(1f, 1f);
+                : UnitFloat2();
             float smoothEntropy = entropy01 * entropy01 * (3f - (2f * entropy01));
             float decompositionStartTime = 0f;
             if (_decompositionStartTimeByInstanceUid.IsCreated)
@@ -5477,6 +8822,16 @@ namespace Hecton8.World
             decompositionMetadata.HealthNormalized = math.lerp(1f, 0f, smoothEntropy);
             decompositionMetadata.Reserved0 = -1f;
             metadata[activeIndex] = decompositionMetadata;
+        }
+
+        private void ApplyDecompositionMetadata(
+            ref BridgeMetadataLane metadata,
+            int activeIndex,
+            uint instanceUid,
+            float entropy01)
+        {
+            NativeArray<HectonVegetationInstanceData> buffer = metadata;
+            ApplyDecompositionMetadata(ref buffer, activeIndex, instanceUid, entropy01);
         }
 
         private static void ApplyDamageMetadata(
@@ -5535,28 +8890,66 @@ namespace Hecton8.World
             metadata[activeIndex] = fallbackMetadata;
         }
 
-        private void EvaluateParasiteExposureInLane(Vector3 runtimePosition, bool underwater, ref float bestExposure)
+        private void ApplyPersistedDamageMetadata(
+            ref BridgeMetadataLane metadata,
+            int activeIndex,
+            uint instanceUid,
+            int templateIndex,
+            float normalizedHealth,
+            float normalizedHeightScale,
+            float damage01,
+            float currentTime)
+        {
+            NativeArray<HectonVegetationInstanceData> buffer = metadata;
+            ApplyPersistedDamageMetadata(ref buffer, activeIndex, instanceUid, templateIndex, normalizedHealth, normalizedHeightScale, damage01, currentTime);
+        }
+
+        private void EvaluateParasiteExposureInLane(
+            Vector3 runtimePosition,
+            bool underwater,
+            int scanBudget,
+            ref int scanCursor,
+            ref float bestExposure)
         {
             NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
             NativeArray<Unity.Mathematics.half> laneHealth = underwater ? _underwaterHealth : _surfaceHealth;
             NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
             int count = underwater ? _underwaterCount : _surfaceCount;
             if (!instanceUids.IsCreated || !laneHealth.IsCreated || !matrices.IsCreated || count <= 0 || !_runtimeFlagsByInstanceUid.IsCreated)
+            {
+                scanCursor = 0;
                 return;
+            }
 
             const float parasiteRadius = 3.25f;
-            for (int i = 0; i < count; i++)
+            int safeCount = math.min(count, math.min(instanceUids.Length, math.min(laneHealth.Length, matrices.Length)));
+            if (safeCount <= 0)
             {
-                uint instanceUid = instanceUids[i];
+                scanCursor = 0;
+                return;
+            }
+
+            if ((uint)scanCursor >= (uint)safeCount)
+                scanCursor = 0;
+
+            int checks = math.min(math.max(1, scanBudget), safeCount);
+            for (int checkedCount = 0; checkedCount < checks; checkedCount++)
+            {
+                int activeIndex = scanCursor;
+                scanCursor++;
+                if (scanCursor >= safeCount)
+                    scanCursor = 0;
+
+                uint instanceUid = instanceUids[activeIndex];
                 if (instanceUid == 0u ||
-                    (float)laneHealth[i] <= 0.0001f ||
+                    (float)laneHealth[activeIndex] <= 0.0001f ||
                     !_runtimeFlagsByInstanceUid.TryGetValue(instanceUid, out byte runtimeFlags) ||
                     (runtimeFlags & FloraRuntimeFlagHasParasite) == 0)
                 {
                     continue;
                 }
 
-                Vector3 delta = ExtractTranslation(matrices[i]) - runtimePosition;
+                Vector3 delta = ExtractTranslation(matrices[activeIndex]) - runtimePosition;
                 float distanceSq = delta.sqrMagnitude;
                 float radiusSq = parasiteRadius * parasiteRadius;
                 if (distanceSq >= radiusSq)
@@ -5568,11 +8961,18 @@ namespace Hecton8.World
             }
         }
 
-        private bool TryApplyTitanRootMound(bool underwater, int activeIndex, uint instanceUid)
+        private bool TryPrepareTitanRootMoundRequest(bool underwater, int activeIndex, uint instanceUid, out Vector3 runtimePosition, out bool rootMoundWriteFailed)
         {
+            runtimePosition = default;
+            rootMoundWriteFailed = false;
             if (instanceUid == 0u ||
-                !_rootMoundAppliedByInstanceUid.IsCreated ||
-                _rootMoundAppliedByInstanceUid.ContainsKey(instanceUid))
+                !_rootMoundAppliedByInstanceUid.IsCreated)
+            {
+                return false;
+            }
+
+            if (_rootMoundAppliedByInstanceUid.TryGetValue(instanceUid, out byte rootMoundState) &&
+                rootMoundState >= TitanRootMoundApplied)
             {
                 return false;
             }
@@ -5602,47 +9002,88 @@ namespace Hecton8.World
                 return false;
             }
 
+            runtimePosition = ExtractTranslation(matrices[activeIndex]);
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            if (rootMoundState < TitanRootMoundPending && !_rootMoundAppliedByInstanceUid.TryPut(instanceUid, TitanRootMoundPending))
+            {
+                rootMoundWriteFailed = true;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryApplyPreparedTitanRootMound(uint instanceUid, Vector3 runtimePosition)
+        {
+            if (instanceUid == 0u || !TryApplyTitanRootMoundRequest(runtimePosition))
+                return false;
+
+            return TryMarkTitanRootMoundApplied(instanceUid);
+        }
+
+        private bool TryMarkTitanRootMoundApplied(uint instanceUid)
+        {
+            if (instanceUid == 0u || !_rootMoundAppliedByInstanceUid.IsCreated)
+                return false;
+
+            IDataVault vault = _dearLieVault;
+            if (vault == null || !vault.TryLockBuffer(OrganicRootMoundAppliedByUidBufferId, OrganicVaultSystemId))
+            {
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
+                return false;
+            }
+
+            bool markFailed = false;
+            try
+            {
+                markFailed = !_rootMoundAppliedByInstanceUid.TryPut(instanceUid, TitanRootMoundApplied);
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(OrganicRootMoundAppliedByUidBufferId, OrganicVaultSystemId);
+            }
+
+            if (markFailed)
+            {
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 128);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryApplyTitanRootMoundRequest(Vector3 runtimePosition)
+        {
             HectonVoxelEngine voxelEngine = HectonVoxelEngine.ActiveRuntimeInstance;
             if (voxelEngine == null)
                 return false;
 
-            double3 universePosition = ToDouble3(ExtractTranslation(matrices[activeIndex]));
-            Vector3 runtimePosition = HectonMapMagicVegetationBridge.ToRuntimeSpace(universePosition);
             if (!voxelEngine.TryGetNearestActiveVolume(runtimePosition, out HectonVoxelVolume volume) || volume == null)
                 return false;
 
             volume.ApplyOrganicRootMound(runtimePosition, TitanRootMoundRadiusMeters, TitanRootMoundStrengthMeters);
-            _rootMoundAppliedByInstanceUid.TryAdd(instanceUid, 1);
             return true;
         }
 
         internal bool IsMaterialClassRegrowable(ulong floraPersistentIdHash)
         {
-            for (int i = 0; i < _templateDescriptors.Length; i++)
-            {
-                if ((ulong)(uint)_templateDescriptors[i].StableHashId != floraPersistentIdHash)
-                    continue;
+            if (!TryFindTemplateDescriptorByPersistentHashWithLock(floraPersistentIdHash, out _, out HarvestableTemplate.RuntimeDescriptor descriptor))
+                return false;
 
-                HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)_templateDescriptors[i].MaterialClassId;
-                return materialClass == HarvestableTemplate.MaterialClass.Kelp ||
-                       materialClass == HarvestableTemplate.MaterialClass.Sargassum;
-            }
-
-            return false;
+            HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)descriptor.MaterialClassId;
+            return materialClass == HarvestableTemplate.MaterialClass.Kelp ||
+                   materialClass == HarvestableTemplate.MaterialClass.Sargassum;
         }
 
         internal float ResolveGrowthTimeSeconds(ulong floraPersistentIdHash)
         {
-            for (int i = 0; i < _templateDescriptors.Length; i++)
-            {
-                if ((ulong)(uint)_templateDescriptors[i].StableHashId != floraPersistentIdHash)
-                    continue;
-
-                if (_growthTimeSecondsByDescriptorIndex != null && i < _growthTimeSecondsByDescriptorIndex.Length)
-                    return Mathf.Max(1f, _growthTimeSecondsByDescriptorIndex[i]);
-
+            if (!TryFindTemplateDescriptorByPersistentHashWithLock(floraPersistentIdHash, out int descriptorIndex, out _))
                 return 480f;
-            }
+
+            if (_growthTimeSecondsByDescriptorIndex != null && descriptorIndex < _growthTimeSecondsByDescriptorIndex.Length)
+                return Mathf.Max(1f, _growthTimeSecondsByDescriptorIndex[descriptorIndex]);
 
             return 480f;
         }
@@ -5662,10 +9103,10 @@ namespace Hecton8.World
 
             HarvestableTemplate.MaterialClass fallbackMaterialClass = ResolveMaterialClass(typeId, semanticType);
             int templateIndex = ResolveTemplateIndex(metadata, fallbackMaterialClass);
-            if (templateIndex < 0 || templateIndex >= _templateDescriptors.Length)
+            if (!TrySnapshotTemplateDescriptorWithLock(templateIndex, out HarvestableTemplate.RuntimeDescriptor descriptor))
                 return false;
 
-            floraPersistentIdHash = (ulong)(uint)_templateDescriptors[templateIndex].StableHashId;
+            floraPersistentIdHash = (ulong)(uint)descriptor.StableHashId;
             growthTimeSeconds = _growthTimeSecondsByDescriptorIndex != null && templateIndex < _growthTimeSecondsByDescriptorIndex.Length
                 ? Mathf.Max(1f, _growthTimeSecondsByDescriptorIndex[templateIndex])
                 : 480f;
@@ -5683,31 +9124,56 @@ namespace Hecton8.World
             if (_dearLieJobScheduled || instanceUid == 0u || !_maturationScaleByInstanceUid.IsCreated)
                 return false;
 
-            float clampedProgress = Mathf.Clamp01(progress01);
-            scaleMultiplier = Mathf.Clamp(scaleMultiplier, 0.1f, 1f);
-            resourceYieldMultiplier = clampedProgress < 0.2f ? 0f : Mathf.Clamp01(resourceYieldMultiplier);
-            _maturationScaleByInstanceUid.Remove(instanceUid);
-            if (scaleMultiplier < 0.9999f)
-                _maturationScaleByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)scaleMultiplier);
-
-            if (_maturationYieldByInstanceUid.IsCreated)
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
             {
-                _maturationYieldByInstanceUid.Remove(instanceUid);
-                if (resourceYieldMultiplier < 0.9999f)
-                    _maturationYieldByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)resourceYieldMultiplier);
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
+                return false;
             }
 
-            if (TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
+            bool applyTitanRootMound = false;
+            bool titanRootMoundWriteFailed = false;
+            Vector3 titanRootMoundPosition = default;
+            try
             {
-                ApplyMaturationVisualToLaneInstance(underwater, activeIndex, instanceUid, clampedProgress, scaleMultiplier);
-                TryDispatchMatureSporeAcoustic(instanceUid, clampedProgress, underwater, activeIndex, templateIndex, ResolveOrganicClockSeconds());
-                if (clampedProgress >= TitanRootMoundMatureThreshold01)
-                    TryApplyTitanRootMound(underwater, activeIndex, instanceUid);
+                float clampedProgress = Mathf.Clamp01(progress01);
+                scaleMultiplier = Mathf.Clamp(scaleMultiplier, 0.1f, 1f);
+                resourceYieldMultiplier = clampedProgress < 0.2f ? 0f : Mathf.Clamp01(resourceYieldMultiplier);
+                if (scaleMultiplier < 0.9999f)
+                    _maturationScaleByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)scaleMultiplier);
+                else
+                    _maturationScaleByInstanceUid.Remove(instanceUid);
+
+                if (_maturationYieldByInstanceUid.IsCreated)
+                {
+                    if (resourceYieldMultiplier < 0.9999f)
+                        _maturationYieldByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)resourceYieldMultiplier);
+                    else
+                        _maturationYieldByInstanceUid.Remove(instanceUid);
+                }
+
+                if (TryFindActiveInstanceByUidPinned(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
+                {
+                    ApplyMaturationVisualToLaneInstance(underwater, activeIndex, instanceUid, clampedProgress, scaleMultiplier);
+                    TryDispatchMatureSporeAcoustic(instanceUid, clampedProgress, underwater, activeIndex, templateIndex, ResolveOrganicClockSeconds());
+                    if (clampedProgress >= TitanRootMoundMatureThreshold01)
+                        applyTitanRootMound = TryPrepareTitanRootMoundRequest(underwater, activeIndex, instanceUid, out titanRootMoundPosition, out titanRootMoundWriteFailed);
+                }
+                else if (clampedProgress < MatureSporeGrowthThreshold01 && _nextSporeAcousticTimeByInstanceUid.IsCreated)
+                {
+                    _nextSporeAcousticTimeByInstanceUid.Remove(instanceUid);
+                }
             }
-            else if (clampedProgress < MatureSporeGrowthThreshold01 && _nextSporeAcousticTimeByInstanceUid.IsCreated)
+            finally
             {
-                _nextSporeAcousticTimeByInstanceUid.Remove(instanceUid);
+                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
             }
+
+            if (applyTitanRootMound)
+                TryApplyPreparedTitanRootMound(instanceUid, titanRootMoundPosition);
+
+            if (titanRootMoundWriteFailed)
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 128);
 
             return true;
         }
@@ -5732,7 +9198,7 @@ namespace Hecton8.World
             float normalizedPower,
             uint toolCapabilityMask)
         {
-            if (!TryResolveNearestConsumableFlora(
+            if (!TrySnapshotNearestConsumableFloraWithLock(
                     hitPoint,
                     Mathf.Max(0.0001f, searchRadius),
                     out Vector3 floraPosition,
@@ -5759,58 +9225,36 @@ namespace Hecton8.World
         internal bool TryApplyLightStarvation(uint instanceUid, float starvation01)
         {
             if (_dearLieJobScheduled ||
-                instanceUid == 0u ||
-                !TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex) ||
-                (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)))
+                !TrySnapshotActiveInstanceByUidWithLock(
+                    instanceUid,
+                    out bool underwater,
+                    out int activeIndex,
+                    out int templateIndex,
+                    out HarvestableTemplate.MaterialClass materialClass,
+                    out _,
+                    out Vector3 instancePosition,
+                    out _))
             {
                 return false;
             }
 
-            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
-            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
-            if (!matrices.IsCreated ||
-                !materialClasses.IsCreated ||
-                activeIndex < 0 ||
-                activeIndex >= matrices.Length ||
-                activeIndex >= materialClasses.Length)
-            {
-                return false;
-            }
-
-            HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[activeIndex];
             if (materialClass == HarvestableTemplate.MaterialClass.None)
                 return false;
 
-            float clampedStarvation01 = Mathf.Clamp01(starvation01);
-            float baseHealth = ResolveBaseHealth(templateIndex);
-            float currentHealth = GetLaneHealth(underwater, activeIndex);
-            if (currentHealth <= 0.0001f)
+            if (!TrySnapshotTemplateDescriptorWithLock(templateIndex, out HarvestableTemplate.RuntimeDescriptor starvationDescriptor))
                 return false;
 
-            float nextHealth = Mathf.Max(0f, currentHealth - (baseHealth * LightStarvationDamagePerSlowTick01 * clampedStarvation01));
-            Vector3 instancePosition = ExtractTranslation(matrices[activeIndex]);
-            if (nextHealth <= baseHealth * LightStarvationDeathHealth01)
-            {
-                ApplyPassiveDecomposition(underwater, activeIndex, instanceUid, materialClass, templateIndex, instancePosition);
-                return true;
-            }
-
-            float normalizedHealth = Mathf.Clamp01(nextHealth / Mathf.Max(0.0001f, baseHealth));
-            float normalizedHeightScale = Mathf.Clamp(
-                Mathf.Min(normalizedHealth, ResolveBareHeightCeiling01(templateIndex)),
-                SoftBareHealthFloor01,
-                1f);
-            ApplySuppressionState(
+            float clampedStarvation01 = Mathf.Clamp01(starvation01);
+            float baseHealth = Mathf.Max(0.1f, starvationDescriptor.BaseHealth);
+            return ApplyLightStarvationState(
                 underwater,
                 activeIndex,
                 instanceUid,
+                materialClass,
                 templateIndex,
                 instancePosition,
                 baseHealth,
-                nextHealth,
-                normalizedHealth,
-                normalizedHeightScale);
-            return true;
+                clampedStarvation01);
         }
 
         internal bool TryApplyAllelopathicToxinSuppression(
@@ -5827,46 +9271,40 @@ namespace Hecton8.World
                     typeId,
                     semanticType,
                     out uint instanceUid,
-                    out _,
-                    out _) ||
+                out _,
+                out _) ||
                 instanceUid == 0u ||
-                !TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex) ||
-                (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)))
+                !TrySnapshotActiveInstanceByUidWithLock(
+                    instanceUid,
+                    out bool underwater,
+                    out int activeIndex,
+                    out int templateIndex,
+                    out HarvestableTemplate.MaterialClass materialClass,
+                    out _,
+                    out Vector3 instancePosition,
+                    out _))
             {
                 return false;
             }
 
-            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
-            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
-            if (!matrices.IsCreated ||
-                !materialClasses.IsCreated ||
-                activeIndex < 0 ||
-                activeIndex >= matrices.Length ||
-                activeIndex >= materialClasses.Length)
-            {
-                return false;
-            }
-
-            HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[activeIndex];
             if (materialClass == HarvestableTemplate.MaterialClass.None)
                 return false;
 
-            float clampedToxicity01 = Mathf.Clamp01(toxicity01);
-            Vector3 instancePosition = ExtractTranslation(matrices[activeIndex]);
-            if (clampedToxicity01 >= AllelopathicDeathThreshold01)
-            {
-                ApplyPassiveDecomposition(underwater, activeIndex, instanceUid, materialClass, templateIndex, instancePosition);
-                return true;
-            }
+            if (!TrySnapshotTemplateDescriptorWithLock(templateIndex, out HarvestableTemplate.RuntimeDescriptor toxinDescriptor))
+                return false;
 
-            float baseHealth = ResolveBaseHealth(templateIndex);
+            float clampedToxicity01 = Mathf.Clamp01(toxicity01);
+            if (clampedToxicity01 >= AllelopathicDeathThreshold01)
+                return ApplyPassiveDecomposition(underwater, activeIndex, instanceUid, materialClass, templateIndex, instancePosition);
+
+            float baseHealth = Mathf.Max(0.1f, toxinDescriptor.BaseHealth);
             float normalizedHealth = math.lerp(ResolveBareThreshold01(templateIndex), AllelopathicBareHealth01, clampedToxicity01);
             float normalizedHeightScale = Mathf.Clamp(
                 Mathf.Min(normalizedHealth, ResolveBareHeightCeiling01(templateIndex)),
                 SoftBareHealthFloor01,
                 1f);
             float nextHealth = baseHealth * normalizedHealth;
-            ApplySuppressionState(
+            return ApplySuppressionState(
                 underwater,
                 activeIndex,
                 instanceUid,
@@ -5874,9 +9312,7 @@ namespace Hecton8.World
                 instancePosition,
                 baseHealth,
                 nextHealth,
-                normalizedHealth,
                 normalizedHeightScale);
-            return true;
         }
 
         internal static float EvaluateMaturationScaleMultiplier(float progress01)
@@ -5886,14 +9322,7 @@ namespace Hecton8.World
             return math.lerp(0.1f, 1f, smoothProgress);
         }
 
-        private float ResolveBaseHealth(int templateIndex)
-        {
-            return templateIndex >= 0 && templateIndex < _templateDescriptors.Length
-                ? Mathf.Max(0.1f, _templateDescriptors[templateIndex].BaseHealth)
-                : 1f;
-        }
-
-        private void ApplySuppressionState(
+        private bool ApplySuppressionState(
             bool underwater,
             int activeIndex,
             uint instanceUid,
@@ -5901,51 +9330,198 @@ namespace Hecton8.World
             Vector3 instancePosition,
             float baseHealth,
             float currentHealth,
-            float normalizedHealth,
             float normalizedHeightScale)
         {
-            SetLaneHealth(underwater, activeIndex, currentHealth);
-            if (_healthByInstanceUid.IsCreated)
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
             {
-                _healthByInstanceUid.Remove(instanceUid);
-                _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)Mathf.Max(0f, currentHealth));
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
+                return false;
             }
 
-            float damage01 = ResolveDamageProgress(baseHealth, currentHealth);
-            UpdateDamageProgressCache(instanceUid, damage01);
-            ApplyDamageToLaneInstance(
-                underwater,
-                activeIndex,
-                instanceUid,
-                templateIndex,
-                Mathf.Clamp01(normalizedHealth),
-                damage01,
-                Mathf.Clamp01(normalizedHeightScale),
-                ResolveOrganicClockSeconds());
-            PersistFloraStateOverride(
-                instanceUid,
-                templateIndex,
-                instancePosition,
-                underwater,
-                activeIndex,
-                baseHealth,
-                currentHealth);
+            bool hasStateOverrideRequest = false;
+            bool clearStateOverrideRequest = false;
+            float stateOverrideNormalizedHealth = 0f;
+            byte stateOverrideHarvestState = 0;
+            try
+            {
+                if (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid))
+                    return false;
+
+                if (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid))
+                    return false;
+
+                if (!IsPinnedActiveLaneSlot(instanceUid, underwater, activeIndex))
+                    return false;
+
+                float pinnedCurrentHealth = GetLaneHealth(underwater, activeIndex);
+                if (pinnedCurrentHealth <= 0.0001f)
+                    return false;
+
+                float appliedHealth = Mathf.Min(Mathf.Max(0f, currentHealth), pinnedCurrentHealth);
+                if (appliedHealth >= pinnedCurrentHealth - 0.0001f)
+                    return false;
+
+                float appliedNormalizedHealth = Mathf.Clamp01(appliedHealth / Mathf.Max(0.0001f, baseHealth));
+                float appliedNormalizedHeightScale = Mathf.Clamp(
+                    Mathf.Min(appliedNormalizedHealth, Mathf.Clamp01(normalizedHeightScale)),
+                    SoftBareHealthFloor01,
+                    1f);
+
+                SetLaneHealth(underwater, activeIndex, appliedHealth);
+                if (_healthByInstanceUid.IsCreated)
+                    _healthByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)appliedHealth);
+
+                float damage01 = ResolveDamageProgress(baseHealth, appliedHealth);
+                UpdateDamageProgressCache(instanceUid, damage01);
+                ApplyDamageToLaneInstance(
+                    underwater,
+                    activeIndex,
+                    instanceUid,
+                    templateIndex,
+                    appliedNormalizedHealth,
+                    damage01,
+                    appliedNormalizedHeightScale,
+                    ResolveOrganicClockSeconds());
+                hasStateOverrideRequest = TryCacheFloraStateOverride(
+                    instanceUid,
+                    templateIndex,
+                    underwater,
+                    activeIndex,
+                    baseHealth,
+                    appliedHealth,
+                    out stateOverrideNormalizedHealth,
+                    out stateOverrideHarvestState,
+                    out clearStateOverrideRequest);
+            }
+            finally
+            {
+                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+            }
+
+            if (hasStateOverrideRequest)
+            {
+                PublishFloraStateOverride(
+                    instanceUid,
+                    templateIndex,
+                    instancePosition,
+                    stateOverrideNormalizedHealth,
+                    stateOverrideHarvestState,
+                    clearStateOverrideRequest);
+            }
+
+            return true;
         }
 
-        private int ResolveDescriptorIndexByPersistentIdHash(ulong floraPersistentIdHash)
+        private bool ApplyLightStarvationState(
+            bool underwater,
+            int activeIndex,
+            uint instanceUid,
+            HarvestableTemplate.MaterialClass materialClass,
+            int templateIndex,
+            Vector3 instancePosition,
+            float baseHealth,
+            float clampedStarvation01)
         {
-            for (int i = 0; i < _templateDescriptors.Length; i++)
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleMutationBuffers(vault, out int lockedMask))
             {
-                if ((ulong)(uint)_templateDescriptors[i].StableHashId == floraPersistentIdHash)
-                    return i;
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
+                return false;
             }
 
-            return -1;
+            bool decomposeAfterUnlock = false;
+            bool hasStateOverrideRequest = false;
+            bool clearStateOverrideRequest = false;
+            float stateOverrideNormalizedHealth = 0f;
+            byte stateOverrideHarvestState = 0;
+            try
+            {
+                if ((_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)) ||
+                    (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid)))
+                {
+                    return false;
+                }
+
+                if (!IsPinnedActiveLaneSlot(instanceUid, underwater, activeIndex))
+                    return false;
+
+                float pinnedCurrentHealth = GetLaneHealth(underwater, activeIndex);
+                if (pinnedCurrentHealth <= 0.0001f)
+                    return false;
+
+                float nextHealth = Mathf.Max(0f, pinnedCurrentHealth - (baseHealth * LightStarvationDamagePerSlowTick01 * clampedStarvation01));
+                if (nextHealth <= baseHealth * LightStarvationDeathHealth01)
+                {
+                    decomposeAfterUnlock = true;
+                }
+                else
+                {
+                    float normalizedHealth = Mathf.Clamp01(nextHealth / Mathf.Max(0.0001f, baseHealth));
+                    float normalizedHeightScale = Mathf.Clamp(
+                        Mathf.Min(normalizedHealth, ResolveBareHeightCeiling01(templateIndex)),
+                        SoftBareHealthFloor01,
+                        1f);
+
+                    SetLaneHealth(underwater, activeIndex, nextHealth);
+                    if (_healthByInstanceUid.IsCreated)
+                        _healthByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)Mathf.Max(0f, nextHealth));
+
+                    float damage01 = ResolveDamageProgress(baseHealth, nextHealth);
+                    UpdateDamageProgressCache(instanceUid, damage01);
+                    ApplyDamageToLaneInstance(
+                        underwater,
+                        activeIndex,
+                        instanceUid,
+                        templateIndex,
+                        normalizedHealth,
+                        damage01,
+                        normalizedHeightScale,
+                        ResolveOrganicClockSeconds());
+                    hasStateOverrideRequest = TryCacheFloraStateOverride(
+                        instanceUid,
+                        templateIndex,
+                        underwater,
+                        activeIndex,
+                        baseHealth,
+                        nextHealth,
+                        out stateOverrideNormalizedHealth,
+                        out stateOverrideHarvestState,
+                        out clearStateOverrideRequest);
+                }
+            }
+            finally
+            {
+                UnlockOrganicLifecycleMutationBuffers(vault, lockedMask);
+            }
+
+            if (decomposeAfterUnlock)
+                return ApplyPassiveDecomposition(underwater, activeIndex, instanceUid, materialClass, templateIndex, instancePosition);
+
+            if (hasStateOverrideRequest)
+            {
+                PublishFloraStateOverride(
+                    instanceUid,
+                    templateIndex,
+                    instancePosition,
+                    stateOverrideNormalizedHealth,
+                    stateOverrideHarvestState,
+                    clearStateOverrideRequest);
+            }
+
+            return true;
+        }
+
+        private int FindTemplateDescriptorIndexByPersistentHashWithLock(ulong floraPersistentIdHash)
+        {
+            return TryFindTemplateDescriptorByPersistentHashWithLock(floraPersistentIdHash, out int descriptorIndex, out _)
+                ? descriptorIndex
+                : -1;
         }
 
         internal bool HasTemplatePersistentIdHash(ulong floraPersistentIdHash)
         {
-            return ResolveDescriptorIndexByPersistentIdHash(floraPersistentIdHash) >= 0;
+            return FindTemplateDescriptorIndexByPersistentHashWithLock(floraPersistentIdHash) >= 0;
         }
 
         private static HarvestState ResolvePersistedHarvestState(byte packedHarvestState)
@@ -5958,23 +9534,30 @@ namespace Hecton8.World
 
         internal bool IsTemplateMaterialClass(ulong floraPersistentIdHash, HarvestableTemplate.MaterialClass materialClass)
         {
-            for (int i = 0; i < _templateDescriptors.Length; i++)
-            {
-                if ((ulong)(uint)_templateDescriptors[i].StableHashId != floraPersistentIdHash)
-                    continue;
-
-                return _templateDescriptors[i].MaterialClassId == (byte)materialClass;
-            }
-
-            return false;
+            return TryFindTemplateDescriptorByPersistentHashWithLock(floraPersistentIdHash, out _, out HarvestableTemplate.RuntimeDescriptor descriptor) &&
+                   descriptor.MaterialClassId == (byte)materialClass;
         }
 
         internal bool TrySetRegrowthProgress(uint instanceUid, Vector3 runtimePosition, float progress01)
         {
+            Matrix4x4 originalMatrix = default;
+            return TrySetRegrowthProgress(instanceUid, runtimePosition, progress01, false, in originalMatrix, out _);
+        }
+
+        private bool TrySetRegrowthProgress(
+            uint instanceUid,
+            Vector3 runtimePosition,
+            float progress01,
+            bool restoreOriginalMatrix,
+            in Matrix4x4 originalMatrix,
+            out bool lockFailed)
+        {
+            lockFailed = false;
             if (_dearLieJobScheduled ||
                 instanceUid == 0u ||
                 !_regrowthProgressByInstanceUid.IsCreated ||
-                !_regrowthPositionByInstanceUid.IsCreated)
+                !_regrowthPositionByInstanceUid.IsCreated ||
+                (restoreOriginalMatrix && !IsFiniteMatrix(in originalMatrix)))
             {
                 return false;
             }
@@ -5982,50 +9565,148 @@ namespace Hecton8.World
             if (ChemicalInfluenceGrid.IsInsidePermanentDefoliantDeadZone(runtimePosition))
                 return false;
 
-            progress01 = math.saturate(progress01);
-            if (_destroyedByInstanceUid.IsCreated)
-                _destroyedByInstanceUid.Remove(instanceUid);
-            ClearDeadRuntimeFlag(instanceUid);
-            MarkOrganicTouched(instanceUid, ResolveOrganicClockSeconds());
-
-            if (_pendingWiltEndTimeByInstanceUid.IsCreated)
-                _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
-
-            if (_damageVisualProgressByInstanceUid.IsCreated)
-                _damageVisualProgressByInstanceUid.Remove(instanceUid);
-
-            if (_decompositionStartTimeByInstanceUid.IsCreated)
-                _decompositionStartTimeByInstanceUid.Remove(instanceUid);
-
-            _regrowthProgressByInstanceUid.Remove(instanceUid);
-            _regrowthProgressByInstanceUid.TryAdd(instanceUid, progress01);
-            _regrowthPositionByInstanceUid.Remove(instanceUid);
-            _regrowthPositionByInstanceUid.TryAdd(instanceUid, new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-
-            if (TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicRegrowthMutationBuffers(vault, out int lockedMask))
             {
-                byte runtimeFlags = 0;
-                if (_runtimeFlagsByInstanceUid.IsCreated)
-                    _runtimeFlagsByInstanceUid.TryGetValue(instanceUid, out runtimeFlags);
-
-                ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
-                ApplyRegrowthVisualToLaneInstance(underwater, activeIndex, instanceUid, progress01);
-                float health = ResolveRegrowthHealth(progress01, templateIndex);
-                SetLaneHealth(underwater, activeIndex, health);
-                _healthByInstanceUid.Remove(instanceUid);
-                _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)health);
-                if (progress01 >= TitanRootMoundMatureThreshold01)
-                    TryApplyTitanRootMound(underwater, activeIndex, instanceUid);
+                lockFailed = true;
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 32);
+                return false;
             }
 
-            if (progress01 >= 0.9999f)
-                FinalizeRegrowth(instanceUid);
+            bool clearRegistryStateOverride = false;
+            bool clearRegistryDestroyedFlora = false;
+            bool applyTitanRootMound = false;
+            bool titanRootMoundWriteFailed = false;
+            bool regrowthStateWriteFailed = false;
+            Vector3 titanRootMoundPosition = default;
+            try
+            {
+                progress01 = math.saturate(progress01);
+                bool hadProgress = _regrowthProgressByInstanceUid.TryGetValue(instanceUid, out float previousProgress);
+                bool hadPosition = _regrowthPositionByInstanceUid.TryGetValue(instanceUid, out float3 previousPosition);
+                bool progressStored = _regrowthProgressByInstanceUid.TryPut(instanceUid, progress01);
+                bool positionStored = _regrowthPositionByInstanceUid.TryPut(instanceUid, ToFloat3(runtimePosition));
+                if (!progressStored || !positionStored)
+                {
+                    RestoreRegrowthState(instanceUid, hadProgress, previousProgress, hadPosition, previousPosition);
+                    regrowthStateWriteFailed = true;
+                }
+                else
+                {
+                    bool hasActiveSlot = TryFindActiveInstanceByUidPinned(instanceUid, out bool underwater, out int activeIndex, out int templateIndex);
+                    bool restoredOriginalMatrix = !restoreOriginalMatrix;
+                    if (restoreOriginalMatrix && hasActiveSlot)
+                    {
+                        NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+                        if (matrices.IsCreated && (uint)activeIndex < (uint)matrices.Length)
+                        {
+                            matrices[activeIndex] = originalMatrix;
+                            restoredOriginalMatrix = true;
+                        }
+                    }
+
+                    if (restoreOriginalMatrix && !restoredOriginalMatrix)
+                    {
+                        RestoreRegrowthState(instanceUid, hadProgress, previousProgress, hadPosition, previousPosition);
+                        regrowthStateWriteFailed = true;
+                    }
+                    else
+                    {
+                        if (_destroyedByInstanceUid.IsCreated)
+                            _destroyedByInstanceUid.Remove(instanceUid);
+                        clearRegistryDestroyedFlora = true;
+                        ClearDeadRuntimeFlag(instanceUid);
+                        MarkOrganicTouched(instanceUid, ResolveOrganicClockSeconds());
+
+                        if (_pendingWiltEndTimeByInstanceUid.IsCreated)
+                            _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
+
+                        if (_damageVisualProgressByInstanceUid.IsCreated)
+                            _damageVisualProgressByInstanceUid.Remove(instanceUid);
+
+                        if (_decompositionStartTimeByInstanceUid.IsCreated)
+                            _decompositionStartTimeByInstanceUid.Remove(instanceUid);
+
+                        if (hasActiveSlot)
+                        {
+                            byte runtimeFlags = 0;
+                            if (_runtimeFlagsByInstanceUid.IsCreated)
+                                _runtimeFlagsByInstanceUid.TryGetValue(instanceUid, out runtimeFlags);
+
+                            ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
+                            ApplyRegrowthVisualToLaneInstance(underwater, activeIndex, instanceUid, progress01);
+                            float health = ResolveRegrowthHealth(progress01, templateIndex);
+                            SetLaneHealth(underwater, activeIndex, health);
+                            _healthByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)health);
+                            if (progress01 >= TitanRootMoundMatureThreshold01)
+                                applyTitanRootMound = TryPrepareTitanRootMoundRequest(underwater, activeIndex, instanceUid, out titanRootMoundPosition, out titanRootMoundWriteFailed);
+                        }
+
+                        if (progress01 >= 0.9999f)
+                            FinalizeRegrowth(instanceUid, out clearRegistryStateOverride);
+                    }
+                }
+            }
+            finally
+            {
+                UnlockOrganicRegrowthMutationBuffers(vault, lockedMask);
+            }
+
+            if (regrowthStateWriteFailed)
+            {
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 128);
+                return false;
+            }
+
+            if (clearRegistryDestroyedFlora || clearRegistryStateOverride)
+            {
+                PersistentWorldRegistry registry = _persistentWorldRegistry;
+                if (registry != null)
+                {
+                    if (clearRegistryDestroyedFlora)
+                        registry.TryClearDestroyedFlora(instanceUid);
+
+                    if (clearRegistryStateOverride)
+                        registry.TryClearFloraStateOverride(instanceUid);
+                }
+            }
+
+            if (applyTitanRootMound)
+                TryApplyPreparedTitanRootMound(instanceUid, titanRootMoundPosition);
+
+            if (titanRootMoundWriteFailed)
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, instanceUid, 128);
 
             return true;
         }
 
-        private void FinalizeRegrowth(uint instanceUid)
+        private void RestoreRegrowthState(
+            uint instanceUid,
+            bool hadProgress,
+            float previousProgress,
+            bool hadPosition,
+            float3 previousPosition)
         {
+            if (_regrowthProgressByInstanceUid.IsCreated)
+            {
+                if (hadProgress)
+                    _regrowthProgressByInstanceUid.TryPut(instanceUid, previousProgress);
+                else
+                    _regrowthProgressByInstanceUid.Remove(instanceUid);
+            }
+
+            if (_regrowthPositionByInstanceUid.IsCreated)
+            {
+                if (hadPosition)
+                    _regrowthPositionByInstanceUid.TryPut(instanceUid, previousPosition);
+                else
+                    _regrowthPositionByInstanceUid.Remove(instanceUid);
+            }
+        }
+
+        private void FinalizeRegrowth(uint instanceUid, out bool clearRegistryStateOverride)
+        {
+            clearRegistryStateOverride = false;
             if (_regrowthProgressByInstanceUid.IsCreated)
                 _regrowthProgressByInstanceUid.Remove(instanceUid);
 
@@ -6036,20 +9717,16 @@ namespace Hecton8.World
                 _decompositionStartTimeByInstanceUid.Remove(instanceUid);
             MarkOrganicTouched(instanceUid, ResolveOrganicClockSeconds());
 
-            PersistentWorldRegistry registry = _persistentWorldRegistry;
-            if (registry != null)
-                registry.TryClearFloraStateOverride(instanceUid);
-
+            clearRegistryStateOverride = true;
             ClearPersistedFloraStateOverride(instanceUid);
 
-            if (TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
+            if (TryFindActiveInstanceByUidPinned(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
             {
-                float baseHealth = templateIndex >= 0 && templateIndex < _templateDescriptors.Length
-                    ? Mathf.Max(0.1f, _templateDescriptors[templateIndex].BaseHealth)
+                float baseHealth = TryCopyPinnedTemplateDescriptor(templateIndex, out HarvestableTemplate.RuntimeDescriptor regrowthDescriptor)
+                    ? Mathf.Max(0.1f, regrowthDescriptor.BaseHealth)
                     : 1f;
                 SetLaneHealth(underwater, activeIndex, baseHealth);
-                _healthByInstanceUid.Remove(instanceUid);
-                _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)baseHealth);
+                _healthByInstanceUid.TryPut(instanceUid, (Unity.Mathematics.half)baseHealth);
                 ApplyRegrowthVisualToLaneInstance(underwater, activeIndex, instanceUid, 1f);
                 return;
             }
@@ -6059,8 +9736,8 @@ namespace Hecton8.World
 
         private float ResolveRegrowthHealth(float progress01, int templateIndex)
         {
-            float baseHealth = templateIndex >= 0 && templateIndex < _templateDescriptors.Length
-                ? Mathf.Max(0.1f, _templateDescriptors[templateIndex].BaseHealth)
+            float baseHealth = TryCopyPinnedTemplateDescriptor(templateIndex, out HarvestableTemplate.RuntimeDescriptor regrowthDescriptor)
+                ? Mathf.Max(0.1f, regrowthDescriptor.BaseHealth)
                 : 1f;
             float smoothProgress = progress01 * progress01 * (3f - (2f * progress01));
             return Mathf.Max(0.05f, math.lerp(baseHealth * 0.1f, baseHealth, smoothProgress));
@@ -6106,7 +9783,7 @@ namespace Hecton8.World
             float clampedScale = Mathf.Clamp(scaleMultiplier, 0.1f, 1f);
             float2 baseScale = _baseScaleByInstanceUid.IsCreated && _baseScaleByInstanceUid.TryGetValue(instanceUid, out float2 cachedBaseScale)
                 ? cachedBaseScale
-                : new float2(1f, 1f);
+                : UnitFloat2();
             HectonVegetationInstanceData maturationMetadata = metadata[activeIndex];
             maturationMetadata.Type = types[activeIndex];
             maturationMetadata.HeightScale = baseScale.x * clampedScale;
@@ -6144,7 +9821,7 @@ namespace Hecton8.World
             float smoothProgress = progress01 * progress01 * (3f - (2f * progress01));
             float2 baseScale = _baseScaleByInstanceUid.IsCreated && _baseScaleByInstanceUid.TryGetValue(instanceUid, out float2 cachedBaseScale)
                 ? cachedBaseScale
-                : new float2(1f, 1f);
+                : UnitFloat2();
             HectonVegetationInstanceData regrowthMetadata = metadata[activeIndex];
             regrowthMetadata.Type = types[activeIndex];
             regrowthMetadata.HeightScale = math.lerp(MinimumDecomposedHeightScale, baseScale.x, smoothProgress);
@@ -6157,15 +9834,76 @@ namespace Hecton8.World
             metadata[activeIndex] = regrowthMetadata;
         }
 
-        private bool TryResolveActiveInstanceByUid(uint instanceUid, out bool underwater, out int activeIndex, out int templateIndex)
+        private bool TrySnapshotActiveInstanceByUidWithLock(
+            uint instanceUid,
+            out bool underwater,
+            out int activeIndex,
+            out int templateIndex,
+            out HarvestableTemplate.MaterialClass materialClass,
+            out Matrix4x4 instanceMatrix,
+            out Vector3 instancePosition,
+            out float currentHealth)
         {
-            if (TryResolveActiveInstanceByUid(instanceUid, _surfaceInstanceUids, _surfaceCount, _surfaceMaterialClasses, _surfaceMetadata, out activeIndex, out templateIndex))
+            underwater = false;
+            activeIndex = -1;
+            templateIndex = -1;
+            materialClass = HarvestableTemplate.MaterialClass.None;
+            instanceMatrix = Matrix4x4.identity;
+            instancePosition = Vector3.zero;
+            currentHealth = 0f;
+            if (instanceUid == 0u)
+                return false;
+
+            IDataVault vault = _dearLieVault;
+            if (!TryLockOrganicLifecycleReadBuffers(vault, out int lockedMask))
+                return false;
+
+            try
+            {
+                if (!TryFindActiveInstanceByUidPinned(instanceUid, out underwater, out activeIndex, out templateIndex))
+                    return false;
+
+                NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+                NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
+                NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
+                NativeArray<Unity.Mathematics.half> health = underwater ? _underwaterHealth : _surfaceHealth;
+                int count = underwater ? _underwaterCount : _surfaceCount;
+                if (!matrices.IsCreated ||
+                    !instanceUids.IsCreated ||
+                    !materialClasses.IsCreated ||
+                    !health.IsCreated ||
+                    activeIndex < 0 ||
+                    activeIndex >= count ||
+                    activeIndex >= matrices.Length ||
+                    activeIndex >= instanceUids.Length ||
+                    activeIndex >= materialClasses.Length ||
+                    activeIndex >= health.Length ||
+                    instanceUids[activeIndex] != instanceUid)
+                {
+                    return false;
+                }
+
+                materialClass = (HarvestableTemplate.MaterialClass)materialClasses[activeIndex];
+                instanceMatrix = matrices[activeIndex];
+                instancePosition = ExtractTranslation(instanceMatrix);
+                currentHealth = (float)health[activeIndex];
+                return true;
+            }
+            finally
+            {
+                UnlockOrganicLifecycleReadBuffers(vault, lockedMask);
+            }
+        }
+
+        private bool TryFindActiveInstanceByUidPinned(uint instanceUid, out bool underwater, out int activeIndex, out int templateIndex)
+        {
+            if (TryFindActiveInstanceByUidPinned(instanceUid, _surfaceInstanceUids, _surfaceCount, _surfaceMaterialClasses, _surfaceMetadata, out activeIndex, out templateIndex))
             {
                 underwater = false;
                 return true;
             }
 
-            if (TryResolveActiveInstanceByUid(instanceUid, _underwaterInstanceUids, _underwaterCount, _underwaterMaterialClasses, _underwaterMetadata, out activeIndex, out templateIndex))
+            if (TryFindActiveInstanceByUidPinned(instanceUid, _underwaterInstanceUids, _underwaterCount, _underwaterMaterialClasses, _underwaterMetadata, out activeIndex, out templateIndex))
             {
                 underwater = true;
                 return true;
@@ -6177,7 +9915,20 @@ namespace Hecton8.World
             return false;
         }
 
-        private bool TryResolveActiveInstanceByUid(
+        private bool IsPinnedActiveLaneSlot(uint instanceUid, bool underwater, int activeIndex)
+        {
+            if (instanceUid == 0u || activeIndex < 0)
+                return false;
+
+            NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
+            int count = underwater ? _underwaterCount : _surfaceCount;
+            return instanceUids.IsCreated &&
+                   activeIndex < count &&
+                   activeIndex < instanceUids.Length &&
+                   instanceUids[activeIndex] == instanceUid;
+        }
+
+        private bool TryFindActiveInstanceByUidPinned(
             uint instanceUid,
             NativeArray<uint> instanceUids,
             int count,
@@ -6191,7 +9942,8 @@ namespace Hecton8.World
             if (!instanceUids.IsCreated || !materialClasses.IsCreated || !metadata.IsCreated || count <= 0)
                 return false;
 
-            for (int i = 0; i < count; i++)
+            int safeCount = math.min(count, math.min(instanceUids.Length, math.min(materialClasses.Length, metadata.Length)));
+            for (int i = 0; i < safeCount; i++)
             {
                 if (instanceUids[i] != instanceUid)
                     continue;
@@ -6204,14 +9956,15 @@ namespace Hecton8.World
             return false;
         }
 
-        private float ResolveParentMassKg(
+        private float ComputePinnedParentMassKg(
             bool underwater,
             int activeIndex,
+            uint instanceUid,
             HarvestableTemplate.MaterialClass materialClass,
             int templateIndex)
         {
-            float baseHealth = templateIndex >= 0 && templateIndex < _templateDescriptors.Length
-                ? Mathf.Max(0.1f, _templateDescriptors[templateIndex].BaseHealth)
+            float baseHealth = TryCopyPinnedTemplateDescriptor(templateIndex, out HarvestableTemplate.RuntimeDescriptor massDescriptor)
+                ? Mathf.Max(0.1f, massDescriptor.BaseHealth)
                 : 1f;
             float height01 = 1f;
             float width01 = 1f;
@@ -6225,11 +9978,6 @@ namespace Hecton8.World
                 metadataAge01 = ResolveHarvestAge01(instanceData);
             }
 
-            uint instanceUid = _underwaterInstanceUids.IsCreated || _surfaceInstanceUids.IsCreated
-                ? (underwater && activeIndex >= 0 && activeIndex < _underwaterCount ? _underwaterInstanceUids[activeIndex] :
-                   !underwater && activeIndex >= 0 && activeIndex < _surfaceCount ? _surfaceInstanceUids[activeIndex] :
-                   0u)
-                : 0u;
             float maturationMultiplier = ResolveMaturationYieldMultiplier(instanceUid);
 
             float resolvedMassKg = materialClass switch
@@ -6290,12 +10038,17 @@ namespace Hecton8.World
             HectonVegetationInstanceData metadata,
             int typeId)
         {
-            double3 rootPositionDouble = ToDouble3(rootPosition);
+            if (!IsFiniteVector(rootPosition))
+                return double.PositiveInfinity;
+
+            double3 rootPositionDouble = HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3(rootPosition);
             HectonVegetationInstanceType vegetationType = (HectonVegetationInstanceType)typeId;
             if (vegetationType == HectonVegetationInstanceType.GiantKelp)
             {
                 double kelpHeight = math.lerp(10d, 20d, (double)math.saturate(metadata.HeightScale));
-                double3 top = rootPositionDouble + new double3(0d, math.max(0.5d, kelpHeight + KelpRadiusBias), 0d);
+                double3 topOffset = default;
+                topOffset.y = math.max(0.5d, kelpHeight + KelpRadiusBias);
+                double3 top = rootPositionDouble + topOffset;
                 double3 closest = ClosestPointOnSegment(rootPositionDouble, top, centerUniversePosition);
                 return math.lengthsq(closest - centerUniversePosition);
             }
@@ -6347,7 +10100,30 @@ namespace Hecton8.World
 
         private static Vector3 ExtractTranslation(Matrix4x4 matrix)
         {
-            return new Vector3(matrix.m03, matrix.m13, matrix.m23);
+            return ToRuntimeVector3(matrix.m03, matrix.m13, matrix.m23);
+        }
+
+        private static Vector3 ToRuntimeVector3(float3 value)
+        {
+            return ToRuntimeVector3(value.x, value.y, value.z);
+        }
+
+        private static float3 ToFloat3(Vector3 value)
+        {
+            float3 result = default;
+            result.x = value.x;
+            result.y = value.y;
+            result.z = value.z;
+            return result;
+        }
+
+        private static Vector3 ToRuntimeVector3(float x, float y, float z)
+        {
+            Vector3 result = default;
+            result.x = x;
+            result.y = y;
+            result.z = z;
+            return result;
         }
 
         private static bool IsFiniteVector(Vector3 value)
@@ -6396,13 +10172,17 @@ namespace Hecton8.World
 
             positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+                ToDouble3(runtimePosition));
             return IsFiniteAup(in positionAup);
         }
 
         private static double3 ToDouble3(Vector3 value)
         {
-            return new double3(value.x, value.y, value.z);
+            double3 result = default;
+            result.x = value.x;
+            result.y = value.y;
+            result.z = value.z;
+            return result;
         }
 
         private static float ResolveFractionalVariation(float encodedVariation)
@@ -6429,53 +10209,24 @@ namespace Hecton8.World
             return mixed == 0u ? 1u : mixed;
         }
 
-        private static NativeArray<T> EnsureLaneCapacity<T>(ref NativeArray<T> array, int requiredCount, string label) where T : unmanaged
+        private NativeArray<T> EnsureLaneCapacity<T>(ref VaultArray<T> array, BufferID bufferId, int requiredCount, string label) where T : struct
         {
-            EnsureNativeCapacity(ref array, requiredCount, label);
+            EnsureVaultArrayCapacity(ref array, bufferId, requiredCount, label, NativeArrayOptions.UninitializedMemory);
             return array;
         }
 
-        private static void EnsureNativeCapacity<T>(ref NativeArray<T> array, int requiredCount, string label) where T : unmanaged
+        private bool EnsureVaultArrayCapacity<T>(
+            ref VaultArray<T> array,
+            BufferID bufferId,
+            int requiredCount,
+            string label,
+            NativeArrayOptions options) where T : struct
         {
             if (requiredCount <= 0)
-                return;
+                return array.IsCreated;
 
-            if (array.IsCreated && array.Length >= requiredCount)
-                return;
-
-            if (array.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-            }
-
-            array = new NativeArray<T>(requiredCount, DataVaultExemptOrganicScratchAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<T>[requiredCount] - resized persistent entropy runtime lane - owner: DestructibleOrganicManager
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
-        }
-
-        private void RegisterNativeMemorySentinel()
-        {
-            NativeMemorySentinel.RegisterNativeHashMap(_healthByInstanceUid, NativeMemoryOwner, nameof(_healthByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_destroyedByInstanceUid, NativeMemoryOwner, nameof(_destroyedByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_pendingWiltEndTimeByInstanceUid, NativeMemoryOwner, nameof(_pendingWiltEndTimeByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_damageVisualProgressByInstanceUid, NativeMemoryOwner, nameof(_damageVisualProgressByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_decompositionStartTimeByInstanceUid, NativeMemoryOwner, nameof(_decompositionStartTimeByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_regrowthProgressByInstanceUid, NativeMemoryOwner, nameof(_regrowthProgressByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_regrowthPositionByInstanceUid, NativeMemoryOwner, nameof(_regrowthPositionByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_maturationScaleByInstanceUid, NativeMemoryOwner, nameof(_maturationScaleByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_maturationYieldByInstanceUid, NativeMemoryOwner, nameof(_maturationYieldByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_nextSporeAcousticTimeByInstanceUid, NativeMemoryOwner, nameof(_nextSporeAcousticTimeByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_baseScaleByInstanceUid, NativeMemoryOwner, nameof(_baseScaleByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_runtimeFlagsByInstanceUid, NativeMemoryOwner, nameof(_runtimeFlagsByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_lastOrganicTouchTimeByInstanceUid, NativeMemoryOwner, nameof(_lastOrganicTouchTimeByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_overgrownByInstanceUid, NativeMemoryOwner, nameof(_overgrownByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_rootMoundAppliedByInstanceUid, NativeMemoryOwner, nameof(_rootMoundAppliedByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_destroyedFloraScratch, NativeMemoryOwner, nameof(_destroyedFloraScratch), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_floraStateOverrideScratch, NativeMemoryOwner, nameof(_floraStateOverrideScratch), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_persistedHealth01ByInstanceUid, NativeMemoryOwner, nameof(_persistedHealth01ByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_persistedHeightScale01ByInstanceUid, NativeMemoryOwner, nameof(_persistedHeightScale01ByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_pendingYieldEvents, NativeMemoryOwner, nameof(_pendingYieldEvents), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_dropDebugScratch, NativeMemoryOwner, nameof(_dropDebugScratch), NativeMemoryLifetime);
+            IDataVault vault = _dearLieVault;
+            return vault != null && array.Ensure(vault, bufferId, requiredCount, OrganicVaultSystemId, options);
         }
 
 #if UNITY_EDITOR
@@ -6497,7 +10248,8 @@ namespace Hecton8.World
                 if (!TryBuildDearLieEvent(in signals[i], out FloraDestructionEventDTO eventDto, ref nanRejectCount))
                     continue;
 
-                Vector3 impactRuntime = (Vector3)AbsoluteUniversePosition.FromAbsolutePosition(eventDto.ImpactAUP).ToRuntimeFloat3();
+                AbsoluteUniversePosition impactAup = AbsoluteUniversePosition.FromAbsolutePosition(eventDto.ImpactAUP);
+                Vector3 impactRuntime = (Vector3)AUPMath.ToRuntimeFloat3(in impactAup, HectonFloatingOrigin.CurrentTotalOffsetDouble);
                 if (!IsFiniteVector(impactRuntime))
                     continue;
 
@@ -6516,38 +10268,6 @@ namespace Hecton8.World
             }
         }
 #endif
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
-        }
-
-        private static void DisposeNativeList<T>(ref NativeList<T> list, string label) where T : unmanaged
-        {
-            if (!list.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
-            list.Dispose();
-            list = default;
-        }
-
-        private static void DisposeNativeHashMap<TKey, TValue>(ref NativeHashMap<TKey, TValue> map, string label)
-            where TKey : unmanaged, System.IEquatable<TKey>
-            where TValue : unmanaged
-        {
-            if (!map.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeHashMap(NativeMemoryOwner, label);
-            map.Dispose();
-            map = default;
-        }
 
         private static Vector3 NormalizeVector3Fast(Vector3 vector, Vector3 fallback)
         {

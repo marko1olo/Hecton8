@@ -9,7 +9,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Supported UI setting kinds exposed by mods.
     /// </summary>
-    public enum ModSettingKind
+    internal enum ModSettingKind
     {
         /// <summary>
         /// Boolean toggle.
@@ -26,7 +26,7 @@ namespace Hecton8.Modding
     /// UI-facing immutable snapshot of a registered mod setting.
     /// </summary>
     [Serializable]
-    public struct ModSettingView
+    internal struct ModSettingView
     {
         /// <summary>
         /// Stable mod identifier that owns this setting.

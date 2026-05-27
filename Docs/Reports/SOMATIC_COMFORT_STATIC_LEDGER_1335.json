@@ -1,0 +1,397 @@
+{
+    "agent_id":  "1335",
+    "timestamp_local":  "2026-05-26T15:33:20.1454158+04:00",
+    "prompt_source":  "Docs/Tasks/CURRENT_BATCH.md",
+    "declared_target":  "Assets/_Project/Scripts/UI/VRSomaticComfortController.cs",
+    "declared_target_exists":  false,
+    "actual_runtime_owner":  {
+                                 "provider":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs",
+                                 "provider_base":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+                                 "horizon_lock":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.HorizonLock.cs",
+                                 "render_feature":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+                                 "shader":  "Assets/_Project/Art/Shaders/Hidden_Hecton_VRBrownout.shader"
+                             },
+    "comfort_classes_and_methods":  [
+                                        {
+                                            "type":  "VRSomaticProvider",
+                                            "file":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs",
+                                            "methods":  [
+                                                            "EnsureSomaticComfortBuffers",
+                                                            "ScheduleSomaticComfortKernel",
+                                                            "RefreshSomaticPressureState",
+                                                            "TryPublishCompletedSomaticComfortNoBlock",
+                                                            "PublishSomaticComfortStateFromWrite",
+                                                            "RecordSomaticComfortTelemetry",
+                                                            "DumpComfortTelemetryOnce",
+                                                            "PublishSomaticComfortShaderState",
+                                                            "FlushQueuedSomaticComfortShaderState",
+                                                            "RunSomaticComfortFuzzerForTests"
+                                                        ]
+                                        },
+                                        {
+                                            "type":  "VRSomaticProvider",
+                                            "file":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.HorizonLock.cs",
+                                            "methods":  [
+                                                            "ScheduleHorizonLockKernel",
+                                                            "SchedulePreparedHorizonLockEvaluation",
+                                                            "TryPublishHorizonLockStateFromWrite",
+                                                            "RecordHorizonTelemetry",
+                                                            "ResolveLocalAupDeltaFromDouble"
+                                                        ]
+                                        },
+                                        {
+                                            "type":  "HectonVRBrownoutFeature",
+                                            "file":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+                                            "render_pass_event":  "BeforeRenderingPostProcessing",
+                                            "gpu_upload":  "Shader.SetGlobalConstantBuffer(_HectonVRBrownoutGlobals, stride 64)"
+                                        }
+                                    ],
+    "kinematic_source_mapping":  {
+                                     "comfort_write":  {
+                                                           "buffer_id":  "ShinobuVRSomaticComfortWrite",
+                                                           "numeric_id":  70166
+                                                       },
+                                     "comfort_read":  {
+                                                          "buffer_id":  "ShinobuVRSomaticComfortRead",
+                                                          "numeric_id":  70167
+                                                      },
+                                     "derivatives":  {
+                                                         "buffer_id":  "ShinobuVRSomaticDerivatives",
+                                                         "numeric_id":  70168
+                                                     },
+                                     "aup_history":  {
+                                                         "buffer_id":  "ShinobuVRSomaticHistory",
+                                                         "numeric_id":  70169
+                                                     },
+                                     "comfort_telemetry":  {
+                                                               "buffer_id":  "ShinobuVRSomaticComfortTelemetry",
+                                                               "numeric_id":  70171,
+                                                               "capacity":  300,
+                                                               "row_bytes":  64
+                                                           },
+                                     "kcc_mirror":  {
+                                                        "buffer_id":  "ShinobuVRSomaticKccStateMirror",
+                                                        "numeric_id":  70174
+                                                    },
+                                     "raw_rotation":  {
+                                                          "buffer_id":  "ShinobuVRSomaticRawRotation",
+                                                          "numeric_id":  70176
+                                                      },
+                                     "horizon_telemetry":  {
+                                                               "buffer_id":  "ShinobuVRSomaticHorizonTelemetry",
+                                                               "numeric_id":  70179
+                                                           }
+                                 },
+    "execution_order":  [
+                            "Tick/POST_SIMULATION schedules ComputeSomaticDerivativesJob when sampled stride or shock requires fresh derivatives.",
+                            "EvaluateFovTunnelingJob consumes AUP-derived derivative DTO plus KCC angular fallback and writes SomaticComfortStateDTO.",
+                            "ResolveLocalAupDeltaMeters and ResolveLocalAupDeltaFromDouble subtract in double3, clamp in double3, then cast per component to float3.",
+                            "CalculateHorizonLockJob and horizon kernel complete before PublishSomaticComfortStateFromWrite copies write state to read state.",
+                            "PublishSomaticComfortShaderState queues Vector4 state; FlushQueuedSomaticComfortShaderState uploads during queued late-frame presentation flush.",
+                            "HectonVRBrownoutFeature executes BeforeRenderingPostProcessing so the tunnel covers world color before the final post stack."
+                        ],
+    "shader_injection_point":  {
+                                   "shader":  "Hidden/Hecton8/VRBrownout",
+                                   "file":  "Assets/_Project/Art/Shaders/Hidden_Hecton_VRBrownout.shader",
+                                   "uses_vr_comfort_signal":  "_HectonVrComfortSignals.x",
+                                   "mask_algorithm":  "squared radial ramp plus eye-stable IGN dither"
+                               },
+    "dto_layouts":  [
+                        {
+                            "structName":  "SomaticComfortStateDTO",
+                            "sizeBytes":  32,
+                            "offsets":  {
+                                            "FovTunnelingIntensity":  "0:float",
+                                            "HorizonLockBlend":  "4:float",
+                                            "FoveatedScaleMultiplier":  "8:float",
+                                            "ActiveComfortFlags":  "12:uint",
+                                            "ReservedParameters":  "16:float4"
+                                        }
+                        },
+                        {
+                            "structName":  "VrComfortProfileDTO",
+                            "sizeBytes":  64,
+                            "offsets":  {
+                                            "ProfileHash":  "0:uint",
+                                            "UserComfortWeight01":  "4:float",
+                                            "FovAggressiveness":  "8:float",
+                                            "HorizonLockSpeed":  "12:float",
+                                            "FoveatedBaseline":  "16:float",
+                                            "AngularVelocitySoftRadS":  "20:float",
+                                            "AngularAccelerationSoftRadS2":  "24:float",
+                                            "LinearAccelerationSoftMps2":  "28:float",
+                                            "EwmaSharpness":  "32:float",
+                                            "ImpactShockWeight":  "36:float",
+                                            "FlatScreenBaselineFovTunnel":  "40:float",
+                                            "VrBaselineFovTunnel":  "44:float",
+                                            "ReleaseSharpness":  "48:float",
+                                            "MockAmplitude":  "52:float",
+                                            "Flags":  "56:uint",
+                                            "_pad0":  "60:byte",
+                                            "_pad1":  "61:byte",
+                                            "_pad2":  "62:byte",
+                                            "_pad3":  "63:byte"
+                                        }
+                        },
+                        {
+                            "structName":  "VrComfortProfileLookupSlotDTO",
+                            "sizeBytes":  16,
+                            "offsets":  {
+                                            "ProfileHash":  "0:uint",
+                                            "ProfileIndex":  "4:int",
+                                            "Occupied":  "8:uint",
+                                            "_pad0":  "12:byte",
+                                            "_pad1":  "13:byte",
+                                            "_pad2":  "14:byte",
+                                            "_pad3":  "15:byte"
+                                        }
+                        },
+                        {
+                            "structName":  "SomaticKinematicHistoryDTO",
+                            "sizeBytes":  96,
+                            "offsets":  {
+                                            "PreviousAup":  "0:AbsoluteUniversePosition",
+                                            "PreviousRotation":  "48:quaternion",
+                                            "PreviousVelocity":  "64:float3",
+                                            "PreviousAngularVelocity":  "76:float3",
+                                            "PreviousFrame":  "88:uint",
+                                            "Flags":  "92:uint"
+                                        }
+                        },
+                        {
+                            "structName":  "SomaticDerivativeDTO",
+                            "sizeBytes":  64,
+                            "offsets":  {
+                                            "LinearVelocity":  "0:float3",
+                                            "LinearAcceleration":  "12:float3",
+                                            "AngularVelocity":  "24:float3",
+                                            "AngularAcceleration":  "36:float3",
+                                            "PeakAngularVelocityRadS":  "48:float",
+                                            "PeakAngularAccelerationRadS2":  "52:float",
+                                            "PeakLinearAccelerationMps2":  "56:float",
+                                            "Flags":  "60:uint"
+                                        }
+                        },
+                        {
+                            "structName":  "ComfortTelemetryEntry",
+                            "sizeBytes":  64,
+                            "offsets":  {
+                                            "Frame":  "0:uint",
+                                            "Flags":  "4:uint",
+                                            "PeakAngularVelocityRadS":  "8:float",
+                                            "PeakAngularAccelerationRadS2":  "12:float",
+                                            "PeakLinearAccelerationMps2":  "16:float",
+                                            "FovTunnelingIntensity":  "20:float",
+                                            "HorizonLockBlend":  "24:float",
+                                            "FoveatedScaleMultiplier":  "28:float",
+                                            "BurstExecutionMicroseconds":  "32:float",
+                                            "ImpactShock01":  "36:float",
+                                            "GlobalQualityWeight01":  "40:float",
+                                            "Pressure01":  "44:float",
+                                            "LockContentionCount":  "48:uint",
+                                            "StateHash":  "52:uint",
+                                            "Sequence":  "56:uint",
+                                            "AupHash":  "60:uint"
+                                        }
+                        },
+                        {
+                            "structName":  "SomaticMockSicknessSampleDTO",
+                            "sizeBytes":  64,
+                            "offsets":  {
+                                            "LinearAcceleration":  "0:float3",
+                                            "AngularVelocity":  "12:float3",
+                                            "AngularAcceleration":  "24:float3",
+                                            "Rotation":  "36:quaternion",
+                                            "Frame":  "52:uint",
+                                            "Flags":  "56:uint",
+                                            "TimeSeconds":  "60:float"
+                                        }
+                        },
+                        {
+                            "structName":  "VRSomaticComfortDTO",
+                            "sizeBytes":  32,
+                            "offsets":  {
+                                            "StabilizedRotation":  "0:quaternion",
+                                            "FovTunnelScalar":  "16:float",
+                                            "PitchDampening":  "20:float",
+                                            "ComfortFlags":  "24:uint",
+                                            "_pad0":  "28:byte",
+                                            "_pad1":  "29:byte",
+                                            "_pad2":  "30:byte",
+                                            "_pad3":  "31:byte"
+                                        }
+                        },
+                        {
+                            "structName":  "SomaticTelemetryEntry",
+                            "sizeBytes":  96,
+                            "offsets":  {
+                                            "StabilizedRotation":  "0:quaternion",
+                                            "QuaternionDelta":  "16:float4",
+                                            "RawAngularVelocity":  "32:float3",
+                                            "FovTunnelScalar":  "44:float",
+                                            "PitchDampening":  "48:float",
+                                            "BurstExecutionMicroseconds":  "52:float",
+                                            "Frame":  "56:uint",
+                                            "Flags":  "60:uint",
+                                            "StateHash":  "64:uint",
+                                            "AupHash":  "68:uint",
+                                            "_pad0":  "72:byte",
+                                            "_pad1":  "73:byte",
+                                            "_pad2":  "74:byte",
+                                            "_pad3":  "75:byte",
+                                            "_pad4":  "76:byte",
+                                            "_pad5":  "77:byte",
+                                            "_pad6":  "78:byte",
+                                            "_pad7":  "79:byte",
+                                            "_pad8":  "80:byte",
+                                            "_pad9":  "81:byte",
+                                            "_pad10":  "82:byte",
+                                            "_pad11":  "83:byte",
+                                            "_pad12":  "84:byte",
+                                            "_pad13":  "85:byte",
+                                            "_pad14":  "86:byte",
+                                            "_pad15":  "87:byte",
+                                            "_pad16":  "88:byte",
+                                            "_pad17":  "89:byte",
+                                            "_pad18":  "90:byte",
+                                            "_pad19":  "91:byte",
+                                            "_pad20":  "92:byte",
+                                            "_pad21":  "93:byte",
+                                            "_pad22":  "94:byte",
+                                            "_pad23":  "95:byte"
+                                        }
+                        },
+                        {
+                            "structName":  "VRSomaticKinematicStateMirrorDTO",
+                            "sizeBytes":  64,
+                            "offsets":  {
+                                            "AUP_Position":  "0:double3",
+                                            "Velocity":  "24:float3",
+                                            "AngularVelocity":  "36:float3",
+                                            "Mass":  "48:float",
+                                            "Flags":  "52:uint",
+                                            "DragCoefficient":  "56:float",
+                                            "RestingFrameCount":  "60:byte",
+                                            "DeepSleepTickCount":  "61:byte",
+                                            "SleepMaterialIndex":  "62:byte",
+                                            "_pad0":  "63:byte"
+                                        }
+                        },
+                        {
+                            "structName":  "VRSomaticBlackBoxEntry",
+                            "sizeBytes":  128,
+                            "offsets":  {
+                                            "Reserved1":  "0:ulong",
+                                            "HeadRotation":  "8:float4",
+                                            "HeadPosition":  "24:float3",
+                                            "NearCollision01":  "36:float",
+                                            "ComfortVignette01":  "40:float",
+                                            "LeftHandSeparationSq":  "44:float",
+                                            "RightHandSeparationSq":  "48:float",
+                                            "HeadAngularSpeedRadiansPerSecond":  "52:float",
+                                            "KccAngularVelocityRadiansPerSecond":  "56:float",
+                                            "KccAngularAccelerationRadiansPerSecondSq":  "60:float",
+                                            "KccComfortVignette01":  "64:float",
+                                            "KccHorizonLock01":  "68:float",
+                                            "Frame":  "72:int",
+                                            "StateHash":  "76:uint",
+                                            "AupShiftSequence":  "80:uint",
+                                            "KccVelocitySequence":  "84:uint",
+                                            "KccVelocityFrame":  "88:uint",
+                                            "KccVelocitySourceId":  "92:uint",
+                                            "Reserved0":  "96:uint",
+                                            "Flags":  "100:ushort",
+                                            "HandGhostMask":  "102:ushort",
+                                            "_pad0":  "104:byte",
+                                            "_pad1":  "105:byte",
+                                            "_pad2":  "106:byte",
+                                            "_pad3":  "107:byte",
+                                            "_pad4":  "108:byte",
+                                            "_pad5":  "109:byte",
+                                            "_pad6":  "110:byte",
+                                            "_pad7":  "111:byte",
+                                            "_pad8":  "112:byte",
+                                            "_pad9":  "113:byte",
+                                            "_pad10":  "114:byte",
+                                            "_pad11":  "115:byte",
+                                            "_pad12":  "116:byte",
+                                            "_pad13":  "117:byte",
+                                            "_pad14":  "118:byte",
+                                            "_pad15":  "119:byte",
+                                            "_pad16":  "120:byte",
+                                            "_pad17":  "121:byte",
+                                            "_pad18":  "122:byte",
+                                            "_pad19":  "123:byte",
+                                            "_pad20":  "124:byte",
+                                            "_pad21":  "125:byte",
+                                            "_pad22":  "126:byte",
+                                            "_pad23":  "127:byte"
+                                        }
+                        },
+                        {
+                            "structName":  "VRSomaticRootSyncInput",
+                            "sizeBytes":  80,
+                            "offsets":  {
+                                            "HeadRotation":  "0:quaternion",
+                                            "PreviousRootRotation":  "16:quaternion",
+                                            "HeadPosition":  "32:float3",
+                                            "DeltaTime":  "44:float",
+                                            "HeadAngularSpeed":  "48:float",
+                                            "RootRotationSharpness":  "52:float",
+                                            "VignetteAngularSpeedStart":  "56:float",
+                                            "VignetteAngularSpeedFull":  "60:float",
+                                            "VignetteMaximum":  "64:float",
+                                            "AccelerationVignette01":  "68:float",
+                                            "KccHorizonLock01":  "72:float",
+                                            "Reserved0":  "76:uint"
+                                        }
+                        },
+                        {
+                            "structName":  "VRSomaticRootSyncOutput",
+                            "sizeBytes":  32,
+                            "offsets":  {
+                                            "RootRotation":  "0:quaternion",
+                                            "RootPosition":  "16:float3",
+                                            "ComfortVignette01":  "28:float"
+                                        }
+                        },
+                        {
+                            "structName":  "HeadCastSample",
+                            "sizeBytes":  48,
+                            "offsets":  {
+                                            "Point":  "0:float3",
+                                            "Normal":  "12:float3",
+                                            "Distance":  "24:float",
+                                            "LocalSide":  "28:float",
+                                            "HasHit":  "32:int",
+                                            "Reserved0":  "36:uint",
+                                            "_pad0":  "40:byte",
+                                            "_pad1":  "41:byte",
+                                            "_pad2":  "42:byte",
+                                            "_pad3":  "43:byte",
+                                            "_pad4":  "44:byte",
+                                            "_pad5":  "45:byte",
+                                            "_pad6":  "46:byte",
+                                            "_pad7":  "47:byte"
+                                        }
+                        },
+                        {
+                            "structName":  "BrownoutGlobalsDTO",
+                            "sizeBytes":  64,
+                            "offsets":  {
+                                            "Params0":  "0:Vector4",
+                                            "Params1":  "16:Vector4",
+                                            "VrComfortSignals":  "32:Vector4",
+                                            "VrComfortMotion":  "48:Vector4"
+                                        }
+                        }
+                    ],
+    "legacy_risk_scan":  {
+                             "post_process_volume_in_actual_owner":  0,
+                             "new_material_in_comfort_hot_path":  0,
+                             "get_component_in_comfort_hot_path":  0,
+                             "managed_delegate_or_event_in_comfort_provider_partial":  0,
+                             "as_native_array_escape_hatches":  0,
+                             "broad_exception_catches":  0
+                         }
+}

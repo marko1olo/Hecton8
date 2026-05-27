@@ -258,7 +258,7 @@ namespace Hecton8.Visor
             {
                 int requestedUploadCount = Mathf.Clamp(stats.UploadCount, 0, DynamicDecalVaultRuntime.MaxCapacity);
                 if (requestedUploadCount <= 0 ||
-                    !DynamicDecalVaultRuntime.TryResolveUploadBuffer(in stats, out NativeArray<TraumaDecalDTO> uploadBuffer))
+                    !DynamicDecalVaultRuntime.TryResolveUploadBuffer(in stats, out NativeArray<TraumaDecalDTO>.ReadOnly uploadBuffer))
                 {
                     return;
                 }
@@ -319,8 +319,8 @@ namespace Hecton8.Visor
                 _stagedBufferIndex = 0;
                 _stagedCount = 0;
                 _hasStagedBuffer = false;
-                _decalBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<TraumaDecalDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[visor trauma capacity A] - screen-space wound double-buffer upload - owner: SHINOBU_325
-                _decalBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<TraumaDecalDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[visor trauma capacity B] - screen-space wound double-buffer upload - owner: SHINOBU_325
+                _decalBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<TraumaDecalDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[visor trauma capacity A] - screen-space wound double-buffer upload - owner: AGENT_1335
+                _decalBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<TraumaDecalDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[visor trauma capacity B] - screen-space wound double-buffer upload - owner: AGENT_1335
             }
 
             private void PromoteStagedUpload()

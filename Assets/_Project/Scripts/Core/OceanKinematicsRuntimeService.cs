@@ -12,6 +12,7 @@ namespace Hecton8.Core
     public sealed class OceanKinematicsRuntimeService : MonoBehaviour, IHectonOceanKinematicsService, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int ProviderCapacity = 4;
+        private const float ProviderAvailabilityProbeIntervalSeconds = 0.5f;
 
         // COLD ALLOC: object[4] - registered ocean-kinematics providers ordered by runtime priority, object-backed to avoid interface collections - owner: OceanKinematicsRuntimeService
         private readonly object[] _providers = new object[ProviderCapacity];
@@ -22,6 +23,8 @@ namespace Hecton8.Core
         private bool _hotSwapRegistered;
         private int _providerCount;
         private IHectonOceanKinematics _activeProvider;
+        private bool _providerRefreshRequested = true;
+        private float _providerAvailabilityProbeCountdown;
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
@@ -102,6 +105,13 @@ namespace Hecton8.Core
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            if (!_providerRefreshRequested)
+            {
+                _providerAvailabilityProbeCountdown -= deltaTime > 0f ? deltaTime : 0f;
+                if (_providerAvailabilityProbeCountdown > 0f)
+                    return;
+            }
+
             RefreshActiveProvider();
         }
 
@@ -127,6 +137,8 @@ namespace Hecton8.Core
             TryUnregisterHotSwapListener();
             TryUnregisterService();
             _activeProvider = null;
+            _providerRefreshRequested = true;
+            _providerAvailabilityProbeCountdown = 0f;
         }
 
         private void OnDestroy()
@@ -148,6 +160,8 @@ namespace Hecton8.Core
             System.Array.Clear(_providers, 0, _providerCount);
             _providerCount = 0;
             _activeProvider = null;
+            _providerRefreshRequested = true;
+            _providerAvailabilityProbeCountdown = 0f;
 
             GlobalRegistry.ClearOceanKinematicsRuntime(this);
         }
@@ -167,6 +181,7 @@ namespace Hecton8.Core
 
             TryUnregisterUpdatable();
             TryRegisterUpdatable();
+            RequestProviderRefresh();
         }
 
         private void RegisterProviderInternal(IHectonOceanKinematics provider)
@@ -241,6 +256,14 @@ namespace Hecton8.Core
             }
 
             _activeProvider = bestAvailableProvider ?? bestFallbackProvider;
+            _providerRefreshRequested = false;
+            _providerAvailabilityProbeCountdown = ProviderAvailabilityProbeIntervalSeconds;
+        }
+
+        private void RequestProviderRefresh()
+        {
+            _providerRefreshRequested = true;
+            _providerAvailabilityProbeCountdown = 0f;
         }
 
         private int IndexOfProvider(IHectonOceanKinematics provider)

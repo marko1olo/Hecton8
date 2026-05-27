@@ -253,9 +253,8 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         private static int ResolveRuntimeWorldSeed()
         {
-            IWorldSeedProvider provider = GlobalRegistry.WorldSeedProvider;
-            return provider != null && provider.IsInitialized
-                ? provider.RuntimeWorldSeed
+            return global::HectonWorldGenerator.TryGetActiveRuntimeWorldSeed(out int runtimeWorldSeed)
+                ? runtimeWorldSeed
                 : 0;
         }
     }

@@ -216,7 +216,6 @@ namespace Hecton8.Physics.Vehicles
                     SignalCount = mockCount,
                     RootAup = rootAup,
                     Frame = frame,
-                    GlobalQualityWeight = quality,
                     RadiusMeters = explosiveRadiusMeters,
                     Magnitude = mockMagnitude
                 };
@@ -262,7 +261,6 @@ namespace Hecton8.Physics.Vehicles
                     GridHeight = tuning.GridHeight,
                     GridDepth = tuning.GridDepth,
                     GridSizeLocal = tuning.GridSizeLocal,
-                    GlobalQualityWeight = quality,
                     DirectDamageScale = tuning.DirectDamageScale,
                     ExplosionFalloff = tuning.ExplosionFalloff
                 };
@@ -696,9 +694,8 @@ namespace Hecton8.Physics.Vehicles
             if (!enableEmergencyMockDamage)
                 return 0;
 
-            float quality = ResolveQualityWeight();
             int maxCount = math.clamp(mockSignalCount, 1, VehicleDamageConstants.MaxMockDamageSignals);
-            return math.clamp((int)math.round(math.lerp(1f, maxCount, quality)), 1, math.min(maxCount, VehicleDamageConstants.MaxDamageSignals));
+            return math.min(maxCount, VehicleDamageConstants.MaxDamageSignals);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

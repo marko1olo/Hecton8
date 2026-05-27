@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Text;
+using Hecton8.Data;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,15 +12,17 @@ namespace Hecton8.EditorValidation
     {
         private const string AgentId = "X_002";
         private const string AgentId1313 = "1313";
+        private const string AgentId1330 = "1330";
         private const string ReportPath = "Docs/Reports/DATA_MONOLITH_CORRUPTION_FUZZER_X_002.json";
         private const string ReportPath1313 = "Docs/Reports/DATA_MONOLITH_CORRUPTION_FUZZER_1313.json";
+        private const string ReportPath1330 = "Docs/Reports/DATA_MONOLITH_CORRUPTION_FUZZER_1330.json";
         private const string TempFolder = "Temp/DataMonolithFuzzer";
 
         [MenuItem("Hecton8/Data Monolith/Run Corruption Fuzzer")]
         public static void RunFromMenu()
         {
             bool passed = Run();
-            Debug.Log("[H8DataMonolithCorruptionFuzzer] passed=" + passed + " report=" + ReportPath + " report1313=" + ReportPath1313);
+            Debug.Log("[H8DataMonolithCorruptionFuzzer] passed=" + passed + " report=" + ReportPath + " report1313=" + ReportPath1313 + " report1330=" + ReportPath1330);
         }
 
         internal static bool Run()
@@ -47,37 +50,38 @@ namespace Hecton8.EditorValidation
                 return false;
             }
 
-            byte[] baseline = File.ReadAllBytes(outputPath);
-            RunCase(projectRoot, tempFolder, "bad_magic", baseline, MutateMagic, "magic", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_stored_checksum", baseline, MutateStoredChecksum, "checksum", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_payload_checksum", baseline, MutatePayloadByte, "checksum", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "truncated_blob", baseline, MutateTruncate, "mismatch", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_header_unknown_flags", baseline, MutateHeaderUnknownFlags, "flags", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_header_reserved", baseline, MutateHeaderReserved, "reserved", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_directory_reserved", baseline, MutateDirectoryReserved, "reserved", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_header_section_count", baseline, MutateHeaderSectionCount, "sections", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_header_section_table_offset", baseline, MutateHeaderSectionTableOffset, "tableOffset", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_section_table_offset", baseline, MutateSectionTableOffset, "Section table range", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_directory_magic", baseline, MutateDirectoryMagic, "Directory magic", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_directory_identity", baseline, MutateDirectoryIdentity, "identity", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_data_start_offset", baseline, MutateDataStartOffset, "Data start", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_section_record_size", baseline, MutateSectionRecordSize, "record size mismatch", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_section_unaligned_offset", baseline, MutateSectionUnalignedOffset, "aligned", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_section_out_of_bounds", baseline, MutateSectionOutOfBounds, "range exceeds", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_section_overlap", baseline, MutateSectionOverlap, "canonical", ref passCount, ref failCount, ref expectedCaseCount, cases);
-            RunCase(projectRoot, tempFolder, "bad_localization_directory", baseline, MutateLocalizationDirectory, "localization", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_magic", outputPath, MutateMagic, "magic", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_stored_checksum", outputPath, MutateStoredChecksum, "checksum", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_payload_checksum", outputPath, MutatePayloadByte, "checksum", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "truncated_blob", outputPath, MutateTruncate, "mismatch", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_header_unknown_flags", outputPath, MutateHeaderUnknownFlags, "flags", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_header_reserved", outputPath, MutateHeaderReserved, "reserved", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_directory_reserved", outputPath, MutateDirectoryReserved, "reserved", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_header_section_count", outputPath, MutateHeaderSectionCount, "sections", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_header_section_table_offset", outputPath, MutateHeaderSectionTableOffset, "tableOffset", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_section_table_offset", outputPath, MutateSectionTableOffset, "Section table range", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_directory_magic", outputPath, MutateDirectoryMagic, "Directory magic", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_directory_identity", outputPath, MutateDirectoryIdentity, "identity", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_data_start_offset", outputPath, MutateDataStartOffset, "Data start", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_section_record_size", outputPath, MutateSectionRecordSize, "record size mismatch", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_section_unaligned_offset", outputPath, MutateSectionUnalignedOffset, "aligned", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_section_out_of_bounds", outputPath, MutateSectionOutOfBounds, "range exceeds", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_section_overlap", outputPath, MutateSectionOverlap, "canonical", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_localization_directory", outputPath, MutateLocalizationDirectory, "localization", ref passCount, ref failCount, ref expectedCaseCount, cases);
 
             bool passed = failCount == 0 && passCount == expectedCaseCount;
             WriteReport(projectRoot, passed, setupError, passCount, failCount, cases);
             return passed;
         }
 
+        private delegate bool BlobFileMutation(string path, out string error);
+
         private static void RunCase(
             string projectRoot,
             string tempFolder,
             string name,
-            byte[] baseline,
-            Func<byte[], byte[]> mutate,
+            string baselinePath,
+            BlobFileMutation mutate,
             string expectedErrorToken,
             ref int passCount,
             ref int failCount,
@@ -85,11 +89,13 @@ namespace Hecton8.EditorValidation
             StringBuilder cases)
         {
             expectedCaseCount++;
-            byte[] mutated = mutate(baseline);
             string path = Path.Combine(tempFolder, name + ".h8bin");
-            File.WriteAllBytes(path, mutated);
-
-            bool valid = H8DataMonolithCompiler.TryValidateBlobFile(path, out string error);
+            bool mutationReady = TryCopyFile(baselinePath, path, out string mutationError) &&
+                                 mutate(path, out mutationError);
+            string error = mutationError;
+            bool valid = false;
+            if (mutationReady)
+                valid = H8DataMonolithCompiler.TryValidateBlobFile(path, out error);
             bool passed = !valid && error.IndexOf(expectedErrorToken, StringComparison.OrdinalIgnoreCase) >= 0;
             if (passed)
                 passCount++;
@@ -108,167 +114,163 @@ namespace Hecton8.EditorValidation
                 .Append("\" }");
         }
 
-        private static byte[] MutateMagic(byte[] source)
+        private static bool MutateMagic(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            bytes[0] ^= 0xFF;
-            return bytes;
+            return TryXorByte(path, 0L, 0xFF, out error);
         }
 
-        private static byte[] MutatePayloadByte(byte[] source)
+        private static bool MutatePayloadByte(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            bytes[bytes.Length - 1] ^= 0x5A;
-            return bytes;
+            if (!TryGetFileLength(path, out long length, out error))
+                return false;
+
+            long offset = Math.Max(H8DataLayoutConstants.HeaderSizeBytes, length - 1L);
+            return TryXorByte(path, offset, 0x5A, out error);
         }
 
-        private static byte[] MutateStoredChecksum(byte[] source)
+        private static bool MutateStoredChecksum(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            WriteUInt64(bytes, 8, 0UL);
-            return bytes;
+            return TryWriteUInt64(path, 8L, 0UL, out error);
         }
 
-        private static byte[] MutateTruncate(byte[] source)
+        private static bool MutateTruncate(string path, out string error)
         {
-            int truncatedLength = Math.Max(0, source.Length - Hecton8.Data.H8DataLayoutConstants.SectionAlignmentBytes);
-            byte[] bytes = new byte[truncatedLength];
-            Buffer.BlockCopy(source, 0, bytes, 0, bytes.Length);
-            return bytes;
+            if (!TryGetFileLength(path, out long length, out error))
+                return false;
+
+            long truncatedLength = Math.Max(0L, length - H8DataLayoutConstants.SectionAlignmentBytes);
+            return TrySetFileLength(path, truncatedLength, out error);
         }
 
-        private static byte[] MutateHeaderUnknownFlags(byte[] source)
+        private static bool MutateHeaderUnknownFlags(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            WriteUInt32(bytes, 36, Hecton8.Data.H8DataLayoutConstants.BlobFlagLittleEndian | 0x2u);
-            WriteUInt32(bytes, Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes + 32, Hecton8.Data.H8DataLayoutConstants.BlobFlagLittleEndian | 0x2u);
-            RecomputeHeaderChecksum(bytes);
-            return bytes;
+            return TryWriteUInt32(path, 36L, H8DataLayoutConstants.BlobFlagLittleEndian | 0x2u, out error) &&
+                   TryWriteUInt32(path, H8DataLayoutConstants.HeaderSizeBytes + 32L, H8DataLayoutConstants.BlobFlagLittleEndian | 0x2u, out error) &&
+                   RecomputeHeaderChecksum(path, out error);
         }
 
-        private static byte[] MutateHeaderReserved(byte[] source)
+        private static bool MutateHeaderReserved(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            WriteUInt32(bytes, 52, 1u);
-            return bytes;
+            return TryWriteUInt32(path, 52L, 1u, out error);
         }
 
-        private static byte[] MutateDirectoryReserved(byte[] source)
+        private static bool MutateDirectoryReserved(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            WriteUInt32(bytes, Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes + 44, 1u);
-            RecomputeHeaderChecksum(bytes);
-            return bytes;
+            return TryWriteUInt32(path, H8DataLayoutConstants.HeaderSizeBytes + 44L, 1u, out error) &&
+                   RecomputeHeaderChecksum(path, out error);
         }
 
-        private static byte[] MutateHeaderSectionCount(byte[] source)
+        private static bool MutateHeaderSectionCount(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            WriteUInt32(bytes, 32, (uint)Hecton8.Data.H8DataSectionId.PhysicsConstants - 1u);
-            return bytes;
+            return TryWriteUInt32(path, 32L, (uint)H8DataSectionId.PhysicsConstants - 1u, out error);
         }
 
-        private static byte[] MutateHeaderSectionTableOffset(byte[] source)
+        private static bool MutateHeaderSectionTableOffset(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            WriteUInt32(bytes, 28, Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes + Hecton8.Data.H8DataLayoutConstants.DirectorySizeBytes + 64u);
-            return bytes;
+            return TryWriteUInt32(path, 28L, (uint)(H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes + 64), out error);
         }
 
-        private static byte[] MutateSectionTableOffset(byte[] source)
+        private static bool MutateSectionTableOffset(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            uint badOffset = (uint)Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes +
-                             (uint)Hecton8.Data.H8DataLayoutConstants.DirectorySizeBytes +
+            uint badOffset = (uint)H8DataLayoutConstants.HeaderSizeBytes +
+                             (uint)H8DataLayoutConstants.DirectorySizeBytes +
                              16u;
-            WriteUInt32(bytes, Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes + 8, badOffset);
-            RecomputeHeaderChecksum(bytes);
-            return bytes;
+            return TryWriteUInt32(path, H8DataLayoutConstants.HeaderSizeBytes + 8L, badOffset, out error) &&
+                   RecomputeHeaderChecksum(path, out error);
         }
 
-        private static byte[] MutateDirectoryMagic(byte[] source)
+        private static bool MutateDirectoryMagic(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            bytes[Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes] ^= 0x5A;
-            RecomputeHeaderChecksum(bytes);
-            return bytes;
+            return TryXorByte(path, H8DataLayoutConstants.HeaderSizeBytes, 0x5A, out error) &&
+                   RecomputeHeaderChecksum(path, out error);
         }
 
-        private static byte[] MutateDirectoryIdentity(byte[] source)
+        private static bool MutateDirectoryIdentity(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            WriteUInt32(bytes, Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes + 32, 0u);
-            RecomputeHeaderChecksum(bytes);
-            return bytes;
+            return TryWriteUInt32(path, H8DataLayoutConstants.HeaderSizeBytes + 32L, 0u, out error) &&
+                   RecomputeHeaderChecksum(path, out error);
         }
 
-        private static byte[] MutateDataStartOffset(byte[] source)
+        private static bool MutateDataStartOffset(string path, out string error)
         {
-            byte[] bytes = Clone(source);
             uint expectedDataStart = AlignUp(
-                (uint)Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes +
-                (uint)Hecton8.Data.H8DataLayoutConstants.DirectorySizeBytes +
-                ((uint)Hecton8.Data.H8DataSectionId.PhysicsConstants * 16u),
-                Hecton8.Data.H8DataLayoutConstants.SectionAlignmentBytes);
-            WriteUInt32(bytes, Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes + 20, expectedDataStart + 1u);
-            RecomputeHeaderChecksum(bytes);
-            return bytes;
+                (uint)H8DataLayoutConstants.HeaderSizeBytes +
+                (uint)H8DataLayoutConstants.DirectorySizeBytes +
+                ((uint)H8DataSectionId.PhysicsConstants * 16u),
+                H8DataLayoutConstants.SectionAlignmentBytes);
+            return TryWriteUInt32(path, H8DataLayoutConstants.HeaderSizeBytes + 20L, expectedDataStart + 1u, out error) &&
+                   RecomputeHeaderChecksum(path, out error);
         }
 
-        private static byte[] MutateSectionRecordSize(byte[] source)
+        private static bool MutateSectionRecordSize(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            int firstEntry = (int)ReadUInt32(bytes, 28);
-            WriteUInt32(bytes, firstEntry + 4, 1u);
-            RecomputeHeaderChecksum(bytes);
-            return bytes;
+            if (!TryReadUInt32(path, 28L, out uint firstEntry, out error))
+                return false;
+
+            return TryWriteUInt32(path, (long)firstEntry + 4L, 1u, out error) &&
+                   RecomputeHeaderChecksum(path, out error);
         }
 
-        private static byte[] MutateSectionUnalignedOffset(byte[] source)
+        private static bool MutateSectionUnalignedOffset(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            int firstEntry = (int)ReadUInt32(bytes, 28);
-            uint offset = ReadUInt32(bytes, firstEntry + 12);
-            WriteUInt32(bytes, firstEntry + 12, offset + 1u);
-            RecomputeHeaderChecksum(bytes);
-            return bytes;
+            if (!TryReadUInt32(path, 28L, out uint firstEntry, out error) ||
+                !TryReadUInt32(path, (long)firstEntry + 12L, out uint offset, out error))
+            {
+                return false;
+            }
+
+            return TryWriteUInt32(path, (long)firstEntry + 12L, offset + 1u, out error) &&
+                   RecomputeHeaderChecksum(path, out error);
         }
 
-        private static byte[] MutateSectionOutOfBounds(byte[] source)
+        private static bool MutateSectionOutOfBounds(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            int firstEntry = (int)ReadUInt32(bytes, 28);
-            WriteUInt32(bytes, firstEntry + 12, (uint)(bytes.Length - Hecton8.Data.H8DataLayoutConstants.SectionAlignmentBytes));
-            RecomputeHeaderChecksum(bytes);
-            return bytes;
+            if (!TryGetFileLength(path, out long length, out error) ||
+                !TryReadUInt32(path, 28L, out uint firstEntry, out error))
+            {
+                return false;
+            }
+
+            uint badOffset = (uint)Math.Max(0L, length - H8DataLayoutConstants.SectionAlignmentBytes);
+            return TryWriteUInt32(path, (long)firstEntry + 12L, badOffset, out error) &&
+                   RecomputeHeaderChecksum(path, out error);
         }
 
-        private static byte[] MutateSectionOverlap(byte[] source)
+        private static bool MutateSectionOverlap(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            int firstEntry = (int)ReadUInt32(bytes, 28);
-            int secondEntry = firstEntry + 16;
-            uint firstOffset = ReadUInt32(bytes, firstEntry + 12);
-            WriteUInt32(bytes, secondEntry + 12, firstOffset);
-            RecomputeHeaderChecksum(bytes);
-            return bytes;
+            if (!TryReadUInt32(path, 28L, out uint firstEntry, out error) ||
+                !TryReadUInt32(path, (long)firstEntry + 12L, out uint firstOffset, out error))
+            {
+                return false;
+            }
+
+            uint secondEntry = firstEntry + 16u;
+            return TryWriteUInt32(path, (long)secondEntry + 12L, firstOffset, out error) &&
+                   RecomputeHeaderChecksum(path, out error);
         }
 
-        private static byte[] MutateLocalizationDirectory(byte[] source)
+        private static bool MutateLocalizationDirectory(string path, out string error)
         {
-            byte[] bytes = Clone(source);
-            WriteUInt32(bytes, Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes + 24, Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes);
-            RecomputeHeaderChecksum(bytes);
-            return bytes;
+            return TryWriteUInt32(path, H8DataLayoutConstants.HeaderSizeBytes + 24L, H8DataLayoutConstants.HeaderSizeBytes, out error) &&
+                   RecomputeHeaderChecksum(path, out error);
         }
 
-        private static void RecomputeHeaderChecksum(byte[] bytes)
+        private static bool RecomputeHeaderChecksum(string path, out string error)
         {
-            ulong checksum = H8DataMonolithCompiler.ComputeHash64(
-                bytes,
-                Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes,
-                bytes.Length - Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes);
-            WriteUInt64(bytes, 8, checksum);
+            if (!TryGetFileLength(path, out long length, out error))
+                return false;
+
+            if (!H8DataMonolithCompiler.TryComputeFileHash64(
+                    path,
+                    H8DataLayoutConstants.HeaderSizeBytes,
+                    length - H8DataLayoutConstants.HeaderSizeBytes,
+                    out ulong checksum,
+                    out error))
+            {
+                return false;
+            }
+
+            return TryWriteUInt64(path, 8L, checksum, out error);
         }
 
         private static uint AlignUp(uint value, int alignment)
@@ -277,11 +279,161 @@ namespace Hecton8.EditorValidation
             return (value + mask) & ~mask;
         }
 
-        private static byte[] Clone(byte[] source)
+        private static bool TryCopyFile(string sourcePath, string destinationPath, out string error)
         {
-            byte[] bytes = new byte[source.Length];
-            Buffer.BlockCopy(source, 0, bytes, 0, source.Length);
-            return bytes;
+            error = string.Empty;
+            try
+            {
+                File.Copy(sourcePath, destinationPath, true);
+                return true;
+            }
+            catch (IOException ex) { return FailFileMutation("copy", ex.Message, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileMutation("copy", ex.Message, out error); }
+            catch (ArgumentException ex) { return FailFileMutation("copy", ex.Message, out error); }
+            catch (NotSupportedException ex) { return FailFileMutation("copy", ex.Message, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileMutation("copy", ex.Message, out error); }
+        }
+
+        private static bool TryGetFileLength(string path, out long length, out string error)
+        {
+            length = 0L;
+            error = string.Empty;
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                length = stream.Length;
+                return true;
+            }
+            catch (IOException ex) { return FailFileMutation("length", ex.Message, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileMutation("length", ex.Message, out error); }
+            catch (ArgumentException ex) { return FailFileMutation("length", ex.Message, out error); }
+            catch (NotSupportedException ex) { return FailFileMutation("length", ex.Message, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileMutation("length", ex.Message, out error); }
+        }
+
+        private static bool TrySetFileLength(string path, long length, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+                stream.SetLength(length);
+                return true;
+            }
+            catch (IOException ex) { return FailFileMutation("truncate", ex.Message, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileMutation("truncate", ex.Message, out error); }
+            catch (ArgumentException ex) { return FailFileMutation("truncate", ex.Message, out error); }
+            catch (NotSupportedException ex) { return FailFileMutation("truncate", ex.Message, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileMutation("truncate", ex.Message, out error); }
+        }
+
+        private static bool TryXorByte(string path, long offset, byte mask, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+                if (offset < 0L || offset >= stream.Length)
+                    return FailFileMutation("xor", "offset outside file: " + offset, out error);
+
+                stream.Position = offset;
+                int value = stream.ReadByte();
+                if (value < 0)
+                    return FailFileMutation("xor", "failed to read byte at offset: " + offset, out error);
+
+                stream.Position = offset;
+                stream.WriteByte((byte)(value ^ mask));
+                return true;
+            }
+            catch (IOException ex) { return FailFileMutation("xor", ex.Message, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileMutation("xor", ex.Message, out error); }
+            catch (ArgumentException ex) { return FailFileMutation("xor", ex.Message, out error); }
+            catch (NotSupportedException ex) { return FailFileMutation("xor", ex.Message, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileMutation("xor", ex.Message, out error); }
+        }
+
+        private static bool TryReadUInt32(string path, long offset, out uint value, out string error)
+        {
+            value = 0u;
+            error = string.Empty;
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                if (offset < 0L || offset + 4L > stream.Length)
+                    return FailFileMutation("read_u32", "offset outside file: " + offset, out error);
+
+                stream.Position = offset;
+                int b0 = stream.ReadByte();
+                int b1 = stream.ReadByte();
+                int b2 = stream.ReadByte();
+                int b3 = stream.ReadByte();
+                if ((b0 | b1 | b2 | b3) < 0)
+                    return FailFileMutation("read_u32", "short read at offset: " + offset, out error);
+
+                value = (uint)b0 | ((uint)b1 << 8) | ((uint)b2 << 16) | ((uint)b3 << 24);
+                return true;
+            }
+            catch (IOException ex) { return FailFileMutation("read_u32", ex.Message, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileMutation("read_u32", ex.Message, out error); }
+            catch (ArgumentException ex) { return FailFileMutation("read_u32", ex.Message, out error); }
+            catch (NotSupportedException ex) { return FailFileMutation("read_u32", ex.Message, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileMutation("read_u32", ex.Message, out error); }
+        }
+
+        private static bool TryWriteUInt32(string path, long offset, uint value, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+                if (offset < 0L || offset + 4L > stream.Length)
+                    return FailFileMutation("write_u32", "offset outside file: " + offset, out error);
+
+                stream.Position = offset;
+                stream.WriteByte((byte)value);
+                stream.WriteByte((byte)(value >> 8));
+                stream.WriteByte((byte)(value >> 16));
+                stream.WriteByte((byte)(value >> 24));
+                return true;
+            }
+            catch (IOException ex) { return FailFileMutation("write_u32", ex.Message, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileMutation("write_u32", ex.Message, out error); }
+            catch (ArgumentException ex) { return FailFileMutation("write_u32", ex.Message, out error); }
+            catch (NotSupportedException ex) { return FailFileMutation("write_u32", ex.Message, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileMutation("write_u32", ex.Message, out error); }
+        }
+
+        private static bool TryWriteUInt64(string path, long offset, ulong value, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+                if (offset < 0L || offset + 8L > stream.Length)
+                    return FailFileMutation("write_u64", "offset outside file: " + offset, out error);
+
+                stream.Position = offset;
+                stream.WriteByte((byte)value);
+                stream.WriteByte((byte)(value >> 8));
+                stream.WriteByte((byte)(value >> 16));
+                stream.WriteByte((byte)(value >> 24));
+                stream.WriteByte((byte)(value >> 32));
+                stream.WriteByte((byte)(value >> 40));
+                stream.WriteByte((byte)(value >> 48));
+                stream.WriteByte((byte)(value >> 56));
+                return true;
+            }
+            catch (IOException ex) { return FailFileMutation("write_u64", ex.Message, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileMutation("write_u64", ex.Message, out error); }
+            catch (ArgumentException ex) { return FailFileMutation("write_u64", ex.Message, out error); }
+            catch (NotSupportedException ex) { return FailFileMutation("write_u64", ex.Message, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileMutation("write_u64", ex.Message, out error); }
+        }
+
+        private static bool FailFileMutation(string stage, string message, out string error)
+        {
+            error = stage + ": " + message;
+            return false;
         }
 
         private static void WriteReport(
@@ -308,6 +460,7 @@ namespace Hecton8.EditorValidation
             string text = report.ToString();
             WriteText(Path.Combine(projectRoot, ReportPath), text);
             WriteText(Path.Combine(projectRoot, ReportPath1313), text.Replace("\"agent\": \"" + AgentId + "\"", "\"agent\": \"" + AgentId1313 + "\""));
+            WriteText(Path.Combine(projectRoot, ReportPath1330), text.Replace("\"agent\": \"" + AgentId + "\"", "\"agent\": \"" + AgentId1330 + "\""));
         }
 
         private static string ResolveProjectRoot()
@@ -333,34 +486,6 @@ namespace Hecton8.EditorValidation
             }
 
             return path.Replace('\\', '/');
-        }
-
-        private static void WriteUInt32(byte[] bytes, int offset, uint value)
-        {
-            bytes[offset] = (byte)value;
-            bytes[offset + 1] = (byte)(value >> 8);
-            bytes[offset + 2] = (byte)(value >> 16);
-            bytes[offset + 3] = (byte)(value >> 24);
-        }
-
-        private static uint ReadUInt32(byte[] bytes, int offset)
-        {
-            return (uint)bytes[offset] |
-                   ((uint)bytes[offset + 1] << 8) |
-                   ((uint)bytes[offset + 2] << 16) |
-                   ((uint)bytes[offset + 3] << 24);
-        }
-
-        private static void WriteUInt64(byte[] bytes, int offset, ulong value)
-        {
-            bytes[offset] = (byte)value;
-            bytes[offset + 1] = (byte)(value >> 8);
-            bytes[offset + 2] = (byte)(value >> 16);
-            bytes[offset + 3] = (byte)(value >> 24);
-            bytes[offset + 4] = (byte)(value >> 32);
-            bytes[offset + 5] = (byte)(value >> 40);
-            bytes[offset + 6] = (byte)(value >> 48);
-            bytes[offset + 7] = (byte)(value >> 56);
         }
 
         private static void WriteText(string path, string text)

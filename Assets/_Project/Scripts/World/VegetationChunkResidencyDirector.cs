@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Jobs;
@@ -64,7 +64,7 @@ namespace Hecton8.World
             float rearRadius = residentRadius * rearResidencyScale;
             float lateralRadius = residentRadius * lateralResidencyScale;
             float searchRadius = usePredictiveResidency ? Mathf.Max(forwardRadius, Mathf.Max(rearRadius, lateralRadius)) : residentRadius;
-            Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+            FixedTileStateMap.Enumerator enumerator = _tileStates.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 TileRuntimeState state = enumerator.Current.Value;
@@ -107,13 +107,12 @@ namespace Hecton8.World
                         byte desiredGrassLodTier = GetGrassLodTier(distanceSqr);
                         bool shouldBeCorrupted = IsChunkCorrupted(key);
                         bool hasPayload = _chunkPayloads.TryGetValue(key, out ChunkPayload payload);
-                        bool hasInFlightJob = _chunkBuildJobs.TryGetValue(key, out _);
                         bool corruptionMismatch = hasPayload && payload.IsCorrupted != shouldBeCorrupted;
-                        if ((!hasPayload || corruptionMismatch) && !hasInFlightJob)
+                        if (!hasPayload || corruptionMismatch)
                         {
                             EnqueuePendingChunk(key, priority);
                         }
-                        else if (hasPayload && !payload.IsCorrupted && payload.GrassLodTier != desiredGrassLodTier && !hasInFlightJob)
+                        else if (hasPayload && !payload.IsCorrupted && payload.GrassLodTier != desiredGrassLodTier)
                         {
                             EnqueuePendingChunk(key, priority);
                         }
@@ -132,11 +131,11 @@ namespace Hecton8.World
 
             for (int i = 0; i < buildBudget; i++)
             {
+                if (!HasAvailableChunkBuildJobSlot())
+                    break;
+
                 ChunkKey key = _pendingChunkKeys[0];
                 DequeuePendingChunkAt(0);
-
-                if (_chunkBuildJobs.ContainsKey(key))
-                    continue;
 
                 long tileKey = PackTileCoord(key.TileX, key.TileZ);
                 if (!_tileStates.TryGetValue(tileKey, out TileRuntimeState state) || state == null || state.TerrainData == null)
@@ -163,7 +162,14 @@ namespace Hecton8.World
                 if (!_chunkPayloads.ContainsKey(key))
                     continue;
 
-                EnsureChunkKeyCapacity(ref _selectedChunkKeys, nextSelectedCount + 1);
+                if (_selectedChunkKeys == null || nextSelectedCount >= _selectedChunkKeys.Length)
+                {
+                    RecordChunkQueueCapacityExceeded(
+                        _selectedChunkKeys != null ? _selectedChunkKeys.Length : 0,
+                        nextSelectedCount);
+                    break;
+                }
+
                 if (!changed)
                 {
                     if (nextSelectedCount >= _selectedChunkCount || !_selectedChunkKeys[nextSelectedCount].Equals(key))
@@ -263,7 +269,13 @@ namespace Hecton8.World
 
             if (totalSurfaceCount > 0)
             {
-                EnsureActiveAggregateBufferCapacity(ref _surfaceAggregateBackBuffers, totalSurfaceCount);
+                if (!EnsureActiveAggregateBufferCapacity(
+                        ref _surfaceAggregateBackBuffers,
+                        BufferID.VegetationSurfaceAggregateBackMatrices,
+                        totalSurfaceCount))
+                {
+                    return false;
+                }
 
                 int writeIndex = 0;
                 for (int i = 0; i < _selectedChunkCount; i++)
@@ -274,12 +286,15 @@ namespace Hecton8.World
                         continue;
 
                     int copyCount = payload.SurfaceCount;
-                    CopyChunkSliceToAggregate(
+                    if (!CopyChunkSliceToAggregate(
                         ResolveChunkPool(isSurface: true, payload),
                         payload.SurfaceOffset,
-                        _surfaceAggregateBackBuffers,
+                        ref _surfaceAggregateBackBuffers,
                         writeIndex,
-                        copyCount);
+                        copyCount))
+                    {
+                        return false;
+                    }
                     writeIndex += copyCount;
                 }
 
@@ -309,7 +324,13 @@ namespace Hecton8.World
 
             if (totalUnderwaterCount > 0)
             {
-                EnsureActiveAggregateBufferCapacity(ref _underwaterAggregateBackBuffers, totalUnderwaterCount);
+                if (!EnsureActiveAggregateBufferCapacity(
+                        ref _underwaterAggregateBackBuffers,
+                        BufferID.VegetationUnderwaterAggregateBackMatrices,
+                        totalUnderwaterCount))
+                {
+                    return false;
+                }
 
                 int writeIndex = 0;
                 for (int i = 0; i < _selectedChunkCount; i++)
@@ -320,16 +341,19 @@ namespace Hecton8.World
                         continue;
 
                     int copyCount = payload.UnderwaterCount;
-                    CopyChunkSliceToAggregate(
+                    if (!CopyChunkSliceToAggregate(
                         ResolveChunkPool(isSurface: false, payload),
                         payload.UnderwaterOffset,
-                        _underwaterAggregateBackBuffers,
+                        ref _underwaterAggregateBackBuffers,
                         writeIndex,
-                        copyCount);
+                        copyCount))
+                    {
+                        return false;
+                    }
                     writeIndex += copyCount;
                 }
 
-                DistortAggregateFlowVectorsByThreat(_underwaterAggregateBackBuffers, totalUnderwaterCount);
+                DistortAggregateFlowVectorsByThreat(ref _underwaterAggregateBackBuffers, totalUnderwaterCount);
                 _underwaterBackCount = totalUnderwaterCount;
                 _underwaterBackDrawBounds = underwaterBounds;
                 _hasUnderwaterBackBounds = hasUnderwaterBounds;
@@ -360,15 +384,23 @@ namespace Hecton8.World
         private bool ScheduleChunkBuild(TileRuntimeState state, ChunkKey key, long tileKey, byte grassLodTier)
         {
             if (state == null ||
-                !TryGetActiveTileCache(state, out NativeArray<byte> sandMask, out NativeArray<byte> rockMask, out NativeArray<ushort> heightSamples) ||
+                !TryGetActiveTileCache(state, out NativeArray<byte> sandMask, out NativeArray<byte> rockMask, out NativeArray<ushort> heightSamples, touchAccess: true) ||
                 state.AlphamapResolution <= 0 ||
                 state.HeightmapResolution <= 1)
             {
                 return false;
             }
 
-            if (!_nativeMemory.TerrainHoleRecordsNative.IsCreated)
+            if (_terrainHoleCount > 0 && _nativeMemory.TerrainHoleRecordsHandle.BufferID == 0u)
                 SyncTerrainHoleNativeCache();
+            if (!TryCreateTerrainHoleJobSnapshot(out NativeArray<TerrainHoleRecord> terrainHoles))
+                return false;
+            int terrainHoleCountForJob = terrainHoles.IsCreated ? terrainHoles.Length : 0;
+            if (!TryPrepareArtificialStructureJobSnapshot(out NativeArray<ArtificialStructureRecord> artificialStructures))
+            {
+                H8Memory.Release(ref terrainHoles, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                return false;
+            }
 
             ChunkPayload payloadHeader = CreateChunkPayloadHeader(state, key.ChunkX, key.ChunkZ);
             payloadHeader.GrassLodTier = grassLodTier;
@@ -393,309 +425,400 @@ namespace Hecton8.World
                 TileCacheRevision = state.CacheRevision,
                 GrassLodTier = grassLodTier,
                 CorruptionState = payloadHeader.CorruptionState,
-                PayloadHeader = payloadHeader,
-                GrassRecords = AllocateJobRecordArray(grassCountX * grassCountZ),
-                FloatingRecords = AllocateJobRecordArray(floatingCountX * floatingCountZ),
-                KelpRecords = AllocateJobRecordArray(kelpCountX * kelpCountZ)
+                PayloadHeader = payloadHeader
             };
+
+            NativeArray<JobInstanceRecord> grassRecords = AllocateJobRecordArray(grassCountX * grassCountZ);
+            NativeArray<JobInstanceRecord> floatingRecords = AllocateJobRecordArray(floatingCountX * floatingCountZ);
+            NativeArray<JobInstanceRecord> kelpRecords = AllocateJobRecordArray(kelpCountX * kelpCountZ);
 
             float3 terrainPosition = new float3(state.TerrainPosition.x, state.TerrainPosition.y, state.TerrainPosition.z);
             float3 terrainSize = new float3(state.TerrainSize.x, state.TerrainSize.y, state.TerrainSize.z);
-            JobHandle grassHandle = default;
-            JobHandle kelpHandle = default;
-            JobHandle floatingHandle = default;
-
-            if (jobState.GrassRecords.IsCreated && jobState.GrassRecords.Length > 0)
+            NativeArray<byte> threatEchoFlags = default;
+            if (!_threatPropagationScheduled &&
+                _ecosystemThreatGridCellCount > 0 &&
+                TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemThreatEchoHandle,
+                    BufferID.VegetationEcosystemThreatEcho,
+                    _ecosystemThreatGridCellCount,
+                    out NativeArray<byte> echoFlags))
             {
-                var grassJob = new GenerateAnchoredVegetationJob
-                {
-                    SandMask = sandMask,
-                    RockMask = rockMask,
-                    HeightSamples = heightSamples,
-                    TerrainHoles = _nativeMemory.TerrainHoleRecordsNative,
-                    ThreatEchoFlags = _nativeMemory.EcosystemThreatEchoCurrentNative,
-                    ArtificialStructures = _nativeMemory.ArtificialStructureRecordsNative,
-                    ArtificialStructureHash = _nativeMemory.ArtificialStructureHashFrontNative,
-                    TerrainHoleCount = _terrainHoleCount,
-                    Output = jobState.GrassRecords,
-                    TerrainPosition = terrainPosition,
-                    TerrainSize = terrainSize,
-                    AlphamapResolution = state.AlphamapResolution,
-                    HeightResolution = state.HeightmapResolution,
-                    MinX = minX,
-                    MinZ = minZ,
-                    MaxX = maxX,
-                    MaxZ = maxZ,
-                    StepX = chunkWidth / grassCountX,
-                    StepZ = chunkDepth / grassCountZ,
-                    SampleCountX = grassCountX,
-                    TileX = key.TileX,
-                    TileZ = key.TileZ,
-                    ChunkX = key.ChunkX,
-                    ChunkZ = key.ChunkZ,
-                    SampleSeedOffset = 0,
-                    JitterFraction = grassJitterFraction,
-                    SandMaskThreshold = _sandMaskThresholdByte,
-                    RockMaskThreshold = _rockMaskThresholdByte,
-                    MinimumNormalY = minimumNormalY,
-                    NormalOffset = normalOffset,
-                    MinWorldYExclusive = waterLevel,
-                    MaxWorldYExclusive = float.MaxValue,
-                    EdgeDitherDistance = edgeDitherDistance,
-                    ScaleMin = grassScaleRange.x,
-                    ScaleMax = grassScaleRange.y,
-                    HeightScaleMin = 0.35f,
-                    HeightScaleMax = 0.8f,
-                    WidthScaleMin = 0.8f,
-                    WidthScaleMax = 1.1f,
-                    TypeId = (int)HectonVegetationInstanceType.Grass,
-                    OrganicSemanticType = (int)VegetationSemanticType.OrganicGrass,
-                    ColonyCableSemanticType = (int)VegetationSemanticType.ColonyCable,
-                    ColonyHullSemanticType = (int)VegetationSemanticType.ColonyHullPlating,
-                    ColonyBeamSemanticType = (int)VegetationSemanticType.ColonySupportBeam,
-                    DeadZoneSemanticType = (int)VegetationSemanticType.DeadZoneMassiveStructure,
-                    WaterLevel = waterLevel,
-                    ColonyBiomeStartDepth = colonyBiomeStartDepth,
-                    DeadZoneStartDepth = deadZoneStartDepth,
-                    VerticalBiomeBlendBand = verticalBiomeBlendBand,
-                    TechnoJungleThreshold = technoJungleThreshold,
-                    TechnoJungleCellSize = technoJungleCellSize,
-                    TechnoJungleSecondaryCellSize = technoJungleSecondaryCellSize,
-                    TechnoJungleWallWidth = technoJungleWallWidth,
-                    TechnoJungleWarpMeters = technoJungleWarpMeters,
-                    TechnoJungleFlowAnisotropy = technoJungleFlowAnisotropy,
-                    DeadZoneStructureChance = deadZoneStructureChance,
-                    DeadZoneDensityScale = deadZoneDensityScale,
-                    AbyssalFlowNoiseScale = abyssalFlowNoiseScale,
-                    AbyssalFlowNoiseStrength = abyssalFlowNoiseStrength,
-                    AbyssalFlowVerticalStrength = abyssalFlowVerticalStrength,
-                    ApplyOrganicKelpPlacementRules = 0,
-                    ThreatGridCenter = new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z),
-                    ThreatGridCellSize = threatGridCellSize,
-                    ThreatGridResolution = _ecosystemThreatGridResolution,
-                    EchoTechnoJungleThresholdBias = 0f,
-                    EchoDeadZoneKeepBoost = 0f,
-                    IgnorePlacementMasks = 0,
-                    CorruptionMode = 0,
-                    EnableVerticalBiomeRewrite = 0,
-                    ScaleSalt = 0x85EBCA6Bu,
-                    WidthSalt = 0xC2B2AE35u,
-                    ScaleJitter = proceduralScaleJitter,
-                    RotationSalt = 0xA24BAEDCu
-                };
-
-                grassHandle = grassJob.Schedule(jobState.GrassRecords.Length, DefaultJobBatchSize);
+                threatEchoFlags = H8Memory.Allocate<byte>(
+                    _ecosystemThreatGridCellCount,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                if (threatEchoFlags.IsCreated && threatEchoFlags.Length >= _ecosystemThreatGridCellCount)
+                    NativeArray<byte>.Copy(echoFlags, threatEchoFlags, _ecosystemThreatGridCellCount);
+                else
+                    H8Memory.Release(ref threatEchoFlags, VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
-
-            if (jobState.KelpRecords.IsCreated && jobState.KelpRecords.Length > 0)
+            bool hasBuiltAnyChunkSlice = false;
+            bool scheduled = false;
+            int jobSlot = -1;
+            try
             {
-                var kelpJob = new GenerateAnchoredVegetationJob
+                if (!IsJobStateCurrent(jobState) || !TryAcquireChunkBuildJobSlot(out jobSlot))
+                    return false;
+
+                JobHandle buildHandle = default;
+                if (grassRecords.IsCreated && grassRecords.Length > 0)
                 {
-                    SandMask = sandMask,
-                    RockMask = rockMask,
-                    HeightSamples = heightSamples,
-                    TerrainHoles = _nativeMemory.TerrainHoleRecordsNative,
-                    ThreatEchoFlags = _nativeMemory.EcosystemThreatEchoCurrentNative,
-                    ArtificialStructures = _nativeMemory.ArtificialStructureRecordsNative,
-                    ArtificialStructureHash = _nativeMemory.ArtificialStructureHashFrontNative,
-                    TerrainHoleCount = _terrainHoleCount,
-                    Output = jobState.KelpRecords,
-                    TerrainPosition = terrainPosition,
-                    TerrainSize = terrainSize,
-                    AlphamapResolution = state.AlphamapResolution,
-                    HeightResolution = state.HeightmapResolution,
-                    MinX = minX,
-                    MinZ = minZ,
-                    MaxX = maxX,
-                    MaxZ = maxZ,
-                    StepX = chunkWidth / kelpCountX,
-                    StepZ = chunkDepth / kelpCountZ,
-                    SampleCountX = kelpCountX,
-                    TileX = key.TileX,
-                    TileZ = key.TileZ,
-                    ChunkX = key.ChunkX,
-                    ChunkZ = key.ChunkZ,
-                    SampleSeedOffset = 0x4000,
-                    JitterFraction = kelpJitterFraction,
-                    SandMaskThreshold = _sandMaskThresholdByte,
-                    RockMaskThreshold = _rockMaskThresholdByte,
-                    MinimumNormalY = minimumNormalY,
-                    NormalOffset = normalOffset,
-                    MinWorldYExclusive = float.NegativeInfinity,
-                    MaxWorldYExclusive = waterLevel,
-                    EdgeDitherDistance = edgeDitherDistance,
-                    ScaleMin = kelpScaleRange.x,
-                    ScaleMax = kelpScaleRange.y,
-                    HeightScaleMin = 0.25f,
-                    HeightScaleMax = 1f,
-                    WidthScaleMin = 0.65f,
-                    WidthScaleMax = 1.1f,
-                    TypeId = (int)HectonVegetationInstanceType.GiantKelp,
-                    OrganicSemanticType = (int)VegetationSemanticType.OrganicKelp,
-                    ColonyCableSemanticType = (int)VegetationSemanticType.ColonyCable,
-                    ColonyHullSemanticType = (int)VegetationSemanticType.ColonyHullPlating,
-                    ColonyBeamSemanticType = (int)VegetationSemanticType.ColonySupportBeam,
-                    DeadZoneSemanticType = (int)VegetationSemanticType.DeadZoneMassiveStructure,
-                    WaterLevel = waterLevel,
-                    ColonyBiomeStartDepth = colonyBiomeStartDepth,
-                    DeadZoneStartDepth = deadZoneStartDepth,
-                    VerticalBiomeBlendBand = verticalBiomeBlendBand,
-                    TechnoJungleThreshold = technoJungleThreshold,
-                    TechnoJungleCellSize = technoJungleCellSize,
-                    TechnoJungleSecondaryCellSize = technoJungleSecondaryCellSize,
-                    TechnoJungleWallWidth = technoJungleWallWidth,
-                    TechnoJungleWarpMeters = technoJungleWarpMeters,
-                    TechnoJungleFlowAnisotropy = technoJungleFlowAnisotropy,
-                    DeadZoneStructureChance = deadZoneStructureChance,
-                    DeadZoneDensityScale = deadZoneDensityScale,
-                    AbyssalFlowNoiseScale = abyssalFlowNoiseScale,
-                    AbyssalFlowNoiseStrength = abyssalFlowNoiseStrength,
-                    AbyssalFlowVerticalStrength = abyssalFlowVerticalStrength,
-                    ApplyOrganicKelpPlacementRules = 1,
-                    OrganicKelpMaxDepthBelowSurface = math.min(
-                        OrganicKelpMaxDepthBelowSurfaceMeters,
-                        math.max(0f, waterLevel - kelpMinHeight)),
-                    OrganicKelpMinimumNormalY = OrganicKelpMaxSlopeNormalY,
-                    ThreatGridCenter = new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z),
-                    ThreatGridCellSize = threatGridCellSize,
-                    ThreatGridResolution = _ecosystemThreatGridResolution,
-                    EchoTechnoJungleThresholdBias = permanentEchoTechnoJungleThresholdBias,
-                    EchoDeadZoneKeepBoost = permanentEchoDeadZoneKeepBoost,
-                    IgnorePlacementMasks = isCorrupted ? 1 : 0,
-                    CorruptionMode = isCorrupted ? 1 : 0,
-                    EnableVerticalBiomeRewrite = isCorrupted ? 0 : 1,
-                    ScaleSalt = 0x27D4EB2Fu,
-                    WidthSalt = 0x165667B1u,
-                    ScaleJitter = proceduralScaleJitter,
-                    RotationSalt = 0x94D049BBu
+                    var grassJob = new GenerateAnchoredVegetationJob
+                    {
+                        SandMask = sandMask,
+                        RockMask = rockMask,
+                        HeightSamples = heightSamples,
+                        TerrainHoles = terrainHoles,
+                        ThreatEchoFlags = threatEchoFlags,
+                        ArtificialStructures = artificialStructures,
+                        ArtificialStructureHash = default,
+                        TerrainHoleCount = terrainHoleCountForJob,
+                        Output = grassRecords,
+                        TerrainPosition = terrainPosition,
+                        TerrainSize = terrainSize,
+                        AlphamapResolution = state.AlphamapResolution,
+                        HeightResolution = state.HeightmapResolution,
+                        MinX = minX,
+                        MinZ = minZ,
+                        MaxX = maxX,
+                        MaxZ = maxZ,
+                        StepX = chunkWidth / grassCountX,
+                        StepZ = chunkDepth / grassCountZ,
+                        SampleCountX = grassCountX,
+                        TileX = key.TileX,
+                        TileZ = key.TileZ,
+                        ChunkX = key.ChunkX,
+                        ChunkZ = key.ChunkZ,
+                        SampleSeedOffset = 0,
+                        JitterFraction = grassJitterFraction,
+                        SandMaskThreshold = _sandMaskThresholdByte,
+                        RockMaskThreshold = _rockMaskThresholdByte,
+                        MinimumNormalY = minimumNormalY,
+                        NormalOffset = normalOffset,
+                        MinWorldYExclusive = waterLevel,
+                        MaxWorldYExclusive = float.MaxValue,
+                        EdgeDitherDistance = edgeDitherDistance,
+                        ScaleMin = grassScaleRange.x,
+                        ScaleMax = grassScaleRange.y,
+                        HeightScaleMin = 0.35f,
+                        HeightScaleMax = 0.8f,
+                        WidthScaleMin = 0.8f,
+                        WidthScaleMax = 1.1f,
+                        TypeId = (int)HectonVegetationInstanceType.Grass,
+                        OrganicSemanticType = (int)VegetationSemanticType.OrganicGrass,
+                        ColonyCableSemanticType = (int)VegetationSemanticType.ColonyCable,
+                        ColonyHullSemanticType = (int)VegetationSemanticType.ColonyHullPlating,
+                        ColonyBeamSemanticType = (int)VegetationSemanticType.ColonySupportBeam,
+                        DeadZoneSemanticType = (int)VegetationSemanticType.DeadZoneMassiveStructure,
+                        WaterLevel = waterLevel,
+                        ColonyBiomeStartDepth = colonyBiomeStartDepth,
+                        DeadZoneStartDepth = deadZoneStartDepth,
+                        VerticalBiomeBlendBand = verticalBiomeBlendBand,
+                        TechnoJungleThreshold = technoJungleThreshold,
+                        TechnoJungleCellSize = technoJungleCellSize,
+                        TechnoJungleSecondaryCellSize = technoJungleSecondaryCellSize,
+                        TechnoJungleWallWidth = technoJungleWallWidth,
+                        TechnoJungleWarpMeters = technoJungleWarpMeters,
+                        TechnoJungleFlowAnisotropy = technoJungleFlowAnisotropy,
+                        DeadZoneStructureChance = deadZoneStructureChance,
+                        DeadZoneDensityScale = deadZoneDensityScale,
+                        AbyssalFlowNoiseScale = abyssalFlowNoiseScale,
+                        AbyssalFlowNoiseStrength = abyssalFlowNoiseStrength,
+                        AbyssalFlowVerticalStrength = abyssalFlowVerticalStrength,
+                        ApplyOrganicKelpPlacementRules = 0,
+                        ThreatGridCenter = new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z),
+                        ThreatGridCellSize = threatGridCellSize,
+                        ThreatGridResolution = _ecosystemThreatGridResolution,
+                        EchoTechnoJungleThresholdBias = 0f,
+                        EchoDeadZoneKeepBoost = 0f,
+                        IgnorePlacementMasks = 0,
+                        CorruptionMode = 0,
+                        EnableVerticalBiomeRewrite = 0,
+                        ScaleSalt = 0x85EBCA6Bu,
+                        WidthSalt = 0xC2B2AE35u,
+                        ScaleJitter = proceduralScaleJitter,
+                        RotationSalt = 0xA24BAEDCu
+                    };
+
+                    buildHandle = CombineOptionalHandles(
+                        buildHandle,
+                        grassJob.Schedule(grassRecords.Length, DefaultJobBatchSize));
+                    hasBuiltAnyChunkSlice = true;
+                }
+
+                if (kelpRecords.IsCreated && kelpRecords.Length > 0)
+                {
+                    var kelpJob = new GenerateAnchoredVegetationJob
+                    {
+                        SandMask = sandMask,
+                        RockMask = rockMask,
+                        HeightSamples = heightSamples,
+                        TerrainHoles = terrainHoles,
+                        ThreatEchoFlags = threatEchoFlags,
+                        ArtificialStructures = artificialStructures,
+                        ArtificialStructureHash = default,
+                        TerrainHoleCount = terrainHoleCountForJob,
+                        Output = kelpRecords,
+                        TerrainPosition = terrainPosition,
+                        TerrainSize = terrainSize,
+                        AlphamapResolution = state.AlphamapResolution,
+                        HeightResolution = state.HeightmapResolution,
+                        MinX = minX,
+                        MinZ = minZ,
+                        MaxX = maxX,
+                        MaxZ = maxZ,
+                        StepX = chunkWidth / kelpCountX,
+                        StepZ = chunkDepth / kelpCountZ,
+                        SampleCountX = kelpCountX,
+                        TileX = key.TileX,
+                        TileZ = key.TileZ,
+                        ChunkX = key.ChunkX,
+                        ChunkZ = key.ChunkZ,
+                        SampleSeedOffset = 0x4000,
+                        JitterFraction = kelpJitterFraction,
+                        SandMaskThreshold = _sandMaskThresholdByte,
+                        RockMaskThreshold = _rockMaskThresholdByte,
+                        MinimumNormalY = minimumNormalY,
+                        NormalOffset = normalOffset,
+                        MinWorldYExclusive = float.NegativeInfinity,
+                        MaxWorldYExclusive = waterLevel,
+                        EdgeDitherDistance = edgeDitherDistance,
+                        ScaleMin = kelpScaleRange.x,
+                        ScaleMax = kelpScaleRange.y,
+                        HeightScaleMin = 0.25f,
+                        HeightScaleMax = 1f,
+                        WidthScaleMin = 0.65f,
+                        WidthScaleMax = 1.1f,
+                        TypeId = (int)HectonVegetationInstanceType.GiantKelp,
+                        OrganicSemanticType = (int)VegetationSemanticType.OrganicKelp,
+                        ColonyCableSemanticType = (int)VegetationSemanticType.ColonyCable,
+                        ColonyHullSemanticType = (int)VegetationSemanticType.ColonyHullPlating,
+                        ColonyBeamSemanticType = (int)VegetationSemanticType.ColonySupportBeam,
+                        DeadZoneSemanticType = (int)VegetationSemanticType.DeadZoneMassiveStructure,
+                        WaterLevel = waterLevel,
+                        ColonyBiomeStartDepth = colonyBiomeStartDepth,
+                        DeadZoneStartDepth = deadZoneStartDepth,
+                        VerticalBiomeBlendBand = verticalBiomeBlendBand,
+                        TechnoJungleThreshold = technoJungleThreshold,
+                        TechnoJungleCellSize = technoJungleCellSize,
+                        TechnoJungleSecondaryCellSize = technoJungleSecondaryCellSize,
+                        TechnoJungleWallWidth = technoJungleWallWidth,
+                        TechnoJungleWarpMeters = technoJungleWarpMeters,
+                        TechnoJungleFlowAnisotropy = technoJungleFlowAnisotropy,
+                        DeadZoneStructureChance = deadZoneStructureChance,
+                        DeadZoneDensityScale = deadZoneDensityScale,
+                        AbyssalFlowNoiseScale = abyssalFlowNoiseScale,
+                        AbyssalFlowNoiseStrength = abyssalFlowNoiseStrength,
+                        AbyssalFlowVerticalStrength = abyssalFlowVerticalStrength,
+                        ApplyOrganicKelpPlacementRules = 1,
+                        OrganicKelpMaxDepthBelowSurface = math.min(
+                            OrganicKelpMaxDepthBelowSurfaceMeters,
+                            math.max(0f, waterLevel - kelpMinHeight)),
+                        OrganicKelpMinimumNormalY = OrganicKelpMaxSlopeNormalY,
+                        ThreatGridCenter = new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z),
+                        ThreatGridCellSize = threatGridCellSize,
+                        ThreatGridResolution = _ecosystemThreatGridResolution,
+                        EchoTechnoJungleThresholdBias = permanentEchoTechnoJungleThresholdBias,
+                        EchoDeadZoneKeepBoost = permanentEchoDeadZoneKeepBoost,
+                        IgnorePlacementMasks = isCorrupted ? 1 : 0,
+                        CorruptionMode = isCorrupted ? 1 : 0,
+                        EnableVerticalBiomeRewrite = isCorrupted ? 0 : 1,
+                        ScaleSalt = 0x27D4EB2Fu,
+                        WidthSalt = 0x165667B1u,
+                        ScaleJitter = proceduralScaleJitter,
+                        RotationSalt = 0x94D049BBu
+                    };
+
+                    buildHandle = CombineOptionalHandles(
+                        buildHandle,
+                        kelpJob.Schedule(kelpRecords.Length, DefaultJobBatchSize));
+                    hasBuiltAnyChunkSlice = true;
+                }
+
+                if (floatingRecords.IsCreated && floatingRecords.Length > 0)
+                {
+                    var floatingJob = new GenerateFloatingVegetationJob
+                    {
+                        SandMask = sandMask,
+                        RockMask = rockMask,
+                        HeightSamples = heightSamples,
+                        TerrainHoles = terrainHoles,
+                        TerrainHoleCount = terrainHoleCountForJob,
+                        Output = floatingRecords,
+                        TerrainPosition = terrainPosition,
+                        TerrainSize = terrainSize,
+                        AlphamapResolution = state.AlphamapResolution,
+                        HeightResolution = state.HeightmapResolution,
+                        MinX = minX,
+                        MinZ = minZ,
+                        MaxX = maxX,
+                        MaxZ = maxZ,
+                        StepX = chunkWidth / floatingCountX,
+                        StepZ = chunkDepth / floatingCountZ,
+                        SampleCountX = floatingCountX,
+                        TileX = key.TileX,
+                        TileZ = key.TileZ,
+                        ChunkX = key.ChunkX,
+                        ChunkZ = key.ChunkZ,
+                        SampleSeedOffset = 0x8000,
+                        JitterFraction = floatingJitterFraction,
+                        SandMaskThreshold = _sandMaskThresholdByte,
+                        RockMaskThreshold = _rockMaskThresholdByte,
+                        MinimumNormalY = minimumNormalY,
+                        WaterLevel = waterLevel,
+                        FloatingSurfaceOffset = floatingSurfaceOffset,
+                        FloatingSurfaceBand = floatingSurfaceBand,
+                        EdgeDitherDistance = edgeDitherDistance,
+                        ScaleMin = floatingScaleRange.x,
+                        ScaleMax = floatingScaleRange.y,
+                        FloatingPatchThreshold = floatingPatchThreshold,
+                        FloatingPatchNoiseScale = floatingPatchNoiseScale,
+                        FloatingCellSize = floatingCellSize,
+                        FloatingSecondaryCellSize = floatingSecondaryCellSize,
+                        FloatingWallWidth = floatingWallWidth,
+                        FloatingWarpMeters = floatingWarpMeters,
+                        FloatingFlowDirection = new float2(_floatingFlowDirectionNormalized.x, _floatingFlowDirectionNormalized.y),
+                        FloatingFlowAnisotropy = floatingFlowAnisotropy,
+                        ScaleJitter = proceduralScaleJitter,
+                        RotationSalt = 0xC13FA9A9u
+                    };
+
+                    buildHandle = CombineOptionalHandles(
+                        buildHandle,
+                        floatingJob.Schedule(floatingRecords.Length, DefaultJobBatchSize));
+                    hasBuiltAnyChunkSlice = true;
+                }
+
+                if (!hasBuiltAnyChunkSlice)
+                    return false;
+
+                _chunkBuildJobs[jobSlot] = new ChunkBuildPendingJob
+                {
+                    Active = true,
+                    JobState = jobState,
+                    GrassRecords = grassRecords,
+                    FloatingRecords = floatingRecords,
+                    KelpRecords = kelpRecords,
+                    TerrainHoles = terrainHoles,
+                    ArtificialStructures = artificialStructures,
+                    ThreatEchoFlags = threatEchoFlags,
+                    Handle = buildHandle
                 };
-
-                kelpHandle = kelpJob.Schedule(jobState.KelpRecords.Length, DefaultJobBatchSize);
+                scheduled = true;
+                return true;
             }
-
-            if (jobState.FloatingRecords.IsCreated && jobState.FloatingRecords.Length > 0)
+            finally
             {
-                var floatingJob = new GenerateFloatingVegetationJob
+                if (!scheduled)
                 {
-                    SandMask = sandMask,
-                    RockMask = rockMask,
-                    HeightSamples = heightSamples,
-                    TerrainHoles = _nativeMemory.TerrainHoleRecordsNative,
-                    TerrainHoleCount = _terrainHoleCount,
-                    Output = jobState.FloatingRecords,
-                    TerrainPosition = terrainPosition,
-                    TerrainSize = terrainSize,
-                    AlphamapResolution = state.AlphamapResolution,
-                    HeightResolution = state.HeightmapResolution,
-                    MinX = minX,
-                    MinZ = minZ,
-                    MaxX = maxX,
-                    MaxZ = maxZ,
-                    StepX = chunkWidth / floatingCountX,
-                    StepZ = chunkDepth / floatingCountZ,
-                    SampleCountX = floatingCountX,
-                    TileX = key.TileX,
-                    TileZ = key.TileZ,
-                    ChunkX = key.ChunkX,
-                    ChunkZ = key.ChunkZ,
-                    SampleSeedOffset = 0x8000,
-                    JitterFraction = floatingJitterFraction,
-                    SandMaskThreshold = _sandMaskThresholdByte,
-                    RockMaskThreshold = _rockMaskThresholdByte,
-                    MinimumNormalY = minimumNormalY,
-                    WaterLevel = waterLevel,
-                    FloatingSurfaceOffset = floatingSurfaceOffset,
-                    FloatingSurfaceBand = floatingSurfaceBand,
-                    EdgeDitherDistance = edgeDitherDistance,
-                    ScaleMin = floatingScaleRange.x,
-                    ScaleMax = floatingScaleRange.y,
-                    FloatingPatchThreshold = floatingPatchThreshold,
-                    FloatingPatchNoiseScale = floatingPatchNoiseScale,
-                    FloatingCellSize = floatingCellSize,
-                    FloatingSecondaryCellSize = floatingSecondaryCellSize,
-                    FloatingWallWidth = floatingWallWidth,
-                    FloatingWarpMeters = floatingWarpMeters,
-                    FloatingFlowDirection = new float2(_floatingFlowDirectionNormalized.x, _floatingFlowDirectionNormalized.y),
-                    FloatingFlowAnisotropy = floatingFlowAnisotropy,
-                    ScaleJitter = proceduralScaleJitter,
-                    RotationSalt = 0xC13FA9A9u
-                };
-
-                floatingHandle = floatingJob.Schedule(jobState.FloatingRecords.Length, DefaultJobBatchSize);
+                    ReleaseJobRecordArray(ref grassRecords);
+                    ReleaseJobRecordArray(ref floatingRecords);
+                    ReleaseJobRecordArray(ref kelpRecords);
+                    H8Memory.Release(ref threatEchoFlags, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                    H8Memory.Release(ref terrainHoles, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                    H8Memory.Release(ref artificialStructures, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                }
             }
-
-            jobState.Handle = JobHandle.CombineDependencies(grassHandle, kelpHandle, floatingHandle);
-            _chunkBuildJobs[key] = jobState;
-            return true;
         }
 
         private int FinalizeCompletedChunkBuilds()
         {
-            if (_chunkBuildJobs.Count == 0)
-                return 0;
-
-            _jobScratchKeys.Clear();
-            Dictionary<ChunkKey, ChunkBuildJobState>.Enumerator enumerator = _chunkBuildJobs.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                ChunkBuildJobState jobState = enumerator.Current.Value;
-                if (jobState != null && jobState.Handle.IsCompleted)
-                    _jobScratchKeys.Add(enumerator.Current.Key);
-            }
-
             int completedCount = 0;
-            for (int i = 0; i < _jobScratchKeys.Count; i++)
+            for (int i = 0; i < _chunkBuildJobs.Length; i++)
             {
-                ChunkKey key = _jobScratchKeys[i];
-                if (!_chunkBuildJobs.TryGetValue(key, out ChunkBuildJobState jobState) || jobState == null)
+                if (!_chunkBuildJobs[i].Active || !_chunkBuildJobs[i].Handle.IsCompleted)
                     continue;
 
-                DispatcherJobSwap.TryComplete(ref jobState.Handle, forceComplete: false);
-                if (!jobState.CancelRequested && IsJobStateCurrent(jobState))
-                {
-                    ReleaseChunkPayloadStorage(key);
-                    ChunkPayload payload = BuildChunkPayloadFromJob(jobState);
-                    _chunkPayloads[key] = payload;
-                    CacheChunkAbyssalNavPayload(key, BuildChunkAbyssalNavPayload(key, jobState, payload));
-                    CacheChunkMegaWreckPayload(key, BuildChunkMegaWreckPayload(payload));
-                    RegisterChunkPayloadStorage(payload);
+                if (FinalizeChunkBuildJob(i))
                     completedCount++;
-                }
-                else if (TryGetDesiredChunkPriority(key, out float priority))
-                {
-                    EnqueuePendingChunk(key, priority);
-                }
-
-                DisposeJobState(jobState);
-                _chunkBuildJobs.Remove(key);
             }
-
-            if (completedCount > 0)
-                _activeSetDirty = true;
 
             return completedCount;
         }
 
+        private bool HasAvailableChunkBuildJobSlot()
+        {
+            for (int i = 0; i < _chunkBuildJobs.Length; i++)
+            {
+                if (!_chunkBuildJobs[i].Active)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool TryAcquireChunkBuildJobSlot(out int slot)
+        {
+            for (int i = 0; i < _chunkBuildJobs.Length; i++)
+            {
+                if (_chunkBuildJobs[i].Active)
+                    continue;
+
+                slot = i;
+                return true;
+            }
+
+            slot = -1;
+            return false;
+        }
+
+        private bool FinalizeChunkBuildJob(int slot)
+        {
+            ChunkBuildPendingJob pending = _chunkBuildJobs[slot];
+            pending.Handle.Complete();
+            try
+            {
+                if (!IsJobStateCurrent(pending.JobState))
+                    return false;
+
+                ChunkKey key = pending.JobState.Key;
+                ReleaseChunkPayloadStorage(key);
+                ChunkPayload payload = BuildChunkPayloadFromJob(
+                    pending.JobState,
+                    pending.GrassRecords,
+                    pending.FloatingRecords,
+                    pending.KelpRecords);
+                if (!SetChunkPayload(key, payload))
+                {
+                    ReleaseChunkPayloadStorage(payload);
+                    return false;
+                }
+
+                CacheChunkAbyssalNavPayload(key, BuildChunkAbyssalNavPayload(key, pending.JobState, payload));
+                CacheChunkMegaWreckPayload(key, BuildChunkMegaWreckPayload(payload));
+                RegisterChunkPayloadStorage(payload);
+                _activeSetDirty = true;
+                return true;
+            }
+            finally
+            {
+                ReleaseChunkBuildPendingJob(ref pending);
+                _chunkBuildJobs[slot] = default;
+            }
+        }
+
         private bool IsJobStateCurrent(ChunkBuildJobState jobState)
         {
-            if (jobState == null)
-                return false;
-
             if (!_tileStates.TryGetValue(jobState.TileKey, out TileRuntimeState state) || state == null)
                 return false;
 
             return state.CacheRevision == jobState.TileCacheRevision;
         }
 
-        private ChunkPayload BuildChunkPayloadFromJob(ChunkBuildJobState jobState)
+        private ChunkPayload BuildChunkPayloadFromJob(
+            ChunkBuildJobState jobState,
+            NativeArray<JobInstanceRecord> grassRecords,
+            NativeArray<JobInstanceRecord> floatingRecords,
+            NativeArray<JobInstanceRecord> kelpRecords)
         {
             ChunkPayload payload = jobState.PayloadHeader;
             payload.GrassLodTier = jobState.GrassLodTier;
             payload.CorruptionState = jobState.CorruptionState;
 
-            int grassCount = CountValidRecords(jobState.GrassRecords);
-            int floatingCount = CountValidRecords(jobState.FloatingRecords);
-            int kelpCount = CountValidRecords(jobState.KelpRecords);
+            int grassCount = CountValidRecords(grassRecords);
+            int floatingCount = CountValidRecords(floatingRecords);
+            int kelpCount = CountValidRecords(kelpRecords);
             int surfaceCount = grassCount + floatingCount;
 
             if (surfaceCount > 0)
@@ -709,13 +832,13 @@ namespace Hecton8.World
                     int writeIndex = surfaceOffset;
                     if (useScratchPool)
                     {
-                        WriteJobRecordsToPool(jobState.GrassRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
-                        WriteJobRecordsToPool(jobState.FloatingRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(grassRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(floatingRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
                     }
                     else
                     {
-                        WriteJobRecordsToPool(jobState.GrassRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
-                        WriteJobRecordsToPool(jobState.FloatingRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(grassRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(floatingRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
                     }
                 }
             }
@@ -730,9 +853,9 @@ namespace Hecton8.World
                     payload.UnderwaterPoolSet = useScratchPool ? (byte)1 : (byte)0;
                     int writeIndex = underwaterOffset;
                     if (useScratchPool)
-                        WriteJobRecordsToPool(jobState.KelpRecords, ref _underwaterDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(kelpRecords, ref _underwaterDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
                     else
-                        WriteJobRecordsToPool(jobState.KelpRecords, ref _underwaterChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(kelpRecords, ref _underwaterChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
                 }
             }
 
@@ -759,7 +882,7 @@ namespace Hecton8.World
             return count;
         }
 
-        private static void WriteJobRecordsToPool(
+        private void WriteJobRecordsToPool(
             NativeArray<JobInstanceRecord> source,
             ref NativeChunkPool pool,
             ref int writeIndex,
@@ -770,48 +893,78 @@ namespace Hecton8.World
             if (!source.IsCreated)
                 return;
 
-            for (int i = 0; i < source.Length; i++)
-            {
-                JobInstanceRecord record = source[i];
-                if (record.IsValid == 0)
-                    continue;
+            int validCount = CountValidRecords(source);
+            if (validCount <= 0)
+                return;
 
-                ResolveFloraDescriptor(
-                    floraTemplates,
-                    floraTemplateRuntimeDescriptors,
-                    record.Type,
-                    record.SemanticType,
-                    record.BiomeLayer,
-                    record.Variation,
-                    out int floraTemplateIndex,
-                    out FloraDataTemplate.RuntimeDescriptor floraDescriptor);
-                byte geneticTraits = ResolveGeneticTraitByte(floraTemplates, floraTemplateIndex, floraDescriptor);
-                pool.Matrices[writeIndex] = ConvertMatrixToStableUniverseSpace(ToMatrix4x4(record.Matrix), universeOffset);
-                pool.Metadata[writeIndex] = new HectonVegetationInstanceData(
-                    (HectonVegetationInstanceType)record.Type,
-                    record.HeightScale,
-                    record.WidthScale,
-                    ResolveDeterministicVatPhase01(record.Variation, record.Type, record.SemanticType, record.BiomeLayer),
-                    floraTemplateIndex,
-                    HectonVegetationInstanceData.RuntimeStateIdle,
-                    HectonVegetationRuntimeFlagEncoding.Encode(record.BiomeLayer, 0, geneticTraits),
-                    floraDescriptor.PulseFrequency,
-                    new Vector4(
-                        floraDescriptor.BioluminescenceColor.x,
-                        floraDescriptor.BioluminescenceColor.y,
-                        floraDescriptor.BioluminescenceColor.z,
-                        floraDescriptor.BioluminescenceColor.w),
-                    floraDescriptor.SwaySpeed,
-                    floraDescriptor.BendAmplitude,
-                    1f,
-                    0f);
-                pool.Types[writeIndex] = record.Type;
-                pool.SemanticTypes[writeIndex] = record.SemanticType;
-                pool.BiomeLayers[writeIndex] = record.BiomeLayer;
-                pool.EdgeDistances[writeIndex] = record.EdgeDistance;
-                pool.FlowDirections[writeIndex] = new Vector2(record.FlowDirection.x, record.FlowDirection.y);
-                pool.FlowVectors[writeIndex] = new Vector3(record.FlowVector.x, record.FlowVector.y, record.FlowVector.z);
-                writeIndex++;
+            int requiredCount = writeIndex + validCount;
+            if (writeIndex < 0 || requiredCount < writeIndex)
+                return;
+
+            if (!TryAcquireChunkPoolWriteView(ref pool, requiredCount, out NativeChunkPoolView poolView, out NativeChunkPoolWriteLocks locks))
+                return;
+
+            try
+            {
+                NativeArray<Matrix4x4> matrices = poolView.Matrices;
+                NativeArray<HectonVegetationInstanceData> metadata = poolView.Metadata;
+                NativeArray<int> types = poolView.Types;
+                NativeArray<int> semanticTypes = poolView.SemanticTypes;
+                NativeArray<byte> biomeLayers = poolView.BiomeLayers;
+                NativeArray<float> edgeDistances = poolView.EdgeDistances;
+                NativeArray<Vector2> flowDirections = poolView.FlowDirections;
+                NativeArray<Vector3> flowVectors = poolView.FlowVectors;
+
+                for (int i = 0; i < source.Length; i++)
+                {
+                    JobInstanceRecord record = source[i];
+                    if (record.IsValid == 0)
+                        continue;
+
+                    if ((uint)writeIndex >= (uint)poolView.Capacity)
+                        return;
+
+                    ResolveFloraDescriptor(
+                        floraTemplates,
+                        floraTemplateRuntimeDescriptors,
+                        record.Type,
+                        record.SemanticType,
+                        record.BiomeLayer,
+                        record.Variation,
+                        out int floraTemplateIndex,
+                        out FloraDataTemplate.RuntimeDescriptor floraDescriptor);
+                    byte geneticTraits = ResolveGeneticTraitByte(floraTemplates, floraTemplateIndex, floraDescriptor);
+                    matrices[writeIndex] = ConvertMatrixToStableUniverseSpace(ToMatrix4x4(record.Matrix), universeOffset);
+                    metadata[writeIndex] = new HectonVegetationInstanceData(
+                        (HectonVegetationInstanceType)record.Type,
+                        record.HeightScale,
+                        record.WidthScale,
+                        ResolveDeterministicVatPhase01(record.Variation, record.Type, record.SemanticType, record.BiomeLayer),
+                        floraTemplateIndex,
+                        HectonVegetationInstanceData.RuntimeStateIdle,
+                        HectonVegetationRuntimeFlagEncoding.Encode(record.BiomeLayer, 0, geneticTraits),
+                        floraDescriptor.PulseFrequency,
+                        new Vector4(
+                            floraDescriptor.BioluminescenceColor.x,
+                            floraDescriptor.BioluminescenceColor.y,
+                            floraDescriptor.BioluminescenceColor.z,
+                            floraDescriptor.BioluminescenceColor.w),
+                        floraDescriptor.SwaySpeed,
+                        floraDescriptor.BendAmplitude,
+                        1f,
+                        0f);
+                    types[writeIndex] = record.Type;
+                    semanticTypes[writeIndex] = record.SemanticType;
+                    biomeLayers[writeIndex] = record.BiomeLayer;
+                    edgeDistances[writeIndex] = record.EdgeDistance;
+                    flowDirections[writeIndex] = new Vector2(record.FlowDirection.x, record.FlowDirection.y);
+                    flowVectors[writeIndex] = new Vector3(record.FlowVector.x, record.FlowVector.y, record.FlowVector.z);
+                    writeIndex++;
+                }
+            }
+            finally
+            {
+                ReleaseChunkPoolWriteLocks(in pool, ref locks);
             }
         }
 
@@ -970,20 +1123,90 @@ namespace Hecton8.World
             };
         }
 
-        private static void CopyChunkSliceToAggregate(
+        private bool CopyChunkSliceToAggregate(
             NativeChunkPool pool,
             int sourceOffset,
-            ActiveAggregateNativeBufferSet destinationBuffers,
+            ref ActiveAggregateNativeBufferSet destinationBuffers,
             int destinationOffset,
             int copyCount)
         {
-            NativeArray<Matrix4x4>.Copy(pool.Matrices, sourceOffset, destinationBuffers.Matrices, destinationOffset, copyCount);
-            NativeArray<HectonVegetationInstanceData>.Copy(pool.Metadata, sourceOffset, destinationBuffers.Metadata, destinationOffset, copyCount);
-            NativeArray<int>.Copy(pool.Types, sourceOffset, destinationBuffers.Types, destinationOffset, copyCount);
-            NativeArray<int>.Copy(pool.SemanticTypes, sourceOffset, destinationBuffers.SemanticTypes, destinationOffset, copyCount);
-            NativeArray<byte>.Copy(pool.BiomeLayers, sourceOffset, destinationBuffers.BiomeLayers, destinationOffset, copyCount);
-            NativeArray<Vector2>.Copy(pool.FlowDirections, sourceOffset, destinationBuffers.FlowDirections, destinationOffset, copyCount);
-            NativeArray<Vector3>.Copy(pool.FlowVectors, sourceOffset, destinationBuffers.FlowVectors, destinationOffset, copyCount);
+            if (copyCount <= 0)
+                return true;
+
+            int requiredCount = destinationOffset + copyCount;
+            int sourceRequiredCount = sourceOffset + copyCount;
+            if (sourceOffset < 0 ||
+                destinationOffset < 0 ||
+                requiredCount < destinationOffset ||
+                sourceRequiredCount < sourceOffset ||
+                !TryReadChunkPoolView(in pool, sourceRequiredCount, out NativeChunkPoolView poolView))
+            {
+                return false;
+            }
+
+            bool matricesLocked = false;
+            bool metadataLocked = false;
+            bool typesLocked = false;
+            bool semanticTypesLocked = false;
+            bool biomeLayersLocked = false;
+            bool flowDirectionsLocked = false;
+            bool flowVectorsLocked = false;
+            IDataVault matricesVault = null;
+            IDataVault metadataVault = null;
+            IDataVault typesVault = null;
+            IDataVault semanticTypesVault = null;
+            IDataVault biomeLayersVault = null;
+            IDataVault flowDirectionsVault = null;
+            IDataVault flowVectorsVault = null;
+            try
+            {
+                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.MatricesHandle, requiredCount, out matricesVault, out NativeArray<Matrix4x4> matrices))
+                    return false;
+                matricesLocked = true;
+                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.MetadataHandle, requiredCount, out metadataVault, out NativeArray<HectonVegetationInstanceData> metadata))
+                    return false;
+                metadataLocked = true;
+                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.TypesHandle, requiredCount, out typesVault, out NativeArray<int> types))
+                    return false;
+                typesLocked = true;
+                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.SemanticTypesHandle, requiredCount, out semanticTypesVault, out NativeArray<int> semanticTypes))
+                    return false;
+                semanticTypesLocked = true;
+                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.BiomeLayersHandle, requiredCount, out biomeLayersVault, out NativeArray<byte> biomeLayers))
+                    return false;
+                biomeLayersLocked = true;
+                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.FlowDirectionsHandle, requiredCount, out flowDirectionsVault, out NativeArray<Vector2> flowDirections))
+                    return false;
+                flowDirectionsLocked = true;
+                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.FlowVectorsHandle, requiredCount, out flowVectorsVault, out NativeArray<Vector3> flowVectors))
+                    return false;
+                flowVectorsLocked = true;
+                NativeArray<Matrix4x4>.Copy(poolView.Matrices, sourceOffset, matrices, destinationOffset, copyCount);
+                NativeArray<HectonVegetationInstanceData>.Copy(poolView.Metadata, sourceOffset, metadata, destinationOffset, copyCount);
+                NativeArray<int>.Copy(poolView.Types, sourceOffset, types, destinationOffset, copyCount);
+                NativeArray<int>.Copy(poolView.SemanticTypes, sourceOffset, semanticTypes, destinationOffset, copyCount);
+                NativeArray<byte>.Copy(poolView.BiomeLayers, sourceOffset, biomeLayers, destinationOffset, copyCount);
+                NativeArray<Vector2>.Copy(poolView.FlowDirections, sourceOffset, flowDirections, destinationOffset, copyCount);
+                NativeArray<Vector3>.Copy(poolView.FlowVectors, sourceOffset, flowVectors, destinationOffset, copyCount);
+                return true;
+            }
+            finally
+            {
+                if (flowVectorsLocked)
+                    flowVectorsVault.ReleaseWriteLock(in destinationBuffers.FlowVectorsHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                if (flowDirectionsLocked)
+                    flowDirectionsVault.ReleaseWriteLock(in destinationBuffers.FlowDirectionsHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                if (biomeLayersLocked)
+                    biomeLayersVault.ReleaseWriteLock(in destinationBuffers.BiomeLayersHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                if (semanticTypesLocked)
+                    semanticTypesVault.ReleaseWriteLock(in destinationBuffers.SemanticTypesHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                if (typesLocked)
+                    typesVault.ReleaseWriteLock(in destinationBuffers.TypesHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                if (metadataLocked)
+                    metadataVault.ReleaseWriteLock(in destinationBuffers.MetadataHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                if (matricesLocked)
+                    matricesVault.ReleaseWriteLock(in destinationBuffers.MatricesHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
         }
     }
 }

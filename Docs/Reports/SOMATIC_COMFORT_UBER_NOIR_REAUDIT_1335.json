@@ -1,0 +1,51 @@
+{
+  "agentId": "1335",
+  "domain": "VR_SOMATIC_COMFORT_AND_TUNNELING_VFX_DRIVER",
+  "pass": "UBER_NOIR_RUNTIME_BRIDGE_REAUDIT",
+  "status": "PATCHED_BUILD_BLOCKED_EXTERNAL_COMPILERS",
+  "prompt": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "lengthBytes": 18576,
+    "taskCount": 20,
+    "sha256": "CED5DA5188E0838802BA00938AFD9F382174FAA78453C32C78A6AE34BCB1C2E2"
+  },
+  "scannedFiles": [
+    "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs"
+  ],
+  "fixedFiles": [
+    "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs"
+  ],
+  "findingsFixed": [
+    "Telemetry ring mutation used TryLockBuffer plus mutable TryResolveHandle instead of a writer lease.",
+    "Black-box dump path used broad catch(Exception) blocks.",
+    "Fixed-layout dump serialization used BinaryWriter instead of deterministic stack little-endian writes."
+  ],
+  "staticChecks": {
+    "broadCatchCount": 0,
+    "bareCatchCount": 0,
+    "binaryWriterCount": 0,
+    "tryLockBufferCount": 0,
+    "tryUnlockBufferCount": 0,
+    "legacyTryResolveHandleCount": 0,
+    "legacyTryReadHandleCount": 0,
+    "tryAcquireWriteLockCount": 1,
+    "releaseWriteLockCount": 2,
+    "tryReadOnlyHandleCount": 1,
+    "gitDiffCheck": "PASS_LF_TO_CRLF_WARNING_ONLY"
+  },
+  "nativeCollections": {
+    "persistentNativeFieldDeclarations": 0,
+    "transientNativeViews": 7
+  },
+  "buildGate": {
+    "attempted": false,
+    "cpuAveragePercent": 26.3,
+    "compilerProcessCount": 2,
+    "compilerProcesses": [
+      "dotnet:31864",
+      "VBCSCompiler:67988"
+    ],
+    "blockedReason": "Coordinator policy forbids dotnet build while dotnet/csc/MSBuild/VBCSCompiler processes are active."
+  },
+  "verificationHashSha256": "D1661668C6AC322274797A6E3755AF25EA71CFB42979DF59EDDCB2D97AF3FD04"
+}

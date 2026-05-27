@@ -20,7 +20,7 @@ namespace Hecton8.EditorTools
         private const string ScriptsRoot = "Assets/_Project/Scripts";
 
         private static readonly Regex _HotMethodSignatureRegex = new Regex(
-            @"^\s*(?:public|private|protected|internal|static|virtual|override|sealed|unsafe|partial|\s)+[\w<>\[\],\s]+\s+(Update|LateUpdate|FixedUpdate|Tick|FixedTick|SlowTick)\s*\(",
+            @"^\s*(?:public|private|protected|internal|static|virtual|override|sealed|unsafe|partial|\s)+[\w<>\[\],\s]+\s+(Update|LateUpdate|FixedUpdate|Tick|FixedTick|FastTick|UnscaledFastTick|SlowTick|ColdTick|FrostTick|LateFrameTick)\s*\(",
             RegexOptions.Compiled);
 
         private static readonly Regex _SceneSearchRegex = new Regex(

@@ -27,7 +27,7 @@ MonoBehaviour:
   rareRewardHook: 'The reason to risk the trip is: Lithium Crystal and Power Coupler.'
   landmarkIdentity: The Shivering Slabs reads through spires, steps, and big natural
     crowns. Landmarks should feel singular and intimidating.
-  safePocketIdentity: Safe pockets are rare and temporary. Retreat routes matter
+  safePocketIdentity: Reorientation pockets are rare and temporary. Retreat routes matter
     more than comfort.
   riskSummary: 'Main failure mode: bad drops and exposed lines, depth stress, and
     expensive hesitation. Creature pressure stays high.'

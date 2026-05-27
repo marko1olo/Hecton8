@@ -432,11 +432,19 @@ namespace Hecton8.UI
             out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
-            return _vault != null &&
-                   IsExactVaultHandle(in handle, expectedBufferId) &&
-                   _vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+            if (_vault == null ||
+                _vault.IsCompactionFenceActive ||
+                !IsExactVaultHandle(in handle, expectedBufferId) ||
+                !_vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength ||
+                _vault.IsCompactionFenceActive)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
         private bool TryReadPdaProjectionVaultBuffer<T>(
@@ -446,11 +454,19 @@ namespace Hecton8.UI
             out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
-            return _vault != null &&
-                   IsExactVaultHandle(in handle, expectedBufferId) &&
-                   _vault.TryReadHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+            if (_vault == null ||
+                _vault.IsCompactionFenceActive ||
+                !IsExactVaultHandle(in handle, expectedBufferId) ||
+                !_vault.TryReadHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength ||
+                _vault.IsCompactionFenceActive)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
         private bool TryReadOnlyPdaProjectionVaultBuffer<T>(
@@ -460,11 +476,19 @@ namespace Hecton8.UI
             out NativeArray<T>.ReadOnly buffer) where T : unmanaged
         {
             buffer = default;
-            return _vault != null &&
-                   IsExactVaultHandle(in handle, expectedBufferId) &&
-                   _vault.TryReadOnlyHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+            if (_vault == null ||
+                _vault.IsCompactionFenceActive ||
+                !IsExactVaultHandle(in handle, expectedBufferId) ||
+                !_vault.TryReadOnlyHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength ||
+                _vault.IsCompactionFenceActive)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
         private void SeedPdaProjectionTuning(NativeArray<PdaProjectionTuningDTO> tuning)
@@ -920,7 +944,27 @@ namespace Hecton8.UI
                     return total;
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                return 0;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return 0;
+            }
+            catch (ObjectDisposedException)
+            {
+                return 0;
+            }
+            catch (InvalidOperationException)
+            {
+                return 0;
+            }
+            catch (ArgumentException)
+            {
+                return 0;
+            }
+            catch (NotSupportedException)
             {
                 return 0;
             }
@@ -1102,17 +1146,21 @@ namespace Hecton8.UI
             int validCount = CountValidPdaProjectionTelemetryRows(telemetry);
             int startIndex = ResolvePdaProjectionTelemetryStartIndex(cursor[0], telemetry.Length, validCount);
             int payloadBytes = validCount * entrySize;
+            int telemetryCapacity = telemetry.Length;
+            int telemetryCursor = cursor[0];
             PdaProjectionBlackBoxDumpHeader header = default;
             header.Magic = PdaProjectionBlackBoxMagic;
             header.Version = PdaProjectionBlackBoxVersion;
             header.FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             header.Flags = flags;
-            header.TelemetryCapacity = telemetry.Length;
-            header.TelemetryCursor = cursor[0];
+            header.TelemetryCapacity = telemetryCapacity;
+            header.TelemetryCursor = telemetryCursor;
             header.TelemetryEntrySizeBytes = entrySize;
             header.PayloadBytes = payloadBytes;
             header.TelemetryValidCount = validCount;
             header.TelemetryStartIndex = startIndex;
+            telemetry = default;
+            cursor = default;
 
             _pdaProjectionBlackBoxDumped = true;
             try
@@ -1126,10 +1174,30 @@ namespace Hecton8.UI
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&header), UnsafeUtility.SizeOf<PdaProjectionBlackBoxDumpHeader>()));
-                    WritePdaProjectionTelemetryDump(stream, telemetry, startIndex, validCount, entrySize);
+                    WritePdaProjectionTelemetryDump(stream, startIndex, validCount, entrySize);
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
+            }
+            catch (ObjectDisposedException)
+            {
+                Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
+            }
+            catch (InvalidOperationException)
+            {
+                Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
+            }
+            catch (ArgumentException)
+            {
+                Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
+            }
+            catch (NotSupportedException)
             {
                 Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
             }
@@ -1173,26 +1241,39 @@ namespace Hecton8.UI
             return cursor >= capacity ? 0 : cursor;
         }
 
-        private static void WritePdaProjectionTelemetryDump(
+        private void WritePdaProjectionTelemetryDump(
             FileStream stream,
-            NativeArray<PdaProjectionTelemetryEntry> telemetry,
             int startIndex,
             int validCount,
             int entrySize)
         {
-            if (stream == null || !telemetry.IsCreated || validCount <= 0 || entrySize <= 0)
+            if (stream == null || validCount <= 0 || entrySize <= 0)
                 return;
 
-            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-            int capacity = telemetry.Length;
-            int available = capacity - startIndex;
-            int firstCount = validCount < available ? validCount : available;
-            if (firstCount > 0)
-                stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(basePtr + startIndex * entrySize), firstCount * entrySize));
+            for (int i = 0; i < validCount; i++)
+            {
+                int sourceIndex = startIndex + i;
+                if (sourceIndex >= PdaProjectionTelemetryCapacity)
+                    sourceIndex -= PdaProjectionTelemetryCapacity;
 
-            int remaining = validCount - firstCount;
-            if (remaining > 0)
-                stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(basePtr), remaining * entrySize));
+                if (!TryReadPdaProjectionTelemetryRow(sourceIndex, out PdaProjectionTelemetryEntry row))
+                    return;
+
+                stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&row), entrySize));
+            }
+        }
+
+        private bool TryReadPdaProjectionTelemetryRow(int index, out PdaProjectionTelemetryEntry row)
+        {
+            row = default;
+            if ((uint)index >= PdaProjectionTelemetryCapacity ||
+                !TryReadOnlyPdaProjectionVaultBuffer(in _pdaProjectionTelemetryHandle, PdaProjectionTelemetryBufferId, PdaProjectionTelemetryCapacity, out NativeArray<PdaProjectionTelemetryEntry>.ReadOnly telemetry))
+            {
+                return false;
+            }
+
+            row = telemetry[index];
+            return true;
         }
 
         void IPDAEventListener.OnPDAEvent(in PDAEventPayload payload)

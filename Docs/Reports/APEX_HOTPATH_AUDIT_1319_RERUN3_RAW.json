@@ -1,0 +1,869 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\APEX_HOTPATH_AUDIT_1319_RERUN3_RAW.json",
+  "auditHashSha256": "d0d2a0d90b3da1fd76e39f905b7d5f6481bb7caf20077d87ef3c971f44ce012d",
+  "summary": {
+    "scannedFiles": 7,
+    "parseFailures": 0,
+    "totalFindings": 104,
+    "objectCreations": 104,
+    "valueTypeCreations": 74,
+    "managedRiskCreations": 30,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Power\\LogisticsNetworkGraph.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Power\\PowerGridTelemetryEvents.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Power\\ShinobuLogisticsRouter.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Power\\SubmarineOsThermalGridRuntime.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Power\\WfcOutpostGraphTranslationJob.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Power\\WfcOutpostGridRegistry.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Power\\WfcOutpostPowerBootRuntime.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 642,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "TopologySummary",
+      "snippet": "new TopologySummary                 {                     NodeCount = NodeCount,                     EdgeCount = EdgeCount                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 648,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "DistributionSummary",
+      "snippet": "new DistributionSummary                  {                      SupplyRatio = 1f,                      BrownoutTier = LogisticsBrownoutTier.None                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 726,
+      "owner": "CommitHibernatingEvaluation",
+      "kind": "object_creation",
+      "detail": "TopologySummary",
+      "snippet": "new TopologySummary                     {                         NodeCount = NodeCount,                         EdgeCount = EdgeCount                     }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 735,
+      "owner": "CommitHibernatingEvaluation",
+      "kind": "object_creation",
+      "detail": "DistributionSummary",
+      "snippet": "new DistributionSummary                     {                         SupplyRatio = 1f,                         BrownoutTier = LogisticsBrownoutTier.None                     }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 745,
+      "owner": "EvaluateDistribution",
+      "kind": "object_creation",
+      "detail": "DistributionSummary",
+      "snippet": "new DistributionSummary                  {                      TotalGeneration = ComputeTotalGeneration(),                      TotalConsumption = ComputeTotalConsumption()                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 1762,
+      "owner": "LogisticsNetworkGraph",
+      "kind": "object_creation",
+      "detail": "DistributionSummary",
+      "snippet": "new DistributionSummary             {                 SupplyRatio = 1f,                 BrownoutTier = LogisticsBrownoutTier.None             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 2374,
+      "owner": "AddNode",
+      "kind": "object_creation",
+      "detail": "LogisticsNode",
+      "snippet": "new LogisticsNode                 {                     Id = nodeId,                     Capacity = math.max(Epsilon, capacity),                     Resistance = SanitizeNodeResistance(resistance),                     CurrentLoad = 0f,     "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 2410,
+      "owner": "AddEdge",
+      "kind": "object_creation",
+      "detail": "TopologyEdgeRecord",
+      "snippet": "new TopologyEdgeRecord                 {                     SourceNodeIndex = sourceNodeIndex,                     DestinationNodeIndex = destinationNodeIndex,                     Resistance = SanitizeEdgeResistance(resistance)            "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 2453,
+      "owner": "AddProducer",
+      "kind": "object_creation",
+      "detail": "ProducerRecord",
+      "snippet": "new ProducerRecord { NodeIndex = nodeIndex }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 2482,
+      "owner": "AddConsumer",
+      "kind": "object_creation",
+      "detail": "ConsumerRecord",
+      "snippet": "new ConsumerRecord                 {                     NodeIndex = nodeIndex,                     Demand = demand,                     PowerPriority = math.clamp(powerPriority, MinPriority, MaxPriority),                     PriorityTier ="
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 2553,
+      "owner": "FinalizeBuild",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(edge.SourceNodeIndex, edge.DestinationNodeIndex)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 2611,
+      "owner": "AnalyzeTopology",
+      "kind": "object_creation",
+      "detail": "TopologySummary",
+      "snippet": "new TopologySummary             {                  NodeCount = _nodeCount,                  EdgeCount = _edgeCount              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 2700,
+      "owner": "Distribute",
+      "kind": "object_creation",
+      "detail": "DistributionSummary",
+      "snippet": "new DistributionSummary             {                  TotalGeneration = ComputeTotalGeneration(),                  TotalConsumption = ComputeTotalConsumption()              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 2821,
+      "owner": "ScheduleNodeStatePublish",
+      "kind": "value_type_creation",
+      "detail": "PublishNodeStatesJob",
+      "snippet": "new PublishNodeStatesJob                 {                     Nodes = _nodeBuffer,                     NodeNetInjection = _nodeNetInjection,                     NodeServedDemand = _nodeServedDemand,                     NodeVoltageSupplyRat"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 2897,
+      "owner": "ScheduleEvaluationSlice",
+      "kind": "value_type_creation",
+      "detail": "EvaluateGraphJob",
+      "snippet": "new EvaluateGraphJob                 {                     NetworkType = _networkType,                     NodeCount = _nodeCount,                     EdgeCount = _edgeCount,                     ConsumerCount = ConsumerCount,               "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 3029,
+      "owner": "CommitUnpoweredEvaluation",
+      "kind": "object_creation",
+      "detail": "TopologySummary",
+      "snippet": "new TopologySummary                 {                     NodeCount = _nodeCount,                     EdgeCount = _edgeCount,                     IslandCount = _nodeCount > 0 ? 1 : 0,                     BfsVisitedCount = 0,                "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 3037,
+      "owner": "CommitUnpoweredEvaluation",
+      "kind": "object_creation",
+      "detail": "DistributionSummary",
+      "snippet": "new DistributionSummary                 {                     TotalGeneration = 0f,                     TotalConsumption = totalConsumption,                     Balance = -totalConsumption,                     SupplyRatio = totalConsumption"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 3079,
+      "owner": "CommitNoEdgeEvaluation",
+      "kind": "object_creation",
+      "detail": "TopologySummary",
+      "snippet": "new TopologySummary                 {                     NodeCount = _nodeCount,                     EdgeCount = _edgeCount,                     IslandCount = _nodeCount                 }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 3085,
+      "owner": "CommitNoEdgeEvaluation",
+      "kind": "object_creation",
+      "detail": "DistributionSummary",
+      "snippet": "new DistributionSummary                 {                     TotalGeneration = totalGeneration,                     TotalConsumption = totalConsumption,                     Balance = totalGeneration - totalConsumption,                     "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 3253,
+      "owner": "CommitScheduledEvaluation",
+      "kind": "object_creation",
+      "detail": "DistributionSummary",
+      "snippet": "new DistributionSummary                 {                     SupplyRatio = 1f,                     BrownoutTier = LogisticsBrownoutTier.None                 }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 3542,
+      "owner": "DumpPowerBlackBox",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 344,
+      "owner": "EnsureInitialized",
+      "kind": "value_type_creation",
+      "detail": "LogisticsGraphInitializeJob",
+      "snippet": "new LogisticsGraphInitializeJob                 {                     Nodes = _nodes,                     StateFlags = _stateFlags,                     OxygenFront = _oxygenFront,                     OxygenBack = _oxygenBack,               "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 428,
+      "owner": "SlowTick",
+      "kind": "value_type_creation",
+      "detail": "LogisticsFlowPrepareJob",
+      "snippet": "new LogisticsFlowPrepareJob                 {                     NodesPtr = (LogisticsNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),                     NodeCount = _nodeCount,                     StateFlags = _stateFlags,        "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 448,
+      "owner": "SlowTick",
+      "kind": "value_type_creation",
+      "detail": "LogisticsFlowDeltaPassJob",
+      "snippet": "new LogisticsFlowDeltaPassJob                     {                         NodesPtr = (LogisticsNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),                         NodeCount = _nodeCount,                         GlobalQualityWe"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 468,
+      "owner": "SlowTick",
+      "kind": "value_type_creation",
+      "detail": "LogisticsPressureCopyJob",
+      "snippet": "new LogisticsPressureCopyJob                     {                         NodeCount = _nodeCount,                         SourcePressure = _pressureBack,                         DestinationPressure = _pressureFront                     }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 476,
+      "owner": "SlowTick",
+      "kind": "value_type_creation",
+      "detail": "LogisticsFlowFinalizeJob",
+      "snippet": "new LogisticsFlowFinalizeJob                 {                     NodesPtr = (LogisticsNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),                     NodeCount = _nodeCount,                     EdgeCount = _edgeCount,         "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 546,
+      "owner": "LateFrameTick",
+      "kind": "value_type_creation",
+      "detail": "LocalShiftResolverJob",
+      "snippet": "new LocalShiftResolverJob                     {                         NodeAup = _nodeAup,                         LocalPositions = _localPositions,                         CameraAup = _cameraAup                     }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 1344,
+      "owner": "BuildFromWfcGrid",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(cell.x * cellSize, cell.y * floorHeight, cell.z * cellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 1346,
+      "owner": "BuildFromWfcGrid",
+      "kind": "value_type_creation",
+      "detail": "LogisticsNodeDTO",
+      "snippet": "new LogisticsNodeDTO                 {                     NodeHash = ComputeNodeHash(signal.SectorHash, nodeIndex, kind),                     Capacity = ResolvePowerDemand(kind),                     CurrentLoad = 0f,                     Fl"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 1362,
+      "owner": "BuildFromWfcGrid",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(local.x, local.y, local.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 1411,
+      "owner": "BuildEmergencyMockGraph",
+      "kind": "value_type_creation",
+      "detail": "GenerateMockLogisticsGraphJob",
+      "snippet": "new GenerateMockLogisticsGraphJob             {                 SectorHash = _activeSectorHash,                 Nodes = _nodes,                 Edges = _edges,                 StateFlags = _stateFlags,                 OxygenFront = _oxygenF"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 1447,
+      "owner": "EmergencyTuning",
+      "kind": "value_type_creation",
+      "detail": "LogisticsTuningDTO",
+      "snippet": "new LogisticsTuningDTO             {                 ReactorOutputWatts = 1000f,                 LifeSupportDrainWatts = 12f,                 OxygenDiffusionRate = 0.18f,                 CrushDepthMultiplier = 1f,                 BasePipeRe"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 1497,
+      "owner": "ScheduleCsrRebuild",
+      "kind": "value_type_creation",
+      "detail": "BuildCsrGraphJob",
+      "snippet": "new BuildCsrGraphJob             {                 NodesPtr = (LogisticsNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),                 NodeCount = math.clamp(_nodeCount, 0, MaxNodes),                 EdgeCount = math.clamp(_edgeCou"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 1538,
+      "owner": "AddUndirectedEdge",
+      "kind": "value_type_creation",
+      "detail": "LogisticsEdgeDTO",
+      "snippet": "new LogisticsEdgeDTO             {                 Nodes = new int2(low, high),                 Capacity = ResolveEdgeCapacity(low, high),                 Resistance = ResolveEdgeResistance(low, high),                 Flow01 = 0f,          "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 1540,
+      "owner": "AddUndirectedEdge",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(low, high)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 1639,
+      "owner": "PublishSolveSideEffects",
+      "kind": "value_type_creation",
+      "detail": "BrownoutSignal",
+      "snippet": "new BrownoutSignal                 {                     NetworkId = _activeGridHandle,                     NodeId = 0u,                     SupplyRatio = 1f - math.saturate(unpowered / (float)nodeCount),                     Severity01 = ma"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 1731,
+      "owner": "WriteBlackBoxDump",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 1732,
+      "owner": "WriteBlackBoxDump",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 1782,
+      "owner": "PublishFluidIncursion",
+      "kind": "value_type_creation",
+      "detail": "FluidIncursionSignal",
+      "snippet": "new FluidIncursionSignal             {                 LeakAup = leakAup,                 CompartmentId = (uint)nodeIndex,                 FloodLevel01 = 1f,                 FlowRate01 = math.saturate(pressureDeltaKpa * 0.001f),            "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2097,
+      "owner": "SanitizeTuning",
+      "kind": "value_type_creation",
+      "detail": "LogisticsTuningDTO",
+      "snippet": "new LogisticsTuningDTO             {                 ReactorOutputWatts = math.clamp(FiniteOr(tuning.ReactorOutputWatts, 1000f), 0f, 100000f),                 LifeSupportDrainWatts = math.clamp(FiniteOr(tuning.LifeSupportDrainWatts, 12f), 0"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2132,
+      "owner": "Unflatten",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2196,
+      "owner": "CalculateAupEdgeLength",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)delta.x, (float)delta.y, (float)delta.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2253,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "LogisticsNodeDTO",
+      "snippet": "new LogisticsNodeDTO                 {                     NodeHash = (uint)(index + 1),                     Capacity = 0f,                     CurrentLoad = 0f,                     Flags = (uint)LogisticsStateFlags.Unpowered,              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2305,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(25000.0, -480.0, 25000.0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2310,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(i % 40, i / 400, (i / 10) % 40)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2310,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(40, 3, 40)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2313,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "LogisticsNodeDTO",
+      "snippet": "new LogisticsNodeDTO                     {                         NodeHash = nodeHash,                         Capacity = demand,                         CurrentLoad = 0f,                         Flags = (uint)flags,                       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2332,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3((i % 40) * 6.0, (i / 400) * 4.0, ((i / 40) % 25) * 6.0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2334,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)local.x, (float)local.y, (float)local.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2379,
+      "owner": "AddEdge",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)delta.x, (float)delta.y, (float)delta.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2383,
+      "owner": "AddEdge",
+      "kind": "value_type_creation",
+      "detail": "LogisticsEdgeDTO",
+      "snippet": "new LogisticsEdgeDTO                 {                     Nodes = new int2(low, high),                     Capacity = capacity,                     Resistance = resistance,                     Flow01 = 0f,                     LastMilliTran"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2385,
+      "owner": "AddEdge",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(low, high)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 2926,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "LogisticsGraphTelemetryEntry",
+      "snippet": "new LogisticsGraphTelemetryEntry                 {                     FrameIndex = FrameIndex,                     NodeCount = nodeCount,                     ActiveNodeCount = activeCount,                     FaultFlags = faultFlags,      "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 3172,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)shifted.x, (float)shifted.y, (float)shifted.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 397,
+      "owner": "EnsureInitialized",
+      "kind": "value_type_creation",
+      "detail": "ClearActiveRangeJob",
+      "snippet": "new ClearActiveRangeJob             {                 NodesA = (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.NodesA),                 NodesB = (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.NodesB),                 Ed"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 504,
+      "owner": "ScheduleEmergencyMockGridInternal",
+      "kind": "value_type_creation",
+      "detail": "EmergencyMockGridJob",
+      "snippet": "new EmergencyMockGridJob             {                 Nodes = (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingNodes),                 Edges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingEdges),       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 554,
+      "owner": "ScheduleTopologyRebuildFromSnapshot",
+      "kind": "value_type_creation",
+      "detail": "TopologySnapshotRebuildJob",
+      "snippet": "new TopologySnapshotRebuildJob             {                 SourceNodes = (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(nodes),                 SourceEdges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(edges)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 632,
+      "owner": "ScheduleExternalThermalInjection",
+      "kind": "value_type_creation",
+      "detail": "ExternalThermalInjectionJob",
+      "snippet": "new ExternalThermalInjectionJob             {                 ExternalHeat = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(views.ExternalHeat),                 Anchors = (ThermalGridAnchorDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(v"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 689,
+      "owner": "ScheduleSolve",
+      "kind": "value_type_creation",
+      "detail": "ThermalStateSignalInjectionJob",
+      "snippet": "new ThermalStateSignalInjectionJob                 {                     ExternalHeat = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(views.ExternalHeat),                     Anchors = (ThermalGridAnchorDTO*)NativeArrayUnsafeUtility.GetUnsa"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 701,
+      "owner": "ScheduleSolve",
+      "kind": "value_type_creation",
+      "detail": "InitializeSolverConvergenceJob",
+      "snippet": "new InitializeSolverConvergenceJob             {                 ConvergenceState = convergencePtr,                 ResidualSamples = residualSamplesPtr,                 ResidualSlotCount = ResidualThreadSlotCount,                 BaseOmega"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 711,
+      "owner": "ScheduleSolve",
+      "kind": "value_type_creation",
+      "detail": "ClearSolverResidualSlotsJob",
+      "snippet": "new ClearSolverResidualSlotsJob                 {                     ResidualSamples = residualSamplesPtr,                     ResidualSlotCount = ResidualThreadSlotCount                 }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 724,
+      "owner": "ScheduleSolve",
+      "kind": "value_type_creation",
+      "detail": "PowerGridRelaxationJob",
+      "snippet": "new PowerGridRelaxationJob                 {                     NodesRead = readPtr,                     NodesWrite = writePtr,                     Edges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.Edges),         "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 746,
+      "owner": "ScheduleSolve",
+      "kind": "value_type_creation",
+      "detail": "ConvergenceResidualReductionJob",
+      "snippet": "new ConvergenceResidualReductionJob                 {                     ConvergenceState = convergencePtr,                     ResidualSamples = residualSamplesPtr,                     TargetTolerance = solverTolerance,                   "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 764,
+      "owner": "ScheduleSolve",
+      "kind": "value_type_creation",
+      "detail": "ShortCircuitIsolationJob",
+      "snippet": "new ShortCircuitIsolationJob             {                 Nodes = finalPtr,                 Edges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.Edges),                 NodeCount = nodeCount             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 771,
+      "owner": "ScheduleSolve",
+      "kind": "value_type_creation",
+      "detail": "ThermalGridTelemetryJob",
+      "snippet": "new ThermalGridTelemetryJob             {                 Nodes = finalPtr,                 PreviousNodes = residualBaselinePtr,                 Edges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.Edges),             "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1155,
+      "owner": "CreateDefaultTuning",
+      "kind": "value_type_creation",
+      "detail": "SubmarineThermalGridTuningDTO",
+      "snippet": "new SubmarineThermalGridTuningDTO             {                 BaseResistance = 0.06f,                 ThermalDissipationRate = 0.18f,                 JacobiTolerance = 0.001f,                 DamageThreshold = 0.72f,                 Criti"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1692,
+      "owner": "WriteBlackBoxFile",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1693,
+      "owner": "WriteBlackBoxFile",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1729,
+      "owner": "SanitizeTuning",
+      "kind": "value_type_creation",
+      "detail": "SubmarineThermalGridTuningDTO",
+      "snippet": "new SubmarineThermalGridTuningDTO             {                 BaseResistance = math.max(Epsilon, FiniteOr(tuning.BaseResistance, 0.06f)),                 ThermalDissipationRate = math.clamp(FiniteOr(tuning.ThermalDissipationRate, 0.18f), "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1885,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "ThermalGridVisualStateDTO",
+      "snippet": "new ThermalGridVisualStateDTO                     {                         NodeHash = node.NodeHash,                         Voltage01 = node.Potential,                         Thermal01 = math.saturate(node.ThermalLoad),                  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1941,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "PowerEdgeDTO",
+      "snippet": "new PowerEdgeDTO { TargetIndex = 1, Conductance = ResolveMockConductance(index, oscillator) }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1947,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "PowerEdgeDTO",
+      "snippet": "new PowerEdgeDTO { TargetIndex = index - 1, Conductance = ResolveMockConductance(index, oscillator) }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1953,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "PowerEdgeDTO",
+      "snippet": "new PowerEdgeDTO { TargetIndex = index - 1, Conductance = ResolveMockConductance(index, oscillator) }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1954,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "PowerEdgeDTO",
+      "snippet": "new PowerEdgeDTO { TargetIndex = index + 1, Conductance = ResolveMockConductance(index + 1, oscillator) }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1962,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "GridNodeDTO",
+      "snippet": "new GridNodeDTO                 {                     NodeHash = hash,                     Potential = potential,                     Resistance = math.max(Epsilon, Tuning.BaseResistance),                     ThermalLoad = 0f,              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1976,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "ThermalGridAnchorDTO",
+      "snippet": "new ThermalGridAnchorDTO                 {                     LocalOffset = new float3(index * 1.5f, 0f, 0f),                     NodeHash = hash                 }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1978,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(index * 1.5f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1981,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "ThermalGridVisualStateDTO",
+      "snippet": "new ThermalGridVisualStateDTO                 {                     NodeHash = hash,                     Voltage01 = potential,                     Thermal01 = 0f,                     FlickerPhase01 = 0f,                     Flags = flags  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2057,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "SolverConvergenceStateDTO",
+      "snippet": "new SolverConvergenceStateDTO                     {                         MaxResidualFloat = 0f,                         PreviousResidualFloat = 0f,                         Omega = math.clamp(FiniteOr(BaseOmega, 1f), 0.55f, 1f),          "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2321,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "ThermalGridVisualStateDTO",
+      "snippet": "new ThermalGridVisualStateDTO                 {                     NodeHash = target.NodeHash,                     Voltage01 = nextPotential,                     Thermal01 = thermal01,                     FlickerPhase01 = flicker,         "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2385,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(local.x, local.y, local.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2484,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "ThermalPowerGridTelemetrySnapshot",
+      "snippet": "new ThermalPowerGridTelemetrySnapshot                 {                     StateHash = hash,                     Frame = Frame,                     Flags = flags,                     TotalGeneratedPower = totalGenerated,                   "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostGraphTranslationJob.cs",
+      "line": 89,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "WfcOutpostPowerNode",
+      "snippet": "new WfcOutpostPowerNode                 {                     NodeId = ComputeNodeId(Descriptor.GridHash, cellIndex, kind),                     Cell = cell,                     LocalOffsetMeters = new float3(                         cell.x "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostGraphTranslationJob.cs",
+      "line": 93,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                         cell.x * cellSize - halfWidth,                         cell.y * floorHeight,                         cell.z * cellSize - halfDepth)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostGraphTranslationJob.cs",
+      "line": 234,
+      "owner": "TryAddBidirectionalEdge",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(sourceNode, destinationNode)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostGraphTranslationJob.cs",
+      "line": 235,
+      "owner": "TryAddBidirectionalEdge",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(destinationNode, sourceNode)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostGraphTranslationJob.cs",
+      "line": 262,
+      "owner": "Unflatten",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostGridRegistry.cs",
+      "line": 153,
+      "owner": "IsValidDescriptor",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  descriptor.OriginAup.LocalX,                  descriptor.OriginAup.LocalY,                  descriptor.OriginAup.LocalZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostGridRegistry.cs",
+      "line": 190,
+      "owner": "TryGetGrid",
+      "kind": "object_creation",
+      "detail": "WfcOutpostGridLease",
+      "snippet": "new WfcOutpostGridLease(in _descriptors[i], cells, bufferId, LogisticsGridSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 137,
+      "owner": "WfcOutpostPowerBootRuntime",
+      "kind": "object_creation",
+      "detail": "LogisticsNetworkGraph",
+      "snippet": "new LogisticsNetworkGraph(MaxCells, MaxDirectedEdges, MaxCells)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 415,
+      "owner": "TryScheduleTranslation",
+      "kind": "value_type_creation",
+      "detail": "WfcOutpostGraphTranslationJob",
+      "snippet": "new WfcOutpostGraphTranslationJob                 {                     Cells = lease.Cells,                     Descriptor = lease.Descriptor,                     Nodes = _nodes,                     CellToNode = _cellToNode,               "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 608,
+      "owner": "PublishDoorPowerSignals",
+      "kind": "value_type_creation",
+      "detail": "WfcOutpostDoorPowerSignal",
+      "snippet": "new WfcOutpostDoorPowerSignal                  {                      DoorAup = ResolveNodeAup(in node),                      SectorHash = _activeDescriptor.SectorHash,                      GridHandle = _activeGridHandle,                   "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 632,
+      "owner": "PublishReactorBrownoutIfNeeded",
+      "kind": "value_type_creation",
+      "detail": "BrownoutSignal",
+      "snippet": "new BrownoutSignal              {                  NetworkId = _activeGridHandle,                  NodeId = (uint)math.max(0, _activeGeneratorNodeIndex),                  SupplyRatio = supplyRatio,                  Severity01 = severity,   "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 699,
+      "owner": "ApplyAupShiftSignals",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(ShiftEpsilonMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 718,
+      "owner": "ResolveNodeAup",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(                  node.LocalOffsetMeters.x,                  node.LocalOffsetMeters.y,                  node.LocalOffsetMeters.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 731,
+      "owner": "ShiftDescriptor",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-shift.x, -shift.y, -shift.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 738,
+      "owner": "IsWithinAupShiftLimit",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(MaxAupShiftMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 743,
+      "owner": "ResolveMacroAupAbsolute",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(aup.LocalX, aup.LocalY, aup.LocalZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 747,
+      "owner": "ResolveMacroAupAbsolute",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(                  (aup.GridX * MacroAupCellSizeMeters) + local.x,                  (aup.GridY * MacroAupCellSizeMeters) + local.y,                  (aup.GridZ * MacroAupCellSizeMeters) + local.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 761,
+      "owner": "ToMacroAup",
+      "kind": "object_creation",
+      "detail": "Hecton8.Core.Contracts.MacroDatabaseAup",
+      "snippet": "new Hecton8.Core.Contracts.MacroDatabaseAup              {                  GridX = gridX,                  GridY = gridY,                  GridZ = gridZ,                  LocalX = (float)(absolute.x - (gridX * MacroAupCellSizeMeters)),    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 774,
+      "owner": "ToMacroAup",
+      "kind": "object_creation",
+      "detail": "Hecton8.Core.Contracts.MacroDatabaseAup",
+      "snippet": "new Hecton8.Core.Contracts.MacroDatabaseAup              {                  GridX = aup.GridX,                  GridY = aup.GridY,                  GridZ = aup.GridZ,                  LocalX = aup.LocalX,                  LocalY = aup.Local"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 831,
+      "owner": "WriteBlackBox",
+      "kind": "value_type_creation",
+      "detail": "WfcOutpostPowerBootTelemetryEntry",
+      "snippet": "new WfcOutpostPowerBootTelemetryEntry                 {                     Frame = CurrentFrameU32(),                     GridHandle = _activeGridHandle,                     SectorHash = _activeDescriptor.SectorHash,                     No"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 873,
+      "owner": "DumpBlackBox",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "line": 874,
+      "owner": "DumpBlackBox",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

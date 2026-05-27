@@ -4,7 +4,6 @@
 // Sibling k HUD_V4_CanvasRoot na Suit_HUD_Canvas.
 // ============================================================================
 
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
@@ -101,6 +100,7 @@ namespace Hecton8.UI
         private float _pendingCanvasAlpha = 1f;
         private float _currentCanvasAlpha = 1f;
         private IPlayerInventoryService _inventoryService;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private PlayerInventory _playerInventory;
         private ItemCatalog _itemCatalog;
         private IToolDurabilityService _toolDurabilitySystem;
@@ -111,6 +111,8 @@ namespace Hecton8.UI
         private bool _hotSwapRegistered;
         private readonly int[] _slotItemHashCache = new int[SlotCount]; // COLD ALLOC: int[4] - quickbar resolved item hash cache - owner: HUDQuickBar
         private readonly bool[] _slotItemHashResolved = new bool[SlotCount]; // COLD ALLOC: bool[4] - quickbar item hash cache validity flags - owner: HUDQuickBar
+        private readonly uint[] _slotMetadataHashCache = new uint[SlotCount]; // COLD ALLOC: uint[4] - quickbar resolved tool metadata hash cache - owner: HUDQuickBar
+        private readonly bool[] _slotMetadataHashResolved = new bool[SlotCount]; // COLD ALLOC: bool[4] - quickbar metadata hash cache validity flags - owner: HUDQuickBar
         private int _lastInventoryVersion = -1;
         [SerializeField] private float fieldAdviceRange = 18f;
         [SerializeField] private LayerMask fieldAdviceMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
@@ -137,6 +139,7 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
             Unsubscribe();
+            _playerRuntimeContext = null;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -148,6 +151,18 @@ namespace Hecton8.UI
             {
                 case GlobalRegistryServiceSlot.PlayerInventory:
                     ApplyInventoryService(currentService as IPlayerInventoryService);
+                    RefreshToolManagerSubscription();
+                    MarkAllDirty();
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    if (previousService is IPlayerRuntimeContext previousContext &&
+                        ReferenceEquals(toolManager, previousContext.ToolManager))
+                    {
+                        toolManager = null;
+                    }
+
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    AutoResolve();
                     RefreshToolManagerSubscription();
                     MarkAllDirty();
                     break;
@@ -253,16 +268,10 @@ namespace Hecton8.UI
 
             if (toolManager == null)
             {
-                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null && playerContext.ToolManager != null)
                 {
                     toolManager = playerContext.ToolManager;
-                }
-                else if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                         playerTransform != null &&
-                         playerTransform.TryGetComponent(out PlayerToolManager resolvedToolManager))
-                {
-                    toolManager = resolvedToolManager;
                 }
             }
             if (font == null)
@@ -627,10 +636,10 @@ namespace Hecton8.UI
                 _slotIconAvailable[slotIndex] = false;
             }
 
-            RefreshDurabilityVisual(slotIndex, prefab);
+            RefreshDurabilityVisual(slotIndex, prefab, itemHashId);
         }
 
-        private void RefreshDurabilityVisual(int slotIndex, GameObject prefab)
+        private void RefreshDurabilityVisual(int slotIndex, GameObject prefab, int itemHashId)
         {
             if (_durBars == null || slotIndex >= _durBars.Length || _durBars[slotIndex] == null)
                 return;
@@ -647,7 +656,11 @@ namespace Hecton8.UI
                     float maxDurability = tool.Metadata.maxDurability;
                     if (maxDurability > 0f)
                     {
-                        float currentDurability = durabilitySystem.GetDurability(tool.Metadata.toolID, maxDurability);
+                        uint itemHash = itemHashId != 0 ? unchecked((uint)itemHashId) : 0u;
+                        uint metadataHash = ResolveSlotMetadataHash(slotIndex, prefab);
+                        float currentDurability = TryReadDurabilityByHashes(durabilitySystem, itemHash, metadataHash, maxDurability, out float resolvedDurability)
+                            ? resolvedDurability
+                            : maxDurability;
                         float normalizedDurability = math.saturate(currentDurability / maxDurability);
                         desiredWidth = (slotSize - 6f) * normalizedDurability;
                         desiredColor = FastLerpColor(DurWarning, DurGood, normalizedDurability);
@@ -680,6 +693,8 @@ namespace Hecton8.UI
             {
                 _slotItemHashCache[i] = 0;
                 _slotItemHashResolved[i] = false;
+                _slotMetadataHashCache[i] = 0u;
+                _slotMetadataHashResolved[i] = false;
             }
         }
 
@@ -704,6 +719,47 @@ namespace Hecton8.UI
             _slotItemHashCache[slotIndex] = itemHashId;
             _slotItemHashResolved[slotIndex] = true;
             return itemHashId;
+        }
+
+        private uint ResolveSlotMetadataHash(int slotIndex, GameObject prefab)
+        {
+            if ((uint)slotIndex >= (uint)SlotCount)
+                return 0u;
+
+            if (_slotMetadataHashResolved[slotIndex])
+                return _slotMetadataHashCache[slotIndex];
+
+            uint metadataHash = 0u;
+            if (prefab != null &&
+                prefab.TryGetComponent(out IPlayerToolDataReadModel tool) &&
+                tool.Metadata != null &&
+                !string.IsNullOrEmpty(tool.Metadata.toolID))
+            {
+                metadataHash = unchecked((uint)Animator.StringToHash(tool.Metadata.toolID));
+            }
+
+            _slotMetadataHashCache[slotIndex] = metadataHash;
+            _slotMetadataHashResolved[slotIndex] = true;
+            return metadataHash;
+        }
+
+        private static bool TryReadDurabilityByHashes(
+            IToolDurabilityService durabilitySystem,
+            uint itemHash,
+            uint metadataHash,
+            float maxDurability,
+            out float durability)
+        {
+            durability = maxDurability;
+            if (durabilitySystem == null)
+                return false;
+
+            if (itemHash != 0u && durabilitySystem.TryReadDurability(itemHash, maxDurability, out durability))
+                return true;
+
+            return metadataHash != 0u &&
+                   metadataHash != itemHash &&
+                   durabilitySystem.TryReadDurability(metadataHash, maxDurability, out durability);
         }
 
         private Sprite ResolveSlotIconSprite(GameObject prefab)
@@ -902,6 +958,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
+            _playerRuntimeContext = GlobalRegistry.Player;
             ApplyInventoryService(GlobalRegistry.PlayerInventory);
             _toolDurabilitySystem = GlobalRegistry.ToolDurabilityService;
         }

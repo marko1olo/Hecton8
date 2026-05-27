@@ -1,0 +1,261 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\DATA_MONOLITH_RERUN10_PARSE_AUDIT_1330.json",
+  "auditHashSha256": "0614e78471cb6cd018d8a2f91a3a142c9aefbd0332b225f66841b707fac2e089",
+  "summary": {
+    "scannedFiles": 7,
+    "parseFailures": 0,
+    "totalFindings": 28,
+    "objectCreations": 20,
+    "valueTypeCreations": 1,
+    "managedRiskCreations": 19,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 3,
+    "linqCalls": 0,
+    "foreachStatements": 1,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 4
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Editor\\DataMonolith\\OOP_StaticData_Scanner.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Editor\\DataMonolith\\H8DataMonolithReleaseBuildGate.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Editor\\DataMonolith\\H8DataMonolithGlobalDataVaultStressProbe.cs",
+    "C:\\hades\\Hecton8\\Tools\\DataMonolithBakeCli\\DataMonolithPlayerParserAbsenceProbe.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Editor\\DataMonolith\\H8DataMonolithLayoutGuard.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Editor\\DataMonolith\\H8DataMonolithCompiler.cs"
+  ],
+  "findings": [
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 32,
+      "owner": "Scan",
+      "kind": "object_creation",
+      "detail": "ScanMode",
+      "snippet": "new ScanMode(developmentBuild)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 89,
+      "owner": "ScanFile",
+      "kind": "object_creation",
+      "detail": "List<PreprocessorFrame>",
+      "snippet": "new List<PreprocessorFrame>(8)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 280,
+      "owner": "AddFinding",
+      "kind": "object_creation",
+      "detail": "Finding",
+      "snippet": "new Finding(kind, path, line, source)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 286,
+      "owner": "AddFinding",
+      "kind": "object_creation",
+      "detail": "Finding",
+      "snippet": "new Finding(kind, path, line, source)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 315,
+      "owner": "ApplyPreprocessorDirective",
+      "kind": "object_creation",
+      "detail": "PreprocessorFrame",
+      "snippet": "new PreprocessorFrame(EvaluateForPlayer(expression, developmentBuild))"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 373,
+      "owner": "EvaluateForPlayer",
+      "kind": "object_creation",
+      "detail": "PreprocessorExpressionParser",
+      "snippet": "new PreprocessorExpressionParser(expression, developmentBuild)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 417,
+      "owner": "StripStringLiterals",
+      "kind": "object_creation",
+      "detail": "StringBuilder",
+      "snippet": "new StringBuilder(line.Length)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 458,
+      "owner": "BuildReport",
+      "kind": "object_creation",
+      "detail": "StringBuilder",
+      "snippet": "new StringBuilder(65536)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 581,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Dictionary<string, int>",
+      "snippet": "new Dictionary<string, int>(StringComparer.Ordinal)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 582,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Dictionary<string, int>",
+      "snippet": "new Dictionary<string, int>(StringComparer.Ordinal)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 583,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<Finding>",
+      "snippet": "new List<Finding>(MaxFindings)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 584,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<Finding>",
+      "snippet": "new List<Finding>(MaxFindings)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 453,
+      "owner": "StripStringLiterals",
+      "kind": "to_string_call",
+      "detail": "builder.ToString",
+      "snippet": "builder.ToString()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 462,
+      "owner": "BuildReport",
+      "kind": "to_string_call",
+      "detail": "DateTime.UtcNow.ToString",
+      "snippet": "DateTime.UtcNow.ToString(\"O\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 470,
+      "owner": "BuildReport",
+      "kind": "to_string_call",
+      "detail": "report.ToString",
+      "snippet": "report.ToString()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 498,
+      "owner": "AppendDictionary",
+      "kind": "foreach_statement",
+      "detail": "KeyValuePair<string, int>",
+      "snippet": "values"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 461,
+      "owner": "BuildReport",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"  \\\"agent\\\": \\\"\" + AgentId + \"\\\",\""
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithPlayerParserAbsenceProbe.cs",
+      "line": 461,
+      "owner": "BuildReport",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"  \\\"agent\\\": \\\"\" + AgentId"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 207,
+      "owner": "TryInitializeFromStreamingAssetsAsync",
+      "kind": "object_creation",
+      "detail": "H8DataBlobLoadResult",
+      "snippet": "new H8DataBlobLoadResult(!failIfMissing && IsLoaded, cancelledStatus)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 246,
+      "owner": "TryInitializeFromStreamingAssetsAsync",
+      "kind": "object_creation",
+      "detail": "H8DataBlobLoadResult",
+      "snippet": "new H8DataBlobLoadResult(!failIfMissing && IsLoaded, failedStatus)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 268,
+      "owner": "TryInitializeFromStreamingAssetsAsync",
+      "kind": "object_creation",
+      "detail": "H8DataBlobLoadResult",
+      "snippet": "new H8DataBlobLoadResult(loaded, status)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 311,
+      "owner": "TryStageStreamingAssetsUriToCacheAsync",
+      "kind": "value_type_creation",
+      "detail": "UnityWebRequest",
+      "snippet": "new UnityWebRequest(streamingUri, UnityWebRequest.kHttpVerbGET)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 312,
+      "owner": "TryStageStreamingAssetsUriToCacheAsync",
+      "kind": "object_creation",
+      "detail": "DownloadHandlerFile",
+      "snippet": "new DownloadHandlerFile(tempPath)                 {                     removeFileOnAbort = true                 }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 499,
+      "owner": "TryInitializeFromFile",
+      "kind": "object_creation",
+      "detail": "FileInfo",
+      "snippet": "new FileInfo(absolutePath)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 1644,
+      "owner": "TryReadWholeFileIntoArena",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, FileOptions.SequentialScan)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 1645,
+      "owner": "TryReadWholeFileIntoArena",
+      "kind": "object_creation",
+      "detail": "Span<byte>",
+      "snippet": "new Span<byte>(destination, expectedBytes)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 281,
+      "owner": "BuildStreamingAssetsLocation",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "root + \"/\""
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 308,
+      "owner": "TryStageStreamingAssetsUriToCacheAsync",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "cachePath + \".tmp\""
+    }
+  ],
+  "parseFailures": [
+  ]
+}

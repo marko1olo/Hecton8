@@ -136,9 +136,10 @@ namespace Hecton8.Gameplay.AirlockPressurization
             MovementAcousticSignal acoustic = default;
 
             float dt = math.max(0f, AirlockPressurizationMath.FiniteOr(DeltaTime, 0f));
-            float quality = math.saturate(AirlockPressurizationMath.FiniteOr(
+            float visualQuality = math.saturate(AirlockPressurizationMath.FiniteOr(
                 GlobalQualityWeight,
                 AirlockPressurizationMath.FiniteOr(tuning.GlobalQualityWeight, 0.5f)));
+            const float authorityQuality = AirlockPressurizationConstants.AuthoritativeQualityWeight;
             float maxWater = math.max(1f, AirlockPressurizationMath.FiniteOr(tuning.MaxWaterVolumeLiters, AirlockPressurizationConstants.LitersPerCubicMeter));
             float chamberLiters = math.max(maxWater + 1f, AirlockPressurizationMath.FiniteOr(tuning.ChamberVolumeLiters, maxWater + 400f));
             float water = math.clamp(AirlockPressurizationMath.FiniteOr(airlock.CurrentWaterVolumeLiters, 0f), 0f, maxWater);
@@ -166,7 +167,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
                     pressure,
                     roomPressure,
                     tuning.EqualizationCurveExponent,
-                    dt * math.lerp(0.7f, 1.15f, quality),
+                    dt * math.lerp(0.7f, 1.15f, authorityQuality),
                     chamberLiters);
                 result.PumpMovedLiters = moved;
                 flags |= moved > 0.001f ? AirlockCycleFlags.AcousticPump : 0u;
@@ -287,7 +288,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
                 BulkheadIntents[index] = intent;
             }
 
-            int vfxPeriod = math.max(1, (int)math.round(math.lerp(10f, 2f, quality)));
+            int vfxPeriod = math.max(1, (int)math.round(math.lerp(10f, 2f, visualQuality)));
             if (result.VfxIntensity01 > 0.2f && ((Frame + (uint)index) % (uint)vfxPeriod) == 0u)
             {
                 vfx = new BubbleSpawnSignal
@@ -310,7 +311,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
                 result.Flags |= flags;
             }
 
-            int audioPeriod = math.max(1, (int)math.round(math.lerp(18f, 5f, quality)));
+            int audioPeriod = math.max(1, (int)math.round(math.lerp(18f, 5f, visualQuality)));
             if (pumping && ((Frame + (uint)(index * 3)) % (uint)audioPeriod) == 0u)
             {
                 acoustic = new MovementAcousticSignal

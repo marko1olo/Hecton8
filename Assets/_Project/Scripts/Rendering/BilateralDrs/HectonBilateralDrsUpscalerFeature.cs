@@ -138,24 +138,26 @@ namespace Hecton8.Rendering
             private int _upscaleArrayKernel = -1;
             private int _debugKernel = -1;
             private int _debugArrayKernel = -1;
-            private uint _clearThreadGroupSizeX = 8;
-            private uint _clearThreadGroupSizeY = 8;
-            private uint _clearArrayThreadGroupSizeX = 8;
-            private uint _clearArrayThreadGroupSizeY = 8;
-            private uint _sobelThreadGroupSizeX = 8;
-            private uint _sobelThreadGroupSizeY = 8;
-            private uint _sobelArrayThreadGroupSizeX = 8;
-            private uint _sobelArrayThreadGroupSizeY = 8;
-            private uint _upscaleThreadGroupSizeX = 8;
-            private uint _upscaleThreadGroupSizeY = 8;
-            private uint _upscaleArrayThreadGroupSizeX = 8;
-            private uint _upscaleArrayThreadGroupSizeY = 8;
-            private uint _debugThreadGroupSizeX = 8;
-            private uint _debugThreadGroupSizeY = 8;
-            private uint _debugArrayThreadGroupSizeX = 8;
-            private uint _debugArrayThreadGroupSizeY = 8;
+            private uint _clearThreadGroupSizeX;
+            private uint _clearThreadGroupSizeY;
+            private uint _clearArrayThreadGroupSizeX;
+            private uint _clearArrayThreadGroupSizeY;
+            private uint _sobelThreadGroupSizeX;
+            private uint _sobelThreadGroupSizeY;
+            private uint _sobelArrayThreadGroupSizeX;
+            private uint _sobelArrayThreadGroupSizeY;
+            private uint _upscaleThreadGroupSizeX;
+            private uint _upscaleThreadGroupSizeY;
+            private uint _upscaleArrayThreadGroupSizeX;
+            private uint _upscaleArrayThreadGroupSizeY;
+            private uint _debugThreadGroupSizeX;
+            private uint _debugThreadGroupSizeY;
+            private uint _debugArrayThreadGroupSizeX;
+            private uint _debugArrayThreadGroupSizeY;
             private bool _reportedMissingKernels;
             private bool _clearOnly;
+            private const uint MaxKernelThreadProduct = 256u;
+            private const int MaxDispatchGroupsPerDimension = 65535;
 
             public BilateralDrsPass()
             {
@@ -178,6 +180,7 @@ namespace Hecton8.Rendering
                     _upscaleArrayKernel = -1;
                     _debugKernel = -1;
                     _debugArrayKernel = -1;
+                    ResetThreadGroups();
                     _reportedMissingKernels = false;
                 }
 
@@ -190,8 +193,17 @@ namespace Hecton8.Rendering
                     if (!TryResolveClearKernel(_computeShader))
                         return;
 
-                    _computeShader.GetKernelThreadGroupSizes(_clearKernel, out _clearThreadGroupSizeX, out _clearThreadGroupSizeY, out _);
-                    _computeShader.GetKernelThreadGroupSizes(_clearArrayKernel, out _clearArrayThreadGroupSizeX, out _clearArrayThreadGroupSizeY, out _);
+                    if (!TryResolveThreadGroups(_computeShader, _clearKernel, out _clearThreadGroupSizeX, out _clearThreadGroupSizeY) ||
+                        !TryResolveThreadGroups(_computeShader, _clearArrayKernel, out _clearArrayThreadGroupSizeX, out _clearArrayThreadGroupSizeY))
+                    {
+                        _clearKernel = -1;
+                        _clearArrayKernel = -1;
+                        _clearThreadGroupSizeX = 0u;
+                        _clearThreadGroupSizeY = 0u;
+                        _clearArrayThreadGroupSizeX = 0u;
+                        _clearArrayThreadGroupSizeY = 0u;
+                        return;
+                    }
                 }
 
                 if (_computeShader != null &&
@@ -203,13 +215,64 @@ namespace Hecton8.Rendering
                     if (!TryResolveActiveKernels(_computeShader))
                         return;
 
-                    _computeShader.GetKernelThreadGroupSizes(_sobelKernel, out _sobelThreadGroupSizeX, out _sobelThreadGroupSizeY, out _);
-                    _computeShader.GetKernelThreadGroupSizes(_sobelArrayKernel, out _sobelArrayThreadGroupSizeX, out _sobelArrayThreadGroupSizeY, out _);
-                    _computeShader.GetKernelThreadGroupSizes(_upscaleKernel, out _upscaleThreadGroupSizeX, out _upscaleThreadGroupSizeY, out _);
-                    _computeShader.GetKernelThreadGroupSizes(_upscaleArrayKernel, out _upscaleArrayThreadGroupSizeX, out _upscaleArrayThreadGroupSizeY, out _);
-                    _computeShader.GetKernelThreadGroupSizes(_debugKernel, out _debugThreadGroupSizeX, out _debugThreadGroupSizeY, out _);
-                    _computeShader.GetKernelThreadGroupSizes(_debugArrayKernel, out _debugArrayThreadGroupSizeX, out _debugArrayThreadGroupSizeY, out _);
+                    if (!TryResolveThreadGroups(_computeShader, _sobelKernel, out _sobelThreadGroupSizeX, out _sobelThreadGroupSizeY) ||
+                        !TryResolveThreadGroups(_computeShader, _sobelArrayKernel, out _sobelArrayThreadGroupSizeX, out _sobelArrayThreadGroupSizeY) ||
+                        !TryResolveThreadGroups(_computeShader, _upscaleKernel, out _upscaleThreadGroupSizeX, out _upscaleThreadGroupSizeY) ||
+                        !TryResolveThreadGroups(_computeShader, _upscaleArrayKernel, out _upscaleArrayThreadGroupSizeX, out _upscaleArrayThreadGroupSizeY) ||
+                        !TryResolveThreadGroups(_computeShader, _debugKernel, out _debugThreadGroupSizeX, out _debugThreadGroupSizeY) ||
+                        !TryResolveThreadGroups(_computeShader, _debugArrayKernel, out _debugArrayThreadGroupSizeX, out _debugArrayThreadGroupSizeY))
+                    {
+                        _sobelKernel = -1;
+                        _sobelArrayKernel = -1;
+                        _upscaleKernel = -1;
+                        _upscaleArrayKernel = -1;
+                        _debugKernel = -1;
+                        _debugArrayKernel = -1;
+                        ClearActiveThreadGroups();
+                    }
                 }
+            }
+
+            private void ResetThreadGroups()
+            {
+                _clearThreadGroupSizeX = 0u;
+                _clearThreadGroupSizeY = 0u;
+                _clearArrayThreadGroupSizeX = 0u;
+                _clearArrayThreadGroupSizeY = 0u;
+                ClearActiveThreadGroups();
+            }
+
+            private void ClearActiveThreadGroups()
+            {
+                _sobelThreadGroupSizeX = 0u;
+                _sobelThreadGroupSizeY = 0u;
+                _sobelArrayThreadGroupSizeX = 0u;
+                _sobelArrayThreadGroupSizeY = 0u;
+                _upscaleThreadGroupSizeX = 0u;
+                _upscaleThreadGroupSizeY = 0u;
+                _upscaleArrayThreadGroupSizeX = 0u;
+                _upscaleArrayThreadGroupSizeY = 0u;
+                _debugThreadGroupSizeX = 0u;
+                _debugThreadGroupSizeY = 0u;
+                _debugArrayThreadGroupSizeX = 0u;
+                _debugArrayThreadGroupSizeY = 0u;
+            }
+
+            private static bool TryResolveThreadGroups(ComputeShader computeShader, int kernel, out uint groupSizeX, out uint groupSizeY)
+            {
+                groupSizeX = 0u;
+                groupSizeY = 0u;
+                if (computeShader == null || kernel < 0 || !computeShader.IsSupported(kernel))
+                    return false;
+
+                computeShader.GetKernelThreadGroupSizes(kernel, out uint x, out uint y, out uint z);
+                ulong threadProduct = (ulong)x * y * z;
+                if (x == 0u || y == 0u || z != 1u || threadProduct == 0UL || threadProduct > MaxKernelThreadProduct)
+                    return false;
+
+                groupSizeX = x;
+                groupSizeY = y;
+                return true;
             }
 
             private bool TryResolveClearKernel(ComputeShader computeShader)
@@ -223,7 +286,7 @@ namespace Hecton8.Rendering
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     if (!_reportedMissingKernels)
                     {
-                        Hecton8.Core.H8Debug.LogError("[SHINOBU_236] Bilateral DRS compute shader is missing a clear edge-mask kernel.");
+                        Hecton8.Core.H8Debug.LogError("[13KRA] Bilateral DRS compute shader is missing a clear edge-mask kernel.");
                         _reportedMissingKernels = true;
                     }
 #endif
@@ -257,7 +320,7 @@ namespace Hecton8.Rendering
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     if (!_reportedMissingKernels)
                     {
-                        Hecton8.Core.H8Debug.LogError("[SHINOBU_236] Bilateral DRS compute shader is missing one or more active upscaler kernels.");
+                        Hecton8.Core.H8Debug.LogError("[13KRA] Bilateral DRS compute shader is missing one or more active upscaler kernels.");
                         _reportedMissingKernels = true;
                     }
 #endif
@@ -287,7 +350,7 @@ namespace Hecton8.Rendering
                 }
 
                 if (_computeShader == null ||
-                    !SystemInfo.supportsComputeShaders ||
+                    !Hecton8.Core.HardwareTierDetector.AllowHighResourceComputeShaders ||
                     _clearKernel < 0)
                 {
                     TryPublishClearedEdgeMask(renderGraph);
@@ -387,7 +450,10 @@ namespace Hecton8.Rendering
                 BufferHandle constantBufferHandle = renderGraph.ImportBuffer(constantBuffer);
                 int edgeWidth = skipSobel ? 1 : ResolveEdgeMaskDimension(fullWidth, qualityGate);
                 int edgeHeight = skipSobel ? 1 : ResolveEdgeMaskDimension(fullHeight, qualityGate);
-                int dispatchZ = useTextureArray ? sliceCount : 1;
+                int dispatchZ = useTextureArray ? ResolveDispatchDepth(sliceCount) : 1;
+                if (dispatchZ <= 0)
+                    return;
+
                 int edgeMaskReadId = useTextureArray ? BilateralDrsShaderIds.EdgeMaskArrayReadId : BilateralDrsShaderIds.EdgeMaskReadId;
                 int edgeMaskWriteId = useTextureArray ? BilateralDrsShaderIds.EdgeMaskArrayWriteId : BilateralDrsShaderIds.EdgeMaskWriteId;
                 int depthId = useTextureArray ? BilateralDrsShaderIds.FullResDepthArrayId : BilateralDrsShaderIds.FullResDepthId;
@@ -428,10 +494,13 @@ namespace Hecton8.Rendering
 
                 int dispatchX = CeilByThreadGroup(edgeWidth, sobelGroupSizeX);
                 int dispatchY = CeilByThreadGroup(edgeHeight, sobelGroupSizeY);
+                if (!skipSobel && (dispatchX <= 0 || dispatchY <= 0))
+                    return;
 
                 if (skipSobel)
                 {
-                    RecordClearEdgeMaskPass(renderGraph, edgeMask, true, useTextureArray, sliceCount);
+                    if (!RecordClearEdgeMaskPass(renderGraph, edgeMask, true, useTextureArray, sliceCount))
+                        return;
                 }
                 else
                 {
@@ -467,6 +536,11 @@ namespace Hecton8.Rendering
 
                 if (HectonBilateralDrsUpscalerRuntime.IsEdgeMaskDebugEnabled())
                 {
+                    int debugDispatchX = CeilByThreadGroup(fullWidth, debugGroupSizeX);
+                    int debugDispatchY = CeilByThreadGroup(fullHeight, debugGroupSizeY);
+                    if (debugDispatchX <= 0 || debugDispatchY <= 0)
+                        return;
+
                     using (var builder = renderGraph.AddComputePass("Hecton Bilateral DRS Edge Mask Debug", out DebugPassData passData, _profilingSampler))
                     {
                         passData.ComputeShader = _computeShader;
@@ -476,8 +550,8 @@ namespace Hecton8.Rendering
                         passData.ConstantBuffer = constantBuffer;
                         passData.EdgeMaskId = edgeMaskReadId;
                         passData.DestinationId = destinationId;
-                        passData.DispatchX = CeilByThreadGroup(fullWidth, debugGroupSizeX);
-                        passData.DispatchY = CeilByThreadGroup(fullHeight, debugGroupSizeY);
+                        passData.DispatchX = debugDispatchX;
+                        passData.DispatchY = debugDispatchY;
                         passData.DispatchZ = dispatchZ;
 
                         builder.UseTexture(edgeMask, AccessFlags.Read);
@@ -499,6 +573,11 @@ namespace Hecton8.Rendering
                     return;
                 }
 
+                int upscaleDispatchX = CeilByThreadGroup(fullWidth, upscaleGroupSizeX);
+                int upscaleDispatchY = CeilByThreadGroup(fullHeight, upscaleGroupSizeY);
+                if (upscaleDispatchX <= 0 || upscaleDispatchY <= 0)
+                    return;
+
                 using (var builder = renderGraph.AddComputePass("Hecton Bilateral DRS Upscale", out UpscalePassData passData, _profilingSampler))
                 {
                     passData.ComputeShader = _computeShader;
@@ -514,8 +593,8 @@ namespace Hecton8.Rendering
                     passData.DepthId = depthId;
                     passData.EdgeMaskId = edgeMaskReadId;
                     passData.DestinationId = destinationId;
-                    passData.DispatchX = CeilByThreadGroup(fullWidth, upscaleGroupSizeX);
-                    passData.DispatchY = CeilByThreadGroup(fullHeight, upscaleGroupSizeY);
+                    passData.DispatchX = upscaleDispatchX;
+                    passData.DispatchY = upscaleDispatchY;
                     passData.DispatchZ = dispatchZ;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
@@ -597,42 +676,48 @@ namespace Hecton8.Rendering
 
             private bool TryPublishClearedEdgeMask(RenderGraph renderGraph)
             {
-                if (SystemInfo.supportsComputeShaders &&
+                if (Hecton8.Core.HardwareTierDetector.AllowHighResourceComputeShaders &&
                     _computeShader != null &&
                     _clearKernel >= 0 &&
                     TryResolveEdgeMaskFormat(out GraphicsFormat edgeMaskFormat))
                 {
-                    PublishClearedEdgeMask(renderGraph, edgeMaskFormat);
-                    return true;
+                    if (PublishClearedEdgeMask(renderGraph, edgeMaskFormat))
+                        return true;
                 }
 
                 return TryPublishRasterClearedEdgeMask(renderGraph);
             }
 
-            private void PublishClearedEdgeMask(RenderGraph renderGraph, GraphicsFormat edgeMaskFormat)
+            private bool PublishClearedEdgeMask(RenderGraph renderGraph, GraphicsFormat edgeMaskFormat)
             {
                 TextureDesc edgeDesc = CreateEdgeMaskDesc(1, 1, edgeMaskFormat, true, false, 1, VRTextureUsage.None);
                 edgeDesc.name = "_HectonBilateralDrsEdgeMask_Clear";
                 TextureHandle edgeMask = renderGraph.CreateTexture(edgeDesc);
-                RecordClearEdgeMaskPass(renderGraph, edgeMask, true, false, 1);
+                return RecordClearEdgeMaskPass(renderGraph, edgeMask, true, false, 1);
             }
 
-            private void RecordClearEdgeMaskPass(
+            private bool RecordClearEdgeMaskPass(
                 RenderGraph renderGraph,
                 TextureHandle edgeMask,
                 bool publishGlobal,
                 bool useTextureArray,
                 int sliceCount)
             {
+                int dispatchX = CeilByThreadGroup(1, useTextureArray ? _clearArrayThreadGroupSizeX : _clearThreadGroupSizeX);
+                int dispatchY = CeilByThreadGroup(1, useTextureArray ? _clearArrayThreadGroupSizeY : _clearThreadGroupSizeY);
+                int dispatchZ = useTextureArray ? ResolveDispatchDepth(sliceCount) : 1;
+                if (dispatchX <= 0 || dispatchY <= 0 || dispatchZ <= 0)
+                    return false;
+
                 using (var builder = renderGraph.AddComputePass("Hecton Bilateral DRS Edge Mask Clear", out ClearPassData passData, _profilingSampler))
                 {
                     passData.ComputeShader = _computeShader;
                     passData.KernelIndex = useTextureArray ? _clearArrayKernel : _clearKernel;
                     passData.EdgeMask = edgeMask;
                     passData.EdgeMaskId = useTextureArray ? BilateralDrsShaderIds.EdgeMaskArrayWriteId : BilateralDrsShaderIds.EdgeMaskWriteId;
-                    passData.DispatchX = CeilByThreadGroup(1, useTextureArray ? _clearArrayThreadGroupSizeX : _clearThreadGroupSizeX);
-                    passData.DispatchY = CeilByThreadGroup(1, useTextureArray ? _clearArrayThreadGroupSizeY : _clearThreadGroupSizeY);
-                    passData.DispatchZ = useTextureArray ? Math.Max(1, sliceCount) : 1;
+                    passData.DispatchX = dispatchX;
+                    passData.DispatchY = dispatchY;
+                    passData.DispatchZ = dispatchZ;
 
                     builder.UseTexture(edgeMask, AccessFlags.Write);
                     if (publishGlobal)
@@ -644,6 +729,8 @@ namespace Hecton8.Rendering
                         cmd.DispatchCompute(data.ComputeShader, data.KernelIndex, data.DispatchX, data.DispatchY, data.DispatchZ);
                     });
                 }
+
+                return true;
             }
 
             private bool TryPublishRasterClearedEdgeMask(RenderGraph renderGraph)
@@ -782,8 +869,16 @@ namespace Hecton8.Rendering
 
             private static int CeilByThreadGroup(int dimension, uint threadGroupSize)
             {
-                uint safeThreadGroupSize = Math.Max(1u, threadGroupSize);
-                return Math.Max(1, Mathf.CeilToInt(dimension / (float)safeThreadGroupSize));
+                if (dimension <= 0 || threadGroupSize == 0u)
+                    return 0;
+
+                long groups = ((long)dimension + threadGroupSize - 1L) / threadGroupSize;
+                return groups > 0L && groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
+            }
+
+            private static int ResolveDispatchDepth(int value)
+            {
+                return value > 0 && value <= MaxDispatchGroupsPerDimension ? value : 0;
             }
 
             private static bool IsFinite(float value)
@@ -860,7 +955,7 @@ namespace Hecton8.Rendering
                 return;
 
             if (settings.computeShader == null ||
-                !SystemInfo.supportsComputeShaders)
+                !Hecton8.Core.HardwareTierDetector.AllowHighResourceComputeShaders)
             {
                 _pass.Setup(settings, settings.computeShader, true);
                 renderer.EnqueuePass(_pass);

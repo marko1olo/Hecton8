@@ -119,7 +119,7 @@ namespace Hecton8.Caves
         /// <summary>Tiny hole. 1-2 rooms. Fish lair, loot stash.</summary>
         Den = 0,
 
-        /// <summary>Single beautiful chamber with one entrance.</summary>
+        /// <summary>Single high-value chamber with one entrance.</summary>
         Grotto = 1,
 
         /// <summary>5-15 rooms with multiple paths and loops.</summary>

@@ -101,7 +101,7 @@ namespace Hecton8.Caves
         public float density = 0.5f;
 
         [Tooltip("Glow color of fungi (spectral cue for depth).")]
-        public Color glowColor = new Color(0.3f, 1f, 0.7f); // cyan-green
+        public Color glowColor = new Color(0.22f, 0.72f, 0.56f); // dirty cyan-green
 
         [Tooltip("Particle emission rate per second.")]
         [Range(0f, 50f)]
@@ -425,7 +425,7 @@ namespace Hecton8.Caves
                 {
                     enabled = true,
                     density = 0.4f,
-                    glowColor = new Color(0.5f, 1f, 0.8f), // cyan
+                    glowColor = new Color(0.32f, 0.76f, 0.58f), // dirty cyan mineral cue
                     emissionRate = 12f
                 },
                 wallGrowth = new WallGrowthConfig
@@ -482,7 +482,7 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Creates a deep cave dressing config (alien, exotic, intense).
+        /// Creates a deep cave dressing config (black-water, mineral, pressure-intense).
         /// </summary>
         public static CaveDressingConfig CreateDeepConfig()
         {
@@ -492,7 +492,7 @@ namespace Hecton8.Caves
                 {
                     enabled = true,
                     intensity = 0.8f,
-                    tint = new Color(0.3f, 0.6f, 0.9f), // deep blue/purple
+                    tint = new Color(0.16f, 0.3f, 0.28f), // dark oxidized mineral
                     scale = 0.3f
                 },
                 sedimentShelves = new SedimentShelfConfig
@@ -506,7 +506,7 @@ namespace Hecton8.Caves
                 {
                     enabled = true,
                     density = 0.7f,
-                    glowColor = new Color(0.2f, 0.9f, 1f), // bright cyan/phosphorescent
+                    glowColor = new Color(0.1f, 0.55f, 0.46f), // muted cyan-green depth cue
                     emissionRate = 25f,
                     lifetime = 3f
                 },
@@ -515,7 +515,7 @@ namespace Hecton8.Caves
                     enabled = true,
                     swayAmount = 0.4f,
                     pulseAmount = 0.3f,
-                    growthColor = new Color(0.2f, 1f, 0.8f)
+                    growthColor = new Color(0.14f, 0.58f, 0.42f)
                 },
                 glowingTissue = new GlowingTissueConfig
                 {
@@ -523,7 +523,7 @@ namespace Hecton8.Caves
                     maxCount = 14,
                     density = 0.7f,
                     baseColor = new Color(0.08f, 0.16f, 0.18f),
-                    glowColor = new Color(0.18f, 0.94f, 1f),
+                    glowColor = new Color(0.25f, 0.68f, 0.56f),
                     pulseAmount = 0.45f
                 },
                 serviceRemnants = new ServiceRemnantConfig
@@ -534,7 +534,7 @@ namespace Hecton8.Caves
                     minScale = 0.32f,
                     maxScale = 1.2f,
                     baseColor = new Color(0.18f, 0.22f, 0.28f),
-                    accentColor = new Color(0.12f, 0.82f, 1f),
+                    accentColor = new Color(0.95f, 0.62f, 0.22f),
                     accentEmission = 0.55f
                 },
                 bioRoots = new CaveBioRootConfig
@@ -550,7 +550,7 @@ namespace Hecton8.Caves
                     propWashStrength = 2.8f,
                     topWidth = 0.18f,
                     tipWidth = 0.05f,
-                    glowColor = new Color(0.18f, 0.98f, 0.96f, 0.92f)
+                    glowColor = new Color(0.16f, 0.62f, 0.54f, 0.82f)
                 },
                 thermalGeysers = new ThermalGeyserConfig
                 {

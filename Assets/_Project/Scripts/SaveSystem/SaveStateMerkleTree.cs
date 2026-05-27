@@ -187,7 +187,7 @@ namespace Hecton8.SaveSystem
         [FieldOffset(16)] public fixed byte Payload[112];
     }
 
-    internal struct SaveMerkleVaultBufferSet
+    internal ref struct SaveMerkleVaultBufferSet
     {
         public NativeArray<MerkleNodeDTO> CurrentTree;
         public NativeArray<MerkleNodeDTO> PreviousTree;
@@ -2726,7 +2726,7 @@ namespace Hecton8.SaveSystem
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        internal struct TelemetryWriteJob : IJob
+        internal struct SaveMerkleTelemetryWriteJob : IJob
         {
             [NoAlias]
             public NativeArray<SaveMerkleTelemetryEntry> TelemetryRing;

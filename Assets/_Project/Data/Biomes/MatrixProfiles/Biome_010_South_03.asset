@@ -27,7 +27,7 @@ MonoBehaviour:
   rareRewardHook: 'Rare pull is modest: Tungsten Chunk and Cooling Cartridge.'
   landmarkIdentity: Meander-Basins reads through bowls, pools, domes, and hotspot
     basins. Landmarks should feel bright and readable.
-  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+  safePocketIdentity: Reorientation pockets are frequent. The player should often see a clear
     reset point nearby.
   riskSummary: 'Main failure mode: localized danger pockets and hostile basins. Creature
     pressure stays high.'

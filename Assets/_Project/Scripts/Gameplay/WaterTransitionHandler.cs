@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -21,6 +22,7 @@ namespace Hecton8.Gameplay
         private HectonPlayerMovement _owner;
         private uint _ownerSignalSourceId;
         private uint _lastConsumedWaterTransitionFrame;
+        private int _lastConsumedSignalSnapshotDispatcherFrame = -1;
         private bool _hasConsumedWaterTransitionFrame;
         private float _surfaceExitGravityDelaySeconds;
         private float _surfaceExitGravityAcceleration;
@@ -49,6 +51,7 @@ namespace Hecton8.Gameplay
             _surfaceExitGravityDelayTimer = 0f;
             _surfaceExitGravitySpikeTimer = 0f;
             _lastConsumedWaterTransitionFrame = 0u;
+            _lastConsumedSignalSnapshotDispatcherFrame = -1;
             _hasConsumedWaterTransitionFrame = false;
         }
 
@@ -57,6 +60,11 @@ namespace Hecton8.Gameplay
             if (_owner == null || _ownerSignalSourceId == 0u)
                 return;
 
+            int dispatcherFrame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastConsumedSignalSnapshotDispatcherFrame == dispatcherFrame)
+                return;
+
+            _lastConsumedSignalSnapshotDispatcherFrame = dispatcherFrame;
             ReadOnlySpan<WaterTransitionSignal> signals = SignalBus<WaterTransitionSignal>.GetFrameSnapshot();
             if (signals.Length == 0)
                 return;

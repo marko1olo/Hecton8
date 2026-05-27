@@ -18,7 +18,7 @@ MonoBehaviour:
     ground finally breaks.
   nodeClusterPattern: Nodes are rare, deliberate, and often tied to one seam, mound,
     or salvage rise in otherwise empty space.
-  safePocketPattern: 'Safe pockets are weak and brief: trench shoulders, lee sides
+  safePocketPattern: 'Reorientation pockets are weak and brief: trench shoulders, lee sides
     of mounds, or the shadow of a wreck fragment.'
   routeAnchorPattern: Anchors are rare. The player should travel from one lonely
     readable object to the next.

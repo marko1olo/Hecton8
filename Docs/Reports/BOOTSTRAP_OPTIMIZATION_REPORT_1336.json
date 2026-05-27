@@ -1,0 +1,404 @@
+﻿{
+    "agent":  "1336",
+    "role":  "SHADER_WARMUP_AND_VARIANT_COLLECTION_COMPILER",
+    "date":  "2026-05-26",
+    "domain":  "Hecton8.Bootstrap/GameBootstrapper shader warmup",
+    "status":  "STATIC_GREEN_LOOP30_BUILD_BLOCKED_BY_MISSING_UNITY_CSPROJ_HOST_CPU_AND_GRAPHICSSTATE_TRACE_GAP_UNITY_PROFILER_PENDING",
+    "taskCount":  20,
+    "sourcePrompt":  "Docs/Tasks/CURRENT_BATCH.md:\u003cAGENT_PROMPT id=\"1336\"\u003e",
+    "onlineSources":  [
+                          {
+                              "url":  "https://docs.unity.cn/Manual/shader-prewarm.html",
+                              "finding":  "Unity documents shader prewarming and recommends collecting/loading GraphicsStateCollection data for modern graphics APIs when exact PSO warmup is needed."
+                          },
+                          {
+                              "url":  "https://docs.unity.cn/ScriptReference/ShaderVariantCollection.WarmUpProgressively.html",
+                              "finding":  "Progressive SVC warmup can spread work over frames but is not full modern-API PSO proof by itself."
+                          },
+                          {
+                              "url":  "https://docs.unity3d.com/ScriptReference/Experimental.Rendering.ShaderWarmup.WarmupShaderFromCollection.html",
+                              "finding":  "ShaderWarmup.WarmupShaderFromCollection requires a rendering setup, including vertex declaration, for variants in a collection."
+                          },
+                          {
+                              "url":  "https://docs.unity3d.com/ja/current/ScriptReference/Experimental.Rendering.GraphicsStateCollection.html",
+                              "finding":  "GraphicsStateCollection is a Unity 6 collection of shader variants plus associated graphics states, with WarmUpProgressively creating GPU representations for recorded shader-state permutations."
+                          }
+                      ],
+    "defectsFoundAndHandled":  [
+                                   {
+                                       "id":  "TELEMETRY_RING_BUFFERID_FALSE_READY",
+                                       "severity":  "high",
+                                       "finding":  "Ring readiness could be inferred from nonzero BufferID after a failed lock/validation attempt.",
+                                       "fix":  "Added _shaderWarmupTelemetryReady and validation through TryAcquireWriteLock/finally ReleaseWriteLock."
+                                   },
+                                   {
+                                       "id":  "MESH_ONLY_VERTEX_DECLARATION",
+                                       "severity":  "high",
+                                       "finding":  "Single P/N/T/UV0 ShaderWarmupSetup did not cover HUD/UI vertex layout states.",
+                                       "fix":  "Added mesh and HUD/UI ShaderWarmupSetup records and warmed each manifest shader through both."
+                                   },
+                                   {
+                                       "id":  "FIXED_LOW_TIER_TIMEOUT",
+                                       "severity":  "medium",
+                                       "finding":  "Fixed 5000ms timeout could false-fail low-tier cadence and optional PSO traces.",
+                                       "fix":  "Added ResolveShaderWarmupTimeoutMilliseconds with manifest/setup/PSO budgets and continuous GlobalQualityWeight padding."
+                                   },
+                                   {
+                                       "id":  "COMPILER_META_PASS_BUDGET_WASTE",
+                                       "severity":  "medium",
+                                       "finding":  "PassType.Meta consumed strict SVC compiler budget despite being lightmap/editor metadata.",
+                                       "fix":  "Removed PassType.Meta and added runtimePassBudgetOnly=true to compiler report."
+                                   },
+                                   {
+                                       "id":  "GRAPHICSSTATE_EMPTY_COLLECTION_LIFETIME_LEAK",
+                                       "severity":  "high",
+                                       "finding":  "Empty .graphicsstate load could create a GraphicsStateCollection then return false without destruction.",
+                                       "fix":  "Destroy and null empty or partially created GraphicsStateCollection objects on fail-closed load."
+                                   },
+                                   {
+                                       "id":  "FATAL_DUMP_FAIL_OPEN_WITHOUT_VAULT",
+                                       "severity":  "critical",
+                                       "finding":  "Dump route could mark queued without writing a black-box file when Vault/ring lock was unavailable.",
+                                       "fix":  "Added 64B MissingTelemetryRing fallback dump header."
+                                   },
+                                   {
+                                       "id":  "SCANNER_PULSE_SVC_GAP",
+                                       "severity":  "critical",
+                                       "finding":  "Scanner pulse shader was not in active bootstrap SVC/manifest.",
+                                       "fix":  "Added Hecton_ScannerPulseInstanced to SuitVisor_HUDPhosphor.shadervariants and scene shaderWarmupShaders."
+                                   },
+                                   {
+                                       "id":  "COMPILER_DIRECT_SHADER_PRIORITY_GAP",
+                                       "severity":  "high",
+                                       "finding":  "Direct HUD/scanner shader roots could be starved by material variants under MaxCompiledVariants.",
+                                       "fix":  "DirectShaderReferenceRoots are emitted first."
+                                   },
+                                   {
+                                       "id":  "TEST_MANIFEST_COVERAGE_SPOTCHECK_ONLY",
+                                       "severity":  "medium",
+                                       "finding":  "Tests only spot-checked GUIDs.",
+                                       "fix":  "Added full SVC shader GUID coverage test and CLI mirror."
+                                   },
+                                   {
+                                       "id":  "MODERN_API_FAIL_OPEN_WITHOUT_GRAPHICSSTATE",
+                                       "severity":  "critical",
+                                       "finding":  "DX12/Vulkan/Metal could enter simulation with zero configured .graphicsstate traces even though SVC warmup is not exact PSO proof for those APIs.",
+                                       "fix":  "Added RequiresGraphicsStateCollectionsForCurrentApi and MissingGraphicsStateCollections fail-closed telemetry before SVC traversal."
+                                   },
+                                   {
+                                       "id":  "INCOMPLETE_VERTEX_LAYOUT_WARMUP",
+                                       "severity":  "high",
+                                       "finding":  "The two warmup vertex declarations did not cover real project layouts for scanner quads, HUD quads, VFX trails with float Color, P+N cubes, and voxel meshes with TexCoord1..4.",
+                                       "fix":  "Expanded prebuilt ShaderWarmupSetup records to mesh P/N/T/UV0, P/UV0, P/N, P/N/UV0, UI Color UNorm8, float Color, and voxel P/N/Color/TexCoord1..4 layouts."
+                                   },
+                                   {
+                                       "id":  "BLACKBOX_DUMP_DIRECT_FINAL_WRITE",
+                                       "severity":  "high",
+                                       "finding":  "Shader warmup black-box dump wrote directly to Dump_1336_Bootstrapper.bin, leaving a partial final file possible if the worker failed mid-write.",
+                                       "fix":  "Worker now writes Dump_1336_Bootstrapper.bin.tmp through AsyncWriteManager and promotes with File.Replace/File.Move only after the temp write succeeds."
+                                   },
+                                   {
+                                       "id":  "UNWIRED_UBERNOIR_RADIATION_SVC",
+                                       "severity":  "critical",
+                                       "finding":  "Hecton8_UberNoir_RadiationWarmup.shadervariants existed on disk but was not referenced by 00_BOOTSTRAP, and its shader GUID was missing from shaderWarmupShaders.",
+                                       "fix":  "Added the radiation SVC GUID and Hecton8_UberNoir shader GUID to the bootstrap scene and prioritized the shader plus INSTANCING_ON/DOTS_INSTANCING_ON in the compiler."
+                                   },
+                                   {
+                                       "id":  "LOW_TIER_TIMEOUT_UNDERCOUNTED_FRAME_SLICES",
+                                       "severity":  "high",
+                                       "finding":  "Timeout calculation counted warmup attempts but undercounted wall-clock yielded frames after coverage expanded to 8 SVCs, 15 manifest shaders, and 7 layouts.",
+                                       "fix":  "Timeout now includes quality-scaled frame-slice cadence, collection-yield frames, and a 60s upper bound to prevent false low-tier boot failure."
+                                   },
+                                   {
+                                       "id":  "GRAPHICSSTATE_PATH_EDITOR_ONLY_LEAK",
+                                       "severity":  "high",
+                                       "finding":  "The .graphicsstate loader accepted generic Assets/... and ProjectSettings/... paths as normal runtime configuration. That can pass in Editor but fail in a player build where those project folders do not exist.",
+                                       "fix":  "Replaced the raw resolver with TryResolveGraphicsStateCollectionPath: .graphicsstate extension required, parent traversal rejected, Assets/StreamingAssets normalized to Application.streamingAssetsPath, and Assets/ProjectSettings paths allowed only under UNITY_EDITOR. Player absolute paths must resolve under StreamingAssets."
+                                   },
+                                   {
+                                       "id":  "NULL_SHADER_MANIFEST_FAIL_OPEN",
+                                       "severity":  "critical",
+                                       "finding":  "Warmup only checked shaderWarmupShaders.Length. If Unity import/GUID damage produced a non-empty array of null shader references, the bootstrapper could warn and still report success with zero real ShaderWarmup calls.",
+                                       "fix":  "Added CountValidShaderWarmupShaders and fail-closed MissingShaderManifest before warmup when no non-null shader references exist. Timeout and start telemetry now use the valid shader count."
+                                   },
+                                   {
+                                       "id":  "SCENE_MANIFEST_GUID_RESOLUTION_NOT_PROVEN",
+                                       "severity":  "high",
+                                       "finding":  "The edit test proved collection shader GUID membership but did not prove scene shader manifest GUIDs resolve to actual Shader assets.",
+                                       "fix":  "BootstrapScene_ShaderManifestCoversEveryConfiguredCollection now resolves every manifest shader GUID to a UnityEngine.Shader and every configured collection GUID to a UnityEngine.ShaderVariantCollection."
+                                   },
+                                   {
+                                       "id":  "PARTIAL_NULL_MANIFEST_FAIL_OPEN",
+                                       "severity":  "critical",
+                                       "finding":  "Loop 18 blocked all-null shader manifests, but a partially null shader manifest or null SVC slot could still produce warning telemetry and continue if other entries were valid.",
+                                       "fix":  "Added exact null-slot scans for shaderVariantCollections and shaderWarmupShaders. Any null configured collection now fails closed with MissingShaderCollections; any null shader slot fails closed with MissingShaderManifest before PSO/SVC warmup."
+                                   },
+                                   {
+                                       "id":  "STREAMINGASSETS_BACKSLASH_TRAVERSAL_GAP",
+                                       "severity":  "high",
+                                       "finding":  "TryResolveStreamingAssetsPath trusted caller-side slash normalization. A direct backslash relative path on Windows could bypass HasParentPathSegment if the helper were reused.",
+                                       "fix":  "TryResolveStreamingAssetsPath now normalizes backslashes itself, rejects parent segments on the normalized value, resolves a full path under Application.streamingAssetsPath, and verifies the final absolute path starts with the StreamingAssets root."
+                                   },
+                                   {
+                                       "id":  "STALE_NULL_WARNING_TELEMETRY_SCHEMA",
+                                       "severity":  "medium",
+                                       "finding":  "After null manifests became fail-closed, private NullCollection/NullShader warning flags and Bootstrap.ShaderWarmup.Warning hash remained as stale schema surface.",
+                                       "fix":  "Removed the stale null warning flags, Warning phase entry, and warning hash so null manifests cannot be reintroduced as warning-only telemetry without an explicit code diff."
+                                   },
+                                   {
+                                       "id":  "STREAMINGASSETS_PATH_CASE_PORTABILITY_GAP",
+                                       "severity":  "high",
+                                       "finding":  "StreamingAssets root checks used OrdinalIgnoreCase on every platform. Linux/macOS/Steam Deck filesystems are case-sensitive, so a case-insensitive prefix check is the wrong root proof.",
+                                       "fix":  "Added ResolvePathStringComparison: Windows Editor/Player uses OrdinalIgnoreCase; all other platforms use Ordinal."
+                                   },
+                                   {
+                                       "id":  "URL_BASED_STREAMINGASSETS_FALSE_FILE_ROUTE",
+                                       "severity":  "high",
+                                       "finding":  "Unity documents Android/WebGL StreamingAssets paths as URL/JAR-backed. The .graphicsstate loader expected filesystem paths and could fail only by incidental Path/File exceptions.",
+                                       "fix":  "Added TryGetStreamingAssetsFileSystemRoot and IsUrlLikePath. URL/JAR StreamingAssets paths now fail closed deterministically before GraphicsStateCollection load."
+                                   },
+                                   {
+                                       "id":  "CONFIGURED_GRAPHICSSTATE_URL_RELATIVE_FALLTHROUGH",
+                                       "severity":  "medium",
+                                       "finding":  "A configured URL-like .graphicsstate path could fall through as a malformed relative StreamingAssets filename before File.Exists failed.",
+                                       "fix":  "TryResolveGraphicsStateCollectionPath now rejects IsUrlLikePath(configuredPath), and TryResolveStreamingAssetsPath rejects IsUrlLikePath(normalizedRelativePath)."
+                                   },
+                                   {
+                                       "id":  "GRAPHICSSTATE_COLLECTION_DESTROY_NOT_FINALLY_GUARDED",
+                                       "severity":  "high",
+                                       "finding":  "WarmConfiguredGraphicsStateCollectionsAsync destroyed a loaded GraphicsStateCollection after awaiting warmup, but the destroy was not in a finally block.",
+                                       "fix":  "Wrapped WarmLoadedGraphicsStateCollectionAsync await in try/finally so UnityEngine.Object.Destroy(collection) runs on failure or unexpected unwind without adding catch-based control flow."
+                                   },
+                                   {
+                                       "id":  "EDITOR_ABSOLUTE_GRAPHICSSTATE_PATH_ESCAPE",
+                                       "severity":  "high",
+                                       "finding":  "Rooted Editor .graphicsstate paths could point outside the repository/project, creating false local PSO proof that CI and player packaging do not own.",
+                                       "fix":  "Added TryGetProjectFileSystemRoot. Rooted Editor paths and generic Assets/ProjectSettings paths now require the resolved full path to remain under the project root."
+                                   },
+                                   {
+                                       "id":  "GRAPHICSSTATE_CONSTRUCTOR_IO_RACE_ESCAPE",
+                                       "severity":  "high",
+                                       "finding":  "A .graphicsstate file could be deleted, denied, or become unsupported between File.Exists and GraphicsStateCollection construction, allowing IO/access exceptions to escape the fail-closed loader.",
+                                       "fix":  "TryLoadGraphicsStateCollection now catches IOException, UnauthorizedAccessException, and NotSupportedException, destroys any partial object, nulls the out parameter, and returns false."
+                                   },
+                                   {
+                                       "id":  "BOOTSTRAP_EVENTS_PERSISTENT_NATIVEQUEUE_ALIAS",
+                                       "severity":  "critical",
+                                       "finding":  "Roslyn audit over Assets/_Project/Scripts/Bootstrap found BootstrapEvents._pendingEvents and _nextFrameEvents as static NativeQueue\u003cBootstrapEventPayload\u003e fields in a long-lived coordinator.",
+                                       "fix":  "BootstrapEventPayload now implements ISignal. BootstrapEvents publishes through SignalBus\u003cBootstrapEventPayload\u003e.TryPushTracked and drains GetFrameSnapshot; the static NativeQueue fields and sentinel registration/disposal were removed."
+                                   },
+                                   {
+                                       "id":  "BOOTSTRAP_EVENTS_LISTENER_CATCH_IN_HOT_FLUSH",
+                                       "severity":  "high",
+                                       "finding":  "BootstrapEvents.FlushPending still isolated every listener with catch (Exception) and H8Debug.LogException after the NativeQueue purge.",
+                                       "fix":  "Removed DispatchToListener, broad catch, exception counters, and exception logging. FlushPending now dispatches directly from the bounded SignalBus snapshot loop."
+                                   },
+                                   {
+                                       "id":  "GAMEBOOTSTRAPPER_EVENT_SOURCE_LEGACY_RING",
+                                       "severity":  "high",
+                                       "finding":  "GameBootstrapper still owned a private managed BootstrapEventQueue with GameBootstrapperEventPayload[] _items for ready/failure publication.",
+                                       "fix":  "GameBootstrapperEventPayload now implements ISignal. Ready/failure publication uses SignalBus\u003cGameBootstrapperEventPayload\u003e.TryPushTracked and FlushPendingEvents drains GetFrameSnapshot while preserving IGameBootstrapperEventListener."
+                                   },
+                                   {
+                                       "id":  "GAMEBOOTSTRAPPER_LISTENER_REENTRANCY_MUTATION",
+                                       "severity":  "high",
+                                       "finding":  "GameBootstrapper.Register/Unregister could mutate the public listener facade while FlushPendingEvents was dispatching OnGameBootstrapperEvent callbacks.",
+                                       "fix":  "Register/Unregister now defer mutations into fixed ListenerSlot buffers while dispatch is active, and FlushPendingEvents applies them in finally after each payload."
+                                   },
+                                   {
+                                       "id":  "BACKGROUND_DOMAIN_HANDSHAKE_MANAGED_EXCEPTION_STATE",
+                                       "severity":  "medium",
+                                       "finding":  "RunBackgroundDomainHandshakeAsync used broad catch (Exception), stored a managed _backgroundDomainHandshakeError string, and JoinBackgroundDomainHandshakeAsync concatenated it into a development log while also using exception-driven cancellation.",
+                                       "fix":  "Replaced managed error string with numeric _backgroundDomainHandshakeFailureCode, moved directory preparation into TryPrepareBackgroundDomainHandshake typed failure-code helper, and changed JoinBackgroundDomainHandshakeAsync to ct.IsCancellationRequested plus non-tokenized NextFrameAsync."
+                                   },
+                                   {
+                                       "id":  "EMPTY_CONFIGURED_MASTER_SVC_FAIL_OPEN",
+                                       "severity":  "critical",
+                                       "finding":  "00_BOOTSTRAP configured Hecton8MasterVariants, but the asset contained m_Shaders: [] and GameBootstrapper skipped empty configured collections instead of failing the warmup contract.",
+                                       "fix":  "Hecton8MasterVariants now contains the 15 first-20-minute manifest shaders and 18 variants; GameBootstrapper rejects any configured ShaderVariantCollection with variantCount \u003c= 0 through InvalidCollectionSet before simulation can start."
+                                   },
+                                   {
+                                       "id":  "MULTI_COLLECTION_CROSS_PRODUCT_WARMUP_WASTE",
+                                       "severity":  "high",
+                                       "finding":  "Runtime warmup iterates collectionCount * shaderWarmupShaders * ShaderWarmupSetup. Keeping eight scene SVCs forced repeated no-op shader/setup attempts and inflated low-tier boot cadence.",
+                                       "fix":  "00_BOOTSTRAP now wires one non-empty master SVC; per-feature SVC files remain as source artifacts, but runtime warmup uses one authoritative collection and still validates every shader GUID in the manifest."
+                                   },
+                                   {
+                                       "id":  "DIRECT_SHADER_MULTI_KEYWORD_VARIANT_GAP",
+                                       "severity":  "high",
+                                       "finding":  "DirectShaderKeywordEntry only represented one keyword, so authored shaders with both multi_compile_instancing and DOTS_INSTANCING_ON could miss the combined DOTS+instancing permutation.",
+                                       "fix":  "Editor compiler DirectShaderKeywordEntry now stores sorted params string[] Keywords and emits DOTS_INSTANCING_ON + INSTANCING_ON for Hecton8_UberNoir. The master SVC and radiation SVC include the combined keyword line."
+                                   },
+                                   {
+                                       "id":  "PRESENTATION_GATE_EXCEPTION_DRIVEN_CANCELLATION",
+                                       "severity":  "medium",
+                                       "finding":  "InitializePresentationBootstrapAsync still used tokenized AwaitableDebtMonitor.NextFrameAsync calls under catch (OperationCanceledException) around the shader warmup gate.",
+                                       "fix":  "Presentation bootstrap now uses ct.IsCancellationRequested checks and non-tokenized NextFrameAsync in the 1336 gate, returning false instead of using cancellation exceptions as normal control flow."
+                                   },
+                                   {
+                                       "id":  "EDITOR_COMPILER_SCENE_MANIFEST_DRIFT",
+                                       "severity":  "high",
+                                       "finding":  "The editor compiler could regenerate Hecton8MasterVariants without consuming 00_BOOTSTRAP.shaderWarmupShaders, letting the master SVC drift away from the runtime-owned manifest.",
+                                       "fix":  "HectonShaderVariantCollectionCompiler1336 now parses the scene shaderWarmupShaders GUID block, resolves shader paths through AssetDatabase.GUIDToAssetPath, promotes them into priorityShaderPaths, and reports sceneShaderManifestIncluded=true."
+                                   },
+                                   {
+                                       "id":  "SCENE_SHADER_MANIFEST_GUID_FILTER_LEAK",
+                                       "severity":  "medium",
+                                       "finding":  "The scene YAML interval used for shader manifest proof also contains runtimeShaderReferenceCatalog, so any all-GUID extractor could treat a ScriptableObject catalog GUID as a shader.",
+                                       "fix":  "Compiler now requires fileID: 4800000 through TryExtractShaderReferenceGuid. Tests use ExtractSceneShaderGuids and assert the RuntimeShaderReferenceCatalog GUID does not leak into shader proof."
+                                   }
+                               ],
+    "remainingProofGaps":  [
+                               {
+                                   "id":  "GRAPHICSSTATE_TRACE_ASSETS_MISSING",
+                                   "severity":  "blocking-for-modern-api-proof",
+                                   "finding":  "No *.graphicsstate/*.graphicsState files found under Assets, Packages, or ProjectSettings.",
+                                   "requiredAction":  "Record target-API traces and configure shaderGraphicsStateCollectionPaths."
+                               },
+                               {
+                                   "id":  "UNITY_IMPORT_AND_PROFILER_PENDING",
+                                   "severity":  "validation-blocker",
+                                   "finding":  "Unity import, edit tests, player boot, and profiler markers were not executed from this shell session.",
+                                   "requiredAction":  "Run BootstrapShaderWarmupEditTests and profile boot for Shader.CreateGPUProgram/PSO creation after veil lowers."
+                               },
+                               {
+                                   "id":  "SCOPED_BUILD_AFTER_LOOP_27_BLOCKED",
+                                   "severity":  "validation-blocker",
+                                   "finding":  "Scoped build route is blocked because Hecton8.Core.csproj is absent in C:\\hades\\Hecton8. CPU also sampled 100.0%, above the project build threshold. No valid Unity-generated runtime project was available for this shell session.",
+                                   "requiredAction":  "Regenerate Unity project files or run Unity import/editor tests, then compile when CPU \u003c=50% and no dotnet/csc are active."
+                               },
+                               {
+                                   "id":  "SIGNALBUS_CONTRACT_AUDIT_TOOL_RUNTIME_MISSING",
+                                   "severity":  "validation-blocker",
+                                   "finding":  "SignalBusContractAuditCli targets .NET 8, but the host has only .NET 10 runtime installed, so the tool help/run path cannot execute here.",
+                                   "requiredAction":  "Install the required .NET 8 runtime or retarget the audit tool, then run the SignalBus contract audit."
+                               }
+                           ],
+    "dto":  {
+                "name":  "BootstrapTelemetryEntry",
+                "sizeBytes":  64,
+                "ringCapacity":  300,
+                "ringBytes":  19200,
+                "bufferId":  76000,
+                "offsets":  {
+                                "TimestampTicks":  "0:long",
+                                "DurationMicroseconds":  "8:long",
+                                "ContextHash":  "16:ulong",
+                                "FrameIndex":  "24:uint",
+                                "EventHash":  "28:uint",
+                                "CollectionIndex":  "32:uint",
+                                "ShaderIndex":  "36:uint",
+                                "VariantCount":  "40:uint",
+                                "WarmedVariantCount":  "44:uint",
+                                "QualityWeight01":  "48:float",
+                                "Phase":  "52:ushort",
+                                "Flags":  "54:ushort",
+                                "ErrorCode":  "56:ushort",
+                                "Reserved":  "58:ushort",
+                                "_pad0":  "60:byte",
+                                "_pad1":  "61:byte",
+                                "_pad2":  "62:byte",
+                                "_pad3":  "63:byte"
+                            }
+            },
+    "warmup":  {
+                   "syncWarmupRemoved":  true,
+                   "legacySyncCallsFoundIn1336WarmupBlock":  0,
+                   "svcApi":  "UnityEngine.Experimental.Rendering.ShaderWarmup.WarmupShaderFromCollection",
+                   "psoApi":  "UnityEngine.Experimental.Rendering.GraphicsStateCollection.WarmUpProgressively",
+                   "graphicsStatePathContract":  ".graphicsstate only; configured URLs are rejected; StreamingAssets-relative or Assets/StreamingAssets paths for filesystem-backed player builds; generic Assets/ProjectSettings paths are editor-only; rooted Editor absolute paths must remain under the project root; parent traversal, URL/JAR StreamingAssets roots, and final paths outside StreamingAssets are rejected.",
+                   "shaderManifestNullGuard":  "Non-empty shaderWarmupShaders arrays must contain no null Shader references. Non-empty shaderVariantCollections arrays must contain no null collection references. Any null slot fails closed before simulation.",
+                   "shaderWarmupSetupCount":  7,
+                   "shaderWarmupSetups":  [
+                                              "mesh:Position/Normal/Tangent/TexCoord0",
+                                              "quad:Position/TexCoord0",
+                                              "mesh-normal:Position/Normal",
+                                              "mesh-normal-uv:Position/Normal/TexCoord0",
+                                              "hud-ui:Position/ColorUNorm8/TexCoord0",
+                                              "trail-float-color:Position/ColorFloat32/TexCoord0",
+                                              "voxel:Position/Normal/ColorUNorm8/TexCoord1/TexCoord2/TexCoord3/TexCoord4"
+                                          ],
+                   "modernApiGraphicsStateFailClosed":  "Direct3D12/Vulkan/Metal require configured .graphicsstate paths before simulation starts.",
+                   "timeoutContract":  "5s..60s clamp from collectionCount, shaderCount, graphicsStateCollectionCount, setupCount, low-tier frame slices, and continuous GlobalQualityWeight padding",
+                   "yield":  "Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync",
+                   "failClosed":  true,
+                   "blackBoxDump":  "Docs/AgentLogs/Dump_1336_Bootstrapper.bin",
+                   "measuredWarmupMilliseconds":  null,
+                   "measuredWarmupReason":  "Unity playmode/profiler route was not executed; no synthetic timing is reported.",
+                   "configuredRuntimeShaderVariantCollections":  1,
+                   "masterShaderVariantCount":  18,
+                   "emptyConfiguredCollectionFailClosed":  true,
+                   "directShaderCombinedDotsInstancingVariant":  true
+               },
+    "staticValidation":  {
+                             "diffCheck":  "scoped git diff --check passed for 1336-touched files; full repository diff-check still has unrelated CURRENT_BATCH.md trailing whitespace outside 1336 edits.",
+                             "methodForbiddenTokenHits":  {
+                                                              "InitializePresentationBootstrapAsync":  0,
+                                                              "FlushPendingEvents":  0,
+                                                              "WarmConfiguredShaderVariantCollectionsAsync":  0,
+                                                              "WarmConfiguredGraphicsStateCollectionsAsync":  0,
+                                                              "WarmLoadedGraphicsStateCollectionAsync":  0,
+                                                              "WaitForShaderWarmupJobAsync":  0,
+                                                              "RunBackgroundDomainHandshakeAsync":  0,
+                                                              "TryPrepareBackgroundDomainHandshake":  0,
+                                                              "JoinBackgroundDomainHandshakeAsync":  0
+                                                          },
+                             "nativeCollectionFieldDeclarations":  0,
+                             "roslynNativeAliasAudit":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1336_BOOTSTRAP_LOOP30.json: 9 bootstrap files, 0 parse failures, 0 native field declarations, 0 forbidden persistent candidates; Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1336_TESTS_LOOP30.json: 36 test files, 0 parse failures, 0 native field declarations; Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1336_EDITOR_LOOP30.json: 383 editor files, 0 parse failures, 1 unrelated persistent NativeArray in AssemblyGuard/CompileWallXRayWindow.cs.",
+                             "sceneSVCManifestCoverage":  "1 configured master SVC, 18 variants, 15 shaderWarmupShaders fileID 4800000 refs, 16 total GUIDs in the YAML interval, 1 non-shader neighbor GUID, 15 master shader GUIDs, 0 missing manifest shaders, combined DOTS_INSTANCING_ON INSTANCING_ON present.",
+                             "graphicsStateAssetsFound":  0,
+                             "compactionAwareRingValidation":  "TryAcquireWriteLock + finally ReleaseWriteLock + _shaderWarmupTelemetryReady",
+                             "bootstrapEventsCatchPurge":  "BootstrapEvents source scan finds no DispatchToListener, no catch (Exception, and no LogException.",
+                             "gameBootstrapperSignalBusSource":  "GameBootstrapper source scan finds SignalBus\u003cGameBootstrapperEventPayload\u003e.Configure/TryPushTracked/GetFrameSnapshot, fixed deferred listener mutation tokens, and no private BootstrapEventQueue or GameBootstrapperEventPayload[] _items.",
+                             "backgroundDomainHandshakeNoThrow":  "RunBackgroundDomainHandshakeAsync/TryPrepareBackgroundDomainHandshake/JoinBackgroundDomainHandshakeAsync scan 0 broad catch, 0 managed error string, 0 Task.Run, 0 async Task, 0 ThrowIfCancellationRequested, 0 tokenized NextFrameAsync, 0 dynamic string concat.",
+                             "editorCompilerSceneManifestMirror":  "CollectBootstrapSceneShaderManifest now uses TryExtractShaderReferenceGuid, requiring fileID: 4800000 before GUID extraction, then AssetDatabase.GUIDToAssetPath resolves shader assets into priorityShaderPaths."
+                         },
+    "compile":  {
+                    "currentSourceBuildResult":  "not_compiled_after_loop30_missing_unity_generated_runtime_csproj_and_cpu_gate",
+                    "blocker":  "Hecton8.Core.csproj is absent in C:\\hades\\Hecton8 and CPU sampled 85.5% with 0 dotnet/csc. No unrelated package/tool project was compiled as substitute proof. Unity import/editor compile remains required.",
+                    "latestScopedBuild":  {
+                                              "command":  "dotnet build Hecton8.Core.csproj --no-restore --verbosity:minimal /m:1",
+                                              "result":  "not_attempted_after_loop30_missing_project_file_and_cpu_gate",
+                                              "warnings":  0,
+                                              "errors":  1,
+                                              "errorScope":  "No Hecton8.Core.csproj exists in C:\\hades\\Hecton8; CPU gate sampled 85.5% after static scanners."
+                                          }
+                },
+    "sha256":  {
+                   "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs":  "C34F8C77B7B41E23E23AF4D696675F27B430E38B0DBF765F92BD20CCF9F03131",
+                   "Assets/_Project/Scripts/Editor/HectonShaderVariantCollectionCompiler1336.cs":  "1EFFC3E0A34541BE73D872928DA9A578EB04AE45136766D7AD56CE99414B2164",
+                   "Assets/_Project/Tests/Editor/BootstrapShaderWarmupEditTests.cs":  "8D276BC5FB76A908C5954AD62CB1CB5D2230E01220B3DA4781294C868FEC2981",
+                   "Assets/_Project/Scenes/00_BOOTSTRAP.unity":  "4991A16427F8C1C8F500EFAAF0882A91D5B13A6EEF686F8A82CC619DB25122F4",
+                   "Assets/_Project/Art/Shaders/Variants/Hecton8MasterVariants.shadervariants":  "E91B72A5C32D1B0B0D22544FBCBA21255B1F1BA9631FBD4ED17788C03982B01B",
+                   "Assets/_Project/Art/Shaders/Variants/Hecton8_UberNoir_RadiationWarmup.shadervariants":  "3BE58BA69F7C26FDEC010DF3C59F02A7AC3B63975296AEE51F941CE11149E77C",
+                   "Docs/Tasks/Status_1336.md":  "47991AE110501A8290E2BE672FFA7C5EAB2C50A4E67DF98F1542EE93072A8418",
+                   "Docs/AgentLogs/Rationale_1336.md":  "0121FAE2D0F1D18C039049D268BDBE36415018D962A6E3EBF576C1747C926C85",
+                   "Docs/AgentLogs/LOG_1336.md":  "45ED592DF49B509718DB8E029FC8E98DF65E3C4B66497221941DEF67E25851A2",
+                   "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1336_BOOTSTRAP_LOOP30.json":  "7087FF67CED4B224E8CFDA27CAE10A602F0250C2BF068E47EE4EAF7E0E2A4F2F",
+                   "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1336_TESTS_LOOP30.json":  "1565EB55E2AC81CE406B3DAC166CC1DCCE9A2B78C4725F073E869F3A4F1326CD",
+                   "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1336_EDITOR_LOOP30.json":  "7DFE2B89DD6E61F008C06723617B25B5966920EEC64E30526E9608FB646C51ED"
+               },
+    "sourceCombinedSha256":  "BB6A72FC977C597E1D0A58FD0EAF064854DECF4D950D0ECD9D31627F2A08F156",
+    "eventPayloadDtos":  [
+                             {
+                                 "name":  "BootstrapEventPayload",
+                                 "sizeBytes":  16,
+                                 "offsets":  {
+                                                 "Frame":  "0:int",
+                                                 "EventType":  "4:ushort",
+                                                 "StatusBits":  "6:ushort",
+                                                 "_pad0":  "8:ulong"
+                                             }
+                             },
+                             {
+                                 "name":  "GameBootstrapperEventPayload",
+                                 "sizeBytes":  16,
+                                 "offsets":  {
+                                                 "ErrorHash":  "0:uint",
+                                                 "EventType":  "4:ushort",
+                                                 "Reserved":  "6:ushort",
+                                                 "_pad0":  "8:ulong"
+                                             }
+                             }
+                         ]
+}

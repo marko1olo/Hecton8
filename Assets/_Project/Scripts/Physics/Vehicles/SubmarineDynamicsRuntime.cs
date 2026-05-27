@@ -244,7 +244,7 @@ namespace Hecton8.Physics.Vehicles
             float quality = ResolveMathLodQualityWeight();
             _hydrodynamicsScheduleTicks = Stopwatch.GetTimestamp();
             if (enableMockSignals)
-                TryPushMockFloodSignal(frame, quality);
+                TryPushMockFloodSignal(frame);
 
             CalculateAddedMassTensorJob addedMassJob = new CalculateAddedMassTensorJob
             {
@@ -295,11 +295,9 @@ namespace Hecton8.Physics.Vehicles
             _integratorPending = true;
         }
 
-        private void TryPushMockFloodSignal(uint frame, float globalQualityWeight)
+        private void TryPushMockFloodSignal(uint frame)
         {
-            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            float curved = quality * quality * (3f - (2f * quality));
-            float probability = math.lerp(1f / 96f, 1f / 16f, curved);
+            const float probability = 1f / 16f;
             uint hash = MixFrameHash(0x5EED110Bu, frame);
             if (Hash01(hash) > probability)
                 return;

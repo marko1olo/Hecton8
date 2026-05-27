@@ -122,6 +122,24 @@ namespace Hecton8.Data
     }
 
     /// <summary>
+    /// Cold boot result for static data blob hydration.
+    /// </summary>
+    public readonly struct H8DataBlobLoadResult
+    {
+        public H8DataBlobLoadResult(bool loaded, H8DataBlobLoadStatus status)
+        {
+            Loaded = loaded;
+            Status = status;
+        }
+
+        /// <summary>True when a valid blob is resident after the load attempt.</summary>
+        public bool Loaded { get; }
+
+        /// <summary>Failure or success code emitted by the loader.</summary>
+        public H8DataBlobLoadStatus Status { get; }
+    }
+
+    /// <summary>
     /// Mandatory 64-byte BIOS header. Checksum covers all bytes after this header.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.HeaderSizeBytes)]

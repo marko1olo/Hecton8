@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ResourcePlan_FossilReef
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourcePlanProfile
   profileId: biome.resource_plan.fossil_reef
-  profileLabel: Fossil Reef Resource Plan
+  profileLabel: Fossil Carbonate Shelf Resource Plan
   commonResource: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}
   uncommonResource: {fileID: 11400000, guid: 91b73894e80923843a89007d3b9cc97d, type: 2}
   rareResource: {fileID: 11400000, guid: 32a9672f690416b4fb198838e2b2ff35, type: 2}
@@ -27,5 +27,5 @@ MonoBehaviour:
   earlyReasonToFarm: Organic growth, useful chemistry, and medium-risk salvage.
   lateReasonToReturn: Still worth revisiting for craft organics and niche biological
     parts.
-  extractionStyle: Mixed salvage, harvest pockets, and risky reef-node peels.
-  routeRewardLogic: Reward hides inside beautiful clusters that can also trap you.
+  extractionStyle: Mixed salvage, harvest pockets, and risky carbonate-node peels.
+  routeRewardLogic: Reward hides inside dense clusters that can also trap you.

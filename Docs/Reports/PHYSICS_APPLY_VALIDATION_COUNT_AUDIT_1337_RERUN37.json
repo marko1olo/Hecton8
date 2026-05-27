@@ -1,0 +1,52 @@
+{
+  "schema": "hecton8.physics_apply_validation_count_audit_1337.v1",
+  "agentId": "1337",
+  "rerun": 37,
+  "scope": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+  "defect": "ScheduleFrontPacketValidation used _frontCount directly for front/validation buffer copy and ValidateForcePacketsJob length.",
+  "fix": "Clamp queuedCount to MaxQueuedPackets before any NativeArray access, reset non-positive count to zero, schedule validation with validationCount, mirror _frontCount to validationCount, and publish clip warning after scoped Vault locks are released.",
+  "lockSafety": {
+    "frontPacketLockReleasedInFinally": true,
+    "validationPacketLockReleasedInFinally": true,
+    "validationMaskLockReleasedInFinally": true,
+    "warningAfterRelease": true
+  },
+  "boundsSafety": {
+    "maxQueuedPackets": 64,
+    "copyLoopUsesValidationCount": true,
+    "jobScheduleUsesValidationCount": true,
+    "frontCountMirroredToValidationCount": true
+  },
+  "staticGates": {
+    "nativeAudit": {
+      "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN37.json",
+      "scannedFiles": 6,
+      "totalNativeFieldDeclarations": 18,
+      "persistentNativeFieldsRemaining": 0,
+      "transientJobViews": 18,
+      "hash": "678f902533c4973cba48935b8ce9d55261ccc9a9333cfd4da22d287131a92c19"
+    },
+    "zeroGcHotPathAudit": {
+      "path": "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN37.json",
+      "scannedHotMethods": 21,
+      "zeroGcHotPathHits": 0,
+      "hash": "37d3eaae558afd5435b07b03d91bff82007b29bc958c42ca3b2ca2c062e54011"
+    },
+    "branchAudit": {
+      "path": "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN37.json",
+      "jobExecuteIfStatements": 4,
+      "jobExecuteNonGuardIfStatements": 0,
+      "distanceSolverDecisionIfStatements": 0,
+      "hash": "7840c12e1756e49e1fc263c62ba27ed19c18ae1ce564b579e2a1354987b43edd"
+    },
+    "directForbiddenTokenHits": 0,
+    "scopedDiffCheckClean": true
+  },
+  "build": {
+    "launched": false,
+    "reason": "CPU gate red",
+    "cpuPercent": 97,
+    "dotnetProcesses": 0,
+    "cscProcesses": 0
+  }
+}

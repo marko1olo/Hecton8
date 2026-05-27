@@ -209,6 +209,7 @@ namespace Hecton8.Visor
     public sealed class HectonVisorARStencilRendererFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
         private const float ProjectionDepthEpsilon = 0.0001f;
+        private const double MaxProjectionLocalMeters = 1000000d;
         private const float ProjectionBudgetMicroseconds = 100f;
         private const float DefaultEstimatedGpuMicroseconds = 55f;
         private const uint TelemetryFlagActive = 1u << 0;
@@ -218,7 +219,34 @@ namespace Hecton8.Visor
         private const uint TelemetryFlagMockData = 1u << 4;
         private const uint DumpMagic = 0x56534152u; // VSAR
         private const uint DumpVersion = 1u;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1309_VisorARStencil.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1335_VisorARStencil.bin";
+        private static readonly Vector3[] FallbackMaskVertices =
+        {
+            new Vector3(0f, 0f, 0f),
+            new Vector3(-1f, 0f, 0f),
+            new Vector3(-0.82f, 0.48f, 0f),
+            new Vector3(-0.28f, 0.68f, 0f),
+            new Vector3(0.28f, 0.68f, 0f),
+            new Vector3(0.82f, 0.48f, 0f),
+            new Vector3(1f, 0f, 0f),
+            new Vector3(0.82f, -0.48f, 0f),
+            new Vector3(0.28f, -0.64f, 0f),
+            new Vector3(-0.28f, -0.64f, 0f),
+            new Vector3(-0.82f, -0.48f, 0f)
+        }; // COLD ALLOC: Vector3[11] - immutable visor fallback mask vertices - owner: HectonVisorARStencilRendererFeature
+        private static readonly int[] FallbackMaskTriangles =
+        {
+            0, 1, 2,
+            0, 2, 3,
+            0, 3, 4,
+            0, 4, 5,
+            0, 5, 6,
+            0, 6, 7,
+            0, 7, 8,
+            0, 8, 9,
+            0, 9, 10,
+            0, 10, 1
+        }; // COLD ALLOC: int[30] - immutable visor fallback mask triangles - owner: HectonVisorARStencilRendererFeature
 
 #if UNITY_EDITOR
         private const string ArShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorAR.shader";
@@ -411,40 +439,70 @@ namespace Hecton8.Visor
                 GraphicsBuffer digitWrite = _bufferWriteIndex == 0 ? _digitBufferA : _digitBufferB;
                 GraphicsBuffer targetWrite = _bufferWriteIndex == 0 ? _targetBufferA : _targetBufferB;
 
-                NativeArray<VisorHudParamsDTO> mappedHud = hudWrite.LockBufferForWrite<VisorHudParamsDTO>(0, 1);
                 try
                 {
-                    CopyHudParamsToMappedBuffer(hudParamsSource, mappedHud);
-                }
-                finally
-                {
-                    hudWrite.UnlockBufferAfterWrite<VisorHudParamsDTO>(1);
-                }
+                    NativeArray<VisorHudParamsDTO> mappedHud = hudWrite.LockBufferForWrite<VisorHudParamsDTO>(0, 1);
+                    try
+                    {
+                        CopyHudParamsToMappedBuffer(hudParamsSource, mappedHud);
+                    }
+                    finally
+                    {
+                        hudWrite.UnlockBufferAfterWrite<VisorHudParamsDTO>(1);
+                    }
 
-                NativeArray<VisorHudDigitParamsDTO> mappedDigits = digitWrite.LockBufferForWrite<VisorHudDigitParamsDTO>(0, 1);
-                try
-                {
-                    CopyDigitParamsToMappedBuffer(digitParamsSource, mappedDigits);
-                }
-                finally
-                {
-                    digitWrite.UnlockBufferAfterWrite<VisorHudDigitParamsDTO>(1);
-                }
+                    NativeArray<VisorHudDigitParamsDTO> mappedDigits = digitWrite.LockBufferForWrite<VisorHudDigitParamsDTO>(0, 1);
+                    try
+                    {
+                        CopyDigitParamsToMappedBuffer(digitParamsSource, mappedDigits);
+                    }
+                    finally
+                    {
+                        digitWrite.UnlockBufferAfterWrite<VisorHudDigitParamsDTO>(1);
+                    }
 
-                NativeArray<VisorArTargetDTO> mappedTargets = targetWrite.LockBufferForWrite<VisorArTargetDTO>(0, VisorARStencilContracts.MaxTargets);
-                try
-                {
-                    CopyTargetsToMappedBuffer(targets, mappedTargets);
-                }
-                finally
-                {
-                    targetWrite.UnlockBufferAfterWrite<VisorArTargetDTO>(VisorARStencilContracts.MaxTargets);
-                }
+                    NativeArray<VisorArTargetDTO> mappedTargets = targetWrite.LockBufferForWrite<VisorArTargetDTO>(0, VisorARStencilContracts.MaxTargets);
+                    try
+                    {
+                        CopyTargetsToMappedBuffer(targets, mappedTargets);
+                    }
+                    finally
+                    {
+                        targetWrite.UnlockBufferAfterWrite<VisorArTargetDTO>(VisorARStencilContracts.MaxTargets);
+                    }
 
-                _activeHudBuffer = hudWrite;
-                _activeDigitBuffer = digitWrite;
-                _activeTargetBuffer = targetWrite;
-                return true;
+                    _activeHudBuffer = hudWrite;
+                    _activeDigitBuffer = digitWrite;
+                    _activeTargetBuffer = targetWrite;
+                    return true;
+                }
+                catch (ObjectDisposedException)
+                {
+                    ClearActivePayload();
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    ClearActivePayload();
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    ClearActivePayload();
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    ClearActivePayload();
+                    return false;
+                }
+            }
+
+            private void ClearActivePayload()
+            {
+                _activeHudBuffer = null;
+                _activeDigitBuffer = null;
+                _activeTargetBuffer = null;
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -681,7 +739,7 @@ namespace Hecton8.Visor
 
             Matrix4x4 maskMatrix = ResolveMaskMatrix(renderCamera, settings);
 
-            if (!BuildAndUploadFrame(renderCamera, out uint telemetryFlags, out NativeArray<VisorTelemetryEntry> telemetry, out int telemetryLength))
+            if (!BuildAndUploadFrame(renderCamera, out uint telemetryFlags))
             {
                 SetStencilPresentationActive(false);
                 return;
@@ -694,7 +752,7 @@ namespace Hecton8.Visor
             renderer.EnqueuePass(_arPass);
 
             if ((telemetryFlags & TelemetryFlagNonFiniteProjection) != 0u)
-                DumpTelemetryOnce(telemetryFlags, telemetry, telemetryLength);
+                DumpTelemetryOnce(telemetryFlags);
         }
 
         protected override void Dispose(bool disposing)
@@ -795,110 +853,155 @@ namespace Hecton8.Visor
 
         private bool BuildAndUploadFrame(
             Camera renderCamera,
-            out uint telemetryFlags,
-            out NativeArray<VisorTelemetryEntry> telemetry,
-            out int telemetryLength)
+            out uint telemetryFlags)
         {
             telemetryFlags = TelemetryFlagActive;
-            telemetry = default;
-            telemetryLength = 0;
-
             IDataVault vault = _dataVault;
-            if (vault == null ||
-                vault.IsCompactionFenceActive ||
-                !vault.TryResolveHandle(in _hudParamsHandle, out NativeArray<VisorHudParamsDTO> hudParamsBuffer) ||
-                !vault.TryResolveHandle(in _digitParamsHandle, out NativeArray<VisorHudDigitParamsDTO> digitParamsBuffer) ||
-                !vault.TryResolveHandle(in _targetSourceHandle, out NativeArray<ARWaypointOverlay.StencilTargetSourceDTO> targetSourceBuffer) ||
-                !vault.TryResolveHandle(in _projectedTargetHandle, out NativeArray<VisorArTargetDTO> projectedTargetBuffer) ||
-                !vault.TryResolveHandle(in _telemetryHandle, out telemetry))
+            if (vault == null || vault.IsCompactionFenceActive)
             {
                 return false;
             }
 
-            telemetryLength = telemetry.IsCreated ? math.min(telemetry.Length, VisorARStencilContracts.TelemetryFrameCount) : 0;
-            if (hudParamsBuffer.Length <= 0 || digitParamsBuffer.Length <= 0 || projectedTargetBuffer.Length < VisorARStencilContracts.MaxTargets)
-                return false;
+            NativeArray<VisorHudParamsDTO> hudParamsBuffer = default;
+            NativeArray<ARWaypointOverlay.StencilTargetSourceDTO> targetSourceBuffer = default;
+            NativeArray<VisorArTargetDTO> projectedTargetBuffer = default;
+            NativeArray<VisorHudDigitParamsDTO> digitParamsBuffer = default;
+            NativeArray<VisorTelemetryEntry> telemetry = default;
+            bool hudLocked = false;
+            bool targetSourceLocked = false;
+            bool projectedLocked = false;
+            bool digitLocked = false;
+            bool telemetryLocked = false;
 
-            int sourceCount = ARWaypointOverlay.CopyStencilTargetSources(targetSourceBuffer, VisorARStencilContracts.MaxTargets);
-            float quality = ResolveGlobalQualityWeight01();
-            float oxygen01 = ReadUIValue(UIValueSlotId.Oxygen01, 1f);
-            float co201 = math.saturate(ReadUIValue(UIValueSlotId.RoomCarbonDioxidePartialKPa, 0f) * 0.1f);
-            float toxicity01 = math.saturate(ReadUIValue(UIValueSlotId.RoomNarcosis01, 0f));
-            float temperature01 = 1f - math.saturate(ReadUIValue(UIValueSlotId.FrostIntensity01, 0f));
-            float depthMeters = math.max(0f, ReadUIValue(UIValueSlotId.DepthMeters, 0f));
-            float pressureAtm = math.max(1f, ReadUIValue(UIValueSlotId.PressureAtm, 1f));
-            float health01 = math.saturate(ReadUIValue(UIValueSlotId.Health01, 1f));
-            float stress01 = ResolvePlayerStress01(oxygen01, co201);
-            float fog01 = math.saturate(settings.fogEdgeStrength * (0.35f + stress01 * 0.65f));
-            float timeSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
-
-            VisorHudParamsDTO hudParams = new VisorHudParamsDTO
+            try
             {
-                VitalStats = new float4(oxygen01, co201, toxicity01, temperature01),
-                VisorGlitchParams = new float4(stress01, fog01, math.saturate(settings.visorCurvature), health01),
-                QualityAndTime = new float4(quality, timeSeconds, sourceCount, math.max(0.01f, settings.fontAtlasScale))
-            };
+                if (!vault.TryAcquireWriteLock(in _hudParamsHandle, SystemID.UI, out hudParamsBuffer))
+                    return false;
+                hudLocked = true;
 
-            if (settings.enableMockHudData)
-            {
-                hudParams = GenerateMockHudData(timeSeconds, in hudParams);
-                telemetryFlags |= TelemetryFlagMockData;
-            }
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _targetSourceHandle, SystemID.UI, out targetSourceBuffer))
+                    return false;
+                targetSourceLocked = true;
 
-            bool hasCameraAup = TryResolveCameraAup(out AbsoluteUniversePosition cameraAup);
-            if (!hasCameraAup)
-            {
-                telemetryFlags |= TelemetryFlagNoPlayerAup;
-                sourceCount = 0;
-            }
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _projectedTargetHandle, SystemID.UI, out projectedTargetBuffer))
+                    return false;
+                projectedLocked = true;
 
-            long projectionStart = System.Diagnostics.Stopwatch.GetTimestamp();
-            int projectedCount = hasCameraAup
-                ? ProjectArTargets(
-                    targetSourceBuffer,
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _digitParamsHandle, SystemID.UI, out digitParamsBuffer))
+                    return false;
+                digitLocked = true;
+
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _telemetryHandle, SystemID.UI, out telemetry))
+                    return false;
+                telemetryLocked = true;
+
+                int telemetryLength = telemetry.IsCreated ? math.min(telemetry.Length, VisorARStencilContracts.TelemetryFrameCount) : 0;
+                if (hudParamsBuffer.Length <= 0 ||
+                    digitParamsBuffer.Length <= 0 ||
+                    targetSourceBuffer.Length < VisorARStencilContracts.MaxTargets ||
+                    projectedTargetBuffer.Length < VisorARStencilContracts.MaxTargets)
+                {
+                    return false;
+                }
+
+                int sourceCount = ARWaypointOverlay.CopyStencilTargetSources(targetSourceBuffer, VisorARStencilContracts.MaxTargets);
+                float quality = ResolveGlobalQualityWeight01();
+                float oxygen01 = ReadUIValue(UIValueSlotId.Oxygen01, 1f);
+                float co201 = math.saturate(ReadUIValue(UIValueSlotId.RoomCarbonDioxidePartialKPa, 0f) * 0.1f);
+                float toxicity01 = math.saturate(ReadUIValue(UIValueSlotId.RoomNarcosis01, 0f));
+                float temperature01 = 1f - math.saturate(ReadUIValue(UIValueSlotId.FrostIntensity01, 0f));
+                float depthMeters = math.max(0f, ReadUIValue(UIValueSlotId.DepthMeters, 0f));
+                float pressureAtm = math.max(1f, ReadUIValue(UIValueSlotId.PressureAtm, 1f));
+                float health01 = math.saturate(ReadUIValue(UIValueSlotId.Health01, 1f));
+                float stress01 = ResolvePlayerStress01(oxygen01, co201);
+                float fog01 = math.saturate(settings.fogEdgeStrength * (0.35f + stress01 * 0.65f));
+                float timeSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+
+                VisorHudParamsDTO hudParams = new VisorHudParamsDTO
+                {
+                    VitalStats = new float4(oxygen01, co201, toxicity01, temperature01),
+                    VisorGlitchParams = new float4(stress01, fog01, math.saturate(settings.visorCurvature), health01),
+                    QualityAndTime = new float4(quality, timeSeconds, sourceCount, math.max(0.01f, settings.fontAtlasScale))
+                };
+
+                if (settings.enableMockHudData)
+                {
+                    hudParams = GenerateMockHudData(timeSeconds, in hudParams);
+                    telemetryFlags |= TelemetryFlagMockData;
+                }
+
+                bool hasCameraAup = TryResolveCameraAup(out AbsoluteUniversePosition cameraAup);
+                if (!hasCameraAup)
+                {
+                    telemetryFlags |= TelemetryFlagNoPlayerAup;
+                    sourceCount = 0;
+                }
+
+                long projectionStart = System.Diagnostics.Stopwatch.GetTimestamp();
+                int projectedCount = hasCameraAup
+                    ? ProjectArTargets(
+                        targetSourceBuffer,
+                        projectedTargetBuffer,
+                        sourceCount,
+                        cameraAup.ToAbsoluteDouble3(),
+                        ToFloat3(renderCamera.transform.right),
+                        ToFloat3(renderCamera.transform.up),
+                        ToFloat3(renderCamera.transform.forward),
+                        global::Hecton8.Core.MathLodApproximation.ApproxTanClamped(math.radians(math.max(1f, renderCamera.fieldOfView)) * 0.5f, 4096f),
+                        math.max(0.01f, renderCamera.aspect),
+                        math.max(ProjectionDepthEpsilon, renderCamera.nearClipPlane),
+                        math.max(renderCamera.farClipPlane, renderCamera.nearClipPlane + 1f),
+                        quality,
+                        ref telemetryFlags)
+                    : ClearProjectedTargets(projectedTargetBuffer);
+                long projectionTicks = System.Diagnostics.Stopwatch.GetTimestamp() - projectionStart;
+                float projectionUs = (float)(projectionTicks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency);
+                if (projectionUs > ProjectionBudgetMicroseconds)
+                    telemetryFlags |= TelemetryFlagProjectionOverBudget;
+
+                if (projectedCount > 0)
+                    hudParams.TargetCoordinates = projectedTargetBuffer[0].ScreenAndFlags;
+                hudParams.QualityAndTime.z = projectedCount;
+
+                VisorHudDigitParamsDTO digitParams = BuildDigitParams(
+                    hudParams.VitalStats.x,
+                    depthMeters,
+                    pressureAtm,
+                    hudParams.VisorGlitchParams.x);
+
+                hudParamsBuffer[0] = hudParams;
+                digitParamsBuffer[0] = digitParams;
+                if (!_arPass.UpdateGpuPayload(hudParamsBuffer, digitParamsBuffer, projectedTargetBuffer))
+                    return false;
+
+                WriteTelemetryFrame(
+                    renderCamera,
+                    telemetry,
+                    telemetryLength,
+                    in hudParams,
                     projectedTargetBuffer,
-                    sourceCount,
-                    cameraAup.ToAbsoluteDouble3(),
-                    ToFloat3(renderCamera.transform.right),
-                    ToFloat3(renderCamera.transform.up),
-                    ToFloat3(renderCamera.transform.forward),
-                    global::Hecton8.Core.MathLodApproximation.ApproxTanClamped(math.radians(math.max(1f, renderCamera.fieldOfView)) * 0.5f, 4096f),
-                    math.max(0.01f, renderCamera.aspect),
-                    math.max(ProjectionDepthEpsilon, renderCamera.nearClipPlane),
-                    math.max(renderCamera.farClipPlane, renderCamera.nearClipPlane + 1f),
-                    quality,
-                    ref telemetryFlags)
-                : ClearProjectedTargets(projectedTargetBuffer);
-            long projectionTicks = System.Diagnostics.Stopwatch.GetTimestamp() - projectionStart;
-            float projectionUs = (float)(projectionTicks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency);
-            if (projectionUs > ProjectionBudgetMicroseconds)
-                telemetryFlags |= TelemetryFlagProjectionOverBudget;
-
-            if (projectedCount > 0)
-                hudParams.TargetCoordinates = projectedTargetBuffer[0].ScreenAndFlags;
-            hudParams.QualityAndTime.z = projectedCount;
-
-            VisorHudDigitParamsDTO digitParams = BuildDigitParams(
-                hudParams.VitalStats.x,
-                depthMeters,
-                pressureAtm,
-                hudParams.VisorGlitchParams.x);
-
-            hudParamsBuffer[0] = hudParams;
-            digitParamsBuffer[0] = digitParams;
-            if (!_arPass.UpdateGpuPayload(hudParamsBuffer, digitParamsBuffer, projectedTargetBuffer))
-                return false;
-
-            WriteTelemetryFrame(
-                renderCamera,
-                telemetry,
-                telemetryLength,
-                in hudParams,
-                projectedTargetBuffer,
-                projectedCount,
-                projectionUs,
-                telemetryFlags);
-            return true;
+                    projectedCount,
+                    projectionUs,
+                    telemetryFlags);
+                return true;
+            }
+            finally
+            {
+                if (telemetryLocked)
+                    vault.ReleaseWriteLock(in _telemetryHandle, SystemID.UI);
+                if (digitLocked)
+                    vault.ReleaseWriteLock(in _digitParamsHandle, SystemID.UI);
+                if (projectedLocked)
+                    vault.ReleaseWriteLock(in _projectedTargetHandle, SystemID.UI);
+                if (targetSourceLocked)
+                    vault.ReleaseWriteLock(in _targetSourceHandle, SystemID.UI);
+                if (hudLocked)
+                    vault.ReleaseWriteLock(in _hudParamsHandle, SystemID.UI);
+            }
         }
 
         private bool TryEnsureVaultBuffers()
@@ -944,15 +1047,11 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR
         private void LoadCsvProfilesCold()
         {
-#if UNITY_EDITOR
-            if (settings == null || !settings.loadCsvProfiles || _dataVault == null || _dataVault.IsCompactionFenceActive)
+            IDataVault vault = _dataVault;
+            if (settings == null || !settings.loadCsvProfiles || vault == null || vault.IsCompactionFenceActive)
                 return;
 
-            if (!TryEnsureVaultBuffers() ||
-                !_dataVault.TryResolveHandle(in _profileHandle, out NativeArray<VisorHudProfileDTO> profiles) ||
-                !_dataVault.TryResolveHandle(in _csvScratchHandle, out NativeArray<byte> scratch) ||
-                !profiles.IsCreated ||
-                !scratch.IsCreated)
+            if (!TryEnsureVaultBuffers())
             {
                 return;
             }
@@ -963,30 +1062,111 @@ namespace Hecton8.Visor
 
             try
             {
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                Span<byte> csvBytes = stackalloc byte[VisorARStencilContracts.CsvScratchBytes];
+                int read = ReadCsvFileIntoSpan(path, csvBytes);
+                if (read <= 0)
+                    return;
+
+                Span<VisorHudProfileDTO> parsedProfiles = stackalloc VisorHudProfileDTO[VisorARStencilContracts.ProfileCapacity];
+                int parsed = ParseProfilesCsv(csvBytes.Slice(0, read), parsedProfiles);
+
+                NativeArray<byte> scratch = default;
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _csvScratchHandle, SystemID.UI, out scratch))
                 {
-                    int length = (int)math.min(stream.Length, scratch.Length);
-                    int read;
-                    unsafe
+                    return;
+                }
+
+                try
+                {
+                    if (!scratch.IsCreated)
                     {
-                        byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                        read = stream.Read(MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(scratchPtr), length));
+                        return;
                     }
 
-                    ParseProfilesCsv(scratch, read, profiles);
+                    CopyBytesToNativeArray(csvBytes.Slice(0, read), scratch);
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _csvScratchHandle, SystemID.UI);
+                }
+
+                NativeArray<VisorHudProfileDTO> profiles = default;
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _profileHandle, SystemID.UI, out profiles))
+                {
+                    return;
+                }
+
+                try
+                {
+                    if (!profiles.IsCreated)
+                    {
+                        return;
+                    }
+
+                    CopyProfilesToNativeArray(parsedProfiles, parsed, profiles);
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _profileHandle, SystemID.UI);
                 }
             }
-            catch (Exception)
+            catch (IOException)
             {
                 // Cold editor/dev configuration path. Runtime rendering must not depend on CSV success.
             }
-#endif
+            catch (UnauthorizedAccessException)
+            {
+                // Cold editor/dev configuration path. Runtime rendering must not depend on CSV success.
+            }
+            catch (ArgumentException)
+            {
+                // Cold editor/dev configuration path. Runtime rendering must not depend on CSV success.
+            }
+            catch (NotSupportedException)
+            {
+                // Cold editor/dev configuration path. Runtime rendering must not depend on CSV success.
+            }
+            catch (ObjectDisposedException)
+            {
+                // Cold editor/dev configuration path. Runtime rendering must not depend on CSV success.
+            }
         }
 
-        private static int ParseProfilesCsv(NativeArray<byte> bytes, int length, NativeArray<VisorHudProfileDTO> profiles)
+        private static int ReadCsvFileIntoSpan(string path, Span<byte> destination)
+        {
+            using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            int length = (int)math.min(stream.Length, destination.Length);
+            return length > 0 ? stream.Read(destination.Slice(0, length)) : 0;
+        }
+
+        private static void CopyBytesToNativeArray(ReadOnlySpan<byte> source, NativeArray<byte> destination)
+        {
+            int count = math.min(source.Length, destination.IsCreated ? destination.Length : 0);
+            for (int i = 0; i < count; i++)
+                destination[i] = source[i];
+            for (int i = count; i < destination.Length; i++)
+                destination[i] = 0;
+        }
+
+        private static void CopyProfilesToNativeArray(
+            ReadOnlySpan<VisorHudProfileDTO> source,
+            int count,
+            NativeArray<VisorHudProfileDTO> destination)
+        {
+            int safeCount = math.min(math.max(0, count), math.min(source.Length, destination.IsCreated ? destination.Length : 0));
+            for (int i = 0; i < safeCount; i++)
+                destination[i] = source[i];
+            for (int i = safeCount; i < destination.Length; i++)
+                destination[i] = default;
+        }
+
+        private static int ParseProfilesCsv(ReadOnlySpan<byte> bytes, Span<VisorHudProfileDTO> profiles)
         {
             int count = 0;
             int cursor = 0;
+            int length = bytes.Length;
             SkipLine(bytes, length, ref cursor);
             while (cursor < length && count < profiles.Length)
             {
@@ -1016,7 +1196,7 @@ namespace Hecton8.Visor
         }
 #endif
 
-        private static uint ParseHash(NativeArray<byte> bytes, int length, ref int cursor)
+        private static uint ParseHash(ReadOnlySpan<byte> bytes, int length, ref int cursor)
         {
             uint hash = 2166136261u;
             while (cursor < length)
@@ -1030,7 +1210,7 @@ namespace Hecton8.Visor
             return hash;
         }
 
-        private static float ParseFloat(NativeArray<byte> bytes, int length, ref int cursor, float fallback)
+        private static float ParseFloat(ReadOnlySpan<byte> bytes, int length, ref int cursor, float fallback)
         {
             while (cursor < length && (bytes[cursor] == (byte)' ' || bytes[cursor] == (byte)'\t'))
                 cursor++;
@@ -1078,7 +1258,7 @@ namespace Hecton8.Visor
             return hasDigit ? sign * value : fallback;
         }
 
-        private static void SkipLine(NativeArray<byte> bytes, int length, ref int cursor)
+        private static void SkipLine(ReadOnlySpan<byte> bytes, int length, ref int cursor)
         {
             while (cursor < length)
             {
@@ -1128,27 +1308,22 @@ namespace Hecton8.Visor
             };
         }
 
-        private void DumpTelemetryOnce(uint reasonFlags, NativeArray<VisorTelemetryEntry> telemetry, int telemetryLength)
+        private unsafe void DumpTelemetryOnce(uint reasonFlags, int telemetryLength, int cursor, uint frameIndex, uint descriptorGeneration)
         {
-            if (_telemetryDumped || !telemetry.IsCreated || telemetryLength <= 0)
+            if (_telemetryDumped || telemetryLength <= 0)
                 return;
 
             _telemetryDumped = true;
-            string path = Path.Combine(Application.dataPath, "..", DumpRelativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
             try
             {
+                string path = Path.Combine(Application.dataPath, "..", DumpRelativePath);
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    int count = math.min(telemetryLength, telemetry.Length);
-                    int frame = SystemDispatcher.CurrentFrameIndex;
-                    uint frameIndex = frame >= 0 ? (uint)frame : 0u;
-                    int cursor = count > 0 ? frame % count : 0;
-                    if (cursor < 0)
-                        cursor += count;
+                    int count = math.min(telemetryLength, VisorARStencilContracts.TelemetryFrameCount);
 
                     Span<byte> header = stackalloc byte[32];
                     WriteUInt32LittleEndian(header, 0, DumpMagic);
@@ -1158,28 +1333,117 @@ namespace Hecton8.Visor
                     WriteUInt32LittleEndian(header, 16, (uint)count);
                     WriteUInt32LittleEndian(header, 20, (uint)cursor);
                     WriteUInt32LittleEndian(header, 24, frameIndex);
-                    WriteUInt32LittleEndian(header, 28, _telemetryDescriptorGeneration);
+                    WriteUInt32LittleEndian(header, 28, descriptorGeneration);
                     stream.Write(header);
 
-                    unsafe
+                    int stride = VisorARStencilContracts.TelemetryEntryStrideBytes;
+                    int start = count == VisorARStencilContracts.TelemetryFrameCount ? (cursor + 1) % count : 0;
+                    byte* rowBytes = stackalloc byte[VisorARStencilContracts.TelemetryEntryStrideBytes];
+                    for (int i = 0; i < count; i++)
                     {
-                        byte* telemetryPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                        int stride = VisorARStencilContracts.TelemetryEntryStrideBytes;
-                        int start = count == VisorARStencilContracts.TelemetryFrameCount ? (cursor + 1) % count : 0;
-                        for (int i = 0; i < count; i++)
-                        {
-                            int row = (start + i) % count;
-                            stream.Write(MemoryMarshal.CreateReadOnlySpan(
-                                ref UnsafeUtility.AsRef<byte>(telemetryPtr + (row * stride)),
-                                stride));
-                        }
+                        int row = (start + i) % count;
+                        if (!TryCopyTelemetryDumpRow(row, rowBytes, stride))
+                            return;
+
+                        stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(rowBytes), stride));
                     }
                 }
             }
-            catch (Exception)
+            catch (IOException)
             {
                 _telemetryDumped = true;
             }
+            catch (UnauthorizedAccessException)
+            {
+                _telemetryDumped = true;
+            }
+            catch (ArgumentException)
+            {
+                _telemetryDumped = true;
+            }
+            catch (NotSupportedException)
+            {
+                _telemetryDumped = true;
+            }
+            catch (ObjectDisposedException)
+            {
+                _telemetryDumped = true;
+            }
+        }
+
+        private void DumpTelemetryOnce(uint reasonFlags)
+        {
+            if (_telemetryDumped)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !TryReadTelemetryDumpShape(vault, out int telemetryLength, out int cursor, out uint frameIndex, out uint descriptorGeneration))
+            {
+                return;
+            }
+
+            DumpTelemetryOnce(reasonFlags, telemetryLength, cursor, frameIndex, descriptorGeneration);
+        }
+
+        private bool TryReadTelemetryDumpShape(
+            IDataVault vault,
+            out int telemetryLength,
+            out int cursor,
+            out uint frameIndex,
+            out uint descriptorGeneration)
+        {
+            telemetryLength = 0;
+            cursor = 0;
+            frameIndex = 0u;
+            descriptorGeneration = 0u;
+            if (vault == null ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            if (!vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VisorTelemetryEntry>.ReadOnly telemetry) ||
+                vault.IsCompactionFenceActive ||
+                !telemetry.IsCreated)
+            {
+                return false;
+            }
+
+            telemetryLength = math.min(telemetry.Length, VisorARStencilContracts.TelemetryFrameCount);
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            frameIndex = frame >= 0 ? (uint)frame : 0u;
+            cursor = telemetryLength > 0 ? frame % telemetryLength : 0;
+            if (cursor < 0)
+                cursor += telemetryLength;
+            descriptorGeneration = _telemetryDescriptorGeneration;
+            return telemetryLength > 0;
+        }
+
+        private unsafe bool TryCopyTelemetryDumpRow(int row, byte* destination, int stride)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                destination == null ||
+                row < 0 ||
+                stride != VisorARStencilContracts.TelemetryEntryStrideBytes ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            if (!vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VisorTelemetryEntry>.ReadOnly telemetry) ||
+                vault.IsCompactionFenceActive ||
+                !telemetry.IsCreated ||
+                row >= telemetry.Length)
+            {
+                return false;
+            }
+
+            VisorTelemetryEntry entry = telemetry[row];
+            UnsafeUtility.MemCpy(destination, &entry, stride);
+            return !vault.IsCompactionFenceActive;
         }
 
         private static void WriteUInt32LittleEndian(Span<byte> bytes, int offset, uint value)
@@ -1243,6 +1507,10 @@ namespace Hecton8.Visor
                     continue;
                 }
 
+                localDouble = math.clamp(
+                    localDouble,
+                    new double3(-MaxProjectionLocalMeters),
+                    new double3(MaxProjectionLocalMeters));
                 float3 local = new float3((float)localDouble.x, (float)localDouble.y, (float)localDouble.z);
                 float viewX = math.dot(cameraRight, local);
                 float viewY = math.dot(cameraUp, local);
@@ -1359,36 +1627,8 @@ namespace Hecton8.Visor
                 name = "Hecton_VisorAR_FallbackStencilMesh"
             };
 
-            Vector3[] vertices =
-            {
-                new Vector3(0f, 0f, 0f),
-                new Vector3(-1f, 0f, 0f),
-                new Vector3(-0.82f, 0.48f, 0f),
-                new Vector3(-0.28f, 0.68f, 0f),
-                new Vector3(0.28f, 0.68f, 0f),
-                new Vector3(0.82f, 0.48f, 0f),
-                new Vector3(1f, 0f, 0f),
-                new Vector3(0.82f, -0.48f, 0f),
-                new Vector3(0.28f, -0.64f, 0f),
-                new Vector3(-0.28f, -0.64f, 0f),
-                new Vector3(-0.82f, -0.48f, 0f)
-            };
-            int[] triangles =
-            {
-                0, 1, 2,
-                0, 2, 3,
-                0, 3, 4,
-                0, 4, 5,
-                0, 5, 6,
-                0, 6, 7,
-                0, 7, 8,
-                0, 8, 9,
-                0, 9, 10,
-                0, 10, 1
-            };
-
-            mesh.vertices = vertices;
-            mesh.triangles = triangles;
+            mesh.SetVertices(FallbackMaskVertices);
+            mesh.SetTriangles(FallbackMaskTriangles, 0, false);
             mesh.bounds = new Bounds(Vector3.zero, new Vector3(2.1f, 1.5f, 0.02f));
             mesh.UploadMeshData(false);
             return mesh;

@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Jobs;
@@ -25,7 +25,7 @@ namespace Hecton8.World
             float radiusSq = clampedRadius * clampedRadius;
             bool changed = false;
 
-            Dictionary<long, TileRuntimeState>.Enumerator tileEnumerator = _tileStates.GetEnumerator();
+            FixedTileStateMap.Enumerator tileEnumerator = _tileStates.GetEnumerator();
             while (tileEnumerator.MoveNext())
             {
                 TileRuntimeState state = tileEnumerator.Current.Value;
@@ -61,55 +61,81 @@ namespace Hecton8.World
         /// </summary>
         private bool MarkChunkCorrupted(ChunkKey key)
         {
-            if (_corruptedChunkKeys.Contains(key))
+            if (IsChunkCorrupted(key))
                 return false;
 
             TrimCorruptionStateToBudget();
-            if (_corruptedChunkKeys.Count >= maxTrackedCorruptedChunks)
+            int capacity = ResolveCorruptedChunkCapacity();
+            if (_corruptedChunkCount >= capacity)
+            {
+                RecordChunkQueueCapacityExceeded(capacity, _corruptedChunkCount);
                 return false;
+            }
 
-            _corruptedChunkKeys.Add(key);
-            _corruptedChunkOrder.Add(key);
+            _corruptedChunkOrder[_corruptedChunkCount++] = key;
             return true;
         }
 
         private bool IsChunkCorrupted(ChunkKey key)
         {
-            return _corruptedChunkKeys.Contains(key);
+            for (int i = 0; i < _corruptedChunkCount; i++)
+            {
+                if (_corruptedChunkOrder[i].Equals(key))
+                    return true;
+            }
+
+            return false;
         }
 
         private void ClearCorruptionStateForTile(int tileX, int tileZ)
         {
-            for (int i = _corruptedChunkOrder.Count - 1; i >= 0; i--)
+            for (int i = _corruptedChunkCount - 1; i >= 0; i--)
             {
                 ChunkKey key = _corruptedChunkOrder[i];
                 if (key.TileX != tileX || key.TileZ != tileZ)
                     continue;
 
-                _corruptedChunkKeys.Remove(key);
-                _corruptedChunkOrder.RemoveAt(i);
+                RemoveCorruptedChunkAt(i);
             }
         }
 
         private void TrimCorruptionStateToBudget()
         {
-            if (_corruptedChunkKeys.Count < maxTrackedCorruptedChunks)
+            int capacity = ResolveCorruptedChunkCapacity();
+            if (_corruptedChunkCount < capacity)
                 return;
 
-            for (int i = 0; i < _corruptedChunkOrder.Count && _corruptedChunkKeys.Count >= maxTrackedCorruptedChunks; i++)
+            for (int i = 0; i < _corruptedChunkCount && _corruptedChunkCount >= capacity; i++)
             {
                 ChunkKey key = _corruptedChunkOrder[i];
                 if (_chunkPayloads.ContainsKey(key) ||
-                    _chunkBuildJobs.ContainsKey(key) ||
                     ContainsDesiredChunk(key))
                 {
                     continue;
                 }
 
-                _corruptedChunkKeys.Remove(key);
-                _corruptedChunkOrder.RemoveAt(i);
+                RemoveCorruptedChunkAt(i);
                 i--;
             }
+        }
+
+        private int ResolveCorruptedChunkCapacity()
+        {
+            int requested = math.max(0, maxTrackedCorruptedChunks);
+            return math.min(requested, _corruptedChunkOrder.Length);
+        }
+
+        private void RemoveCorruptedChunkAt(int index)
+        {
+            if ((uint)index >= (uint)_corruptedChunkCount)
+                return;
+
+            int moveCount = _corruptedChunkCount - index - 1;
+            if (moveCount > 0)
+                Array.Copy(_corruptedChunkOrder, index + 1, _corruptedChunkOrder, index, moveCount);
+
+            _corruptedChunkCount--;
+            _corruptedChunkOrder[_corruptedChunkCount] = default;
         }
 
         private bool InvalidateChunkForCorruption(ChunkKey key)
@@ -124,63 +150,43 @@ namespace Hecton8.World
                 changed = true;
             }
 
-            if (_chunkBuildJobs.ContainsKey(key))
-            {
-                CancelChunkBuildJob(key);
-                changed = true;
-            }
-
             return changed;
         }
 
-        private bool InvalidateChunksForNewPermanentEchoes()
+        private bool InvalidateChunksForNewPermanentEchoes(
+            NativeArray<byte> previousEchoFlags,
+            NativeArray<byte> currentEchoFlags)
         {
-            if (!_nativeMemory.EcosystemThreatEchoCurrentNative.IsCreated ||
-                !_nativeMemory.EcosystemThreatEchoNextNative.IsCreated ||
+            if (!previousEchoFlags.IsCreated ||
+                !currentEchoFlags.IsCreated ||
                 _ecosystemThreatGridResolution <= 0)
             {
                 return false;
             }
 
             bool changed = false;
-            _evictionKeys.Clear();
-            Dictionary<ChunkKey, ChunkPayload>.Enumerator payloadEnumerator = _chunkPayloads.GetEnumerator();
+            ClearEvictionScratch();
+            FixedChunkPayloadMap.Enumerator payloadEnumerator = _chunkPayloads.GetEnumerator();
             while (payloadEnumerator.MoveNext())
             {
                 ChunkPayload payload = payloadEnumerator.Current.Value;
-                if (!HasNewPermanentEchoInBounds(payload.MinX, payload.MaxX, payload.MinZ, payload.MaxZ))
+                if (!HasNewPermanentEchoInBounds(
+                        payload.MinX,
+                        payload.MaxX,
+                        payload.MinZ,
+                        payload.MaxZ,
+                        previousEchoFlags,
+                        currentEchoFlags))
                     continue;
 
-                _evictionKeys.Add(payloadEnumerator.Current.Key);
+                if (!TryAddEvictionScratch(payloadEnumerator.Current.Key))
+                    break;
             }
 
-            for (int i = 0; i < _evictionKeys.Count; i++)
+            for (int i = 0; i < _evictionKeyCount; i++)
             {
                 ChunkKey key = _evictionKeys[i];
                 changed |= InvalidateChunkForCorruption(key);
-                if (TryGetDesiredChunkPriority(key, out float priority))
-                    EnqueuePendingChunk(key, Mathf.Min(-0.5f, priority - 0.5f));
-            }
-
-            _jobScratchKeys.Clear();
-            Dictionary<ChunkKey, ChunkBuildJobState>.Enumerator jobEnumerator = _chunkBuildJobs.GetEnumerator();
-            while (jobEnumerator.MoveNext())
-            {
-                ChunkBuildJobState jobState = jobEnumerator.Current.Value;
-                if (jobState == null ||
-                    !HasNewPermanentEchoInBounds(jobState.PayloadHeader.MinX, jobState.PayloadHeader.MaxX, jobState.PayloadHeader.MinZ, jobState.PayloadHeader.MaxZ))
-                {
-                    continue;
-                }
-
-                _jobScratchKeys.Add(jobEnumerator.Current.Key);
-            }
-
-            for (int i = 0; i < _jobScratchKeys.Count; i++)
-            {
-                ChunkKey key = _jobScratchKeys[i];
-                CancelChunkBuildJob(key);
-                changed = true;
                 if (TryGetDesiredChunkPriority(key, out float priority))
                     EnqueuePendingChunk(key, Mathf.Min(-0.5f, priority - 0.5f));
             }
@@ -191,10 +197,16 @@ namespace Hecton8.World
             return changed;
         }
 
-        private bool HasNewPermanentEchoInBounds(float minX, float maxX, float minZ, float maxZ)
+        private bool HasNewPermanentEchoInBounds(
+            float minX,
+            float maxX,
+            float minZ,
+            float maxZ,
+            NativeArray<byte> previousEchoFlags,
+            NativeArray<byte> currentEchoFlags)
         {
-            if (!_nativeMemory.EcosystemThreatEchoCurrentNative.IsCreated ||
-                !_nativeMemory.EcosystemThreatEchoNextNative.IsCreated ||
+            if (!previousEchoFlags.IsCreated ||
+                !currentEchoFlags.IsCreated ||
                 _ecosystemThreatGridResolution <= 0 ||
                 threatGridCellSize <= 0f)
             {
@@ -212,8 +224,13 @@ namespace Hecton8.World
                 for (int cellX = minCellX; cellX <= maxCellX; cellX++)
                 {
                     int index = (cellZ * _ecosystemThreatGridResolution) + cellX;
-                    if (_nativeMemory.EcosystemThreatEchoCurrentNative[index] == 0 || _nativeMemory.EcosystemThreatEchoNextNative[index] != 0)
+                    if ((uint)index >= (uint)previousEchoFlags.Length ||
+                        (uint)index >= (uint)currentEchoFlags.Length ||
+                        currentEchoFlags[index] == 0 ||
+                        previousEchoFlags[index] != 0)
+                    {
                         continue;
+                    }
 
                     return true;
                 }

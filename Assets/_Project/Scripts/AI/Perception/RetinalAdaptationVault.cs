@@ -4,7 +4,7 @@ using Unity.Mathematics;
 
 namespace Hecton8.AI.Perception
 {
-    internal struct RetinalAdaptationVaultBuffers
+    internal ref struct RetinalAdaptationVaultBuffers
     {
         public NativeArray<float> Exposure;
         public NativeArray<byte> BlindnessState;

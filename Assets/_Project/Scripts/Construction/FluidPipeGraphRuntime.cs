@@ -63,6 +63,8 @@ namespace Hecton8.Construction
         private const uint SolveLockConnectionSources = 1u << 16;
         private const uint SolveLockConnectionDestinations = 1u << 17;
         private const uint SolveLockRuptureDispatch = 1u << 18;
+        private const uint SolveLockLastVisualFlow = 1u << 19;
+        private const uint SolveLockAups = 1u << 20;
 
         [Header("Graph")]
         [SerializeField, Min(16)] private int nodeCapacity = 512;
@@ -123,12 +125,14 @@ namespace Hecton8.Construction
         private void Awake()
         {
             ResolveAtmosphereSystem(force: true);
+            CacheDataVaultCold();
             EnsureNativeState();
         }
 
         private void OnEnable()
         {
             ResolveAtmosphereSystem(force: true);
+            CacheDataVaultCold();
             EnsureNativeState();
             TryRegisterHotSwapListener();
             RegisterRuntime();
@@ -244,45 +248,58 @@ namespace Hecton8.Construction
             out int nodeIndex)
         {
             EnsureNativeState();
-            if (_solveScheduled || _nodeCount >= nodeCapacity ||
-                !TryResolveBuffer(in _pipePressureHandle, nodeCapacity, out NativeArray<float> pipePressure) ||
-                !TryResolveBuffer(in _pipeContentsHandle, nodeCapacity, out NativeArray<float> pipeContents) ||
-                !TryResolveBuffer(in _pipeFlagsHandle, nodeCapacity, out NativeArray<byte> pipeFlags) ||
-                !TryResolveBuffer(in _pipeContentKindsHandle, nodeCapacity, out NativeArray<byte> pipeContentKinds) ||
-                !TryResolveBuffer(in _pipeNetworkIdsHandle, nodeCapacity, out NativeArray<int> pipeNetworkIds) ||
-                !TryResolveBuffer(in _pipeRoomIndicesHandle, nodeCapacity, out NativeArray<int> pipeRoomIndices) ||
-                !TryResolveBuffer(in _pipeCapacitiesHandle, nodeCapacity, out NativeArray<float> pipeCapacities) ||
-                !TryResolveBuffer(in _pipeMaxPressureHandle, nodeCapacity, out NativeArray<float> pipeMaxPressure) ||
-                !TryResolveBuffer(in _pipeFlowRatesHandle, nodeCapacity, out NativeArray<float> pipeFlowRates) ||
-                !TryResolveBuffer(in _pipeSourceRatesHandle, nodeCapacity, out NativeArray<float> pipeSourceRates) ||
-                !TryResolveBuffer(in _pipeDemandRatesHandle, nodeCapacity, out NativeArray<float> pipeDemandRates) ||
-                !TryResolveBuffer(in _pipeFlowVectorsHandle, nodeCapacity, out NativeArray<float3> pipeFlowVectors) ||
-                !TryResolveBuffer(in _pipeRoomExchangeContentsHandle, nodeCapacity, out NativeArray<float> pipeRoomExchangeContents) ||
-                !TryResolveBuffer(in _pipeLastVisualFlowHandle, nodeCapacity, out NativeArray<float> pipeLastVisualFlow01) ||
-                !TryResolveBuffer(in _pipeAupsHandle, nodeCapacity, out NativeArray<AbsoluteUniversePosition> pipeAups))
+            nodeIndex = -1;
+            if (_solveScheduled || _nodeCount >= nodeCapacity)
             {
-                nodeIndex = -1;
                 return false;
             }
 
-            nodeIndex = _nodeCount++;
-            _debugNodeCount = _nodeCount;
-            pipePressure[nodeIndex] = 0f;
-            pipeContents[nodeIndex] = 0f;
-            pipeFlags[nodeIndex] = (byte)FluidPipeFlags.Active;
-            pipeContentKinds[nodeIndex] = contentKind;
-            pipeNetworkIds[nodeIndex] = networkId;
-            pipeRoomIndices[nodeIndex] = roomIndex;
-            pipeCapacities[nodeIndex] = math.max(FluidPipeGraphConstants.MinCapacity, capacity);
-            pipeMaxPressure[nodeIndex] = math.max(FluidPipeGraphConstants.MinMaxPressureKPa, maxPressureKPa);
-            pipeFlowRates[nodeIndex] = math.max(0f, defaultPipeFlowRate);
-            pipeSourceRates[nodeIndex] = 0f;
-            pipeDemandRates[nodeIndex] = 0f;
-            pipeFlowVectors[nodeIndex] = default;
-            pipeRoomExchangeContents[nodeIndex] = 0f;
-            pipeLastVisualFlow01[nodeIndex] = 0f;
-            pipeAups[nodeIndex] = nodeAup;
-            return true;
+            IDataVault vault = ResolveDataVault();
+            uint lockMask = 0u;
+            try
+            {
+                if (!TryAcquireSolveWriteBuffer(vault, in _pipePressureHandle, nodeCapacity, SolveLockPressure, ref lockMask, out NativeArray<float> pipePressure) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeContentsHandle, nodeCapacity, SolveLockContents, ref lockMask, out NativeArray<float> pipeContents) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeFlagsHandle, nodeCapacity, SolveLockFlags, ref lockMask, out NativeArray<byte> pipeFlags) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeContentKindsHandle, nodeCapacity, SolveLockContentKinds, ref lockMask, out NativeArray<byte> pipeContentKinds) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeNetworkIdsHandle, nodeCapacity, SolveLockNetworkIds, ref lockMask, out NativeArray<int> pipeNetworkIds) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeRoomIndicesHandle, nodeCapacity, SolveLockRoomIndices, ref lockMask, out NativeArray<int> pipeRoomIndices) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeCapacitiesHandle, nodeCapacity, SolveLockCapacities, ref lockMask, out NativeArray<float> pipeCapacities) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeMaxPressureHandle, nodeCapacity, SolveLockMaxPressure, ref lockMask, out NativeArray<float> pipeMaxPressure) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeFlowRatesHandle, nodeCapacity, SolveLockFlowRates, ref lockMask, out NativeArray<float> pipeFlowRates) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeSourceRatesHandle, nodeCapacity, SolveLockSourceRates, ref lockMask, out NativeArray<float> pipeSourceRates) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeDemandRatesHandle, nodeCapacity, SolveLockDemandRates, ref lockMask, out NativeArray<float> pipeDemandRates) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeFlowVectorsHandle, nodeCapacity, SolveLockFlowVectors, ref lockMask, out NativeArray<float3> pipeFlowVectors) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeRoomExchangeContentsHandle, nodeCapacity, SolveLockRoomExchange, ref lockMask, out NativeArray<float> pipeRoomExchangeContents) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeLastVisualFlowHandle, nodeCapacity, SolveLockLastVisualFlow, ref lockMask, out NativeArray<float> pipeLastVisualFlow01) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeAupsHandle, nodeCapacity, SolveLockAups, ref lockMask, out NativeArray<AbsoluteUniversePosition> pipeAups))
+                {
+                    return false;
+                }
+
+                nodeIndex = _nodeCount++;
+                _debugNodeCount = _nodeCount;
+                pipePressure[nodeIndex] = 0f;
+                pipeContents[nodeIndex] = 0f;
+                pipeFlags[nodeIndex] = (byte)FluidPipeFlags.Active;
+                pipeContentKinds[nodeIndex] = contentKind;
+                pipeNetworkIds[nodeIndex] = networkId;
+                pipeRoomIndices[nodeIndex] = roomIndex;
+                pipeCapacities[nodeIndex] = math.max(FluidPipeGraphConstants.MinCapacity, capacity);
+                pipeMaxPressure[nodeIndex] = math.max(FluidPipeGraphConstants.MinMaxPressureKPa, maxPressureKPa);
+                pipeFlowRates[nodeIndex] = math.max(0f, defaultPipeFlowRate);
+                pipeSourceRates[nodeIndex] = 0f;
+                pipeDemandRates[nodeIndex] = 0f;
+                pipeFlowVectors[nodeIndex] = default;
+                pipeRoomExchangeContents[nodeIndex] = 0f;
+                pipeLastVisualFlow01[nodeIndex] = 0f;
+                pipeAups[nodeIndex] = nodeAup;
+                return true;
+            }
+            finally
+            {
+                ReleaseSolveWriteLocks(vault, lockMask);
+            }
         }
 
         public bool TryConnectPipeNodes(int sourceNodeIndex, int destinationNodeIndex)
@@ -292,93 +309,152 @@ namespace Hecton8.Construction
                 !IsValidNode(sourceNodeIndex) ||
                 !IsValidNode(destinationNodeIndex) ||
                 sourceNodeIndex == destinationNodeIndex ||
-                !TryResolveBuffer(in _pipeNetworkIdsHandle, nodeCapacity, out NativeArray<int> pipeNetworkIds) ||
-                !TryResolveBuffer(in _pipeContentKindsHandle, nodeCapacity, out NativeArray<byte> pipeContentKinds) ||
-                !TryResolveBuffer(in _pipeConnectionSourcesHandle, connectionCapacity, out NativeArray<int> connectionSources) ||
-                !TryResolveBuffer(in _pipeConnectionDestinationsHandle, connectionCapacity, out NativeArray<int> connectionDestinations) ||
+                !TryReadOnlyBuffer(in _pipeNetworkIdsHandle, nodeCapacity, out NativeArray<int>.ReadOnly pipeNetworkIds) ||
+                !TryReadOnlyBuffer(in _pipeContentKindsHandle, nodeCapacity, out NativeArray<byte>.ReadOnly pipeContentKinds) ||
                 pipeNetworkIds[sourceNodeIndex] != pipeNetworkIds[destinationNodeIndex] ||
                 pipeContentKinds[sourceNodeIndex] != pipeContentKinds[destinationNodeIndex])
             {
                 return false;
             }
 
-            int neededConnections = 0;
-            bool hasForward = HasConnection(sourceNodeIndex, destinationNodeIndex, connectionSources, connectionDestinations);
-            bool hasReverse = HasConnection(destinationNodeIndex, sourceNodeIndex, connectionSources, connectionDestinations);
-            if (!hasForward)
-                neededConnections++;
-            if (!hasReverse)
-                neededConnections++;
-            if (neededConnections == 0)
+            IDataVault vault = ResolveDataVault();
+            uint lockMask = 0u;
+            try
+            {
+                if (!TryAcquireSolveWriteBuffer(vault, in _pipeConnectionSourcesHandle, connectionCapacity, SolveLockConnectionSources, ref lockMask, out NativeArray<int> connectionSources) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeConnectionDestinationsHandle, connectionCapacity, SolveLockConnectionDestinations, ref lockMask, out NativeArray<int> connectionDestinations))
+                {
+                    return false;
+                }
+
+                int neededConnections = 0;
+                bool hasForward = HasConnection(sourceNodeIndex, destinationNodeIndex, connectionSources, connectionDestinations);
+                bool hasReverse = HasConnection(destinationNodeIndex, sourceNodeIndex, connectionSources, connectionDestinations);
+                if (!hasForward)
+                    neededConnections++;
+                if (!hasReverse)
+                    neededConnections++;
+                if (neededConnections == 0)
+                    return true;
+                if (_connectionCount + neededConnections > connectionCapacity)
+                    return false;
+
+                if (!hasForward)
+                {
+                    connectionSources[_connectionCount] = sourceNodeIndex;
+                    connectionDestinations[_connectionCount] = destinationNodeIndex;
+                    _connectionCount++;
+                }
+
+                if (!hasReverse)
+                {
+                    connectionSources[_connectionCount] = destinationNodeIndex;
+                    connectionDestinations[_connectionCount] = sourceNodeIndex;
+                    _connectionCount++;
+                }
+
                 return true;
-            if (_connectionCount + neededConnections > connectionCapacity)
-                return false;
-
-            if (!hasForward)
-            {
-                connectionSources[_connectionCount] = sourceNodeIndex;
-                connectionDestinations[_connectionCount] = destinationNodeIndex;
-                _connectionCount++;
             }
-
-            if (!hasReverse)
+            finally
             {
-                connectionSources[_connectionCount] = destinationNodeIndex;
-                connectionDestinations[_connectionCount] = sourceNodeIndex;
-                _connectionCount++;
+                ReleaseSolveWriteLocks(vault, lockMask);
             }
-
-            return true;
         }
 
         public bool TryInjectPipeContents(int nodeIndex, float contents)
         {
             if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) || !math.isfinite(contents) || contents <= 0f ||
-                !TryResolveBuffer(in _pipeContentsHandle, nodeCapacity, out NativeArray<float> pipeContents) ||
-                !TryResolveBuffer(in _pipePressureHandle, nodeCapacity, out NativeArray<float> pipePressure) ||
-                !TryResolveBuffer(in _pipeCapacitiesHandle, nodeCapacity, out NativeArray<float> pipeCapacities) ||
-                !TryResolveBuffer(in _pipeMaxPressureHandle, nodeCapacity, out NativeArray<float> pipeMaxPressure))
+                !TryReadOnlyBuffer(in _pipeCapacitiesHandle, nodeCapacity, out NativeArray<float>.ReadOnly pipeCapacities) ||
+                !TryReadOnlyBuffer(in _pipeMaxPressureHandle, nodeCapacity, out NativeArray<float>.ReadOnly pipeMaxPressure))
                 return false;
 
-            float nextContents = pipeContents[nodeIndex] + contents;
-            if (!math.isfinite(nextContents))
-                return false;
+            IDataVault vault = ResolveDataVault();
+            uint lockMask = 0u;
+            try
+            {
+                if (!TryAcquireSolveWriteBuffer(vault, in _pipeContentsHandle, nodeCapacity, SolveLockContents, ref lockMask, out NativeArray<float> pipeContents) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipePressureHandle, nodeCapacity, SolveLockPressure, ref lockMask, out NativeArray<float> pipePressure))
+                {
+                    return false;
+                }
 
-            pipeContents[nodeIndex] = nextContents;
-            pipePressure[nodeIndex] = ResolvePressureForNode(nodeIndex, pipeContents[nodeIndex], pipeCapacities, pipeMaxPressure);
-            return true;
+                float nextContents = pipeContents[nodeIndex] + contents;
+                if (!math.isfinite(nextContents))
+                    return false;
+
+                pipeContents[nodeIndex] = nextContents;
+                pipePressure[nodeIndex] = ResolvePressureForNode(nodeIndex, pipeContents[nodeIndex], pipeCapacities, pipeMaxPressure);
+                return true;
+            }
+            finally
+            {
+                ReleaseSolveWriteLocks(vault, lockMask);
+            }
         }
 
         public bool TrySetPipeSourceRate(int nodeIndex, float contentsPerSecond)
         {
-            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) || !math.isfinite(contentsPerSecond) ||
-                !TryResolveBuffer(in _pipeSourceRatesHandle, nodeCapacity, out NativeArray<float> pipeSourceRates))
+            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) || !math.isfinite(contentsPerSecond))
                 return false;
 
-            pipeSourceRates[nodeIndex] = math.max(0f, contentsPerSecond);
-            return true;
+            IDataVault vault = ResolveDataVault();
+            uint lockMask = 0u;
+            try
+            {
+                if (!TryAcquireSolveWriteBuffer(vault, in _pipeSourceRatesHandle, nodeCapacity, SolveLockSourceRates, ref lockMask, out NativeArray<float> pipeSourceRates))
+                    return false;
+
+                pipeSourceRates[nodeIndex] = math.max(0f, contentsPerSecond);
+                return true;
+            }
+            finally
+            {
+                ReleaseSolveWriteLocks(vault, lockMask);
+            }
         }
 
         public bool TrySetPipeDemandRate(int nodeIndex, float contentsPerSecond)
         {
-            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) || !math.isfinite(contentsPerSecond) ||
-                !TryResolveBuffer(in _pipeDemandRatesHandle, nodeCapacity, out NativeArray<float> pipeDemandRates))
+            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) || !math.isfinite(contentsPerSecond))
                 return false;
 
-            pipeDemandRates[nodeIndex] = math.max(0f, contentsPerSecond);
-            return true;
+            IDataVault vault = ResolveDataVault();
+            uint lockMask = 0u;
+            try
+            {
+                if (!TryAcquireSolveWriteBuffer(vault, in _pipeDemandRatesHandle, nodeCapacity, SolveLockDemandRates, ref lockMask, out NativeArray<float> pipeDemandRates))
+                    return false;
+
+                pipeDemandRates[nodeIndex] = math.max(0f, contentsPerSecond);
+                return true;
+            }
+            finally
+            {
+                ReleaseSolveWriteLocks(vault, lockMask);
+            }
         }
 
         public bool TrySetPipeNodeFlags(int nodeIndex, byte setMask, byte clearMask)
         {
-            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) ||
-                !TryResolveBuffer(in _pipeFlagsHandle, nodeCapacity, out NativeArray<byte> pipeFlags))
+            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex))
                 return false;
 
-            byte flags = pipeFlags[nodeIndex];
-            flags = (byte)((flags | setMask) & ~clearMask);
-            pipeFlags[nodeIndex] = flags;
-            return true;
+            IDataVault vault = ResolveDataVault();
+            uint lockMask = 0u;
+            try
+            {
+                if (!TryAcquireSolveWriteBuffer(vault, in _pipeFlagsHandle, nodeCapacity, SolveLockFlags, ref lockMask, out NativeArray<byte> pipeFlags))
+                    return false;
+
+                byte flags = pipeFlags[nodeIndex];
+                flags = (byte)((flags | setMask) & ~clearMask);
+                pipeFlags[nodeIndex] = flags;
+                return true;
+            }
+            finally
+            {
+                ReleaseSolveWriteLocks(vault, lockMask);
+            }
         }
 
         private void EnsureNativeState()
@@ -640,25 +716,36 @@ namespace Hecton8.Construction
 
         private void ClearOxygenSourceDemandRates()
         {
-            if (!TryResolveBuffer(in _pipeFlagsHandle, nodeCapacity, out NativeArray<byte> pipeFlags) ||
-                !TryResolveBuffer(in _pipeDemandRatesHandle, nodeCapacity, out NativeArray<float> pipeDemandRates))
+            if (!TryReadOnlyBuffer(in _pipeFlagsHandle, nodeCapacity, out NativeArray<byte>.ReadOnly pipeFlags))
             {
                 return;
             }
 
-            for (int i = 0; i < _nodeCount; i++)
+            IDataVault vault = ResolveDataVault();
+            uint lockMask = 0u;
+            try
             {
-                byte flags = pipeFlags[i];
-                if ((flags & (byte)FluidPipeFlags.OxygenSource) == 0)
-                    continue;
+                if (!TryAcquireSolveWriteBuffer(vault, in _pipeDemandRatesHandle, nodeCapacity, SolveLockDemandRates, ref lockMask, out NativeArray<float> pipeDemandRates))
+                    return;
 
-                pipeDemandRates[i] = 0f;
+                for (int i = 0; i < _nodeCount; i++)
+                {
+                    byte flags = pipeFlags[i];
+                    if ((flags & (byte)FluidPipeFlags.OxygenSource) == 0)
+                        continue;
+
+                    pipeDemandRates[i] = 0f;
+                }
+            }
+            finally
+            {
+                ReleaseSolveWriteLocks(vault, lockMask);
             }
         }
 
         private void ApplyRoomExchangeOutputs()
         {
-            if (!TryResolveBuffer(in _pipeRoomExchangeContentsHandle, nodeCapacity, out NativeArray<float> pipeRoomExchangeContents) ||
+            if (!TryReadOnlyBuffer(in _pipeRoomExchangeContentsHandle, nodeCapacity, out NativeArray<float>.ReadOnly pipeRoomExchangeContents) ||
                 !TryReadOnlyBuffer(in _pipeContentKindsHandle, nodeCapacity, out NativeArray<byte>.ReadOnly pipeContentKinds) ||
                 !TryReadOnlyBuffer(in _pipeRoomIndicesHandle, nodeCapacity, out NativeArray<int>.ReadOnly pipeRoomIndices))
             {
@@ -726,24 +813,35 @@ namespace Hecton8.Construction
         private void PublishFlowVisuals()
         {
             if (!TryReadOnlyBuffer(in _pipeCapacitiesHandle, nodeCapacity, out NativeArray<float>.ReadOnly pipeCapacities) ||
-                !TryReadOnlyBuffer(in _pipeFlowVectorsHandle, nodeCapacity, out NativeArray<float3>.ReadOnly pipeFlowVectors) ||
-                !TryResolveBuffer(in _pipeLastVisualFlowHandle, nodeCapacity, out NativeArray<float> pipeLastVisualFlow01))
+                !TryReadOnlyBuffer(in _pipeFlowVectorsHandle, nodeCapacity, out NativeArray<float3>.ReadOnly pipeFlowVectors))
             {
                 return;
             }
 
-            for (int i = 0; i < _nodeCount; i++)
+            IDataVault vault = ResolveDataVault();
+            uint lockMask = 0u;
+            try
             {
-                float capacity = math.max(FluidPipeGraphConstants.MinCapacity, pipeCapacities[i]);
-                float flow01 = math.saturate(pipeFlowVectors[i].y * math.rcp(capacity));
-                float previous = pipeLastVisualFlow01[i];
-                if (flow01 <= 0.001f && previous <= 0.001f)
-                    continue;
-                if (math.abs(flow01 - previous) <= 0.01f)
-                    continue;
+                if (!TryAcquireSolveWriteBuffer(vault, in _pipeLastVisualFlowHandle, nodeCapacity, SolveLockLastVisualFlow, ref lockMask, out NativeArray<float> pipeLastVisualFlow01))
+                    return;
 
-                pipeLastVisualFlow01[i] = flow01;
-                ConnectionSplineBatchRenderer.SetPipeNodeFlow((uint)i, flow01);
+                for (int i = 0; i < _nodeCount; i++)
+                {
+                    float capacity = math.max(FluidPipeGraphConstants.MinCapacity, pipeCapacities[i]);
+                    float flow01 = math.saturate(pipeFlowVectors[i].y * math.rcp(capacity));
+                    float previous = pipeLastVisualFlow01[i];
+                    if (flow01 <= 0.001f && previous <= 0.001f)
+                        continue;
+                    if (math.abs(flow01 - previous) <= 0.01f)
+                        continue;
+
+                    pipeLastVisualFlow01[i] = flow01;
+                    ConnectionSplineBatchRenderer.SetPipeNodeFlow((uint)i, flow01);
+                }
+            }
+            finally
+            {
+                ReleaseSolveWriteLocks(vault, lockMask);
             }
         }
 
@@ -874,8 +972,8 @@ namespace Hecton8.Construction
         private static float ResolvePressureForNode(
             int nodeIndex,
             float contents,
-            NativeArray<float> pipeCapacities,
-            NativeArray<float> pipeMaxPressure)
+            NativeArray<float>.ReadOnly pipeCapacities,
+            NativeArray<float>.ReadOnly pipeMaxPressure)
         {
             float capacity = math.max(FluidPipeGraphConstants.MinCapacity, pipeCapacities[nodeIndex]);
             float maxPressure = math.max(FluidPipeGraphConstants.MinMaxPressureKPa, pipeMaxPressure[nodeIndex]);
@@ -915,11 +1013,27 @@ namespace Hecton8.Construction
 
         private IDataVault ResolveDataVault()
         {
-            if (_dataVault != null)
-                return _dataVault;
-
-            _dataVault = GlobalRegistry.DataVault;
             return _dataVault;
+        }
+
+        private void CacheDataVaultCold()
+        {
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            if (_dataVault != null)
+            {
+                CompleteSolve(force: true);
+                ReleaseFluidPipeVaultBuffers(_dataVault);
+            }
+            else
+            {
+                ReleaseFluidPipeVaultBuffers(null);
+            }
+
+            _dataVault = currentVault;
+            _initialized = false;
         }
 
         private bool EnsureFluidPipeVaultBuffers(IDataVault vault)
@@ -1110,6 +1224,8 @@ namespace Hecton8.Construction
             if (vault == null || lockMask == 0u)
                 return;
 
+            if ((lockMask & SolveLockAups) != 0u) ReleaseWriteLock(vault, in _pipeAupsHandle);
+            if ((lockMask & SolveLockLastVisualFlow) != 0u) ReleaseWriteLock(vault, in _pipeLastVisualFlowHandle);
             if ((lockMask & SolveLockRuptureDispatch) != 0u) ReleaseWriteLock(vault, in _ruptureDispatchHandle);
             if ((lockMask & SolveLockConnectionDestinations) != 0u) ReleaseWriteLock(vault, in _pipeConnectionDestinationsHandle);
             if ((lockMask & SolveLockConnectionSources) != 0u) ReleaseWriteLock(vault, in _pipeConnectionSourcesHandle);
@@ -1129,21 +1245,6 @@ namespace Hecton8.Construction
             if ((lockMask & SolveLockFlags) != 0u) ReleaseWriteLock(vault, in _pipeFlagsHandle);
             if ((lockMask & SolveLockContents) != 0u) ReleaseWriteLock(vault, in _pipeContentsHandle);
             if ((lockMask & SolveLockPressure) != 0u) ReleaseWriteLock(vault, in _pipePressureHandle);
-        }
-
-        private bool TryResolveBuffer<T>(
-            in VaultGenerationHandle<T> handle,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            IDataVault vault = ResolveDataVault();
-            return vault != null &&
-                   requiredLength > 0 &&
-                   IsHandleCreated(in handle) &&
-                   vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
         }
 
         private bool TryReadOnlyBuffer<T>(
@@ -1168,7 +1269,7 @@ namespace Hecton8.Construction
         {
             int safeLength = math.max(1, requiredLength);
             if (IsHandleCreated(in handle) &&
-                vault.TryResolveHandle(in handle, out NativeArray<T> existing) &&
+                vault.TryReadHandle(in handle, out NativeArray<T> existing) &&
                 existing.IsCreated &&
                 existing.Length >= safeLength)
             {
@@ -1178,7 +1279,7 @@ namespace Hecton8.Construction
             if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle))
             {
                 handle = existingHandle;
-                if (vault.TryResolveHandle(in handle, out existing) &&
+                if (vault.TryReadHandle(in handle, out existing) &&
                     existing.IsCreated &&
                     existing.Length >= safeLength)
                 {
@@ -1192,7 +1293,7 @@ namespace Hecton8.Construction
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
             return IsHandleCreated(in handle) &&
-                   vault.TryResolveHandle(in handle, out existing) &&
+                   vault.TryReadHandle(in handle, out existing) &&
                    existing.IsCreated &&
                    existing.Length >= safeLength;
         }

@@ -7,6 +7,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.World;
 using System;
+using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 using InteractionSignalPayload = Hecton8.Interaction.InteractionSignal;
@@ -95,8 +96,10 @@ namespace Hecton8.Gameplay
         private string interactText = DefaultInteractText;
 
         private Transform _cachedTransform;
-        private Renderer[] _cachedRenderers;
-        private Collider[] _cachedColliders;
+        // COLD ALLOC: List<Renderer> - reusable child renderer cache for collapse toggles - owner: HarvestableOutcrop
+        private readonly List<Renderer> _cachedRenderers = new List<Renderer>(8);
+        // COLD ALLOC: List<Collider> - reusable child collider cache for collapse toggles - owner: HarvestableOutcrop
+        private readonly List<Collider> _cachedColliders = new List<Collider>(8);
         private ItemData[] _resolvedLootItems;
         private const int InteractTextBufferCapacity = 96;
         private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
@@ -139,10 +142,10 @@ namespace Hecton8.Gameplay
             if (targetRenderer == null)
                 targetRenderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
 
-            // COLD ALLOC: Renderer[n] - intact renderer cache for collapse toggles - owner: HarvestableOutcrop
-            _cachedRenderers = GetComponentsInChildren<Renderer>(true);
-            // COLD ALLOC: Collider[n] - intact collider cache for collapse toggles - owner: HarvestableOutcrop
-            _cachedColliders = GetComponentsInChildren<Collider>(true);
+            _cachedRenderers.Clear();
+            GetComponentsInChildren<Renderer>(true, _cachedRenderers);
+            _cachedColliders.Clear();
+            GetComponentsInChildren<Collider>(true, _cachedColliders);
 
             CacheRegistryServicesCold();
             RebuildLocalizedTextCache();
@@ -166,6 +169,11 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
             StopLateFrameTicking();
             LocalizationEvents.UnregisterLanguageListener(this);
+        }
+
+        private void OnDestroy()
+        {
+            InteractableRegistry.InvalidateTree(this);
         }
 
         /// <inheritdoc />
@@ -355,10 +363,7 @@ namespace Hecton8.Gameplay
 
         private void DisableIntactColliders()
         {
-            if (_cachedColliders == null)
-                return;
-
-            for (int i = 0; i < _cachedColliders.Length; i++)
+            for (int i = 0; i < _cachedColliders.Count; i++)
             {
                 Collider collider = _cachedColliders[i];
                 if (collider != null)
@@ -375,14 +380,11 @@ namespace Hecton8.Gameplay
 
         private void ApplyIntactRendererState(bool enabledState)
         {
-            if (_cachedRenderers != null)
+            for (int i = 0; i < _cachedRenderers.Count; i++)
             {
-                for (int i = 0; i < _cachedRenderers.Length; i++)
-                {
-                    Renderer renderer = _cachedRenderers[i];
-                    if (renderer != null)
-                        renderer.enabled = enabledState;
-                }
+                Renderer renderer = _cachedRenderers[i];
+                if (renderer != null)
+                    renderer.enabled = enabledState;
             }
         }
 
@@ -486,24 +488,18 @@ namespace Hecton8.Gameplay
             _currentHealth = math.max(1, hitsToBreak);
             _isBroken = false;
 
-            if (_cachedRenderers != null)
+            for (int i = 0; i < _cachedRenderers.Count; i++)
             {
-                for (int i = 0; i < _cachedRenderers.Length; i++)
-                {
-                    Renderer renderer = _cachedRenderers[i];
-                    if (renderer != null)
-                        renderer.enabled = true;
-                }
+                Renderer renderer = _cachedRenderers[i];
+                if (renderer != null)
+                    renderer.enabled = true;
             }
 
-            if (_cachedColliders != null)
+            for (int i = 0; i < _cachedColliders.Count; i++)
             {
-                for (int i = 0; i < _cachedColliders.Length; i++)
-                {
-                    Collider collider = _cachedColliders[i];
-                    if (collider != null)
-                        collider.enabled = true;
-                }
+                Collider collider = _cachedColliders[i];
+                if (collider != null)
+                    collider.enabled = true;
             }
         }
 

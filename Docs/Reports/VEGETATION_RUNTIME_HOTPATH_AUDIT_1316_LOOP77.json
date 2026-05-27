@@ -1,0 +1,2483 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\VEGETATION_RUNTIME_HOTPATH_AUDIT_1316_LOOP77.json",
+  "auditHashSha256": "114af5a9e20e9d5b8524751d6d7b2ac36a1666991fb2fb9e367445088ce88020",
+  "summary": {
+    "scannedFiles": 13,
+    "parseFailures": 0,
+    "totalFindings": 305,
+    "objectCreations": 305,
+    "valueTypeCreations": 181,
+    "managedRiskCreations": 120,
+    "nativeTempJobAllocations": 2,
+    "nativePersistentAllocations": 2,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\HectonMapMagicVegetationBridge.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationTileCacheResidency.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationMemoryPool.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationChunkResidencyDirector.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationDensityQueryService.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationTerrainHoleSynchronizer.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationPersistenceManager.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationNavGridSynchronizer.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationThreatAndStructureService.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationThermalSampler.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationPredatorFearField.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationFlowFieldIntegrator.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationCapacityUtilities.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 897,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.7f, 1.15f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 901,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1.15f, 2.1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 905,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.85f, 1.35f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 932,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(6f, 24f, 6f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 937,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(36f, 24f, 36f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1296,
+      "owner": "FixedTileStateMap",
+      "kind": "value_type_creation",
+      "detail": "TileRuntimeState",
+      "snippet": "new TileRuntimeState()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1362,
+      "owner": "GetEnumerator",
+      "kind": "object_creation",
+      "detail": "Enumerator",
+      "snippet": "new Enumerator(this)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1413,
+      "owner": "MoveNext",
+      "kind": "value_type_creation",
+      "detail": "TileStateEntry",
+      "snippet": "new TileStateEntry(_map._keys[next], _map._values[next])"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1518,
+      "owner": "GetEnumerator",
+      "kind": "object_creation",
+      "detail": "Enumerator",
+      "snippet": "new Enumerator(this)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1567,
+      "owner": "MoveNext",
+      "kind": "value_type_creation",
+      "detail": "ChunkPayloadEntry",
+      "snippet": "new ChunkPayloadEntry(_map._keys[next], _map._values[next])"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1881,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "FixedTileStateMap",
+      "snippet": "new FixedTileStateMap(TileCacheLruCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1883,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "FixedChunkPayloadMap",
+      "snippet": "new FixedChunkPayloadMap(InitialChunkCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 2069,
+      "owner": "TryFillTerrainHeightGridFromNativeCache",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(worldX, 0f, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 2260,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "IndirectVegetationNativeBufferSource",
+      "snippet": "new IndirectVegetationNativeBufferSource(this, false)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 2263,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "IndirectVegetationNativeBufferSource",
+      "snippet": "new IndirectVegetationNativeBufferSource(this, true)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 2879,
+      "owner": "TryResolvePlayerRuntimePositionFromAup",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(resolved.x, resolved.y, resolved.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3110,
+      "owner": "ActiveFloatingLabyrinthConfig",
+      "kind": "object_creation",
+      "detail": "FloatingLabyrinthConfig",
+      "snippet": "new FloatingLabyrinthConfig(              floatingPatchThreshold,              floatingPatchNoiseScale,              floatingCellSize,              floatingSecondaryCellSize,              floatingWallWidth,              floatingWarpMeters, "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3141,
+      "owner": "EvaluateFloatingLabyrinth",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(flowDirection.x, flowDirection.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3277,
+      "owner": "TryGetActiveHeightTexturePayload",
+      "kind": "object_creation",
+      "detail": "TerrainHeightTexturePayload",
+      "snippet": "new TerrainHeightTexturePayload(                  heightTexture,                  state.TerrainPosition,                  state.TerrainSize,                  state.HeightmapResolution,                  state.CacheRevision)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3308,
+      "owner": "TryGetActiveTerrainHeightSamplePayload",
+      "kind": "value_type_creation",
+      "detail": "TerrainHeightSamplePayloadDTO",
+      "snippet": "new TerrainHeightSamplePayloadDTO(                  source.HeightSamples,                  source.TerrainPosition,                  source.TerrainSize,                  source.HeightmapResolution,                  source.CacheRevision)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3323,
+      "owner": "TryGetHeightSamplePayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(worldX, 0f, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3338,
+      "owner": "TryGetTerrainHeightSamplePayload",
+      "kind": "value_type_creation",
+      "detail": "TerrainHeightSamplePayloadDTO",
+      "snippet": "new TerrainHeightSamplePayloadDTO(                  source.HeightSamples,                  source.TerrainPosition,                  source.TerrainSize,                  source.HeightmapResolution,                  source.CacheRevision)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3358,
+      "owner": "TryBuildHeightSamplePayload",
+      "kind": "object_creation",
+      "detail": "TerrainHeightSamplePayload",
+      "snippet": "new TerrainHeightSamplePayload(                  heightSamples,                  state.TerrainPosition,                  state.TerrainSize,                  state.HeightmapResolution,                  state.CacheRevision)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3619,
+      "owner": "TryGetEcosystemThreatVoxelPayload",
+      "kind": "object_creation",
+      "detail": "Vector3Int",
+      "snippet": "new Vector3Int(_ecosystemThreatGridResolution, _ecosystemThreatGridResolutionY, _ecosystemThreatGridResolution)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3621,
+      "owner": "TryGetEcosystemThreatVoxelPayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3749,
+      "owner": "SampleBiomassDensityImmediate",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(positionWS.x, positionWS.y, positionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3761,
+      "owner": "TryGetCachedTerrainHeight",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(worldX, 0f, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3857,
+      "owner": "TrySampleAbyssalFlow",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(sampledFlow.x, sampledFlow.y, sampledFlow.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3997,
+      "owner": "GetVegetationDensity",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4010,
+      "owner": "GetVegetationDensity",
+      "kind": "object_creation",
+      "detail": "VegetationDensitySample",
+      "snippet": "new VegetationDensitySample(                      true,                      dominantType,                      ResolveSemanticType(dominantType, biomeLayer, seed),                      biomeLayer,                      ResolveAcousticType(d"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4026,
+      "owner": "ApplyAbyssalFlowNoise",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(baseFlow.x, baseFlow.y, baseFlow.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4027,
+      "owner": "ApplyAbyssalFlowNoise",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4034,
+      "owner": "ApplyAbyssalFlowNoise",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(noisyFlow.x, noisyFlow.y, noisyFlow.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4052,
+      "owner": "GetPlayerVisibilityModifier",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4108,
+      "owner": "TryScheduleVisibilityModifierSample",
+      "kind": "value_type_creation",
+      "detail": "VegetationDensityQueryJob",
+      "snippet": "new VegetationDensityQueryJob              {                  Positions = positions,                  Output = outputVisibility,                  Chunks = chunks,                  DensityGrid = densityGrid,                  ChunkCount = _de"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4163,
+      "owner": "TryScheduleBiomassDensitySample",
+      "kind": "value_type_creation",
+      "detail": "SampleBiomassDensityJob",
+      "snippet": "new SampleBiomassDensityJob              {                  Positions = positions,                  Output = outputDensities,                  Chunks = chunks,                  DensityGrid = densityGrid,                  ChunkCount = _densi"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4197,
+      "owner": "TryScheduleAverageBiomassDensitySample",
+      "kind": "value_type_creation",
+      "detail": "ReduceAverageDensityJob",
+      "snippet": "new ReduceAverageDensityJob             {                 Input = perPointDensities,                 Output = averageOutput              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4485,
+      "owner": "WriteArtificialStructureRecord",
+      "kind": "object_creation",
+      "detail": "ArtificialStructureRecord",
+      "snippet": "new ArtificialStructureRecord              {                  MinX = bounds.min.x,                  MinY = bounds.min.y,                  MinZ = bounds.min.z,                  MaxX = bounds.max.x,                  MaxY = bounds.max.y,      "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4655,
+      "owner": "GetMegaWreckSectionBounds",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(section.WorldCenter, section.WorldSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4672,
+      "owner": "BuildChunkMegaWreckPayload",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(definition.Center, definition.Size)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4688,
+      "owner": "BuildChunkMegaWreckPayload",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(definition.Center, definition.Size)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4699,
+      "owner": "BuildChunkMegaWreckPayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3((minX + maxX) * 0.5f, wreckBounds.center.y, (minZ + maxZ) * 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4700,
+      "owner": "BuildChunkMegaWreckPayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(maxX - minX, wreckBounds.size.y, maxZ - minZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4706,
+      "owner": "BuildChunkMegaWreckPayload",
+      "kind": "object_creation",
+      "detail": "MegaWreckStreamSection",
+      "snippet": "new MegaWreckStreamSection                  {                      WreckId = definition.WreckId,                      SectionSeed = sectionSeed,                      SectionX = sectionX,                      SectionZ = sectionZ,            "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4733,
+      "owner": "FindMegaWreckInteriorWreckId",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(section.WorldCenter, section.WorldSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5072,
+      "owner": "TryResolveVegetationTypeFromCachedMasks",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(state.TerrainPosition.x, state.TerrainPosition.y, state.TerrainPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5073,
+      "owner": "TryResolveVegetationTypeFromCachedMasks",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(state.TerrainSize.x, state.TerrainSize.y, state.TerrainSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5101,
+      "owner": "TryResolveVegetationTypeFromCachedMasks",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(_floatingFlowDirectionNormalized.x, _floatingFlowDirectionNormalized.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5122,
+      "owner": "TryResolveVegetationTypeFromCachedMasks",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5144,
+      "owner": "TryResolveVegetationTypeFromCachedMasks",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5185,
+      "owner": "ToMatrix4x4",
+      "kind": "object_creation",
+      "detail": "Matrix4x4",
+      "snippet": "new Matrix4x4(                  new Vector4(value.c0.x, value.c0.y, value.c0.z, value.c0.w),                  new Vector4(value.c1.x, value.c1.y, value.c1.z, value.c1.w),                  new Vector4(value.c2.x, value.c2.y, value.c2.z, valu"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5186,
+      "owner": "ToMatrix4x4",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(value.c0.x, value.c0.y, value.c0.z, value.c0.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5187,
+      "owner": "ToMatrix4x4",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(value.c1.x, value.c1.y, value.c1.z, value.c1.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5188,
+      "owner": "ToMatrix4x4",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(value.c2.x, value.c2.y, value.c2.z, value.c2.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5189,
+      "owner": "ToMatrix4x4",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(value.c3.x, value.c3.y, value.c3.z, value.c3.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5212,
+      "owner": "ApplyMatrixTranslationOffsetDouble",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(matrix.m03, matrix.m13, matrix.m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5224,
+      "owner": "IsDistantFloraMatrix",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  matrix.m03 + offset.x,                  matrix.m13 + offset.y,                  matrix.m23 + offset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5239,
+      "owner": "ResolveRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(matrix.m03, matrix.m13, matrix.m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5245,
+      "owner": "ToDouble3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5250,
+      "owner": "ToVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  ClampDoubleToRuntimeFloat(value.x),                  ClampDoubleToRuntimeFloat(value.y),                  ClampDoubleToRuntimeFloat(value.z))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5511,
+      "owner": "TrySampleTerrainPlacement",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5544,
+      "owner": "ResolveSlopeFlowDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-normal.x, -normal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5620,
+      "owner": "TryEvaluateTechnoJungle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(worldX, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5622,
+      "owner": "TryEvaluateTechnoJungle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-normalizedFlow.y, normalizedFlow.x)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5623,
+      "owner": "TryEvaluateTechnoJungle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(                  math.dot(world, normalizedFlow),                  math.dot(world, crossFlow) * flowAnisotropy)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5656,
+      "owner": "ApplyAbyssalFlowNoiseStatic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  noise.snoise(sample + new float3(11.7f, 3.1f, 19.9f)),                  noise.snoise(sample + new float3(23.3f, 29.1f, 7.7f)),                  noise.snoise(sample + new float3(41.9f, 13.7f, 31.3f)))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5657,
+      "owner": "ApplyAbyssalFlowNoiseStatic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(11.7f, 3.1f, 19.9f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5658,
+      "owner": "ApplyAbyssalFlowNoiseStatic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(23.3f, 29.1f, 7.7f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5659,
+      "owner": "ApplyAbyssalFlowNoiseStatic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(41.9f, 13.7f, 31.3f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5660,
+      "owner": "ApplyAbyssalFlowNoiseStatic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  ((Hash01(seed ^ 0xA24BAEDCu) * 2f) - 1f) * 0.15f,                  ((Hash01(seed ^ 0x94D049BBu) * 2f) - 1f) * 0.08f,                  ((Hash01(seed ^ 0xC13FA9A9u) * 2f) - 1f) * 0.15f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5665,
+      "owner": "ApplyAbyssalFlowNoiseStatic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(noiseVector.x, noiseVector.y * verticalStrength, noiseVector.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5732,
+      "owner": "TrySampleScatterSurfaceFromCachedTerrain",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(state.TerrainSize.x, state.TerrainSize.y, state.TerrainSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5735,
+      "owner": "TrySampleScatterSurfaceFromCachedTerrain",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(position.x, terrainY, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5736,
+      "owner": "TrySampleScatterSurfaceFromCachedTerrain",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(sampledNormal.x, sampledNormal.y, sampledNormal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5763,
+      "owner": "ResolveScatterSurfaceTangent",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(octant.x, 0f, octant.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5797,
+      "owner": "SampleBlueNoiseThreshold",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(worldX / cellSize, worldZ / cellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5810,
+      "owner": "SampleBlueNoiseThreshold",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(cellX + Hash01(cellSeed), cellZ + Hash01(cellSeed ^ 0x94D049BBu))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5834,
+      "owner": "SampleOrganicEdgeThreshold",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(worldX / cellSize, worldZ / cellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5839,
+      "owner": "SampleOrganicEdgeThreshold",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(Hash01(cellSeed), Hash01(cellSeed ^ 0xA24BAEDCu))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5895,
+      "owner": "SampleNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(dx, hRight - hLeft, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5896,
+      "owner": "SampleNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, hUp - hDown, dz)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5897,
+      "owner": "SampleNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5917,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5919,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.70710677f, 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5921,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5923,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.70710677f, 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5925,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5927,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.70710677f, -0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5929,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5931,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.70710677f, -0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5940,
+      "owner": "ResolveOctantDirectionFromVector",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5947,
+      "owner": "ResolveOctantDirectionFromVector",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(signX * 0.70710677f, signY * 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5949,
+      "owner": "ResolveOctantDirectionFromVector",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(signX, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5949,
+      "owner": "ResolveOctantDirectionFromVector",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, signY)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5957,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5959,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0.38268343f, 0f, 0.9238795f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5961,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0.70710677f, 0f, 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5963,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0.9238795f, 0f, 0.38268343f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5965,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5967,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0.9238795f, 0f, -0.38268343f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5969,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0.70710677f, 0f, -0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5971,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0.38268343f, 0f, -0.9238795f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5987,
+      "owner": "ResolveDominantFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, value.y < 0f ? -1f : 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5990,
+      "owner": "ResolveDominantFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(value.x < 0f ? -1f : 1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5991,
+      "owner": "ResolveDominantFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, value.z < 0f ? -1f : 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6219,
+      "owner": "CreateChunkPayloadHeader",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(                  new Vector3(centerX, state.TerrainPosition.y + (state.TerrainSize.y * 0.5f), centerZ),                  new Vector3(sizeX, math.max(1f, state.TerrainSize.y), sizeZ))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6220,
+      "owner": "CreateChunkPayloadHeader",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(centerX, state.TerrainPosition.y + (state.TerrainSize.y * 0.5f), centerZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6221,
+      "owner": "CreateChunkPayloadHeader",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(sizeX, math.max(1f, state.TerrainSize.y), sizeZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6517,
+      "owner": "TryFindChunkPoolEvictionVictim",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(playerRuntimePosition.x, playerRuntimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6542,
+      "owner": "ResolveMemoryGuardForward",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(_playerVelocity.x, _playerVelocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6547,
+      "owner": "ResolveMemoryGuardForward",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(octant.x, octant.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6557,
+      "owner": "EvaluateChunkEvictionScore",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(centerX - playerPositionXZ.x, centerZ - playerPositionXZ.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6628,
+      "owner": "TryEvaluateResidencyCandidate",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(centerX - playerPositionXZ.x, centerZ - playerPositionXZ.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6678,
+      "owner": "NormalizeScaleRange",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(min, max)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6781,
+      "owner": "InvalidateTileChunks",
+      "kind": "object_creation",
+      "detail": "ChunkKey",
+      "snippet": "new ChunkKey(tileX, tileZ, chunkX, chunkZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6983,
+      "owner": "TryReadChunkPoolView",
+      "kind": "object_creation",
+      "detail": "NativeChunkPoolView",
+      "snippet": "new NativeChunkPoolView(                  matrices,                  metadata,                  types,                  semanticTypes,                  biomeLayers,                  edgeDistances,                  flowDirections,           "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 7053,
+      "owner": "TryAcquireChunkPoolWriteView",
+      "kind": "object_creation",
+      "detail": "NativeChunkPoolView",
+      "snippet": "new NativeChunkPoolView(                  matrices,                  metadata,                  types,                  semanticTypes,                  biomeLayers,                  edgeDistances,                  flowDirections,           "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 7247,
+      "owner": "TryAcquireNativeReadBuffer",
+      "kind": "object_creation",
+      "detail": "HectonIndirectVegetationNativeReadBuffer",
+      "snippet": "new HectonIndirectVegetationNativeReadBuffer(                  matrices,                  metadata,                  count,                  bufferIndex,                  producerHandle,                  hasExplicitBounds,                  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 7884,
+      "owner": "InitializeChunkPool",
+      "kind": "object_creation",
+      "detail": "PoolBlock",
+      "snippet": "new PoolBlock { Offset = 0, Length = capacity }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 8095,
+      "owner": "CreateTerrainLayerMaskSampler",
+      "kind": "object_creation",
+      "detail": "TerrainLayerMaskSampler",
+      "snippet": "new TerrainLayerMaskSampler(pixels, layerIndex & 3)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 8629,
+      "owner": "NormalizeFlowDirection",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(octant.x, octant.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationMemoryPool.cs",
+      "line": 296,
+      "owner": "UpdateNativePoolDefragState",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(_playerVelocity.x, _playerVelocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationMemoryPool.cs",
+      "line": 468,
+      "owner": "BuildPoolDefragPlan",
+      "kind": "object_creation",
+      "detail": "ChunkSliceMoveRecord",
+      "snippet": "new ChunkSliceMoveRecord                         {                             SourceOffset = sourceOffset,                             DestinationOffset = nextOffset,                             Count = count                         }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationMemoryPool.cs",
+      "line": 587,
+      "owner": "ResetPoolFreeList",
+      "kind": "object_creation",
+      "detail": "PoolBlock",
+      "snippet": "new PoolBlock              {                  Offset = clampedUsed,                  Length = freeLength              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 51,
+      "owner": "BuildDesiredChunkList",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(playerPosition.x, playerPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 60,
+      "owner": "BuildDesiredChunkList",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(planarVelocityX * invPlanarSpeed, planarVelocityZ * invPlanarSpeed)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 62,
+      "owner": "BuildDesiredChunkList",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-forward.y, forward.x)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 105,
+      "owner": "BuildDesiredChunkList",
+      "kind": "object_creation",
+      "detail": "ChunkKey",
+      "snippet": "new ChunkKey(state.TileX, state.TileZ, chunkX, chunkZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 418,
+      "owner": "ScheduleChunkBuild",
+      "kind": "value_type_creation",
+      "detail": "ChunkBuildJobState",
+      "snippet": "new ChunkBuildJobState             {                 Key = key,                 TileKey = tileKey,                 TileCacheRevision = state.CacheRevision,                 GrassLodTier = grassLodTier,                 CorruptionState = paylo"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 432,
+      "owner": "ScheduleChunkBuild",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(state.TerrainPosition.x, state.TerrainPosition.y, state.TerrainPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 433,
+      "owner": "ScheduleChunkBuild",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(state.TerrainSize.x, state.TerrainSize.y, state.TerrainSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 458,
+      "owner": "ScheduleChunkBuild",
+      "kind": "value_type_creation",
+      "detail": "GenerateAnchoredVegetationJob",
+      "snippet": "new GenerateAnchoredVegetationJob                     {                         SandMask = sandMask,                         RockMask = rockMask,                         HeightSamples = heightSamples,                         TerrainHoles = "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 521,
+      "owner": "ScheduleChunkBuild",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 541,
+      "owner": "ScheduleChunkBuild",
+      "kind": "value_type_creation",
+      "detail": "GenerateAnchoredVegetationJob",
+      "snippet": "new GenerateAnchoredVegetationJob                     {                         SandMask = sandMask,                         RockMask = rockMask,                         HeightSamples = heightSamples,                         TerrainHoles = "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 608,
+      "owner": "ScheduleChunkBuild",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 628,
+      "owner": "ScheduleChunkBuild",
+      "kind": "value_type_creation",
+      "detail": "GenerateFloatingVegetationJob",
+      "snippet": "new GenerateFloatingVegetationJob                     {                         SandMask = sandMask,                         RockMask = rockMask,                         HeightSamples = heightSamples,                         TerrainHoles = "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 668,
+      "owner": "ScheduleChunkBuild",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(_floatingFlowDirectionNormalized.x, _floatingFlowDirectionNormalized.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 855,
+      "owner": "WriteJobRecordsToPool",
+      "kind": "object_creation",
+      "detail": "HectonVegetationInstanceData",
+      "snippet": "new HectonVegetationInstanceData(                         (HectonVegetationInstanceType)record.Type,                         record.HeightScale,                         record.WidthScale,                         ResolveDeterministicVatPhase"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 864,
+      "owner": "WriteJobRecordsToPool",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                             floraDescriptor.BioluminescenceColor.x,                             floraDescriptor.BioluminescenceColor.y,                             floraDescriptor.BioluminescenceColor.z,                        "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 877,
+      "owner": "WriteJobRecordsToPool",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(record.FlowDirection.x, record.FlowDirection.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 878,
+      "owner": "WriteJobRecordsToPool",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(record.FlowVector.x, record.FlowVector.y, record.FlowVector.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 895,
+      "owner": "ResolveDeterministicVatPhase01",
+      "kind": "value_type_creation",
+      "detail": "uint4",
+      "snippet": "new uint4(                  variationBits,                  unchecked((uint)type),                  unchecked((uint)semanticType),                  biomeLayer)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 1023,
+      "owner": "ResolveFallbackFloraDescriptor",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(0.11f, 0.52f, 0.47f, 0.42f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 1024,
+      "owner": "ResolveFallbackFloraDescriptor",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(0.08f, 0.42f, 0.38f, 0.26f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 1025,
+      "owner": "ResolveFallbackFloraDescriptor",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(0.10f, 0.48f, 0.34f, 0.22f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 1027,
+      "owner": "ResolveFallbackFloraDescriptor",
+      "kind": "object_creation",
+      "detail": "FloraDataTemplate.RuntimeDescriptor",
+      "snippet": "new FloraDataTemplate.RuntimeDescriptor              {                  StableHashId = 0,                  LootHashId = 0,                  VulnerabilityMask = 0u,                  AudioMaterialId = (uint)FloraDataTemplate.AudioMaterialId.O"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 1033,
+      "owner": "ResolveFallbackFloraDescriptor",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(color.x, color.y, color.z, color.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 87,
+      "owner": "RebuildDensityQuerySnapshot",
+      "kind": "object_creation",
+      "detail": "VegetationDensityChunkRecord",
+      "snippet": "new VegetationDensityChunkRecord                  {                      MinX = payload.MinX,                      MaxX = payload.MaxX,                      MinZ = payload.MinZ,                      MaxZ = payload.MaxZ,                     "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 797,
+      "owner": "DistortAggregateFlowVectorsByThreat",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(-radial.z, 0f, radial.x)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 802,
+      "owner": "DistortAggregateFlowVectorsByThreat",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(distortedFlow.x, distortedFlow.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 1083,
+      "owner": "ResolveFallbackVisibilityChannels",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.18f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 1085,
+      "owner": "ResolveFallbackVisibilityChannels",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0.24f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 1087,
+      "owner": "ResolveFallbackVisibilityChannels",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 0.28f * EvaluateSargassumVerticalConcealment(position.y))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 1276,
+      "owner": "TryBuildDensitySample",
+      "kind": "object_creation",
+      "detail": "VegetationDensitySample",
+      "snippet": "new VegetationDensitySample(                      true,                      type,                      ResolveSemanticType(type, biomeLayer, seed),                      biomeLayer,                      ResolveAcousticType(type, density),  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 1437,
+      "owner": "SampleVegetationAudioDensity",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(forward.z, 0f, -forward.x)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 1440,
+      "owner": "SampleVegetationAudioDensity",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(origin.x, origin.y, origin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 1442,
+      "owner": "SampleVegetationAudioDensity",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(origin.x + offset.x, origin.y + offset.y, origin.z + offset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 1443,
+      "owner": "SampleVegetationAudioDensity",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(origin.x - offset.x, origin.y - offset.y, origin.z - offset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 1445,
+      "owner": "SampleVegetationAudioDensity",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(origin.x + offset.x, origin.y + offset.y, origin.z + offset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+      "line": 1446,
+      "owner": "SampleVegetationAudioDensity",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(origin.x - offset.x, origin.y - offset.y, origin.z - offset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+      "line": 69,
+      "owner": "RegisterTerrainHoleHandle",
+      "kind": "object_creation",
+      "detail": "TerrainHoleRecord",
+      "snippet": "new TerrainHoleRecord              {                  HoleId = _nextTerrainHoleId++,                  Y = position.y,                  X = position.x,                  Z = position.z,                  Radius = clampedRadius,                "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+      "line": 165,
+      "owner": "UnregisterTerrainHole",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(removed.X, removed.Y, removed.Z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+      "line": 247,
+      "owner": "SyncMegaWreckInteriorTerrainHoles",
+      "kind": "object_creation",
+      "detail": "TerrainHoleRecord",
+      "snippet": "new TerrainHoleRecord                  {                      HoleId = InvalidTerrainHoleId,                      Y = section.WorldCenter.y,                      X = section.WorldCenter.x,                      Z = section.WorldCenter.z,    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+      "line": 304,
+      "owner": "EvictDistantTerrainHoles",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(hole.X, hole.Y, hole.Z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+      "line": 340,
+      "owner": "SetArtificialInteriorState",
+      "kind": "value_type_creation",
+      "detail": "ArtificialInteriorState",
+      "snippet": "new ArtificialInteriorState             {                 IsActive = 1,                 Type = type,                 StructureId = structureId,                 Bounds = bounds             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+      "line": 449,
+      "owner": "SyncTerrainHoleNativeCache",
+      "kind": "object_creation",
+      "detail": "TerrainHoleStreamingRecord",
+      "snippet": "new TerrainHoleStreamingRecord                     {                         HoleId = hole.HoleId,                         Position = new Vector3(hole.X, hole.Y, hole.Z),                         Radius = hole.Radius,                        "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+      "line": 452,
+      "owner": "SyncTerrainHoleNativeCache",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(hole.X, hole.Y, hole.Z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+      "line": 570,
+      "owner": "InvalidateChunksIntersectingTerrainHoleRange",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(hole.X, 0f, hole.Z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+      "line": 675,
+      "owner": "CopySemanticAnchorPositions",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(poolView.Matrices[i].m03, poolView.Matrices[i].m13, poolView.Matrices[i].m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+      "line": 798,
+      "owner": "FreeChunkSlice",
+      "kind": "object_creation",
+      "detail": "PoolBlock",
+      "snippet": "new PoolBlock { Offset = offset, Length = count }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+      "line": 900,
+      "owner": "QueueDeferredTileCacheDisposal",
+      "kind": "object_creation",
+      "detail": "DeferredTileCacheDisposal",
+      "snippet": "new DeferredTileCacheDisposal                     {                         Request = state.HeightReadbackRequest                     }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationPersistenceManager.cs",
+      "line": 43,
+      "owner": "CorruptZone",
+      "kind": "object_creation",
+      "detail": "ChunkKey",
+      "snippet": "new ChunkKey(state.TileX, state.TileZ, chunkX, chunkZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 54,
+      "owner": "TryBuildImmediateAbyssalVoxelRoute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(startPosition.x, startPosition.y, startPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 55,
+      "owner": "TryBuildImmediateAbyssalVoxelRoute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(endPosition.x, endPosition.y, endPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 96,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(startPosition.x, startPosition.y, startPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 97,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(endPosition.x, endPosition.y, endPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 137,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeList<Vector3>",
+      "snippet": "new NativeList<Vector3>(fixedPathCapacity, Allocator.TempJob)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 138,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeList<Vector3>",
+      "snippet": "new NativeList<Vector3>(fixedPathCapacity, Allocator.TempJob)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 281,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "NativeAStarJob",
+      "snippet": "new NativeAStarJob                     {                         Nodes = navNodesForJob,                         NodeTypes = navNodeTypesForJob,                         ConduitVectors = conduitVectorsForJob,                         ConduitS"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 289,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 292,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(_ecosystemThreatGridResolution, _ecosystemThreatGridResolutionY, _ecosystemThreatGridResolution)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 293,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(_ecosystemThreatVoxelOrigin.x, _ecosystemThreatVoxelOrigin.y, _ecosystemThreatVoxelOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 294,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 309,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(resolvedStartPosition.x, resolvedStartPosition.y, resolvedStartPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 310,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(resolvedEndPosition.x, resolvedEndPosition.y, resolvedEndPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 450,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "StringPullPathJob",
+      "snippet": "new StringPullPathJob                 {                     InputPath = rawPath.AsDeferredJobArray(),                     DensityChunks = densityChunksForJob,                     DensityGrid = densityGridForJob,                     ChunkCou"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 462,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 468,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(_ecosystemThreatGridResolution, _ecosystemThreatGridResolutionY, _ecosystemThreatGridResolution)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 469,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(_ecosystemThreatVoxelOrigin.x, _ecosystemThreatVoxelOrigin.y, _ecosystemThreatVoxelOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 470,
+      "owner": "TryScheduleAbyssalPath",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 554,
+      "owner": "TryApplyExternalSurfaceFlowVectorField",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(flowVector.x, flowVector.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 646,
+      "owner": "BuildChunkAbyssalNavPayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(worldX, terrainY + abyssalNavNodeHoverHeight, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 669,
+      "owner": "BuildChunkAbyssalNavPayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(hole.X, terrainY + abyssalNavNodeHoverHeight, hole.Z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 871,
+      "owner": "TrySampleCachedTerrainHeight",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(state.TerrainSize.x, state.TerrainSize.y, state.TerrainSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 1134,
+      "owner": "RebuildHLODRegistrySnapshot",
+      "kind": "object_creation",
+      "detail": "HLODData",
+      "snippet": "new HLODData                         {                             StructureId = definition.WreckId,                             Type = StructureType.MegaWreck,                             Center = definition.Center,                        "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 1154,
+      "owner": "RebuildHLODRegistrySnapshot",
+      "kind": "object_creation",
+      "detail": "HLODData",
+      "snippet": "new HLODData                     {                         StructureId = structure.StructureId,                         Type = structure.Type,                         Center = structure.Bounds.center,                         Size = structur"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 1337,
+      "owner": "IsHLODVisible",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                 math.max(0.5f, entry.Size.x * 0.5f + hlodFrustumPadding),                 math.max(0.5f, entry.Size.y * 0.5f + hlodFrustumPadding),                 math.max(0.5f, entry.Size.z * 0.5f + hlodFrustumPadding))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 1341,
+      "owner": "IsHLODVisible",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(entry.Center, extents * 2f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 1974,
+      "owner": "RecordAbyssalPathTelemetry",
+      "kind": "value_type_creation",
+      "detail": "AbyssalPathTelemetryEntry",
+      "snippet": "new AbyssalPathTelemetryEntry                 {                     Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),                     RawCount = rawCount,                     OutputCount = outputCount,               "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 2048,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 2095,
+      "owner": "DumpAbyssalPathTelemetry",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "line": 2096,
+      "owner": "DumpAbyssalPathTelemetry",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationThreatAndStructureService.cs",
+      "line": 127,
+      "owner": "RegisterArtificialStructureHandle",
+      "kind": "object_creation",
+      "detail": "PersistentArtificialStructureRecord",
+      "snippet": "new PersistentArtificialStructureRecord             {                 StructureId = structureId,                 Bounds = bounds,                 Type = type             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationThreatAndStructureService.cs",
+      "line": 238,
+      "owner": "GetFlowDirection",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                     playerRuntimePosition.x - position.x,                     0f,                     playerRuntimePosition.z - position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationThreatAndStructureService.cs",
+      "line": 247,
+      "owner": "GetFlowDirection",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(direction.x, 0f, direction.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationThreatAndStructureService.cs",
+      "line": 251,
+      "owner": "GetFlowDirection",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(flow.x, 0f, flow.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationThreatAndStructureService.cs",
+      "line": 361,
+      "owner": "TryGetThreatHotspot",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                          _ecosystemThreatGridCenter.x + localX,                          playerPosition.y,                          _ecosystemThreatGridCenter.z + localZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationPredatorFearField.cs",
+      "line": 41,
+      "owner": "RegisterPredatorFearNode",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(node.Position.x - sectorCenter.x, node.Position.z - sectorCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationPredatorFearField.cs",
+      "line": 62,
+      "owner": "RegisterPredatorFearNode",
+      "kind": "value_type_creation",
+      "detail": "PredatorFearNodeState",
+      "snippet": "new PredatorFearNodeState              {                  Position = sectorCenter,                  Radius = sectorRadius,                  Weight = normalizedWeight,                  ExpireTime = expireTime,                  SpeciesId = sp"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationPredatorFearField.cs",
+      "line": 87,
+      "owner": "SamplePredatorFearPressure",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(worldPosition.x, worldPosition.y, worldPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationPredatorFearField.cs",
+      "line": 94,
+      "owner": "SamplePredatorFearPressure",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(position.x - node.Position.x, position.z - node.Position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationPredatorFearField.cs",
+      "line": 188,
+      "owner": "ResolvePredatorFearSectorCenter",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  Mathf.Round(worldPosition.x / sectorSize) * sectorSize,                  worldPosition.y,                  Mathf.Round(worldPosition.z / sectorSize) * sectorSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 91,
+      "owner": "RegisterSwarmWakeImpulse",
+      "kind": "object_creation",
+      "detail": "SwarmWakeImpulse",
+      "snippet": "new SwarmWakeImpulse             {                 Position = new float3(positionWS.x, positionWS.y, positionWS.z),                 Radius = math.max(0.1f, radiusMeters),                 FlowVector = new float3(flowVectorWS.x, flowVectorWS."
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 93,
+      "owner": "RegisterSwarmWakeImpulse",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(positionWS.x, positionWS.y, positionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 95,
+      "owner": "RegisterSwarmWakeImpulse",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(flowVectorWS.x, flowVectorWS.y, flowVectorWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 111,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(math.select(-1f, 1f, value.x >= 0f), 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 112,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, math.select(-1f, 1f, value.y >= 0f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 123,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 126,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 128,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 461,
+      "owner": "ScheduleThreatPropagationJob",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                 targetCenter.x - halfExtent,                 waterLevel - thermalGridDepthMeters,                 targetCenter.z - halfExtent)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 553,
+      "owner": "ScheduleThreatPropagationJob",
+      "kind": "value_type_creation",
+      "detail": "ThreatPropagationJob",
+      "snippet": "new ThreatPropagationJob             {                 CurrentThreat = currentThreat,                 NextThreat = threatOutput,                 NextThreatCompressed = compressedOutput,                 CurrentEchoFlags = previousEchoFlags, "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 578,
+      "owner": "ScheduleThreatPropagationJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(emissionPosition.x, emissionPosition.y, emissionPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 579,
+      "owner": "ScheduleThreatPropagationJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(targetCenter.x, targetCenter.y, targetCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 586,
+      "owner": "ScheduleThreatPropagationJob",
+      "kind": "value_type_creation",
+      "detail": "ThreatVoxelizationJob",
+      "snippet": "new ThreatVoxelizationJob             {                 ThreatGrid = threatOutput,                 DensityChunks = threatChunks,                 DensityGrid = densityGrid,                 ThreatAttractorGrid = threatAttractorGrid,          "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 600,
+      "owner": "ScheduleThreatPropagationJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(voxelOrigin.x, voxelOrigin.y, voxelOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 601,
+      "owner": "ScheduleThreatPropagationJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(targetCenter.x, targetCenter.y, targetCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 891,
+      "owner": "ScheduleFlowFieldJob",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 893,
+      "owner": "ScheduleFlowFieldJob",
+      "kind": "value_type_creation",
+      "detail": "BuildAbyssalFlowFieldJob",
+      "snippet": "new BuildAbyssalFlowFieldJob             {                 ThreatGrid = currentThreatGrid,                 FlowChunks = flowChunks,                 FlowDensityGrid = flowDensityGrid,                 ThreatAttractorGrid = threatAttractorGrid"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 907,
+      "owner": "ScheduleFlowFieldJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(flowCenter.x, flowCenter.y, flowCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 908,
+      "owner": "ScheduleFlowFieldJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(playerPosition.x, playerPosition.y, playerPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 909,
+      "owner": "ScheduleFlowFieldJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(hotspotPosition.x, hotspotPosition.y, hotspotPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1007,
+      "owner": "ScheduleThermalGridJob",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1010,
+      "owner": "ScheduleThermalGridJob",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(playerRuntimePosition.x, waterLevel - (thermalGridDepthMeters * 0.5f), playerRuntimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1013,
+      "owner": "ScheduleThermalGridJob",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, waterLevel - (thermalGridDepthMeters * 0.5f), 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1015,
+      "owner": "ScheduleThermalGridJob",
+      "kind": "value_type_creation",
+      "detail": "BuildAbyssalThermalGridJob",
+      "snippet": "new BuildAbyssalThermalGridJob             {                 Output = thermalOutput,                 ThreatChunks = threatChunks,                 ThreatAttractorGrid = threatAttractorGrid,                 ChunkCount = _threatSamplingChunkCo"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1027,
+      "owner": "ScheduleThermalGridJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(thermalCenter.x, thermalCenter.y, thermalCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1044,
+      "owner": "ScheduleThermalGridJob",
+      "kind": "value_type_creation",
+      "detail": "BuildAbyssalFlowVolumeJob",
+      "snippet": "new BuildAbyssalFlowVolumeJob             {                 ThermalGrid = thermalOutput,                 ExternalWakeImpulse = _swarmWakeImpulse,                 Output = flowVolumeOutput,                 HorizontalResolution = _abyssalTher"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1065,
+      "owner": "ScheduleThermalGridJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(thermalCenter.x, thermalCenter.y, thermalCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1326,
+      "owner": "UpdateThreatHotspot",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                 _ecosystemThreatGridCenter.x + ((bestX - halfExtent) * threatGridCellSize),                 hotspotY,                 _ecosystemThreatGridCenter.z + ((bestZ - halfExtent) * threatGridCellSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1382,
+      "owner": "GetThreatVoxelView",
+      "kind": "object_creation",
+      "detail": "Vector3Int",
+      "snippet": "new Vector3Int(                 _ecosystemThreatGridResolution,                 _ecosystemThreatGridResolutionY,                 _ecosystemThreatGridResolution)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1898,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(sampleX, worldY, sampleZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1902,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1911,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(sampleX, worldY, sampleZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 1913,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(flowDirection.x, 0f, flowDirection.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2037,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(flowVector.x, flowVector.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2040,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "JobInstanceRecord",
+      "snippet": "new JobInstanceRecord                  {                      Matrix = float4x4.TRS(position, rotation, new float3(scale, scale, scale)),                      HeightScale = heightScale,                      WidthScale = widthScale,         "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2042,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(scale, scale, scale)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2068,
+      "owner": "IntersectsBaseModuleAabb",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x - radius, position.y - 0.05f, position.z - radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2069,
+      "owner": "IntersectsBaseModuleAabb",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x + radius, position.y + height, position.z + radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2397,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(sampleX, WaterLevel + FloatingSurfaceOffset, sampleZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2398,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2399,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(flowDirection.x, 0f, flowDirection.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2402,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(yawDirection.x, 0f, yawDirection.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2402,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2403,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "JobInstanceRecord",
+      "snippet": "new JobInstanceRecord                  {                      Matrix = float4x4.TRS(position, rotation, new float3(scale, scale, scale)),                      HeightScale = heightScale,                      WidthScale = widthScale,         "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2405,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(scale, scale, scale)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2461,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2525,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(worldX, GridCenter.y, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2539,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(worldX - EmissionPosition.x, worldZ - EmissionPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2772,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      (cellX + 0.5f) * CellSizeXZ,                      (cellY + 0.5f) * CellSizeY,                      (cellZ + 0.5f) * CellSizeXZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2776,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      GridOrigin.x + voxelCenterOffset.x,                      GridOrigin.y + voxelCenterOffset.y,                      GridOrigin.z + voxelCenterOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2950,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(worldX, GridCenter.y, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2953,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(PlayerPosition.x - worldX, PlayerPosition.z - worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2955,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(HotspotPosition.x - worldX, HotspotPosition.z - worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 2966,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3021,
+      "owner": "ComputeThreatGradient",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(                      SampleThreat(cellX + 1, cellZ) - SampleThreat(cellX - 1, cellZ),                      SampleThreat(cellX, cellZ + 1) - SampleThreat(cellX, cellZ - 1))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3028,
+      "owner": "ComputeNavGradient",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(                      SampleNavSupport(cellX + 1, cellZ) - SampleNavSupport(cellX - 1, cellZ),                      SampleNavSupport(cellX, cellZ + 1) - SampleNavSupport(cellX, cellZ - 1))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3035,
+      "owner": "ComputeObstacleGradient",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(CellSize, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3036,
+      "owner": "ComputeObstacleGradient",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, CellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3037,
+      "owner": "ComputeObstacleGradient",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(                      SampleObstacle(position + offsetX) - SampleObstacle(position - offsetX),                      SampleObstacle(position + offsetZ) - SampleObstacle(position - offsetZ))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3101,
+      "owner": "SampleWakeFlow",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(position.x - impulse.Position.x, position.z - impulse.Position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3114,
+      "owner": "SampleWakeFlow",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(impulse.FlowVector.x, impulse.FlowVector.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3173,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(worldX, worldY, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3305,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3320,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(noiseX, noiseZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3325,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(horizontalCurrent.x, verticalCurrent, horizontalCurrent.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3326,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(worldX, worldY, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3558,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(EndPosition.x, EndPosition.y, EndPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3573,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(node.x, node.y, node.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3596,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(StartPosition.x, StartPosition.y, StartPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3795,
+      "owner": "SamplePredatorFearAtWorldPosition",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(position.x - node.Position.x, position.z - node.Position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3826,
+      "owner": "SampleThreatVoxelAtWorldPosition",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.0001f, 0.0001f, 0.0001f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3827,
+      "owner": "SampleThreatVoxelAtWorldPosition",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                     (int)math.floor(local.x * inverseCellSize.x),                     (int)math.floor(local.y * inverseCellSize.y),                     (int)math.floor(local.z * inverseCellSize.z))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 3955,
+      "owner": "ToFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4189,
+      "owner": "BuildPortal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4374,
+      "owner": "HasVoxelLineOfSight",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4377,
+      "owner": "HasVoxelLineOfSight",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(-1, -1, -1)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4377,
+      "owner": "HasVoxelLineOfSight",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(1, 1, 1)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4378,
+      "owner": "HasVoxelLineOfSight",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(currentVoxel.x, currentVoxel.y, currentVoxel.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4380,
+      "owner": "HasVoxelLineOfSight",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(DdaEpsilon, DdaEpsilon, DdaEpsilon)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4384,
+      "owner": "HasVoxelLineOfSight",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1000000f, 1000000f, 1000000f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4385,
+      "owner": "HasVoxelLineOfSight",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1000000f, 1000000f, 1000000f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4431,
+      "owner": "TryWorldToVoxel",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                      (int)math.floor(local.x * inverseCellSizeX),                      (int)math.floor(local.y * inverseCellSizeY),                      (int)math.floor(local.z * inverseCellSizeZ))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4545,
+      "owner": "GetActiveVoxelCellSize",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(NavPassabilityCellSize, NavPassabilityCellSize, NavPassabilityCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4556,
+      "owner": "ResolvePortalAxis",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4561,
+      "owner": "ToFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4567,
+      "owner": "ResolvePerpendicular",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4568,
+      "owner": "ResolvePerpendicular",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4569,
+      "owner": "ResolvePerpendicular",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4589,
+      "owner": "ResolveWindingAxis",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4610,
+      "owner": "BuildNavPortal",
+      "kind": "object_creation",
+      "detail": "NavPortal",
+      "snippet": "new NavPortal                 {                     Left = left,                     Right = right,                      WidthSq = math.max(widthSq, FunnelEpsilon),                      Reserved = 0f                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 4629,
+      "owner": "NormalizeRsqrtOrFallback",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationCapacityUtilities.cs",
+      "line": 226,
+      "owner": "EnsureNativeCapacity",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeArray<T>",
+      "snippet": "new NativeArray<T>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationCapacityUtilities.cs",
+      "line": 251,
+      "owner": "EnsureInactiveNativeCapacity",
+      "kind": "native_persistent_allocation",
+      "detail": "NativeArray<T>",
+      "snippet": "new NativeArray<T>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory)"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

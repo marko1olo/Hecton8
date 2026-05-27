@@ -27,6 +27,8 @@ namespace Hecton8.Graphics.Culling
         private const int MatrixStride = 64;
         private const int TelemetryReadbackStride = 3;
         private const int OverloadVisibleThreshold = 50000;
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const float DefaultCullDistanceMeters = 200f;
         private const float LowTierCullDistanceMeters = 100f;
         private const float VramDownsampleThresholdMb = 1600f;
@@ -36,7 +38,6 @@ namespace Hecton8.Graphics.Culling
         private const uint TelemetryDispatchFlag = 1u << 3;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_HLOD_INSTANCE_CULLING.bin";
         private const SystemID VaultOwnerSystemId = SystemID.GraphicsScalability;
-        private const BufferID IndirectArgsReadbackBufferId = BufferID.InstanceCullingIndirectArgsReadback;
         private const BufferID TelemetryRingBufferId = BufferID.InstanceCullingTelemetryRing;
 
         private static readonly int _AllInstancesId = Shader.PropertyToID("_HectonAllInstances");
@@ -80,7 +81,7 @@ namespace Hecton8.Graphics.Culling
         private ComputeShader _activeComputeShader;
         private GraphicsBuffer _visibleInstancesBuffer;
         private GraphicsBuffer _indirectArgsBuffer;
-        private VaultGenerationHandle<uint> _indirectArgsReadbackHandle;
+        private readonly uint[] _indirectArgsUpload = new uint[IndirectArgsCount]; // COLD ALLOC: uint[5] - cached indirect args initialization upload - owner: InstanceCullingService
         private VaultGenerationHandle<InstanceCullingTelemetryEntry> _telemetryRingHandle;
         private IDataVault _dataVault;
         private Action<AsyncGPUReadbackRequest> _cachedReadbackCallback;
@@ -107,7 +108,6 @@ namespace Hecton8.Graphics.Culling
         private float _lastCullDistance;
         private float _lastVramUsedMb;
         private uint _lastFlags;
-        private bool _readbackWriteLockHeld;
         private bool _voxelSdfEnabled;
         private bool _dumpedInvalidState;
 
@@ -115,6 +115,7 @@ namespace Hecton8.Graphics.Culling
         public bool IsAvailable =>
             _activeComputeShader != null &&
             _kernel >= 0 &&
+            _threadGroupSize > 0 &&
             _visibleInstancesBuffer != null &&
             _indirectArgsBuffer != null;
 
@@ -164,15 +165,33 @@ namespace Hecton8.Graphics.Culling
         {
             _activeComputeShader = computeShader;
             _capacity = math.max(1, capacity);
-            _kernel = _activeComputeShader != null ? _activeComputeShader.FindKernel("CullInstances") : -1;
-            if (_kernel >= 0)
+            if (!SystemInfo.supportsComputeShaders)
             {
-                _activeComputeShader.GetKernelThreadGroupSizes(_kernel, out uint groupX, out _, out _);
-                _threadGroupSize = math.max(1, (int)groupX);
+                _activeComputeShader = null;
+                _kernel = -1;
+                _threadGroupSize = 0;
+                ReleaseResources();
+                return;
+            }
+
+            _kernel = _activeComputeShader != null && _activeComputeShader.HasKernel("CullInstances")
+                ? _activeComputeShader.FindKernel("CullInstances")
+                : -1;
+            if (_kernel >= 0 && _activeComputeShader.IsSupported(_kernel))
+            {
+                _activeComputeShader.GetKernelThreadGroupSizes(_kernel, out uint groupX, out uint groupY, out uint groupZ);
+                _threadGroupSize = groupX > 0u &&
+                    groupY == 1u &&
+                    groupZ == 1u &&
+                    groupX <= int.MaxValue &&
+                    groupX <= PortableMaxComputeThreadsPerGroup
+                        ? (int)groupX
+                        : 0;
             }
             else
             {
-                _threadGroupSize = 64;
+                _kernel = -1;
+                _threadGroupSize = 0;
             }
 
             EnsureResources();
@@ -218,6 +237,12 @@ namespace Hecton8.Graphics.Culling
                 flags |= (uint)InstanceCullingDispatchFlags.VramDownsample;
             if (_voxelSdfEnabled)
                 flags |= (uint)InstanceCullingDispatchFlags.VoxelSdfCull;
+            int dispatchGroups = ResolveDispatchGroups(instanceCount, _threadGroupSize);
+            if (dispatchGroups <= 0)
+            {
+                WriteInvalidTelemetry();
+                return false;
+            }
 
             _lastSourceInstanceCount = instanceCount;
             _lastCullDistance = cullDistance;
@@ -251,7 +276,6 @@ namespace Hecton8.Graphics.Culling
             if (_voxelSdfTexture != null)
                 _activeComputeShader.SetTexture(_kernel, _VoxelSdfTextureId, _voxelSdfTexture);
 
-            int dispatchGroups = (instanceCount + _threadGroupSize - 1) / _threadGroupSize;
             _activeComputeShader.Dispatch(_kernel, dispatchGroups, 1, 1);
             GraphicsBuffer.CopyCount(_visibleInstancesBuffer, _indirectArgsBuffer, sizeof(uint));
             TryRequestTelemetryReadback();
@@ -261,7 +285,7 @@ namespace Hecton8.Graphics.Culling
         /// <inheritdoc />
         public bool ApplyAupShift(GraphicsBuffer allInstancesBuffer, int instanceCount, Vector3 shiftMeters, uint shiftFrameId)
         {
-            if (allInstancesBuffer == null || instanceCount <= 0 || allInstancesBuffer.count <= 0)
+            if (allInstancesBuffer == null || instanceCount <= 0 || allInstancesBuffer.count <= 0 || _threadGroupSize <= 0)
                 return false;
 
             float3 shift = new float3(shiftMeters.x, shiftMeters.y, shiftMeters.z);
@@ -333,7 +357,6 @@ namespace Hecton8.Graphics.Culling
             ReleaseBuffer(ref _visibleInstancesBuffer);
             ReleaseBuffer(ref _indirectArgsBuffer);
 
-            ReleaseVaultHandle(_dataVault, ref _indirectArgsReadbackHandle);
             ReleaseVaultHandle(_dataVault, ref _telemetryRingHandle);
 
             _telemetryWriteIndex = 0;
@@ -353,7 +376,10 @@ namespace Hecton8.Graphics.Culling
 
         private bool ValidateDispatch(in InstanceCullingDispatchDescriptor descriptor)
         {
-            if (!IsAvailable || descriptor.AllInstancesBuffer == null || descriptor.InstanceCount <= 0)
+            if (!SystemInfo.supportsComputeShaders ||
+                !IsAvailable ||
+                descriptor.AllInstancesBuffer == null ||
+                descriptor.InstanceCount <= 0)
             {
                 WriteInvalidTelemetry();
                 return false;
@@ -422,15 +448,6 @@ namespace Hecton8.Graphics.Culling
             if (vault == null)
                 return;
 
-            if (!IsExactVaultHandle(in _indirectArgsReadbackHandle, IndirectArgsReadbackBufferId))
-            {
-                _indirectArgsReadbackHandle = vault.EnsureGenerationHandle<uint>(
-                    IndirectArgsReadbackBufferId,
-                    IndirectArgsCount,
-                    VaultOwnerSystemId,
-                    NativeArrayOptions.ClearMemory);
-            }
-
             if (!IsExactVaultHandle(in _telemetryRingHandle, TelemetryRingBufferId))
             {
                 _telemetryRingHandle = vault.EnsureGenerationHandle<InstanceCullingTelemetryEntry>(
@@ -450,19 +467,12 @@ namespace Hecton8.Graphics.Culling
             if (_lastArgs0 == args0 && _lastArgs2 == args2 && _lastArgs3 == args3 && _lastArgs4 == args4)
                 return;
 
-            NativeArray<uint> indirectArgs = _indirectArgsBuffer.LockBufferForWrite<uint>(0, IndirectArgsCount);
-            try
-            {
-                indirectArgs[0] = args.IndexCountPerInstance;
-                indirectArgs[1] = 0u;
-                indirectArgs[2] = args.StartIndex;
-                indirectArgs[3] = args.BaseVertexIndex;
-                indirectArgs[4] = args.StartInstance;
-            }
-            finally
-            {
-                _indirectArgsBuffer.UnlockBufferAfterWrite<uint>(IndirectArgsCount);
-            }
+            _indirectArgsUpload[0] = args.IndexCountPerInstance;
+            _indirectArgsUpload[1] = 0u;
+            _indirectArgsUpload[2] = args.StartIndex;
+            _indirectArgsUpload[3] = args.BaseVertexIndex;
+            _indirectArgsUpload[4] = args.StartInstance;
+            _indirectArgsBuffer.SetData(_indirectArgsUpload, 0, 0, IndirectArgsCount);
             _lastArgs0 = args0;
             _lastArgs2 = args2;
             _lastArgs3 = args3;
@@ -471,62 +481,44 @@ namespace Hecton8.Graphics.Culling
 
         private void TryRequestTelemetryReadback()
         {
-            if (!_enableTelemetryReadback || _readbackPending != 0 || !IsExactVaultHandle(in _indirectArgsReadbackHandle, IndirectArgsReadbackBufferId))
+            if (!_enableTelemetryReadback || _readbackPending != 0 || _indirectArgsBuffer == null)
                 return;
 
             int frame = SystemDispatcher.CurrentFrameIndex;
             if (frame % TelemetryReadbackStride != 0)
                 return;
 
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !vault.TryAcquireWriteLock(in _indirectArgsReadbackHandle, VaultOwnerSystemId, out NativeArray<uint> indirectArgsReadback))
-                return;
-
-            if (!indirectArgsReadback.IsCreated || indirectArgsReadback.Length < IndirectArgsCount)
-            {
-                vault.ReleaseWriteLock(in _indirectArgsReadbackHandle, VaultOwnerSystemId);
-                return;
-            }
-
-            _readbackWriteLockHeld = true;
             _readbackPending = 1;
-            AsyncGPUReadback.RequestIntoNativeArray(ref indirectArgsReadback, _indirectArgsBuffer, _cachedReadbackCallback);
+            AsyncGPUReadback.Request(_indirectArgsBuffer, _cachedReadbackCallback);
         }
 
         private void OnIndirectArgsReadback(AsyncGPUReadbackRequest request)
         {
             _readbackPending = 0;
-            try
+            NativeArray<uint> indirectArgsReadback = request.hasError
+                ? default
+                : request.GetData<uint>();
+            if (!indirectArgsReadback.IsCreated || indirectArgsReadback.Length < 2)
             {
-                if (request.hasError ||
-                    !TryReadIndirectArgsReadback(out NativeArray<uint>.ReadOnly indirectArgsReadback) ||
-                    indirectArgsReadback.Length < 2)
-                {
-                    WriteInvalidTelemetry();
-                    return;
-                }
+                WriteInvalidTelemetry();
+                return;
+            }
 
-                int visible = math.max(0, unchecked((int)indirectArgsReadback[1]));
-                int culled = math.max(0, _lastSourceInstanceCount - visible);
-                _lastVisibleInstanceCount = visible;
-                _lastCulledInstanceCount = culled;
-                uint flags = _lastFlags;
-                if (visible > OverloadVisibleThreshold)
-                    flags |= TelemetryOverloadFlag;
-                WriteTelemetry(
-                    Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                    _lastSourceInstanceCount,
-                    visible,
-                    culled,
-                    flags,
-                    _lastCullDistance,
-                    _lastVramUsedMb);
-            }
-            finally
-            {
-                ReleaseReadbackWriteLock();
-            }
+            int visible = math.max(0, unchecked((int)indirectArgsReadback[1]));
+            int culled = math.max(0, _lastSourceInstanceCount - visible);
+            _lastVisibleInstanceCount = visible;
+            _lastCulledInstanceCount = culled;
+            uint flags = _lastFlags;
+            if (visible > OverloadVisibleThreshold)
+                flags |= TelemetryOverloadFlag;
+            WriteTelemetry(
+                Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                _lastSourceInstanceCount,
+                visible,
+                culled,
+                flags,
+                _lastCullDistance,
+                _lastVramUsedMb);
         }
 
         private void WriteInvalidTelemetry()
@@ -663,16 +655,6 @@ namespace Hecton8.Graphics.Culling
             return _dataVault;
         }
 
-        private bool TryReadIndirectArgsReadback(out NativeArray<uint>.ReadOnly readback)
-        {
-            readback = default;
-            IDataVault vault = _dataVault;
-            return vault != null &&
-                   IsExactVaultHandle(in _indirectArgsReadbackHandle, IndirectArgsReadbackBufferId) &&
-                   vault.TryReadOnlyHandle(in _indirectArgsReadbackHandle, out readback) &&
-                   readback.Length >= IndirectArgsCount;
-        }
-
         private bool TryReadTelemetryRing(out NativeArray<InstanceCullingTelemetryEntry>.ReadOnly telemetryRing)
         {
             telemetryRing = default;
@@ -686,32 +668,25 @@ namespace Hecton8.Graphics.Culling
         private void CompletePendingReadbackBeforeRelease()
         {
             if (_readbackPending == 0)
-            {
-                ReleaseReadbackWriteLock();
                 return;
-            }
 
-            // BLOCKING_SYNC_POINT: teardown/configuration must not release a vault buffer while AsyncGPUReadback owns it.
+            // BLOCKING_SYNC_POINT: teardown/configuration must not release a GraphicsBuffer while AsyncGPUReadback owns it.
             AsyncGPUReadback.WaitAllRequests();
             _readbackPending = 0;
-            ReleaseReadbackWriteLock();
-        }
-
-        private void ReleaseReadbackWriteLock()
-        {
-            if (!_readbackWriteLockHeld)
-                return;
-
-            IDataVault vault = _dataVault;
-            if (vault != null && IsExactVaultHandle(in _indirectArgsReadbackHandle, IndirectArgsReadbackBufferId))
-                vault.ReleaseWriteLock(in _indirectArgsReadbackHandle, VaultOwnerSystemId);
-
-            _readbackWriteLockHeld = false;
         }
 
         private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
             return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
+        }
+
+        private static int ResolveDispatchGroups(int count, int threadGroupSize)
+        {
+            if (count <= 0 || threadGroupSize <= 0)
+                return 0;
+
+            long groups = ((long)count + threadGroupSize - 1L) / threadGroupSize;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct

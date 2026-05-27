@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -40,12 +41,30 @@ namespace Hecton8.UI.Navigation
         public uint LastAupShiftFrameId;
         [FieldOffset(36)]
         public int CalibrationCount;
-        [FieldOffset(40)]
-        public ulong Padding0;
-        [FieldOffset(48)]
-        public ulong Padding1;
-        [FieldOffset(56)]
-        public ulong Padding2;
+        [FieldOffset(40)] private byte _pad0;
+        [FieldOffset(41)] private byte _pad1;
+        [FieldOffset(42)] private byte _pad2;
+        [FieldOffset(43)] private byte _pad3;
+        [FieldOffset(44)] private byte _pad4;
+        [FieldOffset(45)] private byte _pad5;
+        [FieldOffset(46)] private byte _pad6;
+        [FieldOffset(47)] private byte _pad7;
+        [FieldOffset(48)] private byte _pad8;
+        [FieldOffset(49)] private byte _pad9;
+        [FieldOffset(50)] private byte _pad10;
+        [FieldOffset(51)] private byte _pad11;
+        [FieldOffset(52)] private byte _pad12;
+        [FieldOffset(53)] private byte _pad13;
+        [FieldOffset(54)] private byte _pad14;
+        [FieldOffset(55)] private byte _pad15;
+        [FieldOffset(56)] private byte _pad16;
+        [FieldOffset(57)] private byte _pad17;
+        [FieldOffset(58)] private byte _pad18;
+        [FieldOffset(59)] private byte _pad19;
+        [FieldOffset(60)] private byte _pad20;
+        [FieldOffset(61)] private byte _pad21;
+        [FieldOffset(62)] private byte _pad22;
+        [FieldOffset(63)] private byte _pad23;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 80)]
@@ -792,13 +811,13 @@ namespace Hecton8.UI.Navigation
             out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
-            if (vault == null || !IsLaneBound(in lane))
+            if (vault == null || !IsLaneBound(in lane) || vault.IsCompactionFenceActive)
                 return false;
 
             if (!vault.TryResolveHandle(in lane.Handle, out buffer))
                 return false;
 
-            return buffer.IsCreated && buffer.Length >= lane.Length;
+            return !vault.IsCompactionFenceActive && buffer.IsCreated && buffer.Length >= lane.Length;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -994,7 +1013,7 @@ namespace Hecton8.UI.Navigation
             {
                 state.Flags |= FlagNonFiniteFallback;
                 stateBuffer[0] = state;
-                DumpBlackBoxOnce(state.BlackBoxCursor, blackBox);
+                DumpBlackBoxOnce(state.BlackBoxCursor);
                 return;
             }
 
@@ -1087,7 +1106,7 @@ namespace Hecton8.UI.Navigation
             {
                 state.Flags |= FlagNonFiniteFallback;
                 stateBuffer[0] = state;
-                DumpBlackBoxOnce(state.BlackBoxCursor, blackBox);
+                DumpBlackBoxOnce(state.BlackBoxCursor);
             }
 
             stateBuffer[0] = state;
@@ -1565,9 +1584,9 @@ namespace Hecton8.UI.Navigation
             state.BlackBoxCursor = cursor;
         }
 
-        private void DumpBlackBoxOnce(int blackBoxCursor, NativeSlice<CompassBlackBoxEntry> blackBox)
+        private void DumpBlackBoxOnce(int blackBoxCursor)
         {
-            if (_blackBoxDumped || blackBox.Length < BlackBoxCapacity)
+            if (_blackBoxDumped || !IsLaneBound(in _blackBoxLane))
                 return;
 
             _blackBoxDumped = true;
@@ -1578,32 +1597,29 @@ namespace Hecton8.UI.Navigation
                 Directory.CreateDirectory(directory);
                 string path = Path.Combine(directory, DumpFileName);
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(DumpMagic);
-                    writer.Write(BlackBoxCapacity);
                     int cursor = blackBoxCursor;
                     if (cursor < 0 || cursor >= BlackBoxCapacity)
                         cursor = 0;
 
-                    writer.Write(cursor);
+                    Span<byte> header = stackalloc byte[12];
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), DumpMagic);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), BlackBoxCapacity);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), cursor);
+                    stream.Write(header);
+
+                    Span<byte> row = stackalloc byte[64];
                     for (int i = 0; i < BlackBoxCapacity; i++)
                     {
                         int index = cursor + i;
                         if (index >= BlackBoxCapacity)
                             index -= BlackBoxCapacity;
 
-                        CompassBlackBoxEntry entry = blackBox[index];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.ActualHeadingDegrees);
-                        writer.Write(entry.CurrentHeadingDegrees);
-                        writer.Write(entry.DriftDegrees);
-                        writer.Write(entry.MaxGyroDriftDegrees);
-                        writer.Write(entry.AnomalyInterference01);
-                        writer.Write(entry.Power01);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.LastAupShiftFrameId);
-                        writer.Write(entry.CalibrationCount);
+                        if (!TryReadBlackBoxEntry(index, out CompassBlackBoxEntry entry))
+                            return;
+
+                        WriteCompassBlackBoxEntry(row, in entry);
+                        stream.Write(row);
                     }
                 }
             }
@@ -1613,6 +1629,55 @@ namespace Hecton8.UI.Navigation
             catch (UnauthorizedAccessException)
             {
             }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+        }
+
+        private bool TryReadBlackBoxEntry(int index, out CompassBlackBoxEntry entry)
+        {
+            entry = default;
+            if (index < 0 ||
+                index >= BlackBoxCapacity ||
+                !OpenLane(_vault, in _blackBoxLane, out NativeArray<CompassBlackBoxEntry> blackBox) ||
+                blackBox.Length <= index)
+            {
+                return false;
+            }
+
+            entry = blackBox[index];
+            return true;
+        }
+
+        private static void WriteCompassBlackBoxEntry(Span<byte> destination, in CompassBlackBoxEntry entry)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            WriteFloatLittleEndian(destination.Slice(4, 4), entry.ActualHeadingDegrees);
+            WriteFloatLittleEndian(destination.Slice(8, 4), entry.CurrentHeadingDegrees);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.DriftDegrees);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.MaxGyroDriftDegrees);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.AnomalyInterference01);
+            WriteFloatLittleEndian(destination.Slice(24, 4), entry.Power01);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(28, 4), entry.Flags);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(32, 4), entry.LastAupShiftFrameId);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(36, 4), entry.CalibrationCount);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(40, 8), 0ul);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(48, 8), 0ul);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(56, 8), 0ul);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
         private static bool SupportsIndirectDial()

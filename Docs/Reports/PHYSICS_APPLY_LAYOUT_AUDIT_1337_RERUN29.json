@@ -1,0 +1,98 @@
+﻿{
+    "schema":  "hecton8.physics_apply_layout_audit_1337.v1",
+    "agentId":  "1337",
+    "source":  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+    "validator":  "PhysicsCullingLayout1337.Validate",
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "ForcePacket",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Force":  "0:Vector3",
+                                               "Torque":  "12:Vector3",
+                                               "PointOffset":  "24:Vector3",
+                                               "Mode":  "36:ForceMode",
+                                               "RigidbodyIndex":  "40:int",
+                                               "Flags":  "44:byte",
+                                               "Priority":  "45:ForcePacketPriority",
+                                               "_padding0":  "46:byte",
+                                               "_padding17":  "63:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "AcousticPingEvent",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "RuntimePosition":  "0:Vector3",
+                                               "RadiusMeters":  "12:float",
+                                               "Intensity01":  "16:float",
+                                               "LifetimeSeconds":  "20:float",
+                                               "SignalRole":  "24:FieldTargetRole",
+                                               "SourceSpeciesId":  "28:int",
+                                               "EnergyJoules":  "32:float",
+                                               "_pad0":  "36:byte",
+                                               "_pad27":  "63:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "AcousticImpulseEvent",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "RuntimePosition":  "0:Vector3",
+                                               "Direction":  "12:Vector3",
+                                               "KineticEnergyJoules":  "24:float",
+                                               "Volume01":  "28:float",
+                                               "PitchScale":  "32:float",
+                                               "RadiusMeters":  "36:float",
+                                               "SourceBodyInstanceId":  "40:int",
+                                               "AudioMaterialId":  "44:byte",
+                                               "Flags":  "45:AcousticImpulseFlags",
+                                               "_pad0":  "46:byte",
+                                               "_pad17":  "63:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "LargeAcousticImpulseEvent",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "RuntimePosition":  "0:Vector3",
+                                               "Direction":  "12:Vector3",
+                                               "KineticEnergyJoules":  "24:float",
+                                               "Volume01":  "28:float",
+                                               "PitchScale":  "32:float",
+                                               "RadiusMeters":  "36:float",
+                                               "SourceBodyInstanceId":  "40:int",
+                                               "AudioMaterialId":  "44:byte",
+                                               "Flags":  "45:AcousticImpulseFlags",
+                                               "_pad0":  "46:byte",
+                                               "_pad17":  "63:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "RemovedPhysicsEventPayload",
+                               "sizeBytes":  128,
+                               "offsets":  {
+                                               "RuntimePosition":  "0:Vector3",
+                                               "Direction":  "12:Vector3",
+                                               "ForceVector":  "24:Vector3",
+                                               "ImpulseVector":  "36:Vector3",
+                                               "RadiusMeters":  "48:float",
+                                               "Scalar0":  "52:float",
+                                               "Scalar1":  "56:float",
+                                               "Scalar2":  "60:float",
+                                               "PrimaryId":  "64:int",
+                                               "DataHash":  "68:uint",
+                                               "StatusBits":  "72:uint",
+                                               "EventType":  "76:ushort",
+                                               "Reserved":  "78:ushort",
+                                               "_pad0":  "80:byte",
+                                               "_pad47":  "127:byte"
+                                           }
+                           }
+                       ],
+    "allStructSizesMultipleOf8":  true,
+    "widePaddingHits":  0,
+    "directKinematicWeldImpulseRemoved":  true,
+    "forcePacketVaultWritesLocked":  true,
+    "verificationHashSha256":  "97deedc6c753b96e5cc25e08b6efd1d830e64118c4d45dc0efe2c2987093d1e4"
+}

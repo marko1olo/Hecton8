@@ -1,0 +1,61 @@
+{
+  "agentId": "1318",
+  "task": "1318_PURGE",
+  "loop": 26,
+  "status": "VERIFICATION_BLOCKED_CPU_COMPILER_AND_MISSING_PROJECT_FILES",
+  "domain": "Echelon 3 Core Infrastructure and Ecology / Assets/_Project/Scripts/World / DestructibleOrganicManager.cs",
+  "promptExtraction": {
+    "path": "Docs/Reports/AGENT_PROMPT_1318_REEXTRACTED_LOOP26.xml",
+    "status": "EXTRACTED",
+    "promptChars": 25041,
+    "taskCountPattern": "Task NN:",
+    "taskCount": 20
+  },
+  "fixedFindings": [
+    {
+      "id": "LOOP26_SLOWTICK_FORCED_FULL_CACHE_SYNC",
+      "severity": "P2",
+      "problem": "SlowTick called RefreshActiveCachesIfNeeded(force: true) after every persistence sync. That forced both active vegetation lanes through SyncLane under the full organic lifecycle lock even when persistence maps and bridge revisions were logically unchanged.",
+      "fix": "Destroyed-flora and flora-state persistence sync now return a dirty flag based on logical UID map changes. SlowTick only forces cache refresh when those maps changed; normal bridge revision changes still sync through force:false."
+    },
+    {
+      "id": "LOOP26_PERSISTED_OVERRIDE_PAIR_ADMISSION",
+      "severity": "P3",
+      "problem": "Flora state override sync ignored TryAdd failures for the persisted health and height-scale UID maps. A capacity/probe failure could leave one side of the pair present and the other absent.",
+      "fix": "Override sync compares the desired persisted pair against the existing pair, preserves the first valid duplicate UID pair, treats capacity/probe insertion as atomic, removes both entries on partial capacity failure, reports telemetry, and forces a cache refresh when the logical pair state changes."
+    }
+  ],
+  "staticVerification": {
+    "gitDiffCheck": "PASS_WITH_LF_TO_CRLF_WARNING_ONLY",
+    "braceBalance": {
+      "open": 872,
+      "close": 872
+    },
+    "promptTaskCountStrict": 20,
+    "forcedSlowTickFullSync": 0,
+    "targetNativePersistentFieldsStrict": 0,
+    "persistentAllocatorTokens": 0,
+    "roughReadLikeMutatingMatches": 0,
+    "hotOwnerForbiddenTokens": {
+      "Tick": 0,
+      "SlowTick": 0,
+      "LateFrameTick": 0
+    },
+    "sourceSha256": "59689bbb09a58d478f734b692209ca430579dd9f07103beafb11e657b60419b5"
+  },
+  "buildVerification": {
+    "attempted": false,
+    "cpuPercentSample": 100.0,
+    "compilerProcessCount": 2,
+    "csprojCount": 0,
+    "blockedReason": "AGENTS.md forbids dotnet build/Roslyn while CPU is above 50% or compiler processes are active. Workspace root also has no Unity-generated .csproj files, so dotnet build would stop before C# source compilation."
+  },
+  "failedGates": [
+    "BUILD_GATE_BLOCKED_BY_CPU_GT_50",
+    "BUILD_GATE_BLOCKED_BY_ACTIVE_COMPILER_PROCESSES",
+    "UNITY_GENERATED_CSPROJ_FILES_MISSING",
+    "BUILD_NOT_ATTEMPTED",
+    "ROSLYN_RERUN_BLOCKED"
+  ],
+  "verificationHashSha256": "59689bbb09a58d478f734b692209ca430579dd9f07103beafb11e657b60419b5"
+}

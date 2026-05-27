@@ -4,6 +4,9 @@
 #define HECTON_THREADS_PER_GROUP 64
 #define HECTON_FLAG_VOXEL_SDF_CULL 1u
 #define HECTON_FLAG_VRAM_DOWNSAMPLE 2u
+#define HECTON_DEFAULT_CULL_DISTANCE_METERS 200.0
+#define HECTON_MAX_CULL_DISTANCE_METERS 10000.0
+#define HECTON_DEFAULT_BOUNDS_RADIUS_METERS 0.5
 
 StructuredBuffer<float4x4> _HectonAllInstances;
 AppendStructuredBuffer<float4x4> _HectonVisibleInstances;
@@ -37,6 +40,19 @@ bool IsFiniteFloat3(float3 value)
     return IsFiniteFloat(value.x) && IsFiniteFloat(value.y) && IsFiniteFloat(value.z);
 }
 
+bool IsFiniteFloat4(float4 value)
+{
+    return IsFiniteFloat(value.x) && IsFiniteFloat(value.y) && IsFiniteFloat(value.z) && IsFiniteFloat(value.w);
+}
+
+bool HasFiniteMatrix(float4x4 matrixValue)
+{
+    return IsFiniteFloat4(float4(matrixValue._m00, matrixValue._m01, matrixValue._m02, matrixValue._m03)) &&
+           IsFiniteFloat4(float4(matrixValue._m10, matrixValue._m11, matrixValue._m12, matrixValue._m13)) &&
+           IsFiniteFloat4(float4(matrixValue._m20, matrixValue._m21, matrixValue._m22, matrixValue._m23)) &&
+           IsFiniteFloat4(float4(matrixValue._m30, matrixValue._m31, matrixValue._m32, matrixValue._m33));
+}
+
 float3 ResolveInstancePosition(float4x4 matrixValue)
 {
     return float3(matrixValue._m03, matrixValue._m13, matrixValue._m23);
@@ -45,12 +61,30 @@ float3 ResolveInstancePosition(float4x4 matrixValue)
 float ResolveInstanceRadius(float4x4 matrixValue)
 {
     float packedRadius = abs(matrixValue._m31);
-    return packedRadius > 0.001 ? packedRadius : max(0.001, _HectonBoundsRadius);
+    float fallbackRadius = IsFiniteFloat(_HectonBoundsRadius)
+        ? clamp(_HectonBoundsRadius, 0.001, 1000.0)
+        : HECTON_DEFAULT_BOUNDS_RADIUS_METERS;
+    return IsFiniteFloat(packedRadius) && packedRadius > 0.001
+        ? min(packedRadius, 1000.0)
+        : fallbackRadius;
+}
+
+float ResolveCullDistanceMeters()
+{
+    return IsFiniteFloat(_HectonCullDistanceMeters)
+        ? clamp(_HectonCullDistanceMeters, 0.01, HECTON_MAX_CULL_DISTANCE_METERS)
+        : HECTON_DEFAULT_CULL_DISTANCE_METERS;
 }
 
 float PlaneMask(float4 plane, float3 center, float radius)
 {
+    if (!IsFiniteFloat4(plane) || !IsFiniteFloat3(center) || !IsFiniteFloat(radius))
+        return 0.0;
+
     float signedDistance = dot(plane.xyz, center) + plane.w;
+    if (!IsFiniteFloat(signedDistance))
+        return 0.0;
+
     return step(-radius, signedDistance);
 }
 
@@ -78,12 +112,21 @@ float VoxelSdfMask(float3 center)
     if (width == 0u || height == 0u || depth == 0u)
         return 1.0;
 
+    if (!IsFiniteFloat3(center) || !IsFiniteFloat3(_HectonVoxelSdfOrigin) || !IsFiniteFloat3(_HectonVoxelSdfInvSize))
+        return 0.0;
+
     float3 uvw = saturate((center - _HectonVoxelSdfOrigin) * _HectonVoxelSdfInvSize);
+    if (!IsFiniteFloat3(uvw))
+        return 0.0;
+
     uint voxelX = min((uint)floor(uvw.x * (float)width), width - 1u);
     uint voxelY = min((uint)floor(uvw.y * (float)height), height - 1u);
     uint voxelZ = min((uint)floor(uvw.z * (float)depth), depth - 1u);
     int3 voxel = int3((int)voxelX, (int)voxelY, (int)voxelZ);
     float sdf = _HectonVoxelSdfTexture3D.Load(int4(voxel, 0));
+    if (!IsFiniteFloat(sdf))
+        return 0.0;
+
     return step(0.000001, sdf);
 }
 
@@ -98,17 +141,25 @@ void CullInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
 
     float4x4 matrixValue = _HectonAllInstances[instanceId];
+    if (!HasFiniteMatrix(matrixValue))
+        return;
+
     float3 center = ResolveInstancePosition(matrixValue);
     if (!IsFiniteFloat3(center))
         return;
 
     float3 toInstance = center - _HectonCameraPosition;
     float distanceSq = dot(toInstance, toInstance);
-    float cullDistance = max(0.01, _HectonCullDistanceMeters);
+    if (!IsFiniteFloat3(_HectonCameraPosition) || !IsFiniteFloat(distanceSq))
+        return;
+
+    float cullDistance = ResolveCullDistanceMeters();
     float cullDistanceSq = cullDistance * cullDistance;
     float radius = ResolveInstanceRadius(matrixValue);
+    if (!IsFiniteFloat(cullDistanceSq) || !IsFiniteFloat(radius))
+        return;
 
-    float visible = IsFiniteFloat(distanceSq) ? 1.0 : 0.0;
+    float visible = 1.0;
     visible *= step(distanceSq, cullDistanceSq);
     visible *= FrustumMask(center, radius);
     visible *= VoxelSdfMask(center);

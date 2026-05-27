@@ -1,4 +1,7 @@
 using System.Runtime.InteropServices;
+#if UNITY_EDITOR
+using System.Reflection;
+#endif
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
@@ -49,18 +52,18 @@ namespace Hecton8.Construction
         [FieldOffset(8)] public uint AssociatedLock;
         [FieldOffset(12)] public uint SiblingNodeHash;
         [FieldOffset(16)] public uint Flags;
-        [FieldOffset(20)] public byte _pad0;
-        [FieldOffset(21)] public byte _pad1;
-        [FieldOffset(22)] public byte _pad2;
-        [FieldOffset(23)] public byte _pad3;
-        [FieldOffset(24)] public byte _pad4;
-        [FieldOffset(25)] public byte _pad5;
-        [FieldOffset(26)] public byte _pad6;
-        [FieldOffset(27)] public byte _pad7;
-        [FieldOffset(28)] public byte _pad8;
-        [FieldOffset(29)] public byte _pad9;
-        [FieldOffset(30)] public byte _pad10;
-        [FieldOffset(31)] public byte _pad11;
+        [FieldOffset(20)] private byte _pad0;
+        [FieldOffset(21)] private byte _pad1;
+        [FieldOffset(22)] private byte _pad2;
+        [FieldOffset(23)] private byte _pad3;
+        [FieldOffset(24)] private byte _pad4;
+        [FieldOffset(25)] private byte _pad5;
+        [FieldOffset(26)] private byte _pad6;
+        [FieldOffset(27)] private byte _pad7;
+        [FieldOffset(28)] private byte _pad8;
+        [FieldOffset(29)] private byte _pad9;
+        [FieldOffset(30)] private byte _pad10;
+        [FieldOffset(31)] private byte _pad11;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = BulkheadStateLayoutGuard.PlaneSizeBytes)]
@@ -157,19 +160,28 @@ namespace Hecton8.Construction
 
         private static bool ValidateStateLayout()
         {
-            return UnsafeUtility.SizeOf<BulkheadStateDTO>() == StateSizeBytes &&
+            if (UnsafeUtility.SizeOf<BulkheadStateDTO>() != StateSizeBytes)
+                return false;
+#if UNITY_EDITOR
+            return
                    GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO.EdgeHashID)) == 0 &&
                    GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO.ClosureProgress)) == 4 &&
                    GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO.AssociatedLock)) == 8 &&
                    GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO.SiblingNodeHash)) == 12 &&
                    GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO.Flags)) == 16 &&
-                   GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO._pad0)) == 20 &&
-                   GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO._pad11)) == 31;
+                   GetOffset<BulkheadStateDTO>("_pad0") == 20 &&
+                   GetOffset<BulkheadStateDTO>("_pad11") == 31;
+#else
+            return true;
+#endif
         }
 
         private static bool ValidatePlaneLayout()
         {
-            return UnsafeUtility.SizeOf<BulkheadPlaneDTO>() == PlaneSizeBytes &&
+            if (UnsafeUtility.SizeOf<BulkheadPlaneDTO>() != PlaneSizeBytes)
+                return false;
+#if UNITY_EDITOR
+            return
                    GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.CenterAup)) == 0 &&
                    GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.Normal)) == 24 &&
                    GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.WidthMeters)) == 36 &&
@@ -179,11 +191,17 @@ namespace Hecton8.Construction
                    GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.Flags)) == 52 &&
                    GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.IntegrityIndex)) == 56 &&
                    GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.Reserved)) == 60;
+#else
+            return true;
+#endif
         }
 
         private static bool ValidateCsrEdgeLayout()
         {
-            return UnsafeUtility.SizeOf<BulkheadCsrEdgeDTO>() == CsrEdgeSizeBytes &&
+            if (UnsafeUtility.SizeOf<BulkheadCsrEdgeDTO>() != CsrEdgeSizeBytes)
+                return false;
+#if UNITY_EDITOR
+            return
                    GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.EdgeHashID)) == 0 &&
                    GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.ConductivityIndex)) == 4 &&
                    GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.FluidFlowIndex)) == 8 &&
@@ -192,11 +210,17 @@ namespace Hecton8.Construction
                    GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.IntegrityIndex)) == 20 &&
                    GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.Flags)) == 24 &&
                    GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.Reserved)) == 28;
+#else
+            return true;
+#endif
         }
 
         private static bool ValidateTuningLayout()
         {
-            return UnsafeUtility.SizeOf<BulkheadTuningDTO>() == TuningSizeBytes &&
+            if (UnsafeUtility.SizeOf<BulkheadTuningDTO>() != TuningSizeBytes)
+                return false;
+#if UNITY_EDITOR
+            return
                    GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.CloseSpeedPerSecond)) == 0 &&
                    GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.OpenSpeedPerSecond)) == 4 &&
                    GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.OverrideDistanceMeters)) == 8 &&
@@ -205,11 +229,17 @@ namespace Hecton8.Construction
                    GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.AuthorityCadenceHz)) == 20 &&
                    GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.ActiveCount)) == 24 &&
                    GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.Flags)) == 28;
+#else
+            return true;
+#endif
         }
 
         private static bool ValidateProfileLayout()
         {
-            return UnsafeUtility.SizeOf<BulkheadProfileDTO>() == ProfileSizeBytes &&
+            if (UnsafeUtility.SizeOf<BulkheadProfileDTO>() != ProfileSizeBytes)
+                return false;
+#if UNITY_EDITOR
+            return
                    GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.ProfileHash)) == 0 &&
                    GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.CloseSpeedPerSecond)) == 4 &&
                    GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.OpenSpeedPerSecond)) == 8 &&
@@ -218,11 +248,17 @@ namespace Hecton8.Construction
                    GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.WidthMeters)) == 20 &&
                    GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.HeightMeters)) == 24 &&
                    GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.Flags)) == 28;
+#else
+            return true;
+#endif
         }
 
         private static bool ValidateTelemetryLayout()
         {
-            return UnsafeUtility.SizeOf<BulkheadTelemetryEntry>() == TelemetrySizeBytes &&
+            if (UnsafeUtility.SizeOf<BulkheadTelemetryEntry>() != TelemetrySizeBytes)
+                return false;
+#if UNITY_EDITOR
+            return
                    GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.Frame)) == 0 &&
                    GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.ActiveCount)) == 4 &&
                    GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.SealedCount)) == 8 &&
@@ -237,13 +273,20 @@ namespace Hecton8.Construction
                    GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.Flags)) == 44 &&
                    GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.Reserved0)) == 48 &&
                    GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.Reserved1)) == 56;
+#else
+            return true;
+#endif
         }
 
+#if UNITY_EDITOR
         private static int GetOffset<T>(string fieldName)
             where T : struct
         {
-            var field = typeof(T).GetField(fieldName);
+            FieldInfo field = typeof(T).GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             return field != null ? UnsafeUtility.GetFieldOffset(field) : -1;
         }
+#endif
     }
 }

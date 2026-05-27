@@ -1,0 +1,76 @@
+﻿{
+    "agentId":  "1329",
+    "task":  "1329_PURGE",
+    "status":  "VERIFIED_GREEN",
+    "scannedFiles":  9,
+    "failedGates":  [
+
+                    ],
+    "totalNativeFieldDeclarations":  35,
+    "persistentNativeFieldsRemaining":  0,
+    "transientVaultViews":  29,
+    "transientJobViews":  24,
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "Fabricator.FabricatorMemoryTelemetryEntry",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Sequence":  "0:ulong",
+                                               "StateHash":  "8:ulong",
+                                               "Frame":  "16:uint",
+                                               "BufferId":  "20:uint",
+                                               "HandleGeneration":  "24:uint",
+                                               "VaultGeneration":  "28:uint",
+                                               "Flags":  "32:uint",
+                                               "Capacity":  "36:int",
+                                               "FailureStreak":  "40:int",
+                                               "GlobalQualityWeight":  "44:float",
+                                               "CpuMicroseconds":  "48:float",
+                                               "GpuMicroseconds":  "52:float",
+                                               "SystemId":  "56:uint",
+                                               "_pad0":  "60:byte",
+                                               "_pad1":  "61:byte",
+                                               "_pad2":  "62:byte",
+                                               "_pad3":  "63:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "RecipeRequirementDTO",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "BlueprintUnlockMask":  "0:ulong",
+                                               "ResultItemHash":  "8:uint",
+                                               "IngredientHashA":  "12:uint",
+                                               "IngredientHashB":  "16:uint",
+                                               "IngredientHashC":  "20:uint",
+                                               "IngredientHashD":  "24:uint",
+                                               "QuantitiesPacked":  "28:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "CraftingFastFailTelemetryEntry",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "RequirementMask":  "0:ulong",
+                                               "UnlockMask":  "8:ulong",
+                                               "Frame":  "16:uint",
+                                               "RecipeWordIndex":  "20:uint",
+                                               "RecipesEvaluated":  "24:uint",
+                                               "UnlockCullCount":  "28:uint",
+                                               "MaskCullCount":  "32:uint",
+                                               "SimdSuccessCount":  "36:uint",
+                                               "InventoryVersion":  "40:uint",
+                                               "UiPublicationBudget":  "44:uint",
+                                               "StateHash":  "48:uint",
+                                               "Flags":  "52:uint",
+                                               "ScheduleMicroseconds":  "56:float",
+                                               "GlobalQualityWeight":  "60:float"
+                                           }
+                           }
+                       ],
+    "zeroGcHotPathHits":  0,
+    "absoluteAupCastsFound":  0,
+    "compactionAwareLocksProven":  true,
+    "telemetryRingIntegrated":  true,
+    "verificationHashSha256":  "7db0203256b5f1b6fef1ed867157a6fd6994899ea70cea552ca85e7626552807"
+}

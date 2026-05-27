@@ -1,7 +1,7 @@
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
@@ -23,14 +23,17 @@ namespace Hecton8.World
             out Vector3 gridCenter,
             out float cellSize)
         {
-            NativeArray<float2> currentFlowField = _nativeMemory.EcosystemFlowFieldCurrentNative;
-            flowVectors = currentFlowField.IsCreated ? currentFlowField.AsReadOnly() : default;
+            bool hasFlowField = TryReadOnlyVegetationMemoryBuffer(
+                in _nativeMemory.EcosystemFlowFieldHandle,
+                BufferID.VegetationEcosystemFlowField,
+                _ecosystemThreatGridCellCount,
+                out flowVectors);
             gridResolution = _ecosystemThreatGridResolution;
             gridCenter = _ecosystemFlowFieldCenter;
             cellSize = threatGridCellSize;
             return _flowFieldInitialized &&
-                   currentFlowField.IsCreated &&
-                   HasCompleteEcosystemSquareGridState(currentFlowField.Length) &&
+                   hasFlowField &&
+                   HasCompleteEcosystemSquareGridState(flowVectors.Length) &&
                    cellSize > 0f &&
                    math.isfinite(cellSize) &&
                    IsFinite(gridCenter);
@@ -38,10 +41,13 @@ namespace Hecton8.World
 
         public bool TryUploadEcosystemFlowFieldPayload(GraphicsBuffer destination, int count)
         {
-            NativeArray<float2> currentFlowField = _nativeMemory.EcosystemFlowFieldCurrentNative;
             if (destination == null ||
                 count <= 0 ||
-                !currentFlowField.IsCreated ||
+                !TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemFlowFieldHandle,
+                    BufferID.VegetationEcosystemFlowField,
+                    _ecosystemThreatGridCellCount,
+                    out NativeArray<float2> currentFlowField) ||
                 !HasCompleteEcosystemSquareGridState(currentFlowField.Length))
             {
                 return false;
@@ -68,9 +74,8 @@ namespace Hecton8.World
                 !math.isfinite(lifetimeSeconds))
             {
                 _swarmWakeImpulseCount = 0;
+                _swarmWakeImpulse = default;
                 _swarmWakeImpulseExpireTime = float.NegativeInfinity;
-                if (_nativeMemory.SwarmWakeImpulseNative.IsCreated)
-                    _nativeMemory.SwarmWakeImpulseNative[0] = default;
                 return;
             }
 
@@ -78,14 +83,12 @@ namespace Hecton8.World
             if (strength <= 0.0001f)
             {
                 _swarmWakeImpulseCount = 0;
+                _swarmWakeImpulse = default;
                 _swarmWakeImpulseExpireTime = float.NegativeInfinity;
-                if (_nativeMemory.SwarmWakeImpulseNative.IsCreated)
-                    _nativeMemory.SwarmWakeImpulseNative[0] = default;
                 return;
             }
 
-            EnsureFlowFieldBuffers();
-            _nativeMemory.SwarmWakeImpulseNative[0] = new SwarmWakeImpulse
+            _swarmWakeImpulse = new SwarmWakeImpulse
             {
                 Position = new float3(positionWS.x, positionWS.y, positionWS.z),
                 Radius = math.max(0.1f, radiusMeters),
@@ -178,16 +181,18 @@ namespace Hecton8.World
             out float horizontalCellSize,
             out float verticalCellSize)
         {
-            temperatures = _nativeMemory.AbyssalThermalGridNative.IsCreated
-                ? _nativeMemory.AbyssalThermalGridNative.AsReadOnly()
-                : default;
+            bool hasThermalGrid = TryReadOnlyVegetationMemoryBuffer(
+                in _nativeMemory.AbyssalThermalGridHandle,
+                BufferID.VegetationAbyssalThermalGrid,
+                _abyssalThermalGridCellCount,
+                out temperatures);
             horizontalResolution = _abyssalThermalGridResolutionXZ;
             verticalResolution = _abyssalThermalGridResolutionY;
             gridCenter = _abyssalThermalGridCenter;
             horizontalCellSize = thermalGridHorizontalCellSize;
             verticalCellSize = thermalGridVerticalCellSize;
             return _abyssalThermalGridInitialized &&
-                   temperatures.IsCreated &&
+                   hasThermalGrid &&
                    HasCompleteAbyssalGridState(temperatures.Length);
         }
 
@@ -202,16 +207,18 @@ namespace Hecton8.World
             out float horizontalCellSize,
             out float verticalCellSize)
         {
-            flowVectors = _nativeMemory.AbyssalFlowVolumeCurrentNative.IsCreated
-                ? _nativeMemory.AbyssalFlowVolumeCurrentNative.AsReadOnly()
-                : default;
+            bool hasFlowVolume = TryReadOnlyVegetationMemoryBuffer(
+                in _nativeMemory.AbyssalFlowVolumeHandle,
+                BufferID.VegetationAbyssalFlowVolume,
+                _abyssalThermalGridCellCount,
+                out flowVectors);
             horizontalResolution = _abyssalThermalGridResolutionXZ;
             verticalResolution = _abyssalThermalGridResolutionY;
             gridCenter = _abyssalThermalGridCenter;
             horizontalCellSize = thermalGridHorizontalCellSize;
             verticalCellSize = thermalGridVerticalCellSize;
             return _abyssalFlowVolumeInitialized &&
-                   flowVectors.IsCreated &&
+                   hasFlowVolume &&
                    HasCompleteAbyssalGridState(flowVectors.Length);
         }
 
@@ -231,9 +238,11 @@ namespace Hecton8.World
             out float surfaceY,
             out float depthMeters)
         {
-            flowVolume = _nativeMemory.AbyssalFlowVolumeCurrentNative.IsCreated
-                ? _nativeMemory.AbyssalFlowVolumeCurrentNative.AsReadOnly()
-                : default;
+            bool hasFlowVolume = TryReadOnlyVegetationMemoryBuffer(
+                in _nativeMemory.AbyssalFlowVolumeHandle,
+                BufferID.VegetationAbyssalFlowVolume,
+                _abyssalThermalGridCellCount,
+                out flowVolume);
             center = _abyssalThermalGridCenter;
             resolutionXZ = _abyssalThermalGridResolutionXZ;
             resolutionY = _abyssalThermalGridResolutionY;
@@ -246,7 +255,7 @@ namespace Hecton8.World
             depthMeters = thermalGridDepthMeters;
 
             return _abyssalFlowVolumeInitialized &&
-                   flowVolume.IsCreated &&
+                   hasFlowVolume &&
                    HasCompleteAbyssalGridState(flowVolume.Length) &&
                    resolutionXZ > 1 &&
                    resolutionY > 1 &&
@@ -259,22 +268,103 @@ namespace Hecton8.World
         /// Returns the current mega-wreck section streaming payload for composite-structure consumers.
         /// </summary>
 
-        private void PrepareFlowFieldSamplingSnapshot(Vector3 flowCenter)
+        private bool TryPrepareFlowFieldSamplingSnapshot(
+            Vector3 flowCenter,
+            out NativeArray<VegetationDensityChunkRecord> flowChunks,
+            out NativeArray<float3> flowDensityGrid,
+            out NativeArray<float2> threatAttractorGrid,
+            out NativeArray<float> navSupportGrid)
         {
-            EnsureThreatGridBuffers();
-            EnsureFloat3Capacity(ref _nativeMemory.FlowSamplingDensityGridNative, math.max(1, _threatSamplingChunkCount * DensityGridCellCount));
-            EnsureFloatNativeCapacity(ref _nativeMemory.FlowNavSupportGridNative, math.max(1, _ecosystemThreatGridCellCount));
-            ClearFloatGrid(_nativeMemory.FlowNavSupportGridNative, _ecosystemThreatGridCellCount);
+            flowChunks = default;
+            flowDensityGrid = default;
+            threatAttractorGrid = default;
+            navSupportGrid = default;
 
-            if (_threatSamplingChunkCount <= 0 ||
-                !_nativeMemory.DensityQueryGridNative.IsCreated ||
-                _densityQueryChunkCount <= 0)
+            if (!EnsureThreatGridBuffers())
+                return false;
+            if (!TryPrepareThreatSamplingJobSnapshot(true, out flowChunks, out threatAttractorGrid, out flowDensityGrid))
+                return false;
+
+            int navSupportLength = math.max(1, _ecosystemThreatGridCellCount);
+            navSupportGrid = H8Memory.Allocate<float>(
+                navSupportLength,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.ClearMemory);
+
+            if (!navSupportGrid.IsCreated ||
+                navSupportGrid.Length < navSupportLength)
             {
-                return;
+                int actualLength = navSupportGrid.IsCreated ? navSupportGrid.Length : 0;
+                H8Memory.Release(ref flowChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref flowDensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref navSupportGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                RecordVegetationMemoryTelemetry(
+                    BufferID.Unknown,
+                    0,
+                    navSupportLength,
+                    actualLength,
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
+                    VegetationMemoryTelemetryPhase.SlowTick,
+                    VegetationMemorySovereigntyConstants.FlagCapacity,
+                    default);
+                return false;
             }
 
-            NativeArray<float3>.Copy(_nativeMemory.DensityQueryGridNative, _nativeMemory.FlowSamplingDensityGridNative, _threatSamplingChunkCount * DensityGridCellCount);
-            BuildFlowFieldNavSupportGrid(flowCenter);
+            BuildFlowFieldNavSupportGrid(navSupportGrid, flowCenter);
+            return true;
+        }
+
+        private bool TryPrepareThreatSamplingJobSnapshot(
+            bool includeDensityGrid,
+            out NativeArray<VegetationDensityChunkRecord> chunks,
+            out NativeArray<float2> threatAttractorGrid,
+            out NativeArray<float3> densityGrid)
+        {
+            chunks = default;
+            threatAttractorGrid = default;
+            densityGrid = default;
+
+            int chunkCount = _threatSamplingChunkCount;
+            if (chunkCount <= 0)
+                return true;
+
+            long gridLengthLong = (long)chunkCount * DensityGridCellCount;
+            if (gridLengthLong <= 0L ||
+                gridLengthLong > int.MaxValue ||
+                !TryPrepareDensityQueryJobSnapshot(
+                    includeDensityGrid,
+                    true,
+                    out chunks,
+                    out densityGrid,
+                    out threatAttractorGrid) ||
+                !chunks.IsCreated ||
+                chunks.Length < chunkCount ||
+                !threatAttractorGrid.IsCreated ||
+                threatAttractorGrid.Length < gridLengthLong ||
+                (includeDensityGrid && (!densityGrid.IsCreated || densityGrid.Length < gridLengthLong)))
+            {
+                H8Memory.Release(ref chunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref densityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                RecordVegetationMemoryTelemetry(
+                    BufferID.Unknown,
+                    0,
+                    chunkCount,
+                    0,
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
+                    VegetationMemoryTelemetryPhase.SlowTick,
+                    VegetationMemorySovereigntyConstants.FlagCapacity,
+                    default);
+                return false;
+            }
+
+            return true;
         }
 
         private void CompleteThreatPropagationJob(bool forceComplete)
@@ -282,36 +372,220 @@ namespace Hecton8.World
             if (!_threatPropagationScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _threatPropagationHandle, forceComplete))
+            if (!forceComplete && !_threatPropagationJob.Handle.IsCompleted)
                 return;
 
-            NativeArray<float> threatSwap = _nativeMemory.EcosystemThreatGridCurrentNative;
-            _nativeMemory.EcosystemThreatGridCurrentNative = _nativeMemory.EcosystemThreatGridNextNative;
-            _nativeMemory.EcosystemThreatGridNextNative = threatSwap;
-            NativeArray<byte> threatCompressedSwap = _nativeMemory.EcosystemThreatGridCompressedCurrentNative;
-            _nativeMemory.EcosystemThreatGridCompressedCurrentNative = _nativeMemory.EcosystemThreatGridCompressedNextNative;
-            _nativeMemory.EcosystemThreatGridCompressedNextNative = threatCompressedSwap;
-            NativeArray<byte> threatVoxelSwap = _nativeMemory.EcosystemThreatVoxelCurrentNative;
-            _nativeMemory.EcosystemThreatVoxelCurrentNative = _nativeMemory.EcosystemThreatVoxelNextNative;
-            _nativeMemory.EcosystemThreatVoxelNextNative = threatVoxelSwap;
-            NativeArray<byte> echoSwap = _nativeMemory.EcosystemThreatEchoCurrentNative;
-            _nativeMemory.EcosystemThreatEchoCurrentNative = _nativeMemory.EcosystemThreatEchoNextNative;
-            _nativeMemory.EcosystemThreatEchoNextNative = echoSwap;
-            _ecosystemThreatGridCenter = _scheduledThreatGridCenter;
-            _ecosystemThreatVoxelOrigin = _scheduledThreatVoxelOrigin;
-            _threatGridInitialized = true;
-            _threatPropagationScheduled = false;
-            if (InvalidateChunksForNewPermanentEchoes())
-                RefreshResidency();
-            UpdateThreatHotspot();
+            ThreatPropagationPendingJob pending = _threatPropagationJob;
+            pending.Handle.Complete();
+            try
+            {
+                bool permanentEchoChanged = InvalidateChunksForNewPermanentEchoes(pending.PreviousEchoFlags, pending.EchoOutput);
+                bool published =
+                    TryCopyVegetationMemorySnapshot(
+                        ref _nativeMemory.EcosystemThreatGridHandle,
+                        BufferID.VegetationEcosystemThreatGrid,
+                        pending.ThreatOutput,
+                        _ecosystemThreatGridCellCount) &&
+                    TryCopyVegetationMemorySnapshot(
+                        ref _nativeMemory.EcosystemThreatGridCompressedHandle,
+                        BufferID.VegetationEcosystemThreatGridCompressed,
+                        pending.CompressedOutput,
+                        _ecosystemThreatGridCellCount) &&
+                    TryCopyVegetationMemorySnapshot(
+                        ref _nativeMemory.EcosystemThreatEchoHandle,
+                        BufferID.VegetationEcosystemThreatEcho,
+                        pending.EchoOutput,
+                        _ecosystemThreatGridCellCount) &&
+                    TryCopyVegetationMemorySnapshot(
+                        ref _nativeMemory.EcosystemThreatVoxelHandle,
+                        BufferID.VegetationEcosystemThreatVoxel,
+                        pending.VoxelOutput,
+                        _ecosystemThreatVoxelCellCount);
+                if (!published)
+                    return;
+
+                _ecosystemThreatGridCenter = pending.TargetCenter;
+                _ecosystemThreatVoxelOrigin = pending.VoxelOrigin;
+                _lastThreatPropagationTime = ResolveVegetationRuntimeSeconds();
+                _threatGridInitialized = true;
+                if (permanentEchoChanged)
+                    RefreshResidency();
+                UpdateThreatHotspot();
+            }
+            finally
+            {
+                ReleaseThreatPropagationPendingJob(ref pending);
+                _threatPropagationJob = default;
+                _threatPropagationScheduled = false;
+            }
+        }
+
+        private void CompleteFlowFieldJob(bool forceComplete)
+        {
+            if (!_flowFieldScheduled)
+                return;
+
+            if (!forceComplete && !_flowFieldJob.Handle.IsCompleted)
+                return;
+
+            FlowFieldPendingJob pending = _flowFieldJob;
+            pending.Handle.Complete();
+            try
+            {
+                if (!TryCopyVegetationMemorySnapshot(
+                        ref _nativeMemory.EcosystemFlowFieldHandle,
+                        BufferID.VegetationEcosystemFlowField,
+                        pending.FlowOutput,
+                        _ecosystemThreatGridCellCount))
+                {
+                    return;
+                }
+
+                _ecosystemFlowFieldCenter = pending.FlowCenter;
+                _lastFlowFieldSolveTime = pending.RuntimeTime;
+                _flowFieldInitialized = true;
+            }
+            finally
+            {
+                ReleaseFlowFieldPendingJob(ref pending);
+                _flowFieldJob = default;
+                _flowFieldScheduled = false;
+            }
+        }
+
+        private void CompleteThermalGridJob(bool forceComplete)
+        {
+            if (!_abyssalThermalGridScheduled)
+                return;
+
+            if (!forceComplete && !_thermalGridJob.Handle.IsCompleted)
+                return;
+
+            ThermalGridPendingJob pending = _thermalGridJob;
+            pending.Handle.Complete();
+            try
+            {
+                bool biolumeSurge = pending.CanComparePreviousFlowVolume &&
+                    DetectBiolumeSurgeCluster3D(
+                        pending.PreviousFlowVolumeSnapshot,
+                        pending.FlowVolumeOutput,
+                        _abyssalThermalGridResolutionXZ,
+                        _abyssalThermalGridResolutionY,
+                        BiolumeSurgeVelocityDeltaThreshold);
+                bool published =
+                    TryCopyVegetationMemorySnapshot(
+                        ref _nativeMemory.AbyssalThermalGridHandle,
+                        BufferID.VegetationAbyssalThermalGrid,
+                        pending.ThermalOutput,
+                        _abyssalThermalGridCellCount) &&
+                    TryCopyVegetationMemorySnapshot(
+                        ref _nativeMemory.AbyssalFlowVolumeHandle,
+                        BufferID.VegetationAbyssalFlowVolume,
+                        pending.FlowVolumeOutput,
+                        _abyssalThermalGridCellCount);
+                if (!published)
+                    return;
+
+                _abyssalThermalGridCenter = pending.ThermalCenter;
+                _scheduledAbyssalThermalGridCenter = pending.ThermalCenter;
+                _lastThermalGridSolveTime = pending.RuntimeTime;
+                _abyssalThermalGridInitialized = true;
+                _abyssalFlowVolumeInitialized = true;
+                if (biolumeSurge)
+                    TryRegisterBiolumeSurge(BiolumeSurgeDurationSeconds);
+            }
+            finally
+            {
+                ReleaseThermalGridPendingJob(ref pending);
+                _thermalGridJob = default;
+                _abyssalThermalGridScheduled = false;
+            }
+        }
+
+        private static void ReleaseThreatPropagationPendingJob(ref ThreatPropagationPendingJob pending)
+        {
+            H8Memory.Release(ref pending.ThreatChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.ThreatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.DensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.ArtificialStructures, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.PreviousEchoFlags, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.ThreatOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.CompressedOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.EchoOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.VoxelOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            pending.Handle = default;
+        }
+
+        private static void ReleaseFlowFieldPendingJob(ref FlowFieldPendingJob pending)
+        {
+            H8Memory.Release(ref pending.FlowChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.FlowDensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.ThreatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.NavSupportGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.FlowOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            pending.Handle = default;
+        }
+
+        private static void ReleaseThermalGridPendingJob(ref ThermalGridPendingJob pending)
+        {
+            H8Memory.Release(ref pending.ThreatChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.ThreatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.DensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.ThermalOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.FlowVolumeOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.PreviousFlowVolumeSnapshot, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            pending.Handle = default;
+        }
+
+        private bool TryCopyVegetationMemorySnapshot<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            NativeArray<T> source,
+            int count)
+            where T : struct
+        {
+            if (!source.IsCreated ||
+                count < 0 ||
+                source.Length < count)
+            {
+                return false;
+            }
+
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref handle,
+                    bufferId,
+                    math.max(1, count),
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<T> destination))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!destination.IsCreated || destination.Length < count)
+                    return false;
+
+                if (count > 0)
+                    NativeArray<T>.Copy(source, destination, count);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in handle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
         }
 
         private void ScheduleThreatPropagationJob()
         {
-            if (_threatPropagationScheduled)
+            if (_threatPropagationScheduled || _flowFieldScheduled || _abyssalThermalGridScheduled)
                 return;
 
-            EnsureThreatGridBuffers();
+            if (!EnsureThreatGridBuffers())
+                return;
             if (!HasValidThreatGridConfiguration())
                 return;
 
@@ -321,6 +595,14 @@ namespace Hecton8.World
                 : (_threatGridInitialized ? _ecosystemThreatGridCenter : Vector3.zero);
             Vector3 previousCenter = _threatGridInitialized ? _ecosystemThreatGridCenter : targetCenter;
             ResolveThreatSignalSnapshot(out Vector3 emissionPosition, out float emissionRadius, out float emissionStrength);
+            if (!TryPrepareThreatSamplingJobSnapshot(
+                    true,
+                    out NativeArray<VegetationDensityChunkRecord> threatChunks,
+                    out NativeArray<float2> threatAttractorGrid,
+                    out NativeArray<float3> densityGrid))
+            {
+                return;
+            }
 
             float currentTime = ResolveVegetationRuntimeSeconds();
             float deltaTime = 0.5f;
@@ -336,17 +618,104 @@ namespace Hecton8.World
                 waterLevel - thermalGridDepthMeters,
                 targetCenter.z - halfExtent);
 
+            if (!TryPrepareArtificialStructureJobSnapshot(out NativeArray<ArtificialStructureRecord> artificialStructures))
+            {
+                H8Memory.Release(ref threatChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref densityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                return;
+            }
+
+            if (!TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemThreatGridHandle,
+                    BufferID.VegetationEcosystemThreatGrid,
+                    _ecosystemThreatGridCellCount,
+                    out NativeArray<float> currentThreat) ||
+                !TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemThreatEchoHandle,
+                    BufferID.VegetationEcosystemThreatEcho,
+                    _ecosystemThreatGridCellCount,
+                    out NativeArray<byte> currentEchoFlags))
+            {
+                H8Memory.Release(ref threatChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref densityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref artificialStructures, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                return;
+            }
+
+            NativeArray<float> threatOutput = H8Memory.Allocate<float>(
+                _ecosystemThreatGridCellCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.ClearMemory);
+            NativeArray<byte> compressedOutput = H8Memory.Allocate<byte>(
+                _ecosystemThreatGridCellCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.ClearMemory);
+            NativeArray<byte> echoOutput = H8Memory.Allocate<byte>(
+                _ecosystemThreatGridCellCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.ClearMemory);
+            NativeArray<byte> previousEchoFlags = H8Memory.Allocate<byte>(
+                _ecosystemThreatGridCellCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> voxelOutput = H8Memory.Allocate<byte>(
+                _ecosystemThreatVoxelCellCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.ClearMemory);
+            if (!threatOutput.IsCreated ||
+                threatOutput.Length < _ecosystemThreatGridCellCount ||
+                !compressedOutput.IsCreated ||
+                compressedOutput.Length < _ecosystemThreatGridCellCount ||
+                !echoOutput.IsCreated ||
+                echoOutput.Length < _ecosystemThreatGridCellCount ||
+                !previousEchoFlags.IsCreated ||
+                previousEchoFlags.Length < _ecosystemThreatGridCellCount ||
+                !voxelOutput.IsCreated ||
+                voxelOutput.Length < _ecosystemThreatVoxelCellCount)
+            {
+                H8Memory.Release(ref threatChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref densityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref artificialStructures, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref compressedOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref echoOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref previousEchoFlags, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref voxelOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                RecordVegetationMemoryTelemetry(
+                    BufferID.VegetationEcosystemThreatGrid,
+                    _nativeMemory.EcosystemThreatGridHandle.Generation,
+                    _ecosystemThreatGridCellCount,
+                    threatOutput.IsCreated ? threatOutput.Length : 0,
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
+                    VegetationMemoryTelemetryPhase.SlowTick,
+                    VegetationMemorySovereigntyConstants.FlagCapacity,
+                    default);
+                return;
+            }
+
+            NativeArray<byte>.Copy(currentEchoFlags, previousEchoFlags, _ecosystemThreatGridCellCount);
+
             var job = new ThreatPropagationJob
             {
-                CurrentThreat = _nativeMemory.EcosystemThreatGridCurrentNative,
-                NextThreat = _nativeMemory.EcosystemThreatGridNextNative,
-                NextThreatCompressed = _nativeMemory.EcosystemThreatGridCompressedNextNative,
-                CurrentEchoFlags = _nativeMemory.EcosystemThreatEchoCurrentNative,
-                NextEchoFlags = _nativeMemory.EcosystemThreatEchoNextNative,
-                ThreatChunks = _nativeMemory.ThreatSamplingChunksNative,
-                ThreatAttractorGrid = _nativeMemory.ThreatSamplingAttractorGridNative,
-                ArtificialStructures = _nativeMemory.ArtificialStructureRecordsNative,
-                ArtificialStructureHash = _nativeMemory.ArtificialStructureHashFrontNative,
+                CurrentThreat = currentThreat,
+                NextThreat = threatOutput,
+                NextThreatCompressed = compressedOutput,
+                CurrentEchoFlags = previousEchoFlags,
+                NextEchoFlags = echoOutput,
+                ThreatChunks = threatChunks,
+                ThreatAttractorGrid = threatAttractorGrid,
+                ArtificialStructures = artificialStructures,
+                ArtificialStructureHash = default,
                 GridResolution = _ecosystemThreatGridResolution,
                 ThreatChunkCount = _threatSamplingChunkCount,
                 CellSize = threatGridCellSize,
@@ -369,20 +738,16 @@ namespace Hecton8.World
                 ShiftZ = shiftZ
             };
 
-            _scheduledThreatGridCenter = targetCenter;
-            _scheduledThreatVoxelOrigin = voxelOrigin;
-            _lastThreatPropagationTime = currentTime;
-            JobHandle propagationHandle = job.Schedule(_ecosystemThreatGridCellCount, DefaultJobBatchSize);
             var voxelJob = new ThreatVoxelizationJob
             {
-                ThreatGrid = _nativeMemory.EcosystemThreatGridNextNative,
-                DensityChunks = _nativeMemory.ThreatSamplingChunksNative,
-                DensityGrid = _nativeMemory.DensityQueryGridNative,
-                ThreatAttractorGrid = _nativeMemory.ThreatSamplingAttractorGridNative,
-                ChunkHash = _nativeMemory.ThreatSamplingChunkHashFrontNative,
-                ArtificialStructures = _nativeMemory.ArtificialStructureRecordsNative,
-                ArtificialStructureHash = _nativeMemory.ArtificialStructureHashFrontNative,
-                Output = _nativeMemory.EcosystemThreatVoxelNextNative,
+                ThreatGrid = threatOutput,
+                DensityChunks = threatChunks,
+                DensityGrid = densityGrid,
+                ThreatAttractorGrid = threatAttractorGrid,
+                ChunkHash = default,
+                ArtificialStructures = artificialStructures,
+                ArtificialStructureHash = default,
+                Output = voxelOutput,
                 GridResolutionXZ = _ecosystemThreatGridResolution,
                 GridResolutionY = _ecosystemThreatGridResolutionY,
                 CellSizeXZ = threatGridCellSize,
@@ -394,158 +759,247 @@ namespace Hecton8.World
                 TechnoObstacleWeight = flowFieldTechnoObstacleWeight,
                 ObstacleHardThreshold = flowFieldObstacleHardThreshold
             };
-            _threatPropagationHandle = voxelJob.Schedule(_ecosystemThreatVoxelCellCount, DefaultJobBatchSize, propagationHandle);
+
+            JobHandle threatHandle = job.Schedule(_ecosystemThreatGridCellCount, DefaultJobBatchSize);
+            JobHandle voxelHandle = voxelJob.Schedule(_ecosystemThreatVoxelCellCount, DefaultJobBatchSize, threatHandle);
+            _threatPropagationJob = new ThreatPropagationPendingJob
+            {
+                ThreatChunks = threatChunks,
+                ThreatAttractorGrid = threatAttractorGrid,
+                DensityGrid = densityGrid,
+                ArtificialStructures = artificialStructures,
+                ThreatOutput = threatOutput,
+                CompressedOutput = compressedOutput,
+                EchoOutput = echoOutput,
+                PreviousEchoFlags = previousEchoFlags,
+                VoxelOutput = voxelOutput,
+                TargetCenter = targetCenter,
+                VoxelOrigin = voxelOrigin,
+                Handle = voxelHandle
+            };
             _threatPropagationScheduled = true;
         }
 
-        private void EnsureFlowFieldBuffers()
+        private bool EnsureFlowFieldBuffers()
         {
             if (_ecosystemThreatGridCellCount <= 0)
                 InitializeThreatGridMetadata();
 
-            if (!_nativeMemory.EcosystemFlowFieldCurrentNative.IsCreated || _nativeMemory.EcosystemFlowFieldCurrentNative.Length != _ecosystemThreatGridCellCount)
+            if (_ecosystemThreatGridCellCount <= 0)
+                return false;
+
+            if (!TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemFlowFieldHandle,
+                    BufferID.VegetationEcosystemFlowField,
+                    _ecosystemThreatGridCellCount,
+                    out _))
             {
-                DisposeNativeArray(ref _nativeMemory.EcosystemFlowFieldCurrentNative);
-                // COLD ALLOC: NativeArray<float2>[_ecosystemThreatGridCellCount] - abyssal flow-field front buffer for read-only navigation sampling - owner: HectonMapMagicVegetationBridge
-                _nativeMemory.EcosystemFlowFieldCurrentNative = new NativeArray<float2>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.EcosystemFlowFieldCurrentNative, NativeMemoryOwner, nameof(_nativeMemory.EcosystemFlowFieldCurrentNative), NativeMemoryLifetime);
+                if (!EnsureVegetationMemoryBufferReleased(
+                        ref _nativeMemory.EcosystemFlowFieldHandle,
+                        BufferID.VegetationEcosystemFlowField,
+                        _ecosystemThreatGridCellCount,
+                        NativeArrayOptions.ClearMemory))
+                {
+                    return false;
+                }
+
                 _flowFieldInitialized = false;
             }
 
-            if (!_nativeMemory.EcosystemFlowFieldNextNative.IsCreated || _nativeMemory.EcosystemFlowFieldNextNative.Length != _ecosystemThreatGridCellCount)
-            {
-                DisposeNativeArray(ref _nativeMemory.EcosystemFlowFieldNextNative);
-                // COLD ALLOC: NativeArray<float2>[_ecosystemThreatGridCellCount] - abyssal flow-field back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
-                _nativeMemory.EcosystemFlowFieldNextNative = new NativeArray<float2>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.EcosystemFlowFieldNextNative, NativeMemoryOwner, nameof(_nativeMemory.EcosystemFlowFieldNextNative), NativeMemoryLifetime);
-            }
-
-            if (!_nativeMemory.SwarmWakeImpulseNative.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<SwarmWakeImpulse>[1] - single-slot boid wake impulse injected into abyssal flow-field solves - owner: HectonMapMagicVegetationBridge
-                _nativeMemory.SwarmWakeImpulseNative = new NativeArray<SwarmWakeImpulse>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.SwarmWakeImpulseNative, NativeMemoryOwner, nameof(_nativeMemory.SwarmWakeImpulseNative), NativeMemoryLifetime);
-                _swarmWakeImpulseCount = 0;
-                _swarmWakeImpulseExpireTime = float.NegativeInfinity;
-            }
+            return true;
         }
 
-        private void EnsureThermalGridBuffers()
+        private bool EnsureThermalGridBuffers()
         {
             if (_abyssalThermalGridCellCount <= 0)
                 InitializeThermalGridMetadata();
 
-            if (!_nativeMemory.AbyssalThermalGridNative.IsCreated || _nativeMemory.AbyssalThermalGridNative.Length != _abyssalThermalGridCellCount)
+            if (_abyssalThermalGridCellCount <= 0)
+                return false;
+
+            if (!TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalThermalGridHandle,
+                    BufferID.VegetationAbyssalThermalGrid,
+                    _abyssalThermalGridCellCount,
+                    out _))
             {
-                DisposeNativeArray(ref _nativeMemory.AbyssalThermalGridNative);
-                // COLD ALLOC: NativeArray<float>[_abyssalThermalGridCellCount] - abyssal thermal-grid front buffer for stable sampling - owner: HectonMapMagicVegetationBridge
-                _nativeMemory.AbyssalThermalGridNative = new NativeArray<float>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.AbyssalThermalGridNative, NativeMemoryOwner, nameof(_nativeMemory.AbyssalThermalGridNative), NativeMemoryLifetime);
+                if (!EnsureVegetationMemoryBufferReleased(
+                        ref _nativeMemory.AbyssalThermalGridHandle,
+                        BufferID.VegetationAbyssalThermalGrid,
+                        _abyssalThermalGridCellCount,
+                        NativeArrayOptions.ClearMemory))
+                {
+                    return false;
+                }
+
                 _abyssalThermalGridInitialized = false;
                 _abyssalThermalGridRingOffsetX = 0;
                 _abyssalThermalGridRingOffsetY = 0;
                 _abyssalThermalGridRingOffsetZ = 0;
             }
 
-            if (!_nativeMemory.AbyssalThermalGridNextNative.IsCreated || _nativeMemory.AbyssalThermalGridNextNative.Length != _abyssalThermalGridCellCount)
+            if (!TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalFlowVolumeHandle,
+                    BufferID.VegetationAbyssalFlowVolume,
+                    _abyssalThermalGridCellCount,
+                    out _))
             {
-                DisposeNativeArray(ref _nativeMemory.AbyssalThermalGridNextNative);
-                // COLD ALLOC: NativeArray<float>[_abyssalThermalGridCellCount] - abyssal thermal-grid back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
-                _nativeMemory.AbyssalThermalGridNextNative = new NativeArray<float>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.AbyssalThermalGridNextNative, NativeMemoryOwner, nameof(_nativeMemory.AbyssalThermalGridNextNative), NativeMemoryLifetime);
-            }
+                if (!EnsureVegetationMemoryBufferReleased(
+                        ref _nativeMemory.AbyssalFlowVolumeHandle,
+                        BufferID.VegetationAbyssalFlowVolume,
+                        _abyssalThermalGridCellCount,
+                        NativeArrayOptions.ClearMemory))
+                {
+                    return false;
+                }
 
-            if (!_nativeMemory.AbyssalFlowVolumeCurrentNative.IsCreated || _nativeMemory.AbyssalFlowVolumeCurrentNative.Length != _abyssalThermalGridCellCount)
-            {
-                DisposeNativeArray(ref _nativeMemory.AbyssalFlowVolumeCurrentNative);
-                // COLD ALLOC: NativeArray<float3>[_abyssalThermalGridCellCount] - abyssal 3D flow-volume front buffer for deep-current sampling - owner: HectonMapMagicVegetationBridge
-                _nativeMemory.AbyssalFlowVolumeCurrentNative = new NativeArray<float3>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.AbyssalFlowVolumeCurrentNative, NativeMemoryOwner, nameof(_nativeMemory.AbyssalFlowVolumeCurrentNative), NativeMemoryLifetime);
                 _abyssalFlowVolumeInitialized = false;
             }
 
-            if (!_nativeMemory.AbyssalFlowVolumeNextNative.IsCreated || _nativeMemory.AbyssalFlowVolumeNextNative.Length != _abyssalThermalGridCellCount)
+            return true;
+        }
+
+        private static bool HasByteDelta(NativeArray<byte> previous, NativeArray<byte> current, int count)
+        {
+            if (!previous.IsCreated || !current.IsCreated || count <= 0)
+                return false;
+
+            int safeCount = math.min(count, math.min(previous.Length, current.Length));
+            for (int i = 0; i < safeCount; i++)
             {
-                DisposeNativeArray(ref _nativeMemory.AbyssalFlowVolumeNextNative);
-                // COLD ALLOC: NativeArray<float3>[_abyssalThermalGridCellCount] - abyssal 3D flow-volume back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
-                _nativeMemory.AbyssalFlowVolumeNextNative = new NativeArray<float3>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.AbyssalFlowVolumeNextNative, NativeMemoryOwner, nameof(_nativeMemory.AbyssalFlowVolumeNextNative), NativeMemoryLifetime);
+                if (previous[i] != current[i])
+                    return true;
             }
+
+            return false;
         }
 
-        private void CompleteFlowFieldJob(bool forceComplete)
+        private bool InvalidateChunksForNewPermanentEchoes(NativeArray<byte> previousEchoFlags, NativeArray<byte> nextEchoFlags)
         {
-            if (!_flowFieldScheduled)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _flowFieldHandle, forceComplete))
-                return;
-
-            NativeArray<float2> flowSwap = _nativeMemory.EcosystemFlowFieldCurrentNative;
-            _nativeMemory.EcosystemFlowFieldCurrentNative = _nativeMemory.EcosystemFlowFieldNextNative;
-            _nativeMemory.EcosystemFlowFieldNextNative = flowSwap;
-            _ecosystemFlowFieldCenter = _scheduledFlowFieldCenter;
-            _flowFieldInitialized = true;
-            _flowFieldScheduled = false;
+            return HasByteDelta(previousEchoFlags, nextEchoFlags, _ecosystemThreatGridCellCount);
         }
 
-        private void CompleteThermalGridJob(bool forceComplete)
+        private void ScheduleThreatSpatialVisualSolvePhase()
         {
-            if (!_abyssalThermalGridScheduled)
+            if (!_threatGridInitialized)
+            {
+                ScheduleThreatPropagationJob();
+                _threatSpatialSolveCursor = 1;
                 return;
+            }
 
-            if (!DispatcherJobSwap.TryComplete(ref _abyssalThermalGridHandle, forceComplete))
+            byte phase = _threatSpatialSolveCursor;
+            _threatSpatialSolveCursor = (byte)((phase + 1) % 3);
+            if (phase == 0)
+            {
+                ScheduleThreatPropagationJob();
                 return;
+            }
 
-            bool canComparePreviousFlowVolume =
-                _abyssalFlowVolumeInitialized &&
-                _nativeMemory.AbyssalFlowVolumeCurrentNative.IsCreated &&
-                _nativeMemory.AbyssalFlowVolumeNextNative.IsCreated &&
-                _abyssalThermalGridResolutionXZ > 2 &&
-                _abyssalThermalGridResolutionY > 2 &&
-                (_scheduledAbyssalThermalGridCenter - _abyssalThermalGridCenter).sqrMagnitude <=
-                (thermalGridHorizontalCellSize * thermalGridHorizontalCellSize);
-            bool shouldTriggerBiolumeSurge = canComparePreviousFlowVolume &&
-                                             DetectBiolumeSurgeCluster3D(
-                                                 _nativeMemory.AbyssalFlowVolumeCurrentNative,
-                                                 _nativeMemory.AbyssalFlowVolumeNextNative,
-                                                 _abyssalThermalGridResolutionXZ,
-                                                 _abyssalThermalGridResolutionY,
-                                                 BiolumeSurgeVelocityDeltaThreshold);
-            NativeArray<float> thermalSwap = _nativeMemory.AbyssalThermalGridNative;
-            _nativeMemory.AbyssalThermalGridNative = _nativeMemory.AbyssalThermalGridNextNative;
-            _nativeMemory.AbyssalThermalGridNextNative = thermalSwap;
-            NativeArray<float3> flowVolumeSwap = _nativeMemory.AbyssalFlowVolumeCurrentNative;
-            _nativeMemory.AbyssalFlowVolumeCurrentNative = _nativeMemory.AbyssalFlowVolumeNextNative;
-            _nativeMemory.AbyssalFlowVolumeNextNative = flowVolumeSwap;
-            _abyssalThermalGridCenter = _scheduledAbyssalThermalGridCenter;
-            _abyssalThermalGridInitialized = true;
-            _abyssalFlowVolumeInitialized = true;
-            _abyssalThermalGridScheduled = false;
+            float currentTime = ResolveVegetationRuntimeSeconds();
+            if (phase == 1)
+            {
+                if (CanRefreshFlowFieldSolve(currentTime))
+                    ScheduleFlowFieldJob();
+                return;
+            }
 
-            if (shouldTriggerBiolumeSurge)
-                TryRegisterBiolumeSurge(BiolumeSurgeDurationSeconds);
+            if (CanRefreshThermalGridSolve(currentTime))
+                ScheduleThermalGridJob();
+        }
+
+        private bool CanRefreshFlowFieldSolve(float currentTime)
+        {
+            if (!_flowFieldInitialized)
+                return true;
+
+            float interval = math.lerp(2f, 0.35f, ResolveVegetationVisualQualityWeight());
+            return currentTime - _lastFlowFieldSolveTime >= interval;
+        }
+
+        private bool CanRefreshThermalGridSolve(float currentTime)
+        {
+            if (!_abyssalThermalGridInitialized || !_abyssalFlowVolumeInitialized)
+                return true;
+
+            float interval = math.lerp(4f, 0.75f, ResolveVegetationVisualQualityWeight());
+            return currentTime - _lastThermalGridSolveTime >= interval;
+        }
+
+        private static float ResolveVegetationVisualQualityWeight()
+        {
+            float rawQuality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, rawQuality, math.isfinite(rawQuality)));
         }
 
         private void ScheduleFlowFieldJob()
         {
-            if (_flowFieldScheduled)
+            if (_flowFieldScheduled || _threatPropagationScheduled)
                 return;
 
-            EnsureFlowFieldBuffers();
+            if (!EnsureFlowFieldBuffers())
+                return;
             if (_swarmWakeImpulseCount > 0 &&
                 (!float.IsFinite(_swarmWakeImpulseExpireTime) || ResolveVegetationRuntimeSeconds() > _swarmWakeImpulseExpireTime))
             {
                 _swarmWakeImpulseCount = 0;
-                if (_nativeMemory.SwarmWakeImpulseNative.IsCreated)
-                    _nativeMemory.SwarmWakeImpulseNative[0] = default;
+                _swarmWakeImpulse = default;
             }
 
             bool hasPlayerRuntimePosition = TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition);
             Vector3 flowCenter = _threatGridInitialized
                 ? _ecosystemThreatGridCenter
                 : (hasPlayerRuntimePosition ? playerRuntimePosition : Vector3.zero);
-            PrepareFlowFieldSamplingSnapshot(flowCenter);
+            if (!TryPrepareFlowFieldSamplingSnapshot(
+                    flowCenter,
+                    out NativeArray<VegetationDensityChunkRecord> flowChunks,
+                    out NativeArray<float3> flowDensityGrid,
+                    out NativeArray<float2> threatAttractorGrid,
+                    out NativeArray<float> navSupportGrid))
+            {
+                return;
+            }
+
+            NativeArray<float2> flowOutput = H8Memory.Allocate<float2>(
+                _ecosystemThreatGridCellCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.ClearMemory);
+            if (!flowOutput.IsCreated ||
+                flowOutput.Length < _ecosystemThreatGridCellCount)
+            {
+                H8Memory.Release(ref flowChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref flowDensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref navSupportGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref flowOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                RecordVegetationMemoryTelemetry(
+                    BufferID.VegetationEcosystemFlowField,
+                    _nativeMemory.EcosystemFlowFieldHandle.Generation,
+                    _ecosystemThreatGridCellCount,
+                    flowOutput.IsCreated ? flowOutput.Length : 0,
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
+                    VegetationMemoryTelemetryPhase.SlowTick,
+                    VegetationMemorySovereigntyConstants.FlagCapacity,
+                    default);
+                return;
+            }
+
+            if (!TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemThreatGridHandle,
+                    BufferID.VegetationEcosystemThreatGrid,
+                    _ecosystemThreatGridCellCount,
+                    out NativeArray<float> currentThreatGrid))
+            {
+                H8Memory.Release(ref flowChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref flowDensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref navSupportGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref flowOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                return;
+            }
 
             Vector3 playerPosition = hasPlayerRuntimePosition ? playerRuntimePosition : flowCenter;
             Vector3 hotspotPosition = _currentThreatHotspotLevel >= flowFieldHotspotMinimumThreat
@@ -559,14 +1013,14 @@ namespace Hecton8.World
 
             var job = new BuildAbyssalFlowFieldJob
             {
-                ThreatGrid = _nativeMemory.EcosystemThreatGridCurrentNative,
-                FlowChunks = _nativeMemory.ThreatSamplingChunksNative,
-                FlowDensityGrid = _nativeMemory.FlowSamplingDensityGridNative,
-                ThreatAttractorGrid = _nativeMemory.ThreatSamplingAttractorGridNative,
-                ChunkHash = _nativeMemory.ThreatSamplingChunkHashFrontNative,
-                NavSupportGrid = _nativeMemory.FlowNavSupportGridNative,
-                ExternalWakeImpulses = _nativeMemory.SwarmWakeImpulseNative,
-                Output = _nativeMemory.EcosystemFlowFieldNextNative,
+                ThreatGrid = currentThreatGrid,
+                FlowChunks = flowChunks,
+                FlowDensityGrid = flowDensityGrid,
+                ThreatAttractorGrid = threatAttractorGrid,
+                ChunkHash = default,
+                NavSupportGrid = navSupportGrid,
+                ExternalWakeImpulse = _swarmWakeImpulse,
+                Output = flowOutput,
                 GridResolution = _ecosystemThreatGridResolution,
                 ChunkCount = _threatSamplingChunkCount,
                 ExternalWakeImpulseCount = _swarmWakeImpulseCount,
@@ -591,17 +1045,72 @@ namespace Hecton8.World
                 ObstacleHardThreshold = flowFieldObstacleHardThreshold
             };
 
-            _scheduledFlowFieldCenter = flowCenter;
-            _flowFieldHandle = job.Schedule(_ecosystemThreatGridCellCount, DefaultJobBatchSize);
+            float runtimeTime = ResolveVegetationRuntimeSeconds();
+            JobHandle flowHandle = job.Schedule(_ecosystemThreatGridCellCount, DefaultJobBatchSize);
+            _flowFieldJob = new FlowFieldPendingJob
+            {
+                FlowChunks = flowChunks,
+                FlowDensityGrid = flowDensityGrid,
+                ThreatAttractorGrid = threatAttractorGrid,
+                NavSupportGrid = navSupportGrid,
+                FlowOutput = flowOutput,
+                FlowCenter = flowCenter,
+                RuntimeTime = runtimeTime,
+                Handle = flowHandle
+            };
             _flowFieldScheduled = true;
         }
 
         private void ScheduleThermalGridJob()
         {
-            if (_abyssalThermalGridScheduled)
+            if (_abyssalThermalGridScheduled || _threatPropagationScheduled || _flowFieldScheduled)
                 return;
 
-            EnsureThermalGridBuffers();
+            if (!EnsureThermalGridBuffers())
+                return;
+            if (!TryPrepareThreatSamplingJobSnapshot(
+                    false,
+                    out NativeArray<VegetationDensityChunkRecord> threatChunks,
+                    out NativeArray<float2> threatAttractorGrid,
+                    out NativeArray<float3> densityGrid))
+            {
+                return;
+            }
+
+            NativeArray<float> thermalOutput = H8Memory.Allocate<float>(
+                _abyssalThermalGridCellCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.ClearMemory);
+            NativeArray<float3> flowVolumeOutput = H8Memory.Allocate<float3>(
+                _abyssalThermalGridCellCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.ClearMemory);
+            if (!thermalOutput.IsCreated ||
+                thermalOutput.Length < _abyssalThermalGridCellCount ||
+                !flowVolumeOutput.IsCreated ||
+                flowVolumeOutput.Length < _abyssalThermalGridCellCount)
+            {
+                H8Memory.Release(ref threatChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref densityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref thermalOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref flowVolumeOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                RecordVegetationMemoryTelemetry(
+                    BufferID.VegetationAbyssalThermalGrid,
+                    _nativeMemory.AbyssalThermalGridHandle.Generation,
+                    _abyssalThermalGridCellCount,
+                    thermalOutput.IsCreated ? thermalOutput.Length : 0,
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
+                    VegetationMemoryTelemetryPhase.SlowTick,
+                    VegetationMemorySovereigntyConstants.FlagCapacity,
+                    default);
+                return;
+            }
+
             WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
             float2 weatherDirectionXZ = DominantAxisOrDefault(weatherSnapshot.CurrentMeta.GlobalBaseVector.xz, new float2(0f, 1f));
 
@@ -613,9 +1122,9 @@ namespace Hecton8.World
 
             var job = new BuildAbyssalThermalGridJob
             {
-                Output = _nativeMemory.AbyssalThermalGridNextNative,
-                ThreatChunks = _nativeMemory.ThreatSamplingChunksNative,
-                ThreatAttractorGrid = _nativeMemory.ThreatSamplingAttractorGridNative,
+                Output = thermalOutput,
+                ThreatChunks = threatChunks,
+                ThreatAttractorGrid = threatAttractorGrid,
                 ChunkCount = _threatSamplingChunkCount,
                 HorizontalResolution = _abyssalThermalGridResolutionXZ,
                 VerticalResolution = _abyssalThermalGridResolutionY,
@@ -642,9 +1151,9 @@ namespace Hecton8.World
 
             var flowVolumeJob = new BuildAbyssalFlowVolumeJob
             {
-                ThermalGrid = _nativeMemory.AbyssalThermalGridNextNative,
-                ExternalWakeImpulses = _nativeMemory.SwarmWakeImpulseNative,
-                Output = _nativeMemory.AbyssalFlowVolumeNextNative,
+                ThermalGrid = thermalOutput,
+                ExternalWakeImpulse = _swarmWakeImpulse,
+                Output = flowVolumeOutput,
                 HorizontalResolution = _abyssalThermalGridResolutionXZ,
                 VerticalResolution = _abyssalThermalGridResolutionY,
                 RingOffsetX = _abyssalThermalGridRingOffsetX,
@@ -664,9 +1173,53 @@ namespace Hecton8.World
                 GridCenter = new float3(thermalCenter.x, thermalCenter.y, thermalCenter.z)
             };
 
-            _scheduledAbyssalThermalGridCenter = thermalCenter;
+            float runtimeTime = ResolveVegetationRuntimeSeconds();
+            NativeArray<float3> previousFlowVolume = default;
+            NativeArray<float3> previousFlowVolumeSnapshot = default;
+            bool canComparePreviousFlowVolume =
+                _abyssalFlowVolumeInitialized &&
+                TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalFlowVolumeHandle,
+                    BufferID.VegetationAbyssalFlowVolume,
+                    _abyssalThermalGridCellCount,
+                    out previousFlowVolume) &&
+                _abyssalThermalGridResolutionXZ > 2 &&
+                _abyssalThermalGridResolutionY > 2 &&
+                (thermalCenter - _abyssalThermalGridCenter).sqrMagnitude <=
+                (thermalGridHorizontalCellSize * thermalGridHorizontalCellSize);
+            if (canComparePreviousFlowVolume)
+            {
+                previousFlowVolumeSnapshot = H8Memory.Allocate<float3>(
+                    _abyssalThermalGridCellCount,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                if (previousFlowVolumeSnapshot.IsCreated &&
+                    previousFlowVolumeSnapshot.Length >= _abyssalThermalGridCellCount)
+                {
+                    NativeArray<float3>.Copy(previousFlowVolume, previousFlowVolumeSnapshot, _abyssalThermalGridCellCount);
+                }
+                else
+                {
+                    H8Memory.Release(ref previousFlowVolumeSnapshot, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                    canComparePreviousFlowVolume = false;
+                }
+            }
             JobHandle thermalHandle = job.Schedule(_abyssalThermalGridCellCount, DefaultJobBatchSize);
-            _abyssalThermalGridHandle = flowVolumeJob.Schedule(_abyssalThermalGridCellCount, DefaultJobBatchSize, thermalHandle);
+            JobHandle flowVolumeHandle = flowVolumeJob.Schedule(_abyssalThermalGridCellCount, DefaultJobBatchSize, thermalHandle);
+            _thermalGridJob = new ThermalGridPendingJob
+            {
+                ThreatChunks = threatChunks,
+                ThreatAttractorGrid = threatAttractorGrid,
+                DensityGrid = densityGrid,
+                ThermalOutput = thermalOutput,
+                FlowVolumeOutput = flowVolumeOutput,
+                PreviousFlowVolumeSnapshot = previousFlowVolumeSnapshot,
+                ThermalCenter = thermalCenter,
+                RuntimeTime = runtimeTime,
+                CanComparePreviousFlowVolume = canComparePreviousFlowVolume,
+                Handle = flowVolumeHandle
+            };
             _abyssalThermalGridScheduled = true;
         }
 
@@ -804,7 +1357,11 @@ namespace Hecton8.World
         {
             _currentThreatHotspotLevel = 0f;
             _currentThreatHotspotPosition = IsFinite(_ecosystemThreatGridCenter) ? _ecosystemThreatGridCenter : Vector3.zero;
-            if (!_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated ||
+            if (!TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemThreatGridHandle,
+                    BufferID.VegetationEcosystemThreatGrid,
+                    _ecosystemThreatGridCellCount,
+                    out NativeArray<float> threatGrid) ||
                 _ecosystemThreatGridResolution <= 0 ||
                 _ecosystemThreatGridCellCount <= 0 ||
                 threatGridCellSize <= 0f ||
@@ -812,7 +1369,7 @@ namespace Hecton8.World
                 !IsFinite(_ecosystemThreatGridCenter) ||
                 !TryResolveSquareGridCellCount(
                     _ecosystemThreatGridResolution,
-                    _nativeMemory.EcosystemThreatGridCurrentNative.Length,
+                    threatGrid.Length,
                     out int threatGridCellCount) ||
                 _ecosystemThreatGridCellCount < threatGridCellCount)
             {
@@ -823,7 +1380,7 @@ namespace Hecton8.World
             float bestThreat = 0f;
             for (int i = 0; i < threatGridCellCount; i++)
             {
-                float threat = _nativeMemory.EcosystemThreatGridCurrentNative[i];
+                float threat = threatGrid[i];
                 if (!math.isfinite(threat) || threat <= bestThreat)
                     continue;
 
@@ -854,20 +1411,81 @@ namespace Hecton8.World
         private NativeArray<float> GetThreatGridFloatView()
         {
             if (!_threatGridInitialized ||
-                !_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated ||
-                !HasCompleteEcosystemSquareGridState(_nativeMemory.EcosystemThreatGridCurrentNative.Length))
+                !TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemThreatGridHandle,
+                    BufferID.VegetationEcosystemThreatGrid,
+                    _ecosystemThreatGridCellCount,
+                    out NativeArray<float> threatGrid) ||
+                !HasCompleteEcosystemSquareGridState(threatGrid.Length))
             {
                 return default;
             }
 
-            return _nativeMemory.EcosystemThreatGridCurrentNative;
+            return threatGrid;
+        }
+
+        private NativeArray<byte> GetThreatGridCompressedView()
+        {
+            if (!_threatGridInitialized ||
+                !TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemThreatGridCompressedHandle,
+                    BufferID.VegetationEcosystemThreatGridCompressed,
+                    _ecosystemThreatGridCellCount,
+                    out NativeArray<byte> threatGrid) ||
+                !HasCompleteEcosystemSquareGridState(threatGrid.Length))
+            {
+                return default;
+            }
+
+            return threatGrid;
+        }
+
+        private NativeArray<byte> GetThreatGridEchoView()
+        {
+            if (!_threatGridInitialized ||
+                !TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemThreatEchoHandle,
+                    BufferID.VegetationEcosystemThreatEcho,
+                    _ecosystemThreatGridCellCount,
+                    out NativeArray<byte> echoFlags) ||
+                !HasCompleteEcosystemSquareGridState(echoFlags.Length))
+            {
+                return default;
+            }
+
+            return echoFlags;
+        }
+
+        private NativeArray<byte> GetThreatVoxelView()
+        {
+            Vector3Int gridDimensions = new Vector3Int(
+                _ecosystemThreatGridResolution,
+                _ecosystemThreatGridResolutionY,
+                _ecosystemThreatGridResolution);
+            if (!_threatGridInitialized ||
+                !TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemThreatVoxelHandle,
+                    BufferID.VegetationEcosystemThreatVoxel,
+                    _ecosystemThreatVoxelCellCount,
+                    out NativeArray<byte> voxels) ||
+                !TryResolveVoxelGridCellCount(gridDimensions, voxels.Length, out int voxelCellCount) ||
+                _ecosystemThreatVoxelCellCount < voxelCellCount)
+            {
+                return default;
+            }
+
+            return voxels;
         }
 
         private NativeArray<float2> GetFlowFieldView()
         {
             if (!_flowFieldInitialized ||
-                !_nativeMemory.EcosystemFlowFieldCurrentNative.IsCreated ||
-                !HasCompleteEcosystemSquareGridState(_nativeMemory.EcosystemFlowFieldCurrentNative.Length) ||
+                !TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemFlowFieldHandle,
+                    BufferID.VegetationEcosystemFlowField,
+                    _ecosystemThreatGridCellCount,
+                    out NativeArray<float2> flowField) ||
+                !HasCompleteEcosystemSquareGridState(flowField.Length) ||
                 threatGridCellSize <= 0f ||
                 !math.isfinite(threatGridCellSize) ||
                 !IsFinite(_ecosystemFlowFieldCenter))
@@ -875,31 +1493,39 @@ namespace Hecton8.World
                 return default;
             }
 
-            return _nativeMemory.EcosystemFlowFieldCurrentNative;
+            return flowField;
         }
 
         private NativeArray<float> GetAbyssalThermalGridView()
         {
             if (!_abyssalThermalGridInitialized ||
-                !_nativeMemory.AbyssalThermalGridNative.IsCreated ||
-                !HasCompleteAbyssalGridState(_nativeMemory.AbyssalThermalGridNative.Length))
+                !TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalThermalGridHandle,
+                    BufferID.VegetationAbyssalThermalGrid,
+                    _abyssalThermalGridCellCount,
+                    out NativeArray<float> thermalGrid) ||
+                !HasCompleteAbyssalGridState(thermalGrid.Length))
             {
                 return default;
             }
 
-            return _nativeMemory.AbyssalThermalGridNative;
+            return thermalGrid;
         }
 
         private NativeArray<float3> GetAbyssalFlowVolumeView()
         {
             if (!_abyssalFlowVolumeInitialized ||
-                !_nativeMemory.AbyssalFlowVolumeCurrentNative.IsCreated ||
-                !HasCompleteAbyssalGridState(_nativeMemory.AbyssalFlowVolumeCurrentNative.Length))
+                !TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalFlowVolumeHandle,
+                    BufferID.VegetationAbyssalFlowVolume,
+                    _abyssalThermalGridCellCount,
+                    out NativeArray<float3> flowVolume) ||
+                !HasCompleteAbyssalGridState(flowVolume.Length))
             {
                 return default;
             }
 
-            return _nativeMemory.AbyssalFlowVolumeCurrentNative;
+            return flowVolume;
         }
 
         private NativeArray<byte> GetThreatGridByteView(NativeArray<byte> threatGrid)
@@ -914,17 +1540,29 @@ namespace Hecton8.World
             return threatGrid;
         }
 
-        private NativeArray<Vector3> GetAbyssalAnchorNativeView()
+        private NativeArray<Vector3>.ReadOnly GetAbyssalAnchorNativeView()
         {
-            return ResolveAbyssalAnchorViewCount() > 0
-                ? _nativeMemory.AbyssalAnchorPositionsNative
+            int safeCount = ResolveAbyssalAnchorViewCount();
+            return safeCount > 0 &&
+                   TryReadOnlyVegetationMemoryBuffer(
+                       in _nativeMemory.AbyssalAnchorPositionsHandle,
+                       BufferID.VegetationAbyssalAnchorPositions,
+                       safeCount,
+                       out NativeArray<Vector3>.ReadOnly anchors)
+                ? anchors
                 : default;
         }
 
-        private NativeArray<AbsoluteUniversePosition> GetAbyssalAnchorAupNativeView()
+        private NativeArray<AbsoluteUniversePosition>.ReadOnly GetAbyssalAnchorAupNativeView()
         {
-            return ResolveAbyssalAnchorAupViewCount() > 0
-                ? _nativeMemory.AbyssalAnchorAupPositionsNative
+            int safeCount = ResolveAbyssalAnchorAupViewCount();
+            return safeCount > 0 &&
+                   TryReadOnlyVegetationMemoryBuffer(
+                       in _nativeMemory.AbyssalAnchorAupPositionsHandle,
+                       BufferID.VegetationAbyssalAnchorAupPositions,
+                       safeCount,
+                       out NativeArray<AbsoluteUniversePosition>.ReadOnly anchors)
+                ? anchors
                 : default;
         }
 
@@ -932,33 +1570,50 @@ namespace Hecton8.World
         {
             if (_abyssalAnchorCount <= 0 ||
                 _abyssalAnchorPositions == null ||
-                _abyssalAnchorPositions.Length <= 0 ||
-                !_nativeMemory.AbyssalAnchorPositionsNative.IsCreated)
+                _abyssalAnchorPositions.Length <= 0)
             {
                 return 0;
             }
 
             int safeCount = math.min(_abyssalAnchorCount, _abyssalAnchorPositions.Length);
-            safeCount = math.min(safeCount, _nativeMemory.AbyssalAnchorPositionsNative.Length);
-            return math.max(0, safeCount);
+            if (!TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalAnchorPositionsHandle,
+                    BufferID.VegetationAbyssalAnchorPositions,
+                    safeCount,
+                    out NativeArray<Vector3>.ReadOnly anchors))
+            {
+                return 0;
+            }
+
+            return math.max(0, math.min(safeCount, anchors.Length));
         }
 
         private int ResolveAbyssalAnchorAupViewCount()
         {
             int safeCount = ResolveAbyssalAnchorViewCount();
             if (safeCount <= 0 ||
-                !_nativeMemory.AbyssalAnchorAupPositionsNative.IsCreated)
+                !TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalAnchorAupPositionsHandle,
+                    BufferID.VegetationAbyssalAnchorAupPositions,
+                    safeCount,
+                    out NativeArray<AbsoluteUniversePosition>.ReadOnly anchors))
             {
                 return 0;
             }
 
-            return math.max(0, math.min(safeCount, _nativeMemory.AbyssalAnchorAupPositionsNative.Length));
+            return math.max(0, math.min(safeCount, anchors.Length));
         }
 
-        private NativeArray<Vector3> GetAbyssalNavNodeSnapshotNativeView()
+        private NativeArray<Vector3>.ReadOnly GetAbyssalNavNodeSnapshotNativeView()
         {
-            return ResolveAbyssalNavNodeViewCount() > 0
-                ? _nativeMemory.AbyssalNavNodeSnapshotNative
+            int safeCount = ResolveAbyssalNavNodeViewCount();
+            return safeCount > 0 &&
+                   TryReadOnlyVegetationMemoryBuffer(
+                       in _nativeMemory.AbyssalNavNodeSnapshotHandle,
+                       BufferID.VegetationAbyssalNavNodeSnapshot,
+                       safeCount,
+                       out NativeArray<Vector3>.ReadOnly nodes)
+                ? nodes
                 : default;
         }
 
@@ -966,41 +1621,60 @@ namespace Hecton8.World
         {
             if (_abyssalNavNodeCount <= 0 ||
                 _abyssalNavNodeSnapshot == null ||
-                _abyssalNavNodeSnapshot.Length <= 0 ||
-                !_nativeMemory.AbyssalNavNodeSnapshotNative.IsCreated)
+                _abyssalNavNodeSnapshot.Length <= 0)
             {
                 return 0;
             }
 
             int safeCount = math.min(_abyssalNavNodeCount, _abyssalNavNodeSnapshot.Length);
-            safeCount = math.min(safeCount, _nativeMemory.AbyssalNavNodeSnapshotNative.Length);
-            return math.max(0, safeCount);
+            if (!TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalNavNodeSnapshotHandle,
+                    BufferID.VegetationAbyssalNavNodeSnapshot,
+                    safeCount,
+                    out NativeArray<Vector3>.ReadOnly nodes))
+            {
+                return 0;
+            }
+
+            return math.max(0, math.min(safeCount, nodes.Length));
         }
 
         private int ResolveAbyssalNavNodeTypeViewCount()
         {
             int safeCount = ResolveAbyssalNavNodeViewCount();
             if (safeCount <= 0 ||
-                !_nativeMemory.AbyssalNavNodeTypesSnapshotNative.IsCreated)
+                !TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalNavNodeTypesHandle,
+                    BufferID.VegetationAbyssalNavNodeTypes,
+                    safeCount,
+                    out NativeArray<byte>.ReadOnly nodeTypes))
             {
                 return 0;
             }
 
-            return math.max(0, math.min(safeCount, _nativeMemory.AbyssalNavNodeTypesSnapshotNative.Length));
+            return math.max(0, math.min(safeCount, nodeTypes.Length));
         }
 
         private int ResolveAbyssalConduitViewCount()
         {
             int safeCount = ResolveAbyssalNavNodeViewCount();
             if (safeCount <= 0 ||
-                !_nativeMemory.AbyssalNavConduitVectorsSnapshotNative.IsCreated ||
-                !_nativeMemory.AbyssalNavConduitStrengthSnapshotNative.IsCreated)
+                !TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalNavConduitVectorsHandle,
+                    BufferID.VegetationAbyssalNavConduitVectors,
+                    safeCount,
+                    out NativeArray<Vector3>.ReadOnly conduitVectors) ||
+                !TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalNavConduitStrengthsHandle,
+                    BufferID.VegetationAbyssalNavConduitStrengths,
+                    safeCount,
+                    out NativeArray<float>.ReadOnly conduitStrengths))
             {
                 return 0;
             }
 
-            safeCount = math.min(safeCount, _nativeMemory.AbyssalNavConduitVectorsSnapshotNative.Length);
-            safeCount = math.min(safeCount, _nativeMemory.AbyssalNavConduitStrengthSnapshotNative.Length);
+            safeCount = math.min(safeCount, conduitVectors.Length);
+            safeCount = math.min(safeCount, conduitStrengths.Length);
             return math.max(0, safeCount);
         }
 
@@ -1008,31 +1682,44 @@ namespace Hecton8.World
         {
             int safeCount = ResolveAbyssalConduitViewCount();
             if (safeCount <= 0 ||
-                !_nativeMemory.AbyssalNavNodeTypesSnapshotNative.IsCreated)
+                !TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalNavNodeTypesHandle,
+                    BufferID.VegetationAbyssalNavNodeTypes,
+                    safeCount,
+                    out NativeArray<byte>.ReadOnly nodeTypes))
             {
                 return 0;
             }
 
-            safeCount = math.min(safeCount, _nativeMemory.AbyssalNavNodeTypesSnapshotNative.Length);
+            safeCount = math.min(safeCount, nodeTypes.Length);
             return math.max(0, safeCount);
         }
 
-        private NativeArray<Vector3> GetAbyssalPathNativeView()
+        private NativeArray<Vector3>.ReadOnly GetAbyssalPathReadOnlyView()
         {
-            return ResolveAbyssalPathViewCount() > 0
-                ? _nativeMemory.AbyssalPathSnapshotNative
+            return _abyssalPathCount > 0 &&
+                   TryReadOnlyVegetationMemoryBuffer(
+                       in _nativeMemory.AbyssalPathSnapshotHandle,
+                       BufferID.VegetationAbyssalPathSnapshot,
+                       _abyssalPathCount,
+                       out NativeArray<Vector3>.ReadOnly path)
+                ? path
                 : default;
         }
 
         private int ResolveAbyssalPathViewCount()
         {
             if (_abyssalPathCount <= 0 ||
-                !_nativeMemory.AbyssalPathSnapshotNative.IsCreated)
+                !TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalPathSnapshotHandle,
+                    BufferID.VegetationAbyssalPathSnapshot,
+                    _abyssalPathCount,
+                    out NativeArray<Vector3>.ReadOnly path))
             {
                 return 0;
             }
 
-            return math.max(0, math.min(_abyssalPathCount, _nativeMemory.AbyssalPathSnapshotNative.Length));
+            return math.max(0, math.min(_abyssalPathCount, path.Length));
         }
 
         private bool HasCompleteEcosystemSquareGridState(int payloadLength)
@@ -1448,7 +2135,6 @@ namespace Hecton8.World
             private bool IntersectsBaseModuleAabb(float3 position, float scale, float heightScale, float widthScale)
             {
                 if (!ArtificialStructures.IsCreated ||
-                    !ArtificialStructureHash.IsCreated ||
                     ThreatGridResolution <= 0 ||
                     ThreatGridCellSize <= 0f)
                 {
@@ -1464,6 +2150,9 @@ namespace Hecton8.World
                 if (!TryComputeStructureCellRange(aabbMin, aabbMax, out int minCellX, out int maxCellX, out int minCellZ, out int maxCellZ))
                     return false;
 
+                if (!ArtificialStructureHash.IsCreated)
+                    return IntersectsBaseModuleAabbLinear(aabbMin, aabbMax);
+
                 for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
                 {
                     int rowOffset = cellZ * ThreatGridResolution;
@@ -1471,6 +2160,29 @@ namespace Hecton8.World
                     {
                         if (IntersectsBaseModuleAabbInCell(rowOffset + cellX, aabbMin, aabbMax))
                             return true;
+                    }
+                }
+
+                return false;
+            }
+
+            private bool IntersectsBaseModuleAabbLinear(float3 aabbMin, float3 aabbMax)
+            {
+                int count = ArtificialStructures.Length;
+                for (int structureIndex = 0; structureIndex < count; structureIndex++)
+                {
+                    ArtificialStructureRecord structure = ArtificialStructures[structureIndex];
+                    if ((StructureType)structure.Type != StructureType.BaseModule)
+                        continue;
+
+                    if (aabbMax.x >= structure.MinX &&
+                        aabbMin.x <= structure.MaxX &&
+                        aabbMax.y >= structure.MinY &&
+                        aabbMin.y <= structure.MaxY &&
+                        aabbMax.z >= structure.MinZ &&
+                        aabbMin.z <= structure.MaxZ)
+                    {
+                        return true;
                     }
                 }
 
@@ -1556,12 +2268,14 @@ namespace Hecton8.World
             {
                 surfaceY = samplePosition.y;
                 if (!ArtificialStructures.IsCreated ||
-                    !ArtificialStructureHash.IsCreated ||
                     ThreatGridResolution <= 0 ||
                     ThreatGridCellSize <= 0f)
                 {
                     return false;
                 }
+
+                if (!ArtificialStructureHash.IsCreated)
+                    return TryResolveMetalAttachmentSurfaceLinear(samplePosition, ref surfaceY);
 
                 int cellIndex = ComputeStructureGridCellIndex(samplePosition);
                 if (cellIndex < 0)
@@ -1595,6 +2309,32 @@ namespace Hecton8.World
                     found = true;
                 }
                 while (ArtificialStructureHash.TryGetNextValue(out structureIndex, ref iterator));
+
+                return found;
+            }
+
+            private bool TryResolveMetalAttachmentSurfaceLinear(float3 samplePosition, ref float surfaceY)
+            {
+                bool found = false;
+                int count = ArtificialStructures.Length;
+                for (int structureIndex = 0; structureIndex < count; structureIndex++)
+                {
+                    ArtificialStructureRecord structure = ArtificialStructures[structureIndex];
+                    StructureType structureType = (StructureType)structure.Type;
+                    if (structureType != StructureType.BaseModule && structureType != StructureType.MegaWreck)
+                        continue;
+
+                    if (samplePosition.x < structure.MinX ||
+                        samplePosition.x > structure.MaxX ||
+                        samplePosition.z < structure.MinZ ||
+                        samplePosition.z > structure.MaxZ)
+                    {
+                        continue;
+                    }
+
+                    surfaceY = math.max(surfaceY, structure.MaxY);
+                    found = true;
+                }
 
                 return found;
             }
@@ -1966,8 +2706,11 @@ namespace Hecton8.World
 
             private float ApplyArtificialStructureInfluence(int cellIndex, float3 samplePosition, float threat)
             {
-                if (!ArtificialStructureHash.IsCreated || !ArtificialStructures.IsCreated)
+                if (!ArtificialStructures.IsCreated)
                     return threat;
+
+                if (!ArtificialStructureHash.IsCreated)
+                    return ApplyArtificialStructureInfluenceLinear(samplePosition, threat);
 
                 float suppression = 0f;
                 float attraction = 0f;
@@ -2011,6 +2754,51 @@ namespace Hecton8.World
 
                 }
                 while (ArtificialStructureHash.TryGetNextValue(out structureIndex, ref iterator));
+
+                float adjusted = threat * math.saturate(1f - suppression);
+                if (attraction > 0f)
+                    adjusted = math.saturate(adjusted + attraction);
+
+                return adjusted;
+            }
+
+            private float ApplyArtificialStructureInfluenceLinear(float3 samplePosition, float threat)
+            {
+                float suppression = 0f;
+                float attraction = 0f;
+                int count = ArtificialStructures.Length;
+                for (int structureIndex = 0; structureIndex < count; structureIndex++)
+                {
+                    ArtificialStructureRecord structure = ArtificialStructures[structureIndex];
+                    if (samplePosition.x < structure.MinX ||
+                        samplePosition.x > structure.MaxX ||
+                        samplePosition.y < structure.MinY ||
+                        samplePosition.y > structure.MaxY ||
+                        samplePosition.z < structure.MinZ ||
+                        samplePosition.z > structure.MaxZ)
+                    {
+                        continue;
+                    }
+
+                    switch ((StructureType)structure.Type)
+                    {
+                        case StructureType.BaseModule:
+                            suppression = math.max(suppression, StructureThreatSuppression);
+                            break;
+
+                        case StructureType.HazardEmitter:
+                            attraction = math.max(attraction, StructureHazardAttraction);
+                            break;
+
+                        case StructureType.MegaWreck:
+                            attraction = math.max(attraction, StructureHazardAttraction * 0.5f);
+                            break;
+
+                        case StructureType.VoxelCave:
+                            suppression = math.max(suppression, StructureThreatSuppression * 0.35f);
+                            break;
+                    }
+                }
 
                 float adjusted = threat * math.saturate(1f - suppression);
                 if (attraction > 0f)
@@ -2117,12 +2905,13 @@ namespace Hecton8.World
 
             private bool IsInsideBlockingStructure(int columnIndex, float3 position)
             {
-                if (!ArtificialStructures.IsCreated ||
-                    !ArtificialStructureHash.IsCreated ||
-                    columnIndex < 0)
+                if (!ArtificialStructures.IsCreated || columnIndex < 0)
                 {
                     return false;
                 }
+
+                if (!ArtificialStructureHash.IsCreated)
+                    return IsInsideBlockingStructureLinear(position);
 
                 NativeParallelMultiHashMapIterator<int> iterator;
                 int structureIndex;
@@ -2147,6 +2936,26 @@ namespace Hecton8.World
 
                 }
                 while (ArtificialStructureHash.TryGetNextValue(out structureIndex, ref iterator));
+
+                return false;
+            }
+
+            private bool IsInsideBlockingStructureLinear(float3 position)
+            {
+                int count = ArtificialStructures.Length;
+                for (int structureIndex = 0; structureIndex < count; structureIndex++)
+                {
+                    ArtificialStructureRecord structure = ArtificialStructures[structureIndex];
+                    if (position.x >= structure.MinX &&
+                        position.x <= structure.MaxX &&
+                        position.y >= structure.MinY &&
+                        position.y <= structure.MaxY &&
+                        position.z >= structure.MinZ &&
+                        position.z <= structure.MaxZ)
+                    {
+                        return true;
+                    }
+                }
 
                 return false;
             }
@@ -2182,7 +2991,7 @@ namespace Hecton8.World
             [ReadOnly, NoAlias] public NativeArray<float2> ThreatAttractorGrid;
             [ReadOnly, NoAlias] public NativeParallelMultiHashMap<int, int> ChunkHash;
             [ReadOnly, NoAlias] public NativeArray<float> NavSupportGrid;
-            [ReadOnly, NoAlias] public NativeArray<SwarmWakeImpulse> ExternalWakeImpulses;
+            public SwarmWakeImpulse ExternalWakeImpulse;
             [WriteOnly, NoAlias] public NativeArray<float2> Output;
             public int GridResolution;
             public int ChunkCount;
@@ -2359,32 +3168,29 @@ namespace Hecton8.World
 
             private float2 SampleWakeFlow(float3 position)
             {
-                if (!ExternalWakeImpulses.IsCreated || ExternalWakeImpulseCount <= 0)
+                if (ExternalWakeImpulseCount <= 0)
                     return float2.zero;
 
                 float2 wake = float2.zero;
-                for (int i = 0; i < ExternalWakeImpulseCount; i++)
-                {
-                    SwarmWakeImpulse impulse = ExternalWakeImpulses[i];
-                    if (impulse.Radius <= 0.0001f || impulse.Strength <= 0.0001f)
-                        continue;
+                SwarmWakeImpulse impulse = ExternalWakeImpulse;
+                if (impulse.Radius <= 0.0001f || impulse.Strength <= 0.0001f)
+                    return wake;
 
-                    float radius = math.max(impulse.Radius, 0.001f);
-                    float2 planarDelta = new float2(position.x - impulse.Position.x, position.z - impulse.Position.z);
-                    float planarDistanceSq = math.lengthsq(planarDelta);
-                    float radiusSq = radius * radius;
-                    if (planarDistanceSq > radiusSq)
-                        continue;
+                float radius = math.max(impulse.Radius, 0.001f);
+                float2 planarDelta = new float2(position.x - impulse.Position.x, position.z - impulse.Position.z);
+                float planarDistanceSq = math.lengthsq(planarDelta);
+                float radiusSq = radius * radius;
+                if (planarDistanceSq > radiusSq)
+                    return wake;
 
-                    float inverseRadiusSq = math.rcp(radiusSq);
-                    float planarGate = math.saturate(1f - (planarDistanceSq * inverseRadiusSq));
-                    if (planarGate <= 0f)
-                        continue;
+                float inverseRadiusSq = math.rcp(radiusSq);
+                float planarGate = math.saturate(1f - (planarDistanceSq * inverseRadiusSq));
+                if (planarGate <= 0f)
+                    return wake;
 
-                    float verticalGate = math.saturate(1f - (math.abs(position.y - impulse.Position.y) * math.rcp(radius)));
-                    float weight = planarGate * planarGate * verticalGate * impulse.Strength;
-                    wake += DominantAxisOrDefault(new float2(impulse.FlowVector.x, impulse.FlowVector.z), float2.zero) * weight;
-                }
+                float verticalGate = math.saturate(1f - (math.abs(position.y - impulse.Position.y) * math.rcp(radius)));
+                float weight = planarGate * planarGate * verticalGate * impulse.Strength;
+                wake += DominantAxisOrDefault(new float2(impulse.FlowVector.x, impulse.FlowVector.z), float2.zero) * weight;
 
                 return wake;
             }
@@ -2525,7 +3331,7 @@ namespace Hecton8.World
             private const float StormSurfaceTurbulenceStrength = 0.4f;
 
             [ReadOnly, NoAlias] public NativeArray<float> ThermalGrid;
-            [ReadOnly, NoAlias] public NativeArray<SwarmWakeImpulse> ExternalWakeImpulses;
+            public SwarmWakeImpulse ExternalWakeImpulse;
             [NativeDisableParallelForRestriction]
             [WriteOnly, NoAlias] public NativeArray<float3> Output;
             public int HorizontalResolution;
@@ -2610,29 +3416,26 @@ namespace Hecton8.World
 
             private float3 SampleWakeImpulse(float3 position)
             {
-                if (!ExternalWakeImpulses.IsCreated || ExternalWakeImpulseCount <= 0)
+                if (ExternalWakeImpulseCount <= 0)
                     return float3.zero;
 
                 float3 wake = float3.zero;
-                for (int i = 0; i < ExternalWakeImpulseCount; i++)
-                {
-                    SwarmWakeImpulse impulse = ExternalWakeImpulses[i];
-                    if (impulse.Radius <= 0.0001f || impulse.Strength <= 0.0001f)
-                        continue;
+                SwarmWakeImpulse impulse = ExternalWakeImpulse;
+                if (impulse.Radius <= 0.0001f || impulse.Strength <= 0.0001f)
+                    return wake;
 
-                    float radius = math.max(impulse.Radius, 0.001f);
-                    float3 delta = position - impulse.Position;
-                    float distanceSq = math.lengthsq(delta);
-                    float radiusSq = radius * radius;
-                    if (distanceSq > radiusSq)
-                        continue;
+                float radius = math.max(impulse.Radius, 0.001f);
+                float3 delta = position - impulse.Position;
+                float distanceSq = math.lengthsq(delta);
+                float radiusSq = radius * radius;
+                if (distanceSq > radiusSq)
+                    return wake;
 
-                    float weight = math.saturate(1f - (distanceSq * math.rcp(radiusSq)));
-                    if (weight <= 0f)
-                        continue;
+                float weight = math.saturate(1f - (distanceSq * math.rcp(radiusSq)));
+                if (weight <= 0f)
+                    return wake;
 
-                    wake += DominantAxisOrDefault(impulse.FlowVector, float3.zero) * (weight * weight * impulse.Strength);
-                }
+                wake += DominantAxisOrDefault(impulse.FlowVector, float3.zero) * (weight * weight * impulse.Strength);
 
                 return wake;
             }
@@ -3493,12 +4296,14 @@ namespace Hecton8.World
             private bool IsInsideBlockingStructure(float3 position)
             {
                 if (!ArtificialStructures.IsCreated ||
-                    !ArtificialStructureHash.IsCreated ||
                     ThreatGridResolution <= 0 ||
                     ThreatGridCellSize <= 0f)
                 {
                     return false;
                 }
+
+                if (!ArtificialStructureHash.IsCreated)
+                    return IsInsideBlockingStructureLinear(position);
 
                 int cellIndex = ComputeThreatGridCellIndex(position);
                 if (cellIndex < 0)
@@ -3529,6 +4334,28 @@ namespace Hecton8.World
 
                 }
                 while (ArtificialStructureHash.TryGetNextValue(out structureIndex, ref iterator));
+
+                return false;
+            }
+
+            private bool IsInsideBlockingStructureLinear(float3 position)
+            {
+                int count = ArtificialStructures.Length;
+                for (int structureIndex = 0; structureIndex < count; structureIndex++)
+                {
+                    ArtificialStructureRecord structure = ArtificialStructures[structureIndex];
+                    StructureType structureType = (StructureType)structure.Type;
+                    if ((structureType == StructureType.BaseModule || structureType == StructureType.MegaWreck) &&
+                        position.x >= structure.MinX &&
+                        position.x <= structure.MaxX &&
+                        position.y >= structure.MinY &&
+                        position.y <= structure.MaxY &&
+                        position.z >= structure.MinZ &&
+                        position.z <= structure.MaxZ)
+                    {
+                        return true;
+                    }
+                }
 
                 return false;
             }

@@ -123,7 +123,7 @@ namespace Hecton8.World
                 return;
 
             TryRegister();
-            CacheEnvironmentalStrain(GlobalRegistry.EnvironmentalStrainIndustrialSink);
+            CacheEnvironmentalStrain(EnvironmentalStrainManager.Instance);
             TryRegisterHotSwapListener();
         }
 

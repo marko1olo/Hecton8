@@ -23,7 +23,9 @@ Shader "Hidden/Hecton8/BilateralUpsample"
             #pragma fragment Frag
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
             CBUFFER_START(UberNoirReconstructionConstants)
@@ -74,6 +76,11 @@ Shader "Hidden/Hecton8/BilateralUpsample"
             #endif
             }
 
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(saturate(uv));
+            }
+
             float3 Finite3(float3 value, float3 fallback)
             {
                 return all(isfinite(value)) ? value : fallback;
@@ -84,16 +91,15 @@ Shader "Hidden/Hecton8/BilateralUpsample"
                 return isfinite(value) ? saturate(value) : 0.0;
             }
 
-            float SmoothRange01(float edge0, float edge1, float value)
+            float LinearRange01(float edge0, float edge1, float value)
             {
                 float range = max(edge1 - edge0, 0.0001);
-                float t = saturate((value - edge0) * rcp(range));
-                return t * t * (3.0 - 2.0 * t);
+                return saturate((value - edge0) * rcp(range));
             }
 
             float3 SampleColor(float2 uv)
             {
-                return Finite3(SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(uv)).rgb, float3(0.0, 0.0, 0.0));
+                return Finite3(SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(uv)).rgb, float3(0.0, 0.0, 0.0));
             }
 
             float Luma(float3 color)
@@ -103,7 +109,7 @@ Shader "Hidden/Hecton8/BilateralUpsample"
 
             float LinearDepthSafe(float2 uv)
             {
-                float rawDepth = SampleSceneDepth(saturate(uv));
+                float rawDepth = SampleSceneDepth(ResolveFoveatedSourceUV(uv));
                 float depth = LinearEyeDepth(rawDepth, _ZBufferParams);
                 return isfinite(depth) ? max(depth, 0.0) : 0.0;
             }
@@ -144,9 +150,10 @@ Shader "Hidden/Hecton8/BilateralUpsample"
                 if (historyWeight <= 0.0001)
                     return current;
 
-                float2 motion = SAMPLE_TEXTURE2D_X(_MotionVectorTexture, sampler_LinearClamp, saturate(uv)).rg;
+                float2 currentSourceUv = ResolveFoveatedSourceUV(uv);
+                float2 motion = -SAMPLE_TEXTURE2D_X(_MotionVectorTexture, sampler_LinearClamp, currentSourceUv).rg;
                 motion = all(isfinite(motion)) ? motion : float2(0.0, 0.0);
-                float2 historyUv = saturate(uv + motion * motionScale);
+                float2 historyUv = saturate(currentSourceUv + motion * motionScale);
                 float3 history = Finite3(
                     SAMPLE_TEXTURE2D_X(_H8ReconstructionHistoryTex, sampler_LinearClamp, historyUv).rgb,
                     current);
@@ -234,7 +241,7 @@ Shader "Hidden/Hecton8/BilateralUpsample"
                     maxColor = max(maxColor, tapColor);
                 }
 
-                float diagonalWeight01 = SmoothRange01(0.25, 0.85, Finite01(_H8OverkillParams.w));
+                float diagonalWeight01 = LinearRange01(0.25, 0.85, Finite01(_H8OverkillParams.w));
                 [branch]
                 if (diagonalWeight01 > 0.001)
                 {
@@ -262,7 +269,7 @@ Shader "Hidden/Hecton8/BilateralUpsample"
                 float3 bilateral = sum * rcp(max(weightSum, 0.0001));
                 float variance = saturate(abs(Luma(centerColor) - Luma(bilateral)) * 10.0);
                 float scaleDeficit01 = saturate(1.0 - safeScale);
-                float ringingGuard = lerp(1.0, 0.42, SmoothRange01(0.24, 0.52, scaleDeficit01));
+                float ringingGuard = lerp(1.0, 0.42, LinearRange01(0.24, 0.52, scaleDeficit01));
                 float detailGain = sharpness * ringingGuard * lerp(0.35, 1.0, variance);
                 float3 reconstructed = centerColor + (centerColor - bilateral) * detailGain;
                 reconstructed = ApplyNeighborhoodClamp(reconstructed, minColor, maxColor);

@@ -46,10 +46,20 @@ namespace Hecton8.World
 
     public static class WorldGenerativeGeologyMeshBuilder
     {
+        // COLD ALLOC: Object[1] - serializes static scratch pool access during procedural geology mesh assembly - owner: WorldGenerativeGeologyMeshBuilder
+        private static readonly object s_buildSync = new object();
         // COLD ALLOC: List<Vector3>[2048] - mesh source copy scratch for compound geology assembly - owner: WorldGenerativeGeologyMeshBuilder
         private static readonly List<Vector3> s_sourceVertices = new List<Vector3>(2048);
         // COLD ALLOC: List<int>[4096] - mesh source index scratch for compound geology assembly - owner: WorldGenerativeGeologyMeshBuilder
         private static readonly List<int> s_sourceTriangles = new List<int>(4096);
+        private const int MeshScratchPoolSize = 32;
+        private const int MeshScratchVertexCapacity = 8192;
+        private const int MeshScratchIndexCapacity = 24576;
+        // COLD ALLOC: List<Vector3>[32] - reusable geometry scratch lanes for runtime geology mesh assembly - owner: WorldGenerativeGeologyMeshBuilder
+        private static readonly List<Vector3>[] s_vertexScratchPool = BuildVertexScratchPool();
+        // COLD ALLOC: List<int>[32] - reusable index scratch lanes for runtime geology mesh assembly - owner: WorldGenerativeGeologyMeshBuilder
+        private static readonly List<int>[] s_indexScratchPool = BuildIndexScratchPool();
+        private static int s_meshScratchDepth;
 
         private const int MeshNameStride = 4;
         private const int MeshNameLod0Slot = 0;
@@ -80,24 +90,100 @@ namespace Hecton8.World
             int stableHash,
             float scale = 1f)
         {
-            // Normalizuem hash chtoby ne bylo otritsatelnyh
-            int h = Mathf.Abs(stableHash);
-
-            GeologyMeshBundle bundle = archetype switch
+            lock (s_buildSync)
             {
-                GeologyArchetype.RockFloor    => BuildRockFloor(h, scale),
-                GeologyArchetype.RockCluster  => BuildRockCluster(h, scale),
-                GeologyArchetype.RockShelf    => BuildRockShelf(h, scale),
-                GeologyArchetype.RockArch     => BuildRockArch(h, scale),
-                GeologyArchetype.CaveEntrance => BuildCaveEntrance(h, scale),
-                GeologyArchetype.LandmarkSpire => BuildLandmarkSpire(h, scale),
-                _                             => BuildRockCluster(h, scale)
-            };
+                // Normalizuem hash chtoby ne bylo otritsatelnyh
+                int h = NormalizeStableHash(stableHash);
 
-            return bundle;
+                GeologyMeshBundle bundle = archetype switch
+                {
+                    GeologyArchetype.RockFloor    => BuildRockFloor(h, scale),
+                    GeologyArchetype.RockCluster  => BuildRockCluster(h, scale),
+                    GeologyArchetype.RockShelf    => BuildRockShelf(h, scale),
+                    GeologyArchetype.RockArch     => BuildRockArch(h, scale),
+                    GeologyArchetype.CaveEntrance => BuildCaveEntrance(h, scale),
+                    GeologyArchetype.LandmarkSpire => BuildLandmarkSpire(h, scale),
+                    _                             => BuildRockCluster(h, scale)
+                };
+
+                return bundle;
+            }
         }
 
         // ── RockFloor — melkie kamni ──────────────────────────────
+
+        private static int NormalizeStableHash(int stableHash)
+        {
+            unchecked
+            {
+                uint h = (uint)stableHash;
+                h ^= h >> 16;
+                h *= 0x7feb352d;
+                h ^= h >> 15;
+                h *= 0x846ca68b;
+                h ^= h >> 16;
+                return (int)(h & 0x7FFFFFFFu);
+            }
+        }
+
+        private readonly struct MeshScratchLease
+        {
+            private readonly int _slot;
+            public readonly List<Vector3> Vertices;
+            public readonly List<int> Triangles;
+
+            public MeshScratchLease(int slot, List<Vector3> vertices, List<int> triangles)
+            {
+                _slot = slot;
+                Vertices = vertices;
+                Triangles = triangles;
+            }
+
+            public void Dispose()
+            {
+                Vertices.Clear();
+                Triangles.Clear();
+                if (_slot >= 0 && s_meshScratchDepth > _slot)
+                    s_meshScratchDepth = _slot;
+            }
+        }
+
+        private static MeshScratchLease RentMeshScratch(int vertexCapacity, int indexCapacity)
+        {
+            int slot = s_meshScratchDepth++;
+            if (slot < 0 || slot >= MeshScratchPoolSize)
+                slot = MeshScratchPoolSize - 1;
+
+            List<Vector3> vertices = s_vertexScratchPool[slot];
+            List<int> triangles = s_indexScratchPool[slot];
+            vertices.Clear();
+            triangles.Clear();
+            EnsureListCapacity(vertices, vertexCapacity);
+            EnsureListCapacity(triangles, indexCapacity);
+            return new MeshScratchLease(slot, vertices, triangles);
+        }
+
+        private static List<Vector3>[] BuildVertexScratchPool()
+        {
+            var pool = new List<Vector3>[MeshScratchPoolSize];
+            for (int i = 0; i < pool.Length; i++)
+                pool[i] = new List<Vector3>(MeshScratchVertexCapacity);
+            return pool;
+        }
+
+        private static List<int>[] BuildIndexScratchPool()
+        {
+            var pool = new List<int>[MeshScratchPoolSize];
+            for (int i = 0; i < pool.Length; i++)
+                pool[i] = new List<int>(MeshScratchIndexCapacity);
+            return pool;
+        }
+
+        private static void EnsureListCapacity<T>(List<T> list, int capacity)
+        {
+            if (list.Capacity < capacity)
+                list.Capacity = capacity;
+        }
 
         private static GeologyMeshBundle BuildRockFloor(int h, float s)
         {
@@ -130,17 +216,21 @@ namespace Hecton8.World
             // Klaster iz 2-4 mass
             int count = 2 + (variant % 3);
             float baseSize = s * Mathf.Lerp(1.2f, 2.8f, (variant * 0.14f) % 1f);
-            Vector3[] offsets = new Vector3[count];
-            float[] sizes = new float[count];
-            float[] heights = new float[count];
+            System.Span<Vector3> offsets = stackalloc Vector3[4];
+            System.Span<float> sizes = stackalloc float[4];
+            System.Span<float> heights = stackalloc float[4];
 
-            // COLD ALLOC: List[256/512] for procedural mesh vertex data — owner: BuildRockCluster
-            List<Vector3> verts0 = new List<Vector3>(256);
-            List<int> tris0 = new List<int>(512);
-            // COLD ALLOC: List[128/256] for LOD1 mesh data — owner: BuildRockCluster
-            List<Vector3> verts1 = new List<Vector3>(128);
-            List<int> tris1 = new List<int>(256);
+            // SCRATCH: pooled List[256/512] for procedural mesh vertex data - owner: BuildRockCluster
+            MeshScratchLease lod0Scratch = RentMeshScratch(256, 512);
+            List<Vector3> verts0 = lod0Scratch.Vertices;
+            List<int> tris0 = lod0Scratch.Triangles;
+            // SCRATCH: pooled List[128/256] for LOD1 mesh data - owner: BuildRockCluster
+            MeshScratchLease lod1Scratch = RentMeshScratch(128, 256);
+            List<Vector3> verts1 = lod1Scratch.Vertices;
+            List<int> tris1 = lod1Scratch.Triangles;
 
+            try
+            {
             for (int i = 0; i < count; i++)
             {
                 float angle = (i / (float)count) * Mathf.PI * 2f + (h * 0.37f);
@@ -205,6 +295,12 @@ namespace Hecton8.World
                 Lod0 = lod0, Lod1 = lod1, Lod2 = lod2, Collider = col,
                 Bounds = new Bounds(new Vector3(0, bh * 0.5f, 0), new Vector3(baseSize * 2.2f, bh, baseSize * 2.2f))
             };
+            }
+            finally
+            {
+                lod1Scratch.Dispose();
+                lod0Scratch.Dispose();
+            }
         }
 
         // ── RockShelf — ustupy / cliff shelves ────────────────────
@@ -316,10 +412,18 @@ namespace Hecton8.World
             float w, float h, float d,
             int seed, int subdivisions, float noiseAmp)
         {
-            List<Vector3> verts = new List<Vector3>(256);
-            List<int> tris = new List<int>(512);
-            AppendDeformedBox(verts, tris, Vector3.zero, w, h, d, seed, subdivisions, noiseAmp);
-            return BuildMeshFromLists(verts, tris);
+            MeshScratchLease scratch = RentMeshScratch(256, 512);
+            List<Vector3> verts = scratch.Vertices;
+            List<int> tris = scratch.Triangles;
+            try
+            {
+                AppendDeformedBox(verts, tris, Vector3.zero, w, h, d, seed, subdivisions, noiseAmp);
+                return BuildMeshFromLists(verts, tris);
+            }
+            finally
+            {
+                scratch.Dispose();
+            }
         }
 
         private static void AppendDeformedBox(
@@ -434,26 +538,34 @@ namespace Hecton8.World
             float width, float height, float depth, float overhang,
             int seed, int sub, float noiseAmp)
         {
-            // COLD ALLOC: List[512/1024] for shelf mesh vertex data — owner: BuildShelfMesh
-            List<Vector3> verts = new List<Vector3>(512);
-            List<int> tris = new List<int>(1024);
+            // SCRATCH: pooled List[512/1024] for shelf mesh vertex data - owner: BuildShelfMesh
+            MeshScratchLease scratch = RentMeshScratch(512, 1024);
+            List<Vector3> verts = scratch.Vertices;
+            List<int> tris = scratch.Triangles;
+            Mesh wallA = null;
+            Mesh wallB = null;
+            Mesh wallC = null;
+            Mesh shelfLip = null;
+            Mesh lowerLedge = null;
 
+            try
+            {
             // Osnovnaya stena
-            Mesh wallA = BuildDeformedEllipsoid(width * 0.62f, height * 0.82f, depth * 0.56f, seed, 4 + sub, 7 + sub, noiseAmp * 0.9f, 0.15f);
-            Mesh wallB = BuildDeformedEllipsoid(width * 0.55f, height * 0.9f, depth * 0.52f, seed + 9, 4 + sub, 7 + sub, noiseAmp * 0.9f, 0.15f);
-            Mesh wallC = BuildDeformedEllipsoid(width * 0.48f, height * 0.76f, depth * 0.48f, seed + 17, 4 + sub, 6 + sub, noiseAmp * 0.85f, 0.2f);
+            wallA = BuildDeformedEllipsoid(width * 0.62f, height * 0.82f, depth * 0.56f, seed, 4 + sub, 7 + sub, noiseAmp * 0.9f, 0.15f);
+            wallB = BuildDeformedEllipsoid(width * 0.55f, height * 0.9f, depth * 0.52f, seed + 9, 4 + sub, 7 + sub, noiseAmp * 0.9f, 0.15f);
+            wallC = BuildDeformedEllipsoid(width * 0.48f, height * 0.76f, depth * 0.48f, seed + 17, 4 + sub, 6 + sub, noiseAmp * 0.85f, 0.2f);
             AppendMeshTransformed(verts, tris, wallA, new Vector3(-width * 0.18f, height * 0.46f, -depth * 0.28f), Quaternion.Euler(4f, -12f, -8f), Vector3.one);
             AppendMeshTransformed(verts, tris, wallB, new Vector3(width * 0.14f, height * 0.5f, -depth * 0.18f), Quaternion.Euler(-6f, 10f, 6f), Vector3.one);
             AppendMeshTransformed(verts, tris, wallC, new Vector3(0f, height * 0.62f, -depth * 0.42f), Quaternion.Euler(0f, 22f, -4f), Vector3.one);
 
             // Vystupayuschiy shelf
-            Mesh shelfLip = BuildDeformedEllipsoid(width * 0.92f, height * 0.24f, depth * 0.42f + overhang, seed + 7, 4 + sub, 8 + sub, noiseAmp * 0.7f, 0.25f);
+            shelfLip = BuildDeformedEllipsoid(width * 0.92f, height * 0.24f, depth * 0.42f + overhang, seed + 7, 4 + sub, 8 + sub, noiseAmp * 0.7f, 0.25f);
             AppendMeshTransformed(verts, tris, shelfLip,
                 new Vector3(0f, height * 0.84f, depth * 0.24f + overhang * 0.48f),
                 Quaternion.Euler(-5f, 0f, 0f), Vector3.one);
 
             // Nizhniy ustup
-            Mesh lowerLedge = BuildDeformedEllipsoid(width * 0.72f, height * 0.16f, depth * 0.34f, seed + 13, 3 + sub, 6 + sub, noiseAmp * 0.45f, 0.28f);
+            lowerLedge = BuildDeformedEllipsoid(width * 0.72f, height * 0.16f, depth * 0.34f, seed + 13, 3 + sub, 6 + sub, noiseAmp * 0.45f, 0.28f);
             AppendMeshTransformed(verts, tris, lowerLedge,
                 new Vector3(0f, height * 0.34f, depth * 0.12f),
                 Quaternion.Euler(0f, seed % 17 - 8f, 0f), Vector3.one);
@@ -505,23 +617,41 @@ namespace Hecton8.World
                     Mathf.Lerp(-width * 0.24f, width * 0.24f, t),
                     height * Mathf.Lerp(0.48f, 0.8f, ((seed + i * 37) * 0.09f) % 1f),
                     depth * Mathf.Lerp(0.12f, 0.38f, ((seed + i * 41) * 0.11f) % 1f) + overhang * 0.24f);
-                Mesh outcrop = BuildDeformedEllipsoid(
-                    width * 0.22f,
-                    height * 0.16f,
-                    depth * 0.24f,
-                    seed + 131 + i * 19,
-                    4 + Mathf.Max(1, sub - 1),
-                    5 + sub,
-                    noiseAmp * 0.4f,
-                    0.12f);
-                Quaternion tilt = Quaternion.Euler(
-                    Mathf.Lerp(-18f, 16f, ((seed + i * 43) * 0.13f) % 1f),
-                    Mathf.Lerp(-32f, 32f, ((seed + i * 47) * 0.07f) % 1f),
-                    Mathf.Lerp(-12f, 12f, ((seed + i * 53) * 0.05f) % 1f));
-                AppendMeshTransformed(verts, tris, outcrop, outcropPos, tilt, Vector3.one);
+                Mesh outcrop = null;
+                try
+                {
+                    outcrop = BuildDeformedEllipsoid(
+                        width * 0.22f,
+                        height * 0.16f,
+                        depth * 0.24f,
+                        seed + 131 + i * 19,
+                        4 + Mathf.Max(1, sub - 1),
+                        5 + sub,
+                        noiseAmp * 0.4f,
+                        0.12f);
+                    Quaternion tilt = Quaternion.Euler(
+                        Mathf.Lerp(-18f, 16f, ((seed + i * 43) * 0.13f) % 1f),
+                        Mathf.Lerp(-32f, 32f, ((seed + i * 47) * 0.07f) % 1f),
+                        Mathf.Lerp(-12f, 12f, ((seed + i * 53) * 0.05f) % 1f));
+                    AppendMeshTransformed(verts, tris, outcrop, outcropPos, tilt, Vector3.one);
+                }
+                finally
+                {
+                    ReleaseTemporaryMesh(outcrop);
+                }
             }
 
             return BuildMeshFromLists(verts, tris);
+            }
+            finally
+            {
+                ReleaseTemporaryMesh(lowerLedge);
+                ReleaseTemporaryMesh(shelfLip);
+                ReleaseTemporaryMesh(wallC);
+                ReleaseTemporaryMesh(wallB);
+                ReleaseTemporaryMesh(wallA);
+                scratch.Dispose();
+            }
         }
 
         // ── Arch mesh ─────────────────────────────────────────────
@@ -530,9 +660,12 @@ namespace Hecton8.World
             float span, float height, float thick, float asym,
             int seed, int sub, float noiseAmp)
         {
-            List<Vector3> verts = new List<Vector3>(1024);
-            List<int> tris = new List<int>(2048);
+            MeshScratchLease scratch = RentMeshScratch(1024, 2048);
+            List<Vector3> verts = scratch.Vertices;
+            List<int> tris = scratch.Triangles;
 
+            try
+            {
             // Levaya opora
             float leftX = -span * 0.5f + asym * span * 0.1f;
             float rightX = span * 0.5f + asym * span * 0.1f;
@@ -595,23 +728,36 @@ namespace Hecton8.World
                     Mathf.Lerp(leftX * 0.78f, rightX * 0.78f, ((seed + i * 29) * 0.13f) % 1f),
                     height * Mathf.Lerp(0.52f, 0.78f, ((seed + i * 31) * 0.17f) % 1f),
                     side * thick * Mathf.Lerp(0.42f, 0.68f, ((seed + i * 37) * 0.09f) % 1f));
-                Mesh flank = BuildDeformedEllipsoid(
-                    thick * 0.34f,
-                    thick * 0.7f,
-                    thick * 0.56f,
-                    seed + 111 + i * 17,
-                    4,
-                    5,
-                    noiseAmp * 0.32f,
-                    0.08f);
-                Quaternion tilt = Quaternion.Euler(
-                    Mathf.Lerp(-14f, 18f, ((seed + i * 41) * 0.11f) % 1f),
-                    side < 0f ? -28f : 28f,
-                    Mathf.Lerp(-22f, 22f, ((seed + i * 43) * 0.13f) % 1f));
-                AppendMeshTransformed(verts, tris, flank, flankPos, tilt, Vector3.one);
+                Mesh flank = null;
+                try
+                {
+                    flank = BuildDeformedEllipsoid(
+                        thick * 0.34f,
+                        thick * 0.7f,
+                        thick * 0.56f,
+                        seed + 111 + i * 17,
+                        4,
+                        5,
+                        noiseAmp * 0.32f,
+                        0.08f);
+                    Quaternion tilt = Quaternion.Euler(
+                        Mathf.Lerp(-14f, 18f, ((seed + i * 41) * 0.11f) % 1f),
+                        side < 0f ? -28f : 28f,
+                        Mathf.Lerp(-22f, 22f, ((seed + i * 43) * 0.13f) % 1f));
+                    AppendMeshTransformed(verts, tris, flank, flankPos, tilt, Vector3.one);
+                }
+                finally
+                {
+                    ReleaseTemporaryMesh(flank);
+                }
             }
 
             return BuildMeshFromLists(verts, tris);
+            }
+            finally
+            {
+                scratch.Dispose();
+            }
         }
 
         private static void BuildArchBridge(
@@ -652,9 +798,12 @@ namespace Hecton8.World
         private static Mesh BuildArchCollider(float span, float height, float thick)
         {
             // Collider arki: dve nogi + uproschennyy svod, proem otkryt
-            List<Vector3> verts = new List<Vector3>(64);
-            List<int> tris = new List<int>(128);
+            MeshScratchLease scratch = RentMeshScratch(64, 128);
+            List<Vector3> verts = scratch.Vertices;
+            List<int> tris = scratch.Triangles;
 
+            try
+            {
             float legH = height * 0.55f;
             AppendDeformedBox(verts, tris, new Vector3(-span * 0.5f, legH * 0.5f, 0),
                 thick * 1.3f, legH, thick * 1.3f, 0, 1, 0f);
@@ -665,6 +814,11 @@ namespace Hecton8.World
                 span + thick, thick * 1.2f, thick * 1.3f, 0, 1, 0f);
 
             return BuildMeshFromLists(verts, tris);
+            }
+            finally
+            {
+                scratch.Dispose();
+            }
         }
 
         // ── Cave Entrance mesh ────────────────────────────────────
@@ -673,9 +827,12 @@ namespace Hecton8.World
             float w, float h, float d, float openW, float openH,
             int seed, int sub, float noiseAmp)
         {
-            List<Vector3> verts = new List<Vector3>(1024);
-            List<int> tris = new List<int>(2048);
+            MeshScratchLease scratch = RentMeshScratch(1024, 2048);
+            List<Vector3> verts = scratch.Vertices;
+            List<int> tris = scratch.Triangles;
 
+            try
+            {
             // Levaya bokovaya massa
             float sideW = (w - openW) * 0.5f;
             AppendDeformedEllipsoid(verts, tris, new Vector3(-(openW * 0.5f + sideW * 0.58f), h * 0.5f, -d * 0.04f),
@@ -738,20 +895,28 @@ namespace Hecton8.World
                     side * (openW * 0.5f + sideW * Mathf.Lerp(0.42f, 0.78f, ((seed + i * 23) * 0.17f) % 1f)),
                     h * Mathf.Lerp(0.2f, 0.54f, ((seed + i * 29) * 0.11f) % 1f),
                     d * Mathf.Lerp(0.08f, 0.34f, ((seed + i * 31) * 0.07f) % 1f));
-                Mesh breaker = BuildDeformedEllipsoid(
-                    sideW * 0.34f,
-                    h * 0.18f,
-                    d * 0.28f,
-                    seed + 139 + i * 13,
-                    4,
-                    5,
-                    noiseAmp * 0.32f,
-                    0.1f);
-                Quaternion tilt = Quaternion.Euler(
-                    Mathf.Lerp(-18f, 12f, ((seed + i * 37) * 0.13f) % 1f),
-                    side < 0f ? -32f : 32f,
-                    Mathf.Lerp(-14f, 14f, ((seed + i * 41) * 0.19f) % 1f));
-                AppendMeshTransformed(verts, tris, breaker, breakerPos, tilt, Vector3.one);
+                Mesh breaker = null;
+                try
+                {
+                    breaker = BuildDeformedEllipsoid(
+                        sideW * 0.34f,
+                        h * 0.18f,
+                        d * 0.28f,
+                        seed + 139 + i * 13,
+                        4,
+                        5,
+                        noiseAmp * 0.32f,
+                        0.1f);
+                    Quaternion tilt = Quaternion.Euler(
+                        Mathf.Lerp(-18f, 12f, ((seed + i * 37) * 0.13f) % 1f),
+                        side < 0f ? -32f : 32f,
+                        Mathf.Lerp(-14f, 14f, ((seed + i * 41) * 0.19f) % 1f));
+                    AppendMeshTransformed(verts, tris, breaker, breakerPos, tilt, Vector3.one);
+                }
+                finally
+                {
+                    ReleaseTemporaryMesh(breaker);
+                }
             }
 
             int debrisCount = 3 + (seed % 4);
@@ -768,15 +933,23 @@ namespace Hecton8.World
             }
 
             return BuildMeshFromLists(verts, tris);
+            }
+            finally
+            {
+                scratch.Dispose();
+            }
         }
 
         private static Mesh BuildCaveEntranceCollider(
             float w, float h, float d, float openW, float openH)
         {
             // Collider: tolko bokovye massy i verh, proem otkryt
-            List<Vector3> verts = new List<Vector3>(64);
-            List<int> tris = new List<int>(128);
+            MeshScratchLease scratch = RentMeshScratch(64, 128);
+            List<Vector3> verts = scratch.Vertices;
+            List<int> tris = scratch.Triangles;
 
+            try
+            {
             float sideW = (w - openW) * 0.5f;
             AppendDeformedBox(verts, tris, new Vector3(-(openW * 0.5f + sideW * 0.5f), h * 0.5f, 0),
                 sideW, h, d, 0, 1, 0f);
@@ -791,6 +964,11 @@ namespace Hecton8.World
             }
 
             return BuildMeshFromLists(verts, tris);
+            }
+            finally
+            {
+                scratch.Dispose();
+            }
         }
 
         // ── Spire mesh ────────────────────────────────────────────
@@ -799,10 +977,13 @@ namespace Hecton8.World
             float baseW, float totalH, float taper,
             int secondaryCount, int seed, int sub, float noiseAmp)
         {
-            List<Vector3> verts = new List<Vector3>(1024);
-            List<int> tris = new List<int>(2048);
+            MeshScratchLease scratch = RentMeshScratch(1024, 2048);
+            List<Vector3> verts = scratch.Vertices;
+            List<int> tris = scratch.Triangles;
 
             // Glavnyy stvol — konusoobraznyy s shumom
+            try
+            {
             int sections = Mathf.Max(3, sub * 2);
             for (int i = 0; i < sections; i++)
             {
@@ -840,12 +1021,20 @@ namespace Hecton8.World
                     secY,
                     FastSin(angle) * secR);
 
-                Mesh shard = BuildDeformedEllipsoid(secW, secH, secW * 0.82f, seed + i * 29, 4 + Mathf.Max(1, sub - 1), 5 + sub, noiseAmp * 0.55f, 0.1f);
-                Quaternion tilt = Quaternion.Euler(
-                    Mathf.Lerp(-18f, 18f, ((seed + i * 41) * 0.13f) % 1f),
-                    Mathf.Rad2Deg * angle,
-                    Mathf.Lerp(-14f, 14f, ((seed + i * 53) * 0.11f) % 1f));
-                AppendMeshTransformed(verts, tris, shard, secPos, tilt, Vector3.one);
+                Mesh shard = null;
+                try
+                {
+                    shard = BuildDeformedEllipsoid(secW, secH, secW * 0.82f, seed + i * 29, 4 + Mathf.Max(1, sub - 1), 5 + sub, noiseAmp * 0.55f, 0.1f);
+                    Quaternion tilt = Quaternion.Euler(
+                        Mathf.Lerp(-18f, 18f, ((seed + i * 41) * 0.13f) % 1f),
+                        Mathf.Rad2Deg * angle,
+                        Mathf.Lerp(-14f, 14f, ((seed + i * 53) * 0.11f) % 1f));
+                    AppendMeshTransformed(verts, tris, shard, secPos, tilt, Vector3.one);
+                }
+                finally
+                {
+                    ReleaseTemporaryMesh(shard);
+                }
             }
 
             // Tyazhelaya baza
@@ -868,15 +1057,28 @@ namespace Hecton8.World
                 float y = totalH * Mathf.Lerp(0.48f, 0.82f, ((seed + i * 13) * 0.21f) % 1f);
                 float radius = baseW * Mathf.Lerp(0.65f, 0.95f, ((seed + i * 31) * 0.13f) % 1f);
                 Vector3 pos = new Vector3(FastCos(angle) * radius, y, FastSin(angle) * radius);
-                Mesh shard = BuildDeformedEllipsoid(baseW * 0.28f, totalH * 0.22f, baseW * 0.24f, seed + 101 + i * 19, 4 + Mathf.Max(1, sub - 1), 5 + sub, noiseAmp * 0.35f, 0.08f);
-                Quaternion tilt = Quaternion.Euler(
-                    Mathf.Lerp(-26f, 26f, ((seed + i * 61) * 0.17f) % 1f),
-                    Mathf.Rad2Deg * angle,
-                    Mathf.Lerp(-22f, 22f, ((seed + i * 67) * 0.19f) % 1f));
-                AppendMeshTransformed(verts, tris, shard, pos, tilt, Vector3.one);
+                Mesh shard = null;
+                try
+                {
+                    shard = BuildDeformedEllipsoid(baseW * 0.28f, totalH * 0.22f, baseW * 0.24f, seed + 101 + i * 19, 4 + Mathf.Max(1, sub - 1), 5 + sub, noiseAmp * 0.35f, 0.08f);
+                    Quaternion tilt = Quaternion.Euler(
+                        Mathf.Lerp(-26f, 26f, ((seed + i * 61) * 0.17f) % 1f),
+                        Mathf.Rad2Deg * angle,
+                        Mathf.Lerp(-22f, 22f, ((seed + i * 67) * 0.19f) % 1f));
+                    AppendMeshTransformed(verts, tris, shard, pos, tilt, Vector3.one);
+                }
+                finally
+                {
+                    ReleaseTemporaryMesh(shard);
+                }
             }
 
             return BuildMeshFromLists(verts, tris);
+            }
+            finally
+            {
+                scratch.Dispose();
+            }
         }
 
         // ── Mesh utilities ────────────────────────────────────────
@@ -885,9 +1087,12 @@ namespace Hecton8.World
             float w, float h, float d,
             int seed, int sub, float noiseAmp, bool addChips)
         {
-            List<Vector3> verts = new List<Vector3>(384);
-            List<int> tris = new List<int>(768);
+            MeshScratchLease scratch = RentMeshScratch(384, 768);
+            List<Vector3> verts = scratch.Vertices;
+            List<int> tris = scratch.Triangles;
 
+            try
+            {
             AppendDeformedEllipsoid(verts, tris, new Vector3(0f, h * 0.34f, 0f),
                 w, h * 0.7f, d, seed, 4 + sub, 6 + sub, noiseAmp * 0.9f, 0.45f);
 
@@ -927,25 +1132,46 @@ namespace Hecton8.World
                     Mathf.Lerp(-w * 0.16f, w * 0.16f, ((seed + i * 29) * 0.21f) % 1f),
                     h * Mathf.Lerp(0.34f, 0.56f, ((seed + i * 37) * 0.09f) % 1f),
                     Mathf.Lerp(-d * 0.18f, d * 0.18f, ((seed + i * 41) * 0.15f) % 1f));
-                Mesh shard = BuildDeformedBox(w * 0.22f, h * 0.28f, d * 0.14f, seed + 89 + i * 17, 1, noiseAmp * 0.5f);
-                Quaternion tilt = Quaternion.Euler(
-                    Mathf.Lerp(-24f, 24f, ((seed + i * 47) * 0.13f) % 1f),
-                    Mathf.Lerp(0f, 180f, ((seed + i * 53) * 0.07f) % 1f),
-                    Mathf.Lerp(-16f, 16f, ((seed + i * 59) * 0.11f) % 1f));
-                AppendMeshTransformed(verts, tris, shard, pos, tilt, Vector3.one);
+                Mesh shard = null;
+                try
+                {
+                    shard = BuildDeformedBox(w * 0.22f, h * 0.28f, d * 0.14f, seed + 89 + i * 17, 1, noiseAmp * 0.5f);
+                    Quaternion tilt = Quaternion.Euler(
+                        Mathf.Lerp(-24f, 24f, ((seed + i * 47) * 0.13f) % 1f),
+                        Mathf.Lerp(0f, 180f, ((seed + i * 53) * 0.07f) % 1f),
+                        Mathf.Lerp(-16f, 16f, ((seed + i * 59) * 0.11f) % 1f));
+                    AppendMeshTransformed(verts, tris, shard, pos, tilt, Vector3.one);
+                }
+                finally
+                {
+                    ReleaseTemporaryMesh(shard);
+                }
             }
 
             return BuildMeshFromLists(verts, tris);
+            }
+            finally
+            {
+                scratch.Dispose();
+            }
         }
 
         private static Mesh BuildDeformedEllipsoid(
             float w, float h, float d,
             int seed, int rings, int segments, float noiseAmp, float flattenBottom)
         {
-            List<Vector3> verts = new List<Vector3>(256);
-            List<int> tris = new List<int>(512);
-            AppendDeformedEllipsoid(verts, tris, Vector3.zero, w, h, d, seed, rings, segments, noiseAmp, flattenBottom);
-            return BuildMeshFromLists(verts, tris);
+            MeshScratchLease scratch = RentMeshScratch(256, 512);
+            List<Vector3> verts = scratch.Vertices;
+            List<int> tris = scratch.Triangles;
+            try
+            {
+                AppendDeformedEllipsoid(verts, tris, Vector3.zero, w, h, d, seed, rings, segments, noiseAmp, flattenBottom);
+                return BuildMeshFromLists(verts, tris);
+            }
+            finally
+            {
+                scratch.Dispose();
+            }
         }
 
         private static void AppendDeformedEllipsoid(
@@ -1043,6 +1269,17 @@ namespace Hecton8.World
 
             for (int i = 0; i < s_sourceTriangles.Count; i++)
                 tris.Add(baseIndex + s_sourceTriangles[i]);
+        }
+
+        private static void ReleaseTemporaryMesh(Mesh mesh)
+        {
+            if (mesh == null)
+                return;
+
+            if (Application.isPlaying)
+                UnityEngine.Object.Destroy(mesh);
+            else
+                UnityEngine.Object.DestroyImmediate(mesh);
         }
 
         private static Mesh BuildMeshFromLists(List<Vector3> verts, List<int> tris)

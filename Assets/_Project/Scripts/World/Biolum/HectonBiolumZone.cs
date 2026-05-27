@@ -8,7 +8,6 @@ using UnityEngine;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.World;
-using System.Collections.Generic;
 using Unity.Mathematics;
 
 namespace Hecton8.Biolum
@@ -77,8 +76,10 @@ namespace Hecton8.Biolum
         private const float MaxLegacyLightIntensity = 10f;
         private const float MaxLegacyLightRange = 160f;
         private const int BiolumZoneInvalidInputHash = unchecked((int)0x42494F5Au); // BIOZ
-        // COLD ALLOC: List<HectonBiolumZone>[512] - active zone registry replacing scene-wide reflection search fallback - owner: HectonBiolumZone
-        private static readonly List<HectonBiolumZone> s_ActiveZones = new List<HectonBiolumZone>(MaxTrackedActiveZones);
+        // COLD ALLOC: fixed active-zone registry replacing scene-wide reflection search fallback - owner: HectonBiolumZone
+        private static readonly HectonBiolumZone[] s_ActiveZones = new HectonBiolumZone[MaxTrackedActiveZones];
+        private static int s_ActiveZoneCount;
+        private static int s_ActiveZoneVersion;
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // INSPECTOR SETTINGS (Compact)
@@ -116,7 +117,8 @@ namespace Hecton8.Biolum
         private ITickDispatcher _cachedTickDispatcher;
         private ISimulationBucketer _cachedSimulationBucketer;
 
-        internal static List<HectonBiolumZone> ActiveZones => s_ActiveZones;
+        internal static int ActiveZoneCount => math.clamp(s_ActiveZoneCount, 0, MaxTrackedActiveZones);
+        internal static int ActiveZoneVersion => s_ActiveZoneVersion;
         protected float BiolumTickTime => _biolumTickTime;
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -184,15 +186,25 @@ namespace Hecton8.Biolum
             if (zone == null)
                 return;
 
-            int count = s_ActiveZones.Count;
+            int count = math.clamp(s_ActiveZoneCount, 0, MaxTrackedActiveZones);
             for (int i = 0; i < count; i++)
             {
                 if (ReferenceEquals(s_ActiveZones[i], zone))
+                {
+                    s_ActiveZoneCount = count;
                     return;
+                }
             }
 
             if (count < MaxTrackedActiveZones)
-                s_ActiveZones.Add(zone);
+            {
+                s_ActiveZones[count] = zone;
+                s_ActiveZoneCount = count + 1;
+                s_ActiveZoneVersion++;
+                return;
+            }
+
+            s_ActiveZoneCount = count;
         }
 
         private static void UnregisterActiveZone(HectonBiolumZone zone)
@@ -200,11 +212,43 @@ namespace Hecton8.Biolum
             if (zone == null)
                 return;
 
-            for (int i = s_ActiveZones.Count - 1; i >= 0; i--)
+            int count = math.clamp(s_ActiveZoneCount, 0, MaxTrackedActiveZones);
+            for (int i = count - 1; i >= 0; i--)
             {
                 if (ReferenceEquals(s_ActiveZones[i], zone))
-                    s_ActiveZones.RemoveAt(i);
+                {
+                    int last = count - 1;
+                    for (int move = i; move < last; move++)
+                    {
+                        s_ActiveZones[move] = s_ActiveZones[move + 1];
+                    }
+
+                    s_ActiveZones[last] = null;
+                    count = last;
+                    s_ActiveZoneVersion++;
+                }
             }
+
+            s_ActiveZoneCount = count;
+        }
+
+        internal static HectonBiolumZone GetActiveZoneAt(int index)
+        {
+            return (uint)index < (uint)ActiveZoneCount ? s_ActiveZones[index] : null;
+        }
+
+        internal static int CopyActiveZonesTo(HectonBiolumZone[] destination)
+        {
+            if (destination == null || destination.Length == 0)
+                return 0;
+
+            int count = math.min(math.clamp(s_ActiveZoneCount, 0, MaxTrackedActiveZones), destination.Length);
+            for (int i = 0; i < count; i++)
+            {
+                destination[i] = s_ActiveZones[i];
+            }
+
+            return count;
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

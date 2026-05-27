@@ -162,6 +162,11 @@ namespace Hecton8.Items
             ClearPersistentWorldRecord();
         }
 
+        private void OnDestroy()
+        {
+            InteractableRegistry.InvalidateTree(this);
+        }
+
         // ITickable
         public void Tick(float deltaTime)
         {

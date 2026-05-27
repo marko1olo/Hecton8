@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -44,9 +44,30 @@ namespace Hecton8.Audio
             [FieldOffset(28)] public uint HighestPriorityBitIndex;
             [FieldOffset(32)] public uint LastRejectedBitIndex;
             [FieldOffset(36)] public uint SaturationCount;
-            [FieldOffset(40)] public ulong _pad0;
-            [FieldOffset(48)] public ulong _pad1;
-            [FieldOffset(56)] public ulong _pad2;
+            [FieldOffset(40)] private byte _pad0;
+            [FieldOffset(41)] private byte _pad1;
+            [FieldOffset(42)] private byte _pad2;
+            [FieldOffset(43)] private byte _pad3;
+            [FieldOffset(44)] private byte _pad4;
+            [FieldOffset(45)] private byte _pad5;
+            [FieldOffset(46)] private byte _pad6;
+            [FieldOffset(47)] private byte _pad7;
+            [FieldOffset(48)] private byte _pad8;
+            [FieldOffset(49)] private byte _pad9;
+            [FieldOffset(50)] private byte _pad10;
+            [FieldOffset(51)] private byte _pad11;
+            [FieldOffset(52)] private byte _pad12;
+            [FieldOffset(53)] private byte _pad13;
+            [FieldOffset(54)] private byte _pad14;
+            [FieldOffset(55)] private byte _pad15;
+            [FieldOffset(56)] private byte _pad16;
+            [FieldOffset(57)] private byte _pad17;
+            [FieldOffset(58)] private byte _pad18;
+            [FieldOffset(59)] private byte _pad19;
+            [FieldOffset(60)] private byte _pad20;
+            [FieldOffset(61)] private byte _pad21;
+            [FieldOffset(62)] private byte _pad22;
+            [FieldOffset(63)] private byte _pad23;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -63,41 +84,61 @@ namespace Hecton8.Audio
             [FieldOffset(32)] public uint LastInterruptCount;
             [FieldOffset(36)] public uint LastDirectionHash;
             [FieldOffset(40)] public float QualityWeight01;
-            [FieldOffset(44)] public uint _pad0;
-            [FieldOffset(48)] public ulong _pad1;
-            [FieldOffset(56)] public ulong _pad2;
+            [FieldOffset(44)] private byte _pad0;
+            [FieldOffset(45)] private byte _pad1;
+            [FieldOffset(46)] private byte _pad2;
+            [FieldOffset(47)] private byte _pad3;
+            [FieldOffset(48)] private byte _pad4;
+            [FieldOffset(49)] private byte _pad5;
+            [FieldOffset(50)] private byte _pad6;
+            [FieldOffset(51)] private byte _pad7;
+            [FieldOffset(52)] private byte _pad8;
+            [FieldOffset(53)] private byte _pad9;
+            [FieldOffset(54)] private byte _pad10;
+            [FieldOffset(55)] private byte _pad11;
+            [FieldOffset(56)] private byte _pad12;
+            [FieldOffset(57)] private byte _pad13;
+            [FieldOffset(58)] private byte _pad14;
+            [FieldOffset(59)] private byte _pad15;
+            [FieldOffset(60)] private byte _pad16;
+            [FieldOffset(61)] private byte _pad17;
+            [FieldOffset(62)] private byte _pad18;
+            [FieldOffset(63)] private byte _pad19;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct VocalWarningDispatchDTO
         {
-            [FieldOffset(0)] public uint AudioBankHashID;
-            [FieldOffset(4)] public int CuePriority;
-            [FieldOffset(8)] public float VolumeScalar;
-            [FieldOffset(12)] public float PlaybackSpeed;
-            [FieldOffset(16)] public float RadioDistortion01;
-            [FieldOffset(20)] public float SpatialBlend01;
-            [FieldOffset(24)] public long SourceAupGridX;
-            [FieldOffset(32)] public long SourceAupGridY;
-            [FieldOffset(40)] public long SourceAupGridZ;
+            [FieldOffset(0)] public long SourceAupGridX;
+            [FieldOffset(8)] public long SourceAupGridY;
+            [FieldOffset(16)] public long SourceAupGridZ;
+            [FieldOffset(24)] public uint AudioBankHashID;
+            [FieldOffset(28)] public int CuePriority;
+            [FieldOffset(32)] public float VolumeScalar;
+            [FieldOffset(36)] public float PlaybackSpeed;
+            [FieldOffset(40)] public float RadioDistortion01;
+            [FieldOffset(44)] public float SpatialBlend01;
             [FieldOffset(48)] public float SourceAupLocalX;
             [FieldOffset(52)] public float SourceAupLocalY;
             [FieldOffset(56)] public float SourceAupLocalZ;
             [FieldOffset(60)] public uint Flags;
             [FieldOffset(64)] public float DurationSeconds;
-            [FieldOffset(68)] public byte SubtitlePriority;
-            [FieldOffset(69)] public byte WarningId;
-            [FieldOffset(70)] public ushort DirectionHash;
-            [FieldOffset(72)] public uint Frame;
-            [FieldOffset(76)] public uint _pad0;
+            [FieldOffset(68)] public uint Frame;
+            [FieldOffset(72)] public ushort DirectionHash;
+            [FieldOffset(74)] public byte SubtitlePriority;
+            [FieldOffset(75)] public byte WarningId;
+            [FieldOffset(76)] private byte _pad0;
+            [FieldOffset(77)] private byte _pad1;
+            [FieldOffset(78)] private byte _pad2;
+            [FieldOffset(79)] private byte _pad3;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct VwsTelemetryEntry
         {
-            [FieldOffset(0)] public uint Frame;
-            [FieldOffset(4)] public uint ActivePriorityCount;
-            [FieldOffset(8)] public ulong ActivePriorityWord;
+            [FieldOffset(0)] public ulong ActivePriorityWord;
+            [FieldOffset(8)] public uint Frame;
+            [FieldOffset(12)] public uint ActivePriorityCount;
             [FieldOffset(16)] public uint CurrentAudioBankHashID;
             [FieldOffset(20)] public uint LastDispatchedAudioBankHashID;
             [FieldOffset(24)] public float CurrentPriorityScore;
@@ -107,11 +148,11 @@ namespace Hecton8.Audio
             [FieldOffset(40)] public uint FaultFlags;
             [FieldOffset(44)] public uint InterruptCount;
             [FieldOffset(48)] public float QualityWeight01;
-            [FieldOffset(52)] public byte CurrentWarningId;
-            [FieldOffset(53)] public byte LastDispatchedWarningId;
-            [FieldOffset(54)] public ushort DirectionHash;
-            [FieldOffset(56)] public uint HighestPriorityBitIndex;
-            [FieldOffset(60)] public uint SubtitleFrameLatency;
+            [FieldOffset(52)] public uint HighestPriorityBitIndex;
+            [FieldOffset(56)] public uint SubtitleFrameLatency;
+            [FieldOffset(60)] public ushort DirectionHash;
+            [FieldOffset(62)] public byte CurrentWarningId;
+            [FieldOffset(63)] public byte LastDispatchedWarningId;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -136,7 +177,14 @@ namespace Hecton8.Audio
             [FieldOffset(12)] public float DurationSeconds;
             [FieldOffset(16)] public uint Flags;
             [FieldOffset(20)] public uint DirectionHash;
-            [FieldOffset(24)] public ulong _pad0;
+            [FieldOffset(24)] private byte _pad0;
+            [FieldOffset(25)] private byte _pad1;
+            [FieldOffset(26)] private byte _pad2;
+            [FieldOffset(27)] private byte _pad3;
+            [FieldOffset(28)] private byte _pad4;
+            [FieldOffset(29)] private byte _pad5;
+            [FieldOffset(30)] private byte _pad6;
+            [FieldOffset(31)] private byte _pad7;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -154,24 +202,50 @@ namespace Hecton8.Audio
             [FieldOffset(36)] public float DefaultBasePriority;
             [FieldOffset(40)] public uint Flags;
             [FieldOffset(44)] public uint Revision;
-            [FieldOffset(48)] private ulong _pad0;
-            [FieldOffset(56)] private ulong _pad1;
+            [FieldOffset(48)] private byte _pad0;
+            [FieldOffset(49)] private byte _pad1;
+            [FieldOffset(50)] private byte _pad2;
+            [FieldOffset(51)] private byte _pad3;
+            [FieldOffset(52)] private byte _pad4;
+            [FieldOffset(53)] private byte _pad5;
+            [FieldOffset(54)] private byte _pad6;
+            [FieldOffset(55)] private byte _pad7;
+            [FieldOffset(56)] private byte _pad8;
+            [FieldOffset(57)] private byte _pad9;
+            [FieldOffset(58)] private byte _pad10;
+            [FieldOffset(59)] private byte _pad11;
+            [FieldOffset(60)] private byte _pad12;
+            [FieldOffset(61)] private byte _pad13;
+            [FieldOffset(62)] private byte _pad14;
+            [FieldOffset(63)] private byte _pad15;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         public struct VocalWarningTelemetrySnapshot
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint ActivePriorityCount;
+            [FieldOffset(8)]
             public ulong ActivePriorityWord;
+            [FieldOffset(16)]
             public uint CurrentAudioBankHashID;
+            [FieldOffset(20)]
             public float CurrentPriorityScore;
+            [FieldOffset(24)]
             public float BurstExecutionMicros;
+            [FieldOffset(28)]
             public uint ExpiredDiscardCount;
+            [FieldOffset(32)]
             public uint FaultFlags;
+            [FieldOffset(36)]
             public uint InterruptCount;
+            [FieldOffset(40)]
+            private ulong _pad0;
         }
 
-        private struct VwsVaultViews
+        private ref struct VwsVaultViews
         {
             public NativeArray<VocalWarningDTO> Queue;
             public NativeArray<VocalWarningPriorityState> PriorityState;
@@ -365,58 +439,70 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            if (!TryResolveVwsViews(out VwsVaultViews views) ||
-                normalized >= views.Cooldowns.Length ||
-                normalized >= views.WarningFlags.Length ||
-                normalized >= views.WarningSeverity.Length ||
-                normalized >= views.WarningSourceIds.Length)
+            if (!TryAcquireVwsWriteViews(out VwsVaultViews views))
             {
                 Interlocked.Exchange(ref _telemetryDumpRequested, 1);
                 return false;
             }
 
-            float cooldown;
-            unsafe
+            try
             {
-                cooldown = NativeElementRef(views.Cooldowns, normalized);
+                if (normalized >= views.Cooldowns.Length ||
+                    normalized >= views.WarningFlags.Length ||
+                    normalized >= views.WarningSeverity.Length ||
+                    normalized >= views.WarningSourceIds.Length)
+                {
+                    Interlocked.Exchange(ref _telemetryDumpRequested, 1);
+                    return false;
+                }
+
+                float cooldown;
+                unsafe
+                {
+                    cooldown = NativeElementRef(views.Cooldowns, normalized);
+                }
+                if (cooldown > 0f && !IsCriticalWarningId(normalized))
+                    return false;
+
+                uint hash = VocalWarningHashes.FromWarningId(normalized);
+                if (hash == 0u)
+                    return false;
+
+                float severity = ResolveSeverity01(severity01);
+                uint packedFlags = PackFlags(normalized, flags, 0, false);
+                VocalWarningTuningDTO tuning = ResolveTuning(views.Tuning);
+                float priorityScore = ResolvePriorityScore(hash, severity, 0, packedFlags, in tuning);
+                if (!math.isfinite(priorityScore))
+                {
+                    Interlocked.Exchange(ref _telemetryDumpRequested, 1);
+                    return false;
+                }
+
+                float resolvedCooldown = ResolveCooldownSeconds(cooldownSeconds);
+                unsafe
+                {
+                    NativeElementRef(views.Cooldowns, normalized) = resolvedCooldown;
+                    NativeElementRef(views.WarningFlags, normalized) = flags;
+                    NativeElementRef(views.WarningSeverity, normalized) = severity;
+                    NativeElementRef(views.WarningSourceIds, normalized) = sourceId;
+                }
+
+                VocalWarningDTO dto = new VocalWarningDTO
+                {
+                    AudioBankHashID = hash,
+                    PriorityScore = priorityScore,
+                    ExpirationTime = _vwsClockSeconds + ResolveExpirationSeconds(hash, severity),
+                    Flags = packedFlags
+                };
+
+                bool accepted = VocalWarningPriorityWordOps.Insert(views.Queue, views.PriorityState, in dto);
+                _queueCount = ResolveActivePriorityCount(ref views);
+                return accepted;
             }
-            if (cooldown > 0f && !IsCriticalWarningId(normalized))
-                return false;
-
-            uint hash = VocalWarningHashes.FromWarningId(normalized);
-            if (hash == 0u)
-                return false;
-
-            float severity = ResolveSeverity01(severity01);
-            uint packedFlags = PackFlags(normalized, flags, 0, false);
-            VocalWarningTuningDTO tuning = ResolveTuning(views.Tuning);
-            float priorityScore = ResolvePriorityScore(hash, severity, 0, packedFlags, in tuning);
-            if (!math.isfinite(priorityScore))
+            finally
             {
-                Interlocked.Exchange(ref _telemetryDumpRequested, 1);
-                return false;
+                ReleaseVwsWriteViews();
             }
-
-            float resolvedCooldown = ResolveCooldownSeconds(cooldownSeconds);
-            unsafe
-            {
-                NativeElementRef(views.Cooldowns, normalized) = resolvedCooldown;
-                NativeElementRef(views.WarningFlags, normalized) = flags;
-                NativeElementRef(views.WarningSeverity, normalized) = severity;
-                NativeElementRef(views.WarningSourceIds, normalized) = sourceId;
-            }
-
-            VocalWarningDTO dto = new VocalWarningDTO
-            {
-                AudioBankHashID = hash,
-                PriorityScore = priorityScore,
-                ExpirationTime = _vwsClockSeconds + ResolveExpirationSeconds(hash, severity),
-                Flags = packedFlags
-            };
-
-            bool accepted = VocalWarningPriorityWordOps.Insert(views.Queue, views.PriorityState, in dto);
-            _queueCount = ResolveActivePriorityCount(ref views);
-            return accepted;
         }
 
         public void CancelCurrentWarning()
@@ -443,61 +529,82 @@ namespace Hecton8.Audio
 #if UNITY_EDITOR
         public bool EditorInjectMockThreats(int count)
         {
-            if (Volatile.Read(ref _nativeAllocated) == 0 || !TryResolveVwsViews(out VwsVaultViews views))
+            if (Volatile.Read(ref _nativeAllocated) == 0 || !TryAcquireVwsWriteViews(out VwsVaultViews views))
                 return false;
 
-            GenerateMockVocalThreatsJob job = new GenerateMockVocalThreatsJob
+            try
             {
-                Queue = views.Queue,
-                PriorityState = views.PriorityState,
-                Tuning = views.Tuning,
-                TimeSeconds = _vwsClockSeconds,
-                Seed = NextOwnerFrameId() ^ 0x9E3779B9u,
-                Count = math.clamp(count, 1, 50)
-            };
-            job.Run();
-            _queueCount = ResolveActivePriorityCount(ref views);
-            return true;
+                GenerateMockVocalThreatsJob job = new GenerateMockVocalThreatsJob
+                {
+                    Queue = views.Queue,
+                    PriorityState = views.PriorityState,
+                    Tuning = views.Tuning,
+                    TimeSeconds = _vwsClockSeconds,
+                    Seed = NextOwnerFrameId() ^ 0x9E3779B9u,
+                    Count = math.clamp(count, 1, 50)
+                };
+                job.Run();
+                _queueCount = ResolveActivePriorityCount(ref views);
+                return true;
+            }
+            finally
+            {
+                ReleaseVwsWriteViews();
+            }
         }
 
         public bool EditorTryReadTuning(out VocalWarningTuningDTO tuning)
         {
             tuning = CreateDefaultTuning();
-            if (Volatile.Read(ref _nativeAllocated) == 0 || !TryResolveVwsViews(out VwsVaultViews views))
+            IDataVault vault = _dataVault;
+            if (Volatile.Read(ref _nativeAllocated) == 0 ||
+                vault == null ||
+                !vault.TryReadOnlyHandle(in _tuningHandle, out NativeArray<VocalWarningTuningDTO>.ReadOnly tuningView) ||
+                !tuningView.IsCreated ||
+                tuningView.Length <= 0)
                 return false;
 
-            tuning = ResolveTuning(views.Tuning);
+            tuning = ResolveTuning(tuningView);
             return true;
         }
 
         public unsafe bool EditorTryWriteTuning(in VocalWarningTuningDTO tuning)
         {
-            if (Volatile.Read(ref _nativeAllocated) == 0 || !TryResolveVwsViews(out VwsVaultViews views) ||
-                !views.Tuning.IsCreated || views.Tuning.Length <= 0)
+            if (Volatile.Read(ref _nativeAllocated) == 0 || !TryAcquireVwsWriteViews(out VwsVaultViews views))
                 return false;
 
-            void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.Tuning);
-            ref VocalWarningTuningDTO target = ref UnsafeUtility.AsRef<VocalWarningTuningDTO>(pointer);
-            target = SanitizeTuning(tuning);
-            return true;
+            try
+            {
+                if (!views.Tuning.IsCreated || views.Tuning.Length <= 0)
+                    return false;
+
+                void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.Tuning);
+                ref VocalWarningTuningDTO target = ref UnsafeUtility.AsRef<VocalWarningTuningDTO>(pointer);
+                target = SanitizeTuning(tuning);
+                return true;
+            }
+            finally
+            {
+                ReleaseVwsWriteViews();
+            }
         }
 
         public bool EditorTryGetTelemetrySample(int offsetFromNewest, out VocalWarningTelemetrySnapshot snapshot)
         {
             snapshot = default;
-            if (Volatile.Read(ref _nativeAllocated) == 0 || !TryResolveVwsViews(out VwsVaultViews views) ||
-                !views.TelemetryRing.IsCreated || views.TelemetryRing.Length <= 0)
+            IDataVault vault = _dataVault;
+            if (Volatile.Read(ref _nativeAllocated) == 0 ||
+                vault == null ||
+                !vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<VwsTelemetryEntry>.ReadOnly telemetryRing) ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length <= 0)
                 return false;
 
             int cursor = _telemetryCursor - 1 - math.max(0, offsetFromNewest);
             while (cursor < 0)
-                cursor += views.TelemetryRing.Length;
+                cursor += telemetryRing.Length;
 
-            VwsTelemetryEntry entry;
-            unsafe
-            {
-                entry = NativeElementRef(views.TelemetryRing, cursor % views.TelemetryRing.Length);
-            }
+            VwsTelemetryEntry entry = telemetryRing[cursor % telemetryRing.Length];
             snapshot.Frame = entry.Frame;
             snapshot.ActivePriorityCount = entry.ActivePriorityCount;
             snapshot.ActivePriorityWord = entry.ActivePriorityWord;
@@ -514,12 +621,20 @@ namespace Hecton8.Audio
         {
             audioBankHashID = 0u;
             priorityScore = 0f;
-            if (priorityOrderIndex < 0 || Volatile.Read(ref _nativeAllocated) == 0 || !TryResolveVwsViews(out VwsVaultViews views))
+            IDataVault vault = _dataVault;
+            if (priorityOrderIndex < 0 ||
+                Volatile.Read(ref _nativeAllocated) == 0 ||
+                vault == null ||
+                !vault.TryReadOnlyHandle(in _vwsQueueHandle, out NativeArray<VocalWarningDTO>.ReadOnly queue) ||
+                !vault.TryReadOnlyHandle(in _priorityStateHandle, out NativeArray<VocalWarningPriorityState>.ReadOnly priorityState) ||
+                !queue.IsCreated ||
+                !priorityState.IsCreated ||
+                priorityState.Length <= 0)
                 return false;
 
-            int count = ResolveActivePriorityCount(ref views);
+            int count = math.clamp((int)priorityState[0].ActivePriorityCount, 0, QueueCapacity);
             if (priorityOrderIndex >= count ||
-                !VocalWarningPriorityWordOps.TryGetByPriorityOrder(views.Queue, views.PriorityState, priorityOrderIndex, out VocalWarningDTO dto))
+                !VocalWarningPriorityWordOps.TryGetByPriorityOrder(queue, priorityState, priorityOrderIndex, out VocalWarningDTO dto))
             {
                 return false;
             }
@@ -574,13 +689,21 @@ namespace Hecton8.Audio
                 return;
 
             BindVaultStorage(vault);
-            if (!TryResolveVwsViews(out VwsVaultViews views))
+            if (!TryAcquireVwsWriteViews(out VwsVaultViews views))
             {
                 ClearVaultDescriptors();
                 return;
             }
 
-            InitializeVaultStorage(ref views);
+            try
+            {
+                InitializeVaultStorage(ref views);
+            }
+            finally
+            {
+                ReleaseVwsWriteViews();
+            }
+
             Volatile.Write(ref _nativeAllocated, 1);
         }
 
@@ -761,47 +884,179 @@ namespace Hecton8.Audio
             _telemetryRingHandle = default;
         }
 
-        private bool TryResolveVwsViews(out VwsVaultViews views)
+        private bool TryAcquireVwsWriteViews(out VwsVaultViews views)
         {
             views = default;
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            if (!vault.TryResolveHandle(in _vwsQueueHandle, out views.Queue) ||
-                !vault.TryResolveHandle(in _priorityStateHandle, out views.PriorityState) ||
-                !vault.TryResolveHandle(in _warningFlagsHandle, out views.WarningFlags) ||
-                !vault.TryResolveHandle(in _cooldownsHandle, out views.Cooldowns) ||
-                !vault.TryResolveHandle(in _warningSeverityHandle, out views.WarningSeverity) ||
-                !vault.TryResolveHandle(in _warningSourceIdsHandle, out views.WarningSourceIds) ||
-                !vault.TryResolveHandle(in _currentStateHandle, out views.CurrentState) ||
-                !vault.TryResolveHandle(in _dispatchHandle, out views.Dispatch) ||
-                !vault.TryResolveHandle(in _profilesHandle, out views.Profiles) ||
-                !vault.TryResolveHandle(in _tuningHandle, out views.Tuning) ||
+            bool queueLocked = false;
+            bool priorityLocked = false;
+            bool flagsLocked = false;
+            bool cooldownsLocked = false;
+            bool severityLocked = false;
+            bool sourceIdsLocked = false;
+            bool currentLocked = false;
+            bool dispatchLocked = false;
+            bool profilesLocked = false;
+            bool tuningLocked = false;
 #if UNITY_EDITOR
-                !vault.TryResolveHandle(in _csvScratchHandle, out views.CsvScratch) ||
+            bool csvLocked = false;
 #endif
-                !vault.TryResolveHandle(in _telemetryRingHandle, out views.TelemetryRing) ||
-                !views.Queue.IsCreated ||
-                !views.PriorityState.IsCreated ||
-                !views.WarningFlags.IsCreated ||
-                !views.Cooldowns.IsCreated ||
-                !views.WarningSeverity.IsCreated ||
-                !views.WarningSourceIds.IsCreated ||
-                !views.CurrentState.IsCreated ||
-                !views.Dispatch.IsCreated ||
-                !views.Profiles.IsCreated ||
-                !views.Tuning.IsCreated ||
-#if UNITY_EDITOR
-                !views.CsvScratch.IsCreated ||
-#endif
-                !views.TelemetryRing.IsCreated)
-            {
-                views = default;
-                return false;
-            }
+            bool telemetryLocked = false;
+            bool success = false;
 
-            return true;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _vwsQueueHandle, VaultOwner, out views.Queue))
+                    return false;
+                queueLocked = true;
+                if (!vault.TryAcquireWriteLock(in _priorityStateHandle, VaultOwner, out views.PriorityState))
+                    return false;
+                priorityLocked = true;
+                if (!vault.TryAcquireWriteLock(in _warningFlagsHandle, VaultOwner, out views.WarningFlags))
+                    return false;
+                flagsLocked = true;
+                if (!vault.TryAcquireWriteLock(in _cooldownsHandle, VaultOwner, out views.Cooldowns))
+                    return false;
+                cooldownsLocked = true;
+                if (!vault.TryAcquireWriteLock(in _warningSeverityHandle, VaultOwner, out views.WarningSeverity))
+                    return false;
+                severityLocked = true;
+                if (!vault.TryAcquireWriteLock(in _warningSourceIdsHandle, VaultOwner, out views.WarningSourceIds))
+                    return false;
+                sourceIdsLocked = true;
+                if (!vault.TryAcquireWriteLock(in _currentStateHandle, VaultOwner, out views.CurrentState))
+                    return false;
+                currentLocked = true;
+                if (!vault.TryAcquireWriteLock(in _dispatchHandle, VaultOwner, out views.Dispatch))
+                    return false;
+                dispatchLocked = true;
+                if (!vault.TryAcquireWriteLock(in _profilesHandle, VaultOwner, out views.Profiles))
+                    return false;
+                profilesLocked = true;
+                if (!vault.TryAcquireWriteLock(in _tuningHandle, VaultOwner, out views.Tuning))
+                    return false;
+                tuningLocked = true;
+#if UNITY_EDITOR
+                if (!vault.TryAcquireWriteLock(in _csvScratchHandle, VaultOwner, out views.CsvScratch))
+                    return false;
+                csvLocked = true;
+#endif
+                if (!vault.TryAcquireWriteLock(in _telemetryRingHandle, VaultOwner, out views.TelemetryRing))
+                    return false;
+                telemetryLocked = true;
+
+                success =
+                    views.Queue.IsCreated &&
+                    views.PriorityState.IsCreated &&
+                    views.WarningFlags.IsCreated &&
+                    views.Cooldowns.IsCreated &&
+                    views.WarningSeverity.IsCreated &&
+                    views.WarningSourceIds.IsCreated &&
+                    views.CurrentState.IsCreated &&
+                    views.Dispatch.IsCreated &&
+                    views.Profiles.IsCreated &&
+                    views.Tuning.IsCreated &&
+#if UNITY_EDITOR
+                    views.CsvScratch.IsCreated &&
+#endif
+                    views.TelemetryRing.IsCreated;
+                if (!success)
+                    views = default;
+                return success;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    ReleaseVwsWriteViews(
+                        vault,
+                        queueLocked,
+                        priorityLocked,
+                        flagsLocked,
+                        cooldownsLocked,
+                        severityLocked,
+                        sourceIdsLocked,
+                        currentLocked,
+                        dispatchLocked,
+                        profilesLocked,
+                        tuningLocked,
+#if UNITY_EDITOR
+                        csvLocked,
+#endif
+                        telemetryLocked);
+                }
+            }
+        }
+
+        private void ReleaseVwsWriteViews()
+        {
+            ReleaseVwsWriteViews(
+                _dataVault,
+                queueLocked: true,
+                priorityLocked: true,
+                flagsLocked: true,
+                cooldownsLocked: true,
+                severityLocked: true,
+                sourceIdsLocked: true,
+                currentLocked: true,
+                dispatchLocked: true,
+                profilesLocked: true,
+                tuningLocked: true,
+#if UNITY_EDITOR
+                csvLocked: true,
+#endif
+                telemetryLocked: true);
+        }
+
+        private void ReleaseVwsWriteViews(
+            IDataVault vault,
+            bool queueLocked,
+            bool priorityLocked,
+            bool flagsLocked,
+            bool cooldownsLocked,
+            bool severityLocked,
+            bool sourceIdsLocked,
+            bool currentLocked,
+            bool dispatchLocked,
+            bool profilesLocked,
+            bool tuningLocked,
+#if UNITY_EDITOR
+            bool csvLocked,
+#endif
+            bool telemetryLocked)
+        {
+            if (vault == null)
+                return;
+
+            if (telemetryLocked)
+                vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwner);
+#if UNITY_EDITOR
+            if (csvLocked)
+                vault.ReleaseWriteLock(in _csvScratchHandle, VaultOwner);
+#endif
+            if (tuningLocked)
+                vault.ReleaseWriteLock(in _tuningHandle, VaultOwner);
+            if (profilesLocked)
+                vault.ReleaseWriteLock(in _profilesHandle, VaultOwner);
+            if (dispatchLocked)
+                vault.ReleaseWriteLock(in _dispatchHandle, VaultOwner);
+            if (currentLocked)
+                vault.ReleaseWriteLock(in _currentStateHandle, VaultOwner);
+            if (sourceIdsLocked)
+                vault.ReleaseWriteLock(in _warningSourceIdsHandle, VaultOwner);
+            if (severityLocked)
+                vault.ReleaseWriteLock(in _warningSeverityHandle, VaultOwner);
+            if (cooldownsLocked)
+                vault.ReleaseWriteLock(in _cooldownsHandle, VaultOwner);
+            if (flagsLocked)
+                vault.ReleaseWriteLock(in _warningFlagsHandle, VaultOwner);
+            if (priorityLocked)
+                vault.ReleaseWriteLock(in _priorityStateHandle, VaultOwner);
+            if (queueLocked)
+                vault.ReleaseWriteLock(in _vwsQueueHandle, VaultOwner);
         }
 
         private void RefreshCachedServicesCold()
@@ -839,66 +1094,74 @@ namespace Hecton8.Audio
                 return;
             _lastProcessedFrame = frame;
 
-            if (!TryResolveVwsViews(out VwsVaultViews views))
+            if (!TryAcquireVwsWriteViews(out VwsVaultViews views))
                 return;
 
-            float dt = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
-            _vwsClockSeconds += dt;
-            _globalQualityWeight01 = ResolveGlobalQualityWeight01();
-            int maxEvaluations = ResolveMaxEvaluations(_globalQualityWeight01, views.Queue.Length);
-            AbsoluteUniversePosition listenerAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
-
-            EvaluateWarningPrioritiesJob evaluateJob = new EvaluateWarningPrioritiesJob
+            try
             {
-                Queue = views.Queue,
-                PriorityState = views.PriorityState,
-                Cooldowns = views.Cooldowns,
-                WarningFlags = views.WarningFlags,
-                WarningSeverity = views.WarningSeverity,
-                WarningSourceIds = views.WarningSourceIds,
-                Tuning = views.Tuning,
-                VocalWarnings = SignalBus<VocalWarningSignal>.GetFrameSnapshotArray(),
-                VitalWarnings = SignalBus<VitalWarningSignal>.GetFrameSnapshotArray(),
-                CrushWarnings = SignalBus<CrushWarningSignal>.GetFrameSnapshotArray(),
-                Brownouts = SignalBus<BrownoutSignal>.GetFrameSnapshotArray(),
-                HealthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshotArray(),
-                RadiationSignals = SignalBus<RadiationDoseSignal>.GetFrameSnapshotArray(),
-                OxygenSignals = SignalBus<OxygenCriticalSignal>.GetFrameSnapshotArray(),
-                FloodSignals = SignalBus<SubmarineFloodStateSignal>.GetFrameSnapshotArray(),
-                FluidSignals = SignalBus<FluidIncursionSignal>.GetFrameSnapshotArray(),
-                PipeSignals = SignalBus<PipeRuptureSignal>.GetFrameSnapshotArray(),
-                BatterySignals = SignalBus<BatteryLevelSignal>.GetFrameSnapshotArray(),
-                SurvivalSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshotArray(),
-                ListenerAup = listenerAup,
-                TimeSeconds = _vwsClockSeconds,
-                DeltaSeconds = dt,
-                FallbackCooldownSeconds = ResolveCooldownSeconds(fallbackCooldownSeconds),
-                MaxEvaluations = maxEvaluations
-            };
+                float dt = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
+                _vwsClockSeconds += dt;
+                _globalQualityWeight01 = ResolveGlobalQualityWeight01();
+                int maxEvaluations = ResolveMaxEvaluations(_globalQualityWeight01, views.Queue.Length);
+                AbsoluteUniversePosition listenerAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
 
-            long startTicks = Stopwatch.GetTimestamp();
-            evaluateJob.Run();
+                EvaluateWarningPrioritiesJob evaluateJob = new EvaluateWarningPrioritiesJob
+                {
+                    Queue = views.Queue,
+                    PriorityState = views.PriorityState,
+                    Cooldowns = views.Cooldowns,
+                    WarningFlags = views.WarningFlags,
+                    WarningSeverity = views.WarningSeverity,
+                    WarningSourceIds = views.WarningSourceIds,
+                    Tuning = views.Tuning,
+                    VocalWarnings = SignalBus<VocalWarningSignal>.GetFrameSnapshotArray(),
+                    VitalWarnings = SignalBus<VitalWarningSignal>.GetFrameSnapshotArray(),
+                    CrushWarnings = SignalBus<CrushWarningSignal>.GetFrameSnapshotArray(),
+                    Brownouts = SignalBus<BrownoutSignal>.GetFrameSnapshotArray(),
+                    HealthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshotArray(),
+                    RadiationSignals = SignalBus<RadiationDoseSignal>.GetFrameSnapshotArray(),
+                    OxygenSignals = SignalBus<OxygenCriticalSignal>.GetFrameSnapshotArray(),
+                    FloodSignals = SignalBus<SubmarineFloodStateSignal>.GetFrameSnapshotArray(),
+                    FluidSignals = SignalBus<FluidIncursionSignal>.GetFrameSnapshotArray(),
+                    PipeSignals = SignalBus<PipeRuptureSignal>.GetFrameSnapshotArray(),
+                    BatterySignals = SignalBus<BatteryLevelSignal>.GetFrameSnapshotArray(),
+                    SurvivalSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshotArray(),
+                    ListenerAup = listenerAup,
+                    TimeSeconds = _vwsClockSeconds,
+                    DeltaSeconds = dt,
+                    FallbackCooldownSeconds = ResolveCooldownSeconds(fallbackCooldownSeconds),
+                    MaxEvaluations = maxEvaluations
+                };
 
-            DispatchVoiceOverJob dispatchJob = new DispatchVoiceOverJob
+                long startTicks = Stopwatch.GetTimestamp();
+                evaluateJob.Run();
+
+                DispatchVoiceOverJob dispatchJob = new DispatchVoiceOverJob
+                {
+                    Queue = views.Queue,
+                    PriorityState = views.PriorityState,
+                    CurrentState = views.CurrentState,
+                    Dispatch = views.Dispatch,
+                    Tuning = views.Tuning,
+                    TimeSeconds = _vwsClockSeconds,
+                    DeltaSeconds = dt,
+                    QualityWeight01 = _globalQualityWeight01,
+                    VoiceGain = voiceGain,
+                    Frame = frame
+                };
+                dispatchJob.Run();
+                long endTicks = Stopwatch.GetTimestamp();
+
+                _lastBurstExecutionMicros = (float)((endTicks - startTicks) * 1000000.0 / Stopwatch.Frequency);
+                PublishDispatchIfNeeded(ref views, frame);
+                PullCurrentState(ref views);
+                WriteTelemetry(ref views, frame);
+            }
+            finally
             {
-                Queue = views.Queue,
-                PriorityState = views.PriorityState,
-                CurrentState = views.CurrentState,
-                Dispatch = views.Dispatch,
-                Tuning = views.Tuning,
-                TimeSeconds = _vwsClockSeconds,
-                DeltaSeconds = dt,
-                QualityWeight01 = _globalQualityWeight01,
-                VoiceGain = voiceGain,
-                Frame = frame
-            };
-            dispatchJob.Run();
-            long endTicks = Stopwatch.GetTimestamp();
+                ReleaseVwsWriteViews();
+            }
 
-            _lastBurstExecutionMicros = (float)((endTicks - startTicks) * 1000000.0 / Stopwatch.Frequency);
-            PublishDispatchIfNeeded(ref views, frame);
-            PullCurrentState(ref views);
-            WriteTelemetry(ref views, frame);
             FlushTelemetryDumpRequest();
         }
 
@@ -1045,18 +1308,25 @@ namespace Hecton8.Audio
 
         private void ClearQueuedWarnings()
         {
-            if (TryResolveVwsViews(out VwsVaultViews views))
+            if (TryAcquireVwsWriteViews(out VwsVaultViews views))
             {
-                unsafe
+                try
                 {
-                    for (int i = 0; i < views.Queue.Length; i++)
-                        NativeElementRef(views.Queue, i) = default;
-                    if (views.PriorityState.IsCreated && views.PriorityState.Length > 0)
-                        NativeElementRef(views.PriorityState, 0) = default;
-                    if (views.CurrentState.IsCreated && views.CurrentState.Length > 0)
-                        NativeElementRef(views.CurrentState, 0) = default;
-                    if (views.Dispatch.IsCreated && views.Dispatch.Length > 0)
-                        NativeElementRef(views.Dispatch, 0) = default;
+                    unsafe
+                    {
+                        for (int i = 0; i < views.Queue.Length; i++)
+                            NativeElementRef(views.Queue, i) = default;
+                        if (views.PriorityState.IsCreated && views.PriorityState.Length > 0)
+                            NativeElementRef(views.PriorityState, 0) = default;
+                        if (views.CurrentState.IsCreated && views.CurrentState.Length > 0)
+                            NativeElementRef(views.CurrentState, 0) = default;
+                        if (views.Dispatch.IsCreated && views.Dispatch.Length > 0)
+                            NativeElementRef(views.Dispatch, 0) = default;
+                    }
+                }
+                finally
+                {
+                    ReleaseVwsWriteViews();
                 }
             }
 
@@ -1135,7 +1405,11 @@ namespace Hecton8.Audio
 
         private void DumpTelemetryCold()
         {
-            if (!TryResolveVwsViews(out VwsVaultViews views))
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<VwsTelemetryEntry>.ReadOnly telemetryRing) ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length <= 0)
                 return;
 
             if (Volatile.Read(ref _telemetryDumped) != 0)
@@ -1143,10 +1417,6 @@ namespace Hecton8.Audio
 
             try
             {
-                NativeArray<VwsTelemetryEntry> telemetryRing = views.TelemetryRing;
-                if (!telemetryRing.IsCreated || telemetryRing.Length <= 0)
-                    return;
-
                 int entryStride = UnsafeUtility.SizeOf<VwsTelemetryEntry>();
                 int count = math.clamp(_telemetrySamplesWritten, 0, telemetryRing.Length);
                 int cursor = math.clamp(_telemetryCursor, 0, telemetryRing.Length - 1);
@@ -1166,16 +1436,15 @@ namespace Hecton8.Audio
                     Reserved0 = 0u
                 };
 
-                unsafe
-                {
-                    byte* telemetryPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
-                    WriteTelemetryDump(path, in header, telemetryPtr, entryStride, count, startIndex, telemetryRing.Length);
-                    WriteTelemetryDump(agentPath, in header, telemetryPtr, entryStride, count, startIndex, telemetryRing.Length);
-                }
+                WriteTelemetryDump(path, in header, telemetryRing, entryStride, count, startIndex, telemetryRing.Length);
+                WriteTelemetryDump(agentPath, in header, telemetryRing, entryStride, count, startIndex, telemetryRing.Length);
 
                 Interlocked.Exchange(ref _telemetryDumped, 1);
             }
-            catch (Exception)
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
             {
             }
         }
@@ -1183,7 +1452,7 @@ namespace Hecton8.Audio
         private static unsafe void WriteTelemetryDump(
             string path,
             in VwsTelemetryDumpHeader header,
-            byte* telemetryPtr,
+            NativeArray<VwsTelemetryEntry>.ReadOnly telemetryRing,
             int entryStride,
             int count,
             int startIndex,
@@ -1200,10 +1469,18 @@ namespace Hecton8.Audio
                 return;
 
             int firstCount = math.min(count, capacity - startIndex);
-            stream.Write(new ReadOnlySpan<byte>(telemetryPtr + startIndex * entryStride, firstCount * entryStride));
+            for (int i = 0; i < firstCount; i++)
+            {
+                VwsTelemetryEntry entry = telemetryRing[startIndex + i];
+                stream.Write(new ReadOnlySpan<byte>(&entry, entryStride));
+            }
+
             int secondCount = count - firstCount;
-            if (secondCount > 0)
-                stream.Write(new ReadOnlySpan<byte>(telemetryPtr, secondCount * entryStride));
+            for (int i = 0; i < secondCount; i++)
+            {
+                VwsTelemetryEntry entry = telemetryRing[i];
+                stream.Write(new ReadOnlySpan<byte>(&entry, entryStride));
+            }
         }
 
         private static int ResolveActivePriorityCount(ref VwsVaultViews views)
@@ -1369,6 +1646,15 @@ namespace Hecton8.Audio
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static VocalWarningTuningDTO ResolveTuning(NativeArray<VocalWarningTuningDTO> tuning)
+        {
+            if (!tuning.IsCreated || tuning.Length <= 0)
+                return CreateDefaultTuning();
+
+            return SanitizeTuning(tuning[0]);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static VocalWarningTuningDTO ResolveTuning(NativeArray<VocalWarningTuningDTO>.ReadOnly tuning)
         {
             if (!tuning.IsCreated || tuning.Length <= 0)
                 return CreateDefaultTuning();
@@ -2250,6 +2536,41 @@ namespace Hecton8.Audio
                     if (order == priorityOrderIndex)
                     {
                         value = NodeRef(queue, bitIndex);
+                        return value.AudioBankHashID != 0u;
+                    }
+
+                    order++;
+                }
+
+                return false;
+            }
+
+            public static bool TryGetByPriorityOrder(
+                NativeArray<VocalWarningDTO>.ReadOnly queue,
+                NativeArray<VocalWarningPriorityState>.ReadOnly priorityState,
+                int priorityOrderIndex,
+                out VocalWarningDTO value)
+            {
+                value = default;
+                if (priorityOrderIndex < 0 ||
+                    !queue.IsCreated ||
+                    !priorityState.IsCreated ||
+                    priorityState.Length <= 0 ||
+                    queue.Length < PriorityWordBitCount)
+                {
+                    return false;
+                }
+
+                ulong scanWord = priorityState[0].VwsPriorityWord;
+                int order = 0;
+                while (scanWord != 0UL)
+                {
+                    int bitIndex = ResolveHighestPriorityBitIndex(scanWord);
+                    ulong bitMask = 1UL << bitIndex;
+                    scanWord &= ~bitMask;
+                    if (order == priorityOrderIndex)
+                    {
+                        value = queue[bitIndex];
                         return value.AudioBankHashID != 0u;
                     }
 

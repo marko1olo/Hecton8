@@ -19,5 +19,5 @@ MonoBehaviour:
   midReferenceShape: fracture corridor and offset slab gate
   farReferenceShape: one violent split in the world surface
   routeUse: Player should memorize progress by which fracture mouth they entered.
-  safePocketUse: Safe pockets are bends and side cuts, not open rooms.
+  safePocketUse: Reorientation pockets are bends and side cuts, not open rooms.
   emotionalRead: Tense, vertical, and committed.

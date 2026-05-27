@@ -615,18 +615,18 @@ namespace Hecton8.Ecosystem
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct FaunaGeneticsProfileDTO
     {
-        [FieldOffset(0)] public uint SpeciesHash;
-        [FieldOffset(4)] public byte MinSizeByte;
-        [FieldOffset(5)] public byte MaxSizeByte;
-        [FieldOffset(6)] public byte MinAggressionByte;
-        [FieldOffset(7)] public byte MaxAggressionByte;
-        [FieldOffset(8)] public byte HueRangeByte;
-        [FieldOffset(9)] public byte PatternMask;
-        [FieldOffset(10)] public byte MutationProbabilityByte;
-        [FieldOffset(11)] public byte BiolumFrequencyByte;
-        [FieldOffset(12)] public uint Flags;
-        [FieldOffset(16)] public ulong ProfileHash;
-        [FieldOffset(24)] public ulong Reserved0;
+        [FieldOffset(0)] public ulong ProfileHash;
+        [FieldOffset(8)] public ulong Reserved0;
+        [FieldOffset(16)] public uint SpeciesHash;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public byte MinSizeByte;
+        [FieldOffset(25)] public byte MaxSizeByte;
+        [FieldOffset(26)] public byte MinAggressionByte;
+        [FieldOffset(27)] public byte MaxAggressionByte;
+        [FieldOffset(28)] public byte HueRangeByte;
+        [FieldOffset(29)] public byte PatternMask;
+        [FieldOffset(30)] public byte MutationProbabilityByte;
+        [FieldOffset(31)] public byte BiolumFrequencyByte;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

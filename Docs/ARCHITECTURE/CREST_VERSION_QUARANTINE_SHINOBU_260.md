@@ -141,11 +141,13 @@ All large bridge lanes are acquired with `NativeArrayOptions.UninitializedMemory
   - `ResolveOceanRenderer()` no longer calls `TryGetComponent` or logs;
   - `TryBuildBurstTuning` uses the cached renderer;
   - weather/flow/collision reads use cached binding;
+  - surface-weather foam does not read or write Crest `OceanMaterial`;
   - `SeaLevel` does not fall back through `GlobalRegistry`.
 
 - Base `CrestBridge` no longer polls `Crest.OceanRenderer.Instance` or `Crest.UnderwaterRenderer.Instance`.
 - Visual material/camera helpers read only the renderer supplied by a concrete bridge adapter.
 - Underwater Has/Try helpers read a cache populated by the command path.
+- `HectonUnderwaterVisuals` keeps bridge `OceanMaterial` read-only; underwater/GI material writes stay on first-party `oceanUnderwaterMaterial` and shader globals.
 
 `IOceanVisualBridge` exposes vendor-neutral underwater pass verbs and `CameraColorTextureId`. Non-bridge render code must not hard-code `_Crest_CameraColorTexture`; `HectonDryVolumeFeature` reads the active bridge's texture ID before scheduling dry-volume restore.
 

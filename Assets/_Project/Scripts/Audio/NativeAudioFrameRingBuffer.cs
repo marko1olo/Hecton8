@@ -3,10 +3,8 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.Audio
@@ -15,7 +13,6 @@ namespace Hecton8.Audio
     {
         internal const int AudioBufferCapacity = 65536;
         private const int MinimumCapacityFrames = 256;
-        private const int MaximumCapacityFrames = 1 << 30;
         private const int TelemetryCapacity = 300;
         private const uint TelemetryMagic = 0x41313331u;
         private const int TelemetryHeaderBytes = 16;
@@ -31,7 +28,7 @@ namespace Hecton8.Audio
             1 / ((AudioBufferCapacity > 1 &&
                   (AudioBufferCapacity & (AudioBufferCapacity - 1)) == 0) ? 1 : 0);
 
-        private struct RingVaultViews
+        private ref struct RingVaultViews
         {
             public NativeArray<float> Frames;
             public NativeArray<int> SharedState;
@@ -156,16 +153,21 @@ namespace Hecton8.Audio
 
         public void Initialize(int capacityFrames, int sourceChannels = 1)
         {
+            if (sourceChannels < 1 || sourceChannels > 2)
+            {
+                RecordBridgeFailure(NativeAudioKernelBridgeStatus.SharedStateInvalid);
+                return;
+            }
+
             int resolvedCapacity = ResolvePowerOfTwoCapacity(capacityFrames);
-            int resolvedChannels = math.clamp(sourceChannels, 1, 2);
+            int resolvedChannels = sourceChannels;
             if (IsCreated && _capacityFrames == resolvedCapacity && _sourceChannels == resolvedChannels)
             {
                 Clear();
                 return;
             }
 
-            Dispose();
-            if (HasNativeBridgeBuffers())
+            if (!TryDispose())
                 return;
 
             IDataVault vault = GlobalRegistry.DataVault;
@@ -251,8 +253,7 @@ namespace Hecton8.Audio
                 return false;
 
             NativeArray<float> frames = views.Frames;
-            int requiredSamples = _capacityFrames * safeChannels;
-            if (!frames.IsCreated || frames.Length < requiredSamples)
+            if (!frames.IsCreated || _frameSampleCapacity <= 0 || frames.Length < _frameSampleCapacity)
                 return false;
 
             if (!TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot, out int readIndex) ||
@@ -408,7 +409,8 @@ namespace Hecton8.Audio
             NativeArray<int> sharedState = views.SharedState;
             if (!frames.IsCreated ||
                 !sharedState.IsCreated ||
-                frames.Length < _capacityFrames * _sourceChannels ||
+                _frameSampleCapacity <= 0 ||
+                frames.Length < _frameSampleCapacity ||
                 sharedState.Length < NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount)
             {
                 status = NativeAudioKernelBridgeStatus.SharedStateInvalid;
@@ -438,11 +440,19 @@ namespace Hecton8.Audio
 
         internal static int ResolvePowerOfTwoCapacity(int capacityFrames)
         {
-            int resolvedCapacity = math.max(MinimumCapacityFrames, NextPowerOfTwo(capacityFrames));
-            return resolvedCapacity;
+            int requestedCapacity = math.max(MinimumCapacityFrames, capacityFrames);
+            if (requestedCapacity >= AudioBufferCapacity)
+                return AudioBufferCapacity;
+
+            return math.max(MinimumCapacityFrames, NextPowerOfTwo(requestedCapacity));
         }
 
         public void Dispose()
+        {
+            TryDispose();
+        }
+
+        public bool TryDispose()
         {
             IDataVault vault = _dataVault;
             if (HasNativeBridgeBuffers())
@@ -454,7 +464,7 @@ namespace Hecton8.Audio
                     if (H8Memory.IsInitialized &&
                         (clearStatus & NativeAudioKernelBridgeStatus.PluginUnavailable) == 0)
                     {
-                        return;
+                        return false;
                     }
                 }
             }
@@ -472,6 +482,7 @@ namespace Hecton8.Audio
             _frameSampleCapacity = 0;
             Volatile.Write(ref _overflowDropCount, 0);
             Volatile.Write(ref _telemetryDumpQueued, 0);
+            return true;
         }
 
         private bool HasNativeBridgeBuffers()
@@ -742,15 +753,21 @@ namespace Hecton8.Audio
             if (Interlocked.CompareExchange(ref _telemetryDumpQueued, 1, 0) != 0)
                 return;
 
-            byte* snapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
-            UnsafeUtility.MemClear(snapshotPtr, TelemetryDumpBytes);
-            WriteTelemetryDumpHeader(snapshotPtr, 0, reason);
+            try
+            {
+                byte* snapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
+                UnsafeUtility.MemClear(snapshotPtr, TelemetryDumpBytes);
+                WriteTelemetryDumpHeader(snapshotPtr, 0, reason);
 
-            WriteTelemetrySnapshot(telemetry, snapshotPtr, reason);
-            TryMirrorTelemetryToDataVault(ref views);
+                WriteTelemetrySnapshot(telemetry, snapshotPtr, reason);
+                TryMirrorTelemetryToDataVault(ref views);
 
-            if (!HectonSensoryKernelNativeBridge.TryDumpAudioBridgeTelemetry(snapshotPtr, TelemetryDumpBytes))
+                HectonSensoryKernelNativeBridge.TryDumpAudioBridgeTelemetry(snapshotPtr, TelemetryDumpBytes);
+            }
+            finally
+            {
                 Volatile.Write(ref _telemetryDumpQueued, 0);
+            }
         }
 
         private void TryMirrorTelemetryToDataVault(ref RingVaultViews views)
@@ -941,7 +958,7 @@ namespace Hecton8.Audio
             while (power < value && growthWatchdog-- > 0)
             {
                 if (power > (int.MaxValue >> 1))
-                    return MaximumCapacityFrames;
+                    return AudioBufferCapacity;
 
                 power <<= 1;
             }
@@ -961,25 +978,5 @@ namespace Hecton8.Audio
             return value > 0 && (value & (value - 1)) == 0;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        internal struct GenerateMockAudioSamplesJob : IJobParallelFor
-        {
-            [NoAlias] public NativeArray<float> Samples;
-            public uint Seed;
-            public float Gain;
-
-            public void Execute(int index)
-            {
-                if (!Samples.IsCreated || (uint)index >= (uint)Samples.Length)
-                    return;
-
-                uint hash = (uint)index ^ Seed;
-                hash = hash * 747796405u + 2891336453u;
-                uint word = ((hash >> (int)((hash >> 28) + 4u)) ^ hash) * 277803737u;
-                word = (word >> 22) ^ word;
-                float sample = ((word & 0x00FFFFFFu) * (1f / 8388607.5f)) - 1f;
-                Samples[index] = sample * math.saturate(Gain);
-            }
-        }
     }
 }

@@ -5,7 +5,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -37,10 +36,8 @@ namespace Hecton8.Prologue.Space
         private const byte MathLodMesh = 1;
         private const byte MathLodHigh = 2;
         private const byte MathLodUltra = 3;
+        private const int MathLodHysteresisFrames = 3;
         private const string DumpFileName = "Dump_ORBITAL_MECHANICS_DIRECTOR.bin";
-        private const float SplashdownFluidImpulseRadiusMeters = 50f;
-        private const float SplashdownFluidImpulseLifetimeSeconds = 5f;
-        private const float SplashdownFluidImpulseStrengthMetersPerSecond = 20f;
         private const SystemID OwnerSystemId = SystemID.CoreBridge;
         private const BufferID TelemetryRingBufferId = (BufferID)0x4F524241; // "ORBA"
 
@@ -67,21 +64,30 @@ namespace Hecton8.Prologue.Space
         [SerializeField] private Transform planetImpostor;
         [SerializeField] private Transform cloudLayer;
         [SerializeField] private Transform starField;
+        [SerializeField] private Transform gasGiantBackdrop;
         [SerializeField] private Renderer planetSphereRenderer;
         [SerializeField] private Renderer planetImpostorRenderer;
         [SerializeField] private Renderer cloudLayerRenderer;
+        [SerializeField] private Renderer gasGiantBackdropRenderer;
 
         [Header("Relativity Fake")]
-        [SerializeField] private float startDistanceMeters = 12000f;
+        [SerializeField] private float startDistanceMeters = 260000f;
         [SerializeField] private float handoffDistanceMeters = 2f;
-        [SerializeField] private float meshSwapDistanceMeters = 2000f;
-        [SerializeField] private float reentryStartDistanceMeters = 1000f;
-        [SerializeField] private float cloudWhiteoutDistanceMeters = 100f;
-        [SerializeField] private float passiveApproachSpeedMetersPerSecond = 320f;
+        [SerializeField] private float meshSwapDistanceMeters = 120000f;
+        [SerializeField] private float reentryStartDistanceMeters = 70000f;
+        [SerializeField] private float cloudWhiteoutDistanceMeters = 5000f;
+        [SerializeField] private float passiveApproachSpeedMetersPerSecond = 300f;
         [SerializeField] private float thrustAccelerationMetersPerSecondSq = 1400f;
+        [SerializeField] private float scriptedReentryBurnAccelerationMetersPerSecondSq = 260f;
         [SerializeField] private float maxUniverseSpeedMetersPerSecond = 6200f;
-        [SerializeField] private float planetSphereScaleMeters = 5000f;
+        [SerializeField] private float planetSphereScaleMeters = 50000f;
         [SerializeField] private float fakePlanetRadiusMeters = 10000000f;
+
+        [Header("Orbital Window Fake")]
+        [SerializeField, Range(0f, 0.35f)] private float orbitalArcRadius01 = 0.16f;
+        [SerializeField, Range(0f, 3f)] private float hectonOrbitTurns = 1.35f;
+        [SerializeField] private float orbitPresentationFadeDistanceMeters = 6000f;
+        [SerializeField] private float gasGiantBackdropScaleMeters = 110000f;
 
         [Header("Feedback")]
         [SerializeField] private float signalIntervalSeconds = 0.05f;
@@ -105,6 +111,8 @@ namespace Hecton8.Prologue.Space
         private float _audioTimer;
         private float _hapticTimer;
         private byte _mathLod = byte.MaxValue;
+        private byte _mathLodCandidate = byte.MaxValue;
+        private int _mathLodCandidateFrames;
         private bool _domainClaimed;
         private bool _registeredUpdate;
         private bool _registeredHotSwapListener;
@@ -142,6 +150,39 @@ namespace Hecton8.Prologue.Space
         public void SetInputEnabled(bool enabled)
         {
             consumeInput = enabled;
+        }
+
+        public void ConfigureSceneBindings(
+            Transform capsuleTransform,
+            Transform sphereTransform,
+            Transform impostorTransform,
+            Transform cloudsTransform,
+            Renderer sphereRenderer,
+            Renderer impostorRenderer,
+            Renderer cloudsRenderer)
+        {
+            if (capsuleTransform != null)
+                capsuleAuthority = capsuleTransform;
+            if (sphereTransform != null)
+                planetSphere = sphereTransform;
+            if (impostorTransform != null)
+                planetImpostor = impostorTransform;
+            if (cloudsTransform != null)
+                cloudLayer = cloudsTransform;
+            if (sphereRenderer != null)
+                planetSphereRenderer = sphereRenderer;
+            if (impostorRenderer != null)
+                planetImpostorRenderer = impostorRenderer;
+            if (cloudsRenderer != null)
+                cloudLayerRenderer = cloudsRenderer;
+        }
+
+        public void ConfigureAegirBackdrop(Transform backdropTransform, Renderer backdropRenderer)
+        {
+            if (backdropTransform != null)
+                gasGiantBackdrop = backdropTransform;
+            if (backdropRenderer != null)
+                gasGiantBackdropRenderer = backdropRenderer;
         }
 
         public void ForceZeroUniverseVelocity(byte reason)
@@ -378,6 +419,9 @@ namespace Hecton8.Prologue.Space
             if (cloudLayerRenderer == null && cloudLayer != null)
                 cloudLayer.TryGetComponent(out cloudLayerRenderer);
 
+            if (gasGiantBackdropRenderer == null && gasGiantBackdrop != null)
+                gasGiantBackdrop.TryGetComponent(out gasGiantBackdropRenderer);
+
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
         }
@@ -386,6 +430,9 @@ namespace Hecton8.Prologue.Space
         {
             if (planetSphere != null)
                 planetSphere.localScale = Vector3.one * math.max(1f, planetSphereScaleMeters);
+
+            if (gasGiantBackdrop != null)
+                gasGiantBackdrop.localScale = Vector3.one * math.max(planetSphereScaleMeters, gasGiantBackdropScaleMeters);
 
             if (capsuleRigidbody != null)
             {
@@ -503,6 +550,8 @@ namespace Hecton8.Prologue.Space
             _aborted = false;
             _velocityZeroForced = false;
             _mathLod = byte.MaxValue;
+            _mathLodCandidate = byte.MaxValue;
+            _mathLodCandidateFrames = 0;
             PublishSnapshot();
             if (applyPresentation)
                 ApplyPresentation();
@@ -547,8 +596,11 @@ namespace Hecton8.Prologue.Space
             double targetPassiveSpeed = math.max(1d, passiveApproachSpeedMetersPerSecond);
             double maxSpeed = math.max(targetPassiveSpeed, maxUniverseSpeedMetersPerSecond);
             double thrustDelta = (double)thrust01 * math.max(0f, thrustAccelerationMetersPerSecondSq) * dt;
+            double scriptedBurnDelta = (double)ResolveScriptedReentryBurn01() *
+                                       math.max(0f, scriptedReentryBurnAccelerationMetersPerSecondSq) *
+                                       dt;
 
-            _universeVelocity.y -= thrustDelta;
+            _universeVelocity.y -= thrustDelta + scriptedBurnDelta;
 
             double speed = LengthFast(_universeVelocity);
             if (speed < targetPassiveSpeed)
@@ -569,6 +621,16 @@ namespace Hecton8.Prologue.Space
                 _distanceMeters = 0d;
         }
 
+        private float ResolveScriptedReentryBurn01()
+        {
+            if (_velocityZeroForced)
+                return 0f;
+
+            float reentryRange = math.max(1f, reentryStartDistanceMeters);
+            float distance = (float)math.min(math.max(0d, _distanceMeters), (double)float.MaxValue);
+            return 1f - math.saturate(distance * math.rcp(reentryRange));
+        }
+
         private void UpdateReentryState()
         {
             double speedSq = LengthSq(_universeVelocity);
@@ -583,9 +645,11 @@ namespace Hecton8.Prologue.Space
                 _capsuleLeadingEdgeLocalNormalized.x,
                 _capsuleLeadingEdgeLocalNormalized.y,
                 _capsuleLeadingEdgeLocalNormalized.z);
-            Vector3 capsuleForward = capsuleAuthority != null
-                ? capsuleAuthority.TransformDirection(localLeadingEdge)
-                : Vector3.down;
+            Vector3 capsuleForward = lockCapsuleTransform
+                ? _capsuleLockedRotation * localLeadingEdge
+                : capsuleAuthority != null
+                    ? capsuleAuthority.TransformDirection(localLeadingEdge)
+                    : Vector3.down;
             double3 forward = new double3(capsuleForward.x, capsuleForward.y, capsuleForward.z);
             double3 velocityNormal = speedSq > 0.00000001d ? _universeVelocity * math.rsqrt(speedSq) : new double3(0d, -1d, 0d);
             _leadingEdgeDot01 = math.saturate((float)math.abs(math.dot(velocityNormal, forward)));
@@ -593,8 +657,10 @@ namespace Hecton8.Prologue.Space
 
         private void ApplyPresentation()
         {
-            float distance = (float)math.min(_distanceMeters, 200000f);
-            Vector3 planetPosition = new Vector3(0f, -distance, 0f);
+            float distance = (float)math.min(_distanceMeters, math.max(200000f, startDistanceMeters));
+            Vector3 orbitalOffset = ResolveOrbitalWindowOffset(distance);
+            Vector3 planetPosition = new Vector3(orbitalOffset.x, -distance, orbitalOffset.z);
+            Vector3 gasGiantPosition = ResolveGasGiantBackdropPosition(distance, orbitalOffset);
 
             if (universeRoot != null)
                 universeRoot.localPosition = Vector3.zero;
@@ -606,21 +672,26 @@ namespace Hecton8.Prologue.Space
                 planetImpostor.localPosition = planetPosition;
 
             if (cloudLayer != null)
-                cloudLayer.localPosition = Vector3.zero;
+                cloudLayer.localPosition = new Vector3(orbitalOffset.x * 0.12f, 0f, orbitalOffset.z * 0.12f);
 
             if (starField != null)
-                starField.localPosition = new Vector3(0f, distance * 0.00025f, 0f);
+                starField.localPosition = new Vector3(-orbitalOffset.x * 0.02f, distance * 0.00025f, -orbitalOffset.z * 0.02f);
 
-            byte lod = ResolveMathLod(distance);
+            if (gasGiantBackdrop != null)
+                gasGiantBackdrop.localPosition = gasGiantPosition;
+
+            byte lod = ResolveStableMathLod(distance);
             if (lod != _mathLod)
             {
                 _mathLod = lod;
-                bool useMesh = lod != MathLodImpostor;
+                bool hasImpostor = planetImpostorRenderer != null;
+                bool useMesh = lod != MathLodImpostor || !hasImpostor;
                 SetRendererEnabled(planetSphereRenderer, useMesh);
-                SetRendererEnabled(planetImpostorRenderer, !useMesh);
+                SetRendererEnabled(planetImpostorRenderer, hasImpostor && !useMesh);
             }
 
             SetRendererEnabled(cloudLayerRenderer, _cloudWhiteout01 > 0.001f);
+            SetRendererEnabled(gasGiantBackdropRenderer, true);
 
             Shader.SetGlobalFloat(_planetDistanceId, distance);
             Shader.SetGlobalFloat(_fakeRadiusId, math.max(planetSphereScaleMeters, fakePlanetRadiusMeters));
@@ -631,9 +702,70 @@ namespace Hecton8.Prologue.Space
             Shader.SetGlobalFloat(_mathLodId, _mathLod);
         }
 
+        private byte ResolveStableMathLod(float distance)
+        {
+            byte requested = ResolveMathLod(distance);
+            if (_mathLod == byte.MaxValue)
+            {
+                _mathLodCandidate = requested;
+                _mathLodCandidateFrames = 0;
+                return requested;
+            }
+
+            if (requested == _mathLod)
+            {
+                _mathLodCandidate = requested;
+                _mathLodCandidateFrames = 0;
+                return _mathLod;
+            }
+
+            if (requested != _mathLodCandidate)
+            {
+                _mathLodCandidate = requested;
+                _mathLodCandidateFrames = 1;
+                return _mathLod;
+            }
+
+            if (_mathLodCandidateFrames < MathLodHysteresisFrames)
+                _mathLodCandidateFrames++;
+
+            return _mathLodCandidateFrames >= MathLodHysteresisFrames
+                ? requested
+                : _mathLod;
+        }
+
+        private Vector3 ResolveOrbitalWindowOffset(float distance)
+        {
+            float safeStart = math.max(1f, startDistanceMeters);
+            float progress01 = 1f - math.saturate(distance * math.rcp(safeStart));
+            float quality01 = ResolveQuality01();
+            float qualityCurve01 = quality01 * quality01 * (3f - (2f * quality01));
+            float turns = math.lerp(0.45f, math.max(0f, hectonOrbitTurns), qualityCurve01);
+            float phase = progress01 * turns;
+            float fadeDistance = math.max(1f, orbitPresentationFadeDistanceMeters);
+            float fade01 = math.smoothstep(fadeDistance, math.max(fadeDistance + 1f, safeStart * 0.22f), distance);
+            float radius = distance * math.saturate(orbitalArcRadius01) * math.lerp(0.35f, 1f, qualityCurve01) * fade01;
+            float x = TriangleWaveSigned(phase);
+            float z = TriangleWaveSigned(phase + 0.25f) * math.lerp(0.22f, 0.55f, qualityCurve01);
+            return new Vector3(x * radius, 0f, z * radius);
+        }
+
+        private Vector3 ResolveGasGiantBackdropPosition(float distance, Vector3 orbitalOffset)
+        {
+            float quality01 = ResolveQuality01();
+            float qualityCurve01 = quality01 * quality01 * (3f - (2f * quality01));
+            float sideOffset = distance * math.lerp(0.18f, 0.34f, qualityCurve01);
+            float depthOffset = distance * math.lerp(0.04f, 0.16f, qualityCurve01);
+            float verticalDistance = distance * math.lerp(0.74f, 0.62f, qualityCurve01);
+            return new Vector3(
+                sideOffset - (orbitalOffset.x * 0.38f),
+                -verticalDistance,
+                depthOffset + (orbitalOffset.z * 0.22f));
+        }
+
         private byte ResolveMathLod(float distance)
         {
-            float quality01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            float quality01 = ResolveQuality01();
             float meshContinuity01 = math.smoothstep(0.12f, 0.45f, quality01);
             float highDetail01 = math.smoothstep(0.52f, 0.88f, quality01);
             if (distance > meshSwapDistanceMeters && meshContinuity01 < 0.5f)
@@ -646,6 +778,18 @@ namespace Hecton8.Prologue.Space
                 return MathLodHigh;
 
             return MathLodMesh;
+        }
+
+        private static float ResolveQuality01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
+        }
+
+        private static float TriangleWaveSigned(float phase)
+        {
+            float t = math.frac(phase);
+            return 1f - (4f * math.abs(t - 0.5f));
         }
 
         private void EmitFeedback(float dt)
@@ -741,14 +885,6 @@ namespace Hecton8.Prologue.Space
             signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Channel = HapticRequest.ChannelVehicleCritical;
             SignalBus<HapticRequest>.TryPushTracked(in signal, ref _signalPushDropCount);
-
-            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
-                intensity,
-                math.saturate(intensity * 1.2f),
-                signal.DurationSeconds,
-                math.lerp(18f, 38f, _reentryHeat01),
-                3,
-                3);
         }
 
         private void PublishPrologueComplete()
@@ -760,37 +896,8 @@ namespace Hecton8.Prologue.Space
             signal.Sequence = unchecked((ushort)_sequence);
             signal.WhiteoutHoldSeconds = math.max(0.1f, signalIntervalSeconds * 4f);
             signal.Flags = PrologueCompleteSignal.FlagForceWhiteout;
-            signal.Phase = PrologueCompleteSignal.PhaseOceanHandoff;
+            signal.Phase = PrologueCompleteSignal.PhaseWhiteout;
             SignalBus<PrologueCompleteSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
-            PublishSplashdownFluidImpulse();
-        }
-
-        private void PublishSplashdownFluidImpulse()
-        {
-            float3 direction = ResolveSplashdownImpulseDirection();
-            FluidImpulseSignal impulse = default;
-            impulse.PositionAup = _originAup;
-            impulse.Vector = direction * SplashdownFluidImpulseStrengthMetersPerSecond;
-            impulse.Radius = SplashdownFluidImpulseRadiusMeters;
-            impulse.Lifetime = SplashdownFluidImpulseLifetimeSeconds;
-            impulse.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-            impulse.SourceHash = SourceHash;
-            impulse.Flags = 2u;
-            SignalBus<FluidImpulseSignal>.TryPushTracked(in impulse, ref _signalPushDropCount);
-        }
-
-        private float3 ResolveSplashdownImpulseDirection()
-        {
-            double speedSq = math.lengthsq(_universeVelocity);
-            if (speedSq <= 0.00000001d)
-                return new float3(0f, -0.85f, 0.35f);
-
-            double invSpeed = math.rsqrt(speedSq);
-            double3 normal = _universeVelocity * invSpeed;
-            float3 direction = new float3((float)normal.x, (float)normal.y, (float)normal.z);
-            direction.y += 0.25f;
-            float directionSq = math.lengthsq(direction);
-            return directionSq > 0.000001f ? direction * math.rsqrt(directionSq) : new float3(0f, -0.85f, 0.35f);
         }
 
         private void PublishTelemetryAnomaly(uint anomalyHash, byte severity)
@@ -854,6 +961,9 @@ namespace Hecton8.Prologue.Space
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                if (ReferenceEquals(previousService, currentService))
+                    return;
+
                 _registeredUpdate = false;
                 _registeredLateFrame = false;
                 if (currentService != null && isActiveAndEnabled)
@@ -910,27 +1020,42 @@ namespace Hecton8.Prologue.Space
 
         private void RecordTelemetry()
         {
-            if (!TryResolveTelemetryRing(out NativeArray<OrbitalTelemetryEntry> telemetryRing, allowEnsure: false))
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsVaultHandleCreated(in _telemetryRingHandle) ||
+                !vault.TryAcquireWriteLock(in _telemetryRingHandle, OwnerSystemId, out NativeArray<OrbitalTelemetryEntry> telemetryRing))
+            {
                 return;
+            }
 
-            OrbitalTelemetryEntry entry = default;
-            entry.UniverseVelocity = _universeVelocity;
-            entry.PlanetDistanceMeters = _distanceMeters;
-            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-            entry.StateHash = HashState(_universeVelocity, _distanceMeters, _reentryHeat01, _cloudWhiteout01);
-            entry.ReentryHeat01 = _reentryHeat01;
-            entry.CloudWhiteout01 = _cloudWhiteout01;
-            entry.Sequence = unchecked((ushort)_sequence);
-            entry.MathLod = _mathLod == byte.MaxValue ? MathLodImpostor : _mathLod;
-            entry.Flags = (byte)((_handoffEmitted ? 1 : 0) | (_aborted ? 2 : 0));
-            telemetryRing[_telemetryCursor] = entry;
-            _telemetryCursor = (_telemetryCursor + 1) % telemetryRing.Length;
+            try
+            {
+                if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
+                    return;
+
+                OrbitalTelemetryEntry entry = default;
+                entry.UniverseVelocity = _universeVelocity;
+                entry.PlanetDistanceMeters = _distanceMeters;
+                entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+                entry.StateHash = HashState(_universeVelocity, _distanceMeters, _reentryHeat01, _cloudWhiteout01);
+                entry.ReentryHeat01 = _reentryHeat01;
+                entry.CloudWhiteout01 = _cloudWhiteout01;
+                entry.Sequence = unchecked((ushort)_sequence);
+                entry.MathLod = _mathLod == byte.MaxValue ? MathLodImpostor : _mathLod;
+                entry.Flags = (byte)((_handoffEmitted ? 1 : 0) | (_aborted ? 2 : 0));
+                telemetryRing[_telemetryCursor] = entry;
+                _telemetryCursor = (_telemetryCursor + 1) % telemetryRing.Length;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryRingHandle, OwnerSystemId);
+            }
         }
 
         private void DumpTelemetry(byte reason)
         {
             if (_telemetryDumped ||
-                !TryResolveTelemetryRing(out NativeArray<OrbitalTelemetryEntry> telemetryRing, allowEnsure: false))
+                !TryReadTelemetryRing(out NativeArray<OrbitalTelemetryEntry>.ReadOnly telemetryRing))
             {
                 return;
             }
@@ -966,27 +1091,16 @@ namespace Hecton8.Prologue.Space
             }
         }
 
-        private bool TryResolveTelemetryRing(out NativeArray<OrbitalTelemetryEntry> telemetryRing, bool allowEnsure)
+        private bool TryReadTelemetryRing(out NativeArray<OrbitalTelemetryEntry>.ReadOnly telemetryRing)
         {
             telemetryRing = default;
-            if (allowEnsure && !EnsureTelemetry())
-                return false;
-
             IDataVault vault = _dataVault;
             if (vault == null || !IsVaultHandleCreated(in _telemetryRingHandle))
                 return false;
 
-            if (!vault.TryResolveHandle(in _telemetryRingHandle, out telemetryRing) ||
-                !telemetryRing.IsCreated ||
-                telemetryRing.Length < TelemetryCapacity)
-            {
-                if (allowEnsure)
-                    ClearTelemetryDescriptor();
-
-                return false;
-            }
-
-            return true;
+            return vault.TryReadOnlyHandle(in _telemetryRingHandle, out telemetryRing) &&
+                   telemetryRing.IsCreated &&
+                   telemetryRing.Length >= TelemetryCapacity;
         }
 
         private void ClearTelemetryDescriptor()
@@ -1142,9 +1256,14 @@ namespace Hecton8.Prologue.Space
             reentryStartDistanceMeters = math.max(1f, reentryStartDistanceMeters);
             cloudWhiteoutDistanceMeters = math.max(1f, cloudWhiteoutDistanceMeters);
             passiveApproachSpeedMetersPerSecond = math.max(1f, passiveApproachSpeedMetersPerSecond);
+            scriptedReentryBurnAccelerationMetersPerSecondSq = math.max(0f, scriptedReentryBurnAccelerationMetersPerSecondSq);
             maxUniverseSpeedMetersPerSecond = math.max(passiveApproachSpeedMetersPerSecond, maxUniverseSpeedMetersPerSecond);
             planetSphereScaleMeters = math.max(1f, planetSphereScaleMeters);
             fakePlanetRadiusMeters = math.max(planetSphereScaleMeters, fakePlanetRadiusMeters);
+            orbitalArcRadius01 = math.saturate(orbitalArcRadius01);
+            hectonOrbitTurns = math.max(0f, hectonOrbitTurns);
+            orbitPresentationFadeDistanceMeters = math.max(1f, orbitPresentationFadeDistanceMeters);
+            gasGiantBackdropScaleMeters = math.max(planetSphereScaleMeters, gasGiantBackdropScaleMeters);
         }
     }
 

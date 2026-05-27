@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Caves;
 using Hecton8.Core;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -16,20 +14,6 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4027)]
     public sealed class HectonVoxelStreamingBridge : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        private sealed class PendingRequestState : IDisposable
-        {
-            public CancellationTokenSource Cancellation;
-
-            public void Dispose()
-            {
-                if (Cancellation == null)
-                    return;
-
-                Cancellation.Dispose();
-                Cancellation = null;
-            }
-        }
-
         private struct CaveEntranceRequest
         {
             public long Key;
@@ -38,14 +22,16 @@ namespace Hecton8.World
             public float Radius;
             public float Priority;
             public uint Seed;
+            public uint Generation;
         }
 
-        private sealed class ChunkFadeState
+        private struct ChunkFadeState
         {
             public GameObject Volume;
             public Renderer Renderer;
             public Material OriginalMaterial;
             public Material RuntimeMaterial;
+            public int RuntimeMaterialPoolIndex;
             public float Elapsed;
         }
 
@@ -66,19 +52,53 @@ namespace Hecton8.World
         [Header("Presentation")]
         [SerializeField, Min(0.05f)] private float chunkFadeInDuration = 0.5f;
 
-        private readonly Dictionary<long, GameObject> _activeVolumes = new Dictionary<long, GameObject>(16);
-        private readonly Dictionary<long, CaveEntranceRequest> _desiredRequests = new Dictionary<long, CaveEntranceRequest>(32);
-        private readonly Dictionary<long, PendingRequestState> _pendingRequests = new Dictionary<long, PendingRequestState>(16);
-        // COLD ALLOC: Dictionary<long, ChunkFadeState>[16] - temporary streamed voxel chunk dissolve states - owner: HectonVoxelStreamingBridge
-        private readonly Dictionary<long, ChunkFadeState> _chunkFadeStates = new Dictionary<long, ChunkFadeState>(16);
-        private readonly List<CaveEntranceRequest> _launchQueue = new List<CaveEntranceRequest>(16);
-        private readonly List<long> _keyScratch = new List<long>(16);
-        private readonly List<long> _pendingDespawnKeys = new List<long>(16);
-        private readonly List<long> _pendingChunkFadeKeys = new List<long>(16);
-        private readonly List<GameObject> _pendingChunkFadeVolumes = new List<GameObject>(16);
+        private const int MaxRuntimeVolumeCapacity = 32;
+        private const int MaxDesiredRequestCapacity = MaxRuntimeVolumeCapacity * 2;
+        private const int MaxPendingRequestCapacity = MaxRuntimeVolumeCapacity;
+        private const int MaxChunkFadeStateCapacity = MaxRuntimeVolumeCapacity;
+        private const int MaxLaunchQueueCapacity = MaxDesiredRequestCapacity;
+        private const int MaxKeyScratchCapacity = MaxDesiredRequestCapacity + MaxRuntimeVolumeCapacity;
+        private const int MaxPendingChunkFadeCapacity = MaxRuntimeVolumeCapacity;
+
+        // COLD ALLOC: long/GameObject[32] - active streamed voxel cave volumes; no managed collection growth.
+        private readonly long[] _activeVolumeKeys = new long[MaxRuntimeVolumeCapacity];
+        private readonly GameObject[] _activeVolumes = new GameObject[MaxRuntimeVolumeCapacity];
+        private int _activeVolumeCount;
+        // COLD ALLOC: CaveEntranceRequest[64] - desired terrain-hole cave requests; no managed collection growth.
+        private readonly CaveEntranceRequest[] _desiredRequests = new CaveEntranceRequest[MaxDesiredRequestCapacity];
+        private int _desiredRequestCount;
+        // COLD ALLOC: long/uint[32] - bounded async launch generation records.
+        private readonly long[] _pendingRequestKeys = new long[MaxPendingRequestCapacity];
+        private readonly uint[] _pendingRequestGenerations = new uint[MaxPendingRequestCapacity];
+        private int _pendingRequestCount;
+        private uint _pendingRequestSequence;
+        // COLD ALLOC: long/ChunkFadeState[32] - temporary streamed voxel chunk dissolve states.
+        private readonly long[] _chunkFadeStateKeys = new long[MaxChunkFadeStateCapacity];
+        private readonly ChunkFadeState[] _chunkFadeStates = new ChunkFadeState[MaxChunkFadeStateCapacity];
+        private int _chunkFadeStateCount;
+        // COLD ALLOC: CaveEntranceRequest[64] - sorted launch queue; no managed collection growth.
+        private readonly CaveEntranceRequest[] _launchQueue = new CaveEntranceRequest[MaxLaunchQueueCapacity];
+        private int _launchQueueCount;
+        // COLD ALLOC: long[96] - bounded key scratch for removals and fade cleanup.
+        private readonly long[] _keyScratch = new long[MaxKeyScratchCapacity];
+        private int _keyScratchCount;
+        // COLD ALLOC: long[32] - deferred despawn queue.
+        private readonly long[] _pendingDespawnKeys = new long[MaxRuntimeVolumeCapacity];
+        private int _pendingDespawnKeyCount;
+        // COLD ALLOC: long/GameObject[32] - deferred chunk fade registration queue.
+        private readonly long[] _pendingChunkFadeKeys = new long[MaxPendingChunkFadeCapacity];
+        private readonly GameObject[] _pendingChunkFadeVolumes = new GameObject[MaxPendingChunkFadeCapacity];
+        private int _pendingChunkFadeCount;
         private static readonly int ChunkDissolveFadeId = Shader.PropertyToID("_ChunkDissolveFade");
         private const uint ChunkFadeRendererMissingWarningHash = 0xD0B2923Bu;
         private const uint ChunkFadeMaterialMissingWarningHash = 0xBBEEF2CDu;
+        private const uint ChunkFadeMaterialPoolMissingWarningHash = 0x8D4A6E29u;
+        // COLD ALLOC: Material[32] - pooled voxel chunk fade material clones; owner: HectonVoxelStreamingBridge.
+        private readonly Material[] _chunkFadeMaterialPool = new Material[MaxChunkFadeStateCapacity];
+        // COLD ALLOC: bool[32] - pooled fade material occupancy flags; owner: HectonVoxelStreamingBridge.
+        private readonly bool[] _chunkFadeMaterialPoolInUse = new bool[MaxChunkFadeStateCapacity];
+        private int _chunkFadeMaterialPoolCount;
+        private Material _chunkFadePoolSourceMaterial;
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
@@ -88,26 +108,28 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            maxRuntimeVolumes = Mathf.Max(1, maxRuntimeVolumes);
+            maxRuntimeVolumes = Mathf.Clamp(maxRuntimeVolumes, 1, MaxRuntimeVolumeCapacity);
             maxAsyncLaunchesPerTick = Mathf.Max(1, maxAsyncLaunchesPerTick);
             requestDistance = Mathf.Max(25f, requestDistance);
             retentionDistance = Mathf.Max(requestDistance, retentionDistance);
             caveVerticalOffset = Mathf.Max(1f, caveVerticalOffset);
             fallbackCaveHeight = Mathf.Max(4f, fallbackCaveHeight);
             chunkFadeInDuration = Mathf.Max(0.05f, chunkFadeInDuration);
-            ResolveReferences();
         }
 
         private void OnEnable()
         {
-            ResolveReferences();
+            RefreshColdReferences();
             EnsureLifetimeCancellation();
+            EnsureChunkFadeMaterialPool();
             TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void Start()
         {
+            RefreshColdReferences();
+            EnsureChunkFadeMaterialPool();
             TryRegisterHotSwapListener();
             TryRegister();
         }
@@ -118,12 +140,12 @@ namespace Hecton8.World
             TryUnregisterHotSwapListener();
             CancelAllPendingRequests();
             CancelLifetimeCancellation();
-            _launchQueue.Clear();
-            _pendingChunkFadeKeys.Clear();
-            _pendingChunkFadeVolumes.Clear();
-            _pendingDespawnKeys.Clear();
-            _desiredRequests.Clear();
+            ClearLaunchQueue();
+            ClearPendingChunkFadeRegistrations();
+            ClearPendingDespawns();
+            ClearDesiredRequests();
             DespawnAllVolumes();
+            ReleaseChunkFadeMaterialPool();
         }
 
         private void OnDestroy()
@@ -132,12 +154,12 @@ namespace Hecton8.World
             TryUnregisterHotSwapListener();
             CancelAllPendingRequests();
             CancelLifetimeCancellation();
-            _launchQueue.Clear();
-            _pendingChunkFadeKeys.Clear();
-            _pendingChunkFadeVolumes.Clear();
-            _pendingDespawnKeys.Clear();
-            _desiredRequests.Clear();
+            ClearLaunchQueue();
+            ClearPendingChunkFadeRegistrations();
+            ClearPendingDespawns();
+            ClearDesiredRequests();
             DespawnAllVolumes();
+            ReleaseChunkFadeMaterialPool();
         }
 
         /// <summary>
@@ -145,26 +167,28 @@ namespace Hecton8.World
         /// </summary>
         public void Tick(float dt)
         {
-            ResolveReferences();
             _chunkFadeDeltaAccumulator += Mathf.Max(0f, dt);
 
-            if (voxelEngine == null || _launchQueue.Count <= 0 || _activeVolumes.Count >= maxRuntimeVolumes)
+            int runtimeVolumeLimit = ResolveRuntimeVolumeLimit();
+            if (voxelEngine == null || _launchQueueCount <= 0 || _activeVolumeCount >= runtimeVolumeLimit)
                 return;
 
-            int launchCount = Mathf.Min(maxAsyncLaunchesPerTick, _launchQueue.Count);
+            int launchCount = Mathf.Min(maxAsyncLaunchesPerTick, _launchQueueCount);
             for (int i = 0; i < launchCount; i++)
             {
                 CaveEntranceRequest request = _launchQueue[i];
-                if (_activeVolumes.ContainsKey(request.Key) || _pendingRequests.ContainsKey(request.Key))
+                if (ContainsActiveVolume(request.Key) || ContainsPendingRequest(request.Key))
                     continue;
 
-                PendingRequestState pending = CreatePendingRequestState();
-                _pendingRequests[request.Key] = pending;
-                _ = SpawnCaveAsync(request, pending);
+                request.Generation = NextPendingRequestGeneration();
+                if (!SetPendingRequest(request.Key, request.Generation))
+                    continue;
+
+                _ = SpawnCaveAsync(request);
             }
 
             if (launchCount > 0)
-                _launchQueue.RemoveRange(0, launchCount);
+                RemoveLaunchQueuePrefix(launchCount);
         }
 
         public void LateFrameTick()
@@ -184,18 +208,17 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            ResolveReferences();
             RebuildDesiredRequests();
             CancelStalePendingRequests();
             DespawnStaleVolumes();
             RebuildLaunchQueue();
         }
 
-        private async Awaitable SpawnCaveAsync(CaveEntranceRequest request, PendingRequestState pendingState)
+        private async Awaitable SpawnCaveAsync(CaveEntranceRequest request)
         {
-            CancellationToken token = pendingState != null && pendingState.Cancellation != null
-                ? pendingState.Cancellation.Token
-                : EnsureLifetimeCancellation().Token;
+            CancellationToken token = _lifetimeCancellation != null
+                ? _lifetimeCancellation.Token
+                : CancellationToken.None;
 
             try
             {
@@ -211,7 +234,9 @@ namespace Hecton8.World
                 if (volume == null)
                     return;
 
-                if (!isActiveAndEnabled || !_desiredRequests.ContainsKey(request.Key))
+                if (!isActiveAndEnabled ||
+                    !ContainsDesiredRequest(request.Key) ||
+                    !IsPendingRequestGeneration(request.Key, request.Generation))
                 {
                     voxelEngine.DespawnVolume(volume);
                     return;
@@ -220,7 +245,12 @@ namespace Hecton8.World
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 volume.name = "VoxelCave";
 #endif
-                _activeVolumes[request.Key] = volume;
+                if (!SetActiveVolume(request.Key, volume))
+                {
+                    voxelEngine.DespawnVolume(volume);
+                    return;
+                }
+
                 RegisterChunkFade(request.Key, volume);
                 if (vegetationBridge != null)
                     vegetationBridge.RegisterArtificialStructure(ResolveVolumeBounds(volume, caveCenter, request.Radius), StructureType.VoxelCave);
@@ -230,20 +260,17 @@ namespace Hecton8.World
             }
             finally
             {
-                if (_pendingRequests.TryGetValue(request.Key, out PendingRequestState current) && ReferenceEquals(current, pendingState))
-                    _pendingRequests.Remove(request.Key);
-
-                pendingState?.Dispose();
+                RemovePendingRequest(request.Key, request.Generation);
             }
         }
 
         private void RebuildDesiredRequests()
         {
-            _desiredRequests.Clear();
+            ClearDesiredRequests();
             if (vegetationBridge == null || voxelEngine == null)
                 return;
 
-            if (!vegetationBridge.TryGetTerrainHoleStreamingPayload(out NativeArray<TerrainHoleStreamingRecord>.ReadOnly holes, out int holeCount) || holes.Length <= 0 || holeCount <= 0)
+            if (!vegetationBridge.TryGetTerrainHoleStreamingPayload(out var holes, out int holeCount) || holes.Length <= 0 || holeCount <= 0)
                 return;
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
@@ -263,7 +290,7 @@ namespace Hecton8.World
                     ? hole.HoleId
                     : BuildHoleKey(absoluteHolePosition, hole.Radius);
                 double distanceSq = AbsoluteUniversePosition.DistanceSq(in absoluteHolePosition, in playerAup);
-                if (distanceSq > requestDistanceSq && !_activeVolumes.ContainsKey(requestKey))
+                if (distanceSq > requestDistanceSq && !ContainsActiveVolume(requestKey))
                     continue;
 
                 CaveEntranceRequest request = new CaveEntranceRequest
@@ -275,65 +302,62 @@ namespace Hecton8.World
                     Priority = (float)Math.Min(distanceSq, float.MaxValue),
                     Seed = BuildHoleSeed(absoluteHolePosition, hole.Radius)
                 };
-                _desiredRequests[request.Key] = request;
-                if (_desiredRequests.Count >= maxRuntimeVolumes * 2)
+                if (!SetDesiredRequest(in request))
+                    break;
+
+                int desiredLimit = Mathf.Min(ResolveRuntimeVolumeLimit() * 2, _desiredRequests.Length);
+                if (_desiredRequestCount >= desiredLimit)
                     break;
             }
         }
 
         private void CancelStalePendingRequests()
         {
-            if (_pendingRequests.Count <= 0)
+            if (_pendingRequestCount <= 0)
                 return;
 
-            _keyScratch.Clear();
-            Dictionary<long, PendingRequestState>.Enumerator enumerator = _pendingRequests.GetEnumerator();
-            while (enumerator.MoveNext())
+            ClearKeyScratch();
+            for (int i = 0; i < _pendingRequestCount; i++)
             {
-                if (!_desiredRequests.ContainsKey(enumerator.Current.Key))
-                    _keyScratch.Add(enumerator.Current.Key);
+                long key = _pendingRequestKeys[i];
+                if (!ContainsDesiredRequest(key))
+                    AddKeyScratch(key);
             }
 
-            for (int i = 0; i < _keyScratch.Count; i++)
+            for (int i = 0; i < _keyScratchCount; i++)
             {
                 long key = _keyScratch[i];
-                if (!_pendingRequests.TryGetValue(key, out PendingRequestState pending))
-                    continue;
-
-                pending.Cancellation?.Cancel();
-                _pendingRequests.Remove(key);
-                pending.Dispose();
+                RemovePendingRequest(key);
             }
         }
 
         private void DespawnStaleVolumes()
         {
-            if (_activeVolumes.Count <= 0)
+            if (_activeVolumeCount <= 0)
                 return;
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
 
             double retentionDistanceSq = (double)retentionDistance * retentionDistance;
-            _keyScratch.Clear();
-            Dictionary<long, GameObject>.Enumerator enumerator = _activeVolumes.GetEnumerator();
-            while (enumerator.MoveNext())
+            ClearKeyScratch();
+            for (int i = 0; i < _activeVolumeCount; i++)
             {
-                long key = enumerator.Current.Key;
-                if (!_desiredRequests.TryGetValue(key, out CaveEntranceRequest request))
+                long key = _activeVolumeKeys[i];
+                if (!TryGetDesiredRequest(key, out CaveEntranceRequest request))
                 {
-                    _keyScratch.Add(key);
+                    AddKeyScratch(key);
                     continue;
                 }
 
                 if (AbsoluteUniversePosition.DistanceSq(in request.AbsolutePosition, in playerAup) > retentionDistanceSq)
-                    _keyScratch.Add(key);
+                    AddKeyScratch(key);
             }
 
-            for (int i = 0; i < _keyScratch.Count; i++)
+            for (int i = 0; i < _keyScratchCount; i++)
             {
                 long key = _keyScratch[i];
-                if (!_activeVolumes.TryGetValue(key, out GameObject volume))
+                if (!TryGetActiveVolume(key, out GameObject volume))
                     continue;
 
                 QueueVolumeDespawn(key);
@@ -342,48 +366,47 @@ namespace Hecton8.World
 
         private void QueueVolumeDespawn(long key)
         {
-            if (_pendingDespawnKeys.Count >= _pendingDespawnKeys.Capacity)
+            if (_pendingDespawnKeyCount >= _pendingDespawnKeys.Length)
             {
                 FlushPendingDespawns();
-                if (_pendingDespawnKeys.Count >= _pendingDespawnKeys.Capacity)
+                if (_pendingDespawnKeyCount >= _pendingDespawnKeys.Length)
                     return;
             }
 
-            _pendingDespawnKeys.Add(key);
+            _pendingDespawnKeys[_pendingDespawnKeyCount++] = key;
         }
 
         private void FlushPendingDespawns()
         {
-            if (_pendingDespawnKeys.Count <= 0)
+            if (_pendingDespawnKeyCount <= 0)
                 return;
 
-            for (int i = 0; i < _pendingDespawnKeys.Count; i++)
+            for (int i = 0; i < _pendingDespawnKeyCount; i++)
             {
                 long key = _pendingDespawnKeys[i];
-                if (!_activeVolumes.TryGetValue(key, out GameObject volume))
+                if (!TryGetActiveVolume(key, out GameObject volume))
                     continue;
 
                 ClearChunkFadeState(key, clearRenderer: true);
                 if (voxelEngine != null && volume != null)
                     voxelEngine.DespawnVolume(volume);
 
-                _activeVolumes.Remove(key);
+                RemoveActiveVolume(key);
             }
 
-            _pendingDespawnKeys.Clear();
+            ClearPendingDespawns();
         }
 
         private void RebuildLaunchQueue()
         {
-            _launchQueue.Clear();
-            if (_activeVolumes.Count >= maxRuntimeVolumes)
+            ClearLaunchQueue();
+            if (_activeVolumeCount >= ResolveRuntimeVolumeLimit())
                 return;
 
-            Dictionary<long, CaveEntranceRequest>.Enumerator enumerator = _desiredRequests.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int i = 0; i < _desiredRequestCount; i++)
             {
-                CaveEntranceRequest request = enumerator.Current.Value;
-                if (_activeVolumes.ContainsKey(request.Key) || _pendingRequests.ContainsKey(request.Key))
+                CaveEntranceRequest request = _desiredRequests[i];
+                if (ContainsActiveVolume(request.Key) || ContainsPendingRequest(request.Key))
                     continue;
 
                 InsertQueuedRequest(request);
@@ -392,35 +415,41 @@ namespace Hecton8.World
 
         private void InsertQueuedRequest(CaveEntranceRequest request)
         {
-            int insertIndex = _launchQueue.Count;
-            while (insertIndex > 0 && request.Priority < _launchQueue[insertIndex - 1].Priority)
-                insertIndex--;
+            if (_launchQueueCount >= _launchQueue.Length)
+                return;
 
-            _launchQueue.Insert(insertIndex, request);
+            int insertIndex = _launchQueueCount;
+            while (insertIndex > 0 && request.Priority < _launchQueue[insertIndex - 1].Priority)
+            {
+                _launchQueue[insertIndex] = _launchQueue[insertIndex - 1];
+                insertIndex--;
+            }
+
+            _launchQueue[insertIndex] = request;
+            _launchQueueCount++;
         }
 
         private void DespawnAllVolumes()
         {
-            if (voxelEngine == null || _activeVolumes.Count <= 0)
+            if (voxelEngine == null || _activeVolumeCount <= 0)
             {
                 ClearAllChunkFadeStates(clearRenderers: true);
-                _activeVolumes.Clear();
+                ClearActiveVolumes();
                 return;
             }
 
-            _keyScratch.Clear();
-            Dictionary<long, GameObject>.Enumerator enumerator = _activeVolumes.GetEnumerator();
-            while (enumerator.MoveNext())
-                _keyScratch.Add(enumerator.Current.Key);
+            ClearKeyScratch();
+            for (int i = 0; i < _activeVolumeCount; i++)
+                AddKeyScratch(_activeVolumeKeys[i]);
 
-            for (int i = 0; i < _keyScratch.Count; i++)
+            for (int i = 0; i < _keyScratchCount; i++)
             {
                 long key = _keyScratch[i];
                 ClearChunkFadeState(key, clearRenderer: true);
-                if (_activeVolumes.TryGetValue(key, out GameObject volume) && volume != null)
+                if (TryGetActiveVolume(key, out GameObject volume) && volume != null)
                     voxelEngine.DespawnVolume(volume);
 
-                _activeVolumes.Remove(key);
+                RemoveActiveVolume(key);
             }
         }
 
@@ -429,20 +458,24 @@ namespace Hecton8.World
             if (volume == null || chunkFadeInDuration <= 0.0001f)
                 return;
 
-            _pendingChunkFadeKeys.Add(key);
-            _pendingChunkFadeVolumes.Add(volume);
+            if (_pendingChunkFadeCount >= _pendingChunkFadeKeys.Length)
+            {
+                FlushPendingChunkFadeRegistrations();
+                if (_pendingChunkFadeCount >= _pendingChunkFadeKeys.Length)
+                    return;
+            }
+
+            _pendingChunkFadeKeys[_pendingChunkFadeCount] = key;
+            _pendingChunkFadeVolumes[_pendingChunkFadeCount] = volume;
+            _pendingChunkFadeCount++;
         }
 
         private void FlushPendingChunkFadeRegistrations()
         {
-            int count = Mathf.Min(_pendingChunkFadeKeys.Count, _pendingChunkFadeVolumes.Count);
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < _pendingChunkFadeCount; i++)
                 RegisterChunkFadeImmediate(_pendingChunkFadeKeys[i], _pendingChunkFadeVolumes[i]);
 
-            if (_pendingChunkFadeKeys.Count > 0)
-                _pendingChunkFadeKeys.Clear();
-            if (_pendingChunkFadeVolumes.Count > 0)
-                _pendingChunkFadeVolumes.Clear();
+            ClearPendingChunkFadeRegistrations();
         }
 
         private void RegisterChunkFadeImmediate(long key, GameObject volume)
@@ -465,69 +498,161 @@ namespace Hecton8.World
 
             ClearChunkFadeState(key, clearRenderer: true);
 
-            Material runtimeMaterial = new Material(material); // COLD ALLOC: Material[1] - temporary first-party voxel dissolve material restored after fade - owner: HectonVoxelStreamingBridge
+            if (!TryAcquireChunkFadeMaterial(material, out Material runtimeMaterial, out int runtimeMaterialPoolIndex))
+            {
+                PublishChunkFadeWarning(ChunkFadeMaterialPoolMissingWarningHash, key, 1f);
+                return;
+            }
+
             runtimeMaterial.SetFloat(ChunkDissolveFadeId, 0f);
             renderer.sharedMaterial = runtimeMaterial;
 
-            _chunkFadeStates[key] = new ChunkFadeState // COLD ALLOC: ChunkFadeState[1] - per-active streamed voxel chunk dissolve state - owner: HectonVoxelStreamingBridge
+            ChunkFadeState state = new ChunkFadeState
             {
                 Volume = volume,
                 Renderer = renderer,
                 OriginalMaterial = material,
                 RuntimeMaterial = runtimeMaterial,
+                RuntimeMaterialPoolIndex = runtimeMaterialPoolIndex,
                 Elapsed = 0f
             };
+
+            if (!SetChunkFadeState(key, in state))
+            {
+                renderer.sharedMaterial = material;
+                ReleaseChunkFadeMaterial(runtimeMaterialPoolIndex, runtimeMaterial);
+            }
         }
 
         private void TickChunkFade(float dt)
         {
-            if (_chunkFadeStates.Count <= 0)
+            if (_chunkFadeStateCount <= 0)
                 return;
 
             float safeDt = Mathf.Max(0f, dt);
             float duration = Mathf.Max(0.05f, chunkFadeInDuration);
-            _keyScratch.Clear();
+            ClearKeyScratch();
 
-            Dictionary<long, ChunkFadeState>.Enumerator enumerator = _chunkFadeStates.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int i = 0; i < _chunkFadeStateCount; i++)
             {
-                long key = enumerator.Current.Key;
-                ChunkFadeState state = enumerator.Current.Value;
-                if (state == null || state.Renderer == null || state.RuntimeMaterial == null)
+                long key = _chunkFadeStateKeys[i];
+                ChunkFadeState state = _chunkFadeStates[i];
+                if (state.Renderer == null || state.RuntimeMaterial == null)
                 {
-                    _keyScratch.Add(key);
+                    AddKeyScratch(key);
                     continue;
                 }
 
                 state.Elapsed += safeDt;
                 float fade01 = Mathf.Clamp01(state.Elapsed / duration);
                 state.RuntimeMaterial.SetFloat(ChunkDissolveFadeId, fade01);
+                _chunkFadeStates[i] = state;
 
                 if (fade01 >= 0.999f)
-                    _keyScratch.Add(key);
+                    AddKeyScratch(key);
             }
 
-            for (int i = 0; i < _keyScratch.Count; i++)
+            for (int i = 0; i < _keyScratchCount; i++)
                 ClearChunkFadeState(_keyScratch[i], clearRenderer: true);
         }
 
         private void ClearChunkFadeState(long key, bool clearRenderer)
         {
-            if (!_chunkFadeStates.TryGetValue(key, out ChunkFadeState state))
+            int stateIndex = FindChunkFadeStateIndex(key);
+            if (stateIndex < 0)
                 return;
 
+            ChunkFadeState state = _chunkFadeStates[stateIndex];
             if (clearRenderer &&
-                state != null &&
                 state.Renderer != null &&
                 ReferenceEquals(state.Renderer.sharedMaterial, state.RuntimeMaterial))
             {
                 state.Renderer.sharedMaterial = state.OriginalMaterial;
             }
 
-            if (state != null && state.RuntimeMaterial != null)
-                Destroy(state.RuntimeMaterial);
+            ReleaseChunkFadeMaterial(state.RuntimeMaterialPoolIndex, state.RuntimeMaterial);
 
-            _chunkFadeStates.Remove(key);
+            RemoveChunkFadeStateAt(stateIndex);
+        }
+
+        private void EnsureChunkFadeMaterialPool()
+        {
+            if (_chunkFadeMaterialPoolCount > 0 || chunkFadeInDuration <= 0.0001f)
+                return;
+
+            if (voxelEngine == null || voxelEngine.voxelVolumePrefab == null)
+                return;
+
+            if (!voxelEngine.voxelVolumePrefab.TryGetComponent(out Renderer prefabRenderer) || prefabRenderer == null)
+                return;
+
+            Material material = prefabRenderer.sharedMaterial;
+            if (material == null || !material.HasProperty(ChunkDissolveFadeId))
+                return;
+
+            _chunkFadePoolSourceMaterial = material;
+            for (int i = 0; i < _chunkFadeMaterialPool.Length; i++)
+            {
+                Material runtimeMaterial = new Material(material); // COLD ALLOC: Material[32] - prewarmed voxel fade pool; owner: HectonVoxelStreamingBridge.
+                runtimeMaterial.SetFloat(ChunkDissolveFadeId, 1f);
+                _chunkFadeMaterialPool[i] = runtimeMaterial;
+                _chunkFadeMaterialPoolInUse[i] = false;
+            }
+
+            _chunkFadeMaterialPoolCount = _chunkFadeMaterialPool.Length;
+        }
+
+        private bool TryAcquireChunkFadeMaterial(Material sourceMaterial, out Material runtimeMaterial, out int poolIndex)
+        {
+            runtimeMaterial = null;
+            poolIndex = -1;
+
+            if (_chunkFadeMaterialPoolCount <= 0 || !ReferenceEquals(sourceMaterial, _chunkFadePoolSourceMaterial))
+                return false;
+
+            for (int i = 0; i < _chunkFadeMaterialPoolCount; i++)
+            {
+                if (_chunkFadeMaterialPoolInUse[i] || _chunkFadeMaterialPool[i] == null)
+                    continue;
+
+                _chunkFadeMaterialPoolInUse[i] = true;
+                runtimeMaterial = _chunkFadeMaterialPool[i];
+                poolIndex = i;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ReleaseChunkFadeMaterial(int poolIndex, Material runtimeMaterial)
+        {
+            if (poolIndex < 0 || poolIndex >= _chunkFadeMaterialPoolCount)
+                return;
+
+            if (!ReferenceEquals(_chunkFadeMaterialPool[poolIndex], runtimeMaterial))
+                return;
+
+            if (runtimeMaterial != null)
+                runtimeMaterial.SetFloat(ChunkDissolveFadeId, 1f);
+
+            _chunkFadeMaterialPoolInUse[poolIndex] = false;
+        }
+
+        private void ReleaseChunkFadeMaterialPool()
+        {
+            ClearAllChunkFadeStates(clearRenderers: true);
+
+            for (int i = 0; i < _chunkFadeMaterialPoolCount; i++)
+            {
+                if (_chunkFadeMaterialPool[i] != null)
+                    Destroy(_chunkFadeMaterialPool[i]);
+
+                _chunkFadeMaterialPool[i] = null;
+                _chunkFadeMaterialPoolInUse[i] = false;
+            }
+
+            _chunkFadeMaterialPoolCount = 0;
+            _chunkFadePoolSourceMaterial = null;
         }
 
         private static void PublishChunkFadeWarning(uint warningHash, long key, float scalar)
@@ -540,19 +665,11 @@ namespace Hecton8.World
 
         private void ClearAllChunkFadeStates(bool clearRenderers)
         {
-            if (_chunkFadeStates.Count <= 0)
-                return;
-
-            _keyScratch.Clear();
-            Dictionary<long, ChunkFadeState>.Enumerator enumerator = _chunkFadeStates.GetEnumerator();
-            while (enumerator.MoveNext())
-                _keyScratch.Add(enumerator.Current.Key);
-
-            for (int i = 0; i < _keyScratch.Count; i++)
-                ClearChunkFadeState(_keyScratch[i], clearRenderers);
+            while (_chunkFadeStateCount > 0)
+                ClearChunkFadeState(_chunkFadeStateKeys[0], clearRenderers);
         }
 
-        private void ResolveReferences()
+        private void RefreshColdReferences()
         {
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
             WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
@@ -636,12 +753,33 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+            switch (serviceSlot)
             {
-                _registeredTick = false;
-                _registeredSlowTick = false;
-                _registeredLateFrame = false;
-                TryRegister();
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null && isActiveAndEnabled)
+                    {
+                        _registeredTick = false;
+                        _registeredSlowTick = false;
+                        _registeredLateFrame = false;
+                        TryRegister();
+                    }
+                    return;
+
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    return;
+
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    voxelEngine = currentService as HectonVoxelEngine;
+                    ReleaseChunkFadeMaterialPool();
+                    if (isActiveAndEnabled)
+                        EnsureChunkFadeMaterialPool();
+                    return;
+
+                case GlobalRegistryServiceSlot.Player:
+                    IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
+                    playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+                    return;
             }
         }
 
@@ -662,19 +800,10 @@ namespace Hecton8.World
             _hotSwapListenerRegistered = false;
         }
 
-        private PendingRequestState CreatePendingRequestState()
-        {
-            CancellationTokenSource lifetime = EnsureLifetimeCancellation();
-            return new PendingRequestState
-            {
-                Cancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token)
-            };
-        }
-
         private CancellationTokenSource EnsureLifetimeCancellation()
         {
-            if (_lifetimeCancellation == null)
-                _lifetimeCancellation = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
+            if (_lifetimeCancellation == null || _lifetimeCancellation.IsCancellationRequested)
+                _lifetimeCancellation = new CancellationTokenSource();
 
             return _lifetimeCancellation;
         }
@@ -691,24 +820,341 @@ namespace Hecton8.World
 
         private void CancelAllPendingRequests()
         {
-            if (_pendingRequests.Count <= 0)
+            ClearPendingRequests();
+        }
+
+        private void ClearDesiredRequests()
+        {
+            if (_desiredRequestCount > 0)
+                System.Array.Clear(_desiredRequests, 0, _desiredRequestCount);
+            _desiredRequestCount = 0;
+        }
+
+        private int ResolveRuntimeVolumeLimit()
+        {
+            return Mathf.Clamp(maxRuntimeVolumes, 1, MaxRuntimeVolumeCapacity);
+        }
+
+        private bool SetDesiredRequest(in CaveEntranceRequest request)
+        {
+            int index = FindDesiredRequestIndex(request.Key);
+            if (index >= 0)
+            {
+                _desiredRequests[index] = request;
+                return true;
+            }
+
+            if (_desiredRequestCount >= _desiredRequests.Length)
+                return false;
+
+            _desiredRequests[_desiredRequestCount++] = request;
+            return true;
+        }
+
+        private bool ContainsDesiredRequest(long key)
+        {
+            return FindDesiredRequestIndex(key) >= 0;
+        }
+
+        private bool TryGetDesiredRequest(long key, out CaveEntranceRequest request)
+        {
+            int index = FindDesiredRequestIndex(key);
+            if (index < 0)
+            {
+                request = default;
+                return false;
+            }
+
+            request = _desiredRequests[index];
+            return true;
+        }
+
+        private int FindDesiredRequestIndex(long key)
+        {
+            for (int i = 0; i < _desiredRequestCount; i++)
+            {
+                if (_desiredRequests[i].Key == key)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void ClearActiveVolumes()
+        {
+            if (_activeVolumeCount > 0)
+            {
+                System.Array.Clear(_activeVolumeKeys, 0, _activeVolumeCount);
+                System.Array.Clear(_activeVolumes, 0, _activeVolumeCount);
+            }
+
+            _activeVolumeCount = 0;
+        }
+
+        private bool SetActiveVolume(long key, GameObject volume)
+        {
+            int index = FindActiveVolumeIndex(key);
+            if (index >= 0)
+            {
+                _activeVolumes[index] = volume;
+                return true;
+            }
+
+            if (_activeVolumeCount >= ResolveRuntimeVolumeLimit())
+                return false;
+
+            _activeVolumeKeys[_activeVolumeCount] = key;
+            _activeVolumes[_activeVolumeCount] = volume;
+            _activeVolumeCount++;
+            return true;
+        }
+
+        private bool ContainsActiveVolume(long key)
+        {
+            return FindActiveVolumeIndex(key) >= 0;
+        }
+
+        private bool TryGetActiveVolume(long key, out GameObject volume)
+        {
+            int index = FindActiveVolumeIndex(key);
+            if (index < 0)
+            {
+                volume = null;
+                return false;
+            }
+
+            volume = _activeVolumes[index];
+            return true;
+        }
+
+        private bool RemoveActiveVolume(long key)
+        {
+            int index = FindActiveVolumeIndex(key);
+            if (index < 0)
+                return false;
+
+            int last = _activeVolumeCount - 1;
+            if (index != last)
+            {
+                _activeVolumeKeys[index] = _activeVolumeKeys[last];
+                _activeVolumes[index] = _activeVolumes[last];
+            }
+
+            _activeVolumeKeys[last] = 0L;
+            _activeVolumes[last] = null;
+            _activeVolumeCount = last;
+            return true;
+        }
+
+        private int FindActiveVolumeIndex(long key)
+        {
+            for (int i = 0; i < _activeVolumeCount; i++)
+            {
+                if (_activeVolumeKeys[i] == key)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private uint NextPendingRequestGeneration()
+        {
+            unchecked
+            {
+                _pendingRequestSequence++;
+                if (_pendingRequestSequence == 0u)
+                    _pendingRequestSequence = 1u;
+                return _pendingRequestSequence;
+            }
+        }
+
+        private bool SetPendingRequest(long key, uint generation)
+        {
+            int index = FindPendingRequestIndex(key);
+            if (index >= 0)
+            {
+                _pendingRequestGenerations[index] = generation;
+                return true;
+            }
+
+            if (_pendingRequestCount >= _pendingRequestKeys.Length)
+                return false;
+
+            _pendingRequestKeys[_pendingRequestCount] = key;
+            _pendingRequestGenerations[_pendingRequestCount] = generation;
+            _pendingRequestCount++;
+            return true;
+        }
+
+        private bool ContainsPendingRequest(long key)
+        {
+            return FindPendingRequestIndex(key) >= 0;
+        }
+
+        private bool IsPendingRequestGeneration(long key, uint generation)
+        {
+            int index = FindPendingRequestIndex(key);
+            return index >= 0 && _pendingRequestGenerations[index] == generation;
+        }
+
+        private int FindPendingRequestIndex(long key)
+        {
+            for (int i = 0; i < _pendingRequestCount; i++)
+            {
+                if (_pendingRequestKeys[i] == key)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private bool RemovePendingRequest(long key)
+        {
+            int index = FindPendingRequestIndex(key);
+            if (index < 0)
+                return false;
+
+            RemovePendingRequestAt(index);
+            return true;
+        }
+
+        private bool RemovePendingRequest(long key, uint generation)
+        {
+            int index = FindPendingRequestIndex(key);
+            if (index < 0 || _pendingRequestGenerations[index] != generation)
+                return false;
+
+            RemovePendingRequestAt(index);
+            return true;
+        }
+
+        private void RemovePendingRequestAt(int index)
+        {
+            if ((uint)index >= (uint)_pendingRequestCount)
                 return;
 
-            _keyScratch.Clear();
-            Dictionary<long, PendingRequestState>.Enumerator enumerator = _pendingRequests.GetEnumerator();
-            while (enumerator.MoveNext())
-                _keyScratch.Add(enumerator.Current.Key);
-
-            for (int i = 0; i < _keyScratch.Count; i++)
+            int last = _pendingRequestCount - 1;
+            if (index != last)
             {
-                long key = _keyScratch[i];
-                if (!_pendingRequests.TryGetValue(key, out PendingRequestState pending))
-                    continue;
-
-                pending.Cancellation?.Cancel();
-                _pendingRequests.Remove(key);
-                pending.Dispose();
+                _pendingRequestKeys[index] = _pendingRequestKeys[last];
+                _pendingRequestGenerations[index] = _pendingRequestGenerations[last];
             }
+
+            _pendingRequestKeys[last] = 0L;
+            _pendingRequestGenerations[last] = 0u;
+            _pendingRequestCount = last;
+        }
+
+        private void ClearPendingRequests()
+        {
+            if (_pendingRequestCount > 0)
+            {
+                System.Array.Clear(_pendingRequestKeys, 0, _pendingRequestCount);
+                System.Array.Clear(_pendingRequestGenerations, 0, _pendingRequestCount);
+            }
+
+            _pendingRequestCount = 0;
+        }
+
+        private bool SetChunkFadeState(long key, in ChunkFadeState state)
+        {
+            int index = FindChunkFadeStateIndex(key);
+            if (index >= 0)
+            {
+                _chunkFadeStates[index] = state;
+                return true;
+            }
+
+            if (_chunkFadeStateCount >= _chunkFadeStates.Length)
+                return false;
+
+            _chunkFadeStateKeys[_chunkFadeStateCount] = key;
+            _chunkFadeStates[_chunkFadeStateCount] = state;
+            _chunkFadeStateCount++;
+            return true;
+        }
+
+        private int FindChunkFadeStateIndex(long key)
+        {
+            for (int i = 0; i < _chunkFadeStateCount; i++)
+            {
+                if (_chunkFadeStateKeys[i] == key)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void RemoveChunkFadeStateAt(int index)
+        {
+            if ((uint)index >= (uint)_chunkFadeStateCount)
+                return;
+
+            int last = _chunkFadeStateCount - 1;
+            if (index != last)
+            {
+                _chunkFadeStateKeys[index] = _chunkFadeStateKeys[last];
+                _chunkFadeStates[index] = _chunkFadeStates[last];
+            }
+
+            _chunkFadeStateKeys[last] = 0L;
+            _chunkFadeStates[last] = default;
+            _chunkFadeStateCount = last;
+        }
+
+        private void ClearLaunchQueue()
+        {
+            if (_launchQueueCount > 0)
+                System.Array.Clear(_launchQueue, 0, _launchQueueCount);
+            _launchQueueCount = 0;
+        }
+
+        private void RemoveLaunchQueuePrefix(int count)
+        {
+            int removeCount = Mathf.Clamp(count, 0, _launchQueueCount);
+            if (removeCount <= 0)
+                return;
+
+            int remaining = _launchQueueCount - removeCount;
+            for (int i = 0; i < remaining; i++)
+                _launchQueue[i] = _launchQueue[i + removeCount];
+
+            System.Array.Clear(_launchQueue, remaining, removeCount);
+            _launchQueueCount = remaining;
+        }
+
+        private void ClearKeyScratch()
+        {
+            if (_keyScratchCount > 0)
+                System.Array.Clear(_keyScratch, 0, _keyScratchCount);
+            _keyScratchCount = 0;
+        }
+
+        private bool AddKeyScratch(long key)
+        {
+            if (_keyScratchCount >= _keyScratch.Length)
+                return false;
+
+            _keyScratch[_keyScratchCount++] = key;
+            return true;
+        }
+
+        private void ClearPendingDespawns()
+        {
+            if (_pendingDespawnKeyCount > 0)
+                System.Array.Clear(_pendingDespawnKeys, 0, _pendingDespawnKeyCount);
+            _pendingDespawnKeyCount = 0;
+        }
+
+        private void ClearPendingChunkFadeRegistrations()
+        {
+            if (_pendingChunkFadeCount > 0)
+            {
+                System.Array.Clear(_pendingChunkFadeKeys, 0, _pendingChunkFadeCount);
+                System.Array.Clear(_pendingChunkFadeVolumes, 0, _pendingChunkFadeCount);
+            }
+
+            _pendingChunkFadeCount = 0;
         }
 
         private Bounds ResolveVolumeBounds(GameObject volume, Vector3 center, float radius)
@@ -721,7 +1167,8 @@ namespace Hecton8.World
 
         private static Vector3 ResolveRuntimePosition(in CaveEntranceRequest request)
         {
-            float3 runtimePosition = request.AbsolutePosition.ToRuntimeFloat3();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            float3 runtimePosition = AUPMath.ResolveCameraRelative(in request.AbsolutePosition, in originAup);
             return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
         }
 

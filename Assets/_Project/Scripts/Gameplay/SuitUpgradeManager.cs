@@ -63,7 +63,15 @@ namespace Hecton8.Gameplay
         //  SINGLETON
         // ----------------------------------------------------------
 
-        public static SuitUpgradeManager Instance => GlobalRegistry.SuitUpgrades;
+        private static SuitUpgradeManager s_activeRuntimeInstance;
+
+        public static SuitUpgradeManager Instance => s_activeRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_activeRuntimeInstance = null;
+        }
 
         // ----------------------------------------------------------
         //  PRIVATE STATE
@@ -205,7 +213,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            SuitUpgradeManager registered = GlobalRegistry.SuitUpgrades;
+            SuitUpgradeManager registered = s_activeRuntimeInstance ?? GlobalRegistry.SuitUpgrades;
             if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(gameObject);
@@ -298,6 +306,8 @@ namespace Hecton8.Gameplay
 
             Hecton8.Core.GlobalRegistry.RegisterSuitUpgradeRuntime(this);
             _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.SuitUpgrades, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
             return _serviceRegistered;
         }
 
@@ -307,6 +317,8 @@ namespace Hecton8.Gameplay
                 return;
 
             Hecton8.Core.GlobalRegistry.UnregisterSuitUpgradeRuntime(this);
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
             _serviceRegistered = false;
         }
 
@@ -432,7 +444,10 @@ namespace Hecton8.Gameplay
                 return;
 
             upgrades.Sort(CompareUpgradeCatalogEntries);
-            allUpgrades = upgrades.ToArray();
+            if (allUpgrades == null || allUpgrades.Length != upgrades.Count)
+                allUpgrades = new SuitUpgradeData[upgrades.Count];
+
+            upgrades.CopyTo(allUpgrades);
             EditorUtility.SetDirty(this);
         }
 

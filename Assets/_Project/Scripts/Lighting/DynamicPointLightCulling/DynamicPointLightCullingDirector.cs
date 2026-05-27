@@ -31,7 +31,7 @@ namespace Hecton8.Lighting
         private const uint DumpMagic = 0x4C445038u; // LDP8
         private const int DumpVersion = 1;
         private const string DefaultProfileCsvRelativePath = "Docs/Data/light_culling_profiles.csv";
-        private const string BlackBoxDumpFileName = "Dump_LIGHT_DIRECTOR.bin";
+        private const string BlackBoxDumpFileName = "Dump_13KRA.bin";
 
         private static readonly int _DynamicLightBufferId = Shader.PropertyToID("_H8DynamicPointLightBuffer");
         private static readonly int _DynamicLightStateId = Shader.PropertyToID("_H8DynamicPointLightState");
@@ -200,7 +200,7 @@ namespace Hecton8.Lighting
         public void Tick(float deltaTime)
         {
             _frameSequence++;
-            if (!_nativeStorageReady && !EnsureNativeStorage())
+            if (!_nativeStorageReady && !EnsureNativeStorage(allowAllocation: false, allowMockGeneration: false))
                 return;
 
             if (_jobActive)
@@ -304,7 +304,7 @@ namespace Hecton8.Lighting
             if (_jobActive)
                 return false;
 
-            if (!_nativeStorageReady && !EnsureNativeStorage(false))
+            if (!_nativeStorageReady && !EnsureNativeStorage(allowAllocation: false, allowMockGeneration: false))
                 return false;
 
             DynamicPointLightCullingSettingsDTO settings = BuildSettings(ResolveQualityWeight());
@@ -463,7 +463,7 @@ namespace Hecton8.Lighting
             if (_jobActive)
                 return false;
 
-            if (!_nativeStorageReady && !EnsureNativeStorage(false))
+            if (!_nativeStorageReady && !EnsureNativeStorage(allowAllocation: false, allowMockGeneration: false))
                 return false;
 
             NativeArray<DynamicPointLightSourceDTO> sources = ResolveArray(ref _sources);
@@ -534,7 +534,7 @@ namespace Hecton8.Lighting
             sdfOcclusionThreshold = math.clamp(value, -4f, 4f);
         }
 
-        /// <summary>Writes the 300-frame black box to Docs/AgentLogs/Dump_LIGHT_DIRECTOR.bin.</summary>
+        /// <summary>Writes the 300-frame black box to Docs/AgentLogs/Dump_13KRA.bin.</summary>
         public bool DumpBlackBoxNow()
         {
             if (!HasDynamicPointLightHandle(in _telemetryRing, DynamicPointLightCullingVaultIds.TelemetryRing))
@@ -602,10 +602,10 @@ namespace Hecton8.Lighting
             _playerContext = GlobalRegistry.Player;
         }
 
-        private bool EnsureNativeStorage(bool allowMockGeneration = true)
+        private bool EnsureNativeStorage(bool allowAllocation = true, bool allowMockGeneration = true)
         {
             IDataVault vault = _vault;
-            if (vault == null || vault.IsAllocationLocked)
+            if (vault == null || (allowAllocation && vault.IsAllocationLocked))
                 return false;
 
             int safeSourceCapacity = math.clamp(sourceCapacity, 128, 16384);
@@ -626,34 +626,34 @@ namespace Hecton8.Lighting
                 (hadSourceHandles && !currentSourceWindowValid);
             bool sdfBufferWillChange = !TryOpenExistingDynamicPointLightBuffer<float>(DynamicPointLightCullingVaultIds.MockSdfSamples, sdfCapacity, out _);
 
-            _sources = AcquireBuffer(ref _sources, DynamicPointLightCullingVaultIds.Sources, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
-            _states = AcquireBuffer(ref _states, DynamicPointLightCullingVaultIds.States, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
-            _sourceManifest = AcquireBuffer(ref _sourceManifest, DynamicPointLightCullingVaultIds.SourceManifest, 1, NativeArrayOptions.ClearMemory);
-            if (sourceBuffersWillChange)
+            _sources = AcquireBuffer(ref _sources, DynamicPointLightCullingVaultIds.Sources, safeSourceCapacity, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _states = AcquireBuffer(ref _states, DynamicPointLightCullingVaultIds.States, safeSourceCapacity, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _sourceManifest = AcquireBuffer(ref _sourceManifest, DynamicPointLightCullingVaultIds.SourceManifest, 1, NativeArrayOptions.ClearMemory, allowAllocation);
+            if (allowAllocation && sourceBuffersWillChange)
             {
                 _sourceBufferSeeded = false;
                 _activeSourceCount = 0;
                 ClearSourceManifest(safeSourceCapacity);
             }
 
-            _settings = AcquireBuffer(ref _settings, DynamicPointLightCullingVaultIds.Settings, 1, NativeArrayOptions.UninitializedMemory);
-            _gpuPayloadFront = AcquireBuffer(ref _gpuPayloadFront, DynamicPointLightCullingVaultIds.GpuPayloadFront, gpuCapacity, NativeArrayOptions.UninitializedMemory);
-            _gpuPayloadBack = AcquireBuffer(ref _gpuPayloadBack, DynamicPointLightCullingVaultIds.GpuPayloadBack, gpuCapacity, NativeArrayOptions.UninitializedMemory);
-            _telemetryRing = AcquireBuffer(ref _telemetryRing, DynamicPointLightCullingVaultIds.TelemetryRing, DynamicPointLightCullingMath.TelemetryCapacity, NativeArrayOptions.ClearMemory);
-            _telemetryCursor = AcquireBuffer(ref _telemetryCursor, DynamicPointLightCullingVaultIds.TelemetryCursor, 1, NativeArrayOptions.ClearMemory);
-            _importanceKeys = AcquireBuffer(ref _importanceKeys, DynamicPointLightCullingVaultIds.ImportanceKeys, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
-            _importanceIndices = AcquireBuffer(ref _importanceIndices, DynamicPointLightCullingVaultIds.ImportanceIndices, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
-            _sortScratchKeys = AcquireBuffer(ref _sortScratchKeys, DynamicPointLightCullingVaultIds.SortScratchKeys, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
-            _sortScratchIndices = AcquireBuffer(ref _sortScratchIndices, DynamicPointLightCullingVaultIds.SortScratchIndices, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
-            _csvScratch = AcquireBuffer(ref _csvScratch, DynamicPointLightCullingVaultIds.CsvScratch, DefaultCsvScratchBytes, NativeArrayOptions.UninitializedMemory);
-            _profileRules = AcquireBuffer(ref _profileRules, DynamicPointLightCullingVaultIds.ProfileRules, DefaultProfileCapacity, NativeArrayOptions.UninitializedMemory);
-            _mockSdfSamples = AcquireBuffer(ref _mockSdfSamples, DynamicPointLightCullingVaultIds.MockSdfSamples, sdfCapacity, NativeArrayOptions.UninitializedMemory);
-            if (sdfBufferWillChange)
+            _settings = AcquireBuffer(ref _settings, DynamicPointLightCullingVaultIds.Settings, 1, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _gpuPayloadFront = AcquireBuffer(ref _gpuPayloadFront, DynamicPointLightCullingVaultIds.GpuPayloadFront, gpuCapacity, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _gpuPayloadBack = AcquireBuffer(ref _gpuPayloadBack, DynamicPointLightCullingVaultIds.GpuPayloadBack, gpuCapacity, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _telemetryRing = AcquireBuffer(ref _telemetryRing, DynamicPointLightCullingVaultIds.TelemetryRing, DynamicPointLightCullingMath.TelemetryCapacity, NativeArrayOptions.ClearMemory, allowAllocation);
+            _telemetryCursor = AcquireBuffer(ref _telemetryCursor, DynamicPointLightCullingVaultIds.TelemetryCursor, 1, NativeArrayOptions.ClearMemory, allowAllocation);
+            _importanceKeys = AcquireBuffer(ref _importanceKeys, DynamicPointLightCullingVaultIds.ImportanceKeys, safeSourceCapacity, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _importanceIndices = AcquireBuffer(ref _importanceIndices, DynamicPointLightCullingVaultIds.ImportanceIndices, safeSourceCapacity, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _sortScratchKeys = AcquireBuffer(ref _sortScratchKeys, DynamicPointLightCullingVaultIds.SortScratchKeys, safeSourceCapacity, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _sortScratchIndices = AcquireBuffer(ref _sortScratchIndices, DynamicPointLightCullingVaultIds.SortScratchIndices, safeSourceCapacity, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _csvScratch = AcquireBuffer(ref _csvScratch, DynamicPointLightCullingVaultIds.CsvScratch, DefaultCsvScratchBytes, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _profileRules = AcquireBuffer(ref _profileRules, DynamicPointLightCullingVaultIds.ProfileRules, DefaultProfileCapacity, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _mockSdfSamples = AcquireBuffer(ref _mockSdfSamples, DynamicPointLightCullingVaultIds.MockSdfSamples, sdfCapacity, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            if (allowAllocation && sdfBufferWillChange)
                 _mockSdfSeeded = false;
-            _dynamicProbeLights = AcquireBuffer(ref _dynamicProbeLights, DynamicPointLightCullingVaultIds.DynamicProbeLights, gpuCapacity, NativeArrayOptions.UninitializedMemory);
-            _runtimeCounters = AcquireBuffer(ref _runtimeCounters, DynamicPointLightCullingVaultIds.RuntimeCounters, 1, NativeArrayOptions.ClearMemory);
-            _frustumPlanes = AcquireBuffer(ref _frustumPlanes, DynamicPointLightCullingVaultIds.FrustumPlanes, 6, NativeArrayOptions.UninitializedMemory);
-            _selfAudit = AcquireBuffer(ref _selfAudit, DynamicPointLightCullingVaultIds.SelfAudit, 1, NativeArrayOptions.UninitializedMemory);
+            _dynamicProbeLights = AcquireBuffer(ref _dynamicProbeLights, DynamicPointLightCullingVaultIds.DynamicProbeLights, gpuCapacity, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _runtimeCounters = AcquireBuffer(ref _runtimeCounters, DynamicPointLightCullingVaultIds.RuntimeCounters, 1, NativeArrayOptions.ClearMemory, allowAllocation);
+            _frustumPlanes = AcquireBuffer(ref _frustumPlanes, DynamicPointLightCullingVaultIds.FrustumPlanes, 6, NativeArrayOptions.UninitializedMemory, allowAllocation);
+            _selfAudit = AcquireBuffer(ref _selfAudit, DynamicPointLightCullingVaultIds.SelfAudit, 1, NativeArrayOptions.UninitializedMemory, allowAllocation);
 
             _nativeStorageReady =
                 TryResolveDynamicPointLightBuffer(ref _sources, DynamicPointLightCullingVaultIds.Sources, safeSourceCapacity, out _) &&
@@ -679,9 +679,10 @@ namespace Hecton8.Lighting
             if (!_nativeStorageReady)
                 return false;
 
-            WriteSelfAudit();
+            if (allowAllocation)
+                WriteSelfAudit();
             int committedSourceCount = ReadCommittedSourceCount();
-            if (allowMockGeneration && generateMockDataOnEnable && committedSourceCount <= 0)
+            if (allowAllocation && allowMockGeneration && generateMockDataOnEnable && committedSourceCount <= 0)
                 GenerateMockLightCullingData();
 
             return true;
@@ -691,7 +692,8 @@ namespace Hecton8.Lighting
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int length,
-            NativeArrayOptions options) where T : struct
+            NativeArrayOptions options,
+            bool allowAllocation) where T : struct
         {
             IDataVault vault = _vault;
             if (vault == null)
@@ -699,6 +701,9 @@ namespace Hecton8.Lighting
 
             if (TryResolveDynamicPointLightBuffer(ref handle, bufferId, length, out _))
                 return handle;
+
+            if (!allowAllocation || vault.IsAllocationLocked)
+                return default;
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, length, MemoryOwner, options);
             if (!TryResolveDynamicPointLightBuffer(ref handle, bufferId, length, out _))
@@ -901,7 +906,7 @@ namespace Hecton8.Lighting
                     }
 
                     if (_vault != null && isActiveAndEnabled)
-                        EnsureNativeStorage(false);
+                        EnsureNativeStorage(allowAllocation: true, allowMockGeneration: false);
                     break;
 
                 case GlobalRegistryServiceSlot.Player:
@@ -1511,7 +1516,7 @@ namespace Hecton8.Lighting
 #if UNITY_EDITOR
         private bool TryLoadProfilesFromCsv()
         {
-            if (!_nativeStorageReady && !EnsureNativeStorage())
+            if (!_nativeStorageReady && !EnsureNativeStorage(allowAllocation: true, allowMockGeneration: false))
                 return false;
 
             NativeArray<byte> csv = ResolveArray(ref _csvScratch);

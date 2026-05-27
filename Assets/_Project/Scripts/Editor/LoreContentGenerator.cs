@@ -79,7 +79,7 @@ namespace Hecton8.Editor
 
             // Zone 1: THE SPINE
             CreateDepthZone("DepthZone_Spine", "zone_spine", "THE SPINE", 0f, 100f, 0,
-                desc: "Melkovodnye vershiny i skaly. Otnositelno bezopasno.",
+                desc: "Melkovodnye vershiny i skaly pod davleniem. Chitaemyy start, ne zona komforta.",
                 biolum: 0.05f, danger: 0.1f);
 
             // Zone 1.1: Shallow Grave

@@ -230,7 +230,9 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterCableFluid(Vector3 positionWS, float radiusScale)
         {
-            EnsureRenderingResources(true);
+            if (!IsPresentationReady())
+                return;
+
             RegisterDecal(positionWS, cableFluidColor, LerpClamped(0.8f, 2.2f, radiusScale), LerpClamped(2.4f, 4.6f, radiusScale), 10f);
         }
 
@@ -239,7 +241,9 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterRuptureFluid(Vector3 positionWS, float radiusScale)
         {
-            EnsureRenderingResources(true);
+            if (!IsPresentationReady())
+                return;
+
             RegisterDecal(positionWS, ruptureFluidColor, LerpClamped(1.4f, 3.2f, radiusScale), LerpClamped(3.6f, 7.5f, radiusScale), 14f);
         }
 
@@ -248,7 +252,9 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterPressureSpray(Vector3 positionWS, Vector3 inwardDirectionWS, float intensity01)
         {
-            EnsureRenderingResources(true);
+            if (!IsPresentationReady())
+                return;
+
             RegisterSpray(positionWS, inwardDirectionWS, Mathf.Clamp01(intensity01));
         }
 
@@ -257,7 +263,9 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterSeismicDust(Vector3 positionWS, float radiusScale)
         {
-            EnsureRenderingResources(true);
+            if (!IsPresentationReady())
+                return;
+
             float clampedScale = Mathf.Clamp01(radiusScale);
             RegisterDecal(positionWS, seismicDustColor, LerpClamped(0.6f, 1.6f, clampedScale), LerpClamped(2.2f, 5.4f, clampedScale), 8f);
         }
@@ -267,7 +275,9 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterVoxelCaveInDust(Vector3 positionWS, Vector3 impulseDirectionWS, float radiusScale)
         {
-            EnsureRenderingResources(true);
+            if (!IsPresentationReady())
+                return;
+
             float3 position3 = new float3(positionWS.x, positionWS.y, positionWS.z);
             float3 impulse3 = new float3(impulseDirectionWS.x, impulseDirectionWS.y, impulseDirectionWS.z);
             if (!math.all(math.isfinite(position3)) || !math.all(math.isfinite(impulse3)))
@@ -277,7 +287,7 @@ namespace Hecton8.World
             if (clampedScale <= 0.001f)
                 return;
 
-            float3 resolvedImpulse = DominantAxisOrDefault(impulse3, new float3(0f, 1f, 0f));
+            float3 resolvedImpulse = NormalizeOrDefault(impulse3, new float3(0f, 1f, 0f));
             float downwardBias = math.saturate(-resolvedImpulse.y * 0.5f + 0.5f);
             Color color = voxelCaveInDustColor;
             color.a *= LerpClamped(0.55f, 1f, clampedScale);
@@ -311,7 +321,9 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterWakeSilt(Vector3 positionWS, Vector3 sourceVelocityWS, float intensity01)
         {
-            EnsureRenderingResources(true);
+            if (!IsPresentationReady())
+                return;
+
             float3 position3 = new float3(positionWS.x, positionWS.y, positionWS.z);
             float3 velocity3 = new float3(sourceVelocityWS.x, sourceVelocityWS.y, sourceVelocityWS.z);
             if (!math.all(math.isfinite(position3)) || !math.all(math.isfinite(velocity3)))
@@ -335,7 +347,9 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterWaterSplash(Vector3 positionWS, Vector3 sourceVelocityWS, float intensity01)
         {
-            EnsureRenderingResources(true);
+            if (!IsPresentationReady())
+                return;
+
             float3 position3 = new float3(positionWS.x, positionWS.y, positionWS.z);
             float3 velocity3 = new float3(sourceVelocityWS.x, sourceVelocityWS.y, sourceVelocityWS.z);
             if (!math.all(math.isfinite(position3)) || !math.all(math.isfinite(velocity3)))
@@ -543,36 +557,22 @@ namespace Hecton8.World
 
         private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
         {
-            float ax = math.abs(direction.x);
-            float ay = math.abs(direction.y);
-            float az = math.abs(direction.z);
-            float maxComponent = math.max(ax, math.max(ay, az));
-            if (maxComponent <= 0.0001f)
-                return fallback;
-
-            if (ax >= ay && ax >= az)
-                return new Vector3(direction.x >= 0f ? 1f : -1f, 0f, 0f);
-
-            if (ay >= az)
-                return new Vector3(0f, direction.y >= 0f ? 1f : -1f, 0f);
-
-            return new Vector3(0f, 0f, direction.z >= 0f ? 1f : -1f);
+            float3 value = new float3(direction.x, direction.y, direction.z);
+            float3 fallbackValue = new float3(fallback.x, fallback.y, fallback.z);
+            float3 normalized = NormalizeOrDefault(value, fallbackValue);
+            return new Vector3(normalized.x, normalized.y, normalized.z);
         }
 
-        private static float3 DominantAxisOrDefault(float3 value, float3 fallback)
+        private static float3 NormalizeOrDefault(float3 value, float3 fallback)
         {
-            float3 absValue = math.abs(value);
-            float maxComponent = math.cmax(absValue);
-            if (maxComponent <= 0.0001f)
+            if (!math.all(math.isfinite(value)))
                 return fallback;
 
-            if (absValue.x >= absValue.y && absValue.x >= absValue.z)
-                return new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
+            float lengthSq = math.lengthsq(value);
+            if (lengthSq <= 0.0001f)
+                return fallback;
 
-            if (absValue.y >= absValue.z)
-                return new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
-
-            return new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
+            return value * math.rsqrt(lengthSq);
         }
 
         private static float ApproximateMagnitude(float3 value)
@@ -756,8 +756,6 @@ namespace Hecton8.World
                 return;
 
             if (_drawPropertyBlock == null)
-                _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
-            if (_drawPropertyBlock == null)
                 return;
 
             _drawPropertyBlock.Clear();
@@ -781,8 +779,6 @@ namespace Hecton8.World
 
         private void DrawDecal(in FluidDecalState decal)
         {
-            if (_drawPropertyBlock == null)
-                _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
             if (_drawPropertyBlock == null)
                 return;
 
@@ -904,6 +900,19 @@ namespace Hecton8.World
             }
         }
 
+        private bool IsPresentationReady()
+        {
+            return _quadMesh != null &&
+                   _runtimeMaterial != null &&
+                   _drawPropertyBlock != null &&
+                   _decalStates != null &&
+                   _decalStates.Length > 0 &&
+                   _pressureSprayStates != null &&
+                   _pressureSprayStates.Length > 0 &&
+                   _pressureSprayMatrices != null &&
+                   _pressureSprayMatrices.Length >= _pressureSprayStates.Length;
+        }
+
         private static Mesh ResolveSharedQuadMesh()
         {
             if (s_sharedQuadMesh != null)
@@ -975,7 +984,7 @@ namespace Hecton8.World
                 _playerContext = GlobalRegistry.Player;
 
             if (_sargassumDrag == null)
-                _sargassumDrag = GlobalRegistry.SargassumDrag;
+                _sargassumDrag = SargassumGlobalDragManager.Instance;
 
             if (_ambientCurrentReadModel == null)
                 _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;

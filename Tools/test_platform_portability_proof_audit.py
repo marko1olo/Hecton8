@@ -16,6 +16,53 @@ def write_json(path: Path, payload: dict[str, object]) -> None:
     path.write_text(json.dumps(payload), encoding="utf-8")
 
 
+OPENXR_SETTINGS_GUID = "3f1a06542f0878947a6b0e0bbec9c860"
+OPENXR_LOADER_GUID = "ba8874bb90a5e8044bf5c14edba5990f"
+
+
+def write_xr_management_assets(root: Path, serialize_loader_reference: bool, quest_feature_enabled: bool) -> None:
+    project = root / "ProjectSettings"
+    project.mkdir(parents=True, exist_ok=True)
+    (project / "ProjectSettings.asset").write_text("m_BuildTargetVRSettings: []\n", encoding="utf-8")
+    (project / "EditorBuildSettings.asset").write_text(
+        "m_configObjects:\n"
+        f"  com.unity.xr.openxr.settings4: {{fileID: 11400000, guid: {OPENXR_SETTINGS_GUID}, type: 2}}\n",
+        encoding="utf-8",
+    )
+    loader = root / "Assets" / "XR" / "Loaders" / "OpenXRLoader.asset"
+    loader.parent.mkdir(parents=True, exist_ok=True)
+    loader.write_text(
+        "m_Name: OpenXRLoader\n"
+        "m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRLoader\n",
+        encoding="utf-8",
+    )
+    (loader.parent / "OpenXRLoader.asset.meta").write_text(f"guid: {OPENXR_LOADER_GUID}\n", encoding="utf-8")
+    settings = root / "Assets" / "XR" / "Settings" / "OpenXR Package Settings.asset"
+    settings.parent.mkdir(parents=True, exist_ok=True)
+    settings.write_text(
+        "m_Name: Android\n"
+        "m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRSettings\n"
+        "m_renderMode: 1\n"
+        "--- !u!114 &2\n"
+        "m_Name: MetaQuestFeature Android\n"
+        "m_EditorClassIdentifier: Unity.XR.OpenXR.Features.MetaQuestSupport::UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature\n"
+        f"m_enabled: {1 if quest_feature_enabled else 0}\n",
+        encoding="utf-8",
+    )
+    (settings.parent / "OpenXR Package Settings.asset.meta").write_text(
+        f"guid: {OPENXR_SETTINGS_GUID}\n",
+        encoding="utf-8",
+    )
+    if serialize_loader_reference:
+        manager = settings.parent / "XRManagerSettings.asset"
+        manager.write_text(
+            "m_EditorClassIdentifier: Unity.XR.Management::UnityEngine.XR.Management.XRManagerSettings\n"
+            "m_Loaders:\n"
+            f"- {{fileID: 11400000, guid: {OPENXR_LOADER_GUID}, type: 2}}\n",
+            encoding="utf-8",
+        )
+
+
 class PlatformPortabilityProofAuditTests(unittest.TestCase):
     def test_detects_quest_scaffold_but_missing_runtime_proof(self) -> None:
         with tempfile.TemporaryDirectory(prefix="h8_platform_audit_") as tmp:
@@ -170,6 +217,37 @@ il2cppCompilerConfiguration: {}
         self.assertTrue(payload["readiness"]["dataMonolithValidationRoutePresent"])
         self.assertFalse(payload["readiness"]["buildArtifactPresent"])
 
+    def test_openxr_package_settings_without_loader_route_are_not_provider_proof(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_platform_audit_xr_assets_only_") as tmp:
+            root = Path(tmp)
+            write_xr_management_assets(root, serialize_loader_reference=False, quest_feature_enabled=False)
+
+            payload = audit.build_payload(root)
+
+        self.assertTrue(payload["projectSettings"]["xrManagementOpenXrSettingsAssetPresent"])
+        self.assertTrue(payload["projectSettings"]["xrManagementOpenXrSettingsRegistered"])
+        self.assertTrue(payload["projectSettings"]["xrManagementOpenXrLoaderAssetPresent"])
+        self.assertEqual(payload["projectSettings"]["xrManagementOpenXrLoaderGuidReferenceCount"], 0)
+        self.assertTrue(payload["projectSettings"]["xrManagementQuestFeaturePresent"])
+        self.assertFalse(payload["projectSettings"]["xrManagementQuestFeatureEnabled"])
+        self.assertFalse(payload["projectSettings"]["xrManagementProviderSerializedProof"])
+        self.assertFalse(payload["readiness"]["xrProviderSerializedProof"])
+
+    def test_serialized_xr_management_loader_reference_is_provider_proof(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_platform_audit_xr_loader_route_") as tmp:
+            root = Path(tmp)
+            write_xr_management_assets(root, serialize_loader_reference=True, quest_feature_enabled=True)
+
+            payload = audit.build_payload(root)
+
+        self.assertTrue(payload["projectSettings"]["xrManagementOpenXrSettingsAssetPresent"])
+        self.assertTrue(payload["projectSettings"]["xrManagementOpenXrSettingsRegistered"])
+        self.assertTrue(payload["projectSettings"]["xrManagementOpenXrLoaderAssetPresent"])
+        self.assertEqual(payload["projectSettings"]["xrManagementOpenXrLoaderGuidReferenceCount"], 1)
+        self.assertTrue(payload["projectSettings"]["xrManagementQuestFeatureEnabled"])
+        self.assertTrue(payload["projectSettings"]["xrManagementProviderSerializedProof"])
+        self.assertTrue(payload["readiness"]["xrProviderSerializedProof"])
+
     def test_detects_quest_urp_wiring_shader_warmup_and_compute_risk(self) -> None:
         with tempfile.TemporaryDirectory(prefix="h8_platform_audit_graphics_") as tmp:
             root = Path(tmp)
@@ -206,8 +284,7 @@ m_PerPlatformDefaultQuality:
             )
             (project / "GraphicsSettings.asset").write_text(
                 """
-m_PreloadedShaders:
-  - {fileID: 20000000, guid: feedfeedfeedfeedfeedfeedfeedfeed, type: 2}
+m_PreloadedShaders: []
 m_CustomRenderPipeline: {fileID: 11400000, guid: abcdef0123456789abcdef0123456789, type: 2}
 """,
                 encoding="utf-8",
@@ -218,7 +295,9 @@ m_CustomRenderPipeline: {fileID: 11400000, guid: abcdef0123456789abcdef012345678
             bootstrap.parent.mkdir(parents=True)
             bootstrap.write_text(
                 "private ShaderVariantCollection[] shaderVariantCollections;\n"
-                "private void Warm(ShaderVariantCollection collection) { if (!collection.isWarmedUp) collection.WarmUp(); }\n",
+                "private void Warm(ShaderVariantCollection collection, Shader shader, ShaderWarmupSetup setup, GraphicsStateCollection graphics) { "
+                "if (!collection.isWarmedUp) ShaderWarmup.WarmupShaderFromCollection(collection, shader, setup); "
+                "graphics.WarmUpProgressively(1, default); }\n",
                 encoding="utf-8",
             )
             configurator = root / "Assets" / "_Project" / "Scripts" / "Editor" / "Build" / "QuestVulkanRenderPipelineConfigurator.cs"
@@ -263,9 +342,13 @@ void CSMain(uint3 id : SV_DispatchThreadID) {}
         self.assertTrue(payload["readiness"]["questUrpWiredToAndroidQuality"])
         self.assertTrue(payload["qualityPipeline"]["questConfiguratorQualityRouteAuditPresent"])
         self.assertTrue(payload["qualityPipeline"]["questConfiguratorQualityRouteFixerPresent"])
-        self.assertTrue(payload["readiness"]["shaderWarmupPreloaded"])
+        self.assertTrue(payload["readiness"]["graphicsSettingsShaderPreloadBypassDisabled"])
         self.assertTrue(payload["readiness"]["shaderVariantCollectionsPresent"])
         self.assertTrue(payload["readiness"]["bootstrapExplicitShaderWarmup"])
+        self.assertTrue(payload["readiness"]["shaderWarmupRoutePresent"])
+        self.assertEqual(payload["shaderWarmup"]["bootstrapExplicitWarmUpCallCount"], 0)
+        self.assertEqual(payload["shaderWarmup"]["bootstrapShaderWarmupFromCollectionCallCount"], 1)
+        self.assertEqual(payload["shaderWarmup"]["bootstrapGraphicsStateWarmUpProgressivelyCallCount"], 1)
         self.assertFalse(payload["readiness"]["noHighRiskComputeThreadGroups"])
         self.assertFalse(payload["readiness"]["noRuntimeHighRiskComputeThreadGroups"])
         self.assertEqual(payload["computeThreads"]["riskyThreadGroupCount"], 1)
@@ -306,6 +389,41 @@ void CSMain(uint3 id : SV_DispatchThreadID) {}
             audit.hard_failures(payload, asset_args),
             ["high-risk runtime asset numeric compute thread group detected"],
         )
+
+    def test_editor_test_only_runtime_compute_asset_is_reported_but_not_blocking(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_platform_audit_test_only_compute_") as tmp:
+            root = Path(tmp)
+            shader_dir = root / "Assets" / "_Project" / "Art" / "Shaders"
+            shader_dir.mkdir(parents=True)
+            (shader_dir / "TestOnly.compute").write_text(
+                """
+#pragma kernel CSMain
+[numthreads(16, 16, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {}
+""",
+                encoding="utf-8",
+            )
+            (shader_dir / "TestOnly.compute.meta").write_text(
+                "guid: abcdefabcdefabcdefabcdefabcdefab\n",
+                encoding="utf-8",
+            )
+            test_dir = root / "Assets" / "_Project" / "Tests" / "Editor"
+            test_dir.mkdir(parents=True)
+            (test_dir / "ComputeLayoutTests.cs").write_text(
+                "internal sealed class ComputeLayoutTests { private const string Path = \"Assets/_Project/Art/Shaders/TestOnly.compute\"; }\n",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+
+        self.assertEqual(payload["computeThreads"]["riskyThreadGroupCount"], 1)
+        self.assertEqual(payload["computeThreads"]["runtimeAssetRiskyThreadGroupCount"], 0)
+        self.assertEqual(payload["computeThreads"]["editorOrTestOnlyRuntimeAssetRiskyThreadGroupCount"], 1)
+        self.assertEqual(payload["computeThreads"]["runtimeRiskyThreadGroupCount"], 0)
+        self.assertEqual(payload["computeThreads"]["riskyThreadGroupCountByRuntimeReachability"]["EditorOrTestOnly"], 1)
+        self.assertTrue(payload["readiness"]["noRuntimeAssetHighRiskComputeThreadGroups"])
+        args = audit.build_parser().parse_args(["--fail-on-runtime-asset-high-risk-compute"])
+        self.assertEqual(audit.hard_failures(payload, args), [])
 
     def test_editor_compute_risk_does_not_fail_runtime_compute_gate(self) -> None:
         with tempfile.TemporaryDirectory(prefix="h8_platform_audit_editor_compute_") as tmp:
@@ -364,11 +482,15 @@ void CSMain(uint3 id : SV_DispatchThreadID) {}
         self.assertEqual(payload["computeThreads"]["runtimeDispatchCallCount"], 2)
         self.assertEqual(payload["computeThreads"]["dispatchCallsWithoutThreadGroupQueryCount"], 2)
         self.assertEqual(payload["computeThreads"]["runtimeDispatchCallsWithoutThreadGroupQueryCount"], 1)
+        self.assertEqual(payload["computeThreads"]["firstPartyRuntimeDispatchCallsWithoutThreadGroupQueryCount"], 1)
+        self.assertEqual(payload["computeThreads"]["firstPartyRuntimePayloadSizedDispatchCallsWithoutThreadGroupQueryCount"], 0)
+        self.assertEqual(payload["computeThreads"]["vendorRuntimeDispatchCallsWithoutThreadGroupQueryCount"], 0)
         self.assertFalse(payload["readiness"]["noRuntimeComputeDispatchWithoutThreadGroupQuery"])
+        self.assertFalse(payload["readiness"]["noFirstPartyRuntimeComputeDispatchWithoutThreadGroupQuery"])
         args = audit.build_parser().parse_args(["--fail-on-runtime-compute-dispatch-without-threadgroup-query"])
         self.assertEqual(
             audit.hard_failures(payload, args),
-            ["runtime compute dispatch without file-level GetKernelThreadGroupSizes detected"],
+            ["first-party runtime compute dispatch without thread-group proof detected"],
         )
 
     def test_editor_only_compute_dispatch_without_query_does_not_trip_runtime_gate(self) -> None:
@@ -389,6 +511,56 @@ void CSMain(uint3 id : SV_DispatchThreadID) {}
         self.assertEqual(payload["computeThreads"]["dispatchCallCount"], 1)
         self.assertEqual(payload["computeThreads"]["runtimeDispatchCallCount"], 0)
         self.assertEqual(payload["computeThreads"]["runtimeDispatchCallsWithoutThreadGroupQueryCount"], 0)
+        self.assertTrue(payload["readiness"]["noRuntimeComputeDispatchWithoutThreadGroupQuery"])
+        args = audit.build_parser().parse_args(["--fail-on-runtime-compute-dispatch-without-threadgroup-query"])
+        self.assertEqual(audit.hard_failures(payload, args), [])
+
+    def test_payload_sized_first_party_dispatch_bridge_does_not_trip_runtime_gate(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_platform_audit_payload_dispatch_") as tmp:
+            root = Path(tmp)
+            runtime_dir = root / "Assets" / "_Project" / "Scripts" / "Rendering"
+            runtime_dir.mkdir(parents=True)
+            (runtime_dir / "PayloadBridge.cs").write_text(
+                "internal sealed class PayloadBridge { "
+                "private UnityEngine.Rendering.CommandBuffer cmd; "
+                "private void Run(Payload payload) { cmd.DispatchCompute(\n"
+                "payload.Compute,\n"
+                "payload.Kernel,\n"
+                "payload.DispatchGroupsX,\n"
+                "payload.DispatchGroupsY,\n"
+                "1); } "
+                "private struct Payload { public UnityEngine.ComputeShader Compute; public int Kernel; public int DispatchGroupsX; public int DispatchGroupsY; } "
+                "}\n",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+
+        self.assertEqual(payload["computeThreads"]["runtimeDispatchCallsWithoutThreadGroupQueryCount"], 1)
+        self.assertEqual(payload["computeThreads"]["firstPartyRuntimeDispatchCallsWithoutThreadGroupQueryCount"], 0)
+        self.assertEqual(payload["computeThreads"]["firstPartyRuntimePayloadSizedDispatchCallsWithoutThreadGroupQueryCount"], 1)
+        self.assertTrue(payload["readiness"]["noRuntimeComputeDispatchWithoutThreadGroupQuery"])
+        args = audit.build_parser().parse_args(["--fail-on-runtime-compute-dispatch-without-threadgroup-query"])
+        self.assertEqual(audit.hard_failures(payload, args), [])
+
+    def test_vendor_runtime_dispatch_without_query_is_reported_but_not_first_party_blocking(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_platform_audit_vendor_dispatch_") as tmp:
+            root = Path(tmp)
+            runtime_dir = root / "Assets" / "Crest" / "Runtime"
+            runtime_dir.mkdir(parents=True)
+            (runtime_dir / "VendorDispatch.cs").write_text(
+                "internal sealed class VendorDispatch { "
+                "private UnityEngine.ComputeShader compute; "
+                "private void Run() { compute.Dispatch(0, 8, 1, 1); } "
+                "}\n",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+
+        self.assertEqual(payload["computeThreads"]["runtimeDispatchCallsWithoutThreadGroupQueryCount"], 1)
+        self.assertEqual(payload["computeThreads"]["vendorRuntimeDispatchCallsWithoutThreadGroupQueryCount"], 1)
+        self.assertEqual(payload["computeThreads"]["firstPartyRuntimeDispatchCallsWithoutThreadGroupQueryCount"], 0)
         self.assertTrue(payload["readiness"]["noRuntimeComputeDispatchWithoutThreadGroupQuery"])
         args = audit.build_parser().parse_args(["--fail-on-runtime-compute-dispatch-without-threadgroup-query"])
         self.assertEqual(audit.hard_failures(payload, args), [])

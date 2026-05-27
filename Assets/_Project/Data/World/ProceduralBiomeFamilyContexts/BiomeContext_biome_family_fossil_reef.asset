@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: BiomeContext_biome_family_fossil_reef
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralBiomeFamilyContextProfile
   biomeFamily: {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
-  label: Fossil Reef Context
-  summary: Coral-led reef water with readable landmarks and biological shelter memory.
+  label: Fossil Shelf Context
+  summary: Pressure-scoured fossil shelves with hard landmarks, shelter scars, and readable route memory.
   groundBudgetScale: 1.06
   clusterBudgetScale: 1.24
   structureBudgetScale: 1.06

@@ -21,10 +21,10 @@ namespace Hecton8.Caves
     public struct VoxelModifiedCell
     {
         [FieldOffset(0)] public half Density;
-        [FieldOffset(2)] public byte MaterialId;
-        [FieldOffset(3)] public byte Flags;
-        [FieldOffset(4)] public ushort Reserved;
-        [FieldOffset(6)] public ushort Reserved1;
+        [FieldOffset(2)] public ushort Reserved;
+        [FieldOffset(4)] public ushort Reserved1;
+        [FieldOffset(6)] public byte MaterialId;
+        [FieldOffset(7)] public byte Flags;
     }
 
     /// <summary>
@@ -89,12 +89,17 @@ namespace Hecton8.Caves
         private const int MaxActiveThermalMeltEvents = 16;
         private const double InvalidAupCoordinateComponent = double.NaN;
         private const float InvalidRuntimeCoordinateComponent = float.NaN;
+        private const double RuntimeAupLocalClampMeters = 1048576d;
         private const int MinQueuedCarveDrainBudgetPerFrame = 1;
         private const int MaxQueuedCarveDrainBudgetPerFrame = 4;
+        private const int MinScheduledCarveJobCandidatesPerSlice = 2048;
+        private const int MaxScheduledCarveJobCandidatesPerSlice = 8192;
         private const int MinScheduledCarveCommitWritesPerFrame = 64;
         private const int MaxScheduledCarveCommitWritesPerFrame = 512;
+        private const int MinScheduledCarveCommitScansPerFrame = 512;
+        private const int MaxScheduledCarveCommitScansPerFrame = 4096;
         private const float ScheduledCarveBacklogPressureBoost = 0.5f;
-        private const int ScheduledCarveWriteCapacity = ChunkCellCount * 4;
+        private const int ScheduledCarveWriteCapacity = MaxScheduledCarveJobCandidatesPerSlice;
         private const int CompactionFrostTickIntervalFrames = 300;
         private const int CompactionPressurePendingThreshold = InitialPendingCompactionCapacity / 2;
         private const int CompactionPressureFreeSlotThreshold = DirtyChunkStatePoolCapacity / 8;
@@ -124,6 +129,8 @@ namespace Hecton8.Caves
         private const byte DeltaShapeSphere = 0;
         private const byte DeltaShapeBox = 1;
         private const byte DeltaShapeCapsule = 2;
+        private const byte PendingCarveRuntimeFlagSliced = 1 << 0;
+        private const byte PendingCarveRuntimeFlagSuppressPresentation = 1 << 1;
         private const int NativeSnapshotMagic = unchecked((int)0x48584432);
         private const int NativeSnapshotRleMagic = unchecked((int)0x48584433);
         private const int NativeSnapshotDeltaRleMagic = unchecked((int)0x48584434);
@@ -150,6 +157,10 @@ namespace Hecton8.Caves
         private const uint VoxelBlackBoxCommitBudgetFlag = 1u << 3;
         private const uint VoxelBlackBoxPendingQueueCorruptionFlag = 1u << 4;
         private const uint VoxelBlackBoxChunkStatePoolCorruptionFlag = 1u << 5;
+        private const uint VoxelBlackBoxScheduledCarveJobOverrunFlag = 1u << 6;
+        private const uint VoxelBlackBoxScheduledCarveSlicedFlag = 1u << 7;
+        private const uint VoxelBlackBoxCarvedMassTelemetryFlag = 1u << 8;
+        private const uint VoxelBlackBoxChunkStatePoolExhaustedFlag = 1u << 9;
         private const string VoxelPagingBlackBoxDumpRelativePath1312 = "Docs/AgentLogs/Dump_1312_VoxelPaging.bin";
         private const string VoxelBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1304_Voxel.bin";
         private const string NativeMemoryOwner = nameof(VoxelDeltaProcessor);
@@ -159,14 +170,10 @@ namespace Hecton8.Caves
         private static readonly uint _VoxelDebrisSignalHash = unchecked((uint)Hecton.Localization.LocHash.Compute("voxel.debris.carve"));
         private static readonly ProfilerMarker _carveScheduleProfilerMarker = new ProfilerMarker("H8.VoxelDelta.ScheduleCarve");
         private static readonly ProfilerMarker _carveCommitProfilerMarker = new ProfilerMarker("H8.VoxelDelta.CommitCarve");
-        private static readonly uint _CarveCommitWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("VoxelDeltaProcessor.CarveCommitBudgetExceeded"));
-        private static readonly uint _CarveCommitTelemetryContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("VoxelDeltaProcessor.TryCommitScheduledCarve"));
         private static readonly uint _DataVaultRebindWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("VoxelDeltaProcessor.DataVaultRebindDeferred"));
         private static readonly uint _DataVaultRebindTelemetryContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("VoxelDeltaProcessor.RebindDataVaultCold"));
         private static readonly uint _SaveCorruptionHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SAVE_CORRUPTION_HASH"));
         private static readonly uint _SaveCorruptionContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("VoxelDeltaProcessor.LoadSparseRle"));
-        private static readonly uint _VoxelCarvedMassTelemetryHash = unchecked((uint)Hecton.Localization.LocHash.Compute("VoxelDeltaProcessor.TotalVoxelsCarved"));
-        private static readonly uint _VoxelYieldContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("VoxelDeltaProcessor.MaterialYield"));
         private static readonly int _laserHitAupId = Shader.PropertyToID("_LaserHitAup");
         private static readonly int _laserHitHeatId = Shader.PropertyToID("_LaserHitHeat");
         private static readonly int _recentCutHeatPositionRadiusId = Shader.PropertyToID("_HectonRecentCutHeatPositionRadius");
@@ -263,6 +270,7 @@ namespace Hecton8.Caves
         private VaultGenerationHandle<byte> _compactionUniformFlagScratchHandle;
         private bool _compactionScratchCreated;
         private bool _compactionScratchLeased;
+        private int _compactionScratchLockCount;
         private VaultGenerationHandle<byte> _nativeSnapshotScratchHandle;
         private int _nativeSnapshotScratchCapacityBytes;
         private int _nativeSnapshotScratchLeaseCount;
@@ -711,10 +719,24 @@ namespace Hecton8.Caves
         /// <returns>True when one live volume accepted the melt request.</returns>
         public bool AcceptThermalMeltEvent(in ThermalMeltEvent meltEvent)
         {
-            float radius = math.max(MinCarveRadiusMeters, meltEvent.RadiusMeters);
-            float heat01 = math.saturate(meltEvent.Heat01);
-            if (radius <= 0f || heat01 < ThermalMeltMinimumHeat || _registeredVolumes.Count <= 0)
+            float requestedRadius = meltEvent.RadiusMeters;
+            float requestedHeat = meltEvent.Heat01;
+            if (!math.isfinite(requestedRadius) ||
+                requestedRadius <= 0f ||
+                !math.isfinite(requestedHeat))
+            {
+                WriteBlackBoxSample(0UL, VoxelBlackBoxInvalidCarveEventFlag);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                DumpBlackBoxOnce(VoxelBlackBoxInvalidCarveEventFlag);
+#endif
                 return false;
+            }
+
+            float heat01 = math.saturate(requestedHeat);
+            if (heat01 < ThermalMeltMinimumHeat || _registeredVolumes.Count <= 0)
+                return false;
+
+            float radius = ClampCarveRadiusMeters(requestedRadius, MinRuntimeVoxelSize);
 
             double3 absolutePosition = ResolveThermalMeltPositionDouble(in meltEvent);
             if (!IsFiniteDouble3(absolutePosition))
@@ -733,15 +755,37 @@ namespace Hecton8.Caves
             if (!ValidateThermalMeltQueueState())
                 return false;
 
-            for (int i = 0; i < _thermalMeltCount; i++)
+            for (int i = 0; i < _thermalMeltCount;)
             {
                 ThermalMeltRuntime existing = _thermalMeltEvents[i];
-                if (!ReferenceEquals(existing.Volume, targetVolume))
+                if (existing.Volume == null || !existing.Volume.HasRuntimeData)
+                {
+                    RemoveThermalMeltAt(i);
                     continue;
+                }
+
+                if (!IsFiniteThermalMeltRuntime(in existing))
+                {
+                    WriteBlackBoxSample(0UL, VoxelBlackBoxInvalidCarveEventFlag);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    DumpBlackBoxOnce(VoxelBlackBoxInvalidCarveEventFlag);
+#endif
+                    RemoveThermalMeltAt(i);
+                    continue;
+                }
+
+                if (!ReferenceEquals(existing.Volume, targetVolume))
+                {
+                    i++;
+                    continue;
+                }
 
                 float mergeRadius = math.max(radius, existing.RadiusMeters);
                 if (math.lengthsq(existing.AbsoluteCenter - absolutePosition) > (double)mergeRadius * mergeRadius)
+                {
+                    i++;
                     continue;
+                }
 
                 existing.AbsoluteCenter = (existing.AbsoluteCenter + absolutePosition) * 0.5d;
                 existing.RadiusMeters = math.max(existing.RadiusMeters, radius);
@@ -794,12 +838,22 @@ namespace Hecton8.Caves
             if (!ValidateThermalMeltQueueState() || _thermalMeltCount <= 0)
                 return;
 
-            float safeDelta = math.max(0f, deltaTime);
+            float safeDelta = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             for (int i = 0; i < _thermalMeltCount;)
             {
                 ThermalMeltRuntime melt = _thermalMeltEvents[i];
                 if (melt.Volume == null || !melt.Volume.HasRuntimeData)
                 {
+                    RemoveThermalMeltAt(i);
+                    continue;
+                }
+
+                if (!IsFiniteThermalMeltRuntime(in melt))
+                {
+                    WriteBlackBoxSample(0UL, VoxelBlackBoxInvalidCarveEventFlag);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    DumpBlackBoxOnce(VoxelBlackBoxInvalidCarveEventFlag);
+#endif
                     RemoveThermalMeltAt(i);
                     continue;
                 }
@@ -825,9 +879,22 @@ namespace Hecton8.Caves
 
         private bool TryStageThermalMeltStep(in ThermalMeltRuntime melt)
         {
+            if (!IsFiniteThermalMeltRuntime(in melt))
+            {
+                WriteBlackBoxSample(0UL, VoxelBlackBoxInvalidCarveEventFlag);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                DumpBlackBoxOnce(VoxelBlackBoxInvalidCarveEventFlag);
+#endif
+                return false;
+            }
+
             float progress = ResolveThermalMeltProgress(melt.ElapsedSeconds);
-            float radius = math.max(MinCarveRadiusMeters, melt.RadiusMeters * progress);
-            float strength = math.max(MinRuntimeVoxelSize, radius * 0.35f);
+            float requestedRadius = melt.RadiusMeters * progress;
+            if (!math.isfinite(requestedRadius) || requestedRadius <= 0f)
+                return false;
+
+            float radius = ClampCarveRadiusMeters(requestedRadius, MinRuntimeVoxelSize);
+            float strength = ClampCarveBlendStrengthMeters(radius * 0.35f, MinRuntimeVoxelSize);
             return TryEnqueuePendingCarve(new PendingCarveRequest
             {
                 Volume = melt.Volume,
@@ -854,8 +921,22 @@ namespace Hecton8.Caves
 
         private static float ResolveThermalMeltProgress(float elapsedSeconds)
         {
+            if (!math.isfinite(elapsedSeconds) || elapsedSeconds <= 0f)
+                return 0f;
+
             float t = math.saturate(elapsedSeconds / ThermalMeltDurationSeconds);
             return t * t * (3f - 2f * t);
+        }
+
+        private static bool IsFiniteThermalMeltRuntime(in ThermalMeltRuntime melt)
+        {
+            return IsFiniteDouble3(melt.AbsoluteCenter) &&
+                   math.isfinite(melt.RadiusMeters) &&
+                   melt.RadiusMeters > 0f &&
+                   math.isfinite(melt.ElapsedSeconds) &&
+                   melt.ElapsedSeconds >= 0f &&
+                   math.isfinite(melt.StepAccumulatorSeconds) &&
+                   melt.StepAccumulatorSeconds >= 0f;
         }
 
         private static int ResolvePendingCarveSlot(int head, int logicalIndex)
@@ -1025,6 +1106,8 @@ namespace Hecton8.Caves
                 !ReferenceEquals(existing.Volume, incoming.Volume) ||
                 existing.MaterialId != incoming.MaterialId ||
                 existing.DeltaFlags != incoming.DeltaFlags ||
+                IsSlicedPendingCarve(in existing) ||
+                IsSlicedPendingCarve(in incoming) ||
                 !CanCoalesceCarveShape(existing.Shape) ||
                 !CanCoalesceCarveShape(incoming.Shape))
             {
@@ -1058,12 +1141,22 @@ namespace Hecton8.Caves
             return shape != DeltaShapeBox;
         }
 
+        private static bool IsSlicedPendingCarve(in PendingCarveRequest request)
+        {
+            return (request.RuntimeFlags & PendingCarveRuntimeFlagSliced) != 0;
+        }
+
+        private static bool ShouldSuppressCarvePresentation(in PendingCarveRequest request)
+        {
+            return (request.RuntimeFlags & PendingCarveRuntimeFlagSuppressPresentation) != 0;
+        }
+
         private bool EnsureCarveEventQueue()
         {
             EnsureCarveSignalLane();
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
             {
                 _queuedCarveEventsHandle = default;
                 _queuedCarveEventHead = 0;
@@ -1076,6 +1169,9 @@ namespace Hecton8.Caves
             {
                 return true;
             }
+
+            if (vault.IsCompactionFenceActive)
+                return false;
 
             _queuedCarveEventsHandle = vault.EnsureGenerationHandle<VoxelCarveEvent>(
                 BufferID.ShinobuDeltaCrusherCarveEventQueue,
@@ -1116,7 +1212,10 @@ namespace Hecton8.Caves
         private bool EnsureBlackBox()
         {
             IDataVault vault = ResolveDataVault();
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (vault.IsCompactionFenceActive)
                 return false;
 
             _blackBoxHandle = vault.EnsureGenerationHandle<VoxelCarveTelemetryEntry>(
@@ -1149,26 +1248,22 @@ namespace Hecton8.Caves
             vault = default;
             blackBox = default;
             vault = ResolveDataVault();
-            if (vault == null)
-                return false;
-
-            if (!IsExactVaultHandle(in _blackBoxHandle, BufferID.ShinobuDeltaCrusherVoxelBlackBox) && !EnsureBlackBox())
-                return false;
-
-            if (!TryResolveVaultBuffer(vault, in _blackBoxHandle, BufferID.ShinobuDeltaCrusherVoxelBlackBox, VoxelBlackBoxCapacity, out _))
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsExactVaultHandle(in _blackBoxHandle, BufferID.ShinobuDeltaCrusherVoxelBlackBox) ||
+                !TryResolveVaultBuffer(vault, in _blackBoxHandle, BufferID.ShinobuDeltaCrusherVoxelBlackBox, VoxelBlackBoxCapacity, out _) ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireWriteLock(in _blackBoxHandle, SystemID.TerrainSeams, out blackBox))
             {
-                _blackBoxHandle = vault.EnsureGenerationHandle<VoxelCarveTelemetryEntry>(
-                    BufferID.ShinobuDeltaCrusherVoxelBlackBox,
-                    VoxelBlackBoxCapacity,
-                    SystemID.TerrainSeams,
-                    NativeArrayOptions.ClearMemory);
-                _blackBoxCursor = 0;
-                if (!TryResolveVaultBuffer(vault, in _blackBoxHandle, BufferID.ShinobuDeltaCrusherVoxelBlackBox, VoxelBlackBoxCapacity, out _))
-                    return false;
+                return false;
             }
 
-            if (!vault.TryAcquireWriteLock(in _blackBoxHandle, SystemID.TerrainSeams, out blackBox))
+            if (vault.IsCompactionFenceActive)
+            {
+                vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.TerrainSeams);
+                blackBox = default;
                 return false;
+            }
 
             if (blackBox.IsCreated && blackBox.Length >= VoxelBlackBoxCapacity)
                 return true;
@@ -1193,8 +1288,10 @@ namespace Hecton8.Caves
         {
             buffer = default;
             return vault != null &&
+                   !vault.IsCompactionFenceActive &&
                    IsExactVaultHandle(in handle, expectedBufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
+                   !vault.IsCompactionFenceActive &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
@@ -1208,14 +1305,22 @@ namespace Hecton8.Caves
         {
             vault = default;
             queue = default;
-            if (!EnsureCarveEventQueue())
-                return false;
 
             vault = ResolveDataVault();
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !IsExactVaultHandle(in _queuedCarveEventsHandle, BufferID.ShinobuDeltaCrusherCarveEventQueue) ||
+                !TryResolveVaultBuffer(vault, in _queuedCarveEventsHandle, BufferID.ShinobuDeltaCrusherCarveEventQueue, InitialCarveEventQueueCapacity, out _) ||
+                vault.IsCompactionFenceActive ||
                 !vault.TryAcquireWriteLock(in _queuedCarveEventsHandle, SystemID.TerrainSeams, out queue))
             {
+                return false;
+            }
+
+            if (vault.IsCompactionFenceActive)
+            {
+                vault.ReleaseWriteLock(in _queuedCarveEventsHandle, SystemID.TerrainSeams);
+                queue = default;
                 return false;
             }
 
@@ -1272,7 +1377,7 @@ namespace Hecton8.Caves
             if (_queuedCarveEventCount <= 0)
                 return;
 
-            int budget = ResolveQueuedCarveDrainBudgetThisFrame();
+            int budget = ConsumeQueuedCarveDrainBudgetThisFrame();
             if (budget <= 0 ||
                 !TryAcquireQueuedCarveEventBuffer(out IDataVault vault, out NativeArray<VoxelCarveEvent> queuedCarves))
             {
@@ -1314,7 +1419,7 @@ namespace Hecton8.Caves
             return ResolveQueuedCarveDrainBudget(ResolveGlobalQualityWeight01());
         }
 
-        private int ResolveQueuedCarveDrainBudgetThisFrame()
+        private int ConsumeQueuedCarveDrainBudgetThisFrame()
         {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_queuedCarveDrainFrame != frame)
@@ -1359,7 +1464,8 @@ namespace Hecton8.Caves
         {
             VoxelCarveEvent hydratedEvent = carveEvent;
             NormalizeCarveEventDoubleCoordinates(ref hydratedEvent);
-            if (!IsFiniteCarveEvent(in hydratedEvent))
+            if (!IsFiniteCarveEvent(in hydratedEvent) ||
+                HasInvalidQueuedCarveShapeBudget(in hydratedEvent))
             {
                 WriteBlackBoxSample(hydratedEvent.VolumeInstanceId, VoxelBlackBoxInvalidCarveEventFlag);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1424,12 +1530,23 @@ namespace Hecton8.Caves
 
         private static float3 ToRuntimeFloat3(double3 absoluteUniversePosition)
         {
-            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
+            double3 originAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            double3 deltaAup = absoluteUniversePosition - originAup;
+            deltaAup = math.clamp(
+                deltaAup,
+                new double3(-RuntimeAupLocalClampMeters),
+                new double3(RuntimeAupLocalClampMeters));
             float3 result;
-            result.x = runtimePosition.x;
-            result.y = runtimePosition.y;
-            result.z = runtimePosition.z;
+            result.x = (float)deltaAup.x;
+            result.y = (float)deltaAup.y;
+            result.z = (float)deltaAup.z;
             return result;
+        }
+
+        private static Vector3 ToRuntimeVector3(double3 absoluteUniversePosition)
+        {
+            float3 runtimePosition = ToRuntimeFloat3(absoluteUniversePosition);
+            return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
         }
 
         private static double3 ToDouble3(Vector3 value)
@@ -1511,6 +1628,33 @@ namespace Hecton8.Caves
             carveEvent.AbsoluteSegmentEnd = IsFiniteDouble3(absoluteSegmentEnd)
                 ? ToRuntimeFloat3(absoluteSegmentEnd)
                 : InvalidRuntimeFloat3();
+        }
+
+        private static void ClampQueuedCarveEventShapeBudget(HectonVoxelVolume volume, ref VoxelCarveEvent carveEvent)
+        {
+            float voxelSize = volume != null ? math.max(volume.VoxelSize, MinRuntimeVoxelSize) : MinRuntimeVoxelSize;
+            if (carveEvent.RadiusMeters > 0f)
+                carveEvent.RadiusMeters = ClampCarveRadiusMeters(carveEvent.RadiusMeters, voxelSize);
+
+            if (carveEvent.BlendStrengthMeters > 0f)
+                carveEvent.BlendStrengthMeters = ClampCarveBlendStrengthMeters(carveEvent.BlendStrengthMeters, voxelSize);
+
+            if (carveEvent.Shape == (byte)VoxelCarveShapeType.Box)
+            {
+                carveEvent.AbsoluteHalfExtents = new float3(
+                    ClampCarveExtentMeters(carveEvent.AbsoluteHalfExtents.x, voxelSize),
+                    ClampCarveExtentMeters(carveEvent.AbsoluteHalfExtents.y, voxelSize),
+                    ClampCarveExtentMeters(carveEvent.AbsoluteHalfExtents.z, voxelSize));
+            }
+        }
+
+        private static bool HasInvalidQueuedCarveShapeBudget(in VoxelCarveEvent carveEvent)
+        {
+            if (carveEvent.RadiusMeters < 0f || carveEvent.BlendStrengthMeters < 0f)
+                return true;
+
+            return carveEvent.Shape == (byte)VoxelCarveShapeType.Box &&
+                   math.any(carveEvent.AbsoluteHalfExtents < float3.zero);
         }
 
         private static VoxelCarveEvent ResolveOverflowQueuedCarveEvent(
@@ -1741,9 +1885,9 @@ namespace Hecton8.Caves
                 return;
 
             float3 resolvedHalfExtents3 = new float3(
-                math.max(volume.VoxelSize, math.abs(halfExtents.x)),
-                math.max(volume.VoxelSize, math.abs(halfExtents.y)),
-                math.max(volume.VoxelSize, math.abs(halfExtents.z)));
+                ClampCarveExtentMeters(halfExtents.x, volume.VoxelSize),
+                ClampCarveExtentMeters(halfExtents.y, volume.VoxelSize),
+                ClampCarveExtentMeters(halfExtents.z, volume.VoxelSize));
             Vector3 resolvedHalfExtents = new Vector3(
                 resolvedHalfExtents3.x,
                 resolvedHalfExtents3.y,
@@ -1865,6 +2009,16 @@ namespace Hecton8.Caves
             VoxelCarveEvent queuedEvent = carveEvent;
             queuedEvent.VolumeInstanceId = volumeId;
             NormalizeCarveEventDoubleCoordinates(ref queuedEvent);
+            if (HasInvalidQueuedCarveShapeBudget(in queuedEvent))
+            {
+                WriteBlackBoxSample(volumeId, VoxelBlackBoxInvalidCarveEventFlag);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                DumpBlackBoxOnce(VoxelBlackBoxInvalidCarveEventFlag);
+#endif
+                return false;
+            }
+
+            ClampQueuedCarveEventShapeBudget(volume, ref queuedEvent);
             if (!IsFiniteCarveEvent(in queuedEvent))
             {
                 WriteBlackBoxSample(volumeId, VoxelBlackBoxInvalidCarveEventFlag);
@@ -1951,12 +2105,41 @@ namespace Hecton8.Caves
             return estimatedCellCount > 0;
         }
 
-        public bool TryFillDeltaMapForVolume(
+        public bool TryFillDeltaArrayForVolume(
             HectonVoxelVolume volume,
-            NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells)
+            NativeArray<global::VoxelModifiedCellEntry> modifiedCells,
+            NativeArray<int> modifiedCellCount,
+            NativeArray<int> modifiedCellBucketHeads,
+            NativeArray<int> modifiedCellNext,
+            int modifiedCellBucketCount)
         {
             if (!modifiedCells.IsCreated ||
-                volume == null ||
+                !modifiedCellCount.IsCreated ||
+                modifiedCellCount.Length <= 0 ||
+                !modifiedCellBucketHeads.IsCreated ||
+                !modifiedCellNext.IsCreated ||
+                modifiedCellBucketCount <= 0)
+            {
+                return false;
+            }
+
+            modifiedCellCount[0] = 0;
+            int bucketCount = math.min(modifiedCellBucketCount, modifiedCellBucketHeads.Length);
+            if (bucketCount <= 0 ||
+                (bucketCount & (bucketCount - 1)) != 0 ||
+                modifiedCellNext.Length < modifiedCells.Length)
+            {
+                modifiedCellCount[0] = -1;
+                return false;
+            }
+
+            for (int i = 0; i < bucketCount; i++)
+                modifiedCellBucketHeads[i] = -1;
+
+            for (int i = 0; i < modifiedCells.Length; i++)
+                modifiedCellNext[i] = -1;
+
+            if (volume == null ||
                 !volume.HasRuntimeData ||
                 (_chunkStates.Count == 0 && _compactedChunkStates.Count == 0))
             {
@@ -1965,6 +2148,7 @@ namespace Hecton8.Caves
 
             ResolveVolumeCellBounds(volume, out int3 minCell, out int3 maxCell, out int3 minChunk, out int3 maxChunk);
             bool hasModifiedCells = false;
+            int writeCount = 0;
 
             for (int z = minChunk.z; z <= maxChunk.z; z++)
             {
@@ -1981,13 +2165,24 @@ namespace Hecton8.Caves
                                 if (math.any(cell < minCell) || math.any(cell > maxCell))
                                     continue;
 
-                                if (!modifiedCells.TryAdd(cell, new VoxelModifiedCell
+                                VoxelModifiedCell modifiedCell = new VoxelModifiedCell
                                 {
                                     Density = BitsToHalf(compactedState.GetSdfValueBits(flatIndex)),
                                     MaterialId = compactedState.GetMaterialId(flatIndex),
                                     Flags = compactedState.GetCellFlags(flatIndex)
-                                }))
+                                };
+                                if (!TryWriteModifiedCellEntry(
+                                        modifiedCells,
+                                        modifiedCellBucketHeads,
+                                        modifiedCellNext,
+                                        bucketCount,
+                                        ref writeCount,
+                                        cell,
+                                        in modifiedCell))
+                                {
+                                    modifiedCellCount[0] = -1;
                                     return false;
+                                }
 
                                 hasModifiedCells = true;
                             }
@@ -2024,14 +2219,24 @@ namespace Hecton8.Caves
                                 if (math.any(cell < minCell) || math.any(cell > maxCell))
                                     continue;
 
-                                modifiedCells.Remove(cell);
-                                if (!modifiedCells.TryAdd(cell, new VoxelModifiedCell
+                                VoxelModifiedCell modifiedCell = new VoxelModifiedCell
                                 {
                                     Density = BitsToHalf(sdfValueBits[flatIndex]),
                                     MaterialId = materialIds[flatIndex],
                                     Flags = cellFlags[flatIndex]
-                                }))
+                                };
+                                if (!TryWriteModifiedCellEntry(
+                                        modifiedCells,
+                                        modifiedCellBucketHeads,
+                                        modifiedCellNext,
+                                        bucketCount,
+                                        ref writeCount,
+                                        cell,
+                                        in modifiedCell))
+                                {
+                                    modifiedCellCount[0] = -1;
                                     return false;
+                                }
 
                                 hasModifiedCells = true;
                             }
@@ -2040,151 +2245,69 @@ namespace Hecton8.Caves
                 }
             }
 
-            if (!hasModifiedCells)
-                return false;
-
-            return true;
-        }
-
-        public async Awaitable<bool> TryFillDeltaMapForVolumeAsync(
-            HectonVoxelVolume volume,
-            NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells,
-            long budgetTicks,
-            CancellationToken ct)
-        {
-            if (!modifiedCells.IsCreated ||
-                volume == null ||
-                !volume.HasRuntimeData ||
-                (_chunkStates.Count == 0 && _compactedChunkStates.Count == 0))
-            {
-                return false;
-            }
-
-            long frameStart = global::System.Diagnostics.Stopwatch.GetTimestamp();
-            int yieldProbe = 0;
-            ResolveVolumeCellBounds(volume, out int3 minCell, out int3 maxCell, out int3 minChunk, out int3 maxChunk);
-            bool hasModifiedCells = false;
-
-            for (int z = minChunk.z; z <= maxChunk.z; z++)
-            {
-                for (int y = minChunk.y; y <= maxChunk.y; y++)
-                {
-                    for (int x = minChunk.x; x <= maxChunk.x; x++)
-                    {
-                        ChunkAddress address = new ChunkAddress(new int3(x, y, z), volume.VoxelSize);
-                        if (_compactedChunkStates.TryGetValue(address, out CompactedChunkState compactedState))
-                        {
-                            for (int flatIndex = 0; flatIndex < ChunkCellCount; flatIndex++)
-                            {
-                                int3 cell = AbsoluteCellFromLocalIndex(compactedState.ChunkCoord, flatIndex);
-                                if (!math.any(cell < minCell) && !math.any(cell > maxCell))
-                                {
-                                    if (!modifiedCells.TryAdd(cell, new VoxelModifiedCell
-                                    {
-                                        Density = BitsToHalf(compactedState.GetSdfValueBits(flatIndex)),
-                                        MaterialId = compactedState.GetMaterialId(flatIndex),
-                                        Flags = compactedState.GetCellFlags(flatIndex)
-                                    }))
-                                        return false;
-
-                                    hasModifiedCells = true;
-                                }
-
-                                if (((++yieldProbe) & 511) == 0)
-                                    frameStart = await YieldIfDeltaMapFillBudgetExpiredAsync(frameStart, budgetTicks, ct);
-                            }
-                        }
-
-                        if (!_chunkStates.TryGetValue(address, out ChunkDeltaState state))
-                            continue;
-
-                        for (int wordIndex = 0; wordIndex < ChunkDirtyMaskWordCount; wordIndex++)
-                        {
-                            if (((++yieldProbe) & 511) == 0)
-                                frameStart = await YieldIfDeltaMapFillBudgetExpiredAsync(frameStart, budgetTicks, ct);
-
-                            uint dirtyWord;
-                            {
-                                if (!TryResolveChunkStateStorage(
-                                        in state,
-                                        out NativeArray<uint> dirtyMaskWords,
-                                        out _,
-                                        out _,
-                                        out _))
-                                {
-                                    break;
-                                }
-
-                                dirtyWord = dirtyMaskWords[wordIndex];
-                            }
-
-                            if (dirtyWord == 0u)
-                                continue;
-
-                            int baseIndex = wordIndex << 5;
-                            for (int bitIndex = 0; bitIndex < 32; bitIndex++)
-                            {
-                                uint bitMask = 1u << bitIndex;
-                                if ((dirtyWord & bitMask) == 0u)
-                                    continue;
-
-                                int flatIndex = baseIndex + bitIndex;
-                                int3 cell = AbsoluteCellFromLocalIndex(state.ChunkCoord, flatIndex);
-                                if (math.any(cell < minCell) || math.any(cell > maxCell))
-                                    continue;
-
-                                half density;
-                                byte materialId;
-                                byte flags;
-                                {
-                                    if (!TryResolveChunkStateStorage(
-                                            in state,
-                                            out _,
-                                            out NativeArray<ushort> sdfValueBits,
-                                            out NativeArray<byte> materialIds,
-                                            out NativeArray<byte> cellFlags))
-                                    {
-                                        return false;
-                                    }
-
-                                    density = BitsToHalf(sdfValueBits[flatIndex]);
-                                    materialId = materialIds[flatIndex];
-                                    flags = cellFlags[flatIndex];
-                                }
-
-                                modifiedCells.Remove(cell);
-                                if (!modifiedCells.TryAdd(cell, new VoxelModifiedCell
-                                {
-                                    Density = density,
-                                    MaterialId = materialId,
-                                    Flags = flags
-                                }))
-                                    return false;
-
-                                hasModifiedCells = true;
-
-                                if (((++yieldProbe) & 511) == 0)
-                                    frameStart = await YieldIfDeltaMapFillBudgetExpiredAsync(frameStart, budgetTicks, ct);
-                            }
-                        }
-                    }
-                }
-            }
-
+            modifiedCellCount[0] = hasModifiedCells ? writeCount : 0;
             return hasModifiedCells;
         }
 
-        private static async Awaitable<long> YieldIfDeltaMapFillBudgetExpiredAsync(
-            long frameStart,
-            long budgetTicks,
-            CancellationToken ct)
+        private static bool TryWriteModifiedCellEntry(
+            NativeArray<global::VoxelModifiedCellEntry> modifiedCells,
+            NativeArray<int> modifiedCellBucketHeads,
+            NativeArray<int> modifiedCellNext,
+            int modifiedCellBucketCount,
+            ref int writeCount,
+            int3 absoluteCell,
+            in VoxelModifiedCell cell)
         {
-            if (budgetTicks <= 0L || global::System.Diagnostics.Stopwatch.GetTimestamp() - frameStart < budgetTicks)
-                return frameStart;
+            int safeCount = math.clamp(writeCount, 0, modifiedCells.Length);
+            if (!modifiedCellBucketHeads.IsCreated ||
+                !modifiedCellNext.IsCreated ||
+                modifiedCellBucketCount <= 0 ||
+                (modifiedCellBucketCount & (modifiedCellBucketCount - 1)) != 0 ||
+                modifiedCellBucketCount > modifiedCellBucketHeads.Length ||
+                modifiedCellNext.Length < modifiedCells.Length)
+            {
+                return false;
+            }
 
-            await AwaitableDebtMonitor.NextFrameAsync(ct);
-            ct.ThrowIfCancellationRequested();
-            return global::System.Diagnostics.Stopwatch.GetTimestamp();
+            int bucketIndex = ResolveModifiedCellBucket(absoluteCell, modifiedCellBucketCount);
+            int cursor = modifiedCellBucketHeads[bucketIndex];
+            int guard = 0;
+            while ((uint)cursor < (uint)safeCount && guard < safeCount)
+            {
+                global::VoxelModifiedCellEntry entry = modifiedCells[cursor];
+                if (math.all(entry.AbsoluteCell == absoluteCell))
+                {
+                    entry.Cell = cell;
+                    modifiedCells[cursor] = entry;
+                    writeCount = safeCount;
+                    return true;
+                }
+
+                cursor = modifiedCellNext[cursor];
+                guard++;
+            }
+
+            if (safeCount >= modifiedCells.Length || safeCount >= modifiedCellNext.Length)
+                return false;
+
+            modifiedCells[safeCount] = new global::VoxelModifiedCellEntry
+            {
+                AbsoluteCell = absoluteCell,
+                Cell = cell
+            };
+            modifiedCellNext[safeCount] = modifiedCellBucketHeads[bucketIndex];
+            modifiedCellBucketHeads[bucketIndex] = safeCount;
+            writeCount = safeCount + 1;
+            return true;
+        }
+
+        private static int ResolveModifiedCellBucket(int3 cell, int bucketCount)
+        {
+            uint hash = 2166136261u;
+            hash = (hash ^ (uint)cell.x) * 16777619u;
+            hash = (hash ^ (uint)cell.y) * 16777619u;
+            hash = (hash ^ (uint)cell.z) * 16777619u;
+            return (int)(hash & (uint)(bucketCount - 1));
         }
 
         /// <summary>
@@ -3750,7 +3873,7 @@ namespace Hecton8.Caves
             }
         }
 
-        private unsafe void TrySchedulePendingCarve()
+        private void TrySchedulePendingCarve()
         {
             if (IsScheduledCarveBusy || !ValidatePendingCarveQueueState() || _pendingCarveCount <= 0)
                 return;
@@ -3775,9 +3898,9 @@ namespace Hecton8.Caves
                 : math.max(voxelSize, radius * 0.35f);
             float3 halfExtents = shape == DeltaShapeBox
                 ? new float3(
-                    math.max(voxelSize, math.abs(request.AbsoluteHalfExtents.x)),
-                    math.max(voxelSize, math.abs(request.AbsoluteHalfExtents.y)),
-                    math.max(voxelSize, math.abs(request.AbsoluteHalfExtents.z)))
+                    ClampCarveExtentMeters(request.AbsoluteHalfExtents.x, voxelSize),
+                    ClampCarveExtentMeters(request.AbsoluteHalfExtents.y, voxelSize),
+                    ClampCarveExtentMeters(request.AbsoluteHalfExtents.z, voxelSize))
                 : new float3(radius);
             double3 segmentStart = request.AbsoluteHitPoint;
             double3 segmentEnd = shape == DeltaShapeCapsule
@@ -3808,7 +3931,32 @@ namespace Hecton8.Caves
                 ClampLocalizedLaserCarveBounds(ref minCell, ref maxCell, volumeMinCell, volumeMaxCell, segmentStart, voxelSize);
 
             int3 span = (maxCell - minCell) + 1;
-            if (!TryResolveScheduledCarveCandidateCount(span, out int candidateCount))
+            if (!TryResolveScheduledCarveTotalCandidateCount(span, out int totalCandidateCount))
+            {
+                WriteBlackBoxSample(EntityId.ToULong(volume.GetEntityId()), VoxelBlackBoxQueueOverflowFlag);
+                return;
+            }
+
+            int sliceStartIndex = ResolveScheduledCarveSliceStartIndex(in request, totalCandidateCount);
+            if (sliceStartIndex < 0)
+            {
+                WriteBlackBoxSample(EntityId.ToULong(volume.GetEntityId()), VoxelBlackBoxInvalidPendingCarveFlag);
+                return;
+            }
+
+            int remainingCandidateCount = totalCandidateCount - sliceStartIndex;
+            int candidateBudget = ResolveScheduledCarveJobCandidateBudget(ResolveGlobalQualityWeight01());
+            int candidateCount = math.min(remainingCandidateCount, candidateBudget);
+            if (candidateCount <= 0 || candidateCount > ScheduledCarveWriteCapacity)
+            {
+                WriteBlackBoxSample(EntityId.ToULong(volume.GetEntityId()), VoxelBlackBoxQueueOverflowFlag);
+                return;
+            }
+
+            int nextSliceStartIndex = sliceStartIndex + candidateCount;
+            bool hasContinuation = nextSliceStartIndex < totalCandidateCount;
+            if (hasContinuation &&
+                (!ValidatePendingCarveQueueState() || _pendingCarveCount >= _pendingCarves.Length))
             {
                 WriteBlackBoxSample(EntityId.ToULong(volume.GetEntityId()), VoxelBlackBoxQueueOverflowFlag);
                 return;
@@ -3833,6 +3981,7 @@ namespace Hecton8.Caves
             CarveSdfJob carveJob = default;
             carveJob.MinCell = minCell;
             carveJob.Span = span;
+            carveJob.CandidateOffset = sliceStartIndex;
             carveJob.VoxelSize = voxelSize;
             carveJob.Radius = radius;
             carveJob.BlendRadius = blendRadius;
@@ -3844,7 +3993,6 @@ namespace Hecton8.Caves
             carveJob.DeltaFlags = request.DeltaFlags;
             carveJob.Shape = shape;
             carveJob.Writes = scheduledWrites;
-            carveJob.WritesPtr = (CarveCellWrite*)NativeArrayUnsafeUtility.GetUnsafePtr(scheduledWrites);
 
             bool scheduled = false;
             try
@@ -3855,7 +4003,16 @@ namespace Hecton8.Caves
                     _scheduledCarveHandle = carveJob.Schedule(candidateCount, 64);
                     _scheduledCarveRunning = true;
                     scheduled = true;
-                    PublishDebrisSpawnSignal(in request, radius);
+                    if (hasContinuation)
+                    {
+                        if (TryEnqueuePendingCarveContinuation(in request, nextSliceStartIndex))
+                            WriteBlackBoxSample(EntityId.ToULong(volume.GetEntityId()), VoxelBlackBoxScheduledCarveSlicedFlag);
+                        else
+                            WriteBlackBoxSample(EntityId.ToULong(volume.GetEntityId()), VoxelBlackBoxQueueOverflowFlag);
+                    }
+
+                    if (!ShouldSuppressCarvePresentation(in request))
+                        PublishDebrisSpawnSignal(in request, radius);
                 }
             }
             finally
@@ -3873,7 +4030,7 @@ namespace Hecton8.Caves
             }
         }
 
-        private static bool TryResolveScheduledCarveCandidateCount(int3 span, out int candidateCount)
+        private static bool TryResolveScheduledCarveTotalCandidateCount(int3 span, out int candidateCount)
         {
             candidateCount = 0;
             if (span.x <= 0 || span.y <= 0 || span.z <= 0)
@@ -3881,10 +4038,42 @@ namespace Hecton8.Caves
 
             long xy = (long)span.x * span.y;
             long total = xy * span.z;
-            if (total <= 0L || total > ScheduledCarveWriteCapacity)
+            if (total <= 0L || total > int.MaxValue)
                 return false;
 
             candidateCount = (int)total;
+            return true;
+        }
+
+        private static int ResolveScheduledCarveSliceStartIndex(in PendingCarveRequest request, int totalCandidateCount)
+        {
+            if ((request.RuntimeFlags & PendingCarveRuntimeFlagSliced) == 0)
+                return 0;
+
+            int sliceStartIndex = request.SliceStartIndex;
+            return (uint)sliceStartIndex < (uint)totalCandidateCount ? sliceStartIndex : -1;
+        }
+
+        private int ResolveScheduledCarveJobCandidateBudget(float qualityWeight01)
+        {
+            int budget = (int)math.ceil(math.lerp(
+                MinScheduledCarveJobCandidatesPerSlice,
+                MaxScheduledCarveJobCandidatesPerSlice,
+                ResolveScheduledCarvePressure(qualityWeight01)));
+            return math.clamp(budget, 1, ScheduledCarveWriteCapacity);
+        }
+
+        private bool TryEnqueuePendingCarveContinuation(in PendingCarveRequest request, int nextSliceStartIndex)
+        {
+            if (nextSliceStartIndex <= 0 || !ValidatePendingCarveQueueState() || _pendingCarveCount >= _pendingCarves.Length)
+                return false;
+
+            PendingCarveRequest continuation = request;
+            continuation.SliceStartIndex = nextSliceStartIndex;
+            continuation.RuntimeFlags = (byte)(request.RuntimeFlags |
+                                               PendingCarveRuntimeFlagSliced |
+                                               PendingCarveRuntimeFlagSuppressPresentation);
+            EnqueuePendingCarveUnchecked(in continuation);
             return true;
         }
 
@@ -3896,16 +4085,18 @@ namespace Hecton8.Caves
             using (_carveCommitProfilerMarker.Auto())
             {
                 long commitStartTimestamp = global::System.Diagnostics.Stopwatch.GetTimestamp();
+                bool scheduledWritesLocked = false;
                 try
                 {
                     if (_scheduledCarveRunning)
                     {
-                        if (!DispatcherJobSwap.TryComplete(ref _scheduledCarveHandle, false))
+                        if (!TryFinalizeScheduledCarveJobBeforeFrameBoundary())
                             return;
 
                         _scheduledCarveRunning = false;
                         _scheduledCarveCommitPending = true;
                         ResetScheduledCarveCommitProgress();
+                        UnlockScheduledCarveWrites();
                     }
 
                     HectonVoxelVolume volume = _scheduledCarveRequest.Volume;
@@ -3915,23 +4106,31 @@ namespace Hecton8.Caves
                         return;
                     }
 
-                    if (!TryResolveScheduledCarveWrites(out NativeArray<CarveCellWrite> scheduledWrites))
+                    if (!TryAcquireScheduledCarveWritesForCommit(out NativeArray<CarveCellWrite> scheduledWrites))
                     {
                         WriteBlackBoxSample(ResolveScheduledCarveVolumeId(), VoxelBlackBoxInvalidPendingCarveFlag);
                         ResetScheduledCarveState();
                         return;
                     }
 
+                    scheduledWritesLocked = true;
+
                     float voxelSize = math.max(volume.VoxelSize, MinRuntimeVoxelSize);
                     int writeCount = math.min(_scheduledCarveWriteCount, scheduledWrites.Length);
-                    int commitBudget = ResolveScheduledCarveCommitWriteBudgetThisFrame(writeCount - _scheduledCarveCommitIndex);
-                    int endIndex = math.min(_scheduledCarveCommitIndex + commitBudget, writeCount);
-                    for (int i = _scheduledCarveCommitIndex; i < endIndex; i++)
+                    int remainingWrites = writeCount - _scheduledCarveCommitIndex;
+                    int commitBudget = ConsumeScheduledCarveCommitWriteBudgetThisFrame(remainingWrites);
+                    int scanBudget = ResolveScheduledCarveCommitScanBudgetThisFrame(remainingWrites, commitBudget);
+                    int scannedWrites = 0;
+                    int committedWrites = 0;
+                    int i = _scheduledCarveCommitIndex;
+                    for (; i < writeCount && scannedWrites < scanBudget && committedWrites < commitBudget; i++)
                     {
+                        scannedWrites++;
                         CarveCellWrite write = scheduledWrites[i];
                         if (write.IsActive == 0)
                             continue;
 
+                        committedWrites++;
                         int3 chunkCoord = FloorDiv(write.AbsoluteCell, ChunkResolution);
                         ChunkAddress address = new ChunkAddress(chunkCoord, voxelSize);
                         if (!TryGetOrCreateChunkState(chunkCoord, voxelSize, out ChunkDeltaState state))
@@ -3984,7 +4183,7 @@ namespace Hecton8.Caves
                         TryQueueCompaction(volume, address, in state, state.DirtyCellCount);
                     }
 
-                    _scheduledCarveCommitIndex = endIndex;
+                    _scheduledCarveCommitIndex = i;
                     if (_scheduledCarveCommitIndex < writeCount)
                         return;
 
@@ -3999,12 +4198,15 @@ namespace Hecton8.Caves
 
                     EnqueueVolumeRebuild(volume);
                     float resolvedCarveRadius = ResolveCarveRadius(in _scheduledCarveRequest, volume);
-                    EmitCaveInDustDecal(in _scheduledCarveRequest, resolvedCarveRadius);
-                    if ((_scheduledCarveRequest.SourceFlags & CarveSourceLaser) != 0 &&
-                        (_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
-                        _scheduledCarveRequest.Shape != DeltaShapeBox)
+                    if (!ShouldSuppressCarvePresentation(in _scheduledCarveRequest))
                     {
-                        PushRecentCutHeat(in _scheduledCarveRequest, resolvedCarveRadius);
+                        EmitCaveInDustDecal(in _scheduledCarveRequest, resolvedCarveRadius);
+                        if ((_scheduledCarveRequest.SourceFlags & CarveSourceLaser) != 0 &&
+                            (_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
+                            _scheduledCarveRequest.Shape != DeltaShapeBox)
+                        {
+                            PushRecentCutHeat(in _scheduledCarveRequest, resolvedCarveRadius);
+                        }
                     }
 
                     PublishMaterialYieldIfNeeded();
@@ -4013,9 +4215,31 @@ namespace Hecton8.Caves
                 }
                 finally
                 {
+                    if (scheduledWritesLocked)
+                        UnlockScheduledCarveWrites();
+
                     PublishCarveCommitWarningIfNeeded(commitStartTimestamp);
                 }
             }
+        }
+
+        private bool TryFinalizeScheduledCarveJobBeforeFrameBoundary()
+        {
+            if (DispatcherJobSwap.TryComplete(ref _scheduledCarveHandle, false))
+                return true;
+
+            WriteBlackBoxSample(ResolveScheduledCarveVolumeId(), VoxelBlackBoxScheduledCarveJobOverrunFlag);
+
+            // [BLOCKING_SYNC_POINT] FAIL_CLOSED_FRAME_BOUNDARY: the carve write buffer is
+            // Vault-pinned while the worker owns it. Completing here is cheaper than
+            // carrying a relocation-blocking pin into the next PRE_SIMULATION compaction pass.
+            if (!DispatcherJobFence.TryComplete(ref _scheduledCarveHandle, forceComplete: true))
+            {
+                ResetScheduledCarveState();
+                return false;
+            }
+
+            return true;
         }
 
         private void PublishCarveCommitWarningIfNeeded(long startTimestamp)
@@ -4033,13 +4257,9 @@ namespace Hecton8.Caves
 
             _carveCommitWarningArmed = true;
             WriteBlackBoxSample(ResolveScheduledCarveVolumeId(), VoxelBlackBoxCommitBudgetFlag);
-            GlobalTelemetryBus.PublishPerformanceWarning(
-                _CarveCommitWarningHash,
-                _CarveCommitTelemetryContextHash,
-                (float)elapsedMs);
         }
 
-        private int ResolveScheduledCarveCommitWriteBudgetThisFrame(int remainingWrites)
+        private int ConsumeScheduledCarveCommitWriteBudgetThisFrame(int remainingWrites)
         {
             if (remainingWrites <= 0)
                 return 0;
@@ -4059,17 +4279,40 @@ namespace Hecton8.Caves
             return math.min(budget, remainingWrites);
         }
 
+        private int ResolveScheduledCarveCommitScanBudgetThisFrame(int remainingWrites, int writeBudget)
+        {
+            if (remainingWrites <= 0)
+                return 0;
+
+            int budget = (int)math.ceil(ResolveScheduledCarveCommitScansPerFrame(ResolveGlobalQualityWeight01()));
+            budget = math.max(budget, writeBudget);
+            budget = math.clamp(budget, 1, MaxScheduledCarveCommitScansPerFrame);
+            return math.min(budget, remainingWrites);
+        }
+
         private float ResolveScheduledCarveCommitWritesPerFrame(float qualityWeight01)
+        {
+            return math.lerp(
+                MinScheduledCarveCommitWritesPerFrame,
+                MaxScheduledCarveCommitWritesPerFrame,
+                ResolveScheduledCarvePressure(qualityWeight01));
+        }
+
+        private float ResolveScheduledCarveCommitScansPerFrame(float qualityWeight01)
+        {
+            return math.lerp(
+                MinScheduledCarveCommitScansPerFrame,
+                MaxScheduledCarveCommitScansPerFrame,
+                ResolveScheduledCarvePressure(qualityWeight01));
+        }
+
+        private float ResolveScheduledCarvePressure(float qualityWeight01)
         {
             float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 1f);
             float smooth = quality * quality * (3f - 2f * quality);
             float pendingCapacity = InitialCarveEventQueueCapacity + InitialPendingCarveCapacity;
             float backlog = math.saturate((_queuedCarveEventCount + _pendingCarveCount) / math.max(1f, pendingCapacity));
-            float pressure = math.saturate(smooth + (backlog * ScheduledCarveBacklogPressureBoost * (1f - smooth)));
-            return math.lerp(
-                MinScheduledCarveCommitWritesPerFrame,
-                MaxScheduledCarveCommitWritesPerFrame,
-                pressure);
+            return math.saturate(smooth + (backlog * ScheduledCarveBacklogPressureBoost * (1f - smooth)));
         }
 
         private void RequestRebuildsForLoadedState()
@@ -4388,10 +4631,17 @@ namespace Hecton8.Caves
             }
 
             int snapshotWriteVersion = ResolveChunkWriteVersion(request.Address);
+            bool sourceLeaseHeld = true;
             bool scheduled = false;
             try
             {
                 rleUniformFlag[0] = 0;
+                for (int i = 0; i < encodedSdfSampleCount; i++)
+                    sourceSdf[i] = encodedSdf[i];
+
+                volume.ReleasePublishedSonarSdfPayloadReadLease(in sourceSdfReadLease);
+                sourceSdfReadLease = default;
+                sourceLeaseHeld = false;
 
                 _scheduledCompactionRequest = new ScheduledCompactionRequest
                 {
@@ -4399,8 +4649,7 @@ namespace Hecton8.Caves
                     Address = request.Address,
                     RequiredSonarVersion = request.RequiredSonarVersion,
                     SourceSonarVersion = publishedSonarVersion,
-                    WriteVersion = snapshotWriteVersion,
-                    SourceSdfReadLease = sourceSdfReadLease
+                    WriteVersion = snapshotWriteVersion
                 };
 
                 VoxelDeltaCompactionJob job = new VoxelDeltaCompactionJob
@@ -4445,13 +4694,7 @@ namespace Hecton8.Caves
                     DestinationMaterialIds = materialCopy,
                     DestinationCellFlags = flagsCopy
                 }.Schedule(ChunkCellCount, 64);
-                JobHandle sourceCopyHandle = new VoxelDeltaCopyEncodedSdfJob
-                {
-                    Source = encodedSdf,
-                    Destination = sourceSdf
-                }.Schedule(encodedSdfSampleCount, 256);
-                JobHandle compactionInputsReady = JobHandle.CombineDependencies(chunkStateCopyHandle, sourceCopyHandle);
-                JobHandle compactionHandle = job.Schedule(ChunkCellCount, 64, compactionInputsReady);
+                JobHandle compactionHandle = job.Schedule(ChunkCellCount, 64, chunkStateCopyHandle);
                 _scheduledCompactionHandle = new VoxelDeltaUniformRunDetectJob
                 {
                     SdfValueBits = outputSdf,
@@ -4464,6 +4707,9 @@ namespace Hecton8.Caves
             }
             finally
             {
+                if (sourceLeaseHeld)
+                    volume.ReleasePublishedSonarSdfPayloadReadLease(in sourceSdfReadLease);
+
                 if (!scheduled)
                 {
                     ReleaseCompactionScratchBuffers();
@@ -4591,8 +4837,8 @@ namespace Hecton8.Caves
         private static float ResolveBlendStrength(in PendingCarveRequest request, float voxelSize)
         {
             return request.ExplicitBlendStrength > 0f
-                ? math.max(voxelSize, request.ExplicitBlendStrength)
-                : math.max(voxelSize, request.ExplicitRadiusMeters * 0.35f);
+                ? ClampCarveBlendStrengthMeters(request.ExplicitBlendStrength, voxelSize)
+                : ClampCarveBlendStrengthMeters(request.ExplicitRadiusMeters * 0.35f, voxelSize);
         }
 
         private bool TryResolveCurrentCellDensity(
@@ -4618,7 +4864,7 @@ namespace Hecton8.Caves
             if (volume != null)
             {
                 double3 absoluteCellCenter = (new double3(absoluteCell.x, absoluteCell.y, absoluteCell.z) + 0.5d) * voxelSize;
-                Vector3 runtimeCellCenter = HectonFloatingOrigin.ToRuntimePosition(absoluteCellCenter);
+                Vector3 runtimeCellCenter = ToRuntimeVector3(absoluteCellCenter);
                 if (volume.TrySampleDensity(runtimeCellCenter, out density))
                     return true;
             }
@@ -4919,10 +5165,7 @@ namespace Hecton8.Caves
             if (_scheduledCarveMassUnits <= 0)
                 return;
 
-            GlobalTelemetryBus.PublishPerformanceWarning(
-                _VoxelCarvedMassTelemetryHash,
-                _VoxelYieldContextHash,
-                _totalVoxelsCarved);
+            WriteBlackBoxSample((ulong)(uint)math.max(0, _totalVoxelsCarved), VoxelBlackBoxCarvedMassTelemetryFlag);
         }
 
         private void PublishVoxelChunkModifiedEvent(HectonVoxelVolume volume, float voxelSize)
@@ -4975,11 +5218,30 @@ namespace Hecton8.Caves
 
         private float ResolveCarveRadius(in PendingCarveRequest request, HectonVoxelVolume volume)
         {
+            float minRadius = math.max(volume.VoxelSize * 1.25f, MinCarveRadiusMeters);
             if (request.ExplicitRadiusMeters > 0f)
-                return math.max(math.max(volume.VoxelSize * 1.25f, MinCarveRadiusMeters), request.ExplicitRadiusMeters);
+                return math.clamp(request.ExplicitRadiusMeters, minRadius, math.max(minRadius, MaxCarveRadiusMeters));
 
             float baseRadius = math.max(volume.VoxelSize * 2f, MinCarveRadiusMeters);
             return math.clamp(baseRadius + request.AccumulatedDamage * 0.08f, baseRadius, math.max(baseRadius, MaxCarveRadiusMeters));
+        }
+
+        private static float ClampCarveRadiusMeters(float radius, float voxelSize)
+        {
+            float minRadius = math.max(voxelSize * 1.25f, MinCarveRadiusMeters);
+            return math.clamp(radius, minRadius, math.max(minRadius, MaxCarveRadiusMeters));
+        }
+
+        private static float ClampCarveExtentMeters(float extent, float voxelSize)
+        {
+            float minExtent = math.max(voxelSize, MinRuntimeVoxelSize);
+            return math.clamp(math.abs(extent), minExtent, math.max(minExtent, MaxCarveRadiusMeters));
+        }
+
+        private static float ClampCarveBlendStrengthMeters(float strength, float voxelSize)
+        {
+            float minStrength = math.max(voxelSize, MinRuntimeVoxelSize);
+            return math.clamp(strength, minStrength, math.max(minStrength, MaxCarveRadiusMeters));
         }
 
         private void EmitCaveInDustDecal(in PendingCarveRequest request, float radius)
@@ -5009,17 +5271,28 @@ namespace Hecton8.Caves
             }
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (vault.IsCompactionFenceActive)
                 return false;
 
             if (!IsExactVaultHandle(in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites) ||
                 _scheduledCarveWritesCapacity < ScheduledCarveWriteCapacity ||
+                vault.IsCompactionFenceActive ||
                 !vault.TryLockBuffer(BufferID.ShinobuDeltaCrusherCarveWrites, SystemID.TerrainSeams))
             {
                 return false;
             }
 
             _scheduledCarveWritesLocked = true;
+            if (vault.IsCompactionFenceActive)
+            {
+                UnlockScheduledCarveWrites();
+                writes = default;
+                return false;
+            }
+
             if (!TryResolveVaultBuffer(vault, in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites, requiredCount, out writes))
             {
                 UnlockScheduledCarveWrites();
@@ -5034,7 +5307,7 @@ namespace Hecton8.Caves
         private bool EnsureScheduledCarveWriteBuffer()
         {
             IDataVault vault = ResolveDataVault();
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
             {
                 _scheduledCarveWritesCapacity = 0;
                 return false;
@@ -5046,6 +5319,9 @@ namespace Hecton8.Caves
             {
                 return true;
             }
+
+            if (vault.IsCompactionFenceActive)
+                return false;
 
             _scheduledCarveWritesHandle = vault.EnsureGenerationHandle<CarveCellWrite>(
                 BufferID.ShinobuDeltaCrusherCarveWrites,
@@ -5097,12 +5373,25 @@ namespace Hecton8.Caves
             _scheduledCarveWritesLocked = false;
         }
 
-        private bool TryResolveScheduledCarveWrites(out NativeArray<CarveCellWrite> writes)
+        private bool TryAcquireScheduledCarveWritesForCommit(out NativeArray<CarveCellWrite> writes)
         {
             writes = default;
-            IDataVault vault = ResolveDataVault();
-            if (vault == null || !IsExactVaultHandle(in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites))
+            if (_scheduledCarveWriteCount <= 0)
                 return false;
+
+            IDataVault vault = ResolveDataVault();
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsExactVaultHandle(in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites) ||
+                !vault.TryLockBuffer(BufferID.ShinobuDeltaCrusherCarveWrites, SystemID.TerrainSeams))
+                return false;
+
+            _scheduledCarveWritesLocked = true;
+            if (vault.IsCompactionFenceActive)
+            {
+                UnlockScheduledCarveWrites();
+                return false;
+            }
 
             if (!TryResolveVaultBuffer(
                     vault,
@@ -5112,6 +5401,7 @@ namespace Hecton8.Caves
                     out writes) &&
                 _scheduledCarveWriteCount > 0)
             {
+                UnlockScheduledCarveWrites();
                 return false;
             }
 
@@ -5131,7 +5421,7 @@ namespace Hecton8.Caves
             if (radius <= 0f)
                 return;
 
-            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(request.AbsoluteHitPoint);
+            Vector3 runtimeHitPoint = ToRuntimeVector3(request.AbsoluteHitPoint);
             float3 runtimeHitPoint3 = new float3(runtimeHitPoint.x, runtimeHitPoint.y, runtimeHitPoint.z);
             if (!math.all(math.isfinite(runtimeHitPoint3)))
                 return;
@@ -5223,16 +5513,9 @@ namespace Hecton8.Caves
             out NativeArray<byte> rleUniformFlag)
         {
             EnsureCompactionScratchBuffers();
-            if (!TryResolveCompactionScratchBuffers(
-                    out NativeArray<byte> sourceSdfScratch,
-                    out NativeArray<uint> dirtyMaskScratch,
-                    out NativeArray<ushort> deltaSdfScratch,
-                    out NativeArray<byte> materialScratch,
-                    out NativeArray<byte> flagsScratch,
-                    out NativeArray<ushort> outputSdfScratch,
-                    out NativeArray<byte> outputMaterialsScratch,
-                    out NativeArray<byte> outputFlagsScratch,
-                    out NativeArray<byte> uniformFlagScratch))
+            if (_compactionScratchLeased ||
+                sourceSdfLength <= 0 ||
+                !TryLockCompactionScratchBuffers())
             {
                 sourceSdf = default;
                 dirtyMaskCopy = default;
@@ -5246,10 +5529,33 @@ namespace Hecton8.Caves
                 return false;
             }
 
-            if (_compactionScratchLeased ||
-                sourceSdfLength <= 0 ||
-                sourceSdfLength > sourceSdfScratch.Length)
+            if (!TryResolveCompactionScratchBuffers(
+                    out NativeArray<byte> sourceSdfScratch,
+                    out NativeArray<uint> dirtyMaskScratch,
+                    out NativeArray<ushort> deltaSdfScratch,
+                    out NativeArray<byte> materialScratch,
+                    out NativeArray<byte> flagsScratch,
+                    out NativeArray<ushort> outputSdfScratch,
+                    out NativeArray<byte> outputMaterialsScratch,
+                    out NativeArray<byte> outputFlagsScratch,
+                    out NativeArray<byte> uniformFlagScratch))
             {
+                UnlockCompactionScratchBuffers();
+                sourceSdf = default;
+                dirtyMaskCopy = default;
+                deltaSdfCopy = default;
+                materialCopy = default;
+                flagsCopy = default;
+                outputSdf = default;
+                outputMaterials = default;
+                outputFlags = default;
+                rleUniformFlag = default;
+                return false;
+            }
+
+            if (sourceSdfLength > sourceSdfScratch.Length)
+            {
+                UnlockCompactionScratchBuffers();
                 sourceSdf = default;
                 dirtyMaskCopy = default;
                 deltaSdfCopy = default;
@@ -5273,6 +5579,124 @@ namespace Hecton8.Caves
             outputFlags = outputFlagsScratch;
             rleUniformFlag = uniformFlagScratch;
             return true;
+        }
+
+        private bool TryLockCompactionScratchBuffers()
+        {
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || vault.IsCompactionFenceActive || _compactionScratchLockCount != 0)
+                return false;
+
+            int lockedCount = 0;
+            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionSourceSdfScratch))
+                return false;
+            lockedCount = 1;
+            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionDirtyMaskScratch))
+            {
+                UnlockCompactionScratchBuffers(vault, lockedCount);
+                return false;
+            }
+            lockedCount = 2;
+            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionDeltaSdfScratch))
+            {
+                UnlockCompactionScratchBuffers(vault, lockedCount);
+                return false;
+            }
+            lockedCount = 3;
+            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionMaterialScratch))
+            {
+                UnlockCompactionScratchBuffers(vault, lockedCount);
+                return false;
+            }
+            lockedCount = 4;
+            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionFlagsScratch))
+            {
+                UnlockCompactionScratchBuffers(vault, lockedCount);
+                return false;
+            }
+            lockedCount = 5;
+            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionOutputSdfScratch))
+            {
+                UnlockCompactionScratchBuffers(vault, lockedCount);
+                return false;
+            }
+            lockedCount = 6;
+            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionOutputMaterialsScratch))
+            {
+                UnlockCompactionScratchBuffers(vault, lockedCount);
+                return false;
+            }
+            lockedCount = 7;
+            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionOutputFlagsScratch))
+            {
+                UnlockCompactionScratchBuffers(vault, lockedCount);
+                return false;
+            }
+            lockedCount = 8;
+            if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionUniformFlagScratch))
+            {
+                UnlockCompactionScratchBuffers(vault, lockedCount);
+                return false;
+            }
+
+            if (vault.IsCompactionFenceActive)
+            {
+                UnlockCompactionScratchBuffers(vault, 9);
+                return false;
+            }
+
+            _compactionScratchLockCount = 9;
+            return true;
+        }
+
+        private void UnlockCompactionScratchBuffers()
+        {
+            int lockedCount = _compactionScratchLockCount;
+            if (lockedCount <= 0)
+                return;
+
+            _compactionScratchLockCount = 0;
+            UnlockCompactionScratchBuffers(ResolveDataVault(), lockedCount);
+        }
+
+        private static bool TryLockCompactionScratchBuffer(IDataVault vault, BufferID bufferId)
+        {
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryLockBuffer(bufferId, SystemID.TerrainSeams))
+                return false;
+
+            if (!vault.IsCompactionFenceActive)
+                return true;
+
+            vault.TryUnlockBuffer(bufferId, SystemID.TerrainSeams);
+            return false;
+        }
+
+        private static void UnlockCompactionScratchBuffers(IDataVault vault, int lockedCount)
+        {
+            if (vault == null || lockedCount <= 0)
+                return;
+
+            if (lockedCount >= 9)
+                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionUniformFlagScratch, SystemID.TerrainSeams);
+            if (lockedCount >= 8)
+                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionOutputFlagsScratch, SystemID.TerrainSeams);
+            if (lockedCount >= 7)
+                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionOutputMaterialsScratch, SystemID.TerrainSeams);
+            if (lockedCount >= 6)
+                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionOutputSdfScratch, SystemID.TerrainSeams);
+            if (lockedCount >= 5)
+                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionFlagsScratch, SystemID.TerrainSeams);
+            if (lockedCount >= 4)
+                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionMaterialScratch, SystemID.TerrainSeams);
+            if (lockedCount >= 3)
+                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionDeltaSdfScratch, SystemID.TerrainSeams);
+            if (lockedCount >= 2)
+                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionDirtyMaskScratch, SystemID.TerrainSeams);
+            if (lockedCount >= 1)
+                vault.TryUnlockBuffer(BufferID.SaveVoxelDeltaCompactionSourceSdfScratch, SystemID.TerrainSeams);
         }
 
         private bool TryResolveCompactionScratchBuffers(
@@ -5310,13 +5734,8 @@ namespace Hecton8.Caves
 
         private void ReleaseCompactionScratchBuffers()
         {
-            ScheduledCompactionRequest request = _scheduledCompactionRequest;
-            if (request.SourceSdfReadLease.IsValid && request.Volume != null)
-            {
-                request.Volume.ReleasePublishedSonarSdfPayloadReadLease(in request.SourceSdfReadLease);
-                request.SourceSdfReadLease = default;
-                _scheduledCompactionRequest = request;
-            }
+            if (_compactionScratchLeased)
+                UnlockCompactionScratchBuffers();
 
             _compactionScratchLeased = false;
         }
@@ -5328,6 +5747,12 @@ namespace Hecton8.Caves
 
         private void DisposeCompactionScratchBuffers(IDataVault vault)
         {
+            if (_compactionScratchLockCount > 0)
+            {
+                UnlockCompactionScratchBuffers(vault, _compactionScratchLockCount);
+                _compactionScratchLockCount = 0;
+            }
+
             ReleaseVaultHandle(vault, ref _compactionSourceSdfScratchHandle, BufferID.SaveVoxelDeltaCompactionSourceSdfScratch);
             ReleaseVaultHandle(vault, ref _compactionDirtyMaskScratchHandle, BufferID.SaveVoxelDeltaCompactionDirtyMaskScratch);
             ReleaseVaultHandle(vault, ref _compactionDeltaSdfScratchHandle, BufferID.SaveVoxelDeltaCompactionDeltaSdfScratch);
@@ -5584,7 +6009,7 @@ namespace Hecton8.Caves
         {
             int dirtyMaskLength = DirtyChunkStatePoolCapacity * ChunkDirtyMaskWordCount;
             int cellLength = DirtyChunkStatePoolCapacity * ChunkCellCount;
-            return TryResolveVaultChunkStatePool(
+            return TryEnsureVaultChunkStatePoolStorage(
                 dirtyMaskLength,
                 cellLength,
                 out _,
@@ -5636,7 +6061,7 @@ namespace Hecton8.Caves
                    state.PoolSlot < DirtyChunkStatePoolCapacity;
         }
 
-        private bool TryResolveVaultChunkStatePool(
+        private bool TryEnsureVaultChunkStatePoolStorage(
             int dirtyMaskLength,
             int cellLength,
             out NativeArray<uint> dirtyMaskPool,
@@ -5650,7 +6075,7 @@ namespace Hecton8.Caves
             flagsPool = default;
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             _chunkStateDirtyMaskPoolHandle = vault.EnsureGenerationHandle<uint>(
@@ -5674,6 +6099,32 @@ namespace Hecton8.Caves
                 SystemID.TerrainSeams,
                 NativeArrayOptions.ClearMemory);
 
+            return TryResolveVaultChunkStatePool(
+                dirtyMaskLength,
+                cellLength,
+                out dirtyMaskPool,
+                out sdfBitsPool,
+                out materialPool,
+                out flagsPool);
+        }
+
+        private bool TryResolveVaultChunkStatePool(
+            int dirtyMaskLength,
+            int cellLength,
+            out NativeArray<uint> dirtyMaskPool,
+            out NativeArray<ushort> sdfBitsPool,
+            out NativeArray<byte> materialPool,
+            out NativeArray<byte> flagsPool)
+        {
+            dirtyMaskPool = default;
+            sdfBitsPool = default;
+            materialPool = default;
+            flagsPool = default;
+
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
             return TryResolveVaultBuffer(vault, in _chunkStateDirtyMaskPoolHandle, BufferID.ShinobuDeltaCrusherDirtyMaskPool, dirtyMaskLength, out dirtyMaskPool) &&
                    TryResolveVaultBuffer(vault, in _chunkStateSdfBitsPoolHandle, BufferID.ShinobuDeltaCrusherSdfBitsPool, cellLength, out sdfBitsPool) &&
                    TryResolveVaultBuffer(vault, in _chunkStateMaterialPoolHandle, BufferID.ShinobuDeltaCrusherMaterialPool, cellLength, out materialPool) &&
@@ -5682,17 +6133,28 @@ namespace Hecton8.Caves
 
         private bool TryLeaseChunkState(int3 chunkCoord, float voxelSize, out ChunkDeltaState state)
         {
-            EnsureChunkStatePool();
-            if (_chunkStateFreeCount <= 0)
+            state = default;
+            int dirtyMaskLength = DirtyChunkStatePoolCapacity * ChunkDirtyMaskWordCount;
+            int cellLength = DirtyChunkStatePoolCapacity * ChunkCellCount;
+            if (!_chunkStatePoolCreated ||
+                !_chunkStatePoolVaultBacked ||
+                !TryResolveVaultChunkStatePool(dirtyMaskLength, cellLength, out _, out _, out _, out _))
             {
-                state = default;
                 if (!_chunkStatePoolExhaustedWarningArmed)
                 {
                     _chunkStatePoolExhaustedWarningArmed = true;
-                    GlobalTelemetryBus.PublishPerformanceWarning(
-                        _CarveCommitWarningHash,
-                        _CarveCommitTelemetryContextHash,
-                        DirtyChunkStatePoolCapacity);
+                    WriteChunkStatePoolCorruptionSample(-1, _chunkStateFreeCount, DirtyChunkStatePoolCapacity);
+                }
+
+                return false;
+            }
+
+            if (_chunkStateFreeCount <= 0)
+            {
+                if (!_chunkStatePoolExhaustedWarningArmed)
+                {
+                    _chunkStatePoolExhaustedWarningArmed = true;
+                    WriteBlackBoxSample((ulong)(uint)DirtyChunkStatePoolCapacity, VoxelBlackBoxChunkStatePoolExhaustedFlag);
                 }
 
                 return false;
@@ -5983,6 +6445,7 @@ namespace Hecton8.Caves
                    IsFiniteDouble3(request.AbsoluteSegmentEnd) &&
                    IsFiniteVector3(request.AbsoluteHalfExtents) &&
                    IsFiniteVector3(request.AbsoluteImpulseDirection) &&
+                   request.SliceStartIndex >= 0 &&
                    math.isfinite(request.AccumulatedDamage) &&
                    math.isfinite(request.ExplicitRadiusMeters) &&
                    math.isfinite(request.ExplicitBlendStrength);
@@ -6383,7 +6846,6 @@ namespace Hecton8.Caves
             public int RequiredSonarVersion;
             public int SourceSonarVersion;
             public int WriteVersion;
-            public HectonVoxelVolume.PublishedSonarSdfReadLease SourceSdfReadLease;
         }
 
         private struct ThermalMeltRuntime
@@ -6401,6 +6863,7 @@ namespace Hecton8.Caves
             public double3 AbsoluteHitPoint;
             public double3 AbsoluteSegmentEnd;
             public Vector3 AbsoluteHalfExtents;
+            public int SliceStartIndex;
             public float AccumulatedDamage;
             public float ExplicitRadiusMeters;
             public float ExplicitBlendStrength;
@@ -6408,16 +6871,18 @@ namespace Hecton8.Caves
             public byte DeltaFlags;
             public byte SourceFlags;
             public byte Shape;
+            public byte RuntimeFlags;
             public Vector3 AbsoluteImpulseDirection;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private unsafe struct CarveSdfJob : IJobParallelFor
+        private struct CarveSdfJob : IJobParallelFor
         {
             public double3 Center;
             public double3 SegmentEnd;
             public int3 MinCell;
             public int3 Span;
+            public int CandidateOffset;
             public float VoxelSize;
             public float Radius;
             public float BlendRadius;
@@ -6427,14 +6892,16 @@ namespace Hecton8.Caves
             public byte DeltaFlags;
             public byte Shape;
             [NativeDisableParallelForRestriction] public NativeArray<CarveCellWrite> Writes;
-            [NativeDisableUnsafePtrRestriction] public CarveCellWrite* WritesPtr;
 
             public void Execute(int index)
             {
-                CarveCellWrite* write = WritesPtr + index;
+                if (!Writes.IsCreated || (uint)index >= (uint)Writes.Length)
+                    return;
+
+                int candidateIndex = CandidateOffset + index;
                 int spanXY = Span.x * Span.y;
-                int localZ = index / spanXY;
-                int remainder = index - (localZ * spanXY);
+                int localZ = candidateIndex / spanXY;
+                int remainder = candidateIndex - (localZ * spanXY);
                 int localY = remainder / Span.x;
                 int localX = remainder - (localY * Span.x);
                 int3 absoluteCell = MinCell + new int3(localX, localY, localZ);
@@ -6444,17 +6911,13 @@ namespace Hecton8.Caves
                     : Shape == DeltaShapeCapsule
                         ? CapsuleSdf(cellCenter, Center, SegmentEnd, Radius)
                         : SphereSdfApprox(cellCenter - Center, Radius);
-                if (signedDistance >= BlendRadius)
-                {
-                    *write = default;
-                    return;
-                }
 
                 float densityValue = (float)((DeltaFlags & DeltaModeAdditive) != 0
                     ? math.clamp(-signedDistance, -8d, 8d)
                     : math.clamp(signedDistance, -8d, 8d));
+                byte isActive = (byte)math.select(1, 0, signedDistance >= BlendRadius);
 
-                *write = new CarveCellWrite
+                Writes[index] = new CarveCellWrite
                 {
                     AbsoluteCellX = absoluteCell.x,
                     AbsoluteCellY = absoluteCell.y,
@@ -6463,7 +6926,7 @@ namespace Hecton8.Caves
                     MaterialId = MaterialId,
                     DeltaFlags = DeltaFlags,
                     BlendStrength = BlendStrength,
-                    IsActive = 1
+                    IsActive = isActive
                 };
             }
 
@@ -6561,18 +7024,6 @@ namespace Hecton8.Caves
 
             public void Dispose()
             {
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct VoxelDeltaCopyEncodedSdfJob : IJobParallelFor
-        {
-            [ReadOnly] public NativeArray<byte>.ReadOnly Source;
-            [WriteOnly] public NativeArray<byte> Destination;
-
-            public void Execute(int index)
-            {
-                Destination[index] = Source[index];
             }
         }
 

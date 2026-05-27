@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Jobs;
@@ -87,8 +87,8 @@ namespace Hecton8.World
                 return false;
 
             bool changed = false;
-            _tileStateRemovalScratchKeys.Clear();
-            Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+            _tileStateRemovalScratchKeyCount = 0;
+            FixedTileStateMap.Enumerator enumerator = _tileStates.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 TileRuntimeState state = enumerator.Current.Value;
@@ -98,7 +98,12 @@ namespace Hecton8.World
                 if (state.PendingRemoval)
                 {
                     if (!state.HeightReadbackPending || TryFinalizeTileHeightReadback(state))
-                        _tileStateRemovalScratchKeys.Add(enumerator.Current.Key);
+                    {
+                        if (_tileStateRemovalScratchKeyCount < _tileStateRemovalScratchKeys.Length)
+                            _tileStateRemovalScratchKeys[_tileStateRemovalScratchKeyCount++] = enumerator.Current.Key;
+                        else
+                            RecordChunkQueueCapacityExceeded(_tileStateRemovalScratchKeys.Length, _tileStateRemovalScratchKeyCount);
+                    }
 
                     continue;
                 }
@@ -115,13 +120,15 @@ namespace Hecton8.World
 
             enumerator.Dispose();
 
-            for (int i = 0; i < _tileStateRemovalScratchKeys.Count; i++)
+            for (int i = 0; i < _tileStateRemovalScratchKeyCount; i++)
                 FinalizeDeferredTileRemoval(_tileStateRemovalScratchKeys[i]);
+
+            _tileStateRemovalScratchKeyCount = 0;
 
             return changed;
         }
 
-        private static bool TryFinalizeTileHeightReadback(TileRuntimeState state)
+        private bool TryFinalizeTileHeightReadback(TileRuntimeState state)
         {
             if (state == null || !state.HeightReadbackPending)
                 return false;
@@ -130,14 +137,66 @@ namespace Hecton8.World
                 return false;
 
             bool completedSuccessfully = !state.HeightReadbackRequest.hasError;
-            state.HeightReadbackPending = false;
             if (!completedSuccessfully)
             {
+                state.HeightReadbackPending = false;
                 state.HeightmapHash = 0;
                 state.HeightmapUpdateCount = 0u;
                 return false;
             }
 
+            TileNativeCacheBuffer pendingBuffer = state.PendingCacheBufferIndex == 0
+                ? state.PrimaryCacheBuffer
+                : state.SecondaryCacheBuffer;
+            if (state.TileNativeCacheSlot < 0 || pendingBuffer.HeightSampleCount <= 0)
+            {
+                state.HeightReadbackPending = false;
+                return false;
+            }
+
+            NativeArray<ushort> readbackData = state.HeightReadbackRequest.GetData<ushort>();
+            if (!readbackData.IsCreated || readbackData.Length < pendingBuffer.HeightSampleCount)
+            {
+                state.HeightReadbackPending = false;
+                return false;
+            }
+
+            BufferID heightBufferId = ResolveTileNativeCacheBufferId(
+                state.TileNativeCacheSlot,
+                state.PendingCacheBufferIndex,
+                TileNativeCacheHeightOffset);
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref pendingBuffer.HeightSamplesHandle,
+                    heightBufferId,
+                    pendingBuffer.HeightSampleCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault heightVault,
+                    out NativeArray<ushort> heightSamples))
+            {
+                if (state.PendingCacheBufferIndex == 0)
+                    state.PrimaryCacheBuffer = pendingBuffer;
+                else
+                    state.SecondaryCacheBuffer = pendingBuffer;
+                return false;
+            }
+
+            try
+            {
+                NativeArray<ushort>.Copy(readbackData, 0, heightSamples, 0, pendingBuffer.HeightSampleCount);
+            }
+            finally
+            {
+                heightVault.ReleaseWriteLock(
+                    in pendingBuffer.HeightSamplesHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+
+            if (state.PendingCacheBufferIndex == 0)
+                state.PrimaryCacheBuffer = pendingBuffer;
+            else
+                state.SecondaryCacheBuffer = pendingBuffer;
+
+            state.HeightReadbackPending = false;
             state.ActiveCacheBufferIndex = state.PendingCacheBufferIndex;
             TouchTileCacheState(state);
             unchecked
@@ -164,6 +223,9 @@ namespace Hecton8.World
             if (state.HeightReadbackPending)
                 return;
 
+            if (HasChunkBuildJobsForTile(state.TileX, state.TileZ))
+                CompleteAndReleaseChunkBuildJobsForTile(state.TileX, state.TileZ);
+
             DisposeTileNativeCaches(state);
             _tileStates.Remove(tileKey);
             _activeSetDirty = true;
@@ -177,7 +239,7 @@ namespace Hecton8.World
         private bool TryFindTileStateAtPosition(Vector3 worldPosition, out TileRuntimeState state)
         {
             state = null;
-            Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+            FixedTileStateMap.Enumerator enumerator = _tileStates.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 TileRuntimeState candidate = enumerator.Current.Value;
@@ -198,11 +260,12 @@ namespace Hecton8.World
             return false;
         }
 
-        private static bool TryGetActiveTileCache(
+        private bool TryGetActiveTileCache(
             TileRuntimeState state,
             out NativeArray<byte> sandMask,
             out NativeArray<byte> rockMask,
-            out NativeArray<ushort> heightSamples)
+            out NativeArray<ushort> heightSamples,
+            bool touchAccess = false)
         {
             sandMask = default;
             rockMask = default;
@@ -214,17 +277,31 @@ namespace Hecton8.World
                 ? state.PrimaryCacheBuffer
                 : state.SecondaryCacheBuffer;
 
-            if (!buffer.SandMaskNative.IsCreated ||
-                !buffer.RockMaskNative.IsCreated ||
-                !buffer.HeightSamplesNative.IsCreated)
+            if (state.TileNativeCacheSlot < 0 ||
+                buffer.SampleCount <= 0 ||
+                buffer.HeightSampleCount <= 0 ||
+                buffer.SandMaskHandle.BufferID == 0u ||
+                buffer.RockMaskHandle.BufferID == 0u ||
+                buffer.HeightSamplesHandle.BufferID == 0u)
             {
                 return false;
             }
 
-            sandMask = buffer.SandMaskNative;
-            rockMask = buffer.RockMaskNative;
-            heightSamples = buffer.HeightSamplesNative;
-            TouchTileCacheState(state);
+            BufferID sandBufferId = unchecked((BufferID)(int)buffer.SandMaskHandle.BufferID);
+            BufferID rockBufferId = unchecked((BufferID)(int)buffer.RockMaskHandle.BufferID);
+            BufferID heightBufferId = unchecked((BufferID)(int)buffer.HeightSamplesHandle.BufferID);
+            if (!TryReadVegetationMemoryBuffer(in buffer.SandMaskHandle, sandBufferId, buffer.SampleCount, out sandMask) ||
+                !TryReadVegetationMemoryBuffer(in buffer.RockMaskHandle, rockBufferId, buffer.SampleCount, out rockMask) ||
+                !TryReadVegetationMemoryBuffer(in buffer.HeightSamplesHandle, heightBufferId, buffer.HeightSampleCount, out heightSamples))
+            {
+                sandMask = default;
+                rockMask = default;
+                heightSamples = default;
+                return false;
+            }
+
+            if (touchAccess)
+                TouchTileCacheState(state);
             return true;
         }
 
@@ -245,15 +322,21 @@ namespace Hecton8.World
                 ? state.PrimaryCacheBuffer
                 : state.SecondaryCacheBuffer;
 
-            return buffer.SandMaskNative.IsCreated &&
-                   buffer.RockMaskNative.IsCreated &&
-                   buffer.HeightSamplesNative.IsCreated;
+            return state.TileNativeCacheSlot >= 0 &&
+                   buffer.SampleCount > 0 &&
+                   buffer.HeightSampleCount > 0 &&
+                   buffer.SandMaskHandle.BufferID != 0u &&
+                   buffer.RockMaskHandle.BufferID != 0u &&
+                   buffer.HeightSamplesHandle.BufferID != 0u;
         }
 
-        private static void EvictTileCache(TileRuntimeState state)
+        private void EvictTileCache(TileRuntimeState state)
         {
             if (state == null)
                 return;
+
+            if (HasChunkBuildJobsForTile(state.TileX, state.TileZ))
+                CompleteAndReleaseChunkBuildJobsForTile(state.TileX, state.TileZ);
 
             DisposeTileNativeCaches(state);
             state.AlphamapTextureCache = null;
@@ -293,7 +376,7 @@ namespace Hecton8.World
                 long evictionKey = long.MinValue;
                 uint oldestAccessFrame = uint.MaxValue;
 
-                Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+                FixedTileStateMap.Enumerator enumerator = _tileStates.GetEnumerator();
                 while (enumerator.MoveNext())
                 {
                     long tileKey = enumerator.Current.Key;
@@ -302,8 +385,12 @@ namespace Hecton8.World
                         continue;
 
                     residentCacheCount++;
-                    if (tileKey == protectedTileKey || state == null || state.HeightReadbackPending)
+                    if (tileKey == protectedTileKey ||
+                        state == null ||
+                        state.HeightReadbackPending)
+                    {
                         continue;
+                    }
 
                     if (state.LastAccessFrame <= oldestAccessFrame)
                     {

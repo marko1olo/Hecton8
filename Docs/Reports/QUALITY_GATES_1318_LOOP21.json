@@ -1,0 +1,61 @@
+﻿{
+    "agentId":  "1318",
+    "task":  "1318_PURGE",
+    "loop":  21,
+    "status":  "VERIFICATION_BLOCKED_CPU_AND_MISSING_PROJECT_FILES",
+    "domain":  "Echelon 3 Core Infrastructure and Ecology / Assets/_Project/Scripts/World / DestructibleOrganicManager.cs",
+    "scannedFiles":  [
+                         "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+                     ],
+    "fixedFindings":  [
+                          "SyncLane used regrowth-only lock while reading maturation state and running defoliant lifecycle cleanup",
+                          "Dear Lie cleanup did not pin or clear maturation/spore cadence maps",
+                          "FloraBrain parasite exposure query forced unbounded full-lane scans and read Vault-backed runtime flags without a local pin"
+                      ],
+    "lockSetChanges":  {
+                           "dearLieVaultJobBufferCount":  33,
+                           "addedDearLieBuffers":  [
+                                                       "OrganicMaturationScaleByUidBufferId",
+                                                       "OrganicMaturationYieldByUidBufferId",
+                                                       "OrganicNextSporeAcousticTimeByUidBufferId"
+                                                   ],
+                           "syncLaneLock":  "TryLockOrganicLifecycleMutationBuffers",
+                           "parasiteExposureLock":  [
+                                                        "OrganicSurfaceInstanceUidsBufferId",
+                                                        "OrganicUnderwaterInstanceUidsBufferId",
+                                                        "OrganicSurfaceHealthBufferId",
+                                                        "OrganicUnderwaterHealthBufferId",
+                                                        "OrganicRuntimeFlagsByUidBufferId"
+                                                    ]
+                       },
+    "parasiteExposureBudget":  {
+                                   "minRecordsPerLane":  16,
+                                   "maxRecordsPerLane":  96,
+                                   "minRefreshSeconds":  0.05,
+                                   "maxRefreshSeconds":  0.25,
+                                   "holdSeconds":  0.45,
+                                   "queryResetDistanceMeters":  1.5,
+                                   "qualityScale":  "GlobalQualityWeight continuous q*q budget and linear refresh interval"
+                               },
+    "zeroGcHotPath":  {
+                          "managedAllocationsAdded":  0,
+                          "jobsAdded":  0,
+                          "stackallocAddedBytes":  0,
+                          "staticBoundBefore":  "O(surfaceCount + underwaterCount) every FloraBrain Tick",
+                          "staticBoundAfter":  "O(32..192 checked records) per sampled window"
+                      },
+    "failedGates":  [
+                        "BUILD_GATE_BLOCKED_BY_CPU_GT_50",
+                        "BUILD_GATE_BLOCKED_MISSING_UNITY_GENERATED_CSPROJ"
+                    ],
+    "verification":  {
+                         "gitDiffCheck":  "CRLF normalization warning only",
+                         "cpuSamplePercent":  100,
+                         "compilerProcessCount":  0,
+                         "csprojCount":  0,
+                         "dotnetBuild":  "not launched",
+                         "unityProfiler":  "not available in this session"
+                     },
+    "sourceHashSha256":  "7c2b51977cb0b41a9c29b6e14123e5b9cf0eb4c8309830f1071eb0e49fbb81a0",
+    "verificationHashSha256":  "7c2b51977cb0b41a9c29b6e14123e5b9cf0eb4c8309830f1071eb0e49fbb81a0"
+}

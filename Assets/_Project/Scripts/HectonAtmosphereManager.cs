@@ -905,7 +905,7 @@ namespace Hecton8.Atmosphere
         private void OnEnable()
         {
 #if UNITY_EDITOR
-            if (EditorApplication.isCompiling || !Application.isPlaying)
+            if (EditorApplication.isCompiling)
                 return;
 #endif
 
@@ -919,7 +919,7 @@ namespace Hecton8.Atmosphere
                 MapMagicBiomeEvents.Register(this);
                 BiomeMatrixEvents.Register(this);
                 CacheRegistryRuntimeReferences();
-                ResolveBiomeMatrixDirector();
+                RefreshBiomeMatrixDirectorFromRegistry();
                 ApplyCurrentMatrixAtmosphereOverride();
             }
 #if UNITY_EDITOR
@@ -949,7 +949,7 @@ namespace Hecton8.Atmosphere
             }
 
             if (_biomeMatrixDirector == null)
-                ResolveBiomeMatrixDirector();
+                RefreshBiomeMatrixDirectorFromRegistry();
 
             ApplyCurrentMatrixAtmosphereOverride();
             EnsureAegirRingShadowCookie();
@@ -1177,6 +1177,21 @@ namespace Hecton8.Atmosphere
                     _cachedCelestialEngine = currentService as HectonCelestialEngine;
                     EnsureAegirRingShadowCookie();
                     break;
+                case GlobalRegistryServiceSlot.BiomeMatrixRuntime:
+                    if (_biomeMatrixDirector == null || ReferenceEquals(previousService, _biomeMatrixDirector))
+                    {
+                        _biomeMatrixDirector = currentService as BiomeMatrixDirector;
+                        ApplyCurrentMatrixAtmosphereOverride();
+                    }
+                    break;
+                case GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime:
+                    if (_proceduralFieldSampler == null || ReferenceEquals(previousService, _proceduralFieldSampler))
+                    {
+                        _proceduralFieldSampler = currentService as WorldProceduralFieldSampler;
+                        if (_proceduralFieldSampler == null)
+                            ClearProceduralBiomeInfluenceState();
+                    }
+                    break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     if (currentService == null)
                     {
@@ -1201,7 +1216,7 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
         private void EditorTick()
         {
-            if (EditorApplication.isCompiling || !Application.isPlaying)
+            if (EditorApplication.isCompiling)
             {
                 EditorApplication.update -= EditorTick;
                 return;
@@ -1322,7 +1337,7 @@ namespace Hecton8.Atmosphere
 
         private void OnValidate()
         {
-            if (EditorApplication.isCompiling || !Application.isPlaying)
+            if (EditorApplication.isCompiling || Application.isPlaying)
                 return;
 
             _editorInitialized = false;
@@ -1988,13 +2003,10 @@ namespace Hecton8.Atmosphere
 
             _nextBiomeInfluenceRefreshTime = now + math.max(0.05f, _biomeInfluenceRefreshInterval);
 
-            if (_proceduralFieldSampler == null)
-                WorldRuntimeReferenceUtility.TryResolveWorldProceduralFieldSampler(ref _proceduralFieldSampler);
-
             Transform sampleTransform = _playerCameraTransform != null ? _playerCameraTransform : _playerTransform;
             if (_proceduralFieldSampler == null || sampleTransform == null)
             {
-                _hasBiomeInfluenceAtmosphere = false;
+                ClearProceduralBiomeInfluenceState();
                 return;
             }
 
@@ -2014,11 +2026,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            ClearProceduralBiomeInfluenceHysteresis();
-            _hasBiomeInfluenceAtmosphere = false;
-            _currentBiomeInfluence = default;
-            _biomeInfluencePrimaryProfile = null;
-            _biomeInfluenceSecondaryProfile = null;
+            ClearProceduralBiomeInfluenceState();
         }
 
         private bool ShouldCommitProceduralBiomeInfluence(
@@ -2082,6 +2090,15 @@ namespace Hecton8.Atmosphere
             _stableBiomeInfluencePrimaryId = 0;
             _pendingBiomeInfluencePrimaryId = 0;
             _pendingBiomeInfluencePrimaryAup = default;
+        }
+
+        private void ClearProceduralBiomeInfluenceState()
+        {
+            ClearProceduralBiomeInfluenceHysteresis();
+            _hasBiomeInfluenceAtmosphere = false;
+            _currentBiomeInfluence = default;
+            _biomeInfluencePrimaryProfile = null;
+            _biomeInfluenceSecondaryProfile = null;
         }
 
         private static AtmosphereProfile ResolveMatrixAtmosphereProfile(HectonBiomeMatrixProfile profile)
@@ -2267,14 +2284,19 @@ namespace Hecton8.Atmosphere
         {
             _playerRuntimeContext = GlobalRegistry.Player;
             _cachedCelestialEngine = GlobalRegistry.CelestialEngine;
+            if (_biomeMatrixDirector == null)
+                _biomeMatrixDirector = GlobalRegistry.BiomeMatrix;
+            if (_proceduralFieldSampler == null)
+                _proceduralFieldSampler = GlobalRegistry.ProceduralFieldSampler;
         }
 
-        private void ResolveBiomeMatrixDirector()
+        private void RefreshBiomeMatrixDirectorFromRegistry()
         {
             if (!Application.isPlaying)
                 return;
 
-            WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);
+            if (_biomeMatrixDirector == null)
+                _biomeMatrixDirector = GlobalRegistry.BiomeMatrix;
         }
 
         private void ApplyCurrentMatrixAtmosphereOverride()

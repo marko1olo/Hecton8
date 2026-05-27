@@ -148,12 +148,21 @@ namespace Hecton8.EditorValidation
 
                 return true;
             }
-            catch (Exception ex)
-            {
-                LastError = ex.Message;
-                Debug.LogException(ex);
-                return false;
-            }
+            catch (IOException ex) { return FailBake(ex); }
+            catch (UnauthorizedAccessException ex) { return FailBake(ex); }
+            catch (ArgumentException ex) { return FailBake(ex); }
+            catch (InvalidOperationException ex) { return FailBake(ex); }
+            catch (FormatException ex) { return FailBake(ex); }
+            catch (OverflowException ex) { return FailBake(ex); }
+            catch (NotSupportedException ex) { return FailBake(ex); }
+            catch (System.Security.SecurityException ex) { return FailBake(ex); }
+        }
+
+        private static bool FailBake(Exception ex)
+        {
+            LastError = ex.Message;
+            Debug.LogException(ex);
+            return false;
         }
 
         internal static bool TryAnalyzeProductionCoverage(out string report, out int missingCount)
@@ -168,12 +177,21 @@ namespace Hecton8.EditorValidation
                 report = BuildProductionCoverageReport(dataSet, csvFileCount, jsonFileCount, missingCount, coverageError);
                 return missingCount == 0;
             }
-            catch (Exception ex)
-            {
-                missingCount = -1;
-                report = "coverage-analysis-failed: " + ex.Message;
-                return false;
-            }
+            catch (IOException ex) { return FailCoverageAnalysis(ex, out report, out missingCount); }
+            catch (UnauthorizedAccessException ex) { return FailCoverageAnalysis(ex, out report, out missingCount); }
+            catch (ArgumentException ex) { return FailCoverageAnalysis(ex, out report, out missingCount); }
+            catch (InvalidOperationException ex) { return FailCoverageAnalysis(ex, out report, out missingCount); }
+            catch (FormatException ex) { return FailCoverageAnalysis(ex, out report, out missingCount); }
+            catch (OverflowException ex) { return FailCoverageAnalysis(ex, out report, out missingCount); }
+            catch (NotSupportedException ex) { return FailCoverageAnalysis(ex, out report, out missingCount); }
+            catch (System.Security.SecurityException ex) { return FailCoverageAnalysis(ex, out report, out missingCount); }
+        }
+
+        private static bool FailCoverageAnalysis(Exception ex, out string report, out int missingCount)
+        {
+            missingCount = -1;
+            report = "coverage-analysis-failed: " + ex.Message;
+            return false;
         }
 
         private static DataSet BuildDataSetFromSources(LocalizationPool localizationPool, out int csvFileCount, out int jsonFileCount)
@@ -288,18 +306,21 @@ namespace Hecton8.EditorValidation
                                   Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture) +
                                   "." +
                                   DateTime.UtcNow.Ticks.ToString(CultureInfo.InvariantCulture);
-            string outputPath = Path.GetFullPath(OutputAssetPath);
-            string tempPath = outputPath + uniqueSuffix + TempOutputSuffix;
-            string backupPath = outputPath + uniqueSuffix + BackupOutputSuffix;
+            string outputPath = string.Empty;
+            string tempPath = string.Empty;
+            string backupPath = string.Empty;
 
             try
             {
+                outputPath = Path.GetFullPath(OutputAssetPath);
+                tempPath = outputPath + uniqueSuffix + TempOutputSuffix;
+                backupPath = outputPath + uniqueSuffix + BackupOutputSuffix;
                 TryDeleteFile(Path.GetFullPath(OutputAssetPath + TempOutputSuffix));
                 TryDeleteFile(Path.GetFullPath(OutputAssetPath + BackupOutputSuffix));
                 TryDeleteStalePromoteFiles(outputPath);
                 TryDeleteFile(tempPath);
                 TryDeleteFile(backupPath);
-                if (File.Exists(outputPath) &&
+                if (TryFileExists(outputPath) &&
                     TryValidateBlobFile(outputPath, out _) &&
                     TryFileEqualsBytes(outputPath, blob, out _))
                 {
@@ -315,7 +336,7 @@ namespace Hecton8.EditorValidation
                     return false;
                 }
 
-                if (File.Exists(outputPath) &&
+                if (TryFileExists(outputPath) &&
                     TryValidateBlobFile(outputPath, out _) &&
                     TryFilesEqual(outputPath, tempPath, out _))
                 {
@@ -336,22 +357,28 @@ namespace Hecton8.EditorValidation
 
                 return true;
             }
-            catch (Exception ex)
-            {
-                error = "Atomic output write failed: " + ex.Message;
-                TryDeleteFile(tempPath);
-                TryDeleteFile(backupPath);
-                return false;
-            }
+            catch (IOException ex) { return FailAtomicOutputWrite(ex, tempPath, backupPath, out error); }
+            catch (UnauthorizedAccessException ex) { return FailAtomicOutputWrite(ex, tempPath, backupPath, out error); }
+            catch (ArgumentException ex) { return FailAtomicOutputWrite(ex, tempPath, backupPath, out error); }
+            catch (InvalidOperationException ex) { return FailAtomicOutputWrite(ex, tempPath, backupPath, out error); }
+            catch (NotSupportedException ex) { return FailAtomicOutputWrite(ex, tempPath, backupPath, out error); }
+            catch (System.Security.SecurityException ex) { return FailAtomicOutputWrite(ex, tempPath, backupPath, out error); }
+        }
+
+        private static bool FailAtomicOutputWrite(Exception ex, string tempPath, string backupPath, out string error)
+        {
+            error = "Atomic output write failed: " + ex.Message;
+            TryDeleteFile(tempPath);
+            TryDeleteFile(backupPath);
+            return false;
         }
 
         private static bool TryPromoteValidatedBlob(string outputPath, string tempPath, string backupPath, out string error)
         {
             error = string.Empty;
-            if (!File.Exists(outputPath))
+            if (!TryFileExists(outputPath))
             {
-                File.Move(tempPath, outputPath);
-                return true;
+                return TryPromoteNewOutput(tempPath, outputPath, out error);
             }
 
             try
@@ -368,33 +395,97 @@ namespace Hecton8.EditorValidation
                         TryDeleteFile(backupPath);
                         return true;
                     }
-                    catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                    catch (IOException ex)
                     {
                         lastReplaceException = ex;
                         Thread.Sleep(15 * (attempt + 1));
                     }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        lastReplaceException = ex;
+                        Thread.Sleep(15 * (attempt + 1));
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        return TryPromoteAfterReplaceFailure(ex, outputPath, tempPath, backupPath, out error);
+                    }
+                    catch (NotSupportedException ex)
+                    {
+                        return TryPromoteAfterReplaceFailure(ex, outputPath, tempPath, backupPath, out error);
+                    }
+                    catch (System.Security.SecurityException ex)
+                    {
+                        return TryPromoteAfterReplaceFailure(ex, outputPath, tempPath, backupPath, out error);
+                    }
                 }
 
-                throw lastReplaceException ?? new IOException("File.Replace failed without a captured exception.");
+                return TryPromoteAfterReplaceFailure(
+                    lastReplaceException ?? new IOException("File.Replace failed without a captured exception."),
+                    outputPath,
+                    tempPath,
+                    backupPath,
+                    out error);
             }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            catch (IOException ex)
             {
-                if (TryPromoteWithNativeReplace(outputPath, tempPath, backupPath, out string nativeError))
-                    return true;
-
-                if (TryPromoteWithRecoverableMove(outputPath, tempPath, backupPath, out string moveError))
-                    return true;
-
-                if (TryPromoteWithValidatedCopy(outputPath, tempPath, backupPath, out string copyError))
-                    return true;
-
-                error = "Atomic output promote failed: File.Replace=" + ex.GetType().Name + ": " + ex.Message + "; " + nativeError;
-                if (!string.IsNullOrEmpty(moveError))
-                    error += "; RecoverableMove=" + moveError;
-                if (!string.IsNullOrEmpty(copyError))
-                    error += "; ValidatedCopy=" + copyError;
-                return false;
+                return TryPromoteAfterReplaceFailure(ex, outputPath, tempPath, backupPath, out error);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return TryPromoteAfterReplaceFailure(ex, outputPath, tempPath, backupPath, out error);
+            }
+            catch (ArgumentException ex)
+            {
+                return TryPromoteAfterReplaceFailure(ex, outputPath, tempPath, backupPath, out error);
+            }
+            catch (NotSupportedException ex)
+            {
+                return TryPromoteAfterReplaceFailure(ex, outputPath, tempPath, backupPath, out error);
+            }
+            catch (System.Security.SecurityException ex)
+            {
+                return TryPromoteAfterReplaceFailure(ex, outputPath, tempPath, backupPath, out error);
+            }
+        }
+
+        private static bool TryPromoteNewOutput(string tempPath, string outputPath, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                PrepareWritableFile(tempPath);
+                File.Move(tempPath, outputPath);
+                return true;
+            }
+            catch (IOException ex) { return FailFileOperation(ex, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileOperation(ex, out error); }
+            catch (ArgumentException ex) { return FailFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileOperation(ex, out error); }
+        }
+
+        private static bool TryPromoteAfterReplaceFailure(
+            Exception ex,
+            string outputPath,
+            string tempPath,
+            string backupPath,
+            out string error)
+        {
+            if (TryPromoteWithNativeReplace(outputPath, tempPath, backupPath, out string nativeError))
+                return true;
+
+            if (TryPromoteWithRecoverableMove(outputPath, tempPath, backupPath, out string moveError))
+                return true;
+
+            if (TryPromoteWithValidatedCopy(outputPath, tempPath, backupPath, out string copyError))
+                return true;
+
+            error = "Atomic output promote failed: File.Replace=" + ex.GetType().Name + ": " + ex.Message + "; " + nativeError;
+            if (!string.IsNullOrEmpty(moveError))
+                error += "; RecoverableMove=" + moveError;
+            if (!string.IsNullOrEmpty(copyError))
+                error += "; ValidatedCopy=" + copyError;
+            return false;
         }
 
         private static bool TryPromoteWithNativeReplace(string outputPath, string tempPath, string backupPath, out string error)
@@ -411,26 +502,54 @@ namespace Hecton8.EditorValidation
                 TryDeleteFile(backupPath);
                 File.Copy(outputPath, backupPath, true);
             }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            catch (IOException ex)
+            {
+                error = "backup copy failed: " + ex.GetType().Name + ": " + ex.Message;
+                return false;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                error = "backup copy failed: " + ex.GetType().Name + ": " + ex.Message;
+                return false;
+            }
+            catch (ArgumentException ex)
+            {
+                error = "backup copy failed: " + ex.GetType().Name + ": " + ex.Message;
+                return false;
+            }
+            catch (NotSupportedException ex)
+            {
+                error = "backup copy failed: " + ex.GetType().Name + ": " + ex.Message;
+                return false;
+            }
+            catch (System.Security.SecurityException ex)
             {
                 error = "backup copy failed: " + ex.GetType().Name + ": " + ex.Message;
                 return false;
             }
 
-            PrepareWritableFile(outputPath);
-            PrepareWritableFile(tempPath);
-            if (MoveFileEx(tempPath, outputPath, MoveFileReplaceExisting | MoveFileWriteThrough))
+            try
             {
-                TryDeleteFile(backupPath);
-                return true;
+                PrepareWritableFile(outputPath);
+                PrepareWritableFile(tempPath);
+                if (MoveFileEx(tempPath, outputPath, MoveFileReplaceExisting | MoveFileWriteThrough))
+                {
+                    TryDeleteFile(backupPath);
+                    return true;
+                }
+
+                int moveError = Marshal.GetLastWin32Error();
+                if (!TryFileExists(outputPath) && TryFileExists(backupPath))
+                    MoveFileEx(backupPath, outputPath, MoveFileReplaceExisting | MoveFileWriteThrough);
+
+                error = "MoveFileExW failed with error " + moveError.ToString(CultureInfo.InvariantCulture);
+                return false;
             }
-
-            int moveError = Marshal.GetLastWin32Error();
-            if (!File.Exists(outputPath) && File.Exists(backupPath))
-                MoveFileEx(backupPath, outputPath, MoveFileReplaceExisting | MoveFileWriteThrough);
-
-            error = "MoveFileExW failed with error " + moveError.ToString(CultureInfo.InvariantCulture);
-            return false;
+            catch (IOException ex) { return FailFileOperation(ex, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileOperation(ex, out error); }
+            catch (ArgumentException ex) { return FailFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileOperation(ex, out error); }
         }
 
         private static bool TryPromoteWithRecoverableMove(string outputPath, string tempPath, string backupPath, out string error)
@@ -438,7 +557,7 @@ namespace Hecton8.EditorValidation
             error = string.Empty;
             try
             {
-                if (!File.Exists(backupPath))
+                if (!TryFileExists(backupPath))
                     File.Copy(outputPath, backupPath, true);
 
                 PrepareWritableFile(outputPath);
@@ -448,22 +567,73 @@ namespace Hecton8.EditorValidation
                 TryDeleteFile(backupPath);
                 return true;
             }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            catch (IOException ex)
             {
                 error = ex.GetType().Name + ": " + ex.Message;
-                if (!File.Exists(outputPath) && File.Exists(backupPath))
-                {
-                    try
-                    {
-                        File.Move(backupPath, outputPath);
-                    }
-                    catch (Exception restoreEx) when (restoreEx is IOException || restoreEx is UnauthorizedAccessException)
-                    {
-                        error += "; restore failed: " + restoreEx.GetType().Name + ": " + restoreEx.Message;
-                    }
-                }
+                if (!TryFileExists(outputPath) && TryFileExists(backupPath))
+                    TryRestoreMovedBackup(outputPath, backupPath, ref error);
 
                 return false;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+                if (!TryFileExists(outputPath) && TryFileExists(backupPath))
+                    TryRestoreMovedBackup(outputPath, backupPath, ref error);
+
+                return false;
+            }
+            catch (ArgumentException ex)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+                if (!TryFileExists(outputPath) && TryFileExists(backupPath))
+                    TryRestoreMovedBackup(outputPath, backupPath, ref error);
+
+                return false;
+            }
+            catch (NotSupportedException ex)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+                if (!TryFileExists(outputPath) && TryFileExists(backupPath))
+                    TryRestoreMovedBackup(outputPath, backupPath, ref error);
+
+                return false;
+            }
+            catch (System.Security.SecurityException ex)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+                if (!TryFileExists(outputPath) && TryFileExists(backupPath))
+                    TryRestoreMovedBackup(outputPath, backupPath, ref error);
+
+                return false;
+            }
+        }
+
+        private static void TryRestoreMovedBackup(string outputPath, string backupPath, ref string error)
+        {
+            try
+            {
+                File.Move(backupPath, outputPath);
+            }
+            catch (IOException restoreEx)
+            {
+                error += "; restore failed: " + restoreEx.GetType().Name + ": " + restoreEx.Message;
+            }
+            catch (UnauthorizedAccessException restoreEx)
+            {
+                error += "; restore failed: " + restoreEx.GetType().Name + ": " + restoreEx.Message;
+            }
+            catch (ArgumentException restoreEx)
+            {
+                error += "; restore failed: " + restoreEx.GetType().Name + ": " + restoreEx.Message;
+            }
+            catch (NotSupportedException restoreEx)
+            {
+                error += "; restore failed: " + restoreEx.GetType().Name + ": " + restoreEx.Message;
+            }
+            catch (System.Security.SecurityException restoreEx)
+            {
+                error += "; restore failed: " + restoreEx.GetType().Name + ": " + restoreEx.Message;
             }
         }
 
@@ -472,7 +642,7 @@ namespace Hecton8.EditorValidation
             error = string.Empty;
             try
             {
-                if (!File.Exists(backupPath))
+                if (!TryFileExists(backupPath))
                     File.Copy(outputPath, backupPath, true);
 
                 PrepareWritableFile(outputPath);
@@ -491,7 +661,7 @@ namespace Hecton8.EditorValidation
                 TryDeleteFile(backupPath);
                 return true;
             }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            catch (IOException ex)
             {
                 TryRestoreBackup(outputPath, backupPath, out string restoreError);
                 error = ex.GetType().Name + ": " + ex.Message;
@@ -499,12 +669,32 @@ namespace Hecton8.EditorValidation
                     error += "; restore failed: " + restoreError;
                 return false;
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                TryRestoreBackup(outputPath, backupPath, out string restoreError);
+                error = ex.GetType().Name + ": " + ex.Message;
+                if (!string.IsNullOrEmpty(restoreError))
+                    error += "; restore failed: " + restoreError;
+                return false;
+            }
+            catch (ArgumentException ex) { return FailValidatedCopy(ex, outputPath, backupPath, out error); }
+            catch (NotSupportedException ex) { return FailValidatedCopy(ex, outputPath, backupPath, out error); }
+            catch (System.Security.SecurityException ex) { return FailValidatedCopy(ex, outputPath, backupPath, out error); }
+        }
+
+        private static bool FailValidatedCopy(Exception ex, string outputPath, string backupPath, out string error)
+        {
+            TryRestoreBackup(outputPath, backupPath, out string restoreError);
+            error = ex.GetType().Name + ": " + ex.Message;
+            if (!string.IsNullOrEmpty(restoreError))
+                error += "; restore failed: " + restoreError;
+            return false;
         }
 
         private static bool TryRestoreBackup(string outputPath, string backupPath, out string error)
         {
             error = string.Empty;
-            if (!File.Exists(backupPath))
+            if (!TryFileExists(backupPath))
                 return false;
 
             try
@@ -513,11 +703,19 @@ namespace Hecton8.EditorValidation
                 File.Copy(backupPath, outputPath, true);
                 return true;
             }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            catch (IOException ex)
             {
                 error = ex.GetType().Name + ": " + ex.Message;
                 return false;
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+                return false;
+            }
+            catch (ArgumentException ex) { return FailFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileOperation(ex, out error); }
         }
 
         private static bool TryFilesEqual(string leftPath, string rightPath, out string error)
@@ -525,9 +723,13 @@ namespace Hecton8.EditorValidation
             error = string.Empty;
             try
             {
-                FileInfo leftInfo = new FileInfo(leftPath);
-                FileInfo rightInfo = new FileInfo(rightPath);
-                if (leftInfo.Length != rightInfo.Length)
+                if (!TryGetFileLength(leftPath, out long leftLength, out error))
+                    return false;
+
+                if (!TryGetFileLength(rightPath, out long rightLength, out error))
+                    return false;
+
+                if (leftLength != rightLength)
                     return false;
 
                 byte[] leftBuffer = new byte[8192];
@@ -551,11 +753,19 @@ namespace Hecton8.EditorValidation
                     }
                 }
             }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            catch (IOException ex)
             {
                 error = ex.GetType().Name + ": " + ex.Message;
                 return false;
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+                return false;
+            }
+            catch (ArgumentException ex) { return FailFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileOperation(ex, out error); }
         }
 
         private static bool TryFileEqualsBytes(string path, byte[] bytes, out string error)
@@ -563,8 +773,10 @@ namespace Hecton8.EditorValidation
             error = string.Empty;
             try
             {
-                FileInfo info = new FileInfo(path);
-                if (info.Length != bytes.Length)
+                if (!TryGetFileLength(path, out long length, out error))
+                    return false;
+
+                if (length != bytes.Length)
                     return false;
 
                 byte[] buffer = new byte[8192];
@@ -587,33 +799,84 @@ namespace Hecton8.EditorValidation
 
                 return true;
             }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            catch (IOException ex)
             {
                 error = ex.GetType().Name + ": " + ex.Message;
                 return false;
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+                return false;
+            }
+            catch (ArgumentException ex) { return FailFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileOperation(ex, out error); }
+        }
+
+        private static bool TryGetFileLength(string path, out long length, out string error)
+        {
+            length = 0L;
+            error = string.Empty;
+            try
+            {
+                length = new FileInfo(path).Length;
+                return true;
+            }
+            catch (IOException ex) { return FailFileOperation(ex, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileOperation(ex, out error); }
+            catch (ArgumentException ex) { return FailFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileOperation(ex, out error); }
+        }
+
+        private static bool FailFileOperation(Exception ex, out string error)
+        {
+            error = ex.GetType().Name + ": " + ex.Message;
+            return false;
         }
 
         private static void PrepareWritableFile(string path)
         {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            if (string.IsNullOrEmpty(path))
                 return;
 
-            FileAttributes attributes = File.GetAttributes(path);
-            if ((attributes & FileAttributes.ReadOnly) != 0)
-                File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
+            try
+            {
+                if (!File.Exists(path))
+                    return;
+
+                FileAttributes attributes = File.GetAttributes(path);
+                if ((attributes & FileAttributes.ReadOnly) != 0)
+                    File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (System.Security.SecurityException)
+            {
+            }
         }
 
         private static void TryDeleteStalePromoteFiles(string outputPath)
         {
-            string directory = Path.GetDirectoryName(outputPath);
-            string fileName = Path.GetFileName(outputPath);
-            if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName) || !Directory.Exists(directory))
-                return;
-
             string[] candidates;
             try
             {
+                string directory = Path.GetDirectoryName(outputPath);
+                string fileName = Path.GetFileName(outputPath);
+                if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName) || !Directory.Exists(directory))
+                    return;
+
                 candidates = Directory.GetFiles(directory, fileName + "*");
             }
             catch (IOException)
@@ -624,34 +887,67 @@ namespace Hecton8.EditorValidation
             {
                 return;
             }
+            catch (ArgumentException)
+            {
+                return;
+            }
+            catch (NotSupportedException)
+            {
+                return;
+            }
+            catch (System.Security.SecurityException)
+            {
+                return;
+            }
 
             for (int i = 0; i < candidates.Length; i++)
             {
                 string candidate = candidates[i];
-                if (string.Equals(Path.GetFullPath(candidate), outputPath, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                string candidateName = Path.GetFileName(candidate);
-                if (!candidateName.StartsWith(fileName + ".", StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                if (candidate.EndsWith(TempOutputSuffix, StringComparison.OrdinalIgnoreCase) ||
-                    candidate.EndsWith(BackupOutputSuffix, StringComparison.OrdinalIgnoreCase))
+                try
                 {
-                    TryDeleteFile(candidate);
+                    if (string.Equals(Path.GetFullPath(candidate), outputPath, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    string candidateName = Path.GetFileName(candidate);
+                    if (!candidateName.StartsWith(Path.GetFileName(outputPath) + ".", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    if (candidate.EndsWith(TempOutputSuffix, StringComparison.OrdinalIgnoreCase) ||
+                        candidate.EndsWith(BackupOutputSuffix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        TryDeleteFile(candidate);
+                    }
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
+                catch (ArgumentException)
+                {
+                }
+                catch (NotSupportedException)
+                {
+                }
+                catch (System.Security.SecurityException)
+                {
                 }
             }
         }
 
         private static void TryDeleteFile(string path)
         {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            if (string.IsNullOrEmpty(path))
                 return;
 
             for (int attempt = 0; attempt < 10; attempt++)
             {
                 try
                 {
+                    if (!File.Exists(path))
+                        return;
+
                     FileAttributes attributes = File.GetAttributes(path);
                     if ((attributes & FileAttributes.ReadOnly) != 0)
                         File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
@@ -667,9 +963,52 @@ namespace Hecton8.EditorValidation
                 {
                     Thread.Sleep(20 * (attempt + 1));
                 }
-
-                if (!File.Exists(path))
+                catch (ArgumentException)
+                {
                     return;
+                }
+                catch (NotSupportedException)
+                {
+                    return;
+                }
+                catch (System.Security.SecurityException)
+                {
+                    return;
+                }
+
+                if (!TryFileExists(path))
+                    return;
+            }
+        }
+
+        private static bool TryFileExists(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            try
+            {
+                return File.Exists(path);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                return false;
             }
         }
 
@@ -679,34 +1018,65 @@ namespace Hecton8.EditorValidation
         internal static bool TryValidateBlobFile(string path, out string error)
         {
             error = string.Empty;
-            if (!File.Exists(path))
+            if (!TryFileExists(path))
             {
                 error = "Missing Data Monolith output: " + path;
                 return false;
             }
 
-            FileInfo info = new FileInfo(path);
-            if (info.Length < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
+            if (!TryGetFileLength(path, out long fileLength, out error))
+                return false;
+
+            if (fileLength < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
             {
-                error = "Data Monolith is too small: " + info.Length + " bytes.";
+                error = "Data Monolith is too small: " + fileLength + " bytes.";
                 return false;
             }
 
-            if (info.Length > int.MaxValue || info.Length > uint.MaxValue)
+            if (fileLength > int.MaxValue || fileLength > uint.MaxValue)
             {
-                error = "Data Monolith is too large for the current runtime contract: " + info.Length + " bytes.";
+                error = "Data Monolith is too large for the current runtime contract: " + fileLength + " bytes.";
                 return false;
             }
 
-            if ((info.Length & (H8DataLayoutConstants.SectionAlignmentBytes - 1)) != 0)
+            if ((fileLength & (H8DataLayoutConstants.SectionAlignmentBytes - 1)) != 0)
             {
-                error = "Data Monolith file length is not 64-byte aligned: " + info.Length + " bytes.";
+                error = "Data Monolith file length is not 64-byte aligned: " + fileLength + " bytes.";
                 return false;
             }
 
-            byte[] bytes = new byte[(int)info.Length];
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            int sectionTableBytes = SectionOrder.Length * UnsafeUtility.SizeOf<H8DataSectionEntry>();
+            int prefixBytes = H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes + sectionTableBytes;
+            byte[] prefix = new byte[prefixBytes]; // COLD ALLOC: byte[prefixBytes] - editor validation reads fixed h8bin header/directory/table only - owner: H8DataMonolithCompiler
+            if (!TryReadExactRange(path, 0L, prefix, prefix.Length, out error))
+                return false;
+
+            if (!ValidateBlobPrefix(prefix, fileLength, out ulong checksum, out error))
+                return false;
+
+            if (!TryComputeFileHash64(
+                    path,
+                    H8DataLayoutConstants.HeaderSizeBytes,
+                    fileLength - H8DataLayoutConstants.HeaderSizeBytes,
+                    out ulong computedChecksum,
+                    out error))
             {
+                return false;
+            }
+
+            if (checksum == computedChecksum)
+                return true;
+
+            error = "XXHash3 checksum mismatch: stored=0x" + checksum.ToString("X16") + " computed=0x" + computedChecksum.ToString("X16");
+            return false;
+        }
+
+        private static bool TryReadExact(string path, byte[] bytes, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
                 int total = 0;
                 while (total < bytes.Length)
                 {
@@ -717,17 +1087,132 @@ namespace Hecton8.EditorValidation
                     total += read;
                 }
 
-                if (total != bytes.Length)
-                {
-                    error = "Data Monolith read was incomplete: " + total + "/" + bytes.Length + " bytes.";
-                    return false;
-                }
+                if (total == bytes.Length)
+                    return true;
+
+                error = "Data Monolith read was incomplete: " + total + "/" + bytes.Length + " bytes.";
+                return false;
+            }
+            catch (IOException ex) { return FailFileOperation(ex, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileOperation(ex, out error); }
+            catch (ArgumentException ex) { return FailFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileOperation(ex, out error); }
+        }
+
+        private static bool TryReadExactRange(string path, long offset, byte[] bytes, int count, out string error)
+        {
+            error = string.Empty;
+            if (offset < 0L || count < 0 || count > bytes.Length)
+            {
+                error = "Invalid Data Monolith read range: offset=" + offset + " count=" + count + " buffer=" + bytes.Length;
+                return false;
             }
 
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                if (stream.Length < offset + count)
+                {
+                    error = "Data Monolith read range exceeds file length: offset=" + offset + " count=" + count + " length=" + stream.Length;
+                    return false;
+                }
+
+                stream.Position = offset;
+                int total = 0;
+                while (total < count)
+                {
+                    int read = stream.Read(bytes, total, count - total);
+                    if (read <= 0)
+                        break;
+
+                    total += read;
+                }
+
+                if (total == count)
+                    return true;
+
+                error = "Data Monolith range read was incomplete: " + total + "/" + count + " bytes.";
+                return false;
+            }
+            catch (IOException ex) { return FailFileOperation(ex, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileOperation(ex, out error); }
+            catch (ArgumentException ex) { return FailFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileOperation(ex, out error); }
+        }
+
+        internal static unsafe bool TryComputeFileHash64(string path, long offset, long count, out ulong hash, out string error)
+        {
+            hash = 0UL;
+            error = string.Empty;
+            if (offset < 0L || count < 0L)
+            {
+                error = "Invalid Data Monolith hash range: offset=" + offset + " count=" + count;
+                return false;
+            }
+
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 64 * 1024, FileOptions.SequentialScan);
+                if (stream.Length < offset + count)
+                {
+                    error = "Data Monolith hash range exceeds file length: offset=" + offset + " count=" + count + " length=" + stream.Length;
+                    return false;
+                }
+
+                stream.Position = offset;
+                byte[] scratch = new byte[64 * 1024]; // COLD ALLOC: byte[65536] - bounded editor streaming hash scratch - owner: H8DataMonolithCompiler
+                xxHash3.StreamingState state = new xxHash3.StreamingState(true);
+                long remaining = count;
+                while (remaining > 0L)
+                {
+                    int requested = remaining > scratch.Length ? scratch.Length : (int)remaining;
+                    int read = stream.Read(scratch, 0, requested);
+                    if (read <= 0)
+                    {
+                        error = "Data Monolith hash read was incomplete: remaining=" + remaining;
+                        return false;
+                    }
+
+                    fixed (byte* ptr = scratch)
+                        state.Update(ptr, read);
+
+                    remaining -= read;
+                }
+
+                uint2 digest = state.DigestHash64();
+                hash = ((ulong)digest.y << 32) | digest.x;
+                return true;
+            }
+            catch (IOException ex) { return FailFileOperation(ex, out error); }
+            catch (UnauthorizedAccessException ex) { return FailFileOperation(ex, out error); }
+            catch (ArgumentException ex) { return FailFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailFileOperation(ex, out error); }
+        }
+
+        private static bool ValidateBlobBytes(byte[] bytes, out string error)
+        {
+            if (!ValidateBlobPrefix(bytes, bytes.Length, out ulong checksum, out error))
+                return false;
+
+            ulong computedChecksum = ComputeHash64(bytes, H8DataLayoutConstants.HeaderSizeBytes, bytes.Length - H8DataLayoutConstants.HeaderSizeBytes);
+            if (checksum == computedChecksum)
+                return true;
+
+            error = "XXHash3 checksum mismatch: stored=0x" + checksum.ToString("X16") + " computed=0x" + computedChecksum.ToString("X16");
+            return false;
+        }
+
+        private static bool ValidateBlobPrefix(byte[] bytes, long blobLength, out ulong checksum, out string error)
+        {
+            error = string.Empty;
+            checksum = 0UL;
             uint headerMagic = ReadUInt32(bytes, 0);
             ushort headerVersion = ReadUInt16(bytes, 4);
             ushort headerBytes = ReadUInt16(bytes, 6);
-            ulong checksum = ReadUInt64(bytes, 8);
+            checksum = ReadUInt64(bytes, 8);
             uint headerBlobBytes = ReadUInt32(bytes, 16);
             uint headerDirectoryOffset = ReadUInt32(bytes, 20);
             uint headerDirectoryBytes = ReadUInt32(bytes, 24);
@@ -762,7 +1247,7 @@ namespace Hecton8.EditorValidation
             uint expectedDirectoryBytes = H8DataLayoutConstants.DirectorySizeBytes;
             uint expectedSectionTableOffset = expectedDirectoryOffset + expectedDirectoryBytes;
             uint expectedSectionTableBytes = (uint)(SectionOrder.Length * UnsafeUtility.SizeOf<H8DataSectionEntry>());
-            if (headerBlobBytes != bytes.Length ||
+            if (headerBlobBytes != blobLength ||
                 headerDirectoryOffset != expectedDirectoryOffset ||
                 headerDirectoryBytes != expectedDirectoryBytes ||
                 headerSectionTableOffset != expectedSectionTableOffset ||
@@ -781,13 +1266,6 @@ namespace Hecton8.EditorValidation
                         " flags=0x" + headerFlags.ToString("X8") +
                         " schema=0x" + headerSchemaHash.ToString("X8") +
                         " reserved=" + headerReserved0 + "/" + headerReserved1 + "/" + headerReserved2;
-                return false;
-            }
-
-            ulong computedChecksum = ComputeHash64(bytes, H8DataLayoutConstants.HeaderSizeBytes, bytes.Length - H8DataLayoutConstants.HeaderSizeBytes);
-            if (checksum != computedChecksum)
-            {
-                error = "XXHash3 checksum mismatch: stored=0x" + checksum.ToString("X16") + " computed=0x" + computedChecksum.ToString("X16");
                 return false;
             }
 
@@ -849,9 +1327,9 @@ namespace Hecton8.EditorValidation
                 return false;
             }
 
-            if (blobBytes != bytes.Length)
+            if (blobBytes != blobLength)
             {
-                error = "Directory blob byte-count mismatch: " + blobBytes + " expected " + bytes.Length;
+                error = "Directory blob byte-count mismatch: " + blobBytes + " expected " + blobLength;
                 return false;
             }
 
@@ -917,7 +1395,7 @@ namespace Hecton8.EditorValidation
                 }
 
                 ulong sectionBytes = (ulong)recordSize * count;
-                if ((ulong)offset + sectionBytes > (ulong)bytes.Length)
+                if ((ulong)offset + sectionBytes > (ulong)blobLength)
                 {
                     error = expectedId + " section range exceeds blob length.";
                     return false;
@@ -930,7 +1408,7 @@ namespace Hecton8.EditorValidation
                 }
 
                 expectedSectionOffset = AlignUp((ulong)offset + sectionBytes, (uint)H8DataLayoutConstants.SectionAlignmentBytes);
-                if (expectedSectionOffset > (ulong)bytes.Length + (uint)H8DataLayoutConstants.SectionAlignmentBytes)
+                if (expectedSectionOffset > (ulong)blobLength + (uint)H8DataLayoutConstants.SectionAlignmentBytes)
                 {
                     error = expectedId + " canonical section cursor overflow.";
                     return false;
@@ -3462,11 +3940,14 @@ namespace Hecton8.EditorValidation
             internal readonly List<H8PhysicsConstantsRecord> PhysicsConstants = new List<H8PhysicsConstantsRecord>(64);
         }
 
+        // Assigned by Unity JsonUtility during editor/offline bake.
+#pragma warning disable CS0649
         [Serializable] private sealed class JsonRoot { public JsonItem[] items; public JsonCreature[] creatures; public JsonBiome[] biomes; public JsonRecipe[] recipes; }
         [Serializable] private sealed class JsonItem { public string id; public string category; public uint flags; public int maxStack = 1; public string recipe; public float massKg = 1f; public float volumeM3 = 0.001f; public float quality = 1f; public float heatCapacity; public string yieldId; public string name; public string description; }
         [Serializable] private sealed class JsonCreature { public string id; public uint mateMask; public uint biomeMask; public uint flags; public float aggression; public float metabolism = 1f; public float maxHealth = 1f; public float cruiseSpeed = 1f; public float burstSpeed = 1f; public float spawnCredit = 1f; public string name; public string lootTable; public float minDepth; public float maxDepth; }
         [Serializable] private sealed class JsonBiome { public string id; public uint flags; public string surfaceId; public float minDepth; public float maxDepth; public float temperatureC = 2f; public float pressureScalar = 1f; public float fogDensity; public float scatterR = 0.08f; public float scatterG = 0.18f; public float scatterB = 0.24f; public string name; public string heatmapId; public string radiationId; }
         [Serializable] private sealed class JsonRecipe { public string output; public string station; public uint flags; public string ingredients; public float craftSeconds = 1f; public uint outputCount = 1u; }
+#pragma warning restore CS0649
     }
 
     internal sealed class H8DataMonolithBuildPreprocessor : IPreprocessBuildWithReport
@@ -3697,21 +4178,48 @@ namespace Hecton8.EditorValidation
                 };
                 _thread.Start();
             }
-            catch (Exception ex)
+            catch (SocketException ex)
             {
-                Interlocked.Exchange(ref _running, 0);
-                try
-                {
-                    _listener?.Stop();
-                }
-                catch (Exception)
-                {
-                }
-
-                _listener = null;
-                _thread = null;
-                Debug.LogWarning("[H8DataMonolithHotReloadSocket] Socket bridge unavailable: " + ex.Message);
+                HandleStartFailure(ex);
             }
+            catch (ObjectDisposedException ex)
+            {
+                HandleStartFailure(ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                HandleStartFailure(ex);
+            }
+            catch (ThreadStateException ex)
+            {
+                HandleStartFailure(ex);
+            }
+            catch (System.Security.SecurityException ex)
+            {
+                HandleStartFailure(ex);
+            }
+        }
+
+        private static void HandleStartFailure(Exception ex)
+        {
+            Interlocked.Exchange(ref _running, 0);
+            try
+            {
+                _listener?.Stop();
+            }
+            catch (SocketException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+
+            _listener = null;
+            _thread = null;
+            Debug.LogWarning("[H8DataMonolithHotReloadSocket] Socket bridge unavailable: " + ex.Message);
         }
 
         private static void Stop()
@@ -3721,7 +4229,13 @@ namespace Hecton8.EditorValidation
             {
                 _listener?.Stop();
             }
-            catch (Exception)
+            catch (SocketException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
             {
             }
 
@@ -3761,7 +4275,23 @@ namespace Hecton8.EditorValidation
                 {
                     return;
                 }
-                catch (Exception ex)
+                catch (IOException ex)
+                {
+                    Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
+                }
+                catch (ArgumentException ex)
+                {
+                    Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
+                }
+                catch (NotSupportedException ex)
+                {
+                    Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
+                }
+                catch (System.Security.SecurityException ex)
                 {
                     Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
                 }
@@ -3785,7 +4315,19 @@ namespace Hecton8.EditorValidation
                 string expectedPath = Path.GetFullPath(H8DataMonolithCompiler.OutputAssetPath);
                 return string.Equals(fullPath, expectedPath, StringComparison.OrdinalIgnoreCase);
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (System.Security.SecurityException)
             {
                 return false;
             }

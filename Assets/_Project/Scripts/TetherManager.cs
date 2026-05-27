@@ -11,6 +11,9 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Physics
 {
@@ -23,6 +26,9 @@ namespace Hecton8.Physics
     public sealed class TetherManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const string RuntimeShaderName = "Hecton8/Physics/TetherLineStrip";
+#if UNITY_EDITOR
+        private const string RuntimeShaderPath = "Assets/_Project/Art/Shaders/Hecton_TetherLineStrip.shader";
+#endif
         private static readonly int _TetherPositionsId = Shader.PropertyToID("_TetherPositions");
         private static readonly int _TetherSegmentTensionsId = Shader.PropertyToID("_TetherSegmentTensions");
         private static readonly int _TetherDrawParamsId = Shader.PropertyToID("_TetherDrawParams");
@@ -53,6 +59,9 @@ namespace Hecton8.Physics
         [Header("Tether Rendering")]
         [Tooltip("Optional explicit material for tether line rendering. When omitted the manager creates a runtime material from the built-in tether shader.")]
         [SerializeField] private Material tetherRenderMaterial;
+
+        [Tooltip("Authored tether shader reference used when no explicit material is provided. Required for release player fallback material creation.")]
+        [SerializeField] private Shader tetherRenderShader;
 
         [Tooltip("Fallback tether line tint used by the procedural line-strip renderer.")]
         [SerializeField] private Color tetherRenderColor = new Color(0.22f, 0.92f, 0.96f, 0.92f);
@@ -1372,7 +1381,18 @@ namespace Hecton8.Physics
             if (_runtimeRenderMaterial != null)
                 return _runtimeRenderMaterial;
 
-            Shader shader = Shader.Find(RuntimeShaderName);
+            Shader shader = tetherRenderShader;
+#if UNITY_EDITOR
+            if (shader == null)
+            {
+                shader = AssetDatabase.LoadAssetAtPath<Shader>(RuntimeShaderPath);
+                tetherRenderShader = shader;
+            }
+#endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find(RuntimeShaderName);
+#endif
             if (shader == null)
                 return null;
 
@@ -1385,6 +1405,14 @@ namespace Hecton8.Physics
             _ownsRuntimeMaterial = true;
             return _runtimeRenderMaterial;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (tetherRenderShader == null)
+                tetherRenderShader = AssetDatabase.LoadAssetAtPath<Shader>(RuntimeShaderPath);
+        }
+#endif
 
         internal float ResolveTowSpringStiffness(HeavyTowWinch owner)
         {

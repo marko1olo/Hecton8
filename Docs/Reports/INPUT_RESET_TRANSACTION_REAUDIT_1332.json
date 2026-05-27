@@ -1,0 +1,109 @@
+{
+  "agentId": "1332",
+  "task": "1332_PURGE_RESET_TRANSACTION",
+  "status": "STATIC_GREEN_BUILD_BLOCKED_BY_HOST_CPU_GATE",
+  "timestamp": "2026-05-26T21:52:00+04:00",
+  "domain": "Hecton8.Input + UI/PauseControlsPanel.cs + UI/PDAControlsRebindUI.cs",
+  "scannedFiles": 11,
+  "changedFiles": [
+    "Assets/_Project/Scripts/Core/RebindingManager.cs",
+    "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+    "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs"
+  ],
+  "fixes": [
+    "ClearOverrides now deletes persisted controls.json and temp files before clearing runtime binding overrides, preventing reset split-brain when filesystem deletion fails.",
+    "PauseControlsPanel per-row reset now snapshots the previous overridePath and restores it if saveAfterRowReset persistence fails.",
+    "PDAControlsRebindUI per-row reset now snapshots the previous overridePath and restores it if saveAfterRowReset persistence fails.",
+    "PauseControlsPanel OnDisable autosave now consumes SaveOverrides bool and no longer ignores fail-closed persistence.",
+    "Editor source guards were extended for delete-before-runtime-clear ordering and restore-on-save-failure routes."
+  ],
+  "failedGates": [
+    "dotnet_build_blocked_by_host_cpu_gate",
+    "roslyn_native_audit_not_run_due_host_cpu_gate",
+    "unity_editor_tests_not_run",
+    "unity_profiler_gcmonitor_not_run"
+  ],
+  "buildGate": {
+    "dotnetOrCscProcesses": 0,
+    "cpuAverage": 97.92331655374937,
+    "cpuMax": 100.0,
+    "rule": "Do not launch dotnet build when CPU > 50% or dotnet/csc is running.",
+    "result": "blocked"
+  },
+  "staticScans": {
+    "broadCatch": 0,
+    "throwNew": 0,
+    "playerPrefs": 0,
+    "jsonUtility": 0,
+    "removeAllListeners": 0,
+    "stringFormat": 0,
+    "toString": 0,
+    "stringInterpolation": 0,
+    "linq": 0,
+    "foreach": 0,
+    "clearPlayerPrefs": 0,
+    "voidOverrideContract": 0,
+    "uncheckedPanelSave": 0,
+    "runtimeClearBeforeDelete": 0,
+    "hotLoopMarkers": 0,
+    "absoluteAupCastsFound": 0
+  },
+  "totalNativeFieldDeclarations": 0,
+  "totalNativeTokens": 11,
+  "persistentNativeFieldsRemaining": 0,
+  "transientVaultViews": 3,
+  "transientJobViews": 0,
+  "byteOffsetMaps": [
+    {
+      "structName": "InputActionStateDTO",
+      "sizeBytes": 64,
+      "offsets": {
+        "BindingGuidHash64": "0:ulong",
+        "EffectivePathHash64": "8:ulong",
+        "OverridePathHash64": "16:ulong",
+        "ActionIdentityHash64": "24:ulong",
+        "ActionNameHash": "32:uint",
+        "BindingIndex": "48:int",
+        "DisplayStyle": "60:byte"
+      }
+    },
+    {
+      "structName": "AccessibilityConfigDTO",
+      "sizeBytes": 16,
+      "offsets": {
+        "ColorMode": "0:uint",
+        "Flags": "4:uint",
+        "FilterStrength01": "8:float",
+        "GlobalQualityWeight": "12:float"
+      }
+    },
+    {
+      "structName": "InputBindingTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "RealtimeSeconds": "0:double",
+        "PayloadHash64": "8:ulong",
+        "Frame": "16:uint",
+        "IoPhase": "48:byte"
+      }
+    },
+    {
+      "structName": "ControlRemapIoResult",
+      "sizeBytes": 88,
+      "offsets": {
+        "Telemetry": "0:InputBindingTelemetryEntry",
+        "ResultCode": "64:uint",
+        "FaultFlags": "68:uint",
+        "RecordCount": "72:int",
+        "ByteCount": "76:int",
+        "PathBytes": "80:int"
+      }
+    }
+  ],
+  "zeroGcHotPathHits": 0,
+  "absoluteAupCastsFound": 0,
+  "compactionAwareLocksProven": true,
+  "telemetryRingIntegrated": true,
+  "verificationHashSha256": "311e4154951e61c183b9612652255ee17b8dc20239f43e710a6347cd8a1a8514"
+}

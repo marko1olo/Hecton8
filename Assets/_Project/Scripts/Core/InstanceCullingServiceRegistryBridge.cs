@@ -8,7 +8,7 @@ namespace Hecton8.Core
     /// Core-owned registry bridge for the contracts-only procedural GPU instance culling runtime.
     /// </summary>
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(-87)]
+    [DefaultExecutionOrder(-120)]
     public sealed class InstanceCullingServiceRegistryBridge : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001InstanceCullingServiceRegistryBridgeSignalPushDropCount;

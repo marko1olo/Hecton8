@@ -23,7 +23,9 @@ Shader "Hidden/Hecton8/VisorGlitchACES"
             #pragma fragment Frag
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
             CBUFFER_START(NoirPostProcessDTO)
                 float4 GrainParams;
@@ -31,6 +33,15 @@ Shader "Hidden/Hecton8/VisorGlitchACES"
                 float4 ColorGrading;
                 float4 QualityAndLimits;
             CBUFFER_END
+
+            CBUFFER_START(HectonAccessibilityConfig)
+                uint _HectonAccessibilityMode;
+                uint _HectonAccessibilityFlags;
+                float _HectonAccessibilityStrength01;
+                float _HectonAccessibilityGlobalQualityWeight;
+            CBUFFER_END
+
+            float4 _HectonAccessibilityParams;
 
             TEXTURE2D_X(_BlitTexture);
             float4 _BlitTexture_TexelSize;
@@ -72,6 +83,11 @@ Shader "Hidden/Hecton8/VisorGlitchACES"
             #endif
             }
 
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(uv);
+            }
+
             float3 Finite3(float3 value, float3 fallback)
             {
                 return all(isfinite(value)) ? value : fallback;
@@ -101,6 +117,11 @@ Shader "Hidden/Hecton8/VisorGlitchACES"
                 return value * value * (3.0 - 2.0 * value);
             }
 
+            float ResolveLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) / max(0.000001, edge1 - edge0));
+            }
+
             float ResolveTornVisorEdgeMask(float2 uv, float edge01, float damage01, float stress01, float timeWrapped)
             {
                 float edgeBand = Smooth01((edge01 - 0.18) * 1.219512);
@@ -123,7 +144,7 @@ Shader "Hidden/Hecton8/VisorGlitchACES"
                 float axisLenSq = max(dot(axis, axis), 0.0001);
                 axis *= rsqrt(axisLenSq);
                 float veinWidth = max(0.012, lerp(0.036, 0.012, quality));
-                float vein = 1.0 - smoothstep(0.004, veinWidth, abs(dot(fracUv, axis)));
+                float vein = 1.0 - ResolveLinearRamp01(0.004, veinWidth, abs(dot(fracUv, axis)));
                 float reveal = step(lerp(0.96, 0.28, damage01), n0) * vein;
                 crackNormal = axis * reveal;
                 return reveal;
@@ -145,7 +166,8 @@ Shader "Hidden/Hecton8/VisorGlitchACES"
                 float stochasticBudget = saturate(highMath + toxicity * 0.18 + stress * 0.12);
                 float detailMask = step(1.0 - stochasticBudget, blockNoise);
                 float stripe = TriangleWave(uv.y * lerp(28.0, 116.0, highMath) + timeWrapped * lerp(0.22, 1.4, quality)) * detailMask;
-                float wave = sin((uv.y + signedNoise * 0.07) * lerp(38.0, 144.0, ultraMath) + timeWrapped * 2.1) * detailMask;
+                float wavePhase = ((uv.y + signedNoise * 0.07) * lerp(38.0, 144.0, ultraMath) + timeWrapped * 2.1) * 0.15915494;
+                float wave = (1.0 - 2.0 * TriangleWave(wavePhase)) * detailMask;
                 float overkill = cheap + wave * stripe * ultraMath;
                 return float2(lerp(cheap, overkill, highMath) * glitchX, wave * 0.12 * ultraMath * glitchY) * amplitude;
             }
@@ -164,6 +186,39 @@ Shader "Hidden/Hecton8/VisorGlitchACES"
                 float sparkleMask = step(0.985 - ultraMath * 0.14 - stress * 0.025, folded);
                 float sparkle = (folded - 0.5) * ultraMath * stress * sparkleMask;
                 return (detail - 0.5 + sparkle) * intensity;
+            }
+
+            float3 ApplyAccessibilityFilter(float3 color)
+            {
+                float mode = max((float)_HectonAccessibilityMode, _HectonAccessibilityParams.x);
+                float enabled = max((float)(_HectonAccessibilityFlags & 1u), _HectonAccessibilityParams.y);
+                float strength = saturate(max(_HectonAccessibilityStrength01, _HectonAccessibilityParams.z)) * step(0.5, enabled);
+                float quality = saturate(max(_HectonAccessibilityGlobalQualityWeight, _HectonAccessibilityParams.w));
+
+                float3 protanopia = float3(
+                    dot(color, float3(0.56667, 0.43333, 0.0)),
+                    dot(color, float3(0.55833, 0.44167, 0.0)),
+                    dot(color, float3(0.0, 0.24167, 0.75833)));
+                float3 deuteranopia = float3(
+                    dot(color, float3(0.625, 0.375, 0.0)),
+                    dot(color, float3(0.7, 0.3, 0.0)),
+                    dot(color, float3(0.0, 0.3, 0.7)));
+                float3 tritanopia = float3(
+                    dot(color, float3(0.95, 0.05, 0.0)),
+                    dot(color, float3(0.0, 0.43333, 0.56667)),
+                    dot(color, float3(0.0, 0.475, 0.525)));
+
+                float protMask = 1.0 - saturate(abs(mode - 1.0));
+                float deutMask = 1.0 - saturate(abs(mode - 2.0));
+                float tritMask = 1.0 - saturate(abs(mode - 3.0));
+                float activeMask = saturate(protMask + deutMask + tritMask);
+                float3 filtered = lerp(color, protanopia * protMask + deuteranopia * deutMask + tritanopia * tritMask, activeMask);
+
+                float sourceLuma = max(0.0001, dot(color, float3(0.2126, 0.7152, 0.0722)));
+                float filteredLuma = max(0.0001, dot(filtered, float3(0.2126, 0.7152, 0.0722)));
+                float3 lumaPreserved = filtered * (sourceLuma / filteredLuma);
+                filtered = lerp(filtered, lumaPreserved, quality * 0.18);
+                return lerp(color, max(filtered, 0.0), strength);
             }
 
             float4 Frag(Varyings input) : SV_Target
@@ -191,7 +246,7 @@ Shader "Hidden/Hecton8/VisorGlitchACES"
 
                 float2 glitchOffset = DearLieOffset(uv, quality, stress, toxicity, timeWrapped);
                 float2 sampleUv = saturate(uv + glitchOffset + woundOffset);
-                float4 source = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, sampleUv);
+                float4 source = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(sampleUv));
                 float3 color = Finite3(source.rgb, 0.0);
                 float sourceAlpha = isfinite(source.a) ? source.a : 1.0;
 
@@ -224,6 +279,7 @@ Shader "Hidden/Hecton8/VisorGlitchACES"
                 color += float3(0.11, 0.024, 0.018) * tornEdgeMask * (0.22 + stress * 0.58);
                 color += float3(0.05, 0.065, 0.072) * crackMask * (0.035 + quality * 0.025);
                 color = max(Finite3(color, 0.0), 0.0);
+                color = ApplyAccessibilityFilter(color);
 
                 float rawBlend = abSplit * step(uv.x, 0.5);
                 color = Finite3(lerp(color, source.rgb, rawBlend), color);

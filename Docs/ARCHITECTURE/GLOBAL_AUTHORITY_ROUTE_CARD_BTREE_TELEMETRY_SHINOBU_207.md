@@ -29,7 +29,7 @@ Instrument:
 
 - Black-box/telemetry route
 
-R48 exact route fields:
+Route fields:
 
 Producer/consumer phase: lookup readers accumulate during source read paths; `FlushBTreeTelemetryPostSimulationJob` flushes in `POST_SIMULATION`; VISUAL_SYNC/editor tooling reads snapshots only.
 

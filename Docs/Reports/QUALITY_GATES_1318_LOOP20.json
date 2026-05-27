@@ -1,0 +1,58 @@
+﻿{
+  "agentId": "1318",
+  "loop": 20,
+  "task": "MEMORY_SOVEREIGN_DESTRUCTIBLE_ORGANICS_EXORCIST",
+  "domain": "Echelon 3 Core Infrastructure and Ecology / Assets/_Project/Scripts/World / DestructibleOrganicManager.cs",
+  "status": "VERIFICATION_BLOCKED_MISSING_PROJECT_FILES",
+  "promptTaskCount": 20,
+  "promptExtraction": "Docs/Reports/AGENT_PROMPT_1318_REEXTRACTED_LOOP20.xml",
+  "mandatesLoaded": [
+    "OPT_Native_Memory_Collections_JobSystem_Protocol",
+    "OPT_Zero_GC_Policy_AllocFree_Mandate",
+    "DATA_Runtime_Struct_Layout_ARM64",
+    "PHYS_Destructible_Organic_Entropy",
+    "DBG_Telemetry_Crash_Reporting_PostMortem",
+    "ARCH_Execution_Phases",
+    "ARCH_Signal_Lane_Segregation",
+    "MATH_Coordinate_Precision_AUP_FloatingOrigin"
+  ],
+  "fixedThisLoop": [
+    "Titan root-mound TryAdd failure telemetry is now staged and emitted after organic root/overgrowth/maturation/regrowth locks are released.",
+    "TryPrepareTitanRootMoundRequest reports root-map write failure via an out flag instead of writing telemetry under the map lock.",
+    "TryResolveVegetationBridgePayload now rejects short bridge payloads by checking matrices, metadata, types, and semantic type lengths against count.",
+    "SyncLane now computes safeCount from actual bridge payload lengths before Vault capacity ensure and write loops; mismatched payloads fail closed with telemetry instead of indexing short arrays.",
+    "Defoliant tombstone registration validates template index and stable hash route before mutating _destroyedByInstanceUid.",
+    "SyncLane now applies dead runtime flags and decomposition for defoliant suppression only after destroyed tombstone admission succeeds.",
+    "TryApplyToolHit now stages defensive spore and harvest-audio side effects until DestroyResolvedInstance returns true."
+  ],
+  "staticScans": {
+    "primaryTargetPersistentNativeCollectionFields": 0,
+    "rootMoundPrepareCallShape": "all calls include rootMoundWriteFailed out flag",
+    "syncLaneLoopBound": "for loop uses safeCount derived from matrices/metadata/types/semanticTypes lengths",
+    "defoliantAdmission": "templateIndex validation occurs before _destroyedByInstanceUid.TryAdd",
+    "toolHitSideEffects": "defensive spore and death audio emit only after DestroyResolvedInstance success",
+    "gitDiffCheck": "PASS_CRLF_WARNING_ONLY"
+  },
+  "buildGate": {
+    "dotnetBuildRun": true,
+    "dotnetBuildCommand": "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+    "dotnetBuildExitCode": 1,
+    "roslynRun": false,
+    "cpuSamplesPercent": [80.4, 100.0, 59.7, 30.6, 91.6],
+    "compilerProcessCountBeforeBuild": 0,
+    "compilerProcessCountAfterBuild": 0,
+    "blockedReason": "Hecton8.slnx references Unity-generated .csproj files that are absent from the workspace; Get-ChildItem -Filter *.csproj returned count=0. Build stopped at NuGet project-file resolution before C# compilation.",
+    "missingProjectErrors": 62
+  },
+  "residualDebt": [
+    "Workspace has Hecton8.slnx but no generated .csproj files, so local dotnet build cannot compile until Unity/project generation restores them.",
+    "VoxelDynamicNavGridRuntime still has pre-existing voxel-owner persistent NativeArray/List/Dictionary debt outside 1318 primary target.",
+    "Unity Editor/PlayMode/Profiler/GCMonitor proof absent for Loop 20."
+  ],
+  "fileHashesSha256": {
+    "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs": "119D7A8227DC9FAB1A3509579E83C2C374C7A89E08E7D4B113C99A7243D4D686",
+    "Assets/_Project/Scripts/World/EntropyYieldJob.cs": "1DE3DDC9CAFE028293E17BAACD141FFF96C4F715E110B9132BDFF2BBE0959ABE",
+    "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs": "64005DC6318AC9C54535DF9024D235DC69DDCB6747A4017C688969C4235A3539"
+  },
+  "combinedVerificationHashSha256": "f1adf6ae87463585e4ae53f79d6fae5da2daecac6089735f9f404ac1792b304d"
+}

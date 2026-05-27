@@ -55,7 +55,7 @@ namespace Hecton8.Graphics.Scalability
         private const uint CsvMiddleMinScaleHash = 0x8D1CCECEu;
         private const uint CsvHighMinScaleHash = 0x0F348BAFu;
         private const uint CsvUltraMinScaleHash = 0x0328B0C7u;
-        private const string DumpFileName = "Dump_DRS_SURGEON.bin";
+        private const string DumpFileName = "Dump_13KRA.bin";
         private const float DangerFrameTimeMs = 15.0f;
         private const float TargetFrameTimeMs = 16.66f;
         private const float PanicFrameTimeMs = 33.0f;
@@ -384,9 +384,9 @@ namespace Hecton8.Graphics.Scalability
             _drsState.UpscalerTypeHash = _upscalerTypeHash;
             _drsState._pad0 = 0u;
             RebindDataVault(GlobalRegistry.DataVault);
-            TryEnsureDrsStateHandle();
-            TryEnsureTelemetryHandle();
-            TryEnsureScaleStateHandle();
+            TryEnsureDrsStateHandle(allowAllocation: true);
+            TryEnsureTelemetryHandle(allowAllocation: true);
+            TryEnsureScaleStateHandle(allowAllocation: true);
             UpdateVisualBudget((HectonQualityTier)_hardwareTier, _latestSystemStressEwma01, _currentScale);
             UpdateDrsState();
             UpdateScaleState(0);
@@ -1062,7 +1062,7 @@ namespace Hecton8.Graphics.Scalability
             }
         }
 
-        private bool TryEnsureScaleStateHandle()
+        private bool TryEnsureScaleStateHandle(bool allowAllocation = false)
         {
             IDataVault vault = _dataVault;
             if (vault == null)
@@ -1074,10 +1074,11 @@ namespace Hecton8.Graphics.Scalability
                 BufferID.ResolutionScaleState,
                 1,
                 NativeArrayOptions.ClearMemory,
+                allowAllocation,
                 out _);
         }
 
-        private bool TryEnsureDrsStateHandle()
+        private bool TryEnsureDrsStateHandle(bool allowAllocation = false)
         {
             IDataVault vault = _dataVault;
             if (vault == null)
@@ -1089,6 +1090,7 @@ namespace Hecton8.Graphics.Scalability
                 BufferID.DrsState,
                 1,
                 NativeArrayOptions.UninitializedMemory,
+                allowAllocation,
                 out _);
         }
 
@@ -1203,7 +1205,7 @@ namespace Hecton8.Graphics.Scalability
             return true;
         }
 
-        private bool TryEnsureTelemetryHandle()
+        private bool TryEnsureTelemetryHandle(bool allowAllocation = false)
         {
             IDataVault vault = _dataVault;
             if (vault == null)
@@ -1215,6 +1217,7 @@ namespace Hecton8.Graphics.Scalability
                 BufferID.ResolutionScaleTelemetry,
                 TelemetryCapacity,
                 NativeArrayOptions.ClearMemory,
+                allowAllocation,
                 out _);
         }
 
@@ -1231,6 +1234,13 @@ namespace Hecton8.Graphics.Scalability
             _telemetryHandle = default;
             _scalabilityStateHandle = default;
             _mockReconstructionInputHandle = default;
+
+            if (_dataVault != null && !_dataVault.IsAllocationLocked)
+            {
+                TryEnsureDrsStateHandle(allowAllocation: true);
+                TryEnsureTelemetryHandle(allowAllocation: true);
+                TryEnsureScaleStateHandle(allowAllocation: true);
+            }
         }
 
         private void UpdateScaleState(byte flags)
@@ -2289,12 +2299,19 @@ namespace Hecton8.Graphics.Scalability
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
+            bool allowAllocation,
             out NativeArray<T> buffer) where T : struct
         {
             if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
                 return true;
 
             if (vault == null)
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (!allowAllocation || vault.IsAllocationLocked)
             {
                 buffer = default;
                 return false;

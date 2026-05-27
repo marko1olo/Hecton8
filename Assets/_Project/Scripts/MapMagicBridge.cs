@@ -277,6 +277,8 @@ namespace Hecton8.Core
         private const int SnapshotSlotCapacity = 16;
         private const byte TileAppliedEventType = 1;
         private const byte TileMovedEventType = 2;
+        private const byte TerrainChunkGeneratedFlagTileApplied = 1;
+        private const byte TerrainChunkGeneratedFlagHeightPayloadResolved = 1 << 1;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
         [StructLayout(LayoutKind.Explicit, Size = 8)]
@@ -457,20 +459,52 @@ namespace Hecton8.Core
         {
             Terrain terrain = snapshot.Terrain;
             TerrainData terrainData = terrain.terrainData;
+            int heightmapResolution = terrainData.heightmapResolution;
+            int cacheRevision = 0;
+            byte flags = TerrainChunkGeneratedFlagTileApplied;
+            if (TryResolveQuantizedPayloadForSnapshot(in snapshot, terrain, terrainData, out MapMagicBridge.QuantizedHeightmapPayload payload))
+            {
+                heightmapResolution = payload.HeightmapResolution;
+                cacheRevision = payload.CacheRevision;
+                flags |= TerrainChunkGeneratedFlagHeightPayloadResolved;
+            }
+
             TerrainChunkGeneratedSignal signal = new TerrainChunkGeneratedSignal
             {
                 ChunkX = snapshot.TileX,
                 ChunkZ = snapshot.TileZ,
                 TerrainEntityHash = unchecked((uint)EntityId.ToULong(terrain.GetEntityId())),
-                HeightmapResolution = terrainData.heightmapResolution,
-                CacheRevision = 0,
+                HeightmapResolution = heightmapResolution,
+                CacheRevision = cacheRevision,
                 TerrainPosition = (float3)terrain.transform.position,
                 TerrainSize = (float3)terrainData.size,
                 Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Flags = 1
+                Flags = flags
             };
 
             return TerrainChunkGeneratedEvents.TryPublish(in signal);
+        }
+
+        private static bool TryResolveQuantizedPayloadForSnapshot(
+            in MapMagicTerrainTileSnapshot snapshot,
+            Terrain terrain,
+            TerrainData terrainData,
+            out MapMagicBridge.QuantizedHeightmapPayload payload)
+        {
+            payload = default;
+            MapMagicBridge provider = snapshot.Provider;
+            if (provider == null || terrain == null || terrainData == null)
+                return false;
+
+            Vector3 terrainSize = terrainData.size;
+            if (terrainSize.x <= 0f || terrainSize.z <= 0f)
+                return false;
+
+            Vector3 terrainPosition = terrain.transform.position;
+            float sampleX = terrainPosition.x + terrainSize.x * 0.5f;
+            float sampleZ = terrainPosition.z + terrainSize.z * 0.5f;
+            return provider.TryGetQuantizedHeightmapPayload(sampleX, sampleZ, out payload) &&
+                   MapMagicBridge.QuantizedHeightmapPayload.IsValid(in payload);
         }
 
         private static bool Enqueue(byte eventType, in MapMagicTerrainTileSnapshot snapshot)
@@ -693,6 +727,9 @@ namespace Hecton8.Core
     {
         private const int BiomeMatrixLayerCount = 108;
         private const string TectonicSpineFamilyId = "biome.family.tectonic_spine";
+        private static MapMagicBridge s_activeRuntimeInstance;
+
+        internal static MapMagicBridge ActiveRuntimeInstance => s_activeRuntimeInstance;
 
         public readonly struct QuantizedHeightmapPayload
         {
@@ -732,8 +769,25 @@ namespace Hecton8.Core
                 if (!Application.isPlaying)
                     return null;
 #endif
-                return GlobalRegistry.MapMagic;
+                return s_activeRuntimeInstance;
             }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeInstance()
+        {
+            s_activeRuntimeInstance = null;
+        }
+
+        protected void PublishActiveRuntimeInstance()
+        {
+            s_activeRuntimeInstance = this;
+        }
+
+        protected void ClearActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
         }
 
         public abstract float WaterSurfaceLevel { get; }

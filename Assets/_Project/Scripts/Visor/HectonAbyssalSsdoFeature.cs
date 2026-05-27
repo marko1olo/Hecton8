@@ -1,11 +1,11 @@
 using System;
 using System.Runtime.CompilerServices;
+using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
@@ -60,12 +60,62 @@ namespace Hecton8.Visor
 
             [Tooltip("Composite weight applied to the camera color.")]
             [Range(0f, 1f)] public float compositeStrength = 0.52f;
+
+            internal float ResolveRenderScale(float survivalVisualWeight01)
+            {
+                float authored = math.clamp(renderScale, 0.25f, 1f);
+                float qualityCurve = Smooth01(ResolveGlobalQualityWeight01()) * Smooth01(survivalVisualWeight01);
+                float survivalScale = math.max(0.25f, math.min(authored, authored * 0.58f));
+                return math.clamp(math.lerp(survivalScale, authored, qualityCurve), 0.25f, 1f);
+            }
+
+            internal float ResolveRadiusMeters(float survivalVisualWeight01)
+            {
+                float authored = math.max(0.01f, radiusMeters);
+                float qualityCurve = Smooth01(ResolveGlobalQualityWeight01()) * Smooth01(survivalVisualWeight01);
+                float survivalRadius = math.min(authored, 0.55f);
+                return math.max(0.01f, math.lerp(survivalRadius, authored, qualityCurve));
+            }
+
+            internal float ResolveIntensity(float survivalVisualWeight01)
+            {
+                float qualityCurve = math.lerp(0.42f, 1f, Smooth01(ResolveGlobalQualityWeight01()));
+                return math.max(0f, intensity) * math.saturate(survivalVisualWeight01) * qualityCurve;
+            }
+
+            internal float ResolveCompositeStrength(float survivalVisualWeight01)
+            {
+                return math.saturate(compositeStrength) * math.saturate(survivalVisualWeight01);
+            }
+
+            private static float ResolveGlobalQualityWeight01()
+            {
+                float quality = HomeostasisBrain.GlobalQualityWeight;
+                return math.saturate(math.isfinite(quality) ? quality : 1f);
+            }
+
+            private static float Smooth01(float value)
+            {
+                float t = math.saturate(value);
+                return t * t * (3f - 2f * t);
+            }
         }
 
         private sealed class AbyssalSsdoPass : ScriptableRenderPass
         {
             private const float MaterialFloatEpsilon = 0.0001f;
             private const float MaterialVectorEpsilonSq = 0.0000001f;
+
+            private sealed class SsdoFullscreenPassData
+            {
+                public TextureHandle Source;
+                public TextureHandle Depth;
+                public TextureHandle Ssdo;
+                public Material Material;
+                public int ShaderPassIndex;
+                public bool BindDepth;
+                public bool BindSsdo;
+            }
 
             private struct MaterialParameterCache
             {
@@ -146,7 +196,11 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                float renderScale = math.clamp(_settings.renderScale, 0.25f, 1f);
+                float survivalVisualWeight01 = HectonDrsRenderFeatureGate.ResolveSurvivalVisualWeight01();
+                if (survivalVisualWeight01 <= 0.0001f)
+                    return;
+
+                float renderScale = _settings.ResolveRenderScale(survivalVisualWeight01);
                 int ssdoWidth = math.max(1, (int)(sourceDesc.width * renderScale + 0.5f));
                 int ssdoHeight = math.max(1, (int)(sourceDesc.height * renderScale + 0.5f));
 
@@ -171,18 +225,20 @@ namespace Hecton8.Visor
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;
                 compositeDesc.msaaSamples = MSAASamples.None;
-                compositeDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                compositeDesc.colorFormat = sourceDesc.colorFormat;
 
                 TextureHandle occlusionTexture = renderGraph.CreateTexture(occlusionDesc);
                 TextureHandle blurTexture = renderGraph.CreateTexture(blurDesc);
                 TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
 
-                float projectionScale = math.abs(cameraData.camera.projectionMatrix.m11) * 0.5f * sourceDesc.height * math.max(0.01f, _settings.radiusMeters);
+                float projectionRadiusMeters = _settings.ResolveRadiusMeters(survivalVisualWeight01);
+                float projectionScale = math.abs(cameraData.camera.projectionMatrix.m11) * 0.5f * sourceDesc.height * projectionRadiusMeters;
 
                 UpdateMaterialParameters(
                     _occlusionMaterial,
                     ref _occlusionParameterCache,
                     _settings,
+                    survivalVisualWeight01,
                     0f,
                     sourceDesc,
                     ssdoWidth,
@@ -192,6 +248,7 @@ namespace Hecton8.Visor
                     _blurHorizontalMaterial,
                     ref _blurHorizontalParameterCache,
                     _settings,
+                    survivalVisualWeight01,
                     1f,
                     sourceDesc,
                     ssdoWidth,
@@ -201,6 +258,7 @@ namespace Hecton8.Visor
                     _blurVerticalMaterial,
                     ref _blurVerticalParameterCache,
                     _settings,
+                    survivalVisualWeight01,
                     2f,
                     sourceDesc,
                     ssdoWidth,
@@ -210,47 +268,114 @@ namespace Hecton8.Visor
                     _compositeMaterial,
                     ref _compositeParameterCache,
                     _settings,
+                    survivalVisualWeight01,
                     3f,
                     sourceDesc,
                     ssdoWidth,
                     ssdoHeight,
                     projectionScale);
 
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, occlusionTexture, _occlusionMaterial, 0),
-                           passName: "Hecton Abyssal SSDO Gather",
-                           returnBuilder: true))
-                {
-                    builder.UseTexture(depthTexture, AccessFlags.Read);
-                }
-
-                renderGraph.AddBlitPass(
-                    new RenderGraphUtils.BlitMaterialParameters(occlusionTexture, blurTexture, _blurHorizontalMaterial, 1),
-                    passName: "Hecton Abyssal SSDO Blur Horizontal");
-
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(blurTexture, occlusionTexture, _blurVerticalMaterial, 2),
-                           passName: "Hecton Abyssal SSDO Blur Vertical",
-                           returnBuilder: true))
-                {
-                    builder.SetGlobalTextureAfterPass(occlusionTexture, ShaderConstants.SsdoTextureId);
-                }
-
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, compositeTexture, _compositeMaterial, 3),
-                           passName: "Hecton Abyssal SSDO Composite",
-                           returnBuilder: true))
-                {
-                    builder.UseTexture(occlusionTexture, AccessFlags.Read);
-                }
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Abyssal SSDO Gather",
+                    sourceTexture,
+                    depthTexture,
+                    default,
+                    occlusionTexture,
+                    _occlusionMaterial,
+                    0,
+                    true,
+                    false);
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Abyssal SSDO Blur Horizontal",
+                    occlusionTexture,
+                    depthTexture,
+                    default,
+                    blurTexture,
+                    _blurHorizontalMaterial,
+                    1,
+                    true,
+                    false);
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Abyssal SSDO Blur Vertical",
+                    blurTexture,
+                    depthTexture,
+                    default,
+                    occlusionTexture,
+                    _blurVerticalMaterial,
+                    2,
+                    true,
+                    false);
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Abyssal SSDO Composite",
+                    sourceTexture,
+                    depthTexture,
+                    occlusionTexture,
+                    compositeTexture,
+                    _compositeMaterial,
+                    3,
+                    true,
+                    true);
 
                 resourceData.cameraColor = compositeTexture;
+            }
+
+            private void RecordFullscreenPass(
+                RenderGraph renderGraph,
+                string passName,
+                TextureHandle source,
+                TextureHandle depth,
+                TextureHandle ssdo,
+                TextureHandle destination,
+                Material material,
+                int shaderPassIndex,
+                bool bindDepth,
+                bool bindSsdo)
+            {
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<SsdoFullscreenPassData>(
+                           passName,
+                           out SsdoFullscreenPassData passData,
+                           _profilingSampler))
+                {
+                    passData.Source = source;
+                    passData.Depth = depth;
+                    passData.Ssdo = ssdo;
+                    passData.Material = material;
+                    passData.ShaderPassIndex = shaderPassIndex;
+                    passData.BindDepth = bindDepth;
+                    passData.BindSsdo = bindSsdo;
+
+                    builder.UseTexture(source, AccessFlags.Read);
+                    if (bindDepth)
+                        builder.UseTexture(depth, AccessFlags.Read);
+                    if (bindSsdo)
+                        builder.UseTexture(ssdo, AccessFlags.Read);
+                    builder.SetRenderAttachment(destination, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (SsdoFullscreenPassData data, RasterGraphContext context) =>
+                    {
+                        if (data.Material == null)
+                            return;
+
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
+                        if (data.BindDepth)
+                            context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
+                        if (data.BindSsdo)
+                            context.cmd.SetGlobalTexture(ShaderConstants.SsdoTextureId, data.Ssdo);
+                        CoreUtils.DrawFullScreen(context.cmd, data.Material, null, data.ShaderPassIndex);
+                    });
+                }
             }
 
             private static void UpdateMaterialParameters(
                 Material material,
                 ref MaterialParameterCache cache,
                 FeatureSettings settings,
+                float survivalVisualWeight01,
                 float passMode,
                 TextureDesc sourceDesc,
                 int outputWidth,
@@ -274,12 +399,12 @@ namespace Hecton8.Visor
                     outputHeight,
                     1f / math.max(1, outputWidth),
                     1f / math.max(1, outputHeight));
-                float radiusMeters = math.max(0.01f, settings.radiusMeters);
-                float intensity = math.max(0f, settings.intensity);
+                float radiusMeters = settings.ResolveRadiusMeters(survivalVisualWeight01);
+                float intensity = settings.ResolveIntensity(survivalVisualWeight01);
                 float bias = math.max(0f, settings.bias);
                 float depthSigma = math.max(0.01f, settings.depthSigma);
                 float blurDepthThreshold = math.max(0.001f, settings.blurDepthThreshold);
-                float compositeStrength = math.saturate(settings.compositeStrength);
+                float compositeStrength = settings.ResolveCompositeStrength(survivalVisualWeight01);
                 float safeProjectionScale = math.max(0.01f, projectionScale);
 
                 SetMaterialFloatIfChanged(material, ShaderConstants.PassModeId, passMode, ref cache.PassMode, materialDirty);
@@ -353,6 +478,8 @@ namespace Hecton8.Visor
             internal static readonly int ProjectionScaleId = Shader.PropertyToID("_HectonAbyssalSsdoProjectionScale");
             internal static readonly int CompositeStrengthId = Shader.PropertyToID("_HectonAbyssalSsdoCompositeStrength");
             internal static readonly int SsdoTextureId = Shader.PropertyToID("_HectonAbyssalSSDOTex");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
+            internal static readonly int CameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -371,9 +498,13 @@ namespace Hecton8.Visor
                 settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
 #endif
 
-            Shader shader = settings != null && settings.shader != null
-                ? settings.shader
-                : Shader.Find("Hidden/Hecton8/AbyssalSSDO");
+            Shader shader = settings != null ? settings.shader : null;
+            if (shader == null)
+                RuntimeShaderReferenceCatalog.TryGetAbyssalSsdoShader(out shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find("Hidden/Hecton8/AbyssalSSDO");
+#endif
             _pass ??= new AbyssalSsdoPass();
             RecreateMaterial(ref _occlusionMaterial, shader);
             RecreateMaterial(ref _blurHorizontalMaterial, shader);
@@ -397,9 +528,6 @@ namespace Hecton8.Visor
 
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (IsUnsupportedCameraType(cameraType))
-                return;
-
-            if (HectonDrsRenderFeatureGate.ShouldCullForSurvivalScale())
                 return;
 
             _pass.Setup(settings, _occlusionMaterial, _blurHorizontalMaterial, _blurVerticalMaterial, _compositeMaterial);

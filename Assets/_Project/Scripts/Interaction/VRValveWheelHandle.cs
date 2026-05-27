@@ -84,7 +84,8 @@ namespace Hecton8.Interaction
                 return;
 
             bool shouldRestoreTick = (_registeredMomentumTick && !_momentumTickDormant) || ShouldRunMomentumTick();
-            TryUnregisterMomentumTick();
+            _registeredMomentumTick = false;
+            _momentumTickDormant = false;
             if (shouldRestoreTick && currentService != null && isActiveAndEnabled)
                 TryRegisterMomentumTick();
         }
@@ -420,7 +421,7 @@ namespace Hecton8.Interaction
 
         private void TryRegisterMomentumTick()
         {
-            if (_registeredMomentumTick || !Application.isPlaying)
+            if (_registeredMomentumTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredMomentumTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);

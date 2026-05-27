@@ -1,0 +1,42 @@
+{
+    "agentId":  "1318",
+    "loop":  41,
+    "task":  "1318_PURGE",
+    "status":  "VERIFICATION_BLOCKED_CPU_COMPILER_GATE",
+    "promptReport":  "Docs/Reports/AGENT_PROMPT_1318_REEXTRACTED_LOOP41.xml",
+    "promptStrictTaskCount":  20,
+    "promptLooseTaskMentions":  23,
+    "promptSha256":  "bd959f47caea5a192f4bcaba65c92efaf7e647f034b3cf6c68ecb924f262022b",
+    "sourceFile":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+    "sourceSha256":  "5e16f7ca5434ca421c939f27784688047d7aeca014b567b7f5ad8e34448acc7a",
+    "checks":  {
+                   "braceOpen":  903,
+                   "braceClose":  903,
+                   "braceBalanced":  true,
+                   "strictPersistentNativeFieldDeclarations":  0,
+                   "persistentAllocatorTokens":  0,
+                   "hotOwnerForbiddenTokenHits":  0,
+                   "preLockNavObstacleBoundsHits":  0,
+                   "rootMoundPendingTryAddHits":  0,
+                   "oldDescriptorResolveSymbolHits":  0,
+                   "descriptorWithLockCallsInsidePersistenceSync":  0,
+                   "gitDiffCheck":  "LF_TO_CRLF_WARNING_ONLY"
+               },
+    "fixes":  [
+                  "Moved direct/passive destruction nav-obstacle bounds snapshot after lifecycle mutation lock and active-slot revalidation.",
+                  "Changed titan root mound pending admission from TryAdd-only to TryPut when state is below Pending, allowing legacy zero-state rows to recover.",
+                  "Added pinned template descriptor persistent-hash lookup and used it inside persistence sync windows to avoid nested non-reentrant descriptor locks.",
+                  "Renamed hidden lock-taking descriptor-index helper from Resolve* to Find*WithLock."
+              ],
+    "failedGates":  [
+                        "BUILD_GATE_BLOCKED_BY_CPU_GT_50",
+                        "BUILD_GATE_BLOCKED_BY_ACTIVE_COMPILER_PROCESSES"
+                    ],
+    "buildGate":  {
+                      "cpuAveragePercent":  100,
+                      "compilerProcessCount":  10,
+                      "csprojCount":  90,
+                      "missingSlnxProjectReferences":  0,
+                      "dotnetBuildInvoked":  false
+                  }
+}

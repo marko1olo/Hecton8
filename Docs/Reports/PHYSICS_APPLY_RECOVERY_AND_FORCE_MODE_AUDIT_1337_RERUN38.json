@@ -1,0 +1,80 @@
+{
+  "schema": "hecton8.physics_apply_recovery_force_mode_audit_1337.rerun38.v1",
+  "agentId": "1337",
+  "task": "PHYSICS_APPLY_RECOVERY_AND_FORCE_MODE_AUDIT",
+  "status": "STATIC_GREEN_BUILD_BLOCKED_BY_HOST_GATE",
+  "promptHashSha256": "3e605cefcb2f812e4e2febd79f1e87c3d527fb27627de85b3f5c8ffa05c01387",
+  "officialDocsChecked": [
+    "https://docs.unity3d.com/ScriptReference/Rigidbody.MovePosition.html",
+    "https://docs.unity3d.com/ScriptReference/Rigidbody-position.html"
+  ],
+  "patchedFiles": [
+    "Assets/_Project/Scripts/PhysicsApplySystem.cs"
+  ],
+  "defectsFixed": [
+    {
+      "id": "PHYS_APPLY_NAN_RECOVERY_DYNAMIC_TELEPORT",
+      "file": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+      "line": 3979,
+      "problem": "FreezeToxicBody wrote Rigidbody.position while the body could still be dynamic and collision-enabled, then disabled collisions/kinematic state after the teleport. It also preserved a non-finite Rigidbody.rotation.",
+      "fix": "Zero velocities, set isKinematic=true, set detectCollisions=false, then write recovered position, sanitize rotation to identity when non-finite, publish transform, and sleep.",
+      "runtimeAllocation": "none",
+      "hotPathImpact": "fault-path only"
+    },
+    {
+      "id": "PHYS_APPLY_FORCE_MODE_ACCELERATION_REJECTED",
+      "file": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+      "line": 1457,
+      "problem": "ValidateForcePacketsJob used a numeric ForceMode range check. Non-contiguous enum layouts can reject ForceMode.Acceleration even though many project call sites use it for buoyancy and movement.",
+      "fix": "Replaced numeric range validation with explicit branchless membership over Force, Acceleration, Impulse, and VelocityChange. Final validity byte uses math.select.",
+      "runtimeAllocation": "none",
+      "hotPathImpact": "job branch count reduced; semantic false-negatives removed"
+    }
+  ],
+  "scannerResults": {
+    "nativeAliasAudit": {
+      "report": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN38.json",
+      "scannedFiles": 6,
+      "totalNativeFieldDeclarations": 18,
+      "persistentNativeFieldsRemaining": 0,
+      "jobTransientFields": 18,
+      "hash": "f4d0417bcd141bfcd7b0d97f1c503f55e3180f5815734add327ba64e78c729cd"
+    },
+    "zeroGcHotPathAudit": {
+      "report": "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN38.json",
+      "scannedFiles": 6,
+      "scannedHotMethods": 25,
+      "zeroGcHotPathHits": 0,
+      "hash": "0f2d5e666aa8ad269f6257f61a85c6c3b8f1d25515eb4e8f3923ed7491defaef"
+    },
+    "branchAudit": {
+      "report": "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN38.json",
+      "scannedFiles": 6,
+      "jobExecuteIfStatements": 5,
+      "failClosedGuardIfStatements": 5,
+      "jobExecuteNonGuardIfStatements": 0,
+      "distanceSolverDecisionIfStatements": 0,
+      "hash": "de45e5f3c65303ca0938c4ab84f30c74f2d20d7832808c06b38d429b4500580a"
+    }
+  },
+  "directTokenScans": {
+    "newNativeCollectionAllocations": 0,
+    "throwNew": 0,
+    "catchException": 0,
+    "cameraMain": 0,
+    "vector3Distance": 0,
+    "toArray": 0,
+    "toList": 0,
+    "enumerableNamespace": 0,
+    "realLinqCalls": 0,
+    "stringFormat": 0,
+    "stringInterpolation": 0,
+    "absoluteAupPreSubtractionFloatCasts": 0,
+    "widePaddingFields": 0
+  },
+  "buildGate": {
+    "attempted": false,
+    "reason": "AGENTS build throttle red: CPU 65%, dotnet 1, csc 0."
+  },
+  "verificationHashSha256": "581e17807c4b5e84fea2b07a60e506b35d1808f958a4d1b51ba4f0a55d608d8d"
+}

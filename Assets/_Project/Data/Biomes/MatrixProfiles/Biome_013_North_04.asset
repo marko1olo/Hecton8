@@ -26,7 +26,7 @@ MonoBehaviour:
   rareRewardHook: 'Rare pull is modest: Electrolyte Salts and Sealant Pack.'
   landmarkIdentity: Silt Dunes reads through spires, steps, and big natural crowns.
     Landmarks should feel bright and readable.
-  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+  safePocketIdentity: Reorientation pockets are frequent. The player should often see a clear
     reset point nearby.
   riskSummary: 'Main failure mode: bad drops and exposed lines. Creature pressure
     stays low_to_medium.'

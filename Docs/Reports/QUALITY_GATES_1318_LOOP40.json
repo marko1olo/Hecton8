@@ -1,0 +1,46 @@
+{
+    "agentId":  "1318",
+    "loop":  40,
+    "task":  "1318_PURGE",
+    "status":  "VERIFICATION_BLOCKED_CPU_BUILD_GATE",
+    "domain":  "Echelon 3 Core Infrastructure and Ecology / Assets/_Project/Scripts/World / DestructibleOrganicManager.cs",
+    "promptStrictTaskCount":  20,
+    "promptLooseTaskMentions":  23,
+    "promptFile":  "Docs/Reports/AGENT_PROMPT_1318_REEXTRACTED_LOOP40.xml",
+    "promptFileSha256":  "bd959f47caea5a192f4bcaba65c92efaf7e647f034b3cf6c68ecb924f262022b",
+    "sourceSha256":  "968c4cfa182c1e18c6707f2701121c529e2958c47f815bb2d93734d2354484ed",
+    "scannedFiles":  1,
+    "changedFiles":  [
+                         "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+                     ],
+    "fixes":  [
+                  "Removed the obsolete private TryApplyTitanRootMound route that locked only the root-mound map before calling a lane-reading prepare helper",
+                  "Changed parent mass calculation to ComputePinnedParentMassKg and pass the already validated instanceUid explicitly instead of re-reading lane UID buffers inside the helper",
+                  "Eliminated the unbounded/implicit UID lane read in parent mass calculation while preserving lifecycle-mutation lock ownership for template, maturation, and lane metadata reads"
+              ],
+    "staticChecks":  {
+                         "braceOpen":  902,
+                         "braceClose":  902,
+                         "strictPersistentNativeFields":  0,
+                         "persistentAllocatorTokens":  0,
+                         "hotForbiddenHits":  0,
+                         "obsoleteTryApplyTitanRootMoundRefs":  0,
+                         "obsoleteResolveParentMassKgRefs":  0,
+                         "computePinnedParentMassKgRefs":  3,
+                         "gitDiffCheck":  "LF_TO_CRLF_WARNING_ONLY"
+                     },
+    "buildGate":  {
+                      "cpuAvg":  74,
+                      "compilerProcessCount":  0,
+                      "rootCsprojCount":  62,
+                      "missingSlnxProjectRefs":  0,
+                      "buildAllowed":  false,
+                      "reason":  "AGENTS.md forbids dotnet/Roslyn while CPU is above 50%; the pre-build sample was 74%, so build was skipped before invoking dotnet.",
+                      "postSkipCpuAvg":  31
+                  },
+    "failedGates":  [
+                        "BUILD_GATE_BLOCKED_BY_CPU_GT_50",
+                        "ROSLYN_RERUN_BLOCKED_BY_CPU_GT_50"
+                    ],
+    "verificationHashSha256":  "968c4cfa182c1e18c6707f2701121c529e2958c47f815bb2d93734d2354484ed"
+}

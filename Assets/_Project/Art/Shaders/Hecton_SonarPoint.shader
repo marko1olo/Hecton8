@@ -35,8 +35,10 @@ Shader "Hecton8/VFX/TopographicalSonarPoint"
             #pragma target 4.5
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
             struct SonarPointDTO
             {
@@ -77,6 +79,11 @@ Shader "Hecton8/VFX/TopographicalSonarPoint"
             {
                 float lengthSq = dot(value, value);
                 return lengthSq > 0.000001f ? value * rsqrt(lengthSq) : fallback;
+            }
+
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(saturate(uv));
             }
 
             float4 UnpackColor(uint packed)
@@ -138,7 +145,7 @@ Shader "Hecton8/VFX/TopographicalSonarPoint"
             half4 frag(Varyings input) : SV_Target
             {
                 float2 screenUv = input.screenPos.xy * rcp(max(input.screenPos.w, 0.0001f));
-                float sceneRawDepth = SampleSceneDepth(screenUv);
+                float sceneRawDepth = SampleSceneDepth(ResolveFoveatedSourceUV(screenUv));
                 float sceneEyeDepth = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
                 float particleEyeDepth = max(input.screenPos.w, 0.0001f);
                 float depthFade = saturate((sceneEyeDepth - particleEyeDepth) * rcp(max(_RenderParams0.y, 0.0001f)));

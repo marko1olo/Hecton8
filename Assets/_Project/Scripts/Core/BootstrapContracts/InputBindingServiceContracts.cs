@@ -70,16 +70,41 @@ namespace Hecton8.Core
     }
 
     /// <summary>
-    /// Fixed two-tier scalability profile used by platform/settings integration.
+    /// Persisted scalability profile used by platform/settings integration.
+    /// Legacy payloads used 0 = MX350 and 1 = high RTX; both remain readable.
     /// </summary>
     public static class ScalabilityTierProfiles
     {
         public const byte LowMx350 = 0;
-        public const byte HighRtx = 1;
+        public const byte LegacyHighRtx = 1;
+        public const byte Middle = 2;
+        public const byte HighRtx = 3;
+        public const byte Ultra = 4;
+        public const byte MaxProfile = Ultra;
 
         public static byte Normalize(byte tier)
         {
-            return tier == LowMx350 ? LowMx350 : HighRtx;
+            if (tier == LegacyHighRtx)
+                return HighRtx;
+
+            return tier <= MaxProfile ? tier : Ultra;
+        }
+
+        public static float ToGlobalQualityWeight01(byte tier)
+        {
+            switch (Normalize(tier))
+            {
+                case LowMx350:
+                    return 0.35f;
+                case Middle:
+                    return 0.62f;
+                case HighRtx:
+                    return 0.84f;
+                case Ultra:
+                    return 1f;
+                default:
+                    return 0.35f;
+            }
         }
     }
 
@@ -88,11 +113,11 @@ namespace Hecton8.Core
     /// </summary>
     public interface IPlatformIntegration
     {
-        /// <summary>Persisted profile byte: 0 = Low/MX350, 1 = High/RTX.</summary>
+        /// <summary>Persisted profile byte. Legacy 0/1 and current low/middle/high/ultra values are accepted.</summary>
         byte ScalabilityTier { get; }
 
         /// <summary>Persists and broadcasts a runtime scalability profile change.</summary>
-        /// <param name="tier">Profile byte: 0 = Low/MX350, 1 = High/RTX. Other values clamp to High/RTX.</param>
+        /// <param name="tier">Profile byte. Values above the current maximum clamp to Ultra.</param>
         void SetScalabilityTier(byte tier);
     }
 
@@ -270,6 +295,8 @@ namespace Hecton8.Core
 
         void LoadBindingOverridesFromJson(string json);
 
+        bool TryClearBindingOverrides();
+
         void ClearBindingOverrides();
     }
 
@@ -287,7 +314,7 @@ namespace Hecton8.Core
     /// </summary>
     public interface IInputBindingService
     {
-        /// <summary>True while an interactive rebind operation is active.</summary>
+        /// <summary>True while an interactive rebind operation or pending conflict resolution is active.</summary>
         bool IsRebinding { get; }
 
         /// <summary>Raised when a binding rebind starts.</summary>
@@ -307,6 +334,12 @@ namespace Hecton8.Core
 
         /// <summary>Raised after binding overrides are saved.</summary>
         event Action OnOverridesSaved;
+
+        /// <summary>Raised after an owned automatic rebind save fails and runtime state has been restored.</summary>
+        event Action<string, string, int> OnRebindSaveFailed;
+
+        /// <summary>Raised after an automatic binding override save fails and runtime state has been restored.</summary>
+        event Action OnOverridesSaveFailed;
 
         /// <summary>Raised after binding overrides are cleared.</summary>
         event Action OnOverridesCleared;
@@ -336,14 +369,14 @@ namespace Hecton8.Core
         /// <summary>Cancels the active rebind operation, if any.</summary>
         void CancelRebind();
 
-        /// <summary>Saves current binding overrides.</summary>
-        void SaveOverrides();
+        /// <summary>Saves current binding overrides. Returns false when persistence fails or a rebind is active.</summary>
+        bool SaveOverrides();
 
-        /// <summary>Loads persisted binding overrides.</summary>
-        void LoadOverrides();
+        /// <summary>Loads persisted binding overrides, or applies defaults when no saved payload exists.</summary>
+        bool LoadOverrides();
 
-        /// <summary>Clears persisted binding overrides.</summary>
-        void ClearOverrides(bool clearPlayerPrefs = true);
+        /// <summary>Clears runtime binding overrides and, when requested, the persisted controls.json payload.</summary>
+        bool ClearOverrides(bool clearSavedOverrides = true);
     }
 
     /// <summary>

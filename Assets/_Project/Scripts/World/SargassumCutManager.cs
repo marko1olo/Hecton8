@@ -26,6 +26,7 @@ namespace Hecton8.World
         private const int RecentStampCapacity = 16;
         private const int DamageVolumeStampCapacity = 16;
         private const int DamageVolumeThreadGroupSize = 4;
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
         private const int DamageVolumeResolutionStep = 16;
         private const int DamageVolumeDepthStep = 8;
         private const float DamageVolumeQualityHysteresis = 0.08f;
@@ -234,6 +235,8 @@ namespace Hecton8.World
         private RenderTexture _maskWrite;
         private ComputeShader _stampCompute;
         private int _stampKernel = -1;
+        private int _stampThreadGroupSizeX;
+        private int _stampThreadGroupSizeY;
         private GraphicsBuffer _stampCommandBufferA;
         private GraphicsBuffer _stampCommandBufferB;
         private GraphicsBuffer _activeStampCommandBuffer;
@@ -241,6 +244,9 @@ namespace Hecton8.World
         private RenderTexture _damageVolumeWrite;
         private ComputeShader _damageVolumeCompute;
         private int _damageVolumeKernel = -1;
+        private int _damageVolumeThreadGroupSizeX;
+        private int _damageVolumeThreadGroupSizeY;
+        private int _damageVolumeThreadGroupSizeZ;
         private GraphicsBuffer _damageVolumeStampCommandBufferA;
         private GraphicsBuffer _damageVolumeStampCommandBufferB;
         private GraphicsBuffer _activeDamageVolumeStampCommandBuffer;
@@ -288,6 +294,8 @@ namespace Hecton8.World
         private readonly Vector4[] _recentCutHeatPositionRadius = new Vector4[RecentStampCapacity];
         // COLD ALLOC: Vector4[16] - packed recent-cut thermal strength/start/lifetime payload published to shaders - owner: SargassumCutManager
         private readonly Vector4[] _recentCutHeatStrengthTime = new Vector4[RecentStampCapacity];
+        // COLD ALLOC: int[3] - reusable damage-volume resolution upload payload; avoids ComputeShader.SetInts params allocation in LateFrameTick.
+        private readonly int[] _damageVolumeResolutionUpload = new int[3];
         // COLD ALLOC: PendingDebrisBurst[16] - visual particle bursts flushed only in LateFrameTick - owner: SargassumCutManager
         private readonly PendingDebrisBurst[] _pendingDebrisBursts = new PendingDebrisBurst[StampCommandCapacity];
         private int _pendingDebrisBurstCount;
@@ -295,10 +303,12 @@ namespace Hecton8.World
         private int _publishedRecentCutHeatCount = -1;
         private bool _recentCutHeatDirty;
 
+        private static SargassumCutManager s_activeRuntimeInstance;
+
         /// <summary>
-        /// Active registry-owned instance.
+        /// Active owner-published runtime instance.
         /// </summary>
-        public static SargassumCutManager Instance => GlobalRegistry.SargassumCut;
+        public static SargassumCutManager Instance => s_activeRuntimeInstance;
 
         /// <summary>
         /// Current cut mask texture used by shaders and GPU fauna.
@@ -686,6 +696,12 @@ namespace Hecton8.World
             TryAutoAssignAssets();
 #endif
 
+            if (!SystemInfo.supportsComputeShaders)
+            {
+                enabled = false;
+                return;
+            }
+
             InitializeRuntimeResourceBudgets(force: false);
 
             if (_maskRead == null)
@@ -736,7 +752,20 @@ namespace Hecton8.World
                     return;
                 }
 
-                _stampKernel = _stampCompute.FindKernel("CSMain");
+                _stampKernel = _stampCompute.HasKernel("CSMain")
+                    ? _stampCompute.FindKernel("CSMain")
+                    : -1;
+                if (_stampKernel < 0)
+                {
+                    enabled = false;
+                    return;
+                }
+                ResolveKernelThreadGroupSizes(
+                    _stampCompute,
+                    _stampKernel,
+                    out _stampThreadGroupSizeX,
+                    out _stampThreadGroupSizeY,
+                    out _);
             }
 
             if (_damageVolumeCompute == null)
@@ -751,7 +780,20 @@ namespace Hecton8.World
                     return;
                 }
 
-                _damageVolumeKernel = _damageVolumeCompute.FindKernel("StampDamageVolume");
+                _damageVolumeKernel = _damageVolumeCompute.HasKernel("StampDamageVolume")
+                    ? _damageVolumeCompute.FindKernel("StampDamageVolume")
+                    : -1;
+                if (_damageVolumeKernel < 0)
+                {
+                    enabled = false;
+                    return;
+                }
+                ResolveKernelThreadGroupSizes(
+                    _damageVolumeCompute,
+                    _damageVolumeKernel,
+                    out _damageVolumeThreadGroupSizeX,
+                    out _damageVolumeThreadGroupSizeY,
+                    out _damageVolumeThreadGroupSizeZ);
             }
 
             ResetQueuedMaskUpdateState();
@@ -981,6 +1023,11 @@ namespace Hecton8.World
             _stampKernel = -1;
             _damageVolumeCompute = null;
             _damageVolumeKernel = -1;
+            _stampThreadGroupSizeX = 0;
+            _stampThreadGroupSizeY = 0;
+            _damageVolumeThreadGroupSizeX = 0;
+            _damageVolumeThreadGroupSizeY = 0;
+            _damageVolumeThreadGroupSizeZ = 0;
             _lastMaskDispatchFrame = -1;
             _lastDamageVolumeDispatchFrame = -1;
 
@@ -999,6 +1046,48 @@ namespace Hecton8.World
         private static bool IsGraphicsBufferReady(GraphicsBuffer buffer)
         {
             return buffer != null && buffer.IsValid();
+        }
+
+        private static void ResolveKernelThreadGroupSizes(
+            ComputeShader compute,
+            int kernel,
+            out int sizeX,
+            out int sizeY,
+            out int sizeZ)
+        {
+            sizeX = 0;
+            sizeY = 0;
+            sizeZ = 0;
+            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+                return;
+
+            compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            if (queryX == 0u || queryY == 0u || queryZ == 0u ||
+                queryX > int.MaxValue || queryY > int.MaxValue || queryZ > int.MaxValue)
+            {
+                return;
+            }
+
+            ulong xyThreads = queryX * (ulong)queryY;
+            if (xyThreads > PortableMaxComputeThreadsPerGroup ||
+                queryZ > PortableMaxComputeThreadsPerGroup / xyThreads)
+            {
+                return;
+            }
+
+            sizeX = (int)queryX;
+            sizeY = (int)queryY;
+            sizeZ = (int)queryZ;
+        }
+
+        private static int CeilDividePositive(int value, int divisor)
+        {
+            const int MaxDispatchGroupsPerDimension = 65535;
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private GraphicsBuffer ResolveStampCommandWriteBuffer()
@@ -1513,6 +1602,11 @@ namespace Hecton8.World
                 return;
             }
 
+            int groupCountX = CeilDividePositive(_maskRuntimeResolution, _stampThreadGroupSizeX);
+            int groupCountY = CeilDividePositive(_maskRuntimeResolution, _stampThreadGroupSizeY);
+            if (groupCountX <= 0 || groupCountY <= 0)
+                return;
+
             int uploadedStampCount = 0;
             if (_queuedStampCount > 0)
             {
@@ -1557,8 +1651,7 @@ namespace Hecton8.World
                     _maskRuntimeResolution,
                     _maskRuntimeResolution));
 
-            int groupCount = Mathf.Max(1, Mathf.CeilToInt(_maskRuntimeResolution / (float)StampThreadGroupSize));
-            _stampCompute.Dispatch(_stampKernel, groupCount, groupCount, 1);
+            _stampCompute.Dispatch(_stampKernel, groupCountX, groupCountY, 1);
 
             RenderTexture temp = _maskRead;
             _maskRead = _maskWrite;
@@ -1688,6 +1781,14 @@ namespace Hecton8.World
                 return;
             }
 
+            int runtimeResolution = Mathf.Max(32, _damageVolumeRuntimeResolution);
+            int runtimeDepth = Mathf.Max(16, _damageVolumeRuntimeDepth);
+            int groupCountX = CeilDividePositive(runtimeResolution, _damageVolumeThreadGroupSizeX);
+            int groupCountY = CeilDividePositive(runtimeDepth, _damageVolumeThreadGroupSizeY);
+            int groupCountZ = CeilDividePositive(runtimeResolution, _damageVolumeThreadGroupSizeZ);
+            if (groupCountX <= 0 || groupCountY <= 0 || groupCountZ <= 0)
+                return;
+
             int uploadedDamageVolumeStampCount = 0;
             if (_queuedDamageVolumeStampCount > 0)
             {
@@ -1743,13 +1844,11 @@ namespace Hecton8.World
                     1f / Mathf.Max(_damageVolumeWorldSize.y, 0.001f),
                     1f / Mathf.Max(_damageVolumeWorldSize.z, 0.001f),
                     0f));
-            int runtimeResolution = Mathf.Max(32, _damageVolumeRuntimeResolution);
-            int runtimeDepth = Mathf.Max(16, _damageVolumeRuntimeDepth);
-            _damageVolumeCompute.SetInts(_DamageVolumeResolutionId, runtimeResolution, runtimeDepth, runtimeResolution);
+            _damageVolumeResolutionUpload[0] = runtimeResolution;
+            _damageVolumeResolutionUpload[1] = runtimeDepth;
+            _damageVolumeResolutionUpload[2] = runtimeResolution;
+            _damageVolumeCompute.SetInts(_DamageVolumeResolutionId, _damageVolumeResolutionUpload);
 
-            int groupCountX = Mathf.Max(1, Mathf.CeilToInt(runtimeResolution / (float)DamageVolumeThreadGroupSize));
-            int groupCountY = Mathf.Max(1, Mathf.CeilToInt(runtimeDepth / (float)DamageVolumeThreadGroupSize));
-            int groupCountZ = Mathf.Max(1, Mathf.CeilToInt(runtimeResolution / (float)DamageVolumeThreadGroupSize));
             _damageVolumeCompute.Dispatch(_damageVolumeKernel, groupCountX, groupCountY, groupCountZ);
 
             _damageVolumeEnergy = Mathf.Max(
@@ -1907,6 +2006,8 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterSargassumCutRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.SargassumCut, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -1916,6 +2017,8 @@ namespace Hecton8.World
 
             GlobalRegistry.UnregisterSargassumCutRuntime(this);
             _serviceRegistered = false;
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
         }
 
         private void TryUnregister()

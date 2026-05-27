@@ -11,7 +11,10 @@ namespace Hecton8.Tools.DataMonolithBakeCli
 {
     internal static unsafe class DataMonolithFailClosedProbe
     {
+        private const string AgentId = "X_002";
+        private const string AgentId1330 = "1330";
         private const string ReportPath = "Docs/Reports/DATA_MONOLITH_FAIL_CLOSED_RUNTIME_SIM_X_002.json";
+        private const string ReportPath1330 = "Docs/Reports/DATA_MONOLITH_FAIL_CLOSED_RUNTIME_SIM_1330.json";
         private const int AlignmentBytes = 64;
         private const int CaseCount = 13;
         private const int ValidationIterations = 256;
@@ -33,14 +36,13 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             string reportPath = Path.Combine(projectRoot, ReportPath);
             Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
 
-            if (!File.Exists(blobPath))
+            if (!TryGetBlobLength(blobPath, out int blobLength, out string setupError))
             {
-                WriteReport(reportPath, false, "static_data.h8bin missing", 0, 0, 0, 0, 0, 0, Array.Empty<CaseResult>());
+                WriteReport(reportPath, false, setupError, 0, 0, 0, 0, 0, 0, Array.Empty<CaseResult>());
                 return false;
             }
 
-            byte[] baseline = File.ReadAllBytes(blobPath);
-            nuint arenaBytes = (nuint)AlignUp(baseline.Length, AlignmentBytes);
+            nuint arenaBytes = (nuint)AlignUp(blobLength, AlignmentBytes);
             void* active = NativeMemory.AlignedAlloc(arenaBytes, AlignmentBytes);
             void* candidate = NativeMemory.AlignedAlloc(arenaBytes, AlignmentBytes);
             if (active == null || candidate == null)
@@ -49,39 +51,40 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                     NativeMemory.AlignedFree(active);
                 if (candidate != null)
                     NativeMemory.AlignedFree(candidate);
-                WriteReport(reportPath, false, "NativeMemory.AlignedAlloc failed", baseline.Length, 0, 0, 0, 0, 0, Array.Empty<CaseResult>());
+                WriteReport(reportPath, false, "NativeMemory.AlignedAlloc failed", blobLength, 0, 0, 0, 0, 0, Array.Empty<CaseResult>());
                 return false;
             }
 
             try
             {
-                fixed (byte* source = baseline)
+                if (!TryReadFileToNative(blobPath, (byte*)active, blobLength, out setupError))
                 {
-                    Buffer.MemoryCopy(source, active, (long)arenaBytes, baseline.Length);
+                    WriteReport(reportPath, false, setupError, blobLength, 0, 0, 0, 0, 0, Array.Empty<CaseResult>());
+                    return false;
                 }
 
-                if (!ValidateResidentBlob((byte*)active, baseline.Length, out int baselineFailure))
+                if (!ValidateResidentBlob((byte*)active, blobLength, out int baselineFailure))
                 {
-                    WriteReport(reportPath, false, "baseline validation failed code=" + baselineFailure, baseline.Length, 0, 0, 0, 0, 0, Array.Empty<CaseResult>());
+                    WriteReport(reportPath, false, "baseline validation failed code=" + baselineFailure, blobLength, 0, 0, 0, 0, 0, Array.Empty<CaseResult>());
                     return false;
                 }
 
                 ulong publishedChecksum = ReadUInt64((byte*)active, 8);
                 int publishCount = 1;
                 CaseResult[] results = new CaseResult[CaseCount];
-                results[0] = RunCase("bad_stored_checksum", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureBadChecksum, MutateStoredChecksum);
-                results[1] = RunCase("bad_payload_checksum", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureBadChecksum, MutatePayloadByte);
-                results[2] = RunCase("bad_header_unknown_flags", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateHeaderUnknownFlags);
-                results[3] = RunCase("bad_header_reserved", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateHeaderReserved);
-                results[4] = RunCase("bad_directory_reserved", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureDirectory, MutateDirectoryReserved);
-                results[5] = RunCase("bad_header_section_count", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateHeaderSectionCount);
-                results[6] = RunCase("bad_header_section_table_offset", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateHeaderSectionTableOffset);
-                results[7] = RunCase("bad_section_out_of_bounds", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureSectionOutOfRange, MutateSectionOutOfBounds);
-                results[8] = RunCase("bad_section_unaligned_offset", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureSectionAlignment, MutateSectionUnalignedOffset);
-                results[9] = RunCase("bad_section_table_void", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateSectionTableVoid);
-                results[10] = RunCase("bad_section_overlap", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureSectionOutOfRange, MutateSectionOverlap);
-                results[11] = RunCase("bad_localization_directory", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureLocalization, MutateLocalizationDirectory);
-                results[12] = RunTruncatedCase("truncated_blob", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader);
+                results[0] = RunCase("bad_stored_checksum", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureBadChecksum, MutateStoredChecksum);
+                results[1] = RunCase("bad_payload_checksum", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureBadChecksum, MutatePayloadByte);
+                results[2] = RunCase("bad_header_unknown_flags", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateHeaderUnknownFlags);
+                results[3] = RunCase("bad_header_reserved", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateHeaderReserved);
+                results[4] = RunCase("bad_directory_reserved", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureDirectory, MutateDirectoryReserved);
+                results[5] = RunCase("bad_header_section_count", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateHeaderSectionCount);
+                results[6] = RunCase("bad_header_section_table_offset", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateHeaderSectionTableOffset);
+                results[7] = RunCase("bad_section_out_of_bounds", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureSectionOutOfRange, MutateSectionOutOfBounds);
+                results[8] = RunCase("bad_section_unaligned_offset", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureSectionAlignment, MutateSectionUnalignedOffset);
+                results[9] = RunCase("bad_section_table_void", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateSectionTableVoid);
+                results[10] = RunCase("bad_section_overlap", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureSectionOutOfRange, MutateSectionOverlap);
+                results[11] = RunCase("bad_localization_directory", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureLocalization, MutateLocalizationDirectory);
+                results[12] = RunTruncatedCase("truncated_blob", (byte*)active, blobLength, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader);
 
                 GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
                 GC.WaitForPendingFinalizers();
@@ -93,7 +96,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 int failureAccumulator = 0;
                 for (int i = 0; i < ValidationIterations; i++)
                 {
-                    if (ValidateResidentBlob((byte*)active, baseline.Length, out int failureCode))
+                    if (ValidateResidentBlob((byte*)active, blobLength, out int failureCode))
                         validationPasses++;
                     failureAccumulator |= failureCode;
                 }
@@ -111,7 +114,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                     reportPath,
                     passed,
                     string.Empty,
-                    baseline.Length,
+                    blobLength,
                     publishCount,
                     publishedChecksum,
                     validationTicks,
@@ -127,9 +130,87 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             }
         }
 
+        private static bool TryGetBlobLength(string path, out int blobLength, out string error)
+        {
+            blobLength = 0;
+            error = string.Empty;
+            try
+            {
+                FileInfo info = new FileInfo(path);
+                if (!info.Exists)
+                {
+                    error = "static_data.h8bin missing";
+                    return false;
+                }
+
+                if (info.Length <= 0L || info.Length > int.MaxValue)
+                {
+                    error = "static_data.h8bin length outside CLI resident-pointer contract: " + info.Length;
+                    return false;
+                }
+
+                blobLength = (int)info.Length;
+                return true;
+            }
+            catch (IOException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (UnauthorizedAccessException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (ArgumentException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailSetupFileOperation(ex, out error); }
+        }
+
+        private static bool TryReadFileToNative(string path, byte* destination, int expectedBytes, out string error)
+        {
+            error = string.Empty;
+            if (destination == null || expectedBytes <= 0)
+            {
+                error = "invalid native read target";
+                return false;
+            }
+
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 64 * 1024, FileOptions.SequentialScan);
+                if (stream.Length != expectedBytes)
+                {
+                    error = "static_data.h8bin length changed during fail-closed probe: expected=" + expectedBytes + " actual=" + stream.Length;
+                    return false;
+                }
+
+                int total = 0;
+                while (total < expectedBytes)
+                {
+                    int readSize = Math.Min(64 * 1024, expectedBytes - total);
+                    Span<byte> target = new Span<byte>(destination + total, readSize);
+                    int read = stream.Read(target);
+                    if (read <= 0)
+                    {
+                        error = "static_data.h8bin native read was incomplete: " + total + "/" + expectedBytes;
+                        return false;
+                    }
+
+                    total += read;
+                }
+
+                return true;
+            }
+            catch (IOException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (UnauthorizedAccessException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (ArgumentException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailSetupFileOperation(ex, out error); }
+        }
+
+        private static bool FailSetupFileOperation(Exception ex, out string error)
+        {
+            error = ex.GetType().Name + ": " + ex.Message;
+            return false;
+        }
+
         private static CaseResult RunCase(
             string name,
-            byte[] baseline,
+            byte* baseline,
+            int baselineLength,
             void* candidate,
             nuint candidateBytes,
             ulong publishedChecksum,
@@ -137,13 +218,10 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             int expectedFailure,
             CandidateMutator mutate)
         {
-            fixed (byte* source = baseline)
-            {
-                Buffer.MemoryCopy(source, candidate, (long)candidateBytes, baseline.Length);
-            }
+            Buffer.MemoryCopy(baseline, candidate, (long)candidateBytes, baselineLength);
 
-            mutate((byte*)candidate, baseline.Length);
-            bool valid = ValidateResidentBlob((byte*)candidate, baseline.Length, out int failureCode);
+            mutate((byte*)candidate, baselineLength);
+            bool valid = ValidateResidentBlob((byte*)candidate, baselineLength, out int failureCode);
             bool published = valid;
             int finalPublishCount = published ? publishCount + 1 : publishCount;
             ulong finalChecksum = published ? ReadUInt64((byte*)candidate, 8) : publishedChecksum;
@@ -157,18 +235,16 @@ namespace Hecton8.Tools.DataMonolithBakeCli
 
         private static CaseResult RunTruncatedCase(
             string name,
-            byte[] baseline,
+            byte* baseline,
+            int baselineLength,
             void* candidate,
             nuint candidateBytes,
             ulong publishedChecksum,
             int publishCount,
             int expectedFailure)
         {
-            int truncatedLength = baseline.Length - H8DataLayoutConstants.SectionAlignmentBytes;
-            fixed (byte* source = baseline)
-            {
-                Buffer.MemoryCopy(source, candidate, (long)candidateBytes, truncatedLength);
-            }
+            int truncatedLength = baselineLength - H8DataLayoutConstants.SectionAlignmentBytes;
+            Buffer.MemoryCopy(baseline, candidate, (long)candidateBytes, truncatedLength);
 
             bool valid = ValidateResidentBlob((byte*)candidate, truncatedLength, out int failureCode);
             int finalPublishCount = valid ? publishCount + 1 : publishCount;
@@ -494,7 +570,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             StringBuilder report = new StringBuilder(4096);
             report.AppendLine("{");
             report.AppendLine("  \"schema\": \"HECTON8_DATA_MONOLITH_FAIL_CLOSED_RUNTIME_SIM_V1\",");
-            report.AppendLine("  \"agent\": \"X_002\",");
+            report.AppendLine("  \"agent\": \"" + AgentId + "\",");
             report.Append("  \"generated\": \"").Append(DateTime.UtcNow.ToString("O")).AppendLine("\",");
             report.Append("  \"status\": \"").Append(passed ? "PASS_FAIL_CLOSED_NO_POISON_PUBLISH" : "FAIL").AppendLine("\",");
             report.Append("  \"setupError\": \"").Append(Escape(setupError)).AppendLine("\",");
@@ -538,7 +614,16 @@ namespace Hecton8.Tools.DataMonolithBakeCli
 
             report.AppendLine("  ]");
             report.AppendLine("}");
-            File.WriteAllText(reportPath, report.ToString(), Encoding.UTF8);
+            string text = report.ToString();
+            File.WriteAllText(reportPath, text, Encoding.UTF8);
+
+            string reportPath1330 = Path.Combine(
+                Path.GetDirectoryName(reportPath) ?? string.Empty,
+                Path.GetFileName(ReportPath1330));
+            File.WriteAllText(
+                reportPath1330,
+                text.Replace("\"agent\": \"" + AgentId + "\"", "\"agent\": \"" + AgentId1330 + "\"", StringComparison.Ordinal),
+                Encoding.UTF8);
         }
 
         private static double TicksToMicroseconds(long ticks)

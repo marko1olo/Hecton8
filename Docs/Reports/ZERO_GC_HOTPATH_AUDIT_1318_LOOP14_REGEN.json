@@ -1,0 +1,15 @@
+﻿{
+    "agentId":  "1318",
+    "target":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+    "scannedMethods":  [
+                           "Tick",
+                           "LateFrameTick",
+                           "ProcessDearLieRegeneration",
+                           "TryPopReadyDearLieRegeneration",
+                           "TrySetRegrowthProgress"
+                       ],
+    "zeroGcHotPathHits":  0,
+    "hits":  [
+
+             ]
+}

@@ -497,6 +497,9 @@ namespace Hecton8.UI
         [SerializeField]
         [Tooltip("Alpha-clip IGN shader used for HUD background panels that must avoid alpha blending.")]
         private Shader ditheredUiBackgroundShader;
+        [SerializeField]
+        [Tooltip("Pulse shader used by the diegetic save/data-recording lamp.")]
+        private Shader dataRecPulseShader;
 
         [Header("Threat AR")]
         [SerializeField]
@@ -1805,7 +1808,7 @@ namespace Hecton8.UI
         {
         }
 
-        void IPlayerSignalEventListener.OnToolDepletedSignal(in Hecton8.Gameplay.ToolDepletedSignal signal)
+        void IPlayerSignalEventListener.OnToolDepletedSignal(in PlayerToolDepletedSignal signal)
         {
             HandleToolDepletedSignal(in signal);
         }
@@ -1821,7 +1824,7 @@ namespace Hecton8.UI
             InvalidateVisualCaches();
         }
 
-        private void HandleToolDepletedSignal(in Hecton8.Gameplay.ToolDepletedSignal signal)
+        private void HandleToolDepletedSignal(in PlayerToolDepletedSignal signal)
         {
             _toolDepletedHashId = signal.ToolHashId;
             _toolDepletedWarningTimer = ToolDepletedWarningDurationSeconds;
@@ -2666,8 +2669,10 @@ namespace Hecton8.UI
             if (ditheredUiBackgroundShader == null)
                 ditheredUiBackgroundShader = AssetDatabase.LoadAssetAtPath<Shader>(DitheredUiBackgroundShaderPath);
 #endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (ditheredUiBackgroundShader == null)
                 ditheredUiBackgroundShader = Shader.Find(DitheredUiBackgroundShaderName);
+#endif
 
             if (_ditheredUiBackgroundMaterial == null && ditheredUiBackgroundShader != null)
             {
@@ -2704,16 +2709,18 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            Shader dataPulseShader = null;
 #if UNITY_EDITOR
-            dataPulseShader = AssetDatabase.LoadAssetAtPath<Shader>(DataRecPulseShaderPath);
+            if (dataRecPulseShader == null)
+                dataRecPulseShader = AssetDatabase.LoadAssetAtPath<Shader>(DataRecPulseShaderPath);
 #endif
-            if (dataPulseShader == null)
-                dataPulseShader = Shader.Find(DataRecPulseShaderName);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (dataRecPulseShader == null)
+                dataRecPulseShader = Shader.Find(DataRecPulseShaderName);
+#endif
 
-            if (_savingProgressDataPulseMaterial == null && dataPulseShader != null)
+            if (_savingProgressDataPulseMaterial == null && dataRecPulseShader != null)
             {
-                _savingProgressDataPulseMaterial = new Material(dataPulseShader)
+                _savingProgressDataPulseMaterial = new Material(dataRecPulseShader)
                 {
                     name = "HUD_DataRecPulse_Runtime"
                 }; // COLD ALLOC: Material[1] — shader-time DATA save lamp pulse — owner: SuitHUDV4CanvasOverlay
@@ -2816,10 +2823,10 @@ namespace Hecton8.UI
                                    radarResolution > 0;
 
             if (!hasRadarPayload &&
-                WorldSpatialHashGrid.TryGetAcousticDensityMap(out NativeArray<float>.ReadOnly densityMap, out Vector3Int densityDimensions))
+                WorldSpatialHashGrid.TryGetAcousticDensityMap(out float[] densityMap, out Vector3Int densityDimensions))
             {
                 int densityCellCount = densityDimensions.x * densityDimensions.y * densityDimensions.z;
-                radarResolution = math.min(densityMap.Length, densityCellCount);
+                radarResolution = densityMap != null ? math.min(densityMap.Length, densityCellCount) : 0;
                 hasRadarPayload = radarResolution > 0;
                 hasSpatialDensityFallback = hasRadarPayload;
             }
@@ -7308,6 +7315,7 @@ namespace Hecton8.UI
             underwaterVisuals = source.underwaterVisuals;
             defaultHudProfile = source.defaultHudProfile;
             ditheredUiBackgroundShader = source.ditheredUiBackgroundShader;
+            dataRecPulseShader = source.dataRecPulseShader;
             acousticRadarShader = source.acousticRadarShader;
             threatChevronShader = source.threatChevronShader;
             keepVisibleInEditMode = source.keepVisibleInEditMode;

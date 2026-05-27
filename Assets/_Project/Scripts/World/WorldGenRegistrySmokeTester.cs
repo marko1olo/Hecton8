@@ -121,7 +121,6 @@ namespace Hecton8.World
                     GlobalRegistry.RegisterProceduralFieldSampler(fieldSampler);
                     fieldSamplerRegistered = ReferenceEquals(GlobalRegistry.ProceduralFieldSampler, fieldSampler) &&
                                              ReferenceEquals(WorldProceduralFieldSampler.ActiveRuntimeInstance, fieldSampler);
-                    GlobalRegistry.UnregisterProceduralFieldSampler(fieldSampler);
                     Object.DestroyImmediate(fieldSamplerObject);
                     fieldSamplerObject = null;
                     fieldSamplerReleased = GlobalRegistry.ProceduralFieldSampler == null &&
@@ -135,11 +134,10 @@ namespace Hecton8.World
                     GlobalRegistry.RegisterResourceDistribution(resourceDistribution);
                     resourceDistributionRegistered = ReferenceEquals(GlobalRegistry.ResourceDistribution, resourceDistribution) &&
                                                      ReferenceEquals(ResourceDistributionDirector.ActiveRuntimeInstance, resourceDistribution);
-                    GlobalRegistry.UnregisterResourceDistribution(resourceDistribution);
-                    resourceDistributionReleased = GlobalRegistry.ResourceDistribution == null &&
-                                                   ResourceDistributionDirector.ActiveRuntimeInstance == null;
                     Object.DestroyImmediate(resourceObject);
                     resourceObject = null;
+                    resourceDistributionReleased = GlobalRegistry.ResourceDistribution == null &&
+                                                   ResourceDistributionDirector.ActiveRuntimeInstance == null;
                 }
 
                 if (GlobalRegistry.GeologyTerrainSeam == null)
@@ -149,11 +147,10 @@ namespace Hecton8.World
                     GlobalRegistry.RegisterGeologyTerrainSeamRuntime(terrainSeam);
                     geologyTerrainSeamRegistered = ReferenceEquals(GlobalRegistry.GeologyTerrainSeam, terrainSeam) &&
                                                    ReferenceEquals(WorldGenerativeGeologyTerrainSeamApplier.ActiveRuntimeInstance, terrainSeam);
-                    GlobalRegistry.UnregisterGeologyTerrainSeamRuntime(terrainSeam);
-                    geologyTerrainSeamReleased = GlobalRegistry.GeologyTerrainSeam == null &&
-                                                 WorldGenerativeGeologyTerrainSeamApplier.ActiveRuntimeInstance == null;
                     Object.DestroyImmediate(terrainSeamObject);
                     terrainSeamObject = null;
+                    geologyTerrainSeamReleased = GlobalRegistry.GeologyTerrainSeam == null &&
+                                                 WorldGenerativeGeologyTerrainSeamApplier.ActiveRuntimeInstance == null;
                 }
 
                 if (GlobalRegistry.GeologyVoxelBridge == null)
@@ -163,11 +160,10 @@ namespace Hecton8.World
                     GlobalRegistry.RegisterGeologyVoxelBridgeRuntime(voxelBridge);
                     geologyVoxelBridgeRegistered = ReferenceEquals(GlobalRegistry.GeologyVoxelBridge, voxelBridge) &&
                                                    ReferenceEquals(WorldGenerativeGeologyVoxelBridgeDirector.ActiveRuntimeInstance, voxelBridge);
-                    GlobalRegistry.UnregisterGeologyVoxelBridgeRuntime(voxelBridge);
-                    geologyVoxelBridgeReleased = GlobalRegistry.GeologyVoxelBridge == null &&
-                                                 WorldGenerativeGeologyVoxelBridgeDirector.ActiveRuntimeInstance == null;
                     Object.DestroyImmediate(voxelBridgeObject);
                     voxelBridgeObject = null;
+                    geologyVoxelBridgeReleased = GlobalRegistry.GeologyVoxelBridge == null &&
+                                                 WorldGenerativeGeologyVoxelBridgeDirector.ActiveRuntimeInstance == null;
                 }
 
                 if (GlobalRegistry.WorldGen == null)

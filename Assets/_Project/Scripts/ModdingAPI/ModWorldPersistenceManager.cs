@@ -16,7 +16,7 @@ namespace Hecton8.Modding
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7900)]
-    public sealed class ModWorldPersistenceManager : MonoBehaviour, ISaveable, ISaveEventListener, IGameBootstrapperEventListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    internal sealed class ModWorldPersistenceManager : MonoBehaviour, ISaveable, ISaveEventListener, IGameBootstrapperEventListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const string SaveKey = "hecton.internal.mod_world_spawns";
 
@@ -270,7 +270,7 @@ namespace Hecton8.Modding
                 NextSpawnSequence = _nextSpawnSequence
             };
 
-            ModSaveStateStore.SetModString(SaveKey, JsonUtility.ToJson(payload));
+            ModSaveStateStore.SetEngineString(SaveKey, JsonUtility.ToJson(payload));
         }
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace Hecton8.Modding
             _liveEntitiesByHash.Clear();
             _nextSpawnSequence = 1;
 
-            string json = ModSaveStateStore.GetModString(SaveKey, string.Empty);
+            string json = ModSaveStateStore.GetEngineString(SaveKey, string.Empty);
             if (string.IsNullOrWhiteSpace(json))
             {
                 _restorePending = false;

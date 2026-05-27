@@ -152,7 +152,18 @@ namespace Hecton8.Gameplay
             _bound         = false;
 
             // ── Auto-Binding: nayti Player root ──
-            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            Transform playerTransform = null;
+            if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) ||
+                playerContext.PlayerTransform == null)
+            {
+                GameBootstrapper.TryGetCurrentPlayerTransform(out playerTransform);
+            }
+            else
+            {
+                playerTransform = playerContext.PlayerTransform;
+            }
+
+            if (playerTransform == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError("[BuilderTool] OnSpawn: Player transform could not be resolved via GameBootstrapper. Builder tool will not function.");
@@ -160,12 +171,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            GameObject playerRoot = playerTransform.gameObject;
-
             // ── Izvlechenie komponentov s Player root ──
             // GetComponent na konkretnom GameObject — zero GC (TryGetComponent).
 
-            if (!playerRoot.TryGetComponent(out _playerBuilder))
+            if (!TryBindPlayerReferencesCold(playerTransform))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError(
@@ -174,7 +183,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (!playerRoot.TryGetComponent(out _playerInventory))
+            if (_playerInventory == null && !playerTransform.TryGetComponent(out _playerInventory))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogWarning("[BuilderTool] OnSpawn: PlayerInventory not found on Player root. Resource display will be unavailable.");
@@ -184,7 +193,7 @@ namespace Hecton8.Gameplay
 
             // ── Kesh Main Camera Transform ──
             Camera playerCamera = null;
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            if (TryGetPlayerRuntimeContext(out IPlayerRuntimeContext runtimeContext))
                 playerCamera = runtimeContext.PlayerCamera;
             if (playerCamera == null)
                 playerTransform.TryGetComponent(out playerCamera);
@@ -225,12 +234,55 @@ namespace Hecton8.Gameplay
             base.OnDespawn();
         }
 
+        private bool TryBindPlayerReferencesCold(Transform playerTransform)
+        {
+            if (TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext))
+            {
+                _playerBuilder = playerContext.PlayerBuilder;
+                _playerInventory = playerContext.Inventory;
+                Camera playerCamera = playerContext.PlayerCamera;
+                if (playerCamera != null)
+                    _cameraTransform = playerCamera.transform;
+            }
+
+            if (playerTransform != null)
+            {
+                if (_playerBuilder == null)
+                    playerTransform.TryGetComponent(out _playerBuilder);
+                if (_playerInventory == null)
+                    playerTransform.TryGetComponent(out _playerInventory);
+                if (_cameraTransform == null && playerTransform.TryGetComponent(out Camera playerCamera))
+                    _cameraTransform = playerCamera.transform;
+            }
+
+            return _playerBuilder != null;
+        }
+
         protected override void OnToolRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
             object currentService)
         {
             base.OnToolRegistryServiceReplaced(serviceSlot, previousService, currentService);
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                if (currentService is IPlayerRuntimeContext playerContext && playerContext.IsInitialized)
+                {
+                    _bound = TryBindPlayerReferencesCold(playerContext.PlayerTransform);
+                    if (_bound && isActiveAndEnabled)
+                        QueueScreenRefresh();
+                }
+                else
+                {
+                    _playerBuilder = null;
+                    _playerInventory = null;
+                    _cameraTransform = null;
+                    _bound = false;
+                }
+
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled || !_lateFrameRegistered)
                 return;
 

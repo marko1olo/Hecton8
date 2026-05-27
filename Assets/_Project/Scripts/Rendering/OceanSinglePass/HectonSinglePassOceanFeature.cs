@@ -63,10 +63,12 @@ namespace Hecton8.Rendering.OceanSinglePass
             private Material _depthMaterial;
             private int _clearWakeKernel = -1;
             private int _accumulateWakeKernel = -1;
-            private uint _clearThreadGroupSizeX = 8u;
-            private uint _clearThreadGroupSizeY = 8u;
-            private uint _accumulateThreadGroupSizeX = 8u;
-            private uint _accumulateThreadGroupSizeY = 8u;
+            private uint _clearThreadGroupSizeX;
+            private uint _clearThreadGroupSizeY;
+            private uint _accumulateThreadGroupSizeX;
+            private uint _accumulateThreadGroupSizeY;
+            private const uint MaxKernelThreadProduct = 256u;
+            private const int MaxDispatchGroupsPerDimension = 65535;
 
             public SinglePassOceanPass()
             {
@@ -230,6 +232,21 @@ namespace Hecton8.Rendering.OceanSinglePass
                 int sliceCount)
             {
                 OceanSinglePassRuntime.TryGetWakeState(out int resolution, out float scale, out float4 scrollOffset);
+                int dispatchZ = useTextureArray ? ResolveDispatchDepth(sliceCount) : 1;
+                int clearDispatchX = CeilByThreadGroup(resolution, _clearThreadGroupSizeX);
+                int clearDispatchY = CeilByThreadGroup(resolution, _clearThreadGroupSizeY);
+                int accumulateDispatchX = CeilByThreadGroup(resolution, _accumulateThreadGroupSizeX);
+                int accumulateDispatchY = CeilByThreadGroup(resolution, _accumulateThreadGroupSizeY);
+                if (dispatchZ <= 0 ||
+                    clearDispatchX <= 0 ||
+                    clearDispatchY <= 0 ||
+                    accumulateDispatchX <= 0 ||
+                    accumulateDispatchY <= 0)
+                {
+                    PublishClearedWakeTexture(renderGraph);
+                    return;
+                }
+
                 TextureHandle wakeTexture = CreateWakeTexture(renderGraph, resolution, useTextureArray, sliceCount);
                 bool hasEvents = OceanSinglePassRuntime.TryGetWakeEventBuffer(out GraphicsBuffer eventBuffer, out int eventCount);
                 BufferHandle eventBufferHandle = default;
@@ -248,11 +265,11 @@ namespace Hecton8.Rendering.OceanSinglePass
                     passData.Resolution = resolution;
                     passData.ResolutionScale = scale;
                     passData.ScrollOffset = scrollOffset;
-                    passData.ClearDispatchX = CeilByThreadGroup(resolution, _clearThreadGroupSizeX);
-                    passData.ClearDispatchY = CeilByThreadGroup(resolution, _clearThreadGroupSizeY);
-                    passData.AccumulateDispatchX = CeilByThreadGroup(resolution, _accumulateThreadGroupSizeX);
-                    passData.AccumulateDispatchY = CeilByThreadGroup(resolution, _accumulateThreadGroupSizeY);
-                    passData.DispatchZ = useTextureArray ? Math.Max(1, sliceCount) : 1;
+                    passData.ClearDispatchX = clearDispatchX;
+                    passData.ClearDispatchY = clearDispatchY;
+                    passData.AccumulateDispatchX = accumulateDispatchX;
+                    passData.AccumulateDispatchY = accumulateDispatchY;
+                    passData.DispatchZ = dispatchZ;
 
                     builder.UseTexture(wakeTexture, AccessFlags.Write);
                     builder.UseBuffer(constantBufferHandle, AccessFlags.Read);
@@ -356,29 +373,59 @@ namespace Hecton8.Rendering.OceanSinglePass
 
                 _clearWakeKernel = ResolveKernel(_settings.wakeCompute, "ClearWake");
                 _accumulateWakeKernel = ResolveKernel(_settings.wakeCompute, "AccumulateWake");
-                ResolveThreadGroupSizes(_settings.wakeCompute, _clearWakeKernel, ref _clearThreadGroupSizeX, ref _clearThreadGroupSizeY);
-                ResolveThreadGroupSizes(_settings.wakeCompute, _accumulateWakeKernel, ref _accumulateThreadGroupSizeX, ref _accumulateThreadGroupSizeY);
+                if (!TryResolveThreadGroupSizes(_settings.wakeCompute, _clearWakeKernel, out _clearThreadGroupSizeX, out _clearThreadGroupSizeY) ||
+                    !TryResolveThreadGroupSizes(_settings.wakeCompute, _accumulateWakeKernel, out _accumulateThreadGroupSizeX, out _accumulateThreadGroupSizeY))
+                {
+                    _clearWakeKernel = -1;
+                    _accumulateWakeKernel = -1;
+                    _clearThreadGroupSizeX = 0u;
+                    _clearThreadGroupSizeY = 0u;
+                    _accumulateThreadGroupSizeX = 0u;
+                    _accumulateThreadGroupSizeY = 0u;
+                }
             }
 
             private static int ResolveKernel(ComputeShader compute, string name)
             {
-                return compute != null && compute.HasKernel(name) ? compute.FindKernel(name) : -1;
+                if (compute == null || !SystemInfo.supportsComputeShaders || !compute.HasKernel(name))
+                    return -1;
+
+                int kernel = compute.FindKernel(name);
+                return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
             }
 
-            private static void ResolveThreadGroupSizes(ComputeShader compute, int kernel, ref uint x, ref uint y)
+            private static bool TryResolveThreadGroupSizes(ComputeShader compute, int kernel, out uint x, out uint y)
             {
+                x = 0u;
+                y = 0u;
                 if (compute == null || kernel < 0)
-                    return;
+                    return false;
 
-                compute.GetKernelThreadGroupSizes(kernel, out uint groupX, out uint groupY, out _);
-                x = Math.Max(1u, groupX);
-                y = Math.Max(1u, groupY);
+                if (!compute.IsSupported(kernel))
+                    return false;
+
+                compute.GetKernelThreadGroupSizes(kernel, out uint groupX, out uint groupY, out uint groupZ);
+                ulong threadProduct = (ulong)groupX * groupY * groupZ;
+                if (groupX == 0u || groupY == 0u || groupZ != 1u || threadProduct == 0UL || threadProduct > MaxKernelThreadProduct)
+                    return false;
+
+                x = groupX;
+                y = groupY;
+                return true;
             }
 
             private static int CeilByThreadGroup(int value, uint groupSize)
             {
-                int safeGroup = Math.Max(1, (int)groupSize);
-                return Math.Max(1, (value + safeGroup - 1) / safeGroup);
+                if (value <= 0 || groupSize == 0u)
+                    return 0;
+
+                long groups = ((long)value + groupSize - 1L) / groupSize;
+                return groups > 0L && groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
+            }
+
+            private static int ResolveDispatchDepth(int value)
+            {
+                return value > 0 && value <= MaxDispatchGroupsPerDimension ? value : 0;
             }
 
             private static float TicksToMicroseconds(long ticks)
@@ -433,9 +480,11 @@ namespace Hecton8.Rendering.OceanSinglePass
                 settings.wakeCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(WakeComputeAssetPath);
 #endif
 
-            Shader shader = settings != null && settings.depthFoamShader != null
-                ? settings.depthFoamShader
-                : Shader.Find("Hidden/Hecton8/OceanDepthFoam");
+            Shader shader = settings != null ? settings.depthFoamShader : null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find("Hidden/Hecton8/OceanDepthFoam");
+#endif
             RecreateMaterial(ref _depthMaterial, shader);
             _pass ??= new SinglePassOceanPass();
         }

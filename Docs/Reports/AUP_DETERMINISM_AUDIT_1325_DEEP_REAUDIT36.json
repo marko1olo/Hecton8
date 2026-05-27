@@ -1,0 +1,33 @@
+﻿{
+    "schema":  "hecton8.aup_determinism_reaudit36.v1",
+    "agentId":  "1325",
+    "scannedFiles":  4,
+    "findingCount":  0,
+    "findings":  [
+
+                 ],
+    "invalidDimensionClampHits":  [
+
+                                  ],
+    "bridgeProof":  {
+                        "resolveCameraRelativeRejectsInvalidAup":  true,
+                        "toRuntimeFloat3RejectsInvalidAup":  true,
+                        "weightedAupAverageRejectsNonFiniteWeight":  true,
+                        "weightedAverageUsesAnchoredDelta":  true,
+                        "snapshotWriterReturnChecked":  true,
+                        "snapshotDeltaPrevalidatesBeforeNativeAllocation":  true,
+                        "sectorCommitStateMutatesOnMainThread":  true,
+                        "sectorOverrideReadWorkCapturedBeforeBackground":  true,
+                        "backgroundSectorOverrideMergeDoesNotReadRuntimeDictionary":  true,
+                        "indexedQuarantineResetUsesCapturedSavePathAndChunkSize":  true,
+                        "tryCommitDeletesFailClosed":  true,
+                        "invalidChunkDimensionsFailClosed":  true
+                    },
+    "notes":  [
+                  "Reaudit36 fixed indexed-sector paging load/merge path: _sectorOverrideStates is snapshotted on main thread before background IO.",
+                  "ApplySectorOverrides and TryLoadSectorEntityStateOverrides consume only SectorOverrideReadWork on the background thread.",
+                  "SaveBinaryStorage sector override commit/reset/backup temp deletes now route through a fail-closed helper.",
+                  "No direct absolute-AUP-to-float3 cast or invalid chunk-dimension clamp pattern was found in touched bridge files."
+              ],
+    "generatedAtUtc":  "2026-05-27T13:22:48.0516196Z"
+}

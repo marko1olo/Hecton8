@@ -633,11 +633,20 @@ namespace Hecton8.UI
             tableBytes = null;
             tableLength = 0;
             tableHash = _lastTableHash;
-            if (!_nativeReady || _vault == null || !IsGlitchVaultHandle(in _glitchTableHandle, GlitchTableBufferId))
+            if (!_nativeReady ||
+                _vault == null ||
+                _vault.IsCompactionFenceActive ||
+                !IsGlitchVaultHandle(in _glitchTableHandle, GlitchTableBufferId))
                 return false;
 
             if (!_vault.TryLockBuffer(GlitchTableBufferId, SystemID.UI))
                 return false;
+
+            if (_vault.IsCompactionFenceActive)
+            {
+                _vault.TryUnlockBuffer(GlitchTableBufferId, SystemID.UI);
+                return false;
+            }
 
             if (!TryResolveGlitchTableBytesLocked(out tableBytes, out tableLength, out tableHash))
             {
@@ -879,7 +888,7 @@ namespace Hecton8.UI
         /// <summary>Copies the current mock text buffer into a caller-owned preview span.</summary>
         public int CopyMockTextTo(Span<char> destination)
         {
-            if (destination.Length == 0 || !_nativeReady || _vault == null)
+            if (destination.Length == 0 || !_nativeReady || _vault == null || _vault.IsCompactionFenceActive)
                 return 0;
 
             if (_jobScheduled)
@@ -890,6 +899,9 @@ namespace Hecton8.UI
 
             try
             {
+                if (_vault.IsCompactionFenceActive)
+                    return -1;
+
                 if (!TryResolveGlitchVaultBuffer(_vault, in _workTextHandle, WorkTextBufferId, MockTextCapacity, out NativeArray<ushort> textBuffer))
                     return 0;
 
@@ -923,7 +935,10 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!_nativeReady || _vault == null || !IsGlitchVaultHandle(in _glitchTableHandle, GlitchTableBufferId))
+            if (!_nativeReady ||
+                _vault == null ||
+                _vault.IsCompactionFenceActive ||
+                !IsGlitchVaultHandle(in _glitchTableHandle, GlitchTableBufferId))
                 return;
 
             if (!_vault.TryLockBuffer(GlitchTableBufferId, SystemID.UI))
@@ -931,6 +946,9 @@ namespace Hecton8.UI
 
             try
             {
+                if (_vault.IsCompactionFenceActive)
+                    return;
+
                 if (!TryResolveGlitchVaultBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> tableBuffer))
                     return;
 
@@ -1289,9 +1307,16 @@ namespace Hecton8.UI
                 ? vault.TryReadHandle(in handle, out buffer)
                 : vault.TryResolveHandle(in handle, out buffer);
 
-            return opened &&
-                   buffer.IsCreated &&
-                   (requiredLength == 0 || buffer.Length >= requiredLength);
+            if (!opened ||
+                vault.IsCompactionFenceActive ||
+                !buffer.IsCreated ||
+                (requiredLength != 0 && buffer.Length < requiredLength))
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1440,7 +1465,27 @@ namespace Hecton8.UI
                     }
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                written = 0;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                written = 0;
+            }
+            catch (ObjectDisposedException)
+            {
+                written = 0;
+            }
+            catch (InvalidOperationException)
+            {
+                written = 0;
+            }
+            catch (ArgumentException)
+            {
+                written = 0;
+            }
+            catch (NotSupportedException)
             {
                 written = 0;
             }
@@ -1467,11 +1512,18 @@ namespace Hecton8.UI
         private bool TryApplyCsvOverride(out bool shouldRetry)
         {
             shouldRetry = false;
-            if (_vault == null)
+            if (_vault == null || _vault.IsCompactionFenceActive)
                 return false;
 
             if (!_vault.TryLockBuffer(CsvScratchBufferId, SystemID.UI))
             {
+                shouldRetry = true;
+                return false;
+            }
+
+            if (_vault.IsCompactionFenceActive)
+            {
+                _vault.TryUnlockBuffer(CsvScratchBufferId, SystemID.UI);
                 shouldRetry = true;
                 return false;
             }
@@ -1485,6 +1537,9 @@ namespace Hecton8.UI
 
             try
             {
+                if (_vault.IsCompactionFenceActive)
+                    return false;
+
                 if (!TryResolveGlitchVaultBuffer(_vault, in _csvScratchHandle, CsvScratchBufferId, CsvScratchCapacity, out NativeArray<byte> scratchBuffer) ||
                     !TryResolveGlitchVaultBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> tableBuffer))
                 {
@@ -1515,7 +1570,32 @@ namespace Hecton8.UI
                         }
                     }
                 }
-                catch (Exception)
+                catch (IOException)
+                {
+                    shouldRetry = true;
+                    return false;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    shouldRetry = true;
+                    return false;
+                }
+                catch (ObjectDisposedException)
+                {
+                    shouldRetry = true;
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    shouldRetry = true;
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    shouldRetry = true;
+                    return false;
+                }
+                catch (NotSupportedException)
                 {
                     shouldRetry = true;
                     return false;
@@ -1557,7 +1637,10 @@ namespace Hecton8.UI
         private bool TryReadTuningSnapshot(out GlitchTuningDTO tuning)
         {
             tuning = default;
-            if (!_nativeReady || _vault == null || !IsGlitchVaultHandle(in _tuningHandle, TuningBufferId))
+            if (!_nativeReady ||
+                _vault == null ||
+                _vault.IsCompactionFenceActive ||
+                !IsGlitchVaultHandle(in _tuningHandle, TuningBufferId))
                 return false;
 
             if (!_vault.TryLockBuffer(TuningBufferId, SystemID.UI))
@@ -1565,14 +1648,13 @@ namespace Hecton8.UI
 
             try
             {
+                if (_vault.IsCompactionFenceActive)
+                    return false;
+
                 if (!TryReadGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
                     return false;
 
-                GlitchTuningDTO* source = (GlitchTuningDTO*)tuningBuffer.GetUnsafeReadOnlyPtr();
-                if (source == null)
-                    return false;
-
-                tuning = *source;
+                tuning = tuningBuffer[0];
                 return true;
             }
             finally
@@ -1681,8 +1763,17 @@ namespace Hecton8.UI
 
         private bool TryLockOne(BufferID bufferId, int bit)
         {
-            if (_vault == null || !_vault.TryLockBuffer(bufferId, SystemID.UI))
+            if (_vault == null ||
+                _vault.IsCompactionFenceActive ||
+                !_vault.TryLockBuffer(bufferId, SystemID.UI))
             {
+                UnlockScheduledBuffers();
+                return false;
+            }
+
+            if (_vault.IsCompactionFenceActive)
+            {
+                _vault.TryUnlockBuffer(bufferId, SystemID.UI);
                 UnlockScheduledBuffers();
                 return false;
             }
@@ -1837,19 +1928,23 @@ namespace Hecton8.UI
 
         private bool TryPushTerminalStateGlitch(float intensity, float previousIntensity)
         {
-            if (_vault == null ||
-                _vault.IsCompactionFenceActive ||
-                !_vault.TryGetGenerationHandle<TerminalStateDTO>(TerminalOsStateBridgeBufferId, out VaultGenerationHandle<TerminalStateDTO> terminalStateHandle))
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryGetGenerationHandle<TerminalStateDTO>(TerminalOsStateBridgeBufferId, out VaultGenerationHandle<TerminalStateDTO> terminalStateHandle))
             {
                 return false;
             }
 
-            if (!_vault.TryLockBuffer(TerminalOsStateBridgeBufferId, SystemID.UI))
+            if (!vault.TryLockBuffer(TerminalOsStateBridgeBufferId, SystemID.UI))
                 return false;
 
             try
             {
-                if (!TryResolveGlitchVaultBuffer(_vault, in terminalStateHandle, TerminalOsStateBridgeBufferId, TerminalOsConstants.TerminalCapacity, out NativeArray<TerminalStateDTO> terminalStates))
+                if (vault.IsCompactionFenceActive)
+                    return false;
+
+                if (!TryResolveGlitchVaultBuffer(vault, in terminalStateHandle, TerminalOsStateBridgeBufferId, TerminalOsConstants.TerminalCapacity, out NativeArray<TerminalStateDTO> terminalStates))
                     return false;
 
                 TerminalStateDTO* states = (TerminalStateDTO*)terminalStates.GetUnsafePtr();
@@ -1862,7 +1957,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                _vault.TryUnlockBuffer(TerminalOsStateBridgeBufferId, SystemID.UI);
+                vault.TryUnlockBuffer(TerminalOsStateBridgeBufferId, SystemID.UI);
             }
 
             return true;
@@ -1944,15 +2039,7 @@ namespace Hecton8.UI
 
         private void DumpBlackBox(uint faultFlags)
         {
-            if (!TryReadGlitchVaultBuffer(_vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryFrameCount, out NativeArray<DiegeticGlitchTelemetryEntry> telemetryBuffer) ||
-                !TryReadGlitchVaultBuffer(_vault, in _telemetryCursorHandle, TelemetryCursorBufferId, 1, out NativeArray<uint> cursorBuffer))
-            {
-                return;
-            }
-
-            DiegeticGlitchTelemetryEntry* telemetry = (DiegeticGlitchTelemetryEntry*)telemetryBuffer.GetUnsafeReadOnlyPtr();
-            uint* cursor = (uint*)cursorBuffer.GetUnsafeReadOnlyPtr();
-            if (telemetry == null || cursor == null)
+            if (!TryReadTelemetryCursorSnapshot(out uint cursor))
                 return;
 
             try
@@ -1966,7 +2053,7 @@ namespace Hecton8.UI
                 header.Magic = DumpMagic;
                 header.Version = DumpVersion;
                 header.EntryCount = TelemetryFrameCount;
-                header.Cursor = *cursor;
+                header.Cursor = cursor;
                 header.FaultFlags = faultFlags;
                 header.TableHash = _lastTableHash;
                 header.TimestampTicksLow = (uint)timestampTicks;
@@ -1975,13 +2062,77 @@ namespace Hecton8.UI
                 using (FileStream stream = new FileStream(_dumpFullPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096))
                 {
                     stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&header), UnsafeUtility.SizeOf<GlitchBlackBoxDumpHeader>()));
-                    stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(telemetry), UnsafeUtility.SizeOf<DiegeticGlitchTelemetryEntry>() * TelemetryFrameCount));
+                    int stride = UnsafeUtility.SizeOf<DiegeticGlitchTelemetryEntry>();
+                    byte* rowBytes = stackalloc byte[stride];
+                    for (int i = 0; i < TelemetryFrameCount; i++)
+                    {
+                        if (!TryReadTelemetryDumpEntry(i, out DiegeticGlitchTelemetryEntry entry))
+                        {
+                            _lastFaultFlags |= FaultVaultUnavailable;
+                            return;
+                        }
+
+                        UnsafeUtility.MemCpy(rowBytes, &entry, stride);
+                        stream.Write(new ReadOnlySpan<byte>(rowBytes, stride));
+                    }
                 }
             }
-            catch (Exception)
+            catch (IOException)
             {
                 _lastFaultFlags |= FaultVaultUnavailable;
             }
+            catch (UnauthorizedAccessException)
+            {
+                _lastFaultFlags |= FaultVaultUnavailable;
+            }
+            catch (ObjectDisposedException)
+            {
+                _lastFaultFlags |= FaultVaultUnavailable;
+            }
+            catch (InvalidOperationException)
+            {
+                _lastFaultFlags |= FaultVaultUnavailable;
+            }
+            catch (ArgumentException)
+            {
+                _lastFaultFlags |= FaultVaultUnavailable;
+            }
+            catch (NotSupportedException)
+            {
+                _lastFaultFlags |= FaultVaultUnavailable;
+            }
+        }
+
+        private bool TryReadTelemetryCursorSnapshot(out uint cursor)
+        {
+            cursor = 0u;
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !TryReadGlitchVaultBuffer(vault, in _telemetryCursorHandle, TelemetryCursorBufferId, 1, out NativeArray<uint> cursorBuffer))
+            {
+                return false;
+            }
+
+            cursor = cursorBuffer[0];
+            return !vault.IsCompactionFenceActive;
+        }
+
+        private bool TryReadTelemetryDumpEntry(int index, out DiegeticGlitchTelemetryEntry entry)
+        {
+            entry = default;
+            IDataVault vault = _vault;
+            if (index < 0 ||
+                vault == null ||
+                vault.IsCompactionFenceActive ||
+                !TryReadGlitchVaultBuffer(vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryFrameCount, out NativeArray<DiegeticGlitchTelemetryEntry> telemetryBuffer) ||
+                index >= telemetryBuffer.Length)
+            {
+                return false;
+            }
+
+            entry = telemetryBuffer[index];
+            return !vault.IsCompactionFenceActive;
         }
 
         private float ResolveGlobalQualityWeight()

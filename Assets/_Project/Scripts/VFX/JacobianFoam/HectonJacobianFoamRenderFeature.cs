@@ -60,6 +60,12 @@ namespace Hecton8.VFX
                     payload.Compute == null ||
                     payload.DispatchGroupsX <= 0 ||
                     payload.DispatchGroupsY <= 0 ||
+                    payload.CalculateDispatchGroupsX <= 0 ||
+                    payload.CalculateDispatchGroupsY <= 0 ||
+                    payload.AdvectDispatchGroupsX <= 0 ||
+                    payload.AdvectDispatchGroupsY <= 0 ||
+                    payload.ClearDispatchGroupsX <= 0 ||
+                    payload.ClearDispatchGroupsY <= 0 ||
                     payload.ParamsBuffer == null ||
                     payload.WakeBuffer == null)
                 {
@@ -116,11 +122,11 @@ namespace Hecton8.VFX
                         if (payloadData.ClearHistory != 0)
                         {
                             BindClear(context.cmd, in payloadData, data.GenerationTexture, data.HistoryReadTexture);
-                            context.cmd.DispatchCompute(payloadData.Compute, payloadData.ClearKernel, payloadData.DispatchGroupsX, payloadData.DispatchGroupsY, 1);
+                            context.cmd.DispatchCompute(payloadData.Compute, payloadData.ClearKernel, payloadData.ClearDispatchGroupsX, payloadData.ClearDispatchGroupsY, 1);
                         }
 
                         BindCalculate(context.cmd, in payloadData, data.ParamsBuffer, data.DepthTexture, data.DepthTexelSize, data.GenerationTexture, data.WakeBuffer);
-                        context.cmd.DispatchCompute(payloadData.Compute, payloadData.CalculateKernel, payloadData.DispatchGroupsX, payloadData.DispatchGroupsY, 1);
+                        context.cmd.DispatchCompute(payloadData.Compute, payloadData.CalculateKernel, payloadData.CalculateDispatchGroupsX, payloadData.CalculateDispatchGroupsY, 1);
                     });
                 }
 
@@ -144,7 +150,7 @@ namespace Hecton8.VFX
                     {
                         JacobianFoamGpuRuntime.FoamRenderGraphPayload payloadData = data.Payload;
                         BindAdvect(context.cmd, in payloadData, data.ParamsBuffer, data.GenerationTexture, data.HistoryReadTexture, data.HistoryWriteTexture);
-                        context.cmd.DispatchCompute(payloadData.Compute, payloadData.AdvectKernel, payloadData.DispatchGroupsX, payloadData.DispatchGroupsY, 1);
+                        context.cmd.DispatchCompute(payloadData.Compute, payloadData.AdvectKernel, payloadData.AdvectDispatchGroupsX, payloadData.AdvectDispatchGroupsY, 1);
                         JacobianFoamGpuRuntime.AcknowledgePublishedRenderGraphPayload(payloadData.OwnerId, payloadData.Sequence, payloadData.HistoryWriteIndex, payloadData.HistoryWriteTexture.rt);
                     });
                 }

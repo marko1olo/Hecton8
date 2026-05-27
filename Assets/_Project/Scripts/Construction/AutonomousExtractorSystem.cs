@@ -144,19 +144,6 @@ namespace Hecton8.Construction
             return runtime != null;
         }
 
-        /// <summary>
-        /// Ensures a runtime extraction owner exists.
-        /// </summary>
-        public static AutonomousExtractorSystem EnsureRuntimeInstance()
-        {
-            AutonomousExtractorSystem registryRuntime = GlobalRegistry.AutonomousExtractors;
-            if (registryRuntime != null)
-                return registryRuntime;
-
-            GameObject runtimeRoot = new GameObject("[AutonomousExtractorSystem]"); // COLD ALLOC: GameObject[1] — runtime extractor SOA owner root — owner: AutonomousExtractorSystem
-            return runtimeRoot.AddComponent<AutonomousExtractorSystem>();
-        }
-
         private void OnEnable()
         {
             TryRegisterToGlobalRegistry();
@@ -164,6 +151,7 @@ namespace Hecton8.Construction
                 return;
 
             TryRegisterHotSwapListener();
+            BindCurrentDataVaultCold();
             EnsureVaultCapacity(MaxModuleCapacity);
             TryRegisterRuntimeLoops();
         }
@@ -625,6 +613,16 @@ namespace Hecton8.Construction
 
             _dataVault = GlobalRegistry.DataVault;
             return _dataVault;
+        }
+
+        private void BindCurrentDataVaultCold()
+        {
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            ReleaseVaultBuffers(_dataVault);
+            _dataVault = currentVault;
         }
 
         private bool EnsureVaultBuffer<T>(
@@ -1215,8 +1213,7 @@ namespace Hecton8.Construction
             if (_registered || !Application.isPlaying)
                 return;
 
-            AutonomousExtractorSystem runtime = AutonomousExtractorSystem.EnsureRuntimeInstance();
-            if (runtime == null)
+            if (!AutonomousExtractorSystem.TryGetActiveRuntime(out AutonomousExtractorSystem runtime))
                 return;
 
             _registered = runtime.RegisterModule(this) >= 0;

@@ -4,8 +4,10 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Visor
 {
@@ -14,6 +16,15 @@ namespace Hecton8.Visor
     /// </summary>
     public sealed class HectonDryVolumeFeature : ScriptableRendererFeature
     {
+#if UNITY_EDITOR
+        private const string StencilWriteShaderPath = "Assets/_Project/Art/Shaders/Hecton_DryVolumeStencil.shader";
+        private const string RestoreShaderPath = "Assets/_Project/Art/Shaders/Hecton_DryVolumeRestore.shader";
+        private const string ClearShaderPath = "Assets/_Project/Art/Shaders/Hecton_DryVolumeStencilClear.shader";
+#endif
+        private const string StencilWriteShaderName = "Hidden/Hecton8/DryVolumeStencil";
+        private const string RestoreShaderName = "Hidden/Hecton8/DryVolumeRestore";
+        private const string ClearShaderName = "Hidden/Hecton8/DryVolumeStencilClear";
+
         [Serializable]
         private sealed class FeatureSettings
         {
@@ -121,8 +132,6 @@ namespace Hecton8.Visor
             {
                 internal Material restoreMaterial;
                 internal Material clearMaterial;
-                internal Texture oceanCameraColorTexture;
-                internal int stencilRef;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Dry Volume Restore");
@@ -178,6 +187,7 @@ namespace Hecton8.Visor
 
                 _stencilWriteMaterial.SetFloat(ShaderConstants.StencilRefId, _settings.stencilRef);
                 _restoreMaterial.SetFloat(ShaderConstants.StencilRefId, _settings.stencilRef);
+                _restoreMaterial.SetTexture(ShaderConstants.OceanCameraColorTextureId, oceanCameraColorTexture);
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<StencilPassData>(
                            "Hecton Dry Volume Stencil",
@@ -210,16 +220,12 @@ namespace Hecton8.Visor
                 {
                     passData.restoreMaterial = _restoreMaterial;
                     passData.clearMaterial = _clearMaterial;
-                    passData.oceanCameraColorTexture = oceanCameraColorTexture;
-                    passData.stencilRef = _settings.stencilRef;
 
                     builder.SetRenderAttachment(compositeTexture, 0, AccessFlags.ReadWrite);
                     builder.SetRenderAttachmentDepth(depthTexture, AccessFlags.ReadWrite);
 
                     builder.SetRenderFunc((RestorePassData data, RasterGraphContext context) =>
                     {
-                        data.restoreMaterial.SetFloat(ShaderConstants.StencilRefId, data.stencilRef);
-                        context.cmd.SetGlobalTexture(ShaderConstants.OceanCameraColorTextureId, data.oceanCameraColorTexture);
                         CoreUtils.DrawFullScreen(context.cmd, data.restoreMaterial, null, 0);
                         CoreUtils.DrawFullScreen(context.cmd, data.clearMaterial);
                     });
@@ -243,7 +249,6 @@ namespace Hecton8.Visor
                 internal Material resolveMaterial;
                 internal Material clearMaterial;
                 internal float hasDryVolumes;
-                internal int stencilRef;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Underwater Noir Resolve");
@@ -335,7 +340,6 @@ namespace Hecton8.Visor
                     passData.resolveMaterial = _resolveMaterial;
                     passData.clearMaterial = _clearMaterial;
                     passData.hasDryVolumes = hasDryVolumes ? 1f : 0f;
-                    passData.stencilRef = _settings.stencilRef;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.SetRenderAttachment(compositeTexture, 0, AccessFlags.ReadWrite);
@@ -344,7 +348,6 @@ namespace Hecton8.Visor
 
                     builder.SetRenderFunc((ResolvePassData data, RasterGraphContext context) =>
                     {
-                        data.resolveMaterial.SetFloat(ShaderConstants.StencilRefId, data.stencilRef);
                         context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.source);
                         CoreUtils.DrawFullScreen(context.cmd, data.resolveMaterial, null, 1);
 
@@ -383,15 +386,19 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void Create()
         {
-            Shader stencilWriteShader = settings != null && settings.stencilWriteShader != null
-                ? settings.stencilWriteShader
-                : Shader.Find("Hidden/Hecton8/DryVolumeStencil");
-            Shader restoreShader = settings != null && settings.restoreShader != null
-                ? settings.restoreShader
-                : Shader.Find("Hidden/Hecton8/DryVolumeRestore");
-            Shader clearShader = settings != null && settings.clearShader != null
-                ? settings.clearShader
-                : Shader.Find("Hidden/Hecton8/DryVolumeStencilClear");
+            EnsureEditorShaderReferences();
+
+            Shader stencilWriteShader = settings != null ? settings.stencilWriteShader : null;
+            Shader restoreShader = settings != null ? settings.restoreShader : null;
+            Shader clearShader = settings != null ? settings.clearShader : null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (stencilWriteShader == null)
+                stencilWriteShader = Shader.Find(StencilWriteShaderName);
+            if (restoreShader == null)
+                restoreShader = Shader.Find(RestoreShaderName);
+            if (clearShader == null)
+                clearShader = Shader.Find(ClearShaderName);
+#endif
 
             _restorePass ??= new DryRestorePass();
             _resolvePass ??= new UnderwaterResolvePass();
@@ -449,5 +456,28 @@ namespace Hecton8.Visor
             CoreUtils.Destroy(material);
             material = CoreUtils.CreateEngineMaterial(shader);
         }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void EnsureEditorShaderReferences()
+        {
+#if UNITY_EDITOR
+            if (settings == null)
+                return;
+
+            if (settings.stencilWriteShader == null)
+                settings.stencilWriteShader = AssetDatabase.LoadAssetAtPath<Shader>(StencilWriteShaderPath);
+            if (settings.restoreShader == null)
+                settings.restoreShader = AssetDatabase.LoadAssetAtPath<Shader>(RestoreShaderPath);
+            if (settings.clearShader == null)
+                settings.clearShader = AssetDatabase.LoadAssetAtPath<Shader>(ClearShaderPath);
+#endif
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            EnsureEditorShaderReferences();
+        }
+#endif
     }
 }

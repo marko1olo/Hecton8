@@ -3,24 +3,16 @@
 Date: 2026-05-19
 Status: ENVELOPE-ONLY STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
-
-Owner prompt: MODDING_API_SCHEMA_BUILDER  
+Owner domain: Modding API static contract
 Primary sources:
 
 - `Assets/_Project/Scripts/ModdingAPI/ModEventContracts.cs`
+- `Assets/_Project/Scripts/Interaction/InteractionEvents.cs`
+- `Assets/_Project/Scripts/CraftingEvents.cs`
 - `Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs`
 - `Assets/_Project/Scripts/ModdingAPI/ModSpatialContracts.cs`
 
@@ -47,7 +39,16 @@ Legacy payloads below are retained for source-audit continuity only while the le
 |---|---|---:|---|---|
 | `ModEventDto` | Explicit | 64 bytes | `ModEventContracts.cs` | Projected public signal DTO. Exact field offsets are contract. |
 | `ModCommand` | Explicit | 64 bytes | `ModCommandDispatcher.cs` | Dormant legacy command packet. Header fields are explicit and `ModHash` / `RequestId` overlay `Payload0`. |
-| `ModAupResponse` | Sequential | 64 bytes | `ModSpatialContracts.cs` | Async response payload for flow, voxel, and acoustic AUP paths. |
+| `ModPlayerSpawnedEvent` | Explicit | 24 bytes | `ModEventContracts.cs` | Public read-only event payload. |
+| `ModBiomeChangedEvent` | Explicit | 24 bytes | `ModEventContracts.cs` | Public read-only event payload with `_pad0` at byte 20. |
+| `InteractionEventPayload` | Explicit | 32 bytes | `InteractionEvents.cs` | Native `SubscribeNative` byte-copy Interaction lane; callback-scoped span only. |
+| `CraftingEventPayload` | Explicit | 64 bytes | `CraftingEvents.cs` | Native `SubscribeNative` byte-copy Crafting lane; callback-scoped span only. |
+| `ModAupCommand` | Explicit | 120 bytes | `ModSpatialContracts.cs` | Legacy position-changing command wrapper. |
+| `ModAupResponse` | Explicit | 64 bytes | `ModSpatialContracts.cs` | Async response payload for flow, voxel, and acoustic AUP paths. |
+| `ModRenderInstanceCommand` | Explicit | 80 bytes | `ModSpatialContracts.cs` | Legacy render instance command wrapper. |
+| `ModRaycastResultPayload` | Explicit | 48 bytes | `ModSpatialContracts.cs` | Next-frame proxied raycast result. |
+| `ModInteractionRejectedPayload` | Explicit | 16 bytes | `ModSpatialContracts.cs` | Rejection payload; `Opcode`/`TargetSystem` overlay `OpcodeHash`. |
+| `ModCriticalMemoryEvictionPayload` | Explicit | 24 bytes | `ModSpatialContracts.cs` | Heap quota eviction warning before quarantine/disable. |
 
 ## ModEventDto Field Offsets
 
@@ -68,6 +69,15 @@ Legacy payloads below are retained for source-audit continuity only while the le
 | `Reserved0` | 57 | `byte` |
 | `Sequence` | 58 | `ushort` |
 | `Reserved1` | 60 | `uint` |
+
+## Native Byte Payloads
+
+These are first-party NativeQueue bridge payloads copied into `SubscribeNative`. Mods receive `ReadOnlySpan<byte>` valid only for the callback duration; no native handle, Unity object, or first-party queue is exposed.
+
+| Payload | Fields | Notes |
+|---|---|---|
+| `InteractionEventPayload` | `ItemHashId@0`, `TargetHashId@4`, `InteractorHashId@8`, `ReferenceSlot@12`, `Quantity@16`, `EventType@20`, `Reserved@22`, `_pad0@24` | 32 bytes; source owner is `InteractionEvents`. |
+| `CraftingEventPayload` | `SpawnPosition@0`, `VelocityChange@12`, `FabricatorHashId@24`, `RecipeHashId@28`, `ResultItemHashId@32`, `Progress01@36`, `Quantity@40`, `ReferenceSlot@44`, `EventType@48`, `Reserved@50`, `_pad0@52`, `_pad1@56` | 64 bytes; source owner is `CraftingEvents`. |
 
 ## Event Constants
 
@@ -95,15 +105,17 @@ Legacy payloads below are retained for source-audit continuity only while the le
 | `Payload5` | 48 | `ulong` | Opcode-specific. |
 | `Payload6` | 56 | `ulong` | Opcode-specific. |
 
-## Sequential Result Payloads
+## Explicit Result Payloads
 
 | Payload | Fields | Notes |
 |---|---|---|
-| `ModAupCommand` | `Command`, `Position`, `Direction`, `Scalar` | Required for current position-affecting opcodes. |
-| `ModRenderInstanceCommand` | `ModHash`, `RequestId`, `ResourceHash`, `Flags`, `Matrix` | Mod hash overwritten by engine. |
-| `ModRaycastResultPayload` | `ModHash`, `RequestId`, `Status`, `ColliderInstanceId`, `Layer`, `Distance`, `Point`, `Normal` | Collider instance id is diagnostic only. |
-| `ModInteractionRejectedPayload` | `ModHash`, `RequestId`, `Opcode`, `TargetSystem`, `Reason` | Security gate rejection payload. |
-| `ModCriticalMemoryEvictionPayload` | `ModHash`, `TrackedHeapBytes`, `LimitBytes`, `Reason` | Heap quota warning before quarantine/disable. |
+| `ModPlayerSpawnedEvent` | `PlayerId@0`, `AbsoluteUniversePosition@8`, `BiomeId@20` | 24 bytes; managed callback payload only. |
+| `ModBiomeChangedEvent` | `PreviousBiomeId@0`, `CurrentBiomeId@4`, `AbsoluteUniversePosition@8`, `_pad0@20` | 24 bytes; padding keeps ARM64-aligned size. |
+| `ModAupCommand` | `Command@0`, `Position@64`, `Direction@104`, `Scalar@116` | 120 bytes; required for current position-affecting opcodes. |
+| `ModRenderInstanceCommand` | `ModHash@0`, `RequestId@4`, `ResourceHash@8`, `Flags@12`, `Matrix@16` | 80 bytes; mod hash overwritten by engine. |
+| `ModRaycastResultPayload` | `ModHash@0`, `RequestId@4`, `Status@8`, `ColliderInstanceId@12`, `Layer@16`, `Distance@20`, `Point@24`, `Normal@36` | 48 bytes; collider instance id is diagnostic only. |
+| `ModInteractionRejectedPayload` | `ModHash@0`, `RequestId@4`, `Opcode@8`, `TargetSystem@10`, `OpcodeHash@8`, `Reason@12` | 16 bytes; legacy fields overlay future opcode hash. |
+| `ModCriticalMemoryEvictionPayload` | `ModHash@0`, `_pad0@4`, `TrackedHeapBytes@8`, `LimitBytes@16`, `Reason@20` | 24 bytes; heap quota warning before quarantine/disable. |
 
 ## Consistency Gate
 

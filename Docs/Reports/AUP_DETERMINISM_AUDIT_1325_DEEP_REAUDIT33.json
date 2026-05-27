@@ -1,0 +1,21 @@
+{
+    "schema":  "hecton8.aup_determinism_reaudit33.v2",
+    "agentId":  "1325",
+    "scannedFiles":  5,
+    "findingCount":  0,
+    "findings":  [
+
+                 ],
+    "bridgeProof":  {
+                        "toRuntimeFloat3UsesAupOrigin":  true,
+                        "offsetAbsoluteUsesGridLocalCarry":  true,
+                        "weightedAverageUsesAnchoredDelta":  true,
+                        "invalidChunkDimensionsFailClosed":  true
+                    },
+    "notes":  [
+                  "Shared committed-offset runtime bridge converts the committed origin to AUP and uses AUPDeltaClamped before float cast.",
+                  "WeightedAverage3 and WeightedAbsoluteAverage3 use anchored deltas instead of summing three huge absolute doubles.",
+                  "Persistence chunk and sector validators reject invalid dimensions instead of clamping to 1."
+              ],
+    "generatedAtUtc":  "2026-05-27T10:21:15.9839150Z"
+}

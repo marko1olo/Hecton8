@@ -6,6 +6,7 @@ using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
+using UnityEngine.ResourceManagement.ResourceProviders;
 
 namespace Hecton8.EditorTools
 {
@@ -292,20 +293,33 @@ namespace Hecton8.EditorTools
             if (settings == null)
                 return null;
 
-            if (settings.DefaultGroup != null)
-                return settings.DefaultGroup;
-
             AddressableAssetGroup group = settings.FindGroup(TieredTextureGroupName);
-            if (group != null)
-                return group;
+            if (group == null)
+            {
+                group = settings.CreateGroup(
+                    TieredTextureGroupName,
+                    false,
+                    false,
+                    false,
+                    null,
+                    typeof(BundledAssetGroupSchema));
+            }
 
-            return settings.CreateGroup(
-                TieredTextureGroupName,
-                false,
-                false,
-                false,
-                null,
-                typeof(BundledAssetGroupSchema));
+            ConfigureBundledLoadMode(group);
+            return group;
+        }
+
+        private static void ConfigureBundledLoadMode(AddressableAssetGroup group)
+        {
+            BundledAssetGroupSchema schema = group != null ? group.GetSchema<BundledAssetGroupSchema>() : null;
+            if (schema == null)
+                return;
+
+            if (schema.AssetLoadMode != AssetLoadMode.RequestedAssetAndDependencies)
+            {
+                schema.AssetLoadMode = AssetLoadMode.RequestedAssetAndDependencies;
+                EditorUtility.SetDirty(group);
+            }
         }
 
         private static bool IsMaskMap(string path)

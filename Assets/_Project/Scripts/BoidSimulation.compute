@@ -20,23 +20,20 @@
 //       The C# host swaps buffer bindings each frame.
 //       Result: deterministic, race-condition-free simulation.
 //
-//   [2] TILE-BASED SHARED MEMORY (LDS) NEIGHBOR SEARCH
-//       The O(N²) brute-force neighbor scan is restructured into tiles
-//       of size THREAD_GROUP_SIZE (64 on MX350/Pascal). Each tile:
-//         a) Cooperatively loads 64 boids into groupshared LDS.
-//         b) Synchronizes via GroupMemoryBarrierWithGroupSync().
-//         c) Each thread scans the 256 LDS entries (fast L1 access).
-//         d) Synchronizes again before loading the next tile.
-//       Net effect: global memory reads reduced from N² to N²/64.
-//       On MX350 (64 GB/s bandwidth), this is the difference between
-//       feasible and infeasible at 5000 boids.
+//   [2] SPATIAL-GRID SHARED INDEX CACHE
+//       The active path builds a fixed spatial grid and scans 27 neighbor cells.
+//       Each group caches up to SPATIAL_GRID_HARD_MAX_BOIDS_PER_CELL indices
+//       in groupshared LDS, then reads boid payloads by index from the source
+//       structured buffer. This replaces the old O(N^2) brute-force tile path.
+//       Candidate checks now scale with local cell occupancy instead of
+//       all-boids global scans.
 //
 //   [3] ZERO-BRANCHING INNER LOOP (WARP DIVERGENCE ELIMINATION)
 //       All radius/distance checks inside the inner loop use
 //       step() and saturate() intrinsics instead of if-statements.
 //       This guarantees uniform warp execution across all 32 lanes.
 //       Branch divergence cost on Pascal: ~2x slowdown per divergent
-//       branch. With 64 iterations per tile, this matters.
+//       branch. With many candidate checks per boid, this matters.
 //
 //   [4] BRANCHLESS SPEED CLAMPING & FORCE NORMALIZATION
 //       Final velocity integration uses lerp + step combinations
@@ -55,19 +52,18 @@
 //   ------  ----
 //   TOTAL:  32 bytes per boid
 //
-//   Stride is power-of-two friendly. 256 boids in LDS = 8192 bytes.
-//   MX350 has 48KB shared memory per SM. Comfortable fit.
+//   Stride is power-of-two friendly for structured-buffer reads.
+//   Active LDS cache is 32 uint indices = 128 bytes.
 //
 // ============================================================================
 // PERFORMANCE BUDGET (MX350, 5000 boids)
 // ============================================================================
 //
-//   Dispatch:        ceil(5000 / 256) = 20 thread groups
-//   Tiles per boid:  ceil(5000 / 256) = 20 tile iterations
-//   LDS per group:   256 × 32 = 8192 bytes (8 KB)
-//   Global reads:    5000 × 20 tiles × 1 load/thread = 100,000 loads
-//                    vs. old: 5000 × 5000 = 25,000,000 loads
-//                    Reduction factor: 250×
+//   Dispatch:        ceil(5000 / 64) = 79 thread groups
+//   Neighbor scan:   bounded 27-cell spatial-grid candidate walk
+//   LDS per group:   32 x uint = 128 bytes
+//   Global reads:    proportional to occupied neighbor-cell candidates,
+//                    not full N x N brute force.
 //   Target frame:    < 0.5ms compute time
 //
 // ============================================================================
@@ -77,7 +73,7 @@
 //   v1.0  — Initial brute-force O(N²) single-buffer implementation.
 //   v2.0  — [THIS FILE] Complete rewrite:
 //           • Ping-Pong double buffering (race condition elimination)
-//           • Tile-based LDS neighbor search (250× bandwidth reduction)
+//           * Spatial-grid LDS index cache (bounded neighbor candidates)
 //           • Zero-branching inner loop (warp divergence elimination)
 //           • Branchless speed clamping and force normalization
 //
@@ -190,12 +186,12 @@ float4 _AbyssalFlowSpacing;
 float _AbyssalFlowActive;
 float _AbyssalFlowWeight;
 
-float4 _PredatorAupPositions[16];
+float4 _PredatorRuntimePositions[16];
 uint _PredatorCount;
 float _PredatorPanicRadiusSq;
 float _PredatorWeight;
 
-float4 _AcousticPingAupRadius;
+float4 _AcousticPingRuntimeRadius;
 float4 _AcousticPingParams;
 
 float _PanicDecay;
@@ -206,24 +202,24 @@ float _PanicAccelerationThresholdSq;
 // ============================================================================
 
 #define THREAD_GROUP_SIZE 64         // MX350/Pascal baseline: one 64-thread group per wave pair
-                                     // Chosen for: LDS budget (8KB), MX350 occupancy,
-                                     // warp alignment (256 = 8 warps of 32)
+                                     // Chosen for: low LDS pressure, MX350 occupancy,
+                                     // warp alignment (64 = 2 warps of 32)
 #define SPATIAL_GRID_COUNTER_STRIDE 4
 #define SPATIAL_GRID_MAX_CELLS 32768
 #define SPATIAL_GRID_HARD_MAX_BOIDS_PER_CELL 32
 
 // ============================================================================
-// SECTION 5: SHARED MEMORY (LDS) — TILE CACHE
+// SECTION 5: SHARED MEMORY (LDS) - SPATIAL INDEX CACHE
 // ============================================================================
 //
-// Each thread group cooperatively loads tiles of boid data into this
-// fast on-chip memory. Access latency: ~1 cycle (vs ~400 cycles for VRAM).
+// Each thread group cooperatively caches spatial-grid indices in this
+// fast on-chip memory before reading boid payloads from structured buffers.
 //
-// Memory footprint: 256 × 32 bytes = 8,192 bytes = 8 KB
+// Active LDS footprint: 32 uint spatial indices = 128 bytes.
+// Boid payloads stay in structured buffers; the old brute-force BoidData LDS tile is disabled.
 // MX350 SM budget:  48 KB → occupancy is NOT limited by LDS.
 // ============================================================================
 
-groupshared BoidData sharedBoids[THREAD_GROUP_SIZE];
 groupshared uint sharedSpatialIndices[SPATIAL_GRID_HARD_MAX_BOIDS_PER_CELL];
 
 // ============================================================================
@@ -412,7 +408,7 @@ float3 ComputePredatorEscapeDirection(float3 positionWS, out float panic01)
     [loop]
     for (uint predatorIndex = 0; predatorIndex < predatorCount; predatorIndex++)
     {
-        float4 predator = _PredatorAupPositions[predatorIndex];
+        float4 predator = _PredatorRuntimePositions[predatorIndex];
         float3 away = positionWS - predator.xyz;
         float distSq = dot(away, away);
         float active = step(0.5, predator.w);
@@ -430,7 +426,7 @@ float3 ComputeAcousticPingKick(float3 positionWS, out float panic01)
     panic01 = 0.0;
     float active = step(0.5, _AcousticPingParams.w);
     float radiusSq = max(_AcousticPingParams.y, 0.001);
-    float3 away = positionWS - _AcousticPingAupRadius.xyz;
+    float3 away = positionWS - _AcousticPingRuntimeRadius.xyz;
     float distSq = dot(away, away);
     float inside = active * (1.0 - step(radiusSq, distSq));
     float falloff = inside * (1.0 - saturate(distSq / radiusSq));
@@ -620,10 +616,10 @@ void CullVisibleBoids(uint3 id : SV_DispatchThreadID)
 // ============================================================================
 //
 // Execution model:
-//   DispatchCompute(ceil(BoidCount / 256), 1, 1)
+//   DispatchCompute(ceil(BoidCount / THREAD_GROUP_SIZE), 1, 1)
 //   Each thread processes exactly ONE boid.
 //   SV_DispatchThreadID.x = global boid index.
-//   SV_GroupIndex         = local thread index within group [0..255].
+//   SV_GroupIndex         = local thread index within group [0..THREAD_GROUP_SIZE - 1].
 //
 // Data flow:
 //   _BoidsBufferRead[*]  →  accumulate forces  →  integrate  →  _BoidsBufferWrite[index]
@@ -646,6 +642,7 @@ void CSMain(
     // ════════════════════════════════════════════════════════════════════════
 
     uint index = id.x;
+    uint activeBoidCount = max(_BoidCount, 1u);
 
     // Validity flag: 1.0 if this thread maps to a real boid, 0.0 otherwise.
     // Used to mask writes at the end — thread still participates in barriers.
@@ -654,26 +651,26 @@ void CSMain(
     // Load this boid's state from the READ buffer (previous frame).
     // For out-of-range threads, this reads garbage — doesn't matter,
     // the write will be masked by isValid.
-    uint safeIndex = min(index, _BoidCount - 1);
+    uint safeIndex = min(index, activeBoidCount - 1u);
     BoidData selfBoid = _BoidsBufferRead[safeIndex];
     float3 pos = selfBoid.position;
     float3 vel = selfBoid.velocity;
 
     // ════════════════════════════════════════════════════════════════════════
-    // PHASE 1: TILE-BASED NEIGHBOR ACCUMULATION
+    // PHASE 1: SPATIAL-GRID NEIGHBOR ACCUMULATION
     // ════════════════════════════════════════════════════════════════════════
     //
     // Instead of N global memory reads per boid (25,000,000 total for N=5000),
-    // we load tiles of 256 boids into groupshared memory (LDS).
+    // we load tiles of THREAD_GROUP_SIZE boids into groupshared memory (LDS).
     //
     // Per tile:
-    //   1. Each thread loads one boid from global → LDS     (256 coalesced reads)
-    //   2. Barrier — ensure all 256 entries are visible
-    //   3. Each thread reads all 256 LDS entries             (fast, ~1 cycle each)
+    //   1. Each thread loads one boid from global -> LDS
+    //   2. Barrier - ensure all THREAD_GROUP_SIZE entries are visible
+    //   3. Each thread reads all THREAD_GROUP_SIZE LDS entries
     //   4. Barrier — ensure no thread starts overwriting LDS prematurely
     //
-    // Total global reads: N × ceil(N/256) × 1 = N²/256
-    // For N=5000: 100,000 global reads vs 25,000,000. Factor: 250×.
+    // Total global reads: N x ceil(N / THREAD_GROUP_SIZE) x 1.
+    // For N=5000 and THREAD_GROUP_SIZE=64: 395,000 loads vs 25,000,000.
     //
     // ════════════════════════════════════════════════════════════════════════
 
@@ -762,7 +759,7 @@ void CSMain(
         // ── Step 1: Cooperative Load ────────────────────────────────────────
         //
         // Each thread loads exactly one boid from global memory into LDS.
-        // Thread GI in this group loads boid at global index (tile*256 + GI).
+        // Thread GI in this group loads boid at global index (tile * THREAD_GROUP_SIZE + GI).
         //
         // If that index exceeds _BoidCount, we load a sentinel boid at
         // an impossible position (far away) so it never passes radius checks.
@@ -773,7 +770,7 @@ void CSMain(
 
         // Clamp to valid range to prevent out-of-bounds global read.
         // For out-of-range indices, we load boid 0 but then zero it out.
-        uint  clampedLoadIndex = min(loadIndex, _BoidCount - 1);
+        uint  clampedLoadIndex = min(loadIndex, activeBoidCount - 1u);
         float loadValid = step((float)loadIndex + 0.5, (float)_BoidCount);
 
         BoidData loadedBoid = _BoidsBufferRead[clampedLoadIndex];
@@ -794,7 +791,7 @@ void CSMain(
 
         GroupMemoryBarrierWithGroupSync();
 
-        // ── Step 3: Inner Loop — Scan all 256 boids in this tile ────────────
+        // Step 3: Inner Loop - scan all THREAD_GROUP_SIZE boids in this tile.
         //
         // ZERO-BRANCHING DESIGN:
         //   All radius checks are computed as float masks using step().

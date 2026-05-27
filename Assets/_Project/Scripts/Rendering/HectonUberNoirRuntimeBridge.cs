@@ -23,10 +23,7 @@ namespace Hecton8.Core
         private const float StressRecoveryThreshold = 0.72f;
         private const float FeatureMaskEpsilon = 0.001f;
         private const uint DumpMagic = 0x55424E52u; // UBNR
-        private const string IntegratorDumpFileName = "Dump_UBER_NOIR_INTEGRATOR.bin";
-        private const string IntegratorH8DumpFileName = "Dump_UBER_NOIR_INTEGRATOR.h8dump";
-        private const string ExtinctionDumpFileName = "Dump_EXTINCTION_LUT_SAMPLER.bin";
-        private const string ExtinctionH8DumpFileName = "Dump_EXTINCTION_LUT_SAMPLER.h8dump";
+        private const string DumpFileName = "Dump_1335_UberNoirRuntimeBridge.bin";
 
         private const uint FeaturePom = 1u << 0;
         private const uint FeatureScreenRefraction = 1u << 3;
@@ -40,6 +37,7 @@ namespace Hecton8.Core
         private const uint TelemetryFlagLayoutFault = 1u << 0;
         private const uint TelemetryFlagNonFinite = 1u << 1;
         private const uint TelemetryFlagVaultUnavailable = 1u << 2;
+        private const int DumpHeaderSizeBytes = 16;
 
         private static HectonUberNoirRuntimeBridge s_runtimeInstance;
 
@@ -117,7 +115,7 @@ namespace Hecton8.Core
             s_runtimeInstance = this;
             CacheDataVaultCold(forceRefresh: true);
             TryRegisterHotSwapListener();
-            EnsureTelemetryBuffer();
+            EnsureTelemetryBuffer(allowAllocation: true);
             UploadShaderGlobals(0f, 1f, 0u, 0f, force: true);
         }
 
@@ -132,7 +130,7 @@ namespace Hecton8.Core
             s_runtimeInstance = this;
             CacheDataVaultCold(forceRefresh: false);
             TryRegisterHotSwapListener();
-            EnsureTelemetryBuffer();
+            EnsureTelemetryBuffer(allowAllocation: true);
             TryRegisterLateFrameTickable();
         }
 
@@ -177,6 +175,7 @@ namespace Hecton8.Core
 
             ReleaseVaultBuffer(previousService as IDataVault ?? _dataVault, ref _telemetryHandle);
             _dataVault = currentService as IDataVault;
+            EnsureTelemetryBuffer(allowAllocation: true);
         }
 
         /// <summary>
@@ -255,7 +254,7 @@ namespace Hecton8.Core
             }
         }
 
-        private bool EnsureTelemetryBuffer()
+        private bool EnsureTelemetryBuffer(bool allowAllocation)
         {
             IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive)
@@ -264,9 +263,7 @@ namespace Hecton8.Core
                 return false;
             }
 
-            if (IsVaultHandleCreated(in _telemetryHandle) &&
-                vault.TryResolveHandle(in _telemetryHandle, out NativeArray<UberNoirShaderTelemetryEntry> currentRing) &&
-                currentRing.IsCreated &&
+            if (TryReadTelemetryRing(vault, in _telemetryHandle, out NativeArray<UberNoirShaderTelemetryEntry>.ReadOnly currentRing) &&
                 currentRing.Length >= TelemetryCapacity)
             {
                 return true;
@@ -276,15 +273,14 @@ namespace Hecton8.Core
             if (vault.TryGetGenerationHandle(
                     BufferID.ShaderFeatureTelemetryRing,
                     out VaultGenerationHandle<UberNoirShaderTelemetryEntry> existing) &&
-                vault.TryResolveHandle(in existing, out NativeArray<UberNoirShaderTelemetryEntry> existingRing) &&
-                existingRing.IsCreated &&
+                TryReadTelemetryRing(vault, in existing, out NativeArray<UberNoirShaderTelemetryEntry>.ReadOnly existingRing) &&
                 existingRing.Length >= TelemetryCapacity)
             {
                 _telemetryHandle = existing;
                 return true;
             }
 
-            if (vault.IsAllocationLocked)
+            if (!allowAllocation || vault.IsAllocationLocked)
                 return false;
 
             VaultGenerationHandle<UberNoirShaderTelemetryEntry> acquired = vault.EnsureGenerationHandle<UberNoirShaderTelemetryEntry>(
@@ -293,8 +289,7 @@ namespace Hecton8.Core
                 SystemID.GraphicsScalability,
                 NativeArrayOptions.ClearMemory);
             if (!IsVaultHandleCreated(in acquired) ||
-                !vault.TryResolveHandle(in acquired, out NativeArray<UberNoirShaderTelemetryEntry> acquiredRing) ||
-                !acquiredRing.IsCreated ||
+                !TryReadTelemetryRing(vault, in acquired, out NativeArray<UberNoirShaderTelemetryEntry>.ReadOnly acquiredRing) ||
                 acquiredRing.Length < TelemetryCapacity)
             {
                 _telemetryHandle = default;
@@ -313,21 +308,15 @@ namespace Hecton8.Core
             float quality01,
             uint featureMask)
         {
-            if (!EnsureTelemetryBuffer())
+            if (!EnsureTelemetryBuffer(allowAllocation: false))
                 return;
 
             IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryLockBuffer(BufferID.ShaderFeatureTelemetryRing, SystemID.GraphicsScalability))
+            if (!TryAcquireTelemetryWriteBuffer(vault, in _telemetryHandle, out NativeArray<UberNoirShaderTelemetryEntry> ring))
                 return;
 
             try
             {
-                if (!vault.TryResolveHandle(in _telemetryHandle, out NativeArray<UberNoirShaderTelemetryEntry> ring))
-                    return;
-
-                if (!ring.IsCreated || ring.Length < TelemetryCapacity)
-                    return;
-
                 uint qualityByte = EncodeQualityWeightByte(quality01);
                 UberNoirShaderTelemetryEntry entry = default;
                 entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
@@ -354,7 +343,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.ShaderFeatureTelemetryRing, SystemID.GraphicsScalability);
+                vault.ReleaseWriteLock(in _telemetryHandle, SystemID.GraphicsScalability);
             }
         }
 
@@ -363,14 +352,7 @@ namespace Hecton8.Core
             if (_dumpedFault)
                 return;
 
-            if (!EnsureTelemetryBuffer())
-            {
-                WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
-                return;
-            }
-
-            IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryLockBuffer(BufferID.ShaderFeatureTelemetryRing, SystemID.GraphicsScalability))
+            if (!EnsureTelemetryBuffer(allowAllocation: false))
             {
                 WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
                 return;
@@ -381,45 +363,39 @@ namespace Hecton8.Core
             Span<UberNoirShaderTelemetryEntry> snapshot = stackalloc UberNoirShaderTelemetryEntry[TelemetryCapacity];
             int telemetryCursor = _telemetryCursor;
             int entryCount = 0;
-            try
+            if (!TryCopyTelemetrySnapshot(snapshot, out telemetryCursor, out entryCount))
             {
-                if (!vault.TryResolveHandle(in _telemetryHandle, out NativeArray<UberNoirShaderTelemetryEntry> ring))
-                {
-                    WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
-                    return;
-                }
-
-                if (!ring.IsCreated || ring.Length < TelemetryCapacity)
-                {
-                    WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
-                    return;
-                }
-
-                entryCount = math.min(TelemetryCapacity, ring.Length);
-                telemetryCursor = _telemetryCursor;
-                for (int i = 0; i < entryCount; i++)
-                    snapshot[i] = ring[i];
-            }
-            catch (Exception)
-            {
-                _dumpedFault = false;
+                WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
                 return;
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.ShaderFeatureTelemetryRing, SystemID.GraphicsScalability);
             }
 
             try
             {
                 _dumpedFault = true;
                 Directory.CreateDirectory(logDirectory);
-                WriteBlackBoxFile(Path.Combine(logDirectory, IntegratorDumpFileName), reasonFlags, telemetryCursor, snapshot, entryCount);
-                WriteBlackBoxFile(Path.Combine(logDirectory, IntegratorH8DumpFileName), reasonFlags, telemetryCursor, snapshot, entryCount);
-                WriteBlackBoxFile(Path.Combine(logDirectory, ExtinctionDumpFileName), reasonFlags, telemetryCursor, snapshot, entryCount);
-                WriteBlackBoxFile(Path.Combine(logDirectory, ExtinctionH8DumpFileName), reasonFlags, telemetryCursor, snapshot, entryCount);
+                WriteBlackBoxFile(Path.Combine(logDirectory, DumpFileName), reasonFlags, telemetryCursor, snapshot, entryCount);
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                _dumpedFault = false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _dumpedFault = false;
+            }
+            catch (ObjectDisposedException)
+            {
+                _dumpedFault = false;
+            }
+            catch (InvalidOperationException)
+            {
+                _dumpedFault = false;
+            }
+            catch (ArgumentException)
+            {
+                _dumpedFault = false;
+            }
+            catch (NotSupportedException)
             {
                 _dumpedFault = false;
             }
@@ -436,12 +412,29 @@ namespace Hecton8.Core
                 string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
-                WriteEmptyBlackBoxFile(Path.Combine(logDirectory, IntegratorDumpFileName), reasonFlags, _telemetryCursor);
-                WriteEmptyBlackBoxFile(Path.Combine(logDirectory, IntegratorH8DumpFileName), reasonFlags, _telemetryCursor);
-                WriteEmptyBlackBoxFile(Path.Combine(logDirectory, ExtinctionDumpFileName), reasonFlags, _telemetryCursor);
-                WriteEmptyBlackBoxFile(Path.Combine(logDirectory, ExtinctionH8DumpFileName), reasonFlags, _telemetryCursor);
+                WriteEmptyBlackBoxFile(Path.Combine(logDirectory, DumpFileName), reasonFlags, _telemetryCursor);
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                _dumpedFault = false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _dumpedFault = false;
+            }
+            catch (ObjectDisposedException)
+            {
+                _dumpedFault = false;
+            }
+            catch (InvalidOperationException)
+            {
+                _dumpedFault = false;
+            }
+            catch (ArgumentException)
+            {
+                _dumpedFault = false;
+            }
+            catch (NotSupportedException)
             {
                 _dumpedFault = false;
             }
@@ -455,38 +448,143 @@ namespace Hecton8.Core
             int entryCount)
         {
             using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream);
+            Span<byte> header = stackalloc byte[DumpHeaderSizeBytes];
+            Span<byte> rowBytes = stackalloc byte[TelemetryEntrySizeBytes];
             int wrappedCursor = telemetryCursor % math.max(entryCount, 1);
-            writer.Write(DumpMagic);
-            writer.Write(reasonFlags);
-            writer.Write(wrappedCursor);
-            writer.Write(entryCount);
+            WriteDumpHeader(header, reasonFlags, wrappedCursor, entryCount);
+            stream.Write(header);
             for (int i = 0; i < entryCount; i++)
             {
                 UberNoirShaderTelemetryEntry entry = ring[(wrappedCursor + i) % entryCount];
-                writer.Write(entry.Frame);
-                writer.Write(entry.FeatureMask);
-                writer.Write(entry.SystemStress01);
-                writer.Write(entry.HighCostAllowed01);
-                writer.Write(entry.VisualOverkill01);
-                writer.Write(entry.QualityWeightByte);
-                writer.Write(entry.Flags);
-                writer.Write(entry.StateHash);
-                writer.Write(entry.PomEnabled01);
-                writer.Write(entry.ReservedVisualDetail01);
-                writer.Write(entry.Refraction01);
-                writer.Write(entry.Reserved0);
+                WriteTelemetryEntry(rowBytes, in entry);
+                stream.Write(rowBytes);
             }
         }
 
         private static void WriteEmptyBlackBoxFile(string dumpPath, uint reasonFlags, int telemetryCursor)
         {
             using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream);
-            writer.Write(DumpMagic);
-            writer.Write(reasonFlags);
-            writer.Write(telemetryCursor);
-            writer.Write(0);
+            Span<byte> header = stackalloc byte[DumpHeaderSizeBytes];
+            WriteDumpHeader(header, reasonFlags, telemetryCursor, 0);
+            stream.Write(header);
+        }
+
+        private bool TryCopyTelemetrySnapshot(
+            Span<UberNoirShaderTelemetryEntry> snapshot,
+            out int telemetryCursor,
+            out int entryCount)
+        {
+            telemetryCursor = _telemetryCursor;
+            entryCount = 0;
+            IDataVault vault = _dataVault;
+            if (!TryReadTelemetryRing(vault, in _telemetryHandle, out NativeArray<UberNoirShaderTelemetryEntry>.ReadOnly ring) ||
+                ring.Length < TelemetryCapacity)
+            {
+                return false;
+            }
+
+            entryCount = math.min(TelemetryCapacity, ring.Length);
+            for (int i = 0; i < entryCount; i++)
+                snapshot[i] = ring[i];
+
+            telemetryCursor = _telemetryCursor;
+            return true;
+        }
+
+        private static bool TryAcquireTelemetryWriteBuffer(
+            IDataVault vault,
+            in VaultGenerationHandle<UberNoirShaderTelemetryEntry> handle,
+            out NativeArray<UberNoirShaderTelemetryEntry> buffer)
+        {
+            buffer = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsTelemetryHandle(in handle) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.GraphicsScalability, out buffer))
+            {
+                return false;
+            }
+
+            if (vault.IsCompactionFenceActive ||
+                !buffer.IsCreated ||
+                buffer.Length < TelemetryCapacity)
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.GraphicsScalability);
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryReadTelemetryRing(
+            IDataVault vault,
+            in VaultGenerationHandle<UberNoirShaderTelemetryEntry> handle,
+            out NativeArray<UberNoirShaderTelemetryEntry>.ReadOnly ring)
+        {
+            ring = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsTelemetryHandle(in handle) ||
+                !vault.TryReadOnlyHandle(in handle, out ring))
+            {
+                return false;
+            }
+
+            if (vault.IsCompactionFenceActive || ring.Length <= 0)
+            {
+                ring = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsTelemetryHandle(in VaultGenerationHandle<UberNoirShaderTelemetryEntry> handle)
+        {
+            return handle.BufferID == (uint)BufferID.ShaderFeatureTelemetryRing && handle.Generation != 0u;
+        }
+
+        private static void WriteDumpHeader(Span<byte> destination, uint reasonFlags, int telemetryCursor, int entryCount)
+        {
+            WriteUInt32LittleEndian(destination, 0, DumpMagic);
+            WriteUInt32LittleEndian(destination, 4, reasonFlags);
+            WriteInt32LittleEndian(destination, 8, telemetryCursor);
+            WriteInt32LittleEndian(destination, 12, entryCount);
+        }
+
+        private static void WriteTelemetryEntry(Span<byte> destination, in UberNoirShaderTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(destination, 0, entry.Frame);
+            WriteUInt32LittleEndian(destination, 4, entry.FeatureMask);
+            WriteFloatLittleEndian(destination, 8, entry.SystemStress01);
+            WriteFloatLittleEndian(destination, 12, entry.HighCostAllowed01);
+            WriteFloatLittleEndian(destination, 16, entry.VisualOverkill01);
+            WriteUInt32LittleEndian(destination, 20, entry.QualityWeightByte);
+            WriteUInt32LittleEndian(destination, 24, entry.Flags);
+            WriteUInt32LittleEndian(destination, 28, entry.StateHash);
+            WriteFloatLittleEndian(destination, 32, entry.PomEnabled01);
+            WriteFloatLittleEndian(destination, 36, entry.ReservedVisualDetail01);
+            WriteFloatLittleEndian(destination, 40, entry.Refraction01);
+            WriteFloatLittleEndian(destination, 44, entry.Reserved0);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(Span<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, (uint)value);
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
         }
 
         private void UploadShaderGlobals(float stress01, float highCostAllowed01, uint featureMask, float visualOverkill01, bool force)

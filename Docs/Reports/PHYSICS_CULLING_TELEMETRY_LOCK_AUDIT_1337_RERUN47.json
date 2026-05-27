@@ -1,0 +1,83 @@
+{
+  "schema": "hecton8.physics_culling_telemetry_lock_audit_1337.v1",
+  "agentId": "1337",
+  "rerun": 47,
+  "status": "STATIC_GREEN_BUILD_DEFERRED_CPU_GATE_RED",
+  "prompt": {
+    "path": ".codex_tmp/agent1337_prompt_rerun47.xml",
+    "bytes": 18613,
+    "taskCount": 19,
+    "sha256": "3e605cefcb2f812e4e2febd79f1e87c3d527fb27627de85b3f5c8ffa05c01387"
+  },
+  "scannedFiles": [
+    "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+    "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+    "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+    "Assets/_Project/Scripts/Core/Signals/PhysicsWakeSignalContracts.cs",
+    "Assets/_Project/Scripts/Core/Contracts/PhysicsImpactContracts.cs"
+  ],
+  "defect": "After the rerun46 dispatch lock split, body telemetry writes moved outside the long dispatch lock but still used _physicsCullingTelemetry[...] inside the changed-body loop, causing up to MaxTrackedBodies separate short Vault write-lock acquisitions in one dispatch frame.",
+  "fix": [
+    "Removed per-body RecordPhysicsCullingTelemetry calls from the dispatch apply loop.",
+    "Added FlushPhysicsCullingDispatchTelemetry, which acquires _physicsCullingTelemetry once after Unity Rigidbody/Collider side effects have completed.",
+    "Writes body telemetry ring entries in a single scoped try/finally write-lock window.",
+    "Keeps Unity API calls outside the telemetry lock region and clears dispatch scratch only after telemetry flush."
+  ],
+  "telemetryLockRegionAudit": {
+    "method": "FlushPhysicsCullingDispatchTelemetry",
+    "lockRegionStartLine": 3908,
+    "lockReleaseLine": 3973,
+    "unityApiHitsBeforeRelease": 0,
+    "patternsChecked": [
+      "Sleep(",
+      "WakeUp(",
+      ".isKinematic",
+      ".detectCollisions",
+      "ApplyPhysicsCullingCommand",
+      "PublishRigidbodySleepSignal",
+      "RestoreDistance",
+      "ApplyDistance",
+      "Collider",
+      "Rigidbody"
+    ]
+  },
+  "nativeCollections": {
+    "tokenHits": 75,
+    "trueNativeFieldDeclarations": 18,
+    "persistentNativeFieldsRemaining": 0,
+    "transientJobFields": 18,
+    "methodLocalOrSignatureViews": 57
+  },
+  "zeroGcHotPathAudit": {
+    "path": "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN47.json",
+    "scannedFiles": 5,
+    "scannedHotMethods": 24,
+    "zeroGcHotPathHits": 0,
+    "hash": "94d193e6e22516b41c545a6dbcd321b7150b12a5cadd8a383d27833eebf1af00"
+  },
+  "branchAudit": {
+    "path": "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN47.json",
+    "scannedFiles": 5,
+    "jobExecuteIfStatements": 5,
+    "failClosedGuardIfStatements": 5,
+    "jobExecuteNonGuardIfStatements": 0,
+    "distanceSolverDecisionIfStatements": 0,
+    "hash": "482218313e23825fd1c37f1333a5a150b6be2c35d37bfc9f36e156ed9eca6cba"
+  },
+  "tokenAudit": {
+    "hotPathForbiddenHits": 0,
+    "throwNewHits": 0,
+    "catchExceptionHits": 0,
+    "directAbsoluteAupFloatCastsFound": 0,
+    "runtimeAupConversionsClassifiedFalsePositive": 4
+  },
+  "gitDiffCheck": "green except CRLF normalization warning",
+  "build": {
+    "status": "not_launched",
+    "reason": "AGENTS build throttle red: CPU=100%. No dotnet/csc process was active in the sampled process list.",
+    "cpuPercent": 100,
+    "dotnetProcesses": 0,
+    "cscProcesses": 0
+  },
+  "verificationHashSha256": "14773c1ca5965315e11e683438093d22b74d54f3e8154f0a71e18194d46b8177"
+}

@@ -156,7 +156,7 @@ namespace Hecton8.Construction.Editor
             json.AppendLine("  \"dtoLayout\": \"DroneStateDTO=64 bytes: CurrentAUP@0 Velocity@24 CurrentTargetHashID@36 TaskStateFlags@40 BatteryLevel@44 _pad0@48 _pad1@52 _pad2@56 _pad3@60\",");
             json.AppendLine("  \"globalQualityWeightContinuous\": true,");
             json.AppendLine("  \"aStarPersistentState\": \"DroneAStarPersistentState[512] plus per-drone heap/g/cameFrom/nodeState slices; MaxNodesExpandedPerDrone gates each frame\",");
-            json.AppendLine("  \"blackBoxDumpPath\": \"Docs/AgentLogs/Dump_SHINOBU_334.bin\",");
+            json.AppendLine("  \"blackBoxDumpPath\": \"Docs/AgentLogs/Dump_1306_Construction_DroneFleet.bin\",");
             json.Append("  \"verdict\": \"").Append(passed ? "PASS" : "FAIL").AppendLine("\",");
             json.AppendLine("  \"findings\": [");
             json.Append(findings);
@@ -185,7 +185,7 @@ namespace Hecton8.Construction.Editor
             json.AppendLine("    \"dtoLayout\": \"DroneStateDTO=64 bytes: CurrentAUP@0 Velocity@24 CurrentTargetHashID@36 TaskStateFlags@40 BatteryLevel@44 _pad0@48 _pad1@52 _pad2@56 _pad3@60\",");
             json.AppendLine("    \"globalQualityWeightContinuous\": true,");
             json.AppendLine("    \"aStarPersistentState\": \"DroneAStarPersistentState[512] plus per-drone heap/g/cameFrom/nodeState slices\",");
-            json.AppendLine("    \"blackBoxDumpPath\": \"Docs/AgentLogs/Dump_SHINOBU_334.bin\",");
+            json.AppendLine("    \"blackBoxDumpPath\": \"Docs/AgentLogs/Dump_1306_Construction_DroneFleet.bin\",");
             json.Append("    \"verdict\": \"").Append(passed ? "PASS_STATIC_NO_OOP_DRONE_NAV_CALLS" : "FAIL").AppendLine("\"");
             json.Append("  }");
             return json.ToString();

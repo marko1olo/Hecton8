@@ -829,6 +829,32 @@ namespace Hecton8.World
             }
         }
 
+        internal int CopyEntranceHintsTo(CaveEntranceHint[] buffer)
+        {
+            if (buffer == null || buffer.Length <= 0)
+                return 0;
+
+            int writeCount = 0;
+            Dictionary<long, CaveEntranceHint[]>.Enumerator enumerator = _caveEntranceHints.GetEnumerator();
+            while (enumerator.MoveNext() && writeCount < buffer.Length)
+            {
+                CaveEntranceHint[] hints = enumerator.Current.Value;
+                if (hints == null || hints.Length == 0)
+                    continue;
+
+                for (int i = 0; i < hints.Length && writeCount < buffer.Length; i++)
+                {
+                    buffer[writeCount] = hints[i];
+                    writeCount++;
+                }
+            }
+
+            for (int i = writeCount; i < buffer.Length; i++)
+                buffer[i] = default;
+
+            return writeCount;
+        }
+
         internal void CollectActiveVolumes(List<HectonVoxelVolume> buffer)
         {
             if (buffer == null)
@@ -846,6 +872,30 @@ namespace Hecton8.World
 
                 buffer.Add(instance.volume);
             }
+        }
+
+        internal int CopyActiveVolumesTo(HectonVoxelVolume[] buffer)
+        {
+            if (buffer == null || buffer.Length <= 0)
+                return 0;
+
+            int writeCount = 0;
+            var enumerator = _caveInstances.GetEnumerator();
+            while (enumerator.MoveNext() && writeCount < buffer.Length)
+            {
+                KeyValuePair<long, CaveInstance> pair = enumerator.Current;
+                CaveInstance instance = pair.Value;
+                if (instance.isActive == 0 || !IsTrackedVolumeAlive(pair.Key, instance.volume))
+                    continue;
+
+                buffer[writeCount] = instance.volume;
+                writeCount++;
+            }
+
+            for (int i = writeCount; i < buffer.Length; i++)
+                buffer[i] = null;
+
+            return writeCount;
         }
 
         private void SpawnEntranceVisualCues(CaveInstance instance, CavePreset preset, Vector3 position, uint seed)
@@ -1602,10 +1652,9 @@ namespace Hecton8.World
 
         private PendingCaveSpawnState CreatePendingSpawnState()
         {
-            CancellationTokenSource lifetime = EnsureLifetimeCancellation();
             return new PendingCaveSpawnState
             {
-                Cancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token)
+                Cancellation = new CancellationTokenSource()
             };
         }
 

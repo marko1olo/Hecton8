@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -18,7 +17,7 @@ namespace Hecton8.World
     }
 
     /// <summary>
-    /// Native AUP-aware broadphase storing cell occupancy in 64-bit world space instead of presentation-space Unity transforms.
+    /// AUP-aware broadphase storing entry bounds in 64-bit world space instead of presentation-space Unity transforms.
     /// </summary>
     internal sealed class HectonSpatialHash : IDisposable
     {
@@ -62,14 +61,14 @@ namespace Hecton8.World
         internal struct SpatialEntry
         {
             [FieldOffset(0)] public double3 AbsoluteCenter;
-            [FieldOffset(24)] public float3 HalfExtents;
-            [FieldOffset(36)] private uint _pad0;
-            [FieldOffset(40)] public Long3 MinCell;
-            [FieldOffset(64)] public Long3 MaxCell;
-            [FieldOffset(88)] public int KindMask;
-            [FieldOffset(92)] private uint _pad1;
-            [FieldOffset(96)] public ulong EntityFlags;
-            [FieldOffset(104)] public int PayloadId;
+            [FieldOffset(24)] public Long3 MinCell;
+            [FieldOffset(48)] public Long3 MaxCell;
+            [FieldOffset(72)] public ulong EntityFlags;
+            [FieldOffset(80)] public float3 HalfExtents;
+            [FieldOffset(92)] public int KindMask;
+            [FieldOffset(96)] public int PayloadId;
+            [FieldOffset(100)] private uint _pad0;
+            [FieldOffset(104)] private uint _pad1;
             [FieldOffset(108)] private uint _pad2;
         }
 
@@ -81,9 +80,9 @@ namespace Hecton8.World
             [FieldOffset(8)] public readonly int CandidateHandleCount;
             [FieldOffset(12)] public readonly int DedupeHandleCount;
             [FieldOffset(16)] public readonly int ResultHandleCount;
-            [FieldOffset(20)] public readonly byte Saturated;
-            [FieldOffset(21)] private readonly byte _pad0;
-            [FieldOffset(22)] private readonly ushort _pad1;
+            [FieldOffset(20)] private readonly ushort _pad0;
+            [FieldOffset(22)] public readonly byte Saturated;
+            [FieldOffset(23)] private readonly byte _pad1;
 
             public QueryStats(
                 int mode,
@@ -109,108 +108,89 @@ namespace Hecton8.World
         [StructLayout(LayoutKind.Explicit, Size = HectonSpatialHashLayout.TransientEventRecordStrideBytes)]
         internal struct TransientEventRecord
         {
-            [FieldOffset(0)] public uint EventId;
-            [FieldOffset(4)] private uint _pad0;
-            [FieldOffset(8)] public double3 AbsoluteCenter;
-            [FieldOffset(32)] public float RadiusMeters;
-            [FieldOffset(36)] public float Intensity;
-            [FieldOffset(40)] public float Temperature;
-            [FieldOffset(44)] private uint _pad1;
-            [FieldOffset(48)] public double ExpirationTimestamp;
+            [FieldOffset(0)] public double3 AbsoluteCenter;
+            [FieldOffset(24)] public double ExpirationTimestamp;
+            [FieldOffset(32)] public ulong EventFlags;
+            [FieldOffset(40)] public uint EventId;
+            [FieldOffset(44)] public float RadiusMeters;
+            [FieldOffset(48)] public float Intensity;
+            [FieldOffset(52)] public float Temperature;
             [FieldOffset(56)] public uint EventTypeMask;
-            [FieldOffset(60)] private uint _pad2;
-            [FieldOffset(64)] public ulong EventFlags;
-            [FieldOffset(72)] public uint SourceKey;
+            [FieldOffset(60)] public uint SourceKey;
+            [FieldOffset(64)] private uint _pad0;
+            [FieldOffset(68)] private uint _pad1;
+            [FieldOffset(72)] private uint _pad2;
             [FieldOffset(76)] private uint _pad3;
         }
 
         private struct QueryScratchArena : IDisposable
         {
-            public NativeList<int> Handles;
-            public NativeParallelHashSet<int> Dedup;
-            private readonly string _sentinelOwner;
-            private readonly NativeAllocationLifetime _lifetime;
+            public int[] Handles;
+            public int[] Dedup;
+            public int HandleCount;
+            public int DedupCount;
 
             public QueryScratchArena(int initialCapacity, string sentinelOwner, NativeAllocationLifetime lifetime)
             {
                 int safeCapacity = math.max(1, initialCapacity);
-                _sentinelOwner = sentinelOwner;
-                _lifetime = lifetime;
-                // COLD ALLOC: NativeList<int>[safeCapacity] — persistent query result staging arena for AUP spatial overlap queries — owner: HectonSpatialHash
-                Handles = new NativeList<int>(safeCapacity, DataVaultExemptSpatialQueryScratchAllocator);
-                NativeMemorySentinel.RegisterNativeList(
-                    Handles,
-                    _sentinelOwner,
-                    QueryScratchHandlesLabel,
-                    _lifetime);
-                // COLD ALLOC: NativeParallelHashSet<int>[safeCapacity] — persistent dedupe arena for multi-cell overlap queries — owner: HectonSpatialHash
-                Dedup = new NativeParallelHashSet<int>(safeCapacity, DataVaultExemptSpatialQueryScratchAllocator);
-                NativeMemorySentinel.RegisterNativeParallelHashSet(
-                    Dedup,
-                    _sentinelOwner,
-                    QueryScratchDedupLabel,
-                    _lifetime);
+                _ = sentinelOwner;
+                _ = lifetime;
+                // COLD ALLOC: int[safeCapacity] - managed query result staging arena for AUP spatial overlap queries - owner: HectonSpatialHash
+                Handles = new int[safeCapacity];
+                // COLD ALLOC: int[safeCapacity] - managed dedupe arena for multi-cell overlap queries - owner: HectonSpatialHash
+                Dedup = new int[safeCapacity];
+                HandleCount = 0;
+                DedupCount = 0;
+            }
+
+            public int Capacity => Handles != null ? Handles.Length : 0;
+
+            public bool TryAddDedupe(int handle)
+            {
+                int count = DedupCount;
+                for (int i = 0; i < count; i++)
+                {
+                    if (Dedup[i] == handle)
+                        return false;
+                }
+
+                if (count >= Capacity)
+                    return false;
+
+                Dedup[count] = handle;
+                DedupCount = count + 1;
+                return true;
+            }
+
+            public bool TryAddHandle(int handle)
+            {
+                int count = HandleCount;
+                if (count >= Capacity)
+                    return false;
+
+                Handles[count] = handle;
+                HandleCount = count + 1;
+                return true;
             }
 
             public void Reset()
             {
-                Handles.Clear();
-                Dedup.Clear();
+                HandleCount = 0;
+                DedupCount = 0;
             }
 
             public void Dispose()
             {
-                if (Handles.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, QueryScratchHandlesLabel);
-                    Handles.Dispose();
-                }
-
-                if (Dedup.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeParallelHashSet(_sentinelOwner, QueryScratchDedupLabel);
-                    Dedup.Dispose();
-                }
+                Handles = null;
+                Dedup = null;
+                HandleCount = 0;
+                DedupCount = 0;
             }
 
             public JobHandle Dispose(JobHandle dependency)
             {
-                JobHandle disposeHandle = dependency;
-
-                if (Handles.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, QueryScratchHandlesLabel);
-                    disposeHandle = Handles.Dispose(disposeHandle);
-                    Handles = default;
-                }
-
-                if (Dedup.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeParallelHashSet(_sentinelOwner, QueryScratchDedupLabel);
-                    disposeHandle = Dedup.Dispose(disposeHandle);
-                    Dedup = default;
-                }
-
-                return disposeHandle;
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct RebuildCellOccupancyJob : IJob
-        {
-            [ReadOnly, NoAlias] public NativeArray<int> Handles;
-            [ReadOnly, NoAlias] public NativeArray<SpatialEntry> Entries;
-            public int Count;
-            public NativeParallelMultiHashMap<Long3, int> BackBuffer;
-
-            public void Execute()
-            {
-                int safeCount = math.min(Count, math.min(Handles.Length, Entries.Length));
-                for (int i = 0; i < safeCount; i++)
-                {
-                    SpatialEntry entry = Entries[i];
-                    AddEntryCells(Handles[i], in entry, BackBuffer);
-                }
+                Dispose();
+                return dependency;
             }
         }
 
@@ -222,7 +202,6 @@ namespace Hecton8.World
         private const uint MaxHandleGeneration = (1u << (31 - HandleSlotBits)) - 1u;
         private const uint InitialHandleGeneration = 1u;
         private const int DefaultTransientCellCapacity = 512;
-        private const int DefaultCompactionCapacityFloor = 512;
         private const int MaxRegisteredEntryCellSpan = 4096;
         private const int MaxTransientEventCellSpan = 8192;
         private const int MaxSphereQueryCellSpan = 8192;
@@ -232,16 +211,8 @@ namespace Hecton8.World
         private const uint ChemicalScentEventMask = 1u << 1;
         private const uint DisturbanceEventMask = 1u << 3;
         private const float CascadeIntensityThreshold = 0.8f;
-        private const string QueryScratchHandlesLabel = "_queryScratch.Handles";
-        private const string QueryScratchDedupLabel = "_queryScratch.Dedup";
         private const int QueryModeSphere = 1;
         private const int QueryModeAdjacent = 2;
-        private const Allocator DataVaultExemptSpatialQueryScratchAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptSpatialEntryAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptSpatialCellAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptTransientEventAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptSpatialCompactionAllocator = Allocator.Persistent;
-
         private static readonly ProfilerMarker _registerProfilerMarker = new ProfilerMarker("H8.World.AupSpatialHash.Register");
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.World.AupSpatialHash.Update");
         private static readonly ProfilerMarker _queryProfilerMarker = new ProfilerMarker("H8.World.AupSpatialHash.QuerySphere");
@@ -251,34 +222,24 @@ namespace Hecton8.World
         private static readonly ProfilerMarker _transientPruneProfilerMarker = new ProfilerMarker("H8.World.AupSpatialHash.TransientPrune");
 
         private readonly double _cellSizeMeters;
-        private NativeParallelHashMap<int, SpatialEntry> _entries;
-        private NativeList<int> _entryHandles;
-        private NativeQueue<uint> _freeHandles;
-        private NativeParallelHashSet<uint> _queuedFreeHandles;
-        private NativeParallelHashMap<uint, uint> _slotGenerations;
-        private NativeParallelMultiHashMap<Long3, int> _cellOccupancy;
-        private NativeParallelMultiHashMap<Long3, int> _cellOccupancyScratch;
-        private NativeParallelMultiHashMap<uint, TransientEventRecord> _transientEvents;
-        private NativeParallelMultiHashMap<uint, TransientEventRecord> _transientEventsScratch;
-        private NativeParallelHashSet<uint> _transientCellKeySet;
-        private NativeParallelHashSet<uint> _transientCellKeySetScratch;
-        private NativeParallelHashSet<uint> _transientQueryDedupe;
-        private NativeList<uint> _transientCellKeys;
-        private NativeList<uint> _transientCellKeysScratch;
-        private NativeList<int> _compactionHandleSnapshot;
-        private NativeList<SpatialEntry> _compactionEntrySnapshot;
+        private TransientEventRecord[] _transientEvents;
+        private SpatialEntry[] _entries;
+        private byte[] _entryOccupied;
+        private int[] _entryHandles;
+        private uint[] _slotGenerations;
         private QueryScratchArena _queryScratch;
+        private readonly uint[] _freeHandles;
         private static int _nextSentinelInstanceId;
         private readonly string _sentinelOwner;
         private readonly NativeAllocationLifetime _allocationLifetime;
-        private JobHandle _cellCompactionHandle;
-        private JobHandle _readerFence;
         private uint _nextSlot;
         private uint _nextTransientEventId;
-        private bool _cellCompactionScheduled;
-        private int _pendingCellCompactionTargetCapacity;
         private uint _mutationVersion;
-        private uint _compactionMutationVersion;
+        private int _entryHandleCount;
+        private int _transientEventCount;
+        private int _freeHandleHead;
+        private int _freeHandleTail;
+        private int _freeHandleCount;
         private QueryStats _lastQueryStats;
         public HectonSpatialHash(
             int entryCapacity = 128,
@@ -291,67 +252,26 @@ namespace Hecton8.World
             _cellSizeMeters = math.max(0.5d, cellSizeMeters);
             _sentinelOwner = string.Concat(nameof(HectonSpatialHash), "_", ++_nextSentinelInstanceId);
             _allocationLifetime = allocationLifetime;
-            // COLD ALLOC: NativeParallelHashMap<int,SpatialEntry>[safeEntryCapacity] — AUP spatial registry records — owner: HectonSpatialHash
-            _entries = new NativeParallelHashMap<int, SpatialEntry>(safeEntryCapacity, DataVaultExemptSpatialEntryAllocator);
-            NativeMemorySentinel.RegisterNativeParallelHashMap(_entries, _sentinelOwner, nameof(_entries), _allocationLifetime);
-            // COLD ALLOC: NativeList<int>[safeEntryCapacity] - dense active-handle list for zero-alloc hash rebuilds - owner: HectonSpatialHash
-            _entryHandles = new NativeList<int>(safeEntryCapacity, DataVaultExemptSpatialEntryAllocator);
-            NativeMemorySentinel.RegisterNativeList(_entryHandles, _sentinelOwner, nameof(_entryHandles), _allocationLifetime);
-            // COLD ALLOC: NativeQueue<uint>[safeEntryCapacity] - generation-counted free handle queue - owner: HectonSpatialHash
-            _freeHandles = new NativeQueue<uint>(DataVaultExemptSpatialEntryAllocator);
-            NativeMemorySentinel.RegisterNativeQueue(
-                _freeHandles,
-                safeEntryCapacity,
-                _sentinelOwner,
-                nameof(_freeHandles),
-                _allocationLifetime);
-            PrewarmFreeHandleQueue(ref _freeHandles, safeEntryCapacity);
-            // COLD ALLOC: NativeParallelHashSet<uint>[safeEntryCapacity] - duplicate queued-handle guard - owner: HectonSpatialHash
-            _queuedFreeHandles = new NativeParallelHashSet<uint>(safeEntryCapacity, DataVaultExemptSpatialEntryAllocator);
-            NativeMemorySentinel.RegisterNativeParallelHashSet(_queuedFreeHandles, _sentinelOwner, nameof(_queuedFreeHandles), _allocationLifetime);
-            // COLD ALLOC: NativeParallelHashMap<uint,uint>[safeEntryCapacity] - current generation per spatial handle slot - owner: HectonSpatialHash
-            _slotGenerations = new NativeParallelHashMap<uint, uint>(safeEntryCapacity, DataVaultExemptSpatialEntryAllocator);
-            NativeMemorySentinel.RegisterNativeParallelHashMap(_slotGenerations, _sentinelOwner, nameof(_slotGenerations), _allocationLifetime);
-            // COLD ALLOC: NativeParallelMultiHashMap<long3,int>[safeCellCapacity] — AUP cell occupancy buckets — owner: HectonSpatialHash
-            _cellOccupancy = new NativeParallelMultiHashMap<Long3, int>(safeCellCapacity, DataVaultExemptSpatialCellAllocator);
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_cellOccupancy, _sentinelOwner, nameof(_cellOccupancy), _allocationLifetime);
-            // COLD ALLOC: NativeParallelMultiHashMap<long3,int>[safeCellCapacity] - spatial bucket compaction scratch - owner: HectonSpatialHash
-            _cellOccupancyScratch = new NativeParallelMultiHashMap<Long3, int>(safeCellCapacity, DataVaultExemptSpatialCellAllocator);
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_cellOccupancyScratch, _sentinelOwner, nameof(_cellOccupancyScratch), _allocationLifetime);
-            int safeTransientCellCapacity = math.max(DefaultTransientCellCapacity, safeCellCapacity);
-            // COLD ALLOC: NativeParallelMultiHashMap<uint,TransientEventRecord>[safeTransientCellCapacity] - transient acoustic/chemical event buckets - owner: HectonSpatialHash
-            _transientEvents = new NativeParallelMultiHashMap<uint, TransientEventRecord>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_transientEvents, _sentinelOwner, nameof(_transientEvents), _allocationLifetime);
-            // COLD ALLOC: NativeParallelMultiHashMap<uint,TransientEventRecord>[safeTransientCellCapacity] - expired-event prune scratch buckets - owner: HectonSpatialHash
-            _transientEventsScratch = new NativeParallelMultiHashMap<uint, TransientEventRecord>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_transientEventsScratch, _sentinelOwner, nameof(_transientEventsScratch), _allocationLifetime);
-            // COLD ALLOC: NativeParallelHashSet<uint>[safeTransientCellCapacity] - unique transient cell keys - owner: HectonSpatialHash
-            _transientCellKeySet = new NativeParallelHashSet<uint>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
-            NativeMemorySentinel.RegisterNativeParallelHashSet(_transientCellKeySet, _sentinelOwner, nameof(_transientCellKeySet), _allocationLifetime);
-            // COLD ALLOC: NativeParallelHashSet<uint>[safeTransientCellCapacity] - transient prune scratch key set - owner: HectonSpatialHash
-            _transientCellKeySetScratch = new NativeParallelHashSet<uint>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
-            NativeMemorySentinel.RegisterNativeParallelHashSet(_transientCellKeySetScratch, _sentinelOwner, nameof(_transientCellKeySetScratch), _allocationLifetime);
-            // COLD ALLOC: NativeParallelHashSet<uint>[safeTransientCellCapacity] - transient event id dedupe for multi-cell queries - owner: HectonSpatialHash
-            _transientQueryDedupe = new NativeParallelHashSet<uint>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
-            NativeMemorySentinel.RegisterNativeParallelHashSet(_transientQueryDedupe, _sentinelOwner, nameof(_transientQueryDedupe), _allocationLifetime);
-            // COLD ALLOC: NativeList<uint>[safeTransientCellCapacity] - active transient cell-key traversal list - owner: HectonSpatialHash
-            _transientCellKeys = new NativeList<uint>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
-            NativeMemorySentinel.RegisterNativeList(_transientCellKeys, _sentinelOwner, nameof(_transientCellKeys), _allocationLifetime);
-            // COLD ALLOC: NativeList<uint>[safeTransientCellCapacity] - transient prune scratch cell-key traversal list - owner: HectonSpatialHash
-            _transientCellKeysScratch = new NativeList<uint>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
-            NativeMemorySentinel.RegisterNativeList(_transientCellKeysScratch, _sentinelOwner, nameof(_transientCellKeysScratch), _allocationLifetime);
-            // COLD ALLOC: NativeList<int>[safeEntryCapacity] - immutable handle snapshot for async occupancy compaction - owner: HectonSpatialHash
-            _compactionHandleSnapshot = new NativeList<int>(safeEntryCapacity, DataVaultExemptSpatialCompactionAllocator);
-            NativeMemorySentinel.RegisterNativeList(_compactionHandleSnapshot, _sentinelOwner, nameof(_compactionHandleSnapshot), _allocationLifetime);
-            // COLD ALLOC: NativeList<SpatialEntry>[safeEntryCapacity] - immutable entry snapshot for async occupancy compaction - owner: HectonSpatialHash
-            _compactionEntrySnapshot = new NativeList<SpatialEntry>(safeEntryCapacity, DataVaultExemptSpatialCompactionAllocator);
-            NativeMemorySentinel.RegisterNativeList(_compactionEntrySnapshot, _sentinelOwner, nameof(_compactionEntrySnapshot), _allocationLifetime);
+            int safeGenerationCapacity = safeEntryCapacity >= int.MaxValue ? int.MaxValue : safeEntryCapacity + 1;
+            // COLD ALLOC: SpatialEntry[safeEntryCapacity + 1] - managed slot-indexed AUP spatial registry records - owner: HectonSpatialHash
+            _entries = new SpatialEntry[safeGenerationCapacity];
+            // COLD ALLOC: byte[safeEntryCapacity + 1] - managed spatial slot occupancy flags - owner: HectonSpatialHash
+            _entryOccupied = new byte[safeGenerationCapacity];
+            // COLD ALLOC: int[safeEntryCapacity] - managed dense active-handle list for zero-alloc hash rebuilds - owner: HectonSpatialHash
+            _entryHandles = new int[safeEntryCapacity];
+            // COLD ALLOC: uint[safeEntryCapacity + 1] - managed current generation per spatial handle slot; slot zero is invalid - owner: HectonSpatialHash
+            _slotGenerations = new uint[safeGenerationCapacity];
+            int safeTransientEventCapacity = math.max(DefaultTransientCellCapacity, safeCellCapacity);
+            // COLD ALLOC: TransientEventRecord[safeTransientEventCapacity] - managed transient visual/acoustic event records - owner: HectonSpatialHash
+            _transientEvents = new TransientEventRecord[safeTransientEventCapacity];
             _queryScratch = new QueryScratchArena(safeEntryCapacity, _sentinelOwner, _allocationLifetime);
+            // COLD ALLOC: uint[safeEntryCapacity] - managed generation-counted free-handle ring for long-session spatial churn - owner: HectonSpatialHash
+            _freeHandles = new uint[safeEntryCapacity];
             _nextSlot = 1u;
             _nextTransientEventId = 1u;
         }
 
-        public int EntryCount => _entryHandles.IsCreated ? _entryHandles.Length : 0;
+        public int EntryCount => _entryHandleCount;
         public QueryStats LastQueryStats => _lastQueryStats;
 
         public void ClearLastQueryStats()
@@ -401,7 +321,7 @@ namespace Hecton8.World
 
             using (_updateProfilerMarker.Auto())
             {
-                bool appendHandle = !_entries.ContainsKey(handle);
+                bool appendHandle = !ContainsEntry(handle);
                 return UpsertInternal(handle, in position, halfExtents, kindMask, entityFlags, payloadId, appendHandle);
             }
         }
@@ -438,22 +358,13 @@ namespace Hecton8.World
 
         private void RemoveEntry(int handle, bool recycleHandle)
         {
-            if (handle <= 0 || !_entries.TryGetValue(handle, out SpatialEntry existingEntry))
+            if (handle <= 0 || !TryGetEntryByHandle(handle, out SpatialEntry existingEntry))
                 return;
 
-            RemoveEntryCells(handle, in existingEntry);
-            _entries.Remove(handle);
+            _ = existingEntry;
+            ClearEntry(handle);
 
-            for (int i = 0; i < _entryHandles.Length; i++)
-            {
-                if (_entryHandles[i] != handle)
-                    continue;
-
-                int lastIndex = _entryHandles.Length - 1;
-                _entryHandles[i] = _entryHandles[lastIndex];
-                _entryHandles.RemoveAt(lastIndex);
-                break;
-            }
+            RemoveEntryHandle(handle);
 
             if (recycleHandle)
                 RecycleHandle(handle);
@@ -463,7 +374,7 @@ namespace Hecton8.World
 
         public bool TryGetEntry(int handle, out SpatialEntry entry)
         {
-            return _entries.TryGetValue(handle, out entry);
+            return TryGetEntryByHandle(handle, out entry);
         }
 
         public bool IsCurrentHandle(int handle)
@@ -518,8 +429,9 @@ namespace Hecton8.World
                 if (cellSpan > MaxTransientEventCellSpan)
                     return;
 
-                EnsureTransientCapacity(cellSpan);
-                AddTransientRecordToCells(in record, minCell, maxCell, _transientEvents, _transientCellKeySet, _transientCellKeys);
+                if (!TryAppendTransientEvent(in record))
+                    return;
+
                 TryEmitDisturbanceCascade(in record, minCell, maxCell, currentTimestamp, cellSpan);
             }
         }
@@ -542,11 +454,9 @@ namespace Hecton8.World
                     !math.isfinite(currentTimestamp) ||
                     radiusMeters <= 0f ||
                     eventTypeMask == 0u ||
-                    !_transientEvents.IsCreated ||
-                    _transientCellKeys.Length == 0)
+                    _transientEventCount == 0)
                     return 0;
 
-                _transientQueryDedupe.Clear();
                 double3 absoluteCenter = origin.ToAbsoluteDouble3();
                 double radius = math.max(0.001d, radiusMeters);
                 Long3 minCell = ToCell(absoluteCenter - new double3(radius, radius, radius));
@@ -554,38 +464,23 @@ namespace Hecton8.World
                 if (EstimateCellSpan(minCell, maxCell) > MaxSphereQueryCellSpan)
                     return 0;
 
-                for (long z = minCell.Z; z <= maxCell.Z; z++)
+                int eventCount = math.min(math.max(0, _transientEventCount), _transientEvents != null ? _transientEvents.Length : 0);
+                for (int i = 0; i < eventCount; i++)
                 {
-                    for (long y = minCell.Y; y <= maxCell.Y; y++)
-                    {
-                        for (long x = minCell.X; x <= maxCell.X; x++)
-                        {
-                            uint cellKey = HashCell(new Long3(x, y, z));
-                            if (!_transientEvents.TryGetFirstValue(cellKey, out TransientEventRecord record, out NativeParallelMultiHashMapIterator<uint> iterator))
-                                continue;
+                    TransientEventRecord record = _transientEvents[i];
+                    if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp))
+                        continue;
 
-                            do
-                            {
-                                if (!_transientQueryDedupe.Add(record.EventId))
-                                    continue;
+                    if ((record.EventTypeMask & eventTypeMask) == 0u)
+                        continue;
 
-                                if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp))
-                                    continue;
+                    double combinedRadius = radius + record.RadiusMeters;
+                    double3 delta = absoluteCenter - record.AbsoluteCenter;
+                    if (math.lengthsq(delta) > combinedRadius * combinedRadius)
+                        continue;
 
-                                if ((record.EventTypeMask & eventTypeMask) == 0u)
-                                    continue;
-
-                                double combinedRadius = radius + record.RadiusMeters;
-                                double3 delta = absoluteCenter - record.AbsoluteCenter;
-                                if (math.lengthsq(delta) > combinedRadius * combinedRadius)
-                                    continue;
-
-                                if (results.Length < results.Capacity)
-                                    results.AddNoResize(record);
-                            }
-                            while (_transientEvents.TryGetNextValue(out record, ref iterator));
-                        }
-                    }
+                    if (results.Length < results.Capacity)
+                        results.AddNoResize(record);
                 }
 
                 return results.Length;
@@ -605,13 +500,11 @@ namespace Hecton8.World
                 !math.isfinite(radiusMeters) ||
                 !math.isfinite(currentTimestamp) ||
                 radiusMeters <= 0f ||
-                !_transientEvents.IsCreated ||
-                _transientCellKeys.Length == 0)
+                _transientEventCount == 0)
                 return false;
 
             using (_transientQueryProfilerMarker.Auto())
             {
-                _transientQueryDedupe.Clear();
                 double3 absoluteCenter = origin.ToAbsoluteDouble3();
                 double radius = math.max(0.001d, radiusMeters);
                 Long3 minCell = ToCell(absoluteCenter - new double3(radius, radius, radius));
@@ -622,45 +515,30 @@ namespace Hecton8.World
                 double accumulatedWeight = 0d;
                 double3 accumulatedGradient = double3.zero;
 
-                for (long z = minCell.Z; z <= maxCell.Z; z++)
+                int eventCount = math.min(math.max(0, _transientEventCount), _transientEvents != null ? _transientEvents.Length : 0);
+                for (int i = 0; i < eventCount; i++)
                 {
-                    for (long y = minCell.Y; y <= maxCell.Y; y++)
-                    {
-                        for (long x = minCell.X; x <= maxCell.X; x++)
-                        {
-                            uint cellKey = HashCell(new Long3(x, y, z));
-                            if (!_transientEvents.TryGetFirstValue(cellKey, out TransientEventRecord record, out NativeParallelMultiHashMapIterator<uint> iterator))
-                                continue;
+                    TransientEventRecord record = _transientEvents[i];
+                    if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp) || record.Temperature == 0f)
+                        continue;
 
-                            do
-                            {
-                                if (!_transientQueryDedupe.Add(record.EventId))
-                                    continue;
+                    double3 delta = record.AbsoluteCenter - absoluteCenter;
+                    double distanceSq = math.lengthsq(delta);
+                    double influenceRadius = radius + record.RadiusMeters;
+                    double influenceRadiusSq = influenceRadius * influenceRadius;
+                    if (distanceSq > influenceRadiusSq)
+                        continue;
 
-                                if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp) || record.Temperature == 0f)
-                                    continue;
+                    double inverseInfluenceRadius = 1d / math.max(0.001d, influenceRadius);
+                    double falloff = 1d - math.saturate(distanceSq / math.max(0.000001d, influenceRadiusSq));
+                    double weight = falloff * math.max(0f, record.Intensity);
+                    if (weight <= 0d)
+                        continue;
 
-                                double3 delta = record.AbsoluteCenter - absoluteCenter;
-                                double distanceSq = math.lengthsq(delta);
-                                double influenceRadius = radius + record.RadiusMeters;
-                                double influenceRadiusSq = influenceRadius * influenceRadius;
-                                if (distanceSq > influenceRadiusSq)
-                                    continue;
-
-                                double inverseInfluenceRadius = 1d / math.max(0.001d, influenceRadius);
-                                double falloff = 1d - math.saturate(distanceSq / math.max(0.000001d, influenceRadiusSq));
-                                double weight = falloff * math.max(0f, record.Intensity);
-                                if (weight <= 0d)
-                                    continue;
-
-                                temperatureDelta += (float)(record.Temperature * weight);
-                                accumulatedWeight += weight;
-                                if (distanceSq > 0.00000001d)
-                                    accumulatedGradient += (delta * inverseInfluenceRadius) * (record.Temperature * weight);
-                            }
-                            while (_transientEvents.TryGetNextValue(out record, ref iterator));
-                        }
-                    }
+                    temperatureDelta += (float)(record.Temperature * weight);
+                    accumulatedWeight += weight;
+                    if (distanceSq > 0.00000001d)
+                        accumulatedGradient += (delta * inverseInfluenceRadius) * (record.Temperature * weight);
                 }
 
                 if (accumulatedWeight <= 0d)
@@ -696,10 +574,9 @@ namespace Hecton8.World
             for (int i = 0; i < cellCount; i++)
                 densityMap[i] = 0f;
 
-            if (!_transientEvents.IsCreated || _transientCellKeys.Length == 0 || cellCount <= 0)
+            if (_transientEventCount == 0 || cellCount <= 0)
                 return;
 
-            _transientQueryDedupe.Clear();
             double3 center = origin.ToAbsoluteDouble3();
             double radius = math.max(0.001d, radiusMeters);
             double diameter = radius * 2d;
@@ -713,79 +590,123 @@ namespace Hecton8.World
             if (EstimateCellSpan(minCell, maxCell) > MaxSphereQueryCellSpan)
                 return;
 
-            for (long z = minCell.Z; z <= maxCell.Z; z++)
+            int eventCount = math.min(math.max(0, _transientEventCount), _transientEvents != null ? _transientEvents.Length : 0);
+            for (int i = 0; i < eventCount; i++)
             {
-                for (long y = minCell.Y; y <= maxCell.Y; y++)
+                TransientEventRecord record = _transientEvents[i];
+                if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp) || (record.EventTypeMask & acousticEventTypeMask) == 0u)
+                    continue;
+
+                double3 local = record.AbsoluteCenter - minBounds;
+                if (local.x < 0d || local.y < 0d || local.z < 0d ||
+                    local.x >= diameter || local.y >= diameter || local.z >= diameter)
                 {
-                    for (long x = minCell.X; x <= maxCell.X; x++)
-                    {
-                        uint cellKey = HashCell(new Long3(x, y, z));
-                        if (!_transientEvents.TryGetFirstValue(cellKey, out TransientEventRecord record, out NativeParallelMultiHashMapIterator<uint> iterator))
-                            continue;
-
-                        do
-                        {
-                            if (!_transientQueryDedupe.Add(record.EventId))
-                                continue;
-
-                            if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp) || (record.EventTypeMask & acousticEventTypeMask) == 0u)
-                                continue;
-
-                            double3 local = record.AbsoluteCenter - minBounds;
-                            if (local.x < 0d || local.y < 0d || local.z < 0d ||
-                                local.x >= diameter || local.y >= diameter || local.z >= diameter)
-                            {
-                                continue;
-                            }
-
-                            int ix = (int)(local.x / cellSize.x);
-                            int iy = (int)(local.y / cellSize.y);
-                            int iz = (int)(local.z / cellSize.z);
-                            if ((uint)ix >= (uint)dimensions.x || (uint)iy >= (uint)dimensions.y || (uint)iz >= (uint)dimensions.z)
-                                continue;
-
-                            int index = ToDensityMapIndex(ix, iy, iz, dimensions.x, strideZ, cellCount);
-                            if (index < 0)
-                                continue;
-
-                            densityMap[index] = math.min(1f, densityMap[index] + record.Intensity);
-                        }
-                        while (_transientEvents.TryGetNextValue(out record, ref iterator));
-                    }
+                    continue;
                 }
+
+                int ix = (int)(local.x / cellSize.x);
+                int iy = (int)(local.y / cellSize.y);
+                int iz = (int)(local.z / cellSize.z);
+                if ((uint)ix >= (uint)dimensions.x || (uint)iy >= (uint)dimensions.y || (uint)iz >= (uint)dimensions.z)
+                    continue;
+
+                int index = ToDensityMapIndex(ix, iy, iz, dimensions.x, strideZ, cellCount);
+                if (index < 0)
+                    continue;
+
+                densityMap[index] = math.min(1f, densityMap[index] + record.Intensity);
+            }
+        }
+
+        public void BuildAcousticDensityMap(
+            in AbsoluteUniversePosition origin,
+            float radiusMeters,
+            double currentTimestamp,
+            float[] densityMap,
+            int3 dimensions,
+            uint acousticEventTypeMask)
+        {
+            if (densityMap == null ||
+                !IsFiniteAup(in origin) ||
+                !math.isfinite(radiusMeters) ||
+                !math.isfinite(currentTimestamp) ||
+                radiusMeters <= 0f ||
+                acousticEventTypeMask == 0u)
+                return;
+
+            if (dimensions.x <= 0 || dimensions.y <= 0 || dimensions.z <= 0)
+                return;
+
+            if (!TryResolveDensityGridLayout(dimensions, densityMap.Length, out int cellCount, out int strideZ))
+                return;
+
+            for (int i = 0; i < cellCount; i++)
+                densityMap[i] = 0f;
+
+            if (_transientEventCount == 0 || cellCount <= 0)
+                return;
+
+            double3 center = origin.ToAbsoluteDouble3();
+            double radius = math.max(0.001d, radiusMeters);
+            double diameter = radius * 2d;
+            double3 minBounds = center - new double3(radius, radius, radius);
+            double3 cellSize = new double3(
+                diameter / dimensions.x,
+                diameter / dimensions.y,
+                diameter / dimensions.z);
+            Long3 minCell = ToCell(minBounds);
+            Long3 maxCell = ToCell(center + new double3(radius, radius, radius));
+            if (EstimateCellSpan(minCell, maxCell) > MaxSphereQueryCellSpan)
+                return;
+
+            int eventCount = math.min(math.max(0, _transientEventCount), _transientEvents != null ? _transientEvents.Length : 0);
+            for (int i = 0; i < eventCount; i++)
+            {
+                TransientEventRecord record = _transientEvents[i];
+                if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp) || (record.EventTypeMask & acousticEventTypeMask) == 0u)
+                    continue;
+
+                double3 local = record.AbsoluteCenter - minBounds;
+                if (local.x < 0d || local.y < 0d || local.z < 0d ||
+                    local.x >= diameter || local.y >= diameter || local.z >= diameter)
+                {
+                    continue;
+                }
+
+                int ix = (int)(local.x / cellSize.x);
+                int iy = (int)(local.y / cellSize.y);
+                int iz = (int)(local.z / cellSize.z);
+                if ((uint)ix >= (uint)dimensions.x || (uint)iy >= (uint)dimensions.y || (uint)iz >= (uint)dimensions.z)
+                    continue;
+
+                int index = ToDensityMapIndex(ix, iy, iz, dimensions.x, strideZ, cellCount);
+                if (index < 0)
+                    continue;
+
+                densityMap[index] = math.min(1f, densityMap[index] + record.Intensity);
             }
         }
 
         public void PruneExpiredTransientEvents(double currentTimestamp)
         {
-            if (!math.isfinite(currentTimestamp) || !_transientEvents.IsCreated || _transientCellKeys.Length == 0)
+            if (!math.isfinite(currentTimestamp) || _transientEventCount == 0)
                 return;
 
             using (_transientPruneProfilerMarker.Auto())
             {
-                _transientEventsScratch.Clear();
-                _transientCellKeySetScratch.Clear();
-                _transientCellKeysScratch.Clear();
-
-                for (int i = 0; i < _transientCellKeys.Length; i++)
+                int eventCount = math.min(math.max(0, _transientEventCount), _transientEvents != null ? _transientEvents.Length : 0);
+                int writeIndex = 0;
+                for (int i = 0; i < eventCount; i++)
                 {
-                    uint cellKey = _transientCellKeys[i];
-                    if (!_transientEvents.TryGetFirstValue(cellKey, out TransientEventRecord record, out NativeParallelMultiHashMapIterator<uint> iterator))
+                    TransientEventRecord record = _transientEvents[i];
+                    if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp))
                         continue;
 
-                    do
-                    {
-                        if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp))
-                            continue;
-
-                        _transientEventsScratch.Add(cellKey, record);
-                        if (_transientCellKeySetScratch.Add(cellKey))
-                            _transientCellKeysScratch.AddNoResize(cellKey);
-                    }
-                    while (_transientEvents.TryGetNextValue(out record, ref iterator));
+                    _transientEvents[writeIndex++] = record;
                 }
 
-                SwapTransientScratch();
+                ClearTransientTail(writeIndex, eventCount);
+                _transientEventCount = writeIndex;
             }
         }
 
@@ -795,8 +716,7 @@ namespace Hecton8.World
                 !math.isfinite(deltaTime) ||
                 !math.isfinite(decayScale) ||
                 !math.isfinite(minimumIntensity) ||
-                !_transientEvents.IsCreated ||
-                _transientCellKeys.Length == 0 ||
+                _transientEventCount == 0 ||
                 deltaTime <= 0f)
                 return;
 
@@ -804,150 +724,54 @@ namespace Hecton8.World
             {
                 float decayFactor = math.clamp(decayScale * deltaTime, 0f, 1f);
                 float safeMinimumIntensity = math.max(0f, minimumIntensity);
-                _transientEventsScratch.Clear();
-                _transientCellKeySetScratch.Clear();
-                _transientCellKeysScratch.Clear();
-
-                for (int i = 0; i < _transientCellKeys.Length; i++)
+                int eventCount = math.min(math.max(0, _transientEventCount), _transientEvents != null ? _transientEvents.Length : 0);
+                int writeIndex = 0;
+                for (int i = 0; i < eventCount; i++)
                 {
-                    uint cellKey = _transientCellKeys[i];
-                    if (!_transientEvents.TryGetFirstValue(cellKey, out TransientEventRecord record, out NativeParallelMultiHashMapIterator<uint> iterator))
+                    TransientEventRecord record = _transientEvents[i];
+                    if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp))
                         continue;
 
-                    do
+                    if ((record.EventTypeMask & eventTypeMask) != 0u)
                     {
-                        if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp))
+                        record.Intensity *= decayFactor;
+                        if (record.Intensity < safeMinimumIntensity)
                             continue;
-
-                        if ((record.EventTypeMask & eventTypeMask) != 0u)
-                        {
-                            record.Intensity *= decayFactor;
-                            if (record.Intensity < safeMinimumIntensity)
-                                continue;
-                        }
-
-                        _transientEventsScratch.Add(cellKey, record);
-                        if (_transientCellKeySetScratch.Add(cellKey))
-                            _transientCellKeysScratch.AddNoResize(cellKey);
                     }
-                    while (_transientEvents.TryGetNextValue(out record, ref iterator));
+
+                    _transientEvents[writeIndex++] = record;
                 }
 
-                SwapTransientScratch();
+                ClearTransientTail(writeIndex, eventCount);
+                _transientEventCount = writeIndex;
             }
         }
 
         public bool CompactIfOverCapacity(int capacityThreshold, int targetCapacityFloor, double currentTimestamp)
         {
-            bool swapped = TrySwapCompletedCompaction();
             bool scheduled = ScheduleCompactionIfOverCapacity(capacityThreshold, targetCapacityFloor, currentTimestamp);
-            return swapped || scheduled;
+            return scheduled;
         }
 
         public bool ScheduleCompactionIfOverCapacity(int capacityThreshold, int targetCapacityFloor, double currentTimestamp)
         {
             if (!math.isfinite(currentTimestamp))
-                return TrySwapCompletedCompaction();
+                return false;
 
-            bool compacted = false;
-            int safeThreshold = math.max(DefaultCompactionCapacityFloor, capacityThreshold);
-            int safeFloor = math.max(DefaultCompactionCapacityFloor, targetCapacityFloor);
-
-            if (_cellOccupancy.IsCreated && _cellOccupancy.Capacity > safeThreshold)
-            {
-                int targetCapacity = math.max(safeFloor, EstimateActiveCellOccupancyCapacity());
-                if (targetCapacity < _cellOccupancy.Capacity && TryScheduleCellOccupancyCompaction(targetCapacity))
-                {
-                    compacted = true;
-                }
-            }
-
-            if (_transientEvents.IsCreated && _transientEvents.Capacity > safeThreshold)
-            {
-                PruneExpiredTransientEvents(currentTimestamp);
-                int liveTransientCount = math.max(1, _transientEvents.Count());
-                int targetCapacity = math.max(safeFloor, liveTransientCount);
-                if (targetCapacity < _transientEvents.Capacity)
-                {
-                    _transientEventsScratch.Clear();
-                    _transientCellKeySetScratch.Clear();
-                    _transientCellKeysScratch.Clear();
-                    _transientEventsScratch.Capacity = targetCapacity;
-                    NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_transientEventsScratch, _sentinelOwner, nameof(_transientEventsScratch));
-
-                    for (int i = 0; i < _transientCellKeys.Length; i++)
-                    {
-                        uint cellKey = _transientCellKeys[i];
-                        if (!_transientEvents.TryGetFirstValue(cellKey, out TransientEventRecord record, out NativeParallelMultiHashMapIterator<uint> iterator))
-                            continue;
-
-                        do
-                        {
-                            _transientEventsScratch.Add(cellKey, record);
-                            if (_transientCellKeySetScratch.Add(cellKey))
-                                _transientCellKeysScratch.AddNoResize(cellKey);
-                        }
-                        while (_transientEvents.TryGetNextValue(out record, ref iterator));
-                    }
-
-                    SwapTransientScratch();
-                    _transientEventsScratch.Clear();
-                    _transientEventsScratch.Capacity = targetCapacity;
-                    NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_transientEventsScratch, _sentinelOwner, nameof(_transientEventsScratch));
-                    compacted = true;
-                }
-            }
-
-            return compacted;
+            _ = capacityThreshold;
+            _ = targetCapacityFloor;
+            PruneExpiredTransientEvents(currentTimestamp);
+            return false;
         }
 
         public bool TrySwapCompletedCompaction()
         {
-            if (!_cellCompactionScheduled)
-                return false;
-
-            if (!_cellCompactionHandle.IsCompleted || !_readerFence.IsCompleted)
-                return false;
-
-            if (!DispatcherJobSwap.TryComplete(ref _readerFence, forceComplete: false) ||
-                !DispatcherJobSwap.TryComplete(ref _cellCompactionHandle, forceComplete: false))
-            {
-                return false;
-            }
-
-            if (_compactionMutationVersion != _mutationVersion)
-            {
-                _cellOccupancyScratch.Clear();
-                _cellCompactionScheduled = false;
-                _pendingCellCompactionTargetCapacity = 0;
-                _compactionMutationVersion = 0u;
-                _readerFence = default;
-                _cellCompactionHandle = default;
-                return false;
-            }
-
-            NativeParallelMultiHashMap<Long3, int> occupancySwap = _cellOccupancy;
-            _cellOccupancy = _cellOccupancyScratch;
-            _cellOccupancyScratch = occupancySwap;
-            RefreshCellOccupancySentinelCapacities();
-            _cellOccupancyScratch.Clear();
-            if (_pendingCellCompactionTargetCapacity > 0 && _cellOccupancyScratch.Capacity != _pendingCellCompactionTargetCapacity)
-            {
-                _cellOccupancyScratch.Capacity = _pendingCellCompactionTargetCapacity;
-                RefreshCellOccupancySentinelCapacities();
-            }
-
-            _cellCompactionScheduled = false;
-            _pendingCellCompactionTargetCapacity = 0;
-            _compactionMutationVersion = 0u;
-            _readerFence = default;
-            _cellCompactionHandle = default;
-            return true;
+            return false;
         }
 
         public void RegisterReaderFence(JobHandle readerFence)
         {
-            _readerFence = JobHandle.CombineDependencies(_readerFence, readerFence);
+            _ = readerFence;
         }
 
         public void ClearTransientEvents(uint eventTypeMask, uint sourceKey, double currentTimestamp)
@@ -955,39 +779,133 @@ namespace Hecton8.World
             if (eventTypeMask == 0u ||
                 sourceKey == 0u ||
                 !math.isfinite(currentTimestamp) ||
-                !_transientEvents.IsCreated ||
-                _transientCellKeys.Length == 0)
+                _transientEventCount == 0)
                 return;
 
             using (_transientPruneProfilerMarker.Auto())
             {
-                _transientEventsScratch.Clear();
-                _transientCellKeySetScratch.Clear();
-                _transientCellKeysScratch.Clear();
-
-                for (int i = 0; i < _transientCellKeys.Length; i++)
+                int eventCount = math.min(math.max(0, _transientEventCount), _transientEvents != null ? _transientEvents.Length : 0);
+                int writeIndex = 0;
+                for (int i = 0; i < eventCount; i++)
                 {
-                    uint cellKey = _transientCellKeys[i];
-                    if (!_transientEvents.TryGetFirstValue(cellKey, out TransientEventRecord record, out NativeParallelMultiHashMapIterator<uint> iterator))
+                    TransientEventRecord record = _transientEvents[i];
+                    if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp))
                         continue;
 
-                    do
-                    {
-                        if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp))
-                            continue;
+                    if (record.SourceKey == sourceKey && (record.EventTypeMask & eventTypeMask) != 0u)
+                        continue;
 
-                        if (record.SourceKey == sourceKey && (record.EventTypeMask & eventTypeMask) != 0u)
-                            continue;
-
-                        _transientEventsScratch.Add(cellKey, record);
-                        if (_transientCellKeySetScratch.Add(cellKey))
-                            _transientCellKeysScratch.AddNoResize(cellKey);
-                    }
-                    while (_transientEvents.TryGetNextValue(out record, ref iterator));
+                    _transientEvents[writeIndex++] = record;
                 }
 
-                SwapTransientScratch();
+                ClearTransientTail(writeIndex, eventCount);
+                _transientEventCount = writeIndex;
             }
+        }
+
+        private int CollectSphereIntoScratch(
+            in AbsoluteUniversePosition origin,
+            float radiusMeters,
+            int requiredKindMask,
+            ulong interactionFilter,
+            out int visitedCellCount,
+            out int candidateHandleCount,
+            out int dedupeCount,
+            out byte saturated)
+        {
+            visitedCellCount = 0;
+            candidateHandleCount = 0;
+            dedupeCount = 0;
+            saturated = 0;
+            _queryScratch.Reset();
+
+            double3 absoluteCenter = origin.ToAbsoluteDouble3();
+            double radius = math.max(0.001d, radiusMeters);
+            Long3 minCell = ToCell(new double3(absoluteCenter.x - radius, absoluteCenter.y - radius, absoluteCenter.z - radius));
+            Long3 maxCell = ToCell(new double3(absoluteCenter.x + radius, absoluteCenter.y + radius, absoluteCenter.z + radius));
+            int cellSpan = EstimateCellSpan(minCell, maxCell);
+            if (cellSpan > MaxSphereQueryCellSpan)
+            {
+                saturated = 1;
+                return 0;
+            }
+
+            visitedCellCount = cellSpan;
+            int resultCapacity = _queryScratch.Capacity;
+            int entryCapacity = _entryHandles != null ? _entryHandles.Length : 0;
+            int entryCount = math.min(math.max(0, _entryHandleCount), entryCapacity);
+            double radiusSq = radius * radius;
+            for (int i = 0; i < entryCount && _queryScratch.HandleCount < resultCapacity; i++)
+            {
+                int handle = _entryHandles[i];
+                if (!TryGetEntryByHandle(handle, out SpatialEntry entry))
+                    continue;
+
+                candidateHandleCount++;
+                dedupeCount++;
+                if (requiredKindMask != 0 && (entry.KindMask & requiredKindMask) == 0)
+                    continue;
+
+                if (interactionFilter != 0UL && (entry.EntityFlags & interactionFilter) != interactionFilter)
+                    continue;
+
+                if (!SphereOverlapsEntry(absoluteCenter, radiusSq, in entry))
+                    continue;
+
+                _queryScratch.TryAddHandle(handle);
+            }
+
+            if (_queryScratch.HandleCount >= resultCapacity && candidateHandleCount < entryCount)
+                saturated = 1;
+
+            return _queryScratch.HandleCount;
+        }
+
+        private int CollectAdjacentCellsIntoScratch(
+            in AbsoluteUniversePosition origin,
+            int requiredKindMask,
+            ulong interactionFilter,
+            out int visitedCellCount,
+            out int candidateHandleCount,
+            out int dedupeCount,
+            out byte saturated)
+        {
+            visitedCellCount = 27;
+            candidateHandleCount = 0;
+            dedupeCount = 0;
+            saturated = 0;
+            _queryScratch.Reset();
+
+            Long3 centerCell = ToCell(origin.ToAbsoluteDouble3());
+            Long3 minCell = new Long3(centerCell.X - 1L, centerCell.Y - 1L, centerCell.Z - 1L);
+            Long3 maxCell = new Long3(centerCell.X + 1L, centerCell.Y + 1L, centerCell.Z + 1L);
+            int resultCapacity = _queryScratch.Capacity;
+            int entryCapacity = _entryHandles != null ? _entryHandles.Length : 0;
+            int entryCount = math.min(math.max(0, _entryHandleCount), entryCapacity);
+            for (int i = 0; i < entryCount && _queryScratch.HandleCount < resultCapacity; i++)
+            {
+                int handle = _entryHandles[i];
+                if (!TryGetEntryByHandle(handle, out SpatialEntry entry))
+                    continue;
+
+                candidateHandleCount++;
+                dedupeCount++;
+                if (!CellRangesOverlap(entry.MinCell, entry.MaxCell, minCell, maxCell))
+                    continue;
+
+                if (requiredKindMask != 0 && (entry.KindMask & requiredKindMask) == 0)
+                    continue;
+
+                if (interactionFilter != 0UL && (entry.EntityFlags & interactionFilter) != interactionFilter)
+                    continue;
+
+                _queryScratch.TryAddHandle(handle);
+            }
+
+            if (_queryScratch.HandleCount >= resultCapacity && candidateHandleCount < entryCount)
+                saturated = 1;
+
+            return _queryScratch.HandleCount;
         }
 
         public int CollectSphere(in AbsoluteUniversePosition origin, float radiusMeters, int requiredKindMask, ulong interactionFilter, NativeList<int> resultHandles)
@@ -1004,86 +922,28 @@ namespace Hecton8.World
                 if (!IsFiniteAup(in origin) ||
                     !math.isfinite(radiusMeters) ||
                     radiusMeters <= 0f ||
-                    !_cellOccupancy.IsCreated ||
-                    _entryHandles.Length == 0)
+                    _entryHandleCount == 0)
                 {
                     _lastQueryStats = default;
                     return 0;
                 }
 
-                double3 absoluteCenter = origin.ToAbsoluteDouble3();
-                double radius = math.max(0.001d, radiusMeters);
-                Long3 minCell = ToCell(new double3(absoluteCenter.x - radius, absoluteCenter.y - radius, absoluteCenter.z - radius));
-                Long3 maxCell = ToCell(new double3(absoluteCenter.x + radius, absoluteCenter.y + radius, absoluteCenter.z + radius));
-                int cellSpan = EstimateCellSpan(minCell, maxCell);
-                if (cellSpan > MaxSphereQueryCellSpan)
-                {
-                    _lastQueryStats = new QueryStats(QueryModeSphere, 0, 0, 0, 0, 1);
-                    return 0;
-                }
+                int foundCount = CollectSphereIntoScratch(
+                    in origin,
+                    radiusMeters,
+                    requiredKindMask,
+                    interactionFilter,
+                    out int visitedCellCount,
+                    out int candidateHandleCount,
+                    out int dedupeCount,
+                    out byte saturated);
 
-                ulong resolvedInteractionFilter = interactionFilter;
-
-                _queryScratch.Reset();
-                int dedupeCount = 0;
-                int dedupeCapacity = _queryScratch.Dedup.Capacity;
-                int resultCapacity = _queryScratch.Handles.Capacity;
-                int visitedCellCount = 0;
-                int candidateHandleCount = 0;
-
-                for (long z = minCell.Z; z <= maxCell.Z && _queryScratch.Handles.Length < resultCapacity && dedupeCount < dedupeCapacity; z++)
-                {
-                    for (long y = minCell.Y; y <= maxCell.Y && _queryScratch.Handles.Length < resultCapacity && dedupeCount < dedupeCapacity; y++)
-                    {
-                        for (long x = minCell.X; x <= maxCell.X && _queryScratch.Handles.Length < resultCapacity && dedupeCount < dedupeCapacity; x++)
-                        {
-                            visitedCellCount++;
-                            Long3 cellKey = new Long3(x, y, z);
-                            if (!_cellOccupancy.TryGetFirstValue(cellKey, out int handle, out NativeParallelMultiHashMapIterator<Long3> iterator))
-                                continue;
-
-                            do
-                            {
-                                candidateHandleCount++;
-                                if (dedupeCount >= dedupeCapacity)
-                                    continue;
-
-                                if (!_queryScratch.Dedup.Add(handle))
-                                    continue;
-                                dedupeCount++;
-
-                                if (!_entries.TryGetValue(handle, out SpatialEntry entry))
-                                    continue;
-
-                                if (requiredKindMask != 0 && (entry.KindMask & requiredKindMask) == 0)
-                                    continue;
-
-                                if (resolvedInteractionFilter != 0UL && (entry.EntityFlags & resolvedInteractionFilter) != resolvedInteractionFilter)
-                                    continue;
-
-                                if (!SphereOverlapsEntry(absoluteCenter, radius * radius, in entry))
-                                    continue;
-
-                                if (_queryScratch.Handles.Length >= resultCapacity)
-                                    continue;
-
-                                _queryScratch.Handles.AddNoResize(handle);
-                            }
-                            while (_queryScratch.Handles.Length < resultCapacity &&
-                                   dedupeCount < dedupeCapacity &&
-                                   _cellOccupancy.TryGetNextValue(out handle, ref iterator));
-                        }
-                    }
-                }
-
-                int copyCount = math.min(_queryScratch.Handles.Length, resultHandles.Capacity);
+                int copyCount = math.min(foundCount, resultHandles.Capacity);
                 resultHandles.ResizeUninitialized(copyCount);
-                NativeArray<int>.Copy(_queryScratch.Handles.AsArray(), resultHandles.AsArray(), copyCount);
-                byte saturated = (_queryScratch.Handles.Length >= resultCapacity ||
-                                  dedupeCount >= dedupeCapacity ||
-                                  copyCount < _queryScratch.Handles.Length)
-                    ? (byte)1
-                    : (byte)0;
+                for (int i = 0; i < copyCount; i++)
+                    resultHandles[i] = _queryScratch.Handles[i];
+                if (copyCount < foundCount)
+                    saturated = 1;
                 _lastQueryStats = new QueryStats(
                     QueryModeSphere,
                     visitedCellCount,
@@ -1108,85 +968,27 @@ namespace Hecton8.World
                 if (!IsFiniteAup(in origin) ||
                     !math.isfinite(radiusMeters) ||
                     radiusMeters <= 0f ||
-                    !_cellOccupancy.IsCreated ||
-                    _entryHandles.Length == 0)
+                    _entryHandleCount == 0)
                 {
                     _lastQueryStats = default;
                     return 0;
                 }
 
-                double3 absoluteCenter = origin.ToAbsoluteDouble3();
-                double radius = math.max(0.001d, radiusMeters);
-                Long3 minCell = ToCell(new double3(absoluteCenter.x - radius, absoluteCenter.y - radius, absoluteCenter.z - radius));
-                Long3 maxCell = ToCell(new double3(absoluteCenter.x + radius, absoluteCenter.y + radius, absoluteCenter.z + radius));
-                int cellSpan = EstimateCellSpan(minCell, maxCell);
-                if (cellSpan > MaxSphereQueryCellSpan)
-                {
-                    _lastQueryStats = new QueryStats(QueryModeSphere, 0, 0, 0, 0, 1);
-                    return 0;
-                }
+                int foundCount = CollectSphereIntoScratch(
+                    in origin,
+                    radiusMeters,
+                    requiredKindMask,
+                    interactionFilter,
+                    out int visitedCellCount,
+                    out int candidateHandleCount,
+                    out int dedupeCount,
+                    out byte saturated);
 
-                ulong resolvedInteractionFilter = interactionFilter;
-
-                _queryScratch.Reset();
-                int dedupeCount = 0;
-                int dedupeCapacity = _queryScratch.Dedup.Capacity;
-                int resultCapacity = _queryScratch.Handles.Capacity;
-                int visitedCellCount = 0;
-                int candidateHandleCount = 0;
-
-                for (long z = minCell.Z; z <= maxCell.Z && _queryScratch.Handles.Length < resultCapacity && dedupeCount < dedupeCapacity; z++)
-                {
-                    for (long y = minCell.Y; y <= maxCell.Y && _queryScratch.Handles.Length < resultCapacity && dedupeCount < dedupeCapacity; y++)
-                    {
-                        for (long x = minCell.X; x <= maxCell.X && _queryScratch.Handles.Length < resultCapacity && dedupeCount < dedupeCapacity; x++)
-                        {
-                            visitedCellCount++;
-                            Long3 cellKey = new Long3(x, y, z);
-                            if (!_cellOccupancy.TryGetFirstValue(cellKey, out int handle, out NativeParallelMultiHashMapIterator<Long3> iterator))
-                                continue;
-
-                            do
-                            {
-                                candidateHandleCount++;
-                                if (dedupeCount >= dedupeCapacity)
-                                    continue;
-
-                                if (!_queryScratch.Dedup.Add(handle))
-                                    continue;
-                                dedupeCount++;
-
-                                if (!_entries.TryGetValue(handle, out SpatialEntry entry))
-                                    continue;
-
-                                if (requiredKindMask != 0 && (entry.KindMask & requiredKindMask) == 0)
-                                    continue;
-
-                                if (resolvedInteractionFilter != 0UL && (entry.EntityFlags & resolvedInteractionFilter) != resolvedInteractionFilter)
-                                    continue;
-
-                                if (!SphereOverlapsEntry(absoluteCenter, radius * radius, in entry))
-                                    continue;
-
-                                if (_queryScratch.Handles.Length >= resultCapacity)
-                                    continue;
-
-                                _queryScratch.Handles.AddNoResize(handle);
-                            }
-                            while (_queryScratch.Handles.Length < resultCapacity &&
-                                   dedupeCount < dedupeCapacity &&
-                                   _cellOccupancy.TryGetNextValue(out handle, ref iterator));
-                        }
-                    }
-                }
-
-                int copyCount = math.min(_queryScratch.Handles.Length, resultHandles.Length);
-                NativeArray<int>.Copy(_queryScratch.Handles.AsArray(), 0, resultHandles, 0, copyCount);
-                byte saturated = (_queryScratch.Handles.Length >= resultCapacity ||
-                                  dedupeCount >= dedupeCapacity ||
-                                  copyCount < _queryScratch.Handles.Length)
-                    ? (byte)1
-                    : (byte)0;
+                int copyCount = math.min(foundCount, resultHandles.Length);
+                for (int i = 0; i < copyCount; i++)
+                    resultHandles[i] = _queryScratch.Handles[i];
+                if (copyCount < foundCount)
+                    saturated = 1;
                 _lastQueryStats = new QueryStats(
                     QueryModeSphere,
                     visitedCellCount,
@@ -1218,6 +1020,57 @@ namespace Hecton8.World
             return CollectSphere(in origin, radiusMeters, requiredKindMask, 0UL, resultHandles);
         }
 
+        public int CollectSphere(in AbsoluteUniversePosition origin, float radiusMeters, int requiredKindMask, ulong interactionFilter, int[] resultHandles)
+        {
+            if (resultHandles == null || resultHandles.Length == 0)
+            {
+                _lastQueryStats = default;
+                return 0;
+            }
+
+            using (_queryProfilerMarker.Auto())
+            {
+                if (!IsFiniteAup(in origin) ||
+                    !math.isfinite(radiusMeters) ||
+                    radiusMeters <= 0f ||
+                    _entryHandleCount == 0)
+                {
+                    _lastQueryStats = default;
+                    return 0;
+                }
+
+                int foundCount = CollectSphereIntoScratch(
+                    in origin,
+                    radiusMeters,
+                    requiredKindMask,
+                    interactionFilter,
+                    out int visitedCellCount,
+                    out int candidateHandleCount,
+                    out int dedupeCount,
+                    out byte saturated);
+
+                int copyCount = math.min(foundCount, resultHandles.Length);
+                for (int i = 0; i < copyCount; i++)
+                    resultHandles[i] = _queryScratch.Handles[i];
+
+                if (copyCount < foundCount)
+                    saturated = 1;
+                _lastQueryStats = new QueryStats(
+                    QueryModeSphere,
+                    visitedCellCount,
+                    candidateHandleCount,
+                    dedupeCount,
+                    copyCount,
+                    saturated);
+                return copyCount;
+            }
+        }
+
+        public int CollectSphere(in AbsoluteUniversePosition origin, float radiusMeters, int requiredKindMask, int[] resultHandles)
+        {
+            return CollectSphere(in origin, radiusMeters, requiredKindMask, 0UL, resultHandles);
+        }
+
         public int CollectAdjacentCells(in AbsoluteUniversePosition origin, int requiredKindMask, ulong interactionFilter, NativeList<int> resultHandles)
         {
             if (!resultHandles.IsCreated)
@@ -1229,72 +1082,27 @@ namespace Hecton8.World
             using (_queryAdjacentProfilerMarker.Auto())
             {
                 resultHandles.Clear();
-                if (!IsFiniteAup(in origin) || !_cellOccupancy.IsCreated || _entryHandles.Length == 0)
+                if (!IsFiniteAup(in origin) || _entryHandleCount == 0)
                 {
                     _lastQueryStats = default;
                     return 0;
                 }
 
-                Long3 centerCell = ToCell(origin.ToAbsoluteDouble3());
-                ulong resolvedInteractionFilter = interactionFilter;
+                int foundCount = CollectAdjacentCellsIntoScratch(
+                    in origin,
+                    requiredKindMask,
+                    interactionFilter,
+                    out int visitedCellCount,
+                    out int candidateHandleCount,
+                    out int dedupeCount,
+                    out byte saturated);
 
-                _queryScratch.Reset();
-                int dedupeCount = 0;
-                int dedupeCapacity = _queryScratch.Dedup.Capacity;
-                int resultCapacity = _queryScratch.Handles.Capacity;
-                int visitedCellCount = 0;
-                int candidateHandleCount = 0;
-
-                for (long z = centerCell.Z - 1L; z <= centerCell.Z + 1L && _queryScratch.Handles.Length < resultCapacity && dedupeCount < dedupeCapacity; z++)
-                {
-                    for (long y = centerCell.Y - 1L; y <= centerCell.Y + 1L && _queryScratch.Handles.Length < resultCapacity && dedupeCount < dedupeCapacity; y++)
-                    {
-                        for (long x = centerCell.X - 1L; x <= centerCell.X + 1L && _queryScratch.Handles.Length < resultCapacity && dedupeCount < dedupeCapacity; x++)
-                        {
-                            visitedCellCount++;
-                            Long3 cellKey = new Long3(x, y, z);
-                            if (!_cellOccupancy.TryGetFirstValue(cellKey, out int handle, out NativeParallelMultiHashMapIterator<Long3> iterator))
-                                continue;
-
-                            do
-                            {
-                                candidateHandleCount++;
-                                if (dedupeCount >= dedupeCapacity)
-                                    continue;
-
-                                if (!_queryScratch.Dedup.Add(handle))
-                                    continue;
-                                dedupeCount++;
-
-                                if (!_entries.TryGetValue(handle, out SpatialEntry entry))
-                                    continue;
-
-                                if (requiredKindMask != 0 && (entry.KindMask & requiredKindMask) == 0)
-                                    continue;
-
-                                if (resolvedInteractionFilter != 0UL && (entry.EntityFlags & resolvedInteractionFilter) != resolvedInteractionFilter)
-                                    continue;
-
-                                if (_queryScratch.Handles.Length >= resultCapacity)
-                                    continue;
-
-                                _queryScratch.Handles.AddNoResize(handle);
-                            }
-                            while (_queryScratch.Handles.Length < resultCapacity &&
-                                   dedupeCount < dedupeCapacity &&
-                                   _cellOccupancy.TryGetNextValue(out handle, ref iterator));
-                        }
-                    }
-                }
-
-                int copyCount = math.min(_queryScratch.Handles.Length, resultHandles.Capacity);
+                int copyCount = math.min(foundCount, resultHandles.Capacity);
                 resultHandles.ResizeUninitialized(copyCount);
-                NativeArray<int>.Copy(_queryScratch.Handles.AsArray(), resultHandles.AsArray(), copyCount);
-                byte saturated = (_queryScratch.Handles.Length >= resultCapacity ||
-                                  dedupeCount >= dedupeCapacity ||
-                                  copyCount < _queryScratch.Handles.Length)
-                    ? (byte)1
-                    : (byte)0;
+                for (int i = 0; i < copyCount; i++)
+                    resultHandles[i] = _queryScratch.Handles[i];
+                if (copyCount < foundCount)
+                    saturated = 1;
                 _lastQueryStats = new QueryStats(
                     QueryModeAdjacent,
                     visitedCellCount,
@@ -1315,143 +1123,102 @@ namespace Hecton8.World
         {
             JobHandle disposeHandle = CancelPendingJobsForTeardown();
 
-            if (_entries.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashMap(_sentinelOwner, nameof(_entries));
-                disposeHandle = _entries.Dispose(disposeHandle);
-                _entries = default;
-            }
+            _entries = null;
+            _entryOccupied = null;
+            _entryHandles = null;
+            _slotGenerations = null;
+            _entryHandleCount = 0;
 
-            if (_entryHandles.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, nameof(_entryHandles));
-                disposeHandle = _entryHandles.Dispose(disposeHandle);
-                _entryHandles = default;
-            }
-
-            if (_freeHandles.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(_sentinelOwner, nameof(_freeHandles));
-                disposeHandle = _freeHandles.Dispose(disposeHandle);
-                _freeHandles = default;
-            }
-
-            if (_queuedFreeHandles.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashSet(_sentinelOwner, nameof(_queuedFreeHandles));
-                disposeHandle = _queuedFreeHandles.Dispose(disposeHandle);
-                _queuedFreeHandles = default;
-            }
-
-            if (_slotGenerations.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashMap(_sentinelOwner, nameof(_slotGenerations));
-                disposeHandle = _slotGenerations.Dispose(disposeHandle);
-                _slotGenerations = default;
-            }
-
-            if (_cellOccupancy.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(_sentinelOwner, nameof(_cellOccupancy));
-                disposeHandle = _cellOccupancy.Dispose(disposeHandle);
-                _cellOccupancy = default;
-            }
-
-            if (_cellOccupancyScratch.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(_sentinelOwner, nameof(_cellOccupancyScratch));
-                disposeHandle = _cellOccupancyScratch.Dispose(disposeHandle);
-                _cellOccupancyScratch = default;
-            }
-
-            if (_transientEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(_sentinelOwner, nameof(_transientEvents));
-                disposeHandle = _transientEvents.Dispose(disposeHandle);
-                _transientEvents = default;
-            }
-
-            if (_transientEventsScratch.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(_sentinelOwner, nameof(_transientEventsScratch));
-                disposeHandle = _transientEventsScratch.Dispose(disposeHandle);
-                _transientEventsScratch = default;
-            }
-
-            if (_transientCellKeySet.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashSet(_sentinelOwner, nameof(_transientCellKeySet));
-                disposeHandle = _transientCellKeySet.Dispose(disposeHandle);
-                _transientCellKeySet = default;
-            }
-
-            if (_transientCellKeySetScratch.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashSet(_sentinelOwner, nameof(_transientCellKeySetScratch));
-                disposeHandle = _transientCellKeySetScratch.Dispose(disposeHandle);
-                _transientCellKeySetScratch = default;
-            }
-
-            if (_transientQueryDedupe.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashSet(_sentinelOwner, nameof(_transientQueryDedupe));
-                disposeHandle = _transientQueryDedupe.Dispose(disposeHandle);
-                _transientQueryDedupe = default;
-            }
-
-            if (_transientCellKeys.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, nameof(_transientCellKeys));
-                disposeHandle = _transientCellKeys.Dispose(disposeHandle);
-                _transientCellKeys = default;
-            }
-
-            if (_transientCellKeysScratch.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, nameof(_transientCellKeysScratch));
-                disposeHandle = _transientCellKeysScratch.Dispose(disposeHandle);
-                _transientCellKeysScratch = default;
-            }
-
-            if (_compactionHandleSnapshot.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, nameof(_compactionHandleSnapshot));
-                disposeHandle = _compactionHandleSnapshot.Dispose(disposeHandle);
-                _compactionHandleSnapshot = default;
-            }
-
-            if (_compactionEntrySnapshot.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, nameof(_compactionEntrySnapshot));
-                disposeHandle = _compactionEntrySnapshot.Dispose(disposeHandle);
-                _compactionEntrySnapshot = default;
-            }
+            _transientEvents = null;
+            _transientEventCount = 0;
 
             disposeHandle = _queryScratch.Dispose(disposeHandle);
+            _freeHandleHead = 0;
+            _freeHandleTail = 0;
+            _freeHandleCount = 0;
             JobHandle.ScheduleBatchedJobs();
         }
 
         private JobHandle CancelPendingJobsForTeardown()
         {
-            JobHandle dependency = JobHandle.CombineDependencies(_cellCompactionHandle, _readerFence);
-            _cellCompactionHandle = default;
-            _readerFence = default;
-            _cellCompactionScheduled = false;
-            _pendingCellCompactionTargetCapacity = 0;
-            _compactionMutationVersion = 0u;
-            return dependency;
+            return default;
+        }
+
+        private bool ContainsEntry(int handle)
+        {
+            return TryGetEntryByHandle(handle, out _);
+        }
+
+        private bool TryGetEntryByHandle(int handle, out SpatialEntry entry)
+        {
+            entry = default;
+            if (!TryResolveEntrySlot(handle, out int slotIndex))
+                return false;
+
+            if (_entryOccupied == null || slotIndex >= _entryOccupied.Length || _entryOccupied[slotIndex] == 0)
+                return false;
+
+            entry = _entries[slotIndex];
+            return true;
+        }
+
+        private bool TrySetEntry(int handle, in SpatialEntry entry)
+        {
+            if (!TryResolveEntrySlot(handle, out int slotIndex))
+                return false;
+
+            _entries[slotIndex] = entry;
+            _entryOccupied[slotIndex] = 1;
+            return true;
+        }
+
+        private void ClearEntry(int handle)
+        {
+            if (!TryDecodeHandle(handle, out uint slot, out _) ||
+                _entries == null ||
+                _entryOccupied == null ||
+                slot >= (uint)_entries.Length ||
+                slot >= (uint)_entryOccupied.Length)
+            {
+                return;
+            }
+
+            int slotIndex = (int)slot;
+            _entries[slotIndex] = default;
+            _entryOccupied[slotIndex] = 0;
+        }
+
+        private bool TryResolveEntrySlot(int handle, out int slotIndex)
+        {
+            slotIndex = 0;
+            if (!TryDecodeHandle(handle, out uint slot, out uint generation) ||
+                _entries == null ||
+                _entryOccupied == null ||
+                slot >= (uint)_entries.Length ||
+                slot >= (uint)_entryOccupied.Length ||
+                !TryGetSlotGeneration(slot, out uint currentGeneration) ||
+                currentGeneration != generation)
+            {
+                return false;
+            }
+
+            slotIndex = (int)slot;
+            return true;
         }
 
         private int AllocateHandle()
         {
-            while (_freeHandles.TryDequeue(out uint queuedHandle))
+            if (!HasEntryHandleCapacity(1))
+                return 0;
+
+            while (TryDequeueFreeHandle(out uint queuedHandle))
             {
-                _queuedFreeHandles.Remove(queuedHandle);
                 if (IsQueuedFreeHandleCurrent(queuedHandle))
                     return (int)queuedHandle;
             }
 
-            if (_nextSlot > MaxHandleSlot)
+            int generationCapacity = _slotGenerations != null ? _slotGenerations.Length : 0;
+            if (_nextSlot > MaxHandleSlot || _nextSlot >= (uint)generationCapacity)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError("[HectonSpatialHash] Handle allocator exhausted.");
@@ -1460,22 +1227,104 @@ namespace Hecton8.World
             }
 
             uint slot = _nextSlot++;
-            _slotGenerations.TryAdd(slot, InitialHandleGeneration);
+            _slotGenerations[(int)slot] = InitialHandleGeneration;
             return EncodeHandle(slot, InitialHandleGeneration);
         }
 
-        private static void PrewarmFreeHandleQueue(ref NativeQueue<uint> queue, int capacity)
+        private bool HasEntryHandleCapacity(int additionalHandles)
         {
-            if (!queue.IsCreated)
+            int capacity = _entryHandles != null ? _entryHandles.Length : 0;
+            int required = AddCapacitySaturating(_entryHandleCount, math.max(0, additionalHandles));
+            return required <= capacity;
+        }
+
+        private bool TryAppendEntryHandle(int handle)
+        {
+            int capacity = _entryHandles != null ? _entryHandles.Length : 0;
+            if (handle <= 0 || _entryHandleCount >= capacity)
+                return false;
+
+            _entryHandles[_entryHandleCount] = handle;
+            _entryHandleCount++;
+            return true;
+        }
+
+        private void RemoveEntryHandle(int handle)
+        {
+            int capacity = _entryHandles != null ? _entryHandles.Length : 0;
+            int count = math.min(math.max(0, _entryHandleCount), capacity);
+            for (int i = 0; i < count; i++)
+            {
+                if (_entryHandles[i] != handle)
+                    continue;
+
+                int lastIndex = count - 1;
+                _entryHandles[i] = _entryHandles[lastIndex];
+                _entryHandles[lastIndex] = 0;
+                _entryHandleCount = lastIndex;
+                return;
+            }
+
+            _entryHandleCount = count;
+        }
+
+        private bool TryGetSlotGeneration(uint slot, out uint generation)
+        {
+            generation = 0u;
+            if (slot == 0u || _slotGenerations == null || slot >= (uint)_slotGenerations.Length)
+                return false;
+
+            generation = _slotGenerations[(int)slot];
+            return generation != 0u;
+        }
+
+        private bool TrySetSlotGeneration(uint slot, uint generation)
+        {
+            if (slot == 0u || generation == 0u || _slotGenerations == null || slot >= (uint)_slotGenerations.Length)
+                return false;
+
+            _slotGenerations[(int)slot] = generation;
+            return true;
+        }
+
+        private void ClearSlotGeneration(uint slot)
+        {
+            if (slot == 0u || _slotGenerations == null || slot >= (uint)_slotGenerations.Length)
                 return;
 
-            int safeCapacity = math.max(0, capacity);
-            for (int i = 0; i < safeCapacity; i++)
-                queue.Enqueue(default);
+            _slotGenerations[(int)slot] = 0u;
+        }
 
-            while (queue.TryDequeue(out _))
-            {
-            }
+        private bool TryDequeueFreeHandle(out uint handle)
+        {
+            handle = 0u;
+            int capacity = _freeHandles != null ? _freeHandles.Length : 0;
+            if (capacity == 0 || _freeHandleCount <= 0)
+                return false;
+
+            handle = _freeHandles[_freeHandleHead];
+            _freeHandles[_freeHandleHead] = 0u;
+            _freeHandleHead++;
+            if (_freeHandleHead >= capacity)
+                _freeHandleHead = 0;
+
+            _freeHandleCount--;
+            return handle != 0u;
+        }
+
+        private bool TryEnqueueFreeHandle(uint handle)
+        {
+            int capacity = _freeHandles != null ? _freeHandles.Length : 0;
+            if (handle == 0u || capacity == 0 || _freeHandleCount >= capacity)
+                return false;
+
+            _freeHandles[_freeHandleTail] = handle;
+            _freeHandleTail++;
+            if (_freeHandleTail >= capacity)
+                _freeHandleTail = 0;
+
+            _freeHandleCount++;
+            return true;
         }
 
         private bool UpsertInternal(int handle, in AbsoluteUniversePosition position, float3 halfExtents, int kindMask, ulong entityFlags, int payloadId, bool appendHandle)
@@ -1487,11 +1336,10 @@ namespace Hecton8.World
             if (EstimateCellSpan(minCell, maxCell) > MaxRegisteredEntryCellSpan)
                 return false;
 
-            EnsureCapacityForEntry(minCell, maxCell, appendHandle ? 1 : 0);
+            if (appendHandle && !HasEntryHandleCapacity(1))
+                return false;
 
-            bool hadExistingEntry = _entries.TryGetValue(handle, out SpatialEntry previousEntry);
-            if (hadExistingEntry)
-                RemoveEntryCells(handle, in previousEntry);
+            EnsureCapacityForEntry(appendHandle ? 1 : 0);
 
             SpatialEntry entry = new SpatialEntry
             {
@@ -1504,175 +1352,43 @@ namespace Hecton8.World
                 PayloadId = payloadId
             };
 
-            _entries[handle] = entry;
-            if (appendHandle)
-                _entryHandles.AddNoResize(handle);
-            AddEntryCells(handle, in entry);
+            if (!TrySetEntry(handle, in entry))
+                return false;
+            if (appendHandle && !TryAppendEntryHandle(handle))
+            {
+                ClearEntry(handle);
+                return false;
+            }
+
             _mutationVersion++;
             return true;
         }
 
-        private void EnsureCapacityForEntry(Long3 minCell, Long3 maxCell, int additionalEntries)
+        private void EnsureCapacityForEntry(int additionalEntries)
         {
-            int requiredEntryCapacity = AddCapacitySaturating(_entryHandles.Length, math.max(0, additionalEntries));
-            if (_entries.Capacity < requiredEntryCapacity)
-            {
-                _entries.Capacity = GrowCapacity(_entries.Capacity, requiredEntryCapacity);
-                NativeMemorySentinel.RefreshNativeParallelHashMap(_entries, _sentinelOwner, nameof(_entries));
-            }
-
-            if (_entryHandles.Capacity < requiredEntryCapacity)
-            {
-                _entryHandles.Capacity = GrowCapacity(_entryHandles.Capacity, requiredEntryCapacity);
-                NativeMemorySentinel.RefreshNativeList(_entryHandles, _sentinelOwner, nameof(_entryHandles));
-            }
-
-            if (_queuedFreeHandles.Capacity < requiredEntryCapacity)
-            {
-                _queuedFreeHandles.Capacity = GrowCapacity(_queuedFreeHandles.Capacity, requiredEntryCapacity);
-                NativeMemorySentinel.RefreshNativeParallelHashSet(_queuedFreeHandles, _sentinelOwner, nameof(_queuedFreeHandles));
-            }
-
-            if (_slotGenerations.Capacity < requiredEntryCapacity)
-            {
-                _slotGenerations.Capacity = GrowCapacity(_slotGenerations.Capacity, requiredEntryCapacity);
-                NativeMemorySentinel.RefreshNativeParallelHashMap(_slotGenerations, _sentinelOwner, nameof(_slotGenerations));
-            }
-
-            int cellSpan = EstimateCellSpan(minCell, maxCell);
-            int requiredCellCapacity = AddCapacitySaturating(_cellOccupancy.Count(), cellSpan);
-            if (_cellOccupancy.Capacity < requiredCellCapacity)
-            {
-                _cellOccupancy.Capacity = GrowCapacity(_cellOccupancy.Capacity, requiredCellCapacity);
-                NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_cellOccupancy, _sentinelOwner, nameof(_cellOccupancy));
-            }
+            int requiredEntryCapacity = AddCapacitySaturating(_entryHandleCount, math.max(0, additionalEntries));
+            _ = requiredEntryCapacity;
         }
 
-        private void EnsureTransientCapacity(int additionalCells)
+        private bool TryAppendTransientEvent(in TransientEventRecord record)
         {
-            int requiredCapacity = AddCapacitySaturating(_transientEvents.Count(), math.max(1, additionalCells));
-            if (_transientEvents.Capacity < requiredCapacity)
-            {
-                _transientEvents.Capacity = GrowCapacity(_transientEvents.Capacity, requiredCapacity);
-                NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_transientEvents, _sentinelOwner, nameof(_transientEvents));
-            }
-
-            if (_transientEventsScratch.Capacity < requiredCapacity)
-            {
-                _transientEventsScratch.Capacity = GrowCapacity(_transientEventsScratch.Capacity, requiredCapacity);
-                NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_transientEventsScratch, _sentinelOwner, nameof(_transientEventsScratch));
-            }
-
-            int requiredKeyCapacity = AddCapacitySaturating(_transientCellKeys.Length, math.max(1, additionalCells));
-            if (_transientCellKeySet.Capacity < requiredKeyCapacity)
-            {
-                _transientCellKeySet.Capacity = GrowCapacity(_transientCellKeySet.Capacity, requiredKeyCapacity);
-                NativeMemorySentinel.RefreshNativeParallelHashSet(_transientCellKeySet, _sentinelOwner, nameof(_transientCellKeySet));
-            }
-
-            if (_transientCellKeySetScratch.Capacity < requiredKeyCapacity)
-            {
-                _transientCellKeySetScratch.Capacity = GrowCapacity(_transientCellKeySetScratch.Capacity, requiredKeyCapacity);
-                NativeMemorySentinel.RefreshNativeParallelHashSet(_transientCellKeySetScratch, _sentinelOwner, nameof(_transientCellKeySetScratch));
-            }
-
-            if (_transientQueryDedupe.Capacity < requiredCapacity)
-            {
-                _transientQueryDedupe.Capacity = GrowCapacity(_transientQueryDedupe.Capacity, requiredCapacity);
-                NativeMemorySentinel.RefreshNativeParallelHashSet(_transientQueryDedupe, _sentinelOwner, nameof(_transientQueryDedupe));
-            }
-
-            if (_transientCellKeys.Capacity < requiredKeyCapacity)
-            {
-                _transientCellKeys.Capacity = GrowCapacity(_transientCellKeys.Capacity, requiredKeyCapacity);
-                NativeMemorySentinel.RefreshNativeList(_transientCellKeys, _sentinelOwner, nameof(_transientCellKeys));
-            }
-
-            if (_transientCellKeysScratch.Capacity < requiredKeyCapacity)
-            {
-                _transientCellKeysScratch.Capacity = GrowCapacity(_transientCellKeysScratch.Capacity, requiredKeyCapacity);
-                NativeMemorySentinel.RefreshNativeList(_transientCellKeysScratch, _sentinelOwner, nameof(_transientCellKeysScratch));
-            }
-        }
-
-        private void AddTransientRecordToCells(
-            in TransientEventRecord record,
-            Long3 minCell,
-            Long3 maxCell,
-            NativeParallelMultiHashMap<uint, TransientEventRecord> targetMap,
-            NativeParallelHashSet<uint> targetKeySet,
-            NativeList<uint> targetKeyList)
-        {
-            for (long z = minCell.Z; z <= maxCell.Z; z++)
-            {
-                for (long y = minCell.Y; y <= maxCell.Y; y++)
-                {
-                    for (long x = minCell.X; x <= maxCell.X; x++)
-                    {
-                        uint cellKey = HashCell(new Long3(x, y, z));
-                        targetMap.Add(cellKey, record);
-                        if (targetKeySet.Add(cellKey))
-                            targetKeyList.AddNoResize(cellKey);
-                    }
-                }
-            }
-        }
-
-        private bool TryScheduleCellOccupancyCompaction(int targetCapacity)
-        {
-            if (_cellCompactionScheduled || !_cellOccupancyScratch.IsCreated)
+            int capacity = _transientEvents != null ? _transientEvents.Length : 0;
+            int count = math.min(math.max(0, _transientEventCount), capacity);
+            if (count >= capacity)
                 return false;
 
-            int entryCount = _entryHandles.Length;
-            if (entryCount <= 0)
-                return false;
-
-            if (_cellOccupancyScratch.Capacity != targetCapacity)
-            {
-                _cellOccupancyScratch.Capacity = targetCapacity;
-                NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_cellOccupancyScratch, _sentinelOwner, nameof(_cellOccupancyScratch));
-            }
-
-            _cellOccupancyScratch.Clear();
-            if (_compactionHandleSnapshot.Capacity < entryCount)
-            {
-                _compactionHandleSnapshot.Capacity = entryCount;
-                NativeMemorySentinel.RefreshNativeList(_compactionHandleSnapshot, _sentinelOwner, nameof(_compactionHandleSnapshot));
-            }
-            if (_compactionEntrySnapshot.Capacity < entryCount)
-            {
-                _compactionEntrySnapshot.Capacity = entryCount;
-                NativeMemorySentinel.RefreshNativeList(_compactionEntrySnapshot, _sentinelOwner, nameof(_compactionEntrySnapshot));
-            }
-
-            _compactionHandleSnapshot.ResizeUninitialized(entryCount);
-            _compactionEntrySnapshot.ResizeUninitialized(entryCount);
-            int writeIndex = 0;
-            for (int i = 0; i < entryCount; i++)
-            {
-                int handle = _entryHandles[i];
-                if (!_entries.TryGetValue(handle, out SpatialEntry entry))
-                    continue;
-
-                _compactionHandleSnapshot[writeIndex] = handle;
-                _compactionEntrySnapshot[writeIndex] = entry;
-                writeIndex++;
-            }
-
-            if (writeIndex <= 0)
-                return false;
-
-            _cellCompactionHandle = new RebuildCellOccupancyJob
-            {
-                Handles = _compactionHandleSnapshot.AsArray(),
-                Entries = _compactionEntrySnapshot.AsArray(),
-                Count = writeIndex,
-                BackBuffer = _cellOccupancyScratch
-            }.Schedule();
-            _cellCompactionScheduled = true;
-            _pendingCellCompactionTargetCapacity = targetCapacity;
-            _compactionMutationVersion = _mutationVersion;
+            _transientEvents[count] = record;
+            _transientEventCount = count + 1;
             return true;
+        }
+
+        private void ClearTransientTail(int startIndex, int endIndex)
+        {
+            int capacity = _transientEvents != null ? _transientEvents.Length : 0;
+            int safeStart = math.clamp(startIndex, 0, capacity);
+            int safeEnd = math.clamp(endIndex, safeStart, capacity);
+            for (int i = safeStart; i < safeEnd; i++)
+                _transientEvents[i] = default;
         }
 
         private void TryEmitDisturbanceCascade(
@@ -1705,136 +1421,32 @@ namespace Hecton8.World
                 SourceKey = triggerRecord.SourceKey
             };
 
-            EnsureTransientCapacity(cellSpan);
-            AddTransientRecordToCells(in disturbanceRecord, minCell, maxCell, _transientEvents, _transientCellKeySet, _transientCellKeys);
+            _ = cellSpan;
+            TryAppendTransientEvent(in disturbanceRecord);
         }
 
         private bool HasHighIntensityChemicalInCells(Long3 minCell, Long3 maxCell, double currentTimestamp)
         {
-            for (long z = minCell.Z; z <= maxCell.Z; z++)
+            int eventCount = math.min(math.max(0, _transientEventCount), _transientEvents != null ? _transientEvents.Length : 0);
+            for (int i = 0; i < eventCount; i++)
             {
-                for (long y = minCell.Y; y <= maxCell.Y; y++)
+                TransientEventRecord record = _transientEvents[i];
+                if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp))
+                    continue;
+
+                if ((record.EventTypeMask & ChemicalScentEventMask) == 0u ||
+                    record.Intensity <= CascadeIntensityThreshold)
                 {
-                    for (long x = minCell.X; x <= maxCell.X; x++)
-                    {
-                        uint cellKey = HashCell(new Long3(x, y, z));
-                        if (!_transientEvents.TryGetFirstValue(cellKey, out TransientEventRecord record, out NativeParallelMultiHashMapIterator<uint> iterator))
-                            continue;
-
-                        do
-                        {
-                            if (IsTransientExpired(currentTimestamp, record.ExpirationTimestamp))
-                                continue;
-
-                            if ((record.EventTypeMask & ChemicalScentEventMask) != 0u &&
-                                record.Intensity > CascadeIntensityThreshold)
-                            {
-                                return true;
-                            }
-                        }
-                        while (_transientEvents.TryGetNextValue(out record, ref iterator));
-                    }
+                    continue;
                 }
+
+                Long3 recordMinCell = ToCell(record.AbsoluteCenter - new double3(record.RadiusMeters, record.RadiusMeters, record.RadiusMeters));
+                Long3 recordMaxCell = ToCell(record.AbsoluteCenter + new double3(record.RadiusMeters, record.RadiusMeters, record.RadiusMeters));
+                if (CellRangesOverlap(recordMinCell, recordMaxCell, minCell, maxCell))
+                    return true;
             }
 
             return false;
-        }
-
-        private void AddEntryCells(int handle, in SpatialEntry entry)
-        {
-            AddEntryCells(handle, in entry, _cellOccupancy);
-        }
-
-        private static void AddEntryCells(int handle, in SpatialEntry entry, NativeParallelMultiHashMap<Long3, int> targetMap)
-        {
-            for (long z = entry.MinCell.Z; z <= entry.MaxCell.Z; z++)
-            {
-                for (long y = entry.MinCell.Y; y <= entry.MaxCell.Y; y++)
-                {
-                    for (long x = entry.MinCell.X; x <= entry.MaxCell.X; x++)
-                    {
-                        targetMap.Add(new Long3(x, y, z), handle);
-                    }
-                }
-            }
-        }
-
-        private int EstimateActiveCellOccupancyCapacity()
-        {
-            int capacity = 1;
-            for (int i = 0; i < _entryHandles.Length; i++)
-            {
-                int handle = _entryHandles[i];
-                if (!_entries.TryGetValue(handle, out SpatialEntry entry))
-                    continue;
-
-                capacity = AddCapacitySaturating(capacity, EstimateCellSpan(entry.MinCell, entry.MaxCell));
-            }
-
-            return capacity;
-        }
-
-        private void SwapTransientScratch()
-        {
-            NativeParallelMultiHashMap<uint, TransientEventRecord> eventSwap = _transientEvents;
-            _transientEvents = _transientEventsScratch;
-            _transientEventsScratch = eventSwap;
-
-            NativeParallelHashSet<uint> keySetSwap = _transientCellKeySet;
-            _transientCellKeySet = _transientCellKeySetScratch;
-            _transientCellKeySetScratch = keySetSwap;
-
-            NativeList<uint> keyListSwap = _transientCellKeys;
-            _transientCellKeys = _transientCellKeysScratch;
-            _transientCellKeysScratch = keyListSwap;
-            RefreshTransientSentinelCapacities();
-        }
-
-        private void RefreshCellOccupancySentinelCapacities()
-        {
-            NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_cellOccupancy, _sentinelOwner, nameof(_cellOccupancy));
-            NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_cellOccupancyScratch, _sentinelOwner, nameof(_cellOccupancyScratch));
-        }
-
-        private void RefreshTransientSentinelCapacities()
-        {
-            NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_transientEvents, _sentinelOwner, nameof(_transientEvents));
-            NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_transientEventsScratch, _sentinelOwner, nameof(_transientEventsScratch));
-            NativeMemorySentinel.RefreshNativeParallelHashSet(_transientCellKeySet, _sentinelOwner, nameof(_transientCellKeySet));
-            NativeMemorySentinel.RefreshNativeParallelHashSet(_transientCellKeySetScratch, _sentinelOwner, nameof(_transientCellKeySetScratch));
-            NativeMemorySentinel.RefreshNativeList(_transientCellKeys, _sentinelOwner, nameof(_transientCellKeys));
-            NativeMemorySentinel.RefreshNativeList(_transientCellKeysScratch, _sentinelOwner, nameof(_transientCellKeysScratch));
-        }
-
-        private void RemoveEntryCells(int handle, in SpatialEntry entry)
-        {
-            for (long z = entry.MinCell.Z; z <= entry.MaxCell.Z; z++)
-            {
-                for (long y = entry.MinCell.Y; y <= entry.MaxCell.Y; y++)
-                {
-                    for (long x = entry.MinCell.X; x <= entry.MaxCell.X; x++)
-                    {
-                        Long3 cellKey = new Long3(x, y, z);
-                        while (_cellOccupancy.TryGetFirstValue(cellKey, out int existingHandle, out NativeParallelMultiHashMapIterator<Long3> iterator))
-                        {
-                            bool removedCurrentHandle = false;
-                            do
-                            {
-                                if (existingHandle != handle)
-                                    continue;
-
-                                _cellOccupancy.Remove(iterator);
-                                removedCurrentHandle = true;
-                                break;
-                            }
-                            while (_cellOccupancy.TryGetNextValue(out existingHandle, ref iterator));
-
-                            if (!removedCurrentHandle)
-                                break;
-                        }
-                    }
-                }
-            }
         }
 
         private void ResolveCellRange(double3 absoluteCenter, float3 halfExtents, out Long3 minCell, out Long3 maxCell)
@@ -1867,19 +1479,6 @@ namespace Hecton8.World
             return (long)floored;
         }
 
-        private static uint HashCell(Long3 cell)
-        {
-            unchecked
-            {
-                ulong hash = 1469598103934665603UL;
-                hash = (hash ^ (ulong)cell.X) * 1099511628211UL;
-                hash = (hash ^ (ulong)cell.Y) * 1099511628211UL;
-                hash = (hash ^ (ulong)cell.Z) * 1099511628211UL;
-                hash ^= hash >> 32;
-                return (uint)hash;
-            }
-        }
-
         private static bool IsTransientExpired(double currentTimestamp, double expirationTimestamp)
         {
             return !(currentTimestamp < expirationTimestamp);
@@ -1900,6 +1499,13 @@ namespace Hecton8.World
             double3 clampedPoint = math.clamp(absoluteCenter, absoluteMin, absoluteMax);
             double3 delta = absoluteCenter - clampedPoint;
             return math.lengthsq(delta) <= radiusSq;
+        }
+
+        private static bool CellRangesOverlap(Long3 aMin, Long3 aMax, Long3 bMin, Long3 bMax)
+        {
+            return aMin.X <= bMax.X && aMax.X >= bMin.X &&
+                   aMin.Y <= bMax.Y && aMax.Y >= bMin.Y &&
+                   aMin.Z <= bMax.Z && aMax.Z >= bMin.Z;
         }
 
         private static int EstimateCellSpan(Long3 minCell, Long3 maxCell)
@@ -1940,13 +1546,6 @@ namespace Hecton8.World
             return current >= int.MaxValue - safeAdditional ? int.MaxValue : current + safeAdditional;
         }
 
-        private static int GrowCapacity(int currentCapacity, int requiredCapacity)
-        {
-            int safeCurrent = math.max(1, currentCapacity);
-            int doubled = safeCurrent >= (int.MaxValue >> 1) ? int.MaxValue : safeCurrent << 1;
-            return math.max(requiredCapacity, doubled);
-        }
-
         private static bool IsFiniteAup(in AbsoluteUniversePosition position)
         {
             return math.all(math.isfinite(new float3(position.LocalX, position.LocalY, position.LocalZ)));
@@ -1959,29 +1558,26 @@ namespace Hecton8.World
 
         private void RecycleHandle(int handle)
         {
-            if (handle <= 0 || _entries.ContainsKey(handle))
-                return;
-
-            if (_queuedFreeHandles.Contains((uint)handle))
+            if (handle <= 0 || ContainsEntry(handle))
                 return;
 
             if (!TryDecodeHandle(handle, out uint slot, out uint generation))
                 return;
 
-            if (!_slotGenerations.TryGetValue(slot, out uint currentGeneration) || currentGeneration != generation)
+            if (!TryGetSlotGeneration(slot, out uint currentGeneration) || currentGeneration != generation)
                 return;
 
             if (generation >= MaxHandleGeneration)
             {
-                _slotGenerations.Remove(slot);
+                ClearSlotGeneration(slot);
                 return;
             }
 
             uint nextGeneration = generation + 1u;
-            _slotGenerations[slot] = nextGeneration;
-            uint recycledHandle = (uint)EncodeHandle(slot, nextGeneration);
-            if (_queuedFreeHandles.Add(recycledHandle))
-                _freeHandles.Enqueue(recycledHandle);
+            if (!TrySetSlotGeneration(slot, nextGeneration))
+                return;
+
+            TryEnqueueFreeHandle((uint)EncodeHandle(slot, nextGeneration));
         }
 
         private bool IsHandleCurrent(int handle)
@@ -1989,9 +1585,9 @@ namespace Hecton8.World
             if (!TryDecodeHandle(handle, out uint slot, out uint generation))
                 return false;
 
-            return _slotGenerations.TryGetValue(slot, out uint currentGeneration) &&
+            return TryGetSlotGeneration(slot, out uint currentGeneration) &&
                    currentGeneration == generation &&
-                   !_queuedFreeHandles.Contains((uint)handle);
+                   ContainsEntry(handle);
         }
 
         private bool IsQueuedFreeHandleCurrent(uint queuedHandle)
@@ -1999,9 +1595,9 @@ namespace Hecton8.World
             if (!TryDecodeHandle((int)queuedHandle, out uint slot, out uint generation))
                 return false;
 
-            return _slotGenerations.TryGetValue(slot, out uint currentGeneration) &&
+            return TryGetSlotGeneration(slot, out uint currentGeneration) &&
                    currentGeneration == generation &&
-                   !_entries.ContainsKey((int)queuedHandle);
+                   !ContainsEntry((int)queuedHandle);
         }
 
         private static int EncodeHandle(uint slot, uint generation)

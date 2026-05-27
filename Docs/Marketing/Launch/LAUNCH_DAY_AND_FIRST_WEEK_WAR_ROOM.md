@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Launch Day And First Week War Room
 
 Status: launch operations template / no launch scheduled
-Owner lane: SHINOBU_81 / launch ops
+Owner lane: Marketing / launch ops
 Runtime impact: none
 
 ## Purpose

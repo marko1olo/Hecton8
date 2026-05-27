@@ -1,0 +1,28 @@
+﻿{
+    "agentId":  "1318",
+    "loop":  49,
+    "scannedFiles":  [
+                         "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+                     ],
+    "ownersScanned":  [
+                          "Tick",
+                          "SlowTick",
+                          "LateFrameTick",
+                          "Execute"
+                      ],
+    "forbiddenHotHits":  0,
+    "zeroGcHotPathHits":  0,
+    "lootScratchAudit":  {
+                             "nativeListTempAllocations":  2,
+                             "untrackedTempAllocations":  0,
+                             "buildScratchCapacity":  "byte.MaxValue",
+                             "countScratchCapacity":  "byte.MaxValue",
+                             "globalCapacityScratchPattern":  0,
+                             "sentinelLabels":  [
+                                                    "TemplateLootBuildScratchLabel",
+                                                    "TemplateLootCountScratchLabel"
+                                                ]
+                         },
+    "sourceSha256":  "4111978b8c7dfd06a9022585a1207202d8117a4828948b2428f1e680c90f7b7a",
+    "buildStatus":  "FAILED_EXTERNAL_UNITY_TARGET_GRAPH"
+}

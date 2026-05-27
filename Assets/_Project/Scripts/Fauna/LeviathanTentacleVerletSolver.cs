@@ -32,7 +32,7 @@ namespace Hecton8.AI
         private const int TelemetryCapacity = 300;
         private const uint TentacleStateActive = 1u << 0;
         private const uint TentacleStateGrabbing = 1u << 1;
-        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LEVIATHAN_TENTACLE_IK.bin";
+        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
         private const ulong TelemetryDumpMagic = 0x484543544F4E3800UL;
         private const int TelemetryEntryPayloadBytes = 64;
         private const float FlowGridIntegerEpsilon = 0.01f;
@@ -551,7 +551,7 @@ namespace Hecton8.AI
         private VaultGenerationHandle<uint> _tentacleStatesHandle;
         private VaultGenerationHandle<LeviathanTentacleTelemetryEntry> _telemetryRingHandle;
 
-        private struct TentacleVaultBuffers
+        private ref struct TentacleVaultBuffers
         {
             public NativeArray<float3> Positions;
             public NativeArray<float3> PreviousPositions;

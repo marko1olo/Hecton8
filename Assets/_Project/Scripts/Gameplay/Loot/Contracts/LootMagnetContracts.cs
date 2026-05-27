@@ -136,7 +136,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
         [FieldOffset(124)] public uint Reserved;
     }
 
-    public struct LootMagnetVaultViews
+    public ref struct LootMagnetVaultViews
     {
         public NativeArray<AbsoluteUniversePosition> EntityAups;
         public NativeArray<uint> EntityFlags;

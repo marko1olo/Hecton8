@@ -200,7 +200,7 @@ namespace Hecton8.Physics
                                math.isfinite(request.Throttle01) &
                                math.isfinite(request.BatteryLevel);
 
-            float quality = math.saturate(math.select(
+            float presentationQuality = math.saturate(math.select(
                 SeaglideSimdMath.AuthoritativeQualityWeight,
                 GlobalQualityWeight,
                 math.isfinite(GlobalQualityWeight)));
@@ -216,22 +216,17 @@ namespace Hecton8.Physics
             float addedMass = math.max(0f, SanitizeFinite(math.select(tuning.AddedMassKg, state.AddedMassKg, state.AddedMassKg > 0f), SeaglideHydrodynamicsConstants.DefaultAddedMassKg));
             float waterDensity = math.max(1f, SanitizeFinite(tuning.WaterDensityKgPerM3, SeaglideHydrodynamicsConstants.DefaultWaterDensityKgPerM3));
             float crossSection = math.max(0.01f, SanitizeFinite(math.select(tuning.CrossSectionAreaM2, request.CrossSectionAreaOverrideM2, request.CrossSectionAreaOverrideM2 > 0f), SeaglideHydrodynamicsConstants.DefaultCrossSectionAreaM2));
-            float linearDragCoefficient = math.max(0f, SanitizeFinite(tuning.LinearDragCoefficient, SeaglideHydrodynamicsConstants.DefaultLinearDragCoefficient));
             float quadraticDragCoefficient = math.max(0f, SanitizeFinite(math.select(tuning.QuadraticDragCoefficient, request.DragCoefficientOverride, request.DragCoefficientOverride > 0f), SeaglideHydrodynamicsConstants.DefaultQuadraticDragCoefficient));
             int flowSampleCount = math.clamp(tuning.FlowSampleCount, 0, FlowSamples.IsCreated ? FlowSamples.Length : 0);
 
-            float3 flowVelocity = ResolveFlowVelocity(request.CurrentAUP, localAup, FlowSamples, flowSampleCount, SimulationFrame, quality);
+            float3 flowVelocity = ResolveFlowVelocity(request.CurrentAUP, localAup, FlowSamples, flowSampleCount, SimulationFrame);
             float3 relativeVelocity = SanitizeFinite(state.Velocity - flowVelocity, float3.zero);
             float speedSq = math.lengthsq(relativeVelocity);
-            float exactSpeed = SeaglideSimdMath.LengthFromSq(speedSq);
-            float cheapSpeed = DominantAxisLength(relativeVelocity);
-            float speed = math.lerp(cheapSpeed, exactSpeed, quality);
+            float speed = SeaglideSimdMath.LengthFromSq(speedSq);
             float3 thrustForce = inputDirection * (maxThrust * throttle * battery);
-            float3 linearDrag = -relativeVelocity * linearDragCoefficient * math.max(1f, mass + addedMass);
             float3 quadraticDrag = -SafeNormalize(relativeVelocity, float3.zero) * (0.5f * waterDensity * speedSq * quadraticDragCoefficient * crossSection);
-            float dragBlend = Smooth01(math.saturate((quality - 0.18f) * 1.2195122f));
-            float3 dragForce = math.lerp(linearDrag, quadraticDrag, dragBlend);
-            float3 flowForce = flowVelocity * math.max(0f, tuning.FlowForceCoefficient) * (mass + addedMass) * math.lerp(0.35f, 1f, quality);
+            float3 dragForce = quadraticDrag;
+            float3 flowForce = flowVelocity * math.max(0f, tuning.FlowForceCoefficient) * (mass + addedMass);
             float forceCadenceScale = ResolveForceCadenceScale(SimulationTickDelta, request.DeltaTime);
             float3 netForce = (thrustForce + dragForce + flowForce) * forceCadenceScale;
             float forceMagnitudeSq = math.lengthsq(netForce);
@@ -274,7 +269,7 @@ namespace Hecton8.Physics
             packet.CurrentSpeed = math.select(0f, speed, queue);
             WriteForce(index, packet);
 
-            float cavitation01 = ResolveCavitation(speed, tuning.CavitationSpeedStart, tuning.CavitationSpeedFull, quality);
+            float cavitation01 = ResolveCavitation(speed, tuning.CavitationSpeedStart, tuning.CavitationSpeedFull, presentationQuality);
             SeaglideVisualStateDTO visual = default;
             visual.CurrentAUP = currentAup;
             visual.WakeDirection = -inputDirection;
@@ -327,8 +322,7 @@ namespace Hecton8.Physics
             float3 localAup,
             NativeArray<SeaglideFlowSampleDTO> flowSamples,
             int flowSampleCount,
-            uint frame,
-            float quality)
+            uint frame)
         {
             if (flowSamples.IsCreated && flowSampleCount >= 8)
             {
@@ -349,11 +343,10 @@ namespace Hecton8.Physics
             float phaseX = (localAup.x * 0.017f) + (frame * 0.0031f);
             float phaseY = (localAup.y * 0.011f) + (frame * 0.0017f);
             float phaseZ = (localAup.z * 0.019f) + (frame * 0.0023f);
-            float cheapWeight = math.lerp(0.35f, 1f, quality);
             return new float3(
                 TriangleSigned(phaseX) * 0.42f,
                 TriangleSigned(phaseY) * 0.08f,
-                TriangleSigned(phaseZ) * 0.38f) * cheapWeight;
+                TriangleSigned(phaseZ) * 0.38f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -371,16 +364,6 @@ namespace Hecton8.Physics
         {
             phase -= math.floor(phase);
             return (2f * math.abs((2f * phase) - 1f)) - 1f;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float DominantAxisLength(float3 value)
-        {
-            float3 absValue = math.abs(value);
-            float maxAxis = math.max(absValue.x, math.max(absValue.y, absValue.z));
-            float minAxis = math.min(absValue.x, math.min(absValue.y, absValue.z));
-            float midAxis = absValue.x + absValue.y + absValue.z - maxAxis - minAxis;
-            return maxAxis + (0.375f * midAxis) + (0.125f * minAxis);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

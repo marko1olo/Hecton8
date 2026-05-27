@@ -99,7 +99,7 @@ Need to assign in SettingsManager component:
 
 ---
 
-## Design Notes (Subnautica Style)
+## Design Notes (HECTON-8 Instrument Style)
 
 ### Visual Style Implemented
 ✅ Dark background panels (VerticalLayoutGroup containers)

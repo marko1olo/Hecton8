@@ -18,7 +18,7 @@ namespace Hecton8.Modding
         /// <summary>
         /// Applies the provided runtime descriptor to the row.
         /// </summary>
-        public void Bind(ModRuntimeInfo info)
+        internal void Bind(ModRuntimeInfo info)
         {
             if (nameLabel != null)
                 Hecton8.UI.TmpTextNoAlloc.Set(nameLabel, string.IsNullOrWhiteSpace(info.Metadata.Name) ? info.Metadata.Id : info.Metadata.Name);

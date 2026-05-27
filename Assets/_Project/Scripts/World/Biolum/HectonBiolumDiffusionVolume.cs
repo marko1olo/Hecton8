@@ -16,8 +16,8 @@ namespace Hecton8.Biolum
     {
         private const int DefaultResolution = 64;
         private const float DefaultVolumeWorldSize = 72f;
-        private const uint DefaultThreadGroupSize = 4u;
-        private const ulong MaxPortableComputeThreadsPerGroup = 1024ul;
+        private const ulong MaxPortableComputeThreadsPerGroup = 256ul;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const int MaxTrackedZones = 32;
         private const int MaxGlowShaderPoints = 16;
         private const float MaxBiolumHdrIntensity = 10f;
@@ -106,15 +106,15 @@ namespace Hecton8.Biolum
         private int _clearKernel = -1;
         private int _diffuseKernel = -1;
         private int _injectKernel = -1;
-        private uint _clearThreadGroupSizeX = DefaultThreadGroupSize;
-        private uint _clearThreadGroupSizeY = DefaultThreadGroupSize;
-        private uint _clearThreadGroupSizeZ = DefaultThreadGroupSize;
-        private uint _diffuseThreadGroupSizeX = DefaultThreadGroupSize;
-        private uint _diffuseThreadGroupSizeY = DefaultThreadGroupSize;
-        private uint _diffuseThreadGroupSizeZ = DefaultThreadGroupSize;
-        private uint _injectThreadGroupSizeX = DefaultThreadGroupSize;
-        private uint _injectThreadGroupSizeY = DefaultThreadGroupSize;
-        private uint _injectThreadGroupSizeZ = DefaultThreadGroupSize;
+        private uint _clearThreadGroupSizeX;
+        private uint _clearThreadGroupSizeY;
+        private uint _clearThreadGroupSizeZ;
+        private uint _diffuseThreadGroupSizeX;
+        private uint _diffuseThreadGroupSizeY;
+        private uint _diffuseThreadGroupSizeZ;
+        private uint _injectThreadGroupSizeX;
+        private uint _injectThreadGroupSizeY;
+        private uint _injectThreadGroupSizeZ;
         private Transform _playerTransform;
         private HectonBiolumManager _biolumManager;
         private ITickDispatcher _dispatcher;
@@ -222,7 +222,12 @@ namespace Hecton8.Biolum
             float safeDeltaTime = SanitizeDelta(deltaTime);
             ResolveDependencies();
             EnsureResources();
-            if (_playerTransform == null || _biolumManager == null || _volumeA == null || _volumeB == null || _activePointBuffer == null)
+            if (_playerTransform == null ||
+                _biolumManager == null ||
+                _volumeA == null ||
+                _volumeB == null ||
+                _activePointBuffer == null ||
+                !HasValidKernelState())
             {
                 Shader.SetGlobalFloat(_GlobalActiveId, 0f);
                 PublishGlowPointGlobals(0, force: true);
@@ -337,38 +342,38 @@ namespace Hecton8.Biolum
 
         private void EnsureResources()
         {
-            if (biolumDiffusionCompute == null)
-                return;
-
-            if (_clearKernel < 0)
+            if (biolumDiffusionCompute == null || !SystemInfo.supportsComputeShaders)
             {
-                _clearKernel = biolumDiffusionCompute.FindKernel("ClearBiolumVolume");
-                CacheKernelThreadGroupSizes(
-                    _clearKernel,
+                ResetKernelState();
+                return;
+            }
+
+            if (_clearKernel < 0 &&
+                !TryResolveKernel(
+                    "ClearBiolumVolume",
+                    out _clearKernel,
                     out _clearThreadGroupSizeX,
                     out _clearThreadGroupSizeY,
-                    out _clearThreadGroupSizeZ);
-            }
+                    out _clearThreadGroupSizeZ))
+                return;
 
-            if (_diffuseKernel < 0)
-            {
-                _diffuseKernel = biolumDiffusionCompute.FindKernel("DiffuseBiolumVolume");
-                CacheKernelThreadGroupSizes(
-                    _diffuseKernel,
+            if (_diffuseKernel < 0 &&
+                !TryResolveKernel(
+                    "DiffuseBiolumVolume",
+                    out _diffuseKernel,
                     out _diffuseThreadGroupSizeX,
                     out _diffuseThreadGroupSizeY,
-                    out _diffuseThreadGroupSizeZ);
-            }
+                    out _diffuseThreadGroupSizeZ))
+                return;
 
-            if (_injectKernel < 0)
-            {
-                _injectKernel = biolumDiffusionCompute.FindKernel("InjectBiolumPoints");
-                CacheKernelThreadGroupSizes(
-                    _injectKernel,
+            if (_injectKernel < 0 &&
+                !TryResolveKernel(
+                    "InjectBiolumPoints",
+                    out _injectKernel,
                     out _injectThreadGroupSizeX,
                     out _injectThreadGroupSizeY,
-                    out _injectThreadGroupSizeZ);
-            }
+                    out _injectThreadGroupSizeZ))
+                return;
 
             int clampedResolution = Mathf.Clamp(volumeResolution, 32, 64);
             if (_volumeA == null || _volumeA.width != clampedResolution)
@@ -580,6 +585,9 @@ namespace Hecton8.Biolum
             Vector4 texelSize,
             int pointCount)
         {
+            if (biolumDiffusionCompute == null || kernelIndex < 0 || _activePointBuffer == null)
+                return;
+
             biolumDiffusionCompute.SetVector(_HalfExtentsId, halfExtents);
             biolumDiffusionCompute.SetMatrix(_WorldToLocalId, worldToLocal);
             biolumDiffusionCompute.SetVector(_VolumeParamsId, volumeParams);
@@ -600,36 +608,71 @@ namespace Hecton8.Biolum
 
         private void DispatchVolumeKernel(int kernelIndex, uint threadGroupSizeX, uint threadGroupSizeY, uint threadGroupSizeZ)
         {
+            if (biolumDiffusionCompute == null || kernelIndex < 0)
+                return;
+
             int safeResolution = math.clamp(volumeResolution, 1, 64);
             int dispatchX = ResolveDispatchCount(safeResolution, threadGroupSizeX);
             int dispatchY = ResolveDispatchCount(safeResolution, threadGroupSizeY);
             int dispatchZ = ResolveDispatchCount(safeResolution, threadGroupSizeZ);
+            if (dispatchX <= 0 || dispatchY <= 0 || dispatchZ <= 0)
+                return;
+
             biolumDiffusionCompute.Dispatch(kernelIndex, dispatchX, dispatchY, dispatchZ);
         }
 
-        private void CacheKernelThreadGroupSizes(int kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ)
+        private bool TryResolveKernel(string kernelName, out int kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ)
         {
-            sizeX = DefaultThreadGroupSize;
-            sizeY = DefaultThreadGroupSize;
-            sizeZ = DefaultThreadGroupSize;
+            kernelIndex = -1;
+            sizeX = 0u;
+            sizeY = 0u;
+            sizeZ = 0u;
+            if (biolumDiffusionCompute == null || !SystemInfo.supportsComputeShaders)
+                return false;
+
+            if (!biolumDiffusionCompute.HasKernel(kernelName))
+                return false;
+
+            int resolvedKernelIndex = biolumDiffusionCompute.FindKernel(kernelName);
+            if (resolvedKernelIndex < 0 || !biolumDiffusionCompute.IsSupported(resolvedKernelIndex))
+                return false;
+
+            if (!TryCacheKernelThreadGroupSizes(resolvedKernelIndex, out sizeX, out sizeY, out sizeZ))
+                return false;
+
+            kernelIndex = resolvedKernelIndex;
+            return true;
+        }
+
+        private bool TryCacheKernelThreadGroupSizes(int kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ)
+        {
+            sizeX = 0u;
+            sizeY = 0u;
+            sizeZ = 0u;
             if (biolumDiffusionCompute == null || kernelIndex < 0)
-                return;
+                return false;
 
             biolumDiffusionCompute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
             if (IsPortableThreadGroup(sizeX, sizeY, sizeZ))
-                return;
+                return true;
 
-            sizeX = DefaultThreadGroupSize;
-            sizeY = DefaultThreadGroupSize;
-            sizeZ = DefaultThreadGroupSize;
+            sizeX = 0u;
+            sizeY = 0u;
+            sizeZ = 0u;
             ReportInvalidGlowInput();
+            return false;
         }
 
         private static int ResolveDispatchCount(int resolution, uint threadGroupSize)
         {
-            int safeThreadGroupSize = threadGroupSize > 2147483647u ? int.MaxValue : (int)threadGroupSize;
-            safeThreadGroupSize = math.max(1, safeThreadGroupSize);
-            return math.max(1, (resolution + safeThreadGroupSize - 1) / safeThreadGroupSize);
+            if (resolution <= 0 || threadGroupSize == 0u || threadGroupSize > int.MaxValue)
+                return 0;
+
+            long groups = ((long)resolution + (long)threadGroupSize - 1L) / (long)threadGroupSize;
+            if (groups <= 0L || groups > MaxDispatchGroupsPerDimension)
+                return 0;
+
+            return (int)groups;
         }
 
         private static bool IsPortableThreadGroup(uint sizeX, uint sizeY, uint sizeZ)
@@ -645,6 +688,32 @@ namespace Hecton8.Biolum
                 return false;
 
             return xy * sizeZ <= MaxPortableComputeThreadsPerGroup;
+        }
+
+        private bool HasValidKernelState()
+        {
+            return _clearKernel >= 0 &&
+                   _diffuseKernel >= 0 &&
+                   _injectKernel >= 0 &&
+                   IsPortableThreadGroup(_clearThreadGroupSizeX, _clearThreadGroupSizeY, _clearThreadGroupSizeZ) &&
+                   IsPortableThreadGroup(_diffuseThreadGroupSizeX, _diffuseThreadGroupSizeY, _diffuseThreadGroupSizeZ) &&
+                   IsPortableThreadGroup(_injectThreadGroupSizeX, _injectThreadGroupSizeY, _injectThreadGroupSizeZ);
+        }
+
+        private void ResetKernelState()
+        {
+            _clearKernel = -1;
+            _diffuseKernel = -1;
+            _injectKernel = -1;
+            _clearThreadGroupSizeX = 0u;
+            _clearThreadGroupSizeY = 0u;
+            _clearThreadGroupSizeZ = 0u;
+            _diffuseThreadGroupSizeX = 0u;
+            _diffuseThreadGroupSizeY = 0u;
+            _diffuseThreadGroupSizeZ = 0u;
+            _injectThreadGroupSizeX = 0u;
+            _injectThreadGroupSizeY = 0u;
+            _injectThreadGroupSizeZ = 0u;
         }
 
         private float ResolveCascadeTimeSeconds(float safeDeltaTime)

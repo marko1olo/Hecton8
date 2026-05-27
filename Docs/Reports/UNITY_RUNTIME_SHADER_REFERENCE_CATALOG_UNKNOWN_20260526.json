@@ -1,0 +1,99 @@
+{
+  "date": "2026-05-26",
+  "agent": "UNKNOWN",
+  "evidenceClass": "STATIC_SOURCE + OFFICIAL_UNITY_DOCS + BUILD_GUARD_BLOCKED",
+  "domain": "Unity runtime shader dependency ownership",
+  "changedFiles": {
+    "new": [
+      "Assets/_Project/Scripts/Core/RuntimeShaderReferenceCatalog.cs",
+      "Assets/_Project/Scripts/Core/RuntimeShaderReferenceCatalog.cs.meta",
+      "Assets/_Project/Resources/RuntimeShaderReferenceCatalog.asset",
+      "Assets/_Project/Resources/RuntimeShaderReferenceCatalog.asset.meta",
+      "Assets/_Project/Art/Shaders/Hecton_RuntimeFlatColor.shader",
+      "Assets/_Project/Art/Shaders/Hecton_RuntimeFlatColor.shader.meta"
+    ],
+    "patched": [
+      "Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs",
+      "Assets/_Project/Scripts/Core/SceneRuntimeService.cs",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+      "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+      "Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs",
+      "Assets/_Project/Scripts/Visor/HectonAbyssalSsdoFeature.cs",
+      "Assets/_Project/Scripts/Visor/HectonStochasticSsrFeature.cs",
+      "Assets/_Project/Scripts/Visor/HectonNoirDepthFogFeature.cs",
+      "Assets/_Project/Scripts/Visor/HectonHalfResParticlesFeature.cs",
+      "Assets/_Project/Scripts/Visor/HectonScooterVolumetricShaftsFeature.cs",
+      "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs",
+      "Assets/_Project/Scripts/UI/FakeRadarBlipController.cs",
+      "Assets/_Project/Scripts/Construction/ConstructionRuntimeProxyFactory.cs",
+      "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs"
+    ]
+  },
+  "fixes": [
+    "Added RuntimeShaderReferenceCatalog as a tiny Resources bootstrap shader-reference route.",
+    "Added Hecton8/Runtime/FlatColor for runtime ghost-material fallback ownership.",
+    "Moved touched runtime Shader.Find fallbacks behind UNITY_EDITOR || DEVELOPMENT_BUILD.",
+    "Left dirty runtime residuals untouched for active owners."
+  ],
+  "staticResults": {
+    "catalogShaderReferenceCount": 13,
+    "scopedShaderFindHits": 18,
+    "releaseReachableShaderFindHitsInTouchedFiles": 0,
+    "dirtyRuntimeResidualShaderFindHits": [
+      "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:6079",
+      "Assets/_Project/Scripts/HectonVoxelEngine.cs:5632",
+      "Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs:5250",
+      "Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs:5252",
+      "Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs:5254",
+      "Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs:5256",
+      "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:1737",
+      "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs:1059",
+      "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs:1366"
+    ],
+    "diffCheck": "passed with LF/CRLF warnings only"
+  },
+  "build": {
+    "launched": false,
+    "blockedByGuard": true,
+    "log": "Docs/Reports/BUILD_UNKNOWN_RUNTIME_SHADER_REFERENCE_CATALOG_RECHECK2_20260526.log",
+    "previousLog": "Docs/Reports/BUILD_UNKNOWN_RUNTIME_SHADER_REFERENCE_CATALOG_20260526.log",
+    "attempts": 60,
+    "reason": "No legal CPU/compiler window during guarded attempts.",
+    "finalCpuPercent": 71,
+    "finalCompilerProcessCount": 0,
+    "latestCleanPreChangeBuild": "Docs/Reports/BUILD_UNKNOWN_MESH_COMPONENT_CACHE_TRAP_RECHECK3_20260526.log"
+  },
+  "documentation": {
+    "verifyDocStructure": {
+      "pass": true,
+      "activeDocCount": 687,
+      "encodingWithoutUtf8Sig": 0
+    },
+    "oopDocScanner": {
+      "finalPass": true,
+      "activeFileCount": 687,
+      "sourceSyncPass": true
+    },
+    "encodingRepair": [
+      "Docs/CURRENT_ENGINEERING_DISTILLATE.md",
+      "Docs/PROJECT_BASELINE.md",
+      "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md"
+    ],
+    "formatRepair": [
+      "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md"
+    ]
+  },
+  "runtimeMicrosecondsSavedClaimed": 0,
+  "residual": [
+    "No compile proof for this source pass because build guard blocked launch.",
+    "No Unity import proof.",
+    "No Unity Console or Play Mode proof.",
+    "No profiler or GCMonitor proof.",
+    "No player build or shader variant proof.",
+    "Dirty runtime Shader.Find residuals remain."
+  ],
+  "sourceUrls": [
+    "https://docs.unity3d.com/ScriptReference/Shader.Find.html",
+    "https://docs.unity3d.com/Manual/LoadingResourcesatRuntime.html"
+  ]
+}

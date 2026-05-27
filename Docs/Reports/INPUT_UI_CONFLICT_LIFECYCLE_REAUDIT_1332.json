@@ -1,0 +1,71 @@
+{
+  "agentId": "1332",
+  "domain": "Hecton8.Input + UI/PauseControlsPanel.cs + UI/PDAControlsRebindUI.cs",
+  "timestampLocal": "2026-05-27T14:10:07+04:00",
+  "task": "INPUT_UI_CONFLICT_LIFECYCLE_REAUDIT",
+  "status": "STATIC_VERIFIED_BUILD_BLOCKED_EXTERNAL",
+  "scannedProductionFiles": 8,
+  "guardFilesUpdated": [
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs"
+  ],
+  "changedFiles": [
+    "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+    "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs"
+  ],
+  "fixedDefects": [
+    "PDA controls now own OnConflictDetected and show the conflict confirm/cancel modal from a preallocated char buffer.",
+    "Pause/PDA controls cancel only their own active rebind or pending conflict when the visible UI owner disappears.",
+    "PDA controls no longer refresh full controls rows on enable/start/hot-swap while the controls tab is inactive."
+  ],
+  "zeroGcStaticScan": {
+    "catchException": 0,
+    "bareCatch": 0,
+    "throwNew": 0,
+    "playerPrefs": 0,
+    "jsonUtility": 0,
+    "removeAllListeners": 0,
+    "stringFormat": 0,
+    "toString": 0,
+    "stringInterpolation": 0,
+    "linqSelectWhereAnyToList": 0,
+    "foreach": 0
+  },
+  "nativeCollectionScan": {
+    "nativeArrayTokens": 14,
+    "nativeListTokens": 0,
+    "nativeQueueTokens": 0,
+    "nativeParallelHashMapTokens": 0,
+    "nativeParallelMultiHashMapTokens": 0,
+    "unsafeListTokens": 0,
+    "persistentNativeFieldsRemaining": 0,
+    "classification": "NativeArray occurrences are transient method-local GraphicsBuffer/Vault/file-buffer views in AccessibilitySettings and ControlRemapper."
+  },
+  "aupCastCandidatesFound": 0,
+  "diffCheck": "PASS_CRLF_WARNINGS_ONLY",
+  "build": {
+    "attempted": true,
+    "command": "dotnet build .\\Hecton8.Core.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly",
+    "preflightCpuPercent": 24.3702008907348,
+    "preflightCompilerProcesses": 0,
+    "result": "FAILED_EXTERNAL_NON_DOMAIN_BEFORE_OWNER_LOCAL_CORRECTION",
+    "errorCount": 132,
+    "warningCount": 82,
+    "agent1332FilesInCompilerErrors": 0,
+    "postOwnerLocalCorrectionBuild": "NOT_RUN_CPU_GATE_52_20_THEN_100_WITH_ACTIVE_DOTNET_AND_VBCSCOMPILER",
+    "externalErrorAreas": [
+      "Assets/_Project/Scripts/Tools/LaserCutterDodRuntime.cs",
+      "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "Assets/_Project/Scripts/BuoyancyObject.cs",
+      "Assets/_Project/Scripts/BuoyancyProfile.cs",
+      "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
+      "Assets/_Project/Scripts/Gameplay/PlayerTransportPreset.cs",
+      "Assets/_Project/Scripts/HectonNarrativeDirector.cs",
+      "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "Assets/_Project/Scripts/World"
+    ]
+  },
+  "unityEditorTests": "NOT_RUN_TOOL_CONTEXT",
+  "unityProfilerGcProof": "NOT_RUN_TOOL_CONTEXT",
+  "verificationHashSha256": "e41629794a20c183ddbab53185d731b9b015e534aaace8e03bafb78856beece1"
+}

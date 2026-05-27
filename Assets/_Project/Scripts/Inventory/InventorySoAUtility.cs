@@ -179,6 +179,7 @@ namespace Hecton8.Inventory
             return true;
         }
 
+        [System.Obsolete("Bulk-transfer validation is owner-phase scalar work; do not schedule same-frame validation jobs.", false)]
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct InventoryTransferValidationJob : IJob
@@ -285,6 +286,7 @@ namespace Hecton8.Inventory
             }
         }
 
+        [System.Obsolete("Bulk-transfer compaction is owner-phase scalar work; do not schedule same-frame compaction jobs.", false)]
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct InventoryCompactionJob : IJob

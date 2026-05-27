@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,6 +15,17 @@ namespace Hecton8.Editor.ModdingSDK
     {
         private const string DefaultVersion = "1.0.0";
         private const string DefaultAuthor = "Unknown";
+        private const int CurrentRequiredApiVersion = 2;
+        private const int DefaultModPriority = 0;
+        private const string EnvelopeOnlyRuntimeWarning =
+            "Public runtime UGC is envelope-only. Managed DLL entries are legacy/internal and will be disabled by the loader.";
+        private const string ReservedAssemblyNamePrefix = "Hecton8.";
+        private const string ReservedUnityAssemblyNamePrefix = "Unity";
+        private const string ReservedAssemblyNameAssemblyCSharp = "Assembly-CSharp";
+        private const string ReservedAssemblyNameSystem = "System";
+        private const string ReservedAssemblyNameMscorlib = "mscorlib";
+        private const string ReservedAssemblyNameNetstandard = "netstandard";
+
         [Serializable]
         private struct ModManifestData
         {
@@ -24,12 +36,16 @@ namespace Hecton8.Editor.ModdingSDK
             public string[] Dependencies;
             public string EntryAssembly;
             public string EntryType;
+            public int RequiredAPIVersion;
+            public int ModPriority;
         }
 
         private string _modId = string.Empty;
         private string _modName = string.Empty;
         private string _modVersion = DefaultVersion;
         private string _modAuthor = DefaultAuthor;
+        private int _requiredApiVersion = CurrentRequiredApiVersion;
+        private int _modPriority = DefaultModPriority;
         private string _assetFolderPath = string.Empty;
         private BuildTarget _buildTarget = BuildTarget.StandaloneWindows64;
         private Vector2 _scrollPosition;
@@ -69,7 +85,8 @@ namespace Hecton8.Editor.ModdingSDK
                 EditorGUILayout.LabelField("HECTON-8 Mod Builder", EditorStyles.boldLabel);
                 EditorGUILayout.HelpBox(
                     "Builds a supported mod package into ProjectRoot/Mods/[ModId]. " +
-                    "The first DLL is treated as the primary entry assembly. Additional DLLs are copied as support assemblies.",
+                    "Package manifests are validated against the current loader contract. " +
+                    EnvelopeOnlyRuntimeWarning,
                     MessageType.Info);
 
                 _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
@@ -95,6 +112,8 @@ namespace Hecton8.Editor.ModdingSDK
             _modName = EditorGUILayout.TextField("Name", _modName ?? string.Empty);
             _modVersion = EditorGUILayout.TextField("Version", _modVersion ?? string.Empty);
             _modAuthor = EditorGUILayout.TextField("Author", _modAuthor ?? string.Empty);
+            _requiredApiVersion = EditorGUILayout.IntField("Required API Version", _requiredApiVersion);
+            _modPriority = EditorGUILayout.IntField("Mod Priority", _modPriority);
             _buildTarget = (BuildTarget)EditorGUILayout.EnumPopup("Bundle Target", _buildTarget);
         }
 
@@ -110,7 +129,7 @@ namespace Hecton8.Editor.ModdingSDK
             }
 
             EditorGUILayout.HelpBox(
-                "Leave Asset Folder empty for code-only mods. " +
+                "Leave Asset Folder empty for manifest-only or managed-legacy packages. " +
                 "When a folder is supplied, every buildable asset under that folder is packed into [ModId].bundle.",
                 MessageType.None);
         }
@@ -139,6 +158,9 @@ namespace Hecton8.Editor.ModdingSDK
 
             if (GUILayout.Button("Add DLL", GUILayout.Width(100f)))
                 _dllPaths.Add(string.Empty);
+
+            if (HasNonEmptyEntry(_dllPaths))
+                EditorGUILayout.HelpBox(EnvelopeOnlyRuntimeWarning, MessageType.Warning);
         }
 
         private void DrawDependencySection()
@@ -222,40 +244,35 @@ namespace Hecton8.Editor.ModdingSDK
 
             try
             {
+                string modId = _modId.Trim();
                 string projectRoot = GetProjectRootPath();
                 string modsRoot = Path.Combine(projectRoot, "Mods");
-                string outputDirectory = Path.Combine(modsRoot, _modId);
+                string outputDirectory = Path.Combine(modsRoot, modId);
                 Directory.CreateDirectory(modsRoot);
                 Directory.CreateDirectory(outputDirectory);
 
-                ModManifestData previousManifest = ReadExistingManifest(outputDirectory);
-                string bundleOutputPath = BuildBundleIfConfigured(_modId, _assetFolderPath, _buildTarget);
+                string bundleOutputPath = BuildBundleIfConfigured(modId, _assetFolderPath, _buildTarget);
                 string[] copiedAssemblies = CopyAssemblies(outputDirectory);
+                RemoveStaleAssemblies(outputDirectory, copiedAssemblies);
 
                 ModManifestData manifest = new ModManifestData
                 {
-                    Id = _modId,
-                    Name = string.IsNullOrWhiteSpace(_modName) ? _modId : _modName.Trim(),
+                    Id = modId,
+                    Name = string.IsNullOrWhiteSpace(_modName) ? modId : _modName.Trim(),
                     Version = string.IsNullOrWhiteSpace(_modVersion) ? DefaultVersion : _modVersion.Trim(),
                     Author = string.IsNullOrWhiteSpace(_modAuthor) ? DefaultAuthor : _modAuthor.Trim(),
                     Dependencies = CollectNonEmptyEntries(_dependencyIds),
                     EntryAssembly = copiedAssemblies.Length > 0 ? copiedAssemblies[0] : string.Empty,
-                    EntryType = string.Empty
+                    EntryType = string.Empty,
+                    RequiredAPIVersion = _requiredApiVersion,
+                    ModPriority = _modPriority
                 };
 
-                string finalBundlePath = Path.Combine(outputDirectory, _modId + ".bundle");
+                string finalBundlePath = Path.Combine(outputDirectory, modId + ".bundle");
                 if (!string.IsNullOrWhiteSpace(bundleOutputPath))
                     File.Copy(bundleOutputPath, finalBundlePath, true);
                 else if (File.Exists(finalBundlePath))
                     File.Delete(finalBundlePath);
-
-                if (!string.IsNullOrWhiteSpace(previousManifest.EntryAssembly) &&
-                    !string.Equals(previousManifest.EntryAssembly, manifest.EntryAssembly, StringComparison.Ordinal))
-                {
-                    string staleEntryAssemblyPath = Path.Combine(outputDirectory, previousManifest.EntryAssembly);
-                    if (File.Exists(staleEntryAssemblyPath))
-                        File.Delete(staleEntryAssemblyPath);
-                }
 
                 WriteManifest(outputDirectory, manifest);
                 AssetDatabase.Refresh();
@@ -269,18 +286,6 @@ namespace Hecton8.Editor.ModdingSDK
                 Debug.LogError($"[ModBuilderWindow] Build failed for mod '{_modId}': {ex}");
                 EditorUtility.DisplayDialog("Mod Build Failed", ex.Message, "OK");
             }
-        }
-
-        private ModManifestData ReadExistingManifest(string outputDirectory)
-        {
-            string manifestPath = Path.Combine(outputDirectory, "mod.json");
-            if (!File.Exists(manifestPath))
-                return default;
-
-            string json = File.ReadAllText(manifestPath);
-            return string.IsNullOrWhiteSpace(json)
-                ? default
-                : JsonUtility.FromJson<ModManifestData>(json);
         }
 
         private string BuildBundleIfConfigured(string modId, string assetFolderPath, BuildTarget buildTarget)
@@ -373,6 +378,31 @@ namespace Hecton8.Editor.ModdingSDK
             return copiedFileNames;
         }
 
+        private static void RemoveStaleAssemblies(string outputDirectory, string[] copiedAssemblies)
+        {
+            if (string.IsNullOrWhiteSpace(outputDirectory) || !Directory.Exists(outputDirectory))
+                return;
+
+            // COLD ALLOC: HashSet<string>[dll count] - SDK output cleanup - owner: ModBuilderWindow
+            HashSet<string> currentAssemblies = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (copiedAssemblies != null)
+            {
+                for (int i = 0; i < copiedAssemblies.Length; i++)
+                {
+                    if (!string.IsNullOrWhiteSpace(copiedAssemblies[i]))
+                        currentAssemblies.Add(copiedAssemblies[i]);
+                }
+            }
+
+            string[] existingDlls = Directory.GetFiles(outputDirectory, "*.dll", SearchOption.TopDirectoryOnly);
+            for (int i = 0; i < existingDlls.Length; i++)
+            {
+                string fileName = Path.GetFileName(existingDlls[i]);
+                if (!currentAssemblies.Contains(fileName))
+                    File.Delete(existingDlls[i]);
+            }
+        }
+
         private void WriteManifest(string outputDirectory, ModManifestData manifest)
         {
             string json = JsonUtility.ToJson(manifest, true);
@@ -384,6 +414,18 @@ namespace Hecton8.Editor.ModdingSDK
         {
             if (!TryValidateModId(_modId, out validationError))
                 return false;
+
+            if (_requiredApiVersion <= 0)
+            {
+                validationError = "Required API Version must be positive.";
+                return false;
+            }
+
+            if (_requiredApiVersion > CurrentRequiredApiVersion)
+            {
+                validationError = $"Required API Version cannot exceed current loader API version {CurrentRequiredApiVersion}.";
+                return false;
+            }
 
             if (!string.IsNullOrWhiteSpace(_assetFolderPath))
             {
@@ -417,10 +459,76 @@ namespace Hecton8.Editor.ModdingSDK
                     validationError = $"Managed assembly must be a .dll file: {path}";
                     return false;
                 }
+
+                if (!TryValidateManagedAssemblyIdentity(path, out string assemblyValidationError))
+                {
+                    validationError = assemblyValidationError;
+                    return false;
+                }
+            }
+
+            for (int i = 0; i < _dependencyIds.Count; i++)
+            {
+                string dependencyId = _dependencyIds[i];
+                if (string.IsNullOrWhiteSpace(dependencyId))
+                    continue;
+
+                if (!TryValidateModId(dependencyId, out string dependencyValidationError))
+                {
+                    validationError = $"Dependency ID is invalid: {dependencyId}. {dependencyValidationError}";
+                    return false;
+                }
             }
 
             validationError = string.Empty;
             return true;
+        }
+
+        private static bool TryValidateManagedAssemblyIdentity(string path, out string validationError)
+        {
+            validationError = string.Empty;
+
+            string fileAssemblyName = Path.GetFileNameWithoutExtension(path);
+            if (IsReservedManagedAssemblyName(fileAssemblyName))
+            {
+                validationError = $"Managed assembly file name is reserved for engine-owned assemblies: {fileAssemblyName}";
+                return false;
+            }
+
+            try
+            {
+                AssemblyName assemblyName = AssemblyName.GetAssemblyName(path);
+                if (assemblyName != null && IsReservedManagedAssemblyName(assemblyName.Name))
+                {
+                    validationError = $"Managed assembly identity is reserved for engine-owned assemblies: {assemblyName.Name}";
+                    return false;
+                }
+            }
+            catch (Exception ex) when (
+                ex is BadImageFormatException ||
+                ex is FileLoadException ||
+                ex is FileNotFoundException ||
+                ex is IOException ||
+                ex is UnauthorizedAccessException)
+            {
+                validationError = $"Managed assembly identity could not be read: {path}";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsReservedManagedAssemblyName(string assemblyName)
+        {
+            if (string.IsNullOrWhiteSpace(assemblyName))
+                return false;
+
+            return assemblyName.StartsWith(ReservedAssemblyNamePrefix, StringComparison.Ordinal) ||
+                   assemblyName.StartsWith(ReservedUnityAssemblyNamePrefix, StringComparison.Ordinal) ||
+                   string.Equals(assemblyName, ReservedAssemblyNameAssemblyCSharp, StringComparison.Ordinal) ||
+                   string.Equals(assemblyName, ReservedAssemblyNameSystem, StringComparison.Ordinal) ||
+                   string.Equals(assemblyName, ReservedAssemblyNameMscorlib, StringComparison.Ordinal) ||
+                   string.Equals(assemblyName, ReservedAssemblyNameNetstandard, StringComparison.Ordinal);
         }
 
         private bool TryValidateModId(string modId, out string validationError)
@@ -432,6 +540,13 @@ namespace Hecton8.Editor.ModdingSDK
             }
 
             string trimmed = modId.Trim();
+            if (!string.Equals(modId, trimmed, StringComparison.Ordinal))
+            {
+                validationError = "Mod ID must not contain leading or trailing whitespace.";
+                return false;
+            }
+
+            bool previousWasSeparator = false;
             for (int i = 0; i < trimmed.Length; i++)
             {
                 char c = trimmed[i];
@@ -444,10 +559,66 @@ namespace Hecton8.Editor.ModdingSDK
                         "Mod ID may contain only lowercase latin letters, digits, '.', '_' and '-'.";
                     return false;
                 }
+
+                if (isSeparator)
+                {
+                    if (i == 0 || i == trimmed.Length - 1 || previousWasSeparator)
+                    {
+                        validationError = "Mod ID separators must be between lowercase letters or digits and cannot repeat.";
+                        return false;
+                    }
+                }
+
+                previousWasSeparator = isSeparator;
+            }
+
+            if (ContainsReservedModIdentifierSegment(trimmed))
+            {
+                validationError = "Mod ID contains a reserved filesystem device segment.";
+                return false;
             }
 
             validationError = string.Empty;
             return true;
+        }
+
+        private static bool ContainsReservedModIdentifierSegment(string modId)
+        {
+            int segmentStart = 0;
+            for (int i = 0; i <= modId.Length; i++)
+            {
+                if (i < modId.Length && modId[i] != '.' && modId[i] != '_' && modId[i] != '-')
+                    continue;
+
+                string segment = modId.Substring(segmentStart, i - segmentStart);
+                if (IsReservedFilesystemDeviceName(segment))
+                    return true;
+
+                segmentStart = i + 1;
+            }
+
+            return false;
+        }
+
+        private static bool IsReservedFilesystemDeviceName(string segment)
+        {
+            if (string.IsNullOrEmpty(segment))
+                return false;
+
+            return string.Equals(segment, "con", StringComparison.Ordinal) ||
+                   string.Equals(segment, "prn", StringComparison.Ordinal) ||
+                   string.Equals(segment, "aux", StringComparison.Ordinal) ||
+                   string.Equals(segment, "nul", StringComparison.Ordinal) ||
+                   IsReservedDeviceRange(segment, "com") ||
+                   IsReservedDeviceRange(segment, "lpt");
+        }
+
+        private static bool IsReservedDeviceRange(string segment, string prefix)
+        {
+            return segment.Length == 4 &&
+                   segment.StartsWith(prefix, StringComparison.Ordinal) &&
+                   segment[3] >= '1' &&
+                   segment[3] <= '9';
         }
 
         private bool HasBundleEligibleAssets(string assetFolderPath)
@@ -512,6 +683,20 @@ namespace Hecton8.Editor.ModdingSDK
             }
 
             return filtered;
+        }
+
+        private static bool HasNonEmptyEntry(List<string> values)
+        {
+            if (values == null || values.Count == 0)
+                return false;
+
+            for (int i = 0; i < values.Count; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(values[i]))
+                    return true;
+            }
+
+            return false;
         }
 
         private static string GetProjectRootPath()

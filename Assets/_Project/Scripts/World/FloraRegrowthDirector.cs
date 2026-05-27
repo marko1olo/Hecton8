@@ -2,12 +2,9 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Scavenging;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
-using Unity.Jobs;
 
 namespace Hecton8.World
 {
@@ -29,10 +26,6 @@ namespace Hecton8.World
         private const float SeedSlopeSampleDistance = 1.25f;
         private const float MinimumSeedNormalY = 0.8660254f;
         private const int SeedsPerSargassumCluster = 3;
-        private const float CanopyShadowRadiusMeters = 6f;
-        private const float CanopyVerticalMinMeters = 1.25f;
-        private const float CanopyVerticalMaxMeters = 28f;
-        private const float CanopyMinHeightScale = 0.45f;
         private const float LightStarvationStrength = 0.85f;
         private const int MaxSymbioticFungalNodes = 128;
         private const float SymbioticFungalRootRadiusMeters = 15f;
@@ -43,12 +36,6 @@ namespace Hecton8.World
         private const ulong BlindcapTemplateHash = 0x1FB3740AUL;
         private const byte StateWaiting = 0;
         private const byte StateActive = 1;
-        private const string NativeMemoryOwner = nameof(FloraRegrowthDirector);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
-        private const Allocator DataVaultExemptRegrowthScratchAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptRegrowthStateAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptRegrowthIndexAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptMaturationResultAllocator = Allocator.Persistent;
 
         [StructLayout(LayoutKind.Explicit, Size = 40)]
         private struct FloraRegrowthState
@@ -172,132 +159,6 @@ namespace Hecton8.World
             public float Reserved0;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct EvaluateMaturationJob : IJobParallelFor
-        {
-            [ReadOnly, NoAlias] public NativeArray<FloraMaturationState> States;
-            [ReadOnly, NoAlias] public NativeArray<SymbioticFungalBuffState> SymbioticBuffs;
-            public float CurrentPlayTimeSeconds;
-            public float CanopyShadowRadiusMeters;
-            public float CanopyVerticalMinMeters;
-            public float CanopyVerticalMaxMeters;
-            public float CanopyMinHeightScale;
-            public float LightStarvationStrength;
-            public float LunarResonanceGrowthMultiplier;
-            [WriteOnly, NoAlias] public NativeArray<FloraMaturationResult> Results;
-
-            public void Execute(int index)
-            {
-                if (!States.IsCreated ||
-                    !Results.IsCreated ||
-                    index < 0 ||
-                    index >= States.Length ||
-                    index >= Results.Length)
-                {
-                    return;
-                }
-
-                FloraMaturationState state = States[index];
-                float durationSeconds = math.max(1f, state.GrowthDurationSeconds);
-                float ageSeconds = math.max(0f, CurrentPlayTimeSeconds - state.SpawnPlayTimeSeconds);
-                float growthRateMultiplier = ResolveSymbioticGrowthMultiplier(state.InstanceUid) *
-                                             math.max(1f, LunarResonanceGrowthMultiplier) *
-                                             math.max(1f, state.RadiationGrowthMultiplier);
-                float progress01 = math.saturate((ageSeconds / durationSeconds) * growthRateMultiplier);
-                float maturationMultiplier = ResolveMaturationMultiplier(progress01);
-                float growthMultiplier = ResolveLightStarvationGrowthMultiplier(index, state, progress01);
-                Results[index] = new FloraMaturationResult
-                {
-                    InstanceUid = state.InstanceUid,
-                    Progress01 = progress01,
-                    GrowthMultiplier = growthMultiplier,
-                    ScaleMultiplier = maturationMultiplier,
-                    ResourceYieldMultiplier = progress01
-                };
-            }
-
-            private static float ResolveMaturationMultiplier(float progress01)
-            {
-                float clampedProgress = math.saturate(progress01);
-                float smoothProgress = clampedProgress * clampedProgress * (3f - (2f * clampedProgress));
-                return math.lerp(0.1f, 1f, smoothProgress);
-            }
-
-            private float ResolveSymbioticGrowthMultiplier(uint instanceUid)
-            {
-                if (instanceUid == 0u || !SymbioticBuffs.IsCreated)
-                    return 1f;
-
-                float multiplier = 1f;
-                for (int i = 0; i < SymbioticBuffs.Length; i++)
-                {
-                    SymbioticFungalBuffState buff = SymbioticBuffs[i];
-                    if (buff.InstanceUid != instanceUid || CurrentPlayTimeSeconds > buff.ExpirePlayTimeSeconds)
-                        continue;
-
-                    multiplier = math.max(multiplier, math.max(1f, buff.GrowthMultiplier));
-                }
-
-                return multiplier;
-            }
-
-            private float ResolveLightStarvationGrowthMultiplier(int index, FloraMaturationState undergrowth, float progress01)
-            {
-                if (undergrowth.ExternalShadeOcclusion01 > 0.01f && !IsCanopyType(undergrowth.TypeId))
-                    return -math.saturate(math.max(undergrowth.ExternalShadeOcclusion01, LightStarvationStrength));
-
-                if (undergrowth.TypeId != (int)HectonVegetationInstanceType.Grass ||
-                    math.abs(undergrowth.HeightScale) <= 0.0001f)
-                {
-                    return progress01;
-                }
-
-                float bestOcclusion01 = 0f;
-                float verticalRange = math.max(0.001f, CanopyVerticalMaxMeters - CanopyVerticalMinMeters);
-                for (int canopyIndex = 0; canopyIndex < States.Length; canopyIndex++)
-                {
-                    if (canopyIndex == index)
-                        continue;
-
-                    FloraMaturationState canopy = States[canopyIndex];
-                    if (!IsCanopyType(canopy.TypeId) ||
-                        math.abs(canopy.HeightScale) < CanopyMinHeightScale)
-                    {
-                        continue;
-                    }
-
-                    float3 delta = canopy.RuntimePosition - undergrowth.RuntimePosition;
-                    float verticalDelta = delta.y;
-                    if (verticalDelta < CanopyVerticalMinMeters || verticalDelta > CanopyVerticalMaxMeters)
-                        continue;
-
-                    float radius = math.max(0.25f, CanopyShadowRadiusMeters * math.max(1f, math.abs(canopy.WidthScale)));
-                    float radiusSq = radius * radius;
-                    float planarDistanceSq = (delta.x * delta.x) + (delta.z * delta.z);
-                    if (planarDistanceSq > radiusSq)
-                        continue;
-
-                    float planarOcclusion01 = 1f - math.saturate(planarDistanceSq / radiusSq);
-                    float verticalOcclusion01 = 1f - math.saturate((verticalDelta - CanopyVerticalMinMeters) / verticalRange);
-                    float heightOcclusion01 = math.saturate((math.abs(canopy.HeightScale) - CanopyMinHeightScale) / math.max(0.001f, 1f - CanopyMinHeightScale));
-                    float occlusion01 = planarOcclusion01 *
-                                         math.max(0.25f, verticalOcclusion01) *
-                                         math.max(0.25f, heightOcclusion01);
-                    bestOcclusion01 = math.max(bestOcclusion01, occlusion01);
-                }
-
-                return bestOcclusion01 > 0.0001f
-                    ? -math.saturate(bestOcclusion01 * math.max(0.01f, LightStarvationStrength))
-                    : progress01;
-            }
-
-            private static bool IsCanopyType(int typeId)
-            {
-                return typeId == (int)HectonVegetationInstanceType.Sargassum ||
-                       typeId == (int)HectonVegetationInstanceType.GiantKelp;
-            }
-        }
-
         [SerializeField]
         [Tooltip("Runtime owner that mutates streamed flora metadata and harvest health state.")]
         private DestructibleOrganicManager destructibleOrganicManager;
@@ -306,22 +167,22 @@ namespace Hecton8.World
         [Tooltip("MapMagic vegetation bridge that owns abyssal flow and terrain-cache queries.")]
         private HectonMapMagicVegetationBridge vegetationBridge;
 
-        private NativeList<PersistentWorldDeltaRecord> _destroyedFloraScratch;
-        private NativeList<PersistentWorldDeltaRecord> _pendingSeedScratch;
-        private NativeList<FloraRegrowthState> _regrowthStates;
-        private NativeHashMap<uint, int> _stateIndexByInstanceUid;
-        private NativeList<SeedFlightState> _seedFlightStates;
-        private NativeHashMap<uint, int> _seedFlightIndexByUid;
-        private NativeHashMap<uint, byte> _seedEmissionByDestroyedUid;
-        private NativeList<FloraMaturationState> _maturationStates;
-        private NativeHashMap<uint, int> _maturationIndexByInstanceUid;
-        private NativeArray<FloraMaturationResult> _maturationResults;
-        private NativeList<SymbioticFungalNodeState> _symbioticFungalNodes;
-        private NativeList<SymbioticFungalBuffState> _symbioticFungalBuffs;
-        private JobHandle _maturationJobHandle;
+        private readonly PersistentWorldDeltaRecord[] _destroyedFloraScratch = new PersistentWorldDeltaRecord[DefaultTrackedRegrowthCapacity];
+        private readonly PersistentWorldDeltaRecord[] _pendingSeedScratch = new PersistentWorldDeltaRecord[DefaultTrackedRegrowthCapacity];
+        private readonly FloraRegrowthState[] _regrowthStates = new FloraRegrowthState[DefaultTrackedRegrowthCapacity];
+        private int _regrowthStateCount;
+        private readonly SeedFlightState[] _seedFlightStates = new SeedFlightState[DefaultTrackedRegrowthCapacity];
+        private int _seedFlightStateCount;
+        private readonly uint[] _seedEmissionDestroyedUids = new uint[DefaultTrackedRegrowthCapacity];
+        private int _seedEmissionDestroyedUidCount;
+        private readonly FloraMaturationState[] _maturationStates = new FloraMaturationState[DefaultTrackedRegrowthCapacity];
+        private int _maturationStateCount;
+        private readonly SymbioticFungalNodeState[] _symbioticFungalNodes = new SymbioticFungalNodeState[MaxSymbioticFungalNodes];
+        private readonly SymbioticFungalBuffState[] _symbioticFungalBuffs = new SymbioticFungalBuffState[MaxSymbioticFungalNodes];
+        private int _symbioticFungalNodeCount;
+        private int _symbioticFungalBuffCount;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private ISaveService _saveService;
-        private bool _maturationJobScheduled;
         private float _lunarResonanceExpirePlayTimeSeconds;
         private float _lunarResonanceGrowthMultiplier = 1f;
         private float _nextFloraGrowthFrostTickPlayTime;
@@ -337,41 +198,12 @@ namespace Hecton8.World
             ResolveLocalComponentReferences();
             CacheRegistryServicesCold();
 
-            _destroyedFloraScratch = new NativeList<PersistentWorldDeltaRecord>(
-                DefaultTrackedRegrowthCapacity,
-                DataVaultExemptRegrowthScratchAllocator); // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[2048] - destroyed flora scan scratch for regrowth eligibility - owner: FloraRegrowthDirector
-            _pendingSeedScratch = new NativeList<PersistentWorldDeltaRecord>(
-                DefaultTrackedRegrowthCapacity,
-                DataVaultExemptRegrowthScratchAllocator); // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[2048] - pending flora seed scan scratch for delayed sprout updates - owner: FloraRegrowthDirector
-            _regrowthStates = new NativeList<FloraRegrowthState>(
-                DefaultTrackedRegrowthCapacity,
-                DataVaultExemptRegrowthStateAllocator); // COLD ALLOC: NativeList<FloraRegrowthState>[2048] - active and pending flora regrowth states - owner: FloraRegrowthDirector
-            _stateIndexByInstanceUid = new NativeHashMap<uint, int>(
-                DefaultTrackedRegrowthCapacity,
-                DataVaultExemptRegrowthIndexAllocator); // COLD ALLOC: NativeHashMap<uint,int>[2048] - regrowth state lookup keyed by flora uid - owner: FloraRegrowthDirector
-            _seedFlightStates = new NativeList<SeedFlightState>(
-                DefaultTrackedRegrowthCapacity,
-                DataVaultExemptRegrowthStateAllocator); // COLD ALLOC: NativeList<SeedFlightState>[2048] - active organic seed trajectories - owner: FloraRegrowthDirector
-            _seedFlightIndexByUid = new NativeHashMap<uint, int>(
-                DefaultTrackedRegrowthCapacity,
-                DataVaultExemptRegrowthIndexAllocator); // COLD ALLOC: NativeHashMap<uint,int>[2048] - seed trajectory lookup keyed by landed seed uid - owner: FloraRegrowthDirector
-            _seedEmissionByDestroyedUid = new NativeHashMap<uint, byte>(
-                DefaultTrackedRegrowthCapacity,
-                DataVaultExemptRegrowthIndexAllocator); // COLD ALLOC: NativeHashMap<uint,byte>[2048] - destroyed flora seed-emission gate keyed by source flora uid - owner: FloraRegrowthDirector
-            _maturationStates = new NativeList<FloraMaturationState>(
-                DefaultTrackedRegrowthCapacity,
-                DataVaultExemptRegrowthStateAllocator); // COLD ALLOC: NativeList<FloraMaturationState>[2048] - live flora maturation state lane keyed by deterministic flora uid - owner: FloraRegrowthDirector
-            _maturationIndexByInstanceUid = new NativeHashMap<uint, int>(
-                DefaultTrackedRegrowthCapacity,
-                DataVaultExemptRegrowthIndexAllocator); // COLD ALLOC: NativeHashMap<uint,int>[2048] - maturation state lookup keyed by deterministic flora uid - owner: FloraRegrowthDirector
-            _symbioticFungalNodes = new NativeList<SymbioticFungalNodeState>(
-                MaxSymbioticFungalNodes,
-                DataVaultExemptRegrowthStateAllocator); // COLD ALLOC: NativeList<SymbioticFungalNodeState>[128] - bounded fungal root-radius nodes - owner: FloraRegrowthDirector
-            _symbioticFungalBuffs = new NativeList<SymbioticFungalBuffState>(
-                MaxSymbioticFungalNodes,
-                DataVaultExemptRegrowthStateAllocator); // COLD ALLOC: NativeList<SymbioticFungalBuffState>[128] - active fungal growth buffs consumed by maturation Burst job - owner: FloraRegrowthDirector
+            _regrowthStateCount = 0;
+            _seedFlightStateCount = 0;
+            _maturationStateCount = 0;
+            _symbioticFungalNodeCount = 0;
+            _symbioticFungalBuffCount = 0;
             _lastSeedPlayTime = GetCurrentPlayTimeSeconds();
-            RegisterNativeMemorySentinel();
         }
 
         private void ResolveLocalComponentReferences()
@@ -445,24 +277,17 @@ namespace Hecton8.World
             }
 
             TryUnregisterHotSwapListener();
-            JobHandle disposeHandle = _maturationJobScheduled ? _maturationJobHandle : default;
-            DisposeNativeList(ref _destroyedFloraScratch, nameof(_destroyedFloraScratch));
-            DisposeNativeList(ref _pendingSeedScratch, nameof(_pendingSeedScratch));
-            DisposeNativeList(ref _regrowthStates, nameof(_regrowthStates));
-            DisposeNativeHashMap(ref _stateIndexByInstanceUid, nameof(_stateIndexByInstanceUid));
-            DisposeNativeList(ref _seedFlightStates, nameof(_seedFlightStates));
-            DisposeNativeHashMap(ref _seedFlightIndexByUid, nameof(_seedFlightIndexByUid));
-            DisposeNativeHashMap(ref _seedEmissionByDestroyedUid, nameof(_seedEmissionByDestroyedUid));
-            DisposeNativeArray(ref _maturationResults, disposeHandle, _maturationJobScheduled);
-            DisposeNativeList(ref _maturationStates, nameof(_maturationStates), disposeHandle, _maturationJobScheduled);
-            DisposeNativeHashMap(ref _maturationIndexByInstanceUid, nameof(_maturationIndexByInstanceUid), disposeHandle, _maturationJobScheduled);
-            DisposeNativeList(ref _symbioticFungalBuffs, nameof(_symbioticFungalBuffs), disposeHandle, _maturationJobScheduled);
-            DisposeNativeList(ref _symbioticFungalNodes, nameof(_symbioticFungalNodes));
+            _regrowthStateCount = 0;
+            _seedFlightStateCount = 0;
+            _seedEmissionDestroyedUidCount = 0;
+            _symbioticFungalNodeCount = 0;
+            _symbioticFungalBuffCount = 0;
+            _maturationStateCount = 0;
         }
 
         private void CacheRegistryServicesCold()
         {
-            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            _persistentWorldRegistry = PersistentWorldRegistry.Instance;
             _saveService = GlobalRegistry.Save;
         }
 
@@ -531,27 +356,24 @@ namespace Hecton8.World
         {
             if (registry == null ||
                 destructibleOrganicManager == null ||
-                vegetationBridge == null ||
-                !_maturationStates.IsCreated ||
-                !_maturationIndexByInstanceUid.IsCreated)
+                vegetationBridge == null)
             {
                 return;
             }
 
-            for (int i = 0; i < _maturationStates.Length; i++)
+            for (int i = 0; i < _maturationStateCount; i++)
             {
                 FloraMaturationState state = _maturationStates[i];
                 state.SeenThisScan = 0;
                 _maturationStates[i] = state;
             }
 
-            if (_symbioticFungalNodes.IsCreated)
-                _symbioticFungalNodes.Clear();
+            _symbioticFungalNodeCount = 0;
 
             SyncMaturationStatesForPayload(registry, currentPlayTime, underwater: false);
             SyncMaturationStatesForPayload(registry, currentPlayTime, underwater: true);
 
-            for (int i = _maturationStates.Length - 1; i >= 0; i--)
+            for (int i = _maturationStateCount - 1; i >= 0; i--)
             {
                 if (_maturationStates[i].SeenThisScan == 0)
                     RemoveMaturationStateAtSwapBack(i);
@@ -612,7 +434,7 @@ namespace Hecton8.World
                     registry.TryRegisterFloraSpawnTimestamp(instanceUid, runtimePosition, spawnPlayTimeSeconds);
                 }
 
-                if (_maturationIndexByInstanceUid.TryGetValue(instanceUid, out int existingIndex))
+                if (TryFindMaturationStateIndex(instanceUid, out int existingIndex))
                 {
                     FloraMaturationState state = _maturationStates[existingIndex];
                     state.TemplateHash = templateHash;
@@ -630,7 +452,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                if (_maturationStates.Length >= _maturationStates.Capacity)
+                if (_maturationStateCount >= _maturationStates.Length)
                     break;
 
                 FloraMaturationState newState = new FloraMaturationState
@@ -649,36 +471,90 @@ namespace Hecton8.World
                     Reserved0 = 0,
                     Reserved1 = 0
                 };
-                _maturationIndexByInstanceUid.TryAdd(instanceUid, _maturationStates.Length);
-                _maturationStates.AddNoResize(newState);
+                _maturationStates[_maturationStateCount] = newState;
+                _maturationStateCount++;
                 TryRegisterSymbioticFungalNode(in newState);
             }
         }
 
-        private void ScheduleMaturationJob(float currentPlayTime)
+        private void EvaluateMaturationStates(float currentPlayTime)
         {
-            if (_maturationJobScheduled || !_maturationStates.IsCreated || _maturationStates.Length <= 0)
+            if (_maturationStateCount <= 0 ||
+                destructibleOrganicManager == null)
+            {
                 return;
-
-            EnsureMaturationResultCapacity(_maturationStates.Length);
-            if (!_maturationResults.IsCreated || _maturationResults.Length < _maturationStates.Length)
-                return;
+            }
 
             PruneExpiredSymbioticBuffs(currentPlayTime);
-            _maturationJobHandle = new EvaluateMaturationJob
+            float lunarGrowthMultiplier = ResolveLunarResonanceGrowthMultiplier(currentPlayTime);
+            for (int i = 0; i < _maturationStateCount; i++)
             {
-                States = _maturationStates.AsArray(),
-                SymbioticBuffs = _symbioticFungalBuffs.IsCreated ? _symbioticFungalBuffs.AsArray() : default,
-                CurrentPlayTimeSeconds = currentPlayTime,
-                CanopyShadowRadiusMeters = CanopyShadowRadiusMeters,
-                CanopyVerticalMinMeters = CanopyVerticalMinMeters,
-                CanopyVerticalMaxMeters = CanopyVerticalMaxMeters,
-                CanopyMinHeightScale = CanopyMinHeightScale,
-                LightStarvationStrength = LightStarvationStrength,
-                LunarResonanceGrowthMultiplier = ResolveLunarResonanceGrowthMultiplier(currentPlayTime),
-                Results = _maturationResults
-            }.Schedule(_maturationStates.Length, 32);
-            _maturationJobScheduled = true;
+                FloraMaturationState state = _maturationStates[i];
+                EvaluateMaturationState(in state, currentPlayTime, lunarGrowthMultiplier, out FloraMaturationResult result);
+                ApplyMaturationResult(in result);
+            }
+        }
+
+        private void EvaluateMaturationState(
+            in FloraMaturationState state,
+            float currentPlayTime,
+            float lunarGrowthMultiplier,
+            out FloraMaturationResult result)
+        {
+            float durationSeconds = math.max(1f, state.GrowthDurationSeconds);
+            float ageSeconds = math.max(0f, currentPlayTime - state.SpawnPlayTimeSeconds);
+            float growthRateMultiplier = ResolveSymbioticGrowthMultiplier(state.InstanceUid, currentPlayTime) *
+                                         math.max(1f, lunarGrowthMultiplier) *
+                                         math.max(1f, state.RadiationGrowthMultiplier);
+            float progress01 = math.saturate((ageSeconds / durationSeconds) * growthRateMultiplier);
+            result = new FloraMaturationResult
+            {
+                InstanceUid = state.InstanceUid,
+                Progress01 = progress01,
+                GrowthMultiplier = ResolveLightStarvationGrowthMultiplier(in state, progress01),
+                ScaleMultiplier = ResolveMaturationMultiplier(progress01),
+                ResourceYieldMultiplier = progress01,
+                _pad0 = 0u
+            };
+        }
+
+        private static float ResolveMaturationMultiplier(float progress01)
+        {
+            float clampedProgress = math.saturate(progress01);
+            float smoothProgress = clampedProgress * clampedProgress * (3f - (2f * clampedProgress));
+            return math.lerp(0.1f, 1f, smoothProgress);
+        }
+
+        private float ResolveSymbioticGrowthMultiplier(uint instanceUid, float currentPlayTime)
+        {
+            if (instanceUid == 0u || _symbioticFungalBuffCount <= 0)
+                return 1f;
+
+            float multiplier = 1f;
+            for (int i = 0; i < _symbioticFungalBuffCount; i++)
+            {
+                SymbioticFungalBuffState buff = _symbioticFungalBuffs[i];
+                if (buff.InstanceUid != instanceUid || currentPlayTime > buff.ExpirePlayTimeSeconds)
+                    continue;
+
+                multiplier = math.max(multiplier, math.max(1f, buff.GrowthMultiplier));
+            }
+
+            return multiplier;
+        }
+
+        private static float ResolveLightStarvationGrowthMultiplier(in FloraMaturationState state, float progress01)
+        {
+            if (state.ExternalShadeOcclusion01 <= 0.01f || IsCanopyType(state.TypeId))
+                return progress01;
+
+            return -math.saturate(math.max(state.ExternalShadeOcclusion01, LightStarvationStrength));
+        }
+
+        private static bool IsCanopyType(int typeId)
+        {
+            return typeId == (int)HectonVegetationInstanceType.Sargassum ||
+                   typeId == (int)HectonVegetationInstanceType.GiantKelp;
         }
 
         private float ResolveMigratorySargassumShadeOcclusion(Vector3 runtimePosition)
@@ -701,22 +577,23 @@ namespace Hecton8.World
 
         private void TryRegisterSymbioticFungalNode(in FloraMaturationState state)
         {
-            if (!_symbioticFungalNodes.IsCreated ||
-                _symbioticFungalNodes.Length >= _symbioticFungalNodes.Capacity ||
+            if (_symbioticFungalNodeCount >= _symbioticFungalNodes.Length ||
                 !IsSymbioticFungalTemplateHash(state.TemplateHash))
             {
                 return;
             }
 
-            _symbioticFungalNodes.AddNoResize(new SymbioticFungalNodeState
+            _symbioticFungalNodes[_symbioticFungalNodeCount] = new SymbioticFungalNodeState
             {
                 InstanceUid = state.InstanceUid,
                 TemplateHash = state.TemplateHash,
                 RuntimePosition = state.RuntimePosition,
                 Active = 1,
                 Reserved0 = 0,
-                Reserved1 = 0
-            });
+                Reserved1 = 0,
+                _pad0 = 0u
+            };
+            _symbioticFungalNodeCount++;
         }
 
         private static bool IsSymbioticFungalTemplateHash(ulong templateHash)
@@ -736,15 +613,14 @@ namespace Hecton8.World
         public bool TryApplySymbioticFungalFertilizer(uint instanceUid, float growthMultiplier = DefaultSymbioticGrowthMultiplier, float durationSeconds = DefaultSymbioticBuffDurationSeconds)
         {
             if (instanceUid == 0u ||
-                !_symbioticFungalNodes.IsCreated ||
-                _symbioticFungalNodes.Length <= 0)
+                _symbioticFungalNodeCount <= 0)
             {
                 return false;
             }
 
             float3 rootPosition = float3.zero;
             bool foundRoot = false;
-            for (int i = 0; i < _symbioticFungalNodes.Length; i++)
+            for (int i = 0; i < _symbioticFungalNodeCount; i++)
             {
                 SymbioticFungalNodeState node = _symbioticFungalNodes[i];
                 if (node.Active == 0 || node.InstanceUid != instanceUid)
@@ -774,14 +650,14 @@ namespace Hecton8.World
         /// <returns>True when at least one fungal node received a radius buff.</returns>
         public bool TryApplySymbioticFungalFertilizer(Vector3 runtimePosition, float radiusMeters, float growthMultiplier = DefaultSymbioticGrowthMultiplier, float durationSeconds = DefaultSymbioticBuffDurationSeconds)
         {
-            if (radiusMeters <= 0f || !_symbioticFungalNodes.IsCreated || _symbioticFungalNodes.Length <= 0)
+            if (radiusMeters <= 0f || _symbioticFungalNodeCount <= 0)
                 return false;
 
             float3 origin = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             float bestDistanceSq = radiusMeters * radiusMeters;
             float3 rootPosition = float3.zero;
             bool foundRoot = false;
-            for (int i = 0; i < _symbioticFungalNodes.Length; i++)
+            for (int i = 0; i < _symbioticFungalNodeCount; i++)
             {
                 SymbioticFungalNodeState node = _symbioticFungalNodes[i];
                 if (node.Active == 0)
@@ -831,7 +707,7 @@ namespace Hecton8.World
 
         private bool ApplySymbioticRadiusBuff(float3 rootPosition, float growthMultiplier, float durationSeconds)
         {
-            if (!_symbioticFungalNodes.IsCreated || !_symbioticFungalBuffs.IsCreated)
+            if (_symbioticFungalNodeCount <= 0)
                 return false;
 
             float currentPlayTime = GetCurrentPlayTimeSeconds();
@@ -839,7 +715,7 @@ namespace Hecton8.World
             float radiusSq = SymbioticFungalRootRadiusMeters * SymbioticFungalRootRadiusMeters;
             int appliedCount = 0;
             PruneExpiredSymbioticBuffs(currentPlayTime);
-            for (int i = 0; i < _symbioticFungalNodes.Length; i++)
+            for (int i = 0; i < _symbioticFungalNodeCount; i++)
             {
                 SymbioticFungalNodeState node = _symbioticFungalNodes[i];
                 if (node.Active == 0 || node.InstanceUid == 0u)
@@ -862,14 +738,9 @@ namespace Hecton8.World
             return appliedCount > 0;
         }
 
-        private static bool TryCompleteVegetationJob(ref JobHandle handle, bool forceComplete)
-        {
-            return DispatcherJobSwap.TryComplete(ref handle, forceComplete);
-        }
-
         private void UpsertSymbioticFungalBuff(SymbioticFungalBuffState buff)
         {
-            for (int i = 0; i < _symbioticFungalBuffs.Length; i++)
+            for (int i = 0; i < _symbioticFungalBuffCount; i++)
             {
                 if (_symbioticFungalBuffs[i].InstanceUid != buff.InstanceUid)
                     continue;
@@ -878,91 +749,79 @@ namespace Hecton8.World
                 return;
             }
 
-            if (_symbioticFungalBuffs.Length < _symbioticFungalBuffs.Capacity)
-                _symbioticFungalBuffs.AddNoResize(buff);
+            if (_symbioticFungalBuffCount >= _symbioticFungalBuffs.Length)
+                return;
+
+            _symbioticFungalBuffs[_symbioticFungalBuffCount] = buff;
+            _symbioticFungalBuffCount++;
         }
 
         private void PruneExpiredSymbioticBuffs(float currentPlayTime)
         {
-            if (!_symbioticFungalBuffs.IsCreated)
+            if (_symbioticFungalBuffCount <= 0)
                 return;
 
-            for (int i = _symbioticFungalBuffs.Length - 1; i >= 0; i--)
+            for (int i = _symbioticFungalBuffCount - 1; i >= 0; i--)
             {
                 SymbioticFungalBuffState buff = _symbioticFungalBuffs[i];
                 if (buff.InstanceUid == 0u || currentPlayTime > buff.ExpirePlayTimeSeconds)
-                    _symbioticFungalBuffs.RemoveAtSwapBack(i);
+                    RemoveSymbioticFungalBuffAtSwapBack(i);
             }
         }
 
-        private void CompleteMaturationJobIfNeeded(bool forceComplete = false)
+        private void RemoveSymbioticFungalBuffAtSwapBack(int index)
         {
-            if (!_maturationJobScheduled)
+            if (index < 0 || index >= _symbioticFungalBuffCount)
                 return;
 
-            if (!TryCompleteVegetationJob(ref _maturationJobHandle, forceComplete))
+            int lastIndex = _symbioticFungalBuffCount - 1;
+            _symbioticFungalBuffs[index] = _symbioticFungalBuffs[lastIndex];
+            _symbioticFungalBuffs[lastIndex] = default;
+            _symbioticFungalBuffCount = lastIndex;
+        }
+
+        private void ApplyMaturationResult(in FloraMaturationResult result)
+        {
+            if (result.InstanceUid == 0u || destructibleOrganicManager == null)
                 return;
 
-            _maturationJobScheduled = false;
-
-            if (destructibleOrganicManager == null || !_maturationResults.IsCreated || !_maturationStates.IsCreated)
-                return;
-
-            int resultCount = math.min(_maturationStates.Length, _maturationResults.Length);
-            for (int i = 0; i < resultCount; i++)
+            if (result.GrowthMultiplier < -0.0001f)
             {
-                FloraMaturationResult result = _maturationResults[i];
-                if (result.InstanceUid == 0u)
-                    continue;
-
-                if (result.GrowthMultiplier < -0.0001f)
-                {
-                    destructibleOrganicManager.TryApplyLightStarvation(result.InstanceUid, -result.GrowthMultiplier);
-                    continue;
-                }
-
-                destructibleOrganicManager.TrySetMaturationProgress(
-                    result.InstanceUid,
-                    result.Progress01,
-                    result.ScaleMultiplier,
-                    result.ResourceYieldMultiplier);
+                destructibleOrganicManager.TryApplyLightStarvation(result.InstanceUid, -result.GrowthMultiplier);
+                return;
             }
-        }
 
-        private void EnsureMaturationResultCapacity(int requiredCount)
-        {
-            if (requiredCount <= 0)
-                return;
-
-            if (_maturationResults.IsCreated && _maturationResults.Length >= requiredCount)
-                return;
-
-            if (_maturationResults.IsCreated)
-                DisposeNativeArray(ref _maturationResults);
-
-            _maturationResults = new NativeArray<FloraMaturationResult>(
-                requiredCount,
-                DataVaultExemptMaturationResultAllocator,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<FloraMaturationResult>[requiredCount] - burst maturation result lane for slow-tick flora growth application - owner: FloraRegrowthDirector
-            NativeMemorySentinel.RegisterNativeArray(_maturationResults, NativeMemoryOwner, nameof(_maturationResults), NativeMemoryLifetime);
+            destructibleOrganicManager.TrySetMaturationProgress(
+                result.InstanceUid,
+                result.Progress01,
+                result.ScaleMultiplier,
+                result.ResourceYieldMultiplier);
         }
 
         private void RemoveMaturationStateAtSwapBack(int index)
         {
-            if (!_maturationStates.IsCreated || !_maturationIndexByInstanceUid.IsCreated || index < 0 || index >= _maturationStates.Length)
+            if (index < 0 || index >= _maturationStateCount)
                 return;
 
-            FloraMaturationState removed = _maturationStates[index];
-            int lastIndex = _maturationStates.Length - 1;
-            FloraMaturationState last = _maturationStates[lastIndex];
-            _maturationStates.RemoveAtSwapBack(index);
-            _maturationIndexByInstanceUid.Remove(removed.InstanceUid);
+            int lastIndex = _maturationStateCount - 1;
+            _maturationStates[index] = _maturationStates[lastIndex];
+            _maturationStates[lastIndex] = default;
+            _maturationStateCount = lastIndex;
+        }
 
-            if (index < lastIndex)
+        private bool TryFindMaturationStateIndex(uint instanceUid, out int index)
+        {
+            for (int i = 0; i < _maturationStateCount; i++)
             {
-                _maturationIndexByInstanceUid.Remove(last.InstanceUid);
-                _maturationIndexByInstanceUid.TryAdd(last.InstanceUid, index);
+                if (_maturationStates[i].InstanceUid != instanceUid)
+                    continue;
+
+                index = i;
+                return true;
             }
+
+            index = -1;
+            return false;
         }
 
         /// <summary>
@@ -970,13 +829,13 @@ namespace Hecton8.World
         /// </summary>
         public void Tick(float deltaTime)
         {
-            if (!_regrowthStates.IsCreated || !_stateIndexByInstanceUid.IsCreated || destructibleOrganicManager == null)
+            if (_regrowthStateCount <= 0 || destructibleOrganicManager == null)
                 return;
 
             PersistentWorldRegistry registry = _persistentWorldRegistry;
             float currentPlayTime = GetCurrentPlayTimeSeconds();
             UpdateSeedFlights(deltaTime);
-            for (int i = _regrowthStates.Length - 1; i >= 0; i--)
+            for (int i = _regrowthStateCount - 1; i >= 0; i--)
             {
                 FloraRegrowthState state = _regrowthStates[i];
                 if (state.State != StateActive)
@@ -998,11 +857,10 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Recovers completed flora maturation jobs inside the dispatcher late-frame swap window.
+        /// Retained for dispatcher lane compatibility; maturation is evaluated during SlowTick.
         /// </summary>
         public void LateFrameTick()
         {
-            CompleteMaturationJobIfNeeded();
         }
 
         /// <summary>
@@ -1014,7 +872,6 @@ namespace Hecton8.World
             if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.000001f)
                 return;
 
-            CompleteMaturationJobIfNeeded(forceComplete: true);
             float3 runtimeOffset = new float3(-shiftData.ShiftOffset.x, -shiftData.ShiftOffset.y, -shiftData.ShiftOffset.z);
             ApplyOriginShiftToCachedFloraState(runtimeOffset);
         }
@@ -1024,14 +881,8 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            if (!_destroyedFloraScratch.IsCreated || !_regrowthStates.IsCreated || !_stateIndexByInstanceUid.IsCreated)
-                return;
-
             PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null || destructibleOrganicManager == null)
-                return;
-
-            if (_maturationJobScheduled)
                 return;
 
             float currentPlayTime = GetCurrentPlayTimeSeconds();
@@ -1040,16 +891,15 @@ namespace Hecton8.World
 
             _nextFloraGrowthFrostTickPlayTime = currentPlayTime + FloraGrowthFrostTickIntervalSeconds;
             UpdatePendingSeedTimers(registry, currentPlayTime);
-            for (int i = 0; i < _regrowthStates.Length; i++)
+            for (int i = 0; i < _regrowthStateCount; i++)
             {
                 FloraRegrowthState state = _regrowthStates[i];
                 state.SeenThisScan = 0;
                 _regrowthStates[i] = state;
             }
 
-            _destroyedFloraScratch.Clear();
-            registry.CopyDestroyedFloraDeltas(_destroyedFloraScratch);
-            for (int i = 0; i < _destroyedFloraScratch.Length; i++)
+            int destroyedFloraCount = registry.CopyDestroyedFloraDeltas(_destroyedFloraScratch, _destroyedFloraScratch.Length);
+            for (int i = 0; i < destroyedFloraCount; i++)
             {
                 PersistentWorldDeltaRecord deltaRecord = _destroyedFloraScratch[i];
                 if (deltaRecord.InstanceUid == 0u)
@@ -1069,7 +919,7 @@ namespace Hecton8.World
                 TryEmitSargassumSeeds(deltaRecord);
 
                 Vector3 runtimePosition = ToRuntimePosition(deltaRecord.UnpackPosition(registry.ChunkSizeMeters));
-                if (_stateIndexByInstanceUid.TryGetValue(deltaRecord.InstanceUid, out int stateIndex))
+                if (TryFindRegrowthStateIndex(deltaRecord.InstanceUid, out int stateIndex))
                 {
                     FloraRegrowthState existing = _regrowthStates[stateIndex];
                     existing.TemplateHash = deltaRecord.ItemPersistentIdHash;
@@ -1090,7 +940,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                if (_regrowthStates.Length >= _regrowthStates.Capacity)
+                if (_regrowthStateCount >= _regrowthStates.Length)
                     break;
 
                 FloraRegrowthState newState = new FloraRegrowthState
@@ -1106,13 +956,12 @@ namespace Hecton8.World
                     Reserved0 = 0
                 };
 
-                _stateIndexByInstanceUid.TryAdd(newState.InstanceUid, _regrowthStates.Length);
-                _regrowthStates.AddNoResize(newState);
+                _regrowthStates[_regrowthStateCount] = newState;
+                _regrowthStateCount++;
             }
 
-            _destroyedFloraScratch.Clear();
-            registry.CopyFloraStateOverrideDeltas(_destroyedFloraScratch);
-            for (int i = 0; i < _destroyedFloraScratch.Length; i++)
+            int floraOverrideCount = registry.CopyFloraStateOverrideDeltas(_destroyedFloraScratch, _destroyedFloraScratch.Length);
+            for (int i = 0; i < floraOverrideCount; i++)
             {
                 PersistentWorldDeltaRecord deltaRecord = _destroyedFloraScratch[i];
                 if (deltaRecord.InstanceUid == 0u)
@@ -1137,7 +986,7 @@ namespace Hecton8.World
                 float regrowthProgress = math.saturate(normalizedHealth);
                 float regrowthStartPlayTime = currentPlayTime - (Mathf.Max(1f, durationSeconds) * regrowthProgress);
                 Vector3 runtimePosition = ToRuntimePosition(deltaRecord.UnpackPosition(registry.ChunkSizeMeters));
-                if (_stateIndexByInstanceUid.TryGetValue(deltaRecord.InstanceUid, out int stateIndex))
+                if (TryFindRegrowthStateIndex(deltaRecord.InstanceUid, out int stateIndex))
                 {
                     FloraRegrowthState existing = _regrowthStates[stateIndex];
                     existing.TemplateHash = deltaRecord.ItemPersistentIdHash;
@@ -1151,7 +1000,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                if (_regrowthStates.Length >= _regrowthStates.Capacity)
+                if (_regrowthStateCount >= _regrowthStates.Length)
                     break;
 
                 FloraRegrowthState bareState = new FloraRegrowthState
@@ -1167,11 +1016,11 @@ namespace Hecton8.World
                     Reserved0 = 0
                 };
 
-                _stateIndexByInstanceUid.TryAdd(bareState.InstanceUid, _regrowthStates.Length);
-                _regrowthStates.AddNoResize(bareState);
+                _regrowthStates[_regrowthStateCount] = bareState;
+                _regrowthStateCount++;
             }
 
-            for (int i = _regrowthStates.Length - 1; i >= 0; i--)
+            for (int i = _regrowthStateCount - 1; i >= 0; i--)
             {
                 FloraRegrowthState state = _regrowthStates[i];
                 if (state.State == StateWaiting && state.SeenThisScan == 0)
@@ -1179,19 +1028,19 @@ namespace Hecton8.World
             }
 
             SyncMaturationStates(registry, currentPlayTime);
-            ScheduleMaturationJob(currentPlayTime);
+            EvaluateMaturationStates(currentPlayTime);
         }
 
         private void UpdateSeedFlights(float deltaTime)
         {
-            if (!_seedFlightStates.IsCreated || _seedFlightStates.Length <= 0)
+            if (_seedFlightStateCount <= 0)
                 return;
 
             PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null)
                 return;
 
-            for (int i = _seedFlightStates.Length - 1; i >= 0; i--)
+            for (int i = _seedFlightStateCount - 1; i >= 0; i--)
             {
                 SeedFlightState state = _seedFlightStates[i];
                 if (state.Landed != 0)
@@ -1253,16 +1102,13 @@ namespace Hecton8.World
 
         private void TryEmitSargassumSeeds(PersistentWorldDeltaRecord deltaRecord)
         {
-            if (!_seedFlightStates.IsCreated ||
-                !_seedFlightIndexByUid.IsCreated ||
-                !_seedEmissionByDestroyedUid.IsCreated ||
-                !destructibleOrganicManager.IsTemplateMaterialClass(deltaRecord.ItemPersistentIdHash, HarvestableTemplate.MaterialClass.Sargassum))
+            if (!destructibleOrganicManager.IsTemplateMaterialClass(deltaRecord.ItemPersistentIdHash, HarvestableTemplate.MaterialClass.Sargassum))
             {
                 return;
             }
 
             if (vegetationBridge == null ||
-                _seedEmissionByDestroyedUid.ContainsKey(deltaRecord.InstanceUid))
+                ContainsSeedEmissionUid(deltaRecord.InstanceUid))
             {
                 return;
             }
@@ -1275,8 +1121,11 @@ namespace Hecton8.World
             for (int seedIndex = 0; seedIndex < SeedsPerSargassumCluster; seedIndex++)
             {
                 uint seedUid = deltaRecord.InstanceUid ^ (uint)((seedIndex + 1) * 0x9E3779B9u);
-                if (_seedFlightIndexByUid.ContainsKey(seedUid) || _seedFlightStates.Length >= _seedFlightStates.Capacity)
+                if (_seedFlightStateCount >= _seedFlightStates.Length ||
+                    TryFindSeedFlightIndex(seedUid, out _))
+                {
                     continue;
+                }
 
                 Vector3 lateralOffset = ResolveSeedLateralOffset(seedUid);
                 SeedFlightState state = new SeedFlightState
@@ -1290,28 +1139,24 @@ namespace Hecton8.World
                     Reserved1 = 0
                 };
 
-                _seedFlightIndexByUid.TryAdd(seedUid, _seedFlightStates.Length);
-                _seedFlightStates.AddNoResize(state);
+                _seedFlightStates[_seedFlightStateCount] = state;
+                _seedFlightStateCount++;
             }
 
-            _seedEmissionByDestroyedUid.TryAdd(deltaRecord.InstanceUid, 1);
+            TryAddSeedEmissionUid(deltaRecord.InstanceUid);
         }
 
         private void UpdatePendingSeedTimers(PersistentWorldRegistry registry, float currentPlayTime)
         {
-            if (!_pendingSeedScratch.IsCreated)
-                return;
-
             float playDelta = Mathf.Max(0f, currentPlayTime - _lastSeedPlayTime);
             _lastSeedPlayTime = currentPlayTime;
 
-            _pendingSeedScratch.Clear();
-            registry.CopyPendingFloraSeedDeltas(_pendingSeedScratch);
+            int pendingSeedCount = registry.CopyPendingFloraSeedDeltas(_pendingSeedScratch, _pendingSeedScratch.Length);
             ushort elapsedSeconds = (ushort)Mathf.Clamp(Mathf.RoundToInt(playDelta), 0, ushort.MaxValue);
             if (elapsedSeconds == 0)
                 return;
 
-            for (int i = 0; i < _pendingSeedScratch.Length; i++)
+            for (int i = 0; i < pendingSeedCount; i++)
             {
                 PersistentWorldDeltaRecord seedRecord = _pendingSeedScratch[i];
                 if (!PersistentWorldDeltaRecord.IsFloraSeedPending(in seedRecord))
@@ -1330,9 +1175,9 @@ namespace Hecton8.World
 
         private void ApplyOriginShiftToCachedFloraState(float3 runtimeOffset)
         {
-            if (_regrowthStates.IsCreated)
+            if (_regrowthStateCount > 0)
             {
-                for (int i = 0; i < _regrowthStates.Length; i++)
+                for (int i = 0; i < _regrowthStateCount; i++)
                 {
                     FloraRegrowthState state = _regrowthStates[i];
                     state.RuntimePosition += runtimeOffset;
@@ -1340,9 +1185,9 @@ namespace Hecton8.World
                 }
             }
 
-            if (_seedFlightStates.IsCreated)
+            if (_seedFlightStateCount > 0)
             {
-                for (int i = 0; i < _seedFlightStates.Length; i++)
+                for (int i = 0; i < _seedFlightStateCount; i++)
                 {
                     SeedFlightState state = _seedFlightStates[i];
                     state.Position += runtimeOffset;
@@ -1350,9 +1195,9 @@ namespace Hecton8.World
                 }
             }
 
-            if (_maturationStates.IsCreated)
+            if (_maturationStateCount > 0)
             {
-                for (int i = 0; i < _maturationStates.Length; i++)
+                for (int i = 0; i < _maturationStateCount; i++)
                 {
                     FloraMaturationState state = _maturationStates[i];
                     state.RuntimePosition += runtimeOffset;
@@ -1360,71 +1205,15 @@ namespace Hecton8.World
                 }
             }
 
-            if (_symbioticFungalNodes.IsCreated)
+            if (_symbioticFungalNodeCount > 0)
             {
-                for (int i = 0; i < _symbioticFungalNodes.Length; i++)
+                for (int i = 0; i < _symbioticFungalNodeCount; i++)
                 {
                     SymbioticFungalNodeState state = _symbioticFungalNodes[i];
                     state.RuntimePosition += runtimeOffset;
                     _symbioticFungalNodes[i] = state;
                 }
             }
-        }
-
-        private void RegisterNativeMemorySentinel()
-        {
-            NativeMemorySentinel.RegisterNativeList(_destroyedFloraScratch, NativeMemoryOwner, nameof(_destroyedFloraScratch), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_pendingSeedScratch, NativeMemoryOwner, nameof(_pendingSeedScratch), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_regrowthStates, NativeMemoryOwner, nameof(_regrowthStates), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_stateIndexByInstanceUid, NativeMemoryOwner, nameof(_stateIndexByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_seedFlightStates, NativeMemoryOwner, nameof(_seedFlightStates), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_seedFlightIndexByUid, NativeMemoryOwner, nameof(_seedFlightIndexByUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_seedEmissionByDestroyedUid, NativeMemoryOwner, nameof(_seedEmissionByDestroyedUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_maturationStates, NativeMemoryOwner, nameof(_maturationStates), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeHashMap(_maturationIndexByInstanceUid, NativeMemoryOwner, nameof(_maturationIndexByInstanceUid), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_symbioticFungalNodes, NativeMemoryOwner, nameof(_symbioticFungalNodes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_symbioticFungalBuffs, NativeMemoryOwner, nameof(_symbioticFungalBuffs), NativeMemoryLifetime);
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency = default, bool deferDisposal = false) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            if (deferDisposal)
-                array.Dispose(dependency);
-            else
-                array.Dispose();
-            array = default;
-        }
-
-        private static void DisposeNativeList<T>(ref NativeList<T> list, string label, JobHandle dependency = default, bool deferDisposal = false) where T : unmanaged
-        {
-            if (!list.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
-            if (deferDisposal)
-                list.Dispose(dependency);
-            else
-                list.Dispose();
-            list = default;
-        }
-
-        private static void DisposeNativeHashMap<TKey, TValue>(ref NativeHashMap<TKey, TValue> map, string label, JobHandle dependency = default, bool deferDisposal = false)
-            where TKey : unmanaged, System.IEquatable<TKey>
-            where TValue : unmanaged
-        {
-            if (!map.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeHashMap(NativeMemoryOwner, label);
-            if (deferDisposal)
-                map.Dispose(dependency);
-            else
-                map.Dispose();
-            map = default;
         }
 
         private static Vector3 ExtractTranslation(Matrix4x4 matrix)
@@ -1434,20 +1223,28 @@ namespace Hecton8.World
 
         private void RemoveSeedFlightAtSwapBack(int index)
         {
-            if (!_seedFlightStates.IsCreated || !_seedFlightIndexByUid.IsCreated || index < 0 || index >= _seedFlightStates.Length)
+            if (index < 0 || index >= _seedFlightStateCount)
                 return;
 
-            SeedFlightState removed = _seedFlightStates[index];
-            int lastIndex = _seedFlightStates.Length - 1;
-            SeedFlightState last = _seedFlightStates[lastIndex];
-            _seedFlightStates.RemoveAtSwapBack(index);
-            _seedFlightIndexByUid.Remove(removed.SeedInstanceUid);
+            int lastIndex = _seedFlightStateCount - 1;
+            _seedFlightStates[index] = _seedFlightStates[lastIndex];
+            _seedFlightStates[lastIndex] = default;
+            _seedFlightStateCount = lastIndex;
+        }
 
-            if (index < lastIndex)
+        private bool TryFindSeedFlightIndex(uint seedUid, out int index)
+        {
+            for (int i = 0; i < _seedFlightStateCount; i++)
             {
-                _seedFlightIndexByUid.Remove(last.SeedInstanceUid);
-                _seedFlightIndexByUid.TryAdd(last.SeedInstanceUid, index);
+                if (_seedFlightStates[i].SeedInstanceUid != seedUid)
+                    continue;
+
+                index = i;
+                return true;
             }
+
+            index = -1;
+            return false;
         }
 
         private static Vector3 ResolveSeedLateralOffset(uint seedUid)
@@ -1491,21 +1288,74 @@ namespace Hecton8.World
 
         private void RemoveStateAtSwapBack(int index)
         {
-            if (!_regrowthStates.IsCreated || !_stateIndexByInstanceUid.IsCreated || index < 0 || index >= _regrowthStates.Length)
+            if (index < 0 || index >= _regrowthStateCount)
                 return;
 
             FloraRegrowthState removed = _regrowthStates[index];
-            int lastIndex = _regrowthStates.Length - 1;
-            FloraRegrowthState last = _regrowthStates[lastIndex];
-            _regrowthStates.RemoveAtSwapBack(index);
-            _stateIndexByInstanceUid.Remove(removed.InstanceUid);
-            if (_seedEmissionByDestroyedUid.IsCreated)
-                _seedEmissionByDestroyedUid.Remove(removed.InstanceUid);
+            int lastIndex = _regrowthStateCount - 1;
+            _regrowthStates[index] = _regrowthStates[lastIndex];
+            _regrowthStates[lastIndex] = default;
+            _regrowthStateCount = lastIndex;
+            RemoveSeedEmissionUid(removed.InstanceUid);
+        }
 
-            if (index < lastIndex)
+        private bool TryFindRegrowthStateIndex(uint instanceUid, out int index)
+        {
+            for (int i = 0; i < _regrowthStateCount; i++)
             {
-                _stateIndexByInstanceUid.Remove(last.InstanceUid);
-                _stateIndexByInstanceUid.TryAdd(last.InstanceUid, index);
+                if (_regrowthStates[i].InstanceUid != instanceUid)
+                    continue;
+
+                index = i;
+                return true;
+            }
+
+            index = -1;
+            return false;
+        }
+
+        private bool ContainsSeedEmissionUid(uint instanceUid)
+        {
+            if (instanceUid == 0u)
+                return false;
+
+            for (int i = 0; i < _seedEmissionDestroyedUidCount; i++)
+            {
+                if (_seedEmissionDestroyedUids[i] == instanceUid)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void TryAddSeedEmissionUid(uint instanceUid)
+        {
+            if (instanceUid == 0u || ContainsSeedEmissionUid(instanceUid))
+                return;
+
+            int count = _seedEmissionDestroyedUidCount;
+            if (count >= _seedEmissionDestroyedUids.Length)
+                return;
+
+            _seedEmissionDestroyedUids[count] = instanceUid;
+            _seedEmissionDestroyedUidCount = count + 1;
+        }
+
+        private void RemoveSeedEmissionUid(uint instanceUid)
+        {
+            if (instanceUid == 0u)
+                return;
+
+            for (int i = 0; i < _seedEmissionDestroyedUidCount; i++)
+            {
+                if (_seedEmissionDestroyedUids[i] != instanceUid)
+                    continue;
+
+                int lastIndex = _seedEmissionDestroyedUidCount - 1;
+                _seedEmissionDestroyedUids[i] = _seedEmissionDestroyedUids[lastIndex];
+                _seedEmissionDestroyedUids[lastIndex] = 0u;
+                _seedEmissionDestroyedUidCount = lastIndex;
+                return;
             }
         }
 
@@ -1518,7 +1368,8 @@ namespace Hecton8.World
 
         private static Vector3 ToRuntimePosition(AbsoluteUniversePosition position)
         {
-            float3 runtimePosition = position.ToRuntimeFloat3();
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            float3 runtimePosition = AUPMath.ResolveCameraRelative(in position, in runtimeOriginAup);
             return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
         }
     }

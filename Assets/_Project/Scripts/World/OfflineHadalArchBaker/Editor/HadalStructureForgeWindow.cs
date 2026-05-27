@@ -292,9 +292,9 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
             if (!drawPreview || !HadalSdfPreviewStore.HasPreview)
                 return;
 
-            NativeArray<float3> hits = HadalSdfPreviewStore.HitPositions;
-            NativeArray<byte> flags = HadalSdfPreviewStore.HitFlags;
-            if (!hits.IsCreated || !flags.IsCreated)
+            float3[] hits = HadalSdfPreviewStore.HitPositions;
+            byte[] flags = HadalSdfPreviewStore.HitFlags;
+            if (hits == null || flags == null)
                 return;
 
             Gizmos.color = new Color(0.1f, 0.85f, 1f, 0.75f);
@@ -312,8 +312,8 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
 
     public static class HadalSdfPreviewStore
     {
-        public static NativeArray<float3> HitPositions;
-        public static NativeArray<byte> HitFlags;
+        public static float3[] HitPositions;
+        public static byte[] HitFlags;
         public static bool HasPreview;
 
         static HadalSdfPreviewStore()
@@ -329,8 +329,8 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
             int2 grid = new int2(56, 40);
             int rayCount = grid.x * grid.y;
             NativeArray<SdfShapeDTO> nativeShapes = new NativeArray<SdfShapeDTO>(math.max(shapeCount, 1), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            HitPositions = new NativeArray<float3>(rayCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            HitFlags = new NativeArray<byte>(rayCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            NativeArray<float3> hitPositions = new NativeArray<float3>(rayCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> hitFlags = new NativeArray<byte>(rayCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             try
             {
                 for (int i = 0; i < shapeCount; i++)
@@ -339,27 +339,38 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
                 new HadalSdfPreviewRaymarchJob
                 {
                     Shapes = nativeShapes,
-                    HitPositions = HitPositions,
-                    HitFlags = HitFlags,
+                    HitPositions = hitPositions,
+                    HitFlags = hitFlags,
                     Grid = grid,
                     ShapeCount = shapeCount,
                     BoundsExtents = boundsExtents,
                     Steps = 72
                 }.Schedule(rayCount, 64).Complete();
+                HitPositions = new float3[rayCount];
+                HitFlags = new byte[rayCount];
+                for (int i = 0; i < rayCount; i++)
+                {
+                    HitPositions[i] = hitPositions[i];
+                    HitFlags[i] = hitFlags[i];
+                }
+
                 HasPreview = true;
             }
             finally
             {
-                nativeShapes.Dispose();
+                if (nativeShapes.IsCreated)
+                    nativeShapes.Dispose();
+                if (hitPositions.IsCreated)
+                    hitPositions.Dispose();
+                if (hitFlags.IsCreated)
+                    hitFlags.Dispose();
             }
         }
 
         public static void Dispose()
         {
-            if (HitPositions.IsCreated)
-                HitPositions.Dispose();
-            if (HitFlags.IsCreated)
-                HitFlags.Dispose();
+            HitPositions = null;
+            HitFlags = null;
             HasPreview = false;
         }
     }

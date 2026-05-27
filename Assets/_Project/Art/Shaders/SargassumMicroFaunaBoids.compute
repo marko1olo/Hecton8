@@ -287,6 +287,7 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define _AcousticPanicSeed (_SargassumSimulationFrame[0].AcousticPanic1.x)
 #define _AcousticPanicStrength (_SargassumSimulationFrame[0].AcousticPanic1.y)
 #define _AcousticPanicTimeRemaining (_SargassumSimulationFrame[0].AcousticPanic1.z)
+#define _LatchStatsActive (_SargassumSimulationFrame[0].AcousticPanic1.w)
 #define _AbyssalFlowWeatherCurrentWS (_SargassumSimulationFrame[0].AbyssalFlowWeatherCurrent.xyz)
 
 #define LATCH_STATS_QUANTIZE 2048.0
@@ -1275,6 +1276,9 @@ void StoreLatchStat(int index, int value)
 
 void AddLatchStat(int index, int value)
 {
+    if (_LatchStatsActive <= 0.5)
+        return;
+
     uint ignoredValue = 0u;
     _LatchStats.InterlockedAdd(IntBufferByteOffset(index), asuint(value), ignoredValue);
 }

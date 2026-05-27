@@ -30,6 +30,7 @@ namespace Hecton8.Visor
         private const string DearLieProxyShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VolumetricFog_DearLie.shader";
         private const string DearLieProxyShaderName = "Hidden/Hecton8/VolumetricFogDearLie";
         private const double SetupBudgetWarningMilliseconds = 0.2d;
+        private const double MaxCameraLocalAupMeters = 1000000d;
         private const int ColdStateRepairCadenceFrames = 30;
         private const uint SetupWarningHash = 0xA88120F0u;
         private const uint SetupContextHash = 0xC0120F6Au;
@@ -172,7 +173,7 @@ namespace Hecton8.Visor
             private const int FrameParamsStrideBytes = 224;
             private const int DumpThresholdMicroseconds = 2000;
             private const float DearLieProxyBypassThreshold = 0.999f;
-            private const string DumpRelativePath = "Docs/AgentLogs/Dump_1309_VolumetricFog.bin";
+            private const string DumpRelativePath = "Docs/AgentLogs/Dump_1335_VolumetricParticulateFog.bin";
             private const string GridBuildKernelName = "BuildVolumetricFogGrid";
             private const string RaymarchKernelName = "RaymarchVolumetricFog";
             private const string RaymarchXrKernelName = "RaymarchVolumetricFogXR";
@@ -202,9 +203,9 @@ namespace Hecton8.Visor
             {
                 internal ComputeShader computeShader;
                 internal int kernelIndex;
-                internal uint threadGroupSizeX;
-                internal uint threadGroupSizeY;
-                internal int activeViewCount;
+                internal int dispatchX;
+                internal int dispatchY;
+                internal int dispatchZ;
                 internal TextureHandle depth;
                 internal TextureHandle volume;
                 internal TextureHandle result;
@@ -220,9 +221,9 @@ namespace Hecton8.Visor
             {
                 internal ComputeShader computeShader;
                 internal int kernelIndex;
-                internal uint threadGroupSizeX;
-                internal uint threadGroupSizeY;
-                internal uint threadGroupSizeZ;
+                internal int dispatchX;
+                internal int dispatchY;
+                internal int dispatchZ;
                 internal TextureHandle volume;
                 internal GraphicsBuffer paramsBuffer;
                 internal GraphicsBuffer frameParamsBuffer;
@@ -230,7 +231,6 @@ namespace Hecton8.Visor
                 internal TextureHandle marineFogDensityTexture;
                 internal TextureHandle abyssalFlowTexture;
                 internal Vector4 volumeSize;
-                internal int activeDepthSlices;
             }
 
             private sealed class RasterCompositePassData
@@ -296,13 +296,15 @@ namespace Hecton8.Visor
             private int _raymarchKernel = -1;
             private int _raymarchXrKernel = -1;
             private int _gridBuildKernel = -1;
-            private uint _gridBuildThreadGroupSizeX = 8;
-            private uint _gridBuildThreadGroupSizeY = 8;
-            private uint _gridBuildThreadGroupSizeZ = 1;
-            private uint _raymarchThreadGroupSizeX = 8;
-            private uint _raymarchThreadGroupSizeY = 8;
-            private uint _raymarchXrThreadGroupSizeX = 8;
-            private uint _raymarchXrThreadGroupSizeY = 8;
+            private uint _gridBuildThreadGroupSizeX;
+            private uint _gridBuildThreadGroupSizeY;
+            private uint _gridBuildThreadGroupSizeZ;
+            private uint _raymarchThreadGroupSizeX;
+            private uint _raymarchThreadGroupSizeY;
+            private uint _raymarchXrThreadGroupSizeX;
+            private uint _raymarchXrThreadGroupSizeY;
+            private const uint MaxKernelThreadProduct = 256u;
+            private const int MaxDispatchGroupsPerDimension = 65535;
             private float _qualityWeight;
             private double3 _runtimeOriginAup;
             private int _telemetryWriteIndex;
@@ -324,6 +326,7 @@ namespace Hecton8.Visor
             private bool _hasAuthoredParams;
             private bool _hasExternalOverrideParams;
             private bool _deferredDumpRequested;
+            private bool _forceProxyOnly;
 
             public VolumetricFogPass()
             {
@@ -331,16 +334,23 @@ namespace Hecton8.Visor
                 requiresIntermediateTexture = true;
             }
 
-            public bool Setup(FeatureSettings settings, ComputeShader computeShader, float qualityWeight, double3 runtimeOriginAup, int frameIndex)
+            public bool Setup(
+                FeatureSettings settings,
+                ComputeShader computeShader,
+                float qualityWeight,
+                double3 runtimeOriginAup,
+                int frameIndex,
+                bool forceProxyOnly)
             {
                 _settings = settings;
                 _qualityWeight = ResolveFiniteSaturated(qualityWeight);
                 _runtimeOriginAup = math.all(math.isfinite(runtimeOriginAup)) ? runtimeOriginAup : double3.zero;
                 _frameIndex = math.max(0, frameIndex);
+                _forceProxyOnly = forceProxyOnly;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
-                return TryBindComputeShader(computeShader);
+                return forceProxyOnly || TryBindComputeShader(computeShader);
             }
 
             public bool PrepareComputeKernels(FeatureSettings settings, ComputeShader computeShader)
@@ -384,9 +394,14 @@ namespace Hecton8.Visor
                 _gridBuildKernel = _computeShader.FindKernel(GridBuildKernelName);
                 _raymarchKernel = _computeShader.FindKernel(RaymarchKernelName);
                 _raymarchXrKernel = _computeShader.FindKernel(RaymarchXrKernelName);
-                _computeShader.GetKernelThreadGroupSizes(_gridBuildKernel, out _gridBuildThreadGroupSizeX, out _gridBuildThreadGroupSizeY, out _gridBuildThreadGroupSizeZ);
-                _computeShader.GetKernelThreadGroupSizes(_raymarchKernel, out _raymarchThreadGroupSizeX, out _raymarchThreadGroupSizeY, out _);
-                _computeShader.GetKernelThreadGroupSizes(_raymarchXrKernel, out _raymarchXrThreadGroupSizeX, out _raymarchXrThreadGroupSizeY, out _);
+                if (!TryResolveKernelThreadGroups(_computeShader, _gridBuildKernel, false, out _gridBuildThreadGroupSizeX, out _gridBuildThreadGroupSizeY, out _gridBuildThreadGroupSizeZ) ||
+                    !TryResolveKernelThreadGroups(_computeShader, _raymarchKernel, true, out _raymarchThreadGroupSizeX, out _raymarchThreadGroupSizeY, out _) ||
+                    !TryResolveKernelThreadGroups(_computeShader, _raymarchXrKernel, true, out _raymarchXrThreadGroupSizeX, out _raymarchXrThreadGroupSizeY, out _))
+                {
+                    ResetComputeKernelState();
+                    return false;
+                }
+
                 return true;
             }
 
@@ -395,13 +410,50 @@ namespace Hecton8.Visor
                 _gridBuildKernel = -1;
                 _raymarchKernel = -1;
                 _raymarchXrKernel = -1;
-                _gridBuildThreadGroupSizeX = 8;
-                _gridBuildThreadGroupSizeY = 8;
-                _gridBuildThreadGroupSizeZ = 1;
-                _raymarchThreadGroupSizeX = 8;
-                _raymarchThreadGroupSizeY = 8;
-                _raymarchXrThreadGroupSizeX = 8;
-                _raymarchXrThreadGroupSizeY = 8;
+                _gridBuildThreadGroupSizeX = 0u;
+                _gridBuildThreadGroupSizeY = 0u;
+                _gridBuildThreadGroupSizeZ = 0u;
+                _raymarchThreadGroupSizeX = 0u;
+                _raymarchThreadGroupSizeY = 0u;
+                _raymarchXrThreadGroupSizeX = 0u;
+                _raymarchXrThreadGroupSizeY = 0u;
+            }
+
+            private static bool TryResolveKernelThreadGroups(
+                ComputeShader computeShader,
+                int kernelIndex,
+                bool requireSingleZ,
+                out uint groupSizeX,
+                out uint groupSizeY,
+                out uint groupSizeZ)
+            {
+                groupSizeX = 0u;
+                groupSizeY = 0u;
+                groupSizeZ = 0u;
+                if (computeShader == null || kernelIndex < 0 || !computeShader.IsSupported(kernelIndex))
+                    return false;
+
+                computeShader.GetKernelThreadGroupSizes(kernelIndex, out uint x, out uint y, out uint z);
+                ulong threadProduct = (ulong)x * y * z;
+                if (x == 0u || y == 0u || z == 0u || threadProduct == 0UL || threadProduct > MaxKernelThreadProduct)
+                    return false;
+
+                if (requireSingleZ && z != 1u)
+                    return false;
+
+                groupSizeX = x;
+                groupSizeY = y;
+                groupSizeZ = z;
+                return true;
+            }
+
+            private static int ResolveDispatchGroups(int value, uint groupSize)
+            {
+                if (value <= 0 || groupSize == 0u)
+                    return 0;
+
+                long groups = ((long)value + groupSize - 1L) / groupSize;
+                return groups > 0L && groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
             }
 
             public void Dispose()
@@ -476,13 +528,16 @@ namespace Hecton8.Visor
                                        _abyssalFlowTextureHandle != null &&
                                        _emptyVolumeTextureHandle != null;
 
-            public bool TryPrepareNativeState(IDataVault vault)
+            public bool TryPrepareNativeState(IDataVault vault, bool allowAllocation)
             {
-                if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                if (vault == null || vault.IsCompactionFenceActive)
                     return false;
 
                 if (!ReferenceEquals(vault, _vault))
                 {
+                    if (!allowAllocation)
+                        return false;
+
                     if (_mockLightsJobPending)
                     {
                         if (!_mockLightsJobHandle.IsCompleted)
@@ -505,6 +560,12 @@ namespace Hecton8.Visor
                     ClearPointLightBuffer(_pointLightBufferB);
                 }
 
+                if (!allowAllocation)
+                    return EnsureVaultState();
+
+                if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                    return false;
+
                 if (_paramsHandle.BufferID == 0u)
                     _paramsHandle = vault.EnsureGenerationHandle<FogConstantsDTO>(BufferID.ShinobuVolumetricFogParams, 1, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
                 if (_pointLightsHandle.BufferID == 0u)
@@ -521,21 +582,35 @@ namespace Hecton8.Visor
                 return true;
             }
 
-            public bool TryPrepareGpuState()
+            public bool TryPrepareGpuState(bool allowAllocation)
             {
-                EnsureFallbackTextures();
-                if (!EnsureDearLieProxyMaterial())
+                if (!allowAllocation && !HasGpuState)
                     return false;
 
-                if (!EnsureGpuBuffers())
+                if (allowAllocation)
+                    EnsureFallbackTextures();
+                else if (_emptyFogDensityTexture == null || _emptyAbyssalFlowTexture == null)
                     return false;
 
-                return ResolveExternalTextureHandle(_emptyFogDensityTexture, ref _marineFogDensityTextureHandle, ref _marineFogDensityTextureHandleSource) != null &&
-                       ResolveExternalTextureHandle(_emptyAbyssalFlowTexture, ref _abyssalFlowTextureHandle, ref _abyssalFlowTextureHandleSource) != null &&
-                       ResolveExternalTextureHandle(_emptyAbyssalFlowTexture, ref _emptyVolumeTextureHandle, ref _emptyVolumeTextureHandleSource) != null;
+                if (!EnsureDearLieProxyMaterial(allowAllocation))
+                    return false;
+
+                if (!EnsureGpuBuffers(allowAllocation))
+                    return false;
+
+                bool fallbackHandlesReady = ResolveExternalTextureHandle(_emptyFogDensityTexture, ref _marineFogDensityTextureHandle, ref _marineFogDensityTextureHandleSource, allowAllocation) != null &&
+                                            ResolveExternalTextureHandle(_emptyAbyssalFlowTexture, ref _abyssalFlowTextureHandle, ref _abyssalFlowTextureHandleSource, allowAllocation) != null &&
+                                            ResolveExternalTextureHandle(_emptyAbyssalFlowTexture, ref _emptyVolumeTextureHandle, ref _emptyVolumeTextureHandleSource, allowAllocation) != null;
+                if (!fallbackHandlesReady)
+                    return false;
+
+                if (allowAllocation)
+                    RefreshExternalBridgeState(allowExternalTextureHandleAllocation: true);
+
+                return true;
             }
 
-            public void RefreshExternalBridgeState()
+            public void RefreshExternalBridgeState(bool allowExternalTextureHandleAllocation)
             {
                 _bridgeMarineFogTexelSize = Shader.GetGlobalVector(ShaderConstants.MarineSnowDensityTexelSizeId);
                 _bridgeMarineFogParams = Shader.GetGlobalVector(ShaderConstants.MarineSnowDensityParamsId);
@@ -557,7 +632,8 @@ namespace Hecton8.Visor
                         ref _externalMarineFogDensityTextureHandle,
                         ref _externalMarineFogDensityTextureHandleSource,
                         ref _externalMarineFogDensityTextureHandleB,
-                        ref _externalMarineFogDensityTextureHandleSourceB);
+                        ref _externalMarineFogDensityTextureHandleSourceB,
+                        allowExternalTextureHandleAllocation);
                 }
 
                 if (IsUsableAbyssalFlowTexture(_bridgeAbyssalFlowTexture) &&
@@ -568,7 +644,8 @@ namespace Hecton8.Visor
                         ref _externalAbyssalFlowTextureHandle,
                         ref _externalAbyssalFlowTextureHandleSource,
                         ref _externalAbyssalFlowTextureHandleB,
-                        ref _externalAbyssalFlowTextureHandleSourceB);
+                        ref _externalAbyssalFlowTextureHandleSourceB,
+                        allowExternalTextureHandleAllocation);
                 }
             }
 
@@ -577,28 +654,27 @@ namespace Hecton8.Visor
                 if (!_deferredDumpRequested || _vault == null || _telemetryHandle.BufferID == 0u)
                     return;
 
-                if (!_vault.TryResolveHandle(in _telemetryHandle, out NativeArray<VolumetricFogTelemetryEntry> telemetry) ||
-                    !telemetry.IsCreated ||
-                    telemetry.Length < VolumetricFogConstants.TelemetryCapacity)
+                if (!TryReadTelemetryDumpLength(out int telemetryLength) ||
+                    telemetryLength <= 0)
                 {
                     return;
                 }
 
-                DumpTelemetryRing(telemetry);
+                DumpTelemetryRing(telemetryLength);
                 _deferredDumpRequested = false;
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                if (_settings == null ||
-                    _computeShader == null ||
-                    _gridBuildKernel < 0 ||
-                    _raymarchKernel < 0 ||
-                    _raymarchXrKernel < 0 ||
-                    !VolumetricFogNativeLayout.Validate())
+                if (_settings == null || !VolumetricFogNativeLayout.Validate())
                 {
                     return;
                 }
+
+                bool hasComputeKernels = _computeShader != null &&
+                                         _gridBuildKernel >= 0 &&
+                                         _raymarchKernel >= 0 &&
+                                         _raymarchXrKernel >= 0;
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
                 if (resourceData.isActiveTargetBackBuffer)
@@ -631,7 +707,10 @@ namespace Hecton8.Visor
                 float proxyBlend = _settings.ResolveProxyBlend(_qualityWeight);
                 float volumetricContribution = math.saturate(1f - proxyBlend);
                 float volumetricCurve = ResolveQualityCurve(volumetricContribution);
-                bool proxyOnly = proxyBlend >= DearLieProxyBypassThreshold || xrActive;
+                bool proxyOnly = _forceProxyOnly ||
+                                 proxyBlend >= DearLieProxyBypassThreshold ||
+                                 xrActive ||
+                                 !hasComputeKernels;
                 float effectiveProxyBlend = proxyOnly ? 1f : proxyBlend;
                 float effectiveVolumetricQuality = proxyOnly
                     ? 0f
@@ -777,6 +856,20 @@ namespace Hecton8.Visor
                 if (activePointLightBuffer == null || !activePointLightBuffer.IsValid())
                     return;
 
+                int gridDispatchX = ResolveDispatchGroups(volumeWidth, _gridBuildThreadGroupSizeX);
+                int gridDispatchY = ResolveDispatchGroups(volumeHeight, _gridBuildThreadGroupSizeY);
+                int gridDispatchZ = ResolveDispatchGroups(raySteps, _gridBuildThreadGroupSizeZ);
+                uint raymarchThreadGroupX = useTextureArray ? _raymarchXrThreadGroupSizeX : _raymarchThreadGroupSizeX;
+                uint raymarchThreadGroupY = useTextureArray ? _raymarchXrThreadGroupSizeY : _raymarchThreadGroupSizeY;
+                int raymarchDispatchX = ResolveDispatchGroups(halfWidth, raymarchThreadGroupX);
+                int raymarchDispatchY = ResolveDispatchGroups(halfHeight, raymarchThreadGroupY);
+                int raymarchDispatchZ = ResolveDispatchGroups(activeViewCount, 1u);
+                if (gridDispatchX <= 0 || gridDispatchY <= 0 || gridDispatchZ <= 0 ||
+                    raymarchDispatchX <= 0 || raymarchDispatchY <= 0 || raymarchDispatchZ <= 0)
+                {
+                    return;
+                }
+
                 BufferHandle paramsBufferHandle = renderGraph.ImportBuffer(activeParamsBuffer);
                 BufferHandle frameParamsBufferHandle = renderGraph.ImportBuffer(activeFrameParamsBuffer);
                 RTHandle marineFogTextureHandle = TryGetCachedExternalTextureHandle(
@@ -817,9 +910,9 @@ namespace Hecton8.Visor
                 {
                     passData.computeShader = _computeShader;
                     passData.kernelIndex = _gridBuildKernel;
-                    passData.threadGroupSizeX = _gridBuildThreadGroupSizeX;
-                    passData.threadGroupSizeY = _gridBuildThreadGroupSizeY;
-                    passData.threadGroupSizeZ = _gridBuildThreadGroupSizeZ;
+                    passData.dispatchX = gridDispatchX;
+                    passData.dispatchY = gridDispatchY;
+                    passData.dispatchZ = gridDispatchZ;
                     passData.volume = volumeTexture;
                     passData.paramsBuffer = activeParamsBuffer;
                     passData.frameParamsBuffer = activeFrameParamsBuffer;
@@ -827,7 +920,6 @@ namespace Hecton8.Visor
                     passData.marineFogDensityTexture = marineFogGraphTexture;
                     passData.abyssalFlowTexture = abyssalFlowGraphTexture;
                     passData.volumeSize = new Vector4(volumeWidth, volumeHeight, 1f / Mathf.Max(1, volumeWidth), 1f / Mathf.Max(1, volumeHeight));
-                    passData.activeDepthSlices = raySteps;
 
                     builder.UseTexture(volumeTexture, AccessFlags.Write);
                     builder.UseTexture(marineFogGraphTexture, AccessFlags.Read);
@@ -838,16 +930,13 @@ namespace Hecton8.Visor
 
                     builder.SetRenderFunc(static (GridBuildPassData data, ComputeGraphContext context) =>
                     {
-                        int dispatchX = Mathf.CeilToInt(data.volumeSize.x / Mathf.Max(1u, data.threadGroupSizeX));
-                        int dispatchY = Mathf.CeilToInt(data.volumeSize.y / Mathf.Max(1u, data.threadGroupSizeY));
-                        int dispatchZ = Mathf.CeilToInt(data.activeDepthSlices / (float)Mathf.Max(1u, data.threadGroupSizeZ));
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.VolumeWriteId, data.volume);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.MarineSnowDensityTextureId, data.marineFogDensityTexture);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.AbyssalFlowTextureId, data.abyssalFlowTexture);
                         context.cmd.SetComputeConstantBufferParam(data.computeShader, ShaderConstants.ParamsBufferId, data.paramsBuffer, 0, VolumetricFogConstants.ParamsStrideBytes);
                         context.cmd.SetComputeConstantBufferParam(data.computeShader, ShaderConstants.FrameParamsBufferId, data.frameParamsBuffer, 0, FrameParamsStrideBytes);
                         context.cmd.SetComputeBufferParam(data.computeShader, data.kernelIndex, ShaderConstants.PointLightsBufferId, data.pointLightBuffer);
-                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, Mathf.Max(1, dispatchZ));
+                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, data.dispatchX, data.dispatchY, data.dispatchZ);
                     });
                 }
 
@@ -855,9 +944,9 @@ namespace Hecton8.Visor
                 {
                     passData.computeShader = _computeShader;
                     passData.kernelIndex = useTextureArray ? _raymarchXrKernel : _raymarchKernel;
-                    passData.threadGroupSizeX = useTextureArray ? _raymarchXrThreadGroupSizeX : _raymarchThreadGroupSizeX;
-                    passData.threadGroupSizeY = useTextureArray ? _raymarchXrThreadGroupSizeY : _raymarchThreadGroupSizeY;
-                    passData.activeViewCount = activeViewCount;
+                    passData.dispatchX = raymarchDispatchX;
+                    passData.dispatchY = raymarchDispatchY;
+                    passData.dispatchZ = raymarchDispatchZ;
                     passData.depth = depthTexture;
                     passData.volume = volumeTexture;
                     passData.result = halfTexture;
@@ -879,8 +968,6 @@ namespace Hecton8.Visor
 
                     builder.SetRenderFunc(static (RaymarchPassData data, ComputeGraphContext context) =>
                     {
-                        int dispatchX = Mathf.CeilToInt(data.halfSize.x / Mathf.Max(1u, data.threadGroupSizeX));
-                        int dispatchY = Mathf.CeilToInt(data.halfSize.y / Mathf.Max(1u, data.threadGroupSizeY));
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.VolumeTextureId, data.volume);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.HalfResultId, data.result);
@@ -889,7 +976,7 @@ namespace Hecton8.Visor
                         context.cmd.SetComputeConstantBufferParam(data.computeShader, ShaderConstants.ParamsBufferId, data.paramsBuffer, 0, VolumetricFogConstants.ParamsStrideBytes);
                         context.cmd.SetComputeConstantBufferParam(data.computeShader, ShaderConstants.FrameParamsBufferId, data.frameParamsBuffer, 0, FrameParamsStrideBytes);
                         context.cmd.SetComputeBufferParam(data.computeShader, data.kernelIndex, ShaderConstants.PointLightsBufferId, data.pointLightBuffer);
-                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, Mathf.Max(1, data.activeViewCount));
+                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, data.dispatchX, data.dispatchY, data.dispatchZ);
                     });
                 }
 
@@ -992,32 +1079,57 @@ namespace Hecton8.Visor
                 if (!HasNativeState)
                     return false;
 
-                return _vault.TryResolveHandle(in _paramsHandle, out NativeArray<FogConstantsDTO> fogParams) &&
+                IDataVault vault = _vault;
+                return vault != null &&
+                       !vault.IsCompactionFenceActive &&
+                       vault.TryReadOnlyHandle(in _paramsHandle, out NativeArray<FogConstantsDTO>.ReadOnly fogParams) &&
+                       !vault.IsCompactionFenceActive &&
                        fogParams.IsCreated &&
                        fogParams.Length > 0 &&
-                       _vault.TryResolveHandle(in _pointLightsHandle, out NativeArray<PointLightDTO> pointLights) &&
+                       vault.TryReadOnlyHandle(in _pointLightsHandle, out NativeArray<PointLightDTO>.ReadOnly pointLights) &&
+                       !vault.IsCompactionFenceActive &&
                        pointLights.IsCreated &&
                        pointLights.Length >= VolumetricFogConstants.MaxPointLights &&
-                       _vault.TryResolveHandle(in _telemetryHandle, out NativeArray<VolumetricFogTelemetryEntry> telemetry) &&
+                       vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VolumetricFogTelemetryEntry>.ReadOnly telemetry) &&
+                       !vault.IsCompactionFenceActive &&
                        telemetry.IsCreated &&
                        telemetry.Length >= VolumetricFogConstants.TelemetryCapacity &&
-                       _vault.TryResolveHandle(in _extinctionProfilesHandle, out NativeArray<WaterExtinctionProfileDTO> profiles) &&
+                       vault.TryReadOnlyHandle(in _extinctionProfilesHandle, out NativeArray<WaterExtinctionProfileDTO>.ReadOnly profiles) &&
+                       !vault.IsCompactionFenceActive &&
                        profiles.IsCreated &&
                        profiles.Length >= VolumetricFogConstants.ExtinctionProfileCapacity;
             }
 
             private void SeedDefaultExtinctionProfiles()
             {
-                if (_vault == null || !_vault.TryResolveHandle(in _extinctionProfilesHandle, out NativeArray<WaterExtinctionProfileDTO> profiles))
+                IDataVault vault = _vault;
+                if (vault == null ||
+                    vault.IsCompactionFenceActive ||
+                    _extinctionProfilesHandle.BufferID == 0u ||
+                    !vault.TryAcquireWriteLock(in _extinctionProfilesHandle, SystemID.Vfx, out NativeArray<WaterExtinctionProfileDTO> profiles))
+                {
                     return;
+                }
 
-                if (_extinctionProfilesSeeded || !profiles.IsCreated || profiles.Length <= 0)
-                    return;
+                try
+                {
+                    if (vault.IsCompactionFenceActive ||
+                        _extinctionProfilesSeeded ||
+                        !profiles.IsCreated ||
+                        profiles.Length <= 0)
+                    {
+                        return;
+                    }
 
-                profiles[0] = VolumetricFogParamsAccess.CreateDefaultExtinctionProfile();
-                for (int i = 1; i < profiles.Length; i++)
-                    profiles[i] = default;
-                _extinctionProfilesSeeded = true;
+                    profiles[0] = VolumetricFogParamsAccess.CreateDefaultExtinctionProfile();
+                    for (int i = 1; i < profiles.Length; i++)
+                        profiles[i] = default;
+                    _extinctionProfilesSeeded = true;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _extinctionProfilesHandle, SystemID.Vfx);
+                }
             }
 
             private bool UpdateVaultAndGpuState(
@@ -1039,21 +1151,51 @@ namespace Hecton8.Visor
             {
                 activePointLightCount = 0;
                 activePointLightBuffer = GetActivePointLightBuffer();
-                if (_vault == null ||
-                    !_vault.TryResolveHandle(in _paramsHandle, out NativeArray<FogConstantsDTO> fogParams) ||
-                    !_vault.TryResolveHandle(in _pointLightsHandle, out NativeArray<PointLightDTO> pointLights) ||
-                    !_vault.TryResolveHandle(in _telemetryHandle, out NativeArray<VolumetricFogTelemetryEntry> telemetry) ||
-                    !fogParams.IsCreated ||
-                    fogParams.Length <= 0 ||
-                    !pointLights.IsCreated ||
-                    pointLights.Length < VolumetricFogConstants.MaxPointLights ||
+                IDataVault vault = _vault;
+                if (vault == null ||
+                    vault.IsCompactionFenceActive ||
+                    _paramsHandle.BufferID == 0u ||
+                    _pointLightsHandle.BufferID == 0u ||
+                    _telemetryHandle.BufferID == 0u ||
                     activePointLightBuffer == null ||
                     !activePointLightBuffer.IsValid())
                 {
                     return false;
                 }
 
-                RefreshCompletedLightJobAndUpload(pointLights);
+                bool paramsLocked = false;
+                bool pointLightsLocked = false;
+                bool telemetryLocked = false;
+                if (!vault.TryAcquireWriteLock(in _paramsHandle, SystemID.Vfx, out NativeArray<FogConstantsDTO> fogParams))
+                    return false;
+                paramsLocked = true;
+
+                try
+                {
+                    if (vault.IsCompactionFenceActive ||
+                        !vault.TryAcquireWriteLock(in _pointLightsHandle, SystemID.Vfx, out NativeArray<PointLightDTO> pointLights))
+                    {
+                        return false;
+                    }
+                    pointLightsLocked = true;
+
+                    if (vault.IsCompactionFenceActive ||
+                        !vault.TryAcquireWriteLock(in _telemetryHandle, SystemID.Vfx, out NativeArray<VolumetricFogTelemetryEntry> telemetry))
+                    {
+                        return false;
+                    }
+                    telemetryLocked = true;
+
+                    if (vault.IsCompactionFenceActive ||
+                        !fogParams.IsCreated ||
+                        fogParams.Length <= 0 ||
+                        !pointLights.IsCreated ||
+                        pointLights.Length < VolumetricFogConstants.MaxPointLights)
+                    {
+                        return false;
+                    }
+
+                    RefreshCompletedLightJobAndUpload(pointLights);
 
                 Color linearColor = _settings.fogColor.linear;
                 float3 settingsColor = new float3(
@@ -1118,6 +1260,16 @@ namespace Hecton8.Visor
                 if (telemetry.IsCreated && telemetry.Length >= VolumetricFogConstants.TelemetryCapacity)
                     RecordTelemetry(telemetry, in dto, cameraPosition, raySteps, renderScale, estimatedGpuMicroseconds, activePointLightCount, hasMarineFogTexture, hasAbyssalFlowTexture);
                 return true;
+                }
+                finally
+                {
+                    if (telemetryLocked)
+                        vault.ReleaseWriteLock(in _telemetryHandle, SystemID.Vfx);
+                    if (pointLightsLocked)
+                        vault.ReleaseWriteLock(in _pointLightsHandle, SystemID.Vfx);
+                    if (paramsLocked)
+                        vault.ReleaseWriteLock(in _paramsHandle, SystemID.Vfx);
+                }
             }
 
             private void UpdateExternalOverrideState(in FogConstantsDTO existing)
@@ -1162,6 +1314,7 @@ namespace Hecton8.Visor
                 double3 safeOriginAup = math.all(math.isfinite(runtimeOriginAup)) ? runtimeOriginAup : double3.zero;
                 double3 cameraAup = safeOriginAup + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
                 double3 local = cameraAup - safeOriginAup;
+                local = math.clamp(local, new double3(-MaxCameraLocalAupMeters), new double3(MaxCameraLocalAupMeters));
                 float3 result = new float3((float)local.x, (float)local.y, (float)local.z);
                 return math.all(math.isfinite(result)) ? result : float3.zero;
             }
@@ -1182,8 +1335,13 @@ namespace Hecton8.Visor
 
             private void ApplyExtinctionProfileFromVault(ref Color fogColor, ref float baseDensity, ref float extinctionCoefficient, float3 cameraPosition)
             {
-                if (_vault == null || !_vault.TryResolveHandle(in _extinctionProfilesHandle, out NativeArray<WaterExtinctionProfileDTO> profiles))
+                if (_vault == null ||
+                    _vault.IsCompactionFenceActive ||
+                    !_vault.TryReadOnlyHandle(in _extinctionProfilesHandle, out NativeArray<WaterExtinctionProfileDTO>.ReadOnly profiles) ||
+                    _vault.IsCompactionFenceActive)
+                {
                     return;
+                }
 
                 if (!profiles.IsCreated || profiles.Length <= 0)
                     return;
@@ -1561,9 +1719,45 @@ namespace Hecton8.Visor
                 }
             }
 
-            private unsafe void DumpTelemetryRing(NativeArray<VolumetricFogTelemetryEntry> telemetry)
+            private bool TryReadTelemetryDumpLength(out int telemetryLength)
             {
-                if (!telemetry.IsCreated || telemetry.Length <= 0)
+                telemetryLength = 0;
+                if (_vault == null ||
+                    _vault.IsCompactionFenceActive ||
+                    _telemetryHandle.BufferID == 0u ||
+                    !_vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VolumetricFogTelemetryEntry>.ReadOnly telemetry) ||
+                    _vault.IsCompactionFenceActive ||
+                    !telemetry.IsCreated)
+                {
+                    return false;
+                }
+
+                telemetryLength = math.min(telemetry.Length, VolumetricFogConstants.TelemetryCapacity);
+                return telemetryLength > 0;
+            }
+
+            private bool TryReadTelemetryDumpEntry(int index, out VolumetricFogTelemetryEntry entry)
+            {
+                entry = default;
+                if (_vault == null ||
+                    _vault.IsCompactionFenceActive ||
+                    _telemetryHandle.BufferID == 0u ||
+                    index < 0 ||
+                    !_vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VolumetricFogTelemetryEntry>.ReadOnly telemetry) ||
+                    _vault.IsCompactionFenceActive ||
+                    !telemetry.IsCreated ||
+                    index >= telemetry.Length)
+                {
+                    return false;
+                }
+
+                entry = telemetry[index];
+                return !_vault.IsCompactionFenceActive;
+            }
+
+            private unsafe void DumpTelemetryRing(int telemetryLength)
+            {
+                if (telemetryLength <= 0)
                     return;
 
                 try
@@ -1573,17 +1767,36 @@ namespace Hecton8.Visor
                     if (!string.IsNullOrEmpty(directory))
                         Directory.CreateDirectory(directory);
 
-                    int byteLength = telemetry.Length * UnsafeUtility.SizeOf<VolumetricFogTelemetryEntry>();
-                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    ReadOnlySpan<byte> dumpBytes =
-                        MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(source), byteLength);
+                    int stride = UnsafeUtility.SizeOf<VolumetricFogTelemetryEntry>();
+                    byte* rowBytes = stackalloc byte[stride];
                     using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                        stream.Write(dumpBytes);
+                    {
+                        for (int i = 0; i < telemetryLength; i++)
+                        {
+                            if (!TryReadTelemetryDumpEntry(i, out VolumetricFogTelemetryEntry entry))
+                                return;
+
+                            UnsafeUtility.MemCpy(rowBytes, &entry, stride);
+                            stream.Write(new ReadOnlySpan<byte>(rowBytes, stride));
+                        }
+                    }
                 }
                 catch (IOException)
                 {
                 }
                 catch (UnauthorizedAccessException)
+                {
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+                catch (InvalidOperationException)
+                {
+                }
+                catch (ArgumentException)
+                {
+                }
+                catch (NotSupportedException)
                 {
                 }
             }
@@ -1676,11 +1889,15 @@ namespace Hecton8.Visor
                        format == GraphicsFormat.R32G32B32A32_SFloat;
             }
 
-            private bool EnsureDearLieProxyMaterial()
+            private bool EnsureDearLieProxyMaterial(bool allowAllocation)
             {
                 Shader shader = _settings != null ? _settings.dearLieProxyShader : null;
                 if (shader == null)
+                    RuntimeShaderReferenceCatalog.TryGetVolumetricFogDearLieProxyShader(out shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (shader == null)
                     shader = Shader.Find(DearLieProxyShaderName);
+#endif
 
                 if (shader == null)
                     return false;
@@ -1694,19 +1911,32 @@ namespace Hecton8.Visor
                     return true;
                 }
 
+                if (!allowAllocation)
+                    return false;
+
                 DestroyUnityObject(_dearLieProxyMaterial);
                 _dearLieProxyMaterial = CoreUtils.CreateEngineMaterial(shader); // COLD ALLOC: material for raster Dear Lie proxy/composite only.
                 _dearLieProxyShader = shader;
                 return _dearLieProxyMaterial != null;
             }
 
-            private bool EnsureGpuBuffers()
+            private bool EnsureGpuBuffers(bool allowAllocation)
             {
                 if (!SystemInfo.supportsSetConstantBuffer ||
                     !ValidateFrameConstantsLayout())
                 {
                     return false;
                 }
+
+                bool needsAllocation =
+                    _paramsBufferA == null || !_paramsBufferA.IsValid() ||
+                    _paramsBufferB == null || !_paramsBufferB.IsValid() ||
+                    _frameParamsBufferA == null || !_frameParamsBufferA.IsValid() ||
+                    _frameParamsBufferB == null || !_frameParamsBufferB.IsValid() ||
+                    _pointLightBufferA == null || !_pointLightBufferA.IsValid() ||
+                    _pointLightBufferB == null || !_pointLightBufferB.IsValid();
+                if (needsAllocation && !allowAllocation)
+                    return false;
 
                 bool createdParamsBuffer = false;
                 if (_paramsBufferA == null || !_paramsBufferA.IsValid())
@@ -1716,7 +1946,7 @@ namespace Hecton8.Visor
                         GraphicsBuffer.Target.Constant,
                         GraphicsBuffer.UsageFlags.LockBufferForWrite,
                         ConstantBufferCount,
-                        VolumetricFogConstants.ParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[64B] - SHINOBU_233 volumetric fog params A.
+                        VolumetricFogConstants.ParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[64B] - 13KRA volumetric fog params A.
                     createdParamsBuffer = true;
                 }
 
@@ -1727,7 +1957,7 @@ namespace Hecton8.Visor
                         GraphicsBuffer.Target.Constant,
                         GraphicsBuffer.UsageFlags.LockBufferForWrite,
                         ConstantBufferCount,
-                        VolumetricFogConstants.ParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[64B] - SHINOBU_233 volumetric fog params B.
+                        VolumetricFogConstants.ParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[64B] - 13KRA volumetric fog params B.
                     createdParamsBuffer = true;
                 }
 
@@ -1748,7 +1978,7 @@ namespace Hecton8.Visor
                         GraphicsBuffer.Target.Constant,
                         GraphicsBuffer.UsageFlags.LockBufferForWrite,
                         ConstantBufferCount,
-                        FrameParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[224B] - SHINOBU_233 frame params A.
+                        FrameParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[224B] - 13KRA frame params A.
                     createdFrameParamsBuffer = true;
                 }
 
@@ -1759,7 +1989,7 @@ namespace Hecton8.Visor
                         GraphicsBuffer.Target.Constant,
                         GraphicsBuffer.UsageFlags.LockBufferForWrite,
                         ConstantBufferCount,
-                        FrameParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[224B] - SHINOBU_233 frame params B.
+                        FrameParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[224B] - 13KRA frame params B.
                     createdFrameParamsBuffer = true;
                 }
 
@@ -1774,7 +2004,7 @@ namespace Hecton8.Visor
                         GraphicsBuffer.Target.Structured,
                         GraphicsBuffer.UsageFlags.LockBufferForWrite,
                         VolumetricFogConstants.MaxPointLights,
-                        VolumetricFogConstants.PointLightStrideBytes); // COLD ALLOC: GraphicsBuffer[PointLightDTO x8] - SHINOBU_233 fog lights buffer A.
+                        VolumetricFogConstants.PointLightStrideBytes); // COLD ALLOC: GraphicsBuffer[PointLightDTO x8] - 13KRA fog lights buffer A.
                     createdPointLightBuffer = true;
                 }
 
@@ -1785,7 +2015,7 @@ namespace Hecton8.Visor
                         GraphicsBuffer.Target.Structured,
                         GraphicsBuffer.UsageFlags.LockBufferForWrite,
                         VolumetricFogConstants.MaxPointLights,
-                        VolumetricFogConstants.PointLightStrideBytes); // COLD ALLOC: GraphicsBuffer[PointLightDTO x8] - SHINOBU_233 fog lights buffer B.
+                        VolumetricFogConstants.PointLightStrideBytes); // COLD ALLOC: GraphicsBuffer[PointLightDTO x8] - 13KRA fog lights buffer B.
                     createdPointLightBuffer = true;
                 }
 
@@ -1991,13 +2221,16 @@ namespace Hecton8.Visor
                 }
             }
 
-            private static RTHandle ResolveExternalTextureHandle(Texture texture, ref RTHandle handle, ref Texture handleSource)
+            private static RTHandle ResolveExternalTextureHandle(Texture texture, ref RTHandle handle, ref Texture handleSource, bool allowAllocation)
             {
                 if (texture == null)
                     return null;
 
                 if (!ReferenceEquals(texture, handleSource))
                 {
+                    if (!allowAllocation)
+                        return null;
+
                     handle?.Release();
                     handleSource = texture;
                     handle = RTHandles.Alloc(texture);
@@ -2032,7 +2265,8 @@ namespace Hecton8.Visor
                 ref RTHandle handleA,
                 ref Texture handleSourceA,
                 ref RTHandle handleB,
-                ref Texture handleSourceB)
+                ref Texture handleSourceB,
+                bool allowAllocation)
             {
                 if (texture == null)
                     return null;
@@ -2040,6 +2274,9 @@ namespace Hecton8.Visor
                 RTHandle cached = TryGetCachedExternalTextureHandle(texture, handleA, handleSourceA, handleB, handleSourceB);
                 if (cached != null)
                     return cached;
+
+                if (!allowAllocation)
+                    return null;
 
                 if (handleA == null)
                 {
@@ -2147,16 +2384,14 @@ namespace Hecton8.Visor
             _pass ??= new VolumetricFogPass();
             _nextColdStateRepairFrame = 0;
             _pass.PrepareComputeKernels(settings, settings != null ? settings.computeShader : null);
-            _pass.TryPrepareNativeState(GlobalRegistry.DataVault);
-            _pass.TryPrepareGpuState();
+            _pass.TryPrepareNativeState(GlobalRegistry.DataVault, allowAllocation: true);
+            _pass.TryPrepareGpuState(allowAllocation: true);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             if (settings == null ||
-                settings.computeShader == null ||
-                _pass == null ||
-                !SystemInfo.supportsComputeShaders)
+                _pass == null)
             {
                 return;
             }
@@ -2166,20 +2401,35 @@ namespace Hecton8.Visor
                 return;
 
             int currentFrame = SystemDispatcher.CurrentFrameIndex;
-            RunColdMaintenanceIfDue(currentFrame);
+            RunDiagnosticMaintenanceIfDue(currentFrame);
             bool sampleSetupCost = currentFrame >= _nextPerformanceWarningFrame;
             long setupStartTimestamp = sampleSetupCost ? Stopwatch.GetTimestamp() : 0L;
             float qualityWeight = ResolveFiniteSaturated(HomeostasisBrain.GlobalQualityWeight);
+            bool allowVolumetricCompute = HardwareTierDetector.AllowHighResourceComputeShaders &&
+                                          settings.computeShader != null;
             if (!_pass.HasNativeState || !_pass.HasGpuState)
             {
                 return;
             }
 
             double3 runtimeOriginAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            if (!_pass.Setup(settings, settings.computeShader, qualityWeight, runtimeOriginAup, currentFrame))
-                return;
+            bool forceProxyOnly = !allowVolumetricCompute;
+            if (!_pass.Setup(
+                    settings,
+                    allowVolumetricCompute ? settings.computeShader : null,
+                    qualityWeight,
+                    runtimeOriginAup,
+                    currentFrame,
+                    forceProxyOnly))
+            {
+                if (!allowVolumetricCompute ||
+                    !_pass.Setup(settings, null, qualityWeight, runtimeOriginAup, currentFrame, forceProxyOnly: true))
+                {
+                    return;
+                }
+            }
 
-            _pass.RefreshExternalBridgeState();
+            _pass.RefreshExternalBridgeState(allowExternalTextureHandleAllocation: false);
             renderer.EnqueuePass(_pass);
             PublishSetupWarningIfNeeded(setupStartTimestamp, currentFrame, sampleSetupCost);
         }
@@ -2190,7 +2440,7 @@ namespace Hecton8.Visor
             _pass = null;
         }
 
-        private void RunColdMaintenanceIfDue(int currentFrame)
+        private void RunDiagnosticMaintenanceIfDue(int currentFrame)
         {
             if (_pass == null)
                 return;
@@ -2199,12 +2449,6 @@ namespace Hecton8.Visor
                 return;
 
             _nextColdStateRepairFrame = currentFrame + ColdStateRepairCadenceFrames;
-            if (!_pass.HasNativeState)
-                _pass.TryPrepareNativeState(GlobalRegistry.DataVault);
-
-            if (!_pass.HasGpuState)
-                _pass.TryPrepareGpuState();
-
             _pass.FlushDeferredDiagnosticDump();
         }
 

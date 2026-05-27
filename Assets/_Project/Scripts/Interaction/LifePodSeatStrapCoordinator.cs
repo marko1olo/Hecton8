@@ -236,11 +236,14 @@ namespace Hecton8.Interaction
         public void FixedTick(float fixedDeltaTime)
         {
             if (_fixedTickDormant)
+            {
+                TryUnregisterFixedTick();
                 return;
+            }
 
             if (!_seatLockActive)
             {
-                _fixedTickDormant = true;
+                TryUnregisterFixedTick();
                 return;
             }
 
@@ -395,7 +398,7 @@ namespace Hecton8.Interaction
 
         private void TryRegisterFixedTick()
         {
-            if (_registeredFixedTick || !Application.isPlaying)
+            if (_registeredFixedTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);

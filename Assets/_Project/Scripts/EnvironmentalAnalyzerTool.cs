@@ -288,18 +288,21 @@ namespace Hecton8.Gameplay
             if (TryBuildDescriptorAssessment(collider, hit.distance, out AnalyzerAssessment descriptorAssessment))
                 return descriptorAssessment;
 
-            if (collider.TryGetComponent(out HectonItem item))
+            InteractableRegistry.TryResolve(collider, out InteractableRegistry.TargetInfo targetInfo);
+
+            if (TryPeekRegistryItem(in targetInfo, out ItemData itemData, out int quantity))
             {
-                return BuildItemAssessment(item.Data, item.Quantity);
+                return BuildItemAssessment(itemData, quantity);
             }
 
-            if (collider.TryGetComponent(out PickupItem pickup))
+            if (targetInfo.Pickup != null)
             {
-                return BuildItemAssessment(pickup.ItemData, pickup.Quantity);
+                return BuildItemAssessment(targetInfo.Pickup.ItemData, targetInfo.Pickup.Quantity);
             }
 
-            if (collider.TryGetComponent(out ScannableTarget scannable))
+            if (targetInfo.Scannable != null)
             {
+                ScannableTarget scannable = targetInfo.Scannable;
                 return new AnalyzerAssessment(
                     ResolveScannableHeadline(scannable),
                     scannable.EntrySummary,
@@ -308,8 +311,9 @@ namespace Hecton8.Gameplay
                     BuildScannableRecommendation(scannable));
             }
 
-            if (collider.TryGetComponent(out ResourceNode node))
+            if (targetInfo.ResourceNode != null)
             {
+                ResourceNode node = targetInfo.ResourceNode;
                 return new AnalyzerAssessment(
                     node.IsDepleted ? "RESOURCE NODE DEPLETED" : "RESOURCE NODE STABLE",
                     node.IsDepleted
@@ -322,9 +326,9 @@ namespace Hecton8.Gameplay
                         : "Mark for salvage, cutter work, or later recovery.");
             }
 
-            if (collider.TryGetComponent(out BaseModule module))
+            if (targetInfo.BaseModule != null)
             {
-                return BuildModuleAssessment(module);
+                return BuildModuleAssessment(targetInfo.BaseModule);
             }
 
             if (ToolHitUtility.TryGetRigidbody(collider, out Rigidbody body))
@@ -482,7 +486,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            return TryResolvePrimarySurfaceHit(origin, direction, range, analysisMask.value, QueryTriggerInteraction.Collide, out hit);
+            return RequestPrimarySurfaceHit(origin, direction, range, analysisMask.value, QueryTriggerInteraction.Collide, out hit);
         }
 
         private bool TryResolveAnalysisRay(out Vector3 origin, out Vector3 direction)
@@ -552,12 +556,14 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (collider.TryGetComponent(out HectonItem item))
+            InteractableRegistry.TryResolve(collider, out InteractableRegistry.TargetInfo targetInfo);
+
+            if (TryPeekRegistryItem(in targetInfo, out ItemData item))
             {
-                if (item.Data == null)
+                if (item == null)
                     return;
 
-                string itemId = item.Data.PersistentId;
+                string itemId = item.PersistentId;
                 if (string.IsNullOrWhiteSpace(itemId))
                     return;
 
@@ -572,11 +578,9 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (collider.TryGetComponent(out BaseModule _))
+            if (targetInfo.BaseModule != null)
             {
-                ModuleMarker marker = null;
-                collider.TryGetComponent(out marker);
-                BuildableData buildableData = marker != null ? marker.Data : null;
+                BuildableData buildableData = targetInfo.ModuleMarker != null ? targetInfo.ModuleMarker.Data : null;
                 string moduleId = buildableData != null && !string.IsNullOrWhiteSpace(buildableData.PersistentId)
                     ? buildableData.PersistentId
                     : "base_module";
@@ -603,7 +607,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (collider.TryGetComponent(out ResourceNode _))
+            if (targetInfo.ResourceNode != null)
             {
                 scanLog.ArchiveEntry(
                     "analyzer.resource_node",
@@ -618,6 +622,21 @@ namespace Hecton8.Gameplay
                 "UNCLASSIFIED ANALYSIS",
                 assessment.Category,
                 archiveSummary);
+        }
+
+        private static bool TryPeekRegistryItem(in InteractableRegistry.TargetInfo targetInfo, out ItemData itemData)
+        {
+            return TryPeekRegistryItem(in targetInfo, out itemData, out _);
+        }
+
+        private static bool TryPeekRegistryItem(in InteractableRegistry.TargetInfo targetInfo, out ItemData itemData, out int quantity)
+        {
+            itemData = null;
+            quantity = 0;
+            IInventoryPickupPreviewSource preview = targetInfo.PickupPreviewSource;
+            if (preview == null)
+                preview = targetInfo.PickupSource as IInventoryPickupPreviewSource;
+            return preview != null && preview.TryPeekInventoryPickup(out itemData, out quantity);
         }
 
         private void ArchiveSuitDiagnostic(AnalyzerAssessment assessment)

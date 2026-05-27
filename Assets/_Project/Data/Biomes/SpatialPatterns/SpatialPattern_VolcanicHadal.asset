@@ -18,7 +18,7 @@ MonoBehaviour:
     encourage casual sweeping.
   nodeClusterPattern: Important extraction sits around furnace-scale structures and
     late-game thermal crowns.
-  safePocketPattern: Safe pockets exist only as short relief zones outside catastrophic
+  safePocketPattern: Reorientation pockets exist only as short relief zones outside catastrophic
     heat lines.
   routeAnchorPattern: One huge heat landmark should define the mission path more
     than a chain of small anchors.

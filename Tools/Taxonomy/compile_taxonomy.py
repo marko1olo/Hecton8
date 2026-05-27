@@ -822,7 +822,7 @@ def build_entries() -> list[dict]:
         flora(
             "TUBULAR_CORAL",
             "SS_001",
-            "Tubular Coral",
+            "Tubular Carbonate Colony",
             "Calcarituba porosa",
             "safe_shallows",
             "HarvestableTemplate.MaterialClass.Coral",
@@ -831,7 +831,7 @@ def build_entries() -> list[dict]:
             ["CombatDamageTypes.Thermal", "CombatDamageTypes.MicroFracture"],
             ["tube lip ring", "inner silica sleeve"],
             "Laser opens the lip ring; sampler pulls silica sleeve without crushing colony pores.",
-            "BIOPSY H8-XB-001: L-system SS_001. Cross-section shows low fork count and thick tube walls, consistent with authored shallow silhouettes. Flow pulse is a shader cue, not fluid truth. Harvest class Coral; drill or plasma cut the lip ring.",
+            "BIOPSY H8-XB-001: L-system SS_001. Cross-section shows low fork count and thick tube walls, consistent with authored shallow silhouettes. Flow pulse is a shader cue, not fluid truth. Harvest class Carbonate; drill or laser cut the lip ring.",
         ),
         flora(
             "HALO_SARGASSUM",
@@ -873,7 +873,7 @@ def build_entries() -> list[dict]:
             ["CombatDamageTypes.Thermal", "CombatDamageTypes.MicroFracture"],
             ["soft crown leaf ring", "heat-safe tube tip"],
             "Use laser during stable heat; sampler takes crown tissue after vent pulse falls.",
-            "BIOPSY H8-XB-004: L-system TV_001. Tube colony follows vent columns and scars asymmetrically around triangle-wave geyser cycles. Harvest class Coral; plasma cut only after the crown retracts.",
+            "BIOPSY H8-XB-004: L-system TV_001. Tube colony follows vent columns and scars asymmetrically around triangle-wave geyser cycles. Harvest class Vent Carbonate; laser cut only after the crown retracts.",
         ),
         flora(
             "GHOST_WEED",
@@ -892,7 +892,7 @@ def build_entries() -> list[dict]:
         flora(
             "IRON_CORAL",
             "DA_002",
-            "Iron Coral Fork",
+            "Iron Carbonate Fork",
             "Ferricorallium furcatum",
             "deep_abyss",
             "HarvestableTemplate.MaterialClass.TitaniumOutcrop",
@@ -900,7 +900,7 @@ def build_entries() -> list[dict]:
             ["tool_laser_cutter", "tool_salvage_sampler"],
             ["CombatDamageTypes.Thermal", "CombatDamageTypes.MicroFracture"],
             ["rust plate seam", "armored branch tip"],
-            "Drill or plasma cut rust seams; sampler catches ferrous grit from the branch tip.",
+            "Drill or laser cut rust seams; sampler catches ferrous grit from the branch tip.",
             "BIOPSY H8-XB-006: L-system DA_002. Cone branches bind metal and refuse sway; particles around it show current instead. Harvest class TitaniumOutcrop by runtime template; drill seams, not living core.",
         ),
         flora(
@@ -957,7 +957,7 @@ def build_entries() -> list[dict]:
             ["CombatDamageTypes.Emp", "CombatDamageTypes.MicroFracture"],
             ["conductive leaf flag", "charge nodule"],
             "EMP discharges nodule; sampler removes conductive flags after tick noise stops.",
-            "BIOPSY H8-XB-010: L-system DA_003. Short thicket branches cluster charge points and stay readable in abyss light. Electrical ticking is an audio fake from motion state. Harvest class Coral; stun before drilling.",
+            "BIOPSY H8-XB-010: L-system DA_003. Short thicket branches cluster charge points and stay readable in abyss light. Electrical ticking is an audio fake from motion state. Harvest class Conductive Carbonate; stun before drilling.",
         ),
         madness(
             "HALO_CROWN",

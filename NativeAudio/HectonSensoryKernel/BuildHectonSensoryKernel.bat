@@ -22,12 +22,12 @@ set "INTDIR=%ROOT%build"
 if not exist "%OUTDIR%" mkdir "%OUTDIR%"
 if not exist "%INTDIR%" mkdir "%INTDIR%"
 
-cl /nologo /LD /O2 /MT /GR- /EHsc- ^
+cl /nologo /LD /O2 /MT /GR- /EHsc- /Gy /Gw ^
    /Fo"%INTDIR%\\" ^
    /Fe"%OUTDIR%\HectonAudioKernel.dll" ^
-   "%ROOT%AudioPluginUtil.cpp" ^
    "%ROOT%Plugin_HectonSensoryKernel.cpp" ^
-   winmm.lib user32.lib kernel32.lib
+   winmm.lib user32.lib kernel32.lib ^
+   /link /OPT:REF /OPT:ICF
 if errorlevel 1 exit /b %errorlevel%
 
 echo Built %OUTDIR%\HectonAudioKernel.dll

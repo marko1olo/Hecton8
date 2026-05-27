@@ -1,3 +1,5 @@
+using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -27,6 +29,7 @@ namespace Hecton8.UI.VR
         private static int s_x001OpenXRManualOverrideLeverSignalPushDropCount;
         private const int LeverCount = 1;
         private const int BlackBoxFrameCount = 300;
+        private const int BlackBoxDumpEntryBytes = 41;
         private const float MaxDeltaSeconds = 0.05f;
         private const float MinAxisLengthSq = 0.000001f;
         private const float DegreesToRadians = 0.01745329252f;
@@ -650,8 +653,6 @@ namespace Hecton8.UI.VR
                 return;
 
             _blackBoxDumped = true;
-            if (!TryReadBlackBox(out NativeArray<ManualOverrideLeverTelemetryEntry>.ReadOnly blackBox))
-                return;
 
             try
             {
@@ -662,30 +663,61 @@ namespace Hecton8.UI.VR
                     Directory.CreateDirectory(directory);
 
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(BlackBoxFrameCount);
-                    writer.Write(_blackBoxWriteIndex);
+                    Span<byte> header = stackalloc byte[8];
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), BlackBoxFrameCount);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), _blackBoxWriteIndex);
+                    stream.Write(header);
+
+                    Span<byte> entryBytes = stackalloc byte[BlackBoxDumpEntryBytes];
                     for (int i = 0; i < BlackBoxFrameCount; i++)
                     {
-                        ManualOverrideLeverTelemetryEntry entry = blackBox[i];
-                        writer.Write(entry.HandLocalPosition.x);
-                        writer.Write(entry.HandLocalPosition.y);
-                        writer.Write(entry.HandLocalPosition.z);
-                        writer.Write(entry.PivotLocalPosition.x);
-                        writer.Write(entry.PivotLocalPosition.y);
-                        writer.Write(entry.PivotLocalPosition.z);
-                        writer.Write(entry.AngleDegrees);
-                        writer.Write(entry.TargetAngleDegrees);
-                        writer.Write(entry.VelocityDegreesPerSecond);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Flags);
+                        if (!TryReadBlackBoxEntry(i, out ManualOverrideLeverTelemetryEntry entry))
+                            return;
+
+                        WriteBlackBoxEntry(entryBytes, in entry);
+                        stream.Write(entryBytes);
                     }
                 }
             }
-            catch
+            catch (IOException)
             {
             }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+        }
+
+        private static void WriteBlackBoxEntry(Span<byte> destination, in ManualOverrideLeverTelemetryEntry entry)
+        {
+            WriteFloatLittleEndian(destination.Slice(0, 4), entry.HandLocalPosition.x);
+            WriteFloatLittleEndian(destination.Slice(4, 4), entry.HandLocalPosition.y);
+            WriteFloatLittleEndian(destination.Slice(8, 4), entry.HandLocalPosition.z);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.PivotLocalPosition.x);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.PivotLocalPosition.y);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.PivotLocalPosition.z);
+            WriteFloatLittleEndian(destination.Slice(24, 4), entry.AngleDegrees);
+            WriteFloatLittleEndian(destination.Slice(28, 4), entry.TargetAngleDegrees);
+            WriteFloatLittleEndian(destination.Slice(32, 4), entry.VelocityDegreesPerSecond);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(36, 4), entry.Frame);
+            destination[40] = entry.Flags;
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
         private void EnsureReferences()
@@ -815,19 +847,26 @@ namespace Hecton8.UI.VR
         private bool EnsureBlackBoxVaultBuffer()
         {
             IDataVault vault = CacheDataVaultCold();
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                 return false;
 
             if (IsExactBlackBoxHandle() &&
                 vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<ManualOverrideLeverTelemetryEntry>.ReadOnly existing) &&
                 existing.IsCreated &&
-                existing.Length >= BlackBoxFrameCount)
+                existing.Length >= BlackBoxFrameCount &&
+                !vault.IsCompactionFenceActive)
             {
                 return true;
             }
 
+            if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                return false;
+
             if (_blackBoxHandle.BufferID != 0u && _blackBoxHandle.Generation != 0u)
                 vault.ReleaseBuffer(in _blackBoxHandle);
+
+            if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                return false;
 
             _blackBoxHandle = vault.EnsureGenerationHandle<ManualOverrideLeverTelemetryEntry>(
                 BlackBoxBufferId,
@@ -835,10 +874,12 @@ namespace Hecton8.UI.VR
                 VaultOwnerSystemId,
                 NativeArrayOptions.ClearMemory);
 
-            return IsExactBlackBoxHandle() &&
+            return !vault.IsCompactionFenceActive &&
+                   IsExactBlackBoxHandle() &&
                    vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<ManualOverrideLeverTelemetryEntry>.ReadOnly resolved) &&
                    resolved.IsCreated &&
-                   resolved.Length >= BlackBoxFrameCount;
+                   resolved.Length >= BlackBoxFrameCount &&
+                   !vault.IsCompactionFenceActive;
         }
 
         private bool TryAcquireBlackBoxWriteBuffer(out NativeArray<ManualOverrideLeverTelemetryEntry> blackBox)
@@ -846,13 +887,14 @@ namespace Hecton8.UI.VR
             blackBox = default;
             IDataVault vault = _dataVault;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !IsExactBlackBoxHandle() ||
                 !vault.TryAcquireWriteLock(in _blackBoxHandle, VaultOwnerSystemId, out blackBox))
             {
                 return false;
             }
 
-            if (blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
+            if (!vault.IsCompactionFenceActive && blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
                 return true;
 
             vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
@@ -867,15 +909,31 @@ namespace Hecton8.UI.VR
                 vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
         }
 
-        private bool TryReadBlackBox(out NativeArray<ManualOverrideLeverTelemetryEntry>.ReadOnly blackBox)
+        private bool TryReadBlackBoxEntry(int index, out ManualOverrideLeverTelemetryEntry entry)
         {
-            blackBox = default;
+            entry = default;
+            if ((uint)index >= BlackBoxFrameCount)
+                return false;
+
             IDataVault vault = _dataVault;
-            return vault != null &&
-                   IsExactBlackBoxHandle() &&
-                   vault.TryReadOnlyHandle(in _blackBoxHandle, out blackBox) &&
-                   blackBox.IsCreated &&
-                   blackBox.Length >= BlackBoxFrameCount;
+            if (vault == null || vault.IsCompactionFenceActive || !IsExactBlackBoxHandle())
+                return false;
+
+            if (!vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<ManualOverrideLeverTelemetryEntry>.ReadOnly blackBox) ||
+                vault.IsCompactionFenceActive ||
+                !blackBox.IsCreated ||
+                blackBox.Length <= index)
+            {
+                entry = default;
+                return false;
+            }
+
+            entry = blackBox[index];
+            if (!vault.IsCompactionFenceActive)
+                return true;
+
+            entry = default;
+            return false;
         }
 
         private bool IsExactBlackBoxHandle()
@@ -1214,10 +1272,22 @@ namespace Hecton8.UI.VR
             private byte _pad0;
 
             [FieldOffset(42)]
-            private ushort _pad1;
+            private byte _pad1;
+
+            [FieldOffset(43)]
+            private byte _pad2;
 
             [FieldOffset(44)]
-            private uint _pad2;
+            private byte _pad3;
+
+            [FieldOffset(45)]
+            private byte _pad4;
+
+            [FieldOffset(46)]
+            private byte _pad5;
+
+            [FieldOffset(47)]
+            private byte _pad6;
         }
 
     }

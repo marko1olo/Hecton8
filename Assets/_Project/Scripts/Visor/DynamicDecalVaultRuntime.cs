@@ -86,14 +86,38 @@ namespace Hecton8.Visor
         [FieldOffset(20)] public uint DrainedTotal;
         [FieldOffset(24)] public uint DroppedTotal;
         [FieldOffset(28)] public uint LastFrame;
-        [FieldOffset(32)] private uint _pad0;
-        [FieldOffset(36)] private uint _pad1;
-        [FieldOffset(40)] private uint _pad2;
-        [FieldOffset(44)] private uint _pad3;
-        [FieldOffset(48)] private uint _pad4;
-        [FieldOffset(52)] private uint _pad5;
-        [FieldOffset(56)] private uint _pad6;
-        [FieldOffset(60)] private uint _pad7;
+        [FieldOffset(32)] private byte _pad32;
+        [FieldOffset(33)] private byte _pad33;
+        [FieldOffset(34)] private byte _pad34;
+        [FieldOffset(35)] private byte _pad35;
+        [FieldOffset(36)] private byte _pad36;
+        [FieldOffset(37)] private byte _pad37;
+        [FieldOffset(38)] private byte _pad38;
+        [FieldOffset(39)] private byte _pad39;
+        [FieldOffset(40)] private byte _pad40;
+        [FieldOffset(41)] private byte _pad41;
+        [FieldOffset(42)] private byte _pad42;
+        [FieldOffset(43)] private byte _pad43;
+        [FieldOffset(44)] private byte _pad44;
+        [FieldOffset(45)] private byte _pad45;
+        [FieldOffset(46)] private byte _pad46;
+        [FieldOffset(47)] private byte _pad47;
+        [FieldOffset(48)] private byte _pad48;
+        [FieldOffset(49)] private byte _pad49;
+        [FieldOffset(50)] private byte _pad50;
+        [FieldOffset(51)] private byte _pad51;
+        [FieldOffset(52)] private byte _pad52;
+        [FieldOffset(53)] private byte _pad53;
+        [FieldOffset(54)] private byte _pad54;
+        [FieldOffset(55)] private byte _pad55;
+        [FieldOffset(56)] private byte _pad56;
+        [FieldOffset(57)] private byte _pad57;
+        [FieldOffset(58)] private byte _pad58;
+        [FieldOffset(59)] private byte _pad59;
+        [FieldOffset(60)] private byte _pad60;
+        [FieldOffset(61)] private byte _pad61;
+        [FieldOffset(62)] private byte _pad62;
+        [FieldOffset(63)] private byte _pad63;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -147,8 +171,14 @@ namespace Hecton8.Visor
         [FieldOffset(44)] public uint TotalWritten;
         [FieldOffset(48)] public uint MaxActiveThisFrame;
         [FieldOffset(52)] public uint LastBallisticFrame;
-        [FieldOffset(56)] private uint _pad0;
-        [FieldOffset(60)] private uint _pad1;
+        [FieldOffset(56)] private byte _pad56;
+        [FieldOffset(57)] private byte _pad57;
+        [FieldOffset(58)] private byte _pad58;
+        [FieldOffset(59)] private byte _pad59;
+        [FieldOffset(60)] private byte _pad60;
+        [FieldOffset(61)] private byte _pad61;
+        [FieldOffset(62)] private byte _pad62;
+        [FieldOffset(63)] private byte _pad63;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -160,8 +190,14 @@ namespace Hecton8.Visor
         [FieldOffset(12)] public float RadiusMeters;
         [FieldOffset(16)] public float ProjectionDepthMeters;
         [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] private uint _pad0;
-        [FieldOffset(28)] private uint _pad1;
+        [FieldOffset(24)] private byte _pad24;
+        [FieldOffset(25)] private byte _pad25;
+        [FieldOffset(26)] private byte _pad26;
+        [FieldOffset(27)] private byte _pad27;
+        [FieldOffset(28)] private byte _pad28;
+        [FieldOffset(29)] private byte _pad29;
+        [FieldOffset(30)] private byte _pad30;
+        [FieldOffset(31)] private byte _pad31;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 56)]
@@ -214,8 +250,8 @@ namespace Hecton8.Visor
         private const uint RuntimeNonFiniteFaultFlag = 1u << 2;
         private const uint RuntimeUploadStallFlag = 1u << 3;
         private const uint DumpMagic = 0x4445434Cu; // DECL
-        private const string DumpFileName = "Dump_1309_UIPresentation.bin";
-        private const string LogOwner = "SHINOBU_325";
+        private const string DumpFileName = "Dump_1335_DynamicDecal.bin";
+        private const string LogOwner = "AGENT_1335";
         private const SystemID OwnerSystem = SystemID.Vfx;
 
         private static readonly ProfilerMarker _visualSyncMarker = new ProfilerMarker("H8.VisorTrauma.VisualSync");
@@ -270,7 +306,7 @@ namespace Hecton8.Visor
             if (_pendingVisualSyncActive)
             {
                 DispatcherJobFence.TryComplete(ref _pendingVisualSyncHandle, forceComplete: true);
-                UnlockRuntimeBuffers();
+                ReleaseAllDynamicDecalWriteLocks();
             }
 
             ReleaseDynamicDecalVaultHandles(_vault);
@@ -405,8 +441,8 @@ namespace Hecton8.Visor
                            OffsetOf<DecalRequestSignal>(nameof(DecalRequestSignal.SourceFrame)) == 60 &&
                            OffsetOf<DecalRequestQueueStateDTO>(nameof(DecalRequestQueueStateDTO.WriteIndex)) == 0 &&
                            OffsetOf<DecalRequestQueueStateDTO>(nameof(DecalRequestQueueStateDTO.PendingCount)) == 8 &&
-                           OffsetOf<DecalRequestQueueStateDTO>("_pad6") == 56 &&
-                           OffsetOf<DecalRequestQueueStateDTO>("_pad7") == 60 &&
+                           OffsetOf<DecalRequestQueueStateDTO>("_pad56") == 56 &&
+                           OffsetOf<DecalRequestQueueStateDTO>("_pad60") == 60 &&
                            OffsetOf<DynamicDecalFrameStats>(nameof(DynamicDecalFrameStats.UploadHandle)) == 0 &&
                            OffsetOf<DynamicDecalFrameStats>(nameof(DynamicDecalFrameStats.UploadCapacity)) == 16 &&
                            OffsetOf<DynamicDecalFrameStats>(nameof(DynamicDecalFrameStats.NormalRefractionIntensity)) == 52;
@@ -522,21 +558,24 @@ namespace Hecton8.Visor
                 return false;
             }
 
-            if (!TryLockRequestBuffers())
-            {
-                AccumulateDroppedIngress(count);
-                return false;
-            }
-
+            bool requestRingLocked = false;
+            bool requestStateLocked = false;
             try
             {
-                if (!TryResolveDynamicDecalVaultBuffer(ref _requestRingHandle, DynamicDecalVaultBufferIds.RequestRing, RequestRingCapacity, out NativeArray<DecalRequestSignal> requestRing) ||
-                    !TryResolveDynamicDecalVaultBuffer(ref _requestStateHandle, DynamicDecalVaultBufferIds.RequestState, 1, out NativeArray<DecalRequestQueueStateDTO> requestStateArray))
+                if (!TryAcquireDynamicDecalVaultBuffer(in _requestRingHandle, DynamicDecalVaultBufferIds.RequestRing, RequestRingCapacity, out NativeArray<DecalRequestSignal> requestRing))
                 {
                     AccumulateDroppedIngress(count);
                     return false;
                 }
 
+                requestRingLocked = true;
+                if (!TryAcquireDynamicDecalVaultBuffer(in _requestStateHandle, DynamicDecalVaultBufferIds.RequestState, 1, out NativeArray<DecalRequestQueueStateDTO> requestStateArray))
+                {
+                    AccumulateDroppedIngress(count);
+                    return false;
+                }
+
+                requestStateLocked = true;
                 DecalRequestQueueStateDTO queueState = SanitizeRequestQueueState(requestStateArray[0], requestRing.Length);
                 int headroom = math.min(requestRing.Length, RequestRingCapacity) - queueState.PendingCount;
                 if (headroom <= 0)
@@ -550,32 +589,74 @@ namespace Hecton8.Visor
                 int safeCount = math.clamp(count, 1, math.min(MaxCapacity, headroom));
                 AccumulateDroppedIngress(count - safeCount);
                 int startIndex = queueState.WriteIndex;
-                GenerateMockTraumaWoundsJob job = new GenerateMockTraumaWoundsJob
+                int capacity = math.min(requestRing.Length, RequestRingCapacity);
+                uint frame = ResolveVisualFrameId();
+                double3 originAup = ResolveCurrentRuntimeOriginAup();
+                for (int i = 0; i < safeCount; i++)
                 {
-                    Requests = (DecalRequestSignal*)NativeArrayUnsafeUtility.GetUnsafePtr(requestRing),
-                    Capacity = math.min(requestRing.Length, RequestRingCapacity),
-                    StartIndex = startIndex,
-                    Count = safeCount,
-                    Frame = ResolveVisualFrameId(),
-                    OriginAup = ResolveCurrentRuntimeOriginAup()
-                };
+                    int targetIndex = startIndex + i;
+                    if (targetIndex >= capacity)
+                        targetIndex -= capacity;
 
-                JobHandle handle = job.Schedule(safeCount, 64);
-                H8Memory.RegisterActiveJob(OwnerSystem, handle);
-                // [BLOCKING_SYNC_POINT] Cold editor/test path: caller explicitly requested generated mock packets before profiling this frame.
-                DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD PROFILE PATH: deterministic mock injection requested by tools/tests.
+                    requestRing[targetIndex] = BuildMockTraumaWoundRequest(i, frame, originAup);
+                }
+
                 queueState.WriteIndex = WrapRequestIndex(startIndex + safeCount, queueState.Capacity);
                 queueState.PendingCount += safeCount;
                 queueState.EnqueuedTotal += (uint)safeCount;
                 queueState.DroppedTotal += (uint)math.max(0, count - safeCount);
-                queueState.LastFrame = job.Frame;
+                queueState.LastFrame = frame;
                 requestStateArray[0] = queueState;
                 return true;
             }
             finally
             {
-                UnlockRequestBuffers();
+                if (requestStateLocked)
+                    ReleaseDynamicDecalVaultBuffer(in _requestStateHandle, DynamicDecalVaultBufferIds.RequestState);
+                if (requestRingLocked)
+                    ReleaseDynamicDecalVaultBuffer(in _requestRingHandle, DynamicDecalVaultBufferIds.RequestRing);
             }
+        }
+
+        private static DecalRequestSignal BuildMockTraumaWoundRequest(
+            int index,
+            uint frame,
+            double3 originAup)
+        {
+            uint seed = Mix((uint)(index + 1) * 0x9E3779B9u);
+            float phase = (seed & 1023u) * (1f / 1024f);
+            float radius = 2.0f + ((seed >> 10) & 31u) * 0.22f;
+            float xAxis = TriangleWaveSigned(phase);
+            float zAxis = TriangleWaveSigned(phase + 0.25f);
+            float3 rawNormal = MakeFloat3(xAxis * 0.35f, 1f, zAxis * 0.35f);
+            float normalLengthSq = math.max(math.lengthsq(rawNormal), 0.0001f);
+            float3 normal = math.all(math.isfinite(rawNormal))
+                ? rawNormal * math.rsqrt(normalLengthSq)
+                : MakeFloat3(0f, 1f, 0f);
+            DecalRequestSignal request = default;
+            request.ImpactAup = originAup + MakeDouble3(zAxis * radius, ((index & 15) - 8) * 0.12f, xAxis * radius);
+            request.Normal = normal;
+            request.RadiusMeters = 0.22f + ((seed >> 16) & 15u) * 0.035f;
+            request.ProjectionDepthMeters = 0.18f;
+            request.LifetimeSeconds = 4.0f + ((seed >> 21) & 7u) * 0.5f;
+            uint pattern = (uint)(index % 5);
+            request.MaterialHash = pattern == 0u ? DynamicDecalMaterialHashes.Blood :
+                pattern == 1u ? DynamicDecalMaterialHashes.GlassCrack :
+                pattern == 2u ? DynamicDecalMaterialHashes.Burn :
+                pattern == 3u ? DynamicDecalMaterialHashes.Acid :
+                DynamicDecalMaterialHashes.Scorch;
+            request.Flags = DynamicDecalFlags.Active | DynamicDecalFlags.Mock;
+            if (request.MaterialHash == DynamicDecalMaterialHashes.GlassCrack)
+                request.Flags |= DynamicDecalFlags.PersistentGlass;
+            request.StableSeed = seed;
+            request.SourceFrame = frame;
+            return request;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float TriangleWaveSigned(float phase)
+        {
+            return math.abs(math.frac(phase) * 2f - 1f) * 2f - 1f;
         }
 
         public static bool ExecuteVisualSync(
@@ -601,28 +682,42 @@ namespace Hecton8.Visor
                     return false;
                 }
 
-                if (!TryLockRuntimeBuffers())
-                    return false;
-
                 long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
                 uint faultFlags = 0u;
-                bool releaseRuntimeLocks = true;
+                bool requestRingLocked = false;
+                bool requestStateLocked = false;
+                bool instancesLocked = false;
+                bool uploadLocked = false;
+                bool stateLocked = false;
+                bool telemetryLocked = false;
+                bool tuningLocked = false;
                 try
                 {
                     TryIngestGlobalImpactSignals();
                     int ingressDroppedBeforeJob = math.max(0, _droppedIngressThisFrame);
                     _droppedIngressThisFrame = 0;
 
-                    if (!TryResolveDynamicDecalVaultBuffer(ref _requestRingHandle, DynamicDecalVaultBufferIds.RequestRing, RequestRingCapacity, out NativeArray<DecalRequestSignal> requests) ||
-                        !TryResolveDynamicDecalVaultBuffer(ref _requestStateHandle, DynamicDecalVaultBufferIds.RequestState, 1, out NativeArray<DecalRequestQueueStateDTO> requestStateArray) ||
-                        !TryResolveDynamicDecalVaultBuffer(ref _instancesHandle, DynamicDecalVaultBufferIds.Instances, MaxCapacity, out NativeArray<TraumaDecalDTO> instances) ||
-                        !TryResolveDynamicDecalVaultBuffer(ref _uploadHandle, DynamicDecalVaultBufferIds.UploadScratch, MaxCapacity, out NativeArray<TraumaDecalDTO> upload) ||
-                        !TryResolveDynamicDecalVaultBuffer(ref _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray) ||
-                        !TryResolveDynamicDecalVaultBuffer(ref _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing, TelemetryCapacity, out NativeArray<TraumaWoundTelemetryEntry> telemetry) ||
-                        !TryResolveDynamicDecalVaultBuffer(ref _tuningHandle, DynamicDecalVaultBufferIds.Tuning, 1, out NativeArray<DecalTuningDTO> tuningArray))
-                    {
+                    if (!TryAcquireDynamicDecalVaultBuffer(in _requestRingHandle, DynamicDecalVaultBufferIds.RequestRing, RequestRingCapacity, out NativeArray<DecalRequestSignal> requests))
                         return false;
-                    }
+                    requestRingLocked = true;
+                    if (!TryAcquireDynamicDecalVaultBuffer(in _requestStateHandle, DynamicDecalVaultBufferIds.RequestState, 1, out NativeArray<DecalRequestQueueStateDTO> requestStateArray))
+                        return false;
+                    requestStateLocked = true;
+                    if (!TryAcquireDynamicDecalVaultBuffer(in _instancesHandle, DynamicDecalVaultBufferIds.Instances, MaxCapacity, out NativeArray<TraumaDecalDTO> instances))
+                        return false;
+                    instancesLocked = true;
+                    if (!TryAcquireDynamicDecalVaultBuffer(in _uploadHandle, DynamicDecalVaultBufferIds.UploadScratch, MaxCapacity, out NativeArray<TraumaDecalDTO> upload))
+                        return false;
+                    uploadLocked = true;
+                    if (!TryAcquireDynamicDecalVaultBuffer(in _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray))
+                        return false;
+                    stateLocked = true;
+                    if (!TryAcquireDynamicDecalVaultBuffer(in _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing, TelemetryCapacity, out NativeArray<TraumaWoundTelemetryEntry> telemetry))
+                        return false;
+                    telemetryLocked = true;
+                    if (!TryAcquireDynamicDecalVaultBuffer(in _tuningHandle, DynamicDecalVaultBufferIds.Tuning, 1, out NativeArray<DecalTuningDTO> tuningArray))
+                        return false;
+                    tuningLocked = true;
 
                     DecalTuningDTO tuning = SanitizeTuning(tuningArray[0], baseFadeSeconds, requestedCapacity);
                     tuningArray[0] = tuning;
@@ -642,7 +737,8 @@ namespace Hecton8.Visor
                     bool hadRuntimeState = (state.Flags & RuntimeInitializedFlag) != 0u;
                     if (!hadRuntimeState)
                     {
-                        ClearColdVisualBuffers();
+                        ClearNativeBuffer(instances, MaxCapacity);
+                        ClearNativeBuffer(upload, MaxCapacity);
                         state = CreateInitializedRuntimeState(targetQuality, thermalPressure, tuning);
                     }
 
@@ -691,15 +787,11 @@ namespace Hecton8.Visor
 
                     if (!DispatcherJobFence.TryFinalizeCompleted(ref handle))
                     {
-                        _pendingVisualSyncHandle = handle;
-                        _pendingVisualSyncActive = true;
-                        _pendingVisualSyncStartTicks = startTicks;
-                        _pendingVisualSyncQuality = quality;
-                        _pendingVisualSyncThermalPressure = thermalPressure;
-                        _pendingVisualSyncMaxActive = maxActive;
-                        releaseRuntimeLocks = false;
-                        stats = _lastCompletedStats;
-                        return false;
+                        if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))
+                        {
+                            stats = _lastCompletedStats;
+                            return false;
+                        }
                     }
 
                     FinalizeCompletedVisualSync(
@@ -715,8 +807,20 @@ namespace Hecton8.Visor
                 }
                 finally
                 {
-                    if (releaseRuntimeLocks)
-                        UnlockRuntimeBuffers();
+                    if (tuningLocked)
+                        ReleaseDynamicDecalVaultBuffer(in _tuningHandle, DynamicDecalVaultBufferIds.Tuning);
+                    if (telemetryLocked)
+                        ReleaseDynamicDecalVaultBuffer(in _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing);
+                    if (stateLocked)
+                        ReleaseDynamicDecalVaultBuffer(in _stateHandle, DynamicDecalVaultBufferIds.RuntimeState);
+                    if (uploadLocked)
+                        ReleaseDynamicDecalVaultBuffer(in _uploadHandle, DynamicDecalVaultBufferIds.UploadScratch);
+                    if (instancesLocked)
+                        ReleaseDynamicDecalVaultBuffer(in _instancesHandle, DynamicDecalVaultBufferIds.Instances);
+                    if (requestStateLocked)
+                        ReleaseDynamicDecalVaultBuffer(in _requestStateHandle, DynamicDecalVaultBufferIds.RequestState);
+                    if (requestRingLocked)
+                        ReleaseDynamicDecalVaultBuffer(in _requestRingHandle, DynamicDecalVaultBufferIds.RequestRing);
                 }
 
                 if (faultFlags != 0u)
@@ -755,14 +859,20 @@ namespace Hecton8.Visor
             }
 
             uint faultFlags = 0u;
+            bool stateLocked = false;
+            bool uploadLocked = false;
+            bool telemetryLocked = false;
             try
             {
-                if (!TryResolveDynamicDecalVaultBuffer(ref _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray) ||
-                    !TryResolveDynamicDecalVaultBuffer(ref _uploadHandle, DynamicDecalVaultBufferIds.UploadScratch, MaxCapacity, out NativeArray<TraumaDecalDTO> upload) ||
-                    !TryResolveDynamicDecalVaultBuffer(ref _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing, TelemetryCapacity, out NativeArray<TraumaWoundTelemetryEntry> telemetry))
-                {
+                if (!TryAcquireDynamicDecalVaultBuffer(in _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray))
                     return false;
-                }
+                stateLocked = true;
+                if (!TryAcquireDynamicDecalVaultBuffer(in _uploadHandle, DynamicDecalVaultBufferIds.UploadScratch, MaxCapacity, out NativeArray<TraumaDecalDTO> upload))
+                    return false;
+                uploadLocked = true;
+                if (!TryAcquireDynamicDecalVaultBuffer(in _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing, TelemetryCapacity, out NativeArray<TraumaWoundTelemetryEntry> telemetry))
+                    return false;
+                telemetryLocked = true;
 
                 FinalizeCompletedVisualSync(
                     stateArray,
@@ -782,7 +892,12 @@ namespace Hecton8.Visor
                 _pendingVisualSyncQuality = 0f;
                 _pendingVisualSyncThermalPressure = 0f;
                 _pendingVisualSyncMaxActive = 0;
-                UnlockRuntimeBuffers();
+                if (telemetryLocked)
+                    ReleaseDynamicDecalVaultBuffer(in _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing);
+                if (uploadLocked)
+                    ReleaseDynamicDecalVaultBuffer(in _uploadHandle, DynamicDecalVaultBufferIds.UploadScratch);
+                if (stateLocked)
+                    ReleaseDynamicDecalVaultBuffer(in _stateHandle, DynamicDecalVaultBufferIds.RuntimeState);
             }
 
             if (faultFlags != 0u)
@@ -840,14 +955,14 @@ namespace Hecton8.Visor
             if (!IsInitializedForRead())
                 return;
 
-            if (!TryLockUploadTelemetryBuffers())
-                return;
-
             bool uploadStall = false;
+            bool stateLocked = false;
+            bool telemetryLocked = false;
             try
             {
-                if (!TryResolveDynamicDecalVaultBuffer(ref _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray))
+                if (!TryAcquireDynamicDecalVaultBuffer(in _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray))
                     return;
+                stateLocked = true;
 
                 float safe = math.max(0f, math.isfinite(uploadMicroseconds) ? uploadMicroseconds : 0f);
                 DecalRuntimeStateDTO state = stateArray[0];
@@ -859,7 +974,8 @@ namespace Hecton8.Visor
                 _lastRuntimeStateSnapshot = state;
                 _hasRuntimeStateSnapshot = true;
 
-                TryResolveDynamicDecalVaultBuffer(ref _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing, TelemetryCapacity, out NativeArray<TraumaWoundTelemetryEntry> telemetry);
+                TryAcquireDynamicDecalVaultBuffer(in _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing, TelemetryCapacity, out NativeArray<TraumaWoundTelemetryEntry> telemetry);
+                telemetryLocked = telemetry.IsCreated;
                 int count = telemetry.IsCreated ? math.min(telemetry.Length, TelemetryCapacity) : 0;
                 if (count > 0)
                 {
@@ -877,7 +993,10 @@ namespace Hecton8.Visor
             }
             finally
             {
-                UnlockUploadTelemetryBuffers();
+                if (telemetryLocked)
+                    ReleaseDynamicDecalVaultBuffer(in _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing);
+                if (stateLocked)
+                    ReleaseDynamicDecalVaultBuffer(in _stateHandle, DynamicDecalVaultBufferIds.RuntimeState);
             }
 
             if (uploadStall)
@@ -895,13 +1014,12 @@ namespace Hecton8.Visor
             if (!EnsureInitialized())
                 return false;
 
-            if (!TryLockTuningBuffer())
-                return false;
-
+            bool tuningLocked = false;
             try
             {
-                if (!TryResolveDynamicDecalVaultBuffer(ref _tuningHandle, DynamicDecalVaultBufferIds.Tuning, 1, out NativeArray<DecalTuningDTO> tuningArray))
+                if (!TryAcquireDynamicDecalVaultBuffer(in _tuningHandle, DynamicDecalVaultBufferIds.Tuning, 1, out NativeArray<DecalTuningDTO> tuningArray))
                     return false;
+                tuningLocked = true;
 
                 float fallbackCapacityFloat = math.isfinite(tuning.MaximumOverkillCapacity)
                     ? math.clamp(tuning.MaximumOverkillCapacity, LowCapacity, MaxCapacity)
@@ -915,7 +1033,8 @@ namespace Hecton8.Visor
             }
             finally
             {
-                UnlockTuningBuffer();
+                if (tuningLocked)
+                    ReleaseDynamicDecalVaultBuffer(in _tuningHandle, DynamicDecalVaultBufferIds.Tuning);
             }
         }
 
@@ -943,34 +1062,20 @@ namespace Hecton8.Visor
             if (!IsInitializedForRead())
                 return false;
 
-            if (!TryLockDecalReadBuffers())
+            if (!TryReadDynamicDecalVaultBuffer(in _instancesHandle, DynamicDecalVaultBufferIds.Instances, MaxCapacity, out decals) ||
+                !TryReadDynamicDecalVaultBuffer(in _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO>.ReadOnly stateArray))
+            {
+                decals = default;
                 return false;
-
-            bool success = false;
-            try
-            {
-                if (!TryResolveDynamicDecalVaultBuffer(ref _instancesHandle, DynamicDecalVaultBufferIds.Instances, MaxCapacity, out NativeArray<TraumaDecalDTO> resolvedDecals) ||
-                    !TryResolveDynamicDecalVaultBuffer(ref _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray))
-                {
-                    return false;
-                }
-
-                DecalRuntimeStateDTO state = stateArray[0];
-                activeCount = math.clamp(state.ActiveCount, 0, math.min(resolvedDecals.Length, MaxCapacity));
-                decals = resolvedDecals.AsReadOnly();
-                success = true;
-                return true;
             }
-            finally
-            {
-                if (!success)
-                    ReleaseDecalBufferRead();
-            }
+
+            DecalRuntimeStateDTO state = stateArray[0];
+            activeCount = math.clamp(state.ActiveCount, 0, math.min(decals.Length, MaxCapacity));
+            return true;
         }
 
         public static void ReleaseDecalBufferRead()
         {
-            UnlockDecalReadBuffers();
         }
 #endif
 
@@ -981,19 +1086,10 @@ namespace Hecton8.Visor
             if (!EnsureInitialized() || string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
                 return false;
 
-            if (!TryLockProfileCsvBuffers())
-                return false;
-
             try
             {
-                if (!TryResolveDynamicDecalVaultBuffer(ref _csvScratchHandle, DynamicDecalVaultBufferIds.CsvScratch, CsvScratchBytes, out NativeArray<byte> scratch) ||
-                    !TryResolveDynamicDecalVaultBuffer(ref _materialProfileHandle, DynamicDecalVaultBufferIds.MaterialProfiles, MaxMaterialProfiles, out NativeArray<DecalMaterialProfileDTO> profiles))
-                {
-                    return false;
-                }
-
                 int bytesRead = 0;
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                Span<byte> scratch = stackalloc byte[CsvScratchBytes];
                 using FileStream stream = File.OpenRead(csvPath);
                 long streamLength = stream.Length;
                 if (streamLength <= 0L || streamLength > scratch.Length)
@@ -1002,7 +1098,7 @@ namespace Hecton8.Visor
                 int expectedBytes = (int)streamLength;
                 while (bytesRead < expectedBytes)
                 {
-                    Span<byte> readSpan = MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(scratchPtr + bytesRead), expectedBytes - bytesRead);
+                    Span<byte> readSpan = scratch.Slice(bytesRead, expectedBytes - bytesRead);
                     int read = stream.Read(readSpan);
                     if (read <= 0)
                         return false;
@@ -1010,21 +1106,49 @@ namespace Hecton8.Visor
                     bytesRead += read;
                 }
 
-                ReadOnlySpan<byte> csvBytes = MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(scratchPtr), bytesRead);
-                profilesWritten = ParseMaterialProfilesCsv(
-                    csvBytes,
-                    profiles);
-                _materialProfileCount = profilesWritten;
-                return profilesWritten > 0;
+                if (!TryAcquireDynamicDecalVaultBuffer(in _materialProfileHandle, DynamicDecalVaultBufferIds.MaterialProfiles, MaxMaterialProfiles, out NativeArray<DecalMaterialProfileDTO> profiles))
+                    return false;
+
+                try
+                {
+                    profilesWritten = ParseMaterialProfilesCsv(scratch.Slice(0, bytesRead), profiles);
+                    _materialProfileCount = profilesWritten;
+                    return profilesWritten > 0;
+                }
+                finally
+                {
+                    ReleaseDynamicDecalVaultBuffer(in _materialProfileHandle, DynamicDecalVaultBufferIds.MaterialProfiles);
+                }
             }
-            catch (Exception)
+            catch (IOException)
             {
                 profilesWritten = 0;
                 return false;
             }
-            finally
+            catch (UnauthorizedAccessException)
             {
-                UnlockProfileCsvBuffers();
+                profilesWritten = 0;
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                profilesWritten = 0;
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                profilesWritten = 0;
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                profilesWritten = 0;
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                profilesWritten = 0;
+                return false;
             }
         }
 #endif
@@ -1215,14 +1339,14 @@ namespace Hecton8.Visor
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
-            out NativeArray<T> buffer) where T : unmanaged
+            out NativeArray<T>.ReadOnly buffer) where T : unmanaged
         {
             buffer = default;
             if (_vault == null || _vault.IsCompactionFenceActive || requiredLength <= 0)
                 return false;
 
             if (IsDynamicDecalVaultHandle(in handle, bufferId) &&
-                _vault.TryResolveHandle(in handle, out buffer) &&
+                TryReadDynamicDecalVaultBuffer(in handle, bufferId, requiredLength, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
             {
@@ -1237,7 +1361,7 @@ namespace Hecton8.Visor
                 requiredLength,
                 OwnerSystem,
                 options);
-            if (TryResolveDynamicDecalVaultBuffer(ref handle, bufferId, requiredLength, out buffer))
+            if (TryReadDynamicDecalVaultBuffer(in handle, bufferId, requiredLength, out buffer))
                 return true;
 
             ReleaseDynamicDecalVaultHandle(_vault, ref handle, bufferId);
@@ -1245,8 +1369,25 @@ namespace Hecton8.Visor
             return false;
         }
 
-        private static bool TryResolveDynamicDecalVaultBuffer<T>(
-            ref VaultGenerationHandle<T> handle,
+        private static bool TryReadDynamicDecalVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : unmanaged
+        {
+            buffer = default;
+            if (_vault == null || _vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            return IsDynamicDecalVaultHandle(in handle, bufferId) &&
+                   _vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   !_vault.IsCompactionFenceActive &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryAcquireDynamicDecalVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer) where T : unmanaged
@@ -1255,10 +1396,38 @@ namespace Hecton8.Visor
             if (_vault == null || _vault.IsCompactionFenceActive || requiredLength <= 0)
                 return false;
 
-            return IsDynamicDecalVaultHandle(in handle, bufferId) &&
-                   _vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+            if (!IsDynamicDecalVaultHandle(in handle, bufferId) ||
+                !_vault.TryAcquireWriteLock(in handle, OwnerSystem, out buffer) ||
+                _vault.IsCompactionFenceActive ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                ReleaseDynamicDecalVaultBuffer(in handle, bufferId);
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void ReleaseDynamicDecalVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : unmanaged
+        {
+            if (_vault != null && IsDynamicDecalVaultHandle(in handle, bufferId))
+                _vault.ReleaseWriteLock(in handle, OwnerSystem);
+        }
+
+        private static void ReleaseAllDynamicDecalWriteLocks()
+        {
+            ReleaseDynamicDecalVaultBuffer(in _materialProfileHandle, DynamicDecalVaultBufferIds.MaterialProfiles);
+            ReleaseDynamicDecalVaultBuffer(in _tuningHandle, DynamicDecalVaultBufferIds.Tuning);
+            ReleaseDynamicDecalVaultBuffer(in _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing);
+            ReleaseDynamicDecalVaultBuffer(in _stateHandle, DynamicDecalVaultBufferIds.RuntimeState);
+            ReleaseDynamicDecalVaultBuffer(in _uploadHandle, DynamicDecalVaultBufferIds.UploadScratch);
+            ReleaseDynamicDecalVaultBuffer(in _instancesHandle, DynamicDecalVaultBufferIds.Instances);
+            ReleaseDynamicDecalVaultBuffer(in _requestStateHandle, DynamicDecalVaultBufferIds.RequestState);
+            ReleaseDynamicDecalVaultBuffer(in _requestRingHandle, DynamicDecalVaultBufferIds.RequestRing);
         }
 
         private static bool HasDynamicDecalVaultBuffer<T>(
@@ -1271,7 +1440,8 @@ namespace Hecton8.Visor
                    !vault.IsCompactionFenceActive &&
                    requiredLength > 0 &&
                    IsDynamicDecalVaultHandle(in handle, bufferId) &&
-                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
+                   !vault.IsCompactionFenceActive &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
@@ -1322,61 +1492,82 @@ namespace Hecton8.Visor
 
         private static void SeedDefaultTuning()
         {
-            if (!TryResolveDynamicDecalVaultBuffer(ref _tuningHandle, DynamicDecalVaultBufferIds.Tuning, 1, out NativeArray<DecalTuningDTO> tuningArray))
+            if (!TryAcquireDynamicDecalVaultBuffer(in _tuningHandle, DynamicDecalVaultBufferIds.Tuning, 1, out NativeArray<DecalTuningDTO> tuningArray))
                 return;
 
-            DecalTuningDTO tuning = tuningArray[0];
-            if (tuning.Revision != 0u)
+            try
             {
-                _lastTuningSnapshot = SanitizeTuning(tuning, ResolveDefaultTuning().BaseFadeTimeSeconds, MaxCapacity);
-                _hasTuningSnapshot = true;
-                return;
-            }
+                DecalTuningDTO tuning = tuningArray[0];
+                if (tuning.Revision != 0u)
+                {
+                    _lastTuningSnapshot = SanitizeTuning(tuning, ResolveDefaultTuning().BaseFadeTimeSeconds, MaxCapacity);
+                    _hasTuningSnapshot = true;
+                    return;
+                }
 
-            tuning.BaseFadeTimeSeconds = 7.5f;
-            tuning.MaximumOverkillCapacity = MaxCapacity;
-            tuning.NormalRefractionIntensity = 1f;
-            tuning.ProjectionDepthMeters = 0.18f;
-            tuning.LowTierCapacity = LowCapacity;
-            tuning.BaseRadiusMeters = 0.55f;
-            tuning.Revision = 1u;
-            tuning.Flags = 0u;
-            tuningArray[0] = tuning;
-            _lastTuningSnapshot = tuning;
-            _hasTuningSnapshot = true;
+                tuning.BaseFadeTimeSeconds = 7.5f;
+                tuning.MaximumOverkillCapacity = MaxCapacity;
+                tuning.NormalRefractionIntensity = 1f;
+                tuning.ProjectionDepthMeters = 0.18f;
+                tuning.LowTierCapacity = LowCapacity;
+                tuning.BaseRadiusMeters = 0.55f;
+                tuning.Revision = 1u;
+                tuning.Flags = 0u;
+                tuningArray[0] = tuning;
+                _lastTuningSnapshot = tuning;
+                _hasTuningSnapshot = true;
+            }
+            finally
+            {
+                ReleaseDynamicDecalVaultBuffer(in _tuningHandle, DynamicDecalVaultBufferIds.Tuning);
+            }
         }
 
         private static void SeedRequestQueueState()
         {
-            if (!TryResolveDynamicDecalVaultBuffer(ref _requestStateHandle, DynamicDecalVaultBufferIds.RequestState, 1, out NativeArray<DecalRequestQueueStateDTO> stateArray))
+            if (!TryAcquireDynamicDecalVaultBuffer(in _requestStateHandle, DynamicDecalVaultBufferIds.RequestState, 1, out NativeArray<DecalRequestQueueStateDTO> stateArray))
                 return;
 
-            DecalRequestQueueStateDTO state = SanitizeRequestQueueState(stateArray[0], RequestRingCapacity);
-            state.Capacity = RequestRingCapacity;
-            stateArray[0] = state;
+            try
+            {
+                DecalRequestQueueStateDTO state = SanitizeRequestQueueState(stateArray[0], RequestRingCapacity);
+                state.Capacity = RequestRingCapacity;
+                stateArray[0] = state;
+            }
+            finally
+            {
+                ReleaseDynamicDecalVaultBuffer(in _requestStateHandle, DynamicDecalVaultBufferIds.RequestState);
+            }
         }
 
         private static void SeedColdRuntimeState()
         {
-            if (!TryResolveDynamicDecalVaultBuffer(ref _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray))
+            if (!TryAcquireDynamicDecalVaultBuffer(in _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray))
                 return;
 
-            DecalRuntimeStateDTO state = stateArray[0];
-            if ((state.Flags & RuntimeInitializedFlag) != 0u)
+            try
             {
+                DecalRuntimeStateDTO state = stateArray[0];
+                if ((state.Flags & RuntimeInitializedFlag) != 0u)
+                {
+                    _lastRuntimeStateSnapshot = state;
+                    _hasRuntimeStateSnapshot = true;
+                    return;
+                }
+
+                ClearColdVisualBuffers();
+                state = CreateInitializedRuntimeState(
+                    ResolveGlobalQualityWeight(),
+                    ResolveThermalPressure01(),
+                    ResolveLiveTuning());
+                stateArray[0] = state;
                 _lastRuntimeStateSnapshot = state;
                 _hasRuntimeStateSnapshot = true;
-                return;
             }
-
-            ClearColdVisualBuffers();
-            state = CreateInitializedRuntimeState(
-                ResolveGlobalQualityWeight(),
-                ResolveThermalPressure01(),
-                ResolveLiveTuning());
-            stateArray[0] = state;
-            _lastRuntimeStateSnapshot = state;
-            _hasRuntimeStateSnapshot = true;
+            finally
+            {
+                ReleaseDynamicDecalVaultBuffer(in _stateHandle, DynamicDecalVaultBufferIds.RuntimeState);
+            }
         }
 
         private static DecalRuntimeStateDTO CreateInitializedRuntimeState(
@@ -1409,10 +1600,24 @@ namespace Hecton8.Visor
             BufferID bufferId,
             int requiredLength) where T : unmanaged
         {
-            if (!TryResolveDynamicDecalVaultBuffer(ref handle, bufferId, requiredLength, out NativeArray<T> buffer))
+            if (!TryAcquireDynamicDecalVaultBuffer(in handle, bufferId, requiredLength, out NativeArray<T> buffer))
                 return;
 
-            int safeLength = math.min(buffer.Length, requiredLength);
+            try
+            {
+                ClearNativeBuffer(buffer, requiredLength);
+            }
+            finally
+            {
+                ReleaseDynamicDecalVaultBuffer(in handle, bufferId);
+            }
+        }
+
+        private static void ClearNativeBuffer<T>(
+            NativeArray<T> buffer,
+            int requiredLength) where T : unmanaged
+        {
+            int safeLength = math.min(buffer.IsCreated ? buffer.Length : 0, requiredLength);
             if (safeLength <= 0)
                 return;
 
@@ -1473,124 +1678,9 @@ namespace Hecton8.Visor
             return tuning;
         }
 
-        private static bool TryLockRuntimeBuffers()
-        {
-            if (_vault == null)
-                return false;
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem))
-                return false;
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.RequestRing, OwnerSystem))
-            {
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem);
-                return false;
-            }
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.Instances, OwnerSystem))
-            {
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestRing, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem);
-                return false;
-            }
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.UploadScratch, OwnerSystem))
-            {
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.Instances, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestRing, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem);
-                return false;
-            }
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.RuntimeState, OwnerSystem))
-            {
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.UploadScratch, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.Instances, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestRing, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem);
-                return false;
-            }
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.TelemetryRing, OwnerSystem))
-            {
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RuntimeState, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.UploadScratch, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.Instances, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestRing, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem);
-                return false;
-            }
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.Tuning, OwnerSystem))
-            {
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.TelemetryRing, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RuntimeState, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.UploadScratch, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.Instances, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestRing, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem);
-                return false;
-            }
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.MaterialProfiles, OwnerSystem))
-            {
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.Tuning, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.TelemetryRing, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RuntimeState, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.UploadScratch, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.Instances, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestRing, OwnerSystem);
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem);
-                return false;
-            }
-
-            return true;
-        }
-
-        private static void UnlockRuntimeBuffers()
-        {
-            if (_vault == null)
-                return;
-
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.MaterialProfiles, OwnerSystem);
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.Tuning, OwnerSystem);
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.TelemetryRing, OwnerSystem);
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RuntimeState, OwnerSystem);
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.UploadScratch, OwnerSystem);
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.Instances, OwnerSystem);
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestRing, OwnerSystem);
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem);
-        }
-
-        private static bool TryLockRequestBuffers()
-        {
-            if (_vault == null)
-                return false;
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem))
-                return false;
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.RequestRing, OwnerSystem))
-            {
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem);
-                return false;
-            }
-
-            return true;
-        }
-
-        private static void UnlockRequestBuffers()
-        {
-            if (_vault == null)
-                return;
-
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestRing, OwnerSystem);
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem);
-        }
-
         public static bool TryResolveUploadBuffer(
             in DynamicDecalFrameStats stats,
-            out NativeArray<TraumaDecalDTO> upload)
+            out NativeArray<TraumaDecalDTO>.ReadOnly upload)
         {
             upload = default;
             int requiredLength = math.clamp(stats.UploadCount, 0, math.min(stats.UploadCapacity, MaxCapacity));
@@ -1598,120 +1688,9 @@ namespace Hecton8.Visor
                    _vault != null &&
                    !_vault.IsCompactionFenceActive &&
                    IsDynamicDecalVaultHandle(in stats.UploadHandle, DynamicDecalVaultBufferIds.UploadScratch) &&
-                   _vault.TryReadHandle(in stats.UploadHandle, out upload) &&
+                   _vault.TryReadOnlyHandle(in stats.UploadHandle, out upload) &&
                    upload.IsCreated &&
                    upload.Length >= requiredLength;
-        }
-
-        private static bool TryLockUploadTelemetryBuffers()
-        {
-            if (_vault == null)
-                return false;
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.RuntimeState, OwnerSystem))
-                return false;
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.TelemetryRing, OwnerSystem))
-            {
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RuntimeState, OwnerSystem);
-                return false;
-            }
-
-            return true;
-        }
-
-        private static void UnlockUploadTelemetryBuffers()
-        {
-            if (_vault == null)
-                return;
-
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.TelemetryRing, OwnerSystem);
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RuntimeState, OwnerSystem);
-        }
-
-        private static bool TryLockStateBuffer()
-        {
-            return _vault != null && _vault.TryLockBuffer(DynamicDecalVaultBufferIds.RuntimeState, OwnerSystem);
-        }
-
-        private static void UnlockStateBuffer()
-        {
-            if (_vault != null)
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RuntimeState, OwnerSystem);
-        }
-
-        private static bool TryLockTelemetryBuffer()
-        {
-            return _vault != null && _vault.TryLockBuffer(DynamicDecalVaultBufferIds.TelemetryRing, OwnerSystem);
-        }
-
-        private static void UnlockTelemetryBuffer()
-        {
-            if (_vault != null)
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.TelemetryRing, OwnerSystem);
-        }
-
-        private static bool TryLockDecalReadBuffers()
-        {
-            if (_vault == null)
-                return false;
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.Instances, OwnerSystem))
-                return false;
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.RuntimeState, OwnerSystem))
-            {
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.Instances, OwnerSystem);
-                return false;
-            }
-
-            return true;
-        }
-
-        private static void UnlockDecalReadBuffers()
-        {
-            if (_vault == null)
-                return;
-
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RuntimeState, OwnerSystem);
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.Instances, OwnerSystem);
-        }
-
-        private static bool TryLockTuningBuffer()
-        {
-            return _vault != null && _vault.TryLockBuffer(DynamicDecalVaultBufferIds.Tuning, OwnerSystem);
-        }
-
-        private static void UnlockTuningBuffer()
-        {
-            if (_vault != null)
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.Tuning, OwnerSystem);
-        }
-
-        private static bool TryLockProfileCsvBuffers()
-        {
-            if (_vault == null)
-                return false;
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.CsvScratch, OwnerSystem))
-                return false;
-
-            if (!_vault.TryLockBuffer(DynamicDecalVaultBufferIds.MaterialProfiles, OwnerSystem))
-            {
-                _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.CsvScratch, OwnerSystem);
-                return false;
-            }
-
-            return true;
-        }
-
-        private static void UnlockProfileCsvBuffers()
-        {
-            if (_vault == null)
-                return;
-
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.MaterialProfiles, OwnerSystem);
-            _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.CsvScratch, OwnerSystem);
         }
 
         private static void TryIngestGlobalImpactSignals()
@@ -1726,10 +1705,10 @@ namespace Hecton8.Visor
             bool highSpeedAccepted = false;
             bool combatDamageAccepted = false;
             DecalTuningDTO tuning = ResolveLiveTuning();
-            NativeArray<DecalMaterialProfileDTO> materialProfiles = default;
+            NativeArray<DecalMaterialProfileDTO>.ReadOnly materialProfiles = default;
             int materialProfileCapacity = 0;
             if (_materialProfileCount > 0 &&
-                TryResolveDynamicDecalVaultBuffer(ref _materialProfileHandle, DynamicDecalVaultBufferIds.MaterialProfiles, MaxMaterialProfiles, out materialProfiles))
+                TryReadDynamicDecalVaultBuffer(in _materialProfileHandle, DynamicDecalVaultBufferIds.MaterialProfiles, MaxMaterialProfiles, out materialProfiles))
             {
                 materialProfileCapacity = materialProfiles.IsCreated ? materialProfiles.Length : 0;
             }
@@ -1822,7 +1801,7 @@ namespace Hecton8.Visor
             uint materialHash,
             uint profileHash,
             DecalTuningDTO tuning,
-            NativeArray<DecalMaterialProfileDTO> materialProfiles,
+            NativeArray<DecalMaterialProfileDTO>.ReadOnly materialProfiles,
             int materialProfileCapacity,
             float damage,
             float velocity,
@@ -1856,7 +1835,7 @@ namespace Hecton8.Visor
                 request.Flags |= DynamicDecalFlags.PersistentGlass;
             request.StableSeed = Mix(materialHash ^ profileHash ^ frame);
             request.SourceFrame = frame;
-            TryEnqueueRequestNoLock(in request);
+            TryEnqueueRequest(in request);
         }
 
         private static bool TryEnqueueRequest(in DecalRequestSignal request)
@@ -1870,26 +1849,41 @@ namespace Hecton8.Visor
                 return false;
             }
 
-            if (!TryLockRequestBuffers())
-            {
-                AccumulateDroppedIngress(1);
-                return false;
-            }
-
+            bool requestRingLocked = false;
+            bool requestStateLocked = false;
             try
             {
-                return TryEnqueueRequestNoLock(in request);
+                if (!TryAcquireDynamicDecalVaultBuffer(in _requestRingHandle, DynamicDecalVaultBufferIds.RequestRing, RequestRingCapacity, out NativeArray<DecalRequestSignal> requestRing))
+                {
+                    AccumulateDroppedIngress(1);
+                    return false;
+                }
+
+                requestRingLocked = true;
+                if (!TryAcquireDynamicDecalVaultBuffer(in _requestStateHandle, DynamicDecalVaultBufferIds.RequestState, 1, out NativeArray<DecalRequestQueueStateDTO> requestStateArray))
+                {
+                    AccumulateDroppedIngress(1);
+                    return false;
+                }
+
+                requestStateLocked = true;
+                return TryEnqueueRequestToBuffers(requestRing, requestStateArray, in request);
             }
             finally
             {
-                UnlockRequestBuffers();
+                if (requestStateLocked)
+                    ReleaseDynamicDecalVaultBuffer(in _requestStateHandle, DynamicDecalVaultBufferIds.RequestState);
+                if (requestRingLocked)
+                    ReleaseDynamicDecalVaultBuffer(in _requestRingHandle, DynamicDecalVaultBufferIds.RequestRing);
             }
         }
 
-        private static bool TryEnqueueRequestNoLock(in DecalRequestSignal request)
+        private static bool TryEnqueueRequestToBuffers(
+            NativeArray<DecalRequestSignal> requestRing,
+            NativeArray<DecalRequestQueueStateDTO> requestStateArray,
+            in DecalRequestSignal request)
         {
-            if (!TryResolveDynamicDecalVaultBuffer(ref _requestRingHandle, DynamicDecalVaultBufferIds.RequestRing, RequestRingCapacity, out NativeArray<DecalRequestSignal> requestRing) ||
-                !TryResolveDynamicDecalVaultBuffer(ref _requestStateHandle, DynamicDecalVaultBufferIds.RequestState, 1, out NativeArray<DecalRequestQueueStateDTO> requestStateArray))
+            if (!requestRing.IsCreated || !requestStateArray.IsCreated || requestStateArray.Length <= 0)
             {
                 AccumulateDroppedIngress(1);
                 return false;
@@ -2092,7 +2086,7 @@ namespace Hecton8.Visor
 
         private static bool TryResolveMaterialProfile(
             uint sourceHash,
-            NativeArray<DecalMaterialProfileDTO> profiles,
+            NativeArray<DecalMaterialProfileDTO>.ReadOnly profiles,
             int profileCapacity,
             out DecalMaterialProfileDTO profile)
         {
@@ -2166,13 +2160,12 @@ namespace Hecton8.Visor
             if (!EnsureInitialized())
                 return;
 
-            if (!TryLockStateBuffer())
-                return;
-
+            bool stateLocked = false;
             try
             {
-                if (!TryResolveDynamicDecalVaultBuffer(ref _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray))
+                if (!TryAcquireDynamicDecalVaultBuffer(in _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray))
                     return;
+                stateLocked = true;
 
                 DecalRuntimeStateDTO state = stateArray[0];
                 state.Flags |= flags;
@@ -2182,7 +2175,8 @@ namespace Hecton8.Visor
             }
             finally
             {
-                UnlockStateBuffer();
+                if (stateLocked)
+                    ReleaseDynamicDecalVaultBuffer(in _stateHandle, DynamicDecalVaultBufferIds.RuntimeState);
             }
         }
 
@@ -2191,40 +2185,87 @@ namespace Hecton8.Visor
             if (_dumpedFault || !EnsureInitialized())
                 return;
 
-            if (!TryLockTelemetryBuffer())
+            if (!TryResolveTelemetryDumpWindow(out int telemetryCursor, out int count))
                 return;
 
+            _dumpedFault = true;
             try
             {
-                if (!TryResolveDynamicDecalVaultBuffer(ref _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing, TelemetryCapacity, out NativeArray<TraumaWoundTelemetryEntry> telemetry))
-                    return;
-
-                _dumpedFault = true;
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(directory);
                 string dumpPath = Path.Combine(directory, DumpFileName);
                 using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                WriteBlackBoxDumpHeader(stream, reasonFlags, _telemetryCursor);
-                int count = math.min(telemetry.Length, TelemetryCapacity);
+                WriteBlackBoxDumpHeader(stream, reasonFlags, telemetryCursor);
                 for (int i = 0; i < count; i++)
                 {
-                    int index = _telemetryCursor + i;
+                    int index = telemetryCursor + i;
                     if (index >= count)
                         index -= count;
 
-                    TraumaWoundTelemetryEntry entry = telemetry[index];
+                    if (!TryReadTelemetryDumpEntry(index, out TraumaWoundTelemetryEntry entry))
+                        entry = default;
+
                     WriteBlackBoxTelemetryRow(stream, in entry);
                 }
             }
-            catch (Exception)
+            catch (IOException)
             {
                 _dumpedFault = false;
             }
-            finally
+            catch (UnauthorizedAccessException)
             {
-                UnlockTelemetryBuffer();
+                _dumpedFault = false;
             }
+            catch (ObjectDisposedException)
+            {
+                _dumpedFault = false;
+            }
+            catch (InvalidOperationException)
+            {
+                _dumpedFault = false;
+            }
+            catch (ArgumentException)
+            {
+                _dumpedFault = false;
+            }
+            catch (NotSupportedException)
+            {
+                _dumpedFault = false;
+            }
+        }
+
+        private static bool TryResolveTelemetryDumpWindow(out int telemetryCursor, out int count)
+        {
+            telemetryCursor = 0;
+            count = 0;
+            if (!TryReadDynamicDecalVaultBuffer(in _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing, TelemetryCapacity, out NativeArray<TraumaWoundTelemetryEntry>.ReadOnly telemetry))
+                return false;
+
+            count = math.min(telemetry.Length, TelemetryCapacity);
+            telemetryCursor = count > 0 ? PositiveModulo(_telemetryCursor, count) : 0;
+            return count > 0;
+        }
+
+        private static bool TryReadTelemetryDumpEntry(int index, out TraumaWoundTelemetryEntry entry)
+        {
+            entry = default;
+            if (index < 0 ||
+                !TryReadDynamicDecalVaultBuffer(in _telemetryHandle, DynamicDecalVaultBufferIds.TelemetryRing, TelemetryCapacity, out NativeArray<TraumaWoundTelemetryEntry>.ReadOnly telemetry) ||
+                index >= telemetry.Length)
+                return false;
+
+            entry = telemetry[index];
+            return true;
+        }
+
+        private static int PositiveModulo(int value, int modulus)
+        {
+            if (modulus <= 0)
+                return 0;
+
+            int result = value % modulus;
+            return result < 0 ? result + modulus : result;
         }
 
         private static void WriteBlackBoxDumpHeader(FileStream stream, uint reasonFlags, int telemetryCursor)
@@ -2648,7 +2689,7 @@ namespace Hecton8.Visor
         }
 
         public static void CopyDecalsToMappedUploadBuffer(
-            NativeArray<TraumaDecalDTO> source,
+            NativeArray<TraumaDecalDTO>.ReadOnly source,
             TraumaDecalDTO* destination,
             int count)
         {
@@ -2656,8 +2697,8 @@ namespace Hecton8.Visor
             if (safeCount <= 0 || destination == null)
                 return;
 
-            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-            UnsafeUtility.MemCpy(destination, sourcePtr, (long)UnsafeUtility.SizeOf<TraumaDecalDTO>() * safeCount);
+            for (int i = 0; i < safeCount; i++)
+                UnsafeUtility.AsRef<TraumaDecalDTO>(destination + i) = source[i];
         }
 
 #if UNITY_EDITOR
@@ -2671,78 +2712,6 @@ namespace Hecton8.Visor
             return field != null ? UnsafeUtility.GetFieldOffset(field) : -1;
         }
 #endif
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal unsafe struct ClearDecalsJob : IJobParallelFor
-    {
-        [NoAlias, NativeDisableUnsafePtrRestriction] public TraumaDecalDTO* Decals;
-        public int Capacity;
-
-        public void Execute(int index)
-        {
-            if ((uint)index >= (uint)Capacity)
-                return;
-
-            ref TraumaDecalDTO decal = ref UnsafeUtility.AsRef<TraumaDecalDTO>(Decals + index);
-            decal.Opacity01 = 0f;
-            decal.Flags = 0u;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal unsafe struct GenerateMockTraumaWoundsJob : IJobParallelFor
-    {
-        [NoAlias, NativeDisableUnsafePtrRestriction] public DecalRequestSignal* Requests;
-        public int Capacity;
-        public int StartIndex;
-        public int Count;
-        public uint Frame;
-        public double3 OriginAup;
-
-        public void Execute(int index)
-        {
-            if ((uint)index >= (uint)Count)
-                return;
-
-            uint seed = DynamicDecalVaultRuntime.Mix((uint)(index + 1) * 0x9E3779B9u);
-            float phase = (seed & 1023u) * (1f / 1024f);
-            float radius = 2.0f + ((seed >> 10) & 31u) * 0.22f;
-            float xAxis = TriangleWaveSigned(phase);
-            float zAxis = TriangleWaveSigned(phase + 0.25f);
-            float3 rawNormal = DynamicDecalVaultRuntime.MakeFloat3(xAxis * 0.35f, 1f, zAxis * 0.35f);
-            float normalLengthSq = math.max(math.lengthsq(rawNormal), 0.0001f);
-            float3 normal = math.all(math.isfinite(rawNormal))
-                ? rawNormal * math.rsqrt(normalLengthSq)
-                : DynamicDecalVaultRuntime.MakeFloat3(0f, 1f, 0f);
-            int targetIndex = StartIndex + index;
-            if (targetIndex >= Capacity)
-                targetIndex -= Capacity;
-
-            DecalRequestSignal request = default;
-            request.ImpactAup = OriginAup + DynamicDecalVaultRuntime.MakeDouble3(zAxis * radius, ((index & 15) - 8) * 0.12f, xAxis * radius);
-            request.Normal = normal;
-            request.RadiusMeters = 0.22f + ((seed >> 16) & 15u) * 0.035f;
-            request.ProjectionDepthMeters = 0.18f;
-            request.LifetimeSeconds = 4.0f + ((seed >> 21) & 7u) * 0.5f;
-            uint pattern = (uint)(index % 5);
-            request.MaterialHash = pattern == 0u ? DynamicDecalMaterialHashes.Blood :
-                pattern == 1u ? DynamicDecalMaterialHashes.GlassCrack :
-                pattern == 2u ? DynamicDecalMaterialHashes.Burn :
-                pattern == 3u ? DynamicDecalMaterialHashes.Acid :
-                DynamicDecalMaterialHashes.Scorch;
-            request.Flags = DynamicDecalFlags.Active | DynamicDecalFlags.Mock;
-            if (request.MaterialHash == DynamicDecalMaterialHashes.GlassCrack)
-                request.Flags |= DynamicDecalFlags.PersistentGlass;
-            request.StableSeed = seed;
-            request.SourceFrame = Frame;
-            UnsafeUtility.AsRef<DecalRequestSignal>(Requests + targetIndex) = request;
-        }
-
-        private static float TriangleWaveSigned(float phase)
-        {
-            return math.abs(math.frac(phase) * 2f - 1f) * 2f - 1f;
-        }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -2817,6 +2786,8 @@ namespace Hecton8.Visor
             if (!math.all(math.isfinite(local)))
                 return false;
 
+            const double MaxLocalDecalMeters = 1000000.0d;
+            local = math.clamp(local, new double3(-MaxLocalDecalMeters), new double3(MaxLocalDecalMeters));
             float3 position = (float3)local;
             if (!math.all(math.isfinite(position)))
                 return false;
@@ -2983,16 +2954,16 @@ namespace Hecton8.Visor
         private static void ValidateOnLoad()
         {
             if (!DynamicDecalVaultRuntime.ValidateDecalInstanceLayout())
-                Hecton8.Core.H8Debug.LogError("SHINOBU_325 visor trauma ABI layout mismatch: expected TraumaDecalDTO=80B and request ingress DTOs=64B with explicit shader/Vault offsets.");
+                Hecton8.Core.H8Debug.LogError("AGENT_1335 visor trauma ABI layout mismatch: expected TraumaDecalDTO=80B and request ingress DTOs=64B with explicit shader/Vault offsets.");
         }
 
         [UnityEditor.MenuItem("HECTON-8/Rendering/Validate Visor Trauma Layout")]
         private static void ValidateMenu()
         {
             if (DynamicDecalVaultRuntime.ValidateDecalInstanceLayout())
-                Hecton8.Core.H8Debug.Log("SHINOBU_325 visor trauma ABI layout valid: TraumaDecalDTO=80B, DecalRequestSignal=64B, DecalRequestQueueStateDTO=64B.");
+                Hecton8.Core.H8Debug.Log("AGENT_1335 visor trauma ABI layout valid: TraumaDecalDTO=80B, DecalRequestSignal=64B, DecalRequestQueueStateDTO=64B.");
             else
-                Hecton8.Core.H8Debug.LogError("SHINOBU_325 visor trauma ABI layout mismatch: shader/Vault ABI is unsafe.");
+                Hecton8.Core.H8Debug.LogError("AGENT_1335 visor trauma ABI layout mismatch: shader/Vault ABI is unsafe.");
         }
     }
 #endif

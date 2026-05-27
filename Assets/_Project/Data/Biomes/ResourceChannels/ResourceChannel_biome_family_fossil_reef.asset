@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ResourceChannel_biome_family_fossil_reef
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeResourceChannelProfile
   profileId: biome.resource_channel.fossil_reef
-  profileLabel: Fossil Reef Resource Channel
+  profileLabel: Fossil Carbonate Shelf Resource Channel
   resourcePocketItem: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}
   nodeClusterItem: {fileID: 11400000, guid: 91b73894e80923843a89007d3b9cc97d, type: 2}
   safePocketItem: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}

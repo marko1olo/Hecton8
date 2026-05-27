@@ -272,11 +272,12 @@ namespace Hecton8.Physics
                 handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, NativeArrayOptions.ClearMemory);
             }
 
-            if (vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer) &&
-                buffer.IsCreated &&
-                buffer.Length >= requiredLength)
+            if (vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
             {
-                return true;
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                    return true;
+
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
             }
 
             buffer = default;

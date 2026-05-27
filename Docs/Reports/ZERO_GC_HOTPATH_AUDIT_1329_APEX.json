@@ -1,0 +1,465 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\ZERO_GC_HOTPATH_AUDIT_1329_APEX.json",
+  "auditHashSha256": "074d8534f742305e27284fc945b9753bdbaa3a635442a1e47e0f12977ee9c847",
+  "summary": {
+    "scannedFiles": 3,
+    "parseFailures": 0,
+    "totalFindings": 54,
+    "objectCreations": 50,
+    "valueTypeCreations": 21,
+    "managedRiskCreations": 29,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 4
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Fabricator.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\CraftingSystem.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Editor\\FabricatorMemorySovereigntyValidator1329.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 70,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<Fabricator>",
+      "snippet": "new List<Fabricator>(8)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 89,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<RecipeData>",
+      "snippet": "new List<RecipeData>()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 128,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(1f, 0.04f, 0.02f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 130,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(1f, 0.48f, 0.12f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 145,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.05f, 0.86f, 1f, 0.72f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 146,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(1f, 0.04f, 0.02f, 0.86f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 218,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<RecipeData>",
+      "snippet": "new List<RecipeData>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 335,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "object",
+      "snippet": "new object()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 337,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "FabricatorMemoryDumpSnapshot",
+      "snippet": "new FabricatorMemoryDumpSnapshot()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 526,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "MaterialPropertyBlock",
+      "snippet": "new MaterialPropertyBlock()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 1370,
+      "owner": "ResolveThermalHostRuntimePosition",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtime.x, runtime.y, runtime.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 1769,
+      "owner": "RecordFabricatorVaultFailure",
+      "kind": "value_type_creation",
+      "detail": "FabricatorMemoryTelemetryEntry",
+      "snippet": "new FabricatorMemoryTelemetryEntry                 {                     Sequence = unchecked((ulong)_fabricatorMemoryTelemetryCursor + 1UL),                     Frame = unchecked((uint)Time.frameCount),                     BufferId = (uint"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 1848,
+      "owner": "WriteFabricatorMemoryDump",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(FabricatorMemoryDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 1849,
+      "owner": "WriteFabricatorMemoryDump",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 1929,
+      "owner": "TrySynthesizeCraftOutput",
+      "kind": "value_type_creation",
+      "detail": "CraftedItemSynthesisEvent",
+      "snippet": "new CraftedItemSynthesisEvent(result, quantity, spawnPosition, velocityChange)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 1948,
+      "owner": "TryEmitCraftOverflowStack",
+      "kind": "value_type_creation",
+      "detail": "CraftedItemSynthesisEvent",
+      "snippet": "new CraftedItemSynthesisEvent(result, quantity, spawnPosition, velocityChange)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2025,
+      "owner": "TryDeconstructItem",
+      "kind": "value_type_creation",
+      "detail": "CraftedItemSynthesisEvent",
+      "snippet": "new CraftedItemSynthesisEvent(outputItem, output.y, spawnPosition, velocityChange)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2363,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2381,
+      "owner": "TryOffsetAupByRuntimeDelta",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(                 (double)targetRuntimePosition.x - referenceRuntimePosition.x,                 (double)targetRuntimePosition.y - referenceRuntimePosition.y,                 (double)targetRuntimePosition.z - referenceRuntimePosit"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2684,
+      "owner": "EnsureSharedAssemblyFallbackMesh",
+      "kind": "object_creation",
+      "detail": "Mesh",
+      "snippet": "new Mesh              {                  name = \"GEN_FabricatorAssemblyFallbackMesh\",                  hideFlags = HideFlags.HideAndDontSave              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2693,
+      "owner": "EnsureSharedAssemblyFallbackMesh",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, 0.36f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2694,
+      "owner": "EnsureSharedAssemblyFallbackMesh",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, -0.36f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2695,
+      "owner": "EnsureSharedAssemblyFallbackMesh",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, 0f, 0.28f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2696,
+      "owner": "EnsureSharedAssemblyFallbackMesh",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0.28f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2697,
+      "owner": "EnsureSharedAssemblyFallbackMesh",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, 0f, -0.28f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2698,
+      "owner": "EnsureSharedAssemblyFallbackMesh",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(-0.28f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2741,
+      "owner": "ResolveAssemblyFabricatorLocalHeightBounds",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(Vector3.zero, Vector3.one)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2755,
+      "owner": "ResolveAssemblyFabricatorLocalHeightBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(center.x - extents.x, center.y - extents.y, center.z - extents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2756,
+      "owner": "ResolveAssemblyFabricatorLocalHeightBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(center.x + extents.x, center.y - extents.y, center.z - extents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2757,
+      "owner": "ResolveAssemblyFabricatorLocalHeightBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(center.x - extents.x, center.y + extents.y, center.z - extents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2758,
+      "owner": "ResolveAssemblyFabricatorLocalHeightBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(center.x + extents.x, center.y + extents.y, center.z - extents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2759,
+      "owner": "ResolveAssemblyFabricatorLocalHeightBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(center.x - extents.x, center.y - extents.y, center.z + extents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2760,
+      "owner": "ResolveAssemblyFabricatorLocalHeightBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(center.x + extents.x, center.y - extents.y, center.z + extents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2761,
+      "owner": "ResolveAssemblyFabricatorLocalHeightBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(center.x - extents.x, center.y + extents.y, center.z + extents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2762,
+      "owner": "ResolveAssemblyFabricatorLocalHeightBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(center.x + extents.x, center.y + extents.y, center.z + extents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2863,
+      "owner": "PublishWeldingToolAcoustic",
+      "kind": "value_type_creation",
+      "detail": "ToolAcousticSignal",
+      "snippet": "new ToolAcousticSignal             {                 ToolHash = FabricatorToolHash,                 TargetHash = _assemblyTargetHash != 0u ? _assemblyTargetHash : FabricatorWeldingFallbackHash,                 Progress01 = progress,        "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2884,
+      "owner": "PublishPowerDrainSignal",
+      "kind": "value_type_creation",
+      "detail": "PowerDrainSignal",
+      "snippet": "new PowerDrainSignal             {                 ConsumerHash = ResolveFabricatorSignalHash(),                 NetworkHash = 0u,                 Watts = watts,                 Progress01 = math.saturate(progress01),                 Frame "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2899,
+      "owner": "PublishCraftingStartedSignal",
+      "kind": "value_type_creation",
+      "detail": "CraftingStartedSignal",
+      "snippet": "new CraftingStartedSignal             {                 FabricatorHash = ResolveFabricatorSignalHash(),                 RecipeHash = ComputeRecipeSignalHash(recipe),                 ResultItemHash = recipe != null ? unchecked((uint)ComputeI"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2913,
+      "owner": "PublishCraftingCompletedSignal",
+      "kind": "value_type_creation",
+      "detail": "CraftingCompletedSignal",
+      "snippet": "new CraftingCompletedSignal             {                 FabricatorHash = ResolveFabricatorSignalHash(),                 RecipeHash = ComputeRecipeSignalHash(recipe),                 ResultItemHash = unchecked((uint)ComputeItemHash(item)),"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 2934,
+      "owner": "PublishCraftItemAcquiredSignal",
+      "kind": "value_type_creation",
+      "detail": "ItemAcquiredSignal",
+      "snippet": "new ItemAcquiredSignal             {                 PositionAup = positionAup,                 ItemHash = unchecked((uint)itemHash),                 OreHash = 0u,                 Quantity = (ushort)math.min(math.max(1, quantity), ushort.Ma"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 92,
+      "owner": "",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"Maksimalnaya distantsiya ispolzovaniya (metry). \" +                   \"Esli igrok otoydet dalshe — kraft otmenyaetsya.\""
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 100,
+      "owner": "",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"Potreblenie energii VO VREMYa KRAFTA (Vatty). \" +                   \"V idle fabrikator ne potreblyaet dopolnitelno. \" +                   \"Bazovoe potreblenie modulya beretsya iz BuildableData cherez PowerNode.\""
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 100,
+      "owner": "",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"Potreblenie energii VO VREMYa KRAFTA (Vatty). \" +                   \"V idle fabrikator ne potreblyaet dopolnitelno. \""
+    },
+    {
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 105,
+      "owner": "",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"Prioritet otklyucheniya pri defitsite. \" +                   \"0 = kriticheskiy (ne otklyuchat), 100 = roskosh (otklyuchit pervym).\""
+    },
+    {
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "line": 286,
+      "owner": "CanCraft",
+      "kind": "value_type_creation",
+      "detail": "EvaluateRecipeAvailabilityJob",
+      "snippet": "new EvaluateRecipeAvailabilityJob                 {                     RecipeCosts = recipeCosts,                     AvailableItemCounts = availableItemCounts,                     Result = result,                     RecipeCostCount = rec"
+    },
+    {
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "line": 328,
+      "owner": "CanCraft",
+      "kind": "value_type_creation",
+      "detail": "EvaluateRecipeAvailabilityJob",
+      "snippet": "new EvaluateRecipeAvailabilityJob             {                 RecipeCosts = complexRawCosts,                 AvailableItemCounts = availableItemCounts,                 Result = result,                 RecipeCostCount = rawCostCount,      "
+    },
+    {
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "line": 431,
+      "owner": "CanCraft",
+      "kind": "value_type_creation",
+      "detail": "EvaluateRecipeAvailabilityLinearJob",
+      "snippet": "new EvaluateRecipeAvailabilityLinearJob                 {                     RecipeCosts = recipeCosts,                     AvailableItemCounts = availableItemCounts,                     Result = result,                     RecipeCostCount"
+    },
+    {
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "line": 483,
+      "owner": "CanCraft",
+      "kind": "value_type_creation",
+      "detail": "EvaluateRecipeAvailabilityLinearJob",
+      "snippet": "new EvaluateRecipeAvailabilityLinearJob             {                 RecipeCosts = complexRawCosts,                 AvailableItemCounts = availableItemCounts,                 Result = result,                 RecipeCostCount = rawCostCount,"
+    },
+    {
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "line": 590,
+      "owner": "TryBuildTotalRawCostBuffer",
+      "kind": "value_type_creation",
+      "detail": "KahnTotalRawCostJob",
+      "snippet": "new KahnTotalRawCostJob             {                 GraphNodes = graphNodes,                 GraphEdges = graphEdges,                 InDegrees = graphInDegrees,                 Queue = graphQueue,                 RawCosts = rawCosts,    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "line": 616,
+      "owner": "AppendComplexRecipeNode",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(itemHashId, quantity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "line": 669,
+      "owner": "TryAppendComplexRecipeChildren",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(parentNodeIndex, childNodeIndex)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "line": 740,
+      "owner": "TryBuildRecipeCostBuffer",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(itemHashId, adjustedAmount)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "line": 812,
+      "owner": "TryAddMergedCost",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(itemHashId, quantity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "line": 885,
+      "owner": "TryBuildAvailableItemCountPairs",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(cost.x, availableCount)"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

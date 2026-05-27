@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Public Roadmap Language And Promise Policy
 
 Status: promise-control policy
-Owner lane: SHINOBU_81 / public roadmap
+Owner lane: Marketing / public roadmap
 Runtime impact: none
 
 ## Purpose

@@ -36,10 +36,30 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(101)] public readonly byte PrimaryAudioMaterialId;
         [FieldOffset(102)] public readonly byte SecondaryAudioMaterialId;
         [FieldOffset(103)] private readonly byte _hasPointAup;
-        [FieldOffset(104)] private readonly uint _pad0;
-        [FieldOffset(108)] private readonly uint _pad1;
-        [FieldOffset(112)] private readonly ulong _pad2;
-        [FieldOffset(120)] private readonly ulong _pad3;
+        [FieldOffset(104)] private readonly byte _pad0;
+        [FieldOffset(105)] private readonly byte _pad1;
+        [FieldOffset(106)] private readonly byte _pad2;
+        [FieldOffset(107)] private readonly byte _pad3;
+        [FieldOffset(108)] private readonly byte _pad4;
+        [FieldOffset(109)] private readonly byte _pad5;
+        [FieldOffset(110)] private readonly byte _pad6;
+        [FieldOffset(111)] private readonly byte _pad7;
+        [FieldOffset(112)] private readonly byte _pad8;
+        [FieldOffset(113)] private readonly byte _pad9;
+        [FieldOffset(114)] private readonly byte _pad10;
+        [FieldOffset(115)] private readonly byte _pad11;
+        [FieldOffset(116)] private readonly byte _pad12;
+        [FieldOffset(117)] private readonly byte _pad13;
+        [FieldOffset(118)] private readonly byte _pad14;
+        [FieldOffset(119)] private readonly byte _pad15;
+        [FieldOffset(120)] private readonly byte _pad16;
+        [FieldOffset(121)] private readonly byte _pad17;
+        [FieldOffset(122)] private readonly byte _pad18;
+        [FieldOffset(123)] private readonly byte _pad19;
+        [FieldOffset(124)] private readonly byte _pad20;
+        [FieldOffset(125)] private readonly byte _pad21;
+        [FieldOffset(126)] private readonly byte _pad22;
+        [FieldOffset(127)] private readonly byte _pad23;
 
         public PhysicsImpactSignal(
             ulong primaryBodyId,
@@ -74,10 +94,30 @@ namespace Hecton8.Core.Contracts
             WeightClass = weightClass;
             PrimaryAudioMaterialId = primaryAudioMaterialId;
             SecondaryAudioMaterialId = secondaryAudioMaterialId;
-            _pad0 = 0u;
-            _pad1 = 0u;
-            _pad2 = 0UL;
-            _pad3 = 0UL;
+            _pad0 = 0;
+            _pad1 = 0;
+            _pad2 = 0;
+            _pad3 = 0;
+            _pad4 = 0;
+            _pad5 = 0;
+            _pad6 = 0;
+            _pad7 = 0;
+            _pad8 = 0;
+            _pad9 = 0;
+            _pad10 = 0;
+            _pad11 = 0;
+            _pad12 = 0;
+            _pad13 = 0;
+            _pad14 = 0;
+            _pad15 = 0;
+            _pad16 = 0;
+            _pad17 = 0;
+            _pad18 = 0;
+            _pad19 = 0;
+            _pad20 = 0;
+            _pad21 = 0;
+            _pad22 = 0;
+            _pad23 = 0;
         }
 
         public PhysicsImpactSignal(
@@ -105,10 +145,30 @@ namespace Hecton8.Core.Contracts
             WeightClass = weightClass;
             PrimaryAudioMaterialId = primaryAudioMaterialId;
             SecondaryAudioMaterialId = secondaryAudioMaterialId;
-            _pad0 = 0u;
-            _pad1 = 0u;
-            _pad2 = 0UL;
-            _pad3 = 0UL;
+            _pad0 = 0;
+            _pad1 = 0;
+            _pad2 = 0;
+            _pad3 = 0;
+            _pad4 = 0;
+            _pad5 = 0;
+            _pad6 = 0;
+            _pad7 = 0;
+            _pad8 = 0;
+            _pad9 = 0;
+            _pad10 = 0;
+            _pad11 = 0;
+            _pad12 = 0;
+            _pad13 = 0;
+            _pad14 = 0;
+            _pad15 = 0;
+            _pad16 = 0;
+            _pad17 = 0;
+            _pad18 = 0;
+            _pad19 = 0;
+            _pad20 = 0;
+            _pad21 = 0;
+            _pad22 = 0;
+            _pad23 = 0;
         }
 
         public static bool HasPointAup(in PhysicsImpactSignal signal)

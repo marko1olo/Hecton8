@@ -111,56 +111,17 @@ namespace Hecton8.Rendering
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct GenerateMockDrsStateJob : IJob
-    {
-        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
-        // MockState is a single Vault-owned fallback DRS state lane. GenerateMockDrsStateJob only writes
-        // that lane and never reads, resizes, releases, or aliases the parameter/telemetry buffers.
-        //
-        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
-        // HectonBilateralDrsUpscalerRuntime schedules this job only from SimulationKernelBridge. The
-        // returned handle is fed directly into CalculateUpscalerParamsJob and registered through H8Memory
-        // under SystemID.GraphicsScalability, so the dispatcher owns the completion window.
-        //
-        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
-        // The mock state is consumed by the dependent parameter job after the scheduled handle chain. Cold
-        // seeding happens before the simulation route is marked ready. Rejected alternatives: a private
-        // NativeArray would create a second owner, and a local completion call would break dispatcher-owned
-        // fence discipline.
-        [NativeDisableContainerSafetyRestriction] [WriteOnly] [NoAlias] public NativeArray<DrsStateDTO> MockState;
-        public float TimeSeconds;
-        public uint FrameIndex;
-
-        public void Execute()
-        {
-            if (!MockState.IsCreated || MockState.Length < 1)
-                return;
-
-            float phase = TimeSeconds * 0.71f + (FrameIndex & 63u) * 0.013f;
-            float wave = math.saturate(0.5f + 0.5f * Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(phase));
-            float scale = math.lerp(0.4f, 0.72f, wave);
-
-            DrsStateDTO* ptr = (DrsStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(MockState);
-            ref DrsStateDTO dto = ref UnsafeUtility.AsRef<DrsStateDTO>(ptr);
-            dto.CurrentRenderScale = scale;
-            dto.TargetRenderScale = math.max(0.38f, scale - 0.035f);
-            dto.UpscalerTypeHash = BilateralDrsUpscalerConstants.UpscalerTypeHash;
-            dto._pad0 = 0u;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct CalculateUpscalerParamsJob : IJob
     {
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // Parameters writes only the pending CBuffer slot in the Vault-owned parameter lane. Telemetry writes
         // only the 300-entry black-box lane. TelemetryCursor writes only the single cursor lane. Tuning,
-        // Profiles, and MockState are read-only. These BufferIDs are distinct and acquired by the owner before
+        // Profiles, and the mock-state snapshot are read-only. These BufferIDs are distinct and acquired by the owner before
         // _vaultStateReady, so the containers do not overlap in memory or lifetime ownership.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
-        // HectonBilateralDrsUpscalerRuntime schedules CalculateUpscalerParamsJob after the optional
-        // mock-state job, returns the combined handle to the dispatcher, and registers it through H8Memory
+        // HectonBilateralDrsUpscalerRuntime schedules CalculateUpscalerParamsJob through the dispatcher,
+        // returns the handle to the dispatcher, and registers it through H8Memory
         // under SystemID.GraphicsScalability. PostSimulation publishes only after the dispatcher completes
         // the Simulation fence.
         //
@@ -171,9 +132,8 @@ namespace Hecton8.Rendering
         [NativeDisableContainerSafetyRestriction] [WriteOnly] [NoAlias] public NativeArray<UpscalerParamsDTO> Parameters;
         [NativeDisableContainerSafetyRestriction] [WriteOnly] [NoAlias] public NativeArray<UpscalerTelemetryEntry> Telemetry;
         [NativeDisableContainerSafetyRestriction] [NoAlias] public NativeArray<int> TelemetryCursor;
-        [ReadOnly] [NoAlias] public NativeArray<UpscalerTuningDTO> Tuning;
-        [ReadOnly] [NoAlias] public NativeArray<UpscalerProfileDTO> Profiles;
-        [ReadOnly] [NoAlias] public NativeArray<DrsStateDTO> MockState;
+        [ReadOnly] [NoAlias] public NativeArray<UpscalerTuningDTO>.ReadOnly Tuning;
+        [ReadOnly] [NoAlias] public NativeArray<UpscalerProfileDTO>.ReadOnly Profiles;
         public ResolutionScaleState ScaleStateSnapshot;
         public DrsStateDTO MockStateSnapshot;
         public int SubmittedLowWidth;
@@ -203,7 +163,7 @@ namespace Hecton8.Rendering
             float serviceQuality = Sanitize01(FallbackQuality01, 1f);
             if (UseMockState != 0)
             {
-                DrsStateDTO mockState = MockState.IsCreated && MockState.Length > 0 ? MockState[0] : MockStateSnapshot;
+                DrsStateDTO mockState = MockStateSnapshot;
                 currentScale = SanitizeScale(mockState.CurrentRenderScale, 0.5f);
                 targetScale = SanitizeScale(mockState.TargetRenderScale, currentScale);
                 flags |= BilateralDrsUpscalerConstants.FlagMockState;

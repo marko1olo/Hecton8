@@ -151,7 +151,7 @@ namespace Hecton8.AI
         private const uint SteeringDumpFaultHash = 0x53333033u;
         private const int SteeringDumpVersion = 1;
         private const string SteeringDumpDirectoryRelativePath = "Docs/AgentLogs";
-        private const string SteeringDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_303.bin";
+        private const string SteeringDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
         internal const int LeviathanSteeringScheduledJobCount = 5;
         private const int SteeringParamsOffsetMaxSpeed = 0;
         private const int SteeringParamsOffsetTurnSpeed = 4;
@@ -577,9 +577,13 @@ namespace Hecton8.AI
             try
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(SteeringDumpFaultHash, SteeringDumpMagic, _lastLeviathanSteeringChainMicroseconds);
-                Directory.CreateDirectory(SteeringDumpDirectoryRelativePath);
+                DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
+                string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
+                string dumpDirectory = Path.Combine(projectRoot, SteeringDumpDirectoryRelativePath);
+                string dumpPath = Path.Combine(projectRoot, SteeringDumpRelativePath);
+                Directory.CreateDirectory(dumpDirectory);
 
-                using (FileStream stream = new FileStream(SteeringDumpRelativePath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     Span<byte> header = stackalloc byte[24];
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), SteeringDumpMagic);

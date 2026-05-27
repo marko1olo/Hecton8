@@ -299,6 +299,15 @@ namespace Hecton8.Core
         }
 
         /// <inheritdoc />
+        public bool TryGetLookRuntimeState(out PlayerLookState state)
+        {
+            state = _runtimeContext.LookState;
+            return _isInitialized &&
+                   _runtimeContext.IsBound &&
+                   (state.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
+        }
+
+        /// <inheritdoc />
         public bool TryGetMovementStressRuntimeState(out PlayerMovementStressRuntimeState state)
         {
             state = _runtimeContext.MovementStressState;

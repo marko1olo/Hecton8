@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Jobs;
@@ -290,7 +290,7 @@ namespace Hecton8.World
 
             float maxDistanceSq = DefaultTerrainHoleEvictionDistance * DefaultTerrainHoleEvictionDistance;
             Vector3 playerPosition = playerTransform.position;
-            _terrainHoleEvictionScratch.Clear();
+            int removedCount = 0;
 
             int writeIndex = 0;
             for (int i = 0; i < _persistentTerrainHoleCount; i++)
@@ -300,7 +300,8 @@ namespace Hecton8.World
                 float dz = hole.Z - playerPosition.z;
                 if ((dx * dx) + (dz * dz) > maxDistanceSq)
                 {
-                    _terrainHoleEvictionScratch.Add(hole);
+                    removedCount++;
+                    InvalidateChunksIntersectingHole(new Vector3(hole.X, hole.Y, hole.Z), hole.Radius);
                     continue;
                 }
 
@@ -310,7 +311,7 @@ namespace Hecton8.World
                 writeIndex++;
             }
 
-            if (_terrainHoleEvictionScratch.Count <= 0)
+            if (removedCount <= 0)
                 return;
 
             int transientCount = _terrainHoleCount - _persistentTerrainHoleCount;
@@ -331,12 +332,6 @@ namespace Hecton8.World
                 _terrainHoleRecords[i] = default;
 
             SyncTerrainHoleNativeCache();
-            for (int i = 0; i < _terrainHoleEvictionScratch.Count; i++)
-            {
-                TerrainHoleRecord removed = _terrainHoleEvictionScratch[i];
-                InvalidateChunksIntersectingHole(new Vector3(removed.X, removed.Y, removed.Z), removed.Radius);
-            }
-
             RefreshResidency();
         }
 
@@ -407,67 +402,146 @@ namespace Hecton8.World
         {
             if (_terrainHoleCount <= 0)
             {
-                if (_nativeMemory.TerrainHoleRecordsNative.IsCreated)
-                {
-                    if (_nativeMemory.TerrainHoleRecordsNative.Length != EmptyTerrainHoleNativeCapacity)
-                        DisposeNativeArray(ref _nativeMemory.TerrainHoleRecordsNative);
-                }
-
-                if (!_nativeMemory.TerrainHoleRecordsNative.IsCreated)
-                {
-                    _nativeMemory.TerrainHoleRecordsNative = new NativeArray<TerrainHoleRecord>(EmptyTerrainHoleNativeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TerrainHoleRecord>[1] - sentinel-visible empty terrain-hole job input placeholder - owner: HectonMapMagicVegetationBridge
-                    RegisterTrackedNativeArray(_nativeMemory.TerrainHoleRecordsNative, nameof(_nativeMemory.TerrainHoleRecordsNative));
-                }
-
-                if (_nativeMemory.TerrainHoleStreamingRecordsNative.IsCreated)
-                {
-                    if (_nativeMemory.TerrainHoleStreamingRecordsNative.Length != EmptyTerrainHoleNativeCapacity)
-                        DisposeNativeArray(ref _nativeMemory.TerrainHoleStreamingRecordsNative);
-                }
-
-                if (!_nativeMemory.TerrainHoleStreamingRecordsNative.IsCreated)
-                {
-                    _nativeMemory.TerrainHoleStreamingRecordsNative = new NativeArray<TerrainHoleStreamingRecord>(EmptyTerrainHoleNativeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TerrainHoleStreamingRecord>[1] - sentinel-visible empty terrain-hole streaming placeholder - owner: HectonMapMagicVegetationBridge
-                    RegisterTrackedNativeArray(_nativeMemory.TerrainHoleStreamingRecordsNative, nameof(_nativeMemory.TerrainHoleStreamingRecordsNative));
-                }
+                ReleaseVegetationMemoryBuffer(ref _nativeMemory.TerrainHoleRecordsHandle);
+                ReleaseVegetationMemoryBuffer(ref _nativeMemory.TerrainHoleStreamingRecordsHandle);
 
                 MarkAllTileTerrainHolesDirty();
                 return;
             }
 
-            EnsureNativeCapacity(ref _nativeMemory.TerrainHoleRecordsNative, _terrainHoleCount);
             EnsureTerrainHoleStreamingCapacity(ref _terrainHoleStreamingRecords, _terrainHoleCount);
-            EnsureNativeCapacity(ref _nativeMemory.TerrainHoleStreamingRecordsNative, _terrainHoleCount);
-            for (int i = 0; i < _terrainHoleCount; i++)
+            bool holeRecordsLocked = false;
+            bool streamingLocked = false;
+            IDataVault holeRecordsVault = null;
+            IDataVault streamingVault = null;
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.TerrainHoleRecordsHandle,
+                    BufferID.VegetationTerrainHoleRecords,
+                    _terrainHoleCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out holeRecordsVault,
+                    out NativeArray<TerrainHoleRecord> terrainHoleRecordsNative))
             {
-                _nativeMemory.TerrainHoleRecordsNative[i] = _terrainHoleRecords[i];
-                TerrainHoleRecord hole = _terrainHoleRecords[i];
-                TerrainHoleStreamingRecord streamingRecord = new TerrainHoleStreamingRecord
+                MarkAllTileTerrainHolesDirty();
+                return;
+            }
+
+            holeRecordsLocked = true;
+            try
+            {
+                if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.TerrainHoleStreamingRecordsHandle,
+                    BufferID.VegetationTerrainHoleStreamingRecords,
+                    _terrainHoleCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out streamingVault,
+                    out NativeArray<TerrainHoleStreamingRecord> terrainHoleStreamingRecordsNative))
                 {
-                    HoleId = hole.HoleId,
-                    Position = new Vector3(hole.X, hole.Y, hole.Z),
-                    Radius = hole.Radius,
-                    SourceType = hole.SourceType
-                };
-                _terrainHoleStreamingRecords[i] = streamingRecord;
-                _nativeMemory.TerrainHoleStreamingRecordsNative[i] = streamingRecord;
+                    MarkAllTileTerrainHolesDirty();
+                    return;
+                }
+
+                streamingLocked = true;
+                for (int i = 0; i < _terrainHoleCount; i++)
+                {
+                    TerrainHoleRecord hole = _terrainHoleRecords[i];
+                    terrainHoleRecordsNative[i] = hole;
+                    TerrainHoleStreamingRecord streamingRecord = new TerrainHoleStreamingRecord
+                    {
+                        HoleId = hole.HoleId,
+                        Position = new Vector3(hole.X, hole.Y, hole.Z),
+                        Radius = hole.Radius,
+                        SourceType = hole.SourceType
+                    };
+                    _terrainHoleStreamingRecords[i] = streamingRecord;
+                    terrainHoleStreamingRecordsNative[i] = streamingRecord;
+                }
+            }
+            finally
+            {
+                if (streamingLocked)
+                {
+                    streamingVault.ReleaseWriteLock(
+                        in _nativeMemory.TerrainHoleStreamingRecordsHandle,
+                        VegetationMemorySovereigntyConstants.OwnerSystemId);
+                }
+
+                if (holeRecordsLocked)
+                {
+                    holeRecordsVault.ReleaseWriteLock(
+                        in _nativeMemory.TerrainHoleRecordsHandle,
+                        VegetationMemorySovereigntyConstants.OwnerSystemId);
+                }
             }
 
             MarkAllTileTerrainHolesDirty();
         }
 
+        private bool TryReadTerrainHoleRecords(out NativeArray<TerrainHoleRecord> terrainHoles)
+        {
+            terrainHoles = default;
+            if (_terrainHoleCount <= 0)
+                return true;
+
+            return TryReadVegetationMemoryBuffer(
+                in _nativeMemory.TerrainHoleRecordsHandle,
+                BufferID.VegetationTerrainHoleRecords,
+                _terrainHoleCount,
+                out terrainHoles);
+        }
+
+        private bool TryCreateTerrainHoleJobSnapshot(out NativeArray<TerrainHoleRecord> terrainHoles)
+        {
+            terrainHoles = default;
+            int holeCount = _terrainHoleCount;
+            if (holeCount <= 0)
+                return true;
+
+            if (!TryReadTerrainHoleRecords(out NativeArray<TerrainHoleRecord> sourceHoles))
+                return false;
+
+            terrainHoles = H8Memory.Allocate<TerrainHoleRecord>(
+                holeCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            if (!terrainHoles.IsCreated || terrainHoles.Length < holeCount)
+            {
+                int actualLength = terrainHoles.IsCreated ? terrainHoles.Length : 0;
+                H8Memory.Release(ref terrainHoles, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                RecordVegetationMemoryTelemetry(
+                    BufferID.VegetationTerrainHoleRecords,
+                    _nativeMemory.TerrainHoleRecordsHandle.Generation,
+                    holeCount,
+                    actualLength,
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
+                    VegetationMemoryTelemetryPhase.SlowTick,
+                    VegetationMemorySovereigntyConstants.FlagCapacity,
+                    default);
+                return false;
+            }
+
+            NativeArray<TerrainHoleRecord>.Copy(sourceHoles, terrainHoles, holeCount);
+            return true;
+        }
+
         private void InvalidateChunksIntersectingHole(Vector3 position, float radius)
         {
             float radiusSq = radius * radius;
-            _evictionKeys.Clear();
-            Dictionary<ChunkKey, ChunkPayload>.Enumerator payloadEnumerator = _chunkPayloads.GetEnumerator();
+            ClearEvictionScratch();
+            FixedChunkPayloadMap.Enumerator payloadEnumerator = _chunkPayloads.GetEnumerator();
             while (payloadEnumerator.MoveNext())
             {
                 if (DoesChunkIntersectHole(payloadEnumerator.Current.Value, position.x, position.z, radiusSq))
-                    _evictionKeys.Add(payloadEnumerator.Current.Key);
+                {
+                    if (!TryAddEvictionScratch(payloadEnumerator.Current.Key))
+                        break;
+                }
             }
 
-            for (int i = 0; i < _evictionKeys.Count; i++)
+            for (int i = 0; i < _evictionKeyCount; i++)
             {
                 ChunkKey key = _evictionKeys[i];
                 if (_chunkPayloads.TryGetValue(key, out ChunkPayload payload))
@@ -476,23 +550,6 @@ namespace Hecton8.World
                 _chunkPayloads.Remove(key);
                 RemoveChunkAbyssalNavPayload(key);
                 RemoveChunkMegaWreckPayload(key);
-            }
-
-            _jobScratchKeys.Clear();
-            Dictionary<ChunkKey, ChunkBuildJobState>.Enumerator jobEnumerator = _chunkBuildJobs.GetEnumerator();
-            while (jobEnumerator.MoveNext())
-            {
-                ChunkBuildJobState jobState = jobEnumerator.Current.Value;
-                if (jobState == null || !DoesChunkIntersectHole(jobState.PayloadHeader, position.x, position.z, radiusSq))
-                    continue;
-
-                _jobScratchKeys.Add(jobEnumerator.Current.Key);
-            }
-
-            for (int i = 0; i < _jobScratchKeys.Count; i++)
-            {
-                ChunkKey key = _jobScratchKeys[i];
-                CancelChunkBuildJob(key);
             }
 
             _activeSetDirty = true;
@@ -521,15 +578,18 @@ namespace Hecton8.World
 
             Vector3 min = bounds.min;
             Vector3 max = bounds.max;
-            _evictionKeys.Clear();
-            Dictionary<ChunkKey, ChunkPayload>.Enumerator payloadEnumerator = _chunkPayloads.GetEnumerator();
+            ClearEvictionScratch();
+            FixedChunkPayloadMap.Enumerator payloadEnumerator = _chunkPayloads.GetEnumerator();
             while (payloadEnumerator.MoveNext())
             {
                 if (DoesChunkIntersectBounds(payloadEnumerator.Current.Value, min.x, max.x, min.z, max.z))
-                    _evictionKeys.Add(payloadEnumerator.Current.Key);
+                {
+                    if (!TryAddEvictionScratch(payloadEnumerator.Current.Key))
+                        break;
+                }
             }
 
-            for (int i = 0; i < _evictionKeys.Count; i++)
+            for (int i = 0; i < _evictionKeyCount; i++)
             {
                 ChunkKey key = _evictionKeys[i];
                 if (_chunkPayloads.TryGetValue(key, out ChunkPayload payload))
@@ -539,20 +599,6 @@ namespace Hecton8.World
                 RemoveChunkAbyssalNavPayload(key);
                 RemoveChunkMegaWreckPayload(key);
             }
-
-            _jobScratchKeys.Clear();
-            Dictionary<ChunkKey, ChunkBuildJobState>.Enumerator jobEnumerator = _chunkBuildJobs.GetEnumerator();
-            while (jobEnumerator.MoveNext())
-            {
-                ChunkBuildJobState jobState = jobEnumerator.Current.Value;
-                if (jobState == null || !DoesChunkIntersectBounds(jobState.PayloadHeader, min.x, max.x, min.z, max.z))
-                    continue;
-
-                _jobScratchKeys.Add(jobEnumerator.Current.Key);
-            }
-
-            for (int i = 0; i < _jobScratchKeys.Count; i++)
-                CancelChunkBuildJob(_jobScratchKeys[i]);
 
             _activeSetDirty = true;
         }
@@ -574,23 +620,31 @@ namespace Hecton8.World
                    minZ <= payload.MaxZ;
         }
 
-        private static int CountSemanticType(NativeChunkPool pool, int offset, int count, int semanticType)
+        private int CountSemanticType(NativeChunkPool pool, int offset, int count, int semanticType)
         {
-            if (!pool.SemanticTypes.IsCreated || !pool.Matrices.IsCreated || count <= 0)
+            int requiredPoolCount = offset + count;
+            if (offset < 0 ||
+                count <= 0 ||
+                requiredPoolCount < offset)
+            {
+                return 0;
+            }
+
+            if (!TryReadChunkPoolView(in pool, requiredPoolCount, out NativeChunkPoolView poolView))
                 return 0;
 
             int resolvedCount = 0;
-            int end = math.min(pool.SemanticTypes.Length, offset + count);
+            int end = math.min(poolView.SemanticTypes.Length, requiredPoolCount);
             for (int i = math.max(0, offset); i < end; i++)
             {
-                if (pool.SemanticTypes[i] == semanticType)
+                if (poolView.SemanticTypes[i] == semanticType)
                     resolvedCount++;
             }
 
             return resolvedCount;
         }
 
-        private static void CopySemanticAnchorPositions(
+        private void CopySemanticAnchorPositions(
             NativeChunkPool pool,
             int offset,
             int count,
@@ -601,16 +655,24 @@ namespace Hecton8.World
             double3 universeOffset,
             ref int writeIndex)
         {
-            if (!pool.SemanticTypes.IsCreated || !pool.Matrices.IsCreated || count <= 0)
+            int requiredPoolCount = offset + count;
+            if (offset < 0 ||
+                count <= 0 ||
+                requiredPoolCount < offset)
+            {
+                return;
+            }
+
+            if (!TryReadChunkPoolView(in pool, requiredPoolCount, out NativeChunkPoolView poolView))
                 return;
 
-            int end = math.min(pool.SemanticTypes.Length, offset + count);
+            int end = math.min(poolView.SemanticTypes.Length, requiredPoolCount);
             for (int i = math.max(0, offset); i < end; i++)
             {
-                if (pool.SemanticTypes[i] != semanticType)
+                if (poolView.SemanticTypes[i] != semanticType)
                     continue;
 
-                double3 runtimePosition = new double3(pool.Matrices[i].m03, pool.Matrices[i].m13, pool.Matrices[i].m23) + universeOffset;
+                double3 runtimePosition = new double3(poolView.Matrices[i].m03, poolView.Matrices[i].m13, poolView.Matrices[i].m23) + universeOffset;
                 Vector3 position = ToVector3(runtimePosition);
                 managedPositions[writeIndex] = position;
                 nativePositions[writeIndex] = position;
@@ -777,20 +839,19 @@ namespace Hecton8.World
             if (chunkCount <= 0)
                 return;
 
-            EnsureChunkKeyCapacity(ref _densityQueryChunkKeys, chunkCount);
-            EnsureDensityChunkRecordCapacity(ref _nativeMemory.DensityQueryChunksNative, chunkCount);
-            EnsureDensityChunkRecordCapacity(ref _nativeMemory.DensityQueryChunksScratchNative, chunkCount);
-            EnsureFloat3Capacity(ref _nativeMemory.DensityQueryGridNative, chunkCount * DensityGridCellCount);
-            EnsureFloat3Capacity(ref _nativeMemory.DensityQueryGridScratchNative, chunkCount * DensityGridCellCount);
-            EnsureFloat2NativeCapacity(ref _nativeMemory.ThreatAttractorGridNative, chunkCount * DensityGridCellCount);
-            EnsureFloat2NativeCapacity(ref _nativeMemory.ThreatAttractorGridScratchNative, chunkCount * DensityGridCellCount);
+            int capacity = _densityQueryChunkKeys != null ? _densityQueryChunkKeys.Length : 0;
+            if (capacity >= chunkCount)
+                return;
+
+            RecordChunkQueueCapacityExceeded(capacity, chunkCount);
+            _selectedChunkCount = math.min(_selectedChunkCount, capacity);
         }
 
         private void DisposeAllTileNativeCaches()
         {
             FinalizePendingTileHeightReadbacks();
             TryDisposeDeferredTileCacheReadbacks();
-            Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+            FixedTileStateMap.Enumerator enumerator = _tileStates.GetEnumerator();
             while (enumerator.MoveNext())
                 QueueDeferredTileCacheDisposal(enumerator.Current.Value);
 
@@ -799,55 +860,50 @@ namespace Hecton8.World
 
         private void DisposeTerrainHoleCache()
         {
-            DisposeNativeArray(ref _nativeMemory.TerrainHoleRecordsNative);
-            DisposeNativeArray(ref _nativeMemory.TerrainHoleStreamingRecordsNative);
+            ReleaseVegetationMemoryBuffer(ref _nativeMemory.TerrainHoleRecordsHandle);
+            ReleaseVegetationMemoryBuffer(ref _nativeMemory.TerrainHoleStreamingRecordsHandle);
             _terrainHoleCount = 0;
             _persistentTerrainHoleCount = 0;
             _megaWreckInteriorMaskHash = 0;
             _nextTerrainHoleId = 1;
         }
 
-        private static void DisposeTileNativeCaches(TileRuntimeState state)
+        private void DisposeTileNativeCaches(TileRuntimeState state)
         {
             if (state == null)
                 return;
 
+            CompleteAndReleaseChunkBuildJobsForTile(state.TileX, state.TileZ);
             DisposeTileNativeCacheBuffer(ref state.PrimaryCacheBuffer);
             DisposeTileNativeCacheBuffer(ref state.SecondaryCacheBuffer);
-            DisposeNativeArray(
-                ref state.TerrainHoleMaskNative,
-                state.TerrainHolesJobScheduled ? state.TerrainHolesJobHandle : default);
+            ReleaseVegetationMemoryBuffer(ref state.TerrainHoleMaskHandle);
+            ReleaseTileNativeCacheSlot(state);
             state.ActiveCacheBufferIndex = 0;
             state.PendingCacheBufferIndex = 0;
             state.HeightReadbackPending = false;
             state.HeightReadbackRequest = default;
             state.HolesResolution = 0;
+            state.TerrainHoleMaskCount = 0;
             state.TerrainHolesDirty = false;
-            state.TerrainHolesJobScheduled = false;
-            state.TerrainHolesJobHandle = default;
             state.TerrainHoleMaskManaged = null;
         }
 
-        private static void QueueDeferredTileCacheDisposal(TileRuntimeState state)
+        private void QueueDeferredTileCacheDisposal(TileRuntimeState state)
         {
             if (state == null)
                 return;
 
             if (state.HeightReadbackPending && !state.HeightReadbackRequest.done)
             {
-                s_DeferredTileCacheDisposals.Add(new DeferredTileCacheDisposal
+                if (s_DeferredTileCacheDisposalCount < s_DeferredTileCacheDisposals.Length)
                 {
-                    Request = state.HeightReadbackRequest,
-                    PrimaryCacheBuffer = state.PrimaryCacheBuffer,
-                    SecondaryCacheBuffer = state.SecondaryCacheBuffer
-                });
+                    s_DeferredTileCacheDisposals[s_DeferredTileCacheDisposalCount++] = new DeferredTileCacheDisposal
+                    {
+                        Request = state.HeightReadbackRequest
+                    };
+                }
 
-                state.PrimaryCacheBuffer = default;
-                state.SecondaryCacheBuffer = default;
-                state.ActiveCacheBufferIndex = 0;
-                state.PendingCacheBufferIndex = 0;
-                state.HeightReadbackPending = false;
-                state.HeightReadbackRequest = default;
+                DisposeTileNativeCaches(state);
                 return;
             }
 
@@ -856,23 +912,25 @@ namespace Hecton8.World
 
         private static void TryDisposeDeferredTileCacheReadbacks()
         {
-            for (int i = s_DeferredTileCacheDisposals.Count - 1; i >= 0; i--)
+            for (int i = s_DeferredTileCacheDisposalCount - 1; i >= 0; i--)
             {
                 DeferredTileCacheDisposal disposal = s_DeferredTileCacheDisposals[i];
                 if (!disposal.Request.done)
                     continue;
 
-                DisposeTileNativeCacheBuffer(ref disposal.PrimaryCacheBuffer);
-                DisposeTileNativeCacheBuffer(ref disposal.SecondaryCacheBuffer);
-                s_DeferredTileCacheDisposals.RemoveAt(i);
+                int lastIndex = --s_DeferredTileCacheDisposalCount;
+                s_DeferredTileCacheDisposals[i] = s_DeferredTileCacheDisposals[lastIndex];
+                s_DeferredTileCacheDisposals[lastIndex] = default;
             }
         }
 
-        private static void DisposeTileNativeCacheBuffer(ref TileNativeCacheBuffer buffer)
+        private void DisposeTileNativeCacheBuffer(ref TileNativeCacheBuffer buffer)
         {
-            DisposeNativeArray(ref buffer.SandMaskNative);
-            DisposeNativeArray(ref buffer.RockMaskNative);
-            DisposeNativeArray(ref buffer.HeightSamplesNative);
+            ReleaseVegetationMemoryBuffer(ref buffer.SandMaskHandle);
+            ReleaseVegetationMemoryBuffer(ref buffer.RockMaskHandle);
+            ReleaseVegetationMemoryBuffer(ref buffer.HeightSamplesHandle);
+            buffer.SampleCount = 0;
+            buffer.HeightSampleCount = 0;
         }
 
         private void MarkAllTileTerrainHolesDirty()
@@ -880,7 +938,7 @@ namespace Hecton8.World
             if (_tileStates.Count <= 0)
                 return;
 
-            Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+            FixedTileStateMap.Enumerator enumerator = _tileStates.GetEnumerator();
             while (enumerator.MoveNext())
                 MarkTileTerrainHolesDirty(enumerator.Current.Value);
 
@@ -895,7 +953,7 @@ namespace Hecton8.World
             state.TerrainHolesDirty = true;
         }
 
-        private static void EnsureTileTerrainHoleMaskCapacity(TileRuntimeState state)
+        private void EnsureTileTerrainHoleMaskCapacity(TileRuntimeState state)
         {
             if (state == null)
                 return;
@@ -904,21 +962,20 @@ namespace Hecton8.World
             int safeLength = safeResolution > 0 ? safeResolution * safeResolution : 0;
             if (safeLength <= 0)
             {
-                DisposeNativeArray(
-                    ref state.TerrainHoleMaskNative,
-                    state.TerrainHolesJobScheduled ? state.TerrainHolesJobHandle : default);
+                ReleaseVegetationMemoryBuffer(ref state.TerrainHoleMaskHandle);
+                state.TerrainHoleMaskCount = 0;
                 state.TerrainHoleMaskManaged = null;
                 return;
             }
 
-            if (!state.TerrainHoleMaskNative.IsCreated || state.TerrainHoleMaskNative.Length != safeLength)
-            {
-                DisposeNativeArray(
-                    ref state.TerrainHoleMaskNative,
-                    state.TerrainHolesJobScheduled ? state.TerrainHolesJobHandle : default);
-                // COLD ALLOC: NativeArray<byte>[safeLength] - deferred terrain-hole mask build output for one MapMagic tile - owner: HectonMapMagicVegetationBridge
-                state.TerrainHoleMaskNative = new NativeArray<byte>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            }
+            if (state.TileNativeCacheSlot < 0 ||
+                !EnsureAggregateBuffer(
+                    ref state.TerrainHoleMaskHandle,
+                    ResolveTileTerrainHoleMaskBufferId(state.TileNativeCacheSlot),
+                    safeLength))
+                return;
+
+            state.TerrainHoleMaskCount = safeLength;
 
             if (state.TerrainHoleMaskManaged == null ||
                 state.TerrainHoleMaskManaged.GetLength(0) != safeResolution ||
@@ -934,14 +991,17 @@ namespace Hecton8.World
             if (_tileStates.Count <= 0)
                 return;
 
-            Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+            int scheduledThisTick = 0;
+            FixedTileStateMap.Enumerator enumerator = _tileStates.GetEnumerator();
             while (enumerator.MoveNext())
             {
+                if (scheduledThisTick >= TerrainHoleTileScheduleBudgetPerSlowTick)
+                    break;
+
                 TileRuntimeState state = enumerator.Current.Value;
                 if (state == null ||
                     state.Terrain == null ||
                     state.TerrainData == null ||
-                    state.TerrainHolesJobScheduled ||
                     !state.TerrainHolesDirty)
                 {
                     continue;
@@ -949,124 +1009,141 @@ namespace Hecton8.World
 
                 state.HolesResolution = state.TerrainData.holesResolution;
                 EnsureTileTerrainHoleMaskCapacity(state);
-                if (!state.TerrainHoleMaskNative.IsCreated || state.HolesResolution <= 0)
+                if (state.TerrainHoleMaskHandle.BufferID == 0u ||
+                    state.TerrainHoleMaskCount <= 0 ||
+                    state.HolesResolution <= 0)
                 {
                     state.TerrainHolesDirty = false;
                     continue;
                 }
 
-                state.TerrainHolesDirty = false;
-                state.TerrainHolesJobScheduled = true;
-                state.TerrainHolesJobHandle = new TerrainHoleMaskBuildJob
+                if (BuildAndApplyTerrainHoleMaskSync(state))
                 {
-                    TerrainHoles = _nativeMemory.TerrainHoleRecordsNative,
-                    TerrainHoleCount = _terrainHoleCount,
-                    Resolution = state.HolesResolution,
-                    TerrainOriginX = state.TerrainPosition.x,
-                    TerrainOriginZ = state.TerrainPosition.z,
-                    TerrainSizeX = state.TerrainSize.x,
-                    TerrainSizeZ = state.TerrainSize.z,
-                    Output = state.TerrainHoleMaskNative
-                }.Schedule(state.TerrainHoleMaskNative.Length, TerrainHoleJobBatchSize);
+                    state.TerrainHolesDirty = false;
+                    scheduledThisTick++;
+                }
             }
 
             enumerator.Dispose();
         }
 
-        private void FinalizeCompletedTerrainHoleJobs()
-        {
-            if (_tileStates.Count <= 0)
-                return;
-
-            Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                TileRuntimeState state = enumerator.Current.Value;
-                if (state == null || !state.TerrainHolesJobScheduled)
-                    continue;
-
-                if (!state.TerrainHolesJobHandle.IsCompleted)
-                    continue;
-
-                DispatcherJobSwap.TryComplete(ref state.TerrainHolesJobHandle, forceComplete: false);
-                state.TerrainHolesJobScheduled = false;
-                state.TerrainHolesJobHandle = default;
-                ApplyTerrainHoleMask(state);
-            }
-
-            enumerator.Dispose();
-        }
-
-        private static void ApplyTerrainHoleMask(TileRuntimeState state)
+        private bool BuildAndApplyTerrainHoleMaskSync(TileRuntimeState state)
         {
             if (state == null ||
                 state.TerrainData == null ||
                 state.HolesResolution <= 0 ||
-                !state.TerrainHoleMaskNative.IsCreated ||
+                state.TerrainHoleMaskHandle.BufferID == 0u ||
+                state.TerrainHoleMaskCount <= 0 ||
                 state.TerrainHoleMaskManaged == null)
             {
-                return;
+                return false;
             }
 
             int resolution = state.HolesResolution;
-            int length = state.TerrainHoleMaskNative.Length;
-            for (int y = 0; y < resolution; y++)
-            {
-                int rowOffset = y * resolution;
-                for (int x = 0; x < resolution; x++)
-                {
-                    int flatIndex = rowOffset + x;
-                    if ((uint)flatIndex >= (uint)length)
-                        break;
+            int expectedLength = resolution * resolution;
+            if (expectedLength <= 0 || state.TerrainHoleMaskCount < expectedLength)
+                return false;
 
-                    state.TerrainHoleMaskManaged[y, x] = state.TerrainHoleMaskNative[flatIndex] != 0;
-                }
+            BufferID terrainHoleMaskBufferId = unchecked((BufferID)(int)state.TerrainHoleMaskHandle.BufferID);
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref state.TerrainHoleMaskHandle,
+                    terrainHoleMaskBufferId,
+                    state.TerrainHoleMaskCount,
+                    NativeArrayOptions.ClearMemory,
+                    out IDataVault terrainHoleMaskVault,
+                    out NativeArray<byte> terrainHoleMask))
+            {
+                return false;
             }
 
+            bool builtMask = false;
+            try
+            {
+                int length = math.min(expectedLength, terrainHoleMask.Length);
+                int holeCount = math.min(_terrainHoleCount, _terrainHoleRecords.Length);
+                for (int sampleIndex = 0; sampleIndex < length; sampleIndex++)
+                {
+                    int y = sampleIndex / resolution;
+                    int x = sampleIndex - (y * resolution);
+                    float normalizedX = resolution <= 1 ? 0f : x / (float)(resolution - 1);
+                    float normalizedZ = resolution <= 1 ? 0f : y / (float)(resolution - 1);
+                    float worldX = state.TerrainPosition.x + (normalizedX * state.TerrainSize.x);
+                    float worldZ = state.TerrainPosition.z + (normalizedZ * state.TerrainSize.z);
+                    byte surface = 1;
+                    for (int holeIndex = 0; holeIndex < holeCount; holeIndex++)
+                    {
+                        TerrainHoleRecord hole = _terrainHoleRecords[holeIndex];
+                        if (hole.SourceType != TerrainHoleSourceType.CaveEntrance)
+                            continue;
+
+                        float dx = worldX - hole.X;
+                        float dz = worldZ - hole.Z;
+                        if ((dx * dx) + (dz * dz) <= hole.RadiusSq)
+                        {
+                            surface = 0;
+                            break;
+                        }
+                    }
+
+                    terrainHoleMask[sampleIndex] = surface;
+                    state.TerrainHoleMaskManaged[y, x] = surface != 0;
+                }
+
+                builtMask = true;
+            }
+            finally
+            {
+                terrainHoleMaskVault.ReleaseWriteLock(
+                    in state.TerrainHoleMaskHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+
+            if (!builtMask)
+                return false;
+
             state.TerrainData.SetHolesDelayLOD(0, 0, state.TerrainHoleMaskManaged);
+            state.TerrainData.SyncTexture(TerrainData.HolesTextureName);
+            return true;
         }
 
-        private static void EnsureTileNativeCacheBufferCapacity(
+        private bool EnsureTileNativeCacheBufferCapacity(
             TileRuntimeState state,
             int bufferIndex,
             int sampleCount,
             int heightSampleCount)
         {
             if (state == null)
-                return;
+                return false;
 
             TileNativeCacheBuffer buffer = bufferIndex == 0
                 ? state.PrimaryCacheBuffer
                 : state.SecondaryCacheBuffer;
 
-            if (!buffer.SandMaskNative.IsCreated || buffer.SandMaskNative.Length != sampleCount)
-            {
-                DisposeNativeArray(ref buffer.SandMaskNative);
-                // COLD ALLOC: NativeArray<byte>[sampleCount] - tile-cache sand mask imported from terrain splat data - owner: HectonMapMagicVegetationBridge
-                buffer.SandMaskNative = new NativeArray<byte>(sampleCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                RegisterTrackedNativeArray(buffer.SandMaskNative, nameof(buffer.SandMaskNative));
-            }
+            if (state.TileNativeCacheSlot < 0 ||
+                sampleCount <= 0 ||
+                heightSampleCount <= 0 ||
+                !EnsureAggregateBuffer(
+                    ref buffer.SandMaskHandle,
+                    ResolveTileNativeCacheBufferId(state.TileNativeCacheSlot, bufferIndex, TileNativeCacheSandOffset),
+                    sampleCount) ||
+                !EnsureAggregateBuffer(
+                    ref buffer.RockMaskHandle,
+                    ResolveTileNativeCacheBufferId(state.TileNativeCacheSlot, bufferIndex, TileNativeCacheRockOffset),
+                    sampleCount) ||
+                !EnsureAggregateBuffer(
+                    ref buffer.HeightSamplesHandle,
+                    ResolveTileNativeCacheBufferId(state.TileNativeCacheSlot, bufferIndex, TileNativeCacheHeightOffset),
+                    heightSampleCount))
+                return false;
 
-            if (!buffer.RockMaskNative.IsCreated || buffer.RockMaskNative.Length != sampleCount)
-            {
-                DisposeNativeArray(ref buffer.RockMaskNative);
-                // COLD ALLOC: NativeArray<byte>[sampleCount] - tile-cache rock mask imported from terrain splat data - owner: HectonMapMagicVegetationBridge
-                buffer.RockMaskNative = new NativeArray<byte>(sampleCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                RegisterTrackedNativeArray(buffer.RockMaskNative, nameof(buffer.RockMaskNative));
-            }
-
-            if (!buffer.HeightSamplesNative.IsCreated || buffer.HeightSamplesNative.Length != heightSampleCount)
-            {
-                DisposeNativeArray(ref buffer.HeightSamplesNative);
-                // COLD ALLOC: NativeArray<ushort>[heightSampleCount] - tile-cache height samples for zero-GC vegetation placement queries - owner: HectonMapMagicVegetationBridge
-                buffer.HeightSamplesNative = new NativeArray<ushort>(heightSampleCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                RegisterTrackedNativeArray(buffer.HeightSamplesNative, nameof(buffer.HeightSamplesNative));
-            }
+            buffer.SampleCount = sampleCount;
+            buffer.HeightSampleCount = heightSampleCount;
 
             if (bufferIndex == 0)
                 state.PrimaryCacheBuffer = buffer;
             else
                 state.SecondaryCacheBuffer = buffer;
+            return true;
         }
     }
 }

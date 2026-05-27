@@ -72,11 +72,9 @@ namespace Hecton8.Tools
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _tickDispatcher = currentService as ITickDispatcher;
+                _registered = false;
                 if (currentService != null)
-                {
-                    TryUnregisterTick();
                     TryRegisterTick();
-                }
 
                 return;
             }

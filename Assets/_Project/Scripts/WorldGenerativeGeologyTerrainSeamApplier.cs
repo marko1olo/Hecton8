@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Caves;
@@ -88,20 +87,20 @@ namespace Hecton8.World
         private static readonly int HectonVoxelBlendMaskId = Shader.PropertyToID("_HectonVoxelBlendMask");
         private static readonly int HectonVoxelBlendMaskRectId = Shader.PropertyToID("_HectonVoxelBlendMaskRect");
         private static readonly int HectonVoxelBlendMaskParamsId = Shader.PropertyToID("_HectonVoxelBlendMaskParams");
-        private static readonly FieldInfo ProjectionJobQualityWeightField =
-            typeof(HybridSdfHeightmapProjectionJob).GetField("GlobalQualityWeight", BindingFlags.Instance | BindingFlags.Public);
-        private static readonly FieldInfo ProjectionJobQualityWeightValidField =
-            typeof(HybridSdfHeightmapProjectionJob).GetField("GlobalQualityWeightValid", BindingFlags.Instance | BindingFlags.Public);
-        private static readonly FieldInfo DetailJobQualityWeightField =
-            typeof(HybridTerrainSeamMaskDetailJob).GetField("GlobalQualityWeight", BindingFlags.Instance | BindingFlags.Public);
-        private static readonly FieldInfo DetailJobQualityWeightValidField =
-            typeof(HybridTerrainSeamMaskDetailJob).GetField("GlobalQualityWeightValid", BindingFlags.Instance | BindingFlags.Public);
         private static readonly ProfilerMarker TerrainSignalDrainMarker = new ProfilerMarker("H8.TerrainSeam.SignalDrain");
         private static readonly ProfilerMarker TerrainProjectionFenceMarker = new ProfilerMarker("H8.TerrainSeam.ProjectionFence");
         private static readonly ProfilerMarker TerrainBlendMaskUploadMarker = new ProfilerMarker("H8.TerrainSeam.BlendMaskUpload");
         private static readonly ProfilerMarker TerrainHeightmapWritebackMarker = new ProfilerMarker("H8.TerrainSeam.HeightmapWriteback");
 
-        internal static WorldGenerativeGeologyTerrainSeamApplier ActiveRuntimeInstance => GlobalRegistry.GeologyTerrainSeam;
+        private static WorldGenerativeGeologyTerrainSeamApplier s_activeRuntimeInstance;
+
+        internal static WorldGenerativeGeologyTerrainSeamApplier ActiveRuntimeInstance => s_activeRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticRuntimeState()
+        {
+            s_activeRuntimeInstance = null;
+        }
 
         private sealed class TerrainApplyState
         {
@@ -154,6 +153,7 @@ namespace Hecton8.World
         private readonly List<int> _terrainBucketScratch = new List<int>(8);
         private MapMagicTerrainTileSnapshot[] _tileSnapshotScratch;
         private Texture2D _voxelBlendMaskTexture;
+        private IDataVault _dataVault;
         private VaultGenerationHandle<TerrainSeamTelemetryEntry> _terrainSeamBlackBoxHandle;
         private bool _registeredToTickManager;
         private bool _registeredToLateFrameTickManager;
@@ -162,7 +162,7 @@ namespace Hecton8.World
         private UnityEngine.Terrain _pendingVoxelBlendMaskTerrain;
         private RectInt _pendingVoxelBlendMaskRect;
         private int _pendingVoxelBlendMaskSampleCount;
-        private bool _pendingVoxelBlendMaskLowTierVisualOnly;
+        private float _pendingVoxelBlendMaskExpensiveWeight;
         private bool _hasPendingVoxelBlendMaskUpload;
         private int _nextPatchTelemetryFrame;
         private int _blackBoxWriteIndex;
@@ -180,13 +180,16 @@ namespace Hecton8.World
         private bool _voxelBlendMaskGlobalActive;
         private bool _voxelBlendMaskUploadedThisPass;
         private float _debugGlobalQualityWeight = 1f;
+        private float _debugSeamExpensiveWeight;
+        private float _debugMaskDetailWeight;
         private bool _debugLowTierVisualOnly;
         private bool _debugHighTierMaskDetail;
 
         private void Awake()
         {
             EnsureHybridTerrainSeamState();
-            GlobalRegistry.RegisterGeologyTerrainSeamRuntime(this);
+            PublishActiveRuntimeInstance();
+            RefreshDataVaultRoute();
             ResolveReferences();
             ReconcileTerrainSeams();
         }
@@ -194,7 +197,8 @@ namespace Hecton8.World
         private void OnEnable()
         {
             EnsureHybridTerrainSeamState();
-            GlobalRegistry.RegisterGeologyTerrainSeamRuntime(this);
+            PublishActiveRuntimeInstance();
+            RefreshDataVaultRoute();
             ResolveReferences();
             TryRegisterHotSwapListener();
             TryRegisterToTickManager();
@@ -203,6 +207,7 @@ namespace Hecton8.World
 
         private void Start()
         {
+            RefreshDataVaultRoute();
             TryRegisterToTickManager();
             TryRegisterToLateFrameTickManager();
             ReconcileTerrainSeams();
@@ -213,13 +218,11 @@ namespace Hecton8.World
             TryUnregisterFromTickManager();
             TryUnregisterFromLateFrameTickManager();
             TryUnregisterHotSwapListener();
+            ClearActiveRuntimeInstance();
             RestoreAllTerrains();
             DisposeTerrainStateNativeBuffers();
             DisableVoxelBlendMaskGlobal();
             FlushPendingVoxelBlendMaskGlobalClear();
-
-            if (ReferenceEquals(GlobalRegistry.GeologyTerrainSeam, this))
-                GlobalRegistry.UnregisterGeologyTerrainSeamRuntime(this);
         }
 
         private void OnDestroy()
@@ -227,9 +230,22 @@ namespace Hecton8.World
             TryUnregisterFromTickManager();
             TryUnregisterFromLateFrameTickManager();
             TryUnregisterHotSwapListener();
+            ClearActiveRuntimeInstance();
             RestoreAllTerrains();
             DisposeTerrainStateNativeBuffers();
             DisposeHybridTerrainSeamState();
+        }
+
+        private void PublishActiveRuntimeInstance()
+        {
+            GlobalRegistry.RegisterGeologyTerrainSeamRuntime(this);
+            s_activeRuntimeInstance = this;
+        }
+
+        private void ClearActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
 
             if (ReferenceEquals(GlobalRegistry.GeologyTerrainSeam, this))
                 GlobalRegistry.UnregisterGeologyTerrainSeamRuntime(this);
@@ -423,6 +439,12 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                _dataVault = currentService as IDataVault;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 
@@ -617,7 +639,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -679,8 +701,9 @@ namespace Hecton8.World
 
             float globalQualityWeight = ResolveGlobalQualityWeight();
             float seamExpensiveWeight = ResolveSeamExpensiveWeight(globalQualityWeight);
+            float maskDetailWeight = ResolveMaskDetailWeight(globalQualityWeight);
             bool lowTierVisualOnly = seamExpensiveWeight <= 0.0001f;
-            bool highTierMaskDetail = ResolveMaskDetailWeight(globalQualityWeight) > 0.0001f;
+            bool highTierMaskDetail = maskDetailWeight > 0.0001f;
             NativeArray<ushort> quantizedHeightmap = default;
             bool usedVaultHeightmap = TryResolveVaultHeightmap(state, out quantizedHeightmap);
 
@@ -824,7 +847,7 @@ namespace Hecton8.World
                     }
                 }
 
-                QueueVoxelBlendMaskTextureUpload(terrain, applyRect, blendMask, lowTierVisualOnly);
+                QueueVoxelBlendMaskTextureUpload(terrain, applyRect, blendMask, seamExpensiveWeight);
                 uint terrainHash = unchecked((uint)EntityId.ToULong(terrain.GetEntityId()));
                 uint stateHash = HashTerrainSeamState(
                     terrainHash,
@@ -864,11 +887,13 @@ namespace Hecton8.World
                 WorldGenerativeGeologyTelemetry.TryPublishTerrainSeamsBlended(
                     sampleCount,
                     hybridPlanCount,
-                    lowTierVisualOnly);
+                    seamExpensiveWeight);
 
                 _debugHybridBlendSamples = sampleCount;
                 _debugHybridBlendPlans = hybridPlanCount;
                 _debugGlobalQualityWeight = globalQualityWeight;
+                _debugSeamExpensiveWeight = seamExpensiveWeight;
+                _debugMaskDetailWeight = maskDetailWeight;
                 _debugLowTierVisualOnly = lowTierVisualOnly;
                 _debugHighTierMaskDetail = highTierMaskDetail;
 
@@ -890,7 +915,7 @@ namespace Hecton8.World
         private bool TryResolveVaultHeightmap(TerrainApplyState state, out NativeArray<ushort> quantizedHeightmap)
         {
             quantizedHeightmap = default;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null ||
                 state == null ||
                 state.terrain == null ||
@@ -930,7 +955,7 @@ namespace Hecton8.World
             if (hybridPlanCount <= 0 || sampleCount <= 0)
                 return false;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -988,7 +1013,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -1253,24 +1278,14 @@ namespace Hecton8.World
 
         private static void InjectGlobalQualityWeight(ref HybridSdfHeightmapProjectionJob job, float globalQualityWeight)
         {
-            if (ProjectionJobQualityWeightField == null || ProjectionJobQualityWeightValidField == null)
-                return;
-
-            object boxed = job;
-            ProjectionJobQualityWeightField.SetValue(boxed, math.saturate(globalQualityWeight));
-            ProjectionJobQualityWeightValidField.SetValue(boxed, (byte)1);
-            job = (HybridSdfHeightmapProjectionJob)boxed;
+            job.GlobalQualityWeight = math.saturate(globalQualityWeight);
+            job.GlobalQualityWeightValid = 1;
         }
 
         private static void InjectGlobalQualityWeight(ref HybridTerrainSeamMaskDetailJob job, float globalQualityWeight)
         {
-            if (DetailJobQualityWeightField == null || DetailJobQualityWeightValidField == null)
-                return;
-
-            object boxed = job;
-            DetailJobQualityWeightField.SetValue(boxed, math.saturate(globalQualityWeight));
-            DetailJobQualityWeightValidField.SetValue(boxed, (byte)1);
-            job = (HybridTerrainSeamMaskDetailJob)boxed;
+            job.GlobalQualityWeight = math.saturate(globalQualityWeight);
+            job.GlobalQualityWeightValid = 1;
         }
 
         private static float ResolveSeamExpensiveWeight(float globalQualityWeight)
@@ -1297,7 +1312,7 @@ namespace Hecton8.World
             UnityEngine.Terrain terrain,
             RectInt applyRect,
             NativeArray<byte> blendMask,
-            bool lowTierVisualOnly)
+            float seamExpensiveWeight)
         {
             if (terrain == null || terrain.terrainData == null || !blendMask.IsCreated)
                 return;
@@ -1336,7 +1351,8 @@ namespace Hecton8.World
 
             Shader.SetGlobalTexture(HectonVoxelBlendMaskId, _voxelBlendMaskTexture);
             Shader.SetGlobalVector(HectonVoxelBlendMaskRectId, new Vector4(worldMinX, worldMinZ, 1f / worldSizeX, 1f / worldSizeZ));
-            Shader.SetGlobalVector(HectonVoxelBlendMaskParamsId, new Vector4(1f, lowTierVisualOnly ? 0.82f : 1f, lowTierVisualOnly ? 1f : 0f, 0f));
+            float expensiveWeight = Mathf.Clamp01(seamExpensiveWeight);
+            Shader.SetGlobalVector(HectonVoxelBlendMaskParamsId, new Vector4(1f, Mathf.Lerp(0.82f, 1f, expensiveWeight), 1f - expensiveWeight, expensiveWeight));
             _voxelBlendMaskGlobalActive = true;
             _voxelBlendMaskUploadedThisPass = true;
         }
@@ -1345,12 +1361,12 @@ namespace Hecton8.World
             UnityEngine.Terrain terrain,
             RectInt applyRect,
             NativeArray<byte> blendMask,
-            bool lowTierVisualOnly)
+            float seamExpensiveWeight)
         {
             _pendingVoxelBlendMaskTerrain = terrain;
             _pendingVoxelBlendMaskRect = applyRect;
             _pendingVoxelBlendMaskSampleCount = blendMask.IsCreated ? math.min(blendMask.Length, applyRect.width * applyRect.height) : 0;
-            _pendingVoxelBlendMaskLowTierVisualOnly = lowTierVisualOnly;
+            _pendingVoxelBlendMaskExpensiveWeight = Mathf.Clamp01(seamExpensiveWeight);
             _hasPendingVoxelBlendMaskUpload = true;
             _voxelBlendMaskUploadedThisPass = true;
             TryRegisterToLateFrameTickManager();
@@ -1364,7 +1380,7 @@ namespace Hecton8.World
             _hasPendingVoxelBlendMaskUpload = false;
             if (_pendingVoxelBlendMaskSampleCount > 0 &&
                 TryOpenExistingTerrainSeamBuffer(
-                    GlobalRegistry.DataVault,
+                    _dataVault,
                     TerrainSeamBlendMaskBufferId,
                     _pendingVoxelBlendMaskSampleCount,
                     out NativeArray<byte> blendMask))
@@ -1373,11 +1389,12 @@ namespace Hecton8.World
                     _pendingVoxelBlendMaskTerrain,
                     _pendingVoxelBlendMaskRect,
                     blendMask,
-                    _pendingVoxelBlendMaskLowTierVisualOnly);
+                    _pendingVoxelBlendMaskExpensiveWeight);
             }
 
             _pendingVoxelBlendMaskTerrain = null;
             _pendingVoxelBlendMaskSampleCount = 0;
+            _pendingVoxelBlendMaskExpensiveWeight = 0f;
         }
 
         private void PublishTerrainPatchVoxelModifiedEvent(
@@ -1873,7 +1890,7 @@ namespace Hecton8.World
             int totalHeights = Mathf.Max(0, resolution * resolution);
             if (totalHeights > 0)
             {
-                IDataVault vault = GlobalRegistry.DataVault;
+                IDataVault vault = _dataVault;
                 if (vault != null)
                 {
                     state.baselineHeightsBufferId = ResolveTerrainBaselineBufferId(terrain);
@@ -1964,7 +1981,7 @@ namespace Hecton8.World
         private bool TryResolveTerrainSeamBlackBox(out NativeArray<TerrainSeamTelemetryEntry> blackBox)
         {
             blackBox = default;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -2316,6 +2333,11 @@ namespace Hecton8.World
         {
             WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyIntegrationDirector(ref integrationDirector);
             WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+        }
+
+        private void RefreshDataVaultRoute()
+        {
+            _dataVault = GlobalRegistry.DataVault;
         }
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Unity.Collections;
@@ -151,113 +150,6 @@ namespace Hecton8.World
                 Array.Copy(cache, expanded, cache.Length);
 
             cache = expanded;
-        }
-
-        private static void EnsureMatrixNativeCapacity(ref NativeArray<Matrix4x4> cache, int requiredCount)
-        {
-            EnsureNativeCapacity(ref cache, requiredCount);
-        }
-
-        private static void EnsureVegetationDataNativeCapacity(ref NativeArray<HectonVegetationInstanceData> cache, int requiredCount)
-        {
-            EnsureNativeCapacity(ref cache, requiredCount);
-        }
-
-        private static void EnsureIntNativeCapacity(ref NativeArray<int> cache, int requiredCount)
-        {
-            EnsureNativeCapacity(ref cache, requiredCount);
-        }
-
-        private static void EnsureByteNativeCapacity(ref NativeArray<byte> cache, int requiredCount)
-        {
-            EnsureNativeCapacity(ref cache, requiredCount);
-        }
-
-        private static void EnsureVector2NativeCapacity(ref NativeArray<Vector2> cache, int requiredCount)
-        {
-            EnsureNativeCapacity(ref cache, requiredCount);
-        }
-
-        private static void EnsureVector3NativeCapacity(ref NativeArray<Vector3> cache, int requiredCount)
-        {
-            EnsureNativeCapacity(ref cache, requiredCount);
-        }
-
-        private static void EnsureAupNativeCapacity(ref NativeArray<AbsoluteUniversePosition> cache, int requiredCount)
-        {
-            EnsureNativeCapacity(ref cache, requiredCount);
-        }
-
-        private static void EnsureDensityChunkRecordCapacity(ref NativeArray<VegetationDensityChunkRecord> cache, int requiredCount)
-        {
-            EnsureNativeCapacity(ref cache, requiredCount);
-        }
-
-        private static void EnsureFloat3Capacity(ref NativeArray<float3> cache, int requiredCount)
-        {
-            EnsureNativeCapacity(ref cache, requiredCount);
-        }
-
-        private static void EnsureFloatNativeCapacity(ref NativeArray<float> cache, int requiredCount)
-        {
-            EnsureNativeCapacity(ref cache, requiredCount);
-        }
-
-        private static void EnsureFloat2NativeCapacity(ref NativeArray<float2> cache, int requiredCount)
-        {
-            EnsureNativeCapacity(ref cache, requiredCount);
-        }
-
-        private static void EnsureFloat4NativeCapacity(ref NativeArray<float4> cache, int requiredCount)
-        {
-            EnsureNativeCapacity(ref cache, requiredCount);
-        }
-
-        private static void EnsureNativeCapacity<T>(ref NativeArray<T> cache, int requiredCount)
-            where T : struct
-        {
-            if (requiredCount <= 0)
-                return;
-
-            if (cache.IsCreated && cache.Length >= requiredCount)
-                return;
-
-            int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, requiredCount));
-            // COLD ALLOC: NativeArray<T>[nextCapacity] - native snapshot/cache growth for streamed vegetation data - owner: HectonMapMagicVegetationBridge
-            NativeArray<T> expanded = new NativeArray<T>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            if (cache.IsCreated)
-            {
-                if (cache.Length > 0)
-                    NativeArray<T>.Copy(cache, expanded, cache.Length);
-
-                NativeMemorySentinel.UnregisterNativeArray(cache);
-                cache.Dispose();
-            }
-
-            cache = expanded;
-            RegisterTrackedNativeArray(cache, nameof(EnsureNativeCapacity));
-        }
-
-        private static void EnsureInactiveNativeCapacity<T>(ref NativeArray<T> cache, int requiredCount)
-            where T : struct
-        {
-            if (requiredCount <= 0)
-                return;
-
-            if (cache.IsCreated && cache.Length >= requiredCount)
-                return;
-
-            int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, requiredCount));
-            // COLD ALLOC: NativeArray<T>[nextCapacity] - inactive back-buffer growth for streamed vegetation data - owner: HectonMapMagicVegetationBridge
-            NativeArray<T> expanded = new NativeArray<T>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            if (cache.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(cache);
-                cache.Dispose();
-            }
-
-            cache = expanded;
-            RegisterTrackedNativeArray(cache, nameof(EnsureInactiveNativeCapacity));
         }
 
         private static void CopyNativeToManaged<T>(NativeArray<T> source, int sourceIndex, T[] destination, int destinationIndex, int copyCount)

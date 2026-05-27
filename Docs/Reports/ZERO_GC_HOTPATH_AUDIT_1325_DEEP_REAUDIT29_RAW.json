@@ -1,0 +1,1575 @@
+﻿{
+    "schema":  "hecton8.zero_gc_hotpath_reaudit29.raw.v1",
+    "agentId":  "1325",
+    "files":  [
+                  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                  "Assets/_Project/Scripts/World/AUPMath.cs",
+                  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                  "Assets/_Project/Scripts/SaveManager.cs",
+                  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                  "Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs"
+              ],
+    "parseFailures":  0,
+    "rawHitCount":  256,
+    "selectedHotPathManagedRiskHits":  0,
+    "selectedNewStructHits":  1,
+    "selectedNotes":  "TryToRuntimeFloat3 contains only value-type float3 construction; indexed paging native views are outside async methods and cold IO helpers.",
+    "patterns":  {
+                     "objectCreations":  "\\bnew\\s+[A-Za-z_][A-Za-z0-9_\\.]*\\s*\\(",
+                     "stringFormat":  "string\\.Format\\s*\\(",
+                     "toString":  "\\.ToString\\s*\\(",
+                     "interpolated":  "\\$\"",
+                     "linq":  "\\.(Select|Where|Any|ToList)\\s*\\(",
+                     "foreach":  "\\bforeach\\s*\\(",
+                     "throwNew":  "\\bthrow\\s+new\\b",
+                     "catchException":  "\\bcatch\\s*\\(\\s*Exception\\b"
+                 },
+    "hotMethods":  [
+                       "Tick",
+                       "SlowTick",
+                       "LateFrameTick",
+                       "WriteWorldTelemetry",
+                       "TryToRuntimeFloat3",
+                       "TryLoadIndexedSectorRecordsSnapshot",
+                       "TryWriteResidentSectorOverrideSnapshots"
+                   ],
+    "asyncNativeDeclarations":  0,
+    "hits":  [
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  62,
+                     "kind":  "objectCreations",
+                     "text":  "Local = new float4(LocalX, LocalY, LocalZ, 0f),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  78,
+                     "kind":  "objectCreations",
+                     "text":  "new float3(aligned.Local.x, aligned.Local.y, aligned.Local.z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  89,
+                     "kind":  "objectCreations",
+                     "text":  "return FromAbsolutePosition(new double3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  108,
+                     "kind":  "objectCreations",
+                     "text":  "float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  118,
+                     "kind":  "objectCreations",
+                     "text":  "new double3(localRuntime.x, localRuntime.y, localRuntime.z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  141,
+                     "kind":  "objectCreations",
+                     "text":  "if (!math.all(math.isfinite(new double3(localX, localY, localZ))))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  321,
+                     "kind":  "objectCreations",
+                     "text":  "return new float3(float.NaN, float.NaN, float.NaN);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  353,
+                     "kind":  "objectCreations",
+                     "text":  "return new int3(chunkX, chunkY, chunkZ);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  385,
+                     "kind":  "objectCreations",
+                     "text":  "return new int3(int.MinValue, int.MinValue, int.MinValue);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  760,
+                     "kind":  "objectCreations",
+                     "text":  "double3 chunkOrigin = new double3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  765,
+                     "kind":  "objectCreations",
+                     "text":  "return AbsoluteUniversePosition.FromAbsolutePosition(chunkOrigin + new double3(localX, localY, localZ));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  771,
+                     "kind":  "objectCreations",
+                     "text":  "double3 chunkOrigin = new double3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  2178,
+                     "kind":  "objectCreations",
+                     "text":  "throw new FatalArchitectureException(\"1325 persistent world DTO layout violation.\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  2178,
+                     "kind":  "throwNew",
+                     "text":  "throw new FatalArchitectureException(\"1325 persistent world DTO layout violation.\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  2471,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly int3 ApexFaunaTombstoneChunkId = new int3(int.MinValue, 0, 0);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  2676,
+                     "kind":  "objectCreations",
+                     "text":  "float3 position = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  2705,
+                     "kind":  "objectCreations",
+                     "text":  "Vector3 runtimePosition = new Vector3(runtimeFloat.x, runtimeFloat.y, runtimeFloat.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  3271,
+                     "kind":  "objectCreations",
+                     "text":  "ItemPersistentId = new FixedString128Bytes(itemData.PersistentId),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  3894,
+                     "kind":  "objectCreations",
+                     "text":  "return new int3(int.MinValue, int.MinValue, int.MinValue);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  4055,
+                     "kind":  "objectCreations",
+                     "text":  "case 0u: return new float2(1f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  4056,
+                     "kind":  "objectCreations",
+                     "text":  "case 1u: return new float2(-1f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  4057,
+                     "kind":  "objectCreations",
+                     "text":  "case 2u: return new float2(0f, 1f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  4058,
+                     "kind":  "objectCreations",
+                     "text":  "case 3u: return new float2(0f, -1f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  4059,
+                     "kind":  "objectCreations",
+                     "text":  "case 4u: return new float2(ScatterDiagonal2, ScatterDiagonal2);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  4060,
+                     "kind":  "objectCreations",
+                     "text":  "case 5u: return new float2(-ScatterDiagonal2, ScatterDiagonal2);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  4061,
+                     "kind":  "objectCreations",
+                     "text":  "case 6u: return new float2(ScatterDiagonal2, -ScatterDiagonal2);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  4062,
+                     "kind":  "objectCreations",
+                     "text":  "default: return new float2(-ScatterDiagonal2, -ScatterDiagonal2);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  4740,
+                     "kind":  "objectCreations",
+                     "text":  "? PackSectorHash(centerSector + new int2(x, z))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  5152,
+                     "kind":  "objectCreations",
+                     "text":  "int3 chunkId = _currentPlayerChunk + new int3(x, y, z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  5286,
+                     "kind":  "objectCreations",
+                     "text":  "GameObject instance = pool.Spawn(prefab, new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z), Quaternion.identity, allowExpand: false);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  5322,
+                     "kind":  "objectCreations",
+                     "text":  "resolvedSpawnVelocity = new Vector3(spawnVelocityChange.x, spawnVelocityChange.y, spawnVelocityChange.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  5336,
+                     "kind":  "objectCreations",
+                     "text":  "physicsService?.QueueForce(pooledRigidbody, new Vector3(spawnImpulse.x, spawnImpulse.y, spawnImpulse.z), ForceMode.Impulse);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  5663,
+                     "kind":  "objectCreations",
+                     "text":  "sectorCoord = new int2(sectorX, sectorZ);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  5669,
+                     "kind":  "objectCreations",
+                     "text":  "return new int2(int.MinValue, 0);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  5825,
+                     "kind":  "objectCreations",
+                     "text":  "state = new SectorOverrideState();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  5899,
+                     "kind":  "objectCreations",
+                     "text":  "writeResults.Add(new SectorOverrideWriteResult(pair.Key, tempPath, entityStateTempPath));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  6501,
+                     "kind":  "objectCreations",
+                     "text":  "state = new SectorOverrideState();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  6533,
+                     "kind":  "objectCreations",
+                     "text":  "long sectorHash = PackSectorHash(playerSector + new int2(dx, dz));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  6795,
+                     "kind":  "objectCreations",
+                     "text":  "sectorState = new SectorOverrideState();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  6835,
+                     "kind":  "objectCreations",
+                     "text":  "long sectorHash = PackSectorHash(centerSector + new int2(dx, dz));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  6888,
+                     "kind":  "objectCreations",
+                     "text":  "moveDelta = new double3(toAttractor.x \u003c 0d ? -moveMeters : moveMeters, 0d, 0d);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  6890,
+                     "kind":  "objectCreations",
+                     "text":  "moveDelta = new double3(0d, toAttractor.y \u003c 0d ? -moveMeters : moveMeters, 0d);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  6892,
+                     "kind":  "objectCreations",
+                     "text":  "moveDelta = new double3(0d, 0d, toAttractor.z \u003c 0d ? -moveMeters : moveMeters);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  6961,
+                     "kind":  "objectCreations",
+                     "text":  "sectorState = new SectorOverrideState();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  7094,
+                     "kind":  "objectCreations",
+                     "text":  "uint rollHash = math.hash(new uint4("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  7132,
+                     "kind":  "objectCreations",
+                     "text":  "new double3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  7696,
+                     "kind":  "objectCreations",
+                     "text":  "float3 value3 = new float3(value.x, value.y, value.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  7720,
+                     "kind":  "objectCreations",
+                     "text":  "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  7755,
+                     "kind":  "objectCreations",
+                     "text":  "float3 impulse = new float3(initialImpulse.x, initialImpulse.y, initialImpulse.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  7786,
+                     "kind":  "objectCreations",
+                     "text":  "float3 velocityChange = new float3(inheritedVelocityChange.x, inheritedVelocityChange.y, inheritedVelocityChange.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  7895,
+                     "kind":  "objectCreations",
+                     "text":  "slotData.LocalOffset = new float3(position.LocalX, position.LocalY, position.LocalZ);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  8453,
+                     "kind":  "objectCreations",
+                     "text":  "using FileStream stream = new FileStream(WorldTelemetryDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  8454,
+                     "kind":  "objectCreations",
+                     "text":  "using BinaryWriter writer = new BinaryWriter(stream);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  8465,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is ObjectDisposedException)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                     "line":  8499,
+                     "kind":  "objectCreations",
+                     "text":  "? new Vector3Int(_currentPlayerChunk.x, _currentPlayerChunk.y, _currentPlayerChunk.z)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                     "line":  43,
+                     "kind":  "objectCreations",
+                     "text":  "return new double3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                     "line":  78,
+                     "kind":  "objectCreations",
+                     "text":  "float3 result = new float3((float)direction.x, (float)direction.y, (float)direction.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                     "line":  95,
+                     "kind":  "objectCreations",
+                     "text":  "float3 result = new float3((float)delta.x, (float)delta.y, (float)delta.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                     "line":  119,
+                     "kind":  "objectCreations",
+                     "text":  "float3 result = new float3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                     "line":  134,
+                     "kind":  "objectCreations",
+                     "text":  "new double3(committedOffset.x, committedOffset.y, committedOffset.z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                     "line":  143,
+                     "kind":  "objectCreations",
+                     "text":  "return new double3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                     "line":  201,
+                     "kind":  "objectCreations",
+                     "text":  "return new double3(double.NaN, double.NaN, double.NaN);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                     "line":  239,
+                     "kind":  "objectCreations",
+                     "text":  "double3 min = new double3(-RuntimeFloatClampMeters, -RuntimeFloatClampMeters, -RuntimeFloatClampMeters);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                     "line":  240,
+                     "kind":  "objectCreations",
+                     "text":  "double3 max = new double3(RuntimeFloatClampMeters, RuntimeFloatClampMeters, RuntimeFloatClampMeters);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  42,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly object s_flushLock = new object();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  43,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly AutoResetEvent s_flushSignal = new AutoResetEvent(false);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  50,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly object s_readWindowLock = new object();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  53,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly object s_readPrefetchLock = new object();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  54,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly AutoResetEvent s_readPrefetchSignal = new AutoResetEvent(false);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  60,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly object s_fileWriteScratchLock = new object();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  64,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly object s_fileReadScratchLock = new object();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  355,
+                     "kind":  "objectCreations",
+                     "text":  "Thread thread = new Thread(FlushWorkerLoop)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  368,
+                     "kind":  "objectCreations",
+                     "text":  "Thread thread = new Thread(ReadPrefetchWorkerLoop)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  428,
+                     "kind":  "objectCreations",
+                     "text":  "using FileStream stream = new FileStream("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  612,
+                     "kind":  "objectCreations",
+                     "text":  "fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 4096, FileOptions.RandomAccess);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  634,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  636,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Cached file read-window load failed for \u0027{absolutePath}\u0027: {ex.Message}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  779,
+                     "kind":  "objectCreations",
+                     "text":  "return new NativeWriteResult(false, \"Native write path is empty.\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  785,
+                     "kind":  "objectCreations",
+                     "text":  "return new NativeWriteResult(false, \"Native write requested zero bytes.\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  790,
+                     "kind":  "objectCreations",
+                     "text":  "return new NativeWriteResult(false, \"Native write exceeds the supported range.\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  797,
+                     "kind":  "objectCreations",
+                     "text":  "using FileStream fileStream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.None, FileWriteScratchBytes, FileOptions.Asynchronous | FileOptions.SequentialScan);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  802,
+                     "kind":  "objectCreations",
+                     "text":  "return new NativeWriteResult(false, writeError);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  805,
+                     "kind":  "objectCreations",
+                     "text":  "return new NativeWriteResult(false, writeError);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  808,
+                     "kind":  "objectCreations",
+                     "text":  "return new NativeWriteResult(false, flushError);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  810,
+                     "kind":  "objectCreations",
+                     "text":  "return new NativeWriteResult(true, string.Empty);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  812,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  814,
+                     "kind":  "objectCreations",
+                     "text":  "return new NativeWriteResult(false, $\"Sequential native async write failed for \u0027{absolutePath}\u0027: {ex.Message}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  814,
+                     "kind":  "interpolated",
+                     "text":  "return new NativeWriteResult(false, $\"Sequential native async write failed for \u0027{absolutePath}\u0027: {ex.Message}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  885,
+                     "kind":  "objectCreations",
+                     "text":  "using FileStream fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None, FileWriteScratchBytes, FileOptions.SequentialScan);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  898,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  900,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Sequential native overwrite failed for \u0027{absolutePath}\u0027: {ex.Message}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1000,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1002,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Native file read failed: {ex.Message}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1056,
+                     "kind":  "objectCreations",
+                     "text":  "fileLength = new FileInfo(absolutePath).Length;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1059,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1061,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Failed to read file length for \u0027{absolutePath}\u0027: {ex.Message}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1080,
+                     "kind":  "objectCreations",
+                     "text":  "fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1085,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Portable read requested an empty file for \u0027{absolutePath}\u0027.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1091,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Portable read exceeds the supported native buffer range for \u0027{absolutePath}\u0027.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1111,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1113,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Portable read-only open failed for \u0027{absolutePath}\u0027: {ex.Message}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1236,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly object s_indexedSectorQuarantineLock = new object();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1238,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly object s_managedCompressionLock = new object();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1615,
+                     "kind":  "objectCreations",
+                     "text":  "double3 chunkCenter = new double3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1636,
+                     "kind":  "objectCreations",
+                     "text":  "double3 chunkCenter = new double3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1640,
+                     "kind":  "objectCreations",
+                     "text":  "double3 relativeMeters = new double3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  1709,
+                     "kind":  "objectCreations",
+                     "text":  "return AbsoluteUniversePosition.FromAbsolutePosition(new double3(x, y, z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  2912,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Unsupported save header version {headerPrefix.Version}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  2930,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Save header checksum mismatch. Expected 0x{expectedHeaderHash:X16}, found 0x{header.HashHeader64:X16}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  3058,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Indexed sector directory count {sectorCount} exceeded slot capacity {IndexedSectorDirectorySlotCount}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  3125,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Indexed sector block decompression requires save header version \u003e= 0x{IndexedBlockStorageVersion:X4}. Found 0x{header.Version:X4}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  3185,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Indexed sector directory is full while assigning sector 0x{sectorHash:X16}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  3275,
+                     "kind":  "objectCreations",
+                     "text":  "commitTarget = new IndexedSectorCommitTarget("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  3291,
+                     "kind":  "objectCreations",
+                     "text":  "commitTarget = new IndexedSectorCommitTarget("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  3301,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Indexed sector directory is full while resolving commit target for sector 0x{sectorHash:X16}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  3354,
+                     "kind":  "interpolated",
+                     "text":  "$\"[SaveBinaryStorage] Indexed sector directory capacity exceeded. \" +"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  3355,
+                     "kind":  "interpolated",
+                     "text":  "$\"capacity={IndexedSectorDirectorySlotCount}, attempted={attemptedSectorCount}, sector=0x{sectorHash:X16}. \" +"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  3422,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Indexed block length mismatch. Expected {expectedDecompressedLength} bytes, got {decompressedLength}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  3972,
+                     "kind":  "objectCreations",
+                     "text":  "results.Add(new IndexedSectorEntryInfo(entry.SectorHash, entry.ByteOffset, entry.CompressedSize, entry.DecompressedSize, entry.Checksum));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4020,
+                     "kind":  "objectCreations",
+                     "text":  "results[resultCount++] = new IndexedSectorEntryInfo(entry.SectorHash, entry.ByteOffset, entry.CompressedSize, entry.DecompressedSize, entry.Checksum);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4084,
+                     "kind":  "objectCreations",
+                     "text":  "fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4137,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4139,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Smoke corruption failed: {ex.Message}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4197,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"QUARANTINED indexed sector 0x{desiredSectorHash:X16}; pristine reset sector will be generated by runtime streaming. Primary: {sectorError} Backup: {backupError}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4226,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Indexed sector length mismatch for sector 0x{entry.SectorHash:X16}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4269,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Indexed sector 0x{desiredSectorHash:X16} is missing from backup save.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4303,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Indexed sector 0x{desiredSectorHash:X16} backup is missing.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4345,
+                     "kind":  "toString",
+                     "text":  "string tempOverridePath = Path.Combine(directory, sectorHash.ToString(\"X16\") + \".reset.sectmp\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4639,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4642,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Sector entity-state write buffers could not be allocated: {ex.Message}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4689,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4692,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Sector entity-state write job scheduling failed: {ex.Message}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4894,
+                     "kind":  "objectCreations",
+                     "text":  "if (!math.all(math.isfinite(new float2(localX, localZ))))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4900,
+                     "kind":  "objectCreations",
+                     "text":  "if (!math.all(math.isfinite(new double2(absoluteX, absoluteZ))))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4909,
+                     "kind":  "objectCreations",
+                     "text":  "int2 sectorCoord = new int2(sectorX, sectorZ);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4922,
+                     "kind":  "objectCreations",
+                     "text":  "sectorCoord = new int2(int.MinValue, 0);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4936,
+                     "kind":  "objectCreations",
+                     "text":  "sectorCoord = new int2(sectorX, sectorZ);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4942,
+                     "kind":  "objectCreations",
+                     "text":  "return new int2((int)(sectorHash \u003e\u003e 32), unchecked((int)(uint)sectorHash));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  4966,
+                     "kind":  "interpolated",
+                     "text":  "Hecton8.Core.H8Debug.LogWarning($\"[SaveBinaryStorage] QUARANTINED indexed sector 0x{sectorHash:X16}. Primary: {primaryError} Backup: {backupError}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  5194,
+                     "kind":  "objectCreations",
+                     "text":  "results.Add(new ModPayloadSectorInfo("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  5285,
+                     "kind":  "objectCreations",
+                     "text":  "ModPayloadSectorInfo sectorInfo = new ModPayloadSectorInfo("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  5315,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Skipped {skippedModSectorCount} invalid mod payload sector(s).\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  5352,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Mod payload sector 0x{sectorHash:X16} is missing.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  5531,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Indexed sector directory count {directoryHeader.SectorCount} exceeded slot capacity {IndexedSectorDirectorySlotCount}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  5921,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  5923,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Sector override commit failed: {ex.Message}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  6540,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Indexed sector checksum mismatch for sector 0x{entry.SectorHash:X16}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  6641,
+                     "kind":  "interpolated",
+                     "text":  "return $\"{absolutePath}.bak\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  6682,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  6684,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Indexed sector commit backup failed for \u0027{absolutePath}\u0027: {ex.Message}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  7240,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Unsupported save header version {headerPrefix.Version}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  8510,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Unsupported save header version {header.Version}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  8516,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Unsupported save compatibility mask 0x{header.CompatMask:X2}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  8529,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Unsupported save header version {header.Version}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  8535,
+                     "kind":  "interpolated",
+                     "text":  "error = $\"Player payload offset {header.PlayerOffset} does not match fixed header size {expectedHeaderSize}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  8748,
+                     "kind":  "interpolated",
+                     "text":  "return $\"{header.HashPayload64:X16}:{header.Checksum:X8}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  8751,
+                     "kind":  "toString",
+                     "text":  "? header.HashPayload64.ToString(\"X16\")"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  8752,
+                     "kind":  "toString",
+                     "text":  ": ((uint)header.HashPayload64).ToString(\"X8\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  8769,
+                     "kind":  "objectCreations",
+                     "text":  "if (!math.all(math.isfinite(new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z))))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  8778,
+                     "kind":  "objectCreations",
+                     "text":  "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  8791,
+                     "kind":  "objectCreations",
+                     "text":  "runtime = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  8822,
+                     "kind":  "objectCreations",
+                     "text":  "value = string.Intern(new string((char*)AddByteOffset(source, cursor), 0, charCount));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  8971,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception exception)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  9023,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception exception)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  9066,
+                     "kind":  "objectCreations",
+                     "text":  "using (UnmanagedMemoryStream input = new UnmanagedMemoryStream(source, sourceLength))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  9067,
+                     "kind":  "objectCreations",
+                     "text":  "using (UnmanagedMemoryStream output = new UnmanagedMemoryStream(destination, destinationCapacity, destinationCapacity, FileAccess.Write))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  9069,
+                     "kind":  "objectCreations",
+                     "text":  "using (DeflateStream deflate = new DeflateStream(output, System.IO.Compression.CompressionLevel.Fastest, true))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  9111,
+                     "kind":  "objectCreations",
+                     "text":  "using (UnmanagedMemoryStream input = new UnmanagedMemoryStream(source, compressedLength))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  9112,
+                     "kind":  "objectCreations",
+                     "text":  "using (DeflateStream inflate = new DeflateStream(input, CompressionMode.Decompress, true))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                     "line":  9113,
+                     "kind":  "objectCreations",
+                     "text":  "using (UnmanagedMemoryStream output = new UnmanagedMemoryStream(destination, rawLength, rawLength, FileAccess.Write))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  158,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly IComparer\u003cISaveable\u003e SavePriorityComparer = new SavePriorityComparerImpl();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  159,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly IComparer\u003cISaveable\u003e LoadPriorityComparer = new LoadPriorityComparerImpl();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  162,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly object SaveSlotInfoScratchSync = new object();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  166,
+                     "kind":  "objectCreations",
+                     "text":  "private static readonly object SaveLoadCandidateScratchSync = new object();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  353,
+                     "kind":  "objectCreations",
+                     "text":  "return new SaveLoadCandidate(0, 0);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  358,
+                     "kind":  "objectCreations",
+                     "text":  "return new SaveLoadCandidate(BackupFlag, math.max(1, backupGeneration));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  983,
+                     "kind":  "objectCreations",
+                     "text":  "_worldPager = new H8BinaryWorldPager(); // COLD ALLOC: H8BinaryWorldPager[1] - async chunk page persistence bridge - owner: SaveManager"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  1171,
+                     "kind":  "objectCreations",
+                     "text":  "_worldPager = new H8BinaryWorldPager();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  2058,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception exception)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  2529,
+                     "kind":  "objectCreations",
+                     "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  2530,
+                     "kind":  "objectCreations",
+                     "text":  "using (BinaryWriter writer = new BinaryWriter(stream))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  2556,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception exception)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  2558,
+                     "kind":  "interpolated",
+                     "text":  "LogWarning($\"[SaveManager] WFC outpost black box dump failed: {exception.Message}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  2592,
+                     "kind":  "objectCreations",
+                     "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  2593,
+                     "kind":  "objectCreations",
+                     "text":  "using (BinaryWriter writer = new BinaryWriter(stream))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  2613,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception exception)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  2615,
+                     "kind":  "interpolated",
+                     "text":  "LogWarning($\"[SaveManager] Save black box dump failed: {exception.Message}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  2884,
+                     "kind":  "interpolated",
+                     "text":  "LogWarning($\"[SaveManager] Ignored save request for \u0027{slotName}\u0027: {reason}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  2894,
+                     "kind":  "interpolated",
+                     "text":  "LogWarning($\"[SaveManager] Ignored save request for \u0027{slotName}\u0027: {reason}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3205,
+                     "kind":  "interpolated",
+                     "text":  "LogInfo($\"[SaveManager] Saved \u0027{slotName}\u0027 (XXH3-64: {metadata.Checksum}) in {totalTimer.ElapsedMilliseconds}ms\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3209,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3262,
+                     "kind":  "interpolated",
+                     "text":  "$\"[SaveManager] Main-thread snapshot for \u0027{slotName}\u0027 took {snapshotElapsedMs}ms. \" +"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3263,
+                     "kind":  "interpolated",
+                     "text":  "$\"Budget is {MainThreadSnapshotBudgetMs}ms. Snapshot purity is pending verification.\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3279,
+                     "kind":  "objectCreations",
+                     "text":  "return new SaveContextFrameData(SystemDispatcher.CurrentFrameIndex);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3345,
+                     "kind":  "objectCreations",
+                     "text":  "PlayerSignalEvents.TryRaiseTraumaHudSignal(new TraumaHudSignal("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3395,
+                     "kind":  "interpolated",
+                     "text":  "LogWarning($\"[SaveManager] {CriticalSectorCorruptionMessage}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3420,
+                     "kind":  "objectCreations",
+                     "text":  "Vector3 resolvedRuntimePosition = new Vector3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3427,
+                     "kind":  "objectCreations",
+                     "text":  "Vector3 snappedPosition = new Vector3(resolvedRuntimePosition.x, safeY, resolvedRuntimePosition.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3500,
+                     "kind":  "objectCreations",
+                     "text":  "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3579,
+                     "kind":  "objectCreations",
+                     "text":  "return math.all(math.isfinite(new float3(value.x, value.y, value.z)));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3584,
+                     "kind":  "objectCreations",
+                     "text":  "return math.all(math.isfinite(new float4(value.x, value.y, value.z, value.w))) \u0026\u0026"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3585,
+                     "kind":  "objectCreations",
+                     "text":  "math.lengthsq(new float4(value.x, value.y, value.z, value.w)) \u003e 0.0001f;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3613,
+                     "kind":  "interpolated",
+                     "text":  "LogWarning($\"[SaveManager] Ignored load request for \u0027{slotName}\u0027: {reason}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3620,
+                     "kind":  "interpolated",
+                     "text":  "string reason = $\"No primary or backup save found for \u0027{slotName}\u0027.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3622,
+                     "kind":  "interpolated",
+                     "text":  "LogWarning($\"[SaveManager] {reason}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3700,
+                     "kind":  "interpolated",
+                     "text":  "LogWarning($\"[SaveManager] CRITICAL_RECOVERY failed for \u0027{slotName}\u0027: {candidateError}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3761,
+                     "kind":  "interpolated",
+                     "text":  "? $\"backup g{candidates[i].BackupGeneration}\""
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3763,
+                     "kind":  "interpolated",
+                     "text":  "LogWarning($\"[SaveManager] Failed to load {candidateLabel} for \u0027{slotName}\u0027: {candidateError}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3786,
+                     "kind":  "interpolated",
+                     "text":  "LogInfo($\"[SaveManager] Migrated save \u0027{slotName}\u0027 from v{originalVersion}: {summary}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3906,
+                     "kind":  "interpolated",
+                     "text":  "? $\"backup g{criticalBackupGenerationForLoad} promoted to primary\""
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3908,
+                     "kind":  "interpolated",
+                     "text":  "? $\"backup g{loadedCandidate.BackupGeneration}\""
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3927,
+                     "kind":  "interpolated",
+                     "text":  "LogInfo($\"[SaveManager] Loaded \u0027{slotName}\u0027 from {sourceLabel} in {totalTimer.ElapsedMilliseconds}ms{loadCompletionSuffix}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  3930,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4216,
+                     "kind":  "interpolated",
+                     "text":  "public static string GetPrimarySaveFilePath(string slotName) =\u003e $\"{ResolveSafeSlotFileStem(slotName)}.sav\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4222,
+                     "kind":  "interpolated",
+                     "text":  "return $\"{safeSlotName}.sav.bak\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4224,
+                     "kind":  "interpolated",
+                     "text":  "return $\"{safeSlotName}.sav.bak{generation}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4226,
+                     "kind":  "interpolated",
+                     "text":  "public static string GetTempSaveFilePath(string slotName) =\u003e $\"{ResolveSafeSlotFileStem(slotName)}.sav.tmp\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4227,
+                     "kind":  "interpolated",
+                     "text":  "public static string GetDiagnosticSaveFilePath(string slotName) =\u003e $\"{ResolveSafeSlotFileStem(slotName)}.diag\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4339,
+                     "kind":  "objectCreations",
+                     "text":  "if (new FileInfo(absoluteFinalPath) is FileInfo promotedInfo \u0026\u0026 promotedInfo.Exists)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4342,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4424,
+                     "kind":  "objectCreations",
+                     "text":  "compressedSizeBytes = File.Exists(absoluteTempPath) ? new FileInfo(absoluteTempPath).Length : 0L;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4434,
+                     "kind":  "interpolated",
+                     "text":  "LogWarning($\"[SaveManager] Mod payload load warning for \u0027{slotName}\u0027: {error}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4443,
+                     "kind":  "interpolated",
+                     "text":  "LogWarning($\"[SaveManager] Mod payload commit failed for \u0027{slotName}\u0027: {error}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4452,
+                     "kind":  "interpolated",
+                     "text":  "LogWarning($\"[SaveManager] Indexed save directory read failed for \u0027{absolutePath}\u0027: {error}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4796,
+                     "kind":  "interpolated",
+                     "text":  "? $\"Backup g{selectedCandidate.BackupGeneration}\""
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4824,
+                     "kind":  "interpolated",
+                     "text":  "? $\"migration required from v{result.DetectedVersion}\""
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4825,
+                     "kind":  "interpolated",
+                     "text":  ": $\"version v{result.DetectedVersion}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4828,
+                     "kind":  "interpolated",
+                     "text":  "return $\"Readable from {source}, {migration}{compression}{repair}.\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4895,
+                     "kind":  "interpolated",
+                     "text":  "errorMessage = $\"CRITICAL_RECOVERY failed: \u0027{backupSavePath}\u0027 is missing. Primary failure: {primaryError}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4916,
+                     "kind":  "interpolated",
+                     "text":  "errorMessage = $\"CRITICAL_RECOVERY rejected invalid \u0027{backupSavePath}\u0027: {backupError}. Primary failure: {primaryError}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4925,
+                     "kind":  "interpolated",
+                     "text":  "errorMessage = $\"CRITICAL_RECOVERY rejected cascading backup-sector recovery in \u0027{backupSavePath}\u0027. Primary failure: {primaryError}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4934,
+                     "kind":  "interpolated",
+                     "text":  "errorMessage = $\"CRITICAL_RECOVERY promotion failed for \u0027{backupSavePath}\u0027: {promotionError}. Primary failure: {primaryError}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4939,
+                     "kind":  "interpolated",
+                     "text":  "LogError($\"[SaveManager] CRITICAL_RECOVERY promoted \u0027{backupSavePath}\u0027 to \u0027{GetPrimarySaveFilePath(slotName)}\u0027. Primary failure: {primaryError}\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4986,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception ex)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4994,
+                     "kind":  "catchException",
+                     "text":  "catch (Exception cleanupEx)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  4996,
+                     "kind":  "interpolated",
+                     "text":  "errorMessage = $\"{errorMessage}; temp cleanup failed: {cleanupEx.Message}\";"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                     "line":  5651,
+                     "kind":  "objectCreations",
+                     "text":  "return new FileInfo(fullPath).Length;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  728,
+                     "kind":  "objectCreations",
+                     "text":  "buffer[i] = new Vector2Int(chunkX, chunkZ);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  912,
+                     "kind":  "objectCreations",
+                     "text":  "chunkCoordinates = new Vector2Int("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  963,
+                     "kind":  "objectCreations",
+                     "text":  "ChunkExplored?.Invoke(new Vector2Int(chunkX, chunkZ));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  2006,
+                     "kind":  "objectCreations",
+                     "text":  "float3 numericPosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  2016,
+                     "kind":  "objectCreations",
+                     "text":  "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  3022,
+                     "kind":  "objectCreations",
+                     "text":  "Gizmos.color = new Color(0.1f, 0.65f, 1f, 0.55f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  3029,
+                     "kind":  "objectCreations",
+                     "text":  "Vector3 local = new Vector3(x * scale, y * scale, z * scale);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  3035,
+                     "kind":  "objectCreations",
+                     "text":  "Gizmos.color = new Color(0.05f, 1f, 0.28f, 0.32f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  3042,
+                     "kind":  "objectCreations",
+                     "text":  "int3 macroCell = centerCell + new int3(x, y, z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  3050,
+                     "kind":  "objectCreations",
+                     "text":  "Vector3 local = new Vector3(x * scale, y * scale, z * scale);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  3052,
+                     "kind":  "objectCreations",
+                     "text":  "Gizmos.color = new Color(0.1f, 1f, 0.4f, 0.75f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  3054,
+                     "kind":  "objectCreations",
+                     "text":  "Gizmos.color = new Color(0.05f, 1f, 0.28f, 0.32f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  3203,
+                     "kind":  "objectCreations",
+                     "text":  "_cartographyPreSimulationPhase = new CartographyDispatcherPhaseSystem("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  3207,
+                     "kind":  "objectCreations",
+                     "text":  "_cartographySimulationPhase = new CartographyDispatcherPhaseSystem("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                     "line":  3211,
+                     "kind":  "objectCreations",
+                     "text":  "_cartographyPostSimulationPhase = new CartographyDispatcherPhaseSystem("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs",
+                     "line":  1041,
+                     "kind":  "objectCreations",
+                     "text":  "throw new CriticalBootException(\"[BinaryLayoutManifest] Binary layout validation failed: \" + structName);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs",
+                     "line":  1041,
+                     "kind":  "throwNew",
+                     "text":  "throw new CriticalBootException(\"[BinaryLayoutManifest] Binary layout validation failed: \" + structName);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs",
+                     "line":  1065,
+                     "kind":  "objectCreations",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs",
+                     "line":  1066,
+                     "kind":  "objectCreations",
+                     "text":  "using (BinaryWriter writer = new BinaryWriter(stream))"
+                 }
+             ]
+}

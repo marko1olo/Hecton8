@@ -87,10 +87,12 @@ namespace Hecton8.Construction
             CacheConstructionLogisticsCold();
             TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
+            InteractableRegistry.RegisterTree(this);
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
             UnregisterWeldGlowProxy();
@@ -99,6 +101,7 @@ namespace Hecton8.Construction
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
             UnregisterWeldGlowProxy();
             TryUnregisterWeldGlowTick();

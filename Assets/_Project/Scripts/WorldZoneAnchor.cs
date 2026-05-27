@@ -1,6 +1,5 @@
 using Hecton8.Core;
 using Hecton8.Environment;
-using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -10,13 +9,15 @@ namespace Hecton8.World
     public sealed class WorldZoneAnchor : MonoBehaviour
     {
         private const int ActiveAnchorCopyBudget = 64;
-        private static readonly List<WorldZoneAnchor> _ActiveAnchors = new List<WorldZoneAnchor>(32);
+        private static readonly WorldZoneAnchor[] _ActiveAnchors = new WorldZoneAnchor[ActiveAnchorCopyBudget];
+        private static int _ActiveAnchorCount;
         private static int _ActiveAnchorVersion;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _ActiveAnchors.Clear();
+            System.Array.Clear(_ActiveAnchors, 0, _ActiveAnchors.Length);
+            _ActiveAnchorCount = 0;
             _ActiveAnchorVersion = 0;
         }
 
@@ -106,20 +107,20 @@ namespace Hecton8.World
             UnregisterActiveAnchor(this);
         }
 
-        public static void CopyActiveAnchorsTo(List<WorldZoneAnchor> destination)
+        public static int CopyActiveAnchorsTo(WorldZoneAnchor[] destination)
         {
-            CopyActiveAnchorsTo(destination, ActiveAnchorCopyBudget);
+            return CopyActiveAnchorsTo(destination, ActiveAnchorCopyBudget);
         }
 
-        public static void CopyActiveAnchorsTo(List<WorldZoneAnchor> destination, int maxScanCount)
+        public static int CopyActiveAnchorsTo(WorldZoneAnchor[] destination, int maxScanCount)
         {
-            if (destination == null)
-                return;
+            if (destination == null || destination.Length <= 0)
+                return 0;
 
-            destination.Clear();
+            int writeCount = 0;
             int requestedCount = Mathf.Clamp(maxScanCount, 0, ActiveAnchorCopyBudget);
-            int safeCount = Mathf.Min(requestedCount, _ActiveAnchors.Count);
-            for (int i = 0; i < safeCount; i++)
+            int safeCount = Mathf.Min(requestedCount, _ActiveAnchorCount);
+            for (int i = 0; i < safeCount && writeCount < destination.Length; i++)
             {
                 WorldZoneAnchor anchor = _ActiveAnchors[i];
                 if (anchor == null)
@@ -132,8 +133,14 @@ namespace Hecton8.World
                 if (WorldShippingContentFilter.IsSuppressedZone(anchor))
                     continue;
 
-                destination.Add(anchor);
+                destination[writeCount] = anchor;
+                writeCount++;
             }
+
+            for (int i = writeCount; i < destination.Length; i++)
+                destination[i] = null;
+
+            return writeCount;
         }
 
         public static int ActiveAnchorVersion => _ActiveAnchorVersion;
@@ -364,10 +371,11 @@ namespace Hecton8.World
 
         private static void RegisterActiveAnchor(WorldZoneAnchor anchor)
         {
-            if (anchor == null || _ActiveAnchors.Contains(anchor))
+            if (anchor == null || ContainsActiveAnchor(anchor) || _ActiveAnchorCount >= _ActiveAnchors.Length)
                 return;
 
-            _ActiveAnchors.Add(anchor);
+            _ActiveAnchors[_ActiveAnchorCount] = anchor;
+            _ActiveAnchorCount++;
             _ActiveAnchorVersion++;
         }
 
@@ -376,8 +384,33 @@ namespace Hecton8.World
             if (anchor == null)
                 return;
 
-            if (_ActiveAnchors.Remove(anchor))
-                _ActiveAnchorVersion++;
+            int index = FindActiveAnchorIndex(anchor);
+            if (index < 0)
+                return;
+
+            int lastIndex = _ActiveAnchorCount - 1;
+            if (index != lastIndex)
+                _ActiveAnchors[index] = _ActiveAnchors[lastIndex];
+
+            _ActiveAnchors[lastIndex] = null;
+            _ActiveAnchorCount--;
+            _ActiveAnchorVersion++;
+        }
+
+        private static bool ContainsActiveAnchor(WorldZoneAnchor anchor)
+        {
+            return FindActiveAnchorIndex(anchor) >= 0;
+        }
+
+        private static int FindActiveAnchorIndex(WorldZoneAnchor anchor)
+        {
+            for (int i = 0; i < _ActiveAnchorCount; i++)
+            {
+                if (ReferenceEquals(_ActiveAnchors[i], anchor))
+                    return i;
+            }
+
+            return -1;
         }
 
 #if UNITY_EDITOR

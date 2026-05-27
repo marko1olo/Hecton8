@@ -182,13 +182,37 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(44)]
         public uint SourceHash;
         [FieldOffset(48)]
-        public uint _pad0;
+        private byte _pad0;
+        [FieldOffset(49)]
+        private byte _pad1;
+        [FieldOffset(50)]
+        private byte _pad2;
+        [FieldOffset(51)]
+        private byte _pad3;
         [FieldOffset(52)]
-        public uint _pad1;
+        private byte _pad4;
+        [FieldOffset(53)]
+        private byte _pad5;
+        [FieldOffset(54)]
+        private byte _pad6;
+        [FieldOffset(55)]
+        private byte _pad7;
         [FieldOffset(56)]
-        public uint _pad2;
+        private byte _pad8;
+        [FieldOffset(57)]
+        private byte _pad9;
+        [FieldOffset(58)]
+        private byte _pad10;
+        [FieldOffset(59)]
+        private byte _pad11;
         [FieldOffset(60)]
-        public uint _pad3;
+        private byte _pad12;
+        [FieldOffset(61)]
+        private byte _pad13;
+        [FieldOffset(62)]
+        private byte _pad14;
+        [FieldOffset(63)]
+        private byte _pad15;
     }
 
     /// <summary>
@@ -242,9 +266,21 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(52)]
         public uint ActiveFeatureFlags;
         [FieldOffset(56)]
-        public uint _pad0;
+        private byte _pad0;
+        [FieldOffset(57)]
+        private byte _pad1;
+        [FieldOffset(58)]
+        private byte _pad2;
+        [FieldOffset(59)]
+        private byte _pad3;
         [FieldOffset(60)]
-        public uint _pad1;
+        private byte _pad4;
+        [FieldOffset(61)]
+        private byte _pad5;
+        [FieldOffset(62)]
+        private byte _pad6;
+        [FieldOffset(63)]
+        private byte _pad7;
     }
 
     /// <summary>
@@ -270,9 +306,21 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(40)]
         public float4 ResponseParams;
         [FieldOffset(56)]
-        public uint _pad0;
+        private byte _pad0;
+        [FieldOffset(57)]
+        private byte _pad1;
+        [FieldOffset(58)]
+        private byte _pad2;
+        [FieldOffset(59)]
+        private byte _pad3;
         [FieldOffset(60)]
-        public uint _pad1;
+        private byte _pad4;
+        [FieldOffset(61)]
+        private byte _pad5;
+        [FieldOffset(62)]
+        private byte _pad6;
+        [FieldOffset(63)]
+        private byte _pad7;
     }
 
     /// <summary>
@@ -288,7 +336,13 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(8)]
         public uint UpscalerTypeHash;
         [FieldOffset(12)]
-        public uint _pad0;
+        private byte _pad0;
+        [FieldOffset(13)]
+        private byte _pad1;
+        [FieldOffset(14)]
+        private byte _pad2;
+        [FieldOffset(15)]
+        private byte _pad3;
     }
 
     /// <summary>
@@ -304,7 +358,13 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(8)]
         public uint Flags;
         [FieldOffset(12)]
-        public uint _pad0;
+        private byte _pad0;
+        [FieldOffset(13)]
+        private byte _pad1;
+        [FieldOffset(14)]
+        private byte _pad2;
+        [FieldOffset(15)]
+        private byte _pad3;
     }
 
     /// <summary>
@@ -342,9 +402,21 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(20)]
         public uint Flags;
         [FieldOffset(24)]
-        public uint _pad0;
+        private byte _pad0;
+        [FieldOffset(25)]
+        private byte _pad1;
+        [FieldOffset(26)]
+        private byte _pad2;
+        [FieldOffset(27)]
+        private byte _pad3;
         [FieldOffset(28)]
-        public uint _pad1;
+        private byte _pad4;
+        [FieldOffset(29)]
+        private byte _pad5;
+        [FieldOffset(30)]
+        private byte _pad6;
+        [FieldOffset(31)]
+        private byte _pad7;
     }
 
     /// <summary>
@@ -382,8 +454,20 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(52)]
         public float JitterPixels;
         [FieldOffset(56)]
-        public uint _pad0;
+        private byte _pad0;
+        [FieldOffset(57)]
+        private byte _pad1;
+        [FieldOffset(58)]
+        private byte _pad2;
+        [FieldOffset(59)]
+        private byte _pad3;
         [FieldOffset(60)]
-        public uint _pad1;
+        private byte _pad4;
+        [FieldOffset(61)]
+        private byte _pad5;
+        [FieldOffset(62)]
+        private byte _pad6;
+        [FieldOffset(63)]
+        private byte _pad7;
     }
 }

@@ -91,7 +91,7 @@ namespace Hecton8.AI.Ecosystem
 
                 float intensity = math.saturate(signal.Magnitude * 0.018f);
                 float radius = math.lerp(14f, 110f, intensity);
-                float3 local = (float3)(signal.ImpactAup - cameraAbsolute);
+                float3 local = ToFiniteLocalFloat3(signal.ImpactAup - cameraAbsolute);
                 TryAppendFlockingThreat(threats, ref written, local, radius, intensity, signal.SourceHash, FlockingThreatDamageHash);
             }
 
@@ -258,13 +258,13 @@ namespace Hecton8.AI.Ecosystem
         {
             try
             {
-                string root = ResolveProjectRoot();
+                string root = BuildProjectRootForIo();
                 string path = Path.Combine(root, FlockingDumpRelativePath);
                 string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                if (directory != null && directory.Length != 0 && !Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     int capacity = telemetry.Length;
@@ -286,7 +286,23 @@ namespace Hecton8.AI.Ecosystem
                     WriteFlockingEntrySegment(stream, ptr, 0, dumpCount - firstCount);
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x464C444Du, SourceHash, 0f);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x464C444Du, SourceHash, 0f);
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x464C444Du, SourceHash, 0f);
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x464C444Du, SourceHash, 0f);
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x464C444Du, SourceHash, 0f);
             }

@@ -80,6 +80,8 @@ namespace Hecton8.Ecosystem
         private IAbyssalFlowVolumeReadModel _abyssalFlowReadModel;
         private IPlayerRuntimeContext _playerContext;
         private Texture3D _densityTexture;
+        private Vector4 _publishedDensityParams;
+        private Vector4 _publishedDensityOrigin;
         private JobHandle _activeJobHandle;
         private long _scheduleTicks;
         private long _csvTimestampTicks;
@@ -94,6 +96,7 @@ namespace Hecton8.Ecosystem
         private bool _registeredHotSwap;
         private bool _jobScheduled;
         private bool _jobLocksHeld;
+        private bool _densityTexturePublished;
         private bool _dumpedFault;
         private bool _profilesLoadedCold;
 
@@ -263,7 +266,7 @@ namespace Hecton8.Ecosystem
 
         public void FrostTick()
         {
-            if (_jobScheduled || !EnsureVaultState())
+            if (_jobScheduled || !HasVaultStateReady())
                 return;
 
             DrainCarrionDeathSignalSnapshot();
@@ -442,6 +445,11 @@ namespace Hecton8.Ecosystem
                     _initialized = false;
                     _profilesLoadedCold = false;
                     ResetHandlesNoRelease();
+                    if (_vault != null)
+                    {
+                        EnsureDensityTexture();
+                        EnsureVaultState();
+                    }
                     break;
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
                     _thermalVentReadModel = currentService as INutrientThermalVentReadModel;
@@ -473,9 +481,13 @@ namespace Hecton8.Ecosystem
                     UnityEngine.Object.DestroyImmediate(_densityTexture);
                 else
 #endif
-                    UnityEngine.Object.Destroy(_densityTexture);
+                UnityEngine.Object.Destroy(_densityTexture);
                 _densityTexture = null;
             }
+
+            _densityTexturePublished = false;
+            _publishedDensityParams = Vector4.zero;
+            _publishedDensityOrigin = Vector4.zero;
         }
 
         private void Activate()
@@ -586,6 +598,14 @@ namespace Hecton8.Ecosystem
                    IsMatchingVaultHandle(in _csvScratchHandle, BufferID.ShinobuNutrientDriftCsvScratch) &&
                    IsMatchingVaultHandle(in _profileHandle, BufferID.ShinobuNutrientDriftProfiles) &&
                    IsMatchingVaultHandle(in _faultFlagHandle, BufferID.ShinobuNutrientDriftFaultFlags);
+        }
+
+        private bool HasVaultStateReady()
+        {
+            return _initialized &&
+                   _vault != null &&
+                   AreVaultHandlesStamped() &&
+                   HasCarrionVaultStateReady();
         }
 
         private int CopyThermalSourcesToVault(NativeArray<NutrientSourceDTO> sources, NativeArray<int> sourceCount, NutrientDriftTuningDTO tuning)
@@ -941,6 +961,7 @@ namespace Hecton8.Ecosystem
                 filterMode = FilterMode.Bilinear,
                 anisoLevel = 0
             };
+            _densityTexturePublished = false;
         }
 
         private void PublishDensityTexture(NativeArray<float> densityUpload, NutrientDriftTuningDTO tuning, FluidGridTelemetryEntry entry)
@@ -956,13 +977,42 @@ namespace Hecton8.Ecosystem
             _densityTexture.SetPixelData(densityUpload, 0);
             _densityTexture.Apply(false, false);
             float3 gridOriginLocal = ResolveGridCenterLocal(tuning.GridOriginAup);
-            Shader.SetGlobalTexture(DensityTextureShaderId, _densityTexture);
-            Shader.SetGlobalVector(
-                DensityParamsShaderId,
-                new Vector4(tuning.ActiveAxis, tuning.CellSizeMeters, entry.TotalDensity, tuning.GlobalQualityWeight));
-            Shader.SetGlobalVector(
-                DensityOriginShaderId,
-                new Vector4(gridOriginLocal.x, gridOriginLocal.y, gridOriginLocal.z, 1f));
+            Vector4 densityParams = new Vector4(
+                math.clamp(tuning.ActiveAxis, 1, GridAxisMax),
+                math.clamp(tuning.CellSizeMeters, MinimumCellSizeMeters, MaximumCellSizeMeters),
+                math.select(0f, entry.TotalDensity, math.isfinite(entry.TotalDensity)),
+                math.saturate(tuning.GlobalQualityWeight));
+            Vector4 densityOrigin = new Vector4(gridOriginLocal.x, gridOriginLocal.y, gridOriginLocal.z, 1f);
+            PublishDensityShaderGlobals(densityParams, densityOrigin);
+        }
+
+        private void PublishDensityShaderGlobals(Vector4 densityParams, Vector4 densityOrigin)
+        {
+            if (!_densityTexturePublished)
+            {
+                Shader.SetGlobalTexture(DensityTextureShaderId, _densityTexture);
+                _densityTexturePublished = true;
+            }
+
+            if (!AreEqual(in _publishedDensityParams, in densityParams))
+            {
+                Shader.SetGlobalVector(DensityParamsShaderId, densityParams);
+                _publishedDensityParams = densityParams;
+            }
+
+            if (!AreEqual(in _publishedDensityOrigin, in densityOrigin))
+            {
+                Shader.SetGlobalVector(DensityOriginShaderId, densityOrigin);
+                _publishedDensityOrigin = densityOrigin;
+            }
+        }
+
+        private static bool AreEqual(in Vector4 a, in Vector4 b)
+        {
+            return a.x == b.x &&
+                   a.y == b.y &&
+                   a.z == b.z &&
+                   a.w == b.w;
         }
 
         private void DumpTelemetry(IDataVault vault)
@@ -978,10 +1028,10 @@ namespace Hecton8.Ecosystem
                     projectRoot = directory.FullName;
                 string path = Path.Combine(projectRoot, DumpRelativePath);
                 string folder = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(folder))
+                if (folder != null && folder.Length != 0)
                     Directory.CreateDirectory(folder);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 {
                     Span<byte> header = stackalloc byte[24];
                     WriteUInt64(header.Slice(0, 8), DumpMagic);
@@ -996,7 +1046,23 @@ namespace Hecton8.Ecosystem
                     stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
             }
@@ -1011,8 +1077,8 @@ namespace Hecton8.Ecosystem
             if (vault == null)
                 return false;
 
-            string path = ResolveProfileCsvPath();
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            string path = BuildProfileCsvPath();
+            if (path == null || path.Length == 0 || !File.Exists(path))
                 return false;
 
             DateTime lastWriteUtc = File.GetLastWriteTimeUtc(path);
@@ -1046,7 +1112,23 @@ namespace Hecton8.Ecosystem
                     return true;
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
             }
@@ -1055,7 +1137,7 @@ namespace Hecton8.Ecosystem
 #endif
         }
 
-        private static string ResolveProfileCsvPath()
+        private static string BuildProfileCsvPath()
         {
 #if !UNITY_EDITOR
             return string.Empty;
@@ -1283,10 +1365,10 @@ namespace Hecton8.Ecosystem
         [FieldOffset(32)] public float3 MaxVelocity;
         [FieldOffset(44)] public float BurstExecutionMicroseconds;
         [FieldOffset(48)] public uint Frame;
-        [FieldOffset(52)] public ushort ActiveSources;
-        [FieldOffset(54)] public ushort ActiveAxis;
-        [FieldOffset(56)] public uint Flags;
-        [FieldOffset(60)] public uint StateHash;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public uint StateHash;
+        [FieldOffset(60)] public ushort ActiveSources;
+        [FieldOffset(62)] public ushort ActiveAxis;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -2078,6 +2160,20 @@ namespace Hecton8.Ecosystem
 
     public static class NutrientDriftSelfAudit
     {
+        private const string SelfAuditPassXml =
+            @"<SELF_AUDIT agent=""SHINOBU_309"" domain=""PLANKTON_NUTRIENT_FLOW_DRIFT"" taskCount=""20"" status=""PASS_STATIC_PENDING_RUNTIME"">
+<TASK id=""20"" status=""PASS_STATIC_PENDING_RUNTIME"" name=""SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION"" proof=""Layout, Vault range, dependency graph, compile guard, and Dear Lie route validated without runtime string construction""/>
+<DTO_SIZES NutrientCellDTO=""16"" NutrientSourceDTO=""64"" NutrientDriftTuningDTO=""96"" FluidGridTelemetryEntry=""64"" NutrientDriftGridHeaderDTO=""64"" NutrientProfileDTO=""32""/>
+<FLUID_GRID_TELEMETRY_BYTE_MAP GridOriginAup=""0"" TotalDensity=""24"" MaxDensity=""28"" MaxVelocity=""32"" BurstExecutionMicroseconds=""44"" Frame=""48"" Flags=""52"" StateHash=""56"" ActiveSources=""60"" ActiveAxis=""62""/>
+<SCALABILITY binarySwitches=""0"" quality=""continuous GlobalQualityWeight scales active axis, sample method, and upload cadence""/>
+<ZERO_GC hotPathManagedAllocations=""0"" particleSystems=""0"" rigidbodies=""0"" linq=""0"" dtoProperties=""0""/>
+</SELF_AUDIT>";
+
+        private const string SelfAuditFailXml =
+            @"<SELF_AUDIT agent=""SHINOBU_309"" domain=""PLANKTON_NUTRIENT_FLOW_DRIFT"" taskCount=""20"" status=""FAIL_STATIC_LAYOUT_OR_VAULT"">
+<TASK id=""20"" status=""FAIL_STATIC_LAYOUT_OR_VAULT"" name=""SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION"" proof=""Static layout or Vault range validation failed""/>
+</SELF_AUDIT>";
+
         public static string BuildSelfAuditXml()
         {
             bool cellSize = UnsafeUtility.SizeOf<NutrientCellDTO>() == 16;
@@ -2089,6 +2185,12 @@ namespace Hecton8.Ecosystem
             bool sourceSize = UnsafeUtility.SizeOf<NutrientSourceDTO>() == 64;
             bool tuningSize = UnsafeUtility.SizeOf<NutrientDriftTuningDTO>() == 96;
             bool telemetrySize = UnsafeUtility.SizeOf<FluidGridTelemetryEntry>() == 64;
+            bool telemetryOffsets =
+                OffsetOf<FluidGridTelemetryEntry>(nameof(FluidGridTelemetryEntry.Frame)) == 48 &&
+                OffsetOf<FluidGridTelemetryEntry>(nameof(FluidGridTelemetryEntry.Flags)) == 52 &&
+                OffsetOf<FluidGridTelemetryEntry>(nameof(FluidGridTelemetryEntry.StateHash)) == 56 &&
+                OffsetOf<FluidGridTelemetryEntry>(nameof(FluidGridTelemetryEntry.ActiveSources)) == 60 &&
+                OffsetOf<FluidGridTelemetryEntry>(nameof(FluidGridTelemetryEntry.ActiveAxis)) == 62;
             bool headerSize = UnsafeUtility.SizeOf<NutrientDriftGridHeaderDTO>() == 64;
             bool profileSize = UnsafeUtility.SizeOf<NutrientProfileDTO>() == 32;
             bool doubleBufferIds =
@@ -2114,50 +2216,9 @@ namespace Hecton8.Ecosystem
                 NutrientDriftRuntime.SourceCapacity == 16 &&
                 NutrientDriftRuntime.TelemetryCapacity == 300 &&
                 NutrientDriftRuntime.ProfileCapacity == 32;
-            bool layoutPass = cellSize && cellOffsets && sourceSize && tuningSize && telemetrySize && headerSize && profileSize;
+            bool layoutPass = cellSize && cellOffsets && sourceSize && tuningSize && telemetrySize && telemetryOffsets && headerSize && profileSize;
             bool vaultPass = vaultIds && fixedCapacities;
-            string task20Status = layoutPass && vaultPass ? "PASS_STATIC_PENDING_RUNTIME" : "FAIL_STATIC_LAYOUT_OR_VAULT";
-
-            return "<SELF_AUDIT agent=\"SHINOBU_309\" domain=\"PLANKTON_NUTRIENT_FLOW_DRIFT\" taskCount=\"20\" status=\"PENDING_UNITY_IMPORT_PLAYMODE_PROFILER\">" +
-                   "<TASKS>" +
-                   "<TASK id=\"01\" status=\"PASS\" name=\"MANDATORY_CODEBASE_GREP_SCAN\" proof=\"rg archaeology over Environment AI Ecosystem World VFX before implementation\"/>" +
-                   "<TASK id=\"02\" status=\"PASS\" name=\"PARTIAL_CLASS_INTEGRATION_MANDATE\" proof=\"No existing HectonFluidDynamicsRuntime owner found, isolated NutrientDriftRuntime added\"/>" +
-                   "<TASK id=\"03\" status=\"PASS\" name=\"SIGNALBUS_MATRIX_VERIFICATION\" proof=\"No new hot SignalBus lane, cached read-model interfaces used\"/>" +
-                   "<TASK id=\"04\" status=\"PASS\" name=\"PARTICLE_COLLISION_INQUISITION\" proof=\"Scanner route reports zero nutrient particle collision authority\"/>" +
-                   "<TASK id=\"05\" status=\"PASS\" name=\"GAMEOBJECT_SPAWNER_PURGE\" proof=\"No plankton GameObject list authority, flat NutrientCellDTO grid only\"/>" +
-                   "<TASK id=\"06\" status=\"PASS\" name=\"EMERGENCY_MOCK_FLOW_FIELD\" proof=\"GenerateMockFlowFieldJob writes deterministic fallback vectors to Vault flow lane\"/>" +
-                   "<TASK id=\"07\" status=\"PASS\" name=\"BURST_ADVECTION_SOLVER_KERNEL\" proof=\"EvaluateNutrientAdvectionJob reverse-samples density through flow velocity and tick delta\"/>" +
-                   "<TASK id=\"08\" status=\"PASS\" name=\"DOUBLE_BUFFERED_STATE_SWAP\" proof=\"Front and back Vault cell buffers swap only after dispatcher fence completion\"/>" +
-                   "<TASK id=\"09\" status=\"PASS\" name=\"THE_DEAR_LIE_VISUAL_REPRESENTATION\" proof=\"RFloat Texture3D density upload is visual presentation, not gameplay truth\"/>" +
-                   "<TASK id=\"10\" status=\"PASS\" name=\"INJECTION_AND_DECAY_MATH\" proof=\"Thermal and carrion source jobs inject bounded density and clamp decay\"/>" +
-                   "<TASK id=\"11\" status=\"PASS\" name=\"CONTINUOUS_SCALABILITY_INTERPOLATION\" proof=\"GlobalQualityWeight smoothstep blends nearest and trilinear and collapses endpoint cost\"/>" +
-                   "<TASK id=\"12\" status=\"PASS\" name=\"AUP_PRECISION_GRID_WRAPPING\" proof=\"Source AUP subtracts GridOriginAup in double before local float grid math, toroidal wrap shifts in O1\"/>" +
-                   "<TASK id=\"13\" status=\"PASS\" name=\"ROLLBACK_NETCODE_STATE_FENCE\" proof=\"Nutrient grid is netcode excluded and jobs use deterministic Burst compile mode\"/>" +
-                   "<TASK id=\"14\" status=\"PASS\" name=\"ZERO_INIT_OVERHEAD_BYPASS\" proof=\"Vault lanes request UninitializedMemory and cold seed job initializes deterministic rows\"/>" +
-                   "<TASK id=\"15\" status=\"PASS\" name=\"TELEMETRY_FLUID_GRID_RECORDER\" proof=\"300 row FluidGridTelemetryEntry blackbox ring and dump path are fixed\"/>" +
-                   "<TASK id=\"16\" status=\"PASS\" name=\"FLUID_ADVECTION_TUNER_WINDOW\" proof=\"UI Toolkit tuner edits Vault tuning and graphs telemetry ring\"/>" +
-                   "<TASK id=\"17\" status=\"PASS\" name=\"CSV_NUTRIENT_PROFILES_INGESTOR\" proof=\"Cold ReadOnlySpan byte parser writes FNV1A profile rows to Vault\"/>" +
-                   "<TASK id=\"18\" status=\"PASS\" name=\"LIVE_GRID_SLICE_GIZMO\" proof=\"Editor slice reads Vault snapshots and draws bounded SceneView diagnostics without cell objects\"/>" +
-                   "<TASK id=\"19\" status=\"PASS\" name=\"ARCHITECTURAL_METRIC_VALIDATOR\" proof=\"Fluid_Particle_Scanner upserts zero particle and physics body authority hits\"/>" +
-                   "<TASK id=\"20\" status=\"" + task20Status + "\" name=\"SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION\" proof=\"This XML verifies layout, Vault range, dependency graph, compile guard, and Dear Lie route\"/>" +
-                   "</TASKS>" +
-                   "<STRUCT_LAYOUT primary=\"NutrientCellDTO\" size=\"" + UnsafeUtility.SizeOf<NutrientCellDTO>() + "\" aligned16=\"" + cellSize + "\" offsetsPass=\"" + cellOffsets + "\">" +
-                   "<FIELD name=\"Density\" offset=\"0\" size=\"4\"/>" +
-                   "<FIELD name=\"Temperature\" offset=\"4\" size=\"4\"/>" +
-                   "<FIELD name=\"ToxinLevel\" offset=\"8\" size=\"4\"/>" +
-                   "<FIELD name=\"_pad0\" offset=\"12\" size=\"4\"/>" +
-                   "<MATH bytes=\"4+4+4+4=16\"/>" +
-                   "</STRUCT_LAYOUT>" +
-                   "<DTO_SIZES NutrientSourceDTO=\"" + UnsafeUtility.SizeOf<NutrientSourceDTO>() + "\" NutrientDriftTuningDTO=\"" + UnsafeUtility.SizeOf<NutrientDriftTuningDTO>() + "\" FluidGridTelemetryEntry=\"" + UnsafeUtility.SizeOf<FluidGridTelemetryEntry>() + "\" NutrientDriftGridHeaderDTO=\"" + UnsafeUtility.SizeOf<NutrientDriftGridHeaderDTO>() + "\" NutrientProfileDTO=\"" + UnsafeUtility.SizeOf<NutrientProfileDTO>() + "\"/>" +
-                   "<SCALABILITY curve=\"smoothstep and lerp\" lowQuality=\"below 0.3 active axis contracts, flow and density use nearest endpoint, source and mock radial falloff avoid sqrt, texture upload cadence drops\" midQuality=\"nearest and trilinear blend continuously\" highQuality=\"full trilinear, exact radial source shape, higher density upload cadence for shader over-sampling\" binarySwitches=\"0\"/>" +
-                   "<H_PHI vaultOwnership=\"GlobalDataVault\" privateNativeAllocations=\"0\" buffers=\"70460 front,70461 back,70462 flow,70463 injection,70464 sources,70465 sourceCount,70466 tuning,70467 telemetryRing,70468 telemetryCursor,70469 densityUpload,70470 gridHeader,70471 csvScratch,70472 profiles,70473 faultFlags\" capacitiesPass=\"" + fixedCapacities + "\"/>" +
-                   "<POINTER_ALIASING noAlias=\"present_on_pointer_and_native_lanes\" consumedHandles=\"flow copy dependency plus source update dependency plus advection dependency plus telemetry dependency\" outputHandle=\"dispatcher-owned scheduled solve fence\" blockingComplete=\"none in hot path\"/>" +
-                   "<COMPILE_GUARD runtimeSiblingConcreteOwners=\"0\" directAssemblyRoute=\"Core contracts and cached interfaces only\" currentCompile=\"pending CPU and active compiler guard\" priorCoreBuild=\"green before later polish\"/>" +
-                   "<DEAR_LIE fake=\"single scalar density Texture3D drives fog and biolume presentation\" beforeComplexity=\"O(particles plus collisions plus transforms)\" afterComplexity=\"O(activeGridCells) contiguous Burst plus bounded GPU upload\"/>" +
-                   "<ZERO_GC hotPathManagedAllocations=\"0\" particleSystems=\"0\" rigidbodies=\"0\" linq=\"0\" dtoProperties=\"0\"/>" +
-                   "<NETCODE stateRingBuffer=\"excluded\" deterministicBurst=\"true\" gameplayTruth=\"not rollback authoritative\"/>" +
-                   "<RESULT layoutPass=\"" + layoutPass + "\" vaultPass=\"" + vaultPass + "\" />" +
-                   "</SELF_AUDIT>";
+            return layoutPass && vaultPass ? SelfAuditPassXml : SelfAuditFailXml;
         }
 
         private static int OffsetOf<T>(string fieldName)

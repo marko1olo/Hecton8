@@ -28,6 +28,8 @@ namespace Hecton8.Environment.Fluids
             float globalQualityWeight,
             JobHandle inputDeps)
         {
+            _ = globalQualityWeight;
+
             if (!requests.IsCreated || !results.IsCreated || requestCount <= 0)
                 return inputDeps;
 
@@ -39,10 +41,8 @@ namespace Hecton8.Environment.Fluids
             {
                 Requests = requests,
                 Results = results,
-                RequestCount = count,
                 ActiveOriginAUP = activeOriginAUP,
-                SeaLevel = _seaLevel,
-                GlobalQualityWeight = math.saturate(math.select(0f, globalQualityWeight, math.isfinite(globalQualityWeight)))
+                SeaLevel = _seaLevel
             };
             return job.Schedule(count, ResolveInnerLoopBatchCount(count), inputDeps);
         }
@@ -75,9 +75,7 @@ namespace Hecton8.Environment.Fluids
             [ReadOnly, NoAlias] public NativeArray<OceanSampleRequestDTO> Requests;
             [WriteOnly, NoAlias] public NativeArray<OceanSampleResultDTO> Results;
             public double3 ActiveOriginAUP;
-            public int RequestCount;
             public float SeaLevel;
-            public float GlobalQualityWeight;
 
             public void Execute(int index)
             {
@@ -86,24 +84,14 @@ namespace Hecton8.Environment.Fluids
                 bool finite = math.all(math.isfinite(localDouble));
                 float3 local = finite ? (float3)localDouble : float3.zero;
 
-                float quality = math.saturate(GlobalQualityWeight);
-                float budgetCurve = math.smoothstep(0.05f, 1f, quality);
-                int budget = math.max(1, (int)math.ceil(RequestCount * math.lerp(0.05f, 1f, budgetCurve)));
-                bool simplified = index >= budget;
-
                 float2 xz = local.xz;
-                float lowAmp = math.lerp(0.025f, 0.35f, quality);
-                float highAmp = math.lerp(0.1f, 1.25f, quality * quality);
+                const float lowAmp = 0.35f;
+                const float highAmp = 1.25f;
                 float phase0 = math.dot(xz, new float2(0.0031f, 0.0023f));
-                float height = SeaLevel + ApproxSinBhaskara(phase0) * math.select(highAmp, lowAmp, simplified);
+                float height = SeaLevel + ApproxSinBhaskara(phase0) * highAmp;
 
-                if (!simplified)
-                {
-                    float detailWeight0 = math.smoothstep(0.2f, 0.65f, quality);
-                    float detailWeight1 = math.smoothstep(0.45f, 0.95f, quality);
-                    height += ApproxSinBhaskara(math.dot(xz, new float2(-0.0067f, 0.0049f)) + 1.7f) * (0.35f * highAmp * detailWeight0);
-                    height += ApproxSinBhaskara(math.dot(xz, new float2(0.011f, -0.008f)) + 3.1f) * (0.16f * highAmp * detailWeight1);
-                }
+                height += ApproxSinBhaskara(math.dot(xz, new float2(-0.0067f, 0.0049f)) + 1.7f) * (0.35f * highAmp);
+                height += ApproxSinBhaskara(math.dot(xz, new float2(0.011f, -0.008f)) + 3.1f) * (0.16f * highAmp);
 
                 float slopeX = ApproxCosBhaskara(phase0) * 0.0031f * lowAmp;
                 float slopeZ = ApproxCosBhaskara(phase0) * 0.0023f * lowAmp;
@@ -111,8 +99,6 @@ namespace Hecton8.Environment.Fluids
                 float3 velocity = new float3(slopeZ, 0f, -slopeX);
 
                 uint flags = (uint)(OceanSampleStatus.Valid | OceanSampleStatus.Mocked | OceanSampleStatus.DelayedOneToThreeFrames);
-                if (simplified)
-                    flags |= (uint)OceanSampleStatus.SimplifiedByQualityBudget;
                 if (!finite)
                     flags |= (uint)OceanSampleStatus.NonFiniteInput;
 
@@ -121,7 +107,7 @@ namespace Hecton8.Environment.Fluids
                 result.WaterHeight = math.select(height, SeaLevel, !math.isfinite(height));
                 result.SurfaceVelocity = math.select(velocity, float3.zero, !finite);
                 result.WaveNormal = math.select(normal, new float3(0f, 1f, 0f), !finite);
-                result.LatencyMilliseconds = simplified ? 3f : 1f;
+                result.LatencyMilliseconds = 1f;
                 result.StatusFlags = flags;
                 Results[index] = result;
             }

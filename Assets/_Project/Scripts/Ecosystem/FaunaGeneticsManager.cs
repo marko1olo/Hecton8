@@ -25,6 +25,7 @@ namespace Hecton8.Ecosystem
         private bool _hotSwapRegistered;
         private bool _duplicateServiceSuppressed;
         private ISaveService _saveService;
+        private RunModifierController _runModifiers;
 
         /// <summary>Persisted deterministic world seed used by ecosystem systems.</summary>
         public int WorldSeed => _worldSeed;
@@ -44,6 +45,7 @@ namespace Hecton8.Ecosystem
                 return;
             }
 
+            CacheRunModifiersCold();
             if (_worldSeed == 0)
                 _worldSeed = GenerateInitialSeed();
         }
@@ -57,6 +59,7 @@ namespace Hecton8.Ecosystem
             if (_duplicateServiceSuppressed)
                 return;
 
+            CacheRunModifiersCold();
             CacheSaveServiceCold();
             TryRegisterHotSwapListener();
             _saveService?.Register(this);
@@ -67,6 +70,7 @@ namespace Hecton8.Ecosystem
             _saveService?.Unregister(this);
             TryUnregisterHotSwapListener();
             _saveService = null;
+            _runModifiers = null;
             TryUnregisterService();
         }
 
@@ -75,6 +79,7 @@ namespace Hecton8.Ecosystem
             _saveService?.Unregister(this);
             TryUnregisterHotSwapListener();
             _saveService = null;
+            _runModifiers = null;
             TryUnregisterService();
         }
 
@@ -115,6 +120,11 @@ namespace Hecton8.Ecosystem
             _saveService = GlobalRegistry.Save;
         }
 
+        private void CacheRunModifiersCold()
+        {
+            _runModifiers = GlobalRegistry.RunModifiers;
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (_hotSwapRegistered || !Application.isPlaying)
@@ -137,6 +147,12 @@ namespace Hecton8.Ecosystem
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.RunModifierRuntime)
+            {
+                _runModifiers = currentService as RunModifierController;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Save)
                 return;
 
@@ -214,18 +230,15 @@ namespace Hecton8.Ecosystem
             ref float speed,
             ref float health)
         {
-            string creatureId = archetype != null ? archetype.creatureId ?? string.Empty : string.Empty;
+            ReadOnlySpan<char> creatureId = AsSpanOrEmpty(archetype != null ? archetype.creatureId : null);
             for (int i = 0; i < ModEcosystemRegistry.Count; i++)
             {
                 FaunaBiomeMutationDefinition definition = ModEcosystemRegistry.GetAt(i);
                 if (definition == null || definition.BiomeId != biomeIndex)
                     continue;
 
-                if (!string.IsNullOrEmpty(definition.SpeciesId) &&
-                    !string.Equals(definition.SpeciesId, creatureId, StringComparison.Ordinal))
-                {
+                if (!MatchesSpeciesFilter(definition, creatureId))
                     continue;
-                }
 
                 float overlayT = Hash01(variationHash ^ (uint)(i + 1) * 0x9E3779B9u);
                 float overlayScale = definition.MinScaleMultiplier +
@@ -242,7 +255,7 @@ namespace Hecton8.Ecosystem
             unchecked
             {
                 bool hasAupProof = TryResolveAupFromRuntimeOrigin(spawnPosition, out Hecton8.World.AbsoluteUniversePosition spawnAup);
-                uint speciesHash = HashString(archetype != null ? archetype.creatureId : string.Empty);
+                uint speciesHash = HashString(AsSpanOrEmpty(archetype != null ? archetype.creatureId : null));
                 if (hasAupProof)
                 {
                     return FaunaGenome64.BuildAupSeed(
@@ -278,13 +291,14 @@ namespace Hecton8.Ecosystem
 
         private int GenerateInitialSeed()
         {
-            RunModifierController runModifierController = GlobalRegistry.RunModifiers;
+            RunModifierController runModifierController = _runModifiers;
             if (runModifierController != null)
             {
                 RunModifiersDTO modifiers = runModifierController.CurrentModifiers;
-                if (modifiers.isDailySeed && !string.IsNullOrWhiteSpace(modifiers.dailySeedId))
+                ReadOnlySpan<char> dailySeedId = AsSpanOrEmpty(modifiers.dailySeedId);
+                if (modifiers.isDailySeed && HasNonWhiteSpace(dailySeedId))
                 {
-                    int dailySeed = unchecked((int)HashString(modifiers.dailySeedId));
+                    int dailySeed = unchecked((int)HashString(dailySeedId));
                     return dailySeed != 0 ? dailySeed : FallbackWorldSeed;
                 }
             }
@@ -292,11 +306,38 @@ namespace Hecton8.Ecosystem
             return FallbackWorldSeed;
         }
 
-        private static uint HashString(string value)
+        private static bool MatchesSpeciesFilter(FaunaBiomeMutationDefinition definition, ReadOnlySpan<char> creatureId)
+        {
+            ReadOnlySpan<char> speciesId = AsSpanOrEmpty(definition.SpeciesId);
+            return speciesId.Length == 0 || speciesId.SequenceEqual(creatureId);
+        }
+
+        private static ReadOnlySpan<char> AsSpanOrEmpty(string value)
+        {
+            return value != null ? value.AsSpan() : ReadOnlySpan<char>.Empty;
+        }
+
+        private static bool HasNonWhiteSpace(ReadOnlySpan<char> value)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (!IsAsciiWhiteSpace(value[i]))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsAsciiWhiteSpace(char value)
+        {
+            return value == ' ' || (uint)(value - '\t') <= 4u;
+        }
+
+        private static uint HashString(ReadOnlySpan<char> value)
         {
             unchecked
             {
-                if (string.IsNullOrEmpty(value))
+                if (value.Length == 0)
                     return 0x811C9DC5u;
 
                 uint hash = 0x811C9DC5u;

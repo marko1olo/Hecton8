@@ -12,7 +12,7 @@
 //   â€¢ ITickable â€” Ð¸Ð½Ñ‚ÐµÐ³Ñ€Ð°Ñ†Ð¸Ñ Ñ GameTickManager. ÐÐµÑ‚ MonoBehaviour tick.
 //   â€¢ Graphics.RenderMeshIndirect (Unity 6) â€” one GPU-visible draw call.
 //   â€¢ Ping-Pong GraphicsBuffer â€” Ð´Ð²Ð° Ð±ÑƒÑ„ÐµÑ€Ð°, swap ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€, zero race conditions.
-//   â€¢ MaterialPropertyBlock â€” zero GC per-frame (reuse).
+//   â€¢ Owner-local runtime Material â€” zero GC per-frame render state.
 //
 // PING-PONG ARCHITECTURE:
 //   ÐšÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€ compute shader Ñ‡Ð¸Ñ‚Ð°ÐµÑ‚ Ð¸Ð· _BoidsBufferRead Ð¸ Ð¿Ð¸ÑˆÐµÑ‚ Ð² _BoidsBufferWrite.
@@ -52,7 +52,7 @@
 // ZERO GC:
 //   â€¢ Ð’ÑÐµ Ð±ÑƒÑ„ÐµÑ€Ñ‹ Ð°Ð»Ð»Ð¾Ñ†Ð¸Ñ€Ð¾Ð²Ð°Ð½Ñ‹ Ð² Awake, Ð¾ÑÐ²Ð¾Ð±Ð¾Ð¶Ð´ÐµÐ½Ñ‹ Ð² OnDestroy.
 //   â€¢ BoidData â€” struct (blittable, no GC pressure).
-//   â€¢ MaterialPropertyBlock.SetBuffer â€” zero GC (reuse).
+//   â€¢ Owner-local material SetBuffer/SetFloat â€” zero GC after cold material copy.
 //   â€¢ ComputeShader.SetFloat/SetVector/SetInt â€” zero GC.
 //   â€¢ Graphics.RenderMeshIndirect â€” zero GC.
 //   â€¢ GeometryUtility.TestPlanesAABB â€” zero GC (struct arrays).
@@ -60,10 +60,12 @@
 // ============================================================================
 
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.World;
@@ -88,13 +90,39 @@ namespace Hecton8.AI.GPU
         private const int SpatialGridMaxBoidsPerCell = 32;
         private const int SpatialGridCounterStride = 4;
         private const int SpatialGridCellEntryStride = 4;
-        private const int MaxPredatorAupPositions = 16;
+        private const uint ThreadGroupPortableMaxSize = 256u;
+        private const int MaxPredatorRuntimePositions = 16;
         private const int MaxAcousticPingSignalsPerFrame = 16;
         private const float AcousticPingDecayMetersPerSecond = 34f;
         private const float AcousticPingMinLifetimeSeconds = 0.15f;
         private const float AcousticPingMaxLifetimeSeconds = 3.5f;
         private const float DefaultBoidCullingRadiusScale = 2.25f;
         private const float BoidClockMaxSeconds = 16777215f;
+        private const int BoidBlackBoxFrameCount = 300;
+        private const int BoidBlackBoxStride = 128;
+        private const uint BoidBlackBoxDumpMagic = 0x424F4944u;
+        private const uint BoidBlackBoxDumpVersion = 1u;
+        private const BufferID BoidBlackBoxBufferId = (BufferID)71979;
+        private const string BoidBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1301_Boids.bin";
+        private const float RuntimeVectorComponentLimitMeters = 100000f;
+        private const float MaxBoidWeight = 64f;
+        private const float MaxBoidRadiusMeters = 4096f;
+        private const float MaxBoidSpeedMetersPerSecond = 512f;
+        private const float MaxHeightScaleMeters = 10000f;
+
+        private const uint BoidBlackBoxFlagInitialized = 1u << 0;
+        private const uint BoidBlackBoxFlagSimulated = 1u << 1;
+        private const uint BoidBlackBoxFlagBuffersReady = 1u << 2;
+        private const uint BoidBlackBoxFlagVisibleIndices = 1u << 3;
+        private const uint BoidBlackBoxFaultInvalidDeltaTime = 1u << 16;
+        private const uint BoidBlackBoxFaultInvalidTarget = 1u << 17;
+        private const uint BoidBlackBoxFaultInvalidBounds = 1u << 18;
+        private const uint BoidBlackBoxFaultInvalidGrid = 1u << 19;
+        private const uint BoidBlackBoxFaultInvalidClock = 1u << 20;
+        private const uint BoidBlackBoxFaultInvalidPopulation = 1u << 21;
+        private const uint BoidBlackBoxFaultInvalidAcoustic = 1u << 22;
+        private const uint BoidBlackBoxFaultMissingBuffers = 1u << 23;
+        private const uint BoidBlackBoxFaultMask = 0xFFFF0000u;
 
         /// <summary>
         /// GPU-compatible boid data structure.
@@ -110,6 +138,31 @@ namespace Hecton8.AI.GPU
             [FieldOffset(24)] public float   panic;     // 4 bytes
             [FieldOffset(28)] public uint    stateFlags;// 4 bytes
             // TOTAL: 32 bytes
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = BoidBlackBoxStride)]
+        private struct BoidBlackBoxEntry
+        {
+            [FieldOffset(0)] public uint Frame;
+            [FieldOffset(4)] public uint StateHash;
+            [FieldOffset(8)] public uint Flags;
+            [FieldOffset(12)] public int BoidCount;
+            [FieldOffset(16)] public Vector3 TargetPosition;
+            [FieldOffset(28)] public float DeltaTime;
+            [FieldOffset(32)] public Vector3 BoundsCenter;
+            [FieldOffset(44)] public float BoidClockSeconds;
+            [FieldOffset(48)] public Vector3 SpatialGridOrigin;
+            [FieldOffset(60)] public float SpatialGridCellSize;
+            [FieldOffset(64)] public int SpatialGridResolutionX;
+            [FieldOffset(68)] public int SpatialGridResolutionY;
+            [FieldOffset(72)] public int SpatialGridResolutionZ;
+            [FieldOffset(76)] public int DispatchGroupCount;
+            [FieldOffset(80)] public int PredatorCount;
+            [FieldOffset(84)] public int FoveatedTier;
+            [FieldOffset(88)] public float GlobalQualityWeight;
+            [FieldOffset(92)] public float SocialLodWeight;
+            [FieldOffset(96)] public Vector4 AcousticPingParams;
+            [FieldOffset(112)] public Vector4 AcousticPingRuntimeRadius;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -303,15 +356,16 @@ namespace Hecton8.AI.GPU
             public static readonly int AbyssalFlowActive = Shader.PropertyToID("_AbyssalFlowActive");
             public static readonly int AbyssalFlowWeight = Shader.PropertyToID("_AbyssalFlowWeight");
 
-            public static readonly int PredatorAupPositions = Shader.PropertyToID("_PredatorAupPositions");
+            public static readonly int PredatorRuntimePositions = Shader.PropertyToID("_PredatorRuntimePositions");
             public static readonly int PredatorCount = Shader.PropertyToID("_PredatorCount");
             public static readonly int PredatorPanicRadiusSq = Shader.PropertyToID("_PredatorPanicRadiusSq");
             public static readonly int PredatorWeight = Shader.PropertyToID("_PredatorWeight");
-            public static readonly int AcousticPingAupRadius = Shader.PropertyToID("_AcousticPingAupRadius");
+            public static readonly int AcousticPingRuntimeRadius = Shader.PropertyToID("_AcousticPingRuntimeRadius");
             public static readonly int AcousticPingParams = Shader.PropertyToID("_AcousticPingParams");
             public static readonly int PanicDecay = Shader.PropertyToID("_PanicDecay");
             public static readonly int PanicAccelerationThresholdSq = Shader.PropertyToID("_PanicAccelerationThresholdSq");
             public static readonly int FoveatedVatTimeScale = Shader.PropertyToID("_H8FoveatedVatTimeScale");
+            public static readonly int FishScale = Shader.PropertyToID("_FishScale");
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -334,13 +388,15 @@ namespace Hecton8.AI.GPU
         private GraphicsBuffer _fallbackFlowFieldBuffer;
         private GraphicsBuffer _visibleBoidIndexBuffer;
         private GraphicsBuffer _visibleIndirectArgsBuffer;
+        private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _visibleIndirectArgsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] - boid indirect draw static args staging - owner: HectonBoidController
+        private BoidData[] _spawnUploadBuffer;
         private Texture3D _fallbackVoxelSdfTexture;
         private Texture3D _fallbackAbyssalFlowTexture;
         private readonly Vector4[] _cameraFrustumPlaneUpload = new Vector4[6];
         private Mesh _indirectArgsMesh;
-        private readonly Vector4[] _predatorAupPositions = new Vector4[MaxPredatorAupPositions];
-        private int _predatorAupCount;
-        private Vector4 _activeAcousticPingAupRadius;
+        private readonly Vector4[] _predatorRuntimePositions = new Vector4[MaxPredatorRuntimePositions];
+        private int _predatorRuntimePositionCount;
+        private Vector4 _activeAcousticPingRuntimeRadius;
         private Vector4 _activeAcousticPingParams;
 
         /// <summary>
@@ -373,10 +429,17 @@ namespace Hecton8.AI.GPU
 
         /// <summary>Thread group size X (read from shader).</summary>
         private int _threadGroupSizeX;
+        private int _clearSpatialGridThreadGroupSizeX;
+        private int _buildSpatialGridThreadGroupSizeX;
+        private int _clearVisibleIndirectArgsThreadGroupSizeX;
+        private int _cullVisibleBoidsThreadGroupSizeX;
 
         /// <summary>Number of dispatch groups = ceil(boidCount / threadGroupSize).</summary>
         private int _dispatchGroupCount;
-        private int _clearSpatialGridGroupCount = 1;
+        private int _clearSpatialGridGroupCount;
+        private int _buildSpatialGridGroupCount;
+        private int _clearVisibleIndirectArgsGroupCount;
+        private int _cullVisibleBoidsGroupCount;
 
         /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ð¹ Transform Ð¸Ð³Ñ€Ð¾ÐºÐ°.</summary>
         private Transform _playerTransform;
@@ -398,15 +461,21 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private Bounds _simulationBounds;
 
-        /// <summary>MaterialPropertyBlock for instanced rendering. Reused â€” zero GC.</summary>
-        private MaterialPropertyBlock _materialProps;
+        /// <summary>Owner-local material copy for instanced rendering. Reused and released with GPU resources.</summary>
+        private Material _runtimeFishMaterial;
+        private Material _runtimeFishSourceMaterial;
 
         /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ð°Ñ ÐºÐ°Ð¼ÐµÑ€Ð°.</summary>
         private Camera _mainCamera;
         private IFoveatedSimulationDirector _foveatedSimulationDirector;
         private IAbyssalFlowGpuReadModel _fluidRuntime;
+        private IDataVault _dataVault;
+        private VaultGenerationHandle<BoidBlackBoxEntry> _boidBlackBoxHandle;
         private FoveatedSimulationTier _foveatedSimulationTier = FoveatedSimulationTier.Active;
         private bool _hotSwapListenerRegistered;
+        private int _boidBlackBoxCursor;
+        private int _boidBlackBoxWritten;
+        private bool _boidBlackBoxDumped;
 
         /// <summary>Is system initialized and ready.</summary>
         private bool _initialized;
@@ -444,7 +513,6 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private void Awake()
         {
-            EnsureMaterialPropertyBlock();
             boidCount = VRAMEnforcer.ApplyBoidPopulationBudget(boidCount, 64, 8192);
 
             // â”€â”€ Ð—Ð°Ñ‰Ð¸Ñ‚Ð° Ð¾Ñ‚ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾Ð¹ Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ð¸ (v2.2) â”€â”€
@@ -457,8 +525,7 @@ namespace Hecton8.AI.GPU
             if (_initialized)
             {
                 Hecton8.Core.H8Debug.LogWarning(
-                    "[HectonBoidController] Awake() called while already initialized. " +
-                    "Releasing old GPU resources before re-init.",
+                    "[HectonBoidController] Awake() called while already initialized. Releasing old GPU resources before re-init.",
                     this);
                 ReleaseBuffers();
                 _initialized = false;
@@ -471,7 +538,18 @@ namespace Hecton8.AI.GPU
                 return;
             }
 
-            InitializeCompute();
+            if (!EnsureRuntimeFishMaterialReady())
+            {
+                enabled = false;
+                return;
+            }
+
+            if (!InitializeCompute())
+            {
+                enabled = false;
+                return;
+            }
+
             InitializeBuffers();
             InitializeRendering();
 
@@ -479,13 +557,33 @@ namespace Hecton8.AI.GPU
             _initialized      = true;
         }
 
-        private void EnsureMaterialPropertyBlock()
+        private bool EnsureRuntimeFishMaterialReady()
         {
-            if (_materialProps != null)
+            if (fishMaterial == null)
+                return false;
+
+            if (_runtimeFishMaterial != null && ReferenceEquals(_runtimeFishSourceMaterial, fishMaterial))
+                return true;
+
+            ReleaseRuntimeFishMaterial();
+
+            _runtimeFishMaterial = new Material(fishMaterial)
+            {
+                name = "[HectonBoid] RuntimeFishMaterial",
+                hideFlags = HideFlags.HideAndDontSave
+            }; // COLD ALLOC: Material[1] - owner-local boid indirect draw state - owner: HectonBoidController
+            _runtimeFishSourceMaterial = fishMaterial;
+            return true;
+        }
+
+        private void ReleaseRuntimeFishMaterial()
+        {
+            if (_runtimeFishMaterial == null)
                 return;
 
-            // COLD ALLOC: MaterialPropertyBlock[1] — boid instanced render state — owner: HectonBoidController
-            _materialProps = new MaterialPropertyBlock();
+            Destroy(_runtimeFishMaterial);
+            _runtimeFishMaterial = null;
+            _runtimeFishSourceMaterial = null;
         }
 
         private void OnEnable()
@@ -502,6 +600,8 @@ namespace Hecton8.AI.GPU
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
+            EnsureBoidBlackBoxCold();
+
             _registeredToTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
 
             if (_playerTransform == null)
@@ -517,17 +617,23 @@ namespace Hecton8.AI.GPU
             }
 
             TryUnregisterHotSwapListener();
+            ReleaseBoidBlackBoxHandle(_dataVault);
             _foveatedSimulationDirector = null;
             _fluidRuntime = null;
+            _dataVault = null;
             _playerRuntimeContext = null;
             _playerTransform = null;
             _mainCamera = null;
             _foveatedSimulationTier = FoveatedSimulationTier.Active;
+            _boidBlackBoxCursor = 0;
+            _boidBlackBoxWritten = 0;
+            _boidBlackBoxDumped = false;
         }
 
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
+            ReleaseBoidBlackBoxHandle(_dataVault);
             ReleaseBuffers();
         }
 
@@ -550,6 +656,14 @@ namespace Hecton8.AI.GPU
                 case GlobalRegistryServiceSlot.FoveatedSimulationDirector:
                     _foveatedSimulationDirector = currentService as IFoveatedSimulationDirector;
                     _foveatedSimulationTier = FoveatedSimulationTier.Active;
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    ReleaseBoidBlackBoxHandle(previousService as IDataVault ?? _dataVault);
+                    _dataVault = currentService as IDataVault;
+                    _boidBlackBoxCursor = 0;
+                    _boidBlackBoxWritten = 0;
+                    _boidBlackBoxDumped = false;
+                    EnsureBoidBlackBoxCold();
                     break;
             }
         }
@@ -585,9 +699,21 @@ namespace Hecton8.AI.GPU
         {
             using (ProfilerRegistry.AiTick.Auto())
             {
-            if (!_initialized) return;
-            AdvanceBoidClock(deltaTime);
-            EnsureRuntimeBufferCapacity();
+            uint frameInputFaultFlags = math.isfinite(deltaTime) && deltaTime >= 0f ? 0u : BoidBlackBoxFaultInvalidDeltaTime;
+            float safeDeltaTime = ClampMinFinite(deltaTime, 0f, 0f);
+            if (!_initialized)
+            {
+                WriteBoidBlackBoxFrame(safeDeltaTime, false, frameInputFaultFlags);
+                return;
+            }
+
+            if (!HasRuntimeBuffersReady())
+            {
+                WriteBoidBlackBoxFrame(safeDeltaTime, false, frameInputFaultFlags | BoidBlackBoxFaultMissingBuffers);
+                return;
+            }
+
+            AdvanceBoidClock(safeDeltaTime);
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  1. UPDATE TARGET
@@ -606,7 +732,7 @@ namespace Hecton8.AI.GPU
             if (simulateBoids)
             {
                 ConsumeAcousticPingSignals();
-                SetComputeUniforms(deltaTime);
+                SetComputeUniforms(safeDeltaTime);
             }
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -619,8 +745,11 @@ namespace Hecton8.AI.GPU
 
             if (simulateBoids)
             {
-                DispatchSpatialGridBuild();
-                boidShader.Dispatch(_kernelCSMain, _dispatchGroupCount, 1, 1);
+                if (_dispatchGroupCount > 0 && _clearSpatialGridGroupCount > 0 && _buildSpatialGridGroupCount > 0)
+                {
+                    DispatchSpatialGridBuild();
+                    boidShader.Dispatch(_kernelCSMain, _dispatchGroupCount, 1, 1);
+                }
             }
 
 #if UNITY_EDITOR
@@ -653,6 +782,7 @@ namespace Hecton8.AI.GPU
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             RenderBoids();
+            WriteBoidBlackBoxFrame(safeDeltaTime, simulateBoids, frameInputFaultFlags);
             }
         }
 
@@ -663,47 +793,51 @@ namespace Hecton8.AI.GPU
         /// <summary>
         /// Finds kernel, reads thread group size, computes dispatch count.
         /// </summary>
-        private void InitializeCompute()
+        private bool InitializeCompute()
         {
-            _kernelCSMain = boidShader.FindKernel("CSMain");
-            _kernelClearSpatialGrid = boidShader.FindKernel("ClearSpatialGrid");
-            _kernelBuildSpatialGrid = boidShader.FindKernel("BuildSpatialGrid");
-            _kernelClearVisibleIndirectArgs = boidShader.FindKernel("ClearVisibleIndirectArgs");
-            _kernelCullVisibleBoids = boidShader.FindKernel("CullVisibleBoids");
+            if (boidShader == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+                return false;
 
-            uint threadX, threadY, threadZ;
-            boidShader.GetKernelThreadGroupSizes(_kernelCSMain, out threadX, out threadY, out threadZ);
-            _threadGroupSizeX = (int)threadX;
+            if (!TryResolveKernel("CSMain", out _kernelCSMain) ||
+                !TryResolveKernel("ClearSpatialGrid", out _kernelClearSpatialGrid) ||
+                !TryResolveKernel("BuildSpatialGrid", out _kernelBuildSpatialGrid) ||
+                !TryResolveKernel("ClearVisibleIndirectArgs", out _kernelClearVisibleIndirectArgs) ||
+                !TryResolveKernel("CullVisibleBoids", out _kernelCullVisibleBoids))
+            {
+                return false;
+            }
 
-            _dispatchGroupCount = Mathf.Max(1, CeilDivPositive(boidCount, _threadGroupSizeX));
-            _clearSpatialGridGroupCount = Mathf.Max(1, CeilDivPositive(SpatialGridMaxCellCount, _threadGroupSizeX));
+            if (!TryResolveThreadGroupSizeX(_kernelCSMain, out _threadGroupSizeX) ||
+                !TryResolveThreadGroupSizeX(_kernelClearSpatialGrid, out _clearSpatialGridThreadGroupSizeX) ||
+                !TryResolveThreadGroupSizeX(_kernelBuildSpatialGrid, out _buildSpatialGridThreadGroupSizeX) ||
+                !TryResolveThreadGroupSizeX(_kernelClearVisibleIndirectArgs, out _clearVisibleIndirectArgsThreadGroupSizeX) ||
+                !TryResolveThreadGroupSizeX(_kernelCullVisibleBoids, out _cullVisibleBoidsThreadGroupSizeX))
+            {
+                return false;
+            }
+
+            RefreshDispatchGroupCounts();
 
 #if UNITY_EDITOR
             _debugDispatchGroups = _dispatchGroupCount;
 #endif
+            return true;
         }
 
-        private void EnsureRuntimeBufferCapacity()
+        private bool HasRuntimeBuffersReady()
         {
-            bool requiresReallocation =
-                _boidsBufferA == null ||
-                _boidsBufferB == null ||
-                _spatialGridCountBuffer == null ||
-                _spatialGridCellBuffer == null ||
-                _visibleBoidIndexBuffer == null ||
-                _visibleIndirectArgsBuffer == null ||
-                _boidsBufferA.count != boidCount ||
-                _boidsBufferB.count != boidCount ||
-                _spatialGridCountBuffer.count != SpatialGridMaxCellCount ||
-                _spatialGridCellBuffer.count != SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell ||
-                _visibleBoidIndexBuffer.count != boidCount;
-            if (!requiresReallocation)
-                return;
-
-            _dispatchGroupCount = Mathf.Max(1, CeilDivPositive(boidCount, _threadGroupSizeX));
-            InitializeBuffers();
-            InitializeRendering();
-            _simulationBounds = new Bounds(boundsCenter, boundsSize * 2f);
+            return _runtimeFishMaterial != null &&
+                   _boidsBufferA != null &&
+                   _boidsBufferB != null &&
+                   _spatialGridCountBuffer != null &&
+                   _spatialGridCellBuffer != null &&
+                   _visibleBoidIndexBuffer != null &&
+                   _visibleIndirectArgsBuffer != null &&
+                   _boidsBufferA.count == boidCount &&
+                   _boidsBufferB.count == boidCount &&
+                   _spatialGridCountBuffer.count == SpatialGridMaxCellCount &&
+                   _spatialGridCellBuffer.count == SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell &&
+                   _visibleBoidIndexBuffer.count == boidCount;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -720,7 +854,7 @@ namespace Hecton8.AI.GPU
         ///   â€¢ ÐŸÐµÑ€ÐµÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ð¸ ÑÐ¸ÑÑ‚ÐµÐ¼Ñ‹ Ñ‡ÐµÑ€ÐµÐ· public API (SetBoidCount Ð² Ð±ÑƒÐ´ÑƒÑ‰ÐµÐ¼).
         ///   â€¢ Edge case Ñ Awake (ÑÐ¼. ÐºÐ¾Ð¼Ð¼ÐµÐ½Ñ‚Ð°Ñ€Ð¸Ð¹ Ð² Awake).
         ///
-        /// ÐŸÐžÐ Ð¯Ð”ÐžÐš: Release old â†’ Create new â†’ SetData.
+        /// ÐŸÐžÐ Ð¯Ð”ÐžÐš: Release old â†’ Create new â†’ LockBufferForWrite upload.
         /// Ð•ÑÐ»Ð¸ Release Ð²Ñ‹Ð·Ð²Ð°Ð½ Ð½Ð° ÑƒÐ¶Ðµ released Ð±ÑƒÑ„ÐµÑ€ â€” Unity Ð¿Ñ€Ð¾ÑÑ‚Ð¾ Ð¸Ð³Ð½Ð¾Ñ€Ð¸Ñ€ÑƒÐµÑ‚.
         /// Null-check Ð¾Ð±ÑÐ·Ð°Ñ‚ÐµÐ»ÐµÐ½, Ñ‚.Ðº. Release() Ð½Ð° null = NullReferenceException.
         ///
@@ -809,26 +943,23 @@ namespace Hecton8.AI.GPU
             //  STEP 2: Create Ping-Pong boids buffers
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            _boidsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<BoidData>(boidCount);
-            _boidsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<BoidData>(boidCount);
+            _boidsBufferA = GraphicsBufferUploadUtility.CreateStructuredBuffer<BoidData>(boidCount); // COLD ALLOC: GraphicsBuffer[boidCount] - GPU-written boid ping buffer A - owner: HectonBoidController
+            _boidsBufferB = GraphicsBufferUploadUtility.CreateStructuredBuffer<BoidData>(boidCount); // COLD ALLOC: GraphicsBuffer[boidCount] - GPU-written boid ping buffer B - owner: HectonBoidController
             _spatialGridCountBuffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.Raw,
-                GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 SpatialGridMaxCellCount,
-                SpatialGridCounterStride);
+                SpatialGridCounterStride); // COLD ALLOC: GraphicsBuffer[SpatialGridMaxCellCount] - GPU-written spatial cell counters - owner: HectonBoidController
             _spatialGridCellBuffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.Structured,
-                GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell,
-                SpatialGridCellEntryStride);
+                SpatialGridCellEntryStride); // COLD ALLOC: GraphicsBuffer[spatial cells] - GPU-written spatial cell entries - owner: HectonBoidController
             _fallbackFlowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1);
             UploadFallbackFlowField();
-            _visibleBoidIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(boidCount);
+            _visibleBoidIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<uint>(boidCount); // COLD ALLOC: GraphicsBuffer[boidCount] - GPU-written visible boid indices - owner: HectonBoidController
             _visibleIndirectArgsBuffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
-                GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 1,
-                GraphicsBuffer.IndirectDrawIndexedArgs.size);
+                GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[IndirectDrawIndexedArgs] - GPU-written visible boid draw args - owner: HectonBoidController
             UploadIndirectArgsStaticMeshData();
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -836,7 +967,7 @@ namespace Hecton8.AI.GPU
             //  One array, uploaded to BOTH buffers.
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            UploadSpawnSetToBoidBuffers(boundsCenter, 0xB01D5EEDu, 0xB01D7101u, false);
+            UploadSpawnSetToBoidBuffers(boundsCenter, 0xB01D5EEDu, 0xB01D7101u, false, allowResize: true);
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  STEP 4: Initialize frame index
@@ -962,93 +1093,80 @@ namespace Hecton8.AI.GPU
             if (_visibleIndirectArgsBuffer == null || fishMesh == null || ReferenceEquals(_indirectArgsMesh, fishMesh))
                 return;
 
-            var mapped =
-                _visibleIndirectArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            try
+            _visibleIndirectArgsUpload[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
-                mapped[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
-                {
-                    indexCountPerInstance = fishMesh.GetIndexCount(0),
-                    instanceCount = 0u,
-                    startIndex = fishMesh.GetIndexStart(0),
-                    baseVertexIndex = (uint)Mathf.Max(0, fishMesh.GetBaseVertex(0)),
-                    startInstance = 0u
-                };
-            }
-            finally
-            {
-                _visibleIndirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
-            }
+                indexCountPerInstance = fishMesh.GetIndexCount(0),
+                instanceCount = 0u,
+                startIndex = fishMesh.GetIndexStart(0),
+                baseVertexIndex = (uint)Mathf.Max(0, fishMesh.GetBaseVertex(0)),
+                startInstance = 0u
+            };
+            GraphicsBufferUploadUtility.UploadArraySetData(_visibleIndirectArgsBuffer, _visibleIndirectArgsUpload, 1);
             _indirectArgsMesh = fishMesh;
         }
 
-        private void UploadSpawnSetToBoidBuffers(Vector3 center, uint positionSeed, uint velocitySeed, bool useMinimumVelocity)
+        private void UploadSpawnSetToBoidBuffers(Vector3 center, uint positionSeed, uint velocitySeed, bool useMinimumVelocity, bool allowResize)
         {
             if (_boidsBufferA == null || _boidsBufferB == null)
                 return;
 
             int safeCount = math.min(boidCount, math.min(_boidsBufferA.count, _boidsBufferB.count));
-            if (safeCount <= 0)
+            if (safeCount <= 0 || !EnsureSpawnUploadBufferCapacity(safeCount, allowResize))
                 return;
 
-            var writeA = _boidsBufferA.LockBufferForWrite<BoidData>(0, safeCount);
-            try
+            float spawnSpeed = useMinimumVelocity ? minSpeed : (minSpeed + maxSpeed) * 0.5f;
+            for (int i = 0; i < safeCount; i++)
             {
-                var writeB = _boidsBufferB.LockBufferForWrite<BoidData>(0, safeCount);
-                try
-                {
-                    float spawnSpeed = useMinimumVelocity ? minSpeed : (minSpeed + maxSpeed) * 0.5f;
-                    for (int i = 0; i < safeCount; i++)
-                    {
-                        Vector3 position = center + ResolveDeterministicScatterVector(i, center, positionSeed) * spawnRadius;
-                        position.y = Mathf.Clamp(position.y, center.y - boundsSize.y, waterSurfaceY - 2f);
+                Vector3 position = center + ResolveDeterministicScatterVector(i, center, positionSeed) * spawnRadius;
+                position.y = Mathf.Clamp(position.y, center.y - boundsSize.y, waterSurfaceY - 2f);
 
-                        Vector3 velocity = ResolveDeterministicScatterVector(i, center, velocitySeed) * spawnSpeed;
-                        float minimumSpeedSq = minSpeed * minSpeed;
-                        if (velocity.sqrMagnitude < minimumSpeedSq)
-                            velocity = ResolveDeterministicCardinalAxis(i, velocitySeed) * minSpeed;
+                Vector3 velocity = ResolveDeterministicScatterVector(i, center, velocitySeed) * spawnSpeed;
+                float minimumSpeedSq = minSpeed * minSpeed;
+                if (velocity.sqrMagnitude < minimumSpeedSq)
+                    velocity = ResolveDeterministicCardinalAxis(i, velocitySeed) * minSpeed;
 
-                        BoidData boid = new BoidData
-                        {
-                            position = position,
-                            velocity = velocity,
-                            panic = 0f,
-                            stateFlags = 0u
-                        };
-                        writeA[i] = boid;
-                        writeB[i] = boid;
-                    }
-                }
-                finally
+                _spawnUploadBuffer[i] = new BoidData
                 {
-                    _boidsBufferB.UnlockBufferAfterWrite<BoidData>(safeCount);
-                }
+                    position = position,
+                    velocity = velocity,
+                    panic = 0f,
+                    stateFlags = 0u
+                };
             }
-            finally
+
+            GraphicsBufferUploadUtility.UploadArraySetData(_boidsBufferA, _spawnUploadBuffer, safeCount);
+            GraphicsBufferUploadUtility.UploadArraySetData(_boidsBufferB, _spawnUploadBuffer, safeCount);
+        }
+
+        private bool EnsureSpawnUploadBufferCapacity(int safeCount, bool allowResize)
+        {
+            if (safeCount <= 0)
+                return false;
+
+            if (_spawnUploadBuffer == null || _spawnUploadBuffer.Length < safeCount)
             {
-                _boidsBufferA.UnlockBufferAfterWrite<BoidData>(safeCount);
+                if (!allowResize)
+                    return false;
+
+                _spawnUploadBuffer = new BoidData[safeCount]; // COLD ALLOC: BoidData[safeCount] - reusable boid spawn/reset upload staging - owner: HectonBoidController
             }
+
+            return true;
         }
 
         /// <summary>
-        /// Sets up MaterialPropertyBlock and RenderParams.
-        /// One-time allocation. Reused every frame.
-        /// Initial buffer binding uses _boidsBufferB (first frame's write target).
+        /// Sets up owner-local material bindings and RenderParams.
+        /// One-time cold material copy. Reused every frame.
+        /// Draw buffers bind through a draw-local property block before each indirect draw.
         /// </summary>
         private void InitializeRendering()
         {
-            _materialProps.Clear();
+            if (_runtimeFishMaterial == null && !EnsureRuntimeFishMaterialReady())
+                return;
 
             // Frame 0: Read=A, Write=B â†’ after dispatch, fresh data is in B
-            _materialProps.SetBuffer(ShaderProps.BoidsBuffer, _boidsBufferB);
-            _materialProps.SetBuffer(ShaderProps.VisibleBoidIndices, _visibleBoidIndexBuffer);
-            _materialProps.SetFloat(ShaderProps.BoidUseVisibleIndices, 1f);
-            _materialProps.SetFloat("_FishScale", fishScale);
-            _materialProps.SetFloat(ShaderProps.FoveatedVatTimeScale, 1f);
-
-            _renderParams = new RenderParams(fishMaterial)
+            _renderParams = new RenderParams(_runtimeFishMaterial)
             {
-                matProps             = _materialProps,
                 worldBounds          = _simulationBounds,
                 shadowCastingMode    = shadowMode,
                 receiveShadows       = false,
@@ -1137,6 +1255,8 @@ namespace Hecton8.AI.GPU
                 Destroy(_fallbackAbyssalFlowTexture);
                 _fallbackAbyssalFlowTexture = null;
             }
+
+            ReleaseRuntimeFishMaterial();
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1157,6 +1277,18 @@ namespace Hecton8.AI.GPU
         {
             ComputeShader cs = boidShader;
             int kernel = _kernelCSMain;
+            float safeDeltaTime = ClampMinFinite(dt, 0f, 0f);
+            Vector3 safeGridOrigin = ClampFiniteVector3(_spatialGridOrigin, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, Vector3.zero);
+            float safeGridCellSize = ClampFinite(_spatialGridCellSize, 0.001f, MaxBoidRadiusMeters, 5f);
+            Vector3 safeTargetPosition = ClampFiniteVector3(_targetPosition, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, boundsCenter);
+            Vector3 safeBoundsCenter = ClampFiniteVector3(boundsCenter, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, Vector3.zero);
+            Vector3 safeBoundsSize = ResolveSafeBoundsSize();
+            Vector2 safeWorldOffset = ClampFiniteVector2(worldOffset, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, Vector2.zero);
+            Vector2 safeWorldSize = ClampFiniteVector2(worldSize, 0.001f, RuntimeVectorComponentLimitMeters, new Vector2(1024f, 1024f));
+            float safeHeightScale = ClampFinite(heightScale, 0f, MaxHeightScaleMeters, 100f);
+            float safeWaterSurfaceY = ClampFinite(waterSurfaceY, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, 0f);
+            float safeMinSpeed = ClampFinite(minSpeed, 0f, MaxBoidSpeedMetersPerSecond, 2f);
+            float safeMaxSpeed = ClampFinite(maxSpeed, safeMinSpeed, MaxBoidSpeedMetersPerSecond, math.max(safeMinSpeed, 6f));
 
             // â”€â”€ Ping-Pong Buffer Binding â”€â”€
             // Determine which buffer is Read and which is Write this frame.
@@ -1175,51 +1307,51 @@ namespace Hecton8.AI.GPU
 
             // â”€â”€ Simulation â”€â”€
             cs.SetInt(ShaderProps.BoidCount, boidCount);
-            cs.SetFloat(ShaderProps.DeltaTime, dt);
+            cs.SetFloat(ShaderProps.DeltaTime, safeDeltaTime);
             cs.SetVector(ShaderProps.SpatialGridOrigin,
-                new Vector4(_spatialGridOrigin.x, _spatialGridOrigin.y, _spatialGridOrigin.z, 0f));
+                new Vector4(safeGridOrigin.x, safeGridOrigin.y, safeGridOrigin.z, 0f));
             cs.SetVector(ShaderProps.SpatialGridResolution,
                 new Vector4(_spatialGridResolution.x, _spatialGridResolution.y, _spatialGridResolution.z, 0f));
-            cs.SetFloat(ShaderProps.SpatialGridCellSize, _spatialGridCellSize);
+            cs.SetFloat(ShaderProps.SpatialGridCellSize, safeGridCellSize);
             cs.SetInt(ShaderProps.SpatialGridMaxBoidsPerCell, SpatialGridMaxBoidsPerCell);
             cs.SetFloat(ShaderProps.BoidMathLodMode, ResolveBoidSocialLodWeight01());
 
             // â”€â”€ Weights â”€â”€
-            cs.SetFloat(ShaderProps.SeparationWeight, separationWeight);
-            cs.SetFloat(ShaderProps.AlignmentWeight, alignmentWeight);
-            cs.SetFloat(ShaderProps.CohesionWeight, cohesionWeight);
-            cs.SetFloat(ShaderProps.TargetWeight, targetWeight);
-            cs.SetFloat(ShaderProps.ObstacleWeight, obstacleWeight);
-            cs.SetFloat(ShaderProps.BoundsWeight, boundsWeight);
+            cs.SetFloat(ShaderProps.SeparationWeight, ClampFinite(separationWeight, 0f, MaxBoidWeight, 1.5f));
+            cs.SetFloat(ShaderProps.AlignmentWeight, ClampFinite(alignmentWeight, 0f, MaxBoidWeight, 1f));
+            cs.SetFloat(ShaderProps.CohesionWeight, ClampFinite(cohesionWeight, 0f, MaxBoidWeight, 1f));
+            cs.SetFloat(ShaderProps.TargetWeight, ClampFinite(targetWeight, 0f, MaxBoidWeight, 2f));
+            cs.SetFloat(ShaderProps.ObstacleWeight, ClampFinite(obstacleWeight, 0f, MaxBoidWeight, 2f));
+            cs.SetFloat(ShaderProps.BoundsWeight, ClampFinite(boundsWeight, 0f, MaxBoidWeight, 1f));
 
             // â”€â”€ Radii â”€â”€
-            cs.SetFloat(ShaderProps.PerceptionRadius, perceptionRadius);
-            cs.SetFloat(ShaderProps.SeparationRadius, separationRadius);
-            cs.SetFloat(ShaderProps.ObstacleAvoidRadius, obstacleAvoidRadius);
+            cs.SetFloat(ShaderProps.PerceptionRadius, ClampFinite(perceptionRadius, 0.001f, MaxBoidRadiusMeters, 5f));
+            cs.SetFloat(ShaderProps.SeparationRadius, ClampFinite(separationRadius, 0.001f, MaxBoidRadiusMeters, 2f));
+            cs.SetFloat(ShaderProps.ObstacleAvoidRadius, ClampFinite(obstacleAvoidRadius, 0.001f, MaxBoidRadiusMeters, 6f));
 
             // â”€â”€ Speed â”€â”€
-            cs.SetFloat(ShaderProps.MinSpeed, minSpeed);
-            cs.SetFloat(ShaderProps.MaxSpeed, maxSpeed);
+            cs.SetFloat(ShaderProps.MinSpeed, safeMinSpeed);
+            cs.SetFloat(ShaderProps.MaxSpeed, safeMaxSpeed);
 
             // â”€â”€ Target â”€â”€
             cs.SetVector(ShaderProps.TargetPosition,
-                new Vector4(_targetPosition.x, _targetPosition.y, _targetPosition.z, 0f));
+                new Vector4(safeTargetPosition.x, safeTargetPosition.y, safeTargetPosition.z, 0f));
 
             // â”€â”€ Bounds â”€â”€
             cs.SetVector(ShaderProps.BoundsCenter,
-                new Vector4(boundsCenter.x, boundsCenter.y, boundsCenter.z, 0f));
+                new Vector4(safeBoundsCenter.x, safeBoundsCenter.y, safeBoundsCenter.z, 0f));
             cs.SetVector(ShaderProps.BoundsSize,
-                new Vector4(boundsSize.x, boundsSize.y, boundsSize.z, 0f));
+                new Vector4(safeBoundsSize.x, safeBoundsSize.y, safeBoundsSize.z, 0f));
 
             // â”€â”€ Heightmap â”€â”€
             Texture2D hmap = heightMap != null ? heightMap : _fallbackHeightMap;
             cs.SetTexture(kernel, ShaderProps.HeightMap, hmap);
             cs.SetVector(ShaderProps.WorldOffset,
-                new Vector4(worldOffset.x, worldOffset.y, 0f, 0f));
+                new Vector4(safeWorldOffset.x, safeWorldOffset.y, 0f, 0f));
             cs.SetVector(ShaderProps.WorldSize,
-                new Vector4(worldSize.x, worldSize.y, 0f, 0f));
-            cs.SetFloat(ShaderProps.HeightScaleProp, heightScale);
-            cs.SetFloat(ShaderProps.WaterSurfaceY, waterSurfaceY);
+                new Vector4(safeWorldSize.x, safeWorldSize.y, 0f, 0f));
+            cs.SetFloat(ShaderProps.HeightScaleProp, safeHeightScale);
+            cs.SetFloat(ShaderProps.WaterSurfaceY, safeWaterSurfaceY);
 
             BindCaveSdfPayload(cs, kernel);
             BindAbyssalFlowPayload(cs, kernel);
@@ -1234,9 +1366,7 @@ namespace Hecton8.AI.GPU
             Vector4 invDoubleHalfExtents = Vector4.zero;
             float active = 0f;
 
-            HectonCaveVoxelLightingVolume caveVolume = caveSdfOverride != null
-                ? caveSdfOverride
-                : HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
+            HectonCaveVoxelLightingVolume caveVolume = caveSdfOverride;
 
             if (enableVoxelSdfAvoidance &&
                 caveVolume != null &&
@@ -1244,7 +1374,11 @@ namespace Hecton8.AI.GPU
                     out Texture3D publishedTexture,
                     out Matrix4x4 publishedWorldToLocal,
                     out Vector4 publishedHalfExtentsAndRange,
-                    out Vector4 publishedInvDoubleHalfExtents))
+                    out Vector4 publishedInvDoubleHalfExtents) &&
+                publishedTexture != null &&
+                IsFiniteMatrix4x4(publishedWorldToLocal) &&
+                IsFiniteVector4(publishedHalfExtentsAndRange) &&
+                IsFiniteVector4(publishedInvDoubleHalfExtents))
             {
                 sdfTexture = publishedTexture;
                 worldToLocal = publishedWorldToLocal;
@@ -1258,7 +1392,7 @@ namespace Hecton8.AI.GPU
             cs.SetVector(ShaderProps.CaveVoxelHalfExtents, halfExtentsAndRange);
             cs.SetVector(ShaderProps.CaveVoxelInvDoubleHalfExtents, invDoubleHalfExtents);
             cs.SetFloat(ShaderProps.CaveVoxelActive, active);
-            cs.SetFloat(ShaderProps.CaveVoxelWeight, Mathf.Max(0f, voxelSdfWeight));
+            cs.SetFloat(ShaderProps.CaveVoxelWeight, ClampFinite(voxelSdfWeight, 0f, MaxBoidWeight, 1.35f));
         }
 
         private void BindAbyssalFlowPayload(ComputeShader cs, int kernel)
@@ -1277,7 +1411,11 @@ namespace Hecton8.AI.GPU
                     out Texture publishedFlowTexture,
                     out Vector4 publishedTextureGridResolution,
                     out Vector4 publishedTextureFlowCenter,
-                    out Vector4 publishedTextureFlowSpacing))
+                    out Vector4 publishedTextureFlowSpacing) &&
+                    publishedFlowTexture != null &&
+                    IsFiniteVector4(publishedTextureGridResolution) &&
+                    IsFiniteVector4(publishedTextureFlowCenter) &&
+                    IsFiniteVector4(publishedTextureFlowSpacing))
                 {
                     flowTexture = publishedFlowTexture;
                     gridResolution = publishedTextureGridResolution;
@@ -1290,7 +1428,11 @@ namespace Hecton8.AI.GPU
                     out GraphicsBuffer publishedFlowBuffer,
                     out Vector4 publishedGridResolution,
                     out Vector4 publishedFlowCenter,
-                    out Vector4 publishedFlowSpacing))
+                    out Vector4 publishedFlowSpacing) &&
+                    publishedFlowBuffer != null &&
+                    IsFiniteVector4(publishedGridResolution) &&
+                    IsFiniteVector4(publishedFlowCenter) &&
+                    IsFiniteVector4(publishedFlowSpacing))
                 {
                     flowBuffer = publishedFlowBuffer;
                     if (active <= 0f)
@@ -1310,30 +1452,44 @@ namespace Hecton8.AI.GPU
             cs.SetVector(ShaderProps.AbyssalFlowCenter, flowCenter);
             cs.SetVector(ShaderProps.AbyssalFlowSpacing, flowSpacing);
             cs.SetFloat(ShaderProps.AbyssalFlowActive, active);
-            cs.SetFloat(ShaderProps.AbyssalFlowWeight, Mathf.Max(0f, abyssalFlowWeight));
+            cs.SetFloat(ShaderProps.AbyssalFlowWeight, ClampFinite(abyssalFlowWeight, 0f, MaxBoidWeight, 0.35f));
         }
 
         private void BindPanicPayload(ComputeShader cs)
         {
-            float predatorRadius = Mathf.Max(0.001f, predatorPanicRadius);
-            cs.SetVectorArray(ShaderProps.PredatorAupPositions, _predatorAupPositions);
-            cs.SetInt(ShaderProps.PredatorCount, Mathf.Clamp(_predatorAupCount, 0, MaxPredatorAupPositions));
+            float predatorRadius = ClampFinite(predatorPanicRadius, 0.001f, MaxBoidRadiusMeters, 18f);
+            cs.SetVectorArray(ShaderProps.PredatorRuntimePositions, _predatorRuntimePositions);
+            cs.SetInt(ShaderProps.PredatorCount, Mathf.Clamp(_predatorRuntimePositionCount, 0, MaxPredatorRuntimePositions));
             cs.SetFloat(ShaderProps.PredatorPanicRadiusSq, predatorRadius * predatorRadius);
-            cs.SetFloat(ShaderProps.PredatorWeight, Mathf.Max(0f, predatorEvasionWeight));
+            cs.SetFloat(ShaderProps.PredatorWeight, ClampFinite(predatorEvasionWeight, 0f, MaxBoidWeight, 1f));
 
-            float pingActive = _activeAcousticPingParams.x > 0.0001f && ResolveBoidClockSeconds() <= _activeAcousticPingParams.z ? 1f : 0f;
-            _activeAcousticPingParams.w = pingActive;
-            cs.SetVector(ShaderProps.AcousticPingAupRadius, _activeAcousticPingAupRadius);
-            cs.SetVector(ShaderProps.AcousticPingParams, _activeAcousticPingParams);
-            cs.SetFloat(ShaderProps.PanicDecay, Mathf.Max(0f, panicDecayPerSecond));
-            float accelerationThreshold = Mathf.Max(0.001f, panicAccelerationThreshold);
+            Vector4 acousticRuntimeRadius = IsFiniteVector4(_activeAcousticPingRuntimeRadius) ? _activeAcousticPingRuntimeRadius : Vector4.zero;
+            Vector4 acousticParams = IsFiniteVector4(_activeAcousticPingParams) ? _activeAcousticPingParams : Vector4.zero;
+            float clock = ClampMinFinite(ResolveBoidClockSeconds(), 0f, 0f);
+            float pingActive = acousticParams.x > 0.0001f && clock <= acousticParams.z ? 1f : 0f;
+            acousticParams.w = pingActive;
+            if (pingActive <= 0f)
+            {
+                acousticRuntimeRadius = Vector4.zero;
+                acousticParams = Vector4.zero;
+            }
+
+            _activeAcousticPingRuntimeRadius = acousticRuntimeRadius;
+            _activeAcousticPingParams = acousticParams;
+            cs.SetVector(ShaderProps.AcousticPingRuntimeRadius, acousticRuntimeRadius);
+            cs.SetVector(ShaderProps.AcousticPingParams, acousticParams);
+            cs.SetFloat(ShaderProps.PanicDecay, ClampFinite(panicDecayPerSecond, 0f, MaxBoidWeight, 2.5f));
+            float accelerationThreshold = ClampFinite(panicAccelerationThreshold, 0.001f, MaxBoidSpeedMetersPerSecond, 14f);
             cs.SetFloat(ShaderProps.PanicAccelerationThresholdSq, accelerationThreshold * accelerationThreshold);
         }
 
         private void DispatchSpatialGridBuild()
         {
+            if (_clearSpatialGridGroupCount <= 0 || _buildSpatialGridGroupCount <= 0)
+                return;
+
             boidShader.Dispatch(_kernelClearSpatialGrid, _clearSpatialGridGroupCount, 1, 1);
-            boidShader.Dispatch(_kernelBuildSpatialGrid, _dispatchGroupCount, 1, 1);
+            boidShader.Dispatch(_kernelBuildSpatialGrid, _buildSpatialGridGroupCount, 1, 1);
         }
 
         private bool PopulateGpuFrustumPlanes()
@@ -1359,33 +1515,48 @@ namespace Hecton8.AI.GPU
 
             UploadIndirectArgsStaticMeshData();
             bool hasCameraFrustum = PopulateGpuFrustumPlanes();
+            if (_clearVisibleIndirectArgsGroupCount <= 0)
+                return;
+
+            if (_cullVisibleBoidsGroupCount <= 0)
+            {
+                boidShader.SetBuffer(_kernelClearVisibleIndirectArgs, ShaderProps.VisibleIndirectArgs, _visibleIndirectArgsBuffer);
+                boidShader.Dispatch(_kernelClearVisibleIndirectArgs, _clearVisibleIndirectArgsGroupCount, 1, 1);
+                return;
+            }
+
             boidShader.SetBuffer(_kernelClearVisibleIndirectArgs, ShaderProps.VisibleIndirectArgs, _visibleIndirectArgsBuffer);
             boidShader.SetBuffer(_kernelCullVisibleBoids, ShaderProps.BoidsBufferRead, currentDataBuffer);
             boidShader.SetBuffer(_kernelCullVisibleBoids, ShaderProps.VisibleBoidIndices, _visibleBoidIndexBuffer);
             boidShader.SetBuffer(_kernelCullVisibleBoids, ShaderProps.VisibleIndirectArgs, _visibleIndirectArgsBuffer);
             boidShader.SetInt(ShaderProps.BoidCount, boidCount);
             boidShader.SetVectorArray(ShaderProps.CameraFrustumPlanes, _cameraFrustumPlaneUpload);
-            boidShader.SetFloat(ShaderProps.BoidCullingRadius, Mathf.Max(0.01f, fishScale * DefaultBoidCullingRadiusScale));
+            float safeFishScale = ClampFinite(fishScale, 0.001f, MaxBoidRadiusMeters, 0.4f);
+            boidShader.SetFloat(ShaderProps.BoidCullingRadius, math.max(0.01f, safeFishScale * DefaultBoidCullingRadiusScale));
             boidShader.SetInt(ShaderProps.GpuFrustumCullingActive, hasCameraFrustum ? 1 : 0);
-            boidShader.Dispatch(_kernelClearVisibleIndirectArgs, 1, 1, 1);
-            boidShader.Dispatch(_kernelCullVisibleBoids, _dispatchGroupCount, 1, 1);
+            boidShader.Dispatch(_kernelClearVisibleIndirectArgs, _clearVisibleIndirectArgsGroupCount, 1, 1);
+            boidShader.Dispatch(_kernelCullVisibleBoids, _cullVisibleBoidsGroupCount, 1, 1);
         }
 
         private void UpdateSpatialGridLayout()
         {
-            float baseCellSize = Mathf.Max(Mathf.Max(perceptionRadius, separationRadius), 0.001f);
-            Vector3 doubledExtents = boundsSize * 2f;
+            Vector3 safeBoundsCenter = ClampFiniteVector3(boundsCenter, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, Vector3.zero);
+            Vector3 safeBoundsSize = ResolveSafeBoundsSize();
+            float safePerceptionRadius = ClampFinite(perceptionRadius, 0.001f, MaxBoidRadiusMeters, 5f);
+            float safeSeparationRadius = ClampFinite(separationRadius, 0.001f, MaxBoidRadiusMeters, 2f);
+            float baseCellSize = math.max(math.max(safePerceptionRadius, safeSeparationRadius), 0.001f);
+            Vector3 doubledExtents = safeBoundsSize * 2f;
             Vector3 fieldSize = new Vector3(
-                Mathf.Max(doubledExtents.x, baseCellSize),
-                Mathf.Max(doubledExtents.y, baseCellSize),
-                Mathf.Max(doubledExtents.z, baseCellSize));
-            float axisClampCellSize = Mathf.Max(
+                math.max(doubledExtents.x, baseCellSize),
+                math.max(doubledExtents.y, baseCellSize),
+                math.max(doubledExtents.z, baseCellSize));
+            float axisClampCellSize = math.max(
                 fieldSize.x / SpatialGridMaxAxisResolution,
-                Mathf.Max(fieldSize.y / SpatialGridMaxAxisResolution, fieldSize.z / SpatialGridMaxAxisResolution));
-            _spatialGridCellSize = Mathf.Max(baseCellSize, axisClampCellSize);
+                math.max(fieldSize.y / SpatialGridMaxAxisResolution, fieldSize.z / SpatialGridMaxAxisResolution));
+            _spatialGridCellSize = math.max(baseCellSize, axisClampCellSize);
 
-            Vector3 fieldMin = boundsCenter - boundsSize;
-            Vector3 fieldMax = boundsCenter + boundsSize;
+            Vector3 fieldMin = safeBoundsCenter - safeBoundsSize;
+            Vector3 fieldMax = safeBoundsCenter + safeBoundsSize;
             _spatialGridOrigin = new Vector3(
                 FloorToMultiple(fieldMin.x, _spatialGridCellSize),
                 FloorToMultiple(fieldMin.y, _spatialGridCellSize),
@@ -1397,7 +1568,57 @@ namespace Hecton8.AI.GPU
             _spatialGridResolution = new Vector3Int(resolutionX, resolutionY, resolutionZ);
 
             int cellCount = resolutionX * resolutionY * resolutionZ;
-            _clearSpatialGridGroupCount = Mathf.Max(1, CeilDivPositive(cellCount, _threadGroupSizeX));
+            _clearSpatialGridGroupCount = CeilDivPositive(cellCount, _clearSpatialGridThreadGroupSizeX);
+        }
+
+        private bool TryResolveKernel(string kernelName, out int kernelIndex)
+        {
+            kernelIndex = -1;
+            if (boidShader == null || !HardwareTierDetector.AllowHighResourceComputeShaders || !boidShader.HasKernel(kernelName))
+                return false;
+
+            kernelIndex = boidShader.FindKernel(kernelName);
+            return true;
+        }
+
+        private void ResetDispatchGroupSizes()
+        {
+            _threadGroupSizeX = 0;
+            _clearSpatialGridThreadGroupSizeX = 0;
+            _buildSpatialGridThreadGroupSizeX = 0;
+            _clearVisibleIndirectArgsThreadGroupSizeX = 0;
+            _cullVisibleBoidsThreadGroupSizeX = 0;
+            RefreshDispatchGroupCounts();
+        }
+
+        private bool TryResolveThreadGroupSizeX(int kernelIndex, out int groupSizeX)
+        {
+            groupSizeX = 0;
+            if (boidShader == null ||
+                kernelIndex < 0 ||
+                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !boidShader.IsSupported(kernelIndex))
+                return false;
+
+            boidShader.GetKernelThreadGroupSizes(kernelIndex, out uint x, out uint y, out uint z);
+            ulong totalThreads = (ulong)x * y * z;
+            if (x == 0u || y != 1u || z != 1u || totalThreads > ThreadGroupPortableMaxSize || x > 2147483647u)
+            {
+                ResetDispatchGroupSizes();
+                return false;
+            }
+
+            groupSizeX = (int)x;
+            return true;
+        }
+
+        private void RefreshDispatchGroupCounts()
+        {
+            _dispatchGroupCount = CeilDivPositive(boidCount, _threadGroupSizeX);
+            _buildSpatialGridGroupCount = CeilDivPositive(boidCount, _buildSpatialGridThreadGroupSizeX);
+            _cullVisibleBoidsGroupCount = CeilDivPositive(boidCount, _cullVisibleBoidsThreadGroupSizeX);
+            _clearSpatialGridGroupCount = CeilDivPositive(SpatialGridMaxCellCount, _clearSpatialGridThreadGroupSizeX);
+            _clearVisibleIndirectArgsGroupCount = CeilDivPositive(1, _clearVisibleIndirectArgsThreadGroupSizeX);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1430,22 +1651,26 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private void RenderBoids()
         {
-            if (fishMesh == null || fishMaterial == null || _visibleIndirectArgsBuffer == null || _visibleBoidIndexBuffer == null)
+            if (fishMesh == null || _runtimeFishMaterial == null || _visibleIndirectArgsBuffer == null || _visibleBoidIndexBuffer == null)
                 return;
 
             GraphicsBuffer currentDataBuffer = (_frameIndex % 2 == 0) ? _boidsBufferA : _boidsBufferB;
 
-            _materialProps.SetBuffer(ShaderProps.BoidsBuffer, currentDataBuffer);
-            _materialProps.SetBuffer(ShaderProps.VisibleBoidIndices, _visibleBoidIndexBuffer);
-            _materialProps.SetFloat(ShaderProps.BoidUseVisibleIndices, 1f);
-            _materialProps.SetFloat(ShaderProps.FoveatedVatTimeScale,
-                _foveatedSimulationTier == FoveatedSimulationTier.Peripheral ? 0.5f : 1f);
-            _renderParams.matProps = _materialProps;
+            BindRenderMaterialState(currentDataBuffer);
 
             // Update world bounds in case center moved
             _renderParams.worldBounds = _simulationBounds;
 
             UnityEngine.Graphics.RenderMeshIndirect(_renderParams, fishMesh, _visibleIndirectArgsBuffer, 1, 0);
+        }
+
+        private void BindRenderMaterialState(GraphicsBuffer currentDataBuffer)
+        {
+            _runtimeFishMaterial.SetBuffer(ShaderProps.BoidsBuffer, currentDataBuffer);
+            _runtimeFishMaterial.SetBuffer(ShaderProps.VisibleBoidIndices, _visibleBoidIndexBuffer);
+            _runtimeFishMaterial.SetFloat(ShaderProps.BoidUseVisibleIndices, 1f);
+            _runtimeFishMaterial.SetFloat(ShaderProps.FishScale, ClampFinite(fishScale, 0.001f, MaxBoidRadiusMeters, 0.4f));
+            _runtimeFishMaterial.SetFloat(ShaderProps.FoveatedVatTimeScale, ResolveFoveatedVatTimeScale());
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1487,13 +1712,15 @@ namespace Hecton8.AI.GPU
         {
             if (TryResolvePlayerTargetPosition(out Vector3 playerPosition))
             {
-                _targetPosition = playerPosition;
+                _targetPosition = ClampFiniteVector3(playerPosition, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, Vector3.zero);
 
                 // Ð”Ð¸Ð½Ð°Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸Ðµ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ñ‹: Ñ†ÐµÐ½Ñ‚Ñ€ ÑÐ»ÐµÐ´ÑƒÐµÑ‚ Ð·Ð° Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð¼ Ð¿Ð¾ X, Y Ð¸ Z.
                 // ÐžÐ³Ñ€Ð°Ð½Ð¸Ñ‡Ð¸Ð²Ð°ÐµÐ¼ Y, Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð²ÐµÑ€Ñ…Ð½ÑÑ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ð° Ð±Ð¾ÐºÑÐ° (center.y + boundsSize.y)
                 // Ð½Ðµ Ð¿Ñ€Ð¾Ð±Ð¸Ð²Ð°Ð»Ð° Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚ÑŒ Ð²Ð¾Ð´Ñ‹ (waterSurfaceY).
-                float maxCenterY = waterSurfaceY - boundsSize.y;
-                float targetY    = Mathf.Min(_targetPosition.y, maxCenterY);
+                Vector3 safeBoundsSize = ResolveSafeBoundsSize();
+                float safeWaterSurfaceY = ClampFinite(waterSurfaceY, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, 0f);
+                float maxCenterY = safeWaterSurfaceY - safeBoundsSize.y;
+                float targetY    = math.min(_targetPosition.y, maxCenterY);
 
                 boundsCenter = new Vector3(
                     _targetPosition.x,
@@ -1504,7 +1731,7 @@ namespace Hecton8.AI.GPU
             }
             else
             {
-                _targetPosition = boundsCenter;
+                _targetPosition = ClampFiniteVector3(boundsCenter, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, Vector3.zero);
             }
         }
 
@@ -1515,8 +1742,6 @@ namespace Hecton8.AI.GPU
         {
             _playerRuntimeContext = ResolvePlayerContext();
             _playerTransform = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerTransform : null;
-            if (_playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
         }
 
         private IPlayerRuntimeContext ResolvePlayerContext()
@@ -1538,6 +1763,310 @@ namespace Hecton8.AI.GPU
 
             if (forceRefresh || _foveatedSimulationDirector == null)
                 _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
+
+            if (forceRefresh || _dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+        }
+
+        private bool EnsureBoidBlackBoxCold()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (IsVaultHandleCreated(in _boidBlackBoxHandle) &&
+                vault.TryResolveHandle(in _boidBlackBoxHandle, out NativeArray<BoidBlackBoxEntry> existing) &&
+                existing.IsCreated &&
+                existing.Length >= BoidBlackBoxFrameCount)
+            {
+                return true;
+            }
+
+            _boidBlackBoxHandle = vault.EnsureGenerationHandle<BoidBlackBoxEntry>(
+                BoidBlackBoxBufferId,
+                BoidBlackBoxFrameCount,
+                SystemID.AIEcology,
+                NativeArrayOptions.ClearMemory);
+
+            return IsVaultHandleCreated(in _boidBlackBoxHandle) &&
+                   vault.TryResolveHandle(in _boidBlackBoxHandle, out NativeArray<BoidBlackBoxEntry> blackBox) &&
+                   blackBox.IsCreated &&
+                   blackBox.Length >= BoidBlackBoxFrameCount;
+        }
+
+        private void ReleaseBoidBlackBoxHandle(IDataVault vault)
+        {
+            if (vault == null || !IsVaultHandleCreated(in _boidBlackBoxHandle))
+                return;
+
+            vault.ReleaseBuffer(in _boidBlackBoxHandle);
+            _boidBlackBoxHandle = default;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private void WriteBoidBlackBoxFrame(float deltaTime, bool simulateBoids, uint forcedFlags)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in _boidBlackBoxHandle))
+                return;
+
+            uint flags = forcedFlags | ResolveBoidBlackBoxFaultFlags(deltaTime);
+            if (_initialized)
+                flags |= BoidBlackBoxFlagInitialized;
+            if (simulateBoids)
+                flags |= BoidBlackBoxFlagSimulated;
+            if (HasRuntimeBuffersReady())
+                flags |= BoidBlackBoxFlagBuffersReady;
+            if (_visibleBoidIndexBuffer != null)
+                flags |= BoidBlackBoxFlagVisibleIndices;
+
+            if (!vault.TryAcquireWriteLock(in _boidBlackBoxHandle, SystemID.AIEcology, out NativeArray<BoidBlackBoxEntry> blackBox))
+                return;
+
+            try
+            {
+                if (!blackBox.IsCreated || blackBox.Length < BoidBlackBoxFrameCount)
+                    return;
+
+                int index = _boidBlackBoxCursor;
+                blackBox[index] = BuildBoidBlackBoxEntry(deltaTime, flags);
+                _boidBlackBoxCursor = (index + 1) % blackBox.Length;
+                if (_boidBlackBoxWritten < blackBox.Length)
+                    _boidBlackBoxWritten++;
+
+                if ((flags & BoidBlackBoxFaultMask) != 0u && !_boidBlackBoxDumped)
+                {
+                    _boidBlackBoxDumped = true;
+                    DumpBoidBlackBox(blackBox, _boidBlackBoxCursor, _boidBlackBoxWritten);
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _boidBlackBoxHandle, SystemID.AIEcology);
+            }
+        }
+
+        private BoidBlackBoxEntry BuildBoidBlackBoxEntry(float deltaTime, uint flags)
+        {
+            float globalQualityWeight = ResolveGlobalQualityWeight01();
+            float socialLodWeight = ResolveBoidSocialLodWeight01();
+            Vector4 acousticParams = IsFiniteVector4(_activeAcousticPingParams) ? _activeAcousticPingParams : Vector4.zero;
+            Vector4 acousticRuntimeRadius = IsFiniteVector4(_activeAcousticPingRuntimeRadius) ? _activeAcousticPingRuntimeRadius : Vector4.zero;
+            BoidBlackBoxEntry entry = default;
+            entry.Frame = (uint)SystemDispatcher.CurrentFrameIndex;
+            entry.Flags = flags;
+            entry.BoidCount = boidCount;
+            entry.TargetPosition = ClampFiniteVector3(_targetPosition, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, Vector3.zero);
+            entry.DeltaTime = ClampMinFinite(deltaTime, 0f, 0f);
+            entry.BoundsCenter = ClampFiniteVector3(boundsCenter, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, Vector3.zero);
+            entry.BoidClockSeconds = ClampMinFinite(_boidClockSeconds, 0f, 0f);
+            entry.SpatialGridOrigin = ClampFiniteVector3(_spatialGridOrigin, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, Vector3.zero);
+            entry.SpatialGridCellSize = ClampMinFinite(_spatialGridCellSize, 0f, 0f);
+            entry.SpatialGridResolutionX = _spatialGridResolution.x;
+            entry.SpatialGridResolutionY = _spatialGridResolution.y;
+            entry.SpatialGridResolutionZ = _spatialGridResolution.z;
+            entry.DispatchGroupCount = _dispatchGroupCount;
+            entry.PredatorCount = _predatorRuntimePositionCount;
+            entry.FoveatedTier = (int)_foveatedSimulationTier;
+            entry.GlobalQualityWeight = globalQualityWeight;
+            entry.SocialLodWeight = socialLodWeight;
+            entry.AcousticPingParams = acousticParams;
+            entry.AcousticPingRuntimeRadius = acousticRuntimeRadius;
+            entry.StateHash = HashBoidBlackBoxState(in entry);
+            return entry;
+        }
+
+        private uint ResolveBoidBlackBoxFaultFlags(float deltaTime)
+        {
+            uint flags = 0u;
+            if (!math.isfinite(deltaTime) || deltaTime < 0f)
+                flags |= BoidBlackBoxFaultInvalidDeltaTime;
+            if (!TryToFiniteVector3(_targetPosition, out _))
+                flags |= BoidBlackBoxFaultInvalidTarget;
+            if (!TryToFiniteVector3(boundsCenter, out _) || !TryToFiniteVector3(boundsSize, out _))
+                flags |= BoidBlackBoxFaultInvalidBounds;
+            if (!TryToFiniteVector3(_spatialGridOrigin, out _) ||
+                !math.isfinite(_spatialGridCellSize) ||
+                _spatialGridCellSize <= 0f ||
+                _spatialGridResolution.x <= 0 ||
+                _spatialGridResolution.y <= 0 ||
+                _spatialGridResolution.z <= 0 ||
+                _spatialGridResolution.x > SpatialGridMaxAxisResolution ||
+                _spatialGridResolution.y > SpatialGridMaxAxisResolution ||
+                _spatialGridResolution.z > SpatialGridMaxAxisResolution ||
+                _dispatchGroupCount < 0)
+            {
+                flags |= BoidBlackBoxFaultInvalidGrid;
+            }
+
+            if (!math.isfinite(_boidClockSeconds) || _boidClockSeconds < 0f)
+                flags |= BoidBlackBoxFaultInvalidClock;
+            if (boidCount <= 0 || boidCount > 8192)
+                flags |= BoidBlackBoxFaultInvalidPopulation;
+            if (!IsFiniteVector4(_activeAcousticPingRuntimeRadius) || !IsFiniteVector4(_activeAcousticPingParams))
+                flags |= BoidBlackBoxFaultInvalidAcoustic;
+            return flags;
+        }
+
+        private static bool IsFiniteVector4(Vector4 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z) &&
+                   math.isfinite(value.w);
+        }
+
+        private static uint HashBoidBlackBoxState(in BoidBlackBoxEntry entry)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = MixHash(hash, entry.Frame);
+                hash = MixHash(hash, entry.Flags);
+                hash = MixHash(hash, (uint)entry.BoidCount);
+                hash = MixHash(hash, QuantizeFloatForHash(entry.TargetPosition.x));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.TargetPosition.y));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.TargetPosition.z));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.BoundsCenter.x));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.BoundsCenter.y));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.BoundsCenter.z));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.SpatialGridOrigin.x));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.SpatialGridOrigin.y));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.SpatialGridOrigin.z));
+                hash = MixHash(hash, (uint)entry.SpatialGridResolutionX);
+                hash = MixHash(hash, (uint)entry.SpatialGridResolutionY);
+                hash = MixHash(hash, (uint)entry.SpatialGridResolutionZ);
+                hash = MixHash(hash, (uint)entry.DispatchGroupCount);
+                hash = MixHash(hash, (uint)entry.PredatorCount);
+                hash = MixHash(hash, (uint)entry.FoveatedTier);
+                hash = MixHash(hash, QuantizeFloatForHash(entry.GlobalQualityWeight));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.SocialLodWeight));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.AcousticPingParams.x));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.AcousticPingParams.y));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.AcousticPingParams.z));
+                hash = MixHash(hash, QuantizeFloatForHash(entry.AcousticPingParams.w));
+                return hash != 0u ? hash : 1u;
+            }
+        }
+
+        private static uint MixHash(uint hash, uint value)
+        {
+            unchecked
+            {
+                return (hash ^ value) * 16777619u;
+            }
+        }
+
+        private static uint QuantizeFloatForHash(float value)
+        {
+            if (!math.isfinite(value))
+                return 0xFFFFFFFFu;
+
+            float scaled = value * 1000f;
+            if (!math.isfinite(scaled))
+                return 0xFFFFFFFEu;
+
+            scaled = math.clamp(scaled, int.MinValue + 1f, int.MaxValue - 1f);
+            return unchecked((uint)Mathf.RoundToInt(scaled));
+        }
+
+        private static void DumpBoidBlackBox(
+            NativeArray<BoidBlackBoxEntry> blackBox,
+            int cursor,
+            int written)
+        {
+            try
+            {
+                string dumpPath = ResolveBoidBlackBoxDumpPath();
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    int capacity = blackBox.Length;
+                    int dumpCount = Math.Min(capacity, Math.Max(0, written));
+                    int start = written < capacity ? 0 : cursor % capacity;
+                    writer.Write(BoidBlackBoxDumpMagic);
+                    writer.Write(BoidBlackBoxDumpVersion);
+                    writer.Write(BoidBlackBoxStride);
+                    writer.Write(capacity);
+                    writer.Write(dumpCount);
+                    writer.Write(cursor);
+                    writer.Write(start);
+
+                    for (int i = 0; i < dumpCount; i++)
+                    {
+                        int index = (start + i) % capacity;
+                        WriteBoidBlackBoxEntry(writer, in blackBox[index]);
+                    }
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+        }
+
+        private static void WriteBoidBlackBoxEntry(BinaryWriter writer, in BoidBlackBoxEntry entry)
+        {
+            writer.Write(entry.Frame);
+            writer.Write(entry.StateHash);
+            writer.Write(entry.Flags);
+            writer.Write(entry.BoidCount);
+            writer.Write(entry.TargetPosition.x);
+            writer.Write(entry.TargetPosition.y);
+            writer.Write(entry.TargetPosition.z);
+            writer.Write(entry.DeltaTime);
+            writer.Write(entry.BoundsCenter.x);
+            writer.Write(entry.BoundsCenter.y);
+            writer.Write(entry.BoundsCenter.z);
+            writer.Write(entry.BoidClockSeconds);
+            writer.Write(entry.SpatialGridOrigin.x);
+            writer.Write(entry.SpatialGridOrigin.y);
+            writer.Write(entry.SpatialGridOrigin.z);
+            writer.Write(entry.SpatialGridCellSize);
+            writer.Write(entry.SpatialGridResolutionX);
+            writer.Write(entry.SpatialGridResolutionY);
+            writer.Write(entry.SpatialGridResolutionZ);
+            writer.Write(entry.DispatchGroupCount);
+            writer.Write(entry.PredatorCount);
+            writer.Write(entry.FoveatedTier);
+            writer.Write(entry.GlobalQualityWeight);
+            writer.Write(entry.SocialLodWeight);
+            writer.Write(entry.AcousticPingParams.x);
+            writer.Write(entry.AcousticPingParams.y);
+            writer.Write(entry.AcousticPingParams.z);
+            writer.Write(entry.AcousticPingParams.w);
+            writer.Write(entry.AcousticPingRuntimeRadius.x);
+            writer.Write(entry.AcousticPingRuntimeRadius.y);
+            writer.Write(entry.AcousticPingRuntimeRadius.z);
+            writer.Write(entry.AcousticPingRuntimeRadius.w);
+        }
+
+        private static string ResolveBoidBlackBoxDumpPath()
+        {
+            string dataPath = Application.dataPath;
+            if (!string.IsNullOrEmpty(dataPath))
+                return Path.GetFullPath(Path.Combine(dataPath, "..", BoidBlackBoxDumpRelativePath));
+
+            return Path.GetFullPath(BoidBlackBoxDumpRelativePath);
         }
 
         private void TryRegisterHotSwapListener()
@@ -1559,19 +2088,38 @@ namespace Hecton8.AI.GPU
 
         private static float ResolveBoidSocialLodWeight01()
         {
+            float qualityWeight = ResolveGlobalQualityWeight01();
+            return math.saturate(math.smoothstep(0.2f, 0.85f, qualityWeight));
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
             float qualityWeight = MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)
                 ? config.GlobalQualityWeight
                 : HomeostasisBrain.GlobalQualityWeight;
-            qualityWeight = MathLodApproximation.SaturateFinite(qualityWeight, 1f);
-            return math.saturate(math.smoothstep(0.2f, 0.85f, qualityWeight));
+            return MathLodApproximation.SaturateFinite(qualityWeight, 1f);
+        }
+
+        private float ResolveFoveatedVatTimeScale()
+        {
+            float qualityWeight = ResolveGlobalQualityWeight01();
+            switch (_foveatedSimulationTier)
+            {
+                case FoveatedSimulationTier.Frozen:
+                    return math.lerp(0.08f, 0.22f, qualityWeight);
+                case FoveatedSimulationTier.Peripheral:
+                    return math.lerp(0.38f, 0.72f, qualityWeight);
+                default:
+                    return math.lerp(0.82f, 1.08f, qualityWeight);
+            }
         }
 
         private bool TryResolvePlayerTargetPosition(out Vector3 playerPosition)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null)
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            if (playerContext != null &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
             {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
                 if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
                     if (TryToFiniteVector3(movementState.PredictedWorldPosition, out playerPosition) ||
@@ -1579,28 +2127,15 @@ namespace Hecton8.AI.GPU
                     {
                         return true;
                     }
-
-                    float3 aupRuntime = movementState.PredictedAup.ToRuntimeFloat3();
-                    if (TryToFiniteVector3(aupRuntime, out playerPosition))
-                        return true;
                 }
             }
 
-            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
             if (playerContext != null &&
                 playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose) &&
                 (pose.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
                 TryToFiniteVector3(pose.RuntimePosition, out playerPosition))
             {
                 return true;
-            }
-
-            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (movement != null)
-            {
-                float3 runtime = movement.CurrentAup.ToRuntimeFloat3();
-                if (TryToFiniteVector3(runtime, out playerPosition))
-                    return true;
             }
 
             playerPosition = default;
@@ -1619,6 +2154,91 @@ namespace Hecton8.AI.GPU
             return false;
         }
 
+        private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition positionAup, out Vector3 runtimePosition)
+        {
+            runtimePosition = default;
+            if (!AbsoluteUniversePosition.IsFinite(in positionAup))
+                return false;
+
+            return TryToFiniteVector3(positionAup.ToRuntimeFloat3(), out runtimePosition);
+        }
+
+        private static bool TryToFiniteVector3(Vector3 value, out Vector3 result)
+        {
+            if (float.IsFinite(value.x) &&
+                float.IsFinite(value.y) &&
+                float.IsFinite(value.z))
+            {
+                result = value;
+                return true;
+            }
+
+            result = default;
+            return false;
+        }
+
+        private static float ClampFinite(float value, float min, float max, float fallback)
+        {
+            float safe = math.isfinite(value) ? value : fallback;
+            if (safe < min)
+                return min;
+            if (safe > max)
+                return max;
+            return safe;
+        }
+
+        private static float ClampMinFinite(float value, float min, float fallback)
+        {
+            float safe = math.isfinite(value) ? value : fallback;
+            return safe < min ? min : safe;
+        }
+
+        private static Vector2 ClampFiniteVector2(Vector2 value, float min, float max, Vector2 fallback)
+        {
+            Vector2 result;
+            result.x = ClampFinite(value.x, min, max, fallback.x);
+            result.y = ClampFinite(value.y, min, max, fallback.y);
+            return result;
+        }
+
+        private static Vector3 ClampFiniteVector3(Vector3 value, float min, float max, Vector3 fallback)
+        {
+            Vector3 result;
+            result.x = ClampFinite(value.x, min, max, fallback.x);
+            result.y = ClampFinite(value.y, min, max, fallback.y);
+            result.z = ClampFinite(value.z, min, max, fallback.z);
+            return result;
+        }
+
+        private Vector3 ResolveSafeBoundsSize()
+        {
+            Vector3 result;
+            result.x = ClampFinite(math.abs(boundsSize.x), 1f, RuntimeVectorComponentLimitMeters, 100f);
+            result.y = ClampFinite(math.abs(boundsSize.y), 1f, RuntimeVectorComponentLimitMeters, 30f);
+            result.z = ClampFinite(math.abs(boundsSize.z), 1f, RuntimeVectorComponentLimitMeters, 100f);
+            return result;
+        }
+
+        private static bool IsFiniteMatrix4x4(Matrix4x4 value)
+        {
+            return math.isfinite(value.m00) &&
+                   math.isfinite(value.m01) &&
+                   math.isfinite(value.m02) &&
+                   math.isfinite(value.m03) &&
+                   math.isfinite(value.m10) &&
+                   math.isfinite(value.m11) &&
+                   math.isfinite(value.m12) &&
+                   math.isfinite(value.m13) &&
+                   math.isfinite(value.m20) &&
+                   math.isfinite(value.m21) &&
+                   math.isfinite(value.m22) &&
+                   math.isfinite(value.m23) &&
+                   math.isfinite(value.m30) &&
+                   math.isfinite(value.m31) &&
+                   math.isfinite(value.m32) &&
+                   math.isfinite(value.m33);
+        }
+
         /// <summary>
         /// Resolves the gameplay view camera from the current player hierarchy.
         /// </summary>
@@ -1630,23 +2250,19 @@ namespace Hecton8.AI.GPU
             if (_playerTransform == null)
                 FindPlayer();
 
-            if (_playerTransform == null)
-                return false;
-
             IPlayerRuntimeContext playerContext = ResolvePlayerContext();
-            _mainCamera = playerContext != null && playerContext.PlayerCamera != null
-                ? playerContext.PlayerCamera
-                : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
+            _mainCamera = playerContext != null ? playerContext.PlayerCamera : null;
             return _mainCamera != null;
         }
 
         private static int CeilDivPositive(int numerator, int denominator)
         {
-            if (numerator <= 0)
+            const int MaxDispatchGroupsPerDimension = 65535;
+            if (numerator <= 0 || denominator <= 0)
                 return 0;
 
-            int safeDenominator = Mathf.Max(1, denominator);
-            return 1 + ((numerator - 1) / safeDenominator);
+            long groups = ((long)numerator + denominator - 1L) / denominator;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private static int CeilToIntPositive(float value)
@@ -1729,31 +2345,56 @@ namespace Hecton8.AI.GPU
         public void SetHeightMap(Texture2D texture, Vector2 offset, Vector2 size, float maxHeight)
         {
             heightMap   = texture;
-            worldOffset = offset;
-            worldSize   = size;
-            heightScale = maxHeight;
+            worldOffset = ClampFiniteVector2(offset, -RuntimeVectorComponentLimitMeters, RuntimeVectorComponentLimitMeters, Vector2.zero);
+            worldSize   = ClampFiniteVector2(size, 0.001f, RuntimeVectorComponentLimitMeters, new Vector2(1024f, 1024f));
+            heightScale = ClampFinite(maxHeight, 0f, MaxHeightScaleMeters, 100f);
+        }
+
+        public void ClearPredatorRuntimePositions()
+        {
+            _predatorRuntimePositionCount = 0;
         }
 
         public void ClearPredatorAupPositions()
         {
-            _predatorAupCount = 0;
+            ClearPredatorRuntimePositions();
         }
 
-        public bool SetPredatorAupPosition(int index, Vector3 aupPosition)
+        public bool SetPredatorRuntimePosition(int index, Vector3 runtimePosition)
         {
-            if ((uint)index >= MaxPredatorAupPositions)
+            if ((uint)index >= MaxPredatorRuntimePositions ||
+                !TryToFiniteVector3(runtimePosition, out Vector3 finitePosition))
                 return false;
 
-            _predatorAupPositions[index] = new Vector4(aupPosition.x, aupPosition.y, aupPosition.z, 1f);
-            if (index + 1 > _predatorAupCount)
-                _predatorAupCount = index + 1;
+            _predatorRuntimePositions[index] = new Vector4(finitePosition.x, finitePosition.y, finitePosition.z, 1f);
+            if (index + 1 > _predatorRuntimePositionCount)
+                _predatorRuntimePositionCount = index + 1;
 
             return true;
         }
 
+        public bool SetPredatorAupPosition(int index, in AbsoluteUniversePosition predatorAup)
+        {
+            if (!TryResolveRuntimePosition(in predatorAup, out Vector3 runtimePosition))
+                return false;
+
+            return SetPredatorRuntimePosition(index, runtimePosition);
+        }
+
+        [Obsolete("Vector3 predator input is runtime-origin-local. Use SetPredatorRuntimePosition(Vector3) or SetPredatorAupPosition(AbsoluteUniversePosition).")]
+        public bool SetPredatorAupPosition(int index, Vector3 runtimePosition)
+        {
+            return SetPredatorRuntimePosition(index, runtimePosition);
+        }
+
+        public void SetPredatorRuntimePositionCount(int count)
+        {
+            _predatorRuntimePositionCount = Mathf.Clamp(count, 0, MaxPredatorRuntimePositions);
+        }
+
         public void SetPredatorAupCount(int count)
         {
-            _predatorAupCount = Mathf.Clamp(count, 0, MaxPredatorAupPositions);
+            SetPredatorRuntimePositionCount(count);
         }
 
         private void ConsumeAcousticPingSignals()
@@ -1765,8 +2406,7 @@ namespace Hecton8.AI.GPU
             {
                 ref readonly AcousticPingSignal signal = ref signals[i];
                 if (!math.isfinite(signal.RadiusMeters) ||
-                    !math.isfinite(signal.Intensity01) ||
-                    !TryToFiniteVector3(signal.PositionAup.ToRuntimeFloat3(), out Vector3 runtimePosition))
+                    !math.isfinite(signal.Intensity01))
                 {
                     continue;
                 }
@@ -1775,7 +2415,7 @@ namespace Hecton8.AI.GPU
                     signal.RadiusMeters / AcousticPingDecayMetersPerSecond,
                     AcousticPingMinLifetimeSeconds,
                     AcousticPingMaxLifetimeSeconds);
-                RegisterAcousticPing(runtimePosition, signal.RadiusMeters, signal.Intensity01, lifetimeSeconds, currentTime);
+                RegisterAcousticPing(in signal.PositionAup, signal.RadiusMeters, signal.Intensity01, lifetimeSeconds, currentTime);
             }
         }
 
@@ -1792,41 +2432,60 @@ namespace Hecton8.AI.GPU
             return _boidClockSeconds;
         }
 
-        public void RegisterAcousticPing(Vector3 aupPosition, float radiusMeters, float intensity01, float lifetimeSeconds)
+        public void RegisterAcousticPingRuntime(Vector3 runtimePosition, float radiusMeters, float intensity01, float lifetimeSeconds)
         {
-            RegisterAcousticPing(aupPosition, radiusMeters, intensity01, lifetimeSeconds, ResolveBoidClockSeconds());
+            RegisterAcousticPingRuntime(runtimePosition, radiusMeters, intensity01, lifetimeSeconds, ResolveBoidClockSeconds());
         }
 
-        private void RegisterAcousticPing(Vector3 aupPosition, float radiusMeters, float intensity01, float lifetimeSeconds, float currentTime)
+        public void RegisterAcousticPing(in AbsoluteUniversePosition pingAup, float radiusMeters, float intensity01, float lifetimeSeconds)
+        {
+            RegisterAcousticPing(in pingAup, radiusMeters, intensity01, lifetimeSeconds, ResolveBoidClockSeconds());
+        }
+
+        [Obsolete("Vector3 acoustic ping input is runtime-origin-local. Use RegisterAcousticPingRuntime(Vector3) or RegisterAcousticPing(AbsoluteUniversePosition).")]
+        public void RegisterAcousticPing(Vector3 runtimePosition, float radiusMeters, float intensity01, float lifetimeSeconds)
+        {
+            RegisterAcousticPingRuntime(runtimePosition, radiusMeters, intensity01, lifetimeSeconds, ResolveBoidClockSeconds());
+        }
+
+        private void RegisterAcousticPing(in AbsoluteUniversePosition pingAup, float radiusMeters, float intensity01, float lifetimeSeconds, float currentTime)
+        {
+            if (!TryResolveRuntimePosition(in pingAup, out Vector3 runtimePosition))
+                return;
+
+            RegisterAcousticPingRuntime(runtimePosition, radiusMeters, intensity01, lifetimeSeconds, currentTime);
+        }
+
+        private void RegisterAcousticPingRuntime(Vector3 runtimePosition, float radiusMeters, float intensity01, float lifetimeSeconds, float currentTime)
         {
             if (!math.isfinite(radiusMeters) ||
                 !math.isfinite(intensity01) ||
                 !math.isfinite(lifetimeSeconds) ||
                 !math.isfinite(currentTime) ||
-                !TryToFiniteVector3(new float3(aupPosition.x, aupPosition.y, aupPosition.z), out Vector3 finitePosition))
+                !TryToFiniteVector3(runtimePosition, out Vector3 finitePosition))
             {
                 return;
             }
 
-            float shockwaveWeight = math.isfinite(acousticPingShockwaveWeight) ? math.max(0f, acousticPingShockwaveWeight) : 0f;
-            float radius = Mathf.Max(0.001f, radiusMeters);
-            float intensity = Mathf.Clamp01(intensity01) * shockwaveWeight;
+            float shockwaveWeight = ClampFinite(acousticPingShockwaveWeight, 0f, MaxBoidWeight, 1f);
+            float radius = ClampFinite(radiusMeters, 0.001f, MaxBoidRadiusMeters, 0.001f);
+            float intensity = ClampFinite(intensity01, 0f, 1f, 0f) * shockwaveWeight;
             if (intensity <= 0.0001f)
                 return;
 
-            _activeAcousticPingAupRadius = new Vector4(finitePosition.x, finitePosition.y, finitePosition.z, radius);
+            float lifetime = ClampFinite(lifetimeSeconds, AcousticPingMinLifetimeSeconds, AcousticPingMaxLifetimeSeconds, AcousticPingMinLifetimeSeconds);
+            _activeAcousticPingRuntimeRadius = new Vector4(finitePosition.x, finitePosition.y, finitePosition.z, radius);
             _activeAcousticPingParams = new Vector4(
                 intensity,
                 radius * radius,
-                currentTime + Mathf.Max(0.001f, lifetimeSeconds),
+                currentTime + lifetime,
                 1f);
         }
 
         /// <summary>
         /// Ð¡Ð±Ñ€Ð°ÑÑ‹Ð²Ð°ÐµÑ‚ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ Ð²ÑÐµÑ… Ð±Ð¾Ð¹Ð´Ð¾Ð² Ð² Ñ†ÐµÐ½Ñ‚Ñ€.
         /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐ¹ Ð¿Ñ€Ð¸ Ñ‚ÐµÐ»ÐµÐ¿Ð¾Ñ€Ñ‚Ðµ Ð¸Ð³Ñ€Ð¾ÐºÐ°.
-        /// Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ SetData â€” Ð¾Ð´Ð½Ð° Ð°Ð»Ð»Ð¾ÐºÐ°Ñ†Ð¸Ñ managed Ð¼Ð°ÑÑÐ¸Ð²Ð°.
-        /// Uploads to BOTH Ping-Pong buffers to ensure consistency.
+        /// Uses owner-created staging without runtime resize and uploads to BOTH Ping-Pong buffers.
         ///
         /// SPAWN Y RANGE:
         ///   ÐÐ¸Ð¶Ð½ÑÑ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ð°: center.y - boundsSize.y (Ð¿Ð¾Ð»Ð½Ð°Ñ Ð²Ñ‹ÑÐ¾Ñ‚Ð° Ð±Ð¾ÐºÑÐ° Ð²Ð½Ð¸Ð·).
@@ -1835,10 +2494,12 @@ namespace Hecton8.AI.GPU
         public void ResetPositions(Vector3 center)
         {
             if (_boidsBufferA == null || _boidsBufferB == null) return;
+            if (!TryToFiniteVector3(center, out Vector3 safeCenter))
+                return;
 
-            UploadSpawnSetToBoidBuffers(center, 0xB01D2E57u, 0xB01D5A7Eu, true);
-            boundsCenter = center;
-            _simulationBounds.center = center;
+            UploadSpawnSetToBoidBuffers(safeCenter, 0xB01D2E57u, 0xB01D5A7Eu, true, allowResize: false);
+            boundsCenter = safeCenter;
+            _simulationBounds.center = safeCenter;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1878,8 +2539,7 @@ namespace Hecton8.AI.GPU
 
             if (Application.isPlaying && _initialized)
             {
-                _dispatchGroupCount = (boidCount + _threadGroupSizeX - 1) / _threadGroupSizeX;
-                EnsureRuntimeBufferCapacity();
+                RefreshDispatchGroupCounts();
                 _simulationBounds = new Bounds(boundsCenter, boundsSize * 2f);
             }
         }

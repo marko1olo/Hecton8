@@ -64,6 +64,9 @@ namespace Hecton8.UI
         private static readonly char[] FilterEmptyLabelComponentsChars = "COMPONENTS".ToCharArray();
         private static readonly char[] PageDigestPrefixChars = "PAGE ".ToCharArray();
         private static readonly char[] EmptyTextChars = new char[1];
+        private static readonly int ItemDescriptionFallbackKeyHash = unchecked((int)H8LocHashes.ITEM_DESCRIPTION_FALLBACK);
+        private static readonly int PdaInventoryItemDescriptionSourceHash =
+            LocHash.Compute("PDAInventoryTab.ItemDescription".AsSpan());
         private const int MaxDynamicTextBufferChars = 4096;
         private static readonly char[] SharedOversizedTextBuffer = new char[MaxDynamicTextBufferChars]; // COLD ALLOC: char[4096] - no-GC fallback for unusually long PDA strings - owner: PDAInventoryTab
         // COLD ALLOC: string[4] — cached PDA tool-slot key labels — owner: PDAInventoryTab
@@ -264,6 +267,7 @@ namespace Hecton8.UI
         private IPlayerRuntimeContext _playerRuntimeContext;
         private INativeInputManagerRuntime _nativeInputManager;
         private IAudioService _audioService;
+        private ILocalizationMadnessPresentationReadModel _localizationMadnessPresentation;
         private bool _hotSwapRegistered;
 
         private bool IsTabActive =>
@@ -417,6 +421,15 @@ namespace Hecton8.UI
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+            {
+                _localizationMadnessPresentation =
+                    currentService as ILocalizationMadnessPresentationReadModel ??
+                    GlobalRegistry.LocalizationMadnessPresentation;
+                _detailsDirty = true;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
                 _audioService = currentService as IAudioService;
         }
@@ -443,6 +456,7 @@ namespace Hecton8.UI
             _playerRuntimeContext = GlobalRegistry.Player;
             _nativeInputManager = GlobalRegistry.NativeInputRuntime;
             _audioService = GlobalRegistry.Audio;
+            _localizationMadnessPresentation = GlobalRegistry.LocalizationMadnessPresentation;
         }
 
         private void ClearCachedRegistryServices()
@@ -450,6 +464,7 @@ namespace Hecton8.UI
             _playerRuntimeContext = null;
             _nativeInputManager = null;
             _audioService = null;
+            _localizationMadnessPresentation = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1691,7 +1706,7 @@ namespace Hecton8.UI
             if (_detailDesc != null)
                 SetSelectedDescriptionText(_detailDesc);
 
-            ILocalizationMadnessPresentationReadModel localizationManager = Hecton8.Core.GlobalRegistry.LocalizationMadnessPresentation;
+            ILocalizationMadnessPresentationReadModel localizationManager = _localizationMadnessPresentation;
             if (_detailDescMadnessFx != null)
                 _detailDescMadnessFx.SetEffectActive(localizationManager != null && localizationManager.IsMadnessWhisperVisualActive());
 
@@ -3072,10 +3087,10 @@ namespace Hecton8.UI
                 return;
             }
 
-            ILocalizationMadnessPresentationReadModel localization = GlobalRegistry.LocalizationMadnessPresentation;
+            ILocalizationMadnessPresentationReadModel localization = _localizationMadnessPresentation;
             ReadOnlySpan<char> descSpan = _selectedItem.GetDescriptionSpan(localization);
             if (descSpan.IsEmpty)
-                descSpan = ResolveLocalizedSpan(LocalizationKeys.ITEM_DESCRIPTION_FALLBACK, "No description available.");
+                descSpan = ResolveLocalizedSpan(ItemDescriptionFallbackKeyHash, "No description available.");
             descSpan = ResolveStressReactiveItemDescriptionSpan(_selectedItem, descSpan, localization);
             if (descSpan.Length > MaxDynamicTextBufferChars - 64)
                 descSpan = descSpan.Slice(0, MaxDynamicTextBufferChars - 64);
@@ -3536,11 +3551,11 @@ namespace Hecton8.UI
             }
         }
 
-        private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, string fallback)
         {
-            ILocalizationMadnessPresentationReadModel manager = GlobalRegistry.LocalizationMadnessPresentation;
+            ILocalizationMadnessPresentationReadModel manager = _localizationMadnessPresentation;
             return manager != null
-                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback.AsSpan())
+                ? manager.GetRawSpanOrFallback(keyHash, fallback.AsSpan())
                 : fallback.AsSpan();
         }
 
@@ -3578,14 +3593,14 @@ namespace Hecton8.UI
         private static int ResolvePdaLoreSourceHash(Hecton8.Items.ItemData item)
         {
             if (item == null)
-                return LocHash.Compute("PDAInventoryTab.ItemDescription".AsSpan());
+                return PdaInventoryItemDescriptionSourceHash;
 
-            if (!string.IsNullOrWhiteSpace(item.DescriptionTableKey))
-                return LocHash.Compute(item.DescriptionTableKey.AsSpan());
+            if (item.DescriptionTableHashId != 0)
+                return item.DescriptionTableHashId;
 
             return item.PersistentHashId != 0
                 ? item.PersistentHashId
-                : LocHash.Compute("PDAInventoryTab.ItemDescription".AsSpan());
+                : PdaInventoryItemDescriptionSourceHash;
         }
 
     }

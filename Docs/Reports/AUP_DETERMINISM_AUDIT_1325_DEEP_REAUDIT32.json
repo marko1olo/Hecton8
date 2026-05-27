@@ -1,0 +1,16 @@
+﻿{
+    "schema":  "hecton8.aup_determinism_reaudit32.v2",
+    "agentId":  "1325",
+    "scannedFiles":  5,
+    "findingCount":  0,
+    "findings":  [
+
+                 ],
+    "notes":  [
+                  "Remaining ToAbsoluteDouble3 uses are chunk/sector local packing or public absolute export and are not runtime-origin float conversions.",
+                  "Runtime-origin conversions use AUPDeltaClamped/ResolveCameraRelative before float casts.",
+                  "Paged sector hashes use integer grid-local sector quantization when AUP cell size is divisible by sector edge.",
+                  "OffsetMeters and FromGridLocal canonicalize by carrying grid-local deltas instead of recomposing absolute doubles."
+              ],
+    "generatedAtUtc":  "2026-05-27T09:33:59.3710933Z"
+}

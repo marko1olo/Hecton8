@@ -52,6 +52,7 @@ namespace Hecton8.UI
 
         private const int MaxRecordCount = 4096;
         private const int FileStreamBufferBytes = 64 * 1024;
+        private const int VaultMirrorCopyChunkBytes = 8 * 1024;
 
 #if HECTON8_PDA_H8LR_MMF_AVAILABLE
         private MemoryMappedFile _mappedFile;
@@ -93,11 +94,19 @@ namespace Hecton8.UI
             {
                 info = new FileInfo(path);
             }
-            catch (Exception exception) when (
-                exception is IOException ||
-                exception is UnauthorizedAccessException ||
-                exception is NotSupportedException ||
-                exception is ArgumentException)
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
             {
                 return false;
             }
@@ -198,8 +207,78 @@ namespace Hecton8.UI
             in VaultGenerationHandle<byte> vaultMirrorHandle)
         {
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 vaultMirrorHandle.BufferID == 0u ||
                 fileBytes <= 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                Span<byte> chunk = stackalloc byte[VaultMirrorCopyChunkBytes];
+                int totalRead = 0;
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.SequentialScan))
+                {
+                    while (totalRead < fileBytes)
+                    {
+                        int read = stream.Read(chunk.Slice(0, math.min(chunk.Length, fileBytes - totalRead)));
+                        if (read <= 0)
+                            break;
+
+                        if (!TryCopyVaultMirrorChunk(vault, in vaultMirrorHandle, totalRead, chunk.Slice(0, read), fileBytes))
+                            return false;
+
+                        totalRead += read;
+                    }
+                }
+
+                if (totalRead != fileBytes)
+                    return false;
+
+                return TryCommitVaultMirror(vault, in vaultMirrorHandle, fileBytes);
+            }
+            catch (IOException)
+            {
+                ClearMappedState();
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                ClearMappedState();
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                ClearMappedState();
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                ClearMappedState();
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                ClearMappedState();
+                return false;
+            }
+        }
+
+        private static bool TryCopyVaultMirrorChunk(
+            IDataVault vault,
+            in VaultGenerationHandle<byte> vaultMirrorHandle,
+            int destinationOffset,
+            ReadOnlySpan<byte> source,
+            int requiredBytes)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                vaultMirrorHandle.BufferID == 0u ||
+                source.Length <= 0 ||
+                destinationOffset < 0 ||
+                requiredBytes <= 0 ||
+                destinationOffset > requiredBytes - source.Length)
             {
                 return false;
             }
@@ -209,36 +288,59 @@ namespace Hecton8.UI
 
             try
             {
-                if (!vaultMirror.IsCreated || fileBytes > vaultMirror.Length)
-                    return false;
-
-                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(vaultMirror);
-                Span<byte> mirrorSpan = MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(destination), fileBytes);
-                int totalRead = 0;
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.SequentialScan))
+                if (vault.IsCompactionFenceActive ||
+                    !vaultMirror.IsCreated ||
+                    vaultMirror.Length < requiredBytes)
                 {
-                    while (totalRead < fileBytes)
-                    {
-                        int read = stream.Read(mirrorSpan.Slice(totalRead));
-                        if (read <= 0)
-                            break;
-
-                        totalRead += read;
-                    }
+                    return false;
                 }
 
-                if (totalRead != fileBytes)
-                    return false;
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(vaultMirror) + destinationOffset;
+                Span<byte> destinationSpan = MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(destination), source.Length);
+                source.CopyTo(destinationSpan);
+                return !vault.IsCompactionFenceActive;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in vaultMirrorHandle, SystemID.UI);
+            }
+        }
 
-                if (!ValidateMappedBytes(destination, fileBytes))
+        private bool TryCommitVaultMirror(
+            IDataVault vault,
+            in VaultGenerationHandle<byte> vaultMirrorHandle,
+            int fileBytes)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                vaultMirrorHandle.BufferID == 0u ||
+                fileBytes <= 0)
+            {
+                ClearMappedState();
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in vaultMirrorHandle, SystemID.UI, out NativeArray<byte> vaultMirror))
+            {
+                ClearMappedState();
+                return false;
+            }
+
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !vaultMirror.IsCreated ||
+                    vaultMirror.Length < fileBytes)
                 {
-                    _mappedBytes = 0;
-                    _entryCount = 0;
-                    _btreeOffset = 0u;
-                    _btreeRootOffset = 0u;
-                    _btreeEndOffset = 0u;
-                    _btreeNodeCount = 0u;
-                    _btreeAvailable = false;
+                    ClearMappedState();
+                    return false;
+                }
+
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(vaultMirror);
+                if (!ValidateMappedBytes(destination, fileBytes) ||
+                    vault.IsCompactionFenceActive)
+                {
+                    ClearMappedState();
                     return false;
                 }
 
@@ -249,18 +351,25 @@ namespace Hecton8.UI
                 _vaultMirrorBacked = true;
                 return true;
             }
-            catch (Exception exception) when (
-                exception is IOException ||
-                exception is UnauthorizedAccessException ||
-                exception is NotSupportedException ||
-                exception is ArgumentException)
-            {
-                return false;
-            }
             finally
             {
                 vault.ReleaseWriteLock(in vaultMirrorHandle, SystemID.UI);
             }
+        }
+
+        private void ClearMappedState()
+        {
+            _mappedBytes = 0;
+            _entryCount = 0;
+            _btreeOffset = 0u;
+            _btreeRootOffset = 0u;
+            _btreeEndOffset = 0u;
+            _btreeNodeCount = 0u;
+            _vault = null;
+            _vaultMirrorHandle = default;
+            _vaultMirrorLength = 0;
+            _vaultMirrorBacked = false;
+            _btreeAvailable = false;
         }
 
         private bool ValidateMappedBytes(byte* basePointer, int mappedBytes)
@@ -399,10 +508,13 @@ namespace Hecton8.UI
             mappedBytes = _mappedBytes;
             if (_vaultMirrorBacked)
             {
-                if (_vault == null ||
+                IDataVault vault = _vault;
+                if (vault == null ||
+                    vault.IsCompactionFenceActive ||
                     _vaultMirrorHandle.BufferID == 0u ||
                     _vaultMirrorLength < _mappedBytes ||
-                    !_vault.TryResolveHandle(in _vaultMirrorHandle, out NativeArray<byte> vaultMirror) ||
+                    !vault.TryReadOnlyHandle(in _vaultMirrorHandle, out NativeArray<byte>.ReadOnly vaultMirror) ||
+                    vault.IsCompactionFenceActive ||
                     !vaultMirror.IsCreated ||
                     vaultMirror.Length < _mappedBytes)
                 {
@@ -411,7 +523,7 @@ namespace Hecton8.UI
                     return false;
                 }
 
-                basePointer = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(vaultMirror);
+                basePointer = (byte*)vaultMirror.GetUnsafeReadOnlyPtr();
                 mappedBytes = _mappedBytes;
             }
 

@@ -1,17 +1,20 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
 using Hecton8.VFX;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
@@ -52,6 +55,7 @@ namespace Hecton8.Physics
         private const int CompartmentCapacity = 8;
         private const int MaxQueuedImpacts = 16;
         private const int MaxActiveBreaches = 64;
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
         private const int DeferredBreachAddCapacity = 16;
         private const int MinVisibleBreachLimit = 8;
         private const int LeakPlumeParticleCapacity = MaxActiveBreaches * 4;
@@ -81,17 +85,66 @@ namespace Hecton8.Physics
         private const float CriticalBreachWarningCadenceSeconds = 1.5f;
         private const uint DamageControlTelemetryInvalidFlag = 1u;
         private const uint DamageControlTelemetryRepairJobInFlightFlag = 2u;
+        private const uint DamageControlTelemetryCompactionFenceFlag = 4u;
+        private const uint DamageControlTelemetryWriteLockFailureFlag = 8u;
+        private const uint DamageControlTelemetryBufferLockFailureFlag = 16u;
+        private const uint DamageControlTelemetryStaleHandleFlag = 32u;
+        private const uint DamageControlTelemetryCapacityFailureFlag = 64u;
+        private const ushort FailureCodeNone = 0;
+        private const ushort FailureCodeInvalidState = 1;
+        private const ushort FailureCodeWriteLock = 2;
+        private const ushort FailureCodeBufferLock = 3;
+        private const ushort FailureCodeCompactionFence = 4;
+        private const ushort FailureCodeStaleHandle = 5;
+        private const ushort FailureCodeCapacityMismatch = 6;
         private const uint HullDentVisualDamageType = 3u;
         private const uint HullDentVisualSourceHash = 0xD3CA0149u;
         private const float DefaultLeakPlumeParticleSizeMeters = 0.18f;
         private const float DefaultLeakPlumeRenderBoundsPaddingMeters = 4f;
         private const float LeakPlumeClockMaxSeconds = 16777215f;
         private const float Epsilon = 0.0001f;
+        private const double AupLocalCastClampMeters = 100000.0;
         private const string LeakPlumeComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_LeakPlume.compute";
         private const string LeakPlumeMaterialAssetPath = "Assets/_Project/Art/Materials/VFX/Mat_LeakPlume.mat";
-        private const string DamageControlDumpPath = "Docs/AgentLogs/Dump_SUBMARINE_DAMAGE_CONTROL.bin";
-        private const string NativeMemoryOwner = nameof(SubmarineStructuralGrid);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const string DamageControlDumpPath = "Docs/AgentLogs/Dump_1326_SubmarineStructuralGrid.bin";
+        private const SystemID VaultOwnerSystemId = SystemID.VehiclesPhysics;
+        private const ulong StructuralMutationGuardMask = 1UL << 46;
+
+        private const int LockCellIntegrityFront = 1 << 0;
+        private const int LockCellIntegrityBack = 1 << 1;
+        private const int LockCellFatigue = 1 << 2;
+        private const int LockCellCompartmentIndices = 1 << 3;
+        private const int LockHullBreachMaskFront = 1 << 4;
+        private const int LockHullBreachMaskBack = 1 << 5;
+        private const int LockCompartmentBreachAreasFront = 1 << 6;
+        private const int LockCompartmentBreachAreasBack = 1 << 7;
+        private const int LockQueuedImpacts = 1 << 8;
+        private const int LockScheduledImpacts = 1 << 9;
+        private const int LockCompartmentCentroids = 1 << 10;
+        private const int LockFatigueCompartmentFlags = 1 << 11;
+        private const int LockFatigueIntegrityLossPerCycle = 1 << 12;
+        private const int LockFatiguePeakResult = 1 << 13;
+        private const int LockBreachSeveritySumResult = 1 << 14;
+        private const int LockBreaches = 1 << 15;
+
+        private static class StructuralGridVaultRoute
+        {
+            public const BufferID CellIntegrityFront = (BufferID)1326000;
+            public const BufferID CellIntegrityBack = (BufferID)1326001;
+            public const BufferID CellFatigue = (BufferID)1326002;
+            public const BufferID CellCompartmentIndices = (BufferID)1326003;
+            public const BufferID HullBreachMaskFront = (BufferID)1326004;
+            public const BufferID HullBreachMaskBack = (BufferID)1326005;
+            public const BufferID CompartmentBreachAreasFront = (BufferID)1326006;
+            public const BufferID CompartmentBreachAreasBack = (BufferID)1326007;
+            public const BufferID QueuedImpacts = (BufferID)1326008;
+            public const BufferID ScheduledImpacts = (BufferID)1326009;
+            public const BufferID CompartmentCentroids = (BufferID)1326010;
+            public const BufferID FatigueCompartmentFlags = (BufferID)1326011;
+            public const BufferID FatigueIntegrityLossPerCycle = (BufferID)1326012;
+            public const BufferID FatiguePeakResult = (BufferID)1326013;
+            public const BufferID BreachSeveritySumResult = (BufferID)1326014;
+        }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullDamageDiffusionJob : IJob
@@ -134,9 +187,7 @@ namespace Hecton8.Physics
                 for (int impactIndex = 0; impactIndex < ImpactCount; impactIndex++)
                 {
                     ImpactCommand impact = Impacts[impactIndex];
-                    if (impact.DamageBytes <= 0 || impact.RadiusMeters <= Epsilon)
-                        continue;
-
+                    float impactActive = math.select(0f, 1f, impact.DamageBytes > 0 && impact.RadiusMeters > Epsilon);
                     float sigmaMeters = math.max(impact.SigmaMeters, Epsilon);
                     float invTwoSigmaSq = 1f / (2f * sigmaMeters * sigmaMeters);
                     float radiusSq = impact.RadiusMeters * impact.RadiusMeters;
@@ -160,19 +211,13 @@ namespace Hecton8.Physics
                                 float localX = gridMin.x + ((x + 0.5f) * cellSize.x);
                                 float3 delta = new float3(localX, localY, localZ) - impact.LocalPoint;
                                 float distSq = math.lengthsq(delta);
-                                if (distSq > radiusSq)
-                                    continue;
-
                                 int cellIndex = yzBase + x;
                                 int currentIntegrity = OutputIntegrity[cellIndex];
-                                if (currentIntegrity <= 0)
-                                    continue;
-
+                                float activeCell = impactActive *
+                                                   math.select(0f, 1f, distSq <= radiusSq) *
+                                                   math.select(0f, 1f, currentIntegrity > 0);
                                 float weight = ApproximateExpNegPositive(distSq * invTwoSigmaSq);
-                                int damage = (int)math.round(impact.DamageBytes * weight);
-                                if (damage <= 0)
-                                    continue;
-
+                                int damage = (int)math.round(impact.DamageBytes * weight * activeCell);
                                 OutputIntegrity[cellIndex] = (byte)math.max(0, currentIntegrity - damage);
                             }
                         }
@@ -181,16 +226,18 @@ namespace Hecton8.Physics
 
                 for (int cellIndex = 0; cellIndex < CellCount; cellIndex++)
                 {
-                    if (OutputIntegrity[cellIndex] > 0)
-                        continue;
-
+                    int breached = math.select(0, 1, OutputIntegrity[cellIndex] <= 0);
                     int wordIndex = cellIndex >> 6;
                     int bitIndex = cellIndex & 63;
-                    OutputBreachMaskWords[wordIndex] |= 1UL << bitIndex;
+                    ulong breachBit = (1UL << bitIndex) & unchecked((ulong)-(long)breached);
+                    OutputBreachMaskWords[wordIndex] |= breachBit;
 
                     byte compartmentIndex = CellCompartmentIndices[cellIndex];
-                    if (compartmentIndex < OutputCompartmentBreachAreas.Length)
-                        OutputCompartmentBreachAreas[compartmentIndex] += CellBreachAreaSquareMeters;
+                    int safeCompartmentIndex = math.clamp((int)compartmentIndex, 0, OutputCompartmentBreachAreas.Length - 1);
+                    float compartmentWrite = CellBreachAreaSquareMeters *
+                                             breached *
+                                             math.select(0f, 1f, compartmentIndex < OutputCompartmentBreachAreas.Length);
+                    OutputCompartmentBreachAreas[safeCompartmentIndex] += compartmentWrite;
                 }
             }
 
@@ -220,12 +267,6 @@ namespace Hecton8.Physics
 
             public void Execute(int cellIndex)
             {
-                if (CompartmentCount <= 0)
-                {
-                    CellCompartmentIndices[cellIndex] = UnmappedCompartment;
-                    return;
-                }
-
                 int x = cellIndex % GridWidth;
                 int yz = cellIndex / GridWidth;
                 int y = yz % GridHeight;
@@ -236,20 +277,19 @@ namespace Hecton8.Physics
                     GridHeight > 0 ? GridSizeLocal.y / GridHeight : 0f,
                     GridDepth > 0 ? GridSizeLocal.z / GridDepth : 0f);
                 float3 cellLocalPoint = gridMin + (new float3(x + 0.5f, y + 0.5f, z + 0.5f) * cellSize);
-                byte nearestIndex = UnmappedCompartment;
+                int nearestIndex = UnmappedCompartment;
                 float nearestDistanceSq = float.MaxValue;
+                int safeCompartmentCount = math.max(0, CompartmentCount);
 
-                for (int compartmentIndex = 0; compartmentIndex < CompartmentCount; compartmentIndex++)
+                for (int compartmentIndex = 0; compartmentIndex < safeCompartmentCount; compartmentIndex++)
                 {
                     float distanceSq = math.lengthsq(cellLocalPoint - CompartmentCentroids[compartmentIndex]);
-                    if (distanceSq < nearestDistanceSq)
-                    {
-                        nearestDistanceSq = distanceSq;
-                        nearestIndex = (byte)compartmentIndex;
-                    }
+                    bool closer = distanceSq < nearestDistanceSq;
+                    nearestDistanceSq = math.select(nearestDistanceSq, distanceSq, closer);
+                    nearestIndex = math.select(nearestIndex, compartmentIndex, closer);
                 }
 
-                CellCompartmentIndices[cellIndex] = nearestIndex;
+                CellCompartmentIndices[cellIndex] = (byte)math.select((int)UnmappedCompartment, nearestIndex, safeCompartmentCount > 0);
             }
         }
 
@@ -268,37 +308,33 @@ namespace Hecton8.Physics
 
             public void Execute()
             {
-                float peak = PeakNormalized.Length > 0 ? PeakNormalized[0] : 0f;
+                float peak = PeakNormalized[0];
+                int lastFlagIndex = math.max(0, FatigueCompartmentFlags.Length - 1);
                 for (int cellIndex = 0; cellIndex < CellCount; cellIndex++)
                 {
                     byte compartmentIndex = CellCompartmentIndices[cellIndex];
-                    if (compartmentIndex >= FatigueCompartmentFlags.Length ||
-                        FatigueCompartmentFlags[compartmentIndex] == 0)
-                    {
-                        continue;
-                    }
+                    int safeCompartmentIndex = math.clamp((int)compartmentIndex, 0, lastFlagIndex);
+                    int active = math.select(0, 1, compartmentIndex < FatigueCompartmentFlags.Length) &
+                                 math.select(0, 1, FatigueCompartmentFlags[safeCompartmentIndex] != 0);
 
                     byte fatigue = CellFatigue[cellIndex];
-                    if (fatigue < byte.MaxValue)
-                        fatigue++;
+                    int fatigueValue = math.min(byte.MaxValue, fatigue + active);
 
-                    CellFatigue[cellIndex] = fatigue;
-                    peak = math.max(peak, fatigue / (float)byte.MaxValue);
-                    float scaledIntegrityLossPerCycle = math.max(0f, FatigueIntegrityLossPerCycle[compartmentIndex]);
-                    int integrityCap = math.max(0, (int)math.floor(FullIntegrity - (fatigue * scaledIntegrityLossPerCycle)));
+                    CellFatigue[cellIndex] = (byte)fatigueValue;
+                    peak = math.max(peak, fatigueValue / (float)byte.MaxValue);
+                    float scaledIntegrityLossPerCycle = math.max(0f, FatigueIntegrityLossPerCycle[safeCompartmentIndex]) * active;
+                    int integrityCap = math.max(0, (int)math.floor(FullIntegrity - (fatigueValue * scaledIntegrityLossPerCycle)));
                     byte cappedIntegrity = (byte)integrityCap;
-                    if (CellIntegrityFront[cellIndex] > cappedIntegrity)
-                        CellIntegrityFront[cellIndex] = cappedIntegrity;
-
-                    if (CellIntegrityBack[cellIndex] > cappedIntegrity)
-                        CellIntegrityBack[cellIndex] = cappedIntegrity;
+                    byte currentFront = CellIntegrityFront[cellIndex];
+                    byte currentBack = CellIntegrityBack[cellIndex];
+                    CellIntegrityFront[cellIndex] = (byte)math.select((int)currentFront, math.min((int)currentFront, integrityCap), active != 0);
+                    CellIntegrityBack[cellIndex] = (byte)math.select((int)currentBack, math.min((int)currentBack, integrityCap), active != 0);
                 }
 
                 for (int i = 0; i < FatigueCompartmentFlags.Length; i++)
                     FatigueCompartmentFlags[i] = 0;
 
-                if (PeakNormalized.Length > 0)
-                    PeakNormalized[0] = peak;
+                PeakNormalized[0] = peak;
             }
         }
 
@@ -314,7 +350,21 @@ namespace Hecton8.Physics
             [FieldOffset(20)]
             public int DamageBytes;
             [FieldOffset(24)]
-            private ulong _pad0;
+            private byte _pad0;
+            [FieldOffset(25)]
+            private byte _pad1;
+            [FieldOffset(26)]
+            private byte _pad2;
+            [FieldOffset(27)]
+            private byte _pad3;
+            [FieldOffset(28)]
+            private byte _pad4;
+            [FieldOffset(29)]
+            private byte _pad5;
+            [FieldOffset(30)]
+            private byte _pad6;
+            [FieldOffset(31)]
+            private byte _pad7;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -335,41 +385,52 @@ namespace Hecton8.Physics
                 {
                     float4 breach = Breaches[i];
                     float severity = math.max(0f, breach.w);
-                    if (severity > 0f)
-                    {
-                        float3 breachDelta = new float3(breach.x, breach.y, breach.z) - LocalHitPoint;
-                        if (math.lengthsq(breachDelta) <= RepairRadiusSq)
-                            severity = math.max(0f, severity - RepairDelta);
-
-                        breach.w = severity;
-                        Breaches[i] = breach;
-                    }
+                    float3 breachDelta = new float3(breach.x, breach.y, breach.z) - LocalHitPoint;
+                    float repairActive = math.select(0f, 1f, severity > 0f && math.lengthsq(breachDelta) <= RepairRadiusSq);
+                    severity = math.max(0f, severity - (RepairDelta * repairActive));
+                    breach.w = severity;
+                    Breaches[i] = breach;
 
                     sum += severity;
                 }
 
-                if (SeveritySum.IsCreated && SeveritySum.Length > 0)
-                    SeveritySum[0] = math.isfinite(sum) ? sum : 0f;
+                SeveritySum[0] = math.select(0f, sum, math.isfinite(sum));
             }
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
-        private struct DamageControlTelemetryEntry
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        private struct StructuralTelemetryEntry
         {
             [FieldOffset(0)]
-            public float3 FirstBreachLocal;
-            [FieldOffset(12)]
-            public float SeveritySum;
+            public float4 FirstBreachLocalSeverity;
             [FieldOffset(16)]
-            public ushort ActiveBreachCount;
-            [FieldOffset(18)]
-            public ushort VisibleBreachCount;
+            public float SeveritySum;
             [FieldOffset(20)]
-            public uint Frame;
+            public float CpuMicroseconds;
             [FieldOffset(24)]
-            public uint Flags;
+            public float GpuMicroseconds;
             [FieldOffset(28)]
+            public uint Frame;
+            [FieldOffset(32)]
+            public uint Flags;
+            [FieldOffset(36)]
             public uint StateHash;
+            [FieldOffset(40)]
+            public uint BufferId;
+            [FieldOffset(44)]
+            public uint Generation;
+            [FieldOffset(48)]
+            public uint VaultGeneration;
+            [FieldOffset(52)]
+            public uint Sequence;
+            [FieldOffset(56)]
+            public ushort ActiveBreachCount;
+            [FieldOffset(58)]
+            public ushort VisibleBreachCount;
+            [FieldOffset(60)]
+            public ushort FailureCode;
+            [FieldOffset(62)]
+            public ushort ConsecutiveFailureCount;
         }
 
         [Header("Grid Authoring")]
@@ -479,6 +540,7 @@ namespace Hecton8.Physics
         private int _visibleBreachCount;
         private int _pendingMappedCompartmentCount;
         private int _leakPlumeKernelIndex = -1;
+        private int _leakPlumeThreadGroupSizeX;
         private int _activeBreachGpuBufferIndex;
         private int _damageControlTelemetryHead;
         private int _deferredBreachAddCount;
@@ -519,30 +581,44 @@ namespace Hecton8.Physics
         private MaterialPropertyBlock _leakPlumeDrawProperties;
         private IDataVault _dataVault;
         private VaultGenerationHandle<float4> _breachesHandle;
-        private VaultGenerationHandle<DamageControlTelemetryEntry> _damageControlTelemetryHandle;
+        private VaultGenerationHandle<StructuralTelemetryEntry> _damageControlTelemetryHandle;
         private bool _breachRepairJobRunning;
         private bool _pendingRepairQueued;
         private bool _breachGpuDirty;
         private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) - local component search scratch for interface-only wiring - owner: SubmarineStructuralGrid
 
+        private VaultGenerationHandle<byte> _cellIntegrityFrontHandle;
+        private VaultGenerationHandle<byte> _cellIntegrityBackHandle;
+        private VaultGenerationHandle<byte> _cellFatigueHandle;
+        private VaultGenerationHandle<byte> _cellCompartmentIndicesHandle;
+        private VaultGenerationHandle<ulong> _hullBreachMaskFrontHandle;
+        private VaultGenerationHandle<ulong> _hullBreachMaskBackHandle;
+        private VaultGenerationHandle<float> _compartmentBreachAreasFrontHandle;
+        private VaultGenerationHandle<float> _compartmentBreachAreasBackHandle;
+        private VaultGenerationHandle<ImpactCommand> _queuedImpactsHandle;
+        private VaultGenerationHandle<ImpactCommand> _scheduledImpactsHandle;
+        private VaultGenerationHandle<float3> _compartmentCentroidsHandle;
+        private VaultGenerationHandle<byte> _fatigueCompartmentFlagsHandle;
+        private VaultGenerationHandle<float> _fatigueIntegrityLossPerCycleHandle;
+        private VaultGenerationHandle<float> _fatiguePeakResultHandle;
+        private VaultGenerationHandle<float> _breachSeveritySumResultHandle;
+        private int _damageJobLockMask;
+        private int _mappingJobLockMask;
+        private int _fatigueJobLockMask;
+        private int _breachRepairJobLockMask;
+        private uint _structuralTelemetrySequence;
+        private uint _structuralTelemetryFailureCount;
+        private readonly StructuralTelemetryEntry[] _damageControlTelemetryDumpSnapshot = new StructuralTelemetryEntry[DamageControlTelemetryCapacity]; // COLD ALLOC: fixed black-box dump snapshot; hot path only copies into it.
+        private readonly AutoResetEvent _damageControlTelemetryDumpSignal = new AutoResetEvent(false); // COLD ALLOC: persistent dump-worker wake signal.
+        private Thread _damageControlTelemetryDumpThread;
+        private string _damageControlTelemetryDumpPath;
+        private int _damageControlTelemetryDumpHead;
+        private int _damageControlTelemetryDumpRequested;
+        private int _damageControlTelemetryDumpStop;
+        private bool _damageControlTelemetryDumpSignalDisposed;
+
         /// <summary>Signals refused by bounded downstream lanes since this runtime was enabled.</summary>
         public int DroppedSignalCount => _droppedSignalCount;
-
-        private NativeArray<byte> _cellIntegrityFront;
-        private NativeArray<byte> _cellIntegrityBack;
-        private NativeArray<byte> _cellFatigue;
-        private NativeArray<byte> _cellCompartmentIndices;
-        private NativeArray<ulong> _hullBreachMaskFront;
-        private NativeArray<ulong> _hullBreachMaskBack;
-        private NativeArray<float> _compartmentBreachAreasFront;
-        private NativeArray<float> _compartmentBreachAreasBack;
-        private NativeArray<ImpactCommand> _queuedImpacts;
-        private NativeArray<ImpactCommand> _scheduledImpacts;
-        private NativeArray<float3> _compartmentCentroids;
-        private NativeArray<byte> _fatigueCompartmentFlags;
-        private NativeArray<float> _fatigueIntegrityLossPerCycle;
-        private NativeArray<float> _fatiguePeakResult;
-        private NativeArray<float> _breachSeveritySumResult;
         private readonly float4[] _deferredBreachAdds = new float4[DeferredBreachAddCapacity]; // COLD ALLOC: float4[16] - breach adds deferred while Burst repair owns the NativeArray - owner: SubmarineStructuralGrid
         private GraphicsBuffer _breachGpuBufferA;
         private GraphicsBuffer _breachGpuBufferB;
@@ -579,13 +655,22 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public bool IsReady => _nativeStateReady && _cellIntegrityFront.IsCreated;
+        public bool IsReady => _nativeStateReady && IsGenerationHandleCreated(in _cellIntegrityFrontHandle);
 
         /// <inheritdoc />
-        public int BreachMaskWordCount => _hullBreachMaskFront.IsCreated ? _hullBreachMaskFront.Length : 0;
+        public int BreachMaskWordCount
+        {
+            get
+            {
+                int breachWordCount = (ResolveCellCount() + 63) >> 6;
+                return TryReadVaultBuffer(_dataVault, in _hullBreachMaskFrontHandle, breachWordCount, out NativeArray<ulong>.ReadOnly words)
+                    ? words.Length
+                    : 0;
+            }
+        }
 
         /// <inheritdoc />
-        public int ActiveBreachCount => _nativeStateReady && TryResolveBreachBuffer(out var breaches)
+        public int ActiveBreachCount => _nativeStateReady && TryReadBreachBuffer(out var breaches)
             ? math.min(_activeBreachCount, breaches.Length)
             : 0;
 
@@ -615,6 +700,7 @@ namespace Hecton8.Physics
             ResolveGridBounds();
             EnsureNativeState();
             SeedStructuralState();
+            EnsureDamageControlTelemetryDumpWorker();
             EnsureHullImpactSparkParticles();
         }
 
@@ -627,9 +713,11 @@ namespace Hecton8.Physics
             EnsureNativeState();
             SeedStructuralState();
             GlobalRegistry.RegisterSubmarineHullBreach(this);
+            InteractableRegistry.RegisterTree(this);
             if (Application.isPlaying)
                 GlobalRegistry.TryRegisterHotSwapListener(this);
 
+            EnsureDamageControlTelemetryDumpWorker();
             TryRegister();
             TryRegisterDamageReceiver();
             EnsureHullImpactSparkParticles();
@@ -640,12 +728,14 @@ namespace Hecton8.Physics
             StopHullImpactSparkParticles();
             TryUnregisterDamageReceiver();
             TryUnregister();
+            InteractableRegistry.InvalidateTree(this);
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             ClearGlobalRegistryServiceCache();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
                 GlobalRegistry.UnregisterSubmarineHullBreach(this);
             ResetFakeCrushDepthGlobals();
             ReleaseLeakPlumeGpuResources();
+            StopDamageControlTelemetryDumpWorker();
             DisposeNativeStateDeferred();
         }
 
@@ -654,13 +744,16 @@ namespace Hecton8.Physics
             StopHullImpactSparkParticles();
             TryUnregisterDamageReceiver();
             TryUnregister();
+            InteractableRegistry.InvalidateTree(this);
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             ClearGlobalRegistryServiceCache();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
                 GlobalRegistry.UnregisterSubmarineHullBreach(this);
             ResetFakeCrushDepthGlobals();
             ReleaseLeakPlumeGpuResources();
+            StopDamageControlTelemetryDumpWorker();
             DisposeNativeStateDeferred();
+            ReleaseDamageControlTelemetryDumpSignal();
         }
 
         /// <inheritdoc />
@@ -668,7 +761,7 @@ namespace Hecton8.Physics
         {
             using (_fixedTickProfilerMarker.Auto())
             {
-                if (!_nativeStateReady || !_cellIntegrityFront.IsCreated)
+                if (!IsReady)
                     return;
 
                 _recentImpactSeverityNormalized = math.max(
@@ -723,25 +816,47 @@ namespace Hecton8.Physics
         /// </summary>
         public void QueueImpactLocal(float3 localPoint, float impactSpeed, byte integrityDelta)
         {
-            if (!_nativeStateReady || !_queuedImpacts.IsCreated || _queuedImpactCount >= _queuedImpacts.Length)
+            if (!_nativeStateReady ||
+                _queuedImpactCount >= MaxQueuedImpacts ||
+                !TryAcquireStructuralMutationGuard())
                 return;
 
-            float radius = math.max(minimumImpactRadiusMeters, impactSpeed * impactRadiusPerMeterPerSecond);
-            float sigma = math.max(minimumSigmaMeters, radius * sigmaScale);
-            float damageFromImpact = math.max(0f, impactSpeed) * impactSpeedToCellDamageScale;
-            float damageFromSignal = integrityDelta * integrityByteToCellDamageScale;
-            int damageBytes = (int)math.round(math.clamp(damageFromImpact + damageFromSignal, 1f, FullIntegrity));
-            _recentImpactSeverityNormalized = math.max(
-                _recentImpactSeverityNormalized,
-                math.saturate(damageBytes / (float)FullIntegrity));
-
-            _queuedImpacts[_queuedImpactCount++] = new ImpactCommand
+            try
             {
-                LocalPoint = localPoint,
-                RadiusMeters = radius,
-                SigmaMeters = sigma,
-                DamageBytes = damageBytes
-            };
+                if (!TryAcquireStructuralWriteBuffer(in _queuedImpactsHandle, MaxQueuedImpacts, out NativeArray<ImpactCommand> queuedImpacts))
+                    return;
+
+                try
+                {
+                    if (_queuedImpactCount >= queuedImpacts.Length)
+                        return;
+
+                    float radius = math.max(minimumImpactRadiusMeters, impactSpeed * impactRadiusPerMeterPerSecond);
+                    float sigma = math.max(minimumSigmaMeters, radius * sigmaScale);
+                    float damageFromImpact = math.max(0f, impactSpeed) * impactSpeedToCellDamageScale;
+                    float damageFromSignal = integrityDelta * integrityByteToCellDamageScale;
+                    int damageBytes = (int)math.round(math.clamp(damageFromImpact + damageFromSignal, 1f, FullIntegrity));
+                    _recentImpactSeverityNormalized = math.max(
+                        _recentImpactSeverityNormalized,
+                        math.saturate(damageBytes / (float)FullIntegrity));
+
+                    queuedImpacts[_queuedImpactCount++] = new ImpactCommand
+                    {
+                        LocalPoint = localPoint,
+                        RadiusMeters = radius,
+                        SigmaMeters = sigma,
+                        DamageBytes = damageBytes
+                    };
+                }
+                finally
+                {
+                    _dataVault?.ReleaseWriteLock(in _queuedImpactsHandle, VaultOwnerSystemId);
+                }
+            }
+            finally
+            {
+                ReleaseStructuralMutationGuard();
+            }
         }
 
         /// <summary>
@@ -1012,16 +1127,19 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public ulong GetHullBreachMaskWord(int wordIndex)
         {
-            return _hullBreachMaskFront.IsCreated && (uint)wordIndex < (uint)_hullBreachMaskFront.Length
-                ? _hullBreachMaskFront[wordIndex]
+            int breachWordCount = (ResolveCellCount() + 63) >> 6;
+            return TryReadVaultBuffer(_dataVault, in _hullBreachMaskFrontHandle, breachWordCount, out NativeArray<ulong>.ReadOnly words) &&
+                   (uint)wordIndex < (uint)words.Length
+                ? words[wordIndex]
                 : 0UL;
         }
 
         /// <inheritdoc />
         public float GetCompartmentBreachAreaSquareMeters(int compartmentIndex)
         {
-            return _compartmentBreachAreasFront.IsCreated && (uint)compartmentIndex < (uint)_compartmentBreachAreasFront.Length
-                ? _compartmentBreachAreasFront[compartmentIndex]
+            return TryReadVaultBuffer(_dataVault, in _compartmentBreachAreasFrontHandle, CompartmentCapacity, out NativeArray<float>.ReadOnly areas) &&
+                   (uint)compartmentIndex < (uint)areas.Length
+                ? areas[compartmentIndex]
                 : 0f;
         }
 
@@ -1030,7 +1148,7 @@ namespace Hecton8.Physics
         {
             localPointSeverity = default;
             if (!_nativeStateReady ||
-                !TryResolveBreachBuffer(out var breaches) ||
+                !TryReadBreachBuffer(out var breaches) ||
                 (uint)index >= (uint)math.min(_activeBreachCount, breaches.Length))
             {
                 return false;
@@ -1049,21 +1167,20 @@ namespace Hecton8.Physics
         {
             roomId = -1;
             if (!_nativeStateReady ||
-                !_compartmentCentroids.IsCreated ||
+                _mappingJobRunning ||
+                _mappedCompartmentCount <= 0 ||
+                !TryReadVaultBuffer(_dataVault, in _compartmentCentroidsHandle, CompartmentCapacity, out NativeArray<float3>.ReadOnly centroids) ||
                 !TryResolveLocalPointAup(worldHitPoint, out float3 localPoint))
             {
                 return false;
             }
 
-            if (!EnsureCompartmentMappingReady() || _mappedCompartmentCount <= 0)
-                return false;
-
             float bestDistanceSq = float.MaxValue;
             int bestRoomId = -1;
-            int count = math.min(_mappedCompartmentCount, _compartmentCentroids.Length);
+            int count = math.min(_mappedCompartmentCount, centroids.Length);
             for (int compartmentIndex = 0; compartmentIndex < count; compartmentIndex++)
             {
-                float distanceSq = math.lengthsq(localPoint - _compartmentCentroids[compartmentIndex]);
+                float distanceSq = math.lengthsq(localPoint - centroids[compartmentIndex]);
                 if (distanceSq >= bestDistanceSq)
                     continue;
 
@@ -1079,7 +1196,7 @@ namespace Hecton8.Physics
         public bool TryQueueRepairHit(Vector3 worldHitPoint, float deltaTime, float repairUnitsPerSecond, float intensity01)
         {
             if (!_nativeStateReady ||
-                !TryResolveBreachBuffer(out var breaches) ||
+                !TryReadBreachBuffer(out var breaches) ||
                 _breachRepairJobRunning ||
                 _activeBreachCount <= 0 ||
                 !IsFiniteVector(worldHitPoint))
@@ -1142,7 +1259,7 @@ namespace Hecton8.Physics
 
         private void AddOrRefreshBreachLocal(float3 localPoint, float severity01)
         {
-            if (!_nativeStateReady || !TryResolveBreachBuffer(out var breaches) || !math.all(math.isfinite(localPoint)))
+            if (!_nativeStateReady || !math.all(math.isfinite(localPoint)))
                 return;
 
             float severity = math.saturate(severity01);
@@ -1155,32 +1272,52 @@ namespace Hecton8.Physics
                 return;
             }
 
-            int count = math.min(_activeBreachCount, breaches.Length);
-            float mergeRadiusSq = BreachMergeRadiusMeters * BreachMergeRadiusMeters;
-            for (int i = 0; i < count; i++)
+            if (!TryAcquireStructuralMutationGuard())
+                return;
+
+            try
             {
-                float4 breach = breaches[i];
-                float3 breachDelta = new float3(breach.x, breach.y, breach.z) - localPoint;
-                if (math.lengthsq(breachDelta) > mergeRadiusSq)
-                    continue;
+                if (!TryAcquireBreachWriteBuffer(out NativeArray<float4> breaches))
+                    return;
 
-                _activeBreachSeveritySum -= math.max(0f, breach.w);
-                breach.w = math.saturate(math.max(breach.w, severity));
-                _activeBreachSeveritySum += breach.w;
-                breaches[i] = breach;
-                _breachGpuDirty = true;
-                RegisterBreachScreenSpaceFeedback(localPoint, breach.w);
-                return;
+                try
+                {
+                    int count = math.min(_activeBreachCount, breaches.Length);
+                    float mergeRadiusSq = BreachMergeRadiusMeters * BreachMergeRadiusMeters;
+                    for (int i = 0; i < count; i++)
+                    {
+                        float4 breach = breaches[i];
+                        float3 breachDelta = new float3(breach.x, breach.y, breach.z) - localPoint;
+                        if (math.lengthsq(breachDelta) > mergeRadiusSq)
+                            continue;
+
+                        _activeBreachSeveritySum -= math.max(0f, breach.w);
+                        breach.w = math.saturate(math.max(breach.w, severity));
+                        _activeBreachSeveritySum += breach.w;
+                        breaches[i] = breach;
+                        _breachGpuDirty = true;
+                        RegisterBreachScreenSpaceFeedback(localPoint, breach.w);
+                        return;
+                    }
+
+                    if (count >= breaches.Length)
+                        return;
+
+                    breaches[count] = new float4(localPoint, severity);
+                    _activeBreachCount = count + 1;
+                    _activeBreachSeveritySum += severity;
+                    _breachGpuDirty = true;
+                    RegisterBreachScreenSpaceFeedback(localPoint, severity);
+                }
+                finally
+                {
+                    _dataVault?.ReleaseWriteLock(in _breachesHandle, VaultOwnerSystemId);
+                }
             }
-
-            if (count >= breaches.Length)
-                return;
-
-            breaches[count] = new float4(localPoint, severity);
-            _activeBreachCount = count + 1;
-            _activeBreachSeveritySum += severity;
-            _breachGpuDirty = true;
-            RegisterBreachScreenSpaceFeedback(localPoint, severity);
+            finally
+            {
+                ReleaseStructuralMutationGuard();
+            }
         }
 
         private void QueueDeferredBreachAdd(float3 localPoint, float severity01)
@@ -1306,7 +1443,7 @@ namespace Hecton8.Physics
 
         private void ScheduleBreachRepairJob()
         {
-            if (!_pendingRepairQueued || !TryResolveBreachBuffer(out var breaches) || _activeBreachCount <= 0)
+            if (!_pendingRepairQueued || _activeBreachCount <= 0 || _breachRepairJobLockMask != 0)
             {
                 _pendingRepairQueued = false;
                 return;
@@ -1314,21 +1451,68 @@ namespace Hecton8.Physics
 
             using (_breachRepairProfilerMarker.Auto())
             {
-                if (_breachSeveritySumResult.IsCreated)
-                    _breachSeveritySumResult[0] = _activeBreachSeveritySum;
+                NativeArray<float> severitySum;
+                if (!TryAcquireStructuralMutationGuard())
+                    return;
 
-                _breachRepairJobHandle = new BreachRepairJob
+                try
                 {
-                    Breaches = breaches,
-                    SeveritySum = _breachSeveritySumResult,
-                    ActiveCount = _activeBreachCount,
-                    LocalHitPoint = _pendingRepairLocalPoint,
-                    RepairDelta = math.max(0f, _pendingRepairSeverityDelta),
-                    RepairRadiusSq = BreachRepairRadiusMeters * BreachRepairRadiusMeters
-                }.Schedule();
+                    if (!TryAcquireStructuralWriteBuffer(in _breachSeveritySumResultHandle, 1, out severitySum))
+                        return;
 
-                _breachRepairJobRunning = true;
-                _pendingRepairQueued = false;
+                    try
+                    {
+                        severitySum[0] = _activeBreachSeveritySum;
+                    }
+                    finally
+                    {
+                        _dataVault?.ReleaseWriteLock(in _breachSeveritySumResultHandle, VaultOwnerSystemId);
+                    }
+                }
+                finally
+                {
+                    ReleaseStructuralMutationGuard();
+                }
+
+                int lockMask = 0;
+                if (!TryLockStructuralJobBuffer(in _breachesHandle, LockBreaches, ref lockMask) ||
+                    !TryLockStructuralJobBuffer(in _breachSeveritySumResultHandle, LockBreachSeveritySumResult, ref lockMask))
+                {
+                    UnlockStructuralJobBuffers(lockMask);
+                    return;
+                }
+
+                if (!TryResolveBreachBuffer(out NativeArray<float4> breaches) ||
+                    !TryResolveVaultBuffer(_dataVault, in _breachSeveritySumResultHandle, 1, out severitySum))
+                {
+                    UnlockStructuralJobBuffers(lockMask);
+                    return;
+                }
+
+                _breachRepairJobLockMask = lockMask;
+                try
+                {
+                    new BreachRepairJob
+                    {
+                        Breaches = breaches,
+                        SeveritySum = severitySum,
+                        ActiveCount = _activeBreachCount,
+                        LocalHitPoint = _pendingRepairLocalPoint,
+                        RepairDelta = math.max(0f, _pendingRepairSeverityDelta),
+                        RepairRadiusSq = BreachRepairRadiusMeters * BreachRepairRadiusMeters
+                    }.Run();
+
+                    _activeBreachSeveritySum = math.max(0f, severitySum[0]);
+                    _breachGpuDirty = true;
+                    _pendingRepairQueued = false;
+                }
+                finally
+                {
+                    UnlockStructuralJobBuffers(_breachRepairJobLockMask);
+                    _breachRepairJobLockMask = 0;
+                    _breachRepairJobHandle = default;
+                    _breachRepairJobRunning = false;
+                }
             }
         }
 
@@ -1337,52 +1521,66 @@ namespace Hecton8.Physics
             if (!_breachRepairJobRunning)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _breachRepairJobHandle, false))
-                return;
-
             _breachRepairJobHandle = default;
             _breachRepairJobRunning = false;
-            _activeBreachSeveritySum = _breachSeveritySumResult.IsCreated && _breachSeveritySumResult.Length > 0
-                ? math.max(0f, _breachSeveritySumResult[0])
-                : RecalculateBreachSeveritySum();
+            _activeBreachSeveritySum = RecalculateBreachSeveritySum();
+            UnlockStructuralJobBuffers(_breachRepairJobLockMask);
+            _breachRepairJobLockMask = 0;
             _breachGpuDirty = true;
         }
 
         private void CompactInactiveBreaches()
         {
-            if (!TryResolveBreachBuffer(out var breaches) || _breachRepairJobRunning)
+            if (_breachRepairJobRunning || !TryAcquireStructuralMutationGuard())
                 return;
 
-            int count = math.min(_activeBreachCount, breaches.Length);
-            float sum = 0f;
-            bool compacted = false;
-            int i = 0;
-            while (i < count)
+            try
             {
-                float4 breach = breaches[i];
-                if (breach.w > 0f && math.all(math.isfinite(breach)))
+                if (!TryAcquireBreachWriteBuffer(out NativeArray<float4> breaches))
+                    return;
+
+                try
                 {
-                    sum += breach.w;
-                    i++;
-                    continue;
+                    int count = math.min(_activeBreachCount, breaches.Length);
+                    float sum = 0f;
+                    bool compacted = false;
+                    int i = 0;
+                    while (i < count)
+                    {
+                        float4 breach = breaches[i];
+                        if (breach.w > 0f && math.all(math.isfinite(breach)))
+                        {
+                            sum += breach.w;
+                            i++;
+                            continue;
+                        }
+
+                        int lastIndex = count - 1;
+                        breaches[i] = breaches[lastIndex];
+                        breaches[lastIndex] = float4.zero;
+                        count--;
+                        compacted = true;
+                    }
+
+                    _activeBreachCount = count;
+                    _activeBreachSeveritySum = math.isfinite(sum) ? sum : 0f;
+                    if (compacted)
+                        _breachGpuDirty = true;
                 }
-
-                int lastIndex = count - 1;
-                breaches[i] = breaches[lastIndex];
-                breaches[lastIndex] = float4.zero;
-                count--;
-                compacted = true;
+                finally
+                {
+                    _dataVault?.ReleaseWriteLock(in _breachesHandle, VaultOwnerSystemId);
+                }
             }
-
-            _activeBreachCount = count;
-            _activeBreachSeveritySum = math.isfinite(sum) ? sum : 0f;
-            if (compacted)
-                _breachGpuDirty = true;
+            finally
+            {
+                ReleaseStructuralMutationGuard();
+            }
         }
 
         private float RecalculateBreachSeveritySum()
         {
-            if (!TryResolveBreachBuffer(out var breaches))
+            if (!TryReadBreachBuffer(out var breaches))
                 return 0f;
 
             float sum = 0f;
@@ -1456,7 +1654,7 @@ namespace Hecton8.Physics
 
         private float ResolvePeakBreachSeverity()
         {
-            if (!TryResolveBreachBuffer(out var breaches))
+            if (!TryReadBreachBuffer(out var breaches))
                 return 0f;
 
             float peak = 0f;
@@ -1536,7 +1734,11 @@ namespace Hecton8.Physics
             leakPlumeCompute.SetFloat(_LeakDeltaTimeId, safeFixedDeltaTime);
             leakPlumeCompute.SetFloat(_LeakTimeId, ResolveLeakPlumeClockSeconds());
             leakPlumeCompute.SetVector(_LeakParamsId, new Vector4(LeakPlumeParticleCapacity, MaxActiveBreaches, 0f, 0f));
-            leakPlumeCompute.Dispatch(_leakPlumeKernelIndex, 1, 1, 1);
+            int dispatchGroups = CeilDividePositive(MaxActiveBreaches, _leakPlumeThreadGroupSizeX);
+            if (dispatchGroups <= 0)
+                return;
+
+            leakPlumeCompute.Dispatch(_leakPlumeKernelIndex, dispatchGroups, 1, 1);
             Shader.SetGlobalBuffer(_LeakParticleBufferId, _leakPlumeParticleBuffer);
             Shader.SetGlobalInt(_LeakVisibleBreachCountId, _visibleBreachCount);
         }
@@ -1646,7 +1848,7 @@ namespace Hecton8.Physics
 
         private bool EnsureLeakPlumeGpuResources()
         {
-            if (leakPlumeCompute == null)
+            if (leakPlumeCompute == null || !SystemInfo.supportsComputeShaders)
                 return false;
 
             if (_leakPlumeKernelIndex < 0)
@@ -1655,6 +1857,7 @@ namespace Hecton8.Physics
                     return false;
 
                 _leakPlumeKernelIndex = leakPlumeCompute.FindKernel("CSSpawnLeakParticles");
+                _leakPlumeThreadGroupSizeX = ResolveKernelThreadGroupSizeX(leakPlumeCompute, _leakPlumeKernelIndex);
             }
 
             if (_breachGpuBufferA == null)
@@ -1681,7 +1884,31 @@ namespace Hecton8.Physics
             ReleaseGraphicsBuffer(ref _breachGpuBufferB);
             ReleaseGraphicsBuffer(ref _leakPlumeParticleBuffer);
             _leakPlumeKernelIndex = -1;
+            _leakPlumeThreadGroupSizeX = 0;
             _activeBreachGpuBufferIndex = 0;
+        }
+
+        private static int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel)
+        {
+            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+                return 0;
+
+            compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
+            if (sizeX == 0u || sizeY != 1u || sizeZ != 1u || sizeX > int.MaxValue)
+                return 0;
+
+            ulong totalThreads = sizeX * (ulong)sizeY * sizeZ;
+            return totalThreads <= PortableMaxComputeThreadsPerGroup ? (int)sizeX : 0;
+        }
+
+        private static int CeilDividePositive(int value, int divisor)
+        {
+            const int MaxDispatchGroupsPerDimension = 65535;
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
@@ -1695,36 +1922,67 @@ namespace Hecton8.Physics
 
         private void WriteDamageControlTelemetry(uint reasonFlags)
         {
-            WriteDamageControlTelemetry(reasonFlags, true);
+            WriteDamageControlTelemetry(reasonFlags, true, FailureCodeNone);
         }
 
         private void WriteDamageControlTelemetry(uint reasonFlags, bool allowNativeBreachRead)
         {
-            if (!TryResolveDamageControlTelemetry(out var telemetry) || telemetry.Length <= 0)
-                return;
+            WriteDamageControlTelemetry(reasonFlags, allowNativeBreachRead, FailureCodeNone);
+        }
 
-            int index = _damageControlTelemetryHead % telemetry.Length;
-            float4 first = allowNativeBreachRead &&
-                           TryResolveBreachBuffer(out var breaches) &&
-                           _activeBreachCount > 0
-                ? breaches[0]
-                : float4.zero;
-            bool invalid = allowNativeBreachRead &&
-                           _activeBreachCount > 0 &&
-                           (!math.all(math.isfinite(first)) || !math.isfinite(_activeBreachSeveritySum));
-            uint flags = reasonFlags | (invalid ? DamageControlTelemetryInvalidFlag : 0u);
-            DamageControlTelemetryEntry entry = new DamageControlTelemetryEntry
+        private void WriteDamageControlTelemetry(uint reasonFlags, bool allowNativeBreachRead, ushort failureCode)
+        {
+            if (!TryAcquireStructuralWriteBuffer(in _damageControlTelemetryHandle, DamageControlTelemetryCapacity, out NativeArray<StructuralTelemetryEntry> telemetry) ||
+                telemetry.Length <= 0)
             {
-                FirstBreachLocal = new float3(first.x, first.y, first.z),
-                SeveritySum = math.isfinite(_activeBreachSeveritySum) ? _activeBreachSeveritySum : 0f,
-                ActiveBreachCount = (ushort)math.clamp(_activeBreachCount, 0, ushort.MaxValue),
-                VisibleBreachCount = (ushort)math.clamp(_visibleBreachCount, 0, ushort.MaxValue),
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Flags = flags,
-                StateHash = BuildDamageControlTelemetryHash(first, _activeBreachSeveritySum, _activeBreachCount, flags)
-            };
-            telemetry[index] = entry;
-            _damageControlTelemetryHead = (_damageControlTelemetryHead + 1) % telemetry.Length;
+                if (_structuralTelemetryFailureCount < uint.MaxValue)
+                    _structuralTelemetryFailureCount++;
+                return;
+            }
+
+            bool invalid = false;
+            try
+            {
+                int index = _damageControlTelemetryHead % telemetry.Length;
+                float4 first = allowNativeBreachRead &&
+                               TryReadBreachBuffer(out var breaches) &&
+                               _activeBreachCount > 0
+                    ? breaches[0]
+                    : float4.zero;
+                invalid = allowNativeBreachRead &&
+                          _activeBreachCount > 0 &&
+                          (!math.all(math.isfinite(first)) || !math.isfinite(_activeBreachSeveritySum));
+                uint flags = reasonFlags | (invalid ? DamageControlTelemetryInvalidFlag : 0u);
+                ushort resolvedFailureCode = failureCode != FailureCodeNone
+                    ? failureCode
+                    : (invalid ? FailureCodeInvalidState : FailureCodeNone);
+                uint sequence = ++_structuralTelemetrySequence;
+                if (resolvedFailureCode != FailureCodeNone && _structuralTelemetryFailureCount < uint.MaxValue)
+                    _structuralTelemetryFailureCount++;
+
+                StructuralTelemetryEntry entry = new StructuralTelemetryEntry
+                {
+                    FirstBreachLocalSeverity = first,
+                    SeveritySum = math.isfinite(_activeBreachSeveritySum) ? _activeBreachSeveritySum : 0f,
+                    ActiveBreachCount = (ushort)math.clamp(_activeBreachCount, 0, ushort.MaxValue),
+                    VisibleBreachCount = (ushort)math.clamp(_visibleBreachCount, 0, ushort.MaxValue),
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                    Flags = flags,
+                    StateHash = BuildDamageControlTelemetryHash(first, _activeBreachSeveritySum, _activeBreachCount, flags),
+                    BufferId = _breachesHandle.BufferID,
+                    Generation = _breachesHandle.Generation,
+                    VaultGeneration = _dataVault != null ? _dataVault.VaultGenerationID : 0u,
+                    Sequence = sequence,
+                    FailureCode = resolvedFailureCode,
+                    ConsecutiveFailureCount = (ushort)math.clamp(_structuralTelemetryFailureCount, 0u, ushort.MaxValue)
+                };
+                telemetry[index] = entry;
+                _damageControlTelemetryHead = (_damageControlTelemetryHead + 1) % telemetry.Length;
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in _damageControlTelemetryHandle, VaultOwnerSystemId);
+            }
 
             if (invalid)
             {
@@ -1752,10 +2010,97 @@ namespace Hecton8.Physics
 
         private void DumpDamageControlTelemetry()
         {
-            if (!TryResolveDamageControlTelemetry(out var telemetry))
+            if (!TryReadVaultBuffer(_dataVault, in _damageControlTelemetryHandle, DamageControlTelemetryCapacity, out NativeArray<StructuralTelemetryEntry>.ReadOnly telemetry))
                 return;
 
-            string path = Path.Combine(Application.dataPath, "..", DamageControlDumpPath);
+            if (_damageControlTelemetryDumpThread == null)
+                return;
+
+            if (Interlocked.CompareExchange(ref _damageControlTelemetryDumpRequested, 1, 0) != 0)
+                return;
+
+            int count = math.min(telemetry.Length, _damageControlTelemetryDumpSnapshot.Length);
+            for (int i = 0; i < count; i++)
+                _damageControlTelemetryDumpSnapshot[i] = telemetry[i];
+
+            _damageControlTelemetryDumpHead = _damageControlTelemetryHead;
+            _damageControlTelemetryDumpSignal.Set();
+        }
+
+        private void EnsureDamageControlTelemetryDumpWorker()
+        {
+            if (!Application.isPlaying || _damageControlTelemetryDumpSignalDisposed)
+                return;
+
+            Thread existingWorker = _damageControlTelemetryDumpThread;
+            if (existingWorker != null)
+            {
+                if (existingWorker.IsAlive)
+                    return;
+
+                _damageControlTelemetryDumpThread = null;
+            }
+
+            _damageControlTelemetryDumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DamageControlDumpPath));
+            Volatile.Write(ref _damageControlTelemetryDumpStop, 0);
+            Volatile.Write(ref _damageControlTelemetryDumpRequested, 0);
+            _damageControlTelemetryDumpThread = new Thread(DamageControlTelemetryDumpWorkerLoop)
+            {
+                IsBackground = true,
+                Name = "H8.StructuralGrid.BlackBoxDump1326"
+            };
+            _damageControlTelemetryDumpThread.Start();
+        }
+
+        private void StopDamageControlTelemetryDumpWorker()
+        {
+            Thread worker = _damageControlTelemetryDumpThread;
+            if (worker == null)
+                return;
+
+            Volatile.Write(ref _damageControlTelemetryDumpStop, 1);
+            _damageControlTelemetryDumpSignal.Set();
+            if (worker.IsAlive && !worker.Join(100))
+                return;
+
+            _damageControlTelemetryDumpThread = null;
+            Volatile.Write(ref _damageControlTelemetryDumpRequested, 0);
+        }
+
+        private void ReleaseDamageControlTelemetryDumpSignal()
+        {
+            if (_damageControlTelemetryDumpSignalDisposed)
+                return;
+
+            Thread worker = _damageControlTelemetryDumpThread;
+            if (worker != null && worker.IsAlive)
+                return;
+
+            _damageControlTelemetryDumpSignalDisposed = true;
+            _damageControlTelemetryDumpSignal.Dispose();
+        }
+
+        private void DamageControlTelemetryDumpWorkerLoop()
+        {
+            while (Volatile.Read(ref _damageControlTelemetryDumpStop) == 0)
+            {
+                _damageControlTelemetryDumpSignal.WaitOne();
+                if (Volatile.Read(ref _damageControlTelemetryDumpStop) != 0)
+                    break;
+
+                if (Volatile.Read(ref _damageControlTelemetryDumpRequested) == 0)
+                    continue;
+
+                WriteDamageControlTelemetryDump(
+                    _damageControlTelemetryDumpPath,
+                    _damageControlTelemetryDumpHead,
+                    _damageControlTelemetryDumpSnapshot);
+                Volatile.Write(ref _damageControlTelemetryDumpRequested, 0);
+            }
+        }
+
+        private static void WriteDamageControlTelemetryDump(string path, int head, StructuralTelemetryEntry[] snapshot)
+        {
             string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
@@ -1763,20 +2108,29 @@ namespace Hecton8.Physics
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
-                writer.Write(telemetry.Length);
-                writer.Write(_damageControlTelemetryHead);
-                for (int i = 0; i < telemetry.Length; i++)
+                writer.Write(snapshot.Length);
+                writer.Write(head);
+                for (int i = 0; i < snapshot.Length; i++)
                 {
-                    DamageControlTelemetryEntry entry = telemetry[i];
-                    writer.Write(entry.FirstBreachLocal.x);
-                    writer.Write(entry.FirstBreachLocal.y);
-                    writer.Write(entry.FirstBreachLocal.z);
+                    StructuralTelemetryEntry entry = snapshot[i];
+                    writer.Write(entry.FirstBreachLocalSeverity.x);
+                    writer.Write(entry.FirstBreachLocalSeverity.y);
+                    writer.Write(entry.FirstBreachLocalSeverity.z);
+                    writer.Write(entry.FirstBreachLocalSeverity.w);
                     writer.Write(entry.SeveritySum);
+                    writer.Write(entry.CpuMicroseconds);
+                    writer.Write(entry.GpuMicroseconds);
                     writer.Write(entry.ActiveBreachCount);
                     writer.Write(entry.VisibleBreachCount);
                     writer.Write(entry.Frame);
                     writer.Write(entry.Flags);
                     writer.Write(entry.StateHash);
+                    writer.Write(entry.BufferId);
+                    writer.Write(entry.Generation);
+                    writer.Write(entry.VaultGeneration);
+                    writer.Write(entry.Sequence);
+                    writer.Write(entry.FailureCode);
+                    writer.Write(entry.ConsecutiveFailureCount);
                 }
             }
         }
@@ -1829,6 +2183,10 @@ namespace Hecton8.Physics
             if (!math.all(math.isfinite(relativeWorldDouble)))
                 return false;
 
+            relativeWorldDouble = math.clamp(
+                relativeWorldDouble,
+                new double3(-AupLocalCastClampMeters, -AupLocalCastClampMeters, -AupLocalCastClampMeters),
+                new double3(AupLocalCastClampMeters, AupLocalCastClampMeters, AupLocalCastClampMeters));
             Vector3 relativeWorld = new Vector3(
                 (float)relativeWorldDouble.x,
                 (float)relativeWorldDouble.y,
@@ -2121,121 +2479,337 @@ namespace Hecton8.Physics
             if (vault == null)
                 return false;
 
-            if (!TryResolveVaultBuffer(vault, in _breachesHandle, BufferID.SubmarineStructuralBreaches, MaxActiveBreaches, out NativeArray<float4> _))
+            return EnsureVaultHandle(
+                       vault,
+                       BufferID.SubmarineStructuralBreaches,
+                       MaxActiveBreaches,
+                       ref _breachesHandle,
+                       NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(
+                       vault,
+                       BufferID.SubmarineDamageControlBlackBox,
+                       DamageControlTelemetryCapacity,
+                       ref _damageControlTelemetryHandle,
+                       NativeArrayOptions.ClearMemory);
+        }
+
+        private bool EnsureStructuralVaultState()
+        {
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return false;
+
+            int cellCount = ResolveCellCount();
+            int breachWordCount = (cellCount + 63) >> 6;
+            return EnsureVaultHandle(vault, StructuralGridVaultRoute.CellIntegrityFront, cellCount, ref _cellIntegrityFrontHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.CellIntegrityBack, cellCount, ref _cellIntegrityBackHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.CellFatigue, cellCount, ref _cellFatigueHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.CellCompartmentIndices, cellCount, ref _cellCompartmentIndicesHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.HullBreachMaskFront, breachWordCount, ref _hullBreachMaskFrontHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.HullBreachMaskBack, breachWordCount, ref _hullBreachMaskBackHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.CompartmentBreachAreasFront, CompartmentCapacity, ref _compartmentBreachAreasFrontHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.CompartmentBreachAreasBack, CompartmentCapacity, ref _compartmentBreachAreasBackHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.QueuedImpacts, MaxQueuedImpacts, ref _queuedImpactsHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.ScheduledImpacts, MaxQueuedImpacts, ref _scheduledImpactsHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.CompartmentCentroids, CompartmentCapacity, ref _compartmentCentroidsHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.FatigueCompartmentFlags, CompartmentCapacity, ref _fatigueCompartmentFlagsHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.FatigueIntegrityLossPerCycle, CompartmentCapacity, ref _fatigueIntegrityLossPerCycleHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.FatiguePeakResult, 1, ref _fatiguePeakResultHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultHandle(vault, StructuralGridVaultRoute.BreachSeveritySumResult, 1, ref _breachSeveritySumResultHandle, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureBreachVaultState();
+        }
+
+        private bool EnsureVaultHandle<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            ref VaultGenerationHandle<T> handle,
+            NativeArrayOptions options)
+            where T : struct
+        {
+            if (TryResolveVaultBuffer(vault, in handle, requiredLength, out NativeArray<T> _))
+                return true;
+
+            if (!IsVaultOpenForStructuralAccess(vault) || requiredLength <= 0)
+                return false;
+
+            if (vault.IsAllocationLocked)
             {
-                if (vault.IsAllocationLocked)
-                {
-                    if (!vault.TryGetGenerationHandle(BufferID.SubmarineStructuralBreaches, out _breachesHandle))
-                        return false;
-                }
-                else
-                {
-                    _breachesHandle = vault.EnsureGenerationHandle<float4>(
-                        BufferID.SubmarineStructuralBreaches,
-                        MaxActiveBreaches,
-                        SystemID.VehiclesPhysics,
-                        NativeArrayOptions.ClearMemory);
-                }
+                if (!vault.TryGetGenerationHandle(bufferId, out handle))
+                    return false;
+            }
+            else
+            {
+                handle = vault.EnsureGenerationHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    VaultOwnerSystemId,
+                    options);
             }
 
-            if (!TryResolveVaultBuffer(vault, in _damageControlTelemetryHandle, BufferID.SubmarineDamageControlBlackBox, DamageControlTelemetryCapacity, out NativeArray<DamageControlTelemetryEntry> _))
-            {
-                if (vault.IsAllocationLocked)
-                {
-                    if (!vault.TryGetGenerationHandle(BufferID.SubmarineDamageControlBlackBox, out _damageControlTelemetryHandle))
-                        return false;
-                }
-                else
-                {
-                    _damageControlTelemetryHandle = vault.EnsureGenerationHandle<DamageControlTelemetryEntry>(
-                        BufferID.SubmarineDamageControlBlackBox,
-                        DamageControlTelemetryCapacity,
-                        SystemID.VehiclesPhysics,
-                        NativeArrayOptions.ClearMemory);
-                }
-            }
-
-            return TryResolveVaultBuffer(vault, in _breachesHandle, BufferID.SubmarineStructuralBreaches, MaxActiveBreaches, out NativeArray<float4> _) &&
-                   TryResolveVaultBuffer(vault, in _damageControlTelemetryHandle, BufferID.SubmarineDamageControlBlackBox, DamageControlTelemetryCapacity, out NativeArray<DamageControlTelemetryEntry> _);
+            return TryResolveVaultBuffer(vault, in handle, requiredLength, out NativeArray<T> _);
         }
 
         private bool TryResolveBreachBuffer(out NativeArray<float4> breaches)
         {
             breaches = default;
-            if (!EnsureBreachVaultState())
-                return false;
-
-            IDataVault vault = ResolveDataVault();
-            return TryResolveVaultBuffer(vault, in _breachesHandle, BufferID.SubmarineStructuralBreaches, MaxActiveBreaches, out breaches);
+            return TryResolveVaultBuffer(_dataVault, in _breachesHandle, MaxActiveBreaches, out breaches);
         }
 
-        private bool TryResolveDamageControlTelemetry(out NativeArray<DamageControlTelemetryEntry> telemetry)
+        private bool TryReadBreachBuffer(out NativeArray<float4>.ReadOnly breaches)
         {
-            telemetry = default;
-            if (!EnsureBreachVaultState())
-                return false;
+            return TryReadVaultBuffer(_dataVault, in _breachesHandle, MaxActiveBreaches, out breaches);
+        }
 
-            IDataVault vault = ResolveDataVault();
-            return TryResolveVaultBuffer(vault, in _damageControlTelemetryHandle, BufferID.SubmarineDamageControlBlackBox, DamageControlTelemetryCapacity, out telemetry);
+        private bool TryAcquireBreachWriteBuffer(out NativeArray<float4> breaches)
+        {
+            return TryAcquireStructuralWriteBuffer(in _breachesHandle, MaxActiveBreaches, out breaches);
         }
 
         private static bool TryResolveVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer)
             where T : struct
         {
             buffer = default;
-            return vault != null &&
+            return IsVaultOpenForStructuralAccess(vault) &&
                    requiredLength > 0 &&
-                   handle.BufferID == (uint)bufferId &&
-                   handle.Generation != 0u &&
+                   IsGenerationHandleCreated(in handle) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
 
-        private void EnsureNativeState()
+        private static bool TryReadVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer)
+            where T : struct
         {
-            if (_cellIntegrityFront.IsCreated)
-                return;
+            buffer = default;
+            return IsVaultOpenForStructuralAccess(vault) &&
+                   requiredLength > 0 &&
+                   IsGenerationHandleCreated(in handle) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.Length >= requiredLength;
+        }
 
+        private bool TryResolveStructuralNativeViews()
+        {
             int cellCount = ResolveCellCount();
             int breachWordCount = (cellCount + 63) >> 6;
+            IDataVault vault = _dataVault;
+            return TryResolveVaultBuffer(vault, in _cellIntegrityFrontHandle, cellCount, out NativeArray<byte> _) &&
+                   TryResolveVaultBuffer(vault, in _cellIntegrityBackHandle, cellCount, out NativeArray<byte> _) &&
+                   TryResolveVaultBuffer(vault, in _cellFatigueHandle, cellCount, out NativeArray<byte> _) &&
+                   TryResolveVaultBuffer(vault, in _cellCompartmentIndicesHandle, cellCount, out NativeArray<byte> _) &&
+                   TryResolveVaultBuffer(vault, in _hullBreachMaskFrontHandle, breachWordCount, out NativeArray<ulong> _) &&
+                   TryResolveVaultBuffer(vault, in _hullBreachMaskBackHandle, breachWordCount, out NativeArray<ulong> _) &&
+                   TryResolveVaultBuffer(vault, in _compartmentBreachAreasFrontHandle, CompartmentCapacity, out NativeArray<float> _) &&
+                   TryResolveVaultBuffer(vault, in _compartmentBreachAreasBackHandle, CompartmentCapacity, out NativeArray<float> _) &&
+                   TryResolveVaultBuffer(vault, in _queuedImpactsHandle, MaxQueuedImpacts, out NativeArray<ImpactCommand> _) &&
+                   TryResolveVaultBuffer(vault, in _scheduledImpactsHandle, MaxQueuedImpacts, out NativeArray<ImpactCommand> _) &&
+                   TryResolveVaultBuffer(vault, in _compartmentCentroidsHandle, CompartmentCapacity, out NativeArray<float3> _) &&
+                   TryResolveVaultBuffer(vault, in _fatigueCompartmentFlagsHandle, CompartmentCapacity, out NativeArray<byte> _) &&
+                   TryResolveVaultBuffer(vault, in _fatigueIntegrityLossPerCycleHandle, CompartmentCapacity, out NativeArray<float> _) &&
+                   TryResolveVaultBuffer(vault, in _fatiguePeakResultHandle, 1, out NativeArray<float> _) &&
+                   TryResolveVaultBuffer(vault, in _breachSeveritySumResultHandle, 1, out NativeArray<float> _);
+        }
 
-            // COLD ALLOC: NativeArray<byte>[cellCount] - published hull integrity front buffer - owner: SubmarineStructuralGrid
-            _cellIntegrityFront = new NativeArray<byte>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[cellCount] - write-side hull integrity back buffer - owner: SubmarineStructuralGrid
-            _cellIntegrityBack = new NativeArray<byte>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _cellFatigue = new NativeArray<byte>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[cellCount] - immutable cell-to-compartment lookup - owner: SubmarineStructuralGrid
-            _cellCompartmentIndices = new NativeArray<byte>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<ulong>[breachWordCount] - published hull breach bitmask front buffer - owner: SubmarineStructuralGrid
-            _hullBreachMaskFront = new NativeArray<ulong>(breachWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<ulong>[breachWordCount] - write-side hull breach bitmask back buffer - owner: SubmarineStructuralGrid
-            _hullBreachMaskBack = new NativeArray<ulong>(breachWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - published per-compartment breach areas - owner: SubmarineStructuralGrid
-            _compartmentBreachAreasFront = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - write-side per-compartment breach areas - owner: SubmarineStructuralGrid
-            _compartmentBreachAreasBack = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<ImpactCommand>[16] - queued impact staging buffer - owner: SubmarineStructuralGrid
-            _queuedImpacts = new NativeArray<ImpactCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<ImpactCommand>[16] - scheduled impact snapshot buffer - owner: SubmarineStructuralGrid
-            _scheduledImpacts = new NativeArray<ImpactCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float3>[8] - compartment centroids staged for Burst hull mapping - owner: SubmarineStructuralGrid
-            _compartmentCentroids = new NativeArray<float3>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[8] - pressure-fatigue compartment flags consumed by Burst job - owner: SubmarineStructuralGrid
-            _fatigueCompartmentFlags = new NativeArray<byte>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - pressure-fatigue per-compartment loss scalars consumed by Burst job - owner: SubmarineStructuralGrid
-            _fatigueIntegrityLossPerCycle = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[1] - pressure-fatigue peak metric returned by Burst job - owner: SubmarineStructuralGrid
-            _fatiguePeakResult = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            EnsureBreachVaultState();
-            // COLD ALLOC: NativeArray<float>[1] - Burst repair severity sum return lane - owner: SubmarineStructuralGrid
-            _breachSeveritySumResult = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RegisterNativeStateMemorySentinel();
+        private bool TryAcquireStructuralWriteBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (!IsVaultOpenForStructuralAccess(vault))
+            {
+                RecordStructuralVaultFailure(in handle, DamageControlTelemetryCompactionFenceFlag, FailureCodeCompactionFence);
+                return false;
+            }
+
+            if (!IsGenerationHandleCreated(in handle))
+            {
+                RecordStructuralVaultFailure(in handle, DamageControlTelemetryStaleHandleFlag, FailureCodeStaleHandle);
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
+            {
+                RecordStructuralVaultFailure(in handle, DamageControlTelemetryWriteLockFailureFlag, FailureCodeWriteLock);
+                return false;
+            }
+
+            if (!IsVaultOpenForStructuralAccess(vault))
+            {
+                vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+                RecordStructuralVaultFailure(in handle, DamageControlTelemetryCompactionFenceFlag, FailureCodeCompactionFence);
+                buffer = default;
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= requiredLength)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            RecordStructuralVaultFailure(in handle, DamageControlTelemetryCapacityFailureFlag, FailureCodeCapacityMismatch);
+            buffer = default;
+            return false;
+        }
+
+        private bool TryAcquireStructuralWriteBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            int bit,
+            ref int lockMask,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            if (!TryAcquireStructuralWriteBuffer(in handle, requiredLength, out buffer))
+                return false;
+
+            lockMask |= bit;
+            return true;
+        }
+
+        private void ReleaseStructuralWriteLocks(int mask)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || mask == 0)
+                return;
+
+            if ((mask & LockBreaches) != 0) vault.ReleaseWriteLock(in _breachesHandle, VaultOwnerSystemId);
+            if ((mask & LockBreachSeveritySumResult) != 0) vault.ReleaseWriteLock(in _breachSeveritySumResultHandle, VaultOwnerSystemId);
+            if ((mask & LockFatiguePeakResult) != 0) vault.ReleaseWriteLock(in _fatiguePeakResultHandle, VaultOwnerSystemId);
+            if ((mask & LockFatigueIntegrityLossPerCycle) != 0) vault.ReleaseWriteLock(in _fatigueIntegrityLossPerCycleHandle, VaultOwnerSystemId);
+            if ((mask & LockFatigueCompartmentFlags) != 0) vault.ReleaseWriteLock(in _fatigueCompartmentFlagsHandle, VaultOwnerSystemId);
+            if ((mask & LockCompartmentCentroids) != 0) vault.ReleaseWriteLock(in _compartmentCentroidsHandle, VaultOwnerSystemId);
+            if ((mask & LockScheduledImpacts) != 0) vault.ReleaseWriteLock(in _scheduledImpactsHandle, VaultOwnerSystemId);
+            if ((mask & LockQueuedImpacts) != 0) vault.ReleaseWriteLock(in _queuedImpactsHandle, VaultOwnerSystemId);
+            if ((mask & LockCompartmentBreachAreasBack) != 0) vault.ReleaseWriteLock(in _compartmentBreachAreasBackHandle, VaultOwnerSystemId);
+            if ((mask & LockCompartmentBreachAreasFront) != 0) vault.ReleaseWriteLock(in _compartmentBreachAreasFrontHandle, VaultOwnerSystemId);
+            if ((mask & LockHullBreachMaskBack) != 0) vault.ReleaseWriteLock(in _hullBreachMaskBackHandle, VaultOwnerSystemId);
+            if ((mask & LockHullBreachMaskFront) != 0) vault.ReleaseWriteLock(in _hullBreachMaskFrontHandle, VaultOwnerSystemId);
+            if ((mask & LockCellCompartmentIndices) != 0) vault.ReleaseWriteLock(in _cellCompartmentIndicesHandle, VaultOwnerSystemId);
+            if ((mask & LockCellFatigue) != 0) vault.ReleaseWriteLock(in _cellFatigueHandle, VaultOwnerSystemId);
+            if ((mask & LockCellIntegrityBack) != 0) vault.ReleaseWriteLock(in _cellIntegrityBackHandle, VaultOwnerSystemId);
+            if ((mask & LockCellIntegrityFront) != 0) vault.ReleaseWriteLock(in _cellIntegrityFrontHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryLockStructuralJobBuffer<T>(in VaultGenerationHandle<T> handle, int bit, ref int lockMask)
+            where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (!IsVaultOpenForStructuralAccess(vault))
+            {
+                RecordStructuralVaultFailure(in handle, DamageControlTelemetryCompactionFenceFlag, FailureCodeCompactionFence);
+                return false;
+            }
+
+            if (!IsGenerationHandleCreated(in handle))
+            {
+                RecordStructuralVaultFailure(in handle, DamageControlTelemetryStaleHandleFlag, FailureCodeStaleHandle);
+                return false;
+            }
+
+            if (!vault.TryLockBuffer((BufferID)handle.BufferID, VaultOwnerSystemId))
+            {
+                RecordStructuralVaultFailure(in handle, DamageControlTelemetryBufferLockFailureFlag, FailureCodeBufferLock);
+                return false;
+            }
+
+            if (!IsVaultOpenForStructuralAccess(vault))
+            {
+                vault.TryUnlockBuffer((BufferID)handle.BufferID, VaultOwnerSystemId);
+                RecordStructuralVaultFailure(in handle, DamageControlTelemetryCompactionFenceFlag, FailureCodeCompactionFence);
+                return false;
+            }
+
+            lockMask |= bit;
+            return true;
+        }
+
+        private void UnlockStructuralJobBuffers(int mask)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || mask == 0)
+                return;
+
+            if ((mask & LockBreaches) != 0) vault.TryUnlockBuffer((BufferID)_breachesHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockBreachSeveritySumResult) != 0) vault.TryUnlockBuffer((BufferID)_breachSeveritySumResultHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockFatiguePeakResult) != 0) vault.TryUnlockBuffer((BufferID)_fatiguePeakResultHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockFatigueIntegrityLossPerCycle) != 0) vault.TryUnlockBuffer((BufferID)_fatigueIntegrityLossPerCycleHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockFatigueCompartmentFlags) != 0) vault.TryUnlockBuffer((BufferID)_fatigueCompartmentFlagsHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockCompartmentCentroids) != 0) vault.TryUnlockBuffer((BufferID)_compartmentCentroidsHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockScheduledImpacts) != 0) vault.TryUnlockBuffer((BufferID)_scheduledImpactsHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockQueuedImpacts) != 0) vault.TryUnlockBuffer((BufferID)_queuedImpactsHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockCompartmentBreachAreasBack) != 0) vault.TryUnlockBuffer((BufferID)_compartmentBreachAreasBackHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockCompartmentBreachAreasFront) != 0) vault.TryUnlockBuffer((BufferID)_compartmentBreachAreasFrontHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockHullBreachMaskBack) != 0) vault.TryUnlockBuffer((BufferID)_hullBreachMaskBackHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockHullBreachMaskFront) != 0) vault.TryUnlockBuffer((BufferID)_hullBreachMaskFrontHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockCellCompartmentIndices) != 0) vault.TryUnlockBuffer((BufferID)_cellCompartmentIndicesHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockCellFatigue) != 0) vault.TryUnlockBuffer((BufferID)_cellFatigueHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockCellIntegrityBack) != 0) vault.TryUnlockBuffer((BufferID)_cellIntegrityBackHandle.BufferID, VaultOwnerSystemId);
+            if ((mask & LockCellIntegrityFront) != 0) vault.TryUnlockBuffer((BufferID)_cellIntegrityFrontHandle.BufferID, VaultOwnerSystemId);
+        }
+
+        private bool TryAcquireStructuralMutationGuard()
+        {
+            return _dataVault != null && _dataVault.TryAcquireMutationGuard(StructuralMutationGuardMask);
+        }
+
+        private void ReleaseStructuralMutationGuard()
+        {
+            if (_dataVault != null)
+                _dataVault.ReleaseMutationGuard(StructuralMutationGuardMask);
+        }
+
+        private static bool IsVaultOpenForStructuralAccess(IDataVault vault)
+        {
+            return vault != null && !vault.IsCompactionFenceActive;
+        }
+
+        private void RecordStructuralVaultFailure<T>(
+            in VaultGenerationHandle<T> handle,
+            uint reasonFlags,
+            ushort failureCode)
+            where T : struct
+        {
+            if (_structuralTelemetryFailureCount < uint.MaxValue)
+                _structuralTelemetryFailureCount++;
+
+            if (_damageControlTelemetryHandle.BufferID == 0u ||
+                handle.BufferID == _damageControlTelemetryHandle.BufferID)
+            {
+                return;
+            }
+
+            WriteDamageControlTelemetry(reasonFlags, false, failureCode);
+        }
+
+        private static bool IsGenerationHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == unchecked((uint)VaultOwnerSystemId);
+        }
+
+        private void EnsureNativeState()
+        {
+            if (TryResolveStructuralNativeViews())
+            {
+                _nativeStateReady = true;
+                return;
+            }
+
+            if (!EnsureStructuralVaultState() || !TryResolveStructuralNativeViews())
+                return;
 
             _nativeStateReady = true;
             _queuedImpactCount = 0;
@@ -2246,43 +2820,95 @@ namespace Hecton8.Physics
 
         private void SeedStructuralState()
         {
-            if (!_cellIntegrityFront.IsCreated)
+            if (!TryAcquireStructuralMutationGuard())
                 return;
 
-            int cellCount = _cellIntegrityFront.Length;
-            for (int i = 0; i < cellCount; i++)
+            int lockMask = 0;
+            try
             {
-                _cellIntegrityFront[i] = FullIntegrity;
-                _cellIntegrityBack[i] = FullIntegrity;
-                _cellFatigue[i] = 0;
-                _cellCompartmentIndices[i] = UnmappedCompartment;
+                int cellCount = ResolveCellCount();
+                int breachWordCount = (cellCount + 63) >> 6;
+                if (!TryAcquireStructuralWriteBuffer(in _cellIntegrityFrontHandle, cellCount, LockCellIntegrityFront, ref lockMask, out NativeArray<byte> cellIntegrityFront) ||
+                    !TryAcquireStructuralWriteBuffer(in _cellIntegrityBackHandle, cellCount, LockCellIntegrityBack, ref lockMask, out NativeArray<byte> cellIntegrityBack) ||
+                    !TryAcquireStructuralWriteBuffer(in _cellFatigueHandle, cellCount, LockCellFatigue, ref lockMask, out NativeArray<byte> cellFatigue) ||
+                    !TryAcquireStructuralWriteBuffer(in _cellCompartmentIndicesHandle, cellCount, LockCellCompartmentIndices, ref lockMask, out NativeArray<byte> cellCompartmentIndices) ||
+                    !TryAcquireStructuralWriteBuffer(in _hullBreachMaskFrontHandle, breachWordCount, LockHullBreachMaskFront, ref lockMask, out NativeArray<ulong> hullBreachMaskFront) ||
+                    !TryAcquireStructuralWriteBuffer(in _hullBreachMaskBackHandle, breachWordCount, LockHullBreachMaskBack, ref lockMask, out NativeArray<ulong> hullBreachMaskBack) ||
+                    !TryAcquireStructuralWriteBuffer(in _compartmentBreachAreasFrontHandle, CompartmentCapacity, LockCompartmentBreachAreasFront, ref lockMask, out NativeArray<float> compartmentBreachAreasFront) ||
+                    !TryAcquireStructuralWriteBuffer(in _compartmentBreachAreasBackHandle, CompartmentCapacity, LockCompartmentBreachAreasBack, ref lockMask, out NativeArray<float> compartmentBreachAreasBack) ||
+                    !TryAcquireStructuralWriteBuffer(in _queuedImpactsHandle, MaxQueuedImpacts, LockQueuedImpacts, ref lockMask, out NativeArray<ImpactCommand> queuedImpacts) ||
+                    !TryAcquireStructuralWriteBuffer(in _scheduledImpactsHandle, MaxQueuedImpacts, LockScheduledImpacts, ref lockMask, out NativeArray<ImpactCommand> scheduledImpacts) ||
+                    !TryAcquireStructuralWriteBuffer(in _compartmentCentroidsHandle, CompartmentCapacity, LockCompartmentCentroids, ref lockMask, out NativeArray<float3> compartmentCentroids) ||
+                    !TryAcquireStructuralWriteBuffer(in _fatigueCompartmentFlagsHandle, CompartmentCapacity, LockFatigueCompartmentFlags, ref lockMask, out NativeArray<byte> fatigueFlags) ||
+                    !TryAcquireStructuralWriteBuffer(in _fatigueIntegrityLossPerCycleHandle, CompartmentCapacity, LockFatigueIntegrityLossPerCycle, ref lockMask, out NativeArray<float> fatigueLossPerCycle) ||
+                    !TryAcquireStructuralWriteBuffer(in _fatiguePeakResultHandle, 1, LockFatiguePeakResult, ref lockMask, out NativeArray<float> fatiguePeakResult) ||
+                    !TryAcquireStructuralWriteBuffer(in _breachSeveritySumResultHandle, 1, LockBreachSeveritySumResult, ref lockMask, out NativeArray<float> breachSeveritySumResult))
+                {
+                    return;
+                }
+
+                for (int i = 0; i < cellIntegrityFront.Length; i++)
+                {
+                    cellIntegrityFront[i] = FullIntegrity;
+                    cellIntegrityBack[i] = FullIntegrity;
+                    cellFatigue[i] = 0;
+                    cellCompartmentIndices[i] = UnmappedCompartment;
+                }
+
+                for (int i = 0; i < hullBreachMaskFront.Length; i++)
+                {
+                    hullBreachMaskFront[i] = 0UL;
+                    hullBreachMaskBack[i] = 0UL;
+                }
+
+                for (int i = 0; i < CompartmentCapacity; i++)
+                {
+                    compartmentBreachAreasFront[i] = 0f;
+                    compartmentBreachAreasBack[i] = 0f;
+                    compartmentCentroids[i] = float3.zero;
+                    fatigueFlags[i] = 0;
+                    fatigueLossPerCycle[i] = 0f;
+                }
+
+                for (int i = 0; i < MaxQueuedImpacts; i++)
+                {
+                    queuedImpacts[i] = default;
+                    scheduledImpacts[i] = default;
+                }
+
+                _cellBreachAreaSquareMeters = ResolveCellBreachAreaSquareMeters();
+                _fatiguePeakNormalized = 0f;
+                fatiguePeakResult[0] = 0f;
+                breachSeveritySumResult[0] = 0f;
+            }
+            finally
+            {
+                ReleaseStructuralWriteLocks(lockMask);
+                ReleaseStructuralMutationGuard();
             }
 
-            for (int i = 0; i < _hullBreachMaskFront.Length; i++)
+            if (TryAcquireStructuralMutationGuard())
             {
-                _hullBreachMaskFront[i] = 0UL;
-                _hullBreachMaskBack[i] = 0UL;
+                try
+                {
+                    if (TryAcquireBreachWriteBuffer(out NativeArray<float4> breaches))
+                    {
+                        try
+                        {
+                            for (int i = 0; i < breaches.Length; i++)
+                                breaches[i] = float4.zero;
+                        }
+                        finally
+                        {
+                            _dataVault?.ReleaseWriteLock(in _breachesHandle, VaultOwnerSystemId);
+                        }
+                    }
+                }
+                finally
+                {
+                    ReleaseStructuralMutationGuard();
+                }
             }
-
-            for (int i = 0; i < CompartmentCapacity; i++)
-            {
-                _compartmentBreachAreasFront[i] = 0f;
-                _compartmentBreachAreasBack[i] = 0f;
-            }
-
-            _cellBreachAreaSquareMeters = ResolveCellBreachAreaSquareMeters();
-            _fatiguePeakNormalized = 0f;
-            if (_fatiguePeakResult.IsCreated)
-                _fatiguePeakResult[0] = 0f;
-
-            if (TryResolveBreachBuffer(out var breaches))
-            {
-                for (int i = 0; i < breaches.Length; i++)
-                    breaches[i] = float4.zero;
-            }
-
-            if (_breachSeveritySumResult.IsCreated)
-                _breachSeveritySumResult[0] = 0f;
 
             _recentImpactSeverityNormalized = 0f;
             _activeBreachCount = 0;
@@ -2298,7 +2924,7 @@ namespace Hecton8.Physics
 
         private bool EnsureCompartmentMappingReady()
         {
-            if (!_cellCompartmentIndices.IsCreated || fluidDynamics == null || fluidDynamics.CompartmentCount <= 0)
+            if (!IsReady || fluidDynamics == null || fluidDynamics.CompartmentCount <= 0)
                 return true;
 
             if (_mappingJobRunning)
@@ -2308,23 +2934,72 @@ namespace Hecton8.Physics
             if (_mappedCompartmentCount == compartmentCount)
                 return true;
 
-            for (int compartmentIndex = 0; compartmentIndex < compartmentCount; compartmentIndex++)
-                _compartmentCentroids[compartmentIndex] = fluidDynamics.GetCompartmentCentroid(compartmentIndex);
+            NativeArray<float3> compartmentCentroids;
+            if (!TryAcquireStructuralMutationGuard())
+                return false;
+
+            try
+            {
+                if (!TryAcquireStructuralWriteBuffer(in _compartmentCentroidsHandle, CompartmentCapacity, out compartmentCentroids))
+                    return false;
+
+                try
+                {
+                    for (int compartmentIndex = 0; compartmentIndex < compartmentCount; compartmentIndex++)
+                        compartmentCentroids[compartmentIndex] = fluidDynamics.GetCompartmentCentroid(compartmentIndex);
+                }
+                finally
+                {
+                    _dataVault?.ReleaseWriteLock(in _compartmentCentroidsHandle, VaultOwnerSystemId);
+                }
+            }
+            finally
+            {
+                ReleaseStructuralMutationGuard();
+            }
+
+            int lockMask = 0;
+            if (!TryLockStructuralJobBuffer(in _compartmentCentroidsHandle, LockCompartmentCentroids, ref lockMask) ||
+                !TryLockStructuralJobBuffer(in _cellCompartmentIndicesHandle, LockCellCompartmentIndices, ref lockMask))
+            {
+                UnlockStructuralJobBuffers(lockMask);
+                return false;
+            }
+
+            if (!TryResolveVaultBuffer(_dataVault, in _compartmentCentroidsHandle, CompartmentCapacity, out compartmentCentroids) ||
+                !TryResolveVaultBuffer(_dataVault, in _cellCompartmentIndicesHandle, ResolveCellCount(), out NativeArray<byte> cellCompartmentIndices))
+            {
+                UnlockStructuralJobBuffers(lockMask);
+                return false;
+            }
 
             _pendingMappedCompartmentCount = compartmentCount;
-            _mappingJobHandle = new HullCompartmentMappingJob
+            _mappingJobLockMask = lockMask;
+            try
             {
-                CompartmentCentroids = _compartmentCentroids,
-                CellCompartmentIndices = _cellCompartmentIndices,
-                CompartmentCount = compartmentCount,
-                GridWidth = math.max(1, gridWidth),
-                GridHeight = math.max(1, gridHeight),
-                GridDepth = math.max(1, gridDepth),
-                GridCenterLocal = localGridCenter,
-                GridSizeLocal = localGridSize
-            }.Schedule(_cellCompartmentIndices.Length, 32);
-            _mappingJobRunning = true;
-            return false;
+                new HullCompartmentMappingJob
+                {
+                    CompartmentCentroids = compartmentCentroids,
+                    CellCompartmentIndices = cellCompartmentIndices,
+                    CompartmentCount = compartmentCount,
+                    GridWidth = math.max(1, gridWidth),
+                    GridHeight = math.max(1, gridHeight),
+                    GridDepth = math.max(1, gridDepth),
+                    GridCenterLocal = localGridCenter,
+                    GridSizeLocal = localGridSize
+                }.Run(cellCompartmentIndices.Length);
+
+                _mappedCompartmentCount = _pendingMappedCompartmentCount;
+                _pendingMappedCompartmentCount = 0;
+                return true;
+            }
+            finally
+            {
+                UnlockStructuralJobBuffers(_mappingJobLockMask);
+                _mappingJobLockMask = 0;
+                _mappingJobHandle = default;
+                _mappingJobRunning = false;
+            }
         }
 
         private void ConsumeCompletedMappingJob()
@@ -2332,19 +3007,16 @@ namespace Hecton8.Physics
             if (!_mappingJobRunning)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _mappingJobHandle, false))
-                return;
-
+            _mappingJobHandle = default;
             _mappingJobRunning = false;
-            _mappedCompartmentCount = _pendingMappedCompartmentCount;
             _pendingMappedCompartmentCount = 0;
+            UnlockStructuralJobBuffers(_mappingJobLockMask);
+            _mappingJobLockMask = 0;
         }
 
         private void ApplyPressureCycleFatigue()
         {
-            if (!_cellIntegrityFront.IsCreated ||
-                !_cellFatigue.IsCreated ||
-                !_fatigueCompartmentFlags.IsCreated ||
+            if (!IsReady ||
                 _fatigueJobRunning ||
                 _atmosphereSystem == null ||
                 !_atmosphereSystem.IsAtmosphereRuntimeActive ||
@@ -2353,22 +3025,40 @@ namespace Hecton8.Physics
                 return;
             }
 
-            int compartmentCount = math.min(fluidDynamics.CompartmentCount, CompartmentCapacity);
-            float thresholdKPa = math.max(0f, fatiguePressureThresholdKPa);
+            if (!TryAcquireStructuralMutationGuard())
+                return;
+
+            int lockMask = 0;
             bool scheduledAny = false;
-            for (int compartmentIndex = 0; compartmentIndex < compartmentCount; compartmentIndex++)
+            try
             {
-                float previousPressure = _previousCompartmentPressuresKPa[compartmentIndex];
-                float currentPressure = _atmosphereSystem.GetRoomPressureKPa(compartmentIndex);
-                _previousCompartmentPressuresKPa[compartmentIndex] = currentPressure;
+                if (!TryAcquireStructuralWriteBuffer(in _fatigueCompartmentFlagsHandle, CompartmentCapacity, LockFatigueCompartmentFlags, ref lockMask, out NativeArray<byte> fatigueFlags) ||
+                    !TryAcquireStructuralWriteBuffer(in _fatigueIntegrityLossPerCycleHandle, CompartmentCapacity, LockFatigueIntegrityLossPerCycle, ref lockMask, out NativeArray<float> fatigueLossPerCycle))
+                {
+                    return;
+                }
 
-                if (previousPressure >= thresholdKPa || currentPressure < thresholdKPa)
-                    continue;
+                int compartmentCount = math.min(fluidDynamics.CompartmentCount, CompartmentCapacity);
+                float thresholdKPa = math.max(0f, fatiguePressureThresholdKPa);
+                for (int compartmentIndex = 0; compartmentIndex < compartmentCount; compartmentIndex++)
+                {
+                    float previousPressure = _previousCompartmentPressuresKPa[compartmentIndex];
+                    float currentPressure = _atmosphereSystem.GetRoomPressureKPa(compartmentIndex);
+                    _previousCompartmentPressuresKPa[compartmentIndex] = currentPressure;
 
-                float thermalMultiplier = _atmosphereSystem.ResolveThermalFatigueMultiplier(compartmentIndex);
-                _fatigueCompartmentFlags[compartmentIndex] = 1;
-                _fatigueIntegrityLossPerCycle[compartmentIndex] = math.max(0f, fatigueIntegrityLossPerCycle * thermalMultiplier);
-                scheduledAny = true;
+                    if (previousPressure >= thresholdKPa || currentPressure < thresholdKPa)
+                        continue;
+
+                    float thermalMultiplier = _atmosphereSystem.ResolveThermalFatigueMultiplier(compartmentIndex);
+                    fatigueFlags[compartmentIndex] = 1;
+                    fatigueLossPerCycle[compartmentIndex] = math.max(0f, fatigueIntegrityLossPerCycle * thermalMultiplier);
+                    scheduledAny = true;
+                }
+            }
+            finally
+            {
+                ReleaseStructuralWriteLocks(lockMask);
+                ReleaseStructuralMutationGuard();
             }
 
             if (scheduledAny)
@@ -2378,27 +3068,84 @@ namespace Hecton8.Physics
         private void ScheduleFatigueJob()
         {
             if (_fatigueJobRunning ||
-                !_cellIntegrityFront.IsCreated ||
-                !_cellFatigue.IsCreated ||
-                !_cellCompartmentIndices.IsCreated ||
-                !_fatigueCompartmentFlags.IsCreated)
+                !IsReady ||
+                _fatigueJobLockMask != 0)
             {
                 return;
             }
 
-            _fatiguePeakResult[0] = _fatiguePeakNormalized;
-            _fatigueJobHandle = new HullFatigueCompartmentJob
+            if (!TryAcquireStructuralMutationGuard())
+                return;
+
+            try
             {
-                CellCompartmentIndices = _cellCompartmentIndices,
-                CellIntegrityFront = _cellIntegrityFront,
-                CellIntegrityBack = _cellIntegrityBack,
-                CellFatigue = _cellFatigue,
-                FatigueCompartmentFlags = _fatigueCompartmentFlags,
-                FatigueIntegrityLossPerCycle = _fatigueIntegrityLossPerCycle,
-                PeakNormalized = _fatiguePeakResult,
-                CellCount = _cellIntegrityFront.Length
-            }.Schedule();
-            _fatigueJobRunning = true;
+                if (!TryAcquireStructuralWriteBuffer(in _fatiguePeakResultHandle, 1, out NativeArray<float> writablePeakResult))
+                    return;
+
+                try
+                {
+                    writablePeakResult[0] = _fatiguePeakNormalized;
+                }
+                finally
+                {
+                    _dataVault?.ReleaseWriteLock(in _fatiguePeakResultHandle, VaultOwnerSystemId);
+                }
+            }
+            finally
+            {
+                ReleaseStructuralMutationGuard();
+            }
+
+            int lockMask = 0;
+            if (!TryLockStructuralJobBuffer(in _cellCompartmentIndicesHandle, LockCellCompartmentIndices, ref lockMask) ||
+                !TryLockStructuralJobBuffer(in _cellIntegrityFrontHandle, LockCellIntegrityFront, ref lockMask) ||
+                !TryLockStructuralJobBuffer(in _cellIntegrityBackHandle, LockCellIntegrityBack, ref lockMask) ||
+                !TryLockStructuralJobBuffer(in _cellFatigueHandle, LockCellFatigue, ref lockMask) ||
+                !TryLockStructuralJobBuffer(in _fatigueCompartmentFlagsHandle, LockFatigueCompartmentFlags, ref lockMask) ||
+                !TryLockStructuralJobBuffer(in _fatigueIntegrityLossPerCycleHandle, LockFatigueIntegrityLossPerCycle, ref lockMask) ||
+                !TryLockStructuralJobBuffer(in _fatiguePeakResultHandle, LockFatiguePeakResult, ref lockMask))
+            {
+                UnlockStructuralJobBuffers(lockMask);
+                return;
+            }
+
+            int cellCount = ResolveCellCount();
+            if (!TryResolveVaultBuffer(_dataVault, in _cellCompartmentIndicesHandle, cellCount, out NativeArray<byte> cellCompartmentIndices) ||
+                !TryResolveVaultBuffer(_dataVault, in _cellIntegrityFrontHandle, cellCount, out NativeArray<byte> cellIntegrityFront) ||
+                !TryResolveVaultBuffer(_dataVault, in _cellIntegrityBackHandle, cellCount, out NativeArray<byte> cellIntegrityBack) ||
+                !TryResolveVaultBuffer(_dataVault, in _cellFatigueHandle, cellCount, out NativeArray<byte> cellFatigue) ||
+                !TryResolveVaultBuffer(_dataVault, in _fatigueCompartmentFlagsHandle, CompartmentCapacity, out NativeArray<byte> fatigueFlags) ||
+                !TryResolveVaultBuffer(_dataVault, in _fatigueIntegrityLossPerCycleHandle, CompartmentCapacity, out NativeArray<float> fatigueLossPerCycle) ||
+                !TryResolveVaultBuffer(_dataVault, in _fatiguePeakResultHandle, 1, out NativeArray<float> peakResult))
+            {
+                UnlockStructuralJobBuffers(lockMask);
+                return;
+            }
+
+            _fatigueJobLockMask = lockMask;
+            try
+            {
+                new HullFatigueCompartmentJob
+                {
+                    CellCompartmentIndices = cellCompartmentIndices,
+                    CellIntegrityFront = cellIntegrityFront,
+                    CellIntegrityBack = cellIntegrityBack,
+                    CellFatigue = cellFatigue,
+                    FatigueCompartmentFlags = fatigueFlags,
+                    FatigueIntegrityLossPerCycle = fatigueLossPerCycle,
+                    PeakNormalized = peakResult,
+                    CellCount = cellIntegrityFront.Length
+                }.Run();
+
+                _fatiguePeakNormalized = math.max(_fatiguePeakNormalized, peakResult[0]);
+            }
+            finally
+            {
+                UnlockStructuralJobBuffers(_fatigueJobLockMask);
+                _fatigueJobLockMask = 0;
+                _fatigueJobHandle = default;
+                _fatigueJobRunning = false;
+            }
         }
 
         private void ConsumeCompletedFatigueJob()
@@ -2406,45 +3153,114 @@ namespace Hecton8.Physics
             if (!_fatigueJobRunning)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _fatigueJobHandle, false))
-                return;
-
+            _fatigueJobHandle = default;
             _fatigueJobRunning = false;
-            _fatiguePeakNormalized = _fatiguePeakResult.IsCreated
-                ? math.max(_fatiguePeakNormalized, _fatiguePeakResult[0])
-                : _fatiguePeakNormalized;
+            UnlockStructuralJobBuffers(_fatigueJobLockMask);
+            _fatigueJobLockMask = 0;
         }
 
         private void ScheduleDamageJob()
         {
-            if (_damageJobRunning || !_scheduledImpacts.IsCreated || _queuedImpactCount <= 0)
+            if (_damageJobRunning || _damageJobLockMask != 0 || _queuedImpactCount <= 0 || !IsReady)
                 return;
 
             using (_damageScheduleProfilerMarker.Auto())
             {
-                _scheduledImpactCount = _queuedImpactCount;
-                for (int i = 0; i < _scheduledImpactCount; i++)
-                    _scheduledImpacts[i] = _queuedImpacts[i];
+                int copiedImpactCount = 0;
+                int writeLockMask = 0;
+                if (!TryAcquireStructuralMutationGuard())
+                    return;
 
-                _queuedImpactCount = 0;
-                _damageJobHandle = new HullDamageDiffusionJob
+                try
                 {
-                    InputIntegrity = _cellIntegrityFront,
-                    CellCompartmentIndices = _cellCompartmentIndices,
-                    Impacts = _scheduledImpacts,
-                    OutputIntegrity = _cellIntegrityBack,
-                    OutputBreachMaskWords = _hullBreachMaskBack,
-                    OutputCompartmentBreachAreas = _compartmentBreachAreasBack,
-                    GridWidth = gridWidth,
-                    GridHeight = gridHeight,
-                    GridDepth = gridDepth,
-                    CellCount = _cellIntegrityFront.Length,
-                    ImpactCount = _scheduledImpactCount,
-                    GridCenterLocal = localGridCenter,
-                    GridSizeLocal = localGridSize,
-                    CellBreachAreaSquareMeters = _cellBreachAreaSquareMeters
-                }.Schedule();
-                _damageJobRunning = true;
+                    if (!TryAcquireStructuralWriteBuffer(in _queuedImpactsHandle, MaxQueuedImpacts, LockQueuedImpacts, ref writeLockMask, out NativeArray<ImpactCommand> queuedImpacts) ||
+                        !TryAcquireStructuralWriteBuffer(in _scheduledImpactsHandle, MaxQueuedImpacts, LockScheduledImpacts, ref writeLockMask, out NativeArray<ImpactCommand> scheduledImpacts))
+                    {
+                        return;
+                    }
+
+                    copiedImpactCount = math.min(_queuedImpactCount, math.min(queuedImpacts.Length, scheduledImpacts.Length));
+                    for (int i = 0; i < copiedImpactCount; i++)
+                        scheduledImpacts[i] = queuedImpacts[i];
+                }
+                finally
+                {
+                    ReleaseStructuralWriteLocks(writeLockMask);
+                    ReleaseStructuralMutationGuard();
+                }
+
+                if (copiedImpactCount <= 0)
+                    return;
+
+                int lockMask = 0;
+                if (!TryLockStructuralJobBuffer(in _cellIntegrityFrontHandle, LockCellIntegrityFront, ref lockMask) ||
+                    !TryLockStructuralJobBuffer(in _cellCompartmentIndicesHandle, LockCellCompartmentIndices, ref lockMask) ||
+                    !TryLockStructuralJobBuffer(in _scheduledImpactsHandle, LockScheduledImpacts, ref lockMask) ||
+                    !TryLockStructuralJobBuffer(in _cellIntegrityBackHandle, LockCellIntegrityBack, ref lockMask) ||
+                    !TryLockStructuralJobBuffer(in _hullBreachMaskBackHandle, LockHullBreachMaskBack, ref lockMask) ||
+                    !TryLockStructuralJobBuffer(in _compartmentBreachAreasBackHandle, LockCompartmentBreachAreasBack, ref lockMask))
+                {
+                    UnlockStructuralJobBuffers(lockMask);
+                    return;
+                }
+
+                int cellCount = ResolveCellCount();
+                int breachWordCount = (cellCount + 63) >> 6;
+                if (!TryResolveVaultBuffer(_dataVault, in _cellIntegrityFrontHandle, cellCount, out NativeArray<byte> cellIntegrityFront) ||
+                    !TryResolveVaultBuffer(_dataVault, in _cellCompartmentIndicesHandle, cellCount, out NativeArray<byte> cellCompartmentIndices) ||
+                    !TryResolveVaultBuffer(_dataVault, in _scheduledImpactsHandle, MaxQueuedImpacts, out NativeArray<ImpactCommand> scheduledImpactsForJob) ||
+                    !TryResolveVaultBuffer(_dataVault, in _cellIntegrityBackHandle, cellCount, out NativeArray<byte> cellIntegrityBack) ||
+                    !TryResolveVaultBuffer(_dataVault, in _hullBreachMaskBackHandle, breachWordCount, out NativeArray<ulong> hullBreachMaskBack) ||
+                    !TryResolveVaultBuffer(_dataVault, in _compartmentBreachAreasBackHandle, CompartmentCapacity, out NativeArray<float> compartmentBreachAreasBack))
+                {
+                    UnlockStructuralJobBuffers(lockMask);
+                    return;
+                }
+
+                _scheduledImpactCount = copiedImpactCount;
+                _queuedImpactCount = 0;
+                _damageJobLockMask = lockMask;
+                try
+                {
+                    new HullDamageDiffusionJob
+                    {
+                        InputIntegrity = cellIntegrityFront,
+                        CellCompartmentIndices = cellCompartmentIndices,
+                        Impacts = scheduledImpactsForJob,
+                        OutputIntegrity = cellIntegrityBack,
+                        OutputBreachMaskWords = hullBreachMaskBack,
+                        OutputCompartmentBreachAreas = compartmentBreachAreasBack,
+                        GridWidth = gridWidth,
+                        GridHeight = gridHeight,
+                        GridDepth = gridDepth,
+                        CellCount = cellIntegrityFront.Length,
+                        ImpactCount = _scheduledImpactCount,
+                        GridCenterLocal = localGridCenter,
+                        GridSizeLocal = localGridSize,
+                        CellBreachAreaSquareMeters = _cellBreachAreaSquareMeters
+                    }.Run();
+                }
+                finally
+                {
+                    UnlockStructuralJobBuffers(_damageJobLockMask);
+                    _damageJobLockMask = 0;
+                    _damageJobHandle = default;
+                    _damageJobRunning = false;
+                }
+
+                _scheduledImpactCount = 0;
+
+                VaultGenerationHandle<byte> integrityFront = _cellIntegrityFrontHandle;
+                _cellIntegrityFrontHandle = _cellIntegrityBackHandle;
+                _cellIntegrityBackHandle = integrityFront;
+
+                VaultGenerationHandle<ulong> breachMaskFront = _hullBreachMaskFrontHandle;
+                _hullBreachMaskFrontHandle = _hullBreachMaskBackHandle;
+                _hullBreachMaskBackHandle = breachMaskFront;
+
+                VaultGenerationHandle<float> breachAreaFront = _compartmentBreachAreasFrontHandle;
+                _compartmentBreachAreasFrontHandle = _compartmentBreachAreasBackHandle;
+                _compartmentBreachAreasBackHandle = breachAreaFront;
             }
         }
 
@@ -2455,23 +3271,23 @@ namespace Hecton8.Physics
 
             using (_damageConsumeProfilerMarker.Auto())
             {
-                if (!DispatcherJobSwap.TryComplete(ref _damageJobHandle, false))
-                    return;
-
+                _damageJobHandle = default;
                 _damageJobRunning = false;
                 _scheduledImpactCount = 0;
+                UnlockStructuralJobBuffers(_damageJobLockMask);
+                _damageJobLockMask = 0;
 
-                NativeArray<byte> integrityFront = _cellIntegrityFront;
-                _cellIntegrityFront = _cellIntegrityBack;
-                _cellIntegrityBack = integrityFront;
+                VaultGenerationHandle<byte> integrityFront = _cellIntegrityFrontHandle;
+                _cellIntegrityFrontHandle = _cellIntegrityBackHandle;
+                _cellIntegrityBackHandle = integrityFront;
 
-                NativeArray<ulong> breachMaskFront = _hullBreachMaskFront;
-                _hullBreachMaskFront = _hullBreachMaskBack;
-                _hullBreachMaskBack = breachMaskFront;
+                VaultGenerationHandle<ulong> breachMaskFront = _hullBreachMaskFrontHandle;
+                _hullBreachMaskFrontHandle = _hullBreachMaskBackHandle;
+                _hullBreachMaskBackHandle = breachMaskFront;
 
-                NativeArray<float> breachAreaFront = _compartmentBreachAreasFront;
-                _compartmentBreachAreasFront = _compartmentBreachAreasBack;
-                _compartmentBreachAreasBack = breachAreaFront;
+                VaultGenerationHandle<float> breachAreaFront = _compartmentBreachAreasFrontHandle;
+                _compartmentBreachAreasFrontHandle = _compartmentBreachAreasBackHandle;
+                _compartmentBreachAreasBackHandle = breachAreaFront;
             }
         }
 
@@ -2558,31 +3374,37 @@ namespace Hecton8.Physics
 
         private void DisposeNativeStateDeferred()
         {
-            JobHandle dependency = _damageJobRunning ? _damageJobHandle : default;
-            if (_mappingJobRunning)
-                dependency = JobHandle.CombineDependencies(dependency, _mappingJobHandle);
-            if (_fatigueJobRunning)
-                dependency = JobHandle.CombineDependencies(dependency, _fatigueJobHandle);
-            if (_breachRepairJobRunning)
-                dependency = JobHandle.CombineDependencies(dependency, _breachRepairJobHandle);
+            UnlockStructuralJobBuffers(_damageJobLockMask);
+            UnlockStructuralJobBuffers(_mappingJobLockMask);
+            UnlockStructuralJobBuffers(_fatigueJobLockMask);
+            UnlockStructuralJobBuffers(_breachRepairJobLockMask);
+            _damageJobLockMask = 0;
+            _mappingJobLockMask = 0;
+            _fatigueJobLockMask = 0;
+            _breachRepairJobLockMask = 0;
 
-            DisposeDeferred(ref _cellIntegrityFront, ref dependency);
-            DisposeDeferred(ref _cellIntegrityBack, ref dependency);
-            DisposeDeferred(ref _cellFatigue, ref dependency);
-            DisposeDeferred(ref _cellCompartmentIndices, ref dependency);
-            DisposeDeferred(ref _hullBreachMaskFront, ref dependency);
-            DisposeDeferred(ref _hullBreachMaskBack, ref dependency);
-            DisposeDeferred(ref _compartmentBreachAreasFront, ref dependency);
-            DisposeDeferred(ref _compartmentBreachAreasBack, ref dependency);
-            DisposeDeferred(ref _queuedImpacts, ref dependency);
-            DisposeDeferred(ref _scheduledImpacts, ref dependency);
-            DisposeDeferred(ref _compartmentCentroids, ref dependency);
-            DisposeDeferred(ref _fatigueCompartmentFlags, ref dependency);
-            DisposeDeferred(ref _fatigueIntegrityLossPerCycle, ref dependency);
-            DisposeDeferred(ref _fatiguePeakResult, ref dependency);
-            DisposeDeferred(ref _breachSeveritySumResult, ref dependency);
-            _breachesHandle = default;
-            _damageControlTelemetryHandle = default;
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                ReleaseVaultHandle(vault, ref _cellIntegrityFrontHandle);
+                ReleaseVaultHandle(vault, ref _cellIntegrityBackHandle);
+                ReleaseVaultHandle(vault, ref _cellFatigueHandle);
+                ReleaseVaultHandle(vault, ref _cellCompartmentIndicesHandle);
+                ReleaseVaultHandle(vault, ref _hullBreachMaskFrontHandle);
+                ReleaseVaultHandle(vault, ref _hullBreachMaskBackHandle);
+                ReleaseVaultHandle(vault, ref _compartmentBreachAreasFrontHandle);
+                ReleaseVaultHandle(vault, ref _compartmentBreachAreasBackHandle);
+                ReleaseVaultHandle(vault, ref _queuedImpactsHandle);
+                ReleaseVaultHandle(vault, ref _scheduledImpactsHandle);
+                ReleaseVaultHandle(vault, ref _compartmentCentroidsHandle);
+                ReleaseVaultHandle(vault, ref _fatigueCompartmentFlagsHandle);
+                ReleaseVaultHandle(vault, ref _fatigueIntegrityLossPerCycleHandle);
+                ReleaseVaultHandle(vault, ref _fatiguePeakResultHandle);
+                ReleaseVaultHandle(vault, ref _breachSeveritySumResultHandle);
+                ReleaseVaultHandle(vault, ref _breachesHandle);
+                ReleaseVaultHandle(vault, ref _damageControlTelemetryHandle);
+            }
+
             _dataVault = null;
             _damageJobHandle = default;
             _mappingJobHandle = default;
@@ -2606,6 +3428,45 @@ namespace Hecton8.Physics
             _breachGpuDirty = true;
         }
 
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void ValidateStructuralGridMemoryLayoutEditor()
+        {
+            if (UnsafeUtility.SizeOf<VaultGenerationHandle<byte>>() != 16 ||
+                UnsafeUtility.SizeOf<ImpactCommand>() != 32 ||
+                OffsetOf<ImpactCommand>(nameof(ImpactCommand.LocalPoint)) != 0 ||
+                OffsetOf<ImpactCommand>(nameof(ImpactCommand.RadiusMeters)) != 12 ||
+                OffsetOf<ImpactCommand>(nameof(ImpactCommand.SigmaMeters)) != 16 ||
+                OffsetOf<ImpactCommand>(nameof(ImpactCommand.DamageBytes)) != 20 ||
+                UnsafeUtility.SizeOf<StructuralTelemetryEntry>() != 64 ||
+                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.FirstBreachLocalSeverity)) != 0 ||
+                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.SeveritySum)) != 16 ||
+                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.Frame)) != 28 ||
+                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.BufferId)) != 40 ||
+                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.ActiveBreachCount)) != 56 ||
+                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.FailureCode)) != 60 ||
+                OffsetOf<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.ConsecutiveFailureCount)) != 62)
+            {
+                throw new System.InvalidOperationException("SubmarineStructuralGrid memory sovereignty validation failed: DTO stride or field offset changed.");
+            }
+        }
+
+        private static int OffsetOf<T>(string fieldName)
+            where T : struct
+        {
+            return Marshal.OffsetOf<T>(fieldName).ToInt32();
+        }
+#endif
+
         private int ResolveCellCount()
         {
             int safeWidth = math.max(1, gridWidth);
@@ -2626,35 +3487,6 @@ namespace Hecton8.Physics
             float areaXZ = cellSizeX * cellSizeZ;
             float areaYZ = cellSizeY * cellSizeZ;
             return math.min(areaXY, math.min(areaXZ, areaYZ));
-        }
-
-        private static void DisposeDeferred<T>(ref NativeArray<T> array, ref JobHandle dependency) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            dependency = array.Dispose(dependency);
-            array = default;
-        }
-
-        private void RegisterNativeStateMemorySentinel()
-        {
-            NativeMemorySentinel.RegisterNativeArray(_cellIntegrityFront, NativeMemoryOwner, nameof(_cellIntegrityFront), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_cellIntegrityBack, NativeMemoryOwner, nameof(_cellIntegrityBack), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_cellFatigue, NativeMemoryOwner, nameof(_cellFatigue), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_cellCompartmentIndices, NativeMemoryOwner, nameof(_cellCompartmentIndices), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_hullBreachMaskFront, NativeMemoryOwner, nameof(_hullBreachMaskFront), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_hullBreachMaskBack, NativeMemoryOwner, nameof(_hullBreachMaskBack), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_compartmentBreachAreasFront, NativeMemoryOwner, nameof(_compartmentBreachAreasFront), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_compartmentBreachAreasBack, NativeMemoryOwner, nameof(_compartmentBreachAreasBack), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_queuedImpacts, NativeMemoryOwner, nameof(_queuedImpacts), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_scheduledImpacts, NativeMemoryOwner, nameof(_scheduledImpacts), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_compartmentCentroids, NativeMemoryOwner, nameof(_compartmentCentroids), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_fatigueCompartmentFlags, NativeMemoryOwner, nameof(_fatigueCompartmentFlags), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_fatigueIntegrityLossPerCycle, NativeMemoryOwner, nameof(_fatigueIntegrityLossPerCycle), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_fatiguePeakResult, NativeMemoryOwner, nameof(_fatiguePeakResult), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_breachSeveritySumResult, NativeMemoryOwner, nameof(_breachSeveritySumResult), NativeMemoryLifetime);
         }
 
     }

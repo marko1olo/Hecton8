@@ -3,19 +3,9 @@ Date: 2026-05-14
 Owner: SAVE_HASH_CRYPTOGRAPHER
 Status: PENDING VERIFICATION
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
-
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 ## Scope
 
@@ -219,6 +209,6 @@ Commands used:
 - C# static guard for the helper -> PASS (`CS_STATIC_GUARD_OK`).
 - Executable C# parity guard -> PASS (`SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=17 preimageOps=30 preimageEnd=96 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=3 resultCtor=4 blitAttrs=2`).
 - Direct Roslyn parser-level probe reached only standalone missing-reference diagnostics; no syntax diagnostics were emitted before `Hecton8.Core.Memory.Layout`/`Unity.Mathematics` reference failures.
-- `<POLISH_MANDATE>` extraction from `Docs/Tasks/CURRENT_BATCH.md` -> TAG ABSENT; local anti-bloat pass executed on owned artifacts.
+- Local anti-bloat pass on owned save/header artifacts -> no active polish mandate was promoted into this contract.
 
 Unity import, Unity Console, Play Mode, GCMonitor, profiler, player build, and IL2CPP/ARM runtime proof remain `PENDING VERIFICATION`. Local full C# compile is blocked: `dotnet`, PATH `csc`, `mcs`, and `Unity.exe` are unavailable; direct Visual Studio Roslyn exists but standalone compilation lacks Unity/project assembly references.

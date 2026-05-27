@@ -59,6 +59,7 @@ namespace Hecton8.Animation.FaunaProcedural
         private GraphicsBuffer _shaderGlobalsBufferA;
         private GraphicsBuffer _shaderGlobalsBufferB;
         private GraphicsBuffer _activeShaderGlobalsBuffer;
+        private GraphicsBuffer _publishedSkinningMatrixBuffer;
         private JobHandle _pendingHandle;
         private float _simulationTime;
         private float _accumulatedDelta;
@@ -71,6 +72,7 @@ namespace Hecton8.Animation.FaunaProcedural
         private int _activeMatrixUploadCount;
         private int _activeSkeletonCount;
         private int _uploadedMatrixCount;
+        private int _publishedSkinningMatrixCount = -1;
         private int _uploadedSkeletonCount;
         private int _lockedBuffers;
         private float _uploadedQuality = -1f;
@@ -137,6 +139,9 @@ namespace Hecton8.Animation.FaunaProcedural
 
         public bool TryApplyEditorTuning(in ProceduralBoneRigTuningDTO tuning)
         {
+            if (!EnsureVaultBuffers())
+                return false;
+
             if (!TryResolveTuningMutable(out NativeArray<ProceduralBoneRigTuningDTO> mutableTuning))
                 return false;
 
@@ -152,7 +157,7 @@ namespace Hecton8.Animation.FaunaProcedural
                 return false;
 
             if (!IsVaultHandleCreated(in _tuningHandle))
-                EnsureVaultBuffers();
+                return false;
 
             return TryResolveVaultBuffer(
                 vault,
@@ -191,7 +196,10 @@ namespace Hecton8.Animation.FaunaProcedural
 #if UNITY_EDITOR
         public bool TryApplyCsvProfile(string csvText)
         {
-            if (string.IsNullOrEmpty(csvText) || !TryResolveTuningMutable(out NativeArray<ProceduralBoneRigTuningDTO> tuning))
+            if (csvText == null ||
+                csvText.Length == 0 ||
+                !EnsureVaultBuffers() ||
+                !TryResolveTuningMutable(out NativeArray<ProceduralBoneRigTuningDTO> tuning))
                 return false;
 
             IDataVault vault = _dataVault;
@@ -304,7 +312,6 @@ namespace Hecton8.Animation.FaunaProcedural
                     out NativeArray<ProceduralBoneRigTuningDTO> tuningArray,
                     out NativeArray<MockAiVelocitySignal> mockSignals))
             {
-                EnsureVaultBuffers();
                 return;
             }
 
@@ -758,7 +765,7 @@ namespace Hecton8.Animation.FaunaProcedural
             _solverScheduled = false;
             UnlockJobBuffers();
             _frameCounter++;
-            ReadLatestTelemetry();
+            RefreshLatestTelemetrySnapshot();
             _gpuUploadDirty = ShouldUploadMatrices();
             if (!_dumpedFault && LatestTelemetryHasInvalidFlag())
             {
@@ -842,7 +849,7 @@ namespace Hecton8.Animation.FaunaProcedural
             return math.saturate(math.select(1f, _lastQuality, math.isfinite(_lastQuality)));
         }
 
-        private void ReadLatestTelemetry()
+        private void RefreshLatestTelemetrySnapshot()
         {
             _activeMatrixUploadCount = 0;
             _activeSkeletonCount = 0;
@@ -907,7 +914,7 @@ namespace Hecton8.Animation.FaunaProcedural
                 return;
             }
 
-            _dumpedFault = ProceduralBoneBlackBox.TryDumpTelemetry(ResolveProjectRoot(), telemetry, cursor);
+            _dumpedFault = ProceduralBoneBlackBox.TryDumpTelemetry(BuildProjectRootForFaultDump(), telemetry, cursor);
         }
 
         private bool UploadMatricesToGpu()
@@ -932,7 +939,13 @@ namespace Hecton8.Animation.FaunaProcedural
                 return true;
             }
 
-            EnsureGraphicsBuffers();
+            int bufferCapacity = ResolveGraphicsBufferCapacity();
+            if (!HasGraphicsBuffersReady(bufferCapacity))
+            {
+                ClearGpuSkinningBinding();
+                return false;
+            }
+
             GraphicsBuffer writeBuffer = _gpuUploadBufferIndex == 0 ? _matrixBufferA : _matrixBufferB;
             if (!HasValidGraphicsBuffer(writeBuffer, count))
             {
@@ -986,7 +999,15 @@ namespace Hecton8.Animation.FaunaProcedural
             if (!PublishProceduralBoneGlobals(in globals))
                 return false;
 
-            Shader.SetGlobalBuffer(ProceduralBoneMatricesId, buffer);
+            if (!_globalGpuSkinningPublished ||
+                !ReferenceEquals(_publishedSkinningMatrixBuffer, buffer) ||
+                _publishedSkinningMatrixCount != count)
+            {
+                Shader.SetGlobalBuffer(ProceduralBoneMatricesId, buffer);
+                _publishedSkinningMatrixBuffer = buffer;
+                _publishedSkinningMatrixCount = count;
+            }
+
             _globalGpuSkinningPublished = true;
             return true;
         }
@@ -995,7 +1016,7 @@ namespace Hecton8.Animation.FaunaProcedural
         {
             if (!ValidateProceduralBoneShaderGlobalsLayout() ||
                 !SystemInfo.supportsSetConstantBuffer ||
-                !EnsureShaderGlobalsBuffers())
+                !HasShaderGlobalsBuffersReady())
                 return false;
 
             GraphicsBuffer writeBuffer = _shaderGlobalsUploadBufferIndex == 0 ? _shaderGlobalsBufferA : _shaderGlobalsBufferB;
@@ -1035,7 +1056,7 @@ namespace Hecton8.Animation.FaunaProcedural
 
         private void EnsureGraphicsBuffers()
         {
-            int count = math.clamp(_boneCapacity, ProceduralBoneBlenderConstants.EmergencyMockBoneCount, ProceduralBoneBlenderConstants.DefaultBoneCapacity);
+            int count = ResolveGraphicsBufferCapacity();
             if (!HasValidGraphicsBuffer(_matrixBufferA, count))
             {
                 ReleaseGraphicsBuffer(ref _matrixBufferA);
@@ -1049,6 +1070,8 @@ namespace Hecton8.Animation.FaunaProcedural
                 _matrixBufferB = ProceduralBoneGraphicsBufferUpload.CreateStructuredLockBuffer<float4x4>(count);
                 _gpuBufferDataValid = false;
             }
+
+            EnsureShaderGlobalsBuffers();
         }
 
         private void ClearGpuSkinningBinding()
@@ -1069,6 +1092,8 @@ namespace Hecton8.Animation.FaunaProcedural
                 };
                 PublishProceduralBoneGlobals(in disabled);
                 _globalGpuSkinningPublished = false;
+                _publishedSkinningMatrixBuffer = null;
+                _publishedSkinningMatrixCount = -1;
             }
         }
 
@@ -1079,6 +1104,8 @@ namespace Hecton8.Animation.FaunaProcedural
             ReleaseGraphicsBuffer(ref _shaderGlobalsBufferA);
             ReleaseGraphicsBuffer(ref _shaderGlobalsBufferB);
             _activeShaderGlobalsBuffer = null;
+            _publishedSkinningMatrixBuffer = null;
+            _publishedSkinningMatrixCount = -1;
             _gpuBufferDataValid = false;
         }
 
@@ -1165,9 +1192,27 @@ namespace Hecton8.Animation.FaunaProcedural
             return buffer != null && buffer.IsValid() && buffer.count >= requiredCount && buffer.stride == UnsafeUtility.SizeOf<float4x4>();
         }
 
+        private int ResolveGraphicsBufferCapacity()
+        {
+            return math.clamp(_boneCapacity, ProceduralBoneBlenderConstants.EmergencyMockBoneCount, ProceduralBoneBlenderConstants.DefaultBoneCapacity);
+        }
+
+        private bool HasGraphicsBuffersReady(int requiredCount)
+        {
+            return HasValidGraphicsBuffer(_matrixBufferA, requiredCount) &&
+                   HasValidGraphicsBuffer(_matrixBufferB, requiredCount) &&
+                   HasShaderGlobalsBuffersReady();
+        }
+
         private static bool HasValidShaderGlobalsBuffer(GraphicsBuffer buffer)
         {
             return buffer != null && buffer.IsValid() && buffer.count >= 1 && buffer.stride == ProceduralBoneShaderGlobalsBytes;
+        }
+
+        private bool HasShaderGlobalsBuffersReady()
+        {
+            return HasValidShaderGlobalsBuffer(_shaderGlobalsBufferA) &&
+                   HasValidShaderGlobalsBuffer(_shaderGlobalsBufferB);
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
@@ -1180,10 +1225,10 @@ namespace Hecton8.Animation.FaunaProcedural
             buffer = null;
         }
 
-        private static string ResolveProjectRoot()
+        private static string BuildProjectRootForFaultDump()
         {
             string dataPath = Application.dataPath;
-            return string.IsNullOrEmpty(dataPath) ? "." : Path.GetFullPath(Path.Combine(dataPath, ".."));
+            return dataPath == null || dataPath.Length == 0 ? "." : Path.GetFullPath(Path.Combine(dataPath, ".."));
         }
 
         private void OnDrawGizmosSelected()

@@ -47,6 +47,21 @@ Shader "Hecton8/Environment/Hecton_GeologyImpostorBillboard"
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
 
+            float HectonGeologyFiniteOr(float value, float fallbackValue)
+            {
+                return isfinite(value) ? value : fallbackValue;
+            }
+
+            float2 HectonGeologyFiniteUv(float2 value)
+            {
+                return all(isfinite(value)) ? saturate(value) : float2(0.5, 0.5);
+            }
+
+            half4 HectonGeologyFiniteColor(half4 value, half4 fallbackValue)
+            {
+                return all(isfinite(value)) ? value : fallbackValue;
+            }
+
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -70,9 +85,10 @@ Shader "Hecton8/Environment/Hecton_GeologyImpostorBillboard"
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-                VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
+                float3 safePositionOS = all(isfinite(input.positionOS.xyz)) ? input.positionOS.xyz : float3(0.0, 0.0, 0.0);
+                VertexPositionInputs positionInputs = GetVertexPositionInputs(safePositionOS);
                 output.positionCS = positionInputs.positionCS;
-                output.uv = input.uv;
+                output.uv = HectonGeologyFiniteUv(input.uv);
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
                 return output;
             }
@@ -82,13 +98,16 @@ Shader "Hecton8/Environment/Hecton_GeologyImpostorBillboard"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                half4 albedoSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
-                clip(albedoSample.a - _AlphaClipThreshold);
+                half4 baseColor = HectonGeologyFiniteColor(_BaseColor, half4(1.0h, 1.0h, 1.0h, 1.0h));
+                half4 albedoSample = HectonGeologyFiniteColor(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, HectonGeologyFiniteUv(input.uv)), half4(0.0h, 0.0h, 0.0h, 0.0h)) * baseColor;
+                half alphaClipThreshold = (half)saturate(HectonGeologyFiniteOr(_AlphaClipThreshold, 0.45));
+                clip(albedoSample.a - alphaClipThreshold);
 
-                half3 ambient = half3(_AmbientFloor, _AmbientFloor, _AmbientFloor);
+                half ambientFloor = (half)saturate(HectonGeologyFiniteOr(_AmbientFloor, 0.18));
+                half3 ambient = half3(ambientFloor, ambientFloor, ambientFloor);
                 half3 color = albedoSample.rgb * ambient;
                 color = MixFog(color, input.fogFactor);
-                return half4(color, albedoSample.a);
+                return HectonGeologyFiniteColor(half4(color, albedoSample.a), half4(0.0h, 0.0h, 0.0h, 0.0h));
             }
             ENDHLSL
         }

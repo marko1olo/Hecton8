@@ -9,6 +9,7 @@ using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace Hecton8.Construction
 {
@@ -104,10 +105,38 @@ namespace Hecton8.Construction
         [FieldOffset(20)] public float MaxResolvedLength;
         [FieldOffset(24)] public uint ResultHash;
         [FieldOffset(28)] public uint Flags;
-        [FieldOffset(32)] public ulong _pad0;
-        [FieldOffset(40)] public ulong _pad1;
-        [FieldOffset(48)] public ulong _pad2;
-        [FieldOffset(56)] public ulong _pad3;
+        [FieldOffset(32)] private byte _pad0;
+        [FieldOffset(33)] private byte _pad1;
+        [FieldOffset(34)] private byte _pad2;
+        [FieldOffset(35)] private byte _pad3;
+        [FieldOffset(36)] private byte _pad4;
+        [FieldOffset(37)] private byte _pad5;
+        [FieldOffset(38)] private byte _pad6;
+        [FieldOffset(39)] private byte _pad7;
+        [FieldOffset(40)] private byte _pad8;
+        [FieldOffset(41)] private byte _pad9;
+        [FieldOffset(42)] private byte _pad10;
+        [FieldOffset(43)] private byte _pad11;
+        [FieldOffset(44)] private byte _pad12;
+        [FieldOffset(45)] private byte _pad13;
+        [FieldOffset(46)] private byte _pad14;
+        [FieldOffset(47)] private byte _pad15;
+        [FieldOffset(48)] private byte _pad16;
+        [FieldOffset(49)] private byte _pad17;
+        [FieldOffset(50)] private byte _pad18;
+        [FieldOffset(51)] private byte _pad19;
+        [FieldOffset(52)] private byte _pad20;
+        [FieldOffset(53)] private byte _pad21;
+        [FieldOffset(54)] private byte _pad22;
+        [FieldOffset(55)] private byte _pad23;
+        [FieldOffset(56)] private byte _pad24;
+        [FieldOffset(57)] private byte _pad25;
+        [FieldOffset(58)] private byte _pad26;
+        [FieldOffset(59)] private byte _pad27;
+        [FieldOffset(60)] private byte _pad28;
+        [FieldOffset(61)] private byte _pad29;
+        [FieldOffset(62)] private byte _pad30;
+        [FieldOffset(63)] private byte _pad31;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -143,7 +172,10 @@ namespace Hecton8.Construction
         [FieldOffset(8)] public float3 NormalizedOffset;
         [FieldOffset(20)] public float RadiusMultiplier;
         [FieldOffset(24)] public uint Flags;
-        [FieldOffset(28)] public uint _pad0;
+        [FieldOffset(28)] private byte _pad0;
+        [FieldOffset(29)] private byte _pad1;
+        [FieldOffset(30)] private byte _pad2;
+        [FieldOffset(31)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -178,11 +210,25 @@ namespace Hecton8.Construction
         [FieldOffset(36)] public float MaxLengthMeters;
         [FieldOffset(40)] public uint Frame;
         [FieldOffset(44)] public uint ResultHash;
-        [FieldOffset(48)] public ulong _pad0;
-        [FieldOffset(56)] public ulong _pad1;
+        [FieldOffset(48)] private byte _pad0;
+        [FieldOffset(49)] private byte _pad1;
+        [FieldOffset(50)] private byte _pad2;
+        [FieldOffset(51)] private byte _pad3;
+        [FieldOffset(52)] private byte _pad4;
+        [FieldOffset(53)] private byte _pad5;
+        [FieldOffset(54)] private byte _pad6;
+        [FieldOffset(55)] private byte _pad7;
+        [FieldOffset(56)] private byte _pad8;
+        [FieldOffset(57)] private byte _pad9;
+        [FieldOffset(58)] private byte _pad10;
+        [FieldOffset(59)] private byte _pad11;
+        [FieldOffset(60)] private byte _pad12;
+        [FieldOffset(61)] private byte _pad13;
+        [FieldOffset(62)] private byte _pad14;
+        [FieldOffset(63)] private byte _pad15;
     }
 
-    public struct FoundationSnappingVaultViews
+    public ref struct FoundationSnappingVaultViews
     {
         public NativeArray<FoundationModuleAupDTO> Modules;
         public NativeArray<PylonMatrixDTO> PylonMatrices;
@@ -241,12 +287,13 @@ namespace Hecton8.Construction
         public const BufferID CsvScratchBufferId = BufferID.FoundationSnappingCsvScratch;
         public const BufferID DebugRayBufferId = BufferID.FoundationSnappingDebugRays;
         public const BufferID IndirectArgsBufferId = BufferID.FoundationSnappingIndirectArgs;
-        public const string DumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_FOUNDATION_CALCULATOR.bin";
+        public const string DumpPath = "Docs/AgentLogs/Dump_1306_Construction_FoundationCalculator.bin";
 
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
         private static FoundationTuningDTO s_Tuning = CreateDefaultTuning(1f);
         private static FoundationSdfConfigDTO s_SdfConfig = CreateDefaultMockSdfConfig(double3.zero);
+        private static IDataVault s_BoundVault;
         private static bool s_TelemetryDumped;
         private static bool s_TelemetryCursorSeeded;
         private static uint s_TelemetryCursorSeedGeneration;
@@ -272,42 +319,53 @@ namespace Hecton8.Construction
 
         public static bool ValidateStructLayout()
         {
-            return UnsafeUtility.SizeOf<PylonMatrixDTO>() == PylonMatrixSizeBytes &&
-                   UnsafeUtility.SizeOf<FoundationPylonSurfaceDTO>() == PylonSurfaceSizeBytes &&
-                   UnsafeUtility.SizeOf<FoundationModuleAupDTO>() == FoundationModuleSizeBytes &&
-                   UnsafeUtility.SizeOf<FoundationSdfConfigDTO>() == SdfConfigSizeBytes &&
-                   UnsafeUtility.SizeOf<FoundationTuningDTO>() == FoundationTuningSizeBytes &&
-                   UnsafeUtility.SizeOf<FoundationPylonFrameCounters>() == FoundationFrameCounterSizeBytes &&
-                   UnsafeUtility.SizeOf<FoundationTelemetryEntry>() == FoundationTelemetrySizeBytes &&
-                   UnsafeUtility.SizeOf<FoundationPylonIndirectArgsDTO>() == FoundationIndirectArgsSizeBytes &&
-                   UnsafeUtility.SizeOf<FoundationRayOriginDTO>() == FoundationRayOriginSizeBytes &&
-                   UnsafeUtility.SizeOf<FoundationProfileRangeDTO>() == FoundationProfileRangeSizeBytes &&
-                   UnsafeUtility.SizeOf<FoundationDebugRayDTO>() == FoundationDebugRaySizeBytes &&
-                   ResolveOffset<PylonMatrixDTO>(nameof(PylonMatrixDTO.LocalToWorld)) == 0 &&
+            if (UnsafeUtility.SizeOf<PylonMatrixDTO>() != PylonMatrixSizeBytes ||
+                UnsafeUtility.SizeOf<FoundationPylonSurfaceDTO>() != PylonSurfaceSizeBytes ||
+                UnsafeUtility.SizeOf<FoundationModuleAupDTO>() != FoundationModuleSizeBytes ||
+                UnsafeUtility.SizeOf<FoundationSdfConfigDTO>() != SdfConfigSizeBytes ||
+                UnsafeUtility.SizeOf<FoundationTuningDTO>() != FoundationTuningSizeBytes ||
+                UnsafeUtility.SizeOf<FoundationPylonFrameCounters>() != FoundationFrameCounterSizeBytes ||
+                UnsafeUtility.SizeOf<FoundationTelemetryEntry>() != FoundationTelemetrySizeBytes ||
+                UnsafeUtility.SizeOf<FoundationPylonIndirectArgsDTO>() != FoundationIndirectArgsSizeBytes ||
+                UnsafeUtility.SizeOf<FoundationRayOriginDTO>() != FoundationRayOriginSizeBytes ||
+                UnsafeUtility.SizeOf<FoundationProfileRangeDTO>() != FoundationProfileRangeSizeBytes ||
+                UnsafeUtility.SizeOf<FoundationDebugRayDTO>() != FoundationDebugRaySizeBytes)
+            {
+                return false;
+            }
+
+#if UNITY_EDITOR
+            return ResolveOffset<PylonMatrixDTO>(nameof(PylonMatrixDTO.LocalToWorld)) == 0 &&
                    ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.SurfaceNormalFlare)) == 0 &&
-                    ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.AxisRadius)) == 16 &&
-                    ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.HitLocalLength)) == 32 &&
-                    ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.Flags)) == 48 &&
-                    ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.ModuleHash)) == 52 &&
-                    ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.RayIndex)) == 56 &&
-                    ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.ResultHash)) == 60 &&
-                    ResolveOffset<FoundationModuleAupDTO>(nameof(FoundationModuleAupDTO.CenterAup)) == 0 &&
-                    ResolveOffset<FoundationModuleAupDTO>(nameof(FoundationModuleAupDTO.Rotation)) == 24 &&
-                    ResolveOffset<FoundationModuleAupDTO>(nameof(FoundationModuleAupDTO.BoundsExtents)) == 40 &&
-                    ResolveOffset<FoundationPylonFrameCounters>(nameof(FoundationPylonFrameCounters.ActivePylonCount)) == 0 &&
-                    ResolveOffset<FoundationPylonFrameCounters>(nameof(FoundationPylonFrameCounters.Flags)) == 28;
+                   ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.AxisRadius)) == 16 &&
+                   ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.HitLocalLength)) == 32 &&
+                   ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.Flags)) == 48 &&
+                   ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.ModuleHash)) == 52 &&
+                   ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.RayIndex)) == 56 &&
+                   ResolveOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.ResultHash)) == 60 &&
+                   ResolveOffset<FoundationModuleAupDTO>(nameof(FoundationModuleAupDTO.CenterAup)) == 0 &&
+                   ResolveOffset<FoundationModuleAupDTO>(nameof(FoundationModuleAupDTO.Rotation)) == 24 &&
+                   ResolveOffset<FoundationModuleAupDTO>(nameof(FoundationModuleAupDTO.BoundsExtents)) == 40 &&
+                   ResolveOffset<FoundationPylonFrameCounters>(nameof(FoundationPylonFrameCounters.ActivePylonCount)) == 0 &&
+                   ResolveOffset<FoundationPylonFrameCounters>(nameof(FoundationPylonFrameCounters.Flags)) == 28;
+#else
+            return true;
+#endif
         }
 
+#if UNITY_EDITOR
         public static int ResolveOffset<T>(string fieldName) where T : struct
         {
             return Marshal.OffsetOf<T>(fieldName).ToInt32();
         }
+#endif
 
         public static bool InitializeVault(IDataVault vault, double3 mockOriginAup)
         {
             if (vault == null)
                 return false;
 
+            ResetVaultDescriptorsIfOwnerChanged(vault);
             s_Tuning = SanitizeTuning(s_Tuning, ResolveGlobalQualityWeight());
             s_SdfConfig = SanitizeSdfConfig(CreateDefaultMockSdfConfig(mockOriginAup));
             s_ModuleHandle = EnsureVaultHandle(vault, ModuleBufferId, ModuleCapacity, ref s_ModuleHandle);
@@ -326,31 +384,80 @@ namespace Hecton8.Construction
             s_DebugRayHandle = EnsureVaultHandle(vault, DebugRayBufferId, PylonCapacity, ref s_DebugRayHandle);
             s_IndirectArgsHandle = EnsureVaultHandle(vault, IndirectArgsBufferId, 1, ref s_IndirectArgsHandle);
 
-            if (vault.TryResolveHandle(in s_TelemetryCursorHandle, out NativeArray<int> cursor) &&
-                cursor.IsCreated &&
-                cursor.Length > 0 &&
-                (!s_TelemetryCursorSeeded || s_TelemetryCursorSeedGeneration != s_TelemetryCursorHandle.Generation))
+            if (!TryAcquireWriteLane(vault, in s_TelemetryCursorHandle, 1, out NativeArray<int> cursor))
+                return false;
+
+            try
             {
-                cursor[0] = 0;
-                s_TelemetryCursorSeeded = true;
-                s_TelemetryCursorSeedGeneration = s_TelemetryCursorHandle.Generation;
+                if (!s_TelemetryCursorSeeded || s_TelemetryCursorSeedGeneration != s_TelemetryCursorHandle.Generation)
+                {
+                    cursor[0] = 0;
+                    s_TelemetryCursorSeeded = true;
+                    s_TelemetryCursorSeedGeneration = s_TelemetryCursorHandle.Generation;
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_TelemetryCursorHandle, SystemID.Construction);
             }
 
-            if (vault.TryResolveHandle(in s_TuningHandle, out NativeArray<FoundationTuningDTO> tuning) &&
-                tuning.IsCreated &&
-                tuning.Length > 0)
+            if (!TryAcquireWriteLane(vault, in s_TuningHandle, 1, out NativeArray<FoundationTuningDTO> tuning))
+                return false;
+
+            try
             {
                 tuning[0] = s_Tuning;
             }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_TuningHandle, SystemID.Construction);
+            }
 
-            if (vault.TryResolveHandle(in s_SdfConfigHandle, out NativeArray<FoundationSdfConfigDTO> config) &&
-                config.IsCreated &&
-                config.Length > 0)
+            if (!TryAcquireWriteLane(vault, in s_SdfConfigHandle, 1, out NativeArray<FoundationSdfConfigDTO> config))
+                return false;
+
+            try
             {
                 config[0] = s_SdfConfig;
             }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_SdfConfigHandle, SystemID.Construction);
+            }
 
             return ValidateStructLayout();
+        }
+
+        public static void UnbindDataVault(IDataVault vault)
+        {
+            if (vault != null && ReferenceEquals(s_BoundVault, vault))
+                ResetVaultDescriptorsIfOwnerChanged(null);
+        }
+
+        private static void ResetVaultDescriptorsIfOwnerChanged(IDataVault vault)
+        {
+            if (ReferenceEquals(s_BoundVault, vault))
+                return;
+
+            s_BoundVault = vault;
+            s_TelemetryDumped = false;
+            s_TelemetryCursorSeeded = false;
+            s_TelemetryCursorSeedGeneration = 0u;
+            s_ModuleHandle = default;
+            s_PylonMatrixHandle = default;
+            s_PylonSurfaceHandle = default;
+            s_PerModuleCounterHandle = default;
+            s_FrameCounterHandle = default;
+            s_TelemetryHandle = default;
+            s_TelemetryCursorHandle = default;
+            s_TuningHandle = default;
+            s_MockSdfDistanceHandle = default;
+            s_SdfConfigHandle = default;
+            s_RayOriginHandle = default;
+            s_ProfileRangeHandle = default;
+            s_CsvScratchHandle = default;
+            s_DebugRayHandle = default;
+            s_IndirectArgsHandle = default;
         }
 
         public static bool InitializeVault(IDataVault vault)
@@ -450,20 +557,25 @@ namespace Hecton8.Construction
             s_Tuning.MaxMarchStepsLow = math.clamp(maxStepsLow, 1, 512);
             s_Tuning.MaxMarchStepsUltra = math.max(s_Tuning.MaxMarchStepsLow, math.clamp(maxStepsUltra, 1, 512));
             s_Tuning.GlobalQualityWeight = ResolveGlobalQualityWeight();
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = s_BoundVault;
             if (vault == null)
                 return false;
 
             InitializeVault(vault);
-            if (!vault.TryResolveHandle(in s_TuningHandle, out NativeArray<FoundationTuningDTO> tuning) ||
-                !tuning.IsCreated ||
-                tuning.Length <= 0)
+            if (!TryAcquireWriteLane(vault, in s_TuningHandle, 1, out NativeArray<FoundationTuningDTO> tuning))
             {
                 return false;
             }
 
-            tuning[0] = s_Tuning;
-            return true;
+            try
+            {
+                tuning[0] = s_Tuning;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_TuningHandle, SystemID.Construction);
+            }
         }
 
         public static bool TryReadEditorState(
@@ -594,13 +706,12 @@ namespace Hecton8.Construction
                     profileRanges[profileIndex] = range;
                     for (int raySlot = 0; raySlot < MaxRaysPerModule; raySlot++)
                     {
-                        FoundationRayOriginDTO inactive;
+                        FoundationRayOriginDTO inactive = default;
                         inactive.ModuleHash = moduleHash;
                         inactive.RayIndex = (uint)raySlot;
                         inactive.NormalizedOffset = float3.zero;
                         inactive.RadiusMultiplier = 1f;
                         inactive.Flags = 0u;
-                        inactive._pad0 = 0u;
                         rayOrigins[slotStart + raySlot] = inactive;
                     }
 
@@ -618,13 +729,12 @@ namespace Hecton8.Construction
                     continue;
                 }
 
-                FoundationRayOriginDTO ray;
+                FoundationRayOriginDTO ray = default;
                 ray.ModuleHash = moduleHash;
                 ray.RayIndex = rayIndex;
                 ray.NormalizedOffset = math.clamp(offset, new float3(-1f), new float3(1f));
                 ray.RadiusMultiplier = SanitizePositive(radiusMultiplier, 1f);
                 ray.Flags = FoundationPylonFlags.Active;
-                ray._pad0 = 0u;
                 rayOrigins[writeIndex] = ray;
                 rayCount = math.max(rayCount, writeIndex + 1);
             }
@@ -642,7 +752,7 @@ namespace Hecton8.Construction
             if (!TryBeginProfileWriteFence())
                 return false;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = s_BoundVault;
             if (vault == null)
             {
                 EndProfileWriteFence();
@@ -804,11 +914,15 @@ namespace Hecton8.Construction
 
             try
             {
-                string directory = Path.GetDirectoryName(path);
+                string resolvedPath = ResolveDumpPath(path);
+                if (string.IsNullOrEmpty(resolvedPath))
+                    return false;
+
+                string directory = Path.GetDirectoryName(resolvedPath);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+                using FileStream stream = new FileStream(resolvedPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 unsafe
                 {
                     void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
@@ -823,6 +937,18 @@ namespace Hecton8.Construction
             {
                 return false;
             }
+        }
+
+        private static string ResolveDumpPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
+
+            if (Path.IsPathRooted(path))
+                return path;
+
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            return Path.GetFullPath(Path.Combine(projectRoot, path));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -940,7 +1066,7 @@ namespace Hecton8.Construction
             ref VaultGenerationHandle<T> handle) where T : struct
         {
             if (handle.BufferID != 0u &&
-                vault.TryResolveHandle(in handle, out NativeArray<T> existing) &&
+                vault.TryReadHandle(in handle, out NativeArray<T> existing) &&
                 existing.IsCreated &&
                 existing.Length >= requiredLength)
             {
@@ -952,6 +1078,28 @@ namespace Hecton8.Construction
                 math.max(1, requiredLength),
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
+        }
+
+        private static bool TryAcquireWriteLane<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= requiredLength)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, SystemID.Construction);
+            buffer = default;
+            return false;
         }
 
 #if UNITY_EDITOR

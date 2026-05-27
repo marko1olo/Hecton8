@@ -1,0 +1,53 @@
+{
+  "agentId": "1332",
+  "timestamp": "2026-05-27T09:41:44.4765776+04:00",
+  "domain": "Hecton8.Input + UI/PauseControlsPanel.cs + UI/PDAControlsRebindUI.cs",
+  "task": "INPUT_OPTIONS_LEGACY_RANGE_REAUDIT",
+  "status": "STATIC_VERIFIED_BUILD_BLOCKED_BY_HOST_GATE",
+  "whatWasWrong": [
+    "Portable options files longer than the fixed H8CF container could be accepted by truncating the read view.",
+    "Future options file versions greater than the current FileVersion could be parsed as if they were the current binary format.",
+    "Legacy option record fields were read with an unscoped property search, allowing nested spoofed fields or malformed value suffixes to be treated as valid.",
+    "An intermediate optional-property helper could not distinguish a missing optional field from an invalid duplicate field."
+  ],
+  "whatChanged": [
+    "TryReadPortableOptionsFile now rejects fileLength > FixedOptionsFileBytes.",
+    "TryReadPortableOptionsFile now rejects version <= 0 and version > FileVersion.",
+    "Legacy record objects are bounded by the validated Records array range.",
+    "Legacy record fields are read only through top-level property ranges.",
+    "String, int, float, and bool legacy values now require full value-token consumption.",
+    "Optional legacy fields now separate valid/not-found from malformed/duplicate state.",
+    "Dead unscoped legacy property helpers were removed."
+  ],
+  "scannedFiles": [
+    "Assets/_Project/Scripts/Input/InputBindingContracts.cs",
+    "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+    "Assets/_Project/Scripts/Input/AccessibilitySettings.cs",
+    "Assets/_Project/Scripts/Input/InputManager.cs",
+    "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+    "Assets/_Project/Scripts/Core/RebindingManager.cs",
+    "Assets/_Project/Scripts/Core/BootstrapContracts/InputBindingServiceContracts.cs",
+    "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+    "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+    "Assets/_Project/Scripts/Input/INPUT_MIGRATION_GUIDE.md"
+  ],
+  "verification": {
+    "forbiddenProductionTokenHits": 0,
+    "uiDelegateChurnHits": 0,
+    "absoluteAupCastCandidates": 0,
+    "nativeTokenOccurrencesIncludingTests": 15,
+    "nativeTokenOccurrencesProduction": 14,
+    "nativeFieldDeclarations": 0,
+    "persistentNativeFieldsRemaining": 0,
+    "deadUnscopedLegacyJsonHelpersRemaining": 0,
+    "gitDiffCheck": "no whitespace errors; UserOptionsPersistence line-ending warning only",
+    "build": "blocked: CPU sampled at 100%, above the 50% project gate"
+  },
+  "residualRisks": [
+    "Unity Editor tests and Profiler/GCMonitor were not run in this tool context.",
+    "Build/Roslyn dotnet audits were not launched because the CPU gate was closed.",
+    "Shared Core scalability profile remains two-tier LowMx350/HighRtx; this is a cross-domain policy defect and was not patched from input/UI ownership."
+  ],
+  "verificationHashSha256": "cac77ee7b442e153e6d7c717e911af60f1a2be66b9674b0d07fb1ac2cb613628"
+}

@@ -139,7 +139,7 @@ Shader "Hecton8/UI/ToolScreenDiegetic"
                 color = lerp(color, 1.0 - color, invertAmount);
                 color += critical * pulse * float3(0.75, 0.95, 0.72);
 
-                float edge = 1.0 - smoothstep(0.0, 0.045, min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y)));
+                float edge = 1.0 - saturate(min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y)) * rcp(0.045));
                 color += _Color.rgb * edge * 0.08;
 
                 return half4(color, 1.0h);

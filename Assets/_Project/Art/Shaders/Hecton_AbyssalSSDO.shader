@@ -14,12 +14,16 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
         ZTest Always
 
         HLSLINCLUDE
-        #pragma target 4.5
+        #pragma target 3.5
+        #pragma multi_compile_instancing
+        #pragma instancing_options assumeuniformscaling
         #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
         #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
+        #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+        #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
         CBUFFER_START(UnityPerMaterial)
             float _HectonAbyssalSsdoPassMode;
@@ -40,11 +44,14 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
 
         struct Attributes
         {
+            UNITY_VERTEX_INPUT_INSTANCE_ID
             uint vertexID : SV_VertexID;
         };
 
         struct Varyings
         {
+            UNITY_VERTEX_INPUT_INSTANCE_ID
+            UNITY_VERTEX_OUTPUT_STEREO
             float4 positionCS : SV_POSITION;
             float2 screenUV : TEXCOORD0;
         };
@@ -52,12 +59,20 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
         Varyings Vert(Attributes input)
         {
             Varyings output;
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_TRANSFER_INSTANCE_ID(input, output);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
             output.screenUV = float2((input.vertexID << 1) & 2, input.vertexID & 2);
             output.positionCS = float4(output.screenUV * 2.0 - 1.0, 0.0, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
             output.screenUV.y = 1.0 - output.screenUV.y;
         #endif
             return output;
+        }
+
+        float2 ResolveFoveatedSourceUV(float2 uv)
+        {
+            return FoveatedRemapLinearToNonUniform(uv);
         }
 
         float SafeRcp(float value)
@@ -109,15 +124,9 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
 
         void SampleSceneLinearDepth(float2 screenUV, out float rawDepth, out float depthValid, out float linearEyeDepth)
         {
-            rawDepth = SampleSceneDepth(screenUV);
+            rawDepth = SampleSceneDepth(ResolveFoveatedSourceUV(screenUV));
             depthValid = ResolveRawDepthValidity(rawDepth);
-            if (depthValid <= 0.5)
-            {
-                linearEyeDepth = 0.0;
-                return;
-            }
-
-            linearEyeDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
+            linearEyeDepth = LinearEyeDepth(rawDepth, _ZBufferParams) * depthValid;
         }
 
         half EvaluateDirectionalOcclusion(float2 screenUV)
@@ -156,22 +165,17 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
                 float sampleDepthValid;
                 float sampleLinearEyeDepth;
                 SampleSceneLinearDepth(sampleUV, sampleRawDepth, sampleDepthValid, sampleLinearEyeDepth);
-                if (sampleDepthValid <= 0.5)
-                    continue;
-
                 float depthDelta = linearEyeDepth - sampleLinearEyeDepth;
-                if (depthDelta <= 0.0)
-                    continue;
-
                 float depthDeltaSq = depthDelta * depthDelta;
-                if (depthDeltaSq >= radiusMetersSq)
-                    continue;
+                float sampleMask = sampleDepthValid *
+                    step(0.000001, depthDelta) *
+                    step(depthDeltaSq, radiusMetersSq);
 
                 float rangeWeight = 1.0 - saturate(depthDeltaSq * invRadiusMetersSq);
                 float horizonWeight = saturate(depthDelta * invRadiusMeters - _HectonAbyssalSsdoBias);
                 float directionalWeight = saturate(0.7 + dot(rotatedDirection, screenBias));
                 float depthWeight = rcp(1.0 + depthDelta * _HectonAbyssalSsdoDepthSigma * 0.01);
-                accumulated += horizonWeight * directionalWeight * rangeWeight * depthWeight;
+                accumulated += horizonWeight * directionalWeight * rangeWeight * depthWeight * sampleMask;
             }
 
             float normalizedOcclusion = accumulated * 0.25;
@@ -204,7 +208,7 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
                 float sampleLinearEyeDepthA;
                 SampleSceneLinearDepth(uvA, sampleRawDepthA, sampleDepthValidA, sampleLinearEyeDepthA);
                 float depthDeltaA = abs(sampleLinearEyeDepthA - centerLinearEyeDepth);
-                float weightA = sampleDepthValidA > 0.5 && depthDeltaA <= _HectonAbyssalSsdoBlurDepthThreshold ? 1.0 : 0.0;
+                float weightA = sampleDepthValidA * step(depthDeltaA, _HectonAbyssalSsdoBlurDepthThreshold);
                 accumulated += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uvA).r * weightA;
                 totalWeight += weightA;
 
@@ -213,7 +217,7 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
                 float sampleLinearEyeDepthB;
                 SampleSceneLinearDepth(uvB, sampleRawDepthB, sampleDepthValidB, sampleLinearEyeDepthB);
                 float depthDeltaB = abs(sampleLinearEyeDepthB - centerLinearEyeDepth);
-                float weightB = sampleDepthValidB > 0.5 && depthDeltaB <= _HectonAbyssalSsdoBlurDepthThreshold ? 1.0 : 0.0;
+                float weightB = sampleDepthValidB * step(depthDeltaB, _HectonAbyssalSsdoBlurDepthThreshold);
                 accumulated += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uvB).r * weightB;
                 totalWeight += weightB;
             }
@@ -223,33 +227,45 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
 
         half4 FragOcclusion(Varyings input) : SV_Target
         {
-            half occlusion = EvaluateDirectionalOcclusion(input.screenUV);
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 screenUV = UnityStereoTransformScreenSpaceTex(input.screenUV);
+            half occlusion = EvaluateDirectionalOcclusion(screenUV);
             return half4(occlusion, occlusion, occlusion, 1.0);
         }
 
         half4 FragBlurH(Varyings input) : SV_Target
         {
-            half occlusion = BlurOcclusion(input.screenUV, float2(1.0, 0.0));
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 screenUV = UnityStereoTransformScreenSpaceTex(input.screenUV);
+            half occlusion = BlurOcclusion(screenUV, float2(1.0, 0.0));
             return half4(occlusion, occlusion, occlusion, 1.0);
         }
 
         half4 FragBlurV(Varyings input) : SV_Target
         {
-            half occlusion = BlurOcclusion(input.screenUV, float2(0.0, 1.0));
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 screenUV = UnityStereoTransformScreenSpaceTex(input.screenUV);
+            half occlusion = BlurOcclusion(screenUV, float2(0.0, 1.0));
             return half4(occlusion, occlusion, occlusion, 1.0);
         }
 
         half4 FragComposite(Varyings input) : SV_Target
         {
-            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 screenUV = UnityStereoTransformScreenSpaceTex(input.screenUV);
+            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(screenUV));
             float rawDepth;
             float depthValid;
             float linearEyeDepth;
-            SampleSceneLinearDepth(input.screenUV, rawDepth, depthValid, linearEyeDepth);
+            SampleSceneLinearDepth(screenUV, rawDepth, depthValid, linearEyeDepth);
             if (depthValid <= 0.5)
                 return sourceColor;
 
-            half occlusion = SAMPLE_TEXTURE2D_X(_HectonAbyssalSSDOTex, sampler_LinearClamp, input.screenUV).r;
+            half occlusion = SAMPLE_TEXTURE2D_X(_HectonAbyssalSSDOTex, sampler_LinearClamp, screenUV).r;
             sourceColor.rgb *= lerp(1.0h, occlusion, (half)_HectonAbyssalSsdoCompositeStrength);
             return sourceColor;
         }

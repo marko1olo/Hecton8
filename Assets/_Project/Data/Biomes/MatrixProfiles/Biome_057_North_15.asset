@@ -27,7 +27,7 @@ MonoBehaviour:
     Cell.'
   landmarkIdentity: The Iron Plains reads through spires, steps, and big natural
     crowns. Landmarks should feel scarce but memorable.
-  safePocketIdentity: 'Safe pockets are short-lived and mostly procedural: a lee
+  safePocketIdentity: 'Reorientation pockets are short-lived and mostly procedural: a lee
     side, a bowl edge, a dead current seam.'
   riskSummary: 'Main failure mode: bad drops and exposed lines, depth stress, and
     expensive hesitation. Creature pressure stays high.'

@@ -671,7 +671,7 @@ namespace Hecton8.Physics
                 GlobalQualityWeight = q
             }.Schedule(math.min(splineVertices.IsCreated ? splineVertices.Length : 0, safeActiveNodeCount), 32, forceHandle);
 
-            JobHandle telemetryHandle = new RecordTetherTelemetryJob
+            JobHandle telemetryHandle = new RecordHarpoonTetherTelemetryJob
             {
                 States = (TetherStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(states),
                 StateCount = tetherCount,
@@ -923,7 +923,7 @@ namespace Hecton8.Physics
             builder.AppendLine("    <TASK id=\"12\" status=\"PASS\">Anchor distance math subtracts double3 AUP first, then casts local delta to float3.</TASK>");
             builder.AppendLine("    <TASK id=\"13\" status=\"PASS\">All solver jobs use deterministic Burst float mode and fixed tick delta inputs.</TASK>");
             builder.AppendLine("    <TASK id=\"14\" status=\"PASS\">Vault allocations use UninitializedMemory plus deterministic overwrite/sentinel writes.</TASK>");
-            builder.AppendLine("    <TASK id=\"15\" status=\"PASS\">RecordTetherTelemetryJob writes a 300-row telemetry ring and fault flags; TryDumpTelemetryIfFault writes Dump_SHINOBU_328.bin from the owner/editor completion phase.</TASK>");
+            builder.AppendLine("    <TASK id=\"15\" status=\"PASS\">RecordHarpoonTetherTelemetryJob writes a 300-row telemetry ring and fault flags; TryDumpTelemetryIfFault writes Dump_SHINOBU_328.bin from the owner/editor completion phase.</TASK>");
             builder.AppendLine("    <TASK id=\"16\" status=\"PASS_STATIC\">Kinematic tuner is editor-only UI Toolkit and exposes SnapStressSeconds, tension, strength, gravity, quality, node, and iteration controls before writing Vault tuning under editor lock.</TASK>");
             builder.AppendLine("    <TASK id=\"17\" status=\"PASS\">Authoring material profile ingestor uses ReadOnlySpan byte cells, FNV-1a names, and manual finite float decoding.</TASK>");
             builder.AppendLine("    <TASK id=\"18\" status=\"PASS_STATIC\">Live debug gizmo reads Vault nodes/states and draws SceneView lines only in editor.</TASK>");
@@ -940,7 +940,7 @@ namespace Hecton8.Physics
             builder.AppendLine("  <SCALABILITY_CURVE>Below GlobalQualityWeight 0.3, ResolveIterationCount collapses relaxation toward 2 iterations while shader Catmull-Rom Dear Lie hides visual density. Public Schedule still accepts compact live-owner node strides from ResolveNodesPerTether, but the emergency mock path preserves its fixed seeded MockNodesPerTether stride so quality cannot alias tether node ranges. Middle tiers get proportional constraint work and visual scalars. High/Ultra spend extra budget on tighter constraints and richer GPU cable presentation. Quality never changes DTO layout, BufferIDs, save identity, or force authority route.</SCALABILITY_CURVE>");
             builder.AppendLine("  <H_PHI_VAULT_STATUS privateArrays=\"0\">Vault IDs 72180..72193: TetherStates, TetherNodes, TetherPreviousNodes, TetherConstraints, ForcePackets, PhysicsEventMirrors, SplineVertices, TelemetryRing, TelemetryHead, Tuning, MaterialProfiles, BootstrapState, FaultFlags, StressStates.</H_PHI_VAULT_STATUS>");
             builder.AppendLine("  <BOOTSTRAP_SENTINEL_CHECK>BootstrapMagic is valid only when all required Vault lanes resolve at required capacities and the first state/stress/tuning/material rows pass finite, active, positive-constant invariants; otherwise bootstrap[0] is reset and mock seeding rewrites owned rows.</BOOTSTRAP_SENTINEL_CHECK>");
-            builder.AppendLine("  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>NoAlias is present on non-overlapping NativeArray/pointer job fields. Schedule clamps owner-provided active tether/node/constraint counts to non-negative buffer ranges and clamps tether count to both TetherStateDTO and TetherStressStateDTO capacities before scheduling. Dependency chain: TetherManager.ScheduleShinobu328TensionMock dependency -> SimulateTetherNodesJob -> SolveTetherConstraintsJob -> CalculateTetherForceJob -> BuildDearLieGpuSplineJob -> RecordTetherTelemetryJob -> dispatcher-owned output handle; TetherManager stores that handle, registers it with H8Memory, retires it through DispatcherJobFence.TryFinalizeCompleted, and uses forced completion only for teardown. SignalBus publishing is owner-phase TryPush after completion, bounded to activeTetherCount*2 HarpoonTensionPhysicsEventMirrorDTO rows converted into PhysicsEventPayload outside Burst.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>");
+            builder.AppendLine("  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>NoAlias is present on non-overlapping NativeArray/pointer job fields. Schedule clamps owner-provided active tether/node/constraint counts to non-negative buffer ranges and clamps tether count to both TetherStateDTO and TetherStressStateDTO capacities before scheduling. Dependency chain: TetherManager.ScheduleShinobu328TensionMock dependency -> SimulateTetherNodesJob -> SolveTetherConstraintsJob -> CalculateTetherForceJob -> BuildDearLieGpuSplineJob -> RecordHarpoonTetherTelemetryJob -> dispatcher-owned output handle; TetherManager stores that handle, registers it with H8Memory, retires it through DispatcherJobFence.TryFinalizeCompleted, and uses forced completion only for teardown. SignalBus publishing is owner-phase TryPush after completion, bounded to activeTetherCount*2 HarpoonTensionPhysicsEventMirrorDTO rows converted into PhysicsEventPayload outside Burst.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>");
             builder.AppendLine("  <COMPILE_GUARD>No direct sibling-domain asmdef reference was added. Existing TetherManager now references SHINOBU_328 inside the same project runtime surface; compile proof is pending because generated Hecton8.Core.csproj does not include new SHINOBU_328 scripts until Unity project regeneration and prior Core build is blocked by unrelated Gameplay errors.</COMPILE_GUARD>");
             builder.AppendLine("  <DEAR_LIE_CONFIRMATION>Before: CPU rope segments, Unity joints, and LineRenderer imply PhysX island plus per-frame visual point upload. After: O(tethers * nodes * iterations) Burst truth plus O(nodes) GPU upload; shader owns smooth rope thickness and spline interpolation.</DEAR_LIE_CONFIRMATION>");
             builder.AppendLine("</SELF_AUDIT>");
@@ -1874,7 +1874,7 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        public struct RecordTetherTelemetryJob : IJob
+        public struct RecordHarpoonTetherTelemetryJob : IJob
         {
             [NoAlias, NativeDisableUnsafePtrRestriction] public TetherStateDTO* States;
             public int StateCount;

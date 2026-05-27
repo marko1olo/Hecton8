@@ -23,8 +23,10 @@ Shader "Hidden/Hecton8/VisorTraumaLegacy"
             #pragma vertex Vert
             #pragma fragment Frag
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
             #define VISOR_TRAUMA_BLOOD 1u
             #define VISOR_TRAUMA_ACID 2u
@@ -77,9 +79,32 @@ Shader "Hidden/Hecton8/VisorTraumaLegacy"
                 return output;
             }
 
+            float ResolveLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) * rcp(max(0.0001, edge1 - edge0)));
+            }
+
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(saturate(uv));
+            }
+
+            float CheapSignedTriangle(float value)
+            {
+                return abs(frac(value) * 2.0 - 1.0) * 2.0 - 1.0;
+            }
+
+            float ApproximateMagnitude2D(float2 value)
+            {
+                float2 absValue = abs(value);
+                float maxAxis = max(absValue.x, absValue.y);
+                float minAxis = min(absValue.x, absValue.y);
+                return maxAxis + minAxis * 0.375;
+            }
+
             bool TryResolveScenePosition(float2 screenUV, out float3 positionWS)
             {
-                float rawDepth = SampleSceneDepth(screenUV);
+                float rawDepth = SampleSceneDepth(ResolveFoveatedSourceUV(screenUV));
             #if UNITY_REVERSED_Z
                 bool validDepth = rawDepth > 0.0001;
             #else
@@ -121,13 +146,13 @@ Shader "Hidden/Hecton8/VisorTraumaLegacy"
                 uint traumaType = packedPayload & 15u;
                 float birthPhase = frac(trauma.BirthTime * 0.000244140625) * 4096.0;
 
-                float branchNoise = sin(centered.x * 43.0 + centered.y * 17.0 + birthPhase * 0.13);
-                float ringNoise = 0.72 + 0.28 * sin(centered.x * 37.0 + centered.y * 19.0 + packedPayload * 1.71);
+                float branchNoise = CheapSignedTriangle((centered.x * 43.0 + centered.y * 17.0 + birthPhase * 0.13) * 0.15915494);
+                float ringNoise = 0.72 + 0.28 * CheapSignedTriangle((centered.x * 37.0 + centered.y * 19.0 + packedPayload * 1.71) * 0.15915494);
                 float bloodAlpha = radial * radial * lerp(1.0, ringNoise, quality);
                 float mainCrack = saturate(1.0 - abs(centered.y + branchNoise * 0.045) * lerp(26.0, 44.0, quality));
                 float crossCrack = saturate(1.0 - abs(centered.x - branchNoise * 0.035) * lerp(34.0, 64.0, quality));
                 float crackAlpha = saturate((mainCrack + crossCrack * 0.45) * radial);
-                float tornEdge = smoothstep(0.12, 0.62, radial) * (1.0 - smoothstep(0.62, 0.98, radial));
+                float tornEdge = ResolveLinearRamp01(0.12, 0.62, radial) * (1.0 - ResolveLinearRamp01(0.62, 0.98, radial));
 
                 half3 scorch = half3(0.08h, 0.055h, 0.035h);
                 half3 blood = half3(0.24h, 0.010h, 0.006h);
@@ -208,7 +233,7 @@ Shader "Hidden/Hecton8/VisorTraumaLegacy"
 
             half4 Frag(Varyings input) : SV_Target
             {
-                half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
+                half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(input.screenUV));
                 if (_GlobalVisorTraumaCount <= 0)
                     return sourceColor;
 
@@ -216,11 +241,11 @@ Shader "Hidden/Hecton8/VisorTraumaLegacy"
                     return sourceColor;
 
                 ProjectVisorTrauma(scenePositionWS, out half3 traumaColor, out float2 refractOffset);
-                float refractWeight = saturate(length(refractOffset) * 180.0);
+                float refractWeight = saturate(ApproximateMagnitude2D(refractOffset) * 180.0);
                 if (refractWeight > 0.001)
                 {
                     float2 refractUv = clamp(input.screenUV + refractOffset, float2(0.001, 0.001), float2(0.999, 0.999));
-                    half3 refractedColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, refractUv).rgb;
+                    half3 refractedColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(refractUv)).rgb;
                     sourceColor.rgb = lerp(sourceColor.rgb, refractedColor, half(refractWeight));
                 }
 

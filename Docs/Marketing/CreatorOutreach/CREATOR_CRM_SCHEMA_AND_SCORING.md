@@ -3,18 +3,9 @@
 Status: operational specification
 Purpose: turn raw leads into outreach ready rows without lying
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026 05 17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
-
-  `Docs/README.md`
-  `Docs/DOC_GOVERNANCE.md`
-  current public creator/contact evidence
-  fresh CRM/outreach logs
-
-No lead score, contact readiness, subscriber/reach state, platform policy compliance, runtime build, Unity import, profiler, player build, or campaign performance proof is implied unless this document links a fresh evidence artifact. Scoring rules are an internal triage model, not external market telemetry.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 ## Table Schema
 

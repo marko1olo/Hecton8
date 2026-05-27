@@ -1,8 +1,8 @@
 // ============================================================================
 // HECTON-8 - ShellVerificationRuntimeSmokeTester.cs
 // Dev-only runtime smoke coverage for shell verifiers and route recovery.
-// Verifies menu -> world handoff, pause recovery, input restoration, optional
-// load-from-shell, and world -> menu recovery using the real verifier owners.
+// Verifies menu -> orbit new-game handoff plus optional direct save load
+// recovery using the real verifier owners.
 // ============================================================================
 
 using System;
@@ -26,7 +26,7 @@ namespace Hecton8.Dev
         {
             None = 0,
             AwaitMenuShell = 1,
-            AwaitWorldNewGame = 2,
+            AwaitNewGameOrbit = 2,
             AwaitPauseRecovery = 3,
             AwaitInputRestoration = 4,
             AwaitReturnToMenu = 5
@@ -34,6 +34,7 @@ namespace Hecton8.Dev
 
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string MainMenuSceneName = "01_MAIN_MENU";
+        private const string OrbitSceneName = "01_ORBIT";
         private const string WorldSceneName = "02_HECTON_WORLD";
         private const float AutoStartRetryWindow = 3f;
         private const float EditorStableWindowSeconds = 0.5f;
@@ -138,6 +139,7 @@ namespace Hecton8.Dev
             bool canAutoStartFromScene =
                 string.Equals(activeSceneName, BootstrapSceneName, System.StringComparison.Ordinal) ||
                 string.Equals(activeSceneName, MainMenuSceneName, System.StringComparison.Ordinal) ||
+                (string.Equals(activeSceneName, OrbitSceneName, System.StringComparison.Ordinal) && HasPendingResumeState()) ||
                 (string.Equals(activeSceneName, WorldSceneName, System.StringComparison.Ordinal) && HasPendingResumeState());
             if (!canAutoStartFromScene)
             {
@@ -237,9 +239,9 @@ namespace Hecton8.Dev
                 string activeSceneName = SceneManager.GetActiveScene().name;
                 ResumePhase resumePhase = LoadResumePhase();
                 string resumeSaveSlot = LoadResumeSaveSlot();
-                if (CanResumeFromWorld(activeSceneName, resumePhase))
+                if (CanResumeFromScene(activeSceneName, resumePhase))
                 {
-                    await ResumeFromWorldPhaseAsync(resumePhase, resumeSaveSlot, cancellationToken);
+                    await ResumeFromScenePhaseAsync(resumePhase, resumeSaveSlot, cancellationToken);
                     return;
                 }
 
@@ -272,14 +274,22 @@ namespace Hecton8.Dev
 
                 LogDiagnostic("[ShellSmoke] Starting shell verification smoke pass.");
 
-                _debugLastPhase = "NewGameTransition";
-                SaveResumeState(ResumePhase.AwaitWorldNewGame);
+                _debugLastPhase = "NewGameOrbitTransition";
+                SaveResumeState(ResumePhase.AwaitNewGameOrbit);
                 _mainMenuController.StartGame(string.Empty);
                 _sceneVerifier.VerifyNewGameTransition();
-                await WaitUntilAsync(IsWorldNewGameReady, "New-game world handoff", cancellationToken);
-                if (!IsWorldNewGameReady())
+                await WaitUntilAsync(IsNewGameOrbitReady, "New-game orbit handoff", cancellationToken);
+                bool newGameOrbitReady = IsNewGameOrbitReady();
+                if (!newGameOrbitReady)
                 {
-                    Fail("New-game handoff did not reach a valid world state.");
+                    Fail("New-game handoff did not reach a valid orbit prologue state.");
+                    return;
+                }
+
+                if (newGameOrbitReady)
+                {
+                    ClearResumeState();
+                    CompleteRun();
                     return;
                 }
 
@@ -462,10 +472,10 @@ namespace Hecton8.Dev
             }
         }
 
-        private bool IsWorldNewGameReady()
+        private bool IsNewGameOrbitReady()
         {
             GameStartContext context = GameStartContextHolder.Current;
-            return string.Equals(SceneManager.GetActiveScene().name, WorldSceneName, System.StringComparison.Ordinal) &&
+            return string.Equals(SceneManager.GetActiveScene().name, OrbitSceneName, System.StringComparison.Ordinal) &&
                    GameBootstrapper.AreAllSystemsReady() &&
                    context.IsValid &&
                    context.StartMode == GameStartMode.NewGame;
@@ -597,20 +607,26 @@ namespace Hecton8.Dev
                 $"isWorld={isWorld} hasPauseMenu={hasPauseMenu}");
         }
 
-        private async Awaitable ResumeFromWorldPhaseAsync(
+        private async Awaitable ResumeFromScenePhaseAsync(
             ResumePhase resumePhase,
             string resumeSaveSlot,
             CancellationToken cancellationToken)
         {
             LogDiagnostic($"[ShellSmoke] Resume start phase={resumePhase} scene={SceneManager.GetActiveScene().name} slot={resumeSaveSlot}");
 
-            if (resumePhase == ResumePhase.AwaitWorldNewGame && !IsWorldNewGameReady())
+            if (resumePhase == ResumePhase.AwaitNewGameOrbit)
             {
-                Fail("Resume requested in world, but new-game handoff state is invalid.");
+                if (!IsNewGameOrbitReady())
+                {
+                    Fail("Resume requested in orbit, but new-game prologue handoff state is invalid.");
+                    return;
+                }
+
+                CompleteRun();
                 return;
             }
 
-            if (resumePhase == ResumePhase.AwaitWorldNewGame || resumePhase == ResumePhase.AwaitPauseRecovery)
+            if (resumePhase == ResumePhase.AwaitPauseRecovery)
             {
                 _debugLastPhase = "PauseRecovery";
                 SaveResumeState(ResumePhase.AwaitPauseRecovery, resumeSaveSlot);
@@ -810,13 +826,15 @@ namespace Hecton8.Dev
 #endif
         }
 
-        private static bool CanResumeFromWorld(string activeSceneName, ResumePhase resumePhase)
+        private static bool CanResumeFromScene(string activeSceneName, ResumePhase resumePhase)
         {
+            if (string.Equals(activeSceneName, OrbitSceneName, System.StringComparison.Ordinal))
+                return resumePhase == ResumePhase.AwaitNewGameOrbit;
+
             if (!string.Equals(activeSceneName, WorldSceneName, System.StringComparison.Ordinal))
                 return false;
 
-            return resumePhase == ResumePhase.AwaitWorldNewGame ||
-                   resumePhase == ResumePhase.AwaitPauseRecovery ||
+            return resumePhase == ResumePhase.AwaitPauseRecovery ||
                    resumePhase == ResumePhase.AwaitInputRestoration ||
                    resumePhase == ResumePhase.AwaitReturnToMenu;
         }

@@ -39,6 +39,12 @@ namespace Hecton8.Construction
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveAuthorityTickIntervalSeconds()
+        {
+            return ResolveTickIntervalSeconds(HatchLockConstants.AuthoritativeQualityWeight);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint Hash(uint seed, uint value)
         {
             uint hash = seed ^ value;
@@ -373,7 +379,7 @@ namespace Hecton8.Construction
         public float SafePressureDifferentialATM;
         public float StructuralJamThreshold01;
         public float CatastrophicPressureDifferentialATM;
-        public float GlobalQualityWeight;
+        public float AcousticAuthorityWeight;
         public uint Frame;
         public byte EmitAcousticSignals;
 
@@ -461,7 +467,7 @@ namespace Hecton8.Construction
                 double3 hatchAup = HatchAups[index];
                 if (math.all(math.isfinite(hatchAup)))
                 {
-                    float q = HatchLockMath.Sanitize01(GlobalQualityWeight, 0f);
+                    float q = HatchLockMath.Sanitize01(AcousticAuthorityWeight, HatchLockConstants.AuthoritativeQualityWeight);
                     MovementAcousticSignal signal = default;
                     signal.PositionAup = HatchLockMath.PackAup(hatchAup);
                     signal.Volume = math.saturate(0.25f + delta * (0.25f + q * 0.5f));

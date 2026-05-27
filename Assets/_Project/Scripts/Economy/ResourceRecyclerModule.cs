@@ -133,6 +133,11 @@ namespace Hecton8.Economy
             UnregisterModuleInstance();
         }
 
+        private void OnDestroy()
+        {
+            InteractableRegistry.InvalidateTree(this);
+        }
+
         public void Tick(float dt)
         {
             if (!_isProcessing || !_hasPower)

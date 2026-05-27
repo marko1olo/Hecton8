@@ -189,7 +189,7 @@ namespace Hecton8.SaveSystem
         [FieldOffset(56)] public ulong _pad0;
     }
 
-    public struct EntityDeltaCompressionVaultBufferSet
+    public ref struct EntityDeltaCompressionVaultBufferSet
     {
         public NativeArray<byte> SchemaBytes;
         public NativeArray<EntityDeltaDataRecordDTO> CurrentRecords;

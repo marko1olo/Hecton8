@@ -40,6 +40,8 @@ namespace Hecton8.Modding
     [StructLayout(LayoutKind.Explicit, Size = FutureCommandSandboxConstants.EnvelopeSizeBytes)]
     public struct FutureCommandEnvelope
     {
+        public const int SizeBytes = FutureCommandSandboxConstants.EnvelopeSizeBytes;
+
         [FieldOffset(0)] public uint OpcodeHash;
         [FieldOffset(4)] public uint ModderSignature;
         [FieldOffset(8)] public double3 TargetAUP;
@@ -49,7 +51,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public struct FutureCommandOpcodeRecord
+    internal struct FutureCommandOpcodeRecord
     {
         [FieldOffset(0)] public uint OpcodeHash;
         [FieldOffset(4)] public uint Flags;
@@ -58,7 +60,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct FutureCommandSandboxTuning
+    internal struct FutureCommandSandboxTuning
     {
         [FieldOffset(0)] public int MaxCommandsPerFrame;
         [FieldOffset(4)] public int MaxModMemoryMb;
@@ -71,7 +73,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct ModderMemoryLease
+    internal struct ModderMemoryLease
     {
         [FieldOffset(0)] public uint ModderSignature;
         [FieldOffset(4)] public int OffsetBytes;
@@ -84,7 +86,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct ModderFrameCounter
+    internal struct ModderFrameCounter
     {
         [FieldOffset(0)] public uint ModderSignature;
         [FieldOffset(4)] public uint Frame;
@@ -99,7 +101,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public struct ApprovedAssetRecord
+    internal struct ApprovedAssetRecord
     {
         [FieldOffset(0)] public uint AssetHash;
         [FieldOffset(4)] public uint Crc32;
@@ -108,7 +110,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct ModSandboxRingState
+    internal struct ModSandboxRingState
     {
         [FieldOffset(0)] public int PendingHead;
         [FieldOffset(4)] public int PendingTail;
@@ -133,7 +135,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct ModSandboxTelemetryEntry
+    internal struct ModSandboxTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public uint Incoming;
@@ -153,7 +155,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct ModSpawnRequestSignal : ISignal
+    internal struct ModSpawnRequestSignal : ISignal
     {
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public uint ModderSignature;
@@ -166,7 +168,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct ModAssetReferenceSignal : ISignal
+    internal struct ModAssetReferenceSignal : ISignal
     {
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public uint ModderSignature;
@@ -180,7 +182,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct MockAcousticSignal : ISignal
+    internal struct MockAcousticSignal : ISignal
     {
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public uint ModderSignature;
@@ -194,7 +196,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct MockDamageSignal : ISignal
+    internal struct MockDamageSignal : ISignal
     {
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public uint ModderSignature;
@@ -208,7 +210,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct ModFutureDevNullSignal : ISignal
+    internal struct ModFutureDevNullSignal : ISignal
     {
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public uint ModderSignature;
@@ -221,7 +223,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct SurvivalOverrideSignal : ISignal
+    internal struct SurvivalOverrideSignal : ISignal
     {
         [FieldOffset(0)] public uint ModHash;
         [FieldOffset(4)] public uint RequestId;
@@ -233,7 +235,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct ModHapticPulseSignal : ISignal
+    internal struct ModHapticPulseSignal : ISignal
     {
         [FieldOffset(0)] public double3 TargetAUP;
         [FieldOffset(24)] public uint WaveformHash;
@@ -246,7 +248,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public struct ModSubtitleCueSignal : ISignal
+    internal struct ModSubtitleCueSignal : ISignal
     {
         [FieldOffset(0)] public uint TokenHash;
         [FieldOffset(4)] public float Duration;
@@ -300,7 +302,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct KernelExecutionTelemetryEntry
+    internal struct KernelExecutionTelemetryEntry
     {
         [FieldOffset(0)] public ulong ExecutionTicks;
         [FieldOffset(8)] public uint Frame;
@@ -319,7 +321,7 @@ namespace Hecton8.Modding
         [FieldOffset(60)] public uint _pad0;
     }
 
-    public static class FutureCommandSandboxConstants
+    internal static class FutureCommandSandboxConstants
     {
         public const int EnvelopeSizeBytes = 64;
         public const int PendingCapacity = 4096;
@@ -410,42 +412,41 @@ namespace Hecton8.Modding
         [FieldOffset(56)] public ulong Reserved3;
     }
 
-    public partial struct MockModQueue : IDisposable
+    internal partial struct MockModQueue : IDisposable
     {
-        public NativeQueue<FutureCommandEnvelope> Queue;
+        private NativeQueue<FutureCommandEnvelope> _queue;
 
-        public static MockModQueue Wrap(NativeQueue<FutureCommandEnvelope> externalQueue)
+        internal static MockModQueue Wrap(NativeQueue<FutureCommandEnvelope> externalQueue)
         {
             MockModQueue queue = default;
             queue.Attach(externalQueue);
             return queue;
         }
 
-        public bool GetIsCreated()
+        internal bool GetIsCreated()
         {
-            return Queue.IsCreated;
+            return _queue.IsCreated;
         }
 
-        public bool Attach(NativeQueue<FutureCommandEnvelope> externalQueue)
+        internal bool Attach(NativeQueue<FutureCommandEnvelope> externalQueue)
         {
             if (!externalQueue.IsCreated)
                 return false;
 
-            Queue = externalQueue;
+            _queue = externalQueue;
             return true;
         }
 
-        public void Dispose()
+        void IDisposable.Dispose()
         {
-            Queue = default;
+            _queue = default;
         }
-
     }
 
     /// <summary>
     /// Binary-only mod quarantine. It never invokes mod C#; it validates math packets and emits DOD signals.
     /// </summary>
-    public static unsafe class FutureCommandSandboxValidator
+    internal static unsafe class FutureCommandSandboxValidator
     {
         private const string DumpPath = "Docs/AgentLogs/Dump_QUARANTINE_SURGEON.bin";
         private const string KernelDumpPath = "Docs/AgentLogs/Dump_COMMAND_FORGE.bin";
@@ -500,24 +501,24 @@ namespace Hecton8.Modding
         private static bool _initialized;
         private static bool _rollbackFreezeOverride;
 
-        public static int GetPendingEnvelopeCount()
+        internal static int GetPendingEnvelopeCount()
         {
             NativeArray<ModSandboxRingState> state = ResolveRingState();
             return state.IsCreated && state.Length > 0 ? state[0].PendingCount : 0;
         }
 
-        public static int GetDevNullEnvelopeCount()
+        internal static int GetDevNullEnvelopeCount()
         {
             NativeArray<ModSandboxRingState> state = ResolveRingState();
             return state.IsCreated && state.Length > 0 ? state[0].DevNullCount : 0;
         }
 
-        public static bool GetIsInitialized()
+        internal static bool GetIsInitialized()
         {
             return _initialized;
         }
 
-        public static bool GetHasScheduledValidation()
+        internal static bool GetHasScheduledValidation()
         {
             return _scheduledValidationActive;
         }
@@ -528,7 +529,7 @@ namespace Hecton8.Modding
             Shutdown();
         }
 
-        public static void Initialize()
+        internal static void Initialize()
         {
             if (_initialized)
                 return;
@@ -543,7 +544,7 @@ namespace Hecton8.Modding
             _initialized = true;
         }
 
-        public static void Shutdown()
+        internal static void Shutdown()
         {
             CompleteScheduledPreSimulationForBarrier();
             _pendingRingHandle = default;
@@ -572,7 +573,7 @@ namespace Hecton8.Modding
             _initialized = false;
         }
 
-        public static bool Request(in FutureCommandEnvelope envelope)
+        internal static bool Request(in FutureCommandEnvelope envelope)
         {
             Initialize();
             AcquireVaultBuffers();
@@ -587,12 +588,12 @@ namespace Hecton8.Modding
             return true;
         }
 
-        public static int RequestRawEnvelopeStream(NativeArray<byte> bytes, int byteLength)
+        internal static int RequestRawEnvelopeStream(NativeArray<byte> bytes, int byteLength)
         {
             return RequestRawEnvelopeStream(bytes, byteLength, sourceBigEndian: false);
         }
 
-        public static int RequestRawEnvelopeStream(NativeArray<byte> bytes, int byteLength, bool sourceBigEndian)
+        internal static int RequestRawEnvelopeStream(NativeArray<byte> bytes, int byteLength, bool sourceBigEndian)
         {
             Initialize();
             if (!bytes.IsCreated || byteLength < FutureCommandSandboxConstants.EnvelopeSizeBytes)
@@ -623,7 +624,7 @@ namespace Hecton8.Modding
             return accepted;
         }
 
-        public static int RequestFromExternalQueue(NativeQueue<FutureCommandEnvelope> sourceQueue, int maxEnvelopeCount)
+        internal static int RequestFromExternalQueue(NativeQueue<FutureCommandEnvelope> sourceQueue, int maxEnvelopeCount)
         {
             Initialize();
             if (!sourceQueue.IsCreated || maxEnvelopeCount <= 0)
@@ -648,7 +649,7 @@ namespace Hecton8.Modding
             return accepted;
         }
 
-        public static void DrainPreSimulation()
+        internal static void DrainPreSimulation()
         {
             TryFinalizeScheduledPreSimulationNoWait();
             if (_scheduledValidationActive)
@@ -664,7 +665,7 @@ namespace Hecton8.Modding
             H8Memory.RegisterActiveJob(SystemID.ModSandbox, validationHandle);
         }
 
-        public static bool TrySchedulePreSimulation(JobHandle dependsOn, out JobHandle validationHandle)
+        internal static bool TrySchedulePreSimulation(JobHandle dependsOn, out JobHandle validationHandle)
         {
             validationHandle = dependsOn;
             TryFinalizeScheduledPreSimulationNoWait();
@@ -682,7 +683,7 @@ namespace Hecton8.Modding
             return true;
         }
 
-        public static bool TryFinalizeScheduledPreSimulationNoWait()
+        internal static bool TryFinalizeScheduledPreSimulationNoWait()
         {
             if (!_scheduledValidationActive)
                 return true;
@@ -698,7 +699,7 @@ namespace Hecton8.Modding
             return CommitScheduledValidation();
         }
 
-        public static bool CompleteScheduledPreSimulationForBarrier()
+        internal static bool CompleteScheduledPreSimulationForBarrier()
         {
             if (!_scheduledValidationActive)
                 return true;
@@ -717,7 +718,7 @@ namespace Hecton8.Modding
             return true;
         }
 
-        public static void DrainLateFrame()
+        internal static void DrainLateFrame()
         {
             if (!_initialized)
                 return;
@@ -736,12 +737,12 @@ namespace Hecton8.Modding
             ringState[0] = state;
         }
 
-        public static bool RegisterApprovedAsset(uint assetHash, uint crc32)
+        internal static bool RegisterApprovedAsset(uint assetHash, uint crc32)
         {
             return RegisterApprovedAsset(assetHash, crc32, 0u);
         }
 
-        public static bool RegisterApprovedAsset(uint assetHash, uint crc32, uint byteLength)
+        internal static bool RegisterApprovedAsset(uint assetHash, uint crc32, uint byteLength)
         {
             Initialize();
             NativeArray<ApprovedAssetRecord> approvedAssets = OpenVaultLane(ref _approvedAssetManifestHandle);
@@ -771,7 +772,7 @@ namespace Hecton8.Modding
             return true;
         }
 
-        public static bool RegisterApprovedAsset(uint assetHash, NativeArray<byte> assetBytes, int byteLength)
+        internal static bool RegisterApprovedAsset(uint assetHash, NativeArray<byte> assetBytes, int byteLength)
         {
             if (!assetBytes.IsCreated || byteLength <= 0)
                 return false;
@@ -780,7 +781,7 @@ namespace Hecton8.Modding
             return RegisterApprovedAsset(assetHash, ComputeCrc32(assetBytes, safeLength), (uint)safeLength);
         }
 
-        public static uint ComputeCrc32(NativeArray<byte> bytes, int byteLength)
+        internal static uint ComputeCrc32(NativeArray<byte> bytes, int byteLength)
         {
             if (!bytes.IsCreated || byteLength <= 0)
                 return 0u;
@@ -800,7 +801,7 @@ namespace Hecton8.Modding
             return ~crc;
         }
 
-        public static bool SetOpcodeEnabled(uint opcodeHash, bool enabled)
+        internal static bool SetOpcodeEnabled(uint opcodeHash, bool enabled)
         {
             Initialize();
             NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
@@ -839,7 +840,7 @@ namespace Hecton8.Modding
             return true;
         }
 
-        public static bool IsOpcodeEnabled(uint opcodeHash)
+        internal static bool IsOpcodeEnabled(uint opcodeHash)
         {
             Initialize();
             NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
@@ -858,14 +859,14 @@ namespace Hecton8.Modding
             return false;
         }
 
-        public static FutureCommandSandboxTuning GetTuningSnapshot()
+        internal static FutureCommandSandboxTuning GetTuningSnapshot()
         {
             Initialize();
             NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
             return ResolveTuning(tuningBuffer);
         }
 
-        public static void ApplyTuning(in FutureCommandSandboxTuning tuning)
+        internal static void ApplyTuning(in FutureCommandSandboxTuning tuning)
         {
             Initialize();
             AcquireVaultBuffers();
@@ -881,7 +882,7 @@ namespace Hecton8.Modding
             tuningBuffer[0] = safe;
         }
 
-        public static bool ReportCpuThermalPressure(float pressure01)
+        internal static bool ReportCpuThermalPressure(float pressure01)
         {
             Initialize();
             AcquireVaultBuffers();
@@ -895,7 +896,7 @@ namespace Hecton8.Modding
             return true;
         }
 
-        public static int CopyTelemetrySnapshot(NativeArray<ModSandboxTelemetryEntry> destination)
+        internal static int CopyTelemetrySnapshot(NativeArray<ModSandboxTelemetryEntry> destination)
         {
             Initialize();
             AcquireVaultBuffers();
@@ -909,7 +910,7 @@ namespace Hecton8.Modding
             return count;
         }
 
-        public static bool TryGetTelemetryEntry(int index, out ModSandboxTelemetryEntry entry)
+        internal static bool TryGetTelemetryEntry(int index, out ModSandboxTelemetryEntry entry)
         {
             Initialize();
             AcquireVaultBuffers();
@@ -925,7 +926,7 @@ namespace Hecton8.Modding
         }
 
 #if UNITY_EDITOR
-        public static bool TryIngestAllowedOpcodesCsv(NativeArray<byte> csvBytes, int byteLength)
+        internal static bool TryIngestAllowedOpcodesCsv(NativeArray<byte> csvBytes, int byteLength)
         {
             Initialize();
             if (!csvBytes.IsCreated || byteLength <= 0)
@@ -972,7 +973,7 @@ namespace Hecton8.Modding
 #endif
 
 #if UNITY_EDITOR
-        public static bool TryReloadAllowedOpcodesCsvFromDisk()
+        internal static bool TryReloadAllowedOpcodesCsvFromDisk()
         {
             string path = Path.Combine(Application.dataPath, "../Docs/Modding/allowed_opcodes.csv");
             if (!File.Exists(path))
@@ -1006,7 +1007,7 @@ namespace Hecton8.Modding
             }
         }
 
-        public static bool TryReloadKernelTuningProfilesCsvFromDisk()
+        internal static bool TryReloadKernelTuningProfilesCsvFromDisk()
         {
             string path = Path.Combine(Application.dataPath, "../Docs/Modding/kernel_tuning_profiles.csv");
             if (!File.Exists(path))
@@ -1042,7 +1043,7 @@ namespace Hecton8.Modding
 #endif
 
 #if UNITY_EDITOR
-        public static bool TryIngestKernelTuningProfilesCsv(ReadOnlySpan<byte> csvBytes)
+        internal static bool TryIngestKernelTuningProfilesCsv(ReadOnlySpan<byte> csvBytes)
         {
             AcquireVaultBuffers();
             NativeArray<ModKernelTuningProfile> profiles = OpenVaultLane(ref _kernelTuningProfilesHandle);
@@ -1077,12 +1078,12 @@ namespace Hecton8.Modding
         }
 #endif
 
-        public static void SetRollbackResimulationActive(bool active)
+        internal static void SetRollbackResimulationActive(bool active)
         {
             _rollbackFreezeOverride = active;
         }
 
-        public static bool RunSelfAudit()
+        internal static bool RunSelfAudit()
         {
             Initialize();
             if (UnsafeUtility.SizeOf<FutureCommandEnvelope>() != FutureCommandSandboxConstants.EnvelopeSizeBytes)
@@ -1227,7 +1228,7 @@ namespace Hecton8.Modding
             return selfAuditPassed;
         }
 
-        public static ulong ComputeIntegrityHash(in FutureCommandEnvelope envelope)
+        internal static ulong ComputeIntegrityHash(in FutureCommandEnvelope envelope)
         {
             FutureCommandEnvelope copy = envelope;
             copy.IntegrityHash = 0UL;
@@ -1284,6 +1285,7 @@ namespace Hecton8.Modding
 
                 if (!TryParseOpcodeCsvLine(bytes, tokenStart, lineLength, out uint opcodeHash) ||
                     opcodeHash == 0u ||
+                    !IsRuntimeAllowedFutureCommandOpcode(opcodeHash) ||
                     ContainsOpcodeCsvLineBefore(bytes, tokenStart, opcodeHash))
                 {
                     return false;
@@ -1797,12 +1799,11 @@ namespace Hecton8.Modding
             AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.ModMemoryWrite, 1u);
             AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.FaunaAcousticStimulus, 1u);
             AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.FaunaDamageStimulus, 1u);
-            AddEmergencyOpcode(opcodeRecords, ref state, FutureCommandOpcodes.TriggerSubtitleCue, 1u);
             ringState[0] = state;
             GenerateEmergencyOpcodeMap();
         }
 
-        public static void GenerateEmergencyOpcodeMap()
+        internal static void GenerateEmergencyOpcodeMap()
         {
             NativeArray<ModCommandKernelOpcodeRecord> kernelMap = OpenVaultLane(ref _kernelOpcodeMapHandle);
             NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
@@ -1812,48 +1813,33 @@ namespace Hecton8.Modding
 
             MemClearArray(kernelMap);
             ModSandboxRingState state = ringState[0];
-            AddOpcodeRecord(opcodeRecords, ref state, FutureCommandOpcodes.SurvivalOverride, 1u);
-            AddOpcodeRecord(opcodeRecords, ref state, FutureCommandOpcodes.HapticPulse, 1u);
-            AddOpcodeRecord(opcodeRecords, ref state, FutureCommandOpcodes.SubtitleCue, 1u);
-
-            if (kernelMap.Length > 0)
-            {
-                kernelMap[0] = new ModCommandKernelOpcodeRecord
-                {
-                    OpcodeHash = FutureCommandOpcodes.SurvivalOverride,
-                    KernelId = KernelIdSurvivalOverride,
-                    PriorityWeight = 1.0f,
-                    Flags = 1u
-                };
-            }
-
-            if (kernelMap.Length > 1)
-            {
-                kernelMap[1] = new ModCommandKernelOpcodeRecord
-                {
-                    OpcodeHash = FutureCommandOpcodes.HapticPulse,
-                    KernelId = KernelIdHapticPulse,
-                    PriorityWeight = 0.35f,
-                    Flags = 1u
-                };
-            }
-
-            if (kernelMap.Length > 2)
-            {
-                kernelMap[2] = new ModCommandKernelOpcodeRecord
-                {
-                    OpcodeHash = FutureCommandOpcodes.SubtitleCue,
-                    KernelId = KernelIdSubtitleCue,
-                    PriorityWeight = 0.25f,
-                    Flags = 1u
-                };
-            }
-
+            // Reserved command kernels remain dormant until an owning runtime system makes them public.
             ringState[0] = state;
+        }
+
+        private static bool IsRuntimeAllowedFutureCommandOpcode(uint opcodeHash)
+        {
+            switch (opcodeHash)
+            {
+                case FutureCommandOpcodes.SpawnItem:
+                case FutureCommandOpcodes.AlterHealth:
+                case FutureCommandOpcodes.AlterGravity:
+                case FutureCommandOpcodes.AssetReference:
+                case FutureCommandOpcodes.ModMemoryRead:
+                case FutureCommandOpcodes.ModMemoryWrite:
+                case FutureCommandOpcodes.FaunaAcousticStimulus:
+                case FutureCommandOpcodes.FaunaDamageStimulus:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static void AddEmergencyOpcode(NativeArray<FutureCommandOpcodeRecord> opcodeRecords, ref ModSandboxRingState state, uint opcodeHash, uint flags)
         {
+            if (!IsRuntimeAllowedFutureCommandOpcode(opcodeHash))
+                return;
+
             AddOpcodeRecord(opcodeRecords, ref state, opcodeHash, flags);
         }
 
@@ -2295,7 +2281,7 @@ namespace Hecton8.Modding
             telemetryCursor[0] = cursor;
         }
 
-        public static bool TryGetKernelTelemetryEntry(int index, out KernelExecutionTelemetryEntry entry)
+        internal static bool TryGetKernelTelemetryEntry(int index, out KernelExecutionTelemetryEntry entry)
         {
             entry = default;
             NativeArray<KernelExecutionTelemetryEntry> telemetryRing = OpenVaultLane(ref _kernelTelemetryRingHandle);
@@ -2386,7 +2372,7 @@ namespace Hecton8.Modding
             }
         }
 
-        public static void DumpBlackbox(uint faultHash)
+        internal static void DumpBlackbox(uint faultHash)
         {
             int frame = SystemDispatcher.CurrentFrameIndex;
             NativeArray<ModSandboxRingState> ringState = ResolveRingState();
@@ -4175,7 +4161,7 @@ namespace Hecton8.Modding
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        public struct MockMaliciousEnvelopeInjectionJob : IJob
+        internal struct MockMaliciousEnvelopeInjectionJob : IJob
         {
             [NoAlias]
             public NativeQueue<FutureCommandEnvelope>.ParallelWriter Output;

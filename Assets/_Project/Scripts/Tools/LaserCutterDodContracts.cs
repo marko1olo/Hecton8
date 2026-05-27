@@ -35,6 +35,7 @@ namespace Hecton8.Tools
         public const BufferID RequestsBuffer = (BufferID)71320;
         public const BufferID RequestCountBuffer = (BufferID)71321;
         public const BufferID ReservedLegacyProbeBuffer = (BufferID)71322;
+        public const BufferID SdfSnapshotBuffer = (BufferID)71322;
         public const BufferID SdfProbeHitsBuffer = (BufferID)71323;
         public const BufferID HitResultsBuffer = (BufferID)71324;
         public const BufferID DeformationBuffer = (BufferID)71325;

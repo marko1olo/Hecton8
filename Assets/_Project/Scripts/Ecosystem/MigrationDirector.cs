@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Atmosphere;
@@ -62,7 +63,6 @@ namespace Hecton8.Ecosystem
         private int _debugBloodCloudPoiCount;
         private int _debugMigrationGridCellCount;
         private int _debugStatisticalSwarmSlotCount;
-        private bool _debugVrSwarmScalingActive;
         private JobHandle _migrationFieldHandle;
         private bool _migrationFieldScheduled;
         private int _pendingBloodCloudPoiWriteCount;
@@ -72,6 +72,8 @@ namespace Hecton8.Ecosystem
         private IDataVault _migrationVault;
         private IFaunaWorldSeedReadModel _faunaWorldSeedReadModel;
         private IAmbientCurrentReadModel _ambientCurrentReadModel;
+        private HectonCelestialEngine _celestialEngine;
+        private HectonMapMagicVegetationBridge _mapMagicVegetationBridge;
         private BufferID _migrationFieldWriteBufferId;
         private BufferID _migrationFieldPoiBufferId;
         private VaultGenerationHandle<MigrationGridCell> _migrationGridFrontHandle;
@@ -154,7 +156,7 @@ namespace Hecton8.Ecosystem
             [FieldOffset(0)]
             public AbsoluteUniversePositionBlit128 PositionAup;
             [FieldOffset(48)]
-            public float3 PositionFieldAupMeters;
+            public float3 PositionFieldLocalMeters;
             [FieldOffset(60)]
             public float RadiusMeters;
             [FieldOffset(64)]
@@ -179,11 +181,11 @@ namespace Hecton8.Ecosystem
             [FieldOffset(28)]
             public float LastWriteGameTimeSeconds;
             [FieldOffset(32)]
-            public ushort PopulationCount;
-            [FieldOffset(34)]
-            public ushort SpeciesId;
-            [FieldOffset(36)]
             public uint Flags;
+            [FieldOffset(36)]
+            public ushort PopulationCount;
+            [FieldOffset(38)]
+            public ushort SpeciesId;
         }
 
         /// <inheritdoc />
@@ -284,6 +286,27 @@ namespace Hecton8.Ecosystem
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
+            {
+                _celestialEngine = currentService as HectonCelestialEngine;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.MapMagicVegetationRuntime)
+            {
+                _mapMagicVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                DisposeMigrationNativeState();
+                _migrationVault = currentService as IDataVault;
+                if (_migrationVault != null && isActiveAndEnabled && !_duplicateServiceSuppressed)
+                    AllocateMigrationNativeState();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
             _registeredToTick = false;
@@ -363,7 +386,7 @@ namespace Hecton8.Ecosystem
         {
             target = origin;
             MigrationDirector runtime = s_activeRuntime;
-            return runtime != null && runtime.TryResolveMigrationTargetInternal(speciesId, origin, out target);
+            return runtime != null && runtime.TryBuildMigrationTargetInternal(speciesId, origin, out target);
         }
 
         internal static int RegisterStatisticalSwarmPopulationAndResolveCount(int speciesId, Vector3 origin, int populationCount)
@@ -403,7 +426,8 @@ namespace Hecton8.Ecosystem
 
             IFaunaWorldSeedReadModel geneticsManager = _faunaWorldSeedReadModel;
             int worldSeed = geneticsManager != null ? geneticsManager.WorldSeed : 0;
-            uint hash = Hash((uint)worldSeed ^ (uint)_currentDayIndex * 0x9E3779B9u ^ (uint)biomeIndex * 0x85EBCA6Bu ^ HashString(archetype.creatureId));
+            uint speciesHash = HashString(AsSpanOrEmpty(archetype.creatureId));
+            uint hash = Hash((uint)worldSeed ^ (uint)_currentDayIndex * 0x9E3779B9u ^ (uint)biomeIndex * 0x85EBCA6Bu ^ speciesHash);
             if ((hash & 0x3u) != 0u)
                 return 1f;
 
@@ -461,18 +485,30 @@ namespace Hecton8.Ecosystem
             return math.lerp(0.7f, 1.45f, weightedAlignment);
         }
 
-        private bool TryResolveMigrationTargetInternal(int speciesId, Vector3 origin, out Vector3 target)
+        private bool TryBuildMigrationTargetInternal(int speciesId, Vector3 origin, out Vector3 target)
         {
             target = origin;
+            if (!IsFiniteVector3(origin))
+            {
+                target = default;
+                return false;
+            }
+
             float sampledTemperature = ResolveWaterTemperature(origin);
+            if (!math.isfinite(sampledTemperature))
+                sampledTemperature = 15f;
+
             Vector3 currentVector = SampleAmbientCurrent(origin);
+            if (!IsFiniteVector3(currentVector))
+                currentVector = Vector3.zero;
+
             currentVector.y = 0f;
 
             EcosystemMigrationProfile.TemperatureRoute route = default;
             bool hasRoute = migrationProfile != null && migrationProfile.TryResolveRoute(sampledTemperature, out route);
-            float routeDistance = hasRoute ? Mathf.Max(1f, route.migrationDistanceMeters) : Mathf.Max(1f, fallbackMigrationDistanceMeters);
-            float currentAlignmentWeight = hasRoute ? Mathf.Clamp01(route.currentAlignmentWeight) : Mathf.Clamp01(fallbackCurrentAlignmentWeight);
-            float depthBiasMeters = hasRoute ? route.depthBiasMeters : 0f;
+            float routeDistance = SanitizePositiveFinite(hasRoute ? route.migrationDistanceMeters : fallbackMigrationDistanceMeters, 1f);
+            float currentAlignmentWeight = Sanitize01Finite(hasRoute ? route.currentAlignmentWeight : fallbackCurrentAlignmentWeight);
+            float depthBiasMeters = SanitizeFinite(hasRoute ? route.depthBiasMeters : 0f, 0f);
 
             int3 originAupCell = ResolveMigrationAupCell(origin);
             uint seed = Hash((uint)speciesId ^ (uint)_currentDayIndex * 0x9E3779B9u ^ HashInt3(originAupCell));
@@ -480,9 +516,14 @@ namespace Hecton8.Ecosystem
                 ? ResolvePreferredDirection(route.preferredPlanarDirection, seed)
                 : ResolvePreferredDirection(Vector2.zero, seed);
             Vector3 migrationDirection = BlendRouteWithCurrent(preferredDirection, currentVector, currentAlignmentWeight);
-            if (TrySampleMigrationFieldDirection(origin, out Vector3 gridDirection))
+            if (!IsFiniteVector3(migrationDirection))
+                migrationDirection = preferredDirection;
+
+            if (TrySampleMigrationFieldDirection(origin, out Vector3 gridDirection) && IsFiniteVector3(gridDirection))
             {
                 migrationDirection = BlendDirectionsLinear(migrationDirection, gridDirection, migrationFlowAlignmentWeight);
+                if (!IsFiniteVector3(migrationDirection))
+                    migrationDirection = preferredDirection;
 
                 _debugLastMigrationGridDirection = gridDirection;
                 _debugLastMigrationGridMagnitude = Mathf.Max(Mathf.Abs(gridDirection.x), Mathf.Max(Mathf.Abs(gridDirection.y), Mathf.Abs(gridDirection.z)));
@@ -498,7 +539,6 @@ namespace Hecton8.Ecosystem
         private int ResolveVisibleBoidCountInternal(int speciesId, Vector3 origin, int requestedPopulationCount)
         {
             int migrationPopulationCount = ResolveEcologicalMigrationPopulationCountInternal(speciesId, origin, requestedPopulationCount);
-            WriteSwarmPopulationState(speciesId, origin, migrationPopulationCount);
             return ResolveVisibleBoidCountFromMigrationPopulationInternal(migrationPopulationCount);
         }
 
@@ -531,7 +571,6 @@ namespace Hecton8.Ecosystem
         private int ResolveVisibleBoidCountFromMigrationPopulationInternal(int migrationPopulationCount)
         {
             bool vrActive = IsVrSwarmScalingActive();
-            _debugVrSwarmScalingActive = vrActive;
             return ResolveVisibleBoidCountFromMigrationPopulationStatic(migrationPopulationCount, vrActive);
         }
 
@@ -560,8 +599,7 @@ namespace Hecton8.Ecosystem
         private float ResolveVatSwayAmplitudeScaleInternal()
         {
             bool vrActive = IsVrSwarmScalingActive();
-            _debugVrSwarmScalingActive = vrActive;
-            return vrActive ? Mathf.Max(1f, vrVatSwayAmplitudeScale) : 1f;
+            return vrActive ? SanitizePositiveFinite(vrVatSwayAmplitudeScale, 1f) : 1f;
         }
 
         private void RegisterPredatorKillPoiInternal(uint uniqueInstanceUid, Vector3 worldPosition, float fallbackRuntimeSeconds)
@@ -593,14 +631,27 @@ namespace Hecton8.Ecosystem
         private bool TryBuildBloodCloudPoi(uint uniqueInstanceUid, Vector3 worldPosition, float gameTimeSeconds, out MigrationBloodCloudPoi poi)
         {
             poi = default;
+            if (!math.isfinite(gameTimeSeconds) || gameTimeSeconds < 0f)
+                return false;
+
             if (!TryResolveRuntimeAup(worldPosition, out AbsoluteUniversePosition positionAup))
                 return false;
 
+            float3 fieldLocalMeters = ResolveWrappedMigrationFieldPoint(worldPosition);
+            if (!math.all(math.isfinite(fieldLocalMeters)))
+                return false;
+
+            float radiusMeters = math.max(10f, SanitizeFinite(bloodCloudPoiRadiusMeters, 10f));
+            float strength = math.max(0f, SanitizeFinite(bloodCloudPoiStrength, 0f));
+            float expireGameTimeSeconds = gameTimeSeconds + BloodCloudPoiLifetimeGameSeconds;
+            if (!math.isfinite(radiusMeters) || !math.isfinite(strength) || !math.isfinite(expireGameTimeSeconds))
+                return false;
+
             poi.PositionAup = positionAup.ToAlignedBlit();
-            poi.PositionFieldAupMeters = ResolveWrappedMigrationFieldPoint(worldPosition);
-            poi.RadiusMeters = Mathf.Max(10f, bloodCloudPoiRadiusMeters);
-            poi.Strength = Mathf.Max(0f, bloodCloudPoiStrength);
-            poi.ExpireGameTimeSeconds = gameTimeSeconds + BloodCloudPoiLifetimeGameSeconds;
+            poi.PositionFieldLocalMeters = fieldLocalMeters;
+            poi.RadiusMeters = radiusMeters;
+            poi.Strength = strength;
+            poi.ExpireGameTimeSeconds = expireGameTimeSeconds;
             poi.SourceId = unchecked((int)(uniqueInstanceUid & 0x7FFFFFFFu));
             poi.Flags = 1;
             return true;
@@ -622,13 +673,14 @@ namespace Hecton8.Ecosystem
             for (int i = 0; i < capacity; i++)
             {
                 MigrationBloodCloudPoi candidate = _bloodCloudPoiMirror[i];
-                if (candidate.Flags != 0 && candidate.SourceId == sourceId)
+                bool candidateActive = IsActiveBloodCloudPoi(in candidate, gameTimeSeconds);
+                if (candidateActive && candidate.SourceId == sourceId)
                 {
                     selectedSlot = i;
                     break;
                 }
 
-                if (candidate.Flags == 0 || gameTimeSeconds >= candidate.ExpireGameTimeSeconds)
+                if (!candidateActive)
                 {
                     if (selectedSlot < 0)
                         selectedSlot = i;
@@ -660,7 +712,14 @@ namespace Hecton8.Ecosystem
             for (int i = 0; i < _pendingBloodCloudPoiWriteCount; i++)
             {
                 MigrationBloodCloudPoi candidate = _pendingBloodCloudPoiWrites[i];
-                if (candidate.Flags != 0 && candidate.SourceId == poi.SourceId)
+                bool candidateActive = IsActiveBloodCloudPoi(in candidate, gameTimeSeconds);
+                if (candidateActive && candidate.SourceId == poi.SourceId)
+                {
+                    selectedSlot = i;
+                    break;
+                }
+
+                if (!candidateActive)
                 {
                     selectedSlot = i;
                     break;
@@ -697,7 +756,7 @@ namespace Hecton8.Ecosystem
             for (int i = 0; i < _pendingBloodCloudPoiWriteCount; i++)
             {
                 MigrationBloodCloudPoi poi = _pendingBloodCloudPoiWrites[i];
-                if (poi.Flags != 0)
+                if (IsActiveBloodCloudPoi(in poi, gameTimeSeconds))
                 {
                     WriteBloodCloudPoiToNative(in poi, gameTimeSeconds, bloodCloudPois);
                     wroteAny = true;
@@ -712,7 +771,9 @@ namespace Hecton8.Ecosystem
 
         private void RequestMigrationFieldRebuildSoon()
         {
-            _coldTickAccumulator = Mathf.Max(_coldTickAccumulator, ResolveMigrationFieldColdTickIntervalSeconds(ResolveMigrationQualityWeight()));
+            float currentAccumulator = math.max(0f, SanitizeFinite(_coldTickAccumulator, 0f));
+            float rebuildInterval = ResolveMigrationFieldColdTickIntervalSeconds(ResolveMigrationQualityWeight());
+            _coldTickAccumulator = math.max(currentAccumulator, SanitizeFinite(rebuildInterval, 1f));
         }
 
         private void CompactPendingBloodCloudPoiWrites(float gameTimeSeconds)
@@ -724,7 +785,7 @@ namespace Hecton8.Ecosystem
             for (int readIndex = 0; readIndex < _pendingBloodCloudPoiWriteCount; readIndex++)
             {
                 MigrationBloodCloudPoi poi = _pendingBloodCloudPoiWrites[readIndex];
-                if (poi.Flags == 0 || gameTimeSeconds >= poi.ExpireGameTimeSeconds)
+                if (!IsActiveBloodCloudPoi(in poi, gameTimeSeconds))
                     continue;
 
                 _pendingBloodCloudPoiWrites[writeIndex++] = poi;
@@ -756,7 +817,7 @@ namespace Hecton8.Ecosystem
 
             float qualityWeight = ResolveMigrationQualityWeight();
             float qualityScaledIntervalSeconds = ResolveMigrationFieldColdTickIntervalSeconds(qualityWeight);
-            float coldDeltaSeconds = ResolveColdTickDeltaSeconds(Time.unscaledTime, qualityScaledIntervalSeconds);
+            float coldDeltaSeconds = AdvanceColdTickDeltaSeconds(Time.unscaledTime, qualityScaledIntervalSeconds);
             AdvanceFallbackTimeline(coldDeltaSeconds);
             _coldTickAccumulator += coldDeltaSeconds;
             if (_coldTickAccumulator < qualityScaledIntervalSeconds)
@@ -793,10 +854,10 @@ namespace Hecton8.Ecosystem
                 Output = backGrid,
                 BloodCloudPois = bloodCloudPois,
                 Resolution = _migrationGridResolution,
-                CellSizeMeters = Mathf.Max(1f, migrationCellSizeMeters),
-                OriginAupLocal = new float3(migrationGridOriginAupLocal.x, migrationGridOriginAupLocal.y, migrationGridOriginAupLocal.z),
+                CellSizeMeters = ResolveSafeMigrationCellSizeMeters(),
+                OriginAupMeters = ResolveSafeMigrationGridOriginAupMeters(),
                 SeasonalPhase = seasonalPhase,
-                VerticalFlowWeight = Mathf.Clamp01(migrationVerticalFlowWeight),
+                VerticalFlowWeight = math.clamp(SanitizeFinite(migrationVerticalFlowWeight, 0f), 0f, 0.35f),
                 CurrentGameTimeSeconds = timelineSeconds,
                 GlobalQualityWeight = ResolveMigrationQualityWeight()
             };
@@ -824,7 +885,9 @@ namespace Hecton8.Ecosystem
                 frontGrid.Length > 0)
             {
                 MigrationGridCell firstCell = frontGrid[0];
-                _debugLastMigrationGridDirection = new Vector3(firstCell.Direction.x, firstCell.Direction.y, firstCell.Direction.z);
+                _debugLastMigrationGridDirection = math.all(math.isfinite(firstCell.Direction))
+                    ? new Vector3(firstCell.Direction.x, firstCell.Direction.y, firstCell.Direction.z)
+                    : Vector3.zero;
             }
             float gameTimeSeconds = ResolveTimelineGameSeconds(0f);
             PruneExpiredMigrationSwarmStates(gameTimeSeconds);
@@ -844,11 +907,12 @@ namespace Hecton8.Ecosystem
                 return false;
             }
 
-            double safeCellSize = Mathf.Max(1f, migrationCellSizeMeters);
+            double safeCellSize = ResolveSafeMigrationCellSizeMeters();
             double3 originAupMeters = ResolveAupMeters(origin);
-            double gridX = ((originAupMeters.x - migrationGridOriginAupLocal.x) / safeCellSize) - 0.5d;
-            double gridY = ((originAupMeters.y - migrationGridOriginAupLocal.y) / safeCellSize) - 0.5d;
-            double gridZ = ((originAupMeters.z - migrationGridOriginAupLocal.z) / safeCellSize) - 0.5d;
+            double3 gridOriginAupMeters = ResolveSafeMigrationGridOriginAupMeters();
+            double gridX = ((originAupMeters.x - gridOriginAupMeters.x) / safeCellSize) - 0.5d;
+            double gridY = ((originAupMeters.y - gridOriginAupMeters.y) / safeCellSize) - 0.5d;
+            double gridZ = ((originAupMeters.z - gridOriginAupMeters.z) / safeCellSize) - 0.5d;
             int x0 = FastFloorToInt(gridX);
             int y0 = FastFloorToInt(gridY);
             int z0 = FastFloorToInt(gridZ);
@@ -869,7 +933,7 @@ namespace Hecton8.Ecosystem
             if (interpolationWeight <= 0.0001f)
             {
                 float nearestSq = math.lengthsq(nearest);
-                if (nearestSq <= 0.0001f)
+                if (!math.all(math.isfinite(nearest)) || !math.isfinite(nearestSq) || nearestSq <= 0.0001f)
                     return false;
 
                 nearest *= math.rsqrt(nearestSq);
@@ -893,7 +957,7 @@ namespace Hecton8.Ecosystem
             float3 c1 = math.lerp(c01, c11, ty);
             float3 sampled = math.lerp(nearest, math.lerp(c0, c1, tz), interpolationWeight);
             float sampledSq = math.lengthsq(sampled);
-            if (sampledSq <= 0.0001f)
+            if (!math.all(math.isfinite(sampled)) || !math.isfinite(sampledSq) || sampledSq <= 0.0001f)
                 return false;
 
             sampled *= math.rsqrt(sampledSq);
@@ -938,19 +1002,26 @@ namespace Hecton8.Ecosystem
             float gameTimeSeconds,
             float currentMultiplier)
         {
-            if (poi.Flags == 0 || gameTimeSeconds >= poi.ExpireGameTimeSeconds)
+            if (!IsActiveBloodCloudPoi(in poi, gameTimeSeconds))
                 return currentMultiplier;
 
-            double radius = math.max(1f, poi.RadiusMeters);
+            double radius = SanitizePositiveFinite(poi.RadiusMeters, 1f);
             double radiusSq = radius * radius;
             double invRadiusSq = 1d / radiusSq;
             AbsoluteUniversePosition poiAup = AbsoluteUniversePosition.FromAlignedBlit(in poi.PositionAup);
+            if (!poiAup.IsFinite())
+                return currentMultiplier;
+
             double distSq = AbsoluteUniversePosition.DistanceSq(in originAup, in poiAup);
-            if (distSq > radiusSq)
+            if (!math.isfinite(distSq) || distSq > radiusSq)
                 return currentMultiplier;
 
             float falloff = math.saturate((float)(1d - distSq * invRadiusSq));
-            float candidateMultiplier = math.lerp(1f, math.max(1f, whaleFallScavengerPopulationMultiplier), falloff * falloff);
+            float safePopulationMultiplier = math.max(1f, SanitizeFinite(whaleFallScavengerPopulationMultiplier, 1f));
+            float candidateMultiplier = math.lerp(1f, safePopulationMultiplier, falloff * falloff);
+            if (!math.isfinite(candidateMultiplier))
+                return currentMultiplier;
+
             return candidateMultiplier > currentMultiplier ? candidateMultiplier : currentMultiplier;
         }
 
@@ -1249,13 +1320,14 @@ namespace Hecton8.Ecosystem
             if (_migrationGridResolution.x <= 0 || _migrationGridResolution.y <= 0 || _migrationGridResolution.z <= 0)
                 return false;
 
-            double safeCellSize = Mathf.Max(1f, migrationCellSizeMeters);
+            double safeCellSize = ResolveSafeMigrationCellSizeMeters();
+            double3 gridOriginAupMeters = ResolveSafeMigrationGridOriginAupMeters();
             double cellCenterX = (aupCell.x + 0.5d) * safeCellSize;
             double cellCenterY = (aupCell.y + 0.5d) * safeCellSize;
             double cellCenterZ = (aupCell.z + 0.5d) * safeCellSize;
-            int ix = WrapIndex(FastFloorToInt((cellCenterX - migrationGridOriginAupLocal.x) / safeCellSize), _migrationGridResolution.x);
-            int iy = Mathf.Clamp(FastFloorToInt((cellCenterY - migrationGridOriginAupLocal.y) / safeCellSize), 0, _migrationGridResolution.y - 1);
-            int iz = WrapIndex(FastFloorToInt((cellCenterZ - migrationGridOriginAupLocal.z) / safeCellSize), _migrationGridResolution.z);
+            int ix = WrapIndex(FastFloorToInt((cellCenterX - gridOriginAupMeters.x) / safeCellSize), _migrationGridResolution.x);
+            int iy = Mathf.Clamp(FastFloorToInt((cellCenterY - gridOriginAupMeters.y) / safeCellSize), 0, _migrationGridResolution.y - 1);
+            int iz = WrapIndex(FastFloorToInt((cellCenterZ - gridOriginAupMeters.z) / safeCellSize), _migrationGridResolution.z);
             cellIndex = BuildMigrationCellIndex(ix, iy, iz, _migrationGridResolution);
             return cellIndex >= 0 && cellIndex < _migrationGridCellCount;
         }
@@ -1296,14 +1368,14 @@ namespace Hecton8.Ecosystem
             for (int i = 0; i < _bloodCloudPoiMirror.Length; i++)
             {
                 MigrationBloodCloudPoi poi = _bloodCloudPoiMirror[i];
-                if (poi.Flags != 0 && gameTimeSeconds < poi.ExpireGameTimeSeconds)
+                if (IsActiveBloodCloudPoi(in poi, gameTimeSeconds))
                     count++;
             }
 
             for (int i = 0; i < _pendingBloodCloudPoiWriteCount; i++)
             {
                 MigrationBloodCloudPoi pendingPoi = _pendingBloodCloudPoiWrites[i];
-                if (pendingPoi.Flags == 0 || gameTimeSeconds >= pendingPoi.ExpireGameTimeSeconds)
+                if (!IsActiveBloodCloudPoi(in pendingPoi, gameTimeSeconds))
                     continue;
 
                 if (HasActiveBloodCloudPoiSource(pendingPoi.SourceId, gameTimeSeconds))
@@ -1320,9 +1392,7 @@ namespace Hecton8.Ecosystem
             for (int i = 0; i < _pendingBloodCloudPoiWriteCount; i++)
             {
                 MigrationBloodCloudPoi poi = _pendingBloodCloudPoiWrites[i];
-                if (poi.Flags != 0 &&
-                    poi.SourceId == sourceId &&
-                    gameTimeSeconds < poi.ExpireGameTimeSeconds)
+                if (poi.SourceId == sourceId && IsActiveBloodCloudPoi(in poi, gameTimeSeconds))
                 {
                     return true;
                 }
@@ -1336,9 +1406,7 @@ namespace Hecton8.Ecosystem
             for (int i = 0; i < _bloodCloudPoiMirror.Length; i++)
             {
                 MigrationBloodCloudPoi poi = _bloodCloudPoiMirror[i];
-                if (poi.Flags != 0 &&
-                    poi.SourceId == sourceId &&
-                    gameTimeSeconds < poi.ExpireGameTimeSeconds)
+                if (poi.SourceId == sourceId && IsActiveBloodCloudPoi(in poi, gameTimeSeconds))
                 {
                     return true;
                 }
@@ -1347,13 +1415,31 @@ namespace Hecton8.Ecosystem
             return false;
         }
 
+        private static bool IsActiveBloodCloudPoi(in MigrationBloodCloudPoi poi, float gameTimeSeconds)
+        {
+            return poi.Flags != 0 &&
+                math.isfinite(gameTimeSeconds) &&
+                math.isfinite(poi.ExpireGameTimeSeconds) &&
+                gameTimeSeconds < poi.ExpireGameTimeSeconds &&
+                math.all(math.isfinite(poi.PositionFieldLocalMeters)) &&
+                math.isfinite(poi.RadiusMeters) &&
+                poi.RadiusMeters > 0f &&
+                math.isfinite(poi.Strength) &&
+                poi.Strength > 0f;
+        }
+
         private float ResolveTimelineGameSeconds(float fallbackRuntimeSeconds)
         {
-            var celestialEngine = GlobalRegistry.CelestialEngine;
-            if (celestialEngine != null)
-                return celestialEngine.GameTime;
+            HectonCelestialEngine celestialEngine = _celestialEngine;
+            if (celestialEngine != null && math.isfinite(celestialEngine.GameTime))
+                return math.max(0f, celestialEngine.GameTime);
 
-            return fallbackRuntimeSeconds > 0f ? fallbackRuntimeSeconds : _fallbackTimelineGameSeconds;
+            if (math.isfinite(fallbackRuntimeSeconds) && fallbackRuntimeSeconds > 0f)
+                return fallbackRuntimeSeconds;
+
+            return math.isfinite(_fallbackTimelineGameSeconds)
+                ? math.max(0f, _fallbackTimelineGameSeconds)
+                : 0f;
         }
 
         private void AdvanceFallbackTimeline(float deltaSeconds)
@@ -1368,9 +1454,12 @@ namespace Hecton8.Ecosystem
 
         private float ResolveSeasonalPhase(float gameTimeSeconds)
         {
-            var celestialEngine = GlobalRegistry.CelestialEngine;
-            float celestialPhase = celestialEngine != null ? celestialEngine.PlanetPhase * Tau : 0f;
-            return celestialPhase + gameTimeSeconds * Mathf.Max(0f, seasonalRadiansPerGameSecond);
+            HectonCelestialEngine celestialEngine = _celestialEngine;
+            float planetPhase = celestialEngine != null ? SanitizeFinite(celestialEngine.PlanetPhase, 0f) : 0f;
+            float celestialPhase = planetPhase * Tau;
+            float safeGameTimeSeconds = math.max(0f, SanitizeFinite(gameTimeSeconds, 0f));
+            float seasonalRate = math.max(0f, SanitizeFinite(seasonalRadiansPerGameSecond, 0f));
+            return celestialPhase + safeGameTimeSeconds * seasonalRate;
         }
 
         private Vector3 ResolveMigrationProbePosition(int biomeIndex, uint hash)
@@ -1419,15 +1508,74 @@ namespace Hecton8.Ecosystem
                 direction.x * (double)routeDistanceMeters,
                 direction.y * (double)routeDistanceMeters - depthBiasMeters,
                 direction.z * (double)routeDistanceMeters);
+            if (!math.all(math.isfinite(routeOffset)))
+                return origin;
+
             if (!TryResolveAupMeters(origin, out double3 originAbsolute))
             {
-                Vector3 fallbackOffset = new Vector3((float)routeOffset.x, (float)routeOffset.y, (float)routeOffset.z);
-                return origin + fallbackOffset;
+                return TryResolveFiniteRuntimeVector(routeOffset, out Vector3 fallbackOffset) &&
+                    TryResolveFiniteRuntimeVector(new double3(
+                        origin.x + (double)fallbackOffset.x,
+                        origin.y + (double)fallbackOffset.y,
+                        origin.z + (double)fallbackOffset.z), out Vector3 fallbackTarget)
+                    ? fallbackTarget
+                    : origin;
             }
 
             AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromAbsolutePosition(originAbsolute + routeOffset);
-            float3 runtimeTarget = targetAup.ToRuntimeFloat3();
-            return new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
+            return TryResolveRuntimePosition(in targetAup, out Vector3 runtimeTarget)
+                ? runtimeTarget
+                : origin;
+        }
+
+        private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition positionAup, out Vector3 runtimePosition)
+        {
+            runtimePosition = default;
+            if (!AbsoluteUniversePosition.IsFinite(in positionAup))
+                return false;
+
+            float3 runtime = positionAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+            return true;
+        }
+
+        private static bool TryResolveFiniteRuntimeVector(double3 value, out Vector3 runtimeVector)
+        {
+            runtimeVector = default;
+            if (!math.all(math.isfinite(value)))
+                return false;
+
+            float3 runtime = new float3((float)value.x, (float)value.y, (float)value.z);
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            runtimeVector = new Vector3(runtime.x, runtime.y, runtime.z);
+            return true;
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                float.IsFinite(value.y) &&
+                float.IsFinite(value.z);
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        private static float Sanitize01Finite(float value)
+        {
+            return math.saturate(SanitizeFinite(value, 0f));
+        }
+
+        private static float SanitizePositiveFinite(float value, float fallback)
+        {
+            return math.max(fallback, SanitizeFinite(value, fallback));
         }
 
         private static float3 NormalizeOrFallback(float3 value, float3 fallback)
@@ -1438,7 +1586,7 @@ namespace Hecton8.Ecosystem
 
         private float ResolveWaterTemperature(Vector3 origin)
         {
-            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge bridge = _mapMagicVegetationBridge;
             return bridge != null ? bridge.GetWaterTemperature(origin) : 15f;
         }
 
@@ -1462,28 +1610,24 @@ namespace Hecton8.Ecosystem
 
         private void SanitizeMigrationSettings()
         {
-            fallbackMigrationDistanceMeters = Mathf.Max(1f, fallbackMigrationDistanceMeters);
-            fallbackCurrentAlignmentWeight = Mathf.Clamp01(fallbackCurrentAlignmentWeight);
-            migrationCellSizeMeters = Mathf.Max(1f, migrationCellSizeMeters);
+            fallbackMigrationDistanceMeters = SanitizePositiveFinite(fallbackMigrationDistanceMeters, 1f);
+            fallbackCurrentAlignmentWeight = Sanitize01Finite(fallbackCurrentAlignmentWeight);
+            migrationCellSizeMeters = SanitizePositiveFinite(migrationCellSizeMeters, GlobalMigrationCellSizeMeters);
             migrationGridResolutionX = Mathf.Clamp(migrationGridResolutionX, MinimumGridResolutionXZ, MaximumGridResolutionXZ);
             migrationGridResolutionY = Mathf.Clamp(migrationGridResolutionY, MinimumGridResolutionY, MaximumGridResolutionY);
             migrationGridResolutionZ = Mathf.Clamp(migrationGridResolutionZ, MinimumGridResolutionXZ, MaximumGridResolutionXZ);
-            migrationFieldColdTickIntervalSeconds = Mathf.Max(1f, migrationFieldColdTickIntervalSeconds);
-            migrationFlowAlignmentWeight = Mathf.Clamp01(migrationFlowAlignmentWeight);
-            seasonalRadiansPerGameSecond = Mathf.Max(0f, seasonalRadiansPerGameSecond);
-            migrationVerticalFlowWeight = Mathf.Clamp(migrationVerticalFlowWeight, 0f, 0.35f);
-            bloodCloudPoiRadiusMeters = Mathf.Max(10f, bloodCloudPoiRadiusMeters);
-            bloodCloudPoiStrength = Mathf.Clamp(bloodCloudPoiStrength, 0f, 4f);
-            whaleFallScavengerPopulationMultiplier = Mathf.Clamp(whaleFallScavengerPopulationMultiplier, 1f, 50f);
-            vrVatSwayAmplitudeScale = Mathf.Clamp(vrVatSwayAmplitudeScale, 1f, 2f);
+            migrationFieldColdTickIntervalSeconds = SanitizePositiveFinite(migrationFieldColdTickIntervalSeconds, 1f);
+            migrationFlowAlignmentWeight = Sanitize01Finite(migrationFlowAlignmentWeight);
+            seasonalRadiansPerGameSecond = math.max(0f, SanitizeFinite(seasonalRadiansPerGameSecond, 0f));
+            migrationVerticalFlowWeight = math.clamp(SanitizeFinite(migrationVerticalFlowWeight, 0f), 0f, 0.35f);
+            bloodCloudPoiRadiusMeters = math.max(10f, SanitizeFinite(bloodCloudPoiRadiusMeters, 10f));
+            bloodCloudPoiStrength = math.clamp(SanitizeFinite(bloodCloudPoiStrength, 0f), 0f, 4f);
+            whaleFallScavengerPopulationMultiplier = math.clamp(SanitizeFinite(whaleFallScavengerPopulationMultiplier, 1f), 1f, 50f);
+            vrVatSwayAmplitudeScale = math.clamp(SanitizeFinite(vrVatSwayAmplitudeScale, 1f), 1f, 2f);
         }
 
         private IDataVault CacheMigrationDataVault()
         {
-            if (_migrationVault != null)
-                return _migrationVault;
-
-            _migrationVault = GlobalRegistry.DataVault;
             return _migrationVault;
         }
 
@@ -1610,7 +1754,10 @@ namespace Hecton8.Ecosystem
         {
             return UnsafeUtility.SizeOf<MigrationGridCell>() == 32 &&
                 UnsafeUtility.SizeOf<MigrationBloodCloudPoi>() == 80 &&
-                UnsafeUtility.SizeOf<MigrationSwarmState>() == 40;
+                UnsafeUtility.SizeOf<MigrationSwarmState>() == 40 &&
+                Marshal.OffsetOf<MigrationSwarmState>(nameof(MigrationSwarmState.Flags)).ToInt32() == 32 &&
+                Marshal.OffsetOf<MigrationSwarmState>(nameof(MigrationSwarmState.PopulationCount)).ToInt32() == 36 &&
+                Marshal.OffsetOf<MigrationSwarmState>(nameof(MigrationSwarmState.SpeciesId)).ToInt32() == 38;
         }
 
         private void AllocateMigrationNativeState()
@@ -1771,8 +1918,11 @@ namespace Hecton8.Ecosystem
             if (_serviceRegistered)
             {
                 s_activeRuntime = this;
+                _migrationVault = GlobalRegistry.DataVault;
                 _faunaWorldSeedReadModel = GlobalRegistry.FaunaWorldSeed;
                 _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;
+                _celestialEngine = GlobalRegistry.CelestialEngine;
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _mapMagicVegetationBridge);
             }
         }
 
@@ -1796,6 +1946,8 @@ namespace Hecton8.Ecosystem
                 s_activeRuntime = null;
             _faunaWorldSeedReadModel = null;
             _ambientCurrentReadModel = null;
+            _celestialEngine = null;
+            _mapMagicVegetationBridge = null;
         }
 
         private void TryRegisterToTickManager()
@@ -1832,11 +1984,16 @@ namespace Hecton8.Ecosystem
             _registeredLateFrameTick = false;
         }
 
-        private static uint HashString(string value)
+        private static ReadOnlySpan<char> AsSpanOrEmpty(string value)
+        {
+            return value != null ? value.AsSpan() : ReadOnlySpan<char>.Empty;
+        }
+
+        private static uint HashString(ReadOnlySpan<char> value)
         {
             unchecked
             {
-                if (string.IsNullOrEmpty(value))
+                if (value.Length == 0)
                     return 0x811C9DC5u;
 
                 uint hash = 0x811C9DC5u;
@@ -1882,12 +2039,30 @@ namespace Hecton8.Ecosystem
 
         private static int FastFloorToInt(float value)
         {
+            if (!math.isfinite(value))
+                return 0;
+
+            if (value <= int.MinValue)
+                return int.MinValue;
+
+            if (value >= int.MaxValue)
+                return int.MaxValue;
+
             int integer = (int)value;
             return value < integer ? integer - 1 : integer;
         }
 
         private static int FastFloorToInt(double value)
         {
+            if (!math.isfinite(value))
+                return 0;
+
+            if (value <= int.MinValue)
+                return int.MinValue;
+
+            if (value >= int.MaxValue)
+                return int.MaxValue;
+
             int integer = (int)value;
             return value < integer ? integer - 1 : integer;
         }
@@ -1914,7 +2089,8 @@ namespace Hecton8.Ecosystem
         private float ResolveMigrationFieldColdTickIntervalSeconds(float globalQualityWeight)
         {
             float quality = Smooth01(globalQualityWeight);
-            return migrationFieldColdTickIntervalSeconds * math.lerp(2.4f, 0.2f, quality);
+            float baseIntervalSeconds = SanitizePositiveFinite(migrationFieldColdTickIntervalSeconds, 1f);
+            return baseIntervalSeconds * math.lerp(2.4f, 0.2f, quality);
         }
 
         private static float ResolveMigrationQualityWeight()
@@ -1931,7 +2107,7 @@ namespace Hecton8.Ecosystem
             return x * x * (3f - 2f * x);
         }
 
-        private float ResolveColdTickDeltaSeconds(float runtimeSeconds, float maxDeltaSeconds)
+        private float AdvanceColdTickDeltaSeconds(float runtimeSeconds, float maxDeltaSeconds)
         {
             if (_lastColdTickRuntimeSeconds < 0f)
             {
@@ -1944,12 +2120,13 @@ namespace Hecton8.Ecosystem
             if (!math.isfinite(deltaSeconds) || deltaSeconds <= 0f)
                 return 0f;
 
-            return math.min(deltaSeconds, math.max(0.1f, maxDeltaSeconds));
+            float safeMaxDeltaSeconds = math.max(0.1f, SanitizeFinite(maxDeltaSeconds, 0.1f));
+            return math.min(deltaSeconds, safeMaxDeltaSeconds);
         }
 
         private int3 ResolveMigrationAupCell(Vector3 origin)
         {
-            double safeCellSize = Mathf.Max(1f, migrationCellSizeMeters);
+            double safeCellSize = ResolveSafeMigrationCellSizeMeters();
             return ResolveMigrationAupCell(origin, safeCellSize);
         }
 
@@ -1964,18 +2141,34 @@ namespace Hecton8.Ecosystem
 
         private float3 ResolveWrappedMigrationFieldPoint(Vector3 runtimePosition)
         {
-            double safeCellSize = Mathf.Max(1f, migrationCellSizeMeters);
+            double safeCellSize = ResolveSafeMigrationCellSizeMeters();
             double3 aupMeters = ResolveAupMeters(runtimePosition);
             double extentX = safeCellSize * Mathf.Max(1, migrationGridResolutionX);
             double extentY = safeCellSize * Mathf.Max(1, migrationGridResolutionY);
             double extentZ = safeCellSize * Mathf.Max(1, migrationGridResolutionZ);
-            double originX = migrationGridOriginAupLocal.x;
-            double originY = migrationGridOriginAupLocal.y;
-            double originZ = migrationGridOriginAupLocal.z;
-            return new float3(
+            double3 gridOriginAupMeters = ResolveSafeMigrationGridOriginAupMeters();
+            double originX = gridOriginAupMeters.x;
+            double originY = gridOriginAupMeters.y;
+            double originZ = gridOriginAupMeters.z;
+            float3 local = new float3(
                 (float)WrapCoordinateToExtent(aupMeters.x, originX, extentX),
-                (float)ClampCoordinate(aupMeters.y, originY, originY + extentY),
+                (float)ClampCoordinate(aupMeters.y - originY, 0d, extentY),
                 (float)WrapCoordinateToExtent(aupMeters.z, originZ, extentZ));
+            return math.all(math.isfinite(local)) ? local : float3.zero;
+        }
+
+        private float ResolveSafeMigrationCellSizeMeters()
+        {
+            return SanitizePositiveFinite(migrationCellSizeMeters, GlobalMigrationCellSizeMeters);
+        }
+
+        private double3 ResolveSafeMigrationGridOriginAupMeters()
+        {
+            double3 originAupMeters = new double3(
+                migrationGridOriginAupLocal.x,
+                migrationGridOriginAupLocal.y,
+                migrationGridOriginAupLocal.z);
+            return math.all(math.isfinite(originAupMeters)) ? originAupMeters : double3.zero;
         }
 
         private static double3 ResolveAupMeters(Vector3 runtimePosition)
@@ -2016,16 +2209,19 @@ namespace Hecton8.Ecosystem
 
         private static double WrapCoordinateToExtent(double value, double origin, double extent)
         {
-            if (extent <= 0d)
-                return origin;
+            if (!math.isfinite(value) || !math.isfinite(origin) || !math.isfinite(extent) || extent <= 0d)
+                return 0d;
 
             double local = value - origin;
             double wrapped = local - math.floor(local / extent) * extent;
-            return origin + wrapped;
+            return math.isfinite(wrapped) ? wrapped : 0d;
         }
 
         private static double ClampCoordinate(double value, double min, double max)
         {
+            if (!math.isfinite(value) || !math.isfinite(min) || !math.isfinite(max))
+                return 0d;
+
             if (value < min)
                 return min;
 
@@ -2044,7 +2240,7 @@ namespace Hecton8.Ecosystem
             [ReadOnly, NoAlias] public NativeArray<MigrationBloodCloudPoi> BloodCloudPois;
             public int3 Resolution;
             public float CellSizeMeters;
-            public float3 OriginAupLocal;
+            public double3 OriginAupMeters;
             public float SeasonalPhase;
             public float VerticalFlowWeight;
             public float CurrentGameTimeSeconds;
@@ -2052,12 +2248,42 @@ namespace Hecton8.Ecosystem
 
             public void Execute(int index)
             {
+                if (index < 0 ||
+                    index >= Output.Length ||
+                    Resolution.x <= 0 ||
+                    Resolution.y <= 0 ||
+                    Resolution.z <= 0)
+                {
+                    if ((uint)index < (uint)Output.Length)
+                        Output[index] = default;
+                    return;
+                }
+
+                long planeCellCountLong = (long)Resolution.x * Resolution.z;
+                if (planeCellCountLong <= 0L || planeCellCountLong > int.MaxValue)
+                {
+                    Output[index] = default;
+                    return;
+                }
+
+                long totalCellCountLong = planeCellCountLong * Resolution.y;
+                if (totalCellCountLong <= 0L || totalCellCountLong > int.MaxValue || index >= totalCellCountLong)
+                {
+                    Output[index] = default;
+                    return;
+                }
+
+                int planeCellCount = (int)planeCellCountLong;
                 int x = index % Resolution.x;
                 int z = (index / Resolution.x) % Resolution.z;
-                int y = index / (Resolution.x * Resolution.z);
-                float safeCellSize = math.max(1f, CellSizeMeters);
-                float quality = Smooth01(math.saturate(GlobalQualityWeight));
+                int y = index / planeCellCount;
+                float safeCellSize = SanitizePositiveFinite(CellSizeMeters, GlobalMigrationCellSizeMeters);
+                float quality = Smooth01(Sanitize01Finite(GlobalQualityWeight));
                 int poiStride = (int)math.clamp(math.round(math.lerp(4f, 1f, quality)), 1f, 4f);
+                float safeSeasonalPhase = SanitizeFinite(SeasonalPhase, 0f);
+                float safeVerticalFlowWeight = math.clamp(SanitizeFinite(VerticalFlowWeight, 0f), 0f, 0.35f);
+                float safeGameTimeSeconds = math.max(0f, SanitizeFinite(CurrentGameTimeSeconds, 0f));
+                double3 safeOriginAupMeters = math.all(math.isfinite(OriginAupMeters)) ? OriginAupMeters : double3.zero;
 
                 float invX = Resolution.x > 0 ? 1f / Resolution.x : 0f;
                 float invY = Resolution.y > 1 ? 1f / (Resolution.y - 1) : 0f;
@@ -2067,20 +2293,26 @@ namespace Hecton8.Ecosystem
                 float depth01 = y * invY;
                 float seamAngleX = u * Tau;
                 float seamAngleZ = v * Tau;
-                float seasonalAngle = SeasonalPhase +
+                float seasonalAngle = safeSeasonalPhase +
                     MathLodApproximation.ApproxSinBhaskara(seamAngleX) * 0.85f +
                     MathLodApproximation.ApproxCosBhaskara(seamAngleZ) * 0.65f +
                     depth01 * 0.72f;
 
-                float3 cellPosition = OriginAupLocal + new float3(
+                double3 cellAbsolute = safeOriginAupMeters + new double3(
+                    (x + 0.5f) * safeCellSize,
+                    (y + 0.5f) * safeCellSize,
+                    (z + 0.5f) * safeCellSize);
+                float3 cellPosition = new float3(
                     (x + 0.5f) * safeCellSize,
                     (y + 0.5f) * safeCellSize,
                     (z + 0.5f) * safeCellSize);
 
                 float3 baseDirection = new float3(
-                    MathLodApproximation.ApproxCosBhaskara(seasonalAngle) + MathLodApproximation.ApproxSinBhaskara(seamAngleZ + SeasonalPhase * 0.37f) * 0.23f,
-                    MathLodApproximation.ApproxSinBhaskara(seasonalAngle * 0.53f + depth01 * Tau) * VerticalFlowWeight,
-                    MathLodApproximation.ApproxSinBhaskara(seasonalAngle) + MathLodApproximation.ApproxCosBhaskara(seamAngleX - SeasonalPhase * 0.41f) * 0.23f);
+                    MathLodApproximation.ApproxCosBhaskara(seasonalAngle) + MathLodApproximation.ApproxSinBhaskara(seamAngleZ + safeSeasonalPhase * 0.37f) * 0.23f,
+                    MathLodApproximation.ApproxSinBhaskara(seasonalAngle * 0.53f + depth01 * Tau) * safeVerticalFlowWeight,
+                    MathLodApproximation.ApproxSinBhaskara(seasonalAngle) + MathLodApproximation.ApproxCosBhaskara(seamAngleX - safeSeasonalPhase * 0.41f) * 0.23f);
+                if (!math.all(math.isfinite(baseDirection)))
+                    baseDirection = new float3(0f, 0f, 1f);
 
                 float3 attraction = float3.zero;
                 float attractionWeight = 0f;
@@ -2088,29 +2320,46 @@ namespace Hecton8.Ecosystem
                 for (int i = poiStart; i < BloodCloudPois.Length; i += poiStride)
                 {
                     MigrationBloodCloudPoi poi = BloodCloudPois[i];
-                    if (poi.Flags == 0 || CurrentGameTimeSeconds >= poi.ExpireGameTimeSeconds)
+                    if (poi.Flags == 0 ||
+                        !math.isfinite(poi.ExpireGameTimeSeconds) ||
+                        safeGameTimeSeconds >= poi.ExpireGameTimeSeconds ||
+                        !math.all(math.isfinite(poi.PositionFieldLocalMeters)) ||
+                        !math.isfinite(poi.RadiusMeters) ||
+                        !math.isfinite(poi.Strength))
+                    {
                         continue;
+                    }
 
-                    float radius = math.max(1f, poi.RadiusMeters);
+                    float radius = SanitizePositiveFinite(poi.RadiusMeters, 1f);
                     float invRadius = 1f / radius;
                     float invRadiusSq = invRadius * invRadius;
                     float radiusSq = radius * radius;
-                    float3 toPoi = poi.PositionFieldAupMeters - cellPosition;
+                    float3 toPoi = poi.PositionFieldLocalMeters - cellPosition;
                     toPoi.x = WrapDeltaToExtent(toPoi.x, safeCellSize * math.max(1, Resolution.x));
                     toPoi.z = WrapDeltaToExtent(toPoi.z, safeCellSize * math.max(1, Resolution.z));
                     float distSq = math.lengthsq(toPoi);
-                    if (distSq > radiusSq)
+                    if (!math.all(math.isfinite(toPoi)) ||
+                        !math.isfinite(distSq) ||
+                        distSq > radiusSq)
+                    {
                         continue;
+                    }
 
                     float falloff = math.saturate(1f - distSq * invRadiusSq);
-                    float strength = math.max(0f, poi.Strength) * falloff * falloff * math.lerp(0.55f, 1.35f, quality);
+                    float strength = math.max(0f, SanitizeFinite(poi.Strength, 0f)) * falloff * falloff * math.lerp(0.55f, 1.35f, quality);
+                    if (!math.isfinite(strength))
+                        continue;
+
                     attraction += toPoi * (strength * invRadius);
                     attractionWeight += strength;
                 }
 
                 float3 direction = NormalizeOrFallback(baseDirection + attraction, new float3(0f, 0f, 1f));
                 MigrationGridCell cell = default;
-                cell.AupCell = (int3)math.floor(cellPosition / safeCellSize);
+                cell.AupCell = new int3(
+                    FastFloorToInt(cellAbsolute.x / safeCellSize),
+                    FastFloorToInt(cellAbsolute.y / safeCellSize),
+                    FastFloorToInt(cellAbsolute.z / safeCellSize));
                 cell.Direction = direction;
                 cell.Magnitude = math.saturate(1f + attractionWeight * math.lerp(0.06f, 0.22f, quality));
                 cell.PopulationCount = 0;
@@ -2120,7 +2369,10 @@ namespace Hecton8.Ecosystem
 
             private static float WrapDeltaToExtent(float delta, float extent)
             {
-                if (extent <= 0f)
+                if (!math.isfinite(delta))
+                    return 0f;
+
+                if (!math.isfinite(extent) || extent <= 0f)
                     return delta;
 
                 return delta - math.round(delta / extent) * extent;
@@ -2129,13 +2381,44 @@ namespace Hecton8.Ecosystem
             private static float3 NormalizeOrFallback(float3 value, float3 fallback)
             {
                 float lengthSq = math.lengthsq(value);
-                return lengthSq > 0.0001f ? value * math.rsqrt(lengthSq) : fallback;
+                return math.all(math.isfinite(value)) && math.isfinite(lengthSq) && lengthSq > 0.0001f
+                    ? value * math.rsqrt(lengthSq)
+                    : fallback;
             }
 
             private static float Smooth01(float value)
             {
                 float x = math.saturate(value);
                 return x * x * (3f - 2f * x);
+            }
+
+            private static float SanitizeFinite(float value, float fallback)
+            {
+                return math.isfinite(value) ? value : fallback;
+            }
+
+            private static float Sanitize01Finite(float value)
+            {
+                return math.saturate(SanitizeFinite(value, 0f));
+            }
+
+            private static float SanitizePositiveFinite(float value, float fallback)
+            {
+                return math.max(fallback, SanitizeFinite(value, fallback));
+            }
+
+            private static int FastFloorToInt(double value)
+            {
+                if (!math.isfinite(value))
+                    return 0;
+
+                if (value <= int.MinValue)
+                    return int.MinValue;
+
+                if (value >= int.MaxValue)
+                    return int.MaxValue;
+
+                return (int)math.floor(value);
             }
         }
     }

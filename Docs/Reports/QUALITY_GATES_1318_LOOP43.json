@@ -1,0 +1,31 @@
+﻿{
+    "agentId":  "1318",
+    "task":  "1318_PURGE",
+    "loop":  43,
+    "domain":  "Echelon 3 Core Infrastructure and Ecology / Assets/_Project/Scripts/World / DestructibleOrganicManager.cs",
+    "status":  "VERIFICATION_BLOCKED_CPU_COMPILER_GATE",
+    "scannedFiles":  1,
+    "promptStrictTaskCount":  20,
+    "promptLooseTaskMentions":  23,
+    "promptSha256":  "bd959f47caea5a192f4bcaba65c92efaf7e647f034b3cf6c68ecb924f262022b",
+    "sourceSha256":  "412fa364c6379a9c547f632772fac0cb41c3cfd13788ca922a32cb662aab8ea0",
+    "braceBalance":  "913/913",
+    "failedGates":  [
+                        "BUILD_GATE_BLOCKED_BY_CPU_GT_50_OR_COMPILER_ACTIVE",
+                        "ROSLYN_RERUN_BLOCKED_BY_CPU_GT_50_OR_COMPILER_ACTIVE"
+                    ],
+    "cpuAverage":  91,
+    "compilerProcessCount":  2,
+    "rootCsprojCount":  62,
+    "missingSlnxProjectRefs":  0,
+    "strictPersistentNativeFieldDeclarations":  0,
+    "persistentAllocatorTokens":  0,
+    "zeroGcHotPathHits":  0,
+    "staleLightStarvationPrelockHealthPattern":  0,
+    "suppressionDirectCurrentHealthWritePattern":  0,
+    "applySuppressionRefs":  2,
+    "applyLightStarvationStateRefs":  2,
+    "suppressionRegrowthGuardPresent":  true,
+    "suppressionMonotonicHealthGuardPresent":  true,
+    "lightStarvationPinnedHealthGuardPresent":  true
+}

@@ -1,3 +1,4 @@
+using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core.Contracts.Signals;
@@ -104,6 +105,45 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RuntimeQualityWeight_DrivesWaveCadenceReadbackAndTelemetry()
+        {
+            string path = Path.Combine("Assets", "_Project", "Scripts", "Atmosphere", "ShinobuOceanSurfaceAtmosphereRuntime.cs");
+            string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+            StringAssert.Contains("_timeSeconds = ResolveWaveEvaluationTime(_rawSimulationTimeSeconds, _globalQualityWeight);", source);
+            StringAssert.Contains("ResolveReadbackSampleBudget(_globalQualityWeight)", source);
+            StringAssert.Contains("ResolveFullWaveCount(_globalQualityWeight, OceanSurfaceAtmosphereConstants.MaxWaveOctaves)", source);
+            StringAssert.Contains("entry.ActiveWaveCount = HectonOceanSurfaceMath.ResolveFullWaveCount(_globalQualityWeight, limit);", source);
+            StringAssert.DoesNotContain("ResolveWaveEvaluationTime(_rawSimulationTimeSeconds, OceanSurfaceAtmosphereConstants.AuthoritativeQualityWeight)", source);
+            StringAssert.DoesNotContain("ResolveReadbackSampleBudget(OceanSurfaceAtmosphereConstants.AuthoritativeQualityWeight)", source);
+            StringAssert.DoesNotContain("ResolveFullWaveCount(OceanSurfaceAtmosphereConstants.AuthoritativeQualityWeight, limit)", source);
+            StringAssert.DoesNotContain("const float authorityQuality = OceanSurfaceAtmosphereConstants.AuthoritativeQualityWeight;", source);
+            StringAssert.DoesNotContain("authorityQuality", source);
+        }
+
+        [Test]
+        public void RuntimeOceanReadAccessors_DoNotQueueWaveReadbacks()
+        {
+            string path = Path.Combine("Assets", "_Project", "Scripts", "Atmosphere", "ShinobuOceanSurfaceAtmosphereRuntime.cs");
+            string source = File.ReadAllText(path).Replace("\r\n", "\n");
+            string readAccessorRegion = SliceBetween(
+                source,
+                "public bool TrySampleWaveHeight(float3 position, float minSpatialLength, out float waterHeight)",
+                "public void AssignWaveHeightSamplerCompute(ComputeShader computeShader)");
+            string surfaceWeatherReadRegion = SliceBetween(
+                source,
+                "public bool TryGetSurfaceWeatherState(out HectonOceanSurfaceWeatherState state)",
+                "public bool ApplySurfaceWeatherState(in HectonOceanSurfaceWeatherState state)");
+
+            StringAssert.DoesNotContain("QueueWaveHeightSample", readAccessorRegion);
+            StringAssert.DoesNotContain("TryCompleteWaveParameterKernel()", readAccessorRegion);
+            StringAssert.DoesNotContain("TryCompleteWaveParameterKernel()", surfaceWeatherReadRegion);
+            StringAssert.Contains("TryEvaluateWaveKinematicsSnapshot", readAccessorRegion);
+            StringAssert.Contains("if (_waveParameterJobScheduled || !ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves))", source);
+            StringAssert.Contains("HectonOceanSurfaceMath.EvaluateWavesDetailed", source);
+        }
+
+        [Test]
         public void GerstnerPhase_WrapsLongEnduranceTimeBeforeSincos()
         {
             float phase = HectonOceanSurfaceMath.WrapPhaseRadians(987654.25f);
@@ -187,6 +227,15 @@ namespace Hecton8.Tests.Editor
         private static int OffsetOf<T>(string fieldName) where T : unmanaged
         {
             return Marshal.OffsetOf(typeof(T), fieldName).ToInt32();
+        }
+
+        private static string SliceBetween(string source, string startToken, string endToken)
+        {
+            int start = source.IndexOf(startToken, System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(start, 0, $"Missing start token: {startToken}");
+            int end = source.IndexOf(endToken, start, System.StringComparison.Ordinal);
+            Assert.Greater(end, start, $"Missing end token: {endToken}");
+            return source.Substring(start, end - start);
         }
     }
 }

@@ -10,7 +10,9 @@ using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine;
 
 namespace Hecton8.Core.Content.Editor
@@ -43,6 +45,7 @@ namespace Hecton8.Core.Content.Editor
         public static void RunAllBuildValidators()
         {
             ValidateNoFirstPartyResourcesLoads();
+            ValidateNoFirstPartyResourcesAssets();
             ValidateAddressableGroups();
             ContentAssetHashMap[] maps = FindHashMaps();
             ValidateHashMapIntegrity(maps);
@@ -73,6 +76,25 @@ namespace Hecton8.Core.Content.Editor
                     continue;
 
                 Fail("First-party Resources API usage is banned: " + path);
+            }
+        }
+
+        private static void ValidateNoFirstPartyResourcesAssets()
+        {
+            const string resourcesRoot = "Assets/_Project/Resources";
+            if (!Directory.Exists(resourcesRoot))
+                return;
+
+            string[] files = Directory.GetFiles(resourcesRoot, "*", SearchOption.AllDirectories);
+            for (int i = 0; i < files.Length; i++)
+            {
+                string path = files[i].Replace('\\', '/');
+                string extension = Path.GetExtension(path);
+                if (string.Equals(extension, ".meta", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(Path.GetFileName(path), "README.md", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                Fail("First-party runtime assets are banned under Assets/_Project/Resources: " + path);
             }
         }
 
@@ -335,9 +357,13 @@ namespace Hecton8.Core.Content.Editor
                     continue;
 
                 string groupName = group.Name;
-                hasCore |= string.Equals(groupName, CoreGroupName, StringComparison.Ordinal);
-                hasHighRes |= string.Equals(groupName, HighResGroupName, StringComparison.Ordinal);
-                hasOverkill |= string.Equals(groupName, OverkillGroupName, StringComparison.Ordinal);
+                bool isCore = string.Equals(groupName, CoreGroupName, StringComparison.Ordinal);
+                bool isHighRes = string.Equals(groupName, HighResGroupName, StringComparison.Ordinal);
+                bool isOverkill = string.Equals(groupName, OverkillGroupName, StringComparison.Ordinal);
+                hasCore |= isCore;
+                hasHighRes |= isHighRes;
+                hasOverkill |= isOverkill;
+                ValidateAddressableGroupLoadMode(group, groupName, isCore || isHighRes || isOverkill);
 
                 if (group.entries == null)
                     Fail("Addressable group has no entry set: " + groupName);
@@ -372,6 +398,27 @@ namespace Hecton8.Core.Content.Editor
                 Fail("Addressables tier group missing: High_Res.");
             if (!hasOverkill)
                 Fail("Addressables tier group missing: Overkill.");
+        }
+
+        private static void ValidateAddressableGroupLoadMode(
+            AddressableAssetGroup group,
+            string groupName,
+            bool isRequiredTierGroup)
+        {
+            BundledAssetGroupSchema bundledSchema = group.GetSchema<BundledAssetGroupSchema>();
+            if (bundledSchema == null)
+            {
+                if (isRequiredTierGroup)
+                    Fail("Addressables tier group missing bundled schema: " + groupName);
+                return;
+            }
+
+            if (bundledSchema.AssetLoadMode != AssetLoadMode.RequestedAssetAndDependencies)
+            {
+                Fail("Addressable group uses unsupported AssetLoadMode: " +
+                     groupName + " mode=" + bundledSchema.AssetLoadMode +
+                     " expected=" + AssetLoadMode.RequestedAssetAndDependencies);
+            }
         }
 
         private static void ValidateEconomyJsonMeshes(ContentAssetHashMap[] maps)

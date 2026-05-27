@@ -168,6 +168,7 @@ namespace Hecton8.Interaction
         private PhysicalHandController _physicalHandController;
         private IInteractionSignalService _interactionSignals;
         private IPhysicsService _physicsService;
+        private IOrganicToolHitService _organicToolHits;
         private InteractionState _state;
         private bool _registeredTick;
         private bool _registeredFixedTick;
@@ -269,6 +270,7 @@ namespace Hecton8.Interaction
             HectonXRRuntimeState.XRActiveChanged += HandleXRActiveChanged;
             _interactionSignals = GlobalRegistry.InteractionSignals;
             _physicsService = GlobalRegistry.Physics;
+            _organicToolHits = GlobalRegistry.OrganicToolHits;
             _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             TryRegisterHotSwapListener();
             RefreshPanelButtonLayerMask();
@@ -284,6 +286,7 @@ namespace Hecton8.Interaction
             TryUnregisterHotSwapListener();
             _interactionSignals = null;
             _physicsService = null;
+            _organicToolHits = null;
             CancelActiveInteraction();
             UnregisterFromTickSystems();
         }
@@ -294,6 +297,7 @@ namespace Hecton8.Interaction
             TryUnregisterHotSwapListener();
             _interactionSignals = null;
             _physicsService = null;
+            _organicToolHits = null;
         }
 
         /// <inheritdoc />
@@ -317,10 +321,18 @@ namespace Hecton8.Interaction
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.DestructibleOrganicRuntime)
+            {
+                _organicToolHits = currentService as IOrganicToolHitService;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            UnregisterFromTickSystems();
+            _registeredTick = false;
+            _registeredFixedTick = false;
+            _registeredLateFrameTick = false;
             _dispatcherAvailable = currentService != null;
             if (_dispatcherAvailable)
                 RefreshTickRegistration();
@@ -331,6 +343,15 @@ namespace Hecton8.Interaction
         /// Returns true only when the interaction has been consumed by this handler.
         /// </summary>
         public bool TryHandleInteraction(IInteractable interactable, Transform interactor)
+        {
+            InteractableRegistry.TargetInfo targetInfo = default;
+            return TryHandleInteraction(interactable, interactor, in targetInfo);
+        }
+
+        internal bool TryHandleInteraction(
+            IInteractable interactable,
+            Transform interactor,
+            in InteractableRegistry.TargetInfo targetInfo)
         {
             if (interactable == null || interactor == null || !ReferenceEquals(interactor, _cachedTransform))
                 return false;
@@ -364,13 +385,13 @@ namespace Hecton8.Interaction
             if (behaviour == null)
                 return false;
 
-            if (TryBeginCablePlugDrag(interactable, behaviour))
+            if (TryBeginCablePlugDrag(interactable, behaviour, in targetInfo))
                 return true;
 
-            if (TryBeginPocketPickup(interactable, behaviour))
+            if (TryBeginPocketPickup(interactable, behaviour, in targetInfo))
                 return true;
 
-            if (TryBeginHeavyCarry(interactable, behaviour))
+            if (TryBeginHeavyCarry(interactable, behaviour, in targetInfo))
                 return true;
 
             return false;
@@ -400,7 +421,7 @@ namespace Hecton8.Interaction
             if (!IsFiniteVector(handPosition))
                 return false;
 
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            IOrganicToolHitService organicManager = _organicToolHits;
             if (organicManager == null)
                 return false;
 
@@ -507,10 +528,6 @@ namespace Hecton8.Interaction
 
             switch (_state)
             {
-                case InteractionState.PullingPocketItem:
-                    FixedTickPocketPickup(safeFixedDeltaTime);
-                    break;
-
                 case InteractionState.DraggingHeavyObject:
                     FixedTickHeavyCarry(safeFixedDeltaTime);
                     break;
@@ -541,7 +558,7 @@ namespace Hecton8.Interaction
             if (!enablePhysicalPanelButtons || !HectonXRRuntimeState.IsXRActive)
                 return;
 
-            if (_physicalHandController == null && !EnsurePhysicalHandController())
+            if (_physicalHandController == null)
                 return;
 
             if (!PhysicalHandReceiverRegistry.HasReceivers)
@@ -630,10 +647,15 @@ namespace Hecton8.Interaction
                 : mask;
         }
 
-        private bool TryBeginCablePlugDrag(IInteractable interactable, MonoBehaviour behaviour)
+        private bool TryBeginCablePlugDrag(
+            IInteractable interactable,
+            MonoBehaviour behaviour,
+            in InteractableRegistry.TargetInfo targetInfo)
         {
-            VRCableDragPlug cablePlug = interactable as VRCableDragPlug;
-            if (cablePlug == null && !behaviour.TryGetComponent(out cablePlug))
+            VRCableDragPlug cablePlug = targetInfo.Interactable as VRCableDragPlug;
+            if (cablePlug == null)
+                cablePlug = interactable as VRCableDragPlug;
+            if (cablePlug == null)
                 return false;
 
             Transform cableAnchor = interactionAnchor != null ? interactionAnchor : _cachedTransform;
@@ -660,17 +682,21 @@ namespace Hecton8.Interaction
             return true;
         }
 
-        private bool TryBeginPocketPickup(IInteractable interactable, MonoBehaviour behaviour)
+        private bool TryBeginPocketPickup(
+            IInteractable interactable,
+            MonoBehaviour behaviour,
+            in InteractableRegistry.TargetInfo targetInfo)
         {
-            if (!behaviour.TryGetComponent<PickupItem>(out _) &&
-                !behaviour.TryGetComponent<HectonItem>(out _))
+            if (targetInfo.Pickup == null &&
+                !(targetInfo.PickupSource is PickupItem) &&
+                !(targetInfo.PickupSource is HectonItem) &&
+                !(interactable is PickupItem) &&
+                !(interactable is HectonItem))
             {
                 return false;
             }
 
-            behaviour.TryGetComponent(out Rigidbody body);
-            if (body == null)
-                TryResolveParentComponent(behaviour.transform, out body);
+            Rigidbody body = targetInfo.PhysicsBody;
 
             if (body != null)
             {
@@ -680,9 +706,7 @@ namespace Hecton8.Interaction
                     return false;
             }
 
-            behaviour.TryGetComponent(out Collider targetCollider);
-            if (targetCollider == null)
-                TryResolveOwnedComponent(behaviour.transform, out targetCollider);
+            Collider targetCollider = targetInfo.PhysicsCollider;
 
             _activeInteractable = interactable;
             _activeBehaviour = behaviour;
@@ -721,24 +745,6 @@ namespace Hecton8.Interaction
             return true;
         }
 
-        private static bool TryResolveOwnedComponent<T>(Transform root, out T component) where T : Component
-        {
-            component = null;
-            if (root == null)
-                return false;
-
-            if (root.TryGetComponent(out component))
-                return true;
-
-            for (int i = 0; i < root.childCount; i++)
-            {
-                if (TryResolveOwnedComponent(root.GetChild(i), out component))
-                    return true;
-            }
-
-            return false;
-        }
-
         private static bool TryResolveParentComponent<T>(Transform start, out T component) where T : Component
         {
             component = null;
@@ -756,9 +762,15 @@ namespace Hecton8.Interaction
             return false;
         }
 
-        private bool TryBeginHeavyCarry(IInteractable interactable, MonoBehaviour behaviour)
+        private bool TryBeginHeavyCarry(
+            IInteractable interactable,
+            MonoBehaviour behaviour,
+            in InteractableRegistry.TargetInfo targetInfo)
         {
-            if (!behaviour.TryGetComponent(out HeavyCarryInteractable heavyCarry))
+            HeavyCarryInteractable heavyCarry = targetInfo.Interactable as HeavyCarryInteractable;
+            if (heavyCarry == null)
+                heavyCarry = interactable as HeavyCarryInteractable;
+            if (heavyCarry == null)
                 return false;
 
             if (!heavyCarry.TryGetCarryBody(out Rigidbody carryBody) || carryBody == null)
@@ -831,7 +843,7 @@ namespace Hecton8.Interaction
             float progress = math.saturate(_stateTimer / duration);
             QueuePocketPickupVisualScale(_activeTargetTransform, (Vector3)math.lerp((float3)_activeOriginalLocalScale, (float3)_activeTargetLocalScale, progress));
 
-            if (_activeBody == null && interactionAnchor != null)
+            if (_activeTargetTransform != null)
             {
                 Vector3 targetPosition = GetAnchorTargetPosition();
                 Vector3 currentPosition = _activeTargetTransform.position;
@@ -863,36 +875,6 @@ namespace Hecton8.Interaction
 
             if (progress >= 1f)
                 CompletePocketPickup();
-        }
-
-        private void FixedTickPocketPickup(float fixedDeltaTime)
-        {
-            if (_activeBody == null || interactionAnchor == null)
-                return;
-
-            Vector3 targetPosition = GetAnchorTargetPosition();
-            Vector3 currentPosition = _activeBody.position;
-            if (!IsFiniteVector(targetPosition) || !IsFiniteVector(currentPosition))
-                return;
-
-            Vector3 toTarget = targetPosition - currentPosition;
-            float distanceSq = toTarget.sqrMagnitude;
-            float maxStep = ClampFiniteRange(pickupMoveSpeed, 0.5f, 40f, 10f) * math.max(0f, fixedDeltaTime);
-            Vector3 nextPosition;
-            if (distanceSq <= maxStep * maxStep || distanceSq <= 0.00000001f)
-            {
-                nextPosition = targetPosition;
-            }
-            else
-            {
-                float inverseDistance = math.rcp(math.max(ApproximateMagnitudeNoSqrt(toTarget), 0.000001f));
-                nextPosition = currentPosition + toTarget * (maxStep * inverseDistance);
-            }
-
-            if (!IsFiniteVector(nextPosition))
-                return;
-
-            _activeBody.MovePosition(nextPosition);
         }
 
         private void QueuePocketPickupVisualPosition(Transform target, Vector3 position)
@@ -1043,6 +1025,9 @@ namespace Hecton8.Interaction
                     Vector3 deltaVelocity = restoredLinearVelocity - currentLinearVelocity;
                     if (IsFiniteVector(deltaVelocity) && deltaVelocity.sqrMagnitude > 0.000001f)
                         _physicsService?.QueueForce(_activeBody, deltaVelocity, ForceMode.VelocityChange);
+
+                    Vector3 restoredAngularVelocity = IsFiniteVector(_activeBodyAngularVelocity) ? _activeBodyAngularVelocity : Vector3.zero;
+                    _physicsService?.QueueAngularVelocitySet(_activeBody, restoredAngularVelocity);
                 }
             }
         }
@@ -1251,16 +1236,18 @@ namespace Hecton8.Interaction
             if (!Application.isPlaying || !_dispatcherAvailable)
                 return;
 
+            bool panelButtonTickReady =
+                enablePhysicalPanelButtons &&
+                HectonXRRuntimeState.IsXRActive &&
+                _physicalHandController != null;
             bool needsTick =
                 _state != InteractionState.Idle ||
-                (enablePhysicalPanelButtons && HectonXRRuntimeState.IsXRActive);
+                panelButtonTickReady;
             bool handControllerNeedsFixedTick =
                 _physicalHandController != null &&
-                ((enablePhysicalPanelButtons && HectonXRRuntimeState.IsXRActive) ||
-                 _state == InteractionState.DraggingHeavyObject);
+                (panelButtonTickReady || _state == InteractionState.DraggingHeavyObject);
             bool needsFixedTick =
                 handControllerNeedsFixedTick ||
-                _state == InteractionState.PullingPocketItem ||
                 _state == InteractionState.DraggingHeavyObject;
             bool needsLateFrameTick =
                 _pendingPocketVisualPositionDirty ||
@@ -1330,6 +1317,9 @@ namespace Hecton8.Interaction
 
         private void TryUnregisterHotSwapListener()
         {
+            if (!_registeredHotSwapListener)
+                return;
+
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
         }

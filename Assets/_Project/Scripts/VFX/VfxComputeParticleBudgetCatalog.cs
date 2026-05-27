@@ -21,6 +21,9 @@ namespace Hecton8.VFX
         /// <summary>Default portable compute group size for particle kernels.</summary>
         public const int DefaultThreadsPerGroup = 64;
 
+        /// <summary>Portable maximum dispatch groups per axis.</summary>
+        public const int MaxDispatchGroupsPerDimension = 65535;
+
         /// <summary>MX350 soft group cap. Larger quality totals must be split by pool.</summary>
         public const int Mx350SoftGroupsPerDispatch = 512;
 
@@ -369,13 +372,28 @@ namespace Hecton8.VFX
         }
 
         /// <summary>
-        /// Resolves the number of 64-thread groups needed for a particle count.
+        /// Resolves the number of default-thread groups needed for a particle count.
         /// </summary>
         /// <param name="particleCount">Particle count.</param>
-        /// <returns>Dispatch group count.</returns>
+        /// <returns>Dispatch group count, or 0 when no portable dispatch can be submitted.</returns>
         public static int ResolveDispatchGroups(int particleCount)
         {
-            return math.max(1, (math.max(1, particleCount) + DefaultThreadsPerGroup - 1) / DefaultThreadsPerGroup);
+            return ResolveDispatchGroups(particleCount, DefaultThreadsPerGroup);
+        }
+
+        /// <summary>
+        /// Resolves dispatch groups from a caller-owned kernel thread-group size.
+        /// </summary>
+        /// <param name="particleCount">Particle count.</param>
+        /// <param name="threadGroupSize">Queried kernel thread-group size.</param>
+        /// <returns>Dispatch group count, or 0 when no portable dispatch can be submitted.</returns>
+        public static int ResolveDispatchGroups(int particleCount, int threadGroupSize)
+        {
+            if (particleCount <= 0 || threadGroupSize <= 0)
+                return 0;
+
+            long groups = ((long)particleCount + threadGroupSize - 1L) / threadGroupSize;
+            return groups > 0L && groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
     }
 

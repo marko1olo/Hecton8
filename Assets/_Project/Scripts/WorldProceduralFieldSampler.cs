@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
@@ -20,7 +19,6 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4037)]
     public sealed class WorldProceduralFieldSampler : MonoBehaviour, IBiomeMatrixEventListener, IBiomePhysicsInfluenceReadModel
     {
-        private const string SyntheticZoneLabelPrefix = "Synthetic:";
         private const string PatternLabelSedimentResources = "SedimentResources";
         private const string PatternLabelFertileShallows = "FertileShallows";
         private const string PatternLabelReefNavigation = "ReefNavigation";
@@ -31,14 +29,21 @@ namespace Hecton8.World
         private const string PatternLabelAbyssSparse = "AbyssSparse";
         private const string PatternLabelLandmarkCorridor = "LandmarkCorridor";
         private const string PatternLabelNone = "None";
+        private const string PatternLabelFallbackOnly = "FallbackOnly";
+        private const string MatrixLabelFallbackOnly = "FallbackOnly";
         private const string SeafloorSourceNoneLabel = "None";
         private const string SeafloorSourceMapMagicLabel = "MapMagicHeight";
         private const string SeafloorSourceSceneProbeLegacyLabel = "SceneProbeLegacy";
         private const string SeafloorSourceFallbackLabel = "FallbackSynthetic";
         private const int MaxSeafloorHeightCacheEntries = 4096;
+        private const int MaxSeafloorHeightCacheMask = MaxSeafloorHeightCacheEntries - 1;
         private const int NoiseLookupResolution = 512;
         private const int NoiseLookupMask = NoiseLookupResolution - 1;
         private const int MaxBiomeInfluenceGridCellsMx350 = 4096;
+        private const int MaxZoneAnchorSnapshotCount = 64;
+        private const int MaxBiomeMatrixBakeCount = 160;
+        private const int MaxBiomeFamilyBakeCount = 48;
+        private const int MaxCaveEntranceHintBakeCount = 64;
         private const string NativeMemoryOwner = nameof(WorldProceduralFieldSampler);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const NativeAllocationLifetime NativeMemoryTempJobLifetime = NativeAllocationLifetime.TempJob;
@@ -606,15 +611,28 @@ namespace Hecton8.World
         [SerializeField] private float _debugLastCompositionPotential;
         [SerializeField] private int _debugBiomeCacheMisses;
 
-        private readonly List<WorldZoneAnchor> _anchors = new List<WorldZoneAnchor>(32);
-        private readonly List<WorldZoneAnchor> _zoneBakeList = new List<WorldZoneAnchor>(32);
-        private readonly List<HectonBiomeMatrixProfile> _biomeMatrixBakeList = new List<HectonBiomeMatrixProfile>(160);
-        private readonly List<HectonBiomeFamilyProfile> _biomeFamilyBakeList = new List<HectonBiomeFamilyProfile>(48);
-        private readonly List<WorldCaveDirector.CaveEntranceHint> _caveEntranceHintBakeList = new List<WorldCaveDirector.CaveEntranceHint>(32); // COLD ALLOC: cached cave entrance hints for Burst sampler bridge.
-        private readonly Dictionary<WorldZoneAnchor, int> _zoneDataIndexLookup = new Dictionary<WorldZoneAnchor, int>(32);
-        private readonly Dictionary<HectonBiomeMatrixProfile, int> _biomeMatrixDataIndexLookup = new Dictionary<HectonBiomeMatrixProfile, int>(160);
-        private readonly Dictionary<HectonBiomeFamilyProfile, int> _biomeFamilyDataIndexLookup = new Dictionary<HectonBiomeFamilyProfile, int>(48);
-        private readonly Dictionary<Vector2Int, CachedHeightSample> _seafloorHeightCache = new Dictionary<Vector2Int, CachedHeightSample>(1536);
+        // COLD ALLOC: WorldZoneAnchor[64] - active anchor snapshot - owner: WorldProceduralFieldSampler
+        private readonly WorldZoneAnchor[] _anchors = new WorldZoneAnchor[MaxZoneAnchorSnapshotCount];
+        // COLD ALLOC: WorldZoneAnchor[64] - zone bake snapshot - owner: WorldProceduralFieldSampler
+        private readonly WorldZoneAnchor[] _zoneBakeList = new WorldZoneAnchor[MaxZoneAnchorSnapshotCount];
+        // COLD ALLOC: HectonBiomeMatrixProfile[160] - biome matrix bake snapshot - owner: WorldProceduralFieldSampler
+        private readonly HectonBiomeMatrixProfile[] _biomeMatrixBakeList = new HectonBiomeMatrixProfile[MaxBiomeMatrixBakeCount];
+        // COLD ALLOC: HectonBiomeFamilyProfile[48] - biome family bake snapshot - owner: WorldProceduralFieldSampler
+        private readonly HectonBiomeFamilyProfile[] _biomeFamilyBakeList = new HectonBiomeFamilyProfile[MaxBiomeFamilyBakeCount];
+        // COLD ALLOC: CaveEntranceHint[64] - cave entrance hint bake snapshot - owner: WorldProceduralFieldSampler
+        private readonly WorldCaveDirector.CaveEntranceHint[] _caveEntranceHintBakeList = new WorldCaveDirector.CaveEntranceHint[MaxCaveEntranceHintBakeCount];
+        private int _anchorCount;
+        private int _zoneBakeCount;
+        private int _biomeMatrixBakeCount;
+        private int _biomeFamilyBakeCount;
+        private int _caveEntranceHintBakeCount;
+        // COLD ALLOC: Vector2Int[4096] - fixed seafloor cache keys - owner: WorldProceduralFieldSampler
+        private readonly Vector2Int[] _seafloorHeightCacheKeys = new Vector2Int[MaxSeafloorHeightCacheEntries];
+        // COLD ALLOC: CachedHeightSample[4096] - fixed seafloor cache payloads - owner: WorldProceduralFieldSampler
+        private readonly CachedHeightSample[] _seafloorHeightCacheValues = new CachedHeightSample[MaxSeafloorHeightCacheEntries];
+        // COLD ALLOC: byte[4096] - fixed seafloor cache occupancy flags - owner: WorldProceduralFieldSampler
+        private readonly byte[] _seafloorHeightCacheOccupied = new byte[MaxSeafloorHeightCacheEntries];
+        private int _seafloorHeightCacheCount;
         private IDataVault _dataVault;
         private VaultGenerationHandle<ZoneData> _burstZoneDataHandle;
         private VaultGenerationHandle<BiomeMatrixData> _burstBiomeMatrixDataHandle;
@@ -637,17 +655,18 @@ namespace Hecton8.World
         private bool _hasPendingSamplingJob;
         private bool _samplingJobBuffersLocked;
 
-        internal static WorldProceduralFieldSampler ActiveRuntimeInstance => GlobalRegistry.ProceduralFieldSampler;
+        private static WorldProceduralFieldSampler s_activeRuntimeInstance;
+
+        internal static WorldProceduralFieldSampler ActiveRuntimeInstance => s_activeRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticRuntimeState()
+        {
+            s_activeRuntimeInstance = null;
+        }
 
         private struct CachedHeightSample
         {
-            public CachedHeightSample(float height, SeafloorSource source, int samplingFrameId)
-            {
-                Height = height;
-                Source = source;
-                SamplingFrameId = samplingFrameId;
-            }
-
             public float Height;
             public SeafloorSource Source;
             public int SamplingFrameId;
@@ -2146,7 +2165,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            GlobalRegistry.RegisterProceduralFieldSampler(this);
+            PublishActiveRuntimeInstance();
             BiomeMatrixEvents.Register(this);
             _isDataDirty = true;
 #if UNITY_EDITOR
@@ -2157,8 +2176,7 @@ namespace Hecton8.World
         private void OnDisable()
         {
             BiomeMatrixEvents.Unregister(this);
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                GlobalRegistry.UnregisterProceduralFieldSampler(this);
+            ClearActiveRuntimeInstance();
             CompletePendingSamplingJobForBarrier();
             DisposeBurstData();
             ReleaseBiomeInfluenceGraphicsBuffer();
@@ -2176,11 +2194,25 @@ namespace Hecton8.World
             DisposeBurstData();
             ReleaseBiomeInfluenceGraphicsBuffer();
             _isDataDirty = true;
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                GlobalRegistry.UnregisterProceduralFieldSampler(this);
+            ClearActiveRuntimeInstance();
 #if UNITY_EDITOR
             ReleaseAssemblyReloadHook();
 #endif
+        }
+
+        private void PublishActiveRuntimeInstance()
+        {
+            GlobalRegistry.RegisterProceduralFieldSampler(this);
+            s_activeRuntimeInstance = this;
+        }
+
+        private void ClearActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
+
+            if (ReferenceEquals(GlobalRegistry.ProceduralFieldSampler, this))
+                GlobalRegistry.UnregisterProceduralFieldSampler(this);
         }
 
 #if UNITY_EDITOR
@@ -2221,7 +2253,7 @@ namespace Hecton8.World
                 return;
 
             activeInstance.PrepareForEditorReload();
-            GlobalRegistry.UnregisterProceduralFieldSampler(activeInstance);
+            activeInstance.ClearActiveRuntimeInstance();
         }
 #endif
 
@@ -2260,7 +2292,7 @@ namespace Hecton8.World
         public void MarkBurstDataDirty()
         {
             _isDataDirty = true;
-            _seafloorHeightCache.Clear();
+            ClearSeafloorHeightCache();
         }
 
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile _)
@@ -2582,7 +2614,7 @@ namespace Hecton8.World
             if (_isDataDirty)
                 PrepareBurstData();
 
-            int count = _biomeMatrixBakeList.Count;
+            int count = _biomeMatrixBakeCount;
             for (int i = 0; i < count; i++)
             {
                 HectonBiomeMatrixProfile candidate = _biomeMatrixBakeList[i];
@@ -2643,12 +2675,12 @@ namespace Hecton8.World
                 biomeMatrixDataIndex = output.BiomeMatrixDataIndex,
                 biomeFamilyDataIndex = output.BiomeFamilyDataIndex,
                 biomeFamilyFlags = output.BiomeFamilyFlags,
-                biomeProfile = output.BiomeMatrixDataIndex >= 0 && output.BiomeMatrixDataIndex < _biomeMatrixBakeList.Count ? _biomeMatrixBakeList[output.BiomeMatrixDataIndex] : null,
+                biomeProfile = output.BiomeMatrixDataIndex >= 0 && output.BiomeMatrixDataIndex < _biomeMatrixBakeCount ? _biomeMatrixBakeList[output.BiomeMatrixDataIndex] : null,
                 secondaryBiomeProfile = ResolveSecondaryBiomeProfile(output),
-                biomeFamily = output.BiomeFamilyDataIndex >= 0 && output.BiomeFamilyDataIndex < _biomeFamilyBakeList.Count ? _biomeFamilyBakeList[output.BiomeFamilyDataIndex] : null,
+                biomeFamily = output.BiomeFamilyDataIndex >= 0 && output.BiomeFamilyDataIndex < _biomeFamilyBakeCount ? _biomeFamilyBakeList[output.BiomeFamilyDataIndex] : null,
                 secondaryBiomeFamily = ResolveSecondaryBiomeFamily(output),
                 biomeInfluence = new BiomeInfluenceCell { Packed = output.BiomeInfluencePacked },
-                zone = output.ZoneDataIndex >= 0 && output.ZoneDataIndex < _zoneBakeList.Count ? _zoneBakeList[output.ZoneDataIndex] : null,
+                zone = output.ZoneDataIndex >= 0 && output.ZoneDataIndex < _zoneBakeCount ? _zoneBakeList[output.ZoneDataIndex] : null,
                 zoneWeight = output.ZoneWeight,
                 resolvedZoneKind = (WorldZoneAnchor.ZoneKind)output.ResolvedZoneKind,
                 resolvedPattern = (WorldProceduralPattern)output.ResolvedPattern,
@@ -2665,7 +2697,7 @@ namespace Hecton8.World
         private HectonBiomeMatrixProfile ResolveSecondaryBiomeProfile(in CellOutputData output)
         {
             int secondaryIndex = ResolveSecondaryBiomeMatrixDataIndex(in output);
-            return secondaryIndex >= 0 && secondaryIndex < _biomeMatrixBakeList.Count
+            return secondaryIndex >= 0 && secondaryIndex < _biomeMatrixBakeCount
                 ? _biomeMatrixBakeList[secondaryIndex]
                 : null;
         }
@@ -2685,7 +2717,7 @@ namespace Hecton8.World
             }
 
             int familyIndex = biomeMatrixData[secondaryIndex].FamilyDataIndex;
-            return familyIndex >= 0 && familyIndex < _biomeFamilyBakeList.Count
+            return familyIndex >= 0 && familyIndex < _biomeFamilyBakeCount
                 ? _biomeFamilyBakeList[familyIndex]
                 : null;
         }
@@ -2854,12 +2886,14 @@ namespace Hecton8.World
 
             RefreshActiveAnchorsSnapshot();
 
-            _zoneDataIndexLookup.Clear();
-            _biomeMatrixDataIndexLookup.Clear();
-            _biomeFamilyDataIndexLookup.Clear();
-            _zoneBakeList.Clear();
-            _biomeMatrixBakeList.Clear();
-            _biomeFamilyBakeList.Clear();
+            System.Array.Clear(_zoneBakeList, 0, _zoneBakeList.Length);
+            System.Array.Clear(_biomeMatrixBakeList, 0, _biomeMatrixBakeCount);
+            System.Array.Clear(_biomeFamilyBakeList, 0, _biomeFamilyBakeCount);
+            System.Array.Clear(_caveEntranceHintBakeList, 0, _caveEntranceHintBakeCount);
+            _zoneBakeCount = 0;
+            _biomeMatrixBakeCount = 0;
+            _biomeFamilyBakeCount = 0;
+            _caveEntranceHintBakeCount = 0;
 
             RegisterFamilyForBake(littoralKarstFamily);
             RegisterFamilyForBake(fossilReefFamily);
@@ -2885,7 +2919,7 @@ namespace Hecton8.World
                     RegisterMatrixForBake(matrixProfiles[i]);
             }
 
-            for (int i = 0; i < _anchors.Count; i++)
+            for (int i = 0; i < _anchorCount; i++)
             {
                 WorldZoneAnchor anchor = _anchors[i];
                 if (anchor == null)
@@ -2895,22 +2929,21 @@ namespace Hecton8.World
                 RegisterFamilyForBake(anchor.DominantBiomeFamily);
             }
 
-            _caveEntranceHintBakeList.Clear();
             if (_worldCaveDirector != null)
-                _worldCaveDirector.CollectEntranceHints(_caveEntranceHintBakeList);
+                _caveEntranceHintBakeCount = _worldCaveDirector.CopyEntranceHintsTo(_caveEntranceHintBakeList);
 
             if (!TryEnsureVaultBufferCapacity(
                     ref _burstBiomeFamilyDataHandle,
                     BufferID.WorldProceduralFieldBiomeFamilies,
-                    _biomeFamilyBakeList.Count,
+                    _biomeFamilyBakeCount,
                     NativeArrayOptions.UninitializedMemory,
                     out NativeArray<BiomeFamilyData> biomeFamilyData))
             {
                 return;
             }
 
-            _burstBiomeFamilyDataCount = _biomeFamilyBakeList.Count;
-            for (int i = 0; i < _biomeFamilyBakeList.Count; i++)
+            _burstBiomeFamilyDataCount = _biomeFamilyBakeCount;
+            for (int i = 0; i < _biomeFamilyBakeCount; i++)
             {
                 HectonBiomeFamilyProfile family = _biomeFamilyBakeList[i];
                 biomeFamilyData[i] = new BiomeFamilyData
@@ -2923,7 +2956,7 @@ namespace Hecton8.World
             if (!TryEnsureVaultBufferCapacity(
                     ref _burstBiomeMatrixDataHandle,
                     BufferID.WorldProceduralFieldBiomeMatrices,
-                    _biomeMatrixBakeList.Count,
+                    _biomeMatrixBakeCount,
                     NativeArrayOptions.UninitializedMemory,
                     out NativeArray<BiomeMatrixData> biomeMatrixData) ||
                 !TryEnsureVaultBufferCapacity(
@@ -2939,8 +2972,8 @@ namespace Hecton8.World
             for (int i = 0; i < biomeMatrixIdToDataIndex.Length; i++)
                 biomeMatrixIdToDataIndex[i] = -1;
 
-            _burstBiomeMatrixDataCount = _biomeMatrixBakeList.Count;
-            for (int i = 0; i < _biomeMatrixBakeList.Count; i++)
+            _burstBiomeMatrixDataCount = _biomeMatrixBakeCount;
+            for (int i = 0; i < _biomeMatrixBakeCount; i++)
             {
                 HectonBiomeMatrixProfile profile = _biomeMatrixBakeList[i];
                 int matrixIndex = profile != null ? profile.matrixIndex : -1;
@@ -2971,7 +3004,7 @@ namespace Hecton8.World
             if (!TryEnsureVaultBufferCapacity(
                     ref _burstZoneDataHandle,
                     BufferID.WorldProceduralFieldZones,
-                    _anchors.Count,
+                    _anchorCount,
                     NativeArrayOptions.UninitializedMemory,
                     out NativeArray<ZoneData> zoneData))
             {
@@ -2979,15 +3012,18 @@ namespace Hecton8.World
             }
 
             _burstZoneDataCount = 0;
-            for (int i = 0; i < _anchors.Count; i++)
+            for (int i = 0; i < _anchorCount; i++)
             {
                 WorldZoneAnchor anchor = _anchors[i];
                 if (anchor == null)
                     continue;
 
+                if (_zoneBakeCount >= _zoneBakeList.Length)
+                    break;
+
                 int zoneDataIndex = _burstZoneDataCount++;
-                _zoneDataIndexLookup[anchor] = zoneDataIndex;
-                _zoneBakeList.Add(anchor);
+                _zoneBakeList[_zoneBakeCount] = anchor;
+                _zoneBakeCount++;
                 zoneData[zoneDataIndex] = new ZoneData
                 {
                     PositionXZ = new float2(anchor.transform.position.x, anchor.transform.position.z),
@@ -3009,15 +3045,15 @@ namespace Hecton8.World
             if (!TryEnsureVaultBufferCapacity(
                     ref _burstCaveEntranceHintsHandle,
                     BufferID.WorldProceduralFieldCaveEntranceHints,
-                    _caveEntranceHintBakeList.Count,
+                    _caveEntranceHintBakeCount,
                     NativeArrayOptions.UninitializedMemory,
                     out NativeArray<CaveEntranceHintData> caveEntranceHints))
             {
                 return;
             }
 
-            _burstCaveEntranceHintCount = _caveEntranceHintBakeList.Count;
-            for (int i = 0; i < _caveEntranceHintBakeList.Count; i++)
+            _burstCaveEntranceHintCount = _caveEntranceHintBakeCount;
+            for (int i = 0; i < _caveEntranceHintBakeCount; i++)
             {
                 WorldCaveDirector.CaveEntranceHint hint = _caveEntranceHintBakeList[i];
                 caveEntranceHints[i] = new CaveEntranceHintData
@@ -3833,7 +3869,7 @@ namespace Hecton8.World
         private bool TryResolveSeafloorHeight(Vector3 position, out float seafloorHeight, out SeafloorSource seafloorSource)
         {
             Vector2Int cacheKey = GetHeightCacheKey(position.x, position.z);
-            if (_seafloorHeightCache.TryGetValue(cacheKey, out CachedHeightSample cachedSample))
+            if (TryReadSeafloorHeightCache(cacheKey, out CachedHeightSample cachedSample))
             {
                 bool staleFallbackSample = cachedSample.Source == SeafloorSource.FallbackSynthetic &&
                                            cachedSample.SamplingFrameId != _samplingFrameId;
@@ -3848,8 +3884,7 @@ namespace Hecton8.World
             bool resolved = TryResolveSeafloorHeightUncached(position, out seafloorHeight, out seafloorSource);
             if (resolved)
             {
-                TrimSeafloorHeightCacheIfNeeded();
-                _seafloorHeightCache[cacheKey] = new CachedHeightSample(seafloorHeight, seafloorSource, _samplingFrameId);
+                WriteSeafloorHeightCache(cacheKey, seafloorHeight, seafloorSource);
             }
 
             return resolved;
@@ -4119,7 +4154,7 @@ namespace Hecton8.World
             float bestWeight = 0f;
             float bestDistanceSqr = float.MaxValue;
 
-            for (int i = 0; i < _anchors.Count; i++)
+            for (int i = 0; i < _anchorCount; i++)
             {
                 WorldZoneAnchor anchor = _anchors[i];
                 if (anchor == null)
@@ -4155,7 +4190,7 @@ namespace Hecton8.World
 
         private void RefreshActiveAnchorsSnapshot()
         {
-            WorldZoneAnchor.CopyActiveAnchorsTo(_anchors);
+            _anchorCount = WorldZoneAnchor.CopyActiveAnchorsTo(_anchors, MaxZoneAnchorSnapshotCount);
         }
 
         private float EvaluateNoise01(float x, float z, float scale)
@@ -5041,23 +5076,23 @@ namespace Hecton8.World
 
         private void RegisterMatrixForBake(HectonBiomeMatrixProfile profile)
         {
-            if (profile == null || _biomeMatrixDataIndexLookup.ContainsKey(profile))
+            if (profile == null || ResolveBiomeMatrixDataIndex(profile) >= 0 || _biomeMatrixBakeCount >= _biomeMatrixBakeList.Length)
                 return;
 
-            int index = _biomeMatrixBakeList.Count;
-            _biomeMatrixDataIndexLookup.Add(profile, index);
-            _biomeMatrixBakeList.Add(profile);
+            int index = _biomeMatrixBakeCount;
+            _biomeMatrixBakeList[index] = profile;
+            _biomeMatrixBakeCount++;
             RegisterFamilyForBake(profile.familyProfile);
         }
 
         private void RegisterFamilyForBake(HectonBiomeFamilyProfile family)
         {
-            if (family == null || _biomeFamilyDataIndexLookup.ContainsKey(family))
+            if (family == null || ResolveBiomeFamilyDataIndex(family) >= 0 || _biomeFamilyBakeCount >= _biomeFamilyBakeList.Length)
                 return;
 
-            int index = _biomeFamilyBakeList.Count;
-            _biomeFamilyDataIndexLookup.Add(family, index);
-            _biomeFamilyBakeList.Add(family);
+            int index = _biomeFamilyBakeCount;
+            _biomeFamilyBakeList[index] = family;
+            _biomeFamilyBakeCount++;
         }
 
         private bool TryEnsureVaultBufferCapacity<T>(
@@ -5351,24 +5386,42 @@ namespace Hecton8.World
 
         private int ResolveZoneDataIndex(WorldZoneAnchor zone)
         {
-            if (zone != null && _zoneDataIndexLookup.TryGetValue(zone, out int zoneDataIndex))
-                return zoneDataIndex;
+            if (zone == null)
+                return -1;
+
+            for (int i = 0; i < _zoneBakeCount; i++)
+            {
+                if (ReferenceEquals(_zoneBakeList[i], zone))
+                    return i;
+            }
 
             return -1;
         }
 
         private int ResolveBiomeMatrixDataIndex(HectonBiomeMatrixProfile biomeProfile)
         {
-            if (biomeProfile != null && _biomeMatrixDataIndexLookup.TryGetValue(biomeProfile, out int biomeMatrixDataIndex))
-                return biomeMatrixDataIndex;
+            if (biomeProfile == null)
+                return -1;
+
+            for (int i = 0; i < _biomeMatrixBakeCount; i++)
+            {
+                if (ReferenceEquals(_biomeMatrixBakeList[i], biomeProfile))
+                    return i;
+            }
 
             return -1;
         }
 
         private int ResolveBiomeFamilyDataIndex(HectonBiomeFamilyProfile biomeFamily)
         {
-            if (biomeFamily != null && _biomeFamilyDataIndexLookup.TryGetValue(biomeFamily, out int biomeFamilyDataIndex))
-                return biomeFamilyDataIndex;
+            if (biomeFamily == null)
+                return -1;
+
+            for (int i = 0; i < _biomeFamilyBakeCount; i++)
+            {
+                if (ReferenceEquals(_biomeFamilyBakeList[i], biomeFamily))
+                    return i;
+            }
 
             return -1;
         }
@@ -5437,12 +5490,86 @@ namespace Hecton8.World
                 (int)math.round(z * 100f));
         }
 
-        private void TrimSeafloorHeightCacheIfNeeded()
+        private static int GetSeafloorHeightCacheIndex(Vector2Int key)
         {
-            if (_seafloorHeightCache.Count < MaxSeafloorHeightCacheEntries)
+            unchecked
+            {
+                uint hash = ((uint)key.x * 73856093u) ^ ((uint)key.y * 19349663u);
+                hash ^= hash >> 16;
+                return (int)(hash & MaxSeafloorHeightCacheMask);
+            }
+        }
+
+        private bool TryReadSeafloorHeightCache(Vector2Int key, out CachedHeightSample sample)
+        {
+            int startIndex = GetSeafloorHeightCacheIndex(key);
+            for (int probe = 0; probe < MaxSeafloorHeightCacheEntries; probe++)
+            {
+                int index = (startIndex + probe) & MaxSeafloorHeightCacheMask;
+                if (_seafloorHeightCacheOccupied[index] == 0)
+                {
+                    sample = default;
+                    return false;
+                }
+
+                if (_seafloorHeightCacheKeys[index] == key)
+                {
+                    sample = _seafloorHeightCacheValues[index];
+                    return true;
+                }
+            }
+
+            sample = default;
+            return false;
+        }
+
+        private void WriteSeafloorHeightCache(Vector2Int key, float height, SeafloorSource source)
+        {
+            CachedHeightSample sample;
+            sample.Height = height;
+            sample.Source = source;
+            sample.SamplingFrameId = _samplingFrameId;
+
+            if (_seafloorHeightCacheCount >= MaxSeafloorHeightCacheEntries)
+            {
+                ClearSeafloorHeightCache();
+            }
+
+            int startIndex = GetSeafloorHeightCacheIndex(key);
+            for (int probe = 0; probe < MaxSeafloorHeightCacheEntries; probe++)
+            {
+                int index = (startIndex + probe) & MaxSeafloorHeightCacheMask;
+                if (_seafloorHeightCacheOccupied[index] == 0)
+                {
+                    _seafloorHeightCacheKeys[index] = key;
+                    _seafloorHeightCacheValues[index] = sample;
+                    _seafloorHeightCacheOccupied[index] = 1;
+                    _seafloorHeightCacheCount++;
+                    return;
+                }
+
+                if (_seafloorHeightCacheKeys[index] == key)
+                {
+                    _seafloorHeightCacheValues[index] = sample;
+                    return;
+                }
+            }
+
+            ClearSeafloorHeightCache();
+            int fallbackIndex = startIndex & MaxSeafloorHeightCacheMask;
+            _seafloorHeightCacheKeys[fallbackIndex] = key;
+            _seafloorHeightCacheValues[fallbackIndex] = sample;
+            _seafloorHeightCacheOccupied[fallbackIndex] = 1;
+            _seafloorHeightCacheCount = 1;
+        }
+
+        private void ClearSeafloorHeightCache()
+        {
+            if (_seafloorHeightCacheCount <= 0)
                 return;
 
-            _seafloorHeightCache.Clear();
+            System.Array.Clear(_seafloorHeightCacheOccupied, 0, _seafloorHeightCacheOccupied.Length);
+            _seafloorHeightCacheCount = 0;
         }
 
         private void ResolveReferences(bool force = false)
@@ -5488,22 +5615,22 @@ namespace Hecton8.World
 #if UNITY_EDITOR
             _debugLastZone = sample.zone != null
                 ? sample.zone.ZoneLabel
-                : SyntheticZoneLabelPrefix + GetZoneKindLabel(sample.resolvedZoneKind);
+                : GetZoneKindLabel(sample.resolvedZoneKind);
             _debugLastBiomeProfile = sample.biomeProfile != null ? sample.biomeProfile.biomeName : "None";
             _debugLastBiomeFamily = sample.biomeFamily != null ? sample.biomeFamily.familyLabel : "None";
             _debugLastPattern = sample.isValid != 0 ? GetPatternLabel(sample.resolvedPattern) : PatternLabelNone;
             _debugPatternOverride = forcePatternPreviewOverride
                 ? limitPatternOverrideToFallback
-                    ? $"{previewPatternOverride} (FallbackOnly)"
-                    : $"{previewPatternOverride} (Forced)"
+                    ? PatternLabelFallbackOnly
+                    : GetPatternLabel(previewPatternOverride)
                 : "None";
             _debugPreviewBiomeOverride = forcePatternPreviewOverride
                 ? ResolvePreviewBiomeLabel(ResolvePreviewPatternBiomeFamily(previewPatternOverride, sample.depthMeters, sample.slopeDegrees, sample.biomeFamily))
                 : "None";
             _debugPreviewMatrixOverride = forceMatrixBiomePreviewOverride && previewMatrixBiomeOverride != null
                 ? limitMatrixBiomeOverrideToFallback
-                    ? $"{previewMatrixBiomeOverride.biomeName} (FallbackOnly)"
-                    : $"{previewMatrixBiomeOverride.biomeName} (Forced)"
+                    ? MatrixLabelFallbackOnly
+                    : previewMatrixBiomeOverride.biomeName
                 : forcePatternPreviewOverride
                     ? ResolvePreviewPatternBiomeProfile(previewPatternOverride, sample.biomeFamily) != null
                         ? ResolvePreviewPatternBiomeProfile(previewPatternOverride, sample.biomeFamily).biomeName

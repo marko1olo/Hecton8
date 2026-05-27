@@ -1364,10 +1364,13 @@ namespace Hecton8.World.Biomes
             atmosphere = default;
             mask = default;
             counters = default;
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (!TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionCurrentAtmosphere, OwnerSystem, 1, out NativeArray<CurrentAtmosphereDTO>.ReadOnly atmosphereArray) ||
-                !TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionBlendMask, OwnerSystem, 1, out NativeArray<BiomeBlendMaskDTO>.ReadOnly maskArray) ||
-                !TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO>.ReadOnly counterArray))
+            BiomeTransitionManagerRuntime active = ActiveRuntimeInstance;
+            if (active == null ||
+                !active._vaultReady ||
+                active._vault == null ||
+                !TryReadBiomeVaultBuffer(active._vault, in active._currentAtmosphereHandle, BufferID.BiomeTransitionCurrentAtmosphere, OwnerSystem, 1, out NativeArray<CurrentAtmosphereDTO>.ReadOnly atmosphereArray) ||
+                !TryReadBiomeVaultBuffer(active._vault, in active._blendMaskHandle, BufferID.BiomeTransitionBlendMask, OwnerSystem, 1, out NativeArray<BiomeBlendMaskDTO>.ReadOnly maskArray) ||
+                !TryReadBiomeVaultBuffer(active._vault, in active._countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO>.ReadOnly counterArray))
             {
                 return false;
             }
@@ -1384,9 +1387,14 @@ namespace Hecton8.World.Biomes
         public static bool TryReadTuning(out BiomeTransitionTuningDTO tuning)
         {
             tuning = default;
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (!TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out NativeArray<BiomeTransitionTuningDTO>.ReadOnly tuningArray))
+            BiomeTransitionManagerRuntime active = ActiveRuntimeInstance;
+            if (active == null ||
+                !active._vaultReady ||
+                active._vault == null ||
+                !TryReadBiomeVaultBuffer(active._vault, in active._tuningHandle, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out NativeArray<BiomeTransitionTuningDTO>.ReadOnly tuningArray))
+            {
                 return false;
+            }
 
             tuning = tuningArray[0];
             return true;

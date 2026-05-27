@@ -1,9 +1,14 @@
-#include "AudioPluginUtil.h"
+#include "AudioPluginInterface.h"
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
-#if !PLATFORM_WIN
-#include <pthread.h>
+#if PLATFORM_WIN
+#include <stdint.h>
+#include <windows.h>
+#else
+#include <sched.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #endif
 
 namespace HectonSensoryKernel
@@ -40,6 +45,9 @@ namespace HectonSensoryKernel
     static const SInt32 kSharedStateGuardValueA = (SInt32)0x48454354;
     static const SInt32 kSharedStateGuardValueB = (SInt32)0x4F4E2D38;
     static const int kDrainSpinLimit = 1000000;
+    static const unsigned int kMaxProcessFrames = 65536u;
+    static const int kMaxProcessChannels = 64;
+    static const size_t kMaxProcessOutputSamples = (size_t)kMaxProcessFrames * (size_t)kMaxProcessChannels;
 
 #if PLATFORM_WIN
     typedef LONG HectonAtomicInt32;
@@ -98,14 +106,23 @@ namespace HectonSensoryKernel
 #endif
     }
 
-    static volatile HectonAtomicInt32 g_telemetryDumpInUse = 0;
-    static volatile HectonAtomicInt32 g_telemetryDumpBytes = 0;
-    static unsigned char g_telemetryDumpBuffer[kTelemetryDumpMaxBytes] = {};
+    static inline void EnsureTelemetryDumpDirectory()
+    {
+#if PLATFORM_WIN
+        CreateDirectoryA("Docs", NULL);
+        CreateDirectoryA("Docs/AgentLogs", NULL);
+#else
+        mkdir("Docs", 0755);
+        mkdir("Docs/AgentLogs", 0755);
+#endif
+    }
 
     static inline int WriteTelemetryDumpFile(const void* bytes, int byteCount)
     {
         if (bytes == NULL || byteCount <= 0 || byteCount > kTelemetryDumpMaxBytes)
             return 0;
+
+        EnsureTelemetryDumpDirectory();
 
 #if PLATFORM_WIN
         FILE* file = NULL;
@@ -121,65 +138,6 @@ namespace HectonSensoryKernel
         const size_t written = fwrite(bytes, 1u, bytesToWrite, file);
         fclose(file);
         return written == bytesToWrite ? 1 : 0;
-    }
-
-#if PLATFORM_WIN
-    static DWORD WINAPI TelemetryDumpThreadMain(LPVOID)
-    {
-        const int byteCount = (int)AtomicRead32(&g_telemetryDumpBytes);
-        WriteTelemetryDumpFile(g_telemetryDumpBuffer, byteCount);
-        AtomicWrite32(&g_telemetryDumpBytes, 0);
-        AtomicWrite32(&g_telemetryDumpInUse, 0);
-        return 0;
-    }
-#else
-    static void* TelemetryDumpThreadMain(void*)
-    {
-        const int byteCount = (int)AtomicRead32(&g_telemetryDumpBytes);
-        WriteTelemetryDumpFile(g_telemetryDumpBuffer, byteCount);
-        AtomicWrite32(&g_telemetryDumpBytes, 0);
-        AtomicWrite32(&g_telemetryDumpInUse, 0);
-        return NULL;
-    }
-#endif
-
-    static inline int QueueTelemetryDumpAsync(const void* bytes, int byteCount)
-    {
-        if (bytes == NULL || byteCount <= 0 || byteCount > kTelemetryDumpMaxBytes)
-            return 0;
-
-        if (AtomicIncrement32(&g_telemetryDumpInUse) != 1)
-        {
-            AtomicDecrement32(&g_telemetryDumpInUse);
-            return 0;
-        }
-
-        memcpy(g_telemetryDumpBuffer, bytes, (size_t)byteCount);
-        AtomicWrite32(&g_telemetryDumpBytes, (SInt32)byteCount);
-
-#if PLATFORM_WIN
-        HANDLE threadHandle = CreateThread(NULL, 0, TelemetryDumpThreadMain, NULL, 0, NULL);
-        if (threadHandle == NULL)
-        {
-            AtomicWrite32(&g_telemetryDumpBytes, 0);
-            AtomicWrite32(&g_telemetryDumpInUse, 0);
-            return 0;
-        }
-
-        CloseHandle(threadHandle);
-#else
-        pthread_t threadHandle;
-        if (pthread_create(&threadHandle, NULL, TelemetryDumpThreadMain, NULL) != 0)
-        {
-            AtomicWrite32(&g_telemetryDumpBytes, 0);
-            AtomicWrite32(&g_telemetryDumpInUse, 0);
-            return 0;
-        }
-
-        pthread_detach(threadHandle);
-#endif
-
-        return 1;
     }
 
     struct SharedRingBufferDescriptor
@@ -211,6 +169,7 @@ namespace HectonSensoryKernel
 
     static SharedRingBufferDescriptor g_sharedRingBuffer = {};
     static volatile HectonAtomicInt32 g_hasSharedRingBuffer = 0;
+    static volatile HectonAtomicInt32 g_callbackMutationGate = 0;
     static volatile HectonAtomicInt32 g_processCallbackDepth = 0;
     static volatile HectonAtomicInt32 g_lastStatusBits = kStatusCleared;
     static volatile HectonAtomicInt32 g_debugProcessScratchInUse = 0;
@@ -263,10 +222,19 @@ namespace HectonSensoryKernel
 
 #if PLATFORM_WIN
             Sleep(0);
+#else
+            sched_yield();
 #endif
         }
 
         return AtomicRead32(&g_processCallbackDepth) == 0;
+    }
+
+    static inline void RestoreStatusAfterDrainFailure()
+    {
+        AtomicWrite32(&g_callbackMutationGate, 0);
+        const SInt32 restoredStatus = AtomicRead32(&g_hasSharedRingBuffer) != 0 ? kStatusActive : kStatusCleared;
+        WriteStatusBits(restoredStatus | kStatusBusy);
     }
 
     static SInt32 ValidateDescriptor(const SharedRingBufferDescriptor& descriptor)
@@ -293,6 +261,7 @@ namespace HectonSensoryKernel
         }
 
         if (descriptor.capacityFrames <= 1 ||
+            descriptor.capacityFrames > (SInt32)kMaxProcessFrames ||
             !IsPowerOfTwo(descriptor.capacityFrames) ||
             descriptor.capacityMask != descriptor.capacityFrames - 1)
         {
@@ -332,6 +301,28 @@ namespace HectonSensoryKernel
         }
 
         return status;
+    }
+
+    static inline bool TryComputeOutputSampleCount(unsigned int frameCount, int channelCount, size_t* sampleCount)
+    {
+        if (sampleCount == NULL)
+            return false;
+
+        *sampleCount = 0u;
+        if (frameCount == 0u || channelCount <= 0)
+            return false;
+
+        const size_t frames = (size_t)frameCount;
+        const size_t channels = (size_t)channelCount;
+        if (frames > ((size_t)-1) / channels)
+            return false;
+
+        const size_t totalSamples = frames * channels;
+        if (totalSamples > kMaxProcessOutputSamples)
+            return false;
+
+        *sampleCount = totalSamples;
+        return true;
     }
 
     int InternalRegisterEffectDefinition(UnityAudioEffectDefinition& definition)
@@ -382,19 +373,41 @@ namespace HectonSensoryKernel
         int inchannels,
         int outchannels)
     {
-        const int frameCount = (int)length;
-        if (outbuffer == NULL || frameCount <= 0 || outchannels <= 0)
+        if (outbuffer == NULL)
             return UNITY_AUDIODSP_OK;
 
-        memset(outbuffer, 0, sizeof(float) * frameCount * outchannels);
+        if (length == 0u ||
+            length > kMaxProcessFrames ||
+            outchannels <= 0 ||
+            outchannels > kMaxProcessChannels)
+        {
+            WriteStatusBits(kStatusSharedStateInvalid);
+            return UNITY_AUDIODSP_OK;
+        }
 
-        if (inbuffer != NULL && inchannels > 0)
+        size_t outputSampleCount = 0u;
+        if (!TryComputeOutputSampleCount(length, outchannels, &outputSampleCount))
+        {
+            WriteStatusBits(kStatusSharedStateInvalid);
+            return UNITY_AUDIODSP_OK;
+        }
+
+        memset(outbuffer, 0, sizeof(float) * outputSampleCount);
+
+        if (inchannels > kMaxProcessChannels || (inbuffer != NULL && inchannels <= 0))
+        {
+            WriteStatusBits(kStatusSharedStateInvalid);
+            return UNITY_AUDIODSP_OK;
+        }
+
+        const int frameCount = (int)length;
+        if (inbuffer != NULL && inchannels > 0 && inchannels <= kMaxProcessChannels)
         {
             const int passthroughChannels = (inchannels < outchannels) ? inchannels : outchannels;
             for (int frameIndex = 0; frameIndex < frameCount; ++frameIndex)
             {
-                const int inputBase = frameIndex * inchannels;
-                const int outputBase = frameIndex * outchannels;
+                const size_t inputBase = (size_t)frameIndex * (size_t)inchannels;
+                const size_t outputBase = (size_t)frameIndex * (size_t)outchannels;
                 for (int channelIndex = 0; channelIndex < passthroughChannels; ++channelIndex)
                     outbuffer[outputBase + channelIndex] = inbuffer[inputBase + channelIndex];
 
@@ -404,7 +417,8 @@ namespace HectonSensoryKernel
         }
 
         AtomicIncrement32(&g_processCallbackDepth);
-        if (AtomicRead32(&g_hasSharedRingBuffer) == 0)
+        if (AtomicRead32(&g_callbackMutationGate) != 0 ||
+            AtomicRead32(&g_hasSharedRingBuffer) == 0)
         {
             AtomicDecrement32(&g_processCallbackDepth);
             return UNITY_AUDIODSP_OK;
@@ -442,7 +456,7 @@ namespace HectonSensoryKernel
         for (int frameIndex = 0; frameIndex < readableFrames; ++frameIndex)
         {
             const int sourceFrameIndex = (readIndex + frameIndex) & ringBuffer.capacityMask;
-            const int outputBase = frameIndex * outchannels;
+            const size_t outputBase = (size_t)frameIndex * (size_t)outchannels;
             if (sourceChannels == 2)
             {
                 const int sourceBase = sourceFrameIndex << 1;
@@ -479,42 +493,123 @@ namespace HectonSensoryKernel
         return UNITY_AUDIODSP_OK;
     }
 
-    extern "C" UNITY_AUDIODSP_EXPORT_API void AUDIO_CALLING_CONVENTION HectonSensoryKernel_RegisterSharedRingBuffer(const SharedRingBufferDescriptor* descriptor)
+    static inline void CopyEffectName(char* target, size_t targetBytes)
     {
-        AtomicWrite32(&g_hasSharedRingBuffer, 0);
+        if (target == NULL || targetBytes == 0u)
+            return;
+
+        static const char kEffectName[] = "Hecton Sensory Kernel";
+        size_t index = 0u;
+        const size_t lastIndex = targetBytes - 1u;
+        while (index < lastIndex && kEffectName[index] != 0)
+        {
+            target[index] = kEffectName[index];
+            ++index;
+        }
+
+        target[index] = 0;
+    }
+
+    static inline void FillUnityEffectDefinition(UnityAudioEffectDefinition& definition)
+    {
+        memset(&definition, 0, sizeof(definition));
+        CopyEffectName(definition.name, sizeof(definition.name));
+        definition.structsize = sizeof(UnityAudioEffectDefinition);
+        definition.paramstructsize = sizeof(UnityAudioParameterDefinition);
+        definition.apiversion = UNITY_AUDIO_PLUGIN_API_VERSION;
+        definition.pluginversion = 0x010000;
+        definition.create = CreateCallback;
+        definition.release = ReleaseCallback;
+        definition.process = ProcessCallback;
+        definition.setfloatparameter = SetFloatParameterCallback;
+        definition.getfloatparameter = GetFloatParameterCallback;
+        definition.getfloatbuffer = GetFloatBufferCallback;
+        InternalRegisterEffectDefinition(definition);
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API int AUDIO_CALLING_CONVENTION UnityGetAudioEffectDefinitions(UnityAudioEffectDefinition*** definitionptr)
+    {
+        static UnityAudioEffectDefinition definition;
+        static UnityAudioEffectDefinition* definitionPointers[1];
+        if (definitionptr == NULL)
+            return 0;
+
+        FillUnityEffectDefinition(definition);
+        definitionPointers[0] = &definition;
+        *definitionptr = definitionPointers;
+        return 1;
+    }
+
+    static SInt32 RegisterSharedRingBufferOperation(const SharedRingBufferDescriptor* descriptor)
+    {
+        AtomicWrite32(&g_callbackMutationGate, 1);
         WriteStatusBits(kStatusBusy);
         if (!WaitForProcessCallbacksToDrain())
-            return;
+        {
+            RestoreStatusAfterDrainFailure();
+            return ReadStatusBits();
+        }
 
         if (descriptor == NULL)
         {
+            AtomicWrite32(&g_hasSharedRingBuffer, 0);
             ClearSharedRingBufferUnsafe();
             WriteStatusBits(kStatusCleared);
-            return;
+            AtomicWrite32(&g_callbackMutationGate, 0);
+            return kStatusCleared;
         }
 
         const SInt32 validationStatus = ValidateDescriptor(*descriptor);
         if (validationStatus != kStatusNone)
         {
-            ClearSharedRingBufferUnsafe();
             WriteStatusBits(validationStatus);
-            return;
+            AtomicWrite32(&g_callbackMutationGate, 0);
+            return validationStatus;
         }
 
+        AtomicWrite32(&g_hasSharedRingBuffer, 0);
         g_sharedRingBuffer = *descriptor;
         WriteStatusBits(kStatusActive);
         AtomicWrite32(&g_hasSharedRingBuffer, 1);
+        AtomicWrite32(&g_callbackMutationGate, 0);
+        return kStatusActive;
+    }
+
+    static SInt32 ClearSharedRingBufferOperation()
+    {
+        AtomicWrite32(&g_callbackMutationGate, 1);
+        WriteStatusBits(kStatusBusy);
+        if (!WaitForProcessCallbacksToDrain())
+        {
+            RestoreStatusAfterDrainFailure();
+            return ReadStatusBits();
+        }
+
+        AtomicWrite32(&g_hasSharedRingBuffer, 0);
+        ClearSharedRingBufferUnsafe();
+        WriteStatusBits(kStatusCleared);
+        AtomicWrite32(&g_callbackMutationGate, 0);
+        return kStatusCleared;
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API void AUDIO_CALLING_CONVENTION HectonSensoryKernel_RegisterSharedRingBuffer(const SharedRingBufferDescriptor* descriptor)
+    {
+        (void)RegisterSharedRingBufferOperation(descriptor);
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API int AUDIO_CALLING_CONVENTION HectonSensoryKernel_RegisterSharedRingBufferAndGetStatus(const SharedRingBufferDescriptor* descriptor)
+    {
+        return (int)RegisterSharedRingBufferOperation(descriptor);
     }
 
     extern "C" UNITY_AUDIODSP_EXPORT_API void AUDIO_CALLING_CONVENTION HectonSensoryKernel_ClearSharedRingBuffer()
     {
-        AtomicWrite32(&g_hasSharedRingBuffer, 0);
-        WriteStatusBits(kStatusBusy);
-        if (!WaitForProcessCallbacksToDrain())
-            return;
+        (void)ClearSharedRingBufferOperation();
+    }
 
-        ClearSharedRingBufferUnsafe();
-        WriteStatusBits(kStatusCleared);
+    extern "C" UNITY_AUDIODSP_EXPORT_API int AUDIO_CALLING_CONVENTION HectonSensoryKernel_ClearSharedRingBufferAndGetStatus()
+    {
+        return (int)ClearSharedRingBufferOperation();
     }
 
     extern "C" UNITY_AUDIODSP_EXPORT_API int AUDIO_CALLING_CONVENTION HectonSensoryKernel_GetSharedRingBufferStatus()
@@ -524,7 +619,7 @@ namespace HectonSensoryKernel
 
     extern "C" UNITY_AUDIODSP_EXPORT_API int AUDIO_CALLING_CONVENTION HectonSensoryKernel_DumpAudioBridgeTelemetry(const void* bytes, int byteCount)
     {
-        return QueueTelemetryDumpAsync(bytes, byteCount);
+        return WriteTelemetryDumpFile(bytes, byteCount);
     }
 
     extern "C" UNITY_AUDIODSP_EXPORT_API int AUDIO_CALLING_CONVENTION HectonSensoryKernel_DebugProcessBlock(int frameCount, int outchannels)

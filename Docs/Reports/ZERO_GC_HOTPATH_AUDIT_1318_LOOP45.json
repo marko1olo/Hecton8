@@ -1,0 +1,17 @@
+﻿{
+    "agentId":  "1318",
+    "loop":  45,
+    "scannedFiles":  [
+                         "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+                     ],
+    "hotOwners":  [
+                      "Tick",
+                      "SlowTick",
+                      "LateFrameTick",
+                      "Execute"
+                  ],
+    "forbiddenFindings":  0,
+    "strictPersistentNativeFields":  0,
+    "persistentAllocatorTokens":  0,
+    "sourceSha256":  "bcf94e2bb94505083a6580c1c2aa55a81e346b9b90ebb6290a9b4f9158632fb4"
+}

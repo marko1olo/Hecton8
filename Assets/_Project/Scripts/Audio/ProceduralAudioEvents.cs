@@ -426,10 +426,6 @@ namespace Hecton8.Audio
         private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: ListenerSlot[8] - listener removals deferred while dispatching procedural audio events - owner: ProceduralAudioEvents
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
-        // VAULT ALIAS: NativeArray<AudioEvent>[16] - deferred procedural audio event ring - vault owner: SystemID.Audio
-        private static NativeArray<AudioEvent> _pendingAudioEvents;
-        // VAULT ALIAS: NativeArray<AudioEvent>[16] - next-frame procedural audio event ring - vault owner: SystemID.Audio
-        private static NativeArray<AudioEvent> _nextFrameAudioEvents;
         private static VaultGenerationHandle<AudioEvent> _pendingAudioEventsHandle;
         private static VaultGenerationHandle<AudioEvent> _nextFrameAudioEventsHandle;
         private static IDataVault _dataVault;
@@ -453,6 +449,12 @@ namespace Hecton8.Audio
         private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
         private static bool _typedSignalLaneConfigured;
+
+        private ref struct AudioEventVaultViews
+        {
+            public NativeArray<AudioEvent> Pending;
+            public NativeArray<AudioEvent> NextFrame;
+        }
 
         private struct ListenerSlot
         {
@@ -731,29 +733,42 @@ namespace Hecton8.Audio
             }
 
             AudioEvent audioEvent = CreateAudioPingEvent(in info);
-            if (_isDispatching)
+            if (!TryAcquireAudioEventWriteViews(out AudioEventVaultViews views, out IDataVault vault))
             {
-                if (!TryWriteAudioEvent(_nextFrameAudioEvents, ref _nextFrameAudioEventWriteIndex, _nextFrameAudioEventCount, in audioEvent))
-                {
-                    ReportAudioPingOverflow();
-                    return false;
-                }
-
-                _nextFrameAudioEventCount++;
-                _nextFrameAudioPingCount++;
-                return true;
+                ReportAudioPingOverflow();
+                return false;
             }
-            else
-            {
-                if (!TryWriteAudioEvent(_pendingAudioEvents, ref _pendingAudioEventWriteIndex, _pendingAudioEventCount, in audioEvent))
-                {
-                    ReportAudioPingOverflow();
-                    return false;
-                }
 
-                _pendingAudioEventCount++;
-                _pendingAudioPingCount++;
-                return true;
+            try
+            {
+                if (_isDispatching)
+                {
+                    if (!TryWriteAudioEvent(views.NextFrame, ref _nextFrameAudioEventWriteIndex, _nextFrameAudioEventCount, in audioEvent))
+                    {
+                        ReportAudioPingOverflow();
+                        return false;
+                    }
+
+                    _nextFrameAudioEventCount++;
+                    _nextFrameAudioPingCount++;
+                    return true;
+                }
+                else
+                {
+                    if (!TryWriteAudioEvent(views.Pending, ref _pendingAudioEventWriteIndex, _pendingAudioEventCount, in audioEvent))
+                    {
+                        ReportAudioPingOverflow();
+                        return false;
+                    }
+
+                    _pendingAudioEventCount++;
+                    _pendingAudioPingCount++;
+                    return true;
+                }
+            }
+            finally
+            {
+                ReleaseAudioEventWriteViews(ref views, vault);
             }
         }
 
@@ -823,29 +838,42 @@ namespace Hecton8.Audio
             }
 
             AudioEvent audioEvent = CreateStructuralStressEvent(in info);
-            if (_isDispatching)
+            if (!TryAcquireAudioEventWriteViews(out AudioEventVaultViews views, out IDataVault vault))
             {
-                if (!TryWriteAudioEvent(_nextFrameAudioEvents, ref _nextFrameAudioEventWriteIndex, _nextFrameAudioEventCount, in audioEvent))
-                {
-                    ReportStructuralStressOverflow();
-                    return false;
-                }
-
-                _nextFrameAudioEventCount++;
-                _nextFrameStructuralStressCount++;
-                return true;
+                ReportStructuralStressOverflow();
+                return false;
             }
-            else
-            {
-                if (!TryWriteAudioEvent(_pendingAudioEvents, ref _pendingAudioEventWriteIndex, _pendingAudioEventCount, in audioEvent))
-                {
-                    ReportStructuralStressOverflow();
-                    return false;
-                }
 
-                _pendingAudioEventCount++;
-                _pendingStructuralStressCount++;
-                return true;
+            try
+            {
+                if (_isDispatching)
+                {
+                    if (!TryWriteAudioEvent(views.NextFrame, ref _nextFrameAudioEventWriteIndex, _nextFrameAudioEventCount, in audioEvent))
+                    {
+                        ReportStructuralStressOverflow();
+                        return false;
+                    }
+
+                    _nextFrameAudioEventCount++;
+                    _nextFrameStructuralStressCount++;
+                    return true;
+                }
+                else
+                {
+                    if (!TryWriteAudioEvent(views.Pending, ref _pendingAudioEventWriteIndex, _pendingAudioEventCount, in audioEvent))
+                    {
+                        ReportStructuralStressOverflow();
+                        return false;
+                    }
+
+                    _pendingAudioEventCount++;
+                    _pendingStructuralStressCount++;
+                    return true;
+                }
+            }
+            finally
+            {
+                ReleaseAudioEventWriteViews(ref views, vault);
             }
         }
 
@@ -897,7 +925,7 @@ namespace Hecton8.Audio
 
         private static bool EnsureInitialized(bool allowAllocate)
         {
-            if (_pendingAudioEvents.IsCreated && _nextFrameAudioEvents.IsCreated)
+            if (AreAudioEventViewsCreated())
                 return true;
 
             IDataVault vault = _dataVault;
@@ -952,37 +980,119 @@ namespace Hecton8.Audio
                 }
             }
 
-            bool resolved =
-                vault.TryResolveHandle(in _pendingAudioEventsHandle, out _pendingAudioEvents) &&
-                vault.TryResolveHandle(in _nextFrameAudioEventsHandle, out _nextFrameAudioEvents) &&
-                _pendingAudioEvents.IsCreated &&
-                _nextFrameAudioEvents.IsCreated &&
-                _pendingAudioEvents.Length >= PendingAudioEventCapacity &&
-                _nextFrameAudioEvents.Length >= PendingAudioEventCapacity;
-
-            if (!resolved)
-            {
-                _pendingAudioEvents = default;
-                _nextFrameAudioEvents = default;
-                return false;
-            }
-
             if (allowAllocate)
             {
-                ClearAudioEventRing(_pendingAudioEvents);
-                ClearAudioEventRing(_nextFrameAudioEvents);
-                _pendingAudioEventReadIndex = 0;
-                _pendingAudioEventWriteIndex = 0;
-                _nextFrameAudioEventReadIndex = 0;
-                _nextFrameAudioEventWriteIndex = 0;
+                if (!TryAcquireAudioEventWriteViews(out AudioEventVaultViews writeViews, out IDataVault writeVault))
+                    return false;
+
+                try
+                {
+                    ClearAudioEventRing(writeViews.Pending);
+                    ClearAudioEventRing(writeViews.NextFrame);
+                    _pendingAudioEventReadIndex = 0;
+                    _pendingAudioEventWriteIndex = 0;
+                    _nextFrameAudioEventReadIndex = 0;
+                    _nextFrameAudioEventWriteIndex = 0;
+                }
+                finally
+                {
+                    ReleaseAudioEventWriteViews(ref writeViews, writeVault);
+                }
             }
-            return true;
+
+            return AreAudioEventViewsCreated();
         }
 
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle)
             where T : struct
         {
             return handle.BufferID != 0u;
+        }
+
+        private static bool AreAudioEventViewsCreated()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsVaultHandleCreated(in _pendingAudioEventsHandle) ||
+                !IsVaultHandleCreated(in _nextFrameAudioEventsHandle))
+            {
+                return false;
+            }
+
+            if (!vault.TryReadOnlyHandle(in _pendingAudioEventsHandle, out NativeArray<AudioEvent>.ReadOnly pending) ||
+                !vault.TryReadOnlyHandle(in _nextFrameAudioEventsHandle, out NativeArray<AudioEvent>.ReadOnly nextFrame) ||
+                !pending.IsCreated ||
+                !nextFrame.IsCreated ||
+                pending.Length < PendingAudioEventCapacity ||
+                nextFrame.Length < PendingAudioEventCapacity)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryAcquireAudioEventWriteViews(out AudioEventVaultViews views, out IDataVault vault)
+        {
+            views = default;
+            vault = _dataVault;
+            if (vault == null ||
+                !IsVaultHandleCreated(in _pendingAudioEventsHandle) ||
+                !IsVaultHandleCreated(in _nextFrameAudioEventsHandle))
+            {
+                return false;
+            }
+
+            bool pendingLocked = false;
+            bool nextLocked = false;
+            bool success = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _pendingAudioEventsHandle, VaultOwner, out views.Pending))
+                {
+                    return false;
+                }
+
+                pendingLocked = true;
+                if (!views.Pending.IsCreated || views.Pending.Length < PendingAudioEventCapacity)
+                    return false;
+
+                if (!vault.TryAcquireWriteLock(in _nextFrameAudioEventsHandle, VaultOwner, out views.NextFrame))
+                {
+                    return false;
+                }
+
+                nextLocked = true;
+                if (!views.NextFrame.IsCreated || views.NextFrame.Length < PendingAudioEventCapacity)
+                    return false;
+
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    if (nextLocked)
+                        vault.ReleaseWriteLock(in _nextFrameAudioEventsHandle, VaultOwner);
+                    if (pendingLocked)
+                        vault.ReleaseWriteLock(in _pendingAudioEventsHandle, VaultOwner);
+                    views = default;
+                }
+            }
+        }
+
+        private static void ReleaseAudioEventWriteViews(ref AudioEventVaultViews views, IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            if (views.NextFrame.IsCreated)
+                vault.ReleaseWriteLock(in _nextFrameAudioEventsHandle, VaultOwner);
+            if (views.Pending.IsCreated)
+                vault.ReleaseWriteLock(in _pendingAudioEventsHandle, VaultOwner);
+
+            views = default;
         }
 
         private static void ReleaseAudioEventBuffers()
@@ -996,8 +1106,6 @@ namespace Hecton8.Audio
                     vault.ReleaseBuffer(in _nextFrameAudioEventsHandle);
             }
 
-            _pendingAudioEvents = default;
-            _nextFrameAudioEvents = default;
             _pendingAudioEventsHandle = default;
             _nextFrameAudioEventsHandle = default;
             _dataVault = null;
@@ -1051,19 +1159,28 @@ namespace Hecton8.Audio
 
         private static bool FlushAudioEvents()
         {
-            if (!_pendingAudioEvents.IsCreated)
-                return true;
-
             int scanBudget = _pendingAudioEventCount > 0 ? _pendingAudioEventCount : PendingAudioEventCapacity;
             while (scanBudget > 0 && _pendingAudioEventCount > 0)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return false;
 
-                if (!TryReadAudioEvent(_pendingAudioEvents, ref _pendingAudioEventReadIndex, _pendingAudioEventCount, out AudioEvent audioEvent))
+                AudioEvent audioEvent;
+                if (!TryAcquireAudioEventWriteViews(out AudioEventVaultViews views, out IDataVault vault))
                     return true;
 
-                DecrementFrontEventCount(audioEvent.Kind);
+                try
+                {
+                    if (!TryReadAudioEvent(views.Pending, ref _pendingAudioEventReadIndex, _pendingAudioEventCount, out audioEvent))
+                        return true;
+
+                    DecrementFrontEventCount(audioEvent.Kind);
+                }
+                finally
+                {
+                    ReleaseAudioEventWriteViews(ref views, vault);
+                }
+
                 scanBudget--;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
@@ -1107,11 +1224,18 @@ namespace Hecton8.Audio
 
         private static void DropQueuedEvents()
         {
-            if (_pendingAudioEvents.IsCreated)
-                ClearAudioEventRing(_pendingAudioEvents);
-
-            if (_nextFrameAudioEvents.IsCreated)
-                ClearAudioEventRing(_nextFrameAudioEvents);
+            if (TryAcquireAudioEventWriteViews(out AudioEventVaultViews views, out IDataVault vault))
+            {
+                try
+                {
+                    ClearAudioEventRing(views.Pending);
+                    ClearAudioEventRing(views.NextFrame);
+                }
+                finally
+                {
+                    ReleaseAudioEventWriteViews(ref views, vault);
+                }
+            }
 
             _pendingAudioEventReadIndex = 0;
             _pendingAudioEventWriteIndex = 0;
@@ -1199,28 +1323,12 @@ namespace Hecton8.Audio
 
         private static void DispatchAudioPingToListener(IProceduralAudioEventListener listener, in AudioPingTriggerInfo info)
         {
-            try
-            {
-                listener.OnAudioPingTriggered(in info);
-            }
-            catch (Exception exception)
-            {
-                ReportListenerDispatchException();
-                LogListenerDispatchException(exception);
-            }
+            listener.OnAudioPingTriggered(in info);
         }
 
         private static void DispatchStructuralStressToListener(IProceduralAudioEventListener listener, in StructuralStressAudioInfo info)
         {
-            try
-            {
-                listener.OnStructuralStressTriggered(in info);
-            }
-            catch (Exception exception)
-            {
-                ReportListenerDispatchException();
-                LogListenerDispatchException(exception);
-            }
+            listener.OnStructuralStressTriggered(in info);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1403,30 +1511,37 @@ namespace Hecton8.Audio
 
         private static void PromoteNextFrameEvents()
         {
-            if (!_nextFrameAudioEvents.IsCreated)
+            if (!TryAcquireAudioEventWriteViews(out AudioEventVaultViews views, out IDataVault vault))
                 return;
 
-            while (_nextFrameAudioEventCount > 0 &&
-                   TryReadAudioEvent(_nextFrameAudioEvents, ref _nextFrameAudioEventReadIndex, _nextFrameAudioEventCount, out AudioEvent audioEvent))
+            try
             {
-                _nextFrameAudioEventCount--;
-                if (!TryWriteAudioEvent(_pendingAudioEvents, ref _pendingAudioEventWriteIndex, _pendingAudioEventCount, in audioEvent))
-                    break;
-
-                _pendingAudioEventCount++;
-                switch (audioEvent.Kind)
+                while (_nextFrameAudioEventCount > 0 &&
+                       TryReadAudioEvent(views.NextFrame, ref _nextFrameAudioEventReadIndex, _nextFrameAudioEventCount, out AudioEvent audioEvent))
                 {
-                    case AudioEventKind.AudioPing:
-                        if (_nextFrameAudioPingCount > 0)
-                            _nextFrameAudioPingCount--;
-                        _pendingAudioPingCount++;
+                    _nextFrameAudioEventCount--;
+                    if (!TryWriteAudioEvent(views.Pending, ref _pendingAudioEventWriteIndex, _pendingAudioEventCount, in audioEvent))
                         break;
-                    case AudioEventKind.StructuralStress:
-                        if (_nextFrameStructuralStressCount > 0)
-                            _nextFrameStructuralStressCount--;
-                        _pendingStructuralStressCount++;
-                        break;
+
+                    _pendingAudioEventCount++;
+                    switch (audioEvent.Kind)
+                    {
+                        case AudioEventKind.AudioPing:
+                            if (_nextFrameAudioPingCount > 0)
+                                _nextFrameAudioPingCount--;
+                            _pendingAudioPingCount++;
+                            break;
+                        case AudioEventKind.StructuralStress:
+                            if (_nextFrameStructuralStressCount > 0)
+                                _nextFrameStructuralStressCount--;
+                            _pendingStructuralStressCount++;
+                            break;
+                    }
                 }
+            }
+            finally
+            {
+                ReleaseAudioEventWriteViews(ref views, vault);
             }
 
             if (_nextFrameAudioEventCount <= 0)

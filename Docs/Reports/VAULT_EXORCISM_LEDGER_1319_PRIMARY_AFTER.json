@@ -1,0 +1,16 @@
+﻿{
+    "schema":  "hecton8.logistics_primary_native_alias_ledger.v2",
+    "agentId":  "1319",
+    "target":  "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+    "sourceAudit":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1319_AFTER_PRIMARY_CLEAN.json",
+    "forbiddenPersistentCandidates":  0,
+    "transientJobNativeFields":  50,
+    "primaryNativeFieldFindings":  50,
+    "auditHashSha256":  "0a797032d98d991ff5656388d04d8253448b0d449895eeaf4e44bc99bf577c1f",
+    "notes":  [
+                  "Persistent native owner fields removed from primary target; remaining primary native fields are Burst job parameters or transient properties outside the field ledger."
+              ],
+    "forbiddenFields":  [
+
+                        ]
+}

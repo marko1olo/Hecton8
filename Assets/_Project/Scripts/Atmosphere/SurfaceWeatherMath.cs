@@ -192,6 +192,43 @@ namespace Hecton8.Atmosphere
         public byte shouldPlayThunder;
     }
 
+    internal static class SurfaceThunderMath
+    {
+        private const float DefaultLightningFlashSeconds = 0.1f;
+        private const float MinLightningFlashSeconds = 0.01f;
+        private const float MaxLightningFlashSeconds = 0.5f;
+        private const float MinThunderDistanceScale = 0.25f;
+
+        public static float ResolveLightningFlashDurationSeconds(float authoredDurationSeconds)
+        {
+            if (!math.isfinite(authoredDurationSeconds) || authoredDurationSeconds <= 0f)
+                return DefaultLightningFlashSeconds;
+
+            return math.clamp(authoredDurationSeconds, MinLightningFlashSeconds, MaxLightningFlashSeconds);
+        }
+
+        public static float ResolveThunderDelaySeconds(
+            float distanceMeters,
+            float soundSpeedMetersPerSecond,
+            float minDelaySeconds,
+            float maxDelaySeconds,
+            float distanceScale)
+        {
+            float safeMin = math.max(0f, minDelaySeconds);
+            float safeMax = math.max(safeMin, maxDelaySeconds);
+            float safeScale = math.isfinite(distanceScale)
+                ? math.max(MinThunderDistanceScale, distanceScale)
+                : 1f;
+            float safeSoundSpeed = math.max(0.0001f, soundSpeedMetersPerSecond);
+
+            if (!math.isfinite(distanceMeters) || distanceMeters <= 0f)
+                return safeMin;
+
+            float scaledDelay = (distanceMeters * safeScale) / safeSoundSpeed;
+            return math.clamp(scaledDelay, safeMin, safeMax);
+        }
+    }
+
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct SurfaceWeatherMathJob : IJob
@@ -199,7 +236,6 @@ namespace Hecton8.Atmosphere
         private const byte SurfaceExecutionModeSurfaceActive = 0;
         private const byte SurfaceExecutionModeSurfaceSuppressed = 2;
         private const float TwoPi = 6.283185307179586f;
-        private const float LightningFlashSeconds = 0.1f;
         private const float SpeedOfSoundMetersPerSecond = HectonPhysicsContract.SoundSpeedAirMetersPerSecondConst;
 
         public SurfaceWeatherJobInput input;
@@ -332,7 +368,7 @@ namespace Hecton8.Atmosphere
             double3 absoluteUniverseOffset,
             float surfaceY)
         {
-            float flashDuration = LightningFlashSeconds;
+            float flashDuration = SurfaceThunderMath.ResolveLightningFlashDurationSeconds(state.lightningFlashDuration);
             float flashBase = math.max(0f, state.lightningFlashIntensity);
             float randomA = NextRandom01(ref result.randomState);
             float randomB = NextRandom01(ref result.randomState);
@@ -371,7 +407,12 @@ namespace Hecton8.Atmosphere
             float distanceT = math.saturate((thunderDistance - minDistance) / math.max(maxDistance - minDistance, 0.0001f));
             float loudness = math.lerp(state.thunderVolumeNear, state.thunderVolumeFar, distanceT);
             float stormBoost = math.lerp(0.65f, 1f, electricalActivity);
-            float thunderDelay = thunderDistance / SpeedOfSoundMetersPerSecond;
+            float thunderDelay = SurfaceThunderMath.ResolveThunderDelaySeconds(
+                thunderDistance,
+                SpeedOfSoundMetersPerSecond,
+                state.thunderDelayMin,
+                state.thunderDelayMax,
+                state.thunderPropagationDistanceScale);
 
             result.lightningFlashRemaining = flashDuration;
             result.lightningFlashStrength = flashBase * flashVariance;

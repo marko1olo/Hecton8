@@ -403,7 +403,7 @@ namespace Hecton8.Gameplay
 
         private bool TryGetDeploymentHit(Vector3 origin, Vector3 direction, out InteractionSurfaceHit hit)
         {
-            return TryResolvePrimarySurfaceHit(origin, direction, deployRange, deploymentMask.value, QueryTriggerInteraction.Ignore, out hit);
+            return RequestPrimarySurfaceHit(origin, direction, deployRange, deploymentMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
         private bool TryWriteBeaconDeployedHud(string label, BeaconAssessment assessment, int activeCount)

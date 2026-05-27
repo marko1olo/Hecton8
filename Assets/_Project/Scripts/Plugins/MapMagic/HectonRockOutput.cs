@@ -74,6 +74,12 @@ namespace Hecton8.World
 
         public static FinalizeAction finalizeAction = Finalize;
 
+        private struct LayerBuildState
+        {
+            public int Count;
+            public int WriteIndex;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -84,9 +90,8 @@ namespace Hecton8.World
         {
             if (stop != null && stop.stop) return;
 
-            // Collect all HectonRockOutput instances in this tile (including biome subs)
-            // Group transitions by layerID
-            Dictionary<int, List<Matrix4x4>> layerMatrices = new Dictionary<int, List<Matrix4x4>>();
+            // Count first, then fill exact arrays. This avoids per-layer List staging and ToArray copies.
+            Dictionary<int, LayerBuildState> layerBuildStates = new Dictionary<int, LayerBuildState>();
 
             foreach ((HectonRockOutput output, TransitionsList trns, Den.Tools.Matrices.MatrixWorld biomeMask)
                 in data.Outputs<HectonRockOutput, TransitionsList, Den.Tools.Matrices.MatrixWorld>(
@@ -98,11 +103,8 @@ namespace Hecton8.World
 
                 int lid = output.layerID;
 
-                if (!layerMatrices.TryGetValue(lid, out List<Matrix4x4> matrices))
-                {
-                    matrices = new List<Matrix4x4>(trns.count);
-                    layerMatrices[lid] = matrices;
-                }
+                if (!layerBuildStates.TryGetValue(lid, out LayerBuildState state))
+                    state = default;
 
                 for (int t = 0; t < trns.count; t++)
                 {
@@ -118,8 +120,10 @@ namespace Hecton8.World
                         if (maskVal < 0.5f) continue;
                     }
 
-                    matrices.Add(Matrix4x4.TRS(trn.pos, trn.rotation, trn.scale));
+                    state.Count++;
                 }
+
+                layerBuildStates[lid] = state;
             }
 
             if (stop != null && stop.stop) return;
@@ -137,16 +141,58 @@ namespace Hecton8.World
                 chunkCoord = new Vector2Int(cx, cz);
             }
 
-            // Create apply data for each layer
+            int activeLayerCount = 0;
+            foreach (var kvp in layerBuildStates)
+            {
+                if (kvp.Value.Count > 0)
+                    activeLayerCount++;
+            }
+
+            // Create apply data for each non-empty layer.
             HectonRockApplyData applyData = new HectonRockApplyData
             {
                 chunkCoord = chunkCoord,
-                layerMatrices = new Dictionary<int, Matrix4x4[]>(layerMatrices.Count)
+                layerMatrices = new Dictionary<int, Matrix4x4[]>(activeLayerCount)
             };
 
-            foreach (var kvp in layerMatrices)
+            foreach (var kvp in layerBuildStates)
             {
-                applyData.layerMatrices[kvp.Key] = kvp.Value.ToArray();
+                if (kvp.Value.Count > 0)
+                    applyData.layerMatrices[kvp.Key] = new Matrix4x4[kvp.Value.Count];
+            }
+
+            foreach ((HectonRockOutput output, TransitionsList trns, Den.Tools.Matrices.MatrixWorld biomeMask)
+                in data.Outputs<HectonRockOutput, TransitionsList, Den.Tools.Matrices.MatrixWorld>(
+                    typeof(HectonRockOutput), inSubs: true))
+            {
+                if (stop != null && stop.stop) return;
+                if (trns == null) continue;
+                if (biomeMask != null && biomeMask.IsEmpty()) continue;
+
+                int lid = output.layerID;
+                if (!applyData.layerMatrices.TryGetValue(lid, out Matrix4x4[] matrices) ||
+                    !layerBuildStates.TryGetValue(lid, out LayerBuildState state) ||
+                    matrices.Length == 0)
+                {
+                    continue;
+                }
+
+                for (int t = 0; t < trns.count; t++)
+                {
+                    Transition trn = trns.arr[t];
+
+                    if (!data.area.active.Contains(trn.pos)) continue;
+
+                    if (biomeMask != null)
+                    {
+                        float maskVal = biomeMask.GetWorldValue(trn.pos.x, trn.pos.z);
+                        if (maskVal < 0.5f) continue;
+                    }
+
+                    matrices[state.WriteIndex++] = Matrix4x4.TRS(trn.pos, trn.rotation, trn.scale);
+                }
+
+                layerBuildStates[lid] = state;
             }
 
             Graph.OnOutputFinalized?.Invoke(typeof(HectonRockOutput), data, applyData, stop);
@@ -164,18 +210,18 @@ namespace Hecton8.World
 
             public void Apply(UnityEngine.Terrain terrain)
             {
-                HectonRockManager manager = GlobalRegistry.RockManager;
+                HectonRockManager manager = HectonRockManager.Instance;
                 if (manager == null)
                 {
-                    Hecton8.Core.H8Debug.LogError("[HectonRockOutput] GlobalRegistry.RockManager is null. " +
+                    Hecton8.Core.H8Debug.LogError("[HectonRockOutput] HectonRockManager.Instance is null. " +
                                    "Cannot register rock chunk.");
                     return;
                 }
 
+                manager.UnregisterChunk(chunkCoord);
+
                 if (layerMatrices == null || layerMatrices.Count == 0)
                 {
-                    // Empty — unregister all layers for this chunk
-                    manager.UnregisterChunk(chunkCoord);
                     return;
                 }
 
@@ -200,7 +246,7 @@ namespace Hecton8.World
 
         public override void ClearApplied(TileData data, UnityEngine.Terrain terrain)
         {
-            HectonRockManager manager = GlobalRegistry.RockManager;
+            HectonRockManager manager = HectonRockManager.Instance;
             if (manager == null) return;
 
             // Compute chunk coordinate same way as in Finalize

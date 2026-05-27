@@ -3,19 +3,9 @@
 Date: 2026-05-19
 Status: CONTRACT RESERVATION / NOT PUBLIC API / ENVELOPE-ONLY / PENDING RUNTIME VERIFICATION
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
-
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 ## Purpose
 
@@ -25,6 +15,8 @@ It prevents ad hoc enum expansion, direct gameplay mutation, and string-event sh
 Nothing in this file changes runtime behavior.
 
 SDK note: reserved kernels may be visible in Workbench previews as "unsupported future seams", but the SDK must route them to validation errors or DevNull simulation until a source owner implements the runtime kernel and the runtime playbook passes. A graph node for a reserved kernel is not a public opcode.
+
+Static cross-check as of 2026-05-27: `TriggerSubtitleCue`, `SurvivalOverride`, `HapticPulse`, and `SubtitleCue` may keep hash constants and reserved preview metadata, but they must not appear in `allowed_opcodes.csv`, `GenerateEmergencyMockOpcodes()`, the editor runtime opcode tuner, or any runtime opcode-record insertion path. `kernel_tuning_profiles.csv` remains limited to owned reservation profile names, not aliases.
 
 ## Hard Boundary
 
@@ -56,14 +48,10 @@ The reserved targets below are future API names, not source symbols. Current sou
   source today.
 
 This cross-check is mirrored in
-`Docs/ARCHITECTURE/UNCLAIMED_FUTURE_SYSTEM_SEAMS.md#source-reality-classification---2026-05-17`.
+`Docs/ARCHITECTURE/UNCLAIMED_FUTURE_SYSTEM_SEAMS.md#future-system-seam-contract`.
 
-R8 ownership-trail note:
-
-- `SHINOBU_21`, `SHINOBU_31`, `SHINOBU_32`, `SHINOBU_33`, `SHINOBU_34`, `SHINOBU_35`,
-  `SHINOBU_36`, `SHINOBU_39`, and `SHINOBU_40` now have visible Status/Rationale evidence.
-- `SHINOBU_37` and `SHINOBU_38` still have no visible Status/LOG/Rationale trail.
-- These reservation rows remain contract-only and do not grant public API expansion authority.
+Reservation rows remain contract-only and do not grant public API expansion authority. Task/status/log
+ownership trails are process evidence, not source truth for mod API exposure.
 
 The contract-only code seam is:
 
@@ -97,7 +85,7 @@ explicit-run only.
 
 Every future command kernel must provide:
 
-- engine-owned execution through `IModCommandKernel`;
+- engine-owned execution through internal `IModCommandKernel`;
 - no direct mod access to `GameObject`, `Transform`, `ScriptableObject`, `NativeArray`,
   `NativeQueue`, `GlobalDataVault`, save internals, or first-party `SignalBus<T>` snapshots;
 - unmanaged fixed-size command payload;
@@ -112,15 +100,16 @@ Every future command kernel must provide:
 
 ## Reserved Kernels
 
-| Reserved opcode name | Reserved target | Owning future slot | Purpose | Required gates before source enum expansion |
+| Reserved opcode name | Reserved target | Future owner domain | Purpose | Required gates before source enum expansion |
 |---|---|---|---|---|
-| `SurvivalOverride` | `PlayerSurvival` | `SHINOBU_21` | Bounded player survival assist for mods such as Infinite O2. | TTL max 3s, engine-owned oxygen floor clamp, no nitrogen/pressure corruption, no first-party save truth write, unload/quarantine revocation, rejection payload, 300-frame blackbox marker. |
-| `HapticPulse` | `Haptics` | `SHINOBU_36` | Mod requests controller/device feedback by hash, not device API. | Waveform hash allowlist, per-frame pulse budget, accessibility opt-out, platform fallback, no string event names, no direct Input System handles. |
-| `SubtitleCue` | `Localization` | `SHINOBU_39` | Mod requests localized subtitle cue by stable token hash. | Baked token hash, zero-GC char path, no runtime path hashing, no TMP string writes, per-mod cue cap, missing-token rejection. |
-| `TelemetryMarker` | `Telemetry` | `SHINOBU_33` | Mod writes bounded diagnostics into the crash/blackbox lane. | Fixed payload, ring-buffer overwrite policy, no managed strings in hot path, frame id, mod hash, crash dump inclusion proof. |
-| `QaScenarioMarker` | `QA` | `SHINOBU_38` | Mod or test package marks a headless endurance scenario. | Editor/headless gate, no shipping gameplay mutation, deterministic scenario hash, CSV/dump output path, no runtime verification claim without batch log. |
-| `ChunkInterestHint` | `ChunkResidency` | `SHINOBU_35` | Mod requests a streaming interest hint without owning residency. | Sector hash only, no file offsets or native handles, bounded radius, Steam Deck storage pressure gate, drop policy telemetry. |
-| `SaveHashProbe` | `SaveMerkle` | `SHINOBU_34` | Mod asks for redacted save/hash health status. | Read-only redacted DTO, no header offsets, no checksum seeds, no mutation, version-ledger compatibility proof. |
+| `SurvivalOverride` | `PlayerSurvival` | Physiology / quest fail-safe | Bounded player survival assist for mods such as Infinite O2. | TTL max 3s, engine-owned oxygen floor clamp, no nitrogen/pressure corruption, no first-party save truth write, unload/quarantine revocation, rejection payload, 300-frame blackbox marker. |
+| `HapticPulse` | `Haptics` | Input / haptics | Mod requests controller/device feedback by hash, not device API. | Waveform hash allowlist, per-frame pulse budget, accessibility opt-out, platform fallback, no string event names, no direct Input System handles. |
+| `TriggerSubtitleCue` | `Localization` | Localization / subtitles | Legacy/public alias for the subtitle cue reservation. | Same gates as `SubtitleCue`; must remain absent from `allowed_opcodes.csv`, `GenerateEmergencyMockOpcodes()`, and the editor runtime opcode tuner until owner proof exists. |
+| `SubtitleCue` | `Localization` | Localization / subtitles | Mod requests localized subtitle cue by stable token hash. | Baked token hash, zero-GC char path, no runtime path hashing, no TMP string writes, per-mod cue cap, missing-token rejection. |
+| `TelemetryMarker` | `Telemetry` | Telemetry / crash forensics | Mod writes bounded diagnostics into the crash/blackbox lane. | Fixed payload, ring-buffer overwrite policy, no managed strings in hot path, frame id, mod hash, crash dump inclusion proof. |
+| `QaScenarioMarker` | `QA` | QA / headless endurance | Mod or test package marks a headless endurance scenario. | Editor/headless gate, no shipping gameplay mutation, deterministic scenario hash, CSV/dump output path, no runtime verification claim without Unity/player proof artifacts. |
+| `ChunkInterestHint` | `ChunkResidency` | World streaming / chunk residency | Mod requests a streaming interest hint without owning residency. | Sector hash only, no file offsets or native handles, bounded radius, Steam Deck storage pressure gate, drop policy telemetry. |
+| `SaveHashProbe` | `SaveMerkle` | Save / Merkle health | Mod asks for redacted save/hash health status. | Read-only redacted DTO, no header offsets, no checksum seeds, no mutation, version-ledger compatibility proof. |
 
 ## SurvivalOverride Payload Reservation
 
@@ -162,7 +151,7 @@ Before any reservation becomes source API, update all of these in one change:
 - `Docs/Modding/Runtime_Verification_Playbook.md`
 - `Docs/Modding/Validate_Mod_API_Static.ps1`
 - the owning system architecture doc
-- the owning `Status_[ID].md`, `Rationale_[ID].md`, and `LOG_[ID].md`
+- the owning proof artifact paths and unresolved-risk record
 
 ## Proof Limits
 
@@ -172,7 +161,6 @@ Before any reservation becomes source API, update all of these in one change:
 - CSV and `.h8bin` support is contract/export support only; there is no runtime loader path.
 - No Unity import, Play Mode, profiler, GCMonitor, player build, platform build, save/load, mod
   runtime, or device haptics proof.
-- Runtime microseconds saved: `0us`.
-- Latest standalone proof: temporary harness reports `record=64`, `command=64`, `entry=64`,
-  `ringState=64`, `header=64`, `audit=64`, `audit ok=True`, `records=7`, `mask=0x000000FE`,
-  `flags=0x0000003F`, `bytes=512`, `blackbox=300`, and public API counts `8/7`.
+- Runtime frame-time claim: none.
+- Static layout target: reservation record, command envelope, black-box entry, ring state, binary
+  header, and audit report remain 64-byte DTOs until source proof says otherwise.

@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Hecton.Localization;
 using Hecton8.Building;
 using Hecton8.Core.Memory;
@@ -130,7 +129,7 @@ namespace Hecton8.Construction
         [FieldOffset(56)] private ulong _pad3;
     }
 
-    public struct ModuleCatalogViews
+    public ref struct ModuleCatalogViews
     {
         public NativeArray<ModuleCatalogStateDTO> State;
         public NativeArray<ModuleDefinitionDTO> Modules;
@@ -138,6 +137,20 @@ namespace Hecton8.Construction
         public NativeArray<ModuleCostDTO> Costs;
         public NativeArray<uint> HashToIndex;
         public NativeArray<ModuleCatalogTelemetryEntry> Telemetry;
+    }
+
+    public ref struct ModuleCatalogWriteLease
+    {
+        internal IDataVault Vault;
+        internal VaultGenerationHandle<ModuleCatalogStateDTO> StateHandle;
+        internal VaultGenerationHandle<ModuleDefinitionDTO> ModulesHandle;
+        internal VaultGenerationHandle<SocketDefinitionDTO> SocketsHandle;
+        internal VaultGenerationHandle<ModuleCostDTO> CostsHandle;
+        internal VaultGenerationHandle<uint> HashToIndexHandle;
+        internal VaultGenerationHandle<ModuleCatalogTelemetryEntry> TelemetryHandle;
+        internal byte LockMask;
+
+        public bool IsCreated => Vault != null && LockMask != 0;
     }
 
     internal enum ModuleCatalogHydrationStatus : uint
@@ -187,9 +200,15 @@ namespace Hecton8.Construction
         public const uint MockUtilityHash = 0x21601004u;
         private const int CompatibilityLaneBitOffset = 8;
         private const int CompatibilityLaneCount = 23;
+        private const byte CatalogStateLockBit = 1 << 0;
+        private const byte CatalogModulesLockBit = 1 << 1;
+        private const byte CatalogSocketsLockBit = 1 << 2;
+        private const byte CatalogCostsLockBit = 1 << 3;
+        private const byte CatalogHashToIndexLockBit = 1 << 4;
+        private const byte CatalogTelemetryLockBit = 1 << 5;
         private const uint ClassHabitatHash = 0x48414249u; // "HABI"
         private const uint AllBiomesMask = 0xFFFFFFFFu;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_216.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1306_Construction_ModuleCatalog.bin";
 
         public static bool TryEnsureVaultBuffers(
             IDataVault vault,
@@ -200,45 +219,7 @@ namespace Hecton8.Construction
             int hashCapacity = DefaultHashCapacity)
         {
             views = default;
-            if (vault == null || vault.IsAllocationLocked)
-                return false;
-
-            return TryResolveOwnedLane(
-                       vault,
-                       BufferID.BaseModuleCatalogState,
-                       1,
-                       NativeArrayOptions.ClearMemory,
-                       out views.State) &&
-                   TryResolveOwnedLane(
-                       vault,
-                       BufferID.BaseModuleCatalogDefinitions,
-                       math.max(1, moduleCapacity),
-                       NativeArrayOptions.UninitializedMemory,
-                       out views.Modules) &&
-                   TryResolveOwnedLane(
-                       vault,
-                       BufferID.BaseModuleCatalogSockets,
-                       math.max(1, socketCapacity),
-                       NativeArrayOptions.UninitializedMemory,
-                       out views.Sockets) &&
-                   TryResolveOwnedLane(
-                       vault,
-                       BufferID.BaseModuleCatalogCosts,
-                       math.max(1, costCapacity),
-                       NativeArrayOptions.UninitializedMemory,
-                       out views.Costs) &&
-                   TryResolveOwnedLane(
-                       vault,
-                       BufferID.BaseModuleCatalogHashToIndex,
-                       math.max(1, hashCapacity),
-                       NativeArrayOptions.UninitializedMemory,
-                       out views.HashToIndex) &&
-                   TryResolveOwnedLane(
-                       vault,
-                       BufferID.BaseModuleCatalogTelemetryRing,
-                       TelemetryCapacity,
-                       NativeArrayOptions.ClearMemory,
-                       out views.Telemetry);
+            return false;
         }
 
         public static bool TryResolveViews(IDataVault vault, out ModuleCatalogViews views)
@@ -264,26 +245,50 @@ namespace Hecton8.Construction
                    state.CostCount <= views.Costs.Length;
         }
 
-        private static bool TryResolveOwnedLane<T>(
+        private static bool TryEnsureOwnedLane<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
-            out NativeArray<T> buffer) where T : struct
+            out VaultGenerationHandle<T> handle) where T : struct
         {
-            buffer = default;
+            handle = default;
             if (vault == null || vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 math.max(1, requiredLength),
                 SystemID.Construction,
                 options);
             return IsExactBufferId(in handle, bufferId) &&
-                   vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+                   vault.TryReadHandle(in handle, out NativeArray<T> existing) &&
+                   existing.IsCreated &&
+                   existing.Length >= requiredLength;
+        }
+
+        private static bool TryAcquireOwnedLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            handle = default;
+            buffer = default;
+            if (!TryEnsureOwnedLane(vault, bufferId, requiredLength, options, out handle) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= requiredLength)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, SystemID.Construction);
+            buffer = default;
+            return false;
         }
 
         private static bool TryReadExistingLane<T>(
@@ -299,31 +304,149 @@ namespace Hecton8.Construction
                    buffer.IsCreated;
         }
 
-        private static bool TryGetLaneGeneration<T>(
-            IDataVault vault,
-            BufferID bufferId,
-            out uint generation) where T : struct
-        {
-            generation = 0u;
-            if (vault == null ||
-                !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
-                !IsExactBufferId(in handle, bufferId))
-            {
-                return false;
-            }
-
-            generation = handle.Generation;
-            return generation != 0u;
-        }
-
         private static bool IsExactBufferId<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
         {
             return handle.BufferID == unchecked((uint)(int)bufferId);
         }
 
+        public static void ReleaseWriteLease(in ModuleCatalogWriteLease lease)
+        {
+            IDataVault vault = lease.Vault;
+            if (vault == null || lease.LockMask == 0)
+                return;
+
+            if ((lease.LockMask & CatalogTelemetryLockBit) != 0u)
+                vault.ReleaseWriteLock(in lease.TelemetryHandle, SystemID.Construction);
+            if ((lease.LockMask & CatalogHashToIndexLockBit) != 0u)
+                vault.ReleaseWriteLock(in lease.HashToIndexHandle, SystemID.Construction);
+            if ((lease.LockMask & CatalogCostsLockBit) != 0u)
+                vault.ReleaseWriteLock(in lease.CostsHandle, SystemID.Construction);
+            if ((lease.LockMask & CatalogSocketsLockBit) != 0u)
+                vault.ReleaseWriteLock(in lease.SocketsHandle, SystemID.Construction);
+            if ((lease.LockMask & CatalogModulesLockBit) != 0u)
+                vault.ReleaseWriteLock(in lease.ModulesHandle, SystemID.Construction);
+            if ((lease.LockMask & CatalogStateLockBit) != 0u)
+                vault.ReleaseWriteLock(in lease.StateHandle, SystemID.Construction);
+        }
+
+        private static bool TryAcquireCatalogWriteViews(
+            IDataVault vault,
+            out ModuleCatalogViews views,
+            out ModuleCatalogWriteLease lease,
+            int moduleCapacity,
+            int socketCapacity,
+            int costCapacity,
+            int hashCapacity)
+        {
+            views = default;
+            lease = default;
+            if (vault == null || vault.IsAllocationLocked)
+                return false;
+
+            lease.Vault = vault;
+            if (!TryAcquireOwnedLane(
+                    vault,
+                    BufferID.BaseModuleCatalogState,
+                    1,
+                    NativeArrayOptions.ClearMemory,
+                    out lease.StateHandle,
+                    out views.State))
+            {
+                return false;
+            }
+
+            lease.LockMask |= CatalogStateLockBit;
+            if (!TryAcquireOwnedLane(
+                    vault,
+                    BufferID.BaseModuleCatalogDefinitions,
+                    math.max(1, moduleCapacity),
+                    NativeArrayOptions.UninitializedMemory,
+                    out lease.ModulesHandle,
+                    out views.Modules))
+            {
+                ReleaseWriteLease(in lease);
+                lease = default;
+                views = default;
+                return false;
+            }
+
+            lease.LockMask |= CatalogModulesLockBit;
+            if (!TryAcquireOwnedLane(
+                    vault,
+                    BufferID.BaseModuleCatalogSockets,
+                    math.max(1, socketCapacity),
+                    NativeArrayOptions.UninitializedMemory,
+                    out lease.SocketsHandle,
+                    out views.Sockets))
+            {
+                ReleaseWriteLease(in lease);
+                lease = default;
+                views = default;
+                return false;
+            }
+
+            lease.LockMask |= CatalogSocketsLockBit;
+            if (!TryAcquireOwnedLane(
+                    vault,
+                    BufferID.BaseModuleCatalogCosts,
+                    math.max(1, costCapacity),
+                    NativeArrayOptions.UninitializedMemory,
+                    out lease.CostsHandle,
+                    out views.Costs))
+            {
+                ReleaseWriteLease(in lease);
+                lease = default;
+                views = default;
+                return false;
+            }
+
+            lease.LockMask |= CatalogCostsLockBit;
+            if (!TryAcquireOwnedLane(
+                    vault,
+                    BufferID.BaseModuleCatalogHashToIndex,
+                    math.max(1, hashCapacity),
+                    NativeArrayOptions.UninitializedMemory,
+                    out lease.HashToIndexHandle,
+                    out views.HashToIndex))
+            {
+                ReleaseWriteLease(in lease);
+                lease = default;
+                views = default;
+                return false;
+            }
+
+            lease.LockMask |= CatalogHashToIndexLockBit;
+            if (!TryAcquireOwnedLane(
+                    vault,
+                    BufferID.BaseModuleCatalogTelemetryRing,
+                    TelemetryCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out lease.TelemetryHandle,
+                    out views.Telemetry))
+            {
+                ReleaseWriteLease(in lease);
+                lease = default;
+                views = default;
+                return false;
+            }
+
+            lease.LockMask |= CatalogTelemetryLockBit;
+            return true;
+        }
+
         public static JobHandle ScheduleMockCatalog(IDataVault vault, out ModuleCatalogViews views, JobHandle dependency = default)
         {
-            if (!TryEnsureVaultBuffers(vault, out views, 16, 64, 16, 64))
+            views = default;
+            return dependency;
+        }
+
+        public static JobHandle ScheduleMockCatalog(
+            IDataVault vault,
+            out ModuleCatalogViews views,
+            out ModuleCatalogWriteLease lease,
+            JobHandle dependency = default)
+        {
+            if (!TryAcquireCatalogWriteViews(vault, out views, out lease, 16, 64, 16, 64))
                 return dependency;
 
             var job = new GenerateMockModuleCatalogJob
@@ -344,7 +467,19 @@ namespace Hecton8.Construction
             out ModuleCatalogViews views,
             JobHandle dependency = default)
         {
-            if (!TryEnsureVaultBuffers(vault, out views))
+            views = default;
+            return dependency;
+        }
+
+        public static JobHandle ScheduleHydrateCatalog(
+            IDataVault vault,
+            NativeArray<byte> sourceBytes,
+            int sourceByteLength,
+            out ModuleCatalogViews views,
+            out ModuleCatalogWriteLease lease,
+            JobHandle dependency = default)
+        {
+            if (!TryAcquireCatalogWriteViews(vault, out views, out lease, DefaultModuleCapacity, DefaultSocketCapacity, DefaultCostCapacity, DefaultHashCapacity))
                 return dependency;
 
             var job = new HydrateModuleCatalogJob
@@ -372,51 +507,38 @@ namespace Hecton8.Construction
             if (length <= 0L || length > DefaultHydrationByteCapacity)
                 return false;
 
-            if (!TryResolveOwnedLane(
+            if (!TryAcquireOwnedLane(
                     vault,
                     BufferID.BaseModuleCatalogHydrationBytes,
                     (int)length,
                     NativeArrayOptions.UninitializedMemory,
+                    out VaultGenerationHandle<byte> hydrationHandle,
                     out NativeArray<byte> targetBytes) ||
                 targetBytes.Length < length)
                 return false;
 
-            int readLength = ReadCatalogBytesIntoNativeArray(path, targetBytes, (int)length);
-            byteLength = math.max(0, readLength);
-            bytes = targetBytes.AsReadOnly();
-            return readLength == (int)length;
+            try
+            {
+                int readLength = ReadCatalogBytesIntoNativeArray(path, targetBytes, (int)length);
+                byteLength = math.max(0, readLength);
+                bytes = targetBytes.AsReadOnly();
+                return readLength == (int)length;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in hydrationHandle, SystemID.Construction);
+            }
         }
 
         public static bool TryStartCatalogByteLoad(
             IDataVault vault,
             string path,
             out NativeArray<byte>.ReadOnly bytes,
-            out Task<int> loadTask)
+            out Awaitable<int> loadTask)
         {
             bytes = default;
-            loadTask = null;
-            if (vault == null || string.IsNullOrEmpty(path) || !File.Exists(path) || vault.IsAllocationLocked)
-                return false;
-
-            var fileInfo = new FileInfo(path);
-            long length = fileInfo.Length;
-            if (length <= 0L || length > DefaultHydrationByteCapacity)
-                return false;
-
-            if (!TryResolveOwnedLane(
-                    vault,
-                    BufferID.BaseModuleCatalogHydrationBytes,
-                    (int)length,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<byte> targetBytes) ||
-                targetBytes.Length < length)
-                return false;
-
-            int expectedLength = (int)length;
-            string loadPath = path;
-            loadTask = Task.Run(() => ReadCatalogBytesIntoNativeArray(loadPath, targetBytes, expectedLength));
-            bytes = targetBytes.AsReadOnly();
-            return true;
+            loadTask = default;
+            return false;
         }
 
         private static unsafe int ReadCatalogBytesIntoNativeArray(string path, NativeArray<byte> bytes, int expectedLength)
@@ -836,41 +958,70 @@ namespace Hecton8.Construction
             if (vault == null)
                 return false;
 
-            if (!TryEnsureVaultBuffers(vault, out ModuleCatalogViews views, 1, 1, 1, 1))
+            if (!TryAcquireOwnedLane(
+                    vault,
+                    BufferID.BaseModuleCatalogState,
+                    1,
+                    NativeArrayOptions.ClearMemory,
+                    out VaultGenerationHandle<ModuleCatalogStateDTO> stateHandle,
+                    out NativeArray<ModuleCatalogStateDTO> stateBuffer))
+            {
                 return false;
+            }
 
-            ModuleCatalogStateDTO state = views.State[0];
-            uint cursor = state.TelemetryCursor;
-            if (cursor >= views.Telemetry.Length)
-                cursor = 0u;
+            bool telemetryLocked = false;
+            bool shouldDump = false;
+            VaultGenerationHandle<ModuleCatalogTelemetryEntry> telemetryHandle = default;
+            try
+            {
+                if (!TryAcquireOwnedLane(
+                        vault,
+                        BufferID.BaseModuleCatalogTelemetryRing,
+                        TelemetryCapacity,
+                        NativeArrayOptions.ClearMemory,
+                        out telemetryHandle,
+                        out NativeArray<ModuleCatalogTelemetryEntry> telemetryBuffer))
+                {
+                    return false;
+                }
 
-            ModuleCatalogTelemetryEntry entry = default;
-            entry.QueryTicks = queryTicks;
-            entry.BurstTicks = burstTicks;
-            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-            entry.QueryCount = queryCount;
-            entry.SuccessfulAdjacencyCount = successCount;
-            entry.FailedAdjacencyCount = failedCount;
-            if (TicksToMicroseconds(queryTicks + burstTicks) > 100.0)
-                flags |= TelemetryOverBudgetFlag;
-            entry.Flags = flags;
-            entry.CatalogHash = state.CatalogHash;
-            entry.VaultGenerationId = TryGetLaneGeneration<ModuleCatalogTelemetryEntry>(
-                vault,
-                BufferID.BaseModuleCatalogTelemetryRing,
-                out uint telemetryGeneration)
-                ? telemetryGeneration
-                : 0u;
-            entry.StateHash = HashTelemetry(entry);
-            views.Telemetry[(int)cursor] = entry;
+                telemetryLocked = true;
+                ModuleCatalogStateDTO state = stateBuffer[0];
+                uint cursor = state.TelemetryCursor;
+                if (cursor >= telemetryBuffer.Length)
+                    cursor = 0u;
 
-            cursor++;
-            if (cursor >= views.Telemetry.Length)
-                cursor = 0u;
+                ModuleCatalogTelemetryEntry entry = default;
+                entry.QueryTicks = queryTicks;
+                entry.BurstTicks = burstTicks;
+                entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+                entry.QueryCount = queryCount;
+                entry.SuccessfulAdjacencyCount = successCount;
+                entry.FailedAdjacencyCount = failedCount;
+                if (TicksToMicroseconds(queryTicks + burstTicks) > 100.0)
+                    flags |= TelemetryOverBudgetFlag;
+                entry.Flags = flags;
+                entry.CatalogHash = state.CatalogHash;
+                entry.VaultGenerationId = telemetryHandle.Generation;
+                entry.StateHash = HashTelemetry(entry);
+                telemetryBuffer[(int)cursor] = entry;
 
-            state.TelemetryCursor = cursor;
-            views.State[0] = state;
-            if ((flags & TelemetryOverBudgetFlag) != 0u)
+                cursor++;
+                if (cursor >= telemetryBuffer.Length)
+                    cursor = 0u;
+
+                state.TelemetryCursor = cursor;
+                stateBuffer[0] = state;
+                shouldDump = (flags & TelemetryOverBudgetFlag) != 0u;
+            }
+            finally
+            {
+                if (telemetryLocked)
+                    vault.ReleaseWriteLock(in telemetryHandle, SystemID.Construction);
+                vault.ReleaseWriteLock(in stateHandle, SystemID.Construction);
+            }
+
+            if (shouldDump)
                 TryDumpTelemetry(vault, projectRoot);
             return true;
         }

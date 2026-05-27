@@ -12,25 +12,44 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static HectonQualityTier ToQualityTier(byte tier)
         {
-            return ScalabilityTierProfiles.Normalize(tier) == ScalabilityTierProfiles.LowMx350
-                ? HectonQualityTier.Mx350
-                : HectonQualityTier.High;
+            switch (ScalabilityTierProfiles.Normalize(tier))
+            {
+                case ScalabilityTierProfiles.LowMx350:
+                    return HectonQualityTier.Mx350;
+                case ScalabilityTierProfiles.Middle:
+                    return HectonQualityTier.Mid;
+                case ScalabilityTierProfiles.Ultra:
+                    return HectonQualityTier.Ultra;
+                case ScalabilityTierProfiles.HighRtx:
+                    return HectonQualityTier.High;
+                default:
+                    return HectonQualityTier.Mx350;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static byte FromQualityTier(HectonQualityTier tier)
         {
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra
-                ? ScalabilityTierProfiles.HighRtx
-                : ScalabilityTierProfiles.LowMx350;
+            switch (tier)
+            {
+                case HectonQualityTier.Mid:
+                    return ScalabilityTierProfiles.Middle;
+                case HectonQualityTier.High:
+                    return ScalabilityTierProfiles.HighRtx;
+                case HectonQualityTier.Ultra:
+                    return ScalabilityTierProfiles.Ultra;
+                default:
+                    return ScalabilityTierProfiles.LowMx350;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static MathPrecisionLevel ToMathPrecisionLevel(byte tier)
         {
-            return ScalabilityTierProfiles.Normalize(tier) == ScalabilityTierProfiles.LowMx350
-                ? MathPrecisionLevel.Low
-                : MathPrecisionLevel.High;
+            HectonQualityTier qualityTier = ToQualityTier(tier);
+            return qualityTier == HectonQualityTier.High || qualityTier == HectonQualityTier.Ultra
+                ? MathPrecisionLevel.High
+                : MathPrecisionLevel.Low;
         }
     }
 

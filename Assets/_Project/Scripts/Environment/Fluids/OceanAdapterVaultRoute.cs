@@ -83,11 +83,10 @@ namespace Hecton8.Environment.Fluids
             if (vault == null)
                 return false;
 
-            if (!TryOpenOrAcquireLane(
+            if (!TryOpenExistingLane(
                     vault,
                     GlobalWaterLevelBufferID,
                     1,
-                    NativeArrayOptions.UninitializedMemory,
                     out NativeArray<OceanGlobalWaterLevelDTO> buffer))
             {
                 return false;
@@ -110,11 +109,10 @@ namespace Hecton8.Environment.Fluids
             if (vault == null)
                 return false;
 
-            if (!TryOpenOrAcquireLane(
+            if (!TryOpenExistingLane(
                     vault,
                     TelemetryRingBufferID,
                     TelemetryCapacity,
-                    NativeArrayOptions.UninitializedMemory,
                     out NativeArray<OceanAdapterTelemetryEntry> telemetry))
             {
                 return false;
@@ -169,11 +167,10 @@ namespace Hecton8.Environment.Fluids
                    lane.Length > 0;
         }
 
-        private static bool TryOpenOrAcquireLane<T>(
+        private static bool TryOpenExistingLane<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
-            NativeArrayOptions options,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
@@ -181,19 +178,17 @@ namespace Hecton8.Environment.Fluids
                 return false;
 
             uint expectedBufferId = unchecked((uint)(int)bufferId);
-            OceanAdapterVaultLane<T> lane = default;
-            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existing) &&
-                existing.BufferID == expectedBufferId &&
-                existing.Generation != 0u)
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existing) ||
+                existing.BufferID != expectedBufferId ||
+                existing.Generation == 0u)
+                return false;
+
+            OceanAdapterVaultLane<T> lane = new OceanAdapterVaultLane<T>
             {
-                lane.Handle = existing;
-                lane.ExpectedBufferID = expectedBufferId;
-                lane.Length = requiredLength;
-            }
-            else
-            {
-                lane = AcquireLane<T>(vault, bufferId, requiredLength, options);
-            }
+                Handle = existing,
+                ExpectedBufferID = expectedBufferId,
+                Length = requiredLength
+            };
 
             return OpenLane(vault, in lane, out buffer);
         }

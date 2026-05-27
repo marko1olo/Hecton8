@@ -1,5 +1,6 @@
 ﻿param(
     [string]$OutputDir = "C:\hades\Hecton8\Docs\Marketing\Data",
+    [string]$SummaryDir = "C:\hades\Hecton8\Docs\Reports\Marketing\RawLeadSprints",
     [int]$MaxTopPage = 300,
     [switch]$ForceRefresh
 )
@@ -8,11 +9,12 @@ $ErrorActionPreference = "Continue"
 $ProgressPreference = "SilentlyContinue"
 
 if (-not $ForceRefresh) {
-    Write-Output "HOLD_RAW_LEAD_REFRESH - rerun with -ForceRefresh only after a source-backed raw-lead sprint is opened and output overwrite is recorded in source-ledger/status/rationale."
+    Write-Output "HOLD_RAW_LEAD_REFRESH - rerun with -ForceRefresh only after a source-backed raw-lead sprint is opened and output overwrite plus summary destination are recorded in source-ledger/status/rationale."
     exit 0
 }
 
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
+New-Item -ItemType Directory -Force -Path $SummaryDir | Out-Null
 Add-Type -AssemblyName System.Net.Http
 
 function Decode-Html([string]$s) {
@@ -196,15 +198,17 @@ $unique | Export-Csv -LiteralPath $uniquePath -NoTypeInformation -Encoding UTF8
 $fetchPath = Join-Path $OutputDir "RAW_LEAD_FETCH_LOG_2026-05-18.csv"
 $fetchLog | Export-Csv -LiteralPath $fetchPath -NoTypeInformation -Encoding UTF8
 
-$summaryPath = Join-Path $OutputDir "RAW_LEAD_SCRAPE_SUMMARY_2026-05-18.md"
+$summaryDate = Get-Date -Format "yyyy-MM-dd"
+$summaryPath = Join-Path $SummaryDir "RAW_LEAD_SCRAPE_SUMMARY_$summaryDate.md"
 $topGames = $raw | Group-Object source_game | Sort-Object Count -Descending | Select-Object Name,Count
 $topSegments = $unique | Group-Object recommended_segment | Sort-Object Count -Descending | Select-Object Name,Count
 $topCountries = $unique | Group-Object country_candidates | Sort-Object Count -Descending | Select-Object -First 20 Name,Count
 $sample = $unique | Sort-Object @{Expression="raw_occurrences";Descending=$true}, @{Expression="max_public_metric_seen";Descending=$true} | Select-Object -First 50
 $md = New-Object System.Collections.Generic.List[string]
-$md.Add("# Raw Lead Scrape Summary - 2026-05-18") | Out-Null
+$md.Add("# Raw Lead Scrape Summary - $summaryDate") | Out-Null
 $md.Add("") | Out-Null
 $md.Add("Status: raw public index extraction / not outreach-ready") | Out-Null
+$md.Add("Data output: active raw CSVs under the selected OutputDir; this summary is a proof artifact, not an active data contract.") | Out-Null
 $md.Add("Public stance: single-player-first scope / proof-first creator copy") | Out-Null
 $md.Add("Runtime impact: none") | Out-Null
 $md.Add("") | Out-Null

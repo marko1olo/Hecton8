@@ -18,7 +18,7 @@ MonoBehaviour:
     making exact pathing matter.
   nodeClusterPattern: Heavy node clusters appear where plates break and shard fields
     intersect.
-  safePocketPattern: Safe pockets are formed by slab shadows and pressure breaks,
+  safePocketPattern: Reorientation pockets are formed by slab shadows and pressure breaks,
     not comfort terrain.
   routeAnchorPattern: 'Routes are remembered by very hard silhouettes: shard ridge,
     plate seam, crushed terrace.'

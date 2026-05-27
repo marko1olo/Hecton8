@@ -493,7 +493,9 @@ namespace Hecton8.Animation.FaunaProcedural
                 return quaternion.identity;
             }
 
-            return math.normalize(rotation);
+            quaternion normalized = default;
+            normalized.value = rotation.value * math.rsqrt(math.max(math.lengthsq(rotation.value), ProceduralBoneBlenderConstants.MinDenominator));
+            return normalized;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

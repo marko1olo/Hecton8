@@ -1,0 +1,97 @@
+{
+  "agent_id": "1335",
+  "status": "SHARED_FOVEATED_DEPTH_AND_HUD_SHADER_PATCH_BUILD_BLOCKED_EXTERNAL_COMPILERS",
+  "timestamp_local": "2026-05-27T13:35:07+04:00",
+  "domain": "VR somatic comfort, visor rendering, foveation, decals, and diegetic UI presentation",
+  "prompt": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "tag": "AGENT_PROMPT id=\"1335\"",
+    "task_count": 20,
+    "sha256": "CED5DA5188E0838802BA00938AFD9F382174FAA78453C32C78A6AE34BCB1C2E2"
+  },
+  "latest_reaudit": {
+    "scope": "Shared camera-depth foveated sampling plus HUD/scanner/hologram cheap presentation math",
+    "files": [
+      "Assets/_Project/Art/Shaders/AbyssalFluidDecal.shader",
+      "Assets/_Project/Art/Shaders/Hecton_LeakPlume.shader",
+      "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader",
+      "Assets/_Project/Art/Shaders/Hecton_HologramMap.shader",
+      "Assets/_Project/Art/Shaders/Hecton_RadarBlipInstanced.shader",
+      "Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader",
+      "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader",
+      "Assets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader",
+      "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+      "Assets/_Project/Art/Shaders/Hecton_HologramAssembly.shader",
+      "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl",
+      "Assets/_Project/Scripts/Editor/VRSomaticComfortEvaluatorEditTests.cs"
+    ],
+    "broad_art_shader_direct_depth_hits": 0,
+    "scoped_shader_forbidden_terms": {
+      "smoothstep": 0,
+      "sin": 0,
+      "cos": 0,
+      "length": 0,
+      "distance": 0,
+      "pow": 0,
+      "round": 0
+    },
+    "foveated_depth_contract": {
+      "uses_unity_foveated_rendering_helpers": true,
+      "fragment_sv_position_w_divide_removed": true,
+      "corelit_shared_depth_fetches_remapped": true
+    },
+    "scoped_diff_check": "passed_with_lf_to_crlf_warnings_only",
+    "braces_balanced": true,
+    "normal_frame_cpu_microseconds_saved_claimed": 0,
+    "shader_cheats": [
+      "Linear ramps replace Hermite smoothstep in HUD/scanner/hologram masks.",
+      "Triangle-wave wobble replaces sine-based hologram scan and scanner flicker.",
+      "ALU hash replaces sine hash in flicker/noise gates."
+    ]
+  },
+  "file_hashes_sha256": {
+    "Assets/_Project/Art/Shaders/AbyssalFluidDecal.shader": "7ADEB66475F0391D9CF9DFE74B03D6FD11491EB355E9AB12783130D91ADA416F",
+    "Assets/_Project/Art/Shaders/Hecton_LeakPlume.shader": "28F43589887511A3CDC5179F61BBEE88E4A014E14442725FECFCBCBFF12DC68D",
+    "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader": "7E62029E8B7E681E940FDF5FDA68AC05C117833BCD7613777F63BA228B6E109D",
+    "Assets/_Project/Art/Shaders/Hecton_HologramMap.shader": "75B87241039F320B68867FAD68287019DC192ECC281FD60E7EDE5E18B02F6BEC",
+    "Assets/_Project/Art/Shaders/Hecton_RadarBlipInstanced.shader": "B415DFD8E8641718AFA589F97E3558864E24A0D7E2BD0F7E94F72E1A91360528",
+    "Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader": "E4FC9725A7A16FD6AC22DEDDB52C942B2B775DD93343DEFEE236E2597ACA789F",
+    "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader": "9109B612B93D64317EF63AEEB088C7D26A67913EDEE5182ABFBF062DF81552F3",
+    "Assets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader": "3BBB6773B445849AB99BB0F49FF28CA08A1EF01538DD8C1CE1832D2B0C8EEDA2",
+    "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader": "F73381196F92451D5FEF536CCA298D165C7A15A220865A5FCE368A0E1DF9D3F2",
+    "Assets/_Project/Art/Shaders/Hecton_HologramAssembly.shader": "0D7BDE00C530DE84093F972F81A30293C8F3819405A665D462E4CAA91870E64B",
+    "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl": "0D86EFF0017F34AFFC73806111F257B7D8FF23969BFF062D6D394FE624258506",
+    "Assets/_Project/Scripts/Editor/VRSomaticComfortEvaluatorEditTests.cs": "8203B1AB97315237860D05FBBA43A27F8B4D78A04AF5658404922AAAC3541DA7"
+  },
+  "verification_hash_sha256": "D865347FECA1B85322BE6FF4C584E19F5E309323A4DD443B97B9A5668D02FA33",
+  "build": {
+    "attempted": false,
+    "command": "dotnet build .\\Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false",
+    "gate": "CPU 100 percent with 8 active external dotnet processes",
+    "status": "not_launched_external_compiler_gate_closed",
+    "elapsed_seconds": 0,
+    "errors": null,
+    "warnings": null,
+    "representative_external_errors": [
+      "Previous gated Hecton8.Core.csproj build failed outside this patch scope with missing Odin attributes/namespaces.",
+      "Previous gated Hecton8.Core.csproj build failed outside this patch scope with duplicate SoaInventoryQueryEngine.OffsetOf and HectonMapMagicVegetationBridge.InvalidateChunksForNewPermanentEchoes.",
+      "Previous gated Hecton8.Core.csproj build failed outside this patch scope with missing World/Vegetation/Voxel/Wreck/Sargassum BufferID entries."
+    ]
+  },
+  "out_of_scope_findings": [
+    {
+      "file": "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+      "reason_not_edited": "Neighboring Submarine OS owner; editing its dump topology requires an owner route card.",
+      "findings": [
+        "BinaryWriter dump path",
+        "broad catch (Exception)",
+        "telemetry read view held across file IO"
+      ]
+    }
+  ],
+  "notes": [
+    "Local Unity package shader sources were used for the foveated rendering contract.",
+    "No green build is claimed for this pass.",
+    "No managed runtime code was changed in this pass; only shaders, Editor regression tests, and proof artifacts were updated."
+  ]
+}

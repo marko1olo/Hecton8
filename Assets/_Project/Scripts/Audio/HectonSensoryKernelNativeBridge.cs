@@ -30,6 +30,7 @@ namespace Hecton8.Audio
     {
         public const uint DescriptorMagicValue = 0x484B3031u;
         public const int RequiredAlignmentBytes = 8;
+        public const int MaximumCapacityFrames = 65536;
         public const int ReadIndexSlot = 0;
         public const int WriteIndexSlot = 2;
         public const int CapacityFramesSlot = 4;
@@ -93,6 +94,7 @@ namespace Hecton8.Audio
             }
 
             if (descriptor.CapacityFrames <= 1 ||
+                descriptor.CapacityFrames > NativeAudioKernelRingBufferDescriptor.MaximumCapacityFrames ||
                 descriptor.CapacityMask != descriptor.CapacityFrames - 1 ||
                 !IsPowerOfTwo(descriptor.CapacityFrames))
             {
@@ -133,10 +135,7 @@ namespace Hecton8.Audio
             out NativeAudioKernelBridgeStatus status)
         {
             if (!IsDescriptorValid(in descriptor, out status))
-            {
-                TryClear(out _);
                 return false;
-            }
 
             int attempts = Math.Max(1, maxAttempts);
             for (int i = 0; i < attempts; i++)
@@ -148,18 +147,17 @@ namespace Hecton8.Audio
                     break;
             }
 
-            TryClear(out _);
             return false;
         }
 
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN || UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN || UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
         private const string PluginName = "HectonAudioKernel";
 
-        [DllImport(PluginName, EntryPoint = "HectonSensoryKernel_RegisterSharedRingBuffer")]
-        private static extern void RegisterSharedRingBuffer(ref NativeAudioKernelRingBufferDescriptor descriptor);
+        [DllImport(PluginName, EntryPoint = "HectonSensoryKernel_RegisterSharedRingBufferAndGetStatus")]
+        private static extern int RegisterSharedRingBuffer(ref NativeAudioKernelRingBufferDescriptor descriptor);
 
-        [DllImport(PluginName, EntryPoint = "HectonSensoryKernel_ClearSharedRingBuffer")]
-        private static extern void ClearSharedRingBuffer();
+        [DllImport(PluginName, EntryPoint = "HectonSensoryKernel_ClearSharedRingBufferAndGetStatus")]
+        private static extern int ClearSharedRingBuffer();
 
         [DllImport(PluginName, EntryPoint = "HectonSensoryKernel_GetSharedRingBufferStatus")]
         private static extern int GetSharedRingBufferStatusNative();
@@ -201,9 +199,9 @@ namespace Hecton8.Audio
 
             try
             {
-                RegisterSharedRingBuffer(ref descriptor);
-                status = GetStatus();
-                return (status & NativeAudioKernelBridgeStatus.Active) != 0;
+                status = (NativeAudioKernelBridgeStatus)RegisterSharedRingBuffer(ref descriptor);
+                return (status & NativeAudioKernelBridgeStatus.Active) != 0 &&
+                       (status & NativeAudioKernelBridgeStatus.Busy) == 0;
             }
             catch (Exception exception) when (HectonNativeBridge.IsNativeLoadFailure(exception))
             {
@@ -228,8 +226,7 @@ namespace Hecton8.Audio
 
             try
             {
-                ClearSharedRingBuffer();
-                status = GetStatus();
+                status = (NativeAudioKernelBridgeStatus)ClearSharedRingBuffer();
                 return (status & NativeAudioKernelBridgeStatus.Active) == 0 &&
                        (status & NativeAudioKernelBridgeStatus.Busy) == 0;
             }

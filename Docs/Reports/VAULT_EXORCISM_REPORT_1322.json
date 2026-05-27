@@ -1,0 +1,145 @@
+﻿{
+    "agent":  "1322",
+    "role":  "MEMORY_SOVEREIGN_FLUID_ENGINE_EXORCIST",
+    "generatedUtc":  "2026-05-25T22:56:35.1529777Z",
+    "primaryTarget":  "Assets/_Project/Scripts/HectonFluidEngine.cs",
+    "scanner":  "strict_field_regex_with_fluid_scope_filter",
+    "beforeForbiddenPersistentNativeFieldCount":  39,
+    "afterForbiddenPersistentNativeFieldCount":  0,
+    "primaryTargetAfterCount":  0,
+    "fluidScopeAfterCount":  0,
+    "bufferIdRange":  "1322000-1322040 local Fluid BufferID constants",
+    "telemetry":  "FluidTelemetryEntry Size=64 Capacity=300 Dump=Docs/AgentLogs/Dump_1322_FluidEngine.bin",
+    "validator":  "Assets/_Project/Scripts/Physics/Editor/FluidMemorySovereigntyValidator1322.cs",
+    "compileGate":  "dotnet build Hecton8.Core.csproj --no-restore failed before fluid validation: Assets/_Project/Scripts/SubmarineStructuralGrid.cs(2248,71) missing DamageControlTelemetryEntry",
+    "violations":  [
+
+                   ],
+    "auditedFileCount":  31,
+    "auditedFiles":  [
+                         {
+                             "file":  "Assets/_Project/Scripts/HectonFluidEngine.cs",
+                             "sha256":  "bbfec76aafcb79001d801628157a50744d65c36d441f1058ad76c8d2cef32c4d"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AnalyticalGerstnerWaveContracts.cs",
+                             "sha256":  "39e6d56b15c431d284875c6ec0666995c8a1299b3a3daa6a0ecb2adc8892d5e4"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AnalyticalGerstnerWaveJobs.cs",
+                             "sha256":  "6c52986ddb47cbcdf00fb5276e035c1497325ef959e828d75cfb1219554101c7"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AnalyticalGerstnerWaveRuntime.cs",
+                             "sha256":  "6e7a012ac21d9e77f3817cc360406bb651caf83224528e216a7d99289065080a"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AnalyticalWaveTunerWindow.Editor.cs",
+                             "sha256":  "3d11338aabdd6ca94ff9742f2c9092ecaea54ad694f8e247216a2c9730ddbeeb"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AsyncReadback\\AsyncBuoyancyReadbackContracts.cs",
+                             "sha256":  "762539d0f762e7a52160ffa07b0952969cffa17b20d97947473a7e3aece7292b"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AsyncReadback\\AsyncBuoyancyReadbackJobs.cs",
+                             "sha256":  "1393a93f76c8b45d3fa07e14cac3b2e6e2a0d7e9466e697ff8bc9f39c0100a4d"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AsyncReadback\\AsyncBuoyancyReadbackRuntime.cs",
+                             "sha256":  "2f0f102d3d08f8920f4f51ea07341c415625d928a53543a59085c2d03192c207"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\BuoyancyDisplacementContracts.cs",
+                             "sha256":  "77b491de19e82fcb6978a6e56bcaa05516317a3d4aa593dcb989547440187abb"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\BuoyancyDisplacementJobs.cs",
+                             "sha256":  "08c6089b5bd121d6c50285ae9ebe158b9a0aea3f9b20687ae0225cbca1a6f8b1"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                             "sha256":  "abb390c2dca8ff76a3d4a476e5b80b4ddad2aa78854c270b77c64f27d46e26a1"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\BuoyancySimdVectorization.cs",
+                             "sha256":  "e40d5d3b270949eb7616efb22c2d810e8e682707c7be35de86451fbcd9c34205"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\Editor\\AsyncBuoyancyReadbackLayoutValidator.cs",
+                             "sha256":  "d3621497f5446503a6cc1a12f086fda5db3dc8ff6ddc9073dd8f127142c18328"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\Editor\\AsyncGpuReadbackXRayWindow.cs",
+                             "sha256":  "ef3d5a69acc6359ec0afbcad887da43a249a83d744bd21fbb54d941a50ab031d"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\Editor\\PhysicsSleepStateXRayWindow.cs",
+                             "sha256":  "63f091a472696bd0b12f2fc28e76fa0cbf68238f5f9f76570e5991af34d146c5"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\Editor\\RigidbodySleepScanner.cs",
+                             "sha256":  "3311a62321dd50f3de7525ebaf5db4bb3df21f544391859e2737df06eea1cec7"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\Editor\\SynchronousGpuReadbackScanner.cs",
+                             "sha256":  "355dc47bde43a5737374829096d1eff29ea3a536149c8548be6e48f362f7f900"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\Editor\\Wave_Math_Scanner.cs",
+                             "sha256":  "ec5b09045c071d30ae6aa54a3619126a92f232dfbb32de0f614899a5c52a6278"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\GlobalPhysicsStateManager.BuoyancyBridge.cs",
+                             "sha256":  "5ecf7ee80e0939cdf8509d55ca9278ef8fe30053bacb42dd5251905297004c3e"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\PhysicsApplySystem.BuoyancyQueue.cs",
+                             "sha256":  "935693f449766abb56c396693166af30b102061cebec432e2b4f9175220d1597"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Editor\\FluidMemorySovereigntyValidator1322.cs",
+                             "sha256":  "b28831badd9673a3927e37b623bc10a1e2bdeebb899b489d162adea31e536c19"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Editor\\HabitatFluidIncursionTunerWindow.cs",
+                             "sha256":  "0acf2e2bbdd1548458e9a84c51e8c954d5d4ca3ee76fab154418ce5df34e1301"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\FluidFeedbackListener.cs",
+                             "sha256":  "78d5770c94d88c27b5f1711a10cf27146d67ce35389b7b5eb3f8e74e28093b2d"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\FluidImpulseJob.cs",
+                             "sha256":  "ba83fbc519f255463d1e839495e2447b60215858b6b71cc3f3a2728de9de9c4c"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\FluidMathCore.cs",
+                             "sha256":  "7db048cce73339f80061106decf7fe6bbcef7866d1b9b657d000d625c98b977d"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\HabitatFluidIncursionContracts.cs",
+                             "sha256":  "c27677aab589da3ea207be8ac7f2847496c8eea7368504567c32e8ffd7034f44"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\HabitatFluidIncursionCsv.cs",
+                             "sha256":  "fa8d508c2d5f3d7082cfbf29aa1ee5984be10338bab2a9cda75c08ab969ede68"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\HabitatFluidIncursionDirector.cs",
+                             "sha256":  "1b5046cd4df06f583401581e1c24218aef4fefad90903c9e7a29a06b5a883d89"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\HabitatFluidIncursionJobs.cs",
+                             "sha256":  "cd85f8bae5b9246fe47ef0539149e2db0b10226f0cb443f0d378d0eed0776704"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Vehicles\\Editor\\OOP_Buoyancy_Scanner.cs",
+                             "sha256":  "64465c0d76e6e01cb4abdfdb4e7cd0fabe5ed1cb8a8dfaeb8578387c802582b9"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Vehicles\\SubmarineBallastBuoyancyContracts.cs",
+                             "sha256":  "ab2f2281e49d2dfd02a5c37b46c5fb87ddf6e2f9ae2d7f79d5edeacd6821538e"
+                         }
+                     ]
+}

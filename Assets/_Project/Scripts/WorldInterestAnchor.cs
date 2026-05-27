@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -7,8 +6,18 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldInterestAnchor : MonoBehaviour
     {
-        // COLD ALLOC: List<WorldInterestAnchor>[24] - active world-interest anchor registry - owner: WorldInterestAnchor
-        private static readonly List<WorldInterestAnchor> _ActiveAnchors = new List<WorldInterestAnchor>(24);
+        private const int ActiveAnchorCopyBudget = 32;
+        private static readonly WorldInterestAnchor[] _ActiveAnchors = new WorldInterestAnchor[ActiveAnchorCopyBudget];
+        private static int _ActiveAnchorCount;
+        private static int _ActiveAnchorVersion;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            System.Array.Clear(_ActiveAnchors, 0, _ActiveAnchors.Length);
+            _ActiveAnchorCount = 0;
+            _ActiveAnchorVersion = 0;
+        }
 
         public enum InterestKind
         {
@@ -71,13 +80,14 @@ namespace Hecton8.World
             UnregisterActiveAnchor(this);
         }
 
-        public static void CopyActiveAnchorsTo(List<WorldInterestAnchor> destination)
+        public static int CopyActiveAnchorsTo(WorldInterestAnchor[] destination)
         {
-            if (destination == null)
-                return;
+            if (destination == null || destination.Length <= 0)
+                return 0;
 
-            destination.Clear();
-            for (int i = 0; i < _ActiveAnchors.Count; i++)
+            int writeCount = 0;
+            int safeCount = math.min(_ActiveAnchorCount, ActiveAnchorCopyBudget);
+            for (int i = 0; i < safeCount && writeCount < destination.Length; i++)
             {
                 WorldInterestAnchor anchor = _ActiveAnchors[i];
                 if (anchor == null)
@@ -87,9 +97,17 @@ namespace Hecton8.World
                 if (go == null || !go.scene.IsValid())
                     continue;
 
-                destination.Add(anchor);
+                destination[writeCount] = anchor;
+                writeCount++;
             }
+
+            for (int i = writeCount; i < destination.Length; i++)
+                destination[i] = null;
+
+            return writeCount;
         }
+
+        public static int ActiveAnchorVersion => _ActiveAnchorVersion;
 
         public float EvaluateInfluence(Vector3 playerPosition)
         {
@@ -146,10 +164,12 @@ namespace Hecton8.World
 
         private static void RegisterActiveAnchor(WorldInterestAnchor anchor)
         {
-            if (anchor == null || _ActiveAnchors.Contains(anchor))
+            if (anchor == null || FindActiveAnchorIndex(anchor) >= 0 || _ActiveAnchorCount >= _ActiveAnchors.Length)
                 return;
 
-            _ActiveAnchors.Add(anchor);
+            _ActiveAnchors[_ActiveAnchorCount] = anchor;
+            _ActiveAnchorCount++;
+            _ActiveAnchorVersion++;
         }
 
         private static void UnregisterActiveAnchor(WorldInterestAnchor anchor)
@@ -157,7 +177,28 @@ namespace Hecton8.World
             if (anchor == null)
                 return;
 
-            _ActiveAnchors.Remove(anchor);
+            int index = FindActiveAnchorIndex(anchor);
+            if (index < 0)
+                return;
+
+            int lastIndex = _ActiveAnchorCount - 1;
+            if (index != lastIndex)
+                _ActiveAnchors[index] = _ActiveAnchors[lastIndex];
+
+            _ActiveAnchors[lastIndex] = null;
+            _ActiveAnchorCount--;
+            _ActiveAnchorVersion++;
+        }
+
+        private static int FindActiveAnchorIndex(WorldInterestAnchor anchor)
+        {
+            for (int i = 0; i < _ActiveAnchorCount; i++)
+            {
+                if (ReferenceEquals(_ActiveAnchors[i], anchor))
+                    return i;
+            }
+
+            return -1;
         }
 
         private static string BuildDefaultInterestLabel(InterestKind kind)

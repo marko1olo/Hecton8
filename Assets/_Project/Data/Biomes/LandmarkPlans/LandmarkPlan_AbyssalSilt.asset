@@ -19,6 +19,6 @@ MonoBehaviour:
   midReferenceShape: single trench mouth or silt catacomb seam
   farReferenceShape: almost absent silhouette with one lonely anchor
   routeUse: Player should feel orientation stress and cling to rare anchors.
-  safePocketUse: Safe pockets are small lee zones and trench shoulders, not comfort
+  safePocketUse: Reorientation pockets are small lee zones and trench shoulders, not comfort
     spaces.
   emotionalRead: Quiet, heavy, and isolating.

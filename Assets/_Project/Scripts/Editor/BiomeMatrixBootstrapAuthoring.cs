@@ -1312,19 +1312,19 @@ namespace Hecton8.EditorTools
             HectonBiomeMatrixProfile.CardinalRegion region)
         {
             if (tier <= 4)
-                return "Safe pockets are frequent. The player should often see a clear reset point nearby.";
+                return "Reorientation pockets are frequent. The player should often see a clear reset point nearby.";
             if (tier <= 9)
                 return region == HectonBiomeMatrixProfile.CardinalRegion.East
-                    ? "Safe pockets live behind slab cover and under wall breaks."
-                    : "Safe pockets exist, but they must be earned by reading the terrain.";
+                    ? "Reorientation pockets live behind slab cover and under wall breaks."
+                    : "Reorientation pockets exist, but they must be earned by reading the terrain.";
             if (tier <= 14)
-                return "Safe pockets are scarce. Relief should come from one clear nook, not constant cover.";
+                return "Reorientation pockets are scarce. Relief should come from one clear nook, not constant cover.";
             if (tier <= 20)
-                return "Safe pockets are short-lived and mostly procedural: a lee side, a bowl edge, a dead current seam.";
+                return "Reorientation pockets are short-lived and mostly procedural: a lee side, a bowl edge, a dead current seam.";
 
             return family != null && family.familyId == "biome.family.rift_void"
-                ? "Safe pockets are almost psychological only. The player survives by discipline, not comfort."
-                : "Safe pockets are rare and temporary. Retreat routes matter more than comfort.";
+                ? "Reorientation pockets are almost psychological only. The player survives by discipline, not comfort."
+                : "Reorientation pockets are rare and temporary. Retreat routes matter more than comfort.";
         }
 
         private static string BuildRiskSummary(
@@ -1662,18 +1662,18 @@ namespace Hecton8.EditorTools
                     break;
 
                 case "biome.family.fossil_reef":
-                    profile.familyLabel = "Fossil Reef";
+                    profile.familyLabel = "Fossil Carbonate Shelf";
                     profile.debugColor = new Color(0.72f, 0.82f, 0.74f, 1f);
-                    profile.geologicalIdentity = "ÐŸÐ¾Ñ€Ð¸ÑÑ‚Ñ‹Ðµ Ñ€Ð¸Ñ„Ñ‹, ÐºÐ¾Ñ€Ð°Ð»Ð»Ð¾Ð²Ñ‹Ðµ ÑÑ‚ÐµÐ½Ñ‹ Ð¸ Ð¾Ñ€Ð³Ð°Ð½Ð¸Ñ‡ÐµÑÐºÐ¸Ðµ ÐºÐ°Ñ€Ð¼Ð°Ð½Ñ‹ Ð² ÐºÐ°Ð¼Ð½Ðµ.";
-                    profile.gameplayIdentity = "Ð”Ð°Ñ‘Ñ‚ Ð¾Ñ€Ð³Ð°Ð½Ð¸ÐºÑƒ, ÑƒÐºÑ€Ñ‹Ñ‚Ð¸Ñ, Ð½Ð¾Ñ€Ñ‹ Ð¸ Ñ…Ð¾Ñ€Ð¾ÑˆÑƒÑŽ Ð¿Ð°Ð¼ÑÑ‚ÑŒ Ð¼ÐµÑÑ‚Ð° Ð±ÐµÐ· Ð¿Ñ€ÑÐ¼Ð¾Ð¹ Ð°Ð³Ñ€ÐµÑÑÐ¸Ð¸ Ð¼Ð¸Ñ€Ð°.";
+                    profile.geologicalIdentity = "Porous fossil carbonate walls, mineral tubes, and organic pockets locked into old pressure stone.";
+                    profile.gameplayIdentity = "Provides organics, cover, short detours, and strong place memory while keeping exposure and route risk visible.";
                     profile.atmosphereMood = "organic_murmur";
-                    profile.navigationStyle = "honeycomb_paths";
+                    profile.navigationStyle = "porous_carbonate_paths";
                     profile.hazardStyle = "ambush_and_maze";
-                    profile.landmarkStyle = "reef_walls";
-                    profile.primaryResourceTheme = "fiber_membrane_and_biolum";
+                    profile.landmarkStyle = "carbonate_walls";
+                    profile.primaryResourceTheme = "fiber_membrane_and_dim_biolum";
                     profile.secondaryResourceTheme = "fine_minerals";
                     profile.suggestedZoneFamily = "resources.pickups.near";
-                    profile.progressionFeeling = "curious_exploration";
+                    profile.progressionFeeling = "evidence_led_exploration";
                     profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_FiberKelp.asset");
                     profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_MembraneTissue.asset");
                     profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_BiolumPaste.asset");
@@ -1922,7 +1922,7 @@ namespace Hecton8.EditorTools
 
                 case "biome.family.fossil_reef":
                     profile.atmosphereProfile = EnsureAtmosphereProfile("Atmos_FossilReef.asset", new Color(0.26f, 0.46f, 0.38f, 1f), 0.012f, 0.88f, new Color(0.24f, 0.34f, 0.3f, 1f), 0.82f);
-                    profile.faunaFamilyProfile = EnsureFaunaFamilyProfile("fauna.family.reef_ambush", "Reef Ambush", "reef_filter_and_nest", "medium", "pocket_ambusher", "patchy_pressure", "ÐŸÐ¾Ñ€Ð¸ÑÑ‚Ð°Ñ ÑÑ€ÐµÐ´Ð° ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ ÑƒÐºÑ€Ñ‹Ñ‚Ð¸Ñ Ð¸ Ð»Ð¾ÐºÐ°Ð»ÑŒÐ½Ñ‹Ðµ Ð·Ð°ÑÐ°Ð´Ñ‹.", "ÐœÐ½Ð¾Ð³Ð¾ ÐºÐ°Ñ€Ð¼Ð°Ð½Ð¾Ð² Ð¶Ð¸Ð·Ð½Ð¸ Ð¸ Ñ€ÐµÐ·ÐºÐ¸Ðµ ÐºÐ¾Ñ€Ð¾Ñ‚ÐºÐ¸Ðµ ÑƒÐ³Ñ€Ð¾Ð·Ñ‹.");
+                    profile.faunaFamilyProfile = EnsureFaunaFamilyProfile("fauna.family.reef_ambush", "Porous Shelf Ambush", "carbonate_filter_and_nest", "medium", "pocket_ambusher", "patchy_pressure", "Porous carbonate cover creates local ambush pockets without turning the biome into arena combat.", "Many life pockets, short threat spikes, and unreliable shelter reads.");
                     break;
 
                 case "biome.family.tectonic_spine":
@@ -2099,7 +2099,7 @@ namespace Hecton8.EditorTools
                     profile.playProfile = EnsurePlayProfile("Play_GraniteEscarpment.asset", "biome.play.granite_escarpment", "Granite Escarpment Play", "Vertical orientation, technical gathering, and a strong edge-of-world feel.", "A wall-travel biome with crack pockets and careful side movement.", "Move from pocket to pocket along one giant landmark.", 4, 5, 3, 3, 2, 2, 3, 3, "The danger is a bad drop and an awkward climb back.");
                     break;
                 case "biome.family.fossil_reef":
-                    profile.playProfile = EnsurePlayProfile("Play_FossilReef.asset", "biome.play.fossil_reef", "Fossil Reef Play", "Dense life, organics, and beautiful but risky reef navigation.", "Good reward biome with constant chance to disturb something dangerous.", "Slow inspection of reef pockets with repeated greed-versus-safety choices.", 3, 4, 3, 4, 3, 3, 3, 3, "The reef pays well but punishes deep commitment into porous clusters.");
+                    profile.playProfile = EnsurePlayProfile("Play_FossilReef.asset", "biome.play.fossil_reef", "Fossil Carbonate Shelf Play", "Dense organics, salvage hooks, and risky porous-carbonate navigation.", "Good reward biome with constant chance to disturb something dangerous.", "Slow inspection of porous shelf pockets with repeated greed-versus-exposure choices.", 3, 4, 3, 4, 3, 3, 3, 3, "The carbonate shelf pays well but punishes deep commitment into porous clusters.");
                     break;
                 case "biome.family.tectonic_spine":
                     profile.playProfile = EnsurePlayProfile("Play_TectonicSpine.asset", "biome.play.tectonic_spine", "Tectonic Spine Play", "Readable travel along a spine, with depth pressure and hard geometry.", "A transit biome where the player reads the world by huge stone lines.", "Long moves between strong forms with only rare pauses in cover.", 3, 4, 2, 3, 3, 3, 4, 4, "The key mistake here is overcommitting along the edge without a return plan.");
@@ -2174,11 +2174,11 @@ namespace Hecton8.EditorTools
                 case "biome.family.fossil_reef":
                     planFileName = "ResourcePlan_FossilReef.asset";
                     profileId = "biome.resource_plan.fossil_reef";
-                    profileLabel = "Fossil Reef Resource Plan";
+                    profileLabel = "Fossil Carbonate Shelf Resource Plan";
                     earlyReasonToFarm = "Organic growth, useful chemistry, and medium-risk salvage.";
                     lateReasonToReturn = "Still worth revisiting for craft organics and niche biological parts.";
-                    extractionStyle = "Mixed salvage, harvest pockets, and risky reef-node peels.";
-                    routeRewardLogic = "Reward hides inside beautiful clusters that can also trap you.";
+                    extractionStyle = "Mixed salvage, harvest pockets, and risky carbonate-node peels.";
+                    routeRewardLogic = "Reward hides inside dense clusters that can also trap you.";
                     break;
                 case "biome.family.tectonic_spine":
                     planFileName = "ResourcePlan_TectonicSpine.asset";
@@ -2410,8 +2410,8 @@ namespace Hecton8.EditorTools
                     midReferenceShape = "stack clusters and white shelf breaks";
                     farReferenceShape = "clear spire skyline against surface light";
                     routeUse = "Player should chain visible stacks and arches without needing UI help.";
-                    safePocketUse = "Safe pockets hide on lee sides of stacks and under bright arches.";
-                    emotionalRead = "Readable, inviting, and adventurous without feeling harmless.";
+                    safePocketUse = "Reorientation pockets hide on lee sides of stacks and under readable arches.";
+                    emotionalRead = "Readable, exposed, and navigable without feeling harmless.";
                     break;
                 case "biome.family.sediment_drift":
                     fileName = "LandmarkPlan_SedimentDrift.asset";
@@ -2422,7 +2422,7 @@ namespace Hecton8.EditorTools
                     midReferenceShape = "fan-shaped sediment flows";
                     farReferenceShape = "broad dune silhouette with one strong basin edge";
                     routeUse = "Player should read flow direction and basin rims to keep orientation.";
-                    safePocketUse = "Safe pockets live behind basin lips and inside soft depressions.";
+                    safePocketUse = "Reorientation pockets live behind basin lips and inside soft depressions.";
                     emotionalRead = "Calm, open, and slightly deceptive.";
                     break;
                 case "biome.family.granite_escarpment":
@@ -2434,20 +2434,20 @@ namespace Hecton8.EditorTools
                     midReferenceShape = "tall wall ribs and shadowed benches";
                     farReferenceShape = "giant escarpment edge slicing the horizon";
                     routeUse = "Player should navigate by the wall itself, not by scattered props.";
-                    safePocketUse = "Safe pockets exist in crack mouths, ledges, and overhang feet.";
+                    safePocketUse = "Reorientation pockets exist in crack mouths, ledges, and overhang feet.";
                     emotionalRead = "Imposing, technical, and route-defining.";
                     break;
                 case "biome.family.fossil_reef":
                     fileName = "LandmarkPlan_FossilReef.asset";
                     profileId = "biome.landmark_plan.fossil_reef";
-                    profileLabel = "Fossil Reef Landmark Plan";
-                    dominantLandmarkRole = "reef crown or porous fossil wall";
-                    nearReferenceShape = "coral windows and rib-like skeletons";
-                    midReferenceShape = "branching reef crown or fossil gallows";
-                    farReferenceShape = "ornate porous silhouette with clear negative space";
-                    routeUse = "Player should remember routes by unusual reef silhouettes and openings.";
-                    safePocketUse = "Safe pockets hide inside porous chambers and behind fossil ribs.";
-                    emotionalRead = "Beautiful, alive, and quietly dangerous.";
+                    profileLabel = "Fossil Carbonate Shelf Landmark Plan";
+                    dominantLandmarkRole = "carbonate crown or porous fossil wall";
+                    nearReferenceShape = "carbonate windows and rib-like skeletons";
+                    midReferenceShape = "branching fossil crown or fossil gallows";
+                    farReferenceShape = "severe porous silhouette with clear negative space";
+                    routeUse = "Player should remember routes by unusual carbonate silhouettes and openings.";
+                    safePocketUse = "Reorientation pockets hide inside porous chambers and behind fossil ribs.";
+                    emotionalRead = "Valuable, alive, and quietly dangerous.";
                     break;
                 case "biome.family.tectonic_spine":
                     fileName = "LandmarkPlan_TectonicSpine.asset";
@@ -2458,7 +2458,7 @@ namespace Hecton8.EditorTools
                     midReferenceShape = "parallel ridge family and stepped breaks";
                     farReferenceShape = "one giant spine line that tells direction immediately";
                     routeUse = "Player should know forward and backward by the ridge line alone.";
-                    safePocketUse = "Safe pockets appear on the protected side of the spine and in fracture bends.";
+                    safePocketUse = "Reorientation pockets appear on the protected side of the spine and in fracture bends.";
                     emotionalRead = "Directional, severe, and dependable.";
                     break;
                 case "biome.family.crystal_growth":
@@ -2470,7 +2470,7 @@ namespace Hecton8.EditorTools
                     midReferenceShape = "crystal ridge or luminous fan";
                     farReferenceShape = "glowing shard skyline that pulls the eye";
                     routeUse = "Player should see valuable paths from afar but feel exposed on approach.";
-                    safePocketUse = "Safe pockets live behind opaque crystal fans and heavy shard roots.";
+                    safePocketUse = "Reorientation pockets live behind opaque crystal fans and heavy shard roots.";
                     emotionalRead = "Precious, cold, and slightly hypnotic.";
                     break;
                 case "biome.family.abyssal_silt":
@@ -2482,7 +2482,7 @@ namespace Hecton8.EditorTools
                     midReferenceShape = "single trench mouth or silt catacomb seam";
                     farReferenceShape = "almost absent silhouette with one lonely anchor";
                     routeUse = "Player should feel orientation stress and cling to rare anchors.";
-                    safePocketUse = "Safe pockets are small lee zones and trench shoulders, not comfort spaces.";
+                    safePocketUse = "Reorientation pockets are small lee zones and trench shoulders, not comfort spaces.";
                     emotionalRead = "Quiet, heavy, and isolating.";
                     break;
                 case "biome.family.volcanic_glass":
@@ -2494,7 +2494,7 @@ namespace Hecton8.EditorTools
                     midReferenceShape = "flow channel and thermal chimney cluster";
                     farReferenceShape = "dark glass mass split by heat glow";
                     routeUse = "Player should track heat lines and know where a quick extraction lane begins.";
-                    safePocketUse = "Safe pockets are cool seams between hot structures, never broad comfort zones.";
+                    safePocketUse = "Reorientation pockets are cool seams between hot structures, never broad comfort zones.";
                     emotionalRead = "Sharp, risky, and high-value.";
                     break;
                 case "biome.family.volcanic_hadal":
@@ -2506,7 +2506,7 @@ namespace Hecton8.EditorTools
                     midReferenceShape = "chimney forest or furnace ridge";
                     farReferenceShape = "red-black catastrophic skyline";
                     routeUse = "Player should feel that one huge landmark is the whole mission target.";
-                    safePocketUse = "Safe pockets are temporary breaks in heat, not true safe homes.";
+                    safePocketUse = "Reorientation pockets are temporary breaks in heat, not true safe homes.";
                     emotionalRead = "Late-game terror mixed with extreme value.";
                     break;
                 case "biome.family.chemosynthetic_brine":
@@ -2518,7 +2518,7 @@ namespace Hecton8.EditorTools
                     midReferenceShape = "brine pool chain and active vent arc";
                     farReferenceShape = "sunken bowl marked by luminous chemical haze";
                     routeUse = "Player should move from hotspot to hotspot with clear risk spikes.";
-                    safePocketUse = "Safe pockets sit just outside active chemistry, not inside it.";
+                    safePocketUse = "Reorientation pockets sit just outside active chemistry, not inside it.";
                     emotionalRead = "Alien, useful, and locally hostile.";
                     break;
                 case "biome.family.metallic_hadal":
@@ -2530,7 +2530,7 @@ namespace Hecton8.EditorTools
                     midReferenceShape = "shard field or metallic terrace";
                     farReferenceShape = "cold industrial skyline made by geology";
                     routeUse = "Player should read a few hard metallic anchors and ignore most empty space.";
-                    safePocketUse = "Safe pockets are mostly created by shard shadows and pressure slabs.";
+                    safePocketUse = "Reorientation pockets are mostly created by shard shadows and pressure slabs.";
                     emotionalRead = "Hard, expensive, and purposeful.";
                     break;
                 case "biome.family.rift_spine":
@@ -2542,7 +2542,7 @@ namespace Hecton8.EditorTools
                     midReferenceShape = "fracture corridor and offset slab gate";
                     farReferenceShape = "one violent split in the world surface";
                     routeUse = "Player should memorize progress by which fracture mouth they entered.";
-                    safePocketUse = "Safe pockets are bends and side cuts, not open rooms.";
+                    safePocketUse = "Reorientation pockets are bends and side cuts, not open rooms.";
                     emotionalRead = "Tense, vertical, and committed.";
                     break;
                 case "biome.family.rift_void":
@@ -2555,7 +2555,7 @@ namespace Hecton8.EditorTools
                     midReferenceShape = "void-rim terraces and black pressure cuts";
                     farReferenceShape = "a singular abyssal absence in the world";
                     routeUse = "Player should know this place by one unforgettable final landmark.";
-                    safePocketUse = "Safe pockets are almost conceptual; discipline matters more than cover.";
+                    safePocketUse = "Reorientation pockets are almost conceptual; discipline matters more than cover.";
                     emotionalRead = "Final, severe, and unforgettable.";
                     break;
             }
@@ -2626,14 +2626,14 @@ namespace Hecton8.EditorTools
                     fileName = "SpatialPattern_LittoralKarst.asset";
                     profileId = "biome.spatial_pattern.littoral_karst";
                     profileLabel = "Littoral Karst Spatial Pattern";
-                    resourcePocketPattern = "Loose scrap and easy basics sit around the feet of arches, stacks, and bright shelf lips.";
+                    resourcePocketPattern = "Loose scrap and easy basics sit around the feet of arches, stacks, and readable shelf lips.";
                     nodeClusterPattern = "Small mineral nodes hide in short wall cuts and at the base of obvious limestone breaks.";
-                    safePocketPattern = "Safe pockets appear often on the lee side of stacks and inside shallow arch shadows.";
+                    safePocketPattern = "Reorientation pockets appear often on the lee side of stacks and inside shallow arch shadows.";
                     routeAnchorPattern = "Routes chain from one big karst silhouette to the next without needing UI help.";
-                    rareObjectivePattern = "Rare value sits one ring deeper than the comfortable starter loop, still visible from a safe landmark.";
+                    rareObjectivePattern = "Rare value sits one ring deeper than the readable starter loop, still visible from a stable landmark.";
                     explorationLoop = "Spot stack, clear pocket, grab one node, peek deeper, then return by the same silhouette chain.";
                     spatialRead = "Very readable at all distances. Good first biome language.";
-                    playerMemoryHook = "Remember the place by one arch, one stack, and the bright open water between them.";
+                    playerMemoryHook = "Remember the place by one arch, one stack, and the open pressure water between them.";
                     break;
                 case "biome.family.sediment_drift":
                     fileName = "SpatialPattern_SedimentDrift.asset";
@@ -2641,7 +2641,7 @@ namespace Hecton8.EditorTools
                     profileLabel = "Sediment Drift Spatial Pattern";
                     resourcePocketPattern = "Loose materials gather in bowls, drift seams, and the calm sides of dunes.";
                     nodeClusterPattern = "Nodes are sparse and low, usually found where soft terrain breaks against something harder.";
-                    safePocketPattern = "Safe pockets are soft depressions and reverse slopes that briefly hide the player from open sightlines.";
+                    safePocketPattern = "Reorientation pockets are soft depressions and reverse slopes that briefly hide the player from open sightlines.";
                     routeAnchorPattern = "Routes are taught by basin rims and flow direction more than by big unique objects.";
                     rareObjectivePattern = "Rare value is less about one glowing prize and more about finding the right quiet pocket inside broad terrain.";
                     explorationLoop = "Sweep a basin, gather along the drift line, confirm orientation, then push to the next bowl.";
@@ -2654,7 +2654,7 @@ namespace Hecton8.EditorTools
                     profileLabel = "Granite Escarpment Spatial Pattern";
                     resourcePocketPattern = "Useful materials sit on ledges, broken shelves, and crack mouths along the wall.";
                     nodeClusterPattern = "Nodes appear in vertical pocket chains, so one good line can yield several exact stops.";
-                    safePocketPattern = "Safe pockets are overhang feet, side ledges, and recesses that break line-of-sight.";
+                    safePocketPattern = "Reorientation pockets are overhang feet, side ledges, and recesses that break line-of-sight.";
                     routeAnchorPattern = "The wall itself is the route anchor. Progress is measured by named ledges and visible breaks.";
                     rareObjectivePattern = "Rare value hangs in slightly awkward positions that ask for commitment to one ledge line.";
                     explorationLoop = "Take a wall line, harvest two or three ledge pockets, secure a recess, then choose whether to descend further.";
@@ -2664,15 +2664,15 @@ namespace Hecton8.EditorTools
                 case "biome.family.fossil_reef":
                     fileName = "SpatialPattern_FossilReef.asset";
                     profileId = "biome.spatial_pattern.fossil_reef";
-                    profileLabel = "Fossil Reef Spatial Pattern";
-                    resourcePocketPattern = "Organic pickups sit in holes, ribs, alcoves, and reef windows rather than in open space.";
-                    nodeClusterPattern = "Node clusters appear in semi-hidden chambers or at reef roots, rewarding curiosity and short detours.";
-                    safePocketPattern = "Safe pockets exist behind reef ribs and inside porous side chambers, but can turn into ambush pockets.";
-                    routeAnchorPattern = "Routes are remembered by unusual reef silhouettes and repeated porous gate shapes.";
-                    rareObjectivePattern = "Rare finds are tucked into beautiful but slightly suspicious interior spaces.";
+                    profileLabel = "Fossil Carbonate Shelf Spatial Pattern";
+                    resourcePocketPattern = "Organic pickups sit in holes, ribs, alcoves, and carbonate windows rather than in open space.";
+                    nodeClusterPattern = "Node clusters appear in semi-hidden chambers or at carbonate roots, rewarding controlled detours.";
+                    safePocketPattern = "Reorientation pockets exist behind fossil ribs and inside porous side chambers, but can turn into ambush pockets.";
+                    routeAnchorPattern = "Routes are remembered by unusual carbonate silhouettes and repeated porous gate shapes.";
+                    rareObjectivePattern = "Rare finds are tucked into pressure-shadowed interior spaces that look valuable before they look safe.";
                     explorationLoop = "Circle the crown, slip through one opening, harvest a chamber, then escape back into a known silhouette line.";
-                    spatialRead = "Rich and memorable, but layered. It should feel inviting before it feels tricky.";
-                    playerMemoryHook = "Remember the place by one crown shape and one distinctive interior opening.";
+                    spatialRead = "Dense and memorable, but layered. It should read as reward first and trap second.";
+                    playerMemoryHook = "Remember the place by one crown shape and one distinctive pressure-shadow opening.";
                     break;
                 case "biome.family.tectonic_spine":
                     fileName = "SpatialPattern_TectonicSpine.asset";
@@ -2680,7 +2680,7 @@ namespace Hecton8.EditorTools
                     profileLabel = "Tectonic Spine Spatial Pattern";
                     resourcePocketPattern = "Resource pockets ride the protected side of ridges and the short shelves between hard turns.";
                     nodeClusterPattern = "Node clusters appear on spine seams and exposed ridge cuts, often in a line rather than a blob.";
-                    safePocketPattern = "Safe pockets are rare but strong: the correct side of a ridge, a fracture bend, a protected step.";
+                    safePocketPattern = "Reorientation pockets are rare but strong: the correct side of a ridge, a fracture bend, a protected step.";
                     routeAnchorPattern = "The route is the ridge. If the player loses the spine, they should feel it immediately.";
                     rareObjectivePattern = "Rare value is farther along the same line, behind one more exposed step or sharper bend.";
                     explorationLoop = "Pick a spine, move with intent, harvest the protected side, then decide whether the next exposed turn is worth it.";
@@ -2693,7 +2693,7 @@ namespace Hecton8.EditorTools
                     profileLabel = "Crystal Growth Spatial Pattern";
                     resourcePocketPattern = "Valuable loose shards sit near the edge of exposed crystal groves to tempt early greed.";
                     nodeClusterPattern = "Node clusters form around roots and dense shard fans, readable from far but costly up close.";
-                    safePocketPattern = "Safe pockets are behind thick crystal fans and opaque mineral bulges, never in the open glow.";
+                    safePocketPattern = "Reorientation pockets are behind thick crystal fans and opaque mineral bulges, never in the open glow.";
                     routeAnchorPattern = "The route is drawn by luminous shard lines and standout crowns.";
                     rareObjectivePattern = "The rare reward lives in the brightest visible area, but the final approach should feel exposed.";
                     explorationLoop = "Spot a grove, skim outer value, find one safe crystal shadow, then decide whether to take the core.";
@@ -2706,7 +2706,7 @@ namespace Hecton8.EditorTools
                     profileLabel = "Abyssal Silt Spatial Pattern";
                     resourcePocketPattern = "Loose value is sparse and usually sits where almost featureless ground finally breaks.";
                     nodeClusterPattern = "Nodes are rare, deliberate, and often tied to one seam, mound, or salvage rise in otherwise empty space.";
-                    safePocketPattern = "Safe pockets are weak and brief: trench shoulders, lee sides of mounds, or the shadow of a wreck fragment.";
+                    safePocketPattern = "Reorientation pockets are weak and brief: trench shoulders, lee sides of mounds, or the shadow of a wreck fragment.";
                     routeAnchorPattern = "Anchors are rare. The player should travel from one lonely readable object to the next.";
                     rareObjectivePattern = "Rare value should feel far apart, forcing patience and trust in instruments.";
                     explorationLoop = "Long quiet transit, single important stop, short evaluation, then commit to the next anchor.";
@@ -2719,7 +2719,7 @@ namespace Hecton8.EditorTools
                     profileLabel = "Volcanic Glass Spatial Pattern";
                     resourcePocketPattern = "Useful chemistry and hot materials sit in short, exposed strike pockets along thermal cracks.";
                     nodeClusterPattern = "Node clusters gather around vents, broken flow edges, and hard temperature transitions.";
-                    safePocketPattern = "Safe pockets are cool seams between hot structures and should feel temporary, not comfortable.";
+                    safePocketPattern = "Reorientation pockets are cool seams between hot structures and should feel temporary, not comfortable.";
                     routeAnchorPattern = "Routes are remembered by black flow edges and thermal lines, not by clutter.";
                     rareObjectivePattern = "Rare value lives inside the hottest and most visually obvious pocket, demanding fast execution.";
                     explorationLoop = "Read the heat line, enter fast, take what matters, cool off, decide if another strike is worth it.";
@@ -2732,7 +2732,7 @@ namespace Hecton8.EditorTools
                     profileLabel = "Volcanic Hadal Spatial Pattern";
                     resourcePocketPattern = "Routine pockets barely matter here; the biome should not encourage casual sweeping.";
                     nodeClusterPattern = "Important extraction sits around furnace-scale structures and late-game thermal crowns.";
-                    safePocketPattern = "Safe pockets exist only as short relief zones outside catastrophic heat lines.";
+                    safePocketPattern = "Reorientation pockets exist only as short relief zones outside catastrophic heat lines.";
                     routeAnchorPattern = "One huge heat landmark should define the mission path more than a chain of small anchors.";
                     rareObjectivePattern = "One major reward target should justify the entire expedition.";
                     explorationLoop = "Approach with purpose, stabilize once, take the high-value window, and leave before greed wins.";
@@ -2745,7 +2745,7 @@ namespace Hecton8.EditorTools
                     profileLabel = "Chemosynthetic Brine Spatial Pattern";
                     resourcePocketPattern = "Chemistry-rich pickups sit around the edge of active bowls and seep lines.";
                     nodeClusterPattern = "Node clusters form in concentrated hotspots around vents, not evenly across the biome.";
-                    safePocketPattern = "Safe pockets are just outside active chemistry, using the edge of danger rather than true safety.";
+                    safePocketPattern = "Reorientation pockets are just outside active chemistry, using the edge of danger rather than true safety.";
                     routeAnchorPattern = "Route memory comes from bowl chains, vent arcs, and bright chemistry contrast.";
                     rareObjectivePattern = "Rare value sits in one or two hostile active pockets, not in the whole field.";
                     explorationLoop = "Cross empty ground, hit a hotspot hard, pull out, reset, then choose the next chemical pocket.";
@@ -2758,7 +2758,7 @@ namespace Hecton8.EditorTools
                     profileLabel = "Metallic Hadal Spatial Pattern";
                     resourcePocketPattern = "Everyday value sits thinly between hard metallic structures, making exact pathing matter.";
                     nodeClusterPattern = "Heavy node clusters appear where plates break and shard fields intersect.";
-                    safePocketPattern = "Safe pockets are formed by slab shadows and pressure breaks, not comfort terrain.";
+                    safePocketPattern = "Reorientation pockets are formed by slab shadows and pressure breaks, not comfort terrain.";
                     routeAnchorPattern = "Routes are remembered by very hard silhouettes: shard ridge, plate seam, crushed terrace.";
                     rareObjectivePattern = "Rare objective sits behind one precise, expensive deep branch.";
                     explorationLoop = "Long controlled approach, exact extraction stop, brief shelter, then a very deliberate retreat.";
@@ -2771,7 +2771,7 @@ namespace Hecton8.EditorTools
                     profileLabel = "Rift Spine Spatial Pattern";
                     resourcePocketPattern = "Small reward pockets ride the fracture edges and tempt players off the safest line.";
                     nodeClusterPattern = "Clusters sit at gate-like breaks, fracture mouths, and offset slab intersections.";
-                    safePocketPattern = "Safe pockets are side cuts and bends off the main fracture, never broad open rooms.";
+                    safePocketPattern = "Reorientation pockets are side cuts and bends off the main fracture, never broad open rooms.";
                     routeAnchorPattern = "The route is a sequence of fracture mouths. Each one is both a landmark and a decision.";
                     rareObjectivePattern = "The rare target is one fracture deeper than feels comfortable, but clearly foreshadowed.";
                     explorationLoop = "Take one gate, secure one bend, choose whether to spend pressure for the next mouth.";
@@ -2785,7 +2785,7 @@ namespace Hecton8.EditorTools
                     profileLabel = "Rift Void Spatial Pattern";
                     resourcePocketPattern = "Routine resource pockets almost disappear; trivial value should not distract from the place itself.";
                     nodeClusterPattern = "Meaningful nodes are rare and support one high-commitment objective, not farming.";
-                    safePocketPattern = "Safe pockets are conceptual and temporary, usually just enough structure to regain control.";
+                    safePocketPattern = "Reorientation pockets are conceptual and temporary, usually just enough structure to regain control.";
                     routeAnchorPattern = "The biome is defined by one or two overwhelming anchors, not by dense path signage.";
                     rareObjectivePattern = "One singular late-game objective should dominate memory of the entire zone.";
                     explorationLoop = "Orient on the void anchor, survive the approach, complete the objective, and get out clean.";
@@ -2937,14 +2937,14 @@ namespace Hecton8.EditorTools
             { 2, new BiomeSeed("Mesa Plateaus", -200f, 0f, "Flat-topped dry platforms dotted with giant blue holes full of stagnant nutrient-rich water.", false, "resources.landmarks.far", "starter_surface") },
             { 3, new BiomeSeed("The Granite Spine", -200f, 0f, "A continuous obsidian-smooth vertical wall marking the end of the sea.", false, "progression.skyline.far", "starter_surface") },
             { 4, new BiomeSeed("The Silt Tongue", -200f, 0f, "Undulating white sand dunes rippling under long surface swells.", false, "resources.clutter.mid", "starter_surface") },
-            { 5, new BiomeSeed("Sea-Stack Forest", 0f, 300f, "A forest of isolated circular stone pillars over coral dust and shell fields.", false, "resources.landmarks.far", "starter_surface") },
+            { 5, new BiomeSeed("Sea-Stack Forest", 0f, 300f, "A forest of isolated circular stone pillars over carbonate dust and shell fields.", false, "resources.landmarks.far", "starter_surface") },
             { 6, new BiomeSeed("White Alabaster Pools", 0f, 300f, "Terraced basins like frozen waterfalls, filled with milky mineral pools.", false, "resources.pickups.near", "starter_surface") },
             { 7, new BiomeSeed("The Tectonic Chute", 0f, 300f, "A narrow straight canyon cut into granite, funneling the first cold currents.", false, "navigation.route.mid", "starter_surface") },
             { 8, new BiomeSeed("Sand-Fan Deltas", 0f, 300f, "Fractal tidal sediment patterns that change after every storm.", false, "resources.clutter.mid", "starter_surface") },
             { 9, new BiomeSeed("Basalt Steps", 300f, 600f, "Gargantuan hexagonal pillars with deep biolum cracks.", false, "progression.route.mid", "starter_surface") },
             { 10, new BiomeSeed("Meander-Basins", 300f, 600f, "Serpentine channels full of ash drifts and the skeletons of surface life.", false, "resources.clutter.mid", "starter_surface") },
             { 11, new BiomeSeed("Sharp Finned Ridges", 300f, 600f, "Parallel tectonic slabs like the spine of a colossal beast.", false, "progression.skyline.far", "starter_surface") },
-            { 12, new BiomeSeed("Coral-Porous Walls", 300f, 600f, "Ancient fossilized reef walls honeycombed with holes and micro-caverns.", false, "resources.pickups.near", "starter_surface") },
+            { 12, new BiomeSeed("Carbonate-Porous Walls", 300f, 600f, "Ancient fossilized carbonate walls honeycombed with holes and micro-caverns.", false, "resources.pickups.near", "starter_surface") },
             { 13, new BiomeSeed("Silt Dunes", 600f, 1000f, "High-altitude heavy-grey dunes with razor crests.", false, "resources.clutter.mid", "starter_surface") },
             { 14, new BiomeSeed("Pothole Fields", 600f, 1000f, "A meteor-like field of circular seabed depressions.", false, "resources.pickups.near", "starter_surface") },
             { 15, new BiomeSeed("The Slab Wall", 600f, 1000f, "Tilted granite megablocks leaning into sunless overhangs.", false, "progression.skyline.far", "starter_surface") },
@@ -2957,7 +2957,7 @@ namespace Hecton8.EditorTools
             { 22, new BiomeSeed("Bubble Mound Fields", 1500f, 2000f, "Bulbous smooth hills like giant bubbles frozen in time.", false, "resources.clutter.mid", "slope_descent") },
             { 23, new BiomeSeed("The Shattered Cliff-Base", 1500f, 2000f, "A debris valley of square megablocks fallen from above.", false, "construction.frames.mid", "slope_descent") },
             { 24, new BiomeSeed("The Silt Cascades", 1500f, 2000f, "Frozen rivers of sediment flowing down into darkness.", false, "navigation.route.mid", "slope_descent") },
-            { 25, new BiomeSeed("Fracture Slabs", 2000f, 2500f, "Offset tectonic plates creating a jagged neon skyline.", false, "combat.silhouette.far", "slope_descent") },
+            { 25, new BiomeSeed("Fracture Slabs", 2000f, 2500f, "Offset tectonic plates creating a jagged oxidized skyline.", false, "combat.silhouette.far", "slope_descent") },
             { 26, new BiomeSeed("The Eye of the Abyss", 2000f, 2500f, "A perfectly circular 1km depression anchoring the south.", false, "progression.route.landmark", "slope_descent") },
             { 27, new BiomeSeed("The Wall-Fissures", 2000f, 2500f, "Narrow vertical cracks emitting faint thermal light.", false, "hazard.probe", "slope_descent") },
             { 28, new BiomeSeed("Meandering Silt-Rivers", 2000f, 2500f, "Liquid-like sediment channels wandering through the plains.", false, "navigation.route.mid", "slope_descent") },
@@ -2966,7 +2966,7 @@ namespace Hecton8.EditorTools
             { 31, new BiomeSeed("Spine-Teeth", 2500f, 3000f, "Predatory ridge-fins like giant teeth in the dark.", false, "progression.skyline.far", "slope_descent") },
             { 32, new BiomeSeed("Dune-Drains", 2500f, 3000f, "Funnel sinkholes centered in every silt wave.", false, "hazard.probe", "slope_descent") },
             { 33, new BiomeSeed("Silt Catacombs", 3000f, 3500f, "Roofless tunnels left by extinct mega-worms.", false, "progression.route.mid", "slope_descent") },
-            { 34, new BiomeSeed("Fossil Gallows", 3000f, 3500f, "Calcified branching bone-coral structures.", false, "resources.landmarks.far", "slope_descent") },
+            { 34, new BiomeSeed("Fossil Gallows", 3000f, 3500f, "Calcified branching bone-carbonate structures.", false, "resources.landmarks.far", "slope_descent") },
             { 35, new BiomeSeed("The Granite Maw", 3000f, 3500f, "Gaping canyons like a mouth opening in the dark.", false, "progression.route.landmark", "slope_descent") },
             { 36, new BiomeSeed("The Flat Margin", 3000f, 3500f, "An endless plain of grey monotonous silt.", false, "combat.silhouette.far", "slope_descent") },
             { 37, new BiomeSeed("Methane Mounds", 3500f, 4025f, "Spongy cones venting constant methane bubbles.", false, "hazard.probe", "abyss_entry") },

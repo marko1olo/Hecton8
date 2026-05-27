@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Showcase And Festival Submission Playbook
 
 Status: pre submission operating plan / not ready to submit
-Owner lane: SHINOBU_81 / press and showcase ops
+Owner lane: Marketing / press and showcase ops
 Public stance: single player first
 Runtime impact: none
 

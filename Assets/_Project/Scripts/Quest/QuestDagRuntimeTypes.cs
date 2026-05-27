@@ -315,7 +315,7 @@ namespace Hecton8.Quest
     /// <summary>
     /// Resolved NativeArray views. The struct is frame-local; persistent storage remains in GlobalDataVault.
     /// </summary>
-    public struct QuestDagBuffers
+    public ref struct QuestDagBuffers
     {
         public NativeArray<ulong> GlobalStateMasks;
         public NativeArray<ulong> OldStateMasks;

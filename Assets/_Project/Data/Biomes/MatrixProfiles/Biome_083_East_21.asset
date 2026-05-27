@@ -27,7 +27,7 @@ MonoBehaviour:
   rareRewardHook: 'The reason to risk the trip is: Lithium Crystal and Power Coupler.'
   landmarkIdentity: The Shattered Spine reads through walls, fins, fissures, and
     giant vertical breaks. Landmarks should feel singular and intimidating.
-  safePocketIdentity: Safe pockets are rare and temporary. Retreat routes matter
+  safePocketIdentity: Reorientation pockets are rare and temporary. Retreat routes matter
     more than comfort.
   riskSummary: 'Main failure mode: vertical trap geometry and hard commitment, depth
     stress, and expensive hesitation. Creature pressure stays high.'

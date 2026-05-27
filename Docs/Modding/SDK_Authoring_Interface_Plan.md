@@ -2,7 +2,7 @@
 
 Date: 2026-05-19
 Status: SDK ARCHITECTURE PLAN / ENVELOPE-ONLY RUNTIME / PENDING RUNTIME VERIFICATION
-Owner prompt: SHINOBU_66
+Owner domain: Modding SDK product contract
 Runtime authority: `Docs/Modding/Mod_API_Sandbox_Quarantine.md`
 Product blueprint: `Docs/Modding/SDK_Product_Blueprint.md`
 
@@ -453,6 +453,9 @@ Examples:
 | `ThermalBudgetExceeded` | This mod emits too many commands for low-end hardware. | Simulated quality 0.1 drops backlog. |
 | `RollbackUnsafe` | This mod depends on time or non-deterministic state. | Graph uses forbidden nondeterministic source. |
 | `ManagedEntryDisabled` | Runtime C# mods are not supported in envelope-only mode. | Manifest declares DLL entry. |
+| `ReservedAssemblyIdentity` | This DLL uses an engine-owned assembly name. Rename and rebuild it outside the `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, and `netstandard` namespaces. | File name or assembly metadata identity is reserved in any top-level package DLL. |
+| `InvalidPackageIdentity` | This package id is not a stable mod id. Use lowercase letters/digits separated by single `.`, `_`, or `-`. | Mod id or dependency id is non-canonical, path-like, whitespace-padded, separator-only, or uses a reserved filesystem device segment. |
+| `InvalidEntryAssemblyPath` | Managed entry assembly must be a package-local `.dll` file name. | `EntryAssembly` is absolute, relative/path-like, whitespace-padded, or not a DLL file name. |
 
 The Workbench should treat these as build errors, not warnings, when the issue would cause runtime quarantine.
 

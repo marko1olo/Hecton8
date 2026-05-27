@@ -44,7 +44,7 @@ namespace Hecton8.Modding
         /// <summary>
         /// Binds the view to a mod setting snapshot.
         /// </summary>
-        public void Bind(ModSettingView view)
+        internal void Bind(ModSettingView view)
         {
             _modId = view.ModId;
             _settingName = view.SettingName;

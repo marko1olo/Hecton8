@@ -122,6 +122,9 @@ namespace Hecton8.Atmosphere
         private void OnEnable()
         {
             _disposed = false;
+            if (!Application.isPlaying)
+                return;
+
             if (!TryClaimRuntime())
             {
                 enabled = false;

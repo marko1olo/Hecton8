@@ -225,7 +225,7 @@ namespace Hecton8.UI
     /// Blittable base integrity event payload flushed during dispatcher LateUpdate.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 8)]
-    public struct BaseIntegrityEventPayload
+    public struct UiBaseIntegrityEventPayload
     {
         /// <summary>Integrity or air-quality value in normalized [0..1] range.</summary>
         [FieldOffset(0)]
@@ -250,7 +250,7 @@ namespace Hecton8.UI
         /// Receives one base integrity event from the LateUpdate queue drain.
         /// </summary>
         /// <param name="payload">Blittable base integrity event payload.</param>
-        void OnBaseIntegrityEvent(in BaseIntegrityEventPayload payload);
+        void OnBaseIntegrityEvent(in UiBaseIntegrityEventPayload payload);
     }
 
     /// <summary>
@@ -379,10 +379,10 @@ namespace Hecton8.UI
         private static BaseIntegrityListenerRegistry _listeners;
         private static BaseIntegrityListenerRegistry _deferredRegisterListeners;
         private static BaseIntegrityListenerRegistry _deferredUnregisterListeners;
-        // Fixed inline slots: BaseIntegrityEventPayload[8] - deferred lane flushed by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
-        private static FixedUiEventQueue<BaseIntegrityEventPayload> _pendingEvents;
-        // Fixed inline slots: BaseIntegrityEventPayload[8] - next-frame lane prevents same-frame reentrant dispatch - owner: BaseIntegrityEvents
-        private static FixedUiEventQueue<BaseIntegrityEventPayload> _nextFrameEvents;
+        // Fixed inline slots: UiBaseIntegrityEventPayload[8] - deferred lane flushed by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
+        private static FixedUiEventQueue<UiBaseIntegrityEventPayload> _pendingEvents;
+        // Fixed inline slots: UiBaseIntegrityEventPayload[8] - next-frame lane prevents same-frame reentrant dispatch - owner: BaseIntegrityEvents
+        private static FixedUiEventQueue<UiBaseIntegrityEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _droppedListenerRegistrationCount;
@@ -536,7 +536,7 @@ namespace Hecton8.UI
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
-                if (!_pendingEvents.TryDequeue(out BaseIntegrityEventPayload payload))
+                if (!_pendingEvents.TryDequeue(out UiBaseIntegrityEventPayload payload))
                 {
                     _pendingEventCount = 0;
                     break;
@@ -578,7 +578,7 @@ namespace Hecton8.UI
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return false;
 
-            BaseIntegrityEventPayload payload = default;
+            UiBaseIntegrityEventPayload payload = default;
             payload.Value = value;
             payload.FailureMode = (byte)failureMode;
             payload.EventType = (byte)eventType;
@@ -625,7 +625,7 @@ namespace Hecton8.UI
         }
 
         private static bool DrainQueueWithoutDispatch(
-            ref FixedUiEventQueue<BaseIntegrityEventPayload> queue,
+            ref FixedUiEventQueue<UiBaseIntegrityEventPayload> queue,
             ref int pendingCount)
         {
             int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
@@ -658,14 +658,14 @@ namespace Hecton8.UI
                 return;
             }
 
-            FixedUiEventQueue<BaseIntegrityEventPayload> swap = _pendingEvents;
+            FixedUiEventQueue<UiBaseIntegrityEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
 
-        private static void DispatchToListener(IBaseIntegrityEventListener listener, in BaseIntegrityEventPayload payload)
+        private static void DispatchToListener(IBaseIntegrityEventListener listener, in UiBaseIntegrityEventPayload payload)
         {
             try
             {

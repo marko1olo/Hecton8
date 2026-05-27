@@ -20,6 +20,7 @@ namespace Hecton8.Visor
     public sealed class VolumetricLightFeature : ScriptableRendererFeature
     {
         private const string ComputeShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VolumetricLight.compute";
+        private const string ProxyShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VolumetricLightProxy.shader";
         private const float FlashlightVolumetricFullDistanceMeters = 20f;
         private const float FlashlightVolumetricCullDistanceMeters = 30f;
         private const float FlashlightVolumetricFullDistanceMetersSq = FlashlightVolumetricFullDistanceMeters * FlashlightVolumetricFullDistanceMeters;
@@ -37,6 +38,9 @@ namespace Hecton8.Visor
 
             [Tooltip("Compute shader that owns both the half-res raymarch and full-res bilateral composite.")]
             public ComputeShader computeShader = null;
+
+            [Tooltip("Fullscreen Dear Lie fallback used when compute volumetrics are not allowed on this device.")]
+            public Shader proxyShader = null;
 
             [Tooltip("Optional shared VFX profile that defines god ray step budgets by continuous quality weight.")]
             public VFXEmissionProfile emissionProfile = null;
@@ -108,6 +112,20 @@ namespace Hecton8.Visor
                 return Mathf.Clamp(volumetricShadowSteps, 1, ResolveContinuousStepLimit(ResolveEffectiveQualityWeight01()));
             }
 
+            internal float ResolveRenderScale()
+            {
+                float authoredScale = Mathf.Clamp(renderScale, 0.25f, 1f);
+                float qualityWeight = ResolveEffectiveQualityWeight01();
+                float qualityCurve = SmoothStep01(qualityWeight);
+                float lowScale = Mathf.Min(authoredScale, 0.35f);
+                return Mathf.Clamp(Mathf.Lerp(lowScale, authoredScale, qualityCurve), 0.25f, 1f);
+            }
+
+            internal float ResolveQualityWeight01()
+            {
+                return ResolveEffectiveQualityWeight01();
+            }
+
             private int ResolveContinuousStepLimit(float qualityWeight)
             {
                 float t = SmoothStep01(Mathf.Clamp01(qualityWeight));
@@ -137,8 +155,8 @@ namespace Hecton8.Visor
             {
                 internal ComputeShader computeShader;
                 internal int kernelIndex;
-                internal uint threadGroupSizeX;
-                internal uint threadGroupSizeY;
+                internal int dispatchX;
+                internal int dispatchY;
                 internal TextureHandle depth;
                 internal TextureHandle result;
                 internal Vector4 fullSize;
@@ -164,8 +182,8 @@ namespace Hecton8.Visor
             {
                 internal ComputeShader computeShader;
                 internal int kernelIndex;
-                internal uint threadGroupSizeX;
-                internal uint threadGroupSizeY;
+                internal int dispatchX;
+                internal int dispatchY;
                 internal TextureHandle source;
                 internal TextureHandle depth;
                 internal TextureHandle halfInput;
@@ -181,17 +199,39 @@ namespace Hecton8.Visor
                 internal Vector4 compositeParams;
             }
 
+            private sealed class ProxyPassData
+            {
+                internal TextureHandle source;
+                internal TextureHandle depth;
+                internal TextureHandle destination;
+                internal Material material;
+                internal Vector4 fullSize;
+                internal Vector4 mainLightDirection;
+                internal Vector4 mainLightColor;
+                internal Vector4 flashlightPosition;
+                internal Vector4 flashlightDirection;
+                internal Vector4 flashlightColor;
+                internal Vector4 flashlightConeData;
+                internal Vector4 scatteringParams;
+                internal Vector4 marchParams;
+                internal Vector4 shadowParams;
+                internal Vector4 proxyParams;
+                internal float flashlightActive;
+                internal float flashlightVolumetricOpacity;
+                internal float freezeFrameDither;
+            }
+
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Volumetric Light");
             private FeatureSettings _settings;
             private ComputeShader _computeShader;
-            private RTHandle _halfTexture;
-            private RTHandle _compositeTexture;
+            private Material _proxyMaterial;
+            private bool _forceProxyOnly;
             private int _raymarchKernel = -1;
             private int _compositeKernel = -1;
-            private uint _raymarchThreadGroupSizeX = 8;
-            private uint _raymarchThreadGroupSizeY = 8;
-            private uint _compositeThreadGroupSizeX = 8;
-            private uint _compositeThreadGroupSizeY = 8;
+            private uint _raymarchThreadGroupSizeX;
+            private uint _raymarchThreadGroupSizeY;
+            private uint _compositeThreadGroupSizeX;
+            private uint _compositeThreadGroupSizeY;
             private Vector4 _mainLightDirection;
             private Vector4 _mainLightColor;
             private Vector4 _flashlightPosition;
@@ -200,6 +240,8 @@ namespace Hecton8.Visor
             private Vector4 _flashlightConeData;
             private float _flashlightActive;
             private float _flashlightVolumetricOpacity;
+            private const uint MaxKernelThreadProduct = 256u;
+            private const int MaxDispatchGroupsPerDimension = 65535;
 
             public VolumetricLightPass()
             {
@@ -217,10 +259,19 @@ namespace Hecton8.Visor
                 in Vector4 flashlightColor,
                 in Vector4 flashlightConeData,
                 float flashlightActive,
-                float flashlightVolumetricOpacity)
+                float flashlightVolumetricOpacity,
+                Material proxyMaterial,
+                bool forceProxyOnly)
             {
                 _settings = settings;
-                _computeShader = computeShader;
+                _proxyMaterial = proxyMaterial;
+                _forceProxyOnly = forceProxyOnly;
+                if (!ReferenceEquals(_computeShader, computeShader))
+                {
+                    _computeShader = computeShader;
+                    ResetComputeKernelState();
+                }
+
                 _mainLightDirection = mainLightDirection;
                 _mainLightColor = mainLightColor;
                 _flashlightPosition = flashlightPosition;
@@ -233,31 +284,39 @@ namespace Hecton8.Visor
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
 
-                if (_computeShader != null && (_raymarchKernel < 0 || _compositeKernel < 0))
+                if (!_forceProxyOnly && _computeShader != null && (_raymarchKernel < 0 || _compositeKernel < 0))
                 {
-                    _raymarchKernel = _computeShader.FindKernel("RaymarchVolumetricLight");
-                    _compositeKernel = _computeShader.FindKernel("CompositeVolumetricLight");
-                    _computeShader.GetKernelThreadGroupSizes(_raymarchKernel, out _raymarchThreadGroupSizeX, out _raymarchThreadGroupSizeY, out _);
-                    _computeShader.GetKernelThreadGroupSizes(_compositeKernel, out _compositeThreadGroupSizeX, out _compositeThreadGroupSizeY, out _);
+                    if (!TryResolveKernel(_computeShader, "RaymarchVolumetricLight", out _raymarchKernel, out _raymarchThreadGroupSizeX, out _raymarchThreadGroupSizeY) ||
+                        !TryResolveKernel(_computeShader, "CompositeVolumetricLight", out _compositeKernel, out _compositeThreadGroupSizeX, out _compositeThreadGroupSizeY))
+                    {
+                        _raymarchKernel = -1;
+                        _compositeKernel = -1;
+                        _raymarchThreadGroupSizeX = 0u;
+                        _raymarchThreadGroupSizeY = 0u;
+                        _compositeThreadGroupSizeX = 0u;
+                        _compositeThreadGroupSizeY = 0u;
+                    }
                 }
             }
 
             public void Dispose()
             {
-                _halfTexture?.Release();
-                _compositeTexture?.Release();
-                _halfTexture = null;
-                _compositeTexture = null;
+                ResetComputeKernelState();
+            }
+
+            private void ResetComputeKernelState()
+            {
                 _raymarchKernel = -1;
                 _compositeKernel = -1;
+                _raymarchThreadGroupSizeX = 0u;
+                _raymarchThreadGroupSizeY = 0u;
+                _compositeThreadGroupSizeX = 0u;
+                _compositeThreadGroupSizeY = 0u;
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
                 if (_settings == null ||
-                    _computeShader == null ||
-                    _raymarchKernel < 0 ||
-                    _compositeKernel < 0 ||
                     (_mainLightDirection.w <= 0.5f && _flashlightActive <= 0.5f))
                 {
                     return;
@@ -277,14 +336,49 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                int fullWidth = QuantizeDimension(Mathf.Max(1, sourceDesc.width));
-                int fullHeight = QuantizeDimension(Mathf.Max(1, sourceDesc.height));
-                int halfWidth = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.width * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
-                int halfHeight = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.height * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
-                EnsureRenderTargets(halfWidth, halfHeight, fullWidth, fullHeight);
+                bool hasComputeKernels = !_forceProxyOnly &&
+                                         _computeShader != null &&
+                                         _raymarchKernel >= 0 &&
+                                         _compositeKernel >= 0;
+                if (!hasComputeKernels)
+                {
+                    if (_proxyMaterial == null)
+                        return;
 
-                TextureHandle halfTexture = renderGraph.ImportTexture(_halfTexture);
-                TextureHandle compositeTexture = renderGraph.ImportTexture(_compositeTexture);
+                    RecordProxyComposite(renderGraph, resourceData, sourceTexture, depthTexture, sourceDesc);
+                    return;
+                }
+
+                int fullWidth = Mathf.Max(1, sourceDesc.width);
+                int fullHeight = Mathf.Max(1, sourceDesc.height);
+                float renderScale = _settings.ResolveRenderScale();
+                int halfWidth = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.width * renderScale)));
+                int halfHeight = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.height * renderScale)));
+                int raymarchDispatchX = ResolveDispatchGroups(halfWidth, _raymarchThreadGroupSizeX);
+                int raymarchDispatchY = ResolveDispatchGroups(halfHeight, _raymarchThreadGroupSizeY);
+                int compositeDispatchX = ResolveDispatchGroups(fullWidth, _compositeThreadGroupSizeX);
+                int compositeDispatchY = ResolveDispatchGroups(fullHeight, _compositeThreadGroupSizeY);
+                if (raymarchDispatchX <= 0 || raymarchDispatchY <= 0 || compositeDispatchX <= 0 || compositeDispatchY <= 0)
+                    return;
+
+                TextureDesc halfDesc = CreateGraphTextureDesc(
+                    sourceDesc,
+                    halfWidth,
+                    halfHeight,
+                    "_HectonVolumetricLightHalf",
+                    GraphicsFormat.R16G16B16A16_SFloat,
+                    true,
+                    FilterMode.Bilinear);
+                TextureDesc compositeDesc = CreateGraphTextureDesc(
+                    sourceDesc,
+                    fullWidth,
+                    fullHeight,
+                    "_HectonVolumetricLightComposite",
+                    GraphicsFormat.R16G16B16A16_SFloat,
+                    true,
+                    FilterMode.Bilinear);
+                TextureHandle halfTexture = renderGraph.CreateTexture(halfDesc);
+                TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
                 Camera camera = cameraData.camera;
                 Matrix4x4 projectionMatrix = GL.GetGPUProjectionMatrix(camera.projectionMatrix, false);
                 Matrix4x4 viewProjection = projectionMatrix * camera.worldToCameraMatrix;
@@ -314,8 +408,8 @@ namespace Hecton8.Visor
                 {
                     passData.computeShader = _computeShader;
                     passData.kernelIndex = _raymarchKernel;
-                    passData.threadGroupSizeX = _raymarchThreadGroupSizeX;
-                    passData.threadGroupSizeY = _raymarchThreadGroupSizeY;
+                    passData.dispatchX = raymarchDispatchX;
+                    passData.dispatchY = raymarchDispatchY;
                     passData.depth = depthTexture;
                     passData.result = halfTexture;
                     passData.fullSize = fullSize;
@@ -341,8 +435,6 @@ namespace Hecton8.Visor
 
                     builder.SetRenderFunc((RaymarchPassData data, ComputeGraphContext context) =>
                     {
-                        int dispatchX = Mathf.CeilToInt(data.halfSize.x / Mathf.Max(1u, data.threadGroupSizeX));
-                        int dispatchY = Mathf.CeilToInt(data.halfSize.y / Mathf.Max(1u, data.threadGroupSizeY));
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.HalfResultId, data.result);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.FullSizeId, data.fullSize);
@@ -362,7 +454,7 @@ namespace Hecton8.Visor
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.ShadowParamsId, data.shadowParams);
                         context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.FogScatteringCoeffId, data.fogScatteringCoeff);
                         context.cmd.SetComputeMatrixParam(data.computeShader, ShaderConstants.ViewProjectionId, data.viewProjection);
-                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
+                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, data.dispatchX, data.dispatchY, 1);
                     });
                 }
 
@@ -370,8 +462,8 @@ namespace Hecton8.Visor
                 {
                     passData.computeShader = _computeShader;
                     passData.kernelIndex = _compositeKernel;
-                    passData.threadGroupSizeX = _compositeThreadGroupSizeX;
-                    passData.threadGroupSizeY = _compositeThreadGroupSizeY;
+                    passData.dispatchX = compositeDispatchX;
+                    passData.dispatchY = compositeDispatchY;
                     passData.source = sourceTexture;
                     passData.depth = depthTexture;
                     passData.halfInput = halfTexture;
@@ -393,8 +485,6 @@ namespace Hecton8.Visor
 
                     builder.SetRenderFunc((CompositePassData data, ComputeGraphContext context) =>
                     {
-                        int dispatchX = Mathf.CeilToInt(data.fullSize.x / Mathf.Max(1u, data.threadGroupSizeX));
-                        int dispatchY = Mathf.CeilToInt(data.fullSize.y / Mathf.Max(1u, data.threadGroupSizeY));
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceColorId, data.source);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.HalfInputId, data.halfInput);
@@ -408,53 +498,175 @@ namespace Hecton8.Visor
                         context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.FlashlightVolumetricOpacityId, data.flashlightVolumetricOpacity);
                         context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.FreezeFrameDitherId, data.freezeFrameDither);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.CompositeParamsId, data.compositeParams);
-                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
+                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, data.dispatchX, data.dispatchY, 1);
                     });
                 }
 
                 resourceData.cameraColor = compositeTexture;
             }
 
-            private void EnsureRenderTargets(int halfWidth, int halfHeight, int fullWidth, int fullHeight)
+            private void RecordProxyComposite(
+                RenderGraph renderGraph,
+                UniversalResourceData resourceData,
+                TextureHandle sourceTexture,
+                TextureHandle depthTexture,
+                in TextureDesc sourceDesc)
             {
-                if ((_halfTexture == null || _halfTexture.rt == null || _halfTexture.rt.width != halfWidth || _halfTexture.rt.height != halfHeight) ||
-                    (_compositeTexture == null || _compositeTexture.rt == null || _compositeTexture.rt.width != fullWidth || _compositeTexture.rt.height != fullHeight))
+                int fullWidth = Mathf.Max(1, sourceDesc.width);
+                int fullHeight = Mathf.Max(1, sourceDesc.height);
+                TextureDesc proxyDesc = CreateGraphTextureDesc(
+                    sourceDesc,
+                    fullWidth,
+                    fullHeight,
+                    "_HectonVolumetricLightProxyComposite",
+                    sourceDesc.colorFormat,
+                    false,
+                    FilterMode.Bilinear);
+                TextureHandle proxyTexture = renderGraph.CreateTexture(proxyDesc);
+                Vector4 fullSize = new Vector4(fullWidth, fullHeight, 1f / fullWidth, 1f / fullHeight);
+                Vector4 scatteringParams = new Vector4(
+                    Mathf.Max(0f, _settings.density),
+                    Mathf.Max(0f, _settings.scatterCoefficient),
+                    Mathf.Clamp(_settings.anisotropy, -0.95f, 0.95f),
+                    Mathf.Max(0f, _settings.intensity));
+                Vector4 marchParams = new Vector4(
+                    Mathf.Max(0.1f, _settings.maxRayDistance),
+                    _settings.ResolveRaymarchSteps(),
+                    Mathf.Clamp01(_settings.jitterStrength),
+                    Mathf.Clamp01(_settings.minimumTransmittance));
+                Vector4 shadowParams = new Vector4(
+                    _settings.ResolveVolumetricShadowSteps(),
+                    Mathf.Max(0.1f, _settings.volumetricShadowDistance),
+                    Mathf.Max(0.001f, _settings.volumetricShadowBias),
+                    Mathf.Max(0f, _settings.volumetricShadowStrength));
+                Vector4 proxyParams = new Vector4(
+                    _settings.ResolveQualityWeight01(),
+                    _settings.ResolveRenderScale(),
+                    Mathf.Max(0.01f, _settings.bilateralDepthScale),
+                    Mathf.Max(0f, Shader.GetGlobalFloat(ShaderConstants.FogScatteringCoeffId)));
+
+                using (var builder = renderGraph.AddRasterRenderPass<ProxyPassData>(
+                           "Hecton Volumetric Light Proxy Composite",
+                           out ProxyPassData passData,
+                           _profilingSampler))
                 {
-                    _halfTexture?.Release();
-                    _compositeTexture?.Release();
+                    passData.source = sourceTexture;
+                    passData.depth = depthTexture;
+                    passData.destination = proxyTexture;
+                    passData.material = _proxyMaterial;
+                    passData.fullSize = fullSize;
+                    passData.mainLightDirection = _mainLightDirection;
+                    passData.mainLightColor = _mainLightColor;
+                    passData.flashlightPosition = _flashlightPosition;
+                    passData.flashlightDirection = _flashlightDirection;
+                    passData.flashlightColor = _flashlightColor;
+                    passData.flashlightConeData = _flashlightConeData;
+                    passData.scatteringParams = scatteringParams;
+                    passData.marchParams = marchParams;
+                    passData.shadowParams = shadowParams;
+                    passData.proxyParams = proxyParams;
+                    passData.flashlightActive = _flashlightActive;
+                    passData.flashlightVolumetricOpacity = _flashlightVolumetricOpacity;
+                    passData.freezeFrameDither = Shader.GetGlobalFloat(ShaderConstants.FreezeFrameDitherId);
 
-                    // COLD ALLOC: RTHandle[1] — persistent half-resolution volumetric lighting buffer — owner: VolumetricLightFeature
-                    _halfTexture = RTHandles.Alloc(
-                        halfWidth,
-                        halfHeight,
-                        1,
-                        DepthBits.None,
-                        GraphicsFormat.R16G16B16A16_SFloat,
-                        FilterMode.Bilinear,
-                        TextureWrapMode.Clamp,
-                        TextureDimension.Tex2D,
-                        true,
-                        name: "_HectonVolumetricLightHalf");
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.SetRenderAttachment(proxyTexture, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
 
-                    // COLD ALLOC: RTHandle[1] — persistent full-resolution volumetric composite buffer — owner: VolumetricLightFeature
-                    _compositeTexture = RTHandles.Alloc(
-                        fullWidth,
-                        fullHeight,
-                        1,
-                        DepthBits.None,
-                        GraphicsFormat.R16G16B16A16_SFloat,
-                        FilterMode.Bilinear,
-                        TextureWrapMode.Clamp,
-                        TextureDimension.Tex2D,
-                        true,
-                        name: "_HectonVolumetricLightComposite");
+                    builder.SetRenderFunc(static (ProxyPassData data, RasterGraphContext context) =>
+                    {
+                        if (data.material == null)
+                            return;
+
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.source);
+                        context.cmd.SetGlobalTexture(ShaderConstants.SourceDepthId, data.depth);
+                        context.cmd.SetGlobalVector(ShaderConstants.FullSizeId, data.fullSize);
+                        context.cmd.SetGlobalVector(ShaderConstants.MainLightDirectionId, data.mainLightDirection);
+                        context.cmd.SetGlobalVector(ShaderConstants.MainLightColorId, data.mainLightColor);
+                        context.cmd.SetGlobalVector(ShaderConstants.FlashlightPositionId, data.flashlightPosition);
+                        context.cmd.SetGlobalVector(ShaderConstants.FlashlightDirectionId, data.flashlightDirection);
+                        context.cmd.SetGlobalVector(ShaderConstants.FlashlightColorId, data.flashlightColor);
+                        context.cmd.SetGlobalVector(ShaderConstants.FlashlightConeDataId, data.flashlightConeData);
+                        context.cmd.SetGlobalVector(ShaderConstants.ScatteringParamsId, data.scatteringParams);
+                        context.cmd.SetGlobalVector(ShaderConstants.MarchParamsId, data.marchParams);
+                        context.cmd.SetGlobalVector(ShaderConstants.ShadowParamsId, data.shadowParams);
+                        context.cmd.SetGlobalVector(ShaderConstants.ProxyParamsId, data.proxyParams);
+                        context.cmd.SetGlobalFloat(ShaderConstants.FlashlightActiveId, data.flashlightActive);
+                        context.cmd.SetGlobalFloat(ShaderConstants.FlashlightVolumetricOpacityId, data.flashlightVolumetricOpacity);
+                        context.cmd.SetGlobalFloat(ShaderConstants.FreezeFrameDitherId, data.freezeFrameDither);
+                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, 0);
+                    });
                 }
+
+                resourceData.cameraColor = proxyTexture;
+            }
+
+            private static bool TryResolveKernel(ComputeShader computeShader, string kernelName, out int kernelIndex, out uint groupSizeX, out uint groupSizeY)
+            {
+                kernelIndex = -1;
+                groupSizeX = 0u;
+                groupSizeY = 0u;
+                if (computeShader == null || !computeShader.HasKernel(kernelName))
+                    return false;
+
+                int resolvedKernel = computeShader.FindKernel(kernelName);
+                if (resolvedKernel < 0 || !computeShader.IsSupported(resolvedKernel))
+                    return false;
+
+                computeShader.GetKernelThreadGroupSizes(resolvedKernel, out uint x, out uint y, out uint z);
+                ulong threadProduct = (ulong)x * y * z;
+                if (x == 0u || y == 0u || z != 1u || threadProduct == 0UL || threadProduct > MaxKernelThreadProduct)
+                    return false;
+
+                kernelIndex = resolvedKernel;
+                groupSizeX = x;
+                groupSizeY = y;
+                return true;
+            }
+
+            private static int ResolveDispatchGroups(int value, uint groupSize)
+            {
+                if (value <= 0 || groupSize == 0u)
+                    return 0;
+
+                long groups = ((long)value + groupSize - 1L) / groupSize;
+                return groups > 0L && groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
             }
 
             private static int QuantizeDimension(int dimension)
             {
                 int safeDimension = Mathf.Max(1, dimension);
                 return ((safeDimension + RenderTextureBucketSize - 1) / RenderTextureBucketSize) * RenderTextureBucketSize;
+            }
+
+            private static TextureDesc CreateGraphTextureDesc(
+                in TextureDesc sourceDesc,
+                int width,
+                int height,
+                string name,
+                GraphicsFormat colorFormat,
+                bool enableRandomWrite,
+                FilterMode filterMode)
+            {
+                TextureDesc desc = new TextureDesc(Mathf.Max(1, width), Mathf.Max(1, height), false, false);
+                desc.name = name;
+                desc.width = Mathf.Max(1, width);
+                desc.height = Mathf.Max(1, height);
+                desc.depthBufferBits = DepthBits.None;
+                desc.msaaSamples = MSAASamples.None;
+                desc.colorFormat = colorFormat != GraphicsFormat.None ? colorFormat : sourceDesc.colorFormat;
+                desc.clearBuffer = false;
+                desc.dimension = TextureDimension.Tex2D;
+                desc.slices = 1;
+                desc.useDynamicScale = false;
+                desc.useDynamicScaleExplicit = false;
+                desc.enableRandomWrite = enableRandomWrite;
+                desc.filterMode = filterMode;
+                desc.wrapMode = TextureWrapMode.Clamp;
+                desc.useMipMap = false;
+                desc.autoGenerateMips = false;
+                return desc;
             }
         }
 
@@ -476,7 +688,9 @@ namespace Hecton8.Visor
             internal static readonly int MarchParamsId = Shader.PropertyToID("_HectonVolumetricMarchParams");
             internal static readonly int ShadowParamsId = Shader.PropertyToID("_HectonVolumetricShadowParams");
             internal static readonly int CompositeParamsId = Shader.PropertyToID("_HectonVolumetricCompositeParams");
+            internal static readonly int ProxyParamsId = Shader.PropertyToID("_HectonVolumetricProxyParams");
             internal static readonly int ViewProjectionId = Shader.PropertyToID("_HectonVolumetricViewProjection");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
             internal static readonly int FlashlightActiveId = Shader.PropertyToID("_HectonFlashlightActive");
             internal static readonly int FlashlightPositionId = Shader.PropertyToID("_HectonFlashlightPositionWS");
             internal static readonly int FlashlightDirectionId = Shader.PropertyToID("_HectonFlashlightDirectionWS");
@@ -489,6 +703,7 @@ namespace Hecton8.Visor
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
 
         private VolumetricLightPass _pass;
+        private Material _proxyMaterial;
         private int _nextPerformanceWarningFrame;
 
         /// <inheritdoc />
@@ -497,15 +712,34 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR
             if (settings != null && settings.computeShader == null)
                 settings.computeShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(ComputeShaderAssetPath);
+            if (settings != null && settings.proxyShader == null)
+                settings.proxyShader = AssetDatabase.LoadAssetAtPath<Shader>(ProxyShaderAssetPath);
 #endif
 
             _pass ??= new VolumetricLightPass();
+            Shader proxyShader = settings != null ? settings.proxyShader : null;
+            if (proxyShader == null)
+                RuntimeShaderReferenceCatalog.TryGetVolumetricLightProxyShader(out proxyShader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (proxyShader == null)
+                proxyShader = Shader.Find("Hidden/Hecton8/VolumetricLightProxy");
+#endif
+            RecreateMaterial(ref _proxyMaterial, proxyShader);
         }
 
         /// <inheritdoc />
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (settings == null || settings.computeShader == null || _pass == null || !SystemInfo.supportsComputeShaders)
+            if (settings == null ||
+                _pass == null)
+            {
+                return;
+            }
+
+            bool allowComputeVolumetrics = settings.computeShader != null &&
+                                           HardwareTierDetector.AllowHighResourceComputeShaders;
+            bool forceProxyOnly = !allowComputeVolumetrics;
+            if (forceProxyOnly && _proxyMaterial == null)
                 return;
 
             long setupStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -554,7 +788,9 @@ namespace Hecton8.Visor
                 flashlightColor,
                 flashlightConeData,
                 flashlightHasCone,
-                flashlightVolumetricOpacity);
+                flashlightVolumetricOpacity,
+                _proxyMaterial,
+                forceProxyOnly);
             renderer.EnqueuePass(_pass);
             PublishVolumetricSetupWarningIfNeeded(setupStartTimestamp);
         }
@@ -603,6 +839,24 @@ namespace Hecton8.Visor
         protected override void Dispose(bool disposing)
         {
             _pass?.Dispose();
+            CoreUtils.Destroy(_proxyMaterial);
+            _proxyMaterial = null;
+        }
+
+        private static void RecreateMaterial(ref Material material, Shader shader)
+        {
+            if (shader == null)
+            {
+                CoreUtils.Destroy(material);
+                material = null;
+                return;
+            }
+
+            if (material != null && material.shader == shader)
+                return;
+
+            CoreUtils.Destroy(material);
+            material = CoreUtils.CreateEngineMaterial(shader);
         }
     }
 }

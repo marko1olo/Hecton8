@@ -56,10 +56,11 @@ void CSClearArgs(uint3 dispatchThreadId : SV_DispatchThreadID)
     _IndirectArgs.Store(16, 0u);
 }
 
-[numthreads(8, 8, 8)]
+[numthreads(4, 4, 4)]
 void CSRaymarch(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-    uint predatorSlot = dispatchThreadId.x + dispatchThreadId.y * 8u;
+    uint axis = (uint)max((int)_SonarDispatchParams.x, 1);
+    uint predatorSlot = dispatchThreadId.x + dispatchThreadId.y * axis;
     if (dispatchThreadId.z == 0u && predatorSlot < (uint)min((int)_SonarDispatchParams.z, 16))
     {
         float4 predatorAup = _PredatorAUPBuffer[predatorSlot];
@@ -72,7 +73,6 @@ void CSRaymarch(uint3 dispatchThreadId : SV_DispatchThreadID)
         }
     }
 
-    uint axis = (uint)max((int)_SonarDispatchParams.x, 1);
     if (dispatchThreadId.x >= axis || dispatchThreadId.y >= axis || dispatchThreadId.z >= axis)
         return;
 

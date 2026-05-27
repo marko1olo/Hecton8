@@ -22,6 +22,11 @@ float SafeNonNegative(float value)
     return isfinite(value) ? max(0.0, value) : 0.0;
 }
 
+float ResolveLinearRamp01(float edge0, float edge1, float value)
+{
+    return saturate((value - edge0) * rcp(max(0.0001, edge1 - edge0)));
+}
+
 float Hash21(float2 p)
 {
     p = frac(p * float2(123.34, 456.21));
@@ -90,20 +95,20 @@ void ResolveDiegeticVisorLensMask(uint3 dispatchThreadId : SV_DispatchThreadID)
     float dropletSeed = Hash21(floor(dropletGrid));
     float dropletLane = abs(frac(dropletGrid.x + dropletSeed * 0.31) - 0.5);
     float dropletTail = abs(frac(dropletGrid.y + dropletSeed) - 0.18);
-    float dropletMask = (1.0 - smoothstep(0.045, 0.19, dropletLane)) * (1.0 - smoothstep(0.04, 0.36, dropletTail));
+    float dropletMask = (1.0 - ResolveLinearRamp01(0.045, 0.19, dropletLane)) * (1.0 - ResolveLinearRamp01(0.04, 0.36, dropletTail));
     dropletMask *= step(0.52 - dropletScalar * 0.18 - surfaceWash * 0.22, dropletSeed) * dropletScalar * dynamicWeight;
     condensationMask = Safe01(max(condensationMask, dropletMask * (0.42 + condensationScalar * 0.36)));
 
     float crackNoise = ValueNoise(uv * float2(38.0, 22.0) + float2(crackScalar * 2.1 + pressure, anomaly * 1.7));
     float diagonal = abs(frac((uv.x + uv.y * 0.73) * (13.0 + crackScalar * 19.0)) - 0.5);
-    float crackRidge = 1.0 - smoothstep(0.018, 0.082, diagonal);
-    float crackMask = Safe01((smoothstep(0.76 - crackScalar * 0.28, 0.98, crackNoise) * 0.58 + crackRidge * 0.42) * crackScalar);
+    float crackRidge = 1.0 - ResolveLinearRamp01(0.018, 0.082, diagonal);
+    float crackMask = Safe01((ResolveLinearRamp01(0.76 - crackScalar * 0.28, 0.98, crackNoise) * 0.58 + crackRidge * 0.42) * crackScalar);
 
     float dirtDrive = max(dirtScalar, silt * (0.42 + dropletScalar * 0.58));
     float dirtGridScale = lerp(42.0, 120.0, overkill);
     float dirtSeed = Hash21(floor(uv * outputSize * lerp(0.055, 0.125, overkill)) + floor(time * 1.7));
     float scratchSeed = Hash21(floor(uv * dirtGridScale) + float2(17.0, 43.0));
-    float dirtMask = (smoothstep(0.74, 0.97, dirtSeed) * (0.38 + edge * 0.62) + smoothstep(0.83, 0.99, scratchSeed) * 0.36) * dirtDrive;
+    float dirtMask = (ResolveLinearRamp01(0.74, 0.97, dirtSeed) * (0.38 + edge * 0.62) + ResolveLinearRamp01(0.83, 0.99, scratchSeed) * 0.36) * dirtDrive;
 
     float glitchNoise = ValueNoise(uv * float2(91.0, 47.0) + time * (2.4 + anomaly * 5.0));
     float glitchMask = Safe01(saturate(glitchNoise - 0.68) * (anomaly + crackScalar * darkness * 0.35));

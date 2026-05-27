@@ -1,8 +1,13 @@
+using System.IO;
 using System.Reflection;
 using Hecton8.Atmosphere;
+using Hecton8.Core;
 using Hecton8.Celestial;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Environment;
 using NUnit.Framework;
 using UnityEditor;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -362,6 +367,48 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
+    public void SkySystemFollowCameraAppliesSceneViewFollowOnEnableInEditMode()
+    {
+        GameObject followObject = new GameObject("SkyFollowOnEnableEditModeTest");
+        SceneView sceneView = null;
+
+        try
+        {
+            sceneView = EditorWindow.CreateWindow<SceneView>("CodexSceneViewOnEnableTest");
+            sceneView.ShowUtility();
+            sceneView.Focus();
+
+            Vector3 sceneCameraPosition = new Vector3(22f, 44f, 66f);
+            sceneView.camera.transform.position = sceneCameraPosition;
+
+            followObject.AddComponent<SkySystemFollowCamera>();
+
+            Assert.That(followObject.transform.position.x, Is.EqualTo(sceneCameraPosition.x).Within(0.01f));
+            Assert.That(followObject.transform.position.y, Is.EqualTo(sceneCameraPosition.y).Within(0.01f));
+            Assert.That(followObject.transform.position.z, Is.EqualTo(sceneCameraPosition.z).Within(0.01f));
+        }
+        finally
+        {
+            if (sceneView != null)
+                sceneView.Close();
+
+            Object.DestroyImmediate(followObject);
+        }
+    }
+
+    [Test]
+    public void SkySystemFollowCameraRuntimeRouteDoesNotSceneScanCameras()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "SkySystemFollowCamera.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+        StringAssert.DoesNotContain("Camera.GetAllCameras", source);
+        StringAssert.DoesNotContain("ResolveTaggedRuntimeMainCamera", source);
+        StringAssert.Contains("Camera cachedPlayerCamera = TryResolveCachedPlayerCamera();", source);
+        StringAssert.Contains("HectonPlayerMovement movement = playerContext.PlayerMovement;", source);
+    }
+
+    [Test]
     public void ObserverRelativeCelestialBodyPrefersParentLocalDirectionCapture()
     {
         GameObject parentObject = new GameObject("SkyRig");
@@ -388,6 +435,149 @@ public class HectonCelestialEngineEditTests
             Object.DestroyImmediate(bodyObject);
             Object.DestroyImmediate(observerObject);
             Object.DestroyImmediate(parentObject);
+        }
+    }
+
+    [Test]
+    public void ObserverRelativeCelestialBodyCapturesParentDirectionOnEnableInEditMode()
+    {
+        GameObject parentObject = new GameObject("SkyRigOnEnable");
+        GameObject bodyObject = new GameObject("AegirBodyOnEnable");
+
+        try
+        {
+            bodyObject.transform.SetParent(parentObject.transform, false);
+            bodyObject.transform.localPosition = new Vector3(6f, 3f, 2f);
+
+            ObserverRelativeCelestialBody body = bodyObject.AddComponent<ObserverRelativeCelestialBody>();
+
+            Vector3 expectedDirection = bodyObject.transform.localPosition.normalized;
+            Assert.That(Vector3.Dot(body.CurrentDirection, expectedDirection), Is.GreaterThan(0.999f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(bodyObject);
+            Object.DestroyImmediate(parentObject);
+        }
+    }
+
+    [Test]
+    public void ObserverRelativeCelestialBodyCurrentDirectionDoesNotCacheReferences()
+    {
+        GameObject parentObject = new GameObject("OrbitParent");
+        GameObject childObject = new GameObject("OrbitChild");
+
+        try
+        {
+            parentObject.transform.position = new Vector3(3f, 2f, 7f);
+            parentObject.AddComponent<ObserverRelativeCelestialBody>();
+
+            ObserverRelativeCelestialBody child = childObject.AddComponent<ObserverRelativeCelestialBody>();
+            SetPrivateField(child, "placementMode", ObserverRelativeCelestialBody.CelestialPlacementMode.OrbitAroundParent);
+            SetPrivateField(child, "parentBodyTransform", parentObject.transform);
+            SetPrivateField(child, "captureInitialDirectionOnEnable", false);
+            SetPrivateField(child, "fixedDirection", Vector3.forward);
+
+            Assert.That(GetPrivateField(child, "_parentObserverRelativeBody"), Is.Null);
+
+            _ = child.CurrentDirection;
+
+            Assert.That(GetPrivateField(child, "_parentObserverRelativeBody"), Is.Null);
+        }
+        finally
+        {
+            Object.DestroyImmediate(childObject);
+            Object.DestroyImmediate(parentObject);
+        }
+    }
+
+    [Test]
+    public void FirmamentMemoryBudgetResolvesContinuouslyBetweenSurvivalAndOverkill()
+    {
+        float survival = (float)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolveFirmamentMemoryBudget01",
+            2048);
+        float middle = (float)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolveFirmamentMemoryBudget01",
+            7168);
+        float overkill = (float)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolveFirmamentMemoryBudget01",
+            12288);
+
+        Assert.That(survival, Is.EqualTo(0f).Within(0.0001f));
+        Assert.That(middle, Is.GreaterThan(0.49f).And.LessThan(0.51f));
+        Assert.That(overkill, Is.EqualTo(1f).Within(0.0001f));
+    }
+
+    [Test]
+    public void FirmamentPowerOfTwoFloorNeverExceedsContinuousBudget()
+    {
+        int underTwoK = (int)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolvePowerOfTwoFloor",
+            1800);
+        int exactFourK = (int)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolvePowerOfTwoFloor",
+            4096);
+        int betweenFourAndEightK = (int)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolvePowerOfTwoFloor",
+            6200);
+
+        Assert.That(underTwoK, Is.EqualTo(1024));
+        Assert.That(exactFourK, Is.EqualTo(4096));
+        Assert.That(betweenFourAndEightK, Is.EqualTo(4096));
+    }
+
+    [Test]
+    public void SurfaceWeatherDirectorResetBindsOwnedVfxRigInEditMode()
+    {
+        GameObject directorObject = new GameObject("SurfaceWeatherDirectorResetTest");
+        GameObject rigObject = new GameObject("SurfaceWeatherVfxRig");
+
+        try
+        {
+            HectonSurfaceWeatherDirector director = directorObject.AddComponent<HectonSurfaceWeatherDirector>();
+            rigObject.transform.SetParent(directorObject.transform, false);
+            LogAssert.Expect(
+                LogType.Error,
+                "[SurfaceWeatherVfxRig] Missing authored LineRenderer. Add it to this rig or assign authoredBoltRenderer; runtime renderer creation is forbidden.");
+            SurfaceWeatherVfxRig rig = rigObject.AddComponent<SurfaceWeatherVfxRig>();
+
+            SetPrivateField(director, "weatherVfxRig", null);
+            InvokePrivateMethod(director, "Reset");
+
+            Assert.That(GetPrivateField(director, "weatherVfxRig"), Is.SameAs(rig));
+        }
+        finally
+        {
+            Object.DestroyImmediate(rigObject);
+            Object.DestroyImmediate(directorObject);
+        }
+    }
+
+    [Test]
+    public void SurfaceWeatherDirectorOnValidateClampsSuppressionDepthInEditMode()
+    {
+        GameObject directorObject = new GameObject("SurfaceWeatherDirectorValidateTest");
+
+        try
+        {
+            HectonSurfaceWeatherDirector director = directorObject.AddComponent<HectonSurfaceWeatherDirector>();
+            SetPrivateField(director, "surfaceActivationDepth", 9f);
+            SetPrivateField(director, "surfaceSuppressionDepth", 3f);
+
+            InvokePrivateMethod(director, "OnValidate");
+
+            Assert.That(GetPrivateField(director, "surfaceSuppressionDepth"), Is.EqualTo(9f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(directorObject);
         }
     }
 
@@ -508,6 +698,88 @@ public class HectonCelestialEngineEditTests
         }
     }
 
+    [Test]
+    public void ClearCelestialRuntimeSnapshotDoesNotPublishGlobalSnapshotInEditMode()
+    {
+        CelestialRuntimeSnapshot originalSnapshot = GlobalRegistry.CelestialRuntimeSnapshot;
+        uint originalSequence = GlobalRegistry.CelestialRuntimeSnapshotSequence;
+        CelestialRuntimeSnapshot seededSnapshot = new CelestialRuntimeSnapshot
+        {
+            AbsoluteUniverseTime = 123.0,
+            Flags = (uint)CelestialRuntimeFlags.Valid,
+            Sequence = 73u
+        };
+
+        try
+        {
+            SetPrivateStaticField(typeof(GlobalRegistry), "_celestialRuntimeSnapshot", seededSnapshot);
+            SetPrivateStaticField(typeof(GlobalRegistry), "_celestialRuntimeSnapshotSequence", unchecked((int)seededSnapshot.Sequence));
+
+            InvokePrivateMethod("ClearCelestialRuntimeSnapshot");
+
+            Assert.That(GlobalRegistry.CelestialRuntimeSnapshotSequence, Is.EqualTo(seededSnapshot.Sequence));
+            Assert.That(GlobalRegistry.CelestialRuntimeSnapshot.Sequence, Is.EqualTo(seededSnapshot.Sequence));
+            Assert.That(GlobalRegistry.CelestialRuntimeSnapshot.Flags, Is.EqualTo((uint)CelestialRuntimeFlags.Valid));
+        }
+        finally
+        {
+            SetPrivateStaticField(typeof(GlobalRegistry), "_celestialRuntimeSnapshot", originalSnapshot);
+            SetPrivateStaticField(typeof(GlobalRegistry), "_celestialRuntimeSnapshotSequence", unchecked((int)originalSequence));
+        }
+    }
+
+    [Test]
+    public void SeismicWaveMathRejectsFarFiniteAupBeforeFloatCast()
+    {
+        SeismicSignal signal = CreateRadialSeismicSignal();
+        signal.EpicenterAUP = new double3(0d, 0d, 0d);
+        signal.CurrentRadiusMeters = 256f;
+        signal.PWaveRadiusMeters = 256f;
+        signal.SWaveRadiusMeters = 256f;
+
+        float3 displacement = SeismicWaveMath.CalculateSeismicDisplacement(
+            new double3(1.0e40d, 0d, 0d),
+            in signal,
+            0.05d,
+            1f);
+
+        Assert.That(math.all(math.isfinite(displacement)), Is.True);
+        Assert.That(math.lengthsq(displacement), Is.EqualTo(0f));
+    }
+
+    [Test]
+    public void SeismicWaveMathKeepsNearWaveFiniteAfterAupSubtract()
+    {
+        SeismicSignal signal = CreateRadialSeismicSignal();
+        signal.EpicenterAUP = new double3(1000000000000d, -2000d, 1000000000000d);
+        signal.CurrentRadiusMeters = 128f;
+        signal.PWaveRadiusMeters = 128f;
+        signal.SWaveRadiusMeters = 128f;
+
+        float3 displacement = SeismicWaveMath.CalculateSeismicDisplacement(
+            signal.EpicenterAUP + new double3(128d, 0d, 0d),
+            in signal,
+            0.05d,
+            1f);
+
+        Assert.That(math.all(math.isfinite(displacement)), Is.True);
+        Assert.That(math.lengthsq(displacement), Is.GreaterThan(0.00001f));
+    }
+
+    private static SeismicSignal CreateRadialSeismicSignal()
+    {
+        return new SeismicSignal
+        {
+            Flags = SeismicSignal.FlagRadialWave,
+            Intensity01 = 1f,
+            MagnitudeRichter = 8f,
+            PWaveAmplitude01 = 1f,
+            SWaveAmplitude01 = 0f,
+            Sequence = 3,
+            EventTypeHash = 0x13A7u
+        };
+    }
+
     private void SetPrivateField(string fieldName, object value)
     {
         SetPrivateField(_engine, fieldName, value);
@@ -533,6 +805,16 @@ public class HectonCelestialEngineEditTests
         return field.GetValue(target);
     }
 
+    private static void SetPrivateStaticField(System.Type targetType, string fieldName, object value)
+    {
+        FieldInfo field = targetType.GetField(
+            fieldName,
+            BindingFlags.Static | BindingFlags.NonPublic);
+
+        Assert.IsNotNull(field, $"Expected private static field '{fieldName}' to exist.");
+        field.SetValue(null, value);
+    }
+
     private object InvokePrivateMethod(string methodName, params object[] args)
     {
         return InvokePrivateMethod(_engine, methodName, args);
@@ -546,5 +828,15 @@ public class HectonCelestialEngineEditTests
 
         Assert.IsNotNull(method, $"Expected private method '{methodName}' to exist.");
         return method.Invoke(target, args);
+    }
+
+    private static object InvokePrivateStaticMethod(System.Type targetType, string methodName, params object[] args)
+    {
+        MethodInfo method = targetType.GetMethod(
+            methodName,
+            BindingFlags.Static | BindingFlags.NonPublic);
+
+        Assert.IsNotNull(method, $"Expected private static method '{methodName}' to exist.");
+        return method.Invoke(null, args);
     }
 }

@@ -6,7 +6,7 @@ namespace Hecton8.UI
 {
     /// <summary>
     /// UI screen shake for destructive actions (delete save, reset settings).
-    /// EXCEEDS SUBNAUTICA: Subnautica has no screen shake on UI actions.
+    /// Cheap instrument shock cue without changing gameplay truth.
     /// Zero-GC: late-frame state machine, cached RectTransform, no coroutines.
     /// </summary>
     [DisallowMultipleComponent]

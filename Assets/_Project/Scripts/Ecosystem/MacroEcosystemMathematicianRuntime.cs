@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -90,11 +91,15 @@ namespace Hecton8.Ecosystem
 
         /// <summary>
         /// Legacy same-domain bridge; callers should prefer the double3 AUP overload.
-        /// The float3 value is treated as an already absolute meter coordinate.
+        /// The float3 value is treated as runtime-local meters and converted through the current floating origin.
         /// </summary>
         public static bool TryGetBiomassAvailability(float3 runtimePosition, out float preyBiomass01, out float predatorBiomass01, out float carryingCapacity01)
         {
-            return TryGetBiomassAvailability(new double3(runtimePosition), out preyBiomass01, out predatorBiomass01, out carryingCapacity01);
+            preyBiomass01 = 0f;
+            predatorBiomass01 = 0f;
+            carryingCapacity01 = 0f;
+            return TryResolveRuntimePositionAup(runtimePosition, out double3 absoluteUniversePosition) &&
+                   TryGetBiomassAvailability(absoluteUniversePosition, out preyBiomass01, out predatorBiomass01, out carryingCapacity01);
         }
 
         /// <summary>
@@ -116,11 +121,14 @@ namespace Hecton8.Ecosystem
 
         /// <summary>
         /// Legacy same-domain bridge; callers should prefer the double3 AUP overload.
-        /// The float3 value is treated as an already absolute meter coordinate.
+        /// The float3 value is treated as runtime-local meters and converted through the current floating origin.
         /// </summary>
         public static bool TryGetSectorSpawnWeights(float3 runtimePosition, out float predatorWeight01, out float rareResourceWeight01)
         {
-            return TryGetSectorSpawnWeights(new double3(runtimePosition), out predatorWeight01, out rareResourceWeight01);
+            predatorWeight01 = 0f;
+            rareResourceWeight01 = 0f;
+            return TryResolveRuntimePositionAup(runtimePosition, out double3 absoluteUniversePosition) &&
+                   TryGetSectorSpawnWeights(absoluteUniversePosition, out predatorWeight01, out rareResourceWeight01);
         }
 
         /// <summary>
@@ -137,6 +145,22 @@ namespace Hecton8.Ecosystem
 
             ResolveSectorCoordFromAup(absoluteUniversePosition, out long sectorX, out long sectorY, out long sectorZ);
             return runtime.TryGetSectorSpawnWeights(sectorX, sectorY, sectorZ, out predatorWeight01, out rareResourceWeight01);
+        }
+
+        private static bool TryResolveRuntimePositionAup(float3 runtimePosition, out double3 absoluteUniversePosition)
+        {
+            absoluteUniversePosition = default;
+            if (!math.all(math.isfinite(runtimePosition)))
+                return false;
+
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            double3 origin = originAup.ToAbsoluteDouble3();
+            double3 local = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            absoluteUniversePosition = origin + local;
+            return math.all(math.isfinite(absoluteUniversePosition));
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -157,7 +181,7 @@ namespace Hecton8.Ecosystem
         /// <inheritdoc />
         public void FrostTick()
         {
-            if (_jobScheduled || !EnsureVaultState())
+            if (_jobScheduled || !HasVaultStateReady())
                 return;
 
 #if UNITY_EDITOR
@@ -370,6 +394,23 @@ namespace Hecton8.Ecosystem
                 GenerateEmergencyMockEcosystem(vault);
 
             return _initialized;
+        }
+
+        private bool HasVaultStateReady()
+        {
+            return _initialized &&
+                   _vault != null &&
+                   IsMatchingVaultHandle(in _frontHandle, BufferID.ShinobuMacroEcosystemSectorFront) &&
+                   IsMatchingVaultHandle(in _backHandle, BufferID.ShinobuMacroEcosystemSectorBack) &&
+                   IsMatchingVaultHandle(in _remainderHandle, BufferID.ShinobuMacroEcosystemRemainders) &&
+                   IsMatchingVaultHandle(in _coordHandle, BufferID.ShinobuMacroEcosystemSectorCoords) &&
+                   IsMatchingVaultHandle(in _indexEntryHandle, BufferID.ShinobuMacroEcosystemIndexEntries) &&
+                   IsMatchingVaultHandle(in _biomeSpecHandle, BufferID.ShinobuMacroEcosystemBiomeSpecs) &&
+                   IsMatchingVaultHandle(in _tuningHandle, BufferID.ShinobuMacroEcosystemTuning) &&
+                   IsMatchingVaultHandle(in _counterHandle, BufferID.ShinobuMacroEcosystemCounters) &&
+                   IsMatchingVaultHandle(in _telemetryHandle, BufferID.ShinobuMacroEcosystemTelemetryRing) &&
+                   IsMatchingVaultHandle(in _csvScratchHandle, BufferID.ShinobuMacroEcosystemCsvScratch) &&
+                   IsMatchingVaultHandle(in _faultFlagHandle, BufferID.ShinobuMacroEcosystemFaultFlags);
         }
 
         private void GenerateEmergencyMockEcosystem(IDataVault vault)
@@ -760,10 +801,10 @@ namespace Hecton8.Ecosystem
                     projectRoot = directory.FullName;
                 string path = Path.Combine(projectRoot, DumpRelativePath);
                 string folder = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(folder))
+                if (folder != null && folder.Length != 0)
                     Directory.CreateDirectory(folder);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 {
                     Span<byte> header = stackalloc byte[24];
                     WriteUInt64(header.Slice(0, 8), DumpMagic);
@@ -778,7 +819,23 @@ namespace Hecton8.Ecosystem
                     stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
             }
@@ -791,8 +848,8 @@ namespace Hecton8.Ecosystem
             if (vault == null)
                 return;
 
-            string path = ResolveCsvPath();
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            string path = BuildCsvPath();
+            if (path == null || path.Length == 0 || !File.Exists(path))
                 return;
 
             DateTime lastWriteUtc = File.GetLastWriteTimeUtc(path);
@@ -826,13 +883,29 @@ namespace Hecton8.Ecosystem
                     counters[6] = MacroEcosystemCounterDTO.FromValue(parsed);
                 _csvTimestampTicks = lastWriteUtc.Ticks;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x42494353u, RouteHash, 0f);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x42494353u, RouteHash, 0f);
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x42494353u, RouteHash, 0f);
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x42494353u, RouteHash, 0f);
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x42494353u, RouteHash, 0f);
             }
         }
 
-        private static string ResolveCsvPath()
+        private static string BuildCsvPath()
         {
             string dataPath = Application.dataPath;
             string first = Path.Combine(dataPath, "_Project", "Data", CsvFileName);
@@ -1450,14 +1523,14 @@ namespace Hecton8.Ecosystem
         {
             int observed = UnsafeUtility.SizeOf<T>();
             if (observed != expected)
-                throw new CriticalBootException("[MacroEcosystemLayout] Size mismatch " + typeof(T).Name);
+                throw new CriticalBootException("[MacroEcosystemLayout] Size mismatch.");
         }
 
         private static void AssertOffset<T>(string fieldName, int expected) where T : unmanaged
         {
             int observed = (int)Marshal.OffsetOf<T>(fieldName);
             if (observed != expected)
-                throw new CriticalBootException("[MacroEcosystemLayout] Offset mismatch " + typeof(T).Name + "." + fieldName);
+                throw new CriticalBootException("[MacroEcosystemLayout] Offset mismatch.");
         }
     }
 

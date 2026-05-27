@@ -42,7 +42,9 @@ Shader "HECTON/VFX/LeakPlume"
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -177,22 +179,25 @@ Shader "HECTON/VFX/LeakPlume"
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(saturate(uv));
+            }
+
             half ResolveSceneDepthCutoutFade(float4 positionCS)
             {
-                if (positionCS.w <= 0.0001)
-                    return 1.0h;
-
-                float2 screenUV = positionCS.xy * rcp(positionCS.w) * 0.5 + 0.5;
+                float2 screenUV = positionCS.xy * rcp(max(_ScaledScreenParams.xy, float2(1.0, 1.0)));
+                screenUV = UnityStereoTransformScreenSpaceTex(screenUV);
                 if (any(screenUV < 0.0) || any(screenUV > 1.0))
                     return 1.0h;
 
-                float sceneRawDepth = SampleSceneDepth(screenUV);
+                float sceneRawDepth = SampleSceneDepth(ResolveFoveatedSourceUV(screenUV));
             #if UNITY_REVERSED_Z
                 float sceneDepthValid = step(0.0001, sceneRawDepth);
             #else
                 float sceneDepthValid = step(sceneRawDepth, 0.9999);
             #endif
-                float rawFragmentDepth = saturate(positionCS.z * rcp(positionCS.w));
+                float rawFragmentDepth = saturate(positionCS.z);
                 float sceneDepthMeters = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
                 float fragmentDepthMeters = LinearEyeDepth(rawFragmentDepth, _ZBufferParams);
                 half depthFade = (half)saturate((sceneDepthMeters - fragmentDepthMeters) * 3.0);

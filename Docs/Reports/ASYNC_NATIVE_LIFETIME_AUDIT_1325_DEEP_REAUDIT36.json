@@ -1,0 +1,179 @@
+﻿{
+    "schema":  "hecton8.async_native_lifetime_reaudit36.v1",
+    "agentId":  "1325",
+    "scannedFiles":  3,
+    "persistentWorldRegistryFindings":  0,
+    "saveManagerFindings":  21,
+    "findings":  [
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  1117,
+                         "endLine":  1143,
+                         "line":  1117,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  1117,
+                         "endLine":  1143,
+                         "line":  1118,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  1117,
+                         "endLine":  1143,
+                         "line":  1118,
+                         "text":  "new NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  2999,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3000,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3001,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3002,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3003,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3005,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3108,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3108,
+                         "text":  "new NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3142,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3154,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3157,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3157,
+                         "text":  "new NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3178,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  2945,
+                         "endLine":  3339,
+                         "line":  3178,
+                         "text":  "new NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  3670,
+                         "endLine":  4031,
+                         "line":  3714,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  3670,
+                         "endLine":  4031,
+                         "line":  3715,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  3670,
+                         "endLine":  4031,
+                         "line":  3750,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  3670,
+                         "endLine":  4031,
+                         "line":  3817,
+                         "text":  "NativeArray\u003c"
+                     }
+                 ],
+    "status":  "PersistentWorldRegistry async methods have no native collection declarations inside async state-machine bodies; Reaudit36 removed background _sectorOverrideStates reads from indexed paging. SaveManager still contains external async native lifetime debt.",
+    "generatedAtUtc":  "2026-05-27T13:22:48.8115624Z"
+}

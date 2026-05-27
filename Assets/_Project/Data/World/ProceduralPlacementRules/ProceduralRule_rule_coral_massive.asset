@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: ProceduralRule_rule_coral_massive
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
   ruleId: rule.coral.massive
-  ruleLabel: Massive Coral Heads
+  ruleLabel: Massive Carbonate Heads
   familyProfile: {fileID: 11400000, guid: a95fcfd9bc5695a47ae5e0acc0ae5cc0, type: 2}
-  gameplayIntent: Bulky coral mounds that create shelter, porosity and reef trust
-    at close range.
+  gameplayIntent: Bulky carbonate mounds that create shelter, porosity and route
+    confidence at close range.
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
   - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}

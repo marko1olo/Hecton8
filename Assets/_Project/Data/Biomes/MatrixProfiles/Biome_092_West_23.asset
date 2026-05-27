@@ -29,7 +29,7 @@ MonoBehaviour:
   rareRewardHook: 'The reason to risk the trip is: Gold Ore and Abyss Pressure Shell.'
   landmarkIdentity: Tier 23 West Reserve reads through dunes, plains, void cuts,
     and shape changes in the floor. Landmarks should feel singular and intimidating.
-  safePocketIdentity: Safe pockets are almost psychological only. The player survives
+  safePocketIdentity: Reorientation pockets are almost psychological only. The player survives
     by discipline, not comfort.
   riskSummary: 'Main failure mode: orientation loss and long empty recovery swims,
     depth stress, and expensive hesitation. Creature pressure stays extreme.'

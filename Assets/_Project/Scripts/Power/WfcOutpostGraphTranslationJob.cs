@@ -17,7 +17,7 @@ namespace Hecton8.Logistics.Grid
         public WfcOutpostGridDescriptor Descriptor;
         [NoAlias] public NativeArray<WfcOutpostPowerNode> Nodes;
         [NoAlias] public NativeArray<int> CellToNode;
-        [NoAlias] public NativeParallelMultiHashMap<int, int> PowerEdges;
+        [NoAlias] public NativeArray<int2> PowerEdges;
         [NoAlias] public NativeArray<int> Counts;
         [NoAlias] public NativeArray<int> GeneratorNodeIndex;
 
@@ -231,8 +231,8 @@ namespace Hecton8.Logistics.Grid
                 return false;
             }
 
-            PowerEdges.Add(sourceNode, destinationNode);
-            PowerEdges.Add(destinationNode, sourceNode);
+            PowerEdges[directedEdges] = new int2(sourceNode, destinationNode);
+            PowerEdges[directedEdges + 1] = new int2(destinationNode, sourceNode);
             directedEdges += 2;
             return true;
         }
@@ -240,7 +240,7 @@ namespace Hecton8.Logistics.Grid
         private int ResolveEdgeCapacity()
         {
             return PowerEdges.IsCreated
-                ? math.min(PowerEdges.Capacity, WfcOutpostGridConstants.MaxDirectedEdges)
+                ? math.min(PowerEdges.Length, WfcOutpostGridConstants.MaxDirectedEdges)
                 : 0;
         }
 

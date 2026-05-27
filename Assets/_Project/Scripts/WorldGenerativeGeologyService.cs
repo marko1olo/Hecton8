@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -559,6 +560,9 @@ namespace Hecton8.World
         }
 
         private const string GeneratedRootName = "__GENERATED_GEOLOGY";
+        private const string CompositionSingleFeature = "SingleFeature";
+        private const string CompositionPairedFeature = "PairedFeature";
+        private const string CompositionContextPack = "ContextPack";
         private static readonly LOD[] _EmptyLods = new LOD[0];
 
         [Header("Fallback Generation")]
@@ -590,16 +594,27 @@ namespace Hecton8.World
             if (!Application.isPlaying && !allowEditorGeneration)
                 return false;
 
-            bool useFullDetail = request.FinalVariantActive != 0;
-            string resolvedComposition = ResolveComposition(request);
-            if (!useFullDetail)
-                resolvedComposition = "SingleFeature";
+            bool finalVariantRequested = request.FinalVariantActive != 0;
+            float visualQualityWeight = ResolveGlobalQualityWeight();
+            string resolvedComposition = ResolveQualityComposition(
+                ResolveComposition(request),
+                request.StableHash,
+                finalVariantRequested,
+                visualQualityWeight);
 
-            int lodCount = Mathf.Clamp(request.Profile.lodCount, 1, useFullDetail ? 3 : 2);
+            int lodCount = ResolvePresentationLodCount(
+                request.Profile,
+                request.StableHash,
+                finalVariantRequested,
+                visualQualityWeight);
             float blendRadius = Mathf.Max(0.5f, request.Profile.seamBlendRadius * Mathf.Max(0.25f, request.WorldScale));
             float terrainRaise = request.Profile.terrainRaiseMeters * Mathf.Clamp01(request.RidgeSignal + request.CompositionPotential * 0.25f);
             float terrainCut = request.Profile.terrainCutMeters * Mathf.Clamp01(request.CaveProximity + request.CanyonSignal * 0.35f);
-            int debrisCount = useFullDetail ? request.Profile.ResolveDebrisCount(request.StableHash) : 0;
+            int debrisCount = ResolvePresentationDebrisCount(
+                request.Profile,
+                request.StableHash,
+                finalVariantRequested,
+                visualQualityWeight);
             int buildSignature = ComputeBuildSignature(
                 request,
                 resolvedComposition,
@@ -731,7 +746,7 @@ namespace Hecton8.World
             CreatePrimitive(renderers, root, PrimitiveType.Cylinder, new Vector3(width * 0.4f, height * 0.45f, 0f), Quaternion.identity, new Vector3(thickness, height * 0.45f, thickness), ref primitiveIndex);
             CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height, 0f), Quaternion.Euler(0f, 0f, Mathf.Lerp(18f, 6f, lodIndex / 2f)), new Vector3(width, thickness, thickness * 1.1f), ref primitiveIndex);
 
-            if (composition == "ContextPack" && lodIndex == 0)
+            if (composition == CompositionContextPack && lodIndex == 0)
             {
                 CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height * 0.55f, width * 0.22f), Quaternion.Euler(0f, 24f, -14f), new Vector3(width * 0.42f, thickness * 0.8f, thickness), ref primitiveIndex);
                 CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height * 0.42f, -width * 0.24f), Quaternion.Euler(0f, -22f, 10f), new Vector3(width * 0.36f, thickness * 0.75f, thickness), ref primitiveIndex);
@@ -754,7 +769,7 @@ namespace Hecton8.World
             CreatePrimitive(renderers, root, PrimitiveType.Cylinder, new Vector3(0f, height * 0.65f, 0f), Quaternion.identity, new Vector3(shelfThickness * 1.1f, height, shelfThickness * 1.1f), ref primitiveIndex);
             CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height, 0f), Quaternion.Euler(0f, 18f, request.CanyonSignal * 14f), new Vector3(span, shelfThickness, span * 0.55f), ref primitiveIndex);
 
-            if (composition != "SingleFeature")
+            if (composition != CompositionSingleFeature)
             {
                 CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(span * 0.18f, height * 0.82f, span * 0.16f), Quaternion.Euler(0f, -16f, 8f), new Vector3(span * 0.56f, shelfThickness * 0.8f, span * 0.28f), ref primitiveIndex);
                 if (lodIndex == 0)
@@ -775,7 +790,7 @@ namespace Hecton8.World
             CreatePrimitive(renderers, root, PrimitiveType.Sphere, new Vector3(0f, baseScale * 0.45f, 0f), Quaternion.identity, Vector3.one * baseScale, ref primitiveIndex);
             CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(baseScale * 0.36f, baseScale * 0.52f, -baseScale * 0.18f), Quaternion.Euler(18f, 22f, 12f), new Vector3(baseScale * 0.9f, baseScale * 0.45f, baseScale * 0.64f), ref primitiveIndex);
 
-            if (composition != "SingleFeature")
+            if (composition != CompositionSingleFeature)
             {
                 CreatePrimitive(renderers, root, PrimitiveType.Sphere, new Vector3(-baseScale * 0.42f, baseScale * 0.34f, baseScale * 0.24f), Quaternion.identity, Vector3.one * (baseScale * 0.7f), ref primitiveIndex);
                 if (lodIndex == 0)
@@ -813,14 +828,114 @@ namespace Hecton8.World
         private string ResolveComposition(in WorldGenerativeGeologyRequest request)
         {
             if (request.Profile == null)
-                return "SingleFeature";
+                return CompositionSingleFeature;
 
             if (request.Profile.PreferContextPack(request.CompositionPotential))
-                return "ContextPack";
+                return CompositionContextPack;
 
             return request.Profile.compositionMode == WorldGenerativeGeologyProfile.CompositionMode.PairedFeature
-                ? "PairedFeature"
-                : "SingleFeature";
+                ? CompositionPairedFeature
+                : CompositionSingleFeature;
+        }
+
+        private static string ResolveQualityComposition(
+            string authoredComposition,
+            int stableHash,
+            bool finalVariantRequested,
+            float visualQualityWeight)
+        {
+            if (string.Equals(authoredComposition, CompositionSingleFeature, StringComparison.Ordinal))
+                return CompositionSingleFeature;
+
+            float detailPressure = ResolveVisualDetailPressure(finalVariantRequested, visualQualityWeight);
+            float stableChance = ResolveStableHash01(stableHash ^ 0x6A09E667);
+
+            if (string.Equals(authoredComposition, CompositionContextPack, StringComparison.Ordinal))
+            {
+                float contextProbability = Mathf.Lerp(0.02f, 0.92f, detailPressure);
+                if (stableChance <= contextProbability)
+                    return CompositionContextPack;
+
+                float pairedProbability = Mathf.Clamp01(contextProbability + Mathf.Lerp(0.18f, 0.07f, detailPressure));
+                return stableChance <= pairedProbability ? CompositionPairedFeature : CompositionSingleFeature;
+            }
+
+            if (string.Equals(authoredComposition, CompositionPairedFeature, StringComparison.Ordinal))
+            {
+                float pairedProbability = Mathf.Lerp(0.05f, 0.95f, detailPressure);
+                return stableChance <= pairedProbability ? CompositionPairedFeature : CompositionSingleFeature;
+            }
+
+            return CompositionSingleFeature;
+        }
+
+        private static int ResolvePresentationLodCount(
+            WorldGenerativeGeologyProfile profile,
+            int stableHash,
+            bool finalVariantRequested,
+            float visualQualityWeight)
+        {
+            int configuredMax = Mathf.Clamp(profile != null ? profile.lodCount : 1, 1, 3);
+            if (configuredMax <= 1)
+                return 1;
+
+            float detailPressure = ResolveVisualDetailPressure(finalVariantRequested, visualQualityWeight);
+            float dither = ResolveStableHash01(stableHash ^ 0xBB67AE85) - 0.5f;
+            int resolved = Mathf.RoundToInt(Mathf.Lerp(1f, configuredMax, detailPressure) + (dither * 0.34f));
+            return Mathf.Clamp(resolved, 1, configuredMax);
+        }
+
+        private static int ResolvePresentationDebrisCount(
+            WorldGenerativeGeologyProfile profile,
+            int stableHash,
+            bool finalVariantRequested,
+            float visualQualityWeight)
+        {
+            if (profile == null)
+                return 0;
+
+            int configured = Mathf.Max(0, profile.ResolveDebrisCount(stableHash));
+            if (configured <= 0)
+                return 0;
+
+            int survivalCount = profile.terrainSeamMode == WorldGenerativeGeologyProfile.TerrainSeamMode.None ? 0 : 1;
+            float detailPressure = ResolveVisualDetailPressure(finalVariantRequested, visualQualityWeight);
+            float dither = ResolveStableHash01(stableHash ^ 0x3C6EF372) - 0.5f;
+            int resolved = Mathf.RoundToInt(Mathf.Lerp(survivalCount, configured, detailPressure) + (dither * 0.6f));
+            return Mathf.Clamp(resolved, survivalCount, configured);
+        }
+
+        private static float ResolveVisualDetailPressure(bool finalVariantRequested, float visualQualityWeight)
+        {
+            float quality = SmoothQualityWeight(visualQualityWeight);
+            float finalVariantBias = finalVariantRequested ? 0.18f : 0f;
+            return Mathf.Clamp01((quality * 0.82f) + finalVariantBias);
+        }
+
+        private static float SmoothQualityWeight(float visualQualityWeight)
+        {
+            float weight = Mathf.Clamp01(visualQualityWeight);
+            return weight * weight * (3f - (2f * weight));
+        }
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return float.IsNaN(weight) || float.IsInfinity(weight) ? 1f : Mathf.Clamp01(weight);
+        }
+
+        private static float ResolveStableHash01(int stableHash)
+        {
+            unchecked
+            {
+                uint h = (uint)stableHash;
+                h ^= h >> 16;
+                h *= 0x7feb352d;
+                h ^= h >> 15;
+                h *= 0x846ca68b;
+                h ^= h >> 16;
+                return (h & 0x00FFFFFFu) * (1f / 16777215f);
+            }
         }
 
         private static int ComputeBuildSignature(

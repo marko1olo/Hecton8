@@ -212,7 +212,7 @@ namespace Hecton8.Cartography.Editor
             if (_runtime == null || !Application.isPlaying)
                 return;
 
-            if (_runtime.TryBuildCartographyRleRuns(out _, out int runs))
+            if (_runtime.TryBuildCartographyRleRuns(out int runs))
                 _statusLabel.text = "RLE runs staged in Vault: " + runs.ToString();
         }
 

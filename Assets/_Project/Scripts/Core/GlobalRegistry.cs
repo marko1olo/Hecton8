@@ -1389,9 +1389,9 @@ namespace Hecton8.Core
         public static IAbyssalFlowGpuReadModel AbyssalFlowGpu => _fluidRuntime;
 
         /// <summary>
-        /// RenderGraph fluid advection route exposed without binding presentation to the physics runtime type.
+        /// RenderGraph fluid advection dispatch route exposed without binding presentation to the physics runtime type.
         /// </summary>
-        public static IFluidAdvectionRenderGraphReadModel FluidAdvectionRenderGraph => _fluidRuntime;
+        public static IFluidAdvectionRenderGraphDispatchSource FluidAdvectionRenderGraph => _fluidRuntime;
 
         /// <summary>
         /// Read-only authored/global current route exposed by the fluid owner.
@@ -1784,7 +1784,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Registered mod world persistence runtime owner.
         /// </summary>
-        public static ModWorldPersistenceManager ModWorldPersistence => _modWorldPersistenceRuntime;
+        internal static ModWorldPersistenceManager ModWorldPersistence => _modWorldPersistenceRuntime;
 
         /// <summary>
         /// Registered native-to-managed mod projection bridge.
@@ -2436,7 +2436,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Persisted two-tier scalability profile byte: 0 = Low/MX350, 1 = High/RTX.
+        /// Persisted scalability profile byte. Legacy 0/1 and current low/middle/high/ultra values are supported.
         /// </summary>
         public static byte ScalabilityTierProfileByte =>
             ScalabilityTierRuntime.FromQualityTier(ScalabilityTier);
@@ -2844,7 +2844,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Applies a persisted scalability profile override without mutating immutable hardware facts.
         /// </summary>
-        /// <param name="tier">Profile byte: 0 = Low/MX350, 1 = High/RTX.</param>
+        /// <param name="tier">Profile byte. Legacy 0/1 and current low/middle/high/ultra values are supported.</param>
         public static void RegisterScalabilityTierOverride(byte tier)
         {
             Volatile.Write(ref _scalabilityTierOverride, (int)ScalabilityTierRuntime.ToQualityTier(tier));
@@ -3943,7 +3943,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Registers the authoritative mod world persistence runtime owner.
         /// </summary>
-        public static void RegisterModWorldPersistenceRuntime(ModWorldPersistenceManager instance)
+        internal static void RegisterModWorldPersistenceRuntime(ModWorldPersistenceManager instance)
         {
             RegisterServiceAllowSameInstance(ref _modWorldPersistenceRuntime, instance);
         }
@@ -5678,7 +5678,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Unregisters the current mod world persistence runtime owner if the owner matches.
         /// </summary>
-        public static void UnregisterModWorldPersistenceRuntime(ModWorldPersistenceManager instance)
+        internal static void UnregisterModWorldPersistenceRuntime(ModWorldPersistenceManager instance)
         {
             UnregisterService(ref _modWorldPersistenceRuntime, instance);
         }
@@ -7954,6 +7954,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(EclipseGameplaySystem)) return GlobalRegistryServiceSlot.EclipseGameplayRuntime;
             if (serviceType == typeof(RandomEventSystem)) return GlobalRegistryServiceSlot.RandomEventRuntime;
             if (serviceType == typeof(IAbyssalFlowGpuReadModel)) return GlobalRegistryServiceSlot.FluidRuntime;
+            if (serviceType == typeof(IFluidAdvectionRenderGraphDispatchSource)) return GlobalRegistryServiceSlot.FluidRuntime;
             if (serviceType == typeof(IAnalyticalFlowReadModel)) return GlobalRegistryServiceSlot.FluidRuntime;
             if (serviceType == typeof(IAmbientCurrentReadModel)) return GlobalRegistryServiceSlot.FluidRuntime;
             if (serviceType == typeof(IFluidSurfaceCurrentReadModel)) return GlobalRegistryServiceSlot.FluidRuntime;

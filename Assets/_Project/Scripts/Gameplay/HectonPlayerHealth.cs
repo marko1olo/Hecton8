@@ -7,6 +7,7 @@ using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Audio;
+using Hecton8.Interaction;
 using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
@@ -386,6 +387,7 @@ namespace Hecton8.Gameplay
         private int _combatDamageTargetId;
         private bool _combatDamageRegistered;
         private bool _combatDamageSyncDirty;
+        private bool _interactionTargetRegistered;
         private bool _hotSwapRegistered;
         private IAudioService _audioService;
         private IAudioLogRuntime _audioLogs;
@@ -1050,7 +1052,12 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterCombatDamageTarget()
         {
-            if (_combatDamageRegistered || !Application.isPlaying)
+            if (!Application.isPlaying)
+                return;
+
+            TryRegisterInteractionTargetTree();
+
+            if (_combatDamageRegistered)
                 return;
 
             if (_combatDamageTargetId == 0)
@@ -1070,6 +1077,8 @@ namespace Hecton8.Gameplay
 
         private void TryUnregisterCombatDamageTarget()
         {
+            TryUnregisterInteractionTargetTree();
+
             if (!_combatDamageRegistered)
                 return;
 
@@ -1078,6 +1087,24 @@ namespace Hecton8.Gameplay
             _combatDamageSyncDirty = false;
             _cachedCombatStatusMask = 0UL;
             _hasCachedCombatStatusMask = false;
+        }
+
+        private void TryRegisterInteractionTargetTree()
+        {
+            if (_interactionTargetRegistered || !Application.isPlaying)
+                return;
+
+            InteractableRegistry.RegisterTree(this);
+            _interactionTargetRegistered = true;
+        }
+
+        private void TryUnregisterInteractionTargetTree()
+        {
+            if (!_interactionTargetRegistered)
+                return;
+
+            InteractableRegistry.InvalidateTree(this);
+            _interactionTargetRegistered = false;
         }
 
         private void MarkCombatDamageSyncDirty()

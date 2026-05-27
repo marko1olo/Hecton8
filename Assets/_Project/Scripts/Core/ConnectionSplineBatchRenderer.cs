@@ -443,9 +443,14 @@ namespace Hecton8.Core
 
         private static Material CreateRuntimeMaterial(Color color)
         {
-            Shader shader = Shader.Find(FlexiblePipeShaderName);
+            Shader shader = null;
+            RuntimeShaderReferenceCatalog.TryGetFlexiblePipeShader(out shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find(FlexiblePipeShaderName);
             if (shader == null)
                 shader = Shader.Find(FallbackShaderName);
+#endif
 
             if (shader == null)
                 return null;

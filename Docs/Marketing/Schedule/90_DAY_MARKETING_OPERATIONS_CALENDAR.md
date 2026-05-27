@@ -1,7 +1,7 @@
 ﻿# HECTON-8 90-Day Marketing Operations Calendar
 
 Status: reusable schedule template
-Owner lane: SHINOBU_81 / operations
+Owner lane: Marketing / operations
 Runtime impact: none
 
 ## Assumption

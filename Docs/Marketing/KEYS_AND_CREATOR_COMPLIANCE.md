@@ -3,18 +3,9 @@
 Status: policy draft
 Purpose: prevent key scams, legal slop, and trust damage
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
-
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- current platform policy pages
-- fresh campaign logs and source artifacts
-
-No Steam policy, FTC/legal, creator-contact, key-distribution, runtime build, Unity import, profiler, player-build, or marketing-performance proof is implied unless this document links a fresh evidence artifact. Historical campaign assumptions and older platform-rule summaries inside this file are subordinate to current official policy pages and current project authority docs.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 ## Hard Rules
 

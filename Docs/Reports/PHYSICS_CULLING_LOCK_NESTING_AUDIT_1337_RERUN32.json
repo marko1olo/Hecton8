@@ -1,0 +1,28 @@
+﻿{
+    "agent":  "1337",
+    "rerun":  "32",
+    "artifact":  "position-publish-lock-nesting-audit",
+    "methods":  [
+                    {
+                        "method":  "PrepareTrackedBodiesForOriginShiftInternal",
+                        "completeBarrier":  true,
+                        "scopedPositionLocks":  true,
+                        "directNullRemoval":  false,
+                        "deferredCleanup":  true
+                    },
+                    {
+                        "method":  "CommitTrackedBodiesForOriginShiftInternal",
+                        "completeBarrier":  true,
+                        "scopedPositionLocks":  true,
+                        "directNullRemoval":  false,
+                        "deferredCleanup":  true
+                    },
+                    {
+                        "method":  "ResetTrackedBodiesForSafeTeleportInternal",
+                        "completeBarrier":  true,
+                        "scopedPositionLocks":  true,
+                        "directNullRemoval":  false,
+                        "deferredCleanup":  true
+                    }
+                ]
+}

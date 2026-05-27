@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -47,7 +48,7 @@ namespace Hecton8.Visor
         private const uint BlackBoxFlagNonFiniteInput = 1u << 4;
         private const uint BlackBoxFlagThermalMotionCull = 1u << 5;
         private const uint BlackBoxFlagVisualOverkill = 1u << 6;
-        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SCREEN_SPACE_REFRACTION.bin";
+        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1335_VisorFluidRefraction.bin";
 
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader";
@@ -204,6 +205,7 @@ namespace Hecton8.Visor
                 internal TextureHandle Depth;
                 internal TextureHandle Opaque;
                 internal TextureHandle LensMask;
+                internal BufferHandle ConstantsBuffer;
                 internal Material Material;
                 internal bool LensMaskActive;
             }
@@ -237,11 +239,11 @@ namespace Hecton8.Visor
             private int _lensKernelIndex = -1;
             private int _visorFluidGlobalsWriteIndex;
             private int _lensComputeGlobalsWriteIndex;
-            private uint _lensThreadGroupSizeX = 8;
-            private uint _lensThreadGroupSizeY = 8;
-            private float _lensThreadGroupInvX = 0.125f;
-            private float _lensThreadGroupInvY = 0.125f;
+            private uint _lensThreadGroupSizeX;
+            private uint _lensThreadGroupSizeY;
             private bool _hasVisorFluidGlobals;
+            private const uint MaxKernelThreadProduct = 256u;
+            private const int MaxDispatchGroupsPerDimension = 65535;
 
             public VisorFluidPass()
             {
@@ -295,7 +297,7 @@ namespace Hecton8.Visor
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
                 destinationDesc.msaaSamples = MSAASamples.None;
-                destinationDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                destinationDesc.colorFormat = sourceDesc.colorFormat;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
                 bool lensMaskActive = TryAddDiegeticLensMaskPass(
@@ -306,6 +308,10 @@ namespace Hecton8.Visor
 
                 if (!UpdateVisorFluidGlobals(_settings, _runtimeState, lensMaskActive, lensMaskBlend))
                     return;
+                if (_activeVisorFluidGlobalsBuffer == null || !_activeVisorFluidGlobalsBuffer.IsValid())
+                    return;
+
+                BufferHandle globalsBuffer = renderGraph.ImportBuffer(_activeVisorFluidGlobalsBuffer);
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PassData>(
                            "Hecton Visor Fluid Distortion",
@@ -317,6 +323,7 @@ namespace Hecton8.Visor
                     passData.Opaque = opaqueTexture.IsValid() ? opaqueTexture : sourceTexture;
                     passData.LensMask = lensMaskTexture;
                     passData.LensMaskActive = lensMaskActive;
+                    passData.ConstantsBuffer = globalsBuffer;
                     passData.Material = _material;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
@@ -325,15 +332,25 @@ namespace Hecton8.Visor
                         builder.UseTexture(opaqueTexture, AccessFlags.Read);
                     if (lensMaskActive)
                         builder.UseTexture(lensMaskTexture, AccessFlags.Read);
+                    builder.UseBuffer(globalsBuffer, AccessFlags.Read);
                     builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
                     builder.AllowGlobalStateModification(true);
                     builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
                     {
+                        GraphicsBuffer constants = data.ConstantsBuffer;
+                        if (constants == null || !constants.IsValid())
+                            return;
+
                         context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
                         context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
                         context.cmd.SetGlobalTexture(ShaderConstants.CameraOpaqueTextureId, data.Opaque);
                         if (data.LensMaskActive)
                             context.cmd.SetGlobalTexture(ShaderConstants.DiegeticLensMaskTextureId, data.LensMask);
+                        context.cmd.SetGlobalConstantBuffer(
+                            constants,
+                            ShaderConstants.VisorFluidGlobalsBufferId,
+                            0,
+                            VisorFluidGlobalsStrideBytes);
                         CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
                     });
                 }
@@ -440,34 +457,58 @@ namespace Hecton8.Visor
                         Sanitize01(lensMaskBlend)));
                 if (_hasVisorFluidGlobals && VisorFluidGlobalsEqual(in _lastVisorFluidGlobals, in globals))
                 {
-                    if (_activeVisorFluidGlobalsBuffer == null || !_activeVisorFluidGlobalsBuffer.IsValid())
-                        return false;
-
-                    Shader.SetGlobalConstantBuffer(ShaderConstants.VisorFluidGlobalsBufferId, _activeVisorFluidGlobalsBuffer, 0, VisorFluidGlobalsStrideBytes);
-                    return true;
+                    return _activeVisorFluidGlobalsBuffer != null && _activeVisorFluidGlobalsBuffer.IsValid();
                 }
 
                 GraphicsBuffer writeBuffer = ResolveNextVisorFluidGlobalsBuffer();
-                NativeArray<VisorFluidGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<VisorFluidGlobalsDTO>(0, 1);
                 try
                 {
-                    mapped[0] = globals;
+                    NativeArray<VisorFluidGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<VisorFluidGlobalsDTO>(0, 1);
+                    try
+                    {
+                        mapped[0] = globals;
+                    }
+                    finally
+                    {
+                        writeBuffer.UnlockBufferAfterWrite<VisorFluidGlobalsDTO>(1);
+                    }
                 }
-                finally
+                catch (ObjectDisposedException)
                 {
-                    writeBuffer.UnlockBufferAfterWrite<VisorFluidGlobalsDTO>(1);
+                    MarkVisorFluidGlobalsUnavailable();
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    MarkVisorFluidGlobalsUnavailable();
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    MarkVisorFluidGlobalsUnavailable();
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    MarkVisorFluidGlobalsUnavailable();
+                    return false;
                 }
                 _activeVisorFluidGlobalsBuffer = writeBuffer;
                 _lastVisorFluidGlobals = globals;
                 _hasVisorFluidGlobals = true;
-                Shader.SetGlobalConstantBuffer(ShaderConstants.VisorFluidGlobalsBufferId, _activeVisorFluidGlobalsBuffer, 0, VisorFluidGlobalsStrideBytes);
-                return true;
+                return _activeVisorFluidGlobalsBuffer != null && _activeVisorFluidGlobalsBuffer.IsValid();
             }
 
             private GraphicsBuffer ResolveNextVisorFluidGlobalsBuffer()
             {
                 _visorFluidGlobalsWriteIndex ^= 1;
                 return _visorFluidGlobalsWriteIndex == 0 ? _visorFluidGlobalsBufferA : _visorFluidGlobalsBufferB;
+            }
+
+            private void MarkVisorFluidGlobalsUnavailable()
+            {
+                _activeVisorFluidGlobalsBuffer = null;
+                _hasVisorFluidGlobals = false;
             }
 
             private bool EnsureLensComputeGlobalsBuffer(bool allowAllocation)
@@ -525,14 +566,37 @@ namespace Hecton8.Visor
                         Sanitize01(runtimeState.VisualOverkill01)));
 
                 GraphicsBuffer writeBuffer = ResolveNextLensComputeGlobalsBuffer();
-                NativeArray<LensComputeGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<LensComputeGlobalsDTO>(0, 1);
                 try
                 {
-                    mapped[0] = globals;
+                    NativeArray<LensComputeGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<LensComputeGlobalsDTO>(0, 1);
+                    try
+                    {
+                        mapped[0] = globals;
+                    }
+                    finally
+                    {
+                        writeBuffer.UnlockBufferAfterWrite<LensComputeGlobalsDTO>(1);
+                    }
                 }
-                finally
+                catch (ObjectDisposedException)
                 {
-                    writeBuffer.UnlockBufferAfterWrite<LensComputeGlobalsDTO>(1);
+                    ReleaseLensComputeGlobalsBuffer();
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    ReleaseLensComputeGlobalsBuffer();
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    ReleaseLensComputeGlobalsBuffer();
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    ReleaseLensComputeGlobalsBuffer();
+                    return false;
                 }
                 _activeLensComputeGlobalsBuffer = writeBuffer;
                 globalsBuffer = writeBuffer;
@@ -546,24 +610,24 @@ namespace Hecton8.Visor
 
                 _resolvedLensComputeShader = _lensComputeShader;
                 _lensKernelIndex = -1;
-                _lensThreadGroupSizeX = 8;
-                _lensThreadGroupSizeY = 8;
-                _lensThreadGroupInvX = 0.125f;
-                _lensThreadGroupInvY = 0.125f;
-                if (_lensComputeShader == null)
+                _lensThreadGroupSizeX = 0u;
+                _lensThreadGroupSizeY = 0u;
+                if (_lensComputeShader == null ||
+                    !_lensComputeShader.HasKernel("ResolveDiegeticVisorLensMask"))
                     return;
 
-                try
-                {
-                    _lensKernelIndex = _lensComputeShader.FindKernel("ResolveDiegeticVisorLensMask");
-                    _lensComputeShader.GetKernelThreadGroupSizes(_lensKernelIndex, out _lensThreadGroupSizeX, out _lensThreadGroupSizeY, out _);
-                    _lensThreadGroupInvX = math.rcp(math.max(1f, (float)_lensThreadGroupSizeX));
-                    _lensThreadGroupInvY = math.rcp(math.max(1f, (float)_lensThreadGroupSizeY));
-                }
-                catch (Exception)
-                {
-                    _lensKernelIndex = -1;
-                }
+                int resolvedKernel = _lensComputeShader.FindKernel("ResolveDiegeticVisorLensMask");
+                if (resolvedKernel < 0 || !_lensComputeShader.IsSupported(resolvedKernel))
+                    return;
+
+                _lensComputeShader.GetKernelThreadGroupSizes(resolvedKernel, out uint x, out uint y, out uint z);
+                ulong threadProduct = (ulong)x * y * z;
+                if (x == 0u || y == 0u || z != 1u || threadProduct == 0UL || threadProduct > MaxKernelThreadProduct)
+                    return;
+
+                _lensKernelIndex = resolvedKernel;
+                _lensThreadGroupSizeX = x;
+                _lensThreadGroupSizeY = y;
             }
 
             private bool TryAddDiegeticLensMaskPass(RenderGraph renderGraph, in TextureDesc sourceDesc, out TextureHandle lensMaskTexture, out float lensMaskBlend)
@@ -588,6 +652,11 @@ namespace Hecton8.Visor
                 float renderScale = ResolveLensMaskRenderScale(_settings, in _runtimeState);
                 int maskWidth = QuantizeLensMaskDimension(math.max(1, (int)math.round(sourceDesc.width * renderScale)));
                 int maskHeight = QuantizeLensMaskDimension(math.max(1, (int)math.round(sourceDesc.height * renderScale)));
+                int dispatchX = ResolveDispatchGroups(maskWidth, _lensThreadGroupSizeX);
+                int dispatchY = ResolveDispatchGroups(maskHeight, _lensThreadGroupSizeY);
+                if (dispatchX <= 0 || dispatchY <= 0)
+                    return false;
+
                 if (!UpdateLensComputeGlobals(in _runtimeState, lensMaskBlend, out GraphicsBuffer lensComputeGlobalsBuffer))
                     return false;
                 BufferHandle lensComputeGlobalsHandle = renderGraph.ImportBuffer(lensComputeGlobalsBuffer);
@@ -616,8 +685,8 @@ namespace Hecton8.Visor
                     passData.KernelIndex = _lensKernelIndex;
                     passData.LensMask = lensMaskTexture;
                     passData.LensComputeGlobalsBuffer = lensComputeGlobalsBuffer;
-                    passData.DispatchX = CeilByThreadGroup(maskWidth, _lensThreadGroupInvX);
-                    passData.DispatchY = CeilByThreadGroup(maskHeight, _lensThreadGroupInvY);
+                    passData.DispatchX = dispatchX;
+                    passData.DispatchY = dispatchY;
 
                     builder.UseTexture(lensMaskTexture, AccessFlags.Write);
                     builder.UseBuffer(lensComputeGlobalsHandle, AccessFlags.Read);
@@ -650,9 +719,13 @@ namespace Hecton8.Visor
                 return math.clamp(baseScale + Sanitize01(runtimeState.VisualOverkill01) * 0.125f, 0.125f, 0.5f);
             }
 
-            private static int CeilByThreadGroup(int dimension, float invThreadGroupSize)
+            private static int ResolveDispatchGroups(int dimension, uint threadGroupSize)
             {
-                return math.max(1, (int)math.ceil(math.max(1, dimension) * invThreadGroupSize));
+                if (dimension <= 0 || threadGroupSize == 0u)
+                    return 0;
+
+                long groups = ((long)dimension + threadGroupSize - 1L) / threadGroupSize;
+                return groups > 0L && groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
             }
 
             private static int QuantizeLensMaskDimension(int dimension)
@@ -797,6 +870,8 @@ namespace Hecton8.Visor
         {
             TryRegisterBlackBoxHotSwapListener();
             CacheBlackBoxVaultCold(GlobalRegistry.DataVault);
+            EnsureBlackBoxLeaseCold();
+            CacheRenderDependenciesCold();
         }
 
         private void OnDisable()
@@ -819,6 +894,8 @@ namespace Hecton8.Visor
             _pass.PrewarmVisorFluidGlobalsBuffer();
             TryRegisterBlackBoxHotSwapListener();
             CacheBlackBoxVaultCold(GlobalRegistry.DataVault);
+            EnsureBlackBoxLeaseCold();
+            CacheRenderDependenciesCold();
             Shader shader = settings != null ? settings.shader : null;
             if (shader == null)
             {
@@ -869,6 +946,7 @@ namespace Hecton8.Visor
             {
                 ReleaseBlackBoxLease();
                 CacheBlackBoxVaultCold(currentService as IDataVault);
+                EnsureBlackBoxLeaseCold();
                 return;
             }
 
@@ -1133,23 +1211,22 @@ namespace Hecton8.Visor
         private IPlayerRuntimeContext ResolvePlayerContext()
         {
             IPlayerRuntimeContext context = _playerContext;
-            if (context != null && context.PlayerCamera != null)
-                return context;
-
-            context = GlobalRegistry.Player;
-            _playerContext = context;
-            return context;
+            return context != null && context.PlayerCamera != null ? context : null;
         }
 
         private IFluidSim ResolveFluidSimulation()
         {
             IFluidSim fluidSimulation = _fluidSimulation;
-            if (fluidSimulation != null && fluidSimulation.IsReady)
-                return fluidSimulation;
+            return fluidSimulation != null && fluidSimulation.IsReady ? fluidSimulation : null;
+        }
 
-            fluidSimulation = GlobalRegistry.FluidSimulation;
-            _fluidSimulation = fluidSimulation;
-            return fluidSimulation;
+        private void CacheRenderDependenciesCold()
+        {
+            if (_playerContext == null)
+                _playerContext = GlobalRegistry.Player;
+
+            if (_fluidSimulation == null)
+                _fluidSimulation = GlobalRegistry.FluidSimulation;
         }
 
         private float ResolveWaterDensitySignal01(ref uint telemetryFlags)
@@ -1198,7 +1275,7 @@ namespace Hecton8.Visor
         private void WriteBlackBoxFrame(Camera renderCamera, in RuntimeState runtimeState)
         {
             int frame = SystemDispatcher.CurrentFrameIndex;
-            if (!TryResolveBlackBoxRing(out NativeArray<VisorRefractionTelemetryEntry> blackBox, out int blackBoxLength))
+            if (!TryEnsureBlackBoxLease())
                 return;
 
             Vector3 localVelocity = SanitizeVector(runtimeState.LocalVelocity);
@@ -1218,8 +1295,7 @@ namespace Hecton8.Visor
             if (runtimeState.VisualOverkill01 > 0.001f)
                 flags |= BlackBoxFlagVisualOverkill;
 
-            int blackBoxIndex = ResolveBlackBoxIndex(frame, blackBoxLength);
-            blackBox[blackBoxIndex] = new VisorRefractionTelemetryEntry
+            VisorRefractionTelemetryEntry entry = new VisorRefractionTelemetryEntry
             {
                 FrameIndex = frame >= 0 ? (uint)frame : 0u,
                 Flags = flags,
@@ -1236,8 +1312,48 @@ namespace Hecton8.Visor
                 QualityWeightQ16 = EncodeQualityQ16(runtimeState.QualityWeight01)
             };
 
+            if (!TryWriteBlackBoxEntry(frame, in entry, out int blackBoxLength))
+                return;
+
             if ((flags & BlackBoxFlagNonFiniteInput) != 0u)
-                DumpBlackBoxOnce(flags, blackBox, blackBoxLength, ResolveBlackBoxIndex(frame + 1, blackBoxLength));
+                DumpBlackBoxOnce(flags, blackBoxLength, ResolveBlackBoxIndex(frame + 1, blackBoxLength));
+        }
+
+        private bool TryWriteBlackBoxEntry(int frame, in VisorRefractionTelemetryEntry sourceEntry, out int blackBoxLength)
+        {
+            blackBoxLength = 0;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || !IsVaultHandleCreated(in _blackBoxHandle))
+                return false;
+
+            bool blackBoxLocked = false;
+            bool clearDescriptor = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _blackBoxHandle, SystemID.Vfx, out NativeArray<VisorRefractionTelemetryEntry> blackBox))
+                    return false;
+
+                blackBoxLocked = true;
+                if (vault.IsCompactionFenceActive || !blackBox.IsCreated || blackBox.Length < BlackBoxFrameCount)
+                {
+                    clearDescriptor = true;
+                    return false;
+                }
+
+                blackBoxLength = blackBox.Length;
+                VisorRefractionTelemetryEntry entry = sourceEntry;
+                entry.VaultGeneration = _blackBoxHandle.Generation;
+                _blackBoxVaultGeneration = _blackBoxHandle.Generation;
+                blackBox[ResolveBlackBoxIndex(frame, blackBoxLength)] = entry;
+                return true;
+            }
+            finally
+            {
+                if (blackBoxLocked)
+                    vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.Vfx);
+                if (clearDescriptor)
+                    ClearBlackBoxDescriptor();
+            }
         }
 
         private bool TryEnsureBlackBoxLease()
@@ -1255,7 +1371,9 @@ namespace Hecton8.Visor
             if (vault.TryGetGenerationHandle(
                     BufferID.VisorRefractionBlackBox,
                     out VaultGenerationHandle<VisorRefractionTelemetryEntry> existingHandle) &&
-                vault.TryResolveHandle(in existingHandle, out NativeArray<VisorRefractionTelemetryEntry> existingBlackBox) &&
+                !vault.IsCompactionFenceActive &&
+                vault.TryReadOnlyHandle(in existingHandle, out NativeArray<VisorRefractionTelemetryEntry>.ReadOnly existingBlackBox) &&
+                !vault.IsCompactionFenceActive &&
                 existingBlackBox.IsCreated &&
                 existingBlackBox.Length >= BlackBoxFrameCount)
             {
@@ -1265,12 +1383,30 @@ namespace Hecton8.Visor
                 return true;
             }
 
+            ClearBlackBoxDescriptor();
+            return false;
+        }
+
+        private bool EnsureBlackBoxLeaseCold()
+        {
+            if (TryEnsureBlackBoxLease())
+                return true;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+            {
+                ClearBlackBoxDescriptor();
+                return false;
+            }
+
             VaultGenerationHandle<VisorRefractionTelemetryEntry> blackBoxHandle = vault.EnsureGenerationHandle<VisorRefractionTelemetryEntry>(
                 BufferID.VisorRefractionBlackBox,
                 BlackBoxFrameCount,
                 SystemID.Vfx);
             if (!IsVaultHandleCreated(in blackBoxHandle) ||
-                !vault.TryResolveHandle(in blackBoxHandle, out NativeArray<VisorRefractionTelemetryEntry> blackBox) ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in blackBoxHandle, out NativeArray<VisorRefractionTelemetryEntry>.ReadOnly blackBox) ||
+                vault.IsCompactionFenceActive ||
                 !blackBox.IsCreated ||
                 blackBox.Length < BlackBoxFrameCount)
             {
@@ -1284,18 +1420,7 @@ namespace Hecton8.Visor
             return true;
         }
 
-        private bool TryResolveBlackBoxRing(out NativeArray<VisorRefractionTelemetryEntry> blackBox, out int blackBoxLength)
-        {
-            if (TryResolveCurrentBlackBoxRing(out blackBox, out blackBoxLength))
-                return true;
-
-            if (!TryEnsureBlackBoxLease())
-                return false;
-
-            return TryResolveCurrentBlackBoxRing(out blackBox, out blackBoxLength);
-        }
-
-        private bool TryResolveCurrentBlackBoxRing(out NativeArray<VisorRefractionTelemetryEntry> blackBox, out int blackBoxLength)
+        private bool TryResolveCurrentBlackBoxRing(out NativeArray<VisorRefractionTelemetryEntry>.ReadOnly blackBox, out int blackBoxLength)
         {
             blackBox = default;
             blackBoxLength = 0;
@@ -1306,7 +1431,8 @@ namespace Hecton8.Visor
                 return false;
             }
 
-            if (!_dataVault.TryResolveHandle(in _blackBoxHandle, out blackBox) ||
+            if (!_dataVault.TryReadOnlyHandle(in _blackBoxHandle, out blackBox) ||
+                _dataVault.IsCompactionFenceActive ||
                 !blackBox.IsCreated ||
                 blackBox.Length < BlackBoxFrameCount)
             {
@@ -1422,60 +1548,118 @@ namespace Hecton8.Visor
             return index >= 0 ? index : index + blackBoxLength;
         }
 
-        private void DumpBlackBoxOnce(uint reasonFlags, NativeArray<VisorRefractionTelemetryEntry> blackBox, int blackBoxLength, int startIndex)
+        private bool TryReadBlackBoxEntry(int index, out VisorRefractionTelemetryEntry entry)
         {
-            if (_blackBoxDumped || !blackBox.IsCreated || blackBoxLength <= 0)
+            entry = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || !IsVaultHandleCreated(in _blackBoxHandle) || index < 0)
+                return false;
+
+            if (!vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<VisorRefractionTelemetryEntry>.ReadOnly blackBox) ||
+                vault.IsCompactionFenceActive ||
+                !blackBox.IsCreated ||
+                blackBox.Length < BlackBoxFrameCount ||
+                index >= blackBox.Length)
+            {
+                return false;
+            }
+
+            entry = blackBox[index];
+            return !vault.IsCompactionFenceActive;
+        }
+
+        private void DumpBlackBoxOnce(uint reasonFlags, int blackBoxLength, int startIndex)
+        {
+            if (_blackBoxDumped || blackBoxLength <= 0)
                 return;
 
-            blackBoxLength = math.min(blackBoxLength, blackBox.Length);
+            blackBoxLength = math.min(blackBoxLength, BlackBoxFrameCount);
             _blackBoxDumped = true;
-            string path = Path.Combine(Application.dataPath, "..", BlackBoxDumpRelativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
 
             try
             {
+                string path = Path.Combine(Application.dataPath, "..", BlackBoxDumpRelativePath);
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(BlackBoxMagic);
-                    writer.Write(BlackBoxVersion);
-                    writer.Write(reasonFlags);
-                    writer.Write(BlackBoxEntrySizeBytes);
-                    writer.Write(blackBoxLength);
+                    Span<byte> header = stackalloc byte[20];
+                    WriteBlackBoxHeader(header, reasonFlags, blackBoxLength);
+                    stream.Write(header);
+
+                    Span<byte> entryBytes = stackalloc byte[BlackBoxEntrySizeBytes];
                     int index = ResolveBlackBoxIndex(startIndex, blackBoxLength);
                     for (int i = 0; i < blackBoxLength; i++)
                     {
                         if (index >= blackBoxLength)
                             index = 0;
 
-                        WriteTelemetryEntry(writer, blackBox[index]);
+                        if (!TryReadBlackBoxEntry(index, out VisorRefractionTelemetryEntry entry))
+                            return;
+
+                        WriteTelemetryEntry(entryBytes, in entry);
+                        stream.Write(entryBytes);
                         index++;
                     }
                 }
             }
-            catch (Exception)
+            catch (ObjectDisposedException)
+            {
+                _blackBoxDumped = true;
+            }
+            catch (IOException)
+            {
+                _blackBoxDumped = true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _blackBoxDumped = true;
+            }
+            catch (ArgumentException)
+            {
+                _blackBoxDumped = true;
+            }
+            catch (InvalidOperationException)
+            {
+                _blackBoxDumped = true;
+            }
+            catch (NotSupportedException)
             {
                 _blackBoxDumped = true;
             }
         }
 
-        private static void WriteTelemetryEntry(BinaryWriter writer, VisorRefractionTelemetryEntry entry)
+        private static void WriteBlackBoxHeader(Span<byte> destination, uint reasonFlags, int entryCount)
         {
-            writer.Write(entry.FrameIndex);
-            writer.Write(entry.Flags);
-            writer.Write(entry.EffectIntensity01);
-            writer.Write(entry.Wetness01);
-            writer.Write(entry.HullStress01);
-            writer.Write(entry.WaterDensitySignal01);
-            writer.Write(entry.HomeostasisFallback01);
-            writer.Write(entry.LocalVelocitySq);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.CameraPixelWidth);
-            writer.Write(entry.CameraPixelHeight);
-            writer.Write(entry.VaultGeneration);
-            writer.Write(entry.QualityWeightQ16);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), BlackBoxMagic);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), BlackBoxVersion);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(8, 4), reasonFlags);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(12, 4), BlackBoxEntrySizeBytes);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(16, 4), entryCount);
+        }
+
+        private static void WriteTelemetryEntry(Span<byte> destination, in VisorRefractionTelemetryEntry entry)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.FrameIndex);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.Flags);
+            WriteFloatLittleEndian(destination.Slice(8, 4), entry.EffectIntensity01);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.Wetness01);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.HullStress01);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.WaterDensitySignal01);
+            WriteFloatLittleEndian(destination.Slice(24, 4), entry.HomeostasisFallback01);
+            WriteFloatLittleEndian(destination.Slice(28, 4), entry.LocalVelocitySq);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(32, 4), entry.StateHash);
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(36, 2), entry.CameraPixelWidth);
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(38, 2), entry.CameraPixelHeight);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(40, 4), entry.VaultGeneration);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(44, 4), entry.QualityWeightQ16);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

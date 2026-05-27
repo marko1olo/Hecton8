@@ -1,0 +1,31 @@
+﻿{
+    "agentId":  "1330",
+    "task":  "RERUN23_GENERATED_PROJECT_AND_H8BIN_AUDIT",
+    "status":  "STATIC_VERIFIED_BUILD_BLOCKED_BY_CPU_GATE",
+    "failedGates":  [
+
+                    ],
+    "slnxProjectCount":  62,
+    "slnxMissingProjectCount":  0,
+    "slnxMissingProjects":  [
+
+                            ],
+    "csprojXmlCount":  62,
+    "csprojXmlInvalid":  [
+
+                         ],
+    "generatedProjectRestoreStatus":  "PASS",
+    "generatedProjectCreatedCount":  0,
+    "generatedProjectUpdatedCount":  0,
+    "generatedProjectUnchangedCount":  61,
+    "generatedProjectPreservedCount":  1,
+    "generatedProjectUnresolvedCount":  0,
+    "generatedProjectWriteFailureCount":  0,
+    "tempArtifactCount":  0,
+    "h8binValidatorStatus":  "PASS",
+    "h8binFilesChecked":  2,
+    "h8binStructsParsed":  32,
+    "h8binBytesProcessed":  1100480,
+    "buildStatus":  "BLOCKED_HOST_CPU_GATE_CPU_84_DOTNET_CSC_MSBUILD_0",
+    "verificationHashSha256":  "40faeb1d06b8d6d0764c008a40fd53fff1066ada61d7d495bd4e289f5954e025"
+}

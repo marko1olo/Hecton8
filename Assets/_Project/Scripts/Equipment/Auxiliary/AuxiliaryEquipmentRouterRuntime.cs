@@ -353,28 +353,14 @@ namespace Hecton8.Equipment.Auxiliary
             s_activeRuntime = this;
             InitializeService(GlobalRegistry.DataVault);
             TryRegisterHotSwapListener();
-            if (!registerWithDispatcher)
-                return;
-
-            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            TryRegisterDispatcherTicks();
         }
 
         private void OnDisable()
         {
             CompletePendingJobForTeardown();
             TryUnregisterHotSwapListener();
-            if (_registeredUpdate)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredUpdate = false;
-            }
-
-            if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrame = false;
-            }
+            TryUnregisterDispatcherTicks();
 
             if (ReferenceEquals(s_activeRuntime, this))
                 s_activeRuntime = null;
@@ -398,25 +384,13 @@ namespace Hecton8.Equipment.Auxiliary
             if (!isActiveAndEnabled)
                 return;
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (_registeredUpdate)
-                {
-                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                    _registeredUpdate = false;
-                }
+                _registeredUpdate = false;
+                _registeredLateFrame = false;
 
-                if (_registeredLateFrame)
-                {
-                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                    _registeredLateFrame = false;
-                }
-
-                if (registerWithDispatcher)
-                {
-                    _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-                    _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-                }
+                if (currentService != null)
+                    TryRegisterDispatcherTicks();
 
                 return;
             }
@@ -446,6 +420,46 @@ namespace Hecton8.Equipment.Auxiliary
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
+        }
+
+        private void TryRegisterDispatcherTicks()
+        {
+            if (!registerWithDispatcher || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            TryRegisterUpdateTick();
+            TryRegisterLateFrameTick();
+        }
+
+        private void TryRegisterUpdateTick()
+        {
+            if (_registeredUpdate || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterDispatcherTicks()
+        {
+            if (_registeredUpdate)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredUpdate = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
         }
 
         public void InitializeService(IDataVault dataVault)
@@ -1327,7 +1341,7 @@ namespace Hecton8.Equipment.Auxiliary
             if ((tuning.Flags & AuxiliaryTuningFlags.OverrideGlobalQualityWeight) != 0u)
                 return AuxiliaryEquipmentMath.Sanitize01(tuning.GlobalQualityWeight, 1f);
 
-            float global = HomeostasisBrain.GlobalQualityWeight;
+            float global = SignalBusRegistry.GlobalQualityWeight01;
             return math.saturate(math.select(1f, global, math.isfinite(global)));
         }
 
@@ -1419,7 +1433,7 @@ namespace Hecton8.Equipment.Auxiliary
             }
         }
 
-        private struct AuxiliaryVaultViews
+        private ref struct AuxiliaryVaultViews
         {
             public NativeArray<DeployedAuxiliaryDTO> Deployments;
             public NativeArray<AuxiliaryStateDTO> States;

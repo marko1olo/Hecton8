@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -43,6 +44,25 @@ namespace Hecton8.UI
         private static readonly int WaveScalarsId = Shader.PropertyToID("_HectonFrequencyTuningWaveScalars");
         private static readonly int WaveLayoutId = Shader.PropertyToID("_HectonFrequencyTuningWaveLayout");
         private static readonly int ErrorGlobalId = Shader.PropertyToID("_HectonFrequencyTuningError01");
+        private static readonly Vector3[] FrequencyQuadVertices =
+        {
+            new Vector3(-0.5f, -0.5f, 0f),
+            new Vector3(-0.5f, 0.5f, 0f),
+            new Vector3(0.5f, 0.5f, 0f),
+            new Vector3(0.5f, -0.5f, 0f)
+        }; // COLD ALLOC: Vector3[4] - immutable frequency tuning quad vertices - owner: PDADecryptionSpectrogramPanel
+        private static readonly Vector2[] FrequencyQuadUvs =
+        {
+            new Vector2(0f, 0f),
+            new Vector2(0f, 1f),
+            new Vector2(1f, 1f),
+            new Vector2(1f, 0f)
+        }; // COLD ALLOC: Vector2[4] - immutable frequency tuning quad UVs - owner: PDADecryptionSpectrogramPanel
+        private static readonly int[] FrequencyQuadIndices =
+        {
+            0, 1, 2,
+            2, 3, 0
+        }; // COLD ALLOC: int[6] - immutable frequency tuning quad indices - owner: PDADecryptionSpectrogramPanel
 
         [Header("PDA Surface")]
         [SerializeField] private Transform surfaceAnchor;
@@ -248,19 +268,34 @@ namespace Hecton8.UI
             _waveSegmentCount = math.max(1, _pointCount - 1);
             _gpuSegmentCapacity = _waveSegmentCount * 2;
 
-            if (!TryResolveStageTargets(out NativeArray<FrequencyTuningStageTarget> stageTargets) ||
-                !TryResolveTelemetryRing(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
+            if (!TryAcquireStageTargetsWrite(out NativeArray<FrequencyTuningStageTarget> stageTargets))
             {
                 return;
             }
 
-            ClearNativeState(stageTargets, telemetryRing);
-            _nativeReady = true;
+            bool telemetryLocked = false;
+            try
+            {
+                if (!TryAcquireTelemetryRingWrite(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
+                    return;
+
+                telemetryLocked = true;
+                ClearNativeState(stageTargets, telemetryRing);
+                _nativeReady = true;
+            }
+            finally
+            {
+                IDataVault vault = _cachedDataVault;
+                if (telemetryLocked && vault != null && IsVaultHandleCreated(in _telemetryRingHandle))
+                    vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.UI);
+                if (vault != null && IsVaultHandleCreated(in _stageTargetsHandle))
+                    vault.ReleaseWriteLock(in _stageTargetsHandle, SystemID.UI);
+            }
         }
 
-        private bool TryResolveStageTargets(out NativeArray<FrequencyTuningStageTarget> stageTargets)
+        private bool TryAcquireStageTargetsWrite(out NativeArray<FrequencyTuningStageTarget> stageTargets)
         {
-            return TryResolveVaultBuffer(
+            return TryAcquireVaultWriteBuffer(
                 ref _stageTargetsHandle,
                 BufferID.PdaFrequencyStageTargets,
                 StageCount,
@@ -268,9 +303,9 @@ namespace Hecton8.UI
                 out stageTargets);
         }
 
-        private bool TryResolveTelemetryRing(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing)
+        private bool TryAcquireTelemetryRingWrite(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing)
         {
-            return TryResolveVaultBuffer(
+            return TryAcquireVaultWriteBuffer(
                 ref _telemetryRingHandle,
                 BufferID.PdaFrequencyTelemetryRing,
                 TelemetryCapacity,
@@ -278,7 +313,7 @@ namespace Hecton8.UI
                 out telemetryRing);
         }
 
-        private bool TryResolveVaultBuffer<T>(
+        private bool TryAcquireVaultWriteBuffer<T>(
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
@@ -287,29 +322,101 @@ namespace Hecton8.UI
         {
             buffer = default;
             IDataVault vault = _cachedDataVault;
-            if (vault == null || requiredLength <= 0)
+            if (vault == null || requiredLength <= 0 || vault.IsCompactionFenceActive)
             {
                 return false;
             }
 
+            uint expectedBufferId = unchecked((uint)(int)bufferId);
             if (IsVaultHandleCreated(in handle) &&
-                vault.TryResolveHandle(in handle, out buffer) &&
+                handle.BufferID == expectedBufferId &&
+                TryAcquireExistingVaultWriteBuffer(vault, in handle, requiredLength, out buffer))
+            {
+                return true;
+            }
+
+            if (IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            if (vault.IsCompactionFenceActive)
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.UI, options);
+            return IsVaultHandleCreated(in handle) &&
+                   handle.BufferID == expectedBufferId &&
+                   TryAcquireExistingVaultWriteBuffer(vault, in handle, requiredLength, out buffer);
+        }
+
+        private static bool TryAcquireExistingVaultWriteBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : unmanaged
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.UI, out buffer))
+            {
+                return false;
+            }
+
+            if (!vault.IsCompactionFenceActive &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
             {
                 return true;
             }
 
-            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.UI, options);
-            if (!IsVaultHandleCreated(in acquired) ||
-                !vault.TryResolveHandle(in acquired, out buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < requiredLength)
+            vault.ReleaseWriteLock(in handle, SystemID.UI);
+            buffer = default;
+            return false;
+        }
+
+        private bool TryReadStageTarget(int index, out FrequencyTuningStageTarget target)
+        {
+            target = default;
+            IDataVault vault = _cachedDataVault;
+            if (vault == null ||
+                index < 0 ||
+                index >= StageCount ||
+                !IsVaultHandleCreated(in _stageTargetsHandle) ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in _stageTargetsHandle, out NativeArray<FrequencyTuningStageTarget>.ReadOnly stageTargets) ||
+                vault.IsCompactionFenceActive ||
+                !stageTargets.IsCreated ||
+                stageTargets.Length <= index)
             {
                 return false;
             }
 
-            handle = acquired;
+            target = stageTargets[index];
+            return true;
+        }
+
+        private bool TryReadTelemetryEntry(int index, out FrequencyTuningTelemetryEntry entry)
+        {
+            entry = default;
+            IDataVault vault = _cachedDataVault;
+            if (vault == null ||
+                index < 0 ||
+                index >= TelemetryCapacity ||
+                !IsVaultHandleCreated(in _telemetryRingHandle) ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<FrequencyTuningTelemetryEntry>.ReadOnly telemetryRing) ||
+                vault.IsCompactionFenceActive ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length <= index)
+            {
+                return false;
+            }
+
+            entry = telemetryRing[index];
             return true;
         }
 
@@ -678,9 +785,6 @@ namespace Hecton8.UI
 
         private void RecordTelemetry()
         {
-            if (!TryResolveTelemetryRing(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
-                return;
-
             float4 finiteProbe = default;
             finiteProbe.x = _targetFrequency;
             finiteProbe.y = _targetAmplitude;
@@ -693,26 +797,38 @@ namespace Hecton8.UI
                 return;
             }
 
-            FrequencyTuningTelemetryEntry telemetry = default;
-            telemetry.Frame = _lastTickFrame;
-            telemetry.ArtifactHash = _artifactHash;
-            telemetry.TargetFrequency = _targetFrequency;
-            telemetry.TargetAmplitude = _targetAmplitude;
-            telemetry.PlayerFrequency = _playerFrequency;
-            telemetry.PlayerAmplitude = _playerAmplitude;
-            telemetry.Error01 = _currentError01;
-            telemetry.HoldPermille = (ushort)math.clamp((int)math.round(_holdTimerSeconds * math.rcp(UnlockHoldSeconds) * 1000f), 0, 1000);
-            telemetry.Stage = (byte)_stageIndex;
-            telemetry.Flags = (byte)_lockedStageMask;
-            telemetryRing[_telemetryCursor] = telemetry;
-            _telemetryCursor++;
-            if (_telemetryCursor >= TelemetryCapacity)
-                _telemetryCursor = 0;
+            if (!TryAcquireTelemetryRingWrite(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
+                return;
+
+            try
+            {
+                FrequencyTuningTelemetryEntry telemetry = default;
+                telemetry.Frame = _lastTickFrame;
+                telemetry.ArtifactHash = _artifactHash;
+                telemetry.TargetFrequency = _targetFrequency;
+                telemetry.TargetAmplitude = _targetAmplitude;
+                telemetry.PlayerFrequency = _playerFrequency;
+                telemetry.PlayerAmplitude = _playerAmplitude;
+                telemetry.Error01 = _currentError01;
+                telemetry.HoldPermille = (ushort)math.clamp((int)math.round(_holdTimerSeconds * math.rcp(UnlockHoldSeconds) * 1000f), 0, 1000);
+                telemetry.Stage = (byte)_stageIndex;
+                telemetry.Flags = (byte)_lockedStageMask;
+                telemetryRing[_telemetryCursor] = telemetry;
+                _telemetryCursor++;
+                if (_telemetryCursor >= TelemetryCapacity)
+                    _telemetryCursor = 0;
+            }
+            finally
+            {
+                IDataVault vault = _cachedDataVault;
+                if (vault != null && IsVaultHandleCreated(in _telemetryRingHandle))
+                    vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.UI);
+            }
         }
 
         private void DumpTelemetryCold()
         {
-            if (!TryResolveTelemetryRing(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
+            if (!IsVaultHandleCreated(in _telemetryRingHandle))
                 return;
 
             try
@@ -722,22 +838,19 @@ namespace Hecton8.UI
                     Directory.CreateDirectory(directory);
 
                 using FileStream stream = new FileStream(TelemetryDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(TelemetryCapacity);
-                writer.Write(_telemetryCursor);
+                Span<byte> header = stackalloc byte[8];
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), TelemetryCapacity);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), _telemetryCursor);
+                stream.Write(header);
+
+                Span<byte> row = stackalloc byte[32];
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
-                    FrequencyTuningTelemetryEntry entry = telemetryRing[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.ArtifactHash);
-                    writer.Write(entry.TargetFrequency);
-                    writer.Write(entry.TargetAmplitude);
-                    writer.Write(entry.PlayerFrequency);
-                    writer.Write(entry.PlayerAmplitude);
-                    writer.Write(entry.Error01);
-                    writer.Write(entry.HoldPermille);
-                    writer.Write(entry.Stage);
-                    writer.Write(entry.Flags);
+                    if (!TryReadTelemetryEntry(i, out FrequencyTuningTelemetryEntry entry))
+                        return;
+
+                    WriteFrequencyTuningTelemetryEntry(row, in entry);
+                    stream.Write(row);
                 }
             }
             catch (IOException)
@@ -746,30 +859,51 @@ namespace Hecton8.UI
             catch (UnauthorizedAccessException)
             {
             }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
         }
 
         private void BuildStageTargets(uint seed)
         {
-            if (!TryResolveStageTargets(out NativeArray<FrequencyTuningStageTarget> stageTargets))
+            if (!TryAcquireStageTargetsWrite(out NativeArray<FrequencyTuningStageTarget> stageTargets))
                 return;
 
-            uint state = seed != 0u ? seed : DefaultArtifactHash;
-            for (int i = 0; i < StageCount; i++)
+            try
             {
-                float r0 = Next01(ref state);
-                float r1 = Next01(ref state);
-                FrequencyTuningStageTarget target = default;
-                target.Frequency = math.clamp(1.05f + i * 0.8f + r0 * 0.35f, playerFrequencyMin, playerFrequencyMax);
-                target.Amplitude = math.clamp(0.32f + i * 0.12f + r1 * 0.32f, playerAmplitudeMin, playerAmplitudeMax);
-                stageTargets[i] = target;
+                uint state = seed != 0u ? seed : DefaultArtifactHash;
+                for (int i = 0; i < StageCount; i++)
+                {
+                    float r0 = Next01(ref state);
+                    float r1 = Next01(ref state);
+                    FrequencyTuningStageTarget target = default;
+                    target.Frequency = math.clamp(1.05f + i * 0.8f + r0 * 0.35f, playerFrequencyMin, playerFrequencyMax);
+                    target.Amplitude = math.clamp(0.32f + i * 0.12f + r1 * 0.32f, playerAmplitudeMin, playerAmplitudeMax);
+                    stageTargets[i] = target;
+                }
+            }
+            finally
+            {
+                IDataVault vault = _cachedDataVault;
+                if (vault != null && IsVaultHandleCreated(in _stageTargetsHandle))
+                    vault.ReleaseWriteLock(in _stageTargetsHandle, SystemID.UI);
             }
         }
 
         private void ResolveTargetForCurrentStage(out float frequency, out float amplitude)
         {
             int safeStage = math.clamp(_stageIndex, 0, StageCount - 1);
-            FrequencyTuningStageTarget target = TryResolveStageTargets(out NativeArray<FrequencyTuningStageTarget> stageTargets)
-                ? stageTargets[safeStage]
+            FrequencyTuningStageTarget target = TryReadStageTarget(safeStage, out FrequencyTuningStageTarget resolvedTarget)
+                ? resolvedTarget
                 : default;
             frequency = target.Frequency > 0f ? target.Frequency : 1.5f;
             amplitude = target.Amplitude > 0f ? target.Amplitude : 0.55f;
@@ -943,21 +1077,9 @@ namespace Hecton8.UI
                 name = "H8_FrequencyTuningQuad",
                 hideFlags = HideFlags.DontSave
             }; // COLD ALLOC: Mesh[1] - PDA frequency tuning procedural quad - owner: PDADecryptionSpectrogramPanel
-            mesh.vertices = new[]
-            {
-                new Vector3(-0.5f, -0.5f, 0f),
-                new Vector3(-0.5f, 0.5f, 0f),
-                new Vector3(0.5f, 0.5f, 0f),
-                new Vector3(0.5f, -0.5f, 0f)
-            }; // COLD ALLOC: Vector3[4] - quad vertices - owner: PDADecryptionSpectrogramPanel
-            mesh.uv = new[]
-            {
-                new Vector2(0f, 0f),
-                new Vector2(0f, 1f),
-                new Vector2(1f, 1f),
-                new Vector2(1f, 0f)
-            }; // COLD ALLOC: Vector2[4] - quad uvs - owner: PDADecryptionSpectrogramPanel
-            mesh.triangles = new[] { 0, 1, 2, 2, 3, 0 }; // COLD ALLOC: int[6] - quad indices - owner: PDADecryptionSpectrogramPanel
+            mesh.SetVertices(FrequencyQuadVertices);
+            mesh.SetUVs(0, FrequencyQuadUvs);
+            mesh.SetTriangles(FrequencyQuadIndices, 0, false);
             mesh.RecalculateBounds();
             _runtimeQuadMesh = mesh;
             return _runtimeQuadMesh;
@@ -998,6 +1120,25 @@ namespace Hecton8.UI
         {
             float x = Sanitize01(value);
             return x * x * (3f - 2f * x);
+        }
+
+        private static void WriteFrequencyTuningTelemetryEntry(Span<byte> destination, in FrequencyTuningTelemetryEntry entry)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.ArtifactHash);
+            WriteFloatLittleEndian(destination.Slice(8, 4), entry.TargetFrequency);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.TargetAmplitude);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.PlayerFrequency);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.PlayerAmplitude);
+            WriteFloatLittleEndian(destination.Slice(24, 4), entry.Error01);
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(28, 2), entry.HoldPermille);
+            destination[30] = entry.Stage;
+            destination[31] = entry.Flags;
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
         private static float SanitizePositive(float value, float fallback)

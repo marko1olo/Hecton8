@@ -1,0 +1,90 @@
+﻿{
+    "agent_id":  1324,
+    "codename":  "MEMORY_SOVEREIGN_GAS_DYNAMICS_EXORCIST",
+    "domain":  "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+    "prompt_source":  "Docs/Tasks/CURRENT_BATCH.md",
+    "prompt_task_count":  20,
+    "prompt_hash_sha256":  "46898B6A9BCFB857B6F06B2AA8FA140119E91D987A0797D622DADA3D2BBC8306",
+    "primary_file_sha256":  "DBA4B763F2E7EDE1E7208659083737ABD68F3C8F2B816004520E4507C351ADBF",
+    "validator_file_sha256":  "D236FAA20C8C75BFE69D59DCEE57DCD3BC8D34A3B43B548A515459BED5DE5874",
+    "implementation_hash_sha256":  "79441BC850F2AEC9FC3A8D021CAB679FD555530F4CA252C8C95E3DE1387C4150",
+    "hash_input":  "relative path UTF-8 + NUL + file bytes, sorted target C# files",
+    "native_alias_exorcism":  {
+                                  "class_scope_native_array_fields_before":  31,
+                                  "class_scope_native_array_fields_after":  0,
+                                  "direct_persistent_native_allocation_patterns_after":  0,
+                                  "full_atmosphere_native_field_declarations":  141,
+                                  "full_atmosphere_persistent_native_candidates":  0,
+                                  "full_atmosphere_transient_job_fields":  141,
+                                  "gas_dynamics_native_field_declarations":  35,
+                                  "gas_dynamics_persistent_native_candidates":  0,
+                                  "forbidden_patterns_scanned":  [
+                                                                     "NativeArray\u003cT\u003e",
+                                                                     "NativeList\u003cT\u003e",
+                                                                     "NativeQueue\u003cT\u003e",
+                                                                     "NativeParallelHashMap\u003cK,V\u003e",
+                                                                     "NativeParallelMultiHashMap\u003cK,V\u003e",
+                                                                     "UnsafeList\u003cT\u003e"
+                                                                 ],
+                                  "replacement_owner":  "IDataVault / SystemID.HabitatAtmosphere",
+                                  "handle_model":  "VaultGenerationHandle\u003cT\u003e descriptors with phase-local method-local NativeArray\u003cT\u003e views; no private NativeArray resolver properties remain"
+                              },
+    "buffers":  {
+                    "custom_buffer_id_range":  "74420-74449",
+                    "shared_existing_buffer_ids":  [
+                                                       "BufferID.HabitatBaseAwakeState",
+                                                       "BufferID.GasDynamicsTelemetryRing"
+                                                   ],
+                    "ledger":  "Docs/Reports/GAS_DYNAMICS_NATIVE_ALIAS_LEDGER_1324.json",
+                    "roslyn_reaudit_ledger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1324_APEX_REAUDIT.json"
+                },
+    "telemetry":  {
+                      "entry_type":  "AtmosphereTelemetryEntry",
+                      "entry_size_bytes":  64,
+                      "ring_capacity":  300,
+                      "ring_bytes":  19200,
+                      "dump_file":  "Docs/AgentLogs/Dump_1324_SubmarineAtmosphere.bin",
+                      "layout_guard":  "AreDtoLayoutsValid() checks sizes; AtmosphereMemorySovereigntyValidator1324.cs asserts size and every explicit field offset in editor"
+                  },
+    "hot_path_policy":  {
+                            "read_accessors":  "fail-closed pure reads through TryReadLane/TryReadTelemetryRing read-only views with explicit compaction fence checks",
+                            "write_ownership":  "TryAcquireStateWriteLocks / ReleaseStateWriteLocks try/finally spans same-phase mutation only; TryAcquireLaneWriteLock and telemetry helpers check IsCompactionFenceActive before acquisition",
+                            "jobs":  "GasDynamicsStepJob receives resolved NativeArray views and runs same-phase; no VaultGenerationHandle enters job structs and no cross-phase writer lock remains",
+                            "branch_policy":  "hot gas wake catch-up, diffusion, and telemetry aggregation inner loops use math.select/eager bitwise masks; inner-loop if/else/continue/break/&&/|| token counts are zero",
+                            "quality":  "continuous GlobalQualityWeight cadence preserved; no binary quality switch added",
+                            "aup":  "no direct absolute AUP to float3 casts found in target; runtime origin conversion uses AbsoluteUniversePosition.OffsetMeters after finite Vector3 validation"
+                        },
+    "verification":  {
+                         "static_primary_native_field_scan":  "PASS",
+                         "static_primary_alloc_dispose_scan":  "PASS",
+                         "static_primary_obvious_managed_hotpath_scan":  "PASS",
+                         "static_primary_schedule_fence_scan":  "PASS",
+                         "static_editor_layout_validator_scan":  "PASS",
+                         "static_private_native_resolver_property_scan":  "PASS",
+                         "post_acquire_lock_leak_scan":  "PASS",
+                         "full_atmosphere_roslyn_scan":  "PASS",
+                         "scanned_files":  26,
+                         "native_field_declarations":  141,
+                         "persistent_native_fields_remaining":  0,
+                         "transient_job_views":  141,
+                         "transient_vault_views":  259,
+                         "roslyn_audit_hash_sha256":  "0522e20573c1543b7e2d7893bff48ebe1331ce7aebaf800b266233e34702fbdd",
+                         "compile_status":  "PASS",
+                         "compile_guard":  "Guard clear; rerun12 build run with shared compilation disabled",
+                         "compile_command":  "dotnet build .\\Hecton8.Core.csproj --no-restore -v:minimal -m:1 /p:UseSharedCompilation=false /flp:\"logfile=Docs\\AgentLogs\\Build_1324_Hecton8Core_APEX_Rerun12.log;verbosity=minimal\"",
+                         "compile_log":  "Docs/AgentLogs/Build_1324_Hecton8Core_APEX_Rerun12.log",
+                         "build_error_count":  0,
+                         "domain_errors_observed_in_latest_log":  0,
+                         "blocking_error_groups":  [
+
+                                                   ]
+                     },
+    "runtime_cost_estimates_microseconds":  {
+                                                "state_handle_cold_boot":  5200,
+                                                "phase_local_resolution_batch":  6800,
+                                                "try_finally_lock_overhead_per_mutation_batch":  3,
+                                                "telemetry_sample_write":  2,
+                                                "same_phase_run_removed_scheduler_estimate_per_step":  "3-25",
+                                                "native_alias_stale_pointer_risk_removed":  31
+                                            }
+}

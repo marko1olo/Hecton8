@@ -113,6 +113,11 @@ Shader "Hecton8/UI/PDA Sonar Map"
                 return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
             }
 
+            float ResolveLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) * rcp(max(edge1 - edge0, 0.00001)));
+            }
+
             float HectonDitherCoverage(float2 positionCS)
             {
                 float2 pixel = floor(positionCS);
@@ -182,7 +187,7 @@ Shader "Hecton8/UI/PDA Sonar Map"
                     float sdf = DecodeSdf(uvw);
                     float surfaceBand = 1.0 - saturate(abs(sdf) * invSurfaceBandWidth);
                     float3 voxelCell = abs(frac(uvw * gridScale) - 0.5);
-                    float voxelWire = 1.0 - smoothstep(0.16, 0.34, min(voxelCell.x, min(voxelCell.y, voxelCell.z)));
+                    float voxelWire = 1.0 - ResolveLinearRamp01(0.16, 0.34, min(voxelCell.x, min(voxelCell.y, voxelCell.z)));
 
                     [unroll]
                     for (int pingIndex = 0; pingIndex < 8; pingIndex++)

@@ -17,7 +17,7 @@ namespace Hecton8.Construction
     /// </summary>
     internal static class LogisticsPipeTransportScheduler
     {
-        private const int InitialNodeCapacity = 32;
+        private const int MaxNodeCapacity = 128;
         private const int CycleWarningCadenceFrames = 300;
         private const SystemID OwnerSystemId = SystemID.Construction;
         private const BufferID EdgeOffsetsBufferId = (BufferID)72054;
@@ -31,7 +31,7 @@ namespace Hecton8.Construction
         private const string CycleRepairWarningMessage = "LogisticsPipeTransportScheduler dropped cyclic edge to keep pipe DAG valid.";
 #endif
         // COLD ALLOC: List<LogisticsPipeNode>[32] - managed pipe-node registry for shared DAG transport scheduling.
-        private static readonly List<LogisticsPipeNode> _activeNodes = new List<LogisticsPipeNode>(InitialNodeCapacity);
+        private static readonly List<LogisticsPipeNode> _activeNodes = new List<LogisticsPipeNode>(MaxNodeCapacity);
         private static IDataVault _dataVault;
         private static VaultGenerationHandle<int> _edgeOffsetsHandle;
         private static VaultGenerationHandle<int> _edgeDestinationsHandle;
@@ -111,7 +111,7 @@ namespace Hecton8.Construction
             JobHandle teardownDependency = CancelPendingSortForTeardown();
             JobHandle.ScheduleBatchedJobs();
             DispatcherJobSwap.TryComplete(ref teardownDependency, forceComplete: true);
-            IDataVault vault = CacheDataVault();
+            IDataVault vault = _dataVault;
             ReleaseSortWriteLocks(vault);
             ReleaseVaultHandles(vault);
             _activeNodes.Clear();
@@ -119,6 +119,19 @@ namespace Hecton8.Construction
             _scheduledNodeCount = 0;
             _lastProcessedFrame = -1;
             _nextCycleWarningFrame = 0;
+        }
+
+        internal static void BindDataVault(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            JobHandle teardownDependency = CancelPendingSortForTeardown();
+            JobHandle.ScheduleBatchedJobs();
+            DispatcherJobSwap.TryComplete(ref teardownDependency, forceComplete: true);
+            ReleaseSortWriteLocks(_dataVault);
+            ReleaseVaultHandles(_dataVault);
+            _dataVault = vault;
         }
 
         internal static void Register(LogisticsPipeNode node)
@@ -132,6 +145,9 @@ namespace Hecton8.Construction
                 if (ReferenceEquals(_activeNodes[i], node))
                     return;
             }
+
+            if (_activeNodes.Count >= MaxNodeCapacity)
+                return;
 
             _activeNodes.Add(node);
         }
@@ -238,85 +254,85 @@ namespace Hecton8.Construction
             bool scheduled = false;
             try
             {
-            for (int nodeIndex = 0; nodeIndex <= activeCount; nodeIndex++)
-                edgeOffsets[nodeIndex] = 0;
+                for (int nodeIndex = 0; nodeIndex <= activeCount; nodeIndex++)
+                    edgeOffsets[nodeIndex] = 0;
 
-            for (int nodeIndex = 0; nodeIndex < activeCount; nodeIndex++)
-                inputIndegrees[nodeIndex] = 0;
+                for (int nodeIndex = 0; nodeIndex < activeCount; nodeIndex++)
+                    inputIndegrees[nodeIndex] = 0;
 
-            sortedCount[0] = 0;
+                sortedCount[0] = 0;
 
-            for (int sourceIndex = 0; sourceIndex < activeCount; sourceIndex++)
-            {
-                if (!_activeNodes[sourceIndex].ParticipatesInSchedulerDag)
-                    continue;
-
-                StorageCrate destinationCrate = _activeNodes[sourceIndex].DestinationCrate;
-                if (destinationCrate == null)
-                    continue;
-
-                int outDegree = 0;
-                for (int destinationIndex = 0; destinationIndex < activeCount; destinationIndex++)
+                for (int sourceIndex = 0; sourceIndex < activeCount; sourceIndex++)
                 {
-                    if (sourceIndex == destinationIndex)
+                    if (!_activeNodes[sourceIndex].ParticipatesInSchedulerDag)
                         continue;
 
-                    if (!_activeNodes[destinationIndex].ParticipatesInSchedulerDag)
+                    StorageCrate destinationCrate = _activeNodes[sourceIndex].DestinationCrate;
+                    if (destinationCrate == null)
                         continue;
 
-                    if (!ReferenceEquals(destinationCrate, _activeNodes[destinationIndex].SourceCrate))
-                        continue;
+                    int outDegree = 0;
+                    for (int destinationIndex = 0; destinationIndex < activeCount; destinationIndex++)
+                    {
+                        if (sourceIndex == destinationIndex)
+                            continue;
 
-                    outDegree++;
-                    inputIndegrees[destinationIndex] = inputIndegrees[destinationIndex] + 1;
+                        if (!_activeNodes[destinationIndex].ParticipatesInSchedulerDag)
+                            continue;
+
+                        if (!ReferenceEquals(destinationCrate, _activeNodes[destinationIndex].SourceCrate))
+                            continue;
+
+                        outDegree++;
+                        inputIndegrees[destinationIndex] = inputIndegrees[destinationIndex] + 1;
+                    }
+
+                    edgeOffsets[sourceIndex + 1] = outDegree;
                 }
 
-                edgeOffsets[sourceIndex + 1] = outDegree;
-            }
+                for (int nodeIndex = 1; nodeIndex <= activeCount; nodeIndex++)
+                    edgeOffsets[nodeIndex] = edgeOffsets[nodeIndex] + edgeOffsets[nodeIndex - 1];
 
-            for (int nodeIndex = 1; nodeIndex <= activeCount; nodeIndex++)
-                edgeOffsets[nodeIndex] = edgeOffsets[nodeIndex] + edgeOffsets[nodeIndex - 1];
+                for (int nodeIndex = 0; nodeIndex < activeCount; nodeIndex++)
+                    workIndegrees[nodeIndex] = edgeOffsets[nodeIndex];
 
-            for (int nodeIndex = 0; nodeIndex < activeCount; nodeIndex++)
-                workIndegrees[nodeIndex] = edgeOffsets[nodeIndex];
-
-            for (int sourceIndex = 0; sourceIndex < activeCount; sourceIndex++)
-            {
-                if (!_activeNodes[sourceIndex].ParticipatesInSchedulerDag)
-                    continue;
-
-                StorageCrate destinationCrate = _activeNodes[sourceIndex].DestinationCrate;
-                if (destinationCrate == null)
-                    continue;
-
-                for (int destinationIndex = 0; destinationIndex < activeCount; destinationIndex++)
+                for (int sourceIndex = 0; sourceIndex < activeCount; sourceIndex++)
                 {
-                    if (sourceIndex == destinationIndex)
+                    if (!_activeNodes[sourceIndex].ParticipatesInSchedulerDag)
                         continue;
 
-                    if (!_activeNodes[destinationIndex].ParticipatesInSchedulerDag)
+                    StorageCrate destinationCrate = _activeNodes[sourceIndex].DestinationCrate;
+                    if (destinationCrate == null)
                         continue;
 
-                    if (!ReferenceEquals(destinationCrate, _activeNodes[destinationIndex].SourceCrate))
-                        continue;
+                    for (int destinationIndex = 0; destinationIndex < activeCount; destinationIndex++)
+                    {
+                        if (sourceIndex == destinationIndex)
+                            continue;
 
-                    int writeIndex = workIndegrees[sourceIndex];
-                    workIndegrees[sourceIndex] = writeIndex + 1;
-                    edgeDestinations[writeIndex] = destinationIndex;
+                        if (!_activeNodes[destinationIndex].ParticipatesInSchedulerDag)
+                            continue;
+
+                        if (!ReferenceEquals(destinationCrate, _activeNodes[destinationIndex].SourceCrate))
+                            continue;
+
+                        int writeIndex = workIndegrees[sourceIndex];
+                        workIndegrees[sourceIndex] = writeIndex + 1;
+                        edgeDestinations[writeIndex] = destinationIndex;
+                    }
                 }
-            }
 
-            BuildPipeTopologicalOrderJob job = new BuildPipeTopologicalOrderJob
-            {
-                NodeCount = activeCount,
-                EdgeOffsets = edgeOffsets,
-                EdgeDestinations = edgeDestinations,
-                InputIndegrees = inputIndegrees,
-                WorkIndegrees = workIndegrees,
-                Queue = queue,
-                SortedOrder = sortedOrder,
-                SortedCount = sortedCount
-            };
+                BuildPipeTopologicalOrderJob job = new BuildPipeTopologicalOrderJob
+                {
+                    NodeCount = activeCount,
+                    EdgeOffsets = edgeOffsets,
+                    EdgeDestinations = edgeDestinations,
+                    InputIndegrees = inputIndegrees,
+                    WorkIndegrees = workIndegrees,
+                    Queue = queue,
+                    SortedOrder = sortedOrder,
+                    SortedCount = sortedCount
+                };
 
                 _pendingSortHandle = job.Schedule();
                 _pendingSort = true;
@@ -370,7 +386,7 @@ namespace Hecton8.Construction
 
             _pendingSort = false;
             IDataVault vault = CacheDataVault();
-            if (!TryResolveSortBuffers(
+            if (!TryReadLockedSortBuffers(
                     vault,
                     _scheduledNodeCount,
                     out _,
@@ -413,9 +429,6 @@ namespace Hecton8.Construction
 
         private static IDataVault CacheDataVault()
         {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
-
             return _dataVault;
         }
 
@@ -508,7 +521,7 @@ namespace Hecton8.Construction
             return true;
         }
 
-        private static bool TryResolveSortBuffers(
+        private static bool TryReadLockedSortBuffers(
             IDataVault vault,
             int nodeCount,
             out NativeArray<int> edgeOffsets,
@@ -528,13 +541,13 @@ namespace Hecton8.Construction
             sortedCount = default;
 
             return vault != null &&
-                   TryResolveBuffer(vault, in _edgeOffsetsHandle, nodeCount + 1, out edgeOffsets) &&
-                   TryResolveBuffer(vault, in _edgeDestinationsHandle, 0, out edgeDestinations) &&
-                   TryResolveBuffer(vault, in _inputIndegreesHandle, nodeCount, out inputIndegrees) &&
-                   TryResolveBuffer(vault, in _workIndegreesHandle, nodeCount, out workIndegrees) &&
-                   TryResolveBuffer(vault, in _queueHandle, nodeCount, out queue) &&
-                   TryResolveBuffer(vault, in _sortedOrderHandle, nodeCount, out sortedOrder) &&
-                   TryResolveBuffer(vault, in _sortedCountHandle, 1, out sortedCount);
+                   TryReadLockedBuffer(vault, in _edgeOffsetsHandle, nodeCount + 1, out edgeOffsets) &&
+                   TryReadLockedBuffer(vault, in _edgeDestinationsHandle, 0, out edgeDestinations) &&
+                   TryReadLockedBuffer(vault, in _inputIndegreesHandle, nodeCount, out inputIndegrees) &&
+                   TryReadLockedBuffer(vault, in _workIndegreesHandle, nodeCount, out workIndegrees) &&
+                   TryReadLockedBuffer(vault, in _queueHandle, nodeCount, out queue) &&
+                   TryReadLockedBuffer(vault, in _sortedOrderHandle, nodeCount, out sortedOrder) &&
+                   TryReadLockedBuffer(vault, in _sortedCountHandle, 1, out sortedCount);
         }
 
         private static bool TryAcquireWriteBuffer(
@@ -550,7 +563,7 @@ namespace Hecton8.Construction
                 return false;
 
             if (handle.BufferID == 0u ||
-                !vault.TryResolveHandle(in handle, out NativeArray<int> existing) ||
+                !vault.TryReadHandle(in handle, out NativeArray<int> existing) ||
                 !existing.IsCreated ||
                 existing.Length < safeLength)
             {
@@ -571,7 +584,7 @@ namespace Hecton8.Construction
             return false;
         }
 
-        private static bool TryResolveBuffer(
+        private static bool TryReadLockedBuffer(
             IDataVault vault,
             in VaultGenerationHandle<int> handle,
             int requiredLength,
@@ -634,17 +647,31 @@ namespace Hecton8.Construction
                 ReleaseVaultHandle(vault, ref _edgeDestinationsHandle);
                 ReleaseVaultHandle(vault, ref _edgeOffsetsHandle);
             }
+            else
+            {
+                ResetVaultHandles();
+            }
 
             _dataVault = null;
         }
 
         private static void ReleaseVaultHandle(IDataVault vault, ref VaultGenerationHandle<int> handle)
         {
-            if (handle.BufferID == 0u)
-                return;
+            if (handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
 
-            vault.ReleaseBuffer(in handle);
             handle = default;
+        }
+
+        private static void ResetVaultHandles()
+        {
+            _sortedCountHandle = default;
+            _sortedOrderHandle = default;
+            _queueHandle = default;
+            _workIndegreesHandle = default;
+            _inputIndegreesHandle = default;
+            _edgeDestinationsHandle = default;
+            _edgeOffsetsHandle = default;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

@@ -3472,7 +3472,8 @@ namespace Hecton8.Gameplay
             }
 
             // COLD ALLOC: SurvivalDatabaseItemParameters[parsedRows.Count] � immutable injected item-parameter snapshot � owner: HectonSurvivalSystem
-            parsedItems = parsedRows.ToArray();
+            parsedItems = new SurvivalDatabaseItemParameters[parsedRows.Count];
+            parsedRows.CopyTo(parsedItems);
             return true;
         }
 

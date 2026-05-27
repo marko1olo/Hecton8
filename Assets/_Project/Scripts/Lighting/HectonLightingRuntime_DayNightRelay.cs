@@ -105,7 +105,7 @@ namespace Hecton8.Lighting
         private const BufferID DayNightGradientProfilesBuffer = (BufferID)0x63082A;
         private const BufferID DayNightGradientProfileCountBuffer = (BufferID)0x63082B;
         private const BufferID DayNightMockSamplesBuffer = (BufferID)0x63082C;
-        private const string DayNightBlackBoxDumpPath = "Docs/AgentLogs/Dump_SHINOBU_347.bin";
+        private const string DayNightBlackBoxDumpPath = "Docs/AgentLogs/Dump_13KRA.bin";
         private const string LightingGradientProfilesRelativePath = "Docs/Data/lighting_gradient_profiles.csv";
 
         private static readonly int _HectonEnvironmentLightingCBufferId = Shader.PropertyToID("HectonEnvironmentLighting");
@@ -133,7 +133,7 @@ namespace Hecton8.Lighting
         private float _editorQualityOverride = -1f;
         private float _debugColorBlocksEnabled;
 
-        private void EnsureDayNightRelayNativeStorage()
+        private bool EnsureDayNightRelayNativeStorage()
         {
             _environmentLighting = AcquireBuffer<EnvironmentLightingDTO>(
                 DayNightEnvironmentLightingBuffer,
@@ -161,9 +161,31 @@ namespace Hecton8.Lighting
                 DayNightMockSampleCapacity,
                 NativeArrayOptions.UninitializedMemory);
 
+            if (!HasRequiredDayNightRelayStorage())
+                return false;
+
             InitializeDayNightTuning();
             BuildDefaultLightingGradientProfiles();
             EnsureEnvironmentLightingCBuffer();
+            return true;
+        }
+
+        private bool HasRequiredDayNightRelayStorage()
+        {
+            return TryOpenGIRelayBuffer(in _environmentLighting, DayNightEnvironmentLightingBuffer, 1, out NativeArray<EnvironmentLightingDTO> environment) &&
+                   environment.IsCreated &&
+                   TryOpenGIRelayBuffer(in _dayNightTelemetryRing, DayNightTelemetryRingBuffer, TelemetryCapacity, out NativeArray<LightingRelayTelemetryEntry> telemetry) &&
+                   telemetry.IsCreated &&
+                   TryOpenGIRelayBuffer(in _dayNightTelemetryCursor, DayNightTelemetryCursorBuffer, 1, out NativeArray<int> cursor) &&
+                   cursor.IsCreated &&
+                   TryOpenGIRelayBuffer(in _dayNightTuning, DayNightTuningBuffer, 1, out NativeArray<LightingRelayTuningDTO> tuning) &&
+                   tuning.IsCreated &&
+                   TryOpenGIRelayBuffer(in _lightingGradientProfiles, DayNightGradientProfilesBuffer, DayNightGradientProfileCapacity, out NativeArray<LightingGradientProfileDTO> profiles) &&
+                   profiles.IsCreated &&
+                   TryOpenGIRelayBuffer(in _lightingGradientProfileCount, DayNightGradientProfileCountBuffer, 1, out NativeArray<int> profileCount) &&
+                   profileCount.IsCreated &&
+                   TryOpenGIRelayBuffer(in _lightingMockSamples, DayNightMockSamplesBuffer, DayNightMockSampleCapacity, out NativeArray<LightingRelayMockSampleDTO> samples) &&
+                   samples.IsCreated;
         }
 
         private void ReleaseDayNightRelayNativeStorage()
@@ -204,13 +226,13 @@ namespace Hecton8.Lighting
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             if (_vault == null ||
                 requiredLength <= 0 ||
                 !IsGIRelayVaultHandle(in handle, bufferId) ||
-                !_vault.TryReadHandle(in handle, out buffer) ||
+                !_vault.TryReadOnlyHandle(in handle, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -317,7 +339,7 @@ namespace Hecton8.Lighting
 
         private float ResolveDayNightQualityWeight()
         {
-            if (TryReadDayNightRelayArray(in _dayNightTuning, DayNightTuningBuffer, 1, out NativeArray<LightingRelayTuningDTO> tuningArray))
+            if (TryReadDayNightRelayArray(in _dayNightTuning, DayNightTuningBuffer, 1, out NativeArray<LightingRelayTuningDTO>.ReadOnly tuningArray))
             {
                 LightingRelayTuningDTO tuning = tuningArray[0];
                 if (tuning.GlobalQualityOverride >= 0f && math.isfinite(tuning.GlobalQualityOverride))
@@ -335,7 +357,7 @@ namespace Hecton8.Lighting
             if (_editorWaterExtinctionConstant >= 0f && math.isfinite(_editorWaterExtinctionConstant))
                 return math.max(0f, _editorWaterExtinctionConstant);
 
-            if (!TryReadDayNightRelayArray(in _dayNightTuning, DayNightTuningBuffer, 1, out NativeArray<LightingRelayTuningDTO> tuningArray))
+            if (!TryReadDayNightRelayArray(in _dayNightTuning, DayNightTuningBuffer, 1, out NativeArray<LightingRelayTuningDTO>.ReadOnly tuningArray))
                 return 0.0017f;
 
             float value = tuningArray[0].WaterExtinctionConstant;
@@ -347,7 +369,7 @@ namespace Hecton8.Lighting
             if (_editorEclipseDarkeningMultiplier >= 0f && math.isfinite(_editorEclipseDarkeningMultiplier))
                 return math.saturate(_editorEclipseDarkeningMultiplier);
 
-            if (!TryReadDayNightRelayArray(in _dayNightTuning, DayNightTuningBuffer, 1, out NativeArray<LightingRelayTuningDTO> tuningArray))
+            if (!TryReadDayNightRelayArray(in _dayNightTuning, DayNightTuningBuffer, 1, out NativeArray<LightingRelayTuningDTO>.ReadOnly tuningArray))
                 return 0.72f;
 
             float value = tuningArray[0].EclipseDarkeningMultiplier;
@@ -608,7 +630,7 @@ namespace Hecton8.Lighting
         public bool TryGetEnvironmentLightingCopy(out EnvironmentLightingDTO lighting)
         {
             lighting = default;
-            if (!TryReadDayNightRelayArray(in _environmentLighting, DayNightEnvironmentLightingBuffer, 1, out NativeArray<EnvironmentLightingDTO> environment))
+            if (!TryReadDayNightRelayArray(in _environmentLighting, DayNightEnvironmentLightingBuffer, 1, out NativeArray<EnvironmentLightingDTO>.ReadOnly environment))
                 return false;
 
             lighting = environment[0];
@@ -621,17 +643,17 @@ namespace Hecton8.Lighting
         {
             telemetry = default;
             cursor = _dayNightTelemetryCursorCached;
-            if (!TryReadDayNightRelayArray(in _dayNightTelemetryRing, DayNightTelemetryRingBuffer, TelemetryCapacity, out NativeArray<LightingRelayTelemetryEntry> telemetryRing))
+            if (!TryReadDayNightRelayArray(in _dayNightTelemetryRing, DayNightTelemetryRingBuffer, TelemetryCapacity, out NativeArray<LightingRelayTelemetryEntry>.ReadOnly telemetryRing))
                 return false;
 
-            telemetry = telemetryRing.AsReadOnly();
+            telemetry = telemetryRing;
             return true;
         }
 
         public bool TryGetLightingRelayTuningCopy(out LightingRelayTuningDTO tuning)
         {
             tuning = default;
-            if (!TryReadDayNightRelayArray(in _dayNightTuning, DayNightTuningBuffer, 1, out NativeArray<LightingRelayTuningDTO> tuningArray))
+            if (!TryReadDayNightRelayArray(in _dayNightTuning, DayNightTuningBuffer, 1, out NativeArray<LightingRelayTuningDTO>.ReadOnly tuningArray))
                 return false;
 
             tuning = tuningArray[0];

@@ -1,0 +1,52 @@
+{
+  "agentId": "1332",
+  "task": "1332_RUNTIME_CLEAR_FAILCLOSED_REAUDIT",
+  "status": "STATIC_VERIFIED_BUILD_GATE_CLOSED",
+  "scannedFiles": 11,
+  "failedGates": [
+    "DOTNET_BUILD_BLOCKED_BY_HOST_CPU_GATE",
+    "UNITY_EDITOR_TESTS_AND_PROFILER_NOT_RUN_IN_TOOL_CONTEXT"
+  ],
+  "changes": [
+    "Expanded INativeInputManagerRuntime with TryClearBindingOverrides while retaining the legacy void wrapper.",
+    "InputManager now returns false when runtime override clear cannot be proven.",
+    "InputManager TryClearBindingOverrides now initializes the runtime action asset before rejecting an early clear request.",
+    "ControlRemapper transactional load uses a no-throw try-clear helper before apply and rollback clear.",
+    "RebindingManager no longer publishes clear/load success unless runtime clear returns true.",
+    "RebindingManager ClearOverrides now captures current runtime overrides in a fixed rollback array before clearing.",
+    "RebindingManager ClearOverrides now restores runtime overrides when saved-file deletion fails.",
+    "RebindingManager now deletes the temp controls file before the primary controls.json file to avoid data loss on temp-delete failure.",
+    "AccessibilitySettings now routes OnDestroy through OnServiceShutdown to release cold GraphicsBuffer allocations.",
+    "Editor guard and regression test cover rejected clear without losing current overrides."
+  ],
+  "totalNativeFieldDeclarations": 0,
+  "persistentNativeFieldsRemaining": 0,
+  "transientVaultViews": 3,
+  "transientJobViews": 0,
+  "nativeTokenOccurrencesInProductionScope": 14,
+  "zeroGcHotPathHits": 0,
+  "absoluteAupCastsFound": 0,
+  "compactionAwareLocksProven": true,
+  "telemetryRingIntegrated": true,
+  "interfaceExpansion": {
+    "file": "Assets/_Project/Scripts/Core/BootstrapContracts/InputBindingServiceContracts.cs",
+    "method": "bool TryClearBindingOverrides()",
+    "existingSignaturesMutated": false,
+    "localImplementersUpdated": [
+      "Assets/_Project/Scripts/Input/InputManager.cs",
+      "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs::MockNativeInputRuntime"
+    ]
+  },
+  "verification": {
+    "productionForbiddenTokenHits": 0,
+    "nativeCollectionFieldDeclarations": 0,
+    "gitDiffCheckWhitespaceErrors": 0,
+    "cpuGateSamples": [65, 85, 79],
+    "cpuGateAverage": 76.3,
+    "compilerProcesses": "",
+    "dotnetBuildAttempted": false,
+    "dotnetBuildExitCode": null,
+    "agent1332DomainErrorsInBuildOutput": null
+  },
+  "verificationHashSha256": "87a0d6346e68560401b921599202e859e24f4d57d4c8c81b0115a085cd226c5e"
+}

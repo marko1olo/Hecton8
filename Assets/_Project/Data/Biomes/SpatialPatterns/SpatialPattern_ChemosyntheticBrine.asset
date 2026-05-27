@@ -18,7 +18,7 @@ MonoBehaviour:
     and seep lines.
   nodeClusterPattern: Node clusters form in concentrated hotspots around vents, not
     evenly across the biome.
-  safePocketPattern: Safe pockets are just outside active chemistry, using the edge
+  safePocketPattern: Reorientation pockets are just outside active chemistry, using the edge
     of danger rather than true safety.
   routeAnchorPattern: Route memory comes from bowl chains, vent arcs, and bright
     chemistry contrast.

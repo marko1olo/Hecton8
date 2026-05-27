@@ -1,0 +1,63 @@
+﻿# Project Baseline
+
+Date: 2026-05-26
+Status: STATIC BASELINE
+Owner: DOCS_ACTUALIZATION
+Evidence class: STATIC_DOC / STATIC_SOURCE
+
+Purpose: stable engineering entry point. This file is not a work log, task board, build-status page, report index, or prompt digest.
+
+## Authority
+
+- Source under `Assets/_Project` wins over dated reports.
+- `AGENTS.md`, `.agents-skills/`, and `Docs/ARCHITECTURE` define operating doctrine.
+- `Docs/Reports` stores evidence snapshots. It is not a contract layer.
+- `Docs/DEPRECATED`, `Docs/_Archive`, and `Docs/Archive` are historical storage.
+- A report fact becomes active only after it is distilled into `Docs/ARCHITECTURE` or another stable contract.
+
+## Root and Docs Boundary
+
+- Repository root text anchors are limited to `AGENTS.md`, `TASTE.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
+- `Docs/` root is for stable maps, governance, quality gates, project contracts, and architecture entry points.
+- Generated/tool-required root paths must stay short and contract-shaped; full generated bodies belong in reports, regenerated artifacts, or deprecated snapshots.
+- Large generated documentation artifacts belong in `Docs/Generated`.
+- CSV authoring/tuning profiles belong in `Docs/Data/Profiles`.
+- Dated notes, prompt extracts, report chains, task status files, local telemetry, and temporary scan counters do not belong in `Docs/` root.
+- Current proof snapshots belong in `Docs/Reports` and the concise evidence sections of `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+
+## Stable Runtime Doctrine
+
+- Persistent cross-domain native memory routes through `GlobalDataVault` and generation-checked handles.
+- Private persistent `NativeArray`, `NativeList`, `NativeQueue`, raw pointer, or unsafe buffer fields in managers and `MonoBehaviour` types are debt unless a specific owner contract proves lifetime, disposal, and local scratch scope.
+- Read accessors are pure: no allocation, scene search, publication, sync, job completion, global mutation, or hidden dependency resolution.
+- `GlobalRegistry` is cold identity and dependency injection only.
+- `SignalBus<T>` is the hot first-party broadcast route.
+- `GlobalSignals` direct queues are legacy bridge lanes.
+- `HectonEventBus` is managed mod/API isolation.
+- `HomeostasisBrain.GlobalQualityWeight` is the continuous quality scalar. It may scale fidelity, cadence, capacity, and optional telemetry, but not gameplay truth ownership, DTO layout, save identity, or authority route.
+- Burst/jobs are valid for amortized data-local batch work with dispatcher-owned completion windows. Tiny jobs, same-frame schedule/readback loops, and hidden `.Complete()` require profiler proof or removal.
+
+## Stable Data Contracts
+
+- Data Monolith runtime payload target: `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
+- Save writer version: `0x000B`.
+- Current save header size: `56` bytes.
+- AUP/blit layout: `48` bytes.
+- AUP distance work subtracts sector/local coordinates in double before float local handoff.
+
+## Verification Language
+
+- Use `PENDING VERIFICATION` unless a current artifact path proves the claim.
+- Static source reads do not prove runtime behavior.
+- CLI compile proves only the compiled source slice named by the log.
+- Runtime readiness requires explicit Unity import, Console, Play Mode or player, profiler, GC/memory, shader/render, save/load, platform, and visual artifacts.
+
+## Deprecated Material Boundary
+
+Root-local telemetry, old FAQ/glossary prose, marketing binary storage, and stale domain planning bundles are no longer active project docs. Manifests:
+
+- `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/MANIFEST.md`
+- `Docs/DEPRECATED/Legacy_Domain_Bundles_2026-05-26/MANIFEST.md`
+- `Docs/DEPRECATED/Root_Generated_Snapshots_2026-05-26/MANIFEST.md`
+
+Archived facts must not be cited as active contracts. Promote only the current technical fact, then cite the archive path as evidence.

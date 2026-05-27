@@ -8,6 +8,9 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Rendering;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Gameplay
 {
@@ -16,6 +19,9 @@ namespace Hecton8.Gameplay
     {
         private const string HarpoonCategory = "HARPOON";
         private const string TracerShaderName = "Hecton8/Physics/TetherLineStrip";
+#if UNITY_EDITOR
+        private const string TracerShaderPath = "Assets/_Project/Art/Shaders/Hecton_TetherLineStrip.shader";
+#endif
         private static readonly int _TetherPositionsId = Shader.PropertyToID("_TetherPositions");
         private static readonly int _TetherSegmentTensionsId = Shader.PropertyToID("_TetherSegmentTensions");
         private static readonly int _TetherDrawParamsId = Shader.PropertyToID("_TetherDrawParams");
@@ -151,6 +157,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float tetherPullBonus = 1.35f;
 
         [Header("Tracer")]
+        [SerializeField] private Shader tracerShader;
         [SerializeField] private float tracerLifetime = 0.08f;
         [SerializeField] private Color tracerColor = new Color(0.46f, 0.98f, 0.94f, 0.95f);
         [SerializeField, Range(0.002f, 0.05f)] private float tracerRadius = 0.012f;
@@ -277,7 +284,7 @@ namespace Hecton8.Gameplay
             float runtimeDamage = GetRuntimePowerScalar(damage);
             Vector3 endPoint = toolOrigin + toolForward * runtimeRange;
 
-            if (TryResolvePrimarySurfaceHit(toolOrigin, toolForward, runtimeRange, targetMask.value, QueryTriggerInteraction.Ignore, out InteractionSurfaceHit hit))
+            if (RequestPrimarySurfaceHit(toolOrigin, toolForward, runtimeRange, targetMask.value, QueryTriggerInteraction.Ignore, out InteractionSurfaceHit hit))
             {
                 endPoint = hit.point;
                 ToolHitUtility.ApplyDamage(
@@ -623,12 +630,20 @@ namespace Hecton8.Gameplay
             _tracerPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - harpoon tracer GPU bindings - owner: HarpoonLauncherTool
         }
 
-        private static Material GetTracerMaterial()
+        private Material GetTracerMaterial()
         {
             if (s_tracerMaterial != null)
                 return s_tracerMaterial;
 
-            Shader shader = Shader.Find(TracerShaderName);
+            Shader shader = tracerShader;
+#if UNITY_EDITOR
+            if (shader == null)
+                shader = AssetDatabase.LoadAssetAtPath<Shader>(TracerShaderPath);
+#endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find(TracerShaderName);
+#endif
             if (shader == null)
                 return null;
 
@@ -995,7 +1010,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            return TryResolvePrimarySurfaceHit(origin, forward, GetRuntimeMaxRange(range), targetMask.value, QueryTriggerInteraction.Ignore, out hit);
+            return RequestPrimarySurfaceHit(origin, forward, GetRuntimeMaxRange(range), targetMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
         private bool TryResolveToolPose(out Vector3 origin, out Vector3 forward)

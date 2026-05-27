@@ -5,8 +5,11 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Visor
 {
@@ -15,6 +18,10 @@ namespace Hecton8.Visor
     /// </summary>
     public sealed class HectonSonarPointCloudFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
+#if UNITY_EDITOR
+        private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/SonarGridOverlay.shader";
+#endif
+
         [Serializable]
         private sealed class FeatureSettings
         {
@@ -58,6 +65,17 @@ namespace Hecton8.Visor
         private sealed class SonarPointCloudPass : ScriptableRenderPass, IDisposable
         {
             private const int RenderTextureBucketSize = 64;
+
+            private sealed class SonarFullscreenPassData
+            {
+                internal Material material;
+                internal TextureHandle source;
+                internal TextureHandle history;
+                internal TextureHandle worldHistory;
+                internal int shaderPassIndex;
+                internal bool bindHistory;
+                internal bool bindWorldHistory;
+            }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Sonar Point Cloud");
             private FeatureSettings _settings;
@@ -171,46 +189,99 @@ namespace Hecton8.Visor
 
                 UpdateMaterialParameters(_material, _settings, screenHistoryAlive, worldHistoryAlive, _worldMemoryRect, _worldScrollUvOffset, floatingOriginOffset);
 
-                Texture historyReadTextureSource = _historyRead != null ? _historyRead.rt : null;
-                if (historyReadTextureSource != null)
-                    _material.SetTexture(ShaderConstants.HistoryTextureId, historyReadTextureSource);
-
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, historyWriteTexture, _material, 0),
-                           passName: "Hecton Sonar History Write",
-                           returnBuilder: true))
-                {
-                    builder.UseTexture(historyReadTexture, AccessFlags.Read);
-                    builder.SetGlobalTextureAfterPass(historyWriteTexture, ShaderConstants.HistoryTextureId);
-                    builder.SetGlobalTextureAfterPass(historyWriteTexture, ShaderConstants.PointCloudTextureId);
-                }
-
-                Texture worldHistoryReadTextureSource = _worldHistoryRead != null ? _worldHistoryRead.rt : null;
-                if (worldHistoryReadTextureSource != null)
-                    _material.SetTexture(ShaderConstants.WorldHistoryTextureId, worldHistoryReadTextureSource);
-
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, worldHistoryWriteTexture, _material, 1),
-                           passName: "Hecton Sonar World History Write",
-                           returnBuilder: true))
-                {
-                    builder.UseTexture(worldHistoryReadTexture, AccessFlags.Read);
-                    builder.SetGlobalTextureAfterPass(worldHistoryWriteTexture, ShaderConstants.WorldHistoryTextureId);
-                    builder.SetGlobalTextureAfterPass(worldHistoryWriteTexture, ShaderConstants.WorldPointCloudTextureId);
-                }
-
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, compositeTexture, _material, 2),
-                           passName: "Hecton Sonar Point Cloud Composite",
-                           returnBuilder: true))
-                {
-                    builder.UseTexture(historyWriteTexture, AccessFlags.Read);
-                    builder.UseTexture(worldHistoryWriteTexture, AccessFlags.Read);
-                }
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Sonar History Write",
+                    sourceTexture,
+                    historyReadTexture,
+                    default,
+                    historyWriteTexture,
+                    _material,
+                    0,
+                    true,
+                    false);
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Sonar World History Write",
+                    sourceTexture,
+                    default,
+                    worldHistoryReadTexture,
+                    worldHistoryWriteTexture,
+                    _material,
+                    1,
+                    false,
+                    true);
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Sonar Point Cloud Composite",
+                    sourceTexture,
+                    historyWriteTexture,
+                    worldHistoryWriteTexture,
+                    compositeTexture,
+                    _material,
+                    2,
+                    true,
+                    true);
 
                 resourceData.cameraColor = compositeTexture;
                 SwapHistoryTargets();
                 SwapWorldMemoryTargets();
+            }
+
+            private void RecordFullscreenPass(
+                RenderGraph renderGraph,
+                string passName,
+                TextureHandle source,
+                TextureHandle history,
+                TextureHandle worldHistory,
+                TextureHandle destination,
+                Material material,
+                int shaderPassIndex,
+                bool bindHistory,
+                bool bindWorldHistory)
+            {
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<SonarFullscreenPassData>(
+                           passName,
+                           out SonarFullscreenPassData passData,
+                           _profilingSampler))
+                {
+                    passData.material = material;
+                    passData.source = source;
+                    passData.history = history;
+                    passData.worldHistory = worldHistory;
+                    passData.shaderPassIndex = shaderPassIndex;
+                    passData.bindHistory = bindHistory;
+                    passData.bindWorldHistory = bindWorldHistory;
+
+                    builder.UseTexture(source, AccessFlags.Read);
+                    if (bindHistory)
+                        builder.UseTexture(history, AccessFlags.Read);
+                    if (bindWorldHistory)
+                        builder.UseTexture(worldHistory, AccessFlags.Read);
+                    builder.SetRenderAttachment(destination, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (SonarFullscreenPassData data, RasterGraphContext context) =>
+                    {
+                        if (data.material == null)
+                            return;
+
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.source);
+                        if (data.bindHistory)
+                        {
+                            context.cmd.SetGlobalTexture(ShaderConstants.HistoryTextureId, data.history);
+                            context.cmd.SetGlobalTexture(ShaderConstants.PointCloudTextureId, data.history);
+                        }
+
+                        if (data.bindWorldHistory)
+                        {
+                            context.cmd.SetGlobalTexture(ShaderConstants.WorldHistoryTextureId, data.worldHistory);
+                            context.cmd.SetGlobalTexture(ShaderConstants.WorldPointCloudTextureId, data.worldHistory);
+                        }
+
+                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, data.shaderPassIndex);
+                    });
+                }
             }
 
             private void EnsureHistoryTextures(int width, int height)
@@ -387,6 +458,7 @@ namespace Hecton8.Visor
         private static class ShaderConstants
         {
             internal static readonly int SonarRevealExpireTimeId = Shader.PropertyToID("_SonarRevealExpireTime");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
             internal static readonly int HistoryTextureId = Shader.PropertyToID("_HectonSonarHistoryTex");
             internal static readonly int PointCloudTextureId = Shader.PropertyToID("_HectonSonarPointCloudRT");
             internal static readonly int PersistenceSecondsId = Shader.PropertyToID("_PersistenceSeconds");
@@ -413,9 +485,16 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void Create()
         {
-            Shader shader = settings != null && settings.shader != null
-                ? settings.shader
-                : Shader.Find("Hidden/Hecton8/SonarGridOverlay");
+#if UNITY_EDITOR
+            if (settings != null && settings.shader == null)
+                settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
+#endif
+
+            Shader shader = settings != null ? settings.shader : null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find("Hidden/Hecton8/SonarGridOverlay");
+#endif
 
             if (_pass == null)
                 _pass = new SonarPointCloudPass();

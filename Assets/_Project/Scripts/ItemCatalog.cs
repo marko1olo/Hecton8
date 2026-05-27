@@ -26,6 +26,8 @@ using UnityEditor;
 #if UNITY_EDITOR && UNITY_ADDRESSABLES_EDITOR_EXIST
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEngine.ResourceManagement.ResourceProviders;
 #endif
 
 namespace Hecton8.SaveSystem
@@ -399,26 +401,29 @@ namespace Hecton8.SaveSystem
             runtimeRecord.LastAccessFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             CaptureCurrentPlayerAup(ref runtimeRecord);
 
-            if (!runtimeRecord.Handle.IsValid())
+            if (runtimeRecord.LoadState == WorldPrefabLoadState.Queued)
             {
-                runtimeRecord.LoadState = WorldPrefabLoadState.Failed;
                 _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
-                return TryGetDirectWorldPrefabFallback(hashId, out prefab);
+                return false;
             }
 
-            if (runtimeRecord.LoadState == WorldPrefabLoadState.Queued)
-                return false;
+            if (!runtimeRecord.Handle.IsValid())
+            {
+                FailWorldPrefabLoad(hashId, ref runtimeRecord);
+                return TryGetDirectWorldPrefabFallback(hashId, out prefab);
+            }
 
             if (runtimeRecord.LoadState == WorldPrefabLoadState.Loading)
             {
                 if (!runtimeRecord.Handle.IsDone)
+                {
+                    _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
                     return false;
+                }
 
                 if (runtimeRecord.Handle.Status != AsyncOperationStatus.Succeeded || runtimeRecord.Handle.Result == null)
                 {
-                    CompleteWorldPrefabDispatch(ref runtimeRecord, success: false);
-                    runtimeRecord.LoadState = WorldPrefabLoadState.Failed;
-                    _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
+                    FailWorldPrefabLoad(hashId, ref runtimeRecord);
                     return TryGetDirectWorldPrefabFallback(hashId, out prefab);
                 }
 
@@ -974,6 +979,45 @@ namespace Hecton8.SaveSystem
             RemovePendingWorldPrefabRelease(hashId);
             _worldPrefabRuntimeLookup.Remove(hashId);
             return true;
+        }
+
+        private void FailWorldPrefabLoad(int hashId, ref WorldPrefabRuntimeRecord runtimeRecord)
+        {
+            CompleteWorldPrefabDispatch(ref runtimeRecord, success: false);
+            ReleaseFailedWorldPrefabHandle(ref runtimeRecord);
+            runtimeRecord.LoadState = WorldPrefabLoadState.Failed;
+            _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
+        }
+
+        private void ReleaseFailedWorldPrefabHandle(ref WorldPrefabRuntimeRecord runtimeRecord)
+        {
+            AsyncOperationHandle<GameObject> handle = runtimeRecord.Handle;
+            if (!handle.IsValid())
+            {
+                runtimeRecord.Handle = default;
+                runtimeRecord.DispatchRequestId = 0;
+                runtimeRecord.DispatchAssetKey = 0u;
+                return;
+            }
+
+            CacheRuntimeServices();
+            AssetLifecycleGovernor governor = _cachedAssetLifecycleGovernor;
+            if (governor != null && runtimeRecord.DispatchAssetKey != 0u)
+            {
+                governor.ReleaseAddressableAsset(runtimeRecord.DispatchAssetKey);
+            }
+            else if (governor != null)
+            {
+                governor.TryReleaseExternalAddressableFault(handle);
+            }
+            else
+            {
+                Addressables.Release(handle);
+            }
+
+            runtimeRecord.Handle = default;
+            runtimeRecord.DispatchRequestId = 0;
+            runtimeRecord.DispatchAssetKey = 0u;
         }
 
         private bool TryEnqueuePendingWorldPrefabRelease(int hashId)
@@ -1658,13 +1702,34 @@ namespace Hecton8.SaveSystem
 
             string groupName = ResolveWorldPrefabGroupName(persistentId);
             if (string.IsNullOrWhiteSpace(groupName))
+            {
+                ConfigureBundledLoadMode(settings.DefaultGroup);
                 return settings.DefaultGroup;
+            }
 
             AddressableAssetGroup group = settings.FindGroup(groupName);
             if (group != null)
+            {
+                ConfigureBundledLoadMode(group);
                 return group;
+            }
 
-            return settings.CreateGroup(groupName, false, false, false, null, typeof(UnityEditor.AddressableAssets.Settings.GroupSchemas.BundledAssetGroupSchema));
+            group = settings.CreateGroup(groupName, false, false, false, null, typeof(BundledAssetGroupSchema));
+            ConfigureBundledLoadMode(group);
+            return group;
+        }
+
+        private static void ConfigureBundledLoadMode(AddressableAssetGroup group)
+        {
+            BundledAssetGroupSchema schema = group != null ? group.GetSchema<BundledAssetGroupSchema>() : null;
+            if (schema == null)
+                return;
+
+            if (schema.AssetLoadMode != AssetLoadMode.RequestedAssetAndDependencies)
+            {
+                schema.AssetLoadMode = AssetLoadMode.RequestedAssetAndDependencies;
+                EditorUtility.SetDirty(group);
+            }
         }
 
         private static string ResolveWorldPrefabGroupName(string persistentId)

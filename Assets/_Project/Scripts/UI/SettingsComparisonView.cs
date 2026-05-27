@@ -7,7 +7,7 @@ namespace Hecton8.UI
 {
     /// <summary>
     /// Settings comparison view â€” shows before/after performance estimates.
-    /// EXCEEDS SUBNAUTICA: Subnautica has no performance comparison, only apply/revert.
+    /// Keeps quality changes tied to visible pressure, readability, and frame budget impact.
     /// Estimates FPS impact based on quality preset changes.
     /// Zero-GC: late-frame state machine, cached strings, dirty flags.
     /// </summary>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -47,7 +48,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            if (_originalShadowModes == null || _originalShadowModes.Length != renderers.Length)
+            if (_originalShadowModes == null || _originalShadowModes.Length != Count(renderers))
                 CacheRuntimeState();
         }
 
@@ -61,17 +62,17 @@ namespace Hecton8.World
 
             _RendererScratch.Clear();
             GetComponentsInChildren<Renderer>(true, _RendererScratch);
-            renderers = _RendererScratch.ToArray();
+            renderers = CopyScratchToArray(_RendererScratch, renderers);
             _RendererScratch.Clear();
 
             _ColliderScratch.Clear();
             GetComponentsInChildren<Collider>(true, _ColliderScratch);
-            colliders = _ColliderScratch.ToArray();
+            colliders = CopyScratchToArray(_ColliderScratch, colliders);
             _ColliderScratch.Clear();
 
             _RigidbodyScratch.Clear();
             GetComponentsInChildren<Rigidbody>(true, _RigidbodyScratch);
-            rigidbodies = _RigidbodyScratch.ToArray();
+            rigidbodies = CopyScratchToArray(_RigidbodyScratch, rigidbodies);
             _RigidbodyScratch.Clear();
 
             behaviours = CollectBehaviours();
@@ -96,8 +97,11 @@ namespace Hecton8.World
 
         private void CacheRuntimeState()
         {
-            _originalShadowModes = new ShadowCastingMode[renderers != null ? renderers.Length : 0];
-            _originalReceiveShadows = new bool[renderers != null ? renderers.Length : 0];
+            int rendererCount = Count(renderers);
+            EnsureArrayLength(ref _originalShadowModes, rendererCount);
+            EnsureArrayLength(ref _originalReceiveShadows, rendererCount);
+            Array.Clear(_originalShadowModes, 0, _originalShadowModes.Length);
+            Array.Clear(_originalReceiveShadows, 0, _originalReceiveShadows.Length);
             for (int i = 0; i < _originalShadowModes.Length; i++)
             {
                 Renderer renderer = renderers[i];
@@ -108,8 +112,11 @@ namespace Hecton8.World
                 _originalReceiveShadows[i] = renderer.receiveShadows;
             }
 
-            _originalRigidbodyKinematic = new bool[rigidbodies != null ? rigidbodies.Length : 0];
-            _originalRigidbodyDetectCollisions = new bool[rigidbodies != null ? rigidbodies.Length : 0];
+            int rigidbodyCount = Count(rigidbodies);
+            EnsureArrayLength(ref _originalRigidbodyKinematic, rigidbodyCount);
+            EnsureArrayLength(ref _originalRigidbodyDetectCollisions, rigidbodyCount);
+            Array.Clear(_originalRigidbodyKinematic, 0, _originalRigidbodyKinematic.Length);
+            Array.Clear(_originalRigidbodyDetectCollisions, 0, _originalRigidbodyDetectCollisions.Length);
             for (int i = 0; i < _originalRigidbodyKinematic.Length; i++)
             {
                 Rigidbody body = rigidbodies[i];
@@ -223,7 +230,7 @@ namespace Hecton8.World
                 _FilteredBehaviourScratch.Add(behaviour);
             }
 
-            Behaviour[] result = _FilteredBehaviourScratch.ToArray();
+            Behaviour[] result = CopyScratchToArray(_FilteredBehaviourScratch, behaviours);
             _BehaviourScratch.Clear();
             _FilteredBehaviourScratch.Clear();
             return result;
@@ -240,6 +247,33 @@ namespace Hecton8.World
         private static bool Meets(WorldSliceAnchor.SliceState state, WorldSliceAnchor.SliceState threshold)
         {
             return (int)state >= (int)threshold;
+        }
+
+        private static int Count<T>(T[] values)
+        {
+            return values != null ? values.Length : 0;
+        }
+
+        private static void EnsureArrayLength<T>(ref T[] values, int length)
+        {
+            if (length <= 0)
+            {
+                values = Array.Empty<T>();
+                return;
+            }
+
+            if (values == null || values.Length != length)
+                values = new T[length];
+        }
+
+        private static T[] CopyScratchToArray<T>(List<T> source, T[] target)
+        {
+            int count = source != null ? source.Count : 0;
+            EnsureArrayLength(ref target, count);
+            for (int i = 0; i < count; i++)
+                target[i] = source[i];
+
+            return target;
         }
 
 #if UNITY_EDITOR

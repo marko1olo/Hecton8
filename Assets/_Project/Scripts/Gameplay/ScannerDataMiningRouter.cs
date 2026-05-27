@@ -438,7 +438,6 @@ namespace Hecton8.Gameplay
         private int _entityCount;
         private int _telemetryCursor;
         private uint _completionCount;
-        private ScannerVaultViews _cachedVaultViews;
         private bool _queryScheduled;
         private bool _queryBuffersLocked;
         private bool _completionBuffersLocked;
@@ -455,7 +454,7 @@ namespace Hecton8.Gameplay
         private static ScannerVfxDTO s_lastVfxTarget;
         private static uint s_lastVfxFrame;
 
-        private struct ScannerVaultViews
+        private ref struct ScannerVaultViews
         {
             public NativeArray<ScannerSpatialEntityDTO> Entities;
             public NativeArray<ScannableEntityMetadataDTO> Metadata;
@@ -1329,20 +1328,23 @@ namespace Hecton8.Gameplay
 
         private bool TryReadVaultViews(out ScannerVaultViews views)
         {
-            views = _cachedVaultViews;
-            return _vaultViewsCached && views.HasCoreBuffers;
+            views = default;
+            return _vaultViewsCached && TryResolveVaultViews(out views);
         }
 
         private bool TryRefreshVaultViewsCold(out ScannerVaultViews views)
         {
+            bool resolved = TryResolveVaultViews(out views);
+            _vaultViewsCached = resolved;
+            return resolved;
+        }
+
+        private bool TryResolveVaultViews(out ScannerVaultViews views)
+        {
             views = default;
             IDataVault vault = _dataVault;
             if (vault == null)
-            {
-                _cachedVaultViews = default;
-                _vaultViewsCached = false;
                 return false;
-            }
 
             vault.TryResolveHandle(in _entitiesHandle, out views.Entities);
             vault.TryResolveHandle(in _metadataHandle, out views.Metadata);
@@ -1359,9 +1361,7 @@ namespace Hecton8.Gameplay
             vault.TryResolveHandle(in _scanProgressHandle, out views.ScanProgress);
             vault.TryResolveHandle(in _loreIndexHandle, out views.LoreIndex);
             vault.TryResolveHandle(in _encyclopediaStateHandle, out views.EncyclopediaState);
-            _cachedVaultViews = views;
-            _vaultViewsCached = views.HasCoreBuffers;
-            return _vaultViewsCached;
+            return views.HasCoreBuffers;
         }
 
         private void ReleaseHandlesOnly()
@@ -1381,7 +1381,6 @@ namespace Hecton8.Gameplay
             _scanProgressHandle = default;
             _loreIndexHandle = default;
             _encyclopediaStateHandle = default;
-            _cachedVaultViews = default;
             _vaultViewsCached = false;
             _dataVault = null;
             _pendingDataVault = null;

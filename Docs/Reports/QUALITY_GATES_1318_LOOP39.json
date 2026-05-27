@@ -1,0 +1,46 @@
+{
+  "agentId": "1318",
+  "loop": 39,
+  "task": "1318_PURGE",
+  "status": "VERIFICATION_BLOCKED_COMPILER_GATE",
+  "domain": "Echelon 3 Core Infrastructure and Ecology / Assets/_Project/Scripts/World / DestructibleOrganicManager.cs",
+  "promptStrictTaskCount": 20,
+  "promptLooseTaskMentions": 23,
+  "promptFile": "Docs/Reports/AGENT_PROMPT_1318_REEXTRACTED_LOOP39.xml",
+  "promptFileSha256": "bd959f47caea5a192f4bcaba65c92efaf7e647f034b3cf6c68ecb924f262022b",
+  "sourceSha256": "2447bdf5089d7b991c202e87d08ed57861e5099686af0e93d26df08f6a82100f",
+  "scannedFiles": 1,
+  "changedFiles": [
+    "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+  ],
+  "fixes": [
+    "Aggressive overgrowth no longer resolves lane UID, material-class, or health Vault views before acquiring an overgrowth lock",
+    "OrganicOvergrowthMutationBufferCount now covers destroyed, regrowth, last-touch, overgrown, root-mound state, both lane UID buffers, both material-class buffers, and both lane health buffers",
+    "EvaluateAggressiveOvergrowthInLane now delegates one bounded step at a time to a lock-owning helper and dispatches nav/root side effects only after unlock",
+    "Overgrowth lock failure stops the lane pass after one telemetry write instead of emitting telemetry for every budget step"
+  ],
+  "staticChecks": {
+    "braceOpen": 906,
+    "braceClose": 906,
+    "strictPersistentNativeFields": 0,
+    "persistentAllocatorTokens": 0,
+    "hotForbiddenHits": 0,
+    "oldTryResolveActiveInstanceByUidRefs": 0,
+    "overgrowthMutationBufferCount": 11,
+    "overgrowthPrelockScanHits": 0,
+    "gitDiffCheck": "LF_TO_CRLF_WARNING_ONLY"
+  },
+  "buildGate": {
+    "cpuAvg": 35.0,
+    "compilerProcessCount": 1,
+    "rootCsprojCount": 62,
+    "missingSlnxProjectRefs": 0,
+    "buildAllowed": false,
+    "reason": "AGENTS.md forbids dotnet/Roslyn while another dotnet/csc/VBCSCompiler process is running."
+  },
+  "failedGates": [
+    "BUILD_GATE_BLOCKED_BY_ACTIVE_COMPILER_PROCESS",
+    "ROSLYN_RERUN_BLOCKED_BY_ACTIVE_COMPILER_PROCESS"
+  ],
+  "verificationHashSha256": "2447bdf5089d7b991c202e87d08ed57861e5099686af0e93d26df08f6a82100f"
+}

@@ -10,7 +10,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Resolved DataVault views for Alpha Leviathan cognition.
     /// </summary>
-    public struct AlphaLeviathanVaultBuffers
+    public ref struct AlphaLeviathanVaultBuffers
     {
         public NativeArray<AlphaLeviathanCognitionState> States;
         public NativeArray<AlphaLeviathanSensoryStimulus> SensoryStimuli;

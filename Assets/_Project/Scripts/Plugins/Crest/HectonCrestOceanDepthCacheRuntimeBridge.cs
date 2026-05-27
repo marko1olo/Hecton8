@@ -2,7 +2,10 @@ using System;
 using System.IO;
 using Crest;
 using Hecton8.SaveSystem;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 
 namespace Hecton8.World
 {
@@ -95,18 +98,29 @@ namespace Hecton8.World
                 if (request.hasError)
                     return;
 
-                Texture2D readbackTexture = new Texture2D(cacheWidth, cacheHeight, TextureFormat.RGBA32, false, true)
+                NativeArray<byte> pngBytes = default;
+                try
                 {
-                    name = "__HectonDepthCacheDebugReadback",
-                    hideFlags = HideFlags.HideAndDontSave
-                }; // COLD ALLOC: Texture2D[1] - one-shot async depth-cache forensic PNG dump - owner: HectonCrestOceanDepthCacheRuntimeBridge
-                readbackTexture.SetPixelData(request.GetData<Color32>(), 0);
-                readbackTexture.Apply(false, false);
-                byte[] pngBytes = readbackTexture.EncodeToPNG();
-                if (pngBytes != null && pngBytes.Length > 0)
-                    File.WriteAllBytes(absolutePath, pngBytes);
+                    NativeArray<Color32> readbackPixels = request.GetData<Color32>();
+                    pngBytes = ImageConversion.EncodeNativeArrayToPNG(
+                        readbackPixels,
+                        GraphicsFormat.R8G8B8A8_UNorm,
+                        (uint)cacheWidth,
+                        (uint)cacheHeight,
+                        0u);
 
-                UnityEngine.Object.DestroyImmediate(readbackTexture);
+                    if (pngBytes.IsCreated && pngBytes.Length > 0)
+                    {
+                        byte* pngPointer = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(pngBytes);
+                        using FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read, 65536, FileOptions.SequentialScan);
+                        stream.Write(new ReadOnlySpan<byte>(pngPointer, pngBytes.Length));
+                    }
+                }
+                finally
+                {
+                    if (pngBytes.IsCreated)
+                        pngBytes.Dispose();
+                }
             });
             return true;
 #else

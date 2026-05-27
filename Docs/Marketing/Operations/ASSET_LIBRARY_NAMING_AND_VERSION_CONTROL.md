@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Marketing Asset Library, Naming, And Version Control
 
 Status: asset ops policy
-Owner lane: SHINOBU_81 / marketing operations
+Owner lane: Marketing / marketing operations
 Runtime impact: none
 
 ## Purpose

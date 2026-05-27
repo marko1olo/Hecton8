@@ -1,0 +1,37 @@
+﻿{
+    "schema":  "hecton8.inventory_aup_cast_scan.v3",
+    "agentId":  "1317",
+    "scannedFiles":  6,
+    "candidates":  5,
+    "absoluteAupCastsFound":  0,
+    "candidatesList":  [
+                           {
+                               "path":  "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+                               "line":  638,
+                               "text":  "runtimePosition = ClampAupDeltaToFloat3(runtime);"
+                           },
+                           {
+                               "path":  "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+                               "line":  643,
+                               "text":  "private static float3 ClampAupDeltaToFloat3(double3 deltaAup)"
+                           },
+                           {
+                               "path":  "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+                               "line":  1150,
+                               "text":  "float3 delta = ClampAupDeltaToFloat3(deltaDouble);"
+                           },
+                           {
+                               "path":  "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+                               "line":  1158,
+                               "text":  "internal static float3 ClampAupDeltaToFloat3(double3 deltaAup)"
+                           },
+                           {
+                               "path":  "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+                               "line":  1633,
+                               "text":  "float3 visualMidpoint = InventoryRoutingNetwork.ClampAupDeltaToFloat3(midpointLocalFromSource);"
+                           }
+                       ],
+    "absoluteAupCasts":  [
+
+                         ]
+}

@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPatternProfile
   pattern: 0
   label: Fertile Shallows
-  summary: Garden-like fertile water with shelter detours, biological nests and calm
-    ambient life.
+  summary: Resource-readable shallow water with shelter detours, biological nests
+    and pressure-readable ambient life.
   groundBudgetScale: 1.1
   clusterBudgetScale: 1.8
   structureBudgetScale: 0.85

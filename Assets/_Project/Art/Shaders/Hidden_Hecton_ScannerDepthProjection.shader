@@ -18,11 +18,15 @@ Shader "Hidden/Hecton8/ScannerDepthProjection"
             Name "ScannerDepthProjection"
 
             HLSLPROGRAM
-            #pragma target 4.5
+            #pragma target 3.5
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -39,11 +43,13 @@ Shader "Hidden/Hecton8/ScannerDepthProjection"
             TEXTURE2D_X(_BlitTexture);
             struct Attributes
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 uint vertexID : SV_VertexID;
             };
 
             struct Varyings
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float2 screenUV : TEXCOORD0;
@@ -52,6 +58,8 @@ Shader "Hidden/Hecton8/ScannerDepthProjection"
             Varyings Vert(Attributes input)
             {
                 Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.screenUV = float2((input.vertexID << 1) & 2, input.vertexID & 2);
                 output.positionCS = float4(output.screenUV * 2.0 - 1.0, 0.0, 1.0);
@@ -68,9 +76,25 @@ Shader "Hidden/Hecton8/ScannerDepthProjection"
                 return frac((hash.x + hash.y) * hash.z);
             }
 
-            float TemporalSinFlicker01(float timeSeconds, float speed, float phaseOffset)
+            float TemporalTriangleFlicker01(float timeSeconds, float speed, float phaseOffset)
             {
-                return frac(sin(timeSeconds * max(speed, 0.001) + phaseOffset) * 43758.5453);
+                float phase = frac(timeSeconds * max(speed, 0.001) + phaseOffset);
+                return abs(phase * 2.0 - 1.0);
+            }
+
+            float ResolveLinearBand01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) / max(0.000001, edge1 - edge0));
+            }
+
+            float ResolveReverseLinearBand01(float edge0, float edge1, float value)
+            {
+                return 1.0 - ResolveLinearBand01(edge0, edge1, value);
+            }
+
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(uv);
             }
 
             float3 SafeNormalize3(float3 value, float3 fallback)
@@ -81,11 +105,13 @@ Shader "Hidden/Hecton8/ScannerDepthProjection"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float2 uv = UnityStereoTransformScreenSpaceTex(input.screenUV);
-                half4 source = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
-                float depth = SampleSceneDepth(uv);
+                float2 cameraTextureUv = ResolveFoveatedSourceUV(uv);
+                half4 source = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, cameraTextureUv);
+                float depth = SampleSceneDepth(cameraTextureUv);
 #if UNITY_REVERSED_Z
                 if (depth <= 0.0001)
                     return source;
@@ -108,13 +134,13 @@ Shader "Hidden/Hecton8/ScannerDepthProjection"
                 float forwardMeters = dot(delta, forwardAxis);
                 float2 projector = float2(dot(delta, rightAxis), dot(delta, upAxis)) / radius;
                 float radialSq = dot(projector, projector);
-                float insideRadius = 1.0 - smoothstep(0.6724, 1.0, radialSq);
-                float insideDepth = smoothstep(0.0, 0.12, forwardMeters) * (1.0 - smoothstep(projectionDepth * 0.72, projectionDepth, forwardMeters));
+                float insideRadius = ResolveReverseLinearBand01(0.6724, 1.0, radialSq);
+                float insideDepth = ResolveLinearBand01(0.0, 0.12, forwardMeters) * ResolveReverseLinearBand01(projectionDepth * 0.72, projectionDepth, forwardMeters);
                 float2 gridUv = projector * _HectonScannerProjectionGridScale;
                 float2 cell = floor(gridUv);
                 float2 local = abs(frac(gridUv) - 0.5);
-                float wire = 1.0 - smoothstep(0.35, 0.49, max(local.x, local.y));
-                float temporal = TemporalSinFlicker01(_Time.y, _HectonScannerProjectionFlickerSpeed, 41.0);
+                float wire = ResolveReverseLinearBand01(0.35, 0.49, max(local.x, local.y));
+                float temporal = TemporalTriangleFlicker01(_Time.y, _HectonScannerProjectionFlickerSpeed, 0.41);
                 float dither = Hash21(cell + temporal);
                 float gate = step(_HectonScannerProjectionDitherCutoff, min(dither, temporal));
                 float fade = (1.0 - age01) * intensity;

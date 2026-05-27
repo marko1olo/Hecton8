@@ -963,6 +963,9 @@ namespace Hecton8.Graphics.Culling
 
     public static class TBDRComputeDispatchLimiter
     {
+        private const int PortableMaxComputeThreadsPerGroup = 256;
+        private const int MaxDispatchGroupsPerDimension = 65535;
+
         public static int HardwareMaxThreadsPerGroup;
         public static int ActiveMaxThreadsPerGroup;
         public static int LastKernelThreadsPerGroup;
@@ -985,21 +988,32 @@ namespace Hecton8.Graphics.Culling
 
         public static void Boot()
         {
-            HardwareMaxThreadsPerGroup = math.max(1, SystemInfo.maxComputeWorkGroupSize);
-            ActiveMaxThreadsPerGroup = TBDRHardwarePipelineSwitch.IsMobileTBDR()
-                ? math.min(256, HardwareMaxThreadsPerGroup)
-                : math.min(1024, HardwareMaxThreadsPerGroup);
+            if (!SystemInfo.supportsComputeShaders)
+            {
+                HardwareMaxThreadsPerGroup = 0;
+                ActiveMaxThreadsPerGroup = 0;
+                LastRejectCode = 4u;
+                return;
+            }
+
+            int hardwareLimit = SystemInfo.maxComputeWorkGroupSize;
+            HardwareMaxThreadsPerGroup = hardwareLimit > 0 ? hardwareLimit : 0;
+            ActiveMaxThreadsPerGroup = HardwareMaxThreadsPerGroup > 0
+                ? math.min(PortableMaxComputeThreadsPerGroup, HardwareMaxThreadsPerGroup)
+                : 0;
         }
 
         public static bool TryDispatch1D(ComputeShader shader, int kernel, int workItemCount)
         {
-            return TryDispatch(shader, kernel, math.max(0, workItemCount), 1, 1);
+            return TryDispatch(shader, kernel, workItemCount, 1, 1);
         }
 
         public static bool TryDispatch(ComputeShader shader, int kernel, int workItemsX, int workItemsY, int workItemsZ)
         {
-            if (shader == null || kernel < 0)
+            if (!SystemInfo.supportsComputeShaders || shader == null || kernel < 0)
             {
+                LastKernelThreadsPerGroup = 0;
+                ResetDispatchGroups();
                 LastRejectCode = 1u;
                 return false;
             }
@@ -1007,50 +1021,88 @@ namespace Hecton8.Graphics.Culling
             if (ActiveMaxThreadsPerGroup <= 0)
                 Boot();
 
-            shader.GetKernelThreadGroupSizes(kernel, out uint groupXRaw, out uint groupYRaw, out uint groupZRaw);
-            int groupX = ToPositiveGroupSize(groupXRaw);
-            int groupY = ToPositiveGroupSize(groupYRaw);
-            int groupZ = ToPositiveGroupSize(groupZRaw);
-            long threadsPerGroup = (long)groupX * groupY * groupZ;
-            LastKernelThreadsPerGroup = threadsPerGroup > int.MaxValue ? int.MaxValue : (int)threadsPerGroup;
-            if (threadsPerGroup <= 0L || threadsPerGroup > ActiveMaxThreadsPerGroup)
+            if (ActiveMaxThreadsPerGroup <= 0 || !shader.IsSupported(kernel))
             {
+                LastKernelThreadsPerGroup = 0;
+                ResetDispatchGroups();
                 LastRejectCode = 2u;
                 return false;
             }
 
+            shader.GetKernelThreadGroupSizes(kernel, out uint groupXRaw, out uint groupYRaw, out uint groupZRaw);
+            int groupX = ToPositiveGroupSize(groupXRaw);
+            int groupY = ToPositiveGroupSize(groupYRaw);
+            int groupZ = ToPositiveGroupSize(groupZRaw);
+            if (groupX <= 0 || groupY <= 0 || groupZ <= 0)
+            {
+                LastKernelThreadsPerGroup = 0;
+                ResetDispatchGroups();
+                LastRejectCode = 2u;
+                return false;
+            }
+
+            long xyThreads = (long)groupX * groupY;
+            if (groupX > ActiveMaxThreadsPerGroup || xyThreads > ActiveMaxThreadsPerGroup || groupZ > ActiveMaxThreadsPerGroup / xyThreads)
+            {
+                LastKernelThreadsPerGroup = xyThreads > int.MaxValue ? int.MaxValue : (int)xyThreads;
+                ResetDispatchGroups();
+                LastRejectCode = 2u;
+                return false;
+            }
+
+            long threadsPerGroup = xyThreads * groupZ;
+            LastKernelThreadsPerGroup = (int)threadsPerGroup;
+
             if (workItemsX <= 0 || workItemsY <= 0 || workItemsZ <= 0)
             {
-                LastDispatchGroupsX = 0;
-                LastDispatchGroupsY = 0;
-                LastDispatchGroupsZ = 0;
+                ResetDispatchGroups();
                 LastRejectCode = 3u;
                 return false;
             }
 
-            LastDispatchGroupsX = DivCeil(workItemsX, groupX);
-            LastDispatchGroupsY = DivCeil(workItemsY, groupY);
-            LastDispatchGroupsZ = DivCeil(workItemsZ, groupZ);
+            int dispatchGroupsX = ResolveDispatchGroups(workItemsX, groupX);
+            int dispatchGroupsY = ResolveDispatchGroups(workItemsY, groupY);
+            int dispatchGroupsZ = ResolveDispatchGroups(workItemsZ, groupZ);
+            if (dispatchGroupsX <= 0 || dispatchGroupsY <= 0 || dispatchGroupsZ <= 0)
+            {
+                ResetDispatchGroups();
+                LastRejectCode = 5u;
+                return false;
+            }
+
+            LastDispatchGroupsX = dispatchGroupsX;
+            LastDispatchGroupsY = dispatchGroupsY;
+            LastDispatchGroupsZ = dispatchGroupsZ;
             shader.Dispatch(kernel, LastDispatchGroupsX, LastDispatchGroupsY, LastDispatchGroupsZ);
             LastRejectCode = 0u;
             return true;
         }
 
-        private static int ToPositiveGroupSize(uint value)
+        private static void ResetDispatchGroups()
         {
-            if (value == 0u)
-                return 1;
-
-            return value > (uint)int.MaxValue ? int.MaxValue : (int)value;
+            LastDispatchGroupsX = 0;
+            LastDispatchGroupsY = 0;
+            LastDispatchGroupsZ = 0;
         }
 
-        private static int DivCeil(int value, int divisor)
+        private static int ToPositiveGroupSize(uint value)
         {
-            if (value <= 0)
+            if (value == 0u || value > (uint)int.MaxValue)
                 return 0;
 
-            int safeDivisor = math.max(1, divisor);
-            return 1 + (value - 1) / safeDivisor;
+            return (int)value;
+        }
+
+        private static int ResolveDispatchGroups(int value, int divisor)
+        {
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            if (groups <= 0L || groups > MaxDispatchGroupsPerDimension)
+                return 0;
+
+            return (int)groups;
         }
     }
 

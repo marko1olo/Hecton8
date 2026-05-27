@@ -2190,7 +2190,7 @@ namespace Hecton8.Physiology
             return string.IsNullOrEmpty(dataPath) ? "." : Path.GetFullPath(Path.Combine(dataPath, ".."));
         }
 
-        private struct JobPointers
+        private ref struct JobPointers
         {
             public RespawnStateDTO* State;
             public RespawnRequestDTO* Request;

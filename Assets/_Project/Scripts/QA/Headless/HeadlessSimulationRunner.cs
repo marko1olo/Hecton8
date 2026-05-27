@@ -162,7 +162,22 @@ namespace Hecton8.QA.Headless
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
             }
-            catch (Exception exception)
+            catch (IOException exception)
+            {
+                if (!_finished)
+                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                if (!_finished)
+                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+            }
+            catch (InvalidOperationException exception)
+            {
+                if (!_finished)
+                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+            }
+            catch (ArgumentException exception)
             {
                 if (!_finished)
                     FailAndQuit(1, TimeoutHash, exception.GetType().Name);
@@ -583,11 +598,16 @@ namespace Hecton8.QA.Headless
             if (gas == null || !gas.IsInitialized)
                 return true;
 
-            NativeArray<float>.ReadOnly pressures = gas.RoomPressure;
-            int count = math.min(gas.RoomCount, pressures.Length);
+            int count = math.max(0, gas.RoomCount);
             for (int i = 0; i < count; i++)
             {
-                float pressure = pressures[i];
+                if (!gas.TryGetRoomSnapshot(i, out GasRoomSnapshot snapshot))
+                {
+                    _gasInvalidRoomId = i;
+                    return false;
+                }
+
+                float pressure = snapshot.PressureKPa;
                 if (!math.isfinite(pressure) || pressure < 0f)
                 {
                     _gasInvalidRoomId = i;
@@ -674,7 +694,7 @@ namespace Hecton8.QA.Headless
 
             try
             {
-                _csvWriter.WriteDay(
+                bool wrote = _csvWriter.WriteDay(
                     _completedDays,
                     biomass.PreyBiomassSum,
                     biomass.PredatorBiomassSum,
@@ -684,9 +704,38 @@ namespace Hecton8.QA.Headless
                     nativeAllocations,
                     h8Allocations,
                     flags);
+                if (!wrote)
+                {
+                    _csvWriter.DiscardPendingRow();
+                    _evidenceFailureFlags |= EvidenceCsvWriteFailed;
+                    FailAndQuit(1, CsvWriteHash, "[CSV_WRITE_FAILED]");
+                    return false;
+                }
+
                 return true;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                _csvWriter.DiscardPendingRow();
+                _evidenceFailureFlags |= EvidenceCsvWriteFailed;
+                FailAndQuit(1, CsvWriteHash, "[CSV_WRITE_FAILED]");
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _csvWriter.DiscardPendingRow();
+                _evidenceFailureFlags |= EvidenceCsvWriteFailed;
+                FailAndQuit(1, CsvWriteHash, "[CSV_WRITE_FAILED]");
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                _csvWriter.DiscardPendingRow();
+                _evidenceFailureFlags |= EvidenceCsvWriteFailed;
+                FailAndQuit(1, CsvWriteHash, "[CSV_WRITE_FAILED]");
+                return false;
+            }
+            catch (NotSupportedException)
             {
                 _csvWriter.DiscardPendingRow();
                 _evidenceFailureFlags |= EvidenceCsvWriteFailed;
@@ -814,7 +863,19 @@ namespace Hecton8.QA.Headless
             {
                 DumpBlackbox();
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                _evidenceFailureFlags |= EvidenceBlackboxWriteFailed;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _evidenceFailureFlags |= EvidenceBlackboxWriteFailed;
+            }
+            catch (ArgumentException)
+            {
+                _evidenceFailureFlags |= EvidenceBlackboxWriteFailed;
+            }
+            catch (NotSupportedException)
             {
                 _evidenceFailureFlags |= EvidenceBlackboxWriteFailed;
             }
@@ -916,7 +977,19 @@ namespace Hecton8.QA.Headless
             {
                 WriteResult(exitCode, status);
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                _evidenceFailureFlags |= EvidenceResultWriteFailed;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _evidenceFailureFlags |= EvidenceResultWriteFailed;
+            }
+            catch (ArgumentException)
+            {
+                _evidenceFailureFlags |= EvidenceResultWriteFailed;
+            }
+            catch (NotSupportedException)
             {
                 _evidenceFailureFlags |= EvidenceResultWriteFailed;
             }
@@ -1550,6 +1623,7 @@ namespace Hecton8.QA.Headless
             private readonly FileStream _stream;
             private readonly byte[] _buffer;
             private int _cursor;
+            private bool _overflowed;
 
             public HeadlessCsvWriter(string path)
             {
@@ -1564,7 +1638,7 @@ namespace Hecton8.QA.Headless
                 Flush();
             }
 
-            public void WriteDay(
+            public bool WriteDay(
                 int day,
                 float prey,
                 float predator,
@@ -1576,6 +1650,7 @@ namespace Hecton8.QA.Headless
                 uint flags)
             {
                 _cursor = 0;
+                _overflowed = false;
                 AppendInt(day);
                 AppendComma();
                 AppendFixed(prey);
@@ -1594,16 +1669,24 @@ namespace Hecton8.QA.Headless
                 AppendComma();
                 AppendUInt(flags);
                 AppendByte((byte)'\n');
-                Flush();
+                return Flush();
             }
 
             public void Dispose()
             {
                 try
                 {
-                    Flush();
+                    _ = Flush();
                 }
-                catch (Exception)
+                catch (IOException)
+                {
+                    _cursor = 0;
+                }
+                catch (ObjectDisposedException)
+                {
+                    _cursor = 0;
+                }
+                catch (NotSupportedException)
                 {
                     _cursor = 0;
                 }
@@ -1612,7 +1695,10 @@ namespace Hecton8.QA.Headless
                 {
                     _stream.Dispose();
                 }
-                catch (Exception)
+                catch (IOException)
+                {
+                }
+                catch (ObjectDisposedException)
                 {
                 }
             }
@@ -1620,15 +1706,24 @@ namespace Hecton8.QA.Headless
             public void DiscardPendingRow()
             {
                 _cursor = 0;
+                _overflowed = false;
             }
 
-            private void Flush()
+            private bool Flush()
             {
+                if (_overflowed)
+                {
+                    _cursor = 0;
+                    _overflowed = false;
+                    return false;
+                }
+
                 if (_cursor <= 0)
-                    return;
+                    return true;
 
                 _stream.Write(_buffer, 0, _cursor);
                 _cursor = 0;
+                return true;
             }
 
             private void AppendComma()
@@ -1714,14 +1809,23 @@ namespace Hecton8.QA.Headless
 
             private void AppendByte(byte value)
             {
+                if (_overflowed)
+                    return;
+
                 if (_cursor >= _buffer.Length)
-                    throw new InvalidOperationException("HEADLESS_CSV_ROW_OVERFLOW");
+                {
+                    _overflowed = true;
+                    return;
+                }
 
                 _buffer[_cursor++] = value;
             }
 
             private void Reverse(int first, int last)
             {
+                if (_overflowed)
+                    return;
+
                 while (first < last)
                 {
                     byte temp = _buffer[first];

@@ -657,10 +657,11 @@ namespace Hecton8.Gameplay
         private void ConsumeFuel(float amount)
         {
             float previousLevel = _currentFuelLevel;
+            int depletedCount = 0;
 
-            while (amount > 0 && _fuelItems.Count > 0)
+            while (amount > 0 && depletedCount < _fuelItems.Count)
             {
-                FuelItem firstItem = _fuelItems[0];
+                FuelItem firstItem = _fuelItems[depletedCount];
 
                 if (firstItem.remainingFuel <= amount)
                 {
@@ -668,14 +669,10 @@ namespace Hecton8.Gameplay
                     amount -= firstItem.remainingFuel;
                     _currentFuelLevel -= firstItem.remainingFuel;
                     _totalFuelCapacity -= firstItem.fuelValue;
-
-                    // Remove depleted item
-                    int slotIndex = 0;
-                    _fuelItems.RemoveAt(0);
+                    depletedCount++;
 
                     _pendingDepletedAudio = depletedSound != null;
-
-                    OnFuelDepleted?.Invoke(slotIndex);
+                    OnFuelDepleted?.Invoke(0);
                 }
                 else
                 {
@@ -685,6 +682,9 @@ namespace Hecton8.Gameplay
                     amount = 0;
                 }
             }
+
+            if (depletedCount > 0)
+                _fuelItems.RemoveRange(0, depletedCount);
 
             // Fire event if level changed significantly
             if (math.abs(_currentFuelLevel - previousLevel) > 0.1f)

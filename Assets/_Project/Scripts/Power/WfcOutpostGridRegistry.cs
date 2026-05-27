@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Logistics.Grid.Contracts;
 using Unity.Collections;
@@ -10,15 +11,23 @@ namespace Hecton8.Power
     /// Read-only lease for a registered WFC outpost native grid.
     /// </summary>
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-    public readonly struct WfcOutpostGridLease
+    public readonly ref struct WfcOutpostGridLease
     {
         public readonly WfcOutpostGridDescriptor Descriptor;
         public readonly NativeArray<byte> Cells;
+        public readonly BufferID BufferId;
+        public readonly SystemID SystemId;
 
-        public WfcOutpostGridLease(in WfcOutpostGridDescriptor descriptor, NativeArray<byte> cells)
+        public WfcOutpostGridLease(
+            in WfcOutpostGridDescriptor descriptor,
+            NativeArray<byte> cells,
+            BufferID bufferId,
+            SystemID systemId)
         {
             Descriptor = descriptor;
             Cells = cells;
+            BufferId = bufferId;
+            SystemId = systemId;
         }
     }
 
@@ -33,8 +42,9 @@ namespace Hecton8.Power
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
 
-        // COLD ALLOC: NativeArray<byte>[4] - registered WFC grid slot handles - owner: WfcOutpostGridRegistry
-        private static readonly NativeArray<byte>[] _gridSlots = new NativeArray<byte>[DataVaultExemptGridSlotCount];
+        private const BufferID GridSlotBase = (BufferID)731620;
+
+        private static readonly VaultGenerationHandle<byte>[] _gridSlots = new VaultGenerationHandle<byte>[DataVaultExemptGridSlotCount];
         // COLD ALLOC: WfcOutpostGridDescriptor[4] - registered WFC grid descriptors - owner: WfcOutpostGridRegistry
         private static readonly WfcOutpostGridDescriptor[] _descriptors = new WfcOutpostGridDescriptor[SlotCount];
         // COLD ALLOC: uint[4] - stable WFC grid handles - owner: WfcOutpostGridRegistry
@@ -47,11 +57,10 @@ namespace Hecton8.Power
         {
             for (int i = 0; i < SlotCount; i++)
             {
-                NativeArray<byte> slot = _gridSlots[i];
-                if (slot.IsCreated)
-                    H8Memory.Release(ref slot, LogisticsGridSystemId);
+                if (_gridSlots[i].BufferID != 0u && TryResolveVault(out IDataVault vault))
+                    vault.ReleaseBuffer(in _gridSlots[i]);
 
-                _gridSlots[i] = slot;
+                _gridSlots[i] = default;
                 _descriptors[i] = default;
                 _handles[i] = 0u;
             }
@@ -86,26 +95,39 @@ namespace Hecton8.Power
             if (slot < 0)
                 slot = ReserveSlot();
 
-            if (!EnsureSlot(slot))
+            if (!EnsureSlot(slot, out NativeArray<byte> destination))
                 return false;
 
-            _handles[slot] = 0u;
-            _descriptors[slot] = default;
-            NativeArray<byte> destination = _gridSlots[slot];
-            for (int i = 0; i < cellCount; i++)
-                destination[i] = cells[i];
-            for (int i = cellCount; i < destination.Length; i++)
-                destination[i] = 0;
+            if (!TryResolveVault(out IDataVault vault) ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryLockBuffer(ResolveSlotBufferId(slot), LogisticsGridSystemId))
+            {
+                return false;
+            }
 
-            WfcOutpostGridDescriptor stored = descriptor;
-            stored.CellCount = (ushort)cellCount;
-            if (stored.GridHash == 0u)
-                stored.GridHash = ComputeGridHash(destination, cellCount, descriptor.SectorHash, descriptor.GenerationSequence);
+            try
+            {
+                _handles[slot] = 0u;
+                _descriptors[slot] = default;
+                for (int i = 0; i < cellCount; i++)
+                    destination[i] = cells[i];
+                for (int i = cellCount; i < destination.Length; i++)
+                    destination[i] = 0;
 
-            handle = NextHandle(slot);
-            _descriptors[slot] = stored;
-            _handles[slot] = handle;
-            return true;
+                WfcOutpostGridDescriptor stored = descriptor;
+                stored.CellCount = (ushort)cellCount;
+                if (stored.GridHash == 0u)
+                    stored.GridHash = ComputeGridHash(destination, cellCount, descriptor.SectorHash, descriptor.GenerationSequence);
+
+                handle = NextHandle(slot);
+                _descriptors[slot] = stored;
+                _handles[slot] = handle;
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(ResolveSlotBufferId(slot), LogisticsGridSystemId);
+            }
         }
 
         private static bool IsValidDescriptor(in WfcOutpostGridDescriptor descriptor)
@@ -141,17 +163,48 @@ namespace Hecton8.Power
 
         public static bool TryGetGrid(uint handle, out WfcOutpostGridLease lease)
         {
+            lease = default;
             for (int i = 0; i < SlotCount; i++)
             {
-                if (_handles[i] != handle || !_gridSlots[i].IsCreated)
+                if (_handles[i] != handle)
                     continue;
 
-                lease = new WfcOutpostGridLease(in _descriptors[i], _gridSlots[i]);
+                if (!TryResolveVault(out IDataVault vault) ||
+                    vault.IsCompactionFenceActive)
+                {
+                    return false;
+                }
+
+                BufferID bufferId = ResolveSlotBufferId(i);
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryLockBuffer(bufferId, LogisticsGridSystemId))
+                    return false;
+
+                if (!TryResolveSlot(i, out NativeArray<byte> cells) ||
+                    _handles[i] != handle)
+                {
+                    vault.TryUnlockBuffer(bufferId, LogisticsGridSystemId);
+                    return false;
+                }
+
+                lease = new WfcOutpostGridLease(in _descriptors[i], cells, bufferId, LogisticsGridSystemId);
                 return true;
             }
 
-            lease = default;
             return false;
+        }
+
+        public static void ReleaseGridLease(in WfcOutpostGridLease lease)
+        {
+            ReleaseGridLease(lease.BufferId, lease.SystemId);
+        }
+
+        public static void ReleaseGridLease(BufferID bufferId, SystemID systemId)
+        {
+            if (bufferId == BufferID.Unknown || systemId == SystemID.Unknown || !TryResolveVault(out IDataVault vault))
+                return;
+
+            vault.TryUnlockBuffer(bufferId, systemId);
         }
 
         public static void ReleaseGrid(uint handle)
@@ -161,14 +214,26 @@ namespace Hecton8.Power
                 if (_handles[i] != handle)
                     continue;
 
-                _handles[i] = 0u;
-                _descriptors[i] = default;
-                if (_gridSlots[i].IsCreated)
+                if (!TryResolveVault(out IDataVault vault) ||
+                    vault.IsCompactionFenceActive ||
+                    !vault.TryLockBuffer(ResolveSlotBufferId(i), LogisticsGridSystemId))
                 {
-                    NativeArray<byte> slot = _gridSlots[i];
-                    for (int cellIndex = 0; cellIndex < slot.Length; cellIndex++)
-                        slot[cellIndex] = 0;
-                    _gridSlots[i] = slot;
+                    return;
+                }
+
+                try
+                {
+                    _handles[i] = 0u;
+                    _descriptors[i] = default;
+                    if (TryResolveSlot(i, out NativeArray<byte> slot))
+                    {
+                        for (int cellIndex = 0; cellIndex < slot.Length; cellIndex++)
+                            slot[cellIndex] = 0;
+                    }
+                }
+                finally
+                {
+                    vault.TryUnlockBuffer(ResolveSlotBufferId(i), LogisticsGridSystemId);
                 }
 
                 return;
@@ -203,20 +268,46 @@ namespace Hecton8.Power
             return slot;
         }
 
-        private static bool EnsureSlot(int slot)
+        private static bool EnsureSlot(int slot, out NativeArray<byte> cells)
         {
+            cells = default;
             if ((uint)slot >= SlotCount)
                 return false;
 
-            if (_gridSlots[slot].IsCreated)
+            if (TryResolveSlot(slot, out cells))
                 return true;
 
-            _gridSlots[slot] = H8Memory.Allocate<byte>(
+            if (!TryResolveVault(out IDataVault vault))
+                return false;
+
+            _gridSlots[slot] = vault.EnsureGenerationHandle<byte>(
+                (BufferID)((int)GridSlotBase + slot),
                 WfcOutpostGridConstants.MaxCellCount,
                 LogisticsGridSystemId,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[500] - registered WFC grid copy - owner: WfcOutpostGridRegistry
-            return _gridSlots[slot].IsCreated;
+                NativeArrayOptions.ClearMemory);
+            return TryResolveSlot(slot, out cells);
+        }
+
+        private static BufferID ResolveSlotBufferId(int slot)
+        {
+            return (BufferID)((int)GridSlotBase + slot);
+        }
+
+        private static bool TryResolveSlot(int slot, out NativeArray<byte> cells)
+        {
+            cells = default;
+            if ((uint)slot >= SlotCount || _gridSlots[slot].BufferID == 0u || !TryResolveVault(out IDataVault vault))
+                return false;
+
+            return vault.TryResolveHandle(in _gridSlots[slot], out cells) &&
+                   cells.IsCreated &&
+                   cells.Length >= WfcOutpostGridConstants.MaxCellCount;
+        }
+
+        private static bool TryResolveVault(out IDataVault vault)
+        {
+            vault = GlobalRegistry.DataVault;
+            return vault != null && !vault.IsCompactionFenceActive;
         }
 
         private static uint NextHandle(int slot)

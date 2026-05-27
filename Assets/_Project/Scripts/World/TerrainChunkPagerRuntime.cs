@@ -79,7 +79,7 @@ namespace Hecton8.World
         [SerializeField, Min(2)] private int queueCapacity = TerrainChunkPagerConstants.DefaultQueueCapacity;
         [SerializeField, Min(4096)] private int chunkByteCapacity = TerrainChunkPagerConstants.DefaultChunkBytes;
         [SerializeField] private string chunkRootRelativePath = DefaultChunkRootRelativePath;
-        [SerializeField] private bool forceMockDiskIo = true;
+        [SerializeField] private bool forceMockDiskIo = false;
         [SerializeField] private bool loadCsvProfileOnEnable = true;
         [SerializeField] private bool useMockCameraAupWhenNoPlayer = true;
         [SerializeField] private Vector3 mockCameraAupMeters;
@@ -389,7 +389,8 @@ namespace Hecton8.World
             _chunkSlabByteLength = chunkSlabByteLength;
             _compressedSlabByteLength = compressedSlabByteLength;
             _dumpSnapshotByteLength = dumpSnapshotByteLength;
-            _forceMockDiskIo = forceMockDiskIo ? 1 : 0;
+            bool resolvedForceMockDiskIo = ResolveForceMockDiskIo();
+            _forceMockDiskIo = resolvedForceMockDiskIo ? 1 : 0;
             _pathBuffer = new char[512];
             _utf8PathBuffer = new byte[4096];
             _chunkRootFullPath = ResolveChunkRootPath();
@@ -585,7 +586,7 @@ namespace Hecton8.World
                 {
                     TerrainChunkPagerTuningDTO tuning = TerrainChunkPagerTuningDTO.CreateDefault();
                     tuning.ChunkByteCapacity = _allocatedChunkByteCapacity;
-                    tuning.Flags = forceMockDiskIo ? TerrainChunkPagerConstants.RequestFlagForceMock : 0u;
+                    tuning.Flags = resolvedForceMockDiskIo ? TerrainChunkPagerConstants.RequestFlagForceMock : 0u;
                     tuningBuffer[0] = TerrainChunkPagerMath.Sanitize(tuning);
                 }
                 finally
@@ -594,6 +595,15 @@ namespace Hecton8.World
                 }
             }
 
+        }
+
+        private bool ResolveForceMockDiskIo()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return forceMockDiskIo;
+#else
+            return false;
+#endif
         }
 
         private void AcquireArray<T>(
@@ -1592,7 +1602,8 @@ namespace Hecton8.World
             if (capacity <= 0 ||
                 compressedCapacity <= 0 ||
                 fileLength <= headerBytes ||
-                header.Version == 0u ||
+                header.Version != TerrainChunkPagerConstants.FileVersion ||
+                (header.Flags & ~TerrainChunkPagerConstants.FileFlagsMask) != 0u ||
                 (header.Compression != TerrainChunkPagerConstants.FileCompressionRaw &&
                  header.Compression != TerrainChunkPagerConstants.FileCompressionLz4) ||
                 header.StoredBytes == 0u ||

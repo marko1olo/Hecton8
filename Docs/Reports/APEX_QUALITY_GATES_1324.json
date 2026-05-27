@@ -1,0 +1,155 @@
+{
+  "agentId": "1324",
+  "task": "1324_PURGE",
+  "status": "STATIC_GREEN_BUILD_DEFERRED_CPU_GUARD_LOOP18",
+  "scannedFiles": 26,
+  "sourcePrompt": "Docs/Tasks/CURRENT_BATCH.md",
+  "rootPromptExists": false,
+  "promptTaskCount": 20,
+  "promptHashSha256": "46898b6a9bcfb857b6f06b2aa8fa140119e91d987a0797d622dada3d2bbc8306",
+  "failedGates": [],
+  "totalNativeFieldDeclarations": 112,
+  "persistentNativeFieldsRemaining": 0,
+  "transientVaultViews": 270,
+  "transientJobViews": 112,
+  "previousRoslynNativeAliasLedger": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1324_DEEP_AUDIT.json",
+  "previousRoslynScannedFiles": 26,
+  "previousRoslynNativeFieldDeclarations": 141,
+  "previousRoslynPersistentCandidates": 0,
+  "runtimeNativeFieldScan": {
+    "scope": "Assets/_Project/Scripts/Atmosphere/**/*.cs excluding Editor",
+    "scannedFiles": 26,
+    "totalNativeFieldDeclarations": 112,
+    "transientJobFields": 112,
+    "persistentCandidates": 0
+  },
+  "byteOffsetMaps": [
+    {
+      "structName": "PendingBaseTransitionSignal",
+      "sizeBytes": 64,
+      "offsets": {
+        "BaseCenterAup": "0:AbsoluteUniversePosition(48)",
+        "BaseId": "48:int",
+        "RoomId": "52:int",
+        "_pad0": "56:uint",
+        "Flags": "60:ushort",
+        "IsEnter": "62:byte",
+        "_pad1": "63:byte"
+      }
+    },
+    {
+      "structName": "AtmosphereTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "PackedOwner": "0:ulong",
+        "FrameIndex": "8:uint",
+        "RoomCount": "12:int",
+        "TotalO2KPa": "16:float",
+        "TotalCO2KPa": "20:float",
+        "TotalNitrogenKPa": "24:float",
+        "MaxPressureKPa": "28:float",
+        "StateHash": "32:uint",
+        "BufferId": "36:uint",
+        "SystemId": "40:uint",
+        "Generation": "44:uint",
+        "DroppedUpdates": "48:int",
+        "CpuMicroseconds": "52:float",
+        "_pad0": "56:uint",
+        "Flags": "60:ushort",
+        "Reserved": "62:ushort"
+      }
+    },
+    {
+      "structName": "GasDynamicsNativeMemoryAudit",
+      "sizeBytes": 48,
+      "offsets": {
+        "LocalRegisteredBytes": "0:long",
+        "LargestAllocationBytes": "8:long",
+        "SentinelTrackedBytes": "16:long",
+        "RoomCapacity": "24:int",
+        "BulkheadCapacity": "28:int",
+        "LocalAllocationCount": "32:int",
+        "SentinelActiveAllocationCount": "36:int",
+        "LargestAllocationLabelHash": "40:uint",
+        "_pad0": "44:uint"
+      }
+    }
+  ],
+  "zeroGcHotPathHits": 0,
+  "absoluteAupCastsFound": 0,
+  "compactionAwareLocksProven": true,
+  "telemetryRingIntegrated": true,
+  "editorLayoutValidator": "Assets/_Project/Scripts/Atmosphere/AtmosphereMemorySovereigntyValidator1324.cs",
+  "loop15Repairs": [
+    "BaseAtmosphereLogisticsJobs nearest-node AUP delta now uses AupPrecisionMath.LocalDeltaDouble plus DowncastLocalDeltaClamped before float3 distance math.",
+    "Consumer/source/vent nearest-node best-candidate loops now update best index and best distance through math.select instead of data-dependent if blocks."
+  ],
+  "loop16Repairs": [
+    "IGasDynamicsSolver no longer exposes direct NativeArray.ReadOnly room/base gas views.",
+    "WfcOutpostPowerBootRuntime binds base awake state through TryGetBaseHibernationSnapshot and passes only a copied scalar byte to LogisticsNetworkGraph.",
+    "LogisticsNetworkGraph no longer accepts a gas NativeArray<byte>.ReadOnly base-awake view.",
+    "TryGetNativeMemoryAudit now fails closed unless all gas lanes and the telemetry ring resolve successfully.",
+    "TryEnsureLane refuses to allocate/resolve during an active DataVault compaction fence."
+  ],
+  "loop17Repairs": [
+    "GasDynamicsSolver.ResolveLane now fails closed unless an active gas state write-lock mask is present.",
+    "TryEnsureLane, TryReadLane, state write-lock acquisition, and telemetry ring routes now perform local post-view or post-lock compaction fence checks.",
+    "TryReadLane and TryReadTelemetryRing clear read-only out buffers on failed post-fence validation."
+  ],
+  "loop17GuardProof": {
+    "resolveLaneRequiresStateLock": true,
+    "tryReadLaneClearsOutput": true,
+    "ensureLanePostFence": true,
+    "writeLockPostFence": true,
+    "telemetryLockPostFence": true
+  },
+  "loop18Repairs": [
+    "Every GasDynamicsSolver TryAcquireStateWriteLocks failure call site now routes through RecordStateWriteLockFailure or FailStateWriteLock.",
+    "State write-lock failure paths now attempt to write TelemetryFailureStateWriteLock into the unmanaged AtmosphereTelemetryEntry ring.",
+    "Four consecutive state write-lock failures now trigger the existing DumpBlackBoxOnce route when the telemetry ring can be read.",
+    "Successful state-lock acquisition and native disposal reset the consecutive failure counter."
+  ],
+  "loop18GuardProof": {
+    "stateWriteLockFailureTelemetryGaps": 0,
+    "consecutiveFailureDumpThreshold": 4,
+    "buildCpuAveragePercent": 100.0,
+    "activeCompilerProcesses": 0
+  },
+  "directForbiddenTokenScan": {
+    "files": [
+      "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsJobs.cs",
+      "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs",
+      "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+      "Assets/_Project/Scripts/Atmosphere/AtmosphereMemorySovereigntyValidator1324.cs",
+      "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs",
+      "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+      "Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs",
+      "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs"
+    ],
+    "hits": 0
+  },
+  "publicGasNativeViewScan": {
+    "oldIgGasNativeReadOnlyPropertiesFound": 0,
+    "externalBaseAwakeStateViewRefsFound": 0,
+    "oldPowerTryBindBaseAwakeStateRefsFound": 0
+  },
+  "aupDemotionScan": {
+    "unsafeFloatLocalDeltaCastsFound": 0,
+    "patchedHelper": "AtmosphereLogisticsAupMath.LocalNodeDeltaClamped"
+  },
+  "buildStatus": "deferred_cpu_guard",
+  "buildGuard": "Loop18 build/Roslyn rerun not launched because latest CPU average sampled at 100.0 and project rules forbid dotnet build/Roslyn under >50% CPU.",
+  "latestCompletedBuildStatus": "blocked_external_dependency",
+  "latestCompletedBuildLog": "Docs/AgentLogs/Build_1324_Hecton8Core_DeepContractLoop14.log",
+  "latestCompletedBuildErrorCount": 14,
+  "latestCompletedDomainBuildErrorsObserved": 0,
+  "knownAdjacentArchitectureRisks": [
+    "BaseAtmosphereLogisticsRuntime still holds dispatcher buffer locks until PostSimulation for scheduled jobs; replacing this safely requires subsystem scheduling redesign, not a hidden Complete.",
+    "ToxicOutgassingChemistryRuntime still schedules long job chains over DataVault views opened through OpenBuffer/TryResolveHandle; current Loop17 did not rewrite its ownership model because safe repair requires owner-level scheduling or immutable snapshot redesign."
+  ],
+  "verificationHashInput": "relative path UTF-8 + NUL + file bytes, sorted target C# files",
+  "verificationHashSha256": "56e6681a9649d0373cef2bdcb772b25e39559ba85733c1104d149ee50612220a"
+}

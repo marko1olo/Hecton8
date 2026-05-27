@@ -2,6 +2,7 @@ using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Caves;
 using Hecton8.World;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
@@ -1566,6 +1567,10 @@ namespace Hecton8.Gameplay
         [SerializeField, HideInInspector] private Matrix4x4[] cachedLocalMatrices;
         [SerializeField, HideInInspector] private float[] cachedMassScales;
         [SerializeField, HideInInspector] private Collider[] cachedRuntimeColliders;
+        // COLD ALLOC: List<MeshFilter> - reusable chunk authoring scan buffer - owner: OrganicDebrisProfile
+        private readonly List<MeshFilter> _meshFilterScratch = new List<MeshFilter>(16);
+        // COLD ALLOC: List<Collider> - reusable chunk collider authoring scan buffer - owner: OrganicDebrisProfile
+        private readonly List<Collider> _colliderScratch = new List<Collider>(16);
 
         /// <inheritdoc />
         public bool IsValid => sharedMaterial != null &&
@@ -1667,12 +1672,13 @@ namespace Hecton8.Gameplay
         private void RebuildCache()
         {
             Transform root = chunkRoot != null ? chunkRoot : transform;
-            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
+            _meshFilterScratch.Clear();
+            root.GetComponentsInChildren<MeshFilter>(true, _meshFilterScratch);
             int validCount = 0;
 
-            for (int i = 0; i < meshFilters.Length; i++)
+            for (int i = 0; i < _meshFilterScratch.Count; i++)
             {
-                MeshFilter meshFilter = meshFilters[i];
+                MeshFilter meshFilter = _meshFilterScratch[i];
                 if (meshFilter == null || meshFilter.sharedMesh == null)
                     continue;
 
@@ -1685,13 +1691,18 @@ namespace Hecton8.Gameplay
             cachedChunkMeshes = new Mesh[validCount];
             cachedLocalMatrices = new Matrix4x4[validCount];
             cachedMassScales = new float[validCount];
-            cachedRuntimeColliders = root.GetComponentsInChildren<Collider>(true); // COLD ALLOC: Collider[][chunk collider count] - runtime collider disable cache - owner: OrganicDebrisProfile
+            _colliderScratch.Clear();
+            root.GetComponentsInChildren<Collider>(true, _colliderScratch);
+            cachedRuntimeColliders = new Collider[_colliderScratch.Count]; // COLD ALLOC: Collider[][chunk collider count] - runtime collider disable cache - owner: OrganicDebrisProfile
+            for (int i = 0; i < _colliderScratch.Count; i++)
+                cachedRuntimeColliders[i] = _colliderScratch[i];
+            _colliderScratch.Clear();
 
             Matrix4x4 rootWorldToLocal = transform.worldToLocalMatrix;
             int writeIndex = 0;
-            for (int i = 0; i < meshFilters.Length; i++)
+            for (int i = 0; i < _meshFilterScratch.Count; i++)
             {
-                MeshFilter meshFilter = meshFilters[i];
+                MeshFilter meshFilter = _meshFilterScratch[i];
                 if (meshFilter == null || meshFilter.sharedMesh == null)
                     continue;
 
@@ -1704,6 +1715,8 @@ namespace Hecton8.Gameplay
                 cachedMassScales[writeIndex] = math.max(0.25f, DebrisManager.EstimateMagnitudeNoSqrt(meshFilter.sharedMesh.bounds.extents.sqrMagnitude));
                 writeIndex++;
             }
+
+            _meshFilterScratch.Clear();
         }
 
         private void ApplyRuntimeAuthoringVisibility()

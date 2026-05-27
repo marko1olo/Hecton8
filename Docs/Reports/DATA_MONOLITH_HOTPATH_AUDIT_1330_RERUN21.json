@@ -1,0 +1,21 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_HOTPATH_AUDIT_RERUN21_V1",
+    "agentId":  "1330",
+    "status":  "PASS_FOCUSED_HOTPATH_ZERO_GC_STATIC",
+    "scannedFiles":  7,
+    "parseFailures":  0,
+    "rawToolAgentId":  "1304",
+    "rawObjectCreations":  19,
+    "rawManagedRiskCreations":  18,
+    "rawStringConcatSuspects":  27,
+    "rawToStringCalls":  15,
+    "zeroGcHotPathHits":  0,
+    "focusedHotMethods":  [
+                              "H8CreatureSoAReconstructJob.Execute",
+                              "H8ItemSoAReconstructJob.Execute",
+                              "H8StaticDataArena.TryGetCreatureGenomeBlock",
+                              "H8StaticDataArena.TrySampleDepthPressure"
+                          ],
+    "classification":  "Raw findings are cold async boot/file I/O/editor/CLI reporting or value-type result construction; no Tick/SlowTick/LateFrameTick/job Execute allocation/string/LINQ/foreach/throw/catch hits in scoped Data Monolith hot-path methods.",
+    "verificationHashSha256":  "9aca2b62fc15afec102048b59b234b4a1cf9545589b7a58899b0a56795daf30d"
+}

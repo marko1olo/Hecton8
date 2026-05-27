@@ -7,7 +7,6 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
@@ -68,6 +67,13 @@ namespace Hecton8.Visor
 
         private sealed class ProjectionPass : ScriptableRenderPass
         {
+            private sealed class ProjectionPassData
+            {
+                public TextureHandle Source;
+                public TextureHandle Depth;
+                public Material Material;
+            }
+
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Scanner Projection");
             private FeatureSettings _settings;
             private Material _material;
@@ -126,17 +132,34 @@ namespace Hecton8.Visor
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
                 destinationDesc.msaaSamples = MSAASamples.None;
-                destinationDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                destinationDesc.colorFormat = sourceDesc.colorFormat;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
                 UpdateMaterialIfNeeded(_material, _settings, _state);
 
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
-                           passName: "Hecton Scanner Projection",
-                           returnBuilder: true))
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<ProjectionPassData>(
+                           "Hecton Scanner Projection",
+                           out ProjectionPassData passData,
+                           _profilingSampler))
                 {
+                    passData.Source = sourceTexture;
+                    passData.Depth = depthTexture;
+                    passData.Material = _material;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (ProjectionPassData data, RasterGraphContext context) =>
+                    {
+                        if (data.Material == null)
+                            return;
+
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
+                        context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
+                        CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
+                    });
                 }
 
                 resourceData.cameraColor = destinationTexture;
@@ -233,6 +256,8 @@ namespace Hecton8.Visor
             internal static readonly int GridScaleId = Shader.PropertyToID("_HectonScannerProjectionGridScale");
             internal static readonly int DitherCutoffId = Shader.PropertyToID("_HectonScannerProjectionDitherCutoff");
             internal static readonly int FlickerSpeedId = Shader.PropertyToID("_HectonScannerProjectionFlickerSpeed");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
+            internal static readonly int CameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -347,6 +372,10 @@ namespace Hecton8.Visor
         private static float3 DowncastLocalAupForShader(double3 aup)
         {
             double3 local = aup - HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(local)))
+                return new float3(float.NaN, float.NaN, float.NaN);
+
+            local = math.clamp(local, new double3(-1000000.0), new double3(1000000.0));
             return new float3((float)local.x, (float)local.y, (float)local.z);
         }
 

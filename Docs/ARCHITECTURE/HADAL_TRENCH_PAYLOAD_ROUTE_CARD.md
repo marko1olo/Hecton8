@@ -79,7 +79,7 @@ No `static_data.h8bin` integration proof exists.
 
 No runtime Vault buffer is allocated by SHINOBU_241 because the current implementation is editor/offline source and local scratch only.
 
-## R48 Exact Route Field Normalization
+## Route Field Contract
 
 Route ID: HADAL_TRENCH_PAYLOAD_ROUTE_CARD
 

@@ -851,7 +851,7 @@ namespace Hecton8.World.FloraAmbientSway
                 return false;
             }
 
-            string path = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "flora_biome_sway_profiles.csv");
+            string path = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "Data", "Profiles", "flora_biome_sway_profiles.csv");
             if (!File.Exists(path))
                 return false;
 

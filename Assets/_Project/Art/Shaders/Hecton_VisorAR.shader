@@ -23,7 +23,9 @@ Shader "Hidden/Hecton8/VisorAR"
             #pragma fragment CopyFrag
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
             TEXTURE2D_X(_BlitTexture);
 
@@ -64,12 +66,17 @@ Shader "Hidden/Hecton8/VisorAR"
             #endif
             }
 
+            float2 CopyResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(uv);
+            }
+
             half4 CopyFrag(CopyVaryings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                float2 uv = CopyResolveStereoUV(input.screenUV);
+                float2 uv = CopyResolveFoveatedSourceUV(CopyResolveStereoUV(input.screenUV));
                 return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
             }
             ENDHLSL
@@ -93,7 +100,9 @@ Shader "Hidden/Hecton8/VisorAR"
             #pragma fragment Frag
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
             #define HECTON_VISOR_MAX_TARGETS 16
 
@@ -161,6 +170,11 @@ Shader "Hidden/Hecton8/VisorAR"
             #endif
             }
 
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(uv);
+            }
+
             float Hash21(float2 p)
             {
                 p = frac(p * float2(123.34, 456.21));
@@ -183,9 +197,10 @@ Shader "Hidden/Hecton8/VisorAR"
             float SegmentBox(float2 uv, float2 center, float2 halfSize)
             {
                 float2 d = abs(uv - center) - halfSize;
-                float outside = length(max(d, 0.0));
+                float2 outside = max(d, 0.0);
+                float outside = max(outside.x, outside.y);
                 float inside = min(max(d.x, d.y), 0.0);
-                return 1.0 - smoothstep(0.0, 0.025, outside + inside);
+                return saturate(1.0 - (outside + inside) * 40.0);
             }
 
             float DigitSegmentMask(float digit, float segment)
@@ -235,16 +250,18 @@ Shader "Hidden/Hecton8/VisorAR"
             float LineBox(float2 uv, float2 center, float2 halfSize, float softness)
             {
                 float2 d = abs(uv - center) - halfSize;
-                float dist = length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
-                return 1.0 - smoothstep(0.0, softness, dist);
+                float2 outside = max(d, 0.0);
+                float dist = max(outside.x, outside.y) + min(max(d.x, d.y), 0.0);
+                return saturate(1.0 - dist / max(softness, 0.0001));
             }
 
             float DrawBracket(float2 uv, float2 center, float scale, float edge01)
             {
                 float2 p = (uv - center) / max(scale, 0.0001);
                 float2 ap = abs(p);
-                float corner = smoothstep(0.68, 0.58, max(ap.x, ap.y));
-                float outer = 1.0 - smoothstep(0.78, 0.9, max(ap.x, ap.y));
+                float boxEdge = max(ap.x, ap.y);
+                float corner = saturate((0.68 - boxEdge) * 10.0);
+                float outer = saturate((0.9 - boxEdge) * 8.333333);
                 float horizontal = LineBox(ap, float2(0.53, 0.66), float2(0.18, 0.025), 0.018);
                 float vertical = LineBox(ap, float2(0.66, 0.53), float2(0.025, 0.18), 0.018);
                 float reticle = LineBox(p, float2(0.0, 0.0), float2(0.11, 0.008), 0.01) + LineBox(p, float2(0.0, 0.0), float2(0.008, 0.11), 0.01);
@@ -253,8 +270,8 @@ Shader "Hidden/Hecton8/VisorAR"
 
             float DrawScanline(float2 uv, float time, float quality)
             {
-                float y = uv.y * lerp(240.0, 720.0, quality) + time * lerp(12.0, 42.0, quality);
-                return 0.5 + 0.5 * sin(y);
+                float phase = uv.y * lerp(240.0, 720.0, quality) + time * lerp(1.9, 6.7, quality);
+                return 1.0 - abs(frac(phase) * 2.0 - 1.0);
             }
 
             half4 Frag(Varyings input) : SV_Target
@@ -273,11 +290,11 @@ Shader "Hidden/Hecton8/VisorAR"
                 float2 centered = uv * 2.0 - 1.0;
                 float radial = dot(centered, centered);
                 float2 curvedUv = uv + centered * radial * curvature * lerp(0.002, 0.024, quality);
-                float chromaWeight = smoothstep(0.06, 1.0, quality);
+                float chromaWeight = saturate((quality - 0.06) * 1.0638298);
                 float chroma = lerp(0.0002, 0.0025, chromaWeight) * (0.25 + stress);
-                half3 source = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv)).rgb;
-                half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv + float2(chroma, 0.0))).r;
-                half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv - float2(chroma, 0.0))).b;
+                half3 source = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(saturate(curvedUv))).rgb;
+                half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(saturate(curvedUv + float2(chroma, 0.0)))).r;
+                half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(saturate(curvedUv - float2(chroma, 0.0)))).b;
                 source = lerp(source, half3(red, source.g, blue), chromaWeight);
 
                 float3 hudColor = float3(0.42, 0.94, 0.98);
@@ -308,7 +325,8 @@ Shader "Hidden/Hecton8/VisorAR"
                     float scale = max(0.018, 0.052 * target.ShapeParams.z);
                     float bracket = DrawBracket(uv, center, scale, target.ShapeParams.x) * active;
                     float occluded = saturate(target.ShapeParams.y);
-                    float pulse = 0.72 + 0.28 * sin(time * lerp(2.0, 7.0, quality) + target.ShapeParams.w * 1.37);
+                    float pulsePhase = frac(time * lerp(0.3183099, 1.1140846, quality) + target.ShapeParams.w * 0.137);
+                    float pulse = 0.72 + 0.28 * (1.0 - abs(pulsePhase * 2.0 - 1.0));
                     lineEnergy += bracket * pulse * (1.0 - occluded * 0.55);
                     warnEnergy += bracket * occluded * 0.6;
                     hudColor = lerp(hudColor, saturate(target.ColorAndPulse.rgb), bracket * active * 0.08);
@@ -317,7 +335,7 @@ Shader "Hidden/Hecton8/VisorAR"
                 float edge = saturate(radial);
                 float scan = DrawScanline(uv, time, quality);
                 float noise = ValueNoise(uv * lerp(48.0, 160.0, quality) + time * 0.11);
-                float fog = smoothstep(0.24, 1.0, edge) * fogIntensity * (0.35 + 0.65 * noise);
+                float fog = saturate((edge - 0.24) * 1.3157895) * fogIntensity * (0.35 + 0.65 * noise);
                 float lineAlpha = saturate(lineEnergy * (0.78 + scan * 0.22));
                 float warnAlpha = saturate(warnEnergy * (0.9 + stress * 0.6));
                 float3 arColor = hudColor * lineAlpha + warnColor * warnAlpha;

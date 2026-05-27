@@ -98,9 +98,9 @@ namespace Hecton8.Animation.FaunaProcedural
     [StructLayout(LayoutKind.Explicit, Size = ProceduralBoneBlenderConstants.FrameInputBytes)]
     public struct ProceduralBoneFrameInputDTO
     {
-        [FieldOffset(0)] public float3 RootLocalPosition;
-        [FieldOffset(12)] public float Visible01;
-        [FieldOffset(16)] public quaternion RootRotation;
+        [FieldOffset(0)] public quaternion RootRotation;
+        [FieldOffset(16)] public float3 RootLocalPosition;
+        [FieldOffset(28)] public float Visible01;
         [FieldOffset(32)] public float3 VelocityLocal;
         [FieldOffset(44)] public float GlobalQualityWeight;
         [FieldOffset(48)] public float3 JawTargetLocal;
@@ -233,7 +233,10 @@ namespace Hecton8.Animation.FaunaProcedural
                    UnsafeUtility.SizeOf<MockAiVelocitySignal>() == ProceduralBoneBlenderConstants.MockAiSignalBytes &&
                    UnsafeUtility.SizeOf<ProceduralBoneFrameStatsDTO>() == ProceduralBoneBlenderConstants.FrameStatsBytes &&
                    UnsafeUtility.SizeOf<ProceduralBoneTelemetryEntry>() == ProceduralBoneBlenderConstants.TelemetryEntryBytes &&
-                   UnsafeUtility.SizeOf<ProceduralBoneCounter64>() == 64;
+                   UnsafeUtility.SizeOf<ProceduralBoneCounter64>() == 64 &&
+                   Marshal.OffsetOf<ProceduralBoneFrameInputDTO>(nameof(ProceduralBoneFrameInputDTO.RootRotation)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<ProceduralBoneFrameInputDTO>(nameof(ProceduralBoneFrameInputDTO.RootLocalPosition)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<ProceduralBoneFrameInputDTO>(nameof(ProceduralBoneFrameInputDTO.Visible01)).ToInt32() == 28;
         }
     }
 
@@ -560,13 +563,13 @@ namespace Hecton8.Animation.FaunaProcedural
 
             try
             {
-                string root = string.IsNullOrEmpty(projectRoot) ? "." : projectRoot;
+                string root = projectRoot == null || projectRoot.Length == 0 ? "." : projectRoot;
                 string path = Path.Combine(root, ProceduralBoneBlenderConstants.DumpRelativePath);
                 string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
+                if (directory != null && directory.Length != 0)
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     int cursor = telemetryCursor[0];

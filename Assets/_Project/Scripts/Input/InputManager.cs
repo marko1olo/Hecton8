@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -87,8 +88,9 @@ namespace Hecton8.Input
         private bool _isSecondaryActionHeld;
         private InputRecoveryState _inputRecoveryState;
 
-        // COLD ALLOC: Dictionary<int, InputDisplayStyle>[8] — cached device-display-style lookup for input callbacks — owner: InputManager
-        private readonly Dictionary<int, InputDisplayStyle> _displayStyleByDeviceId = new Dictionary<int, InputDisplayStyle>(8);
+        // COLD ALLOC: Dictionary<int, InputDisplayStyle>[32] — cached device-display-style lookup for keyboards, mice, gamepads, XR controllers, and platform virtual devices — owner: InputManager
+        private readonly Dictionary<int, InputDisplayStyle> _displayStyleByDeviceId = new Dictionary<int, InputDisplayStyle>(32);
+        private Action<InputDevice, InputDeviceChange> _cachedDeviceChangeAction;
 
         public static bool TryValidateRuntimeConfiguration(out string message)
         {
@@ -357,6 +359,7 @@ namespace Hecton8.Input
         
         private void Awake()
         {
+            EnsureCachedDelegates();
             BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, out INativeInputManagerRuntime registered);
             if (registered != null && !ReferenceEquals(registered, this))
             {
@@ -375,6 +378,7 @@ namespace Hecton8.Input
             if (_serviceShuttingDown)
                 return;
 
+            EnsureCachedDelegates();
             RegisterService();
             SubscribeToDeviceChanges();
             EnsureInputActionsInitialized();
@@ -580,7 +584,21 @@ namespace Hecton8.Input
             {
                 return Instantiate(templateAsset); // COLD ALLOC: InputActionAsset[1] — detached runtime input asset clone — owner: InputManager
             }
-            catch (Exception)
+            catch (UnityException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[InputManager] Runtime InputActionAsset clone failed.");
+#endif
+                return null;
+            }
+            catch (InvalidOperationException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[InputManager] Runtime InputActionAsset clone failed.");
+#endif
+                return null;
+            }
+            catch (ArgumentException)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError("[InputManager] Runtime InputActionAsset clone failed.");
@@ -612,7 +630,25 @@ namespace Hecton8.Input
                     return TryExtractGeneratedInputActionAsset(actions);
                 }
             }
-            catch (Exception)
+            catch (TypeLoadException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning("[InputManager] Generated InputAction fallback unavailable.");
+#endif
+            }
+            catch (MissingMethodException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning("[InputManager] Generated InputAction fallback unavailable.");
+#endif
+            }
+            catch (MemberAccessException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning("[InputManager] Generated InputAction fallback unavailable.");
+#endif
+            }
+            catch (TargetInvocationException)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogWarning("[InputManager] Generated InputAction fallback unavailable.");
@@ -659,18 +695,15 @@ namespace Hecton8.Input
         {
             CaptureInputDisplayStyle(context);
             _moveInput = context.ReadValue<Vector2>();
-            OnMove?.Invoke(_moveInput);
         }
         private void OnMoveCanceled(InputAction.CallbackContext context)
         {
             _moveInput = Vector2.zero;
-            OnMove?.Invoke(Vector2.zero);
         }
         private void OnLookPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
             _lookInput = context.ReadValue<Vector2>();
-            OnLook?.Invoke(_lookInput);
         }
         private void OnLookCanceled(InputAction.CallbackContext context)
         {
@@ -680,51 +713,42 @@ namespace Hecton8.Input
         {
             CaptureInputDisplayStyle(context);
             _isJumping = true;
-            OnJump?.Invoke();
         }
         private void OnJumpCanceledPerformed(InputAction.CallbackContext context)
         {
             _isJumping = false;
-            OnJumpCanceled?.Invoke();
         }
         private void OnSprintPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
             _isSprinting = true;
-            OnSprint?.Invoke();
         }
         private void OnSprintCanceledPerformed(InputAction.CallbackContext context)
         {
             _isSprinting = false;
-            OnSprintCanceled?.Invoke();
         }
         private void OnVerticalMovementPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
             _verticalMovementInput = context.ReadValue<float>();
-            OnVerticalMove?.Invoke(_verticalMovementInput);
         }
         private void OnVerticalMovementCanceled(InputAction.CallbackContext context)
         {
             _verticalMovementInput = 0f;
-            OnVerticalMove?.Invoke(0f);
         }
         
         // Interaction Callbacks
         private void OnInteractPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnInteract?.Invoke();
         }
         private void OnFlashlightPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnFlashlight?.Invoke();
         }
         private void OnPDAPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnPDA?.Invoke();
         }
         private void OnPausePerformed(InputAction.CallbackContext context)
         {
@@ -734,29 +758,24 @@ namespace Hecton8.Input
         private void OnInventoryPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnInventory?.Invoke();
         }
         
         // Tool Callbacks
         private void OnToolSlot1Performed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnToolSlot1?.Invoke();
         }
         private void OnToolSlot2Performed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnToolSlot2?.Invoke();
         }
         private void OnToolSlot3Performed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnToolSlot3?.Invoke();
         }
         private void OnToolSlot4Performed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnToolSlot4?.Invoke();
         }
         
         // Action Callbacks
@@ -764,23 +783,19 @@ namespace Hecton8.Input
         {
             CaptureInputDisplayStyle(context);
             _isPrimaryActionHeld = true;
-            OnPrimaryAction?.Invoke();
         }
         private void OnPrimaryActionCanceledPerformed(InputAction.CallbackContext context)
         {
             _isPrimaryActionHeld = false;
-            OnPrimaryActionCanceled?.Invoke();
         }
         private void OnSecondaryActionPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
             _isSecondaryActionHeld = true;
-            OnSecondaryAction?.Invoke();
         }
         private void OnSecondaryActionCanceledPerformed(InputAction.CallbackContext context)
         {
             _isSecondaryActionHeld = false;
-            OnSecondaryActionCanceled?.Invoke();
         }
         
         // UI Callbacks
@@ -798,17 +813,14 @@ namespace Hecton8.Input
         private void OnCancelPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnCancel?.Invoke();
         }
         private void OnTabNextPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnTabNext?.Invoke();
         }
         private void OnTabPreviousPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnTabPrevious?.Invoke();
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void OnDebugToggleBlackBoxDashboardPerformed(InputAction.CallbackContext context)
@@ -902,7 +914,11 @@ namespace Hecton8.Input
                 else if (actionMap == "UI")
                     return _uiActionMap?.FindAction(actionName);
             }
-            catch (Exception)
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
+            catch (ArgumentException)
             {
                 return null;
             }
@@ -922,7 +938,11 @@ namespace Hecton8.Input
                 if (actionMap == "UI")
                     return _uiActionMap;
             }
-            catch (Exception)
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
+            catch (ArgumentException)
             {
                 return null;
             }
@@ -1054,16 +1074,16 @@ namespace Hecton8.Input
             {
                 binding = action.bindings[bindingIndex];
             }
-            catch (Exception)
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (ArgumentOutOfRangeException)
             {
                 return false;
             }
 
-            string path = binding.effectivePath;
-            if (string.IsNullOrWhiteSpace(path))
-                path = !string.IsNullOrWhiteSpace(binding.overridePath) ? binding.overridePath : binding.path;
-
-            if (string.IsNullOrWhiteSpace(path))
+            if (!TryGetActiveBindingPath(binding, out string path))
                 return false;
 
             bindingPath = path;
@@ -1084,16 +1104,16 @@ namespace Hecton8.Input
 
                 binding = action.bindings[bindingIndex];
             }
-            catch
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (ArgumentOutOfRangeException)
             {
                 return false;
             }
 
-            string path = binding.effectivePath;
-            if (string.IsNullOrWhiteSpace(path))
-                path = !string.IsNullOrWhiteSpace(binding.overridePath) ? binding.overridePath : binding.path;
-
-            if (string.IsNullOrWhiteSpace(path))
+            if (!TryGetActiveBindingPath(binding, out string path))
                 return false;
 
             return TryBuildBindingDisplayStringFromPath(path, out display);
@@ -1127,19 +1147,35 @@ namespace Hecton8.Input
 
                 binding = action.bindings[bindingIndex];
             }
-            catch
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (ArgumentOutOfRangeException)
             {
                 return false;
             }
 
-            string path = binding.effectivePath;
-            if (string.IsNullOrWhiteSpace(path))
-                path = !string.IsNullOrWhiteSpace(binding.overridePath) ? binding.overridePath : binding.path;
-
-            if (string.IsNullOrWhiteSpace(path))
+            if (!TryGetActiveBindingPath(binding, out string path))
                 return false;
 
             return TryWriteBindingDisplayStringFromPath(path, buffer, bufferOffset, out charsWritten);
+        }
+
+        private static bool TryGetActiveBindingPath(InputBinding binding, out string path)
+        {
+            path = binding.effectivePath;
+            if (!string.IsNullOrWhiteSpace(path))
+                return true;
+
+            if (binding.overridePath != null)
+            {
+                path = string.Empty;
+                return false;
+            }
+
+            path = binding.path;
+            return !string.IsNullOrWhiteSpace(path);
         }
 
         private static bool TryBuildBindingDisplayStringFromPath(string path, out string display)
@@ -1578,7 +1614,11 @@ namespace Hecton8.Input
 
                 return count > 0 ? 0 : -1;
             }
-            catch
+            catch (InvalidOperationException)
+            {
+                return -1;
+            }
+            catch (ArgumentOutOfRangeException)
             {
                 return -1;
             }
@@ -1601,7 +1641,11 @@ namespace Hecton8.Input
                     return i;
                 }
             }
-            catch
+            catch (InvalidOperationException)
+            {
+                return GetFirstDisplayableBindingIndex(action);
+            }
+            catch (ArgumentOutOfRangeException)
             {
                 return GetFirstDisplayableBindingIndex(action);
             }
@@ -1611,11 +1655,7 @@ namespace Hecton8.Input
 
         private static bool IsBindingSuitableForDisplay(InputBinding binding, InputDisplayStyle displayStyle)
         {
-            string path = binding.effectivePath;
-            if (string.IsNullOrWhiteSpace(path))
-                path = !string.IsNullOrWhiteSpace(binding.overridePath) ? binding.overridePath : binding.path;
-
-            if (string.IsNullOrWhiteSpace(path))
+            if (!TryGetActiveBindingPath(binding, out string path))
                 return false;
 
             if (IsGamepadDisplayStyle(displayStyle))
@@ -1651,16 +1691,16 @@ namespace Hecton8.Input
 
                 binding = action.bindings[bindingIndex];
             }
-            catch
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (ArgumentOutOfRangeException)
             {
                 return false;
             }
 
-            string path = binding.effectivePath;
-            if (string.IsNullOrWhiteSpace(path))
-                path = !string.IsNullOrWhiteSpace(binding.overridePath) ? binding.overridePath : binding.path;
-
-            return GlyphProvider.TryGetBindingMarkup(path, out markup);
+            return TryGetActiveBindingPath(binding, out string path) && GlyphProvider.TryGetBindingMarkup(path, out markup);
         }
 
         private static bool TryResolveTokenBinding(string token, out string actionName, out string actionMap)
@@ -1756,7 +1796,8 @@ namespace Hecton8.Input
             if (_deviceChangeSubscribed)
                 return;
 
-            InputSystem.onDeviceChange += HandleInputDeviceChange;
+            EnsureCachedDelegates();
+            InputSystem.onDeviceChange += _cachedDeviceChangeAction;
             _deviceChangeSubscribed = true;
             RefreshTrackedDevices();
         }
@@ -1766,8 +1807,15 @@ namespace Hecton8.Input
             if (!_deviceChangeSubscribed)
                 return;
 
-            InputSystem.onDeviceChange -= HandleInputDeviceChange;
+            if (_cachedDeviceChangeAction != null)
+                InputSystem.onDeviceChange -= _cachedDeviceChangeAction;
+
             _deviceChangeSubscribed = false;
+        }
+
+        private void EnsureCachedDelegates()
+        {
+            _cachedDeviceChangeAction ??= HandleInputDeviceChange; // COLD ALLOC: Action<InputDevice,InputDeviceChange>[1] - cached device-change callback - owner: InputManager
         }
 
         private void HandleInputDeviceChange(InputDevice device, InputDeviceChange change)
@@ -1941,20 +1989,40 @@ namespace Hecton8.Input
 
         public string SaveBindingOverridesAsJson()
         {
-            if (_runtimeInputActionAsset == null) return string.Empty;
-            return _runtimeInputActionAsset.SaveBindingOverridesAsJson();
+            return string.Empty;
         }
 
         public void LoadBindingOverridesFromJson(string json)
         {
-            if (_runtimeInputActionAsset == null || string.IsNullOrEmpty(json)) return;
-            _runtimeInputActionAsset.LoadBindingOverridesFromJson(json);
+        }
+
+        public bool TryClearBindingOverrides()
+        {
+            if (_runtimeInputActionAsset == null && !EnsureInputActionsInitialized())
+                return false;
+
+            try
+            {
+                _runtimeInputActionAsset.RemoveAllBindingOverrides();
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
         }
 
         public void ClearBindingOverrides()
         {
-            if (_runtimeInputActionAsset == null) return;
-            _runtimeInputActionAsset.RemoveAllBindingOverrides();
+            TryClearBindingOverrides();
         }
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -2055,9 +2123,6 @@ namespace Hecton8.Input
             catch (ArgumentOutOfRangeException)
             {
             }
-            catch (Exception)
-            {
-            }
         }
 
         private bool TrySetActionMapEnabled(InputActionMap requestedActionMap, bool enable, bool scheduleRecoveryOnFailure)
@@ -2100,11 +2165,6 @@ namespace Hecton8.Input
                 if (scheduleRecoveryOnFailure)
                     RequestActionMapRecovery();
             }
-            catch (Exception)
-            {
-                if (scheduleRecoveryOnFailure)
-                    RequestActionMapRecovery();
-            }
 
             return false;
         }
@@ -2126,7 +2186,11 @@ namespace Hecton8.Input
             {
                 actionMapName = resolvedActionMap.name;
             }
-            catch (Exception)
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (ArgumentOutOfRangeException)
             {
                 return false;
             }
@@ -2138,7 +2202,11 @@ namespace Hecton8.Input
             {
                 resolvedActionMap = _runtimeInputActionAsset.FindActionMap(actionMapName);
             }
-            catch (Exception)
+            catch (InvalidOperationException)
+            {
+                resolvedActionMap = null;
+            }
+            catch (ArgumentException)
             {
                 resolvedActionMap = null;
             }
@@ -2237,10 +2305,6 @@ namespace Hecton8.Input
             {
                 return false;
             }
-            catch (Exception)
-            {
-                return false;
-            }
         }
 
         private bool TryValidateActionMap(InputActionMap actionMap, bool scheduleRecoveryOnFailure)
@@ -2258,7 +2322,14 @@ namespace Hecton8.Input
                     return false;
                 }
             }
-            catch (Exception)
+            catch (InvalidOperationException)
+            {
+                if (scheduleRecoveryOnFailure)
+                    RequestActionMapRecovery();
+
+                return false;
+            }
+            catch (ArgumentOutOfRangeException)
             {
                 if (scheduleRecoveryOnFailure)
                     RequestActionMapRecovery();
@@ -2540,11 +2611,6 @@ namespace Hecton8.Input
                 RequestActionMapRecovery();
                 return false;
             }
-            catch (Exception)
-            {
-                RequestActionMapRecovery();
-                return false;
-            }
         }
 
         private void ResetInputActionCaches(bool disposeRuntimeAsset)
@@ -2621,7 +2687,11 @@ namespace Hecton8.Input
             {
                 actionMapName = actionMap.name;
             }
-            catch (Exception)
+            catch (InvalidOperationException)
+            {
+                return;
+            }
+            catch (ArgumentOutOfRangeException)
             {
                 return;
             }
@@ -2663,10 +2733,6 @@ namespace Hecton8.Input
                 return false;
             }
             catch (ArgumentOutOfRangeException)
-            {
-                return false;
-            }
-            catch (Exception)
             {
                 return false;
             }

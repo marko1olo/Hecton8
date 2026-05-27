@@ -46,6 +46,17 @@ namespace Hecton8.World
                 float3 axisX = new float3(instanceMatrix.m00, instanceMatrix.m10, instanceMatrix.m20);
                 float3 axisY = new float3(instanceMatrix.m01, instanceMatrix.m11, instanceMatrix.m21);
                 float3 axisZ = new float3(instanceMatrix.m02, instanceMatrix.m12, instanceMatrix.m22);
+                if (!math.all(math.isfinite(center)) ||
+                    !math.all(math.isfinite(axisX)) ||
+                    !math.all(math.isfinite(axisY)) ||
+                    !math.all(math.isfinite(axisZ)) ||
+                    !math.isfinite(RadiusScale) ||
+                    !math.isfinite(MinRadius))
+                {
+                    VisibilityMask[index] = 0;
+                    return;
+                }
+
                 float radiusScaleSq = RadiusScale * RadiusScale;
                 float minRadiusSq = MinRadius * MinRadius;
                 float radiusSq = math.max(
@@ -53,10 +64,21 @@ namespace Hecton8.World
                     math.max(
                         math.lengthsq(axisX),
                         math.max(math.lengthsq(axisY), math.lengthsq(axisZ))) * radiusScaleSq);
+                if (!math.isfinite(radiusSq) || radiusSq < 0f)
+                {
+                    VisibilityMask[index] = 0;
+                    return;
+                }
 
                 for (int planeIndex = 0; planeIndex < PlaneCount; planeIndex++)
                 {
                     float4 plane = CullingPlanes[planeIndex];
+                    if (!math.all(math.isfinite(plane)))
+                    {
+                        VisibilityMask[index] = 0;
+                        return;
+                    }
+
                     float signedDistance = math.dot(plane.xyz, center) + plane.w;
                     if (signedDistance < 0f && (signedDistance * signedDistance) > radiusSq)
                     {
@@ -260,6 +282,9 @@ namespace Hecton8.World
         /// </summary>
         public static bool IsSphereVisible(NativeArray<Plane> cullingPlanes, Vector3 center, float radius)
         {
+            if (!IsFinite(center) || !float.IsFinite(radius) || radius < 0f)
+                return false;
+
             int planeCount = cullingPlanes.IsCreated ? cullingPlanes.Length : 0;
             float centerX = center.x;
             float centerY = center.y;
@@ -269,6 +294,9 @@ namespace Hecton8.World
             {
                 Plane plane = cullingPlanes[planeIndex];
                 Vector3 normal = plane.normal;
+                if (!IsFinite(normal) || !float.IsFinite(plane.distance))
+                    return false;
+
                 float signedDistance =
                     (normal.x * centerX) +
                     (normal.y * centerY) +
@@ -287,8 +315,14 @@ namespace Hecton8.World
         public static bool IsBoundsVisible(NativeArray<Plane> cullingPlanes, Bounds bounds)
         {
             Vector3 extents = bounds.extents;
+            if (!IsFinite(bounds.center) || !IsFinite(extents))
+                return false;
+
             float maxAxis = math.cmax(math.abs(new float3(extents.x, extents.y, extents.z)));
             float radius = maxAxis * 1.7320508f;
+            if (!float.IsFinite(radius) || radius < 0f)
+                return false;
+
             return IsSphereVisible(cullingPlanes, bounds.center, radius);
         }
 
@@ -327,6 +361,13 @@ namespace Hecton8.World
         public static GraphicsBuffer CreateBatchHandleBuffer()
         {
             return GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(1);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
         }
     }
 }

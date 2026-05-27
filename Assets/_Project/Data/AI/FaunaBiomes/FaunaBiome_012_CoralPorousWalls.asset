@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: FaunaBiome_012_CoralPorousWalls
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.AI.FaunaBiomeData
   biomeIndex: 12
-  biomeName: Coral-Porous Walls
+  biomeName: Carbonate-Porous Walls
   possibleCreatures:
   - archetype: {fileID: 11400000, guid: 88414339a9effbd46952a03c1836a11b, type: 2}
     prefab: {fileID: 676815894980492824, guid: 54d26ac0f761ade449ffd3811fbe2620, type: 3}

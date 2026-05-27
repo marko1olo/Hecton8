@@ -28,6 +28,7 @@ namespace Hecton8.World
         private const uint GprReturnHash = 0x47505252u; // GPRR
         private const uint TelemetryFaultFlag = 1u << 31;
         private const uint GroundRadarProceduralVertexCount = 6u;
+        private const BufferID GroundRadarSdfSnapshotBuffer = (BufferID)71339;
         private static readonly int GroundRadarPingsId = Shader.PropertyToID("_GroundRadarPings");
         private static readonly int GroundRadarPulseId = Shader.PropertyToID("_GroundRadarPulse");
         private static readonly int GroundRadarScaleId = Shader.PropertyToID("_GroundRadarScale");
@@ -55,6 +56,7 @@ namespace Hecton8.World
         private VaultGenerationHandle<int> _gprCountersHandle;
         private VaultGenerationHandle<float> _maxSignalStrengthHandle;
         private VaultGenerationHandle<GroundRadarTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<byte> _sdfSnapshotHandle;
         private IDataVault _dataVault;
         private GraphicsBuffer _gprPingBufferA;
         private GraphicsBuffer _gprPingBufferB;
@@ -67,6 +69,7 @@ namespace Hecton8.World
         private IPlayerRuntimeContext _playerContext;
         private ISubmarineState _submarineState;
         private Hecton8.Core.Contracts.IVoxelSonarSdfReadModel _voxelSdfReadModel;
+        private Hecton8.Core.Contracts.IVoxelSonarSdfReadLeaseModel _voxelSdfReadLeaseModel;
         private IEcosystemDirectorService _ecosystemDirector;
         private IWorldResourceSpawnerReadModel _worldResourceSpawnerReadModel;
         private IWorldResourceSpawnerReadDependencySink _worldResourceSpawnerReadDependencySink;
@@ -82,6 +85,8 @@ namespace Hecton8.World
         private int _registeredRenderable;
         private int _hotSwapRegistered;
         private bool _scanJobScheduled;
+        private bool _scanSdfSnapshotLocked;
+        private int _scanJobBufferLockCount;
         private bool _gprReadSnapshotsValid;
         private bool _pendingDataVaultRebind;
         private float _scanTimer;
@@ -131,7 +136,7 @@ namespace Hecton8.World
             EnsureRuntimeDrawResources();
             GlobalRegistry.RegisterGroundRadarService(this);
             CacheConfiguredOreReadModel();
-            CacheOreReadModelFromRegistry();
+            CacheOreReadModelFromOwnerRoute();
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this) ? 1 : 0;
         }
@@ -167,12 +172,22 @@ namespace Hecton8.World
             _ecosystemDirector = null;
             _playerContext = null;
             _submarineState = null;
-            _voxelSdfReadModel = null;
             if (_scanJobScheduled)
             {
                 if (DispatcherJobFence.TryComplete(ref _scanJobHandle, forceComplete: true))
+                {
                     _scanJobScheduled = false;
+                    ReleaseScanSdfSnapshotLock();
+                    ReleaseScanJobBufferLocks();
+                }
             }
+            if (!_scanJobScheduled)
+            {
+                ReleaseScanSdfSnapshotLock();
+                ReleaseScanJobBufferLocks();
+            }
+            _voxelSdfReadModel = null;
+            _voxelSdfReadLeaseModel = null;
 
             ReleaseGraphicsBuffer(ref _gprPingBufferA);
             ReleaseGraphicsBuffer(ref _gprPingBufferB);
@@ -188,6 +203,7 @@ namespace Hecton8.World
             _gprCountersHandle = default;
             _maxSignalStrengthHandle = default;
             _telemetryRingHandle = default;
+            _sdfSnapshotHandle = default;
             _dataVault = null;
             _pendingDataVault = null;
             _pendingDataVaultRebind = false;
@@ -249,7 +265,15 @@ namespace Hecton8.World
                 return;
 
             _scanJobScheduled = false;
-            CommitCompletedScan();
+            try
+            {
+                CommitCompletedScan();
+            }
+            finally
+            {
+                ReleaseScanSdfSnapshotLock();
+                ReleaseScanJobBufferLocks();
+            }
         }
 
         public void Render(float deltaTime)
@@ -572,71 +596,91 @@ namespace Hecton8.World
 
         private void ScheduleRadarJob(float3 probeOrigin, float deltaTime, bool scanDue, bool hasShift, float3 aupShift)
         {
-            if (!TryOpenGprStateForOwnerWrite(
-                out NativeArray<float3> hits,
-                out NativeArray<float> signalStrength,
-                out NativeArray<float> ageSeconds,
-                out NativeArray<int> gprOreTypes,
-                out NativeArray<float4> pingGpu,
-                out NativeArray<int> counters,
-                out NativeArray<float> maxSignalStrength,
-                out _))
-            {
+            if (!TryLockScanJobBuffers())
                 return;
-            }
 
-            NativeArray<byte>.ReadOnly encodedSdf = default;
-            int3 gridDimensions = default;
-            float3 volumeOrigin = default;
-            float3 cellSize = default;
-            float sdfRange = 0f;
-
-            if (scanDue)
-                TryReadNearestSdf(probeOrigin, out encodedSdf, out gridDimensions, out volumeOrigin, out cellSize, out sdfRange);
-
-            NativeArray<float3>.ReadOnly orePositions = default;
-            NativeArray<int>.ReadOnly oreTypes = default;
-            int oreCount = 0;
-            IWorldResourceSpawnerReadDependencySink oreReadDependencySink = null;
-            if (scanDue)
-                TryResolveOreSource(out orePositions, out oreTypes, out oreCount, out oreReadDependencySink);
-
-            float qualityWeight01 = ReadGlobalQualityWeight01();
-            maxSignalStrength[0] = 0f;
-            GroundRadarRaymarchJob job = new GroundRadarRaymarchJob
+            bool scanJobBuffersClaimed = false;
+            bool sdfSnapshotClaimed = false;
+            bool sdfSnapshotLocked = false;
+            try
             {
-                EncodedSdf = encodedSdf,
-                OrePositions = oreCount > 0 ? orePositions : default,
-                OreTypes = oreCount > 0 ? oreTypes : default,
-                GprHits = new NativeSlice<float3>(hits),
-                GprSignalStrength = new NativeSlice<float>(signalStrength),
-                GprAgeSeconds = new NativeSlice<float>(ageSeconds),
-                GprOreTypes = new NativeSlice<int>(gprOreTypes),
-                GprPingGpu = new NativeSlice<float4>(pingGpu),
-                Counters = new NativeSlice<int>(counters),
-                MaxSignalStrength = new NativeSlice<float>(maxSignalStrength),
-                GridDimensions = gridDimensions,
-                VolumeOrigin = volumeOrigin,
-                CellSize = cellSize,
-                SdfRange = sdfRange,
-                OreScanCount = oreCount,
-                OreFilterType = _oreFilterType,
-                PreviousActiveCount = _activeGprPings,
-                RequestedRayCount = SelectRayCount(qualityWeight01),
-                MaxSteps = SelectRaymarchStepCount(maxRaymarchSteps, qualityWeight01),
-                ProbeOrigin = probeOrigin,
-                ScanRadiusMeters = scanRadiusMeters,
-                StepMeters = stepMeters,
-                DeltaTime = deltaTime,
-                RuntimeShift = aupShift,
-                Flags = (scanDue ? GroundRadarConstants.ScanFlag : 0u) |
-                        (hasShift ? GroundRadarConstants.AupShiftFlag : 0u)
-            };
+                if (!TryOpenGprStateForOwnerWrite(
+                    out NativeArray<float3> hits,
+                    out NativeArray<float> signalStrength,
+                    out NativeArray<float> ageSeconds,
+                    out NativeArray<int> gprOreTypes,
+                    out NativeArray<float4> pingGpu,
+                    out NativeArray<int> counters,
+                    out NativeArray<float> maxSignalStrength,
+                    out _))
+                {
+                    return;
+                }
 
-            _scanJobHandle = job.Schedule();
-            if (scanDue && oreCount > 0 && oreReadDependencySink != null)
-                oreReadDependencySink.RegisterOreReadDependency(_scanJobHandle);
-            _scanJobScheduled = true;
+                NativeArray<byte>.ReadOnly encodedSdf = default;
+                int3 gridDimensions = default;
+                float3 volumeOrigin = default;
+                float3 cellSize = default;
+                float sdfRange = 0f;
+
+                if (scanDue)
+                    TryReadNearestSdf(probeOrigin, out encodedSdf, out gridDimensions, out volumeOrigin, out cellSize, out sdfRange, out sdfSnapshotLocked);
+
+                NativeArray<float3>.ReadOnly orePositions = default;
+                NativeArray<int>.ReadOnly oreTypes = default;
+                int oreCount = 0;
+                IWorldResourceSpawnerReadDependencySink oreReadDependencySink = null;
+                if (scanDue)
+                    TryResolveOreSource(out orePositions, out oreTypes, out oreCount, out oreReadDependencySink);
+
+                float qualityWeight01 = ReadGlobalQualityWeight01();
+                maxSignalStrength[0] = 0f;
+                GroundRadarRaymarchJob job = new GroundRadarRaymarchJob
+                {
+                    EncodedSdf = encodedSdf,
+                    OrePositions = oreCount > 0 ? orePositions : default,
+                    OreTypes = oreCount > 0 ? oreTypes : default,
+                    GprHits = new NativeSlice<float3>(hits),
+                    GprSignalStrength = new NativeSlice<float>(signalStrength),
+                    GprAgeSeconds = new NativeSlice<float>(ageSeconds),
+                    GprOreTypes = new NativeSlice<int>(gprOreTypes),
+                    GprPingGpu = new NativeSlice<float4>(pingGpu),
+                    Counters = new NativeSlice<int>(counters),
+                    MaxSignalStrength = new NativeSlice<float>(maxSignalStrength),
+                    GridDimensions = gridDimensions,
+                    VolumeOrigin = volumeOrigin,
+                    CellSize = cellSize,
+                    SdfRange = sdfRange,
+                    OreScanCount = oreCount,
+                    OreFilterType = _oreFilterType,
+                    PreviousActiveCount = _activeGprPings,
+                    RequestedRayCount = SelectRayCount(qualityWeight01),
+                    MaxSteps = SelectRaymarchStepCount(maxRaymarchSteps, qualityWeight01),
+                    ProbeOrigin = probeOrigin,
+                    ScanRadiusMeters = scanRadiusMeters,
+                    StepMeters = stepMeters,
+                    DeltaTime = deltaTime,
+                    RuntimeShift = aupShift,
+                    Flags = (scanDue ? GroundRadarConstants.ScanFlag : 0u) |
+                            (hasShift ? GroundRadarConstants.AupShiftFlag : 0u)
+                };
+
+                _scanJobHandle = job.Schedule();
+                _scanSdfSnapshotLocked = sdfSnapshotLocked;
+                sdfSnapshotClaimed = true;
+
+                if (scanDue && oreCount > 0 && oreReadDependencySink != null)
+                    oreReadDependencySink.RegisterOreReadDependency(_scanJobHandle);
+                _scanJobScheduled = true;
+                scanJobBuffersClaimed = true;
+            }
+            finally
+            {
+                if (!sdfSnapshotClaimed)
+                    UnlockSdfSnapshotBuffer(ref sdfSnapshotLocked);
+                if (!scanJobBuffersClaimed)
+                    ReleaseScanJobBufferLocks();
+            }
         }
 
         private void CommitCompletedScan()
@@ -803,35 +847,207 @@ namespace Hecton8.World
             out int3 gridDimensions,
             out float3 volumeOrigin,
             out float3 cellSize,
-            out float sdfRange)
+            out float sdfRange,
+            out bool snapshotLocked)
         {
             encodedSdf = default;
             gridDimensions = default;
             volumeOrigin = default;
             cellSize = default;
             sdfRange = 0f;
+            snapshotLocked = false;
 
             Hecton8.Core.Contracts.IVoxelSonarSdfReadModel voxelSdfReadModel = _voxelSdfReadModel;
-            if (voxelSdfReadModel == null)
+            Hecton8.Core.Contracts.IVoxelSonarSdfReadLeaseModel leaseModel = _voxelSdfReadLeaseModel;
+            if (voxelSdfReadModel == null || leaseModel == null)
                 return false;
 
-            if (!voxelSdfReadModel.TryReadNearestSonarSdf(
+            if (!leaseModel.TryAcquireNearestSonarSdfReadLease(
                     probeOrigin,
                     out NativeArray<byte>.ReadOnly payload,
                     out int3 dimensions,
                     out float3 payloadOrigin,
                     out float3 payloadCellSize,
-                    out float payloadRange))
+                    out float payloadRange,
+                    out Hecton8.Core.Contracts.VoxelSonarSdfReadLease payloadLease))
             {
                 return false;
             }
 
-            encodedSdf = payload;
-            gridDimensions = dimensions;
-            volumeOrigin = payloadOrigin;
-            cellSize = payloadCellSize;
-            sdfRange = payloadRange;
+            bool accepted = false;
+            bool leaseLocked = true;
+            try
+            {
+                long expectedLong = (long)dimensions.x * dimensions.y * dimensions.z;
+                if (expectedLong <= 0L ||
+                    expectedLong > int.MaxValue ||
+                    !payload.IsCreated ||
+                    payload.Length < expectedLong ||
+                    !TryCopySdfLeaseToSnapshot(payload, (int)expectedLong, out encodedSdf, out snapshotLocked))
+                {
+                    return false;
+                }
+
+                gridDimensions = dimensions;
+                volumeOrigin = payloadOrigin;
+                cellSize = payloadCellSize;
+                sdfRange = payloadRange;
+                accepted = true;
+                return true;
+            }
+            finally
+            {
+                if (leaseLocked)
+                    leaseModel.ReleaseNearestSonarSdfReadLease(in payloadLease);
+                if (!accepted)
+                    UnlockSdfSnapshotBuffer(ref snapshotLocked);
+            }
+        }
+
+        private bool TryCopySdfLeaseToSnapshot(
+            NativeArray<byte>.ReadOnly sourceSdf,
+            int requiredLength,
+            out NativeArray<byte>.ReadOnly snapshotSdf,
+            out bool snapshotLocked)
+        {
+            snapshotSdf = default;
+            snapshotLocked = false;
+            if (!sourceSdf.IsCreated || requiredLength <= 0 || sourceSdf.Length < requiredLength)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                return false;
+
+            if (!IsVaultHandleCreated(in _sdfSnapshotHandle) ||
+                !vault.TryResolveHandle(in _sdfSnapshotHandle, out NativeArray<byte> snapshot) ||
+                vault.IsCompactionFenceActive ||
+                !snapshot.IsCreated ||
+                snapshot.Length < requiredLength)
+            {
+                if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                    return false;
+
+                _sdfSnapshotHandle = vault.EnsureGenerationHandle<byte>(
+                    GroundRadarSdfSnapshotBuffer,
+                    requiredLength,
+                    SystemID.WorldStreaming,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (vault.IsCompactionFenceActive ||
+                !vault.TryLockBuffer(GroundRadarSdfSnapshotBuffer, SystemID.WorldStreaming))
+                return false;
+
+            snapshotLocked = true;
+            if (vault.IsCompactionFenceActive)
+            {
+                UnlockSdfSnapshotBuffer(ref snapshotLocked);
+                return false;
+            }
+
+            if (!IsVaultHandleCreated(in _sdfSnapshotHandle) ||
+                !vault.TryResolveHandle(in _sdfSnapshotHandle, out snapshot) ||
+                vault.IsCompactionFenceActive ||
+                !snapshot.IsCreated ||
+                snapshot.Length < requiredLength)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < requiredLength; i++)
+                snapshot[i] = sourceSdf[i];
+
+            snapshotSdf = snapshot.AsReadOnly();
             return true;
+        }
+
+        private bool TryLockScanJobBuffers()
+        {
+            if (_scanJobBufferLockCount != 0)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            int locked = 0;
+            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarHits)) { UnlockScanJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarSignalStrength)) { UnlockScanJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarAgeSeconds)) { UnlockScanJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarOreTypes)) { UnlockScanJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarPingGpu)) { UnlockScanJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarCounters)) { UnlockScanJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockWorldBuffer(vault, BufferID.GroundRadarMaxSignalStrength)) { UnlockScanJobBuffers(vault, locked); return false; }
+            locked++;
+
+            _scanJobBufferLockCount = locked;
+            return true;
+        }
+
+        private static bool TryLockWorldBuffer(IDataVault vault, BufferID bufferId)
+        {
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryLockBuffer(bufferId, SystemID.WorldStreaming))
+                return false;
+
+            if (!vault.IsCompactionFenceActive)
+                return true;
+
+            vault.TryUnlockBuffer(bufferId, SystemID.WorldStreaming);
+            return false;
+        }
+
+        private void ReleaseScanJobBufferLocks()
+        {
+            UnlockScanJobBuffers(_dataVault, _scanJobBufferLockCount);
+            _scanJobBufferLockCount = 0;
+        }
+
+        private void ReleaseScanSdfSnapshotLock()
+        {
+            if (!_scanSdfSnapshotLocked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.TryUnlockBuffer(GroundRadarSdfSnapshotBuffer, SystemID.WorldStreaming);
+
+            _scanSdfSnapshotLocked = false;
+        }
+
+        private void UnlockSdfSnapshotBuffer(ref bool locked)
+        {
+            if (!locked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.TryUnlockBuffer(GroundRadarSdfSnapshotBuffer, SystemID.WorldStreaming);
+
+            locked = false;
+        }
+
+        private static void UnlockScanJobBuffers(IDataVault vault, int locked)
+        {
+            if (vault == null)
+                return;
+
+            if (locked >= 7) vault.TryUnlockBuffer(BufferID.GroundRadarMaxSignalStrength, SystemID.WorldStreaming);
+            if (locked >= 6) vault.TryUnlockBuffer(BufferID.GroundRadarCounters, SystemID.WorldStreaming);
+            if (locked >= 5) vault.TryUnlockBuffer(BufferID.GroundRadarPingGpu, SystemID.WorldStreaming);
+            if (locked >= 4) vault.TryUnlockBuffer(BufferID.GroundRadarOreTypes, SystemID.WorldStreaming);
+            if (locked >= 3) vault.TryUnlockBuffer(BufferID.GroundRadarAgeSeconds, SystemID.WorldStreaming);
+            if (locked >= 2) vault.TryUnlockBuffer(BufferID.GroundRadarSignalStrength, SystemID.WorldStreaming);
+            if (locked >= 1) vault.TryUnlockBuffer(BufferID.GroundRadarHits, SystemID.WorldStreaming);
         }
 
         private static float ReadGlobalQualityWeight01()
@@ -888,14 +1104,14 @@ namespace Hecton8.World
             return false;
         }
 
-        private bool CacheOreReadModelFromRegistry()
+        private bool CacheOreReadModelFromOwnerRoute()
         {
             if (_worldResourceSpawnerReadModel != null)
                 return true;
 
-            _worldResourceSpawnerReadModel = GlobalRegistry.WorldResourceSpawner;
-            _worldResourceSpawnerReadDependencySink = _worldResourceSpawnerReadModel as IWorldResourceSpawnerReadDependencySink;
-            return _worldResourceSpawnerReadModel != null;
+            return WorldRuntimeReferenceUtility.TryResolveWorldResourceSpawnerReadModel(
+                ref _worldResourceSpawnerReadModel,
+                ref _worldResourceSpawnerReadDependencySink);
         }
 
         private uint AdvanceRadarFrameId()
@@ -994,8 +1210,18 @@ namespace Hecton8.World
             _dataVault = GlobalRegistry.DataVault;
             _playerContext = GlobalRegistry.Player;
             _submarineState = GlobalRegistry.SubmarineState;
-            _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
-            _ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            HectonVoxelEngine voxelEngine = null;
+            if (WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine))
+            {
+                _voxelSdfReadModel = voxelEngine;
+                _voxelSdfReadLeaseModel = voxelEngine as Hecton8.Core.Contracts.IVoxelSonarSdfReadLeaseModel;
+            }
+            else
+            {
+                _voxelSdfReadModel = null;
+                _voxelSdfReadLeaseModel = null;
+            }
+            _ecosystemDirector = EcosystemDirector.ActiveRuntimeInstance;
         }
 
         private void RebindCachedService(GlobalRegistryServiceSlot serviceSlot, object currentService)
@@ -1013,6 +1239,7 @@ namespace Hecton8.World
                     return;
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
                     _voxelSdfReadModel = currentService as Hecton8.Core.Contracts.IVoxelSonarSdfReadModel;
+                    _voxelSdfReadLeaseModel = currentService as Hecton8.Core.Contracts.IVoxelSonarSdfReadLeaseModel;
                     return;
                 case GlobalRegistryServiceSlot.EcosystemDirector:
                     _ecosystemDirector = currentService as IEcosystemDirectorService;
@@ -1123,7 +1350,12 @@ namespace Hecton8.World
         {
             if (radarPingMaterial == null && _runtimeMaterial == null)
             {
-                Shader shader = Shader.Find("Hecton8/World/GroundRadarPingIndirect");
+                Shader shader = null;
+                RuntimeShaderReferenceCatalog.TryGetGroundRadarPingIndirectShader(out shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (shader == null)
+                    shader = Shader.Find("Hecton8/World/GroundRadarPingIndirect");
+#endif
                 if (shader != null)
                 {
                     _runtimeMaterial = new Material(shader) // COLD ALLOC: Material[GroundRadarPingRuntime] — fallback GPR render material — owner: TERRAIN_GPR_SYSTEM

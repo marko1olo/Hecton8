@@ -1,0 +1,43 @@
+﻿{
+    "agentId":  "1329",
+    "task":  "1329_PURGE",
+    "status":  "VERIFIED_GREEN",
+    "scannedFiles":  4,
+    "failedGates":  [
+
+                    ],
+    "totalNativeFieldDeclarations":  24,
+    "persistentNativeFieldsRemaining":  0,
+    "transientVaultViews":  25,
+    "transientJobViews":  13,
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "Fabricator.FabricatorMemoryTelemetryEntry",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Sequence":  "0:ulong",
+                                               "StateHash":  "8:ulong",
+                                               "Frame":  "16:uint",
+                                               "BufferId":  "20:uint",
+                                               "HandleGeneration":  "24:uint",
+                                               "VaultGeneration":  "28:uint",
+                                               "Flags":  "32:uint",
+                                               "Capacity":  "36:int",
+                                               "FailureStreak":  "40:int",
+                                               "GlobalQualityWeight":  "44:float",
+                                               "CpuMicroseconds":  "48:float",
+                                               "GpuMicroseconds":  "52:float",
+                                               "SystemId":  "56:uint",
+                                               "_pad0":  "60:byte",
+                                               "_pad1":  "61:byte",
+                                               "_pad2":  "62:byte",
+                                               "_pad3":  "63:byte"
+                                           }
+                           }
+                       ],
+    "zeroGcHotPathHits":  0,
+    "absoluteAupCastsFound":  0,
+    "compactionAwareLocksProven":  true,
+    "telemetryRingIntegrated":  true,
+    "verificationHashSha256":  "2161879615dab92336a3a8dabef84afaf5549be011e9a6ff71601d8521bde3a2"
+}

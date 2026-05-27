@@ -1,0 +1,102 @@
+{
+  "agentId": "1332",
+  "task": "1332_CONTROLS_JSON_TRANSACTION_REAUDIT",
+  "status": "STATIC_VERIFIED_BUILD_BLOCKED_HOST_GATE",
+  "scannedFiles": 10,
+  "failedGates": [
+    "DOTNET_BUILD_AND_ROSLYN_AUDIT_BLOCKED_BY_HOST_GATE"
+  ],
+  "totalNativeFieldDeclarations": 0,
+  "persistentNativeFieldsRemaining": 0,
+  "transientVaultViews": 3,
+  "transientJobViews": 0,
+  "byteOffsetMaps": [
+    {
+      "structName": "InputActionStateDTO",
+      "sizeBytes": 64,
+      "offsets": {
+        "BindingGuidHash64": "0:ulong",
+        "EffectivePathHash64": "8:ulong",
+        "OverridePathHash64": "16:ulong",
+        "ActionIdentityHash64": "24:ulong",
+        "ActionNameHash": "32:uint",
+        "ActionMapHash": "36:uint",
+        "BindingGroupHash": "40:uint",
+        "ControlPathHash": "44:uint",
+        "BindingIndex": "48:int",
+        "PathByteOffset": "52:ushort",
+        "PathByteLength": "54:ushort",
+        "CompositeDepth": "56:ushort",
+        "DeviceMask": "58:ushort",
+        "DisplayStyle": "60:byte",
+        "Flags": "61:byte",
+        "_pad0": "62:byte",
+        "_pad1": "63:byte"
+      }
+    },
+    {
+      "structName": "AccessibilityConfigDTO",
+      "sizeBytes": 16,
+      "offsets": {
+        "ColorMode": "0:uint",
+        "Flags": "4:uint",
+        "FilterStrength01": "8:float",
+        "GlobalQualityWeight": "12:float"
+      }
+    },
+    {
+      "structName": "InputBindingTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "RealtimeSeconds": "0:double",
+        "PayloadHash64": "8:ulong",
+        "Frame": "16:uint",
+        "Operation": "20:uint",
+        "Result": "24:uint",
+        "Bytes": "28:uint",
+        "DurationMicroseconds": "32:uint",
+        "FaultFlags": "36:uint",
+        "BindingIndex": "40:int",
+        "RecordCount": "44:ushort",
+        "PathBytes": "46:ushort",
+        "IoPhase": "48:byte",
+        "_pad0": "49:byte",
+        "_pad1": "50:byte",
+        "_pad2": "51:byte",
+        "_pad3": "52:byte",
+        "_pad4": "53:byte",
+        "_pad5": "54:byte",
+        "_pad6": "55:byte",
+        "_pad7": "56:byte",
+        "_pad8": "57:byte",
+        "_pad9": "58:byte",
+        "_pad10": "59:byte",
+        "_pad11": "60:byte",
+        "_pad12": "61:byte",
+        "_pad13": "62:byte",
+        "_pad14": "63:byte"
+      }
+    },
+    {
+      "structName": "ControlRemapIoResult",
+      "sizeBytes": 88,
+      "offsets": {
+        "Telemetry": "0:InputBindingTelemetryEntry",
+        "ResultCode": "64:uint",
+        "FaultFlags": "68:uint",
+        "RecordCount": "72:int",
+        "ByteCount": "76:int",
+        "PathBytes": "80:int",
+        "_pad0": "84:byte",
+        "_pad1": "85:byte",
+        "_pad2": "86:byte",
+        "_pad3": "87:byte"
+      }
+    }
+  ],
+  "zeroGcHotPathHits": 0,
+  "absoluteAupCastsFound": 0,
+  "compactionAwareLocksProven": true,
+  "telemetryRingIntegrated": true,
+  "verificationHashSha256": "7ceb5186acc24c80d8a51100cc6151c0848cd9f753f0ee3539e30627a3e029e5"
+}

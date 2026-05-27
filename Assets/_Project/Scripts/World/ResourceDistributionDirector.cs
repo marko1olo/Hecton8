@@ -73,7 +73,15 @@ namespace Hecton8.World
         private const int MeteorImpactSeedSalt = unchecked((int)0x4D45544F);
         private const int MeteorRadiationHazardIdSalt = unchecked((int)0x524144);
 
-        internal static ResourceDistributionDirector ActiveRuntimeInstance => GlobalRegistry.ResourceDistribution;
+        private static ResourceDistributionDirector s_activeRuntimeInstance;
+
+        internal static ResourceDistributionDirector ActiveRuntimeInstance => s_activeRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticRuntimeState()
+        {
+            s_activeRuntimeInstance = null;
+        }
 
         private struct BrinePoolState
         {
@@ -446,7 +454,7 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterResourceDistribution(this);
+            PublishActiveRuntimeInstance();
             CacheRegistryServicesCold();
             CacheSpawnSdfValidationServicesCold();
             TryRegisterHotSwapListener();
@@ -470,6 +478,8 @@ namespace Hecton8.World
                 _seismicHookRegistered = false;
             }
 
+            ClearActiveRuntimeInstance();
+
             if (_slowTickRegistered)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
@@ -492,19 +502,31 @@ namespace Hecton8.World
             TryUnregisterHotSwapListener();
             ClearSpawnSdfValidationServicesCold();
             ClearCachedRegistryServices();
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                GlobalRegistry.UnregisterResourceDistribution(this);
             UpdateDiagnostics(default);
         }
 
         private void OnDestroy()
         {
+            ClearActiveRuntimeInstance();
             CancelMetamorphismJobForTeardown();
             DisposeMetamorphismBuffers();
             TryUnregisterHotSwapListener();
             ClearSpawnSdfValidationServicesCold();
             ClearCachedRegistryServices();
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
+        }
+
+        private void PublishActiveRuntimeInstance()
+        {
+            GlobalRegistry.RegisterResourceDistribution(this);
+            s_activeRuntimeInstance = this;
+        }
+
+        private void ClearActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
+
+            if (ReferenceEquals(GlobalRegistry.ResourceDistribution, this))
                 GlobalRegistry.UnregisterResourceDistribution(this);
         }
 
@@ -514,7 +536,7 @@ namespace Hecton8.World
                 _objectPool = GlobalRegistry.ObjectPoolService;
 
             if (_persistentWorldRegistry == null)
-                _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+                _persistentWorldRegistry = PersistentWorldRegistry.Instance;
 
             if (_dispatcher == null)
                 _dispatcher = GlobalRegistry.Dispatcher;
@@ -2914,9 +2936,7 @@ namespace Hecton8.World
 
         private Material CreateGhostMaterial()
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null)
-                shader = Shader.Find("Unlit/Color");
+            Shader shader = ResolveRuntimeFlatColorShader();
 
             if (shader == null)
                 return null;
@@ -2948,9 +2968,7 @@ namespace Hecton8.World
 
         private Material CreateMagmaVentMaterial()
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null)
-                shader = Shader.Find("Unlit/Color");
+            Shader shader = ResolveRuntimeFlatColorShader();
 
             if (shader == null)
                 return null;
@@ -2978,6 +2996,19 @@ namespace Hecton8.World
             }
 
             return material;
+        }
+
+        private static Shader ResolveRuntimeFlatColorShader()
+        {
+            Shader shader = null;
+            RuntimeShaderReferenceCatalog.TryGetRuntimeFlatColorShader(out shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+                shader = Shader.Find("Unlit/Color");
+#endif
+            return shader;
         }
 
         private void UpdateDiagnostics(int2 playerSector)

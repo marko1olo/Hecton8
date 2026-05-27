@@ -1,0 +1,23 @@
+{
+    "agentId":  "1318",
+    "loop":  48,
+    "scannedFile":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+    "hotOwners":  [
+                      "Tick",
+                      "SlowTick",
+                      "LateFrameTick"
+                  ],
+    "forbiddenHits":  0,
+    "checkedPatterns":  [
+                            "new managed/native containers",
+                            "LINQ",
+                            "ToArray/ToList",
+                            "string interpolation/format",
+                            "Debug.Log",
+                            "scene search/GetComponent",
+                            "TryGetLatestCreated",
+                            "Complete/Schedule"
+                        ],
+    "note":  "Static source scan only; compiler/profiler proof blocked by active VBCSCompiler gate.",
+    "sourceSha256":  "3c06c7a8097e12b0a3ae6dc09364c29b860d2b91cc137e02e1c3db4fb95f34df"
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "hecton8.vault_native_alias_roslyn_ledger.v1",
+  "agentId": "1336",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "sourceRoot": "Assets/_Project/Tests/Editor",
+  "outputPath": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1336_TESTS_LOOP30.json",
+  "auditHashSha256": "5a195970987824bee6b967bbe24a361df3bc590161e73f6f0aad4aa22eb3ba75",
+  "summary": {
+    "scannedFiles": 36,
+    "parseFailures": 0,
+    "totalNativeFieldDeclarations": 0,
+    "forbiddenPersistentCandidates": 0,
+    "forbiddenMonoBehaviourCandidates": 0,
+    "jobTransientFields": 0,
+    "stackOnlyRefStructViewFields": 0,
+    "coreMemoryAllowedFields": 0,
+    "rawPointerFields": 0
+  },
+  "findings": [
+  ],
+  "parseFailures": [
+  ]
+}

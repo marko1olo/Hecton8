@@ -1,0 +1,152 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\ZERO_GC_HOTPATH_AUDIT_1324_DEEP_AUDIT.json",
+  "auditHashSha256": "16af6cd02ee969714ecfcd3048db65a56112671cc6c837b595eb83f6e7f12ca8",
+  "summary": {
+    "scannedFiles": 2,
+    "parseFailures": 0,
+    "totalFindings": 15,
+    "objectCreations": 15,
+    "valueTypeCreations": 10,
+    "managedRiskCreations": 5,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Atmosphere\\GasDynamicsSolver.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Atmosphere\\AtmosphereMemorySovereigntyValidator1324.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 424,
+      "owner": "TryGetRoomSnapshot",
+      "kind": "object_creation",
+      "detail": "GasRoomSnapshot",
+      "snippet": "new GasRoomSnapshot(                  roomId,                  oxygen,                  carbonDioxide,                  nitrogen,                  pressure,                  FiniteNonNegativeOrZero(_roomAmbientPressure[roomId]),            "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 456,
+      "owner": "TryGetBaseHibernationSnapshot",
+      "kind": "object_creation",
+      "detail": "GasBaseHibernationSnapshot",
+      "snippet": "new GasBaseHibernationSnapshot(                  baseId,                  _baseRoomStart[baseId],                  _baseRoomCount[baseId],                  _baseCenterAup[baseId],                  BaseAwakeState[baseId] != 0,               "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 969,
+      "owner": "TryGetNativeMemoryAudit",
+      "kind": "object_creation",
+      "detail": "GasDynamicsNativeMemoryAudit",
+      "snippet": "new GasDynamicsNativeMemoryAudit(                  RoomO2.Length,                  _bulkheadCapacityLimit,                  accumulator.AllocationCount,                  accumulator.RegisteredBytes,                  accumulator.LargestAlloc"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 1480,
+      "owner": "TryWriteFailureTelemetry",
+      "kind": "value_type_creation",
+      "detail": "AtmosphereTelemetryEntry",
+      "snippet": "new AtmosphereTelemetryEntry                 {                     PackedOwner = ((ulong)_telemetryRingHandle.BufferID << 32) | _telemetryRingHandle.SystemID,                     FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,   "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 1679,
+      "owner": "ScheduleStep",
+      "kind": "value_type_creation",
+      "detail": "GasDynamicsStepJob",
+      "snippet": "new GasDynamicsStepJob                     {                         DeltaTime = math.max(0f, deltaTime),                         RoomCount = _roomCount,                         BulkheadCount = _bulkheadCount,                         FrameI"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 1903,
+      "owner": "EnqueueDeferredBaseTransition",
+      "kind": "value_type_creation",
+      "detail": "PendingBaseTransitionSignal",
+      "snippet": "new PendingBaseTransitionSignal              {                  BaseCenterAup = signal.BaseCenterAup,                  BaseId = signal.BaseId,                  RoomId = signal.RoomId,                  Flags = signal.Flags,                  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 1921,
+      "owner": "EnqueueDeferredBaseTransition",
+      "kind": "value_type_creation",
+      "detail": "PendingBaseTransitionSignal",
+      "snippet": "new PendingBaseTransitionSignal              {                  BaseCenterAup = signal.BaseCenterAup,                  BaseId = signal.BaseId,                  RoomId = signal.RoomId,                  Flags = signal.Flags,                  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 1996,
+      "owner": "ApplyBaseExitSignal",
+      "kind": "value_type_creation",
+      "detail": "PendingBaseTransitionSignal",
+      "snippet": "new PendingBaseTransitionSignal              {                  BaseCenterAup = signal.BaseCenterAup,                  BaseId = signal.BaseId,                  RoomId = signal.RoomId,                  Flags = signal.Flags,                  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 2026,
+      "owner": "ApplyBaseEnterSignal",
+      "kind": "value_type_creation",
+      "detail": "PendingBaseTransitionSignal",
+      "snippet": "new PendingBaseTransitionSignal              {                  BaseCenterAup = signal.BaseCenterAup,                  BaseId = signal.BaseId,                  RoomId = signal.RoomId,                  Flags = signal.Flags,                  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 2239,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 2383,
+      "owner": "ApplyBaseWakeCatchUp",
+      "kind": "value_type_creation",
+      "detail": "BaseHibernationWakeCatchUpJob",
+      "snippet": "new BaseHibernationWakeCatchUpJob              {                  BaseId = baseId,                  RoomCount = _roomCount,                  ElapsedSeconds = elapsedSeconds,                  RoomO2 = RoomO2,                  RoomCO2 = RoomC"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 2441,
+      "owner": "PublishActiveRoomToxicitySignal",
+      "kind": "value_type_creation",
+      "detail": "ToxicitySignal",
+      "snippet": "new ToxicitySignal(                 roomId,                 snapshot.CarbonDioxideKPa,                 snapshot.PressureAtm,                 toxicity01,                 narcosis01,                 frame,                 flags)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 2500,
+      "owner": "DumpBlackBoxOnce",
+      "kind": "object_creation",
+      "detail": "System.IO.FileStream",
+      "snippet": "new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 2501,
+      "owner": "DumpBlackBoxOnce",
+      "kind": "object_creation",
+      "detail": "System.IO.BinaryWriter",
+      "snippet": "new System.IO.BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "line": 3095,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "AtmosphereTelemetryEntry",
+      "snippet": "new AtmosphereTelemetryEntry                 {                     PackedOwner = ((ulong)TelemetryBufferId << 32) | TelemetrySystemId,                     FrameIndex = FrameIndex,                     RoomCount = roomLimit,                  "
+    }
+  ],
+  "parseFailures": [
+  ]
+}

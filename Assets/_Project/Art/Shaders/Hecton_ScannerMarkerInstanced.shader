@@ -103,8 +103,8 @@ Shader "HECTON/Scanner/MarkerInstanced"
                 float instanceAlpha = saturate(input.instanceAlpha);
                 float2 centered = input.uv * 2.0 - 1.0;
                 float diamond = abs(centered.x) + abs(centered.y);
-                float border = 1.0 - smoothstep(1.0 - _EdgeWidth, 1.0, abs(diamond - 1.0));
-                float fill = smoothstep(1.0, 0.82, diamond) * _FillAlpha * instanceAlpha;
+                float border = 1.0 - saturate((abs(diamond - 1.0) - (1.0 - _EdgeWidth)) * rcp(max(_EdgeWidth, 0.0001)));
+                float fill = saturate((1.0 - diamond) * rcp(max(1.0 - 0.82, 0.0001))) * _FillAlpha * instanceAlpha;
                 float flicker01 = HectonTemporalFlicker01(_Time.y, _FlickerFrequency, dot(input.uv, float2(7.17, 13.31)));
                 float flicker = 1.0 - (_FlickerIntensity * 2.0) + (_FlickerIntensity * 2.0 * flicker01);
                 float alpha = saturate((border + fill) * _OccludedColor.a * flicker * _OccludedBoost * instanceAlpha);
@@ -197,8 +197,8 @@ Shader "HECTON/Scanner/MarkerInstanced"
                 float instanceAlpha = saturate(input.instanceAlpha);
                 float2 centered = input.uv * 2.0 - 1.0;
                 float diamond = abs(centered.x) + abs(centered.y);
-                float border = 1.0 - smoothstep(1.0 - _EdgeWidth, 1.0, abs(diamond - 1.0));
-                float fill = smoothstep(1.0, 0.82, diamond) * _FillAlpha * instanceAlpha;
+                float border = 1.0 - saturate((abs(diamond - 1.0) - (1.0 - _EdgeWidth)) * rcp(max(_EdgeWidth, 0.0001)));
+                float fill = saturate((1.0 - diamond) * rcp(max(1.0 - 0.82, 0.0001))) * _FillAlpha * instanceAlpha;
                 float flicker01 = HectonTemporalFlicker01(_Time.y, _FlickerFrequency, dot(input.uv, float2(7.17, 13.31)));
                 float flicker = 1.0 - (_FlickerIntensity * 2.0) + (_FlickerIntensity * 2.0 * flicker01);
                 float alpha = saturate((border + fill) * _BaseColor.a * flicker * instanceAlpha);

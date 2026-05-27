@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
   m_Name: BiomeVisual_012_West_03_Coral_Porous_Walls
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
-  biomeName: 'Coral-Porous Walls [West T03]'
+  biomeName: 'Carbonate-Porous Walls [West T03]'
   scatterColorBase: {r: 0.03221537, g: 0.120178394, b: 0.16193846, a: 1}
   scatterColorShallow: {r: 0.1237969, g: 0.29596913, b: 0.28993225, a: 1}
   depthFogDensity: {x: 0.30183232, y: 0.18603069, z: 0.11545808}

@@ -61,6 +61,7 @@ namespace Hecton8.UI
         private bool _biosFallbackActive;
         private TMP_FontAsset _primaryFont;
         private TMP_FontAsset _targetFont;
+        private Material _targetFontMaterial;
         private Canvas _targetCanvas;
         private RectTransform _root;
         private CanvasGroup _group;
@@ -221,8 +222,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            Material targetMaterial = _targetFont != null ? _targetFont.material : null;
-            int processed = _swapScheduler.DrainTick(_targetFont, targetMaterial);
+            int processed = _swapScheduler.DrainTick(_targetFont, _targetFontMaterial);
             _queueIndex += processed;
 
             UpdateStatusLabel();
@@ -586,6 +586,7 @@ namespace Hecton8.UI
         private void BeginSwapQueue(TMP_FontAsset targetFont, bool biosFallbackActive)
         {
             _targetFont = targetFont;
+            _targetFontMaterial = targetFont != null ? targetFont.material : null;
             _biosFallbackActive = biosFallbackActive;
             CollectSwapQueue(targetFont);
             if (_queueCount <= 0)
@@ -734,6 +735,7 @@ namespace Hecton8.UI
             _biosFallbackActive = false;
             _primaryFont = null;
             _targetFont = null;
+            _targetFontMaterial = null;
             _queueCount = 0;
             _queueIndex = 0;
             _fontReadinessStartFrame = -1;

@@ -61,7 +61,7 @@ namespace Hecton8.Construction
             if (!ValidateDroneTransactionLayouts())
                 return;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = RefreshDroneDataVaultForColdPath();
             if (vault == null)
             {
                 return;
@@ -84,8 +84,12 @@ namespace Hecton8.Construction
 
         private static void ReleaseDroneTransactionMemory()
         {
+            ReleaseDroneTransactionMemory(s_CachedDataVault ?? RefreshDroneDataVaultForColdPath());
+        }
+
+        private static void ReleaseDroneTransactionMemory(IDataVault vault)
+        {
             CompleteScheduledDroneServiceTransactionBatch(true);
-            IDataVault vault = GlobalRegistry.DataVault;
             ReleaseDroneTransactionVaultHandle(vault, ref s_DroneTransactionTasksHandle);
             ReleaseDroneTransactionVaultHandle(vault, ref s_DroneTransactionCommandsHandle);
             ReleaseDroneTransactionVaultHandle(vault, ref s_DroneTransactionAupSnapshotsHandle);
@@ -110,14 +114,19 @@ namespace Hecton8.Construction
 
         private static bool ValidateDroneTransactionLayouts()
         {
-            return UnsafeUtility.SizeOf<DroneTaskDTO>() == 32 &&
-                   UnsafeUtility.SizeOf<DroneTransactionCommandDTO>() == 64 &&
-                   UnsafeUtility.SizeOf<DroneTransactionAupSnapshotDTO>() == 64 &&
-                   UnsafeUtility.SizeOf<DroneTransactionIntegrityDTO>() == 32 &&
-                   UnsafeUtility.SizeOf<DroneTransactionResultDTO>() == 64 &&
-                   UnsafeUtility.SizeOf<DroneTransactionCounterDTO>() == 64 &&
-                   UnsafeUtility.SizeOf<DroneTransactionTelemetryEntry>() == 64 &&
-                   OffsetOf<DroneTransactionIntegrityDTO>(nameof(DroneTransactionIntegrityDTO.TargetEntityHash)) == 0 &&
+            if (UnsafeUtility.SizeOf<DroneTaskDTO>() != 32 ||
+                UnsafeUtility.SizeOf<DroneTransactionCommandDTO>() != 64 ||
+                UnsafeUtility.SizeOf<DroneTransactionAupSnapshotDTO>() != 64 ||
+                UnsafeUtility.SizeOf<DroneTransactionIntegrityDTO>() != 32 ||
+                UnsafeUtility.SizeOf<DroneTransactionResultDTO>() != 64 ||
+                UnsafeUtility.SizeOf<DroneTransactionCounterDTO>() != 64 ||
+                UnsafeUtility.SizeOf<DroneTransactionTelemetryEntry>() != 64)
+            {
+                return false;
+            }
+
+#if UNITY_EDITOR
+            return OffsetOf<DroneTransactionIntegrityDTO>(nameof(DroneTransactionIntegrityDTO.TargetEntityHash)) == 0 &&
                    OffsetOf<DroneTransactionIntegrityDTO>(nameof(DroneTransactionIntegrityDTO.CurrentIntegrityMilli)) == 4 &&
                    OffsetOf<DroneTransactionIntegrityDTO>(nameof(DroneTransactionIntegrityDTO.MaxRecoverableIntegrityMilli)) == 8 &&
                    OffsetOf<DroneTransactionIntegrityDTO>(nameof(DroneTransactionIntegrityDTO.RepairBudgetMilli)) == 12 &&
@@ -183,12 +192,17 @@ namespace Hecton8.Construction
                    OffsetOf<DroneTransactionCounterDTO>(nameof(DroneTransactionCounterDTO.Value)) == 0 &&
                    OffsetOf<DroneTransactionCounterDTO>("_pad0") == 4 &&
                    OffsetOf<DroneTransactionCounterDTO>("_pad59") == 63;
+#else
+            return true;
+#endif
         }
 
+#if UNITY_EDITOR
         private static int OffsetOf<T>(string fieldName)
         {
             return Marshal.OffsetOf(typeof(T), fieldName).ToInt32();
         }
+#endif
 
         private static bool DroneTransactionHandlesValid()
         {
@@ -273,12 +287,26 @@ namespace Hecton8.Construction
             where T : struct
         {
             buffer = default;
-            return vault != null &&
-                   requiredLength > 0 &&
-                   DroneTransactionHandleValid(in handle, bufferId) &&
-                   vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !DroneTransactionHandleValid(in handle, bufferId))
+            {
+                return false;
+            }
+
+            bool locked = vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer);
+            if (locked &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            if (locked)
+                vault.ReleaseWriteLock(in handle, SystemID.Construction);
+
+            buffer = default;
+            return false;
         }
 
         private static bool TryReadDroneTransactionBuffer<T>(
@@ -289,7 +317,7 @@ namespace Hecton8.Construction
             where T : struct
         {
             buffer = default;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = s_CachedDataVault;
             return vault != null &&
                    requiredLength > 0 &&
                    DroneTransactionHandleValid(in handle, bufferId) &&
@@ -305,7 +333,7 @@ namespace Hecton8.Construction
             where T : struct
         {
             buffer = default;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = s_CachedDataVault;
             return vault != null &&
                    requiredLength > 0 &&
                    DroneTransactionHandleValid(in handle, bufferId) &&
@@ -325,7 +353,7 @@ namespace Hecton8.Construction
             out NativeArray<byte> commandConsumed,
             out NativeArray<DroneTransactionTelemetryEntry> telemetry)
         {
-            vault = GlobalRegistry.DataVault;
+            vault = s_CachedDataVault;
             tasks = default;
             commands = default;
             aupSnapshots = default;
@@ -1143,16 +1171,16 @@ namespace Hecton8.Construction
             if (s_DroneInventoryVaultHandlesBound)
                 return true;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = s_CachedDataVault ?? RefreshDroneDataVaultForColdPath();
             if (vault == null || !SoaInventoryQueryEngine.RuntimeLayoutValid())
                 return false;
 
             InventorySoaVaultHandles handles = default;
-            if (!TryBindDroneInventoryLane(vault, BufferID.ShinobuInventoryActiveSlotCount, 1, out handles.ActiveSlotCount))
+            if (!TryBindDroneInventoryLane<int>(vault, BufferID.ShinobuInventoryActiveSlotCount, 1, out handles.ActiveSlotCount))
                 return false;
 
             s_DroneInventoryVaultHandles = handles;
-            s_DroneInventoryVaultHandlesBound = s_DroneInventoryVaultHandles.ActiveSlotCount.Handle.Generation != 0u;
+            s_DroneInventoryVaultHandlesBound = s_DroneInventoryVaultHandles.ActiveSlotCount.Generation != 0u;
             s_DroneInventoryVault = s_DroneInventoryVaultHandlesBound ? vault : null;
             return s_DroneInventoryVaultHandlesBound;
         }
@@ -1161,7 +1189,7 @@ namespace Hecton8.Construction
             IDataVault vault,
             BufferID bufferId,
             int length,
-            out InventorySoaVaultLane<T> lane)
+            out InventorySoaVaultLane lane)
             where T : struct
         {
             lane = default;
@@ -1177,7 +1205,7 @@ namespace Hecton8.Construction
                 return false;
 
             lane = default;
-            lane.Handle = handle;
+            lane.SetHandle(in handle);
             lane.ExpectedBufferID = expectedBufferId;
             lane.Length = length;
             return true;
@@ -1196,7 +1224,8 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (!s_DroneInventoryVault.TryReadHandle(in s_DroneInventoryVaultHandles.ActiveSlotCount.Handle, out NativeArray<int> activeSlotCount) ||
+            VaultGenerationHandle<int> activeSlotCountHandle = s_DroneInventoryVaultHandles.ActiveSlotCount.ToHandle<int>();
+            if (!s_DroneInventoryVault.TryReadHandle(in activeSlotCountHandle, out NativeArray<int> activeSlotCount) ||
                 !activeSlotCount.IsCreated)
             {
                 return false;
@@ -1517,7 +1546,16 @@ namespace Hecton8.Construction
                     stream.Write(new ReadOnlySpan<byte>(telemetryPtr, byteCount));
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
             {
             }
         }

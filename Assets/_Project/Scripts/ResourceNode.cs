@@ -259,12 +259,19 @@ namespace Hecton8.Scavenging
                 return;
 
             ActivateRuntimeState();
+            InteractableRegistry.RegisterTree(this);
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             UnregisterSpatialHandle();
             UnregisterWorldStateRegistry();
+        }
+
+        private void OnDestroy()
+        {
+            InteractableRegistry.InvalidateTree(this);
         }
 
         public void OnSpawn()
@@ -273,10 +280,12 @@ namespace Hecton8.Scavenging
             ResetState();
             RegisterWorldStateRegistry();
             ActivateRuntimeState();
+            InteractableRegistry.RegisterTree(this);
         }
 
         public void OnDespawn()
         {
+            InteractableRegistry.InvalidateTree(this);
             UnregisterSpatialHandle();
             UnregisterWorldStateRegistry();
             ResetState();
@@ -314,6 +323,8 @@ namespace Hecton8.Scavenging
             TryWarmLootOraclePayloadCache();
             ApplyPresentation(template, fallbackMesh, fallbackMaterial);
             _currentHealth = Mathf.Clamp(_currentHealth, 0f, maxHealth);
+            if (isActiveAndEnabled)
+                InteractableRegistry.RegisterTree(this);
 
             if (_spatialHandle != 0)
                 WorldSpatialHashGrid.SetResourceHalfExtents(_spatialHandle, SpatialHalfExtents);

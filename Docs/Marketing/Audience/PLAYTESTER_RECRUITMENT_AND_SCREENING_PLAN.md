@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Playtester Recruitment And Screening Plan
 
 Status: pre-playtest plan
-Owner lane: SHINOBU_81 / player research
+Owner lane: Marketing / player research
 Runtime impact: none
 
 ## Purpose

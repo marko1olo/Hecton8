@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Demo, Steam Playtest, And Telemetry Plan
 
 Status: pre-demo operating plan
-Owner lane: SHINOBU_81 / demo funnel
+Owner lane: Marketing / demo funnel
 Runtime impact: none
 
 ## Source Boundary

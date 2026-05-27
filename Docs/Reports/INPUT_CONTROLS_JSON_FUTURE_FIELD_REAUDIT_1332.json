@@ -1,0 +1,44 @@
+{
+  "agentId": "1332",
+  "task": "INPUT_CONTROLS_JSON_FUTURE_FIELD_REAUDIT",
+  "timestamp": "2026-05-27T18:43:29+04:00",
+  "status": "STATIC_VERIFIED_BUILD_BLOCKED_BY_CPU_COMPILER_GATE",
+  "scannedFiles": 10,
+  "changedFiles": [
+    "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs"
+  ],
+  "fixedIssues": [
+    {
+      "id": "flat-json-skipper",
+      "problem": "Unknown future controls.json fields were skipped only until the first comma/brace/bracket, so valid nested future metadata could make a save unreadable.",
+      "fix": "Added bounded stack-only nested container skipping for unknown object/array values with strict ASCII string handling.",
+      "hotPathImpact": "0 us simulation; cold controls.json load only."
+    },
+    {
+      "id": "zero-binding-guid-wildcard",
+      "problem": "The parser required an id field, but id:0 still bypassed BindingIdMatches and degraded to index-only matching.",
+      "fix": "Reject zero BindingGuidHash64 during parse and make BindingIdMatches fail closed when expectedHash is zero.",
+      "hotPathImpact": "0 us simulation; cold controls.json load only."
+    }
+  ],
+  "staticVerification": {
+    "broadCatchHits": 0,
+    "throwNewHits": 0,
+    "playerPrefsHits": 0,
+    "jsonUtilityHits": 0,
+    "removeAllListenersHits": 0,
+    "stringFormattingHits": 0,
+    "linqHits": 0,
+    "foreachHits": 0,
+    "nativeCollectionFieldDeclarations": 0,
+    "persistentNativeFieldsRemaining": 0,
+    "nativeTokenOccurrences": 21,
+    "diffCheck": "clean except repository LF-to-CRLF warnings"
+  },
+  "buildVerification": {
+    "attempted": false,
+    "reason": "CPU sampled 58% with dotnet pid 44004 and VBCSCompiler pid 24496 active. A later 30s wait left VBCSCompiler pid 24496 active and CPU at 60%. Explicit gate requires CPU <= 50% and no compiler process."
+  },
+  "verificationHashSha256": "8a990f3e8db34c79eba3b1c4e7114fdd9b174e91e3f1b8d5893d373995b7e26c"
+}

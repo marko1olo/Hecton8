@@ -14,7 +14,7 @@ namespace Hecton8.Physics
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Current Volume")]
-    public sealed class CurrentVolume : MonoBehaviour
+    public sealed class CurrentVolume : MonoBehaviour, IUpdatable, IFixedTickable, IGlobalRegistryHotSwapListener
     {
         private const float SharedAmbientPatternScale = 0.0135f;
         private const float SharedAmbientTimeScale = 0.11f;
@@ -106,6 +106,9 @@ namespace Hecton8.Physics
         private float _cachedSampleTime;
         private float _cachedInfluenceRadiusSq = 64f;
         private uint _sampleCacheShiftSequence;
+        private bool _registeredToTickDispatcher;
+        private bool _registeredToFixedDispatcher;
+        private bool _hotSwapRegistered;
 
         public static int ActiveCount => ActiveVolumes.Count;
 
@@ -148,7 +151,7 @@ namespace Hecton8.Physics
             if (HectonFloatingOrigin.IsShiftInProgress)
                 return Vector3.zero;
 
-            float sampleTime = ResolveFrameSampleTime();
+            float sampleTime = ReadSharedSampleTime();
             Unity.Mathematics.float3 ambient = CurrentManager.SampleCurrent(
                 new Unity.Mathematics.float3(worldPos.x, worldPos.y, worldPos.z),
                 sampleTime,
@@ -186,12 +189,13 @@ namespace Hecton8.Physics
         {
             flowPattern = targetPattern;
             localDirection = targetLocalDirection.sqrMagnitude > 0.0001f
-                ? DominantAxisOrDefault(targetLocalDirection, Vector3.forward)
+                ? NormalizeOrDefault(targetLocalDirection, Vector3.forward)
                 : Vector3.forward;
             strength = math.max(0f, targetStrength);
             verticalFactor = math.clamp(targetVerticalFactor, -1f, 1f);
             vortexRadialPull = math.clamp(targetVortexRadialPull, -1f, 1f);
             _sampleCacheFrame = -1;
+            RefreshSampleCacheIfPlaying();
         }
 
         internal void ApplySemanticBoundsPreset(
@@ -206,6 +210,7 @@ namespace Hecton8.Physics
                 math.max(0.01f, targetBoxSize.z));
             sphereRadius = math.max(0.01f, targetSphereRadius);
             _sampleCacheFrame = -1;
+            RefreshSampleCacheIfPlaying();
         }
 
         internal float GetApproximateInfluenceRadius()
@@ -219,20 +224,112 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            if (ActiveVolumesSet.Add(this))   // O(1)
-                ActiveVolumes.Add(this);
+            if (!TryRegisterActiveVolume())
+                return;
+
+            RefreshSampleCache();
+            TryRegisterDispatchers();
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
+            TryUnregisterDispatchers();
+
             if (ActiveVolumesSet.Remove(this))
                 ActiveVolumes.Remove(this);
         }
 
-        private Vector3 SampleInternal(Vector3 worldPos)
+        private bool TryRegisterActiveVolume()
+        {
+            if (ActiveVolumesSet.Contains(this))
+                return true;
+
+            if (ActiveVolumes.Count >= ActiveVolumeCapacity)
+            {
+                LogActiveVolumeCapacityExceeded();
+                return false;
+            }
+
+            if (!ActiveVolumesSet.Add(this))
+                return true;
+
+            ActiveVolumes.Add(this);
+            return true;
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
+            TryUnregisterDispatchers();
+        }
+
+        public void Tick(float deltaTime)
         {
             RefreshSampleCache();
+        }
 
+        public void FixedTick(float fixedDeltaTime)
+        {
+            RefreshSampleCache();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+                TryRegisterDispatchers();
+        }
+
+        private void TryRegisterDispatchers()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (!_registeredToTickDispatcher)
+                _registeredToTickDispatcher = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+
+            if (!_registeredToFixedDispatcher)
+                _registeredToFixedDispatcher = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterDispatchers()
+        {
+            if (_registeredToFixedDispatcher)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                _registeredToFixedDispatcher = false;
+            }
+
+            if (_registeredToTickDispatcher)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToTickDispatcher = false;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private Vector3 SampleInternal(Vector3 worldPos)
+        {
             float weight = shape == VolumeShape.Box
                 ? ComputeBoxWeight(worldPos)
                 : ComputeSphereWeight(worldPos);
@@ -244,7 +341,7 @@ namespace Hecton8.Physics
             if (dir.sqrMagnitude <= 0.0001f)
                 return Vector3.zero;
 
-            dir = DominantAxisOrDefault(dir, Vector3.zero);
+            dir = NormalizeOrDefault(dir, Vector3.zero);
 
             float pulse = 1f;
             if (pulseAmplitude > 0.0001f && pulseFrequency > 0.0001f)
@@ -276,7 +373,6 @@ namespace Hecton8.Physics
             ref AbsoluteUniversePosition sampleAup,
             ref bool sampleAupValid)
         {
-            RefreshSampleCache();
             if (_cachedInfluenceRadiusSq > LargeVolumeAupCullThresholdSq)
             {
                 if (!_cachedAupValid)
@@ -335,7 +431,7 @@ namespace Hecton8.Physics
                 return inward ? -_cachedForward : _cachedForward;
             }
 
-            Vector3 radial = DominantAxisOrDefault(delta, _cachedForward);
+            Vector3 radial = NormalizeOrDefault(delta, _cachedForward);
             if (inward)
                 radial = -radial;
             radial.y = math.clamp(verticalFactor * vertical * 0.1f, -1f, 1f);
@@ -355,8 +451,8 @@ namespace Hecton8.Physics
                 ? CrossVector(axis, radial)
                 : CrossVector(radial, axis);
 
-            tangent = DominantAxisOrDefault(tangent, Vector3.zero);
-            radial = DominantAxisOrDefault(radial, Vector3.zero);
+            tangent = NormalizeOrDefault(tangent, Vector3.zero);
+            radial = NormalizeOrDefault(radial, Vector3.zero);
 
             Vector3 dir = tangent + (-radial * vortexRadialPull) + (axis * verticalFactor);
             return dir;
@@ -399,12 +495,13 @@ namespace Hecton8.Physics
 
             Transform cachedTransform = transform;
             _cachedPosition = cachedTransform.position;
-            _cachedUp = DominantAxisOrDefault(cachedTransform.up, Vector3.up);
-            _cachedForward = DominantAxisOrDefault(cachedTransform.forward, Vector3.forward);
+            _cachedUp = NormalizeOrDefault(cachedTransform.up, Vector3.up);
+            _cachedForward = NormalizeOrDefault(cachedTransform.forward, Vector3.forward);
             _cachedWorldToLocalMatrix = cachedTransform.worldToLocalMatrix;
-            Vector3 safeLocalDirection = DominantAxisOrDefault(localDirection, Vector3.forward);
+            Vector3 safeLocalDirection = NormalizeOrDefault(localDirection, Vector3.forward);
             _cachedDirectionalFlow = cachedTransform.TransformDirection(safeLocalDirection);
             _cachedDirectionalFlow.y *= verticalFactor;
+            _cachedDirectionalFlow = NormalizeOrDefault(_cachedDirectionalFlow, _cachedForward);
             float influenceRadius = GetApproximateInfluenceRadius();
             _cachedInfluenceRadiusSq = influenceRadius * influenceRadius;
             if (_cachedInfluenceRadiusSq > LargeVolumeAupCullThresholdSq)
@@ -417,7 +514,7 @@ namespace Hecton8.Physics
                 _cachedAupValid = false;
             }
 
-            _cachedSampleTime = ResolveFrameSampleTime();
+            _cachedSampleTime = UpdateSharedSampleTimeForOwnerPhase();
             _sampleCacheFrame = frame;
             _sampleCacheShiftSequence = shiftSequence;
         }
@@ -442,7 +539,15 @@ namespace Hecton8.Physics
             return positionAup.IsFinite();
         }
 
-        private static float ResolveFrameSampleTime()
+        private static float ReadSharedSampleTime()
+        {
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            return _sharedSampleTimeFrame == frame
+                ? _sharedSampleTime
+                : ResolveCurrentSampleClockSeconds();
+        }
+
+        private static float UpdateSharedSampleTimeForOwnerPhase()
         {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_sharedSampleTimeFrame != frame)
@@ -452,6 +557,14 @@ namespace Hecton8.Physics
             }
 
             return _sharedSampleTime;
+        }
+
+        private void RefreshSampleCacheIfPlaying()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            RefreshSampleCache();
         }
 
         private static float ResolveCurrentSampleClockSeconds()
@@ -473,22 +586,14 @@ namespace Hecton8.Physics
             return triangle01 * 2f - 1f;
         }
 
-        private static Vector3 DominantAxisOrDefault(Vector3 value, Vector3 fallback)
+        private static Vector3 NormalizeOrDefault(Vector3 value, Vector3 fallback)
         {
-            float ax = math.abs(value.x);
-            float ay = math.abs(value.y);
-            float az = math.abs(value.z);
-            float maxComponent = math.max(ax, math.max(ay, az));
-            if (maxComponent <= 0.000001f)
+            float lengthSq = value.x * value.x + value.y * value.y + value.z * value.z;
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f)
                 return fallback;
 
-            if (ax >= ay && ax >= az)
-                return new Vector3(value.x >= 0f ? 1f : -1f, 0f, 0f);
-
-            if (ay >= az)
-                return new Vector3(0f, value.y >= 0f ? 1f : -1f, 0f);
-
-            return new Vector3(0f, 0f, value.z >= 0f ? 1f : -1f);
+            float invLength = math.rsqrt(lengthSq);
+            return new Vector3(value.x * invLength, value.y * invLength, value.z * invLength);
         }
 
         private static Vector3 ProjectOnPlaneUnit(Vector3 value, Vector3 unitNormal)
@@ -512,6 +617,15 @@ namespace Hecton8.Physics
         private static float ResolveL1MagnitudeUpperBound(Vector3 value)
         {
             return math.abs(value.x) + math.abs(value.y) + math.abs(value.z);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogActiveVolumeCapacityExceeded()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Hecton8.Core.H8Debug.LogError("[CurrentVolume] Active volume capacity exceeded. capacity=" + ActiveVolumeCapacity);
+#endif
         }
 
 #if UNITY_EDITOR
@@ -541,7 +655,7 @@ namespace Hecton8.Physics
                 Gizmos.DrawSphere(Vector3.zero, sphereRadius);
 
             Gizmos.color = new Color(0.1f, 0.95f, 1f, 0.85f);
-            Gizmos.DrawRay(Vector3.zero, DominantAxisOrDefault(localDirection, Vector3.forward) * 2f);
+            Gizmos.DrawRay(Vector3.zero, NormalizeOrDefault(localDirection, Vector3.forward) * 2f);
             Gizmos.matrix = old;
         }
 #endif

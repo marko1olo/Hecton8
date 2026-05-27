@@ -6,7 +6,7 @@ using Unity.Mathematics;
 namespace Hecton8.Inventory.Algorithms
 {
     /// <summary>
-    /// Result slots written by <see cref="InventoryDefragJob"/>.
+    /// Result slots written by <see cref="InventoryDefragCommand"/>.
     /// </summary>
     public static class InventoryDefragResultSlots
     {
@@ -24,8 +24,7 @@ namespace Hecton8.Inventory.Algorithms
     /// Sort order: non-empty first, category ascending, hash ascending, count descending.
     /// Optional arrays are shifted and swapped only when created and long enough for <see cref="SlotCount"/>.
     /// </remarks>
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct InventoryDefragJob : IJob
+    public ref struct InventoryDefragCommand
     {
         public NativeArray<int> ItemHashes;
         public NativeArray<ushort> ItemCounts;
@@ -362,6 +361,60 @@ namespace Hecton8.Inventory.Algorithms
             public float UnitMassKg;
             public float UnitVolumeM3;
             public float UnitRadiationSv;
+        }
+    }
+
+    /// <summary>
+    /// Legacy Burst wrapper for amortized dispatcher-owned defrag windows. Player inventory sort uses
+    /// <see cref="InventoryDefragCommand"/> directly to avoid same-frame schedule/readback.
+    /// </summary>
+    [System.Obsolete("Use InventoryDefragCommand.Execute() in the owner phase unless a dispatcher-owned async window is proven.", false)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct InventoryDefragJob : IJob
+    {
+        public NativeArray<int> ItemHashes;
+        public NativeArray<ushort> ItemCounts;
+        public NativeArray<byte> ItemCategories;
+        public NativeArray<ushort> MaxStackSizes;
+        public NativeArray<byte> ItemRarities;
+        public NativeArray<byte> ItemWidths;
+        public NativeArray<byte> ItemHeights;
+        public NativeArray<byte> ItemFlags;
+        public NativeArray<ushort> ItemStateFlags;
+        public NativeArray<byte> ItemGenetics;
+        public NativeArray<ushort> QualityMilli;
+        public NativeArray<byte> Durabilities;
+        public NativeArray<uint> LastUpdateUnixSeconds;
+        public NativeArray<float> UnitMassKg;
+        public NativeArray<float> UnitVolumeM3;
+        public NativeArray<float> UnitRadiationSv;
+        public NativeArray<int> Result;
+        public int SlotCount;
+
+        public void Execute()
+        {
+            InventoryDefragCommand command = new InventoryDefragCommand
+            {
+                ItemHashes = ItemHashes,
+                ItemCounts = ItemCounts,
+                ItemCategories = ItemCategories,
+                MaxStackSizes = MaxStackSizes,
+                ItemRarities = ItemRarities,
+                ItemWidths = ItemWidths,
+                ItemHeights = ItemHeights,
+                ItemFlags = ItemFlags,
+                ItemStateFlags = ItemStateFlags,
+                ItemGenetics = ItemGenetics,
+                QualityMilli = QualityMilli,
+                Durabilities = Durabilities,
+                LastUpdateUnixSeconds = LastUpdateUnixSeconds,
+                UnitMassKg = UnitMassKg,
+                UnitVolumeM3 = UnitVolumeM3,
+                UnitRadiationSv = UnitRadiationSv,
+                Result = Result,
+                SlotCount = SlotCount
+            };
+            command.Execute();
         }
     }
 }

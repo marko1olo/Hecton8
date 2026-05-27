@@ -75,7 +75,7 @@ namespace Hecton8.Core.Persistence.Paging
         private VaultGenerationHandle<byte> _readStagingHandle;
         private VaultGenerationHandle<byte> _compressionScratchHandle;
         private VaultGenerationHandle<byte> _hotStateArenaHandle;
-        private VaultGenerationHandle<PagerTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<H8BinaryWorldPagerTelemetryEntry> _telemetryRingHandle;
         private IDataVault _vault;
         private SpinLock _writeQueueLock;
         private SpinLock _readQueueLock;
@@ -898,7 +898,7 @@ namespace Hecton8.Core.Persistence.Paging
                 HotStateMaxBytes,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _telemetryRingHandle = vault.EnsureGenerationHandle<PagerTelemetryEntry>(
+            _telemetryRingHandle = vault.EnsureGenerationHandle<H8BinaryWorldPagerTelemetryEntry>(
                 BufferID.SaveWorldPagerTelemetryRing,
                 TelemetryCapacity,
                 VaultOwner,
@@ -1130,7 +1130,7 @@ namespace Hecton8.Core.Persistence.Paging
             TryResolvePagerVaultBuffer(in _hotStateArenaHandle, BufferID.SaveWorldPagerHotState, HotStateMaxBytes, out array);
         }
 
-        private void ResolveTelemetryRing(out NativeArray<PagerTelemetryEntry> array)
+        private void ResolveTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry> array)
         {
             TryResolvePagerVaultBuffer(in _telemetryRingHandle, BufferID.SaveWorldPagerTelemetryRing, TelemetryCapacity, out array);
         }
@@ -2906,7 +2906,7 @@ namespace Hecton8.Core.Persistence.Paging
             int directorySlot = -1,
             uint metrics = 0u)
         {
-            ResolveTelemetryRing(out NativeArray<PagerTelemetryEntry> telemetryRing);
+            ResolveTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry> telemetryRing);
             if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
                 return;
 
@@ -2915,7 +2915,7 @@ namespace Hecton8.Core.Persistence.Paging
                 Interlocked.Exchange(ref _telemetryCursor.Value, 0);
 
             int slot = (index & int.MaxValue) % TelemetryCapacity;
-            telemetryRing[slot] = new PagerTelemetryEntry
+            telemetryRing[slot] = new H8BinaryWorldPagerTelemetryEntry
             {
                 SectorHash = sectorHash,
                 Offset = offset,
@@ -2975,7 +2975,7 @@ namespace Hecton8.Core.Persistence.Paging
 
         private unsafe void WriteBlackBoxDumps()
         {
-            ResolveTelemetryRing(out NativeArray<PagerTelemetryEntry> telemetryRing);
+            ResolveTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry> telemetryRing);
             if (!telemetryRing.IsCreated || string.IsNullOrEmpty(_dumpPath))
                 return;
 
@@ -2987,7 +2987,7 @@ namespace Hecton8.Core.Persistence.Paging
 
         private unsafe void WriteBlackBoxDump(string dumpPath)
         {
-            ResolveTelemetryRing(out NativeArray<PagerTelemetryEntry> telemetryRing);
+            ResolveTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry> telemetryRing);
             if (string.IsNullOrEmpty(dumpPath) || !telemetryRing.IsCreated)
                 return;
 
@@ -3000,12 +3000,12 @@ namespace Hecton8.Core.Persistence.Paging
                 {
                     WriteUInt(headerPtr, 0, 0x444D4838u); // H8MD
                     WriteInt(headerPtr, 4, TelemetryCapacity);
-                    WriteInt(headerPtr, 8, UnsafeUtility.SizeOf<PagerTelemetryEntry>());
+                    WriteInt(headerPtr, 8, UnsafeUtility.SizeOf<H8BinaryWorldPagerTelemetryEntry>());
                     WriteInt(headerPtr, 12, Volatile.Read(ref _telemetryCursor.Value));
                 }
 
                 stream.Write(header);
-                stream.Write(new ReadOnlySpan<byte>(telemetryRing.GetUnsafeReadOnlyPtr(), telemetryRing.Length * UnsafeUtility.SizeOf<PagerTelemetryEntry>()));
+                stream.Write(new ReadOnlySpan<byte>(telemetryRing.GetUnsafeReadOnlyPtr(), telemetryRing.Length * UnsafeUtility.SizeOf<H8BinaryWorldPagerTelemetryEntry>()));
             }
             catch (IOException)
             {
@@ -3087,7 +3087,7 @@ namespace Hecton8.Core.Persistence.Paging
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
-        private struct PagerTelemetryEntry
+        private struct H8BinaryWorldPagerTelemetryEntry
         {
             [FieldOffset(0)] public long SectorHash;
             [FieldOffset(8)] public long Offset;

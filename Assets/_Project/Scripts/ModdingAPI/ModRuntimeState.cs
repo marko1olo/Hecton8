@@ -20,9 +20,12 @@ namespace Hecton8.Modding
         [System.ThreadStatic] private static uint _currentModHash;
         [System.ThreadStatic] private static int _scopeDepth;
 
-        internal static string CurrentModId => string.IsNullOrWhiteSpace(_currentModId) ? "anonymous" : _currentModId;
+        internal static string CurrentModId => _currentModId ?? string.Empty;
         internal static uint CurrentModHash => _currentModHash;
-        internal static bool HasActiveMod => _scopeDepth > 0;
+        internal static bool HasActiveMod =>
+            _scopeDepth > 0 &&
+            !string.IsNullOrWhiteSpace(_currentModId) &&
+            _currentModHash != 0u;
 
         internal static Scope Enter(string modId)
         {
@@ -42,11 +45,20 @@ namespace Hecton8.Modding
 
             internal Scope(string modId, uint modHash)
             {
+                if (string.IsNullOrWhiteSpace(modId))
+                    throw new IllegalContractException("Mod execution scope requires a non-empty owner id.");
+
+                uint resolvedModHash = modHash != 0u
+                    ? modHash
+                    : ModCommandDispatcher.ComputeModHash(modId);
+                if (resolvedModHash == 0u)
+                    throw new IllegalContractException("Mod execution scope requires a non-zero owner hash.");
+
                 _previousModId = _currentModId;
                 _previousModHash = _currentModHash;
                 _previousScopeDepth = _scopeDepth;
-                _currentModId = string.IsNullOrWhiteSpace(modId) ? "anonymous" : modId;
-                _currentModHash = modHash != 0u ? modHash : ModCommandDispatcher.ComputeModHash(_currentModId);
+                _currentModId = modId;
+                _currentModHash = resolvedModHash;
                 _scopeDepth = _previousScopeDepth + 1;
             }
 
@@ -64,6 +76,9 @@ namespace Hecton8.Modding
         private const uint FnvOffsetBasis = 2166136261u;
         private const uint FnvPrime = 16777619u;
         private const string SaveDictionaryPrefix = "m8v1:";
+        private const string EngineStorageKeyPrefix = "hecton.internal.";
+        private const string EngineStorageOwnerId = "hecton.internal.engine_save_owner";
+        private static readonly uint EngineStorageOwnerHash = ModCommandDispatcher.ComputeModHash(EngineStorageOwnerId);
 
         // COLD ALLOC: Dictionary<string,string>[64] — custom mod save payload map persisted inside SaveData — owner: ModSaveStateStore
         private struct ModSaveEntry
@@ -93,6 +108,37 @@ namespace Hecton8.Modding
 
         internal static void SetModString(string key, string value)
         {
+            SetStringForOwner(key, value, RequireActivePersistenceOwnerHash("SetModString"));
+        }
+
+        internal static string GetModString(string key, string defaultValue)
+        {
+            if (TryGetStringForOwner(key, RequireActivePersistenceOwnerHash("GetModString"), out string value))
+                return value;
+
+            return defaultValue ?? string.Empty;
+        }
+
+        internal static void SetEngineString(string key, string value)
+        {
+            SetStringForOwner(key, value, RequireEnginePersistenceOwnerHash(key));
+        }
+
+        internal static string GetEngineString(string key, string defaultValue)
+        {
+            uint ownerHash = RequireEnginePersistenceOwnerHash(key);
+            if (TryGetStringForOwner(key, ownerHash, out string value))
+                return value;
+
+            uint legacyOwnerHash = ModCommandDispatcher.ComputeModHash(key);
+            if (legacyOwnerHash != ownerHash && TryGetStringForOwner(key, legacyOwnerHash, out value))
+                return value;
+
+            return defaultValue ?? string.Empty;
+        }
+
+        private static void SetStringForOwner(string key, string value, uint ownerHash)
+        {
             if (string.IsNullOrWhiteSpace(key))
             {
                 Hecton8.Core.H8Debug.LogError("[ModSaveStateStore] Refused to write mod save data with an empty key.");
@@ -100,8 +146,7 @@ namespace Hecton8.Modding
             }
 
             uint keyHash = ModCommandDispatcher.ComputeModHash(key);
-            uint modHash = ResolvePersistenceOwnerHash(key);
-            uint compoundHash = ComputeCompoundPersistenceHash(modHash, keyHash);
+            uint compoundHash = ComputeCompoundPersistenceHash(ownerHash, keyHash);
             if (_customModIndexByHash.TryGetValue(compoundHash, out int index) && index >= 0 && index < _customModData.Count)
             {
                 ModSaveEntry entry = _customModData[index];
@@ -109,9 +154,9 @@ namespace Hecton8.Modding
                 {
                     entry.Key = key;
                     entry.Value = value ?? string.Empty;
-                    entry.SerializedKey = BuildSerializedStorageKey(modHash, keyHash);
+                    entry.SerializedKey = BuildSerializedStorageKey(ownerHash, keyHash);
                     entry.KeyHash = keyHash;
-                    entry.ModHash = modHash;
+                    entry.ModHash = ownerHash;
                     entry.CompoundHash = compoundHash;
                     _customModData[index] = entry;
                     return;
@@ -121,7 +166,7 @@ namespace Hecton8.Modding
             for (int i = 0; i < _customModData.Count; i++)
             {
                 ModSaveEntry entry = _customModData[i];
-                if (!MatchesPersistenceEntry(in entry, key, keyHash, modHash, compoundHash))
+                if (!MatchesPersistenceEntry(in entry, key, keyHash, ownerHash, compoundHash))
                     continue;
 
                 if (entry.CompoundHash != 0u && entry.CompoundHash != compoundHash)
@@ -129,9 +174,9 @@ namespace Hecton8.Modding
 
                 entry.Key = key;
                 entry.Value = value ?? string.Empty;
-                entry.SerializedKey = BuildSerializedStorageKey(modHash, keyHash);
+                entry.SerializedKey = BuildSerializedStorageKey(ownerHash, keyHash);
                 entry.KeyHash = keyHash;
-                entry.ModHash = modHash;
+                entry.ModHash = ownerHash;
                 entry.CompoundHash = compoundHash;
                 _customModData[i] = entry;
                 _customModIndexByHash[compoundHash] = i;
@@ -143,36 +188,42 @@ namespace Hecton8.Modding
             {
                 Key = key,
                 Value = value ?? string.Empty,
-                SerializedKey = BuildSerializedStorageKey(modHash, keyHash),
+                SerializedKey = BuildSerializedStorageKey(ownerHash, keyHash),
                 KeyHash = keyHash,
-                ModHash = modHash,
+                ModHash = ownerHash,
                 CompoundHash = compoundHash
             });
         }
 
-        internal static string GetModString(string key, string defaultValue)
+        private static bool TryGetStringForOwner(string key, uint ownerHash, out string value)
         {
+            value = string.Empty;
             if (string.IsNullOrWhiteSpace(key))
-                return defaultValue ?? string.Empty;
+                return false;
 
             uint keyHash = ModCommandDispatcher.ComputeModHash(key);
-            uint modHash = ResolvePersistenceOwnerHash(key);
-            uint compoundHash = ComputeCompoundPersistenceHash(modHash, keyHash);
+            uint compoundHash = ComputeCompoundPersistenceHash(ownerHash, keyHash);
             if (_customModIndexByHash.TryGetValue(compoundHash, out int index) && index >= 0 && index < _customModData.Count)
             {
                 ModSaveEntry entry = _customModData[index];
-                if (MatchesPersistenceEntry(in entry, key, keyHash, modHash, compoundHash))
-                    return entry.Value ?? string.Empty;
+                if (MatchesPersistenceEntry(in entry, key, keyHash, ownerHash, compoundHash))
+                {
+                    value = entry.Value ?? string.Empty;
+                    return true;
+                }
             }
 
             for (int i = 0; i < _customModData.Count; i++)
             {
                 ModSaveEntry entry = _customModData[i];
-                if (MatchesPersistenceEntry(in entry, key, keyHash, modHash, compoundHash))
-                    return entry.Value ?? string.Empty;
+                if (MatchesPersistenceEntry(in entry, key, keyHash, ownerHash, compoundHash))
+                {
+                    value = entry.Value ?? string.Empty;
+                    return true;
+                }
             }
 
-            return defaultValue ?? string.Empty;
+            return false;
         }
 
         internal static void PopulateSaveData(SaveData data)
@@ -384,12 +435,26 @@ namespace Hecton8.Modding
             return true;
         }
 
-        private static uint ResolvePersistenceOwnerHash(string key)
+        private static uint RequireActivePersistenceOwnerHash(string surface)
         {
-            uint currentModHash = ModExecutionScope.CurrentModHash;
-            return currentModHash != 0u
-                ? currentModHash
-                : ModCommandDispatcher.ComputeModHash(key);
+            if (!ModExecutionScope.HasActiveMod)
+                throw new IllegalContractException("ModSaveStateStore." + surface + " requires an active mod execution scope. Engine-owned save payloads must use SetEngineString or GetEngineString.");
+
+            return ModExecutionScope.CurrentModHash;
+        }
+
+        private static uint RequireEnginePersistenceOwnerHash(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key) ||
+                !key.StartsWith(EngineStorageKeyPrefix, System.StringComparison.Ordinal))
+            {
+                throw new IllegalContractException("Engine-owned mod save payload keys must use the hecton.internal. prefix.");
+            }
+
+            if (EngineStorageOwnerHash == 0u)
+                throw new IllegalContractException("Engine-owned mod save payload route requires a non-zero owner hash.");
+
+            return EngineStorageOwnerHash;
         }
 
         private static bool MatchesPersistenceEntry(
@@ -593,8 +658,9 @@ namespace Hecton8.Modding
 
     internal static class ModRecipeRegistry
     {
-        // COLD ALLOC: List<RecipeData>[32] — runtime-only crafting recipe overlay — owner: ModRecipeRegistry
-        private static readonly List<RecipeData> _runtimeRecipes = new List<RecipeData>(32);
+        private const int MaxRuntimeRecipeCount = Fabricator.MaxRecipeCacheEntries;
+        // COLD ALLOC: List<RecipeData>[Fabricator.MaxRecipeCacheEntries] — bounded runtime crafting recipe overlay — owner: ModRecipeRegistry
+        private static readonly List<RecipeData> _runtimeRecipes = new List<RecipeData>(MaxRuntimeRecipeCount);
 
         internal static int Count => _runtimeRecipes.Count;
 
@@ -634,6 +700,12 @@ namespace Hecton8.Modding
 
             if (ContainsRecipeReference(recipeData))
                 return true;
+
+            if (_runtimeRecipes.Count >= MaxRuntimeRecipeCount)
+            {
+                error = "Runtime recipe registry capacity exceeded.";
+                return false;
+            }
 
             _runtimeRecipes.Add(recipeData);
             ModRegistryEvents.NotifyRecipeRegistryChanged();

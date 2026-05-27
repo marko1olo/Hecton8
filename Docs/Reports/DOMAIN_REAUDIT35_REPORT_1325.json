@@ -1,0 +1,87 @@
+﻿{
+    "schema":  "hecton8.domain_reaudit35.v1",
+    "agentId":  "1325",
+    "domain":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs + World AUP persistence bridge",
+    "promptSha256":  "EE975B109958AEF4F71A0B55FED9B9E339A88F3EED23829E64D2BA249AA61F94",
+    "taskCount":  20,
+    "touchedFiles":  [
+                         "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                         "Assets/_Project/Scripts/World/AUPMath.cs",
+                         "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                         "Assets/_Project/Scripts/SaveManager.cs"
+                     ],
+    "individualHashes":  [
+                             {
+                                 "path":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                                 "sha256":  "D6436947E56714B08DEE99E93B8D242FDAF569746842B4B79891F46DB80CC61D"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                                 "sha256":  "848AF96D81EBFEC76840D7AB09F2569EE7DDB0AA3FE10EC72E9BD2D06AECA40F"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                                 "sha256":  "A7843A500349F810EE4493A309E90236B1B820D9CA26F8382CCAE0A324013D80"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                 "sha256":  "391D18D7BAFB2B9D550D04978CEFD5762F2B7AC90432C22EB4B9B0E07903623D"
+                             }
+                         ],
+    "verificationHashSha256":  "C9349F1AE9F0ADAFD781505EA17B888A6E0BD5D8AD2AF1F0078CB41D0C93DF93",
+    "sourceChanges":  [
+                          "Resident sector snapshot writer return value is now checked; failed background writer cannot be silently treated as success.",
+                          "Resident sector delta and entity-state buckets are validated for sector ownership before TempJob NativeArray allocation.",
+                          "Sector override commit captures main-thread work items before background IO and reconciles _sectorOverrideStates only on the main thread.",
+                          "PersistentWorldRegistry file deletes now route through a fail-closed helper with specific IO/path/permission catches instead of raw File.Delete calls."
+                      ],
+    "worldLedger":  "Docs\\\\Reports\\\\VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT35_WORLD.json",
+    "allScriptsLedger":  "Docs\\\\Reports\\\\VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT35_ALLSCRIPTS.json",
+    "zeroGcHotPathAudit":  "Docs\\\\Reports\\\\ZERO_GC_HOTPATH_AUDIT_1325_DEEP_REAUDIT35_RAW.json",
+    "aupAudit":  "Docs\\\\Reports\\\\AUP_DETERMINISM_AUDIT_1325_DEEP_REAUDIT35.json",
+    "asyncNativeAudit":  "Docs\\\\Reports\\\\ASYNC_NATIVE_LIFETIME_AUDIT_1325_DEEP_REAUDIT35.json",
+    "worldSummary":  {
+                         "scannedFiles":  276,
+                         "parseFailures":  0,
+                         "totalNativeFieldDeclarations":  1094,
+                         "forbiddenPersistentCandidates":  0,
+                         "forbiddenMonoBehaviourCandidates":  0,
+                         "jobTransientFields":  976,
+                         "stackOnlyRefStructViewFields":  118,
+                         "coreMemoryAllowedFields":  0,
+                         "rawPointerFields":  57
+                     },
+    "allScriptsSummary":  {
+                              "scannedFiles":  2441,
+                              "parseFailures":  0,
+                              "totalNativeFieldDeclarations":  6672,
+                              "forbiddenPersistentCandidates":  813,
+                              "forbiddenMonoBehaviourCandidates":  36,
+                              "jobTransientFields":  5497,
+                              "stackOnlyRefStructViewFields":  317,
+                              "coreMemoryAllowedFields":  45,
+                              "rawPointerFields":  864
+                          },
+    "primaryNativeFindings":  0,
+    "primaryForbiddenPersistentNativeFields":  0,
+    "saveManagerForbiddenNativeFields":  13,
+    "saveBinaryForbiddenNativeFields":  0,
+    "selectedHotPathFindings":  0,
+    "absoluteAupCastsFound":  0,
+    "asyncNativePersistentWorldRegistryFindings":  0,
+    "asyncNativeSaveManagerFindings":  18,
+    "compile":  {
+                    "attempted":  false,
+                    "result":  "blocked_by_build_guard_active_dotnet",
+                    "firstVisibleErrors":  [
+                                               "Build guard sampled CPU 46.74% with active dotnet PID 62864; AGENTS forbids launching another dotnet/csc build while a dotnet process is running."
+                                           ],
+                    "touched1325ErrorsVisible":  0
+                },
+    "failedGates":  [
+                        "BOUNDARY_NATIVE_ALIAS_RESIDUALS_IN_SAVE_MANAGER_OUTSIDE_1325_PRIMARY_DOMAIN",
+                        "BOUNDARY_ASYNC_NATIVE_RESIDUALS_IN_SAVE_MANAGER_OUTSIDE_1325_PRIMARY_DOMAIN",
+                        "BUILD_GUARD_BLOCKED_ACTIVE_DOTNET_PID_62864"
+                    ],
+    "generatedAtUtc":  "2026-05-27T12:48:35.2629474Z"
+}

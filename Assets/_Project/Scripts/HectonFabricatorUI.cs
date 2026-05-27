@@ -143,8 +143,8 @@ namespace Hecton8.UI
         [SerializeField] private int _debugVisibleInstanceCount;
         [SerializeField] private int _debugHoveredRecipeIndex = -1;
 
-        // COLD ALLOC: List<RecipeData>[32] — filtered fabricator recipe cache — owner: HectonFabricatorUI
-        private readonly List<RecipeData> _filteredRecipes = new List<RecipeData>(32);
+        // COLD ALLOC: List<RecipeData>[Fabricator.MaxRecipeCacheEntries] — filtered fabricator recipe cache — owner: HectonFabricatorUI
+        private readonly List<RecipeData> _filteredRecipes = new List<RecipeData>(Fabricator.MaxRecipeCacheEntries);
         // COLD ALLOC: Matrix4x4[16] — instanced hologram draw buffer mirror — owner: HectonFabricatorUI
         private readonly Matrix4x4[] _hologramMatrixBuffer = new Matrix4x4[MaxVisibleHologramInstances];
         // COLD ALLOC: Matrix4x4[1] — selected recipe hologram draw buffer — owner: HectonFabricatorUI
@@ -1602,8 +1602,8 @@ namespace Hecton8.UI
         {
             int visibleRecipeCount = _recipes != null ? Mathf.Min(_recipes.Count, MaxVisibleRecipeEntries) : 0;
             bool hasFastFailInventory = TryReadRecipeListFastFailInventory(
-                out NativeArray<uint> fastFailHashes,
-                out NativeArray<uint> fastFailQuantities,
+                out NativeArray<uint>.ReadOnly fastFailHashes,
+                out NativeArray<uint>.ReadOnly fastFailQuantities,
                 out int fastFailActiveSlotCount,
                 out ulong fastFailInventoryMask);
             int fastFailScarcityVersion = ResolveFastFailScarcityVersion();
@@ -1926,8 +1926,8 @@ namespace Hecton8.UI
         }
 
         private bool TryReadRecipeListFastFailInventory(
-            out NativeArray<uint> itemHashIds,
-            out NativeArray<uint> quantities,
+            out NativeArray<uint>.ReadOnly itemHashIds,
+            out NativeArray<uint>.ReadOnly quantities,
             out int activeSlotCount,
             out ulong currentInventoryMask)
         {
@@ -1945,8 +1945,8 @@ namespace Hecton8.UI
             bool hasFastFailRequirement,
             in RecipeRequirementDTO fastFailRequirement,
             bool hasFastFailInventory,
-            NativeArray<uint> fastFailHashes,
-            NativeArray<uint> fastFailQuantities,
+            NativeArray<uint>.ReadOnly fastFailHashes,
+            NativeArray<uint>.ReadOnly fastFailQuantities,
             int fastFailActiveSlotCount,
             ulong fastFailInventoryMask)
         {
@@ -1990,6 +1990,7 @@ namespace Hecton8.UI
             InventoryGrid grid = playerInventory.Grid;
             NativeArray<int>.ReadOnly anchorHashIds = grid != null ? grid.AnchorHashIds : default;
             NativeArray<ushort>.ReadOnly stackCounts = playerInventory.GetStackCountsReadOnly();
+            NativeArray<ushort>.ReadOnly craftLockedCounts = playerInventory.GetCraftLockedCountsReadOnly();
             if (!anchorHashIds.IsCreated || !stackCounts.IsCreated)
                 return false;
 
@@ -2011,7 +2012,10 @@ namespace Hecton8.UI
                     if (anchorHashIds[anchorIndex] != itemHashId)
                         continue;
 
-                    availableCount += stackCounts[anchorIndex];
+                    int availableStack = craftLockedCounts.IsCreated && anchorIndex < craftLockedCounts.Length
+                        ? Mathf.Max(0, (int)stackCounts[anchorIndex] - craftLockedCounts[anchorIndex])
+                        : stackCounts[anchorIndex];
+                    availableCount += availableStack;
                     if (availableCount >= requiredAmount)
                         break;
                 }
@@ -2026,8 +2030,8 @@ namespace Hecton8.UI
         private bool TryCanCraftRecipeFastFailFallback(
             RecipeData recipe,
             in RecipeRequirementDTO requirement,
-            NativeArray<uint> fastFailHashes,
-            NativeArray<uint> fastFailQuantities,
+            NativeArray<uint>.ReadOnly fastFailHashes,
+            NativeArray<uint>.ReadOnly fastFailQuantities,
             int fastFailActiveSlotCount,
             ulong fastFailInventoryMask,
             out bool craftable)

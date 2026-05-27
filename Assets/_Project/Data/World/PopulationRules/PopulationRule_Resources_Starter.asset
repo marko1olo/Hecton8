@@ -21,7 +21,7 @@ MonoBehaviour:
   prefabFamily: resource.pickup.cluster
   familyProfile: {fileID: 11400000, guid: 953a4dfd27598fe4cae12d03e8447afe, type: 2}
   gameplayPurpose: Starter loose resource pocket.
-  biomeFitSummary: Best in bright starter geology with clear gathering loops and
+  biomeFitSummary: Best in readable starter geology with clear gathering loops and
     obvious return lines.
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}

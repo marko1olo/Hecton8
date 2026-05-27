@@ -1,0 +1,586 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\DATA_MONOLITH_HOTPATH_AUDIT_1330_RERUN15_RAW.json",
+  "auditHashSha256": "674904c35eafa53b9e8aff51c47c448d6af5730d1f63a1b841ed06efeb961ec2",
+  "summary": {
+    "scannedFiles": 4,
+    "parseFailures": 0,
+    "totalFindings": 69,
+    "objectCreations": 37,
+    "valueTypeCreations": 2,
+    "managedRiskCreations": 35,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 4,
+    "linqCalls": 22,
+    "foreachStatements": 2,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 4
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Data\\Monolith\\H8CreatureSoAReconstructJob.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Editor\\DataMonolith\\H8DataMonolithCompilerWindow.cs",
+    "C:\\hades\\Hecton8\\Tools\\DataMonolithBakeCli\\DataMonolithSourceInventoryProbe.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 207,
+      "owner": "TryInitializeFromStreamingAssetsAsync",
+      "kind": "object_creation",
+      "detail": "H8DataBlobLoadResult",
+      "snippet": "new H8DataBlobLoadResult(!failIfMissing && IsLoaded, cancelledStatus)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 246,
+      "owner": "TryInitializeFromStreamingAssetsAsync",
+      "kind": "object_creation",
+      "detail": "H8DataBlobLoadResult",
+      "snippet": "new H8DataBlobLoadResult(!failIfMissing && IsLoaded, failedStatus)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 268,
+      "owner": "TryInitializeFromStreamingAssetsAsync",
+      "kind": "object_creation",
+      "detail": "H8DataBlobLoadResult",
+      "snippet": "new H8DataBlobLoadResult(loaded, status)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 311,
+      "owner": "TryStageStreamingAssetsUriToCacheAsync",
+      "kind": "value_type_creation",
+      "detail": "UnityWebRequest",
+      "snippet": "new UnityWebRequest(streamingUri, UnityWebRequest.kHttpVerbGET)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 312,
+      "owner": "TryStageStreamingAssetsUriToCacheAsync",
+      "kind": "object_creation",
+      "detail": "DownloadHandlerFile",
+      "snippet": "new DownloadHandlerFile(tempPath)                 {                     removeFileOnAbort = true                 }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 584,
+      "owner": "TryGetExistingBlobLength",
+      "kind": "object_creation",
+      "detail": "FileInfo",
+      "snippet": "new FileInfo(absolutePath)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 1748,
+      "owner": "TryReadWholeFileIntoArena",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, FileOptions.SequentialScan)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 1749,
+      "owner": "TryReadWholeFileIntoArena",
+      "kind": "object_creation",
+      "detail": "Span<byte>",
+      "snippet": "new Span<byte>(destination, expectedBytes)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 281,
+      "owner": "BuildStreamingAssetsLocation",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "root + \"/\""
+    },
+    {
+      "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 308,
+      "owner": "TryStageStreamingAssetsUriToCacheAsync",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "cachePath + \".tmp\""
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 32,
+      "owner": "Run",
+      "kind": "object_creation",
+      "detail": "SourceInventoryReport",
+      "snippet": "new SourceInventoryReport             {                 Schema = \"HECTON8_DATA_MONOLITH_SOURCE_INVENTORY_V5\",                 Agent = AgentId,                 GeneratedUtc = DateTime.UtcNow.ToString(\"O\"),                 ActiveBlob = blob, "
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 47,
+      "owner": "Run",
+      "kind": "object_creation",
+      "detail": "JsonSerializerOptions",
+      "snippet": "new JsonSerializerOptions             {                 WriteIndented = true,                 IncludeFields = false             }"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 60,
+      "owner": "ReadBlobInventory",
+      "kind": "object_creation",
+      "detail": "BlobInventory",
+      "snippet": "new BlobInventory             {                 Path = BlobRelativePath,                 Exists = File.Exists(blobPath)             }"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 107,
+      "owner": "ReadBlobInventory",
+      "kind": "object_creation",
+      "detail": "HeaderInventory",
+      "snippet": "new HeaderInventory             {                 MagicHex = ToHex(magic),                 FormatVersion = format,                 HeaderBytes = headerBytes,                 Checksum64Hex = ToHex(checksum),                 BlobBytes = blobB"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 167,
+      "owner": "ReadBlobInventory",
+      "kind": "object_creation",
+      "detail": "DirectoryInventory",
+      "snippet": "new DirectoryInventory             {                 MagicHex = ToHex(directoryMagic),                 FormatVersion = directoryFormat,                 SectionCount = directorySectionCount,                 SectionTableOffset = directorySect"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 216,
+      "owner": "ReadBlobInventory",
+      "kind": "object_creation",
+      "detail": "List<SectionInventory>",
+      "snippet": "new List<SectionInventory>((int)Math.Min(sectionCount, 256u))"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 238,
+      "owner": "ReadBlobInventory",
+      "kind": "object_creation",
+      "detail": "SectionInventory",
+      "snippet": "new SectionInventory                 {                     Index = i,                     SectionId = sectionId,                     Name = Enum.IsDefined(typeof(H8DataSectionId), sectionId) ? ((H8DataSectionId)sectionId).ToString() : \"Unkn"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 270,
+      "owner": "BuildCsvInventory",
+      "kind": "object_creation",
+      "detail": "List<CsvEntry>",
+      "snippet": "new List<CsvEntry>(256)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 282,
+      "owner": "BuildCsvInventory",
+      "kind": "value_type_creation",
+      "detail": "CsvEntry",
+      "snippet": "new CsvEntry                 {                     Path = relativePath,                     Bytes = bytes,                     FileReadFailureCode = fileReadFailureCode,                     Classification = classification,                  "
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 305,
+      "owner": "BuildTotals",
+      "kind": "object_creation",
+      "detail": "Dictionary<string, int>",
+      "snippet": "new Dictionary<string, int>             {                 [\"csvAll\"] = entries.Count,                 [\"repoRootCsvStaticConfigRisk\"] = entries.Count(e => e.Classification == \"repo_root_csv_static_config_risk\"),                 [\"streamingA"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 328,
+      "owner": "BuildBlockGroups",
+      "kind": "object_creation",
+      "detail": "List<BlockGroupInventory>",
+      "snippet": "new List<BlockGroupInventory>             {                 BuildBlockGroup(\"Ecology\", sections, H8DataSectionId.Creatures, H8DataSectionId.Biomes, H8DataSectionId.BiomeHeatmap, H8DataSectionId.SpawnCreditCosts),                 BuildBlockG"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 344,
+      "owner": "BuildBlockGroup",
+      "kind": "object_creation",
+      "detail": "BlockGroupInventory",
+      "snippet": "new BlockGroupInventory { Name = name, Present = false }"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 348,
+      "owner": "BuildBlockGroup",
+      "kind": "object_creation",
+      "detail": "BlockGroupInventory",
+      "snippet": "new BlockGroupInventory             {                 Name = name,                 Present = true,                 StartOffset = start,                 EndExclusive = end,                 Bytes = end >= start ? end - start : 0UL,           "
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 428,
+      "owner": "FindCodeReferences",
+      "kind": "object_creation",
+      "detail": "CsvReferenceSummary",
+      "snippet": "new CsvReferenceSummary()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 450,
+      "owner": "FindCodeReferences",
+      "kind": "object_creation",
+      "detail": "List<PreprocessorFrame>",
+      "snippet": "new List<PreprocessorFrame>(8)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 451,
+      "owner": "FindCodeReferences",
+      "kind": "object_creation",
+      "detail": "List<PreprocessorFrame>",
+      "snippet": "new List<PreprocessorFrame>(8)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 515,
+      "owner": "ApplyPreprocessorDirective",
+      "kind": "object_creation",
+      "detail": "PreprocessorFrame",
+      "snippet": "new PreprocessorFrame(EvaluateForPlayer(expression, developmentBuild))"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 573,
+      "owner": "EvaluateForPlayer",
+      "kind": "object_creation",
+      "detail": "PreprocessorExpressionParser",
+      "snippet": "new PreprocessorExpressionParser(expression, developmentBuild)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 628,
+      "owner": "TryGetFileLength",
+      "kind": "object_creation",
+      "detail": "FileInfo",
+      "snippet": "new FileInfo(path)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 673,
+      "owner": "TryReadExact",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 750,
+      "owner": "ActiveBlob",
+      "kind": "object_creation",
+      "detail": "BlobInventory",
+      "snippet": "new BlobInventory()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 751,
+      "owner": "Totals",
+      "kind": "object_creation",
+      "detail": "Dictionary<string, int>",
+      "snippet": "new Dictionary<string, int>()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 752,
+      "owner": "BlockGroups",
+      "kind": "object_creation",
+      "detail": "List<BlockGroupInventory>",
+      "snippet": "new List<BlockGroupInventory>()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 753,
+      "owner": "CsvInventory",
+      "kind": "object_creation",
+      "detail": "List<CsvEntry>",
+      "snippet": "new List<CsvEntry>()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 779,
+      "owner": "AllReferences",
+      "kind": "object_creation",
+      "detail": "List<string>",
+      "snippet": "new List<string>(8)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 780,
+      "owner": "PlayerActiveReferences",
+      "kind": "object_creation",
+      "detail": "List<string>",
+      "snippet": "new List<string>(8)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 793,
+      "owner": "Header",
+      "kind": "object_creation",
+      "detail": "HeaderInventory",
+      "snippet": "new HeaderInventory()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 794,
+      "owner": "Directory",
+      "kind": "object_creation",
+      "detail": "DirectoryInventory",
+      "snippet": "new DirectoryInventory()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 795,
+      "owner": "Sections",
+      "kind": "object_creation",
+      "detail": "List<SectionInventory>",
+      "snippet": "new List<SectionInventory>()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 36,
+      "owner": "Run",
+      "kind": "to_string_call",
+      "detail": "DateTime.UtcNow.ToString",
+      "snippet": "DateTime.UtcNow.ToString(\"O\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 242,
+      "owner": "ReadBlobInventory",
+      "kind": "to_string_call",
+      "detail": "((H8DataSectionId)sectionId).ToString",
+      "snippet": "((H8DataSectionId)sectionId).ToString()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 282,
+      "owner": "BuildCsvInventory",
+      "kind": "linq_call_suspect",
+      "detail": "entries.Add",
+      "snippet": "entries.Add(new CsvEntry                 {                     Path = relativePath,                     Bytes = bytes,                     FileReadFailureCode = fileReadFailureCode,                     Classification = classification,      "
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 294,
+      "owner": "BuildCsvInventory",
+      "kind": "linq_call_suspect",
+      "detail": "references.AllReferences.ToArray",
+      "snippet": "references.AllReferences.ToArray()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 295,
+      "owner": "BuildCsvInventory",
+      "kind": "linq_call_suspect",
+      "detail": "references.PlayerActiveReferences.ToArray",
+      "snippet": "references.PlayerActiveReferences.ToArray()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 308,
+      "owner": "BuildTotals",
+      "kind": "linq_call_suspect",
+      "detail": "entries.Count",
+      "snippet": "entries.Count(e => e.Classification == \"repo_root_csv_static_config_risk\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 309,
+      "owner": "BuildTotals",
+      "kind": "linq_call_suspect",
+      "detail": "entries.Count",
+      "snippet": "entries.Count(e => e.Classification == \"streaming_assets_csv_static_config_risk\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 310,
+      "owner": "BuildTotals",
+      "kind": "linq_call_suspect",
+      "detail": "entries.Count",
+      "snippet": "entries.Count(e => e.Classification == \"repo_root_unref_legacy_csv\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 311,
+      "owner": "BuildTotals",
+      "kind": "linq_call_suspect",
+      "detail": "entries.Count",
+      "snippet": "entries.Count(e => e.Classification == \"editor_fenced_repo_root_authoring_csv\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 312,
+      "owner": "BuildTotals",
+      "kind": "linq_call_suspect",
+      "detail": "entries.Count",
+      "snippet": "entries.Count(e => e.Classification == \"editor_fenced_streaming_assets_authoring_csv\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 313,
+      "owner": "BuildTotals",
+      "kind": "linq_call_suspect",
+      "detail": "entries.Count",
+      "snippet": "entries.Count(e => e.Classification == \"monolith_source_csv\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 314,
+      "owner": "BuildTotals",
+      "kind": "linq_call_suspect",
+      "detail": "entries.Count",
+      "snippet": "entries.Count(e => e.Classification == \"editor_only_authoring_csv\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 315,
+      "owner": "BuildTotals",
+      "kind": "linq_call_suspect",
+      "detail": "entries.Count",
+      "snippet": "entries.Count(e => e.Classification == \"cross_domain_authoring_source\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 316,
+      "owner": "BuildTotals",
+      "kind": "linq_call_suspect",
+      "detail": "entries.Count",
+      "snippet": "entries.Count(e => e.Classification == \"docs_archive_report_csv\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 317,
+      "owner": "BuildTotals",
+      "kind": "linq_call_suspect",
+      "detail": "entries.Count",
+      "snippet": "entries.Count(e => e.Classification == \"other_csv\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 321,
+      "owner": "BuildTotals",
+      "kind": "linq_call_suspect",
+      "detail": "blob.Sections.Count",
+      "snippet": "blob.Sections.Count(s => s.OffsetAligned64)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 322,
+      "owner": "BuildTotals",
+      "kind": "linq_call_suspect",
+      "detail": "blob.Sections.Count",
+      "snippet": "blob.Sections.Count(s => s.RecordAligned16)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 339,
+      "owner": "BuildBlockGroup",
+      "kind": "linq_call_suspect",
+      "detail": "sections\n                .Where(s => s.PayloadBytes > 0UL && ids.Any(id => s.SectionId == (uint)id))\n                .OrderBy(s => s.OffsetBytes)\n                .ToList",
+      "snippet": "sections                 .Where(s => s.PayloadBytes > 0UL && ids.Any(id => s.SectionId == (uint)id))                 .OrderBy(s => s.OffsetBytes)                 .ToList()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 339,
+      "owner": "BuildBlockGroup",
+      "kind": "linq_call_suspect",
+      "detail": "sections\n                .Where(s => s.PayloadBytes > 0UL && ids.Any(id => s.SectionId == (uint)id))\n                .OrderBy",
+      "snippet": "sections                 .Where(s => s.PayloadBytes > 0UL && ids.Any(id => s.SectionId == (uint)id))                 .OrderBy(s => s.OffsetBytes)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 339,
+      "owner": "BuildBlockGroup",
+      "kind": "linq_call_suspect",
+      "detail": "sections\n                .Where",
+      "snippet": "sections                 .Where(s => s.PayloadBytes > 0UL && ids.Any(id => s.SectionId == (uint)id))"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 340,
+      "owner": "BuildBlockGroup",
+      "kind": "linq_call_suspect",
+      "detail": "ids.Any",
+      "snippet": "ids.Any(id => s.SectionId == (uint)id)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 355,
+      "owner": "BuildBlockGroup",
+      "kind": "linq_call_suspect",
+      "detail": "selected.All",
+      "snippet": "selected.All(s => s.OffsetAligned64)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 356,
+      "owner": "BuildBlockGroup",
+      "kind": "linq_call_suspect",
+      "detail": "selected.Select(s => s.Name).ToArray",
+      "snippet": "selected.Select(s => s.Name).ToArray()"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 356,
+      "owner": "BuildBlockGroup",
+      "kind": "linq_call_suspect",
+      "detail": "selected.Select",
+      "snippet": "selected.Select(s => s.Name)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 737,
+      "owner": "ToHex",
+      "kind": "to_string_call",
+      "detail": "value.ToString",
+      "snippet": "value.ToString(\"X8\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 742,
+      "owner": "ToHex",
+      "kind": "to_string_call",
+      "detail": "value.ToString",
+      "snippet": "value.ToString(\"X16\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 271,
+      "owner": "BuildCsvInventory",
+      "kind": "foreach_statement",
+      "detail": "string",
+      "snippet": "Directory.GetFiles(projectRoot, \"*.csv\", SearchOption.AllDirectories)"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 432,
+      "owner": "FindCodeReferences",
+      "kind": "foreach_statement",
+      "detail": "string",
+      "snippet": "scriptFiles"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 737,
+      "owner": "ToHex",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"0x\" + value.ToString(\"X8\")"
+    },
+    {
+      "path": "Tools/DataMonolithBakeCli/DataMonolithSourceInventoryProbe.cs",
+      "line": 742,
+      "owner": "ToHex",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"0x\" + value.ToString(\"X16\")"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

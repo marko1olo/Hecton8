@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: FloraDataTemplate_AnchorCoral
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.World.FloraDataTemplate
   stableId: flora.anchor_coral
-  displayName: Anchor Coral
+  displayName: Anchor Carbonate
   vegetationType: 0
   category: 2
   semanticType: 0

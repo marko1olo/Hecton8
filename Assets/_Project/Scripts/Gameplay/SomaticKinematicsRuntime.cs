@@ -1395,30 +1395,37 @@ namespace Hecton8.Gameplay
         private bool TryLockSimulationBuffers()
         {
             IDataVault vault = _dataVault;
-            if (vault == null || _buffersLocked)
+            if (vault == null || vault.IsCompactionFenceActive || _buffersLocked)
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.ShinobuSomaticKinematicState, SystemID.GameplayPlayer))
+            if (!TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticKinematicState))
                 return false;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSomaticBoundingSphere, SystemID.GameplayPlayer))
+            if (!TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticBoundingSphere))
             {
                 vault.TryUnlockBuffer(BufferID.ShinobuSomaticKinematicState, SystemID.GameplayPlayer);
                 return false;
             }
 
             _buffersLocked = true;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSomaticHandStrokeHistory, SystemID.GameplayPlayer) ||
-                !vault.TryLockBuffer(BufferID.ShinobuSomaticTuning, SystemID.GameplayPlayer) ||
-                !vault.TryLockBuffer(BufferID.ShinobuSomaticDragLut, SystemID.GameplayPlayer) ||
-                !vault.TryLockBuffer(BufferID.ShinobuSomaticSignalScratch, SystemID.GameplayPlayer) ||
-                !vault.TryLockBuffer(BufferID.ShinobuSomaticBlackBox, SystemID.GameplayPlayer) ||
-                !vault.TryLockBuffer(BufferID.ShinobuSomaticBlackBoxCursor, SystemID.GameplayPlayer))
+            if (!TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticHandStrokeHistory) ||
+                !TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticTuning) ||
+                !TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticDragLut) ||
+                !TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticSignalScratch) ||
+                !TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticBlackBox) ||
+                !TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticBlackBoxCursor))
             {
                 UnlockSimulationBuffers();
                 return false;
             }
 
             return true;
+        }
+
+        private static bool TryLockSomaticBuffer(IDataVault vault, BufferID bufferId)
+        {
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryLockBuffer(bufferId, SystemID.GameplayPlayer);
         }
 
         private void UnlockSimulationBuffers(IDataVault vaultOverride = null)
@@ -1656,11 +1663,36 @@ namespace Hecton8.Gameplay
                 else
                     ApplyTuning(in tuning);
             }
-            catch (Exception)
+            catch (IOException)
             {
-                tuning = GenerateEmergencyMockKinematics();
-                ApplyTuning(in tuning);
+                ApplyEmergencyKinematics();
             }
+            catch (UnauthorizedAccessException)
+            {
+                ApplyEmergencyKinematics();
+            }
+            catch (ObjectDisposedException)
+            {
+                ApplyEmergencyKinematics();
+            }
+            catch (InvalidOperationException)
+            {
+                ApplyEmergencyKinematics();
+            }
+            catch (ArgumentException)
+            {
+                ApplyEmergencyKinematics();
+            }
+            catch (NotSupportedException)
+            {
+                ApplyEmergencyKinematics();
+            }
+        }
+
+        private void ApplyEmergencyKinematics()
+        {
+            SomaticKinematicsTuningData tuning = GenerateEmergencyMockKinematics();
+            ApplyTuning(in tuning);
         }
 
         public SomaticKinematicsTuningData GenerateEmergencyMockKinematics()
@@ -1731,11 +1763,35 @@ namespace Hecton8.Gameplay
 
         private void ApplyTuning(in SomaticKinematicsTuningData tuning)
         {
-            if (!ResolveTuningBuffers(out NativeArray<SomaticKinematicsTuningData> tuningBuffer, out NativeArray<float> dragLut))
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
                 return;
 
-            tuningBuffer[0] = tuning;
-            FillEmergencyDragLut(dragLut, tuning.BaseDrag);
+            bool tuningLocked = false;
+            bool dragLutLocked = false;
+            try
+            {
+                if (!TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticTuning))
+                    return;
+                tuningLocked = true;
+
+                if (!TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticDragLut))
+                    return;
+                dragLutLocked = true;
+
+                if (!ResolveTuningBuffers(out NativeArray<SomaticKinematicsTuningData> tuningBuffer, out NativeArray<float> dragLut))
+                    return;
+
+                tuningBuffer[0] = tuning;
+                FillEmergencyDragLut(dragLut, tuning.BaseDrag);
+            }
+            finally
+            {
+                if (dragLutLocked)
+                    vault.TryUnlockBuffer(BufferID.ShinobuSomaticDragLut, SystemID.GameplayPlayer);
+                if (tuningLocked)
+                    vault.TryUnlockBuffer(BufferID.ShinobuSomaticTuning, SystemID.GameplayPlayer);
+            }
         }
 
         private static void FillEmergencyDragLut(NativeArray<float> dragLut, float baseDrag)
@@ -1758,8 +1814,8 @@ namespace Hecton8.Gameplay
             if (_jobPending || string.IsNullOrEmpty(_csvOverridePath))
                 return;
 
-            if (!ResolveTuningBuffers(out NativeArray<SomaticKinematicsTuningData> tuningBuffer, out NativeArray<float> dragLut) ||
-                !ResolveCsvScratch(out NativeArray<byte> csvScratch))
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
                 return;
 
             try
@@ -1772,29 +1828,30 @@ namespace Hecton8.Gameplay
                     return;
 
                 int read = 0;
+                Span<byte> chunk = stackalloc byte[1024];
                 using (FileStream stream = new FileStream(_csvOverridePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan))
                 {
                     long length = stream.Length;
-                    if (length <= 0L || length > csvScratch.Length)
+                    if (length <= 0L || length > CsvScratchCapacity)
                         return;
 
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(csvScratch);
-                    Span<byte> bytes = new Span<byte>(ptr, (int)length);
-                    while (read < bytes.Length)
+                    int targetLength = (int)length;
+                    while (read < targetLength)
                     {
-                        int count = stream.Read(bytes.Slice(read));
+                        int request = math.min(chunk.Length, targetLength - read);
+                        int count = stream.Read(chunk.Slice(0, request));
                         if (count <= 0)
                             break;
+                        if (!TryWriteCsvScratchChunk(vault, read, chunk.Slice(0, count)))
+                            return;
                         read += count;
                     }
 
                     if (read <= 0)
                         return;
 
-                    SomaticKinematicsTuningData tuning = tuningBuffer[0];
-                    ParseCsvOverrides(bytes.Slice(0, read), ref tuning);
-                    tuningBuffer[0] = tuning;
-                    FillEmergencyDragLut(dragLut, tuning.BaseDrag);
+                    if (!TryApplyCsvScratchOverrides(vault, read))
+                        return;
                 }
                 _csvLastWriteTicks = ticks;
             }
@@ -1803,6 +1860,91 @@ namespace Hecton8.Gameplay
             }
             catch (UnauthorizedAccessException)
             {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+        }
+
+        private unsafe bool TryWriteCsvScratchChunk(IDataVault vault, int offset, ReadOnlySpan<byte> source)
+        {
+            if (vault == null || vault.IsCompactionFenceActive || offset < 0 || source.Length <= 0)
+                return false;
+
+            bool csvScratchLocked = false;
+            try
+            {
+                if (!TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticCsvScratch))
+                    return false;
+                csvScratchLocked = true;
+
+                if (!ResolveCsvScratch(out NativeArray<byte> csvScratch) ||
+                    offset > csvScratch.Length ||
+                    source.Length > csvScratch.Length - offset)
+                    return false;
+
+                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(csvScratch);
+                source.CopyTo(new Span<byte>(ptr + offset, source.Length));
+                return true;
+            }
+            finally
+            {
+                if (csvScratchLocked)
+                    vault.TryUnlockBuffer(BufferID.ShinobuSomaticCsvScratch, SystemID.GameplayPlayer);
+            }
+        }
+
+        private unsafe bool TryApplyCsvScratchOverrides(IDataVault vault, int byteCount)
+        {
+            if (vault == null || vault.IsCompactionFenceActive || byteCount <= 0 || byteCount > CsvScratchCapacity)
+                return false;
+
+            bool tuningLocked = false;
+            bool dragLutLocked = false;
+            bool csvScratchLocked = false;
+            try
+            {
+                if (!TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticTuning))
+                    return false;
+                tuningLocked = true;
+
+                if (!TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticDragLut))
+                    return false;
+                dragLutLocked = true;
+
+                if (!TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticCsvScratch))
+                    return false;
+                csvScratchLocked = true;
+
+                if (!ResolveTuningBuffers(out NativeArray<SomaticKinematicsTuningData> tuningBuffer, out NativeArray<float> dragLut) ||
+                    !ResolveCsvScratch(out NativeArray<byte> csvScratch) ||
+                    byteCount > csvScratch.Length)
+                    return false;
+
+                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(csvScratch);
+                SomaticKinematicsTuningData tuning = tuningBuffer[0];
+                ParseCsvOverrides(new ReadOnlySpan<byte>(ptr, byteCount), ref tuning);
+                tuningBuffer[0] = tuning;
+                FillEmergencyDragLut(dragLut, tuning.BaseDrag);
+                return true;
+            }
+            finally
+            {
+                if (csvScratchLocked)
+                    vault.TryUnlockBuffer(BufferID.ShinobuSomaticCsvScratch, SystemID.GameplayPlayer);
+                if (dragLutLocked)
+                    vault.TryUnlockBuffer(BufferID.ShinobuSomaticDragLut, SystemID.GameplayPlayer);
+                if (tuningLocked)
+                    vault.TryUnlockBuffer(BufferID.ShinobuSomaticTuning, SystemID.GameplayPlayer);
             }
         }
 
@@ -1934,7 +2076,7 @@ namespace Hecton8.Gameplay
 
         private unsafe void DumpBlackBoxOnce()
         {
-            if (_dumpWritten || !ResolveBlackBoxBuffers(out NativeArray<SomaticKinematicBlackBoxEntry> blackBox, out NativeArray<int> blackBoxCursor))
+            if (_dumpWritten || !TryResolveBlackBoxDumpHeader(out SomaticBlackBoxDumpHeader header, out int entryCount))
                 return;
 
             try
@@ -1945,22 +2087,116 @@ namespace Hecton8.Gameplay
                     Directory.CreateDirectory(directory);
 
                 using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                SomaticBlackBoxDumpHeader header = default;
-                header.Magic = 0x53484E36u;
-                header.Version = 1u;
-                header.EntryCount = (uint)blackBox.Length;
-                header.EntryBytes = (uint)UnsafeUtility.SizeOf<SomaticKinematicBlackBoxEntry>();
-                header.Cursor = (uint)blackBoxCursor[0];
-                header.Frame = _fixedFrameSequence;
                 stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<SomaticBlackBoxDumpHeader>()));
-                void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
-                stream.Write(new ReadOnlySpan<byte>(ptr, blackBox.Length * UnsafeUtility.SizeOf<SomaticKinematicBlackBoxEntry>()));
+                for (int i = 0; i < entryCount; i++)
+                {
+                    if (!TryReadBlackBoxDumpEntry(i, out SomaticKinematicBlackBoxEntry entry))
+                    {
+                        _dumpWritten = false;
+                        return;
+                    }
+
+                    stream.Write(new ReadOnlySpan<byte>(&entry, UnsafeUtility.SizeOf<SomaticKinematicBlackBoxEntry>()));
+                }
                 stream.Flush(true);
                 _dumpWritten = true;
             }
-            catch (Exception)
+            catch (IOException)
             {
                 _dumpWritten = false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _dumpWritten = false;
+            }
+            catch (ObjectDisposedException)
+            {
+                _dumpWritten = false;
+            }
+            catch (InvalidOperationException)
+            {
+                _dumpWritten = false;
+            }
+            catch (ArgumentException)
+            {
+                _dumpWritten = false;
+            }
+            catch (NotSupportedException)
+            {
+                _dumpWritten = false;
+            }
+        }
+
+        private bool TryResolveBlackBoxDumpHeader(out SomaticBlackBoxDumpHeader header, out int entryCount)
+        {
+            header = default;
+            entryCount = 0;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            bool blackBoxLocked = false;
+            bool cursorLocked = false;
+            try
+            {
+                if (!TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticBlackBox))
+                    return false;
+                blackBoxLocked = true;
+
+                if (!TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticBlackBoxCursor))
+                    return false;
+                cursorLocked = true;
+
+                if (!ResolveBlackBoxBuffers(out NativeArray<SomaticKinematicBlackBoxEntry> blackBox, out NativeArray<int> blackBoxCursor) ||
+                    blackBox.Length <= 0 ||
+                    blackBoxCursor.Length <= 0)
+                    return false;
+
+                entryCount = blackBox.Length;
+                header.Magic = 0x53484E36u;
+                header.Version = 1u;
+                header.EntryCount = (uint)entryCount;
+                header.EntryBytes = (uint)UnsafeUtility.SizeOf<SomaticKinematicBlackBoxEntry>();
+                header.Cursor = (uint)blackBoxCursor[0];
+                header.Frame = _fixedFrameSequence;
+                return true;
+            }
+            finally
+            {
+                if (cursorLocked)
+                    vault.TryUnlockBuffer(BufferID.ShinobuSomaticBlackBoxCursor, SystemID.GameplayPlayer);
+                if (blackBoxLocked)
+                    vault.TryUnlockBuffer(BufferID.ShinobuSomaticBlackBox, SystemID.GameplayPlayer);
+            }
+        }
+
+        private bool TryReadBlackBoxDumpEntry(int index, out SomaticKinematicBlackBoxEntry entry)
+        {
+            entry = default;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || index < 0)
+                return false;
+
+            bool blackBoxLocked = false;
+            try
+            {
+                if (!TryLockSomaticBuffer(vault, BufferID.ShinobuSomaticBlackBox))
+                    return false;
+                blackBoxLocked = true;
+
+                if (!TryResolveSomaticVaultBuffer(ref _blackBoxHandle, BufferID.ShinobuSomaticBlackBox, BlackBoxCapacity, out NativeArray<SomaticKinematicBlackBoxEntry> blackBox) ||
+                    index >= blackBox.Length)
+                    return false;
+
+                entry = blackBox[index];
+                return true;
+            }
+            finally
+            {
+                if (blackBoxLocked)
+                    vault.TryUnlockBuffer(BufferID.ShinobuSomaticBlackBox, SystemID.GameplayPlayer);
             }
         }
 

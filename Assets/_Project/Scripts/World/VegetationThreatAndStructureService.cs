@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Jobs;
@@ -18,10 +18,11 @@ namespace Hecton8.World
         /// </summary>
         public float GetThreatLevel(Vector3 position)
         {
-            if (!_threatGridInitialized || !_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated || _ecosystemThreatGridResolution <= 0)
+            NativeArray<float> threatGrid = GetThreatGridFloatView();
+            if (!_threatGridInitialized || !threatGrid.IsCreated || _ecosystemThreatGridResolution <= 0)
                 return 0f;
 
-            return SampleThreatGridAtPosition(position, _ecosystemThreatGridCenter, threatGridCellSize, _ecosystemThreatGridResolution, _nativeMemory.EcosystemThreatGridCurrentNative);
+            return SampleThreatGridAtPosition(position, _ecosystemThreatGridCenter, threatGridCellSize, _ecosystemThreatGridResolution, threatGrid);
         }
 
         public void ApplyExternalThreatPulse(Vector3 position, float radius, float strength, float holdDuration)
@@ -63,7 +64,7 @@ namespace Hecton8.World
         /// </summary>
         public float GetCanopyHeightAt(float worldX, float worldZ)
         {
-            if (!_canopyGridInitialized || !_nativeMemory.CanopyHeightGridNative.IsCreated || _canopyGridResolution <= 0)
+            if (!_canopyGridInitialized || _canopyGridResolution <= 0)
                 return float.NegativeInfinity;
 
             return SampleCanopyHeightAtPosition(worldX, worldZ);
@@ -94,7 +95,7 @@ namespace Hecton8.World
                 return InvalidArtificialStructureId;
             }
 
-            for (int i = 0; i < _persistentArtificialStructures.Count; i++)
+            for (int i = 0; i < _persistentArtificialStructureCount; i++)
             {
                 PersistentArtificialStructureRecord existing = _persistentArtificialStructures[i];
                 if (existing.Type != type)
@@ -117,12 +118,18 @@ namespace Hecton8.World
             }
 
             int structureId = _nextArtificialStructureId++;
-            _persistentArtificialStructures.Add(new PersistentArtificialStructureRecord
+            if (_persistentArtificialStructureCount >= _persistentArtificialStructures.Length)
+            {
+                RecordChunkQueueCapacityExceeded(_persistentArtificialStructures.Length, _persistentArtificialStructureCount);
+                return InvalidArtificialStructureId;
+            }
+
+            _persistentArtificialStructures[_persistentArtificialStructureCount++] = new PersistentArtificialStructureRecord
             {
                 StructureId = structureId,
                 Bounds = bounds,
                 Type = type
-            });
+            };
 
             InvalidateChunksIntersectingBounds(bounds);
             RefreshArtificialStructureSnapshotIfIdle();
@@ -135,17 +142,17 @@ namespace Hecton8.World
         /// </summary>
         public bool UnregisterArtificialStructure(int structureId)
         {
-            if (structureId == InvalidArtificialStructureId || _persistentArtificialStructures.Count <= 0)
+            if (structureId == InvalidArtificialStructureId || _persistentArtificialStructureCount <= 0)
                 return false;
 
-            for (int i = 0; i < _persistentArtificialStructures.Count; i++)
+            for (int i = 0; i < _persistentArtificialStructureCount; i++)
             {
                 PersistentArtificialStructureRecord structure = _persistentArtificialStructures[i];
                 if (structure.StructureId != structureId)
                     continue;
 
                 Bounds removedBounds = structure.Bounds;
-                _persistentArtificialStructures.RemoveAt(i);
+                RemovePersistentArtificialStructureAt(i);
                 InvalidateChunksIntersectingBounds(removedBounds);
                 RefreshArtificialStructureSnapshotIfIdle();
                 RefreshResidency();
@@ -153,6 +160,19 @@ namespace Hecton8.World
             }
 
             return false;
+        }
+
+        private void RemovePersistentArtificialStructureAt(int index)
+        {
+            if ((uint)index >= (uint)_persistentArtificialStructureCount)
+                return;
+
+            int moveCount = _persistentArtificialStructureCount - index - 1;
+            if (moveCount > 0)
+                Array.Copy(_persistentArtificialStructures, index + 1, _persistentArtificialStructures, index, moveCount);
+
+            _persistentArtificialStructureCount--;
+            _persistentArtificialStructures[_persistentArtificialStructureCount] = default;
         }
 
         /// <summary>
@@ -173,14 +193,15 @@ namespace Hecton8.World
         /// </summary>
         public bool HasPermanentThreatEcho(Vector3 position)
         {
+            NativeArray<byte> echoFlags = GetThreatGridEchoView();
             if (!_threatGridInitialized ||
-                !_nativeMemory.EcosystemThreatEchoCurrentNative.IsCreated ||
+                !echoFlags.IsCreated ||
                 _ecosystemThreatGridResolution <= 0)
             {
                 return false;
             }
 
-            return SampleThreatEchoFlagAtPosition(position, _ecosystemThreatGridCenter, threatGridCellSize, _ecosystemThreatGridResolution, _nativeMemory.EcosystemThreatEchoCurrentNative) != 0;
+            return SampleThreatEchoFlagAtPosition(position, _ecosystemThreatGridCenter, threatGridCellSize, _ecosystemThreatGridResolution, echoFlags) != 0;
         }
 
         /// <summary>
@@ -200,7 +221,13 @@ namespace Hecton8.World
             if (!IsFinite(position))
                 return Vector3.zero;
 
-            if (!_flowFieldInitialized || !_nativeMemory.EcosystemFlowFieldCurrentNative.IsCreated || _ecosystemThreatGridResolution <= 0)
+            if (!_flowFieldInitialized ||
+                !TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemFlowFieldHandle,
+                    BufferID.VegetationEcosystemFlowField,
+                    _ecosystemThreatGridCellCount,
+                    out NativeArray<float2> flowField) ||
+                _ecosystemThreatGridResolution <= 0)
             {
                 if (!TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition) ||
                     !IsFinite(playerRuntimePosition))
@@ -220,7 +247,7 @@ namespace Hecton8.World
                 return new Vector3(direction.x, 0f, direction.z);
             }
 
-            float2 flow = SampleFlowFieldAtPosition(position, _ecosystemFlowFieldCenter, threatGridCellSize, _ecosystemThreatGridResolution, _nativeMemory.EcosystemFlowFieldCurrentNative);
+            float2 flow = SampleFlowFieldAtPosition(position, _ecosystemFlowFieldCenter, threatGridCellSize, _ecosystemThreatGridResolution, flowField);
             return new Vector3(flow.x, 0f, flow.y);
         }
 
@@ -230,8 +257,8 @@ namespace Hecton8.World
         public Vector3 GetAbyssalConduitVector(Vector3 position)
         {
             if (_abyssalNavNodeCount <= 0 ||
-                !_nativeMemory.AbyssalNavConduitVectorsSnapshotNative.IsCreated ||
-                !_nativeMemory.AbyssalNavConduitStrengthSnapshotNative.IsCreated ||
+                _abyssalNavConduitVectorsSnapshot == null ||
+                _abyssalNavConduitStrengthSnapshot == null ||
                 !IsFinite(position))
             {
                 return Vector3.zero;
@@ -240,9 +267,7 @@ namespace Hecton8.World
             int nodeIndex = FindNearestAbyssalNavNodeIndex(position);
             if (nodeIndex < 0 ||
                 nodeIndex >= _abyssalNavConduitVectorsSnapshot.Length ||
-                nodeIndex >= _abyssalNavConduitStrengthSnapshot.Length ||
-                nodeIndex >= _nativeMemory.AbyssalNavConduitVectorsSnapshotNative.Length ||
-                nodeIndex >= _nativeMemory.AbyssalNavConduitStrengthSnapshotNative.Length)
+                nodeIndex >= _abyssalNavConduitStrengthSnapshot.Length)
             {
                 return Vector3.zero;
             }
@@ -287,13 +312,15 @@ namespace Hecton8.World
         {
             hotspotPosition = _currentThreatHotspotPosition;
             hotspotThreatLevel = 0f;
+            Vector3 playerPosition = default;
+            NativeArray<float> threatGrid = GetThreatGridFloatView();
             if (!_threatGridInitialized ||
-                !_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated ||
+                !threatGrid.IsCreated ||
                 _ecosystemThreatGridResolution <= 0 ||
                 threatGridCellSize <= 0f ||
                 !math.isfinite(threatGridCellSize) ||
                 !IsFinite(_ecosystemThreatGridCenter) ||
-                !TryResolvePlayerRuntimePositionFromAup(out Vector3 playerPosition))
+                !TryResolvePlayerRuntimePositionFromAup(out playerPosition))
             {
                 return false;
             }
@@ -301,7 +328,7 @@ namespace Hecton8.World
             long expectedThreatGridLength = (long)_ecosystemThreatGridResolution * _ecosystemThreatGridResolution;
             if (expectedThreatGridLength <= 0L ||
                 expectedThreatGridLength > int.MaxValue ||
-                _nativeMemory.EcosystemThreatGridCurrentNative.Length < expectedThreatGridLength ||
+                threatGrid.Length < expectedThreatGridLength ||
                 !IsFinite(playerPosition) ||
                 !math.isfinite(minimumThreatLevel) ||
                 !math.isfinite(minimumDistanceFromPlayer) ||
@@ -326,7 +353,7 @@ namespace Hecton8.World
                 for (int x = 0; x < _ecosystemThreatGridResolution; x++)
                 {
                     int index = (z * _ecosystemThreatGridResolution) + x;
-                    float threat = _nativeMemory.EcosystemThreatGridCurrentNative[index];
+                    float threat = threatGrid[index];
                     if (threat <= bestThreat || !math.isfinite(threat))
                         continue;
 

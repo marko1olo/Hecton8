@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — OxygenPlant.cs
-// Brain Coral equivalent — releases oxygen bubbles at regular intervals.
+// Life-support vent prop - releases oxygen bubbles at regular intervals.
 //
 // ARCHITECTURE:
 //   • Standalone prop — uses ITickable via GameTickManager (no Update).
@@ -26,8 +26,8 @@ using UnityEngine;
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// Oxygen-producing plant that releases bubbles at regular intervals.
-    /// Subnautica Brain Coral equivalent.
+    /// Oxygen-producing life-support growth that releases bubbles at regular intervals.
+    /// Uses a predictable cadence so oxygen is an instrument-readable route resource.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class OxygenPlant : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener

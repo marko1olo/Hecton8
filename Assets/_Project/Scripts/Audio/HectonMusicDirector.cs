@@ -18,6 +18,7 @@ namespace Hecton8.Audio
     public sealed class HectonMusicDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001HectonMusicDirectorSignalPushDropCount;
+        private static HectonMusicDirector s_activeRuntimeInstance;
         private enum PlaybackState : byte
         {
             Silent = 0,
@@ -42,6 +43,7 @@ namespace Hecton8.Audio
         private const float StormDepthAttenuationInv = 0.008333333f;
         private const float AuthoredPressureRangeInv = 0.25f;
         private const float Random24ToUnit = 0.000000059604648f;
+        private const double AupRuntimeFloatClampMeters = 3.4028234663852886E+38d;
         private static readonly bool ProceduralSynthOwnsMusicPlayback = true;
         private static readonly int _PredatorThreatLayerMask = HectonLayerMasks.CreatureLayerMask;
 
@@ -375,14 +377,14 @@ namespace Hecton8.Audio
         /// <summary>
         /// Global access to the music director.
         /// </summary>
-        public static HectonMusicDirector Instance => GlobalRegistry.MusicDirector;
+        public static HectonMusicDirector Instance => s_activeRuntimeInstance;
 
         /// <summary>
         /// Silent singleton probe for optional callers.
         /// </summary>
         public static bool TryGetInstance(out HectonMusicDirector instance)
         {
-            instance = GlobalRegistry.MusicDirector;
+            instance = s_activeRuntimeInstance;
             return instance != null;
         }
 
@@ -852,7 +854,13 @@ namespace Hecton8.Audio
 
         private bool TryRegisterToGlobalRegistry()
         {
-            if (_serviceRegistered || !Application.isPlaying)
+            if (_serviceRegistered)
+            {
+                s_activeRuntimeInstance = this;
+                return true;
+            }
+
+            if (!Application.isPlaying)
                 return true;
 
             HectonMusicDirector activeDirector = GlobalRegistry.MusicDirector;
@@ -864,6 +872,8 @@ namespace Hecton8.Audio
 
             GlobalRegistry.RegisterMusicDirectorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.MusicDirector, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
             return _serviceRegistered;
         }
 
@@ -873,6 +883,8 @@ namespace Hecton8.Audio
                 return;
 
             GlobalRegistry.UnregisterMusicDirectorRuntime(this);
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
             _serviceRegistered = false;
         }
 
@@ -914,7 +926,7 @@ namespace Hecton8.Audio
                 pool.Warmup(runtimeDirectorPrefab, 1);
 
             pool.Spawn(runtimeDirectorPrefab, Vector3.zero, Quaternion.identity);
-            return GlobalRegistry.MusicDirector != null;
+            return s_activeRuntimeInstance != null;
         }
 
         private static IObjectPoolService ResolveRuntimeObjectPool()
@@ -1416,7 +1428,15 @@ namespace Hecton8.Audio
             }
 
             AbsoluteUniversePosition playerAup = _playerMovement.CurrentAup;
-            float3 playerRuntime3 = playerAup.ToRuntimeFloat3();
+            if (!TryResolveRuntimeOriginRelativeFloat3(in playerAup, out float3 playerRuntime3))
+            {
+                _predatorProximity01 = 0f;
+                _debugPredatorProximity01 = 0f;
+                _debugStormPressure01 = _stormPressure01;
+                _debugOxygenDanger01 = _oxygenDanger01;
+                return;
+            }
+
             Vector3 playerRuntimePosition = new Vector3(playerRuntime3.x, playerRuntime3.y, playerRuntime3.z);
 
             if (WorldSpatialHashGrid.TryGetNearestAggressiveBioform(
@@ -1439,6 +1459,27 @@ namespace Hecton8.Audio
             _debugPredatorProximity01 = _predatorProximity01;
             _debugStormPressure01 = _stormPressure01;
             _debugOxygenDanger01 = _oxygenDanger01;
+        }
+
+        private static bool TryResolveRuntimeOriginRelativeFloat3(
+            in AbsoluteUniversePosition positionAup,
+            out float3 runtimePosition)
+        {
+            runtimePosition = default;
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!positionAup.IsFinite() || !originAup.IsFinite())
+                return false;
+
+            double3 deltaAup = AbsoluteUniversePosition.DeltaMetersClamped(in positionAup, in originAup);
+            double3 clampedDelta = math.clamp(
+                deltaAup,
+                new double3(-AupRuntimeFloatClampMeters),
+                new double3(AupRuntimeFloatClampMeters));
+            runtimePosition = new float3(
+                (float)clampedDelta.x,
+                (float)clampedDelta.y,
+                (float)clampedDelta.z);
+            return math.all(math.isfinite(runtimePosition));
         }
 
         private void UpdateLayerRouting(float deltaTime)

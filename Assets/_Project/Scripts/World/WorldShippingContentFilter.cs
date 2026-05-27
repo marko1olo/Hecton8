@@ -83,9 +83,11 @@ namespace Hecton8.World
 
             Scene scene = target.gameObject.scene;
             EnsureSuppressionCacheForScene(scene);
-            HashSet<EntityId> suppressedHierarchyIds = GetSuppressedHierarchyIds(scene, createIfMissing: false);
-            if (suppressedHierarchyIds == null || suppressedHierarchyIds.Count == 0)
+            if (!TryGetSuppressedHierarchyIds(scene, out HashSet<EntityId> suppressedHierarchyIds) ||
+                suppressedHierarchyIds.Count == 0)
+            {
                 return false;
+            }
 
             Transform current = target;
             while (current != null)
@@ -115,8 +117,8 @@ namespace Hecton8.World
                 return 0;
 
             PrimeSuppressionCacheForScene(scene);
-            HashSet<EntityId> suppressedHierarchyIds = GetSuppressedHierarchyIds(scene, createIfMissing: false);
-            if (suppressedHierarchyIds == null || suppressedHierarchyIds.Count == 0)
+            if (!TryGetSuppressedHierarchyIds(scene, out HashSet<EntityId> suppressedHierarchyIds) ||
+                suppressedHierarchyIds.Count == 0)
             {
                 rootObjects.Clear();
                 traversalStack.Clear();
@@ -193,18 +195,18 @@ namespace Hecton8.World
             PrimeSuppressionCacheForScene(scene);
         }
 
-        private static HashSet<EntityId> GetSuppressedHierarchyIds(Scene scene, bool createIfMissing)
+        private static bool TryGetSuppressedHierarchyIds(Scene scene, out HashSet<EntityId> suppressedHierarchyIds)
         {
-            return GetSuppressedHierarchyIds(scene.handle.GetRawData(), createIfMissing);
+            suppressedHierarchyIds = null;
+            return scene.IsValid() &&
+                   _suppressedHierarchyIdsByScene.TryGetValue(scene.handle.GetRawData(), out suppressedHierarchyIds) &&
+                   suppressedHierarchyIds != null;
         }
 
-        private static HashSet<EntityId> GetSuppressedHierarchyIds(ulong sceneHandle, bool createIfMissing)
+        private static HashSet<EntityId> EnsureSuppressedHierarchyIds(ulong sceneHandle)
         {
             if (_suppressedHierarchyIdsByScene.TryGetValue(sceneHandle, out HashSet<EntityId> suppressedHierarchyIds))
                 return suppressedHierarchyIds;
-
-            if (!createIfMissing)
-                return null;
 
             // COLD ALLOC: HashSet<EntityId>[32] â€” per-scene suppression membership cache â€” owner: WorldShippingContentFilter
             suppressedHierarchyIds = new HashSet<EntityId>(32);
@@ -223,7 +225,7 @@ namespace Hecton8.World
             if (_primedSceneHandles.Contains(sceneHandle))
                 return;
 
-            HashSet<EntityId> suppressedHierarchyIds = GetSuppressedHierarchyIds(sceneHandle, createIfMissing: true);
+            HashSet<EntityId> suppressedHierarchyIds = EnsureSuppressedHierarchyIds(sceneHandle);
             suppressedHierarchyIds.Clear();
 
             _cacheRootObjects.Clear();

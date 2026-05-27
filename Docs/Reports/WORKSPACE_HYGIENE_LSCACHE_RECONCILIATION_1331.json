@@ -1,0 +1,539 @@
+﻿{
+    "agent_id":  "1331",
+    "evidence_class":  "STATIC_FS_RECONCILIATION",
+    "generated_utc":  "2026-05-26T14:25:32Z",
+    "root":  "C:\\hades\\Hecton8",
+    "excluded_paths":  [
+                           "Assets/_Project/Scripts",
+                           "Assets/Project/Scripts"
+                       ],
+    "online_research_basis":  [
+                                  "Unity Asset Metadata: .meta files carry asset GUID/import settings and orphaning breaks references",
+                                  "Unity Special folder names: Unity ignores .tmp and dot-prefixed files inside Assets",
+                                  "C# Dev Kit .lscache header: language-service cache, safe to delete, regenerated automatically"
+                              ],
+    "apply_timeout_note":  "The narrow apply deleted files but the shell tool timed out before replacing the historical action log; this report reconciles deletion from git status and HEAD blobs.",
+    "lscache_deleted_count":  54,
+    "lscache_deleted_bytes":  1175114,
+    "orphan_meta_deleted":  0,
+    "recovery_dirs_deleted":  0,
+    "archive_moves":  0,
+    "post_verify_counts":  {
+                               "archive_moves":  0,
+                               "meta_scanned":  12003,
+                               "orphan_meta":  0,
+                               "recovery_dirs":  0,
+                               "root_unrouted":  0,
+                               "scan_elapsed_microseconds":  91007192,
+                               "temp_files":  0
+                           },
+    "boundary_audit":  {
+                           "forbidden_paths":  [
+                                                   "Assets/_Project/Scripts",
+                                                   "Assets/Project/Scripts"
+                                               ],
+                           "violations":  [
+
+                                          ],
+                           "passed":  true
+                       },
+    "command_purity":  {
+                           "dotnet_build_invoked":  false,
+                           "msbuild_invoked":  false,
+                           "unity_batchmode_invoked":  false,
+                           "unity_editor_invoked":  false
+                       },
+    "tracked_ignored_policy_debt":  {
+                                        "codex_artifacts_tracked_ignored_count":  325,
+                                        "disposition":  "left untouched; evidence/artifact directory outside Unity AssetDatabase and potentially used by other agents"
+                                    },
+    "actions":  [
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "AmplifyImpostors.Editor.csproj.lscache",
+                        "size_bytes":  20973,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "e15e3c5869a952e3f12d96c2cc841b03a158c9fe"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "AmplifyImpostors.Runtime.csproj.lscache",
+                        "size_bytes":  20761,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "832a5c95a5591e9e6e6e7773070729456cf2692b"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "AstarPathfindingProject.csproj.lscache",
+                        "size_bytes":  23825,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "d7bcba11f1ae882f53c94516872bebcebb715216"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "AstarPathfindingProjectEditor.csproj.lscache",
+                        "size_bytes":  21662,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "978b58a0b3b9cbd81cbd77f314b36ad5ac6d4939"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "BakeryEditorAssembly.csproj.lscache",
+                        "size_bytes":  21639,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "5db1f0681fc4e044d169293c8cda643196593f79"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "BakeryRuntimeAssembly.csproj.lscache",
+                        "size_bytes":  20956,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "1e6f1110e5b6c0dcc1244295f04081cc5db4e121"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Crest.Helpers.Editor.csproj.lscache",
+                        "size_bytes":  21028,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "e5f2e0315ba989d9cb50df1311ae25135784e8d6"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Crest.csproj.lscache",
+                        "size_bytes":  23933,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "7c3fc6a200927525a7290185d0f7b4fc318ffaf7"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Den.Tools.Editor.csproj.lscache",
+                        "size_bytes":  21265,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "923ae49969ccdc4016f96b44fe8f877b715bf229"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Den.Tools.csproj.lscache",
+                        "size_bytes":  21484,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "998311e4a6f3e4d21af94a8caf25dbc255cbce73"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "EasySave3.csproj.lscache",
+                        "size_bytes":  24577,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "bf291e1b46d7d0510f059711ea5285c08c71ab40"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "EasySave3Editor.csproj.lscache",
+                        "size_bytes":  21221,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "cfbc82b04901b05168ba58333de197a83f6f42cd"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "GPUInstancer.Editor.csproj.lscache",
+                        "size_bytes":  21538,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "696d268e9eb3132925be4df5241b14185f6564f2"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "GPUInstancer.csproj.lscache",
+                        "size_bytes":  21965,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "d14a09c06653a0bfa02b95ff1bfe61267170efe9"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Hecton8.Bootstrap.Contracts.csproj.lscache",
+                        "size_bytes":  20675,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "66865edde120c17c72796441b90491f8bf295b5b"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Hecton8.Input.Generated.csproj.lscache",
+                        "size_bytes":  20617,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "71f1d982ac7970555b598a03e0b8a80e89aa7ccf"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Hecton8.Input.csproj.lscache",
+                        "size_bytes":  20661,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "20fcc094ede404201595b24f22a8c2c148179de2"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Hecton8.World.Contracts.csproj.lscache",
+                        "size_bytes":  20728,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "5faea0dcae1d00af7e673706327e5f8f14bed9c8"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Hecton8.World.Dots.csproj.lscache",
+                        "size_bytes":  21220,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "66190bc102911ff2f6115c46ee98021fe90eee65"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "JBooth.MicroSplat.Core.Editor.csproj.lscache",
+                        "size_bytes":  19819,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "86729c6afd9a7734c1c1a321fc46a3bc1db01cb5"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "JBooth.MicroSplat.Core.csproj.lscache",
+                        "size_bytes":  18667,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "1e04268af226540f7ba60beb95be8e00debd4834"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Lofelt.NiceVibrations.Demo.csproj.lscache",
+                        "size_bytes":  21535,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "4593302c5840499a936764076619b1e3f806571d"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Lofelt.NiceVibrations.Editor.csproj.lscache",
+                        "size_bytes":  20918,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "cd12c45d8369abc060e9cd3e584b7e1cf9363e81"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Lofelt.NiceVibrations.csproj.lscache",
+                        "size_bytes":  20900,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "8b092d80dba05dece33e1f1fa54fc74656e95872"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MapMagic.Editor.csproj.lscache",
+                        "size_bytes":  22007,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "58913233e39b8e4d40666c0cb74f40a0c9cc4969"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MapMagic.MicroSplat.Editor.csproj.lscache",
+                        "size_bytes":  21062,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "8c75dca932b456f3a1135496269f397c9b2e0340"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MapMagic.MicroSplat.csproj.lscache",
+                        "size_bytes":  19755,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "9b0670378f75ed7e141509a43c48bdb09b662abc"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MapMagic.Settings.csproj.lscache",
+                        "size_bytes":  20748,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "70ad959a8e8bf751d857aa62c036137bb7ac0d89"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MapMagic.csproj.lscache",
+                        "size_bytes":  22061,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "b62fac7d8034bb066c52eabd38808330bcb11804"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MeshBakerCore.csproj.lscache",
+                        "size_bytes":  20846,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "6a627a8a37bc12a950a55f067e65ba365e484c09"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MeshBakerEditor.csproj.lscache",
+                        "size_bytes":  22107,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "c04d266ddf0229c9b45d49f1cddaf55a6c088470"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MoreMountains.Feedbacks.Authorizations.csproj.lscache",
+                        "size_bytes":  21191,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "da6eeb75d4a0c7a5d6914b8a2a6207cb1457fe4c"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MoreMountains.Feedbacks.Cinemachine.csproj.lscache",
+                        "size_bytes":  21499,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "e327f33e3be0f6182d905d5d14e53ac5152ca585"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MoreMountains.Feedbacks.Editor.csproj.lscache",
+                        "size_bytes":  21431,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "8dd29db43622cafa55c0613c814f34e3a6b09dc7"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MoreMountains.Feedbacks.HDRP.csproj.lscache",
+                        "size_bytes":  21980,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "1e871b31a132bb364cf7fb048cbc37284059322b"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MoreMountains.Feedbacks.MMTools.csproj.lscache",
+                        "size_bytes":  22766,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "201e6fa7368b7e19446413e79532f40a5ab366e6"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MoreMountains.Feedbacks.NiceVibrations.csproj.lscache",
+                        "size_bytes":  21235,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "2188814ee86a60a7c263126dcb8562e3b3744c18"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MoreMountains.Feedbacks.PostProcessing.csproj.lscache",
+                        "size_bytes":  21612,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "58c9a21c147399c20cf83150e96c56583d5c91f3"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MoreMountains.Feedbacks.TextMeshPro.csproj.lscache",
+                        "size_bytes":  21750,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "67801c9e7feba967e0db8932d5fee4db031c35b3"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MoreMountains.Feedbacks.URP.csproj.lscache",
+                        "size_bytes":  22072,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "86b846271bd92045181498eef9d8a28f01fb45e9"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MoreMountains.Feedbacks.csproj.lscache",
+                        "size_bytes":  25393,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "1faa63d38ba783c295e0765d95a5f345e56943c3"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MoreMountains.Tools.Editor.csproj.lscache",
+                        "size_bytes":  22889,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "e3bb0d97763d97e1378a3b3b10003911ae0aebef"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "MoreMountains.Tools.csproj.lscache",
+                        "size_bytes":  29677,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "ef8852bd87aeae226a70f183229ca6a90638fadf"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "PackageToolsEditor.csproj.lscache",
+                        "size_bytes":  20877,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "2e45facf3a93e5a5e4c365386f2183712fdf47ae"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "RealtimeCSG.csproj.lscache",
+                        "size_bytes":  26254,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "63efdfc3ecc6a540b07755f2f6d738b18fd4e5c0"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "ShapesEditor.csproj.lscache",
+                        "size_bytes":  21921,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "9d9d4347902953ea963a7f5d5e2b264ee2aa2fda"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "ShapesRuntime.csproj.lscache",
+                        "size_bytes":  22580,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "6e51459c14862e5c676822ee6b7cd97d06dac100"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Sirenix.OdinInspector.Modules.UnityMathematics.csproj.lscache",
+                        "size_bytes":  21042,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "b6ebf1db278e1d54f4027723e883a18eef2062dc"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Tayx.Graphy.Editor.csproj.lscache",
+                        "size_bytes":  20911,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "b5ed5fc65a437db836519e759568b80d0ebce0be"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Tayx.Graphy.csproj.lscache",
+                        "size_bytes":  21050,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "eb0faa9eb64d3e4603d6025fd7c28630bfc6494f"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "Technie.PhysicsCreator.Updater.csproj.lscache",
+                        "size_bytes":  20868,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "eeb1d9b4fe0a16cde852b1f62ae80a8298cb168e"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "TechniePhysicsCreator.csproj.lscache",
+                        "size_bytes":  21459,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "38cfb0e96b0ced2ea18a440bd60d39846d6ce4ff"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "VolumetricLightBeam.Editor.csproj.lscache",
+                        "size_bytes":  21826,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "30c06a363d575018278efd10fd020774b2b6f45a"
+                    },
+                    {
+                        "type":  "DELETE_FILE",
+                        "path":  "VolumetricLightBeam.csproj.lscache",
+                        "size_bytes":  21678,
+                        "reason":  "root_lscache_language_service_cache",
+                        "status":  "RECONCILED_DELETED_ON_DISK",
+                        "evidence":  "git ls-files -d plus Test-Path false; blob size from HEAD",
+                        "blob_sha1":  "d5fde3dc198959e26d20f788513f012d7afc7f24"
+                    }
+                ],
+    "report_sha256":  "d96ab278275dd3cdfba3f686d5cfa74130e3500a5d76d46c2f575d870f0e2d11"
+}

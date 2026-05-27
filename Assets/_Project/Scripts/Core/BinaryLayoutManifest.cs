@@ -794,11 +794,17 @@ namespace Hecton8.Core
         {
             string world = WorldLayoutNamespace;
             string poolSlot = world + "PoolSlotData";
-            AssertSize(poolSlot, 40);
+            AssertSize(poolSlot, 72);
             AssertOffset(poolSlot, "BoundGuid", 0);
-            AssertOffset(poolSlot, "AupCell", 8);
-            AssertOffset(poolSlot, "LocalOffset", 20);
-            AssertOffset(poolSlot, "HydrationFrame", 32);
+            AssertOffset(poolSlot, "GridX", 8);
+            AssertOffset(poolSlot, "GridY", 16);
+            AssertOffset(poolSlot, "GridZ", 24);
+            AssertOffset(poolSlot, "LocalOffset", 32);
+            AssertOffset(poolSlot, "HydrationFrame", 44);
+            AssertOffset(poolSlot, "RefCount", 46);
+            AssertOffset(poolSlot, "StateFlags", 47);
+            AssertOffset(poolSlot, "StableFrames", 48);
+            AssertOffset(poolSlot, "LastVisibleFrame", 50);
 
             string entity = world + "EntityDataRecord";
             AssertSize(entity, 64);
@@ -811,8 +817,11 @@ namespace Hecton8.Core
             string tombstone = world + "ResourceNodeTombstoneRecord";
             AssertSize(tombstone, 80);
             AssertOffset(tombstone, "TombstoneId", 0);
-            AssertOffset(tombstone, "Position", 16);
-            AssertOffset(tombstone, "ChunkId", 64);
+            AssertOffset(tombstone, "Position", 8);
+            AssertOffset(tombstone, "ChunkId", 56);
+            AssertOffset(tombstone, "InstanceUid", 68);
+            AssertOffset(tombstone, "Reserved0", 72);
+            AssertOffset(tombstone, "Reserved1", 76);
 
             string item = world + "PersistentWorldItemRecord";
             AssertSize(item, 256);
@@ -824,11 +833,25 @@ namespace Hecton8.Core
             AssertOffset(item, "InstanceUid", 200);
             AssertOffset(item, "Flags", 204);
 
+            string delta = world + "PersistentWorldDeltaRecord";
+            AssertSize(delta, 64);
+            AssertOffset(delta, "ItemPersistentIdHash", 0);
+            AssertOffset(delta, "ChunkId", 8);
+            AssertOffset(delta, "InstanceUid", 20);
+            AssertOffset(delta, "PackedLocalPosition", 24);
+            AssertOffset(delta, "Quantity", 28);
+            AssertOffset(delta, "ItemFlags", 30);
+            AssertOffset(delta, "Reserved", 31);
+
             string compact = world + "PersistentWorldCompactDeltaRecord";
             AssertSize(compact, 16);
             AssertOffset(compact, "PackedLocalPosition", 0);
+            AssertOffset(compact, "InstanceUid", 4);
             AssertOffset(compact, "Quantity", 8);
+            AssertOffset(compact, "ItemFlags", 10);
+            AssertOffset(compact, "Reserved", 11);
             AssertOffset(compact, "ChunkIndex", 12);
+            AssertOffset(compact, "ItemHashIndex", 14);
         }
 
         private static void VerifySignalLayouts()

@@ -1,0 +1,28 @@
+﻿{
+    "schema":  "hecton8.aup_determinism_reaudit35.v1",
+    "agentId":  "1325",
+    "scannedFiles":  4,
+    "findingCount":  0,
+    "findings":  [
+
+                 ],
+    "invalidDimensionClampHits":  [
+
+                                  ],
+    "bridgeProof":  {
+                        "resolveCameraRelativeRejectsInvalidAup":  true,
+                        "toRuntimeFloat3RejectsInvalidAup":  true,
+                        "weightedAupAverageRejectsNonFiniteWeight":  true,
+                        "weightedAverageUsesAnchoredDelta":  true,
+                        "snapshotWriterReturnChecked":  true,
+                        "snapshotDeltaPrevalidatesBeforeNativeAllocation":  true,
+                        "sectorCommitStateMutatesOnMainThread":  true,
+                        "invalidChunkDimensionsFailClosed":  true
+                    },
+    "notes":  [
+                  "Reaudit35 fixed the resident-sector snapshot boolean-return blind spot and prevalidates delta/entity-state sector ownership before TempJob arrays are allocated.",
+                  "Sector override commit now captures main-thread work items before background IO and reconciles _sectorOverrideStates only after MainThreadAsync.",
+                  "No direct absolute-AUP-to-float3 cast or invalid chunk-dimension clamp pattern was found in touched bridge files."
+              ],
+    "generatedAtUtc":  "2026-05-27T12:48:34.5342272Z"
+}

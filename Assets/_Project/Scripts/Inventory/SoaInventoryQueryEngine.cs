@@ -4,6 +4,7 @@ namespace Hecton8.Inventory
     using System.IO;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
+    using System.Reflection;
     using System.Threading;
     using Hecton8.Core.Memory;
     using Unity.Burst;
@@ -22,7 +23,14 @@ namespace Hecton8.Inventory
         [FieldOffset(12)] public uint MatchCount;
         [FieldOffset(16)] public int ActiveSlotCount;
         [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] public ulong Reserved0;
+        [FieldOffset(24)] private byte _pad0;
+        [FieldOffset(25)] private byte _pad1;
+        [FieldOffset(26)] private byte _pad2;
+        [FieldOffset(27)] private byte _pad3;
+        [FieldOffset(28)] private byte _pad4;
+        [FieldOffset(29)] private byte _pad5;
+        [FieldOffset(30)] private byte _pad6;
+        [FieldOffset(31)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -54,41 +62,74 @@ namespace Hecton8.Inventory
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct InventorySoaTelemetryEntry
     {
-        [FieldOffset(0)] public uint Frame;
-        [FieldOffset(4)] public uint TargetHashID;
-        [FieldOffset(8)] public int FirstIndex;
-        [FieldOffset(12)] public uint QuantityTotal;
-        [FieldOffset(16)] public uint MatchCount;
-        [FieldOffset(20)] public int ActiveSlotCount;
-        [FieldOffset(24)] public int Capacity;
-        [FieldOffset(28)] public float EstimatedMicroseconds;
-        [FieldOffset(32)] public float GlobalQualityWeight;
-        [FieldOffset(36)] public uint Flags;
-        [FieldOffset(40)] public int MutationIndex;
-        [FieldOffset(44)] public int MutationDelta;
-        [FieldOffset(48)] public ulong LayoutHash;
-        [FieldOffset(56)] public ulong Reserved0;
+        [FieldOffset(0)] public ulong LayoutHash;
+        [FieldOffset(8)] public ulong Reserved0;
+        [FieldOffset(16)] public uint Frame;
+        [FieldOffset(20)] public uint TargetHashID;
+        [FieldOffset(24)] public int FirstIndex;
+        [FieldOffset(28)] public uint QuantityTotal;
+        [FieldOffset(32)] public uint MatchCount;
+        [FieldOffset(36)] public int ActiveSlotCount;
+        [FieldOffset(40)] public int Capacity;
+        [FieldOffset(44)] public float EstimatedMicroseconds;
+        [FieldOffset(48)] public float GlobalQualityWeight;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public int MutationIndex;
+        [FieldOffset(60)] public int MutationDelta;
     }
 
-    public struct InventorySoaVaultLane<T> where T : struct
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    public struct InventorySoaVaultLane
     {
-        public VaultGenerationHandle<T> Handle;
+        [FieldOffset(0)]
+        public uint BufferID;
+
+        [FieldOffset(4)]
+        public uint SystemID;
+
+        [FieldOffset(8)]
+        public uint Generation;
+
+        [FieldOffset(12)]
+        public uint Flags;
+
+        [FieldOffset(16)]
         public uint ExpectedBufferID;
+
+        [FieldOffset(20)]
         public int Length;
+
+        public void SetHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            BufferID = handle.BufferID;
+            SystemID = handle.SystemID;
+            Generation = handle.Generation;
+            Flags = handle.Flags;
+        }
+
+        public VaultGenerationHandle<T> ToHandle<T>() where T : struct
+        {
+            VaultGenerationHandle<T> handle = default;
+            handle.BufferID = BufferID;
+            handle.SystemID = SystemID;
+            handle.Generation = Generation;
+            handle.Flags = Flags;
+            return handle;
+        }
     }
 
     public struct InventorySoaVaultHandles
     {
-        public InventorySoaVaultLane<uint> ItemHashIDs;
-        public InventorySoaVaultLane<int> Quantities;
-        public InventorySoaVaultLane<float> Durabilities;
-        public InventorySoaVaultLane<int> ActiveSlotCount;
-        public InventorySoaVaultLane<InventorySoaTelemetryEntry> TelemetryRing;
-        public InventorySoaVaultLane<int> TelemetryCursor;
-        public InventorySoaVaultLane<InventoryCapacityProfileDTO> CapacityProfiles;
+        public InventorySoaVaultLane ItemHashIDs;
+        public InventorySoaVaultLane Quantities;
+        public InventorySoaVaultLane Durabilities;
+        public InventorySoaVaultLane ActiveSlotCount;
+        public InventorySoaVaultLane TelemetryRing;
+        public InventorySoaVaultLane TelemetryCursor;
+        public InventorySoaVaultLane CapacityProfiles;
     }
 
-    public struct InventorySoaVaultBuffers
+    public ref struct InventorySoaVaultBuffers
     {
         public NativeArray<uint> ItemHashIDs;
         public NativeArray<int> Quantities;
@@ -112,6 +153,7 @@ namespace Hecton8.Inventory
         public const uint DumpVersion = 1u;
         public const ulong LayoutHash = 0x5348494E4F425533UL; // SHINOBU3
         public const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_316.bin";
+        private const double FloatCastClampMeters = 3.4028234663852886e38d;
 
         public const uint ResultFound = 1u << 0;
         public const uint ResultInserted = 1u << 1;
@@ -129,9 +171,35 @@ namespace Hecton8.Inventory
         public static bool RuntimeLayoutValid()
         {
             return UnsafeUtility.SizeOf<InventorySoaQueryResultDTO>() == QueryResultDtoSizeBytes &&
+                   OffsetOf<InventorySoaQueryResultDTO>(nameof(InventorySoaQueryResultDTO.TargetHashID)) == 0 &&
+                   OffsetOf<InventorySoaQueryResultDTO>(nameof(InventorySoaQueryResultDTO.FirstIndex)) == 4 &&
+                   OffsetOf<InventorySoaQueryResultDTO>(nameof(InventorySoaQueryResultDTO.QuantityTotal)) == 8 &&
+                   OffsetOf<InventorySoaQueryResultDTO>(nameof(InventorySoaQueryResultDTO.MatchCount)) == 12 &&
+                   OffsetOf<InventorySoaQueryResultDTO>(nameof(InventorySoaQueryResultDTO.ActiveSlotCount)) == 16 &&
+                   OffsetOf<InventorySoaQueryResultDTO>(nameof(InventorySoaQueryResultDTO.Flags)) == 20 &&
                    UnsafeUtility.SizeOf<InventorySoaMutationResultDTO>() == MutationResultDtoSizeBytes &&
                    UnsafeUtility.SizeOf<InventoryCapacityProfileDTO>() == CapacityProfileDtoSizeBytes &&
-                   UnsafeUtility.SizeOf<InventorySoaTelemetryEntry>() == TelemetryEntrySizeBytes;
+                   UnsafeUtility.SizeOf<InventorySoaTelemetryEntry>() == TelemetryEntrySizeBytes &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.LayoutHash)) == 0 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.Reserved0)) == 8 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.Frame)) == 16 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.TargetHashID)) == 20 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.FirstIndex)) == 24 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.QuantityTotal)) == 28 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.MatchCount)) == 32 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.ActiveSlotCount)) == 36 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.Capacity)) == 40 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.EstimatedMicroseconds)) == 44 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.GlobalQualityWeight)) == 48 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.Flags)) == 52 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.MutationIndex)) == 56 &&
+                   OffsetOf<InventorySoaTelemetryEntry>(nameof(InventorySoaTelemetryEntry.MutationDelta)) == 60;
+        }
+
+        private static int OffsetOf<T>(string fieldName) where T : struct
+        {
+            FieldInfo field = typeof(T).GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            return field != null ? UnsafeUtility.GetFieldOffset(field) : -1;
         }
 
         public static InventorySoaVaultHandles EnsureVaultBuffers(
@@ -199,13 +267,13 @@ namespace Hecton8.Inventory
             if (vault == null)
                 return false;
 
-            buffers.ItemHashIDs = OpenLane(vault, in handles.ItemHashIDs);
-            buffers.Quantities = OpenLane(vault, in handles.Quantities);
-            buffers.Durabilities = OpenLane(vault, in handles.Durabilities);
-            buffers.ActiveSlotCount = OpenLane(vault, in handles.ActiveSlotCount);
-            buffers.TelemetryRing = OpenLane(vault, in handles.TelemetryRing);
-            buffers.TelemetryCursor = OpenLane(vault, in handles.TelemetryCursor);
-            buffers.CapacityProfiles = OpenLane(vault, in handles.CapacityProfiles);
+            buffers.ItemHashIDs = OpenLane<uint>(vault, in handles.ItemHashIDs);
+            buffers.Quantities = OpenLane<int>(vault, in handles.Quantities);
+            buffers.Durabilities = OpenLane<float>(vault, in handles.Durabilities);
+            buffers.ActiveSlotCount = OpenLane<int>(vault, in handles.ActiveSlotCount);
+            buffers.TelemetryRing = OpenLane<InventorySoaTelemetryEntry>(vault, in handles.TelemetryRing);
+            buffers.TelemetryCursor = OpenLane<int>(vault, in handles.TelemetryCursor);
+            buffers.CapacityProfiles = OpenLane<InventoryCapacityProfileDTO>(vault, in handles.CapacityProfiles);
             return buffers.ItemHashIDs.IsCreated &&
                    buffers.Quantities.IsCreated &&
                    buffers.Durabilities.IsCreated &&
@@ -224,13 +292,13 @@ namespace Hecton8.Inventory
             if (vault == null)
                 return false;
 
-            buffers.ItemHashIDs = ReadLane(vault, in handles.ItemHashIDs);
-            buffers.Quantities = ReadLane(vault, in handles.Quantities);
-            buffers.Durabilities = ReadLane(vault, in handles.Durabilities);
-            buffers.ActiveSlotCount = ReadLane(vault, in handles.ActiveSlotCount);
-            buffers.TelemetryRing = ReadLane(vault, in handles.TelemetryRing);
-            buffers.TelemetryCursor = ReadLane(vault, in handles.TelemetryCursor);
-            buffers.CapacityProfiles = ReadLane(vault, in handles.CapacityProfiles);
+            buffers.ItemHashIDs = ReadLane<uint>(vault, in handles.ItemHashIDs);
+            buffers.Quantities = ReadLane<int>(vault, in handles.Quantities);
+            buffers.Durabilities = ReadLane<float>(vault, in handles.Durabilities);
+            buffers.ActiveSlotCount = ReadLane<int>(vault, in handles.ActiveSlotCount);
+            buffers.TelemetryRing = ReadLane<InventorySoaTelemetryEntry>(vault, in handles.TelemetryRing);
+            buffers.TelemetryCursor = ReadLane<int>(vault, in handles.TelemetryCursor);
+            buffers.CapacityProfiles = ReadLane<InventoryCapacityProfileDTO>(vault, in handles.CapacityProfiles);
             return buffers.ItemHashIDs.IsCreated &&
                    buffers.Quantities.IsCreated &&
                    buffers.ActiveSlotCount.IsCreated;
@@ -567,8 +635,18 @@ namespace Hecton8.Inventory
             if (!math.all(math.isfinite(dropAup)) || !math.all(math.isfinite(runtime)))
                 return false;
 
-            runtimePosition = new float3((float)runtime.x, (float)runtime.y, (float)runtime.z);
+            runtimePosition = ClampAupDeltaToFloat3(runtime);
             return math.all(math.isfinite(runtimePosition));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ClampAupDeltaToFloat3(double3 deltaAup)
+        {
+            float3 result = default;
+            result.x = (float)math.clamp(deltaAup.x, -FloatCastClampMeters, FloatCastClampMeters);
+            result.y = (float)math.clamp(deltaAup.y, -FloatCastClampMeters, FloatCastClampMeters);
+            result.z = (float)math.clamp(deltaAup.z, -FloatCastClampMeters, FloatCastClampMeters);
+            return result;
         }
 
         public static bool TryParseCapacityProfiles(
@@ -636,13 +714,25 @@ namespace Hecton8.Inventory
 
                 return true;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
             {
                 return false;
             }
         }
 
-        private static InventorySoaVaultLane<T> AcquireLane<T>(
+        private static InventorySoaVaultLane AcquireLane<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
@@ -661,24 +751,24 @@ namespace Hecton8.Inventory
             if (handle.BufferID != expectedBufferId || handle.Generation == 0u)
                 return default;
 
-            return new InventorySoaVaultLane<T>
-            {
-                Handle = handle,
-                ExpectedBufferID = expectedBufferId,
-                Length = requiredLength
-            };
+            InventorySoaVaultLane lane = default;
+            lane.SetHandle(in handle);
+            lane.ExpectedBufferID = expectedBufferId;
+            lane.Length = requiredLength;
+            return lane;
         }
 
         private static NativeArray<T> OpenLane<T>(
             IDataVault vault,
-            in InventorySoaVaultLane<T> lane) where T : struct
+            in InventorySoaVaultLane lane) where T : struct
         {
+            VaultGenerationHandle<T> handle = lane.ToHandle<T>();
             if (vault == null ||
                 lane.ExpectedBufferID == 0u ||
-                lane.Handle.BufferID != lane.ExpectedBufferID ||
-                lane.Handle.Generation == 0u ||
+                lane.BufferID != lane.ExpectedBufferID ||
+                lane.Generation == 0u ||
                 lane.Length <= 0 ||
-                !vault.TryResolveHandle(in lane.Handle, out NativeArray<T> buffer) ||
+                !vault.TryResolveHandle(in handle, out NativeArray<T> buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < lane.Length)
             {
@@ -690,14 +780,15 @@ namespace Hecton8.Inventory
 
         private static NativeArray<T> ReadLane<T>(
             IDataVault vault,
-            in InventorySoaVaultLane<T> lane) where T : struct
+            in InventorySoaVaultLane lane) where T : struct
         {
+            VaultGenerationHandle<T> handle = lane.ToHandle<T>();
             if (vault == null ||
                 lane.ExpectedBufferID == 0u ||
-                lane.Handle.BufferID != lane.ExpectedBufferID ||
-                lane.Handle.Generation == 0u ||
+                lane.BufferID != lane.ExpectedBufferID ||
+                lane.Generation == 0u ||
                 lane.Length <= 0 ||
-                !vault.TryReadHandle(in lane.Handle, out NativeArray<T> buffer) ||
+                !vault.TryReadHandle(in handle, out NativeArray<T> buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < lane.Length)
             {
@@ -1316,15 +1407,14 @@ namespace Hecton8.Inventory
                     out uint matchCount,
                     out uint flags);
 
-                Results[ResultIndex] = new InventorySoaQueryResultDTO
-                {
-                    TargetHashID = TargetHashID,
-                    FirstIndex = firstIndex,
-                    QuantityTotal = quantityTotal,
-                    MatchCount = matchCount,
-                    ActiveSlotCount = active,
-                    Flags = flags
-                };
+                InventorySoaQueryResultDTO result = default;
+                result.TargetHashID = TargetHashID;
+                result.FirstIndex = firstIndex;
+                result.QuantityTotal = quantityTotal;
+                result.MatchCount = matchCount;
+                result.ActiveSlotCount = active;
+                result.Flags = flags;
+                Results[ResultIndex] = result;
             }
         }
 
@@ -1356,15 +1446,14 @@ namespace Hecton8.Inventory
                     out uint matchCount,
                     out uint flags);
 
-                Results[index] = new InventorySoaQueryResultDTO
-                {
-                    TargetHashID = targetHash,
-                    FirstIndex = firstIndex,
-                    QuantityTotal = quantityTotal,
-                    MatchCount = matchCount,
-                    ActiveSlotCount = active,
-                    Flags = flags
-                };
+                InventorySoaQueryResultDTO result = default;
+                result.TargetHashID = targetHash;
+                result.FirstIndex = firstIndex;
+                result.QuantityTotal = quantityTotal;
+                result.MatchCount = matchCount;
+                result.ActiveSlotCount = active;
+                result.Flags = flags;
+                Results[index] = result;
             }
         }
 

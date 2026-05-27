@@ -14,7 +14,6 @@ namespace Hecton8.Gameplay
     internal static class ToolHitUtility
     {
         private static int s_x001ToolHitUtilitySignalPushDropCount;
-        private const int MaxParentResolveDepth = 32;
         private static HUDNotification s_notification;
         private static PlayerToolManager s_playerToolManager;
         private static IPhysicsService s_physicsService;
@@ -149,24 +148,34 @@ namespace Hecton8.Gameplay
             if (hitCollider == null)
                 return false;
 
-            if (hitCollider.TryGetComponent(out cuttable))
-                return true;
-
-            return TryFindParentComponentBounded(hitCollider.transform, out cuttable);
+            return TryResolveCachedCuttable(hitCollider, out cuttable);
         }
 
-        private static bool TryFindParentComponentBounded<T>(Transform start, out T component)
+        private static bool TryResolveCachedCuttable(Collider hitCollider, out ICuttable cuttable)
         {
-            component = default;
-            Transform current = start != null ? start.parent : null;
-            int depth = 0;
-            while (current != null && depth < MaxParentResolveDepth)
+            cuttable = null;
+            if (hitCollider == null ||
+                !InteractableRegistry.TryResolve(hitCollider, out InteractableRegistry.TargetInfo targetInfo))
             {
-                if (current.TryGetComponent(out component))
-                    return true;
+                return false;
+            }
 
-                current = current.parent;
-                depth++;
+            if (targetInfo.Cuttable != null)
+            {
+                cuttable = targetInfo.Cuttable;
+                return true;
+            }
+
+            if (targetInfo.BaseModule is ICuttable moduleCuttable)
+            {
+                cuttable = moduleCuttable;
+                return true;
+            }
+
+            if (targetInfo.Interactable is ICuttable interactableCuttable)
+            {
+                cuttable = interactableCuttable;
+                return true;
             }
 
             return false;
@@ -182,9 +191,24 @@ namespace Hecton8.Gameplay
             if (hitCollider == null)
                 return false;
 
-            if (!hitCollider.TryGetComponent(out receiver))
-                TryFindParentComponentBounded(hitCollider.transform, out receiver);
+            return TryResolveCachedDamageReceiver(hitCollider, out receiver, out receiverComponent);
+        }
 
+        private static bool TryResolveCachedDamageReceiver(
+            Collider hitCollider,
+            out IDamageReceiver receiver,
+            out Component receiverComponent)
+        {
+            receiver = null;
+            receiverComponent = null;
+            if (hitCollider == null ||
+                !InteractableRegistry.TryResolve(hitCollider, out InteractableRegistry.TargetInfo targetInfo) ||
+                targetInfo.DamageReceiver == null)
+            {
+                return false;
+            }
+
+            receiver = targetInfo.DamageReceiver;
             receiverComponent = receiver as Component;
             return receiverComponent != null;
         }
@@ -307,10 +331,7 @@ namespace Hecton8.Gameplay
             if (hitCollider == null)
                 return false;
 
-            if (!hitCollider.TryGetComponent(out IInventoryPickupPreviewSource previewSource))
-                TryFindParentComponentBounded(hitCollider.transform, out previewSource);
-
-            if (previewSource == null)
+            if (!TryResolvePickupPreviewSource(hitCollider, out IInventoryPickupPreviewSource previewSource))
                 return false;
 
             return previewSource.TryPeekInventoryPickup(out itemData, out quantity);
@@ -323,10 +344,7 @@ namespace Hecton8.Gameplay
             if (hitCollider == null || interactor == null)
                 return false;
 
-            if (!hitCollider.TryGetComponent(out IInventoryPickupSource pickupSource))
-                TryFindParentComponentBounded(hitCollider.transform, out pickupSource);
-
-            if (pickupSource == null)
+            if (!TryResolvePickupSource(hitCollider, out IInventoryPickupSource pickupSource))
                 return false;
 
             if (pickupSource is IInventoryPickupPreviewSource previewSource)
@@ -339,6 +357,46 @@ namespace Hecton8.Gameplay
             return pickupSource.TryHandleInventoryPickup(inventory, interactor);
         }
 
+        private static bool TryResolvePickupPreviewSource(Collider hitCollider, out IInventoryPickupPreviewSource previewSource)
+        {
+            previewSource = null;
+            if (hitCollider == null)
+                return false;
+
+            if (InteractableRegistry.TryResolve(hitCollider, out InteractableRegistry.TargetInfo targetInfo))
+            {
+                if (targetInfo.PickupPreviewSource != null)
+                {
+                    previewSource = targetInfo.PickupPreviewSource;
+                    return true;
+                }
+
+                if (targetInfo.PickupSource is IInventoryPickupPreviewSource cachedPreviewSource)
+                {
+                    previewSource = cachedPreviewSource;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryResolvePickupSource(Collider hitCollider, out IInventoryPickupSource pickupSource)
+        {
+            pickupSource = null;
+            if (hitCollider == null)
+                return false;
+
+            if (InteractableRegistry.TryResolve(hitCollider, out InteractableRegistry.TargetInfo targetInfo) &&
+                targetInfo.PickupSource != null)
+            {
+                pickupSource = targetInfo.PickupSource;
+                return true;
+            }
+
+            return false;
+        }
+
         public static bool TryGetRigidbody(Collider hitCollider, out Rigidbody body)
         {
             body = null;
@@ -349,8 +407,7 @@ namespace Hecton8.Gameplay
             if (body != null)
                 return true;
 
-            TryFindParentComponentBounded(hitCollider.transform, out body);
-            return body != null;
+            return false;
         }
 
         public static void ApplyImpulse(Collider hitCollider, Vector3 direction, float impulse)

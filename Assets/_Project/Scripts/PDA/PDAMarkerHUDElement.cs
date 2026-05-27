@@ -315,8 +315,13 @@ namespace Hecton8.PDA
                 return;
             }
 
-            float3 markerRuntime = markerAup.ToRuntimeFloat3();
-            Vector3 screenPoint = _mainCamera.WorldToScreenPoint(new Vector3(markerRuntime.x, markerRuntime.y, markerRuntime.z));
+            if (!TryResolveRuntimePosition(in markerAup, out Vector3 markerRuntime))
+            {
+                SetDisplayVisible(display, false);
+                return;
+            }
+
+            Vector3 screenPoint = _mainCamera.WorldToScreenPoint(markerRuntime);
             if (screenPoint.z <= 0f)
             {
                 SetDisplayVisible(display, false);
@@ -505,6 +510,30 @@ namespace Hecton8.PDA
             uint estimateBits = (math.asuint(clampedSq) >> 1) + 0x1FC00000u;
             float estimate = math.asfloat(estimateBits);
             return 0.5f * (estimate + (clampedSq / math.max(estimate, 0.0001f)));
+        }
+
+        private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)
+        {
+            runtimePosition = default;
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            double3 localDelta = AupPrecisionMath.LocalDeltaDouble(
+                targetAup.ToAbsoluteDouble3(),
+                originAup.ToAbsoluteDouble3());
+
+            if (!math.all(math.isfinite(localDelta)))
+                return false;
+
+            double maxLocalCastMeters = AupPrecisionMath.DefaultMaxLocalCastMeters;
+            double3 clampedDelta = math.clamp(
+                localDelta,
+                new double3(-maxLocalCastMeters, -maxLocalCastMeters, -maxLocalCastMeters),
+                new double3(maxLocalCastMeters, maxLocalCastMeters, maxLocalCastMeters));
+            float3 local = new float3((float)clampedDelta.x, (float)clampedDelta.y, (float)clampedDelta.z);
+            if (!math.all(math.isfinite(local)))
+                return false;
+
+            runtimePosition = new Vector3(local.x, local.y, local.z);
+            return true;
         }
 
         private static int WriteDistanceLabel(int meters, char[] buffer)

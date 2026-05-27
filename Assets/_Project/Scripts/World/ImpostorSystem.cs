@@ -10,7 +10,7 @@
 //   • Stabilize impostor transitions with hysteresis and adaptive threshold scaling
 //
 // ARCHITECTURE:
-//   • GlobalRegistry.Impostors is the authoritative runtime lookup.
+//   • Owner-local Instance is the runtime lookup; GlobalRegistry is cold registration.
 //   • ITickable — registers with GameTickManager
 //   • Zero-GC — pre-allocated collections, struct-based data
 //   • Scene-owned fallback material derivation (no runtime Addressables dependency)
@@ -181,7 +181,8 @@ namespace Hecton8.World
         /// <summary>
         /// Registry-backed runtime instance. Null when the system is absent.
         /// </summary>
-        public static ImpostorSystem Instance => GlobalRegistry.Impostors;
+        private static ImpostorSystem s_activeRuntimeInstance;
+        public static ImpostorSystem Instance => s_activeRuntimeInstance;
 
         /// <summary>
         /// Count of currently active impostor instances.
@@ -201,6 +202,7 @@ namespace Hecton8.World
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_activeRuntimeInstance = null;
         }
 
         private void Awake()
@@ -300,6 +302,8 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterImpostorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Impostors, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -309,6 +313,9 @@ namespace Hecton8.World
 
             if (ReferenceEquals(GlobalRegistry.Impostors, this))
                 GlobalRegistry.UnregisterImpostorRuntime(this);
+
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
 
             _serviceRegistered = false;
         }
@@ -1127,8 +1134,13 @@ namespace Hecton8.World
             if (_distantGeologyBillboardShader != null)
                 return _distantGeologyBillboardShader;
 
+            Shader shader = null;
+            RuntimeShaderReferenceCatalog.TryGetGeologyImpostorBillboardShader(out shader);
+            if (shader != null)
+                return shader;
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Shader shader = Shader.Find("Hecton8/Environment/Hecton_GeologyImpostorBillboard");
+            shader = Shader.Find("Hecton8/Environment/Hecton_GeologyImpostorBillboard");
             if (shader != null)
                 return shader;
 #endif

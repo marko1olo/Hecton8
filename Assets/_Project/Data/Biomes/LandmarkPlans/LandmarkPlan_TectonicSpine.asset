@@ -19,6 +19,6 @@ MonoBehaviour:
   midReferenceShape: parallel ridge family and stepped breaks
   farReferenceShape: one giant spine line that tells direction immediately
   routeUse: Player should know forward and backward by the ridge line alone.
-  safePocketUse: Safe pockets appear on the protected side of the spine and in fracture
+  safePocketUse: Reorientation pockets appear on the protected side of the spine and in fracture
     bends.
   emotionalRead: Directional, severe, and dependable.

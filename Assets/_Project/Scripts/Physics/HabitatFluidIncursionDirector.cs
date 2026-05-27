@@ -187,16 +187,14 @@ namespace Hecton8.Physics
             baseMassKg = math.max(1f, baseMassKg);
         }
 
-        /// <summary>Schedules the deterministic scalar flood solver when quality-scaled cadence reaches its window.</summary>
+        /// <summary>Schedules the deterministic scalar flood solver when the authority cadence reaches its window.</summary>
         public void FixedTick(float fixedDeltaTime)
         {
             if (fixedDeltaTime <= 0f || _hasScheduled)
                 return;
 
             _simulationAccumulator = math.min(0.25f, _simulationAccumulator + fixedDeltaTime);
-            float solverQuality = ResolveGlobalQualityWeight();
-            float cadenceCurve = math.smoothstep(0f, 1f, solverQuality);
-            float solverWindowSeconds = math.lerp(0.2f, 0.016f, cadenceCurve);
+            float solverWindowSeconds = ResolveAuthoritySolverWindowSeconds();
             if (_simulationAccumulator + 0.00001f < solverWindowSeconds)
                 return;
             float solverDeltaTime = _simulationAccumulator;
@@ -259,7 +257,6 @@ namespace Hecton8.Physics
                 IncursionWriterBudget = SignalBus<FluidIncursionSignal>.ParallelWriterBudget,
                 CompartmentCount = safeCompartmentCount,
                 DeltaTime = solverDeltaTime,
-                GlobalQualityWeight = tuning.GlobalQualityWeight,
                 DischargeCoefficient = tuning.DischargeCoefficient,
                 MaxIngressPerSecondNormalized = tuning.MaxIngressPerSecondNormalized,
                 ExternalWaterlineAup = ResolveExternalWaterlineAup()
@@ -281,7 +278,7 @@ namespace Hecton8.Physics
                 CompartmentCount = safeCompartmentCount,
                 EdgeCount = math.min(_edgeCount, edgeDestinations.Length),
                 SolverIterations = tuning.SolverIterations,
-                MaxVisitedNodes = ResolveBfsNodeBudget(tuning.GlobalQualityWeight),
+                MaxVisitedNodes = ResolveAuthorityBfsNodeBudget(),
                 DeltaTime = solverDeltaTime,
                 TransferRate01PerSecond = tuning.TransferRate01PerSecond,
                 MaxTransferPerNodeM3 = tuning.MaxTransferPerNodeM3,
@@ -1042,7 +1039,7 @@ namespace Hecton8.Physics
                 AcousticMuffleGain = 1f,
                 StateHash = 0u,
                 Frame = unchecked((uint)_frame),
-                SolverIterations = ResolveSolverIterations(quality),
+                SolverIterations = ResolveAuthoritySolverIterations(),
                 CompartmentCount = (ushort)math.min(ushort.MaxValue, safeCount),
                 EdgeCount = (ushort)math.min(ushort.MaxValue, _edgeCount)
             };
@@ -1053,7 +1050,7 @@ namespace Hecton8.Physics
             FluidIncursionTuningDTO tuning = tuningArray[0];
             float quality = ResolveGlobalQualityWeight();
             tuning.GlobalQualityWeight = quality;
-            tuning.SolverIterations = ResolveSolverIterations(quality);
+            tuning.SolverIterations = ResolveAuthoritySolverIterations();
             tuning.Frame = unchecked((uint)_frame);
             tuning.CompartmentCount = (ushort)math.min(ushort.MaxValue, safeCount);
             tuning.EdgeCount = (ushort)math.min(ushort.MaxValue, _edgeCount);
@@ -1343,6 +1340,11 @@ namespace Hecton8.Physics
                 HabitatFluidIncursionConstants.MaxSolverIterations);
         }
 
+        private static ushort ResolveAuthoritySolverIterations()
+        {
+            return ResolveSolverIterations(HabitatFluidIncursionMath.AuthoritativeQualityWeight);
+        }
+
         private static int ResolveBfsNodeBudget(float quality)
         {
             float q = math.smoothstep(0f, 1f, math.saturate(quality));
@@ -1353,6 +1355,17 @@ namespace Hecton8.Physics
                     q)),
                 HabitatFluidIncursionConstants.MinBfsNodesPerTick,
                 HabitatFluidIncursionConstants.MaxBfsNodesPerTick);
+        }
+
+        private static int ResolveAuthorityBfsNodeBudget()
+        {
+            return ResolveBfsNodeBudget(HabitatFluidIncursionMath.AuthoritativeQualityWeight);
+        }
+
+        private static float ResolveAuthoritySolverWindowSeconds()
+        {
+            float q = math.smoothstep(0f, 1f, HabitatFluidIncursionMath.AuthoritativeQualityWeight);
+            return math.lerp(0.2f, 0.016f, q);
         }
 
         private static float ResolveGlobalQualityWeight()

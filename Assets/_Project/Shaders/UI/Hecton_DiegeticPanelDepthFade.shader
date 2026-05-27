@@ -33,8 +33,10 @@ Shader "Hecton8/UI/Diegetic Panel Depth Fade"
             #pragma vertex Vert
             #pragma fragment Frag
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -82,6 +84,11 @@ Shader "Hecton8/UI/Diegetic Panel Depth Fade"
                 return row3[index - 12u];
             }
 
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(saturate(uv));
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -101,7 +108,7 @@ Shader "Hecton8/UI/Diegetic Panel Depth Fade"
 
                 if (_OcclusionActive > 0.5)
                 {
-                    float sceneDepthRaw = SampleSceneDepth(screenUV);
+                    float sceneDepthRaw = SampleSceneDepth(ResolveFoveatedSourceUV(screenUV));
                     float linearSceneDepth = LinearEyeDepth(sceneDepthRaw, _ZBufferParams);
                     float linearFragmentDepth = -input.positionVS.z;
 

@@ -211,11 +211,20 @@ namespace Hecton8.Rendering.OceanSinglePass
                 return PublishMockConstantBuffer() ||
                        (runtime != null && s_publishedConstantBuffer != null && s_publishedConstantBuffer.IsValid());
 
-            VaultGenerationHandle<OceanMockRenderStateDTO> handle = vault.EnsureGenerationHandle<OceanMockRenderStateDTO>(
-                OceanSinglePassConstants.MockRenderStateBuffer,
-                1,
-                OwnerSystemId,
-                NativeArrayOptions.UninitializedMemory);
+            VaultGenerationHandle<OceanMockRenderStateDTO> handle;
+            if (!vault.TryGetGenerationHandle<OceanMockRenderStateDTO>(OceanSinglePassConstants.MockRenderStateBuffer, out handle) ||
+                !IsHandleValid(in handle))
+            {
+                if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                    return PublishMockConstantBuffer();
+
+                handle = vault.EnsureGenerationHandle<OceanMockRenderStateDTO>(
+                    OceanSinglePassConstants.MockRenderStateBuffer,
+                    1,
+                    OwnerSystemId,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
             if (!IsHandleValid(in handle) ||
                 !vault.TryResolveHandle(in handle, out NativeArray<OceanMockRenderStateDTO> mockState) ||
                 !mockState.IsCreated ||
@@ -453,6 +462,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             SeedTelemetryCursorIfNeeded(telemetryCursor);
             SeedProfilesIfNeeded(profiles);
             LoadAestheticProfilesCsvIfNeeded();
+            ShorelineFoamGraftRuntime.EnsureColdState(vault, _projectRootPath);
 
             _vaultReady = hasVisual &&
                           hasTuning &&
@@ -821,6 +831,19 @@ namespace Hecton8.Rendering.OceanSinglePass
             {
                 return true;
             }
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existing) &&
+                IsHandleValid(in existing) &&
+                vault.TryResolveHandle(in existing, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                handle = existing;
+                return true;
+            }
+
+            if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                return false;
 
             if (IsHandleValid(in handle))
                 ReleaseVaultHandle(vault, ref handle);

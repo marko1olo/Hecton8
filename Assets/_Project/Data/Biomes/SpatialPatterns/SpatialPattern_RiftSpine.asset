@@ -18,7 +18,7 @@ MonoBehaviour:
     off the safest line.
   nodeClusterPattern: Clusters sit at gate-like breaks, fracture mouths, and offset
     slab intersections.
-  safePocketPattern: Safe pockets are side cuts and bends off the main fracture,
+  safePocketPattern: Reorientation pockets are side cuts and bends off the main fracture,
     never broad open rooms.
   routeAnchorPattern: The route is a sequence of fracture mouths. Each one is both
     a landmark and a decision.

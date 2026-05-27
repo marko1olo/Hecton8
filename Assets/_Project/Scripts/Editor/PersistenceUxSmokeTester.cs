@@ -177,7 +177,7 @@ namespace Hecton8.Dev
                 ContainsAll(sceneRuntimeService, "TransitionDissolveSeconds = 3f", "_pendingSceneLoadOperation.allowSceneActivation = false", "ReleaseSceneActivation(_pendingSceneLoadOperation);") &&
                 ContainsAll(sceneRuntimeService, "HasMainMenuDissolveReachedActivationTime(_cinematicTransitionElapsed)", "return elapsedSeconds == TransitionDissolveSeconds;") &&
                 ContainsAll(sceneRuntimeService, "IServiceShutdown", "ShutdownServiceState()", "_sceneActivationReleased = false;") &&
-                ContainsAll(mainMenuController, "SceneRuntimeService.EnsureRuntimeInstance", "sceneService.LoadScene(targetSceneName);") &&
+                ContainsAll(mainMenuController, "SceneRuntimeService.EnsureRuntimeInstance", "ResolveStartSceneName(isNewGame)", "sceneService.LoadScene(sceneName);", "newGameTargetSceneName = \"01_ORBIT\"") &&
                 ContainsAll(pauseMenuController, "SceneRuntimeService.EnsureRuntimeInstance", "sceneService.LoadScene(mainMenuSceneName);") &&
                 SourceIndex(sceneRuntimeService, "_pendingSceneLoadOperation.allowSceneActivation = true") == int.MaxValue &&
                 SourceIndex(sceneRuntimeService, "_cinematicTransitionElapsed >= TransitionDissolveSeconds") == int.MaxValue &&

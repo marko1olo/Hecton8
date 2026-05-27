@@ -1,0 +1,72 @@
+{
+  "actions": [],
+  "agent_id": "1331",
+  "asset_database_refresh_marker": "Docs/AgentLogs/AssetDatabaseRefresh_1331.md",
+  "boundary_audit": {
+    "forbidden_path": "Assets/_Project/Scripts",
+    "passed": true,
+    "violations": []
+  },
+  "command_purity": {
+    "commands_used": [
+      "python Tools/workspace_hygiene_1331.py"
+    ],
+    "dotnet_build_invoked": false,
+    "msbuild_invoked": false,
+    "unity_batchmode_invoked": false
+  },
+  "companion_meta_deleted": 0,
+  "dry_run": true,
+  "dry_run_validation": {
+    "critical_assets_targeted": false,
+    "expected_hit_list_counts": {
+      "archive_moves": 0,
+      "meta_scanned": 12002,
+      "orphan_meta": 0,
+      "recovery_dirs": 0,
+      "root_unrouted": 0,
+      "scan_elapsed_microseconds": 72869701,
+      "temp_files": 0
+    },
+    "scripts_domain_targeted": false
+  },
+  "empty_dirs_deleted": 0,
+  "evidence_class": "STATIC_FS",
+  "excluded_path": "Assets/_Project/Scripts",
+  "execution_microseconds": 106427911,
+  "false_positive_fuzzer": {
+    "algorithm": "meta_path[:-5] then exact Path.exists() on base path",
+    "computed_base": "Assets/Art/Texture.png",
+    "input_asset": "Assets/Art/Texture.png",
+    "input_meta": "Assets/Art/Texture.png.meta",
+    "would_flag_when_base_exists": false
+  },
+  "files_archived": 0,
+  "generated_utc": "2026-05-26T11:06:18Z",
+  "locked_file_handling": "unlink/rmtree/move catch OSError and log FAILED_LOCKED_OR_IO, then continue queue",
+  "orphan_meta_deleted": 0,
+  "post_counts": {
+    "archive_moves": 0,
+    "meta_scanned": 12002,
+    "orphan_meta": 0,
+    "recovery_dirs": 0,
+    "root_unrouted": 0,
+    "scan_elapsed_microseconds": 29354172,
+    "temp_files": 0
+  },
+  "pre_counts": {
+    "archive_moves": 0,
+    "meta_scanned": 12002,
+    "orphan_meta": 0,
+    "recovery_dirs": 0,
+    "root_unrouted": 0,
+    "scan_elapsed_microseconds": 72869701,
+    "temp_files": 0
+  },
+  "recovery_dirs_deleted": 0,
+  "report_sha256": "9557e7e5fff2a4791a2c553af5298364f13ad010f45733230439751ee4691dd8",
+  "root": "C:\\hades\\Hecton8",
+  "temp_files_deleted": 0,
+  "total_bytes_archived": 0,
+  "total_bytes_freed": 0
+}

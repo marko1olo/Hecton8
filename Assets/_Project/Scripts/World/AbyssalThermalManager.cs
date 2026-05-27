@@ -1,9 +1,10 @@
-using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Audio;
 using Hecton.Localization;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Caves;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -27,7 +28,17 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-102)]
     public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, IFixedTickable, ILateFrameTickable, IOriginShiftListener, IThermodynamicsService, IRandomEventListener, global::Hecton8.Gameplay.ILaserCutterEventListener, IGlobalRegistryHotSwapListener
     {
+        private static AbyssalThermalManager s_activeRuntimeInstance;
         private static int s_x001AbyssalThermalManagerSignalPushDropCount;
+
+        internal static AbyssalThermalManager ActiveRuntimeInstance => s_activeRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticRuntimeState()
+        {
+            s_activeRuntimeInstance = null;
+        }
+
         public struct ThermalFlowSample
         {
             public byte HasFlow;
@@ -109,14 +120,18 @@ namespace Hecton8.World
             public float VentIndex;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct ThermalTelemetryEntry
         {
-            public float3 PositionWS;
-            public float TemperatureCelsius;
-            public float Heat01;
-            public uint Flags;
-            public int Frame;
-            public int ActiveVentCount;
+            [FieldOffset(0)] public double3 PositionAup;
+            [FieldOffset(24)] public long Frame;
+            [FieldOffset(32)] public ulong Sequence;
+            [FieldOffset(40)] public float TemperatureCelsius;
+            [FieldOffset(44)] public float Heat01;
+            [FieldOffset(48)] public uint Flags;
+            [FieldOffset(52)] public int ActiveVentCount;
+            [FieldOffset(56)] public uint FailureCode;
+            [FieldOffset(60)] private uint _pad0;
         }
 
         private struct EmpNestState
@@ -168,11 +183,15 @@ namespace Hecton8.World
         private const int ThermalMapDiffusionSliceCount = 8;
         private const int ThermalMapDiffusionSliceMask = ThermalMapDiffusionSliceCount - 1;
         private const int ThermalMapDiffusionSliceCellCount = ThermalMapCellCount / ThermalMapDiffusionSliceCount;
+        private const int ThermalMapDiffusionJobBatchSize = 64;
         private const int ThermalMapAxisShift = 5;
         private const uint KccVelocityThermalMaxAgeFrames = 12u;
         private const int ThermalGridSaveRleCapacity = ThermalMapCellCount;
         private const int ThermalTelemetryCapacity = 300;
         private const int VentBufferRingSize = 3;
+        private const SystemID ThermalVaultOwnerSystem = SystemID.Thermodynamics;
+        private const int PortableMaxComputeThreadsPerGroup = 256;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const float VentStateCompareEpsilon = 0.01f;
         private const float DefaultThermalMapWorldSizeMeters = 192f;
         private const float DefaultThermalMapColdTickSeconds = 1f;
@@ -194,6 +213,10 @@ namespace Hecton8.World
         private const uint ThermalTelemetryFlagPlayerAmbientTemp = 1u << 1;
         private const uint ThermalTelemetryFlagThermalShock = 1u << 2;
         private const byte ThermalShockAcousticChannel = 11;
+        private const BufferID ThermalMapReadCelsiusBufferId = (BufferID)70056;
+        private const BufferID ThermalMapWriteCelsiusBufferId = (BufferID)70057;
+        private const BufferID ThermalMapSourceCelsiusBufferId = (BufferID)70058;
+        private const BufferID ThermalMapInsulationBufferId = (BufferID)70059;
         private const string NativeMemoryOwner = nameof(AbyssalThermalManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const uint ThermalHashSeed = 0xC6BC2796u;
@@ -601,10 +624,10 @@ namespace Hecton8.World
         [Tooltip("Thermal Diamond nodes accepted by the crystallization commit path.")]
         private int _debugCrystallizedNodeCount;
 
-        // COLD ALLOC: List<WorldZoneAnchor>[32] - reusable runtime cartographer anchor scratch list for abyssal vent selection - owner: AbyssalThermalManager
-        private readonly List<WorldZoneAnchor> _zoneAnchors = new List<WorldZoneAnchor>(MaxAnchorScanCapacity);
-        // COLD ALLOC: List<RuntimeVentRegistration>[16] - bounded runtime hydrothermal vent registry injected by geology bridge - owner: AbyssalThermalManager
-        private readonly List<RuntimeVentRegistration> _runtimeVentRegistrations = new List<RuntimeVentRegistration>(MaxVentCapacity);
+        // COLD ALLOC: WorldZoneAnchor[32] - reusable runtime cartographer anchor scratch array for abyssal vent selection - owner: AbyssalThermalManager
+        private readonly WorldZoneAnchor[] _zoneAnchors = new WorldZoneAnchor[MaxAnchorScanCapacity];
+        // COLD ALLOC: RuntimeVentRegistration[16] - bounded runtime hydrothermal vent registry injected by geology bridge - owner: AbyssalThermalManager
+        private readonly RuntimeVentRegistration[] _runtimeVentRegistrations = new RuntimeVentRegistration[MaxVentCapacity];
         // COLD ALLOC: Plane[6] - frustum planes for smoke visibility checks - owner: AbyssalThermalManager
         private readonly Plane[] _frustumPlanes = new Plane[6];
 
@@ -629,13 +652,15 @@ namespace Hecton8.World
         private bool _cutterBeamActive;
         private bool _hasSmokeData;
         private int _kernelIndex = -1;
-        private int _threadGroupSizeX = 64;
-        private int _dispatchGroupCount = 1;
+        private int _threadGroupSizeX;
+        private int _dispatchGroupCount;
         private int _frameParity;
         private int _activeVentBufferIndex;
         private int _nextVentBufferUploadIndex = 1;
         private int _activeVentCount;
         private int _activeCableZoneCount;
+        private int _zoneAnchorCount;
+        private int _runtimeVentRegistrationCount;
         private int _instanceId;
         private float _simulationTime;
         private float _cableCutStampCooldown;
@@ -646,6 +671,11 @@ namespace Hecton8.World
         private IPlayerRuntimeContext _playerRuntimeContext;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private IPhysicsService _physicsService;
+        private IGasDynamicsSolver _gasDynamics;
+        private IDamageReceiver _playerThermalDamageReceiver;
+        private Transform _playerThermalDamageTransform;
+        private IDamageReceiver _submarineThermalDamageReceiver;
+        private Transform _submarineThermalDamageTransform;
         private AbyssalFluidDecalManager _fluidDecalManager;
         private bool[] _cableReleasedStates;
         private float[] _cableReleaseProgress;
@@ -661,20 +691,20 @@ namespace Hecton8.World
         private float _seismicEruptionTimer;
         private float _seismicEruptionStrength01;
         private int _lastSeismicSignalSequence;
-        private NativeArray<ThermalCrystallizationSample> _crystallizationSamples;
-        private NativeArray<ThermalCrystallizationResult> _crystallizationResults;
-        private JobHandle _crystallizationJobHandle;
+        private ThermalCrystallizationSample[] _crystallizationSamples;
+        private ThermalCrystallizationResult[] _crystallizationResults;
         private bool _crystallizationJobActive;
         private int _pendingCrystallizationSampleCount;
         private int _scheduledCrystallizationSampleCount;
         private float[] _ventCrystallizationCooldowns;
-        private NativeArray<float> _thermalMapReadCelsius;
-        private NativeArray<float> _thermalMapWriteCelsius;
-        private NativeArray<float> _thermalMapSourceCelsius;
-        private NativeArray<float> _thermalMapInsulation01;
-        private NativeArray<float> _thermalMapVisualCelsius;
-        private NativeArray<SaveBinaryStorage.ThermalGridRleRun> _thermalGridRleRuns;
-        private NativeArray<ThermalTelemetryEntry> _thermalTelemetryRing;
+        private VaultGenerationHandle<float> _thermalMapReadCelsiusHandle;
+        private VaultGenerationHandle<float> _thermalMapWriteCelsiusHandle;
+        private VaultGenerationHandle<float> _thermalMapSourceCelsiusHandle;
+        private VaultGenerationHandle<float> _thermalMapInsulation01Handle;
+        private float[] _thermalMapVisualCelsius;
+        private SaveBinaryStorage.ThermalGridRleRun[] _thermalGridRleRuns;
+        private VaultGenerationHandle<ThermalTelemetryEntry> _thermalTelemetryRingHandle;
+        private IDataVault _dataVault;
         private JobHandle _thermalMapJobHandle;
         private bool _thermalMapJobActive;
         private ISimulationBucketer _simulationBucketer;
@@ -832,7 +862,7 @@ namespace Hecton8.World
                 CableRadiusWS = Mathf.Max(2f, cableRadiusWS)
             };
 
-            for (int i = 0; i < _runtimeVentRegistrations.Count; i++)
+            for (int i = 0; i < _runtimeVentRegistrationCount; i++)
             {
                 if (_runtimeVentRegistrations[i].RuntimeKey != runtimeKey)
                     continue;
@@ -842,24 +872,25 @@ namespace Hecton8.World
                 return;
             }
 
-            if (_runtimeVentRegistrations.Count >= MaxVentCapacity)
+            if (_runtimeVentRegistrationCount >= MaxVentCapacity)
                 return;
 
-            _runtimeVentRegistrations.Add(registration);
+            _runtimeVentRegistrations[_runtimeVentRegistrationCount] = registration;
+            _runtimeVentRegistrationCount++;
             RebuildVentField();
         }
 
         public void UnregisterRuntimeVent(long runtimeKey)
         {
-            if (runtimeKey == 0L || _runtimeVentRegistrations.Count <= 0)
+            if (runtimeKey == 0L || _runtimeVentRegistrationCount <= 0)
                 return;
 
-            for (int i = 0; i < _runtimeVentRegistrations.Count; i++)
+            for (int i = 0; i < _runtimeVentRegistrationCount; i++)
             {
                 if (_runtimeVentRegistrations[i].RuntimeKey != runtimeKey)
                     continue;
 
-                _runtimeVentRegistrations.RemoveAt(i);
+                RemoveRuntimeVentRegistrationAt(i);
                 RebuildVentField();
                 return;
             }
@@ -867,7 +898,7 @@ namespace Hecton8.World
 
         private void SyncPersistentThermalVents()
         {
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
             if (registry == null)
                 return;
 
@@ -880,7 +911,7 @@ namespace Hecton8.World
                 return;
             }
 
-            _runtimeVentRegistrations.Clear();
+            ClearRuntimeVentRegistrations();
             int count = math.min(registry.ActiveThermalVentCount, MaxVentCapacity);
             for (int i = 0; i < count; i++)
             {
@@ -888,7 +919,10 @@ namespace Hecton8.World
                     continue;
 
                 Vector3 positionWS = ResolvePersistentThermalVentRuntimePosition(in record.PositionAup);
-                _runtimeVentRegistrations.Add(new RuntimeVentRegistration
+                if (_runtimeVentRegistrationCount >= MaxVentCapacity)
+                    break;
+
+                _runtimeVentRegistrations[_runtimeVentRegistrationCount] = new RuntimeVentRegistration
                 {
                     RuntimeKey = record.RuntimeKey,
                     PositionWS = positionWS,
@@ -899,25 +933,43 @@ namespace Hecton8.World
                     HeatIntensity = Mathf.Max(0.5f, record.HeatIntensity),
                     SmokeDensity = Mathf.Max(0.1f, record.SmokeDensity),
                     CableRadiusWS = Mathf.Max(2f, record.CableRadiusWS)
-                });
+                };
+                _runtimeVentRegistrationCount++;
             }
 
             _lastPersistentThermalVentRevision = revision;
         }
 
+        private void RemoveRuntimeVentRegistrationAt(int index)
+        {
+            if ((uint)index >= (uint)_runtimeVentRegistrationCount)
+                return;
+
+            int lastIndex = _runtimeVentRegistrationCount - 1;
+            if (index != lastIndex)
+                _runtimeVentRegistrations[index] = _runtimeVentRegistrations[lastIndex];
+
+            _runtimeVentRegistrations[lastIndex] = default;
+            _runtimeVentRegistrationCount--;
+        }
+
+        private void ClearRuntimeVentRegistrations()
+        {
+            for (int i = 0; i < _runtimeVentRegistrationCount; i++)
+                _runtimeVentRegistrations[i] = default;
+
+            _runtimeVentRegistrationCount = 0;
+        }
+
         private static Vector3 ResolvePersistentThermalVentRuntimePosition(in AbsoluteUniversePosition positionAup)
         {
             double3 absolute = positionAup.ToAbsoluteDouble3();
-            Vector3 absoluteVector = new Vector3(
-                (float)absolute.x,
-                (float)absolute.y,
-                (float)absolute.z);
-            return HectonFloatingOrigin.ToRuntimePosition(absoluteVector);
+            return HectonFloatingOrigin.ToRuntimePosition(absolute);
         }
 
         private void Awake()
         {
-            AbyssalThermalManager registeredThermodynamics = GlobalRegistry.Thermodynamics;
+            AbyssalThermalManager registeredThermodynamics = s_activeRuntimeInstance;
             if (registeredThermodynamics != null && registeredThermodynamics != this)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -969,6 +1021,12 @@ namespace Hecton8.World
             _hasSmokeData = false;
             _frameParity = 0;
             _simulationBucketer = null;
+            _gasDynamics = null;
+            _playerThermalDamageReceiver = null;
+            _playerThermalDamageTransform = null;
+            _submarineThermalDamageReceiver = null;
+            _submarineThermalDamageTransform = null;
+            CompleteThermalMapJobIfReady(forceComplete: true);
             _thermalMapDiffusionSlicesCompleted = 0;
             _thermalMapDiffusionSliceCursor = 0;
             ClearHazardSources();
@@ -986,6 +1044,12 @@ namespace Hecton8.World
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterHotSwapListener();
             _simulationBucketer = null;
+            _gasDynamics = null;
+            _playerThermalDamageReceiver = null;
+            _playerThermalDamageTransform = null;
+            _submarineThermalDamageReceiver = null;
+            _submarineThermalDamageTransform = null;
+            CompleteThermalMapJobIfReady(forceComplete: true);
             ClearHazardSources();
             ReleaseBuffers();
             DisposeCrystallizationBuffers();
@@ -1005,7 +1069,7 @@ namespace Hecton8.World
 
         private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)
         {
-            for (int i = 0; i < _runtimeVentRegistrations.Count; i++)
+            for (int i = 0; i < _runtimeVentRegistrationCount; i++)
             {
                 RuntimeVentRegistration registration = _runtimeVentRegistrations[i];
                 registration.PositionWS += runtimeOffset;
@@ -1075,7 +1139,7 @@ namespace Hecton8.World
                 }
             }
 
-            if (!_crystallizationJobActive && _crystallizationSamples.IsCreated)
+            if (!_crystallizationJobActive && _crystallizationSamples != null)
             {
                 float3 offset = new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z);
                 for (int i = 0; i < _pendingCrystallizationSampleCount; i++)
@@ -1105,7 +1169,6 @@ namespace Hecton8.World
         /// <param name="dt">Frame delta supplied by GameTickManager.</param>
         public void Tick(float dt)
         {
-            ResolveDependencies();
             float deltaTime = math.max(0f, dt);
             AdvanceThermalMapColdTick(deltaTime);
             _simulationTime += deltaTime;
@@ -1138,7 +1201,6 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            ResolveDependencies();
             ApplySeismicSignalEruptionScalar();
             AdvancePassiveCrystallizationCooldowns(0.5f);
             SyncPersistentThermalVents();
@@ -1164,7 +1226,7 @@ namespace Hecton8.World
             float crystallizationRadiusMeters,
             uint sourceId = 0u)
         {
-            if (!_crystallizationSamples.IsCreated || _pendingCrystallizationSampleCount >= MaxCrystallizationSampleCapacity)
+            if (_crystallizationSamples == null || _pendingCrystallizationSampleCount >= MaxCrystallizationSampleCapacity)
                 return false;
 
             float3 position = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
@@ -1228,14 +1290,24 @@ namespace Hecton8.World
             if (fdt <= 0f)
                 return;
 
-            ResolveDependencies();
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : _playerMovement;
             GameObject playerObject = playerContext != null ? playerContext.PlayerObject : playerTransform != null ? playerTransform.gameObject : null;
             Vector3 playerPosition = ResolvePlayerRuntimePosition(playerContext, playerTransform);
             float playerTemperature = ResolveAmbientTemperatureCelsius(playerPosition);
+            IDamageReceiver playerDamageReceiver = _playerThermalDamageReceiver;
+            Transform playerDamageTransform = _playerThermalDamageTransform != null ? _playerThermalDamageTransform : playerTransform;
 
-            if (ProcessThermalGameplayTarget(null, playerObject, playerPosition, fdt, playerMovement, publishPresentation: true, out playerTemperature))
+            if (ProcessThermalGameplayTarget(
+                    null,
+                    playerObject,
+                    playerPosition,
+                    fdt,
+                    playerMovement,
+                    playerDamageReceiver,
+                    playerDamageTransform,
+                    publishPresentation: true,
+                    out playerTemperature))
             {
                 _previousPlayerTemperatureCelsius = playerTemperature;
             }
@@ -1251,7 +1323,16 @@ namespace Hecton8.World
             {
                 Vector3 submarinePosition = submarineBody.worldCenterOfMass;
                 float submarineTemperature = ResolveAmbientTemperatureCelsius(submarinePosition);
-                ProcessThermalGameplayTarget(submarineBody, submarineBody.gameObject, submarinePosition, fdt, null, publishPresentation: false, out submarineTemperature);
+                ProcessThermalGameplayTarget(
+                    submarineBody,
+                    submarineBody.gameObject,
+                    submarinePosition,
+                    fdt,
+                    null,
+                    _submarineThermalDamageReceiver,
+                    _submarineThermalDamageTransform,
+                    publishPresentation: false,
+                    out submarineTemperature);
                 if (_previousSubmarineTemperatureCelsius >= ThermalShockHotThresholdCelsius &&
                     submarineTemperature <= ThermalShockColdThresholdCelsius)
                 {
@@ -1260,6 +1341,8 @@ namespace Hecton8.World
                         submarineTemperature - _previousSubmarineTemperatureCelsius,
                         ResolveNearestVentSourceId(submarinePosition),
                         submarineBody.gameObject,
+                        _submarineThermalDamageReceiver,
+                        _submarineThermalDamageTransform,
                         (byte)(TemperatureChangedSignal.FlagThermalShock | TemperatureChangedSignal.FlagSubmarineAmbient));
                 }
 
@@ -1293,13 +1376,13 @@ namespace Hecton8.World
             out float cellSizeMeters,
             out int version)
         {
-            temperatureCelsius = _thermalMapVisualCelsius.IsCreated ? _thermalMapVisualCelsius.AsReadOnly() : default;
+            temperatureCelsius = default;
             width = ThermalMapResolution;
             height = ThermalMapResolution;
             originWS = _thermalMapOriginWS;
             cellSizeMeters = _thermalMapCellSizeMeters;
             version = _thermalMapVersion;
-            return UsesThermalGrid() && _thermalMapVisualCelsius.IsCreated;
+            return false;
         }
 
         public bool TryGetThermalGridReadback(
@@ -1311,14 +1394,18 @@ namespace Hecton8.World
             out float cellSizeMeters,
             out int version)
         {
-            temperatureCelsius = _thermalMapReadCelsius.IsCreated ? _thermalMapReadCelsius.AsReadOnly() : default;
+            temperatureCelsius = default;
             width = ThermalGridResolution;
             height = ThermalGridResolution;
             depth = ThermalGridResolution;
             originWS = _thermalMapOriginWS;
             cellSizeMeters = _thermalMapCellSizeMeters;
             version = _thermalMapVersion;
-            return UsesThermalGrid() && _thermalMapReadCelsius.IsCreated;
+            return UsesThermalGrid() &&
+                   TryReadOnlyThermalMapBuffer(
+                       in _thermalMapReadCelsiusHandle,
+                       ThermalMapReadCelsiusBufferId,
+                       out temperatureCelsius);
         }
 
         public bool TryGetThermalGridReadbackAup(
@@ -1357,7 +1444,7 @@ namespace Hecton8.World
             out float cellSizeMeters,
             out int version)
         {
-            if (!UsesThermalGrid() || !_thermalMapReadCelsius.IsCreated)
+            if (!TryLockThermalMapReadback())
             {
                 temperatureCelsius = default;
                 width = 0;
@@ -1401,6 +1488,7 @@ namespace Hecton8.World
                 if (Interlocked.CompareExchange(ref _thermalMapReadbackRetainCount, next, observed) != observed)
                     continue;
 
+                _dataVault?.TryUnlockBuffer(ThermalMapReadCelsiusBufferId, ThermalVaultOwnerSystem);
                 if (next == 0 && _thermalMapDisposePending)
                     DisposeThermalMapBuffers();
                 return;
@@ -1526,6 +1614,8 @@ namespace Hecton8.World
             Vector3 positionWS,
             float fixedDeltaTime,
             HectonPlayerMovement playerMovement,
+            IDamageReceiver fallbackDamageReceiver,
+            Transform fallbackDamageTransform,
             bool publishPresentation,
             out float temperatureCelsius)
         {
@@ -1549,6 +1639,8 @@ namespace Hecton8.World
                         delta,
                         sourceId,
                         targetObject,
+                        fallbackDamageReceiver,
+                        fallbackDamageTransform,
                         (byte)(TemperatureChangedSignal.FlagThermalShock | TemperatureChangedSignal.FlagPlayerAmbient));
                 }
 
@@ -1580,7 +1672,15 @@ namespace Hecton8.World
             }
 
             if (targetObject != null && boilingDamagePerSecond > 0f)
-                QueueBoilingDamage(targetObject, positionWS, temperatureCelsius, heat01, fixedDeltaTime, sourceId);
+                QueueBoilingDamage(
+                    targetObject,
+                    positionWS,
+                    temperatureCelsius,
+                    heat01,
+                    fixedDeltaTime,
+                    sourceId,
+                    fallbackDamageReceiver,
+                    fallbackDamageTransform);
 
             return true;
         }
@@ -1591,7 +1691,9 @@ namespace Hecton8.World
             float temperatureCelsius,
             float heat01,
             float fixedDeltaTime,
-            int sourceId)
+            int sourceId,
+            IDamageReceiver fallbackDamageReceiver,
+            Transform fallbackDamageTransform)
         {
             float amount = boilingDamagePerSecond * math.saturate(heat01) * math.max(0f, fixedDeltaTime);
             if (!(amount > 0f) || !math.isfinite(amount))
@@ -1599,8 +1701,13 @@ namespace Hecton8.World
 
             if (!TryResolveRegisteredCombatTarget(targetObject, out int targetId, out Transform targetTransform))
             {
-                if (TryResolveDamageReceiver(targetObject, out IDamageReceiver fallbackReceiver, out Transform fallbackTransform))
-                    ApplyThermalOwnerFallbackDamage(fallbackReceiver, fallbackTransform, positionWS, amount, temperatureCelsius, sourceId);
+                ApplyThermalOwnerFallbackDamage(
+                    fallbackDamageReceiver,
+                    fallbackDamageTransform,
+                    positionWS,
+                    amount,
+                    temperatureCelsius,
+                    sourceId);
                 return;
             }
 
@@ -1637,7 +1744,6 @@ namespace Hecton8.World
                 return temperatureCelsius < ambientWaterTemperatureCelsius - 0.001f;
 
             if (UsesThermalGrid() &&
-                _thermalMapReadCelsius.IsCreated &&
                 TrySampleThermalMap(positionWS, out temperatureCelsius))
             {
                 sourceId = ResolveNearestVentSourceId(positionWS);
@@ -1650,7 +1756,11 @@ namespace Hecton8.World
         private bool TrySampleThermalMap(Vector3 positionWS, out float temperatureCelsius)
         {
             temperatureCelsius = ResolveAmbientTemperatureCelsius(positionWS);
-            if (!_thermalMapReadCelsius.IsCreated || _thermalMapCellSizeMeters <= 0.0001f)
+            if (!TryReadThermalMapBuffer(
+                    in _thermalMapReadCelsiusHandle,
+                    ThermalMapReadCelsiusBufferId,
+                    out NativeArray<float> readBuffer) ||
+                _thermalMapCellSizeMeters <= 0.0001f)
                 return false;
 
             float invCellSize = math.rcp(_thermalMapCellSizeMeters);
@@ -1664,7 +1774,7 @@ namespace Hecton8.World
             int x = math.clamp((int)localX, 0, ThermalGridResolution - 1);
             int y = math.clamp((int)localY, 0, ThermalGridResolution - 1);
             int z = math.clamp((int)localZ, 0, ThermalGridResolution - 1);
-            temperatureCelsius = _thermalMapReadCelsius[ToThermalGridIndex(x, y, z)];
+            temperatureCelsius = readBuffer[ToThermalGridIndex(x, y, z)];
             return math.isfinite(temperatureCelsius);
         }
 
@@ -1724,7 +1834,14 @@ namespace Hecton8.World
             SignalBus<TemperatureChangedSignal>.TryPushTracked(in signal, ref s_x001AbyssalThermalManagerSignalPushDropCount);
         }
 
-        private void EmitThermalShock(Vector3 positionWS, float deltaCelsius, int sourceId, GameObject targetObject, byte temperatureFlags)
+        private void EmitThermalShock(
+            Vector3 positionWS,
+            float deltaCelsius,
+            int sourceId,
+            GameObject targetObject,
+            IDamageReceiver fallbackDamageReceiver,
+            Transform fallbackDamageTransform,
+            byte temperatureFlags)
         {
             if (TryResolveRegisteredCombatTarget(targetObject, out int targetId, out Transform targetTransform))
             {
@@ -1753,11 +1870,11 @@ namespace Hecton8.World
                 double3 impactAup = ResolveCombatImpactAup(positionWS);
                 CombatDamageRuntime.TryQueueDamage(in request, in detail, impactAup);
             }
-            else if (TryResolveDamageReceiver(targetObject, out IDamageReceiver fallbackReceiver, out Transform fallbackTransform))
+            else if (fallbackDamageReceiver != null)
             {
                 ApplyThermalOwnerFallbackDamage(
-                    fallbackReceiver,
-                    fallbackTransform,
+                    fallbackDamageReceiver,
+                    fallbackDamageTransform,
                     positionWS,
                     ThermalShockDamageMagnitude,
                     math.select(0f, math.abs(deltaCelsius), math.isfinite(deltaCelsius)),
@@ -1799,30 +1916,6 @@ namespace Hecton8.World
                 {
                     targetId = candidateId;
                     targetTransform = current;
-                    return true;
-                }
-
-                current = current.parent;
-            }
-
-            return false;
-        }
-
-        private static bool TryResolveDamageReceiver(
-            GameObject targetObject,
-            out IDamageReceiver receiver,
-            out Transform receiverTransform)
-        {
-            receiver = null;
-            receiverTransform = null;
-            Transform current = targetObject != null ? targetObject.transform : null;
-            for (int depth = 0; depth < 6 && current != null; depth++)
-            {
-                IDamageReceiver candidateReceiver = current.GetComponent<IDamageReceiver>();
-                if (candidateReceiver != null)
-                {
-                    receiver = candidateReceiver;
-                    receiverTransform = current;
                     return true;
                 }
 
@@ -1992,8 +2085,13 @@ namespace Hecton8.World
 
         private void RecordThermalTelemetry(Vector3 positionWS, float temperatureCelsius, float heat01, uint flags)
         {
-            if (!_thermalTelemetryRing.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsThermalVaultHandle(in _thermalTelemetryRingHandle, BufferID.AbyssalThermalManagerTelemetryRing))
+            {
                 return;
+            }
 
             if (!math.isfinite(temperatureCelsius) || !math.isfinite(heat01) || !MathGuard.IsFinite(positionWS))
             {
@@ -2001,23 +2099,45 @@ namespace Hecton8.World
                 return;
             }
 
-            int index = _thermalTelemetryIndex % ThermalTelemetryCapacity;
-            _thermalTelemetryRing[index] = new ThermalTelemetryEntry
+            if (!vault.TryAcquireWriteLock(in _thermalTelemetryRingHandle, ThermalVaultOwnerSystem, out NativeArray<ThermalTelemetryEntry> ring))
+                return;
+
+            try
             {
-                PositionWS = new float3(positionWS.x, positionWS.y, positionWS.z),
-                TemperatureCelsius = temperatureCelsius,
-                Heat01 = heat01,
-                Flags = flags,
-                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                ActiveVentCount = _activeVentCount
-            };
-            _thermalTelemetryIndex = (_thermalTelemetryIndex + 1) % ThermalTelemetryCapacity;
+                if (!ring.IsCreated || ring.Length < ThermalTelemetryCapacity)
+                    return;
+
+                int index = _thermalTelemetryIndex % ThermalTelemetryCapacity;
+                ring[index] = new ThermalTelemetryEntry
+                {
+                    PositionAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(positionWS),
+                    Frame = unchecked((long)Hecton8.Core.SystemDispatcher.CurrentFrameId),
+                    Sequence = unchecked((ulong)_thermalTelemetryIndex),
+                    TemperatureCelsius = temperatureCelsius,
+                    Heat01 = heat01,
+                    Flags = flags,
+                    ActiveVentCount = _activeVentCount,
+                    FailureCode = 0u
+                };
+                _thermalTelemetryIndex = (_thermalTelemetryIndex + 1) % ThermalTelemetryCapacity;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _thermalTelemetryRingHandle, ThermalVaultOwnerSystem);
+            }
         }
 
         private void DumpThermalBlackBox()
         {
-            if (_thermalTelemetryDumped || !_thermalTelemetryRing.IsCreated)
+            IDataVault vault = _dataVault;
+            if (_thermalTelemetryDumped ||
+                vault == null ||
+                !IsThermalVaultHandle(in _thermalTelemetryRingHandle, BufferID.AbyssalThermalManagerTelemetryRing) ||
+                !vault.TryReadOnlyHandle(in _thermalTelemetryRingHandle, out NativeArray<ThermalTelemetryEntry>.ReadOnly ring) ||
+                !ring.IsCreated)
+            {
                 return;
+            }
 
             _thermalTelemetryDumped = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -2033,21 +2153,26 @@ namespace Hecton8.World
                 {
                     writer.Write(ThermalTelemetryCapacity);
                     writer.Write(_thermalTelemetryIndex);
-                    for (int i = 0; i < _thermalTelemetryRing.Length; i++)
+                    for (int i = 0; i < ring.Length; i++)
                     {
-                        ThermalTelemetryEntry entry = _thermalTelemetryRing[i];
-                        writer.Write(entry.PositionWS.x);
-                        writer.Write(entry.PositionWS.y);
-                        writer.Write(entry.PositionWS.z);
+                        ThermalTelemetryEntry entry = ring[i];
+                        writer.Write(entry.PositionAup.x);
+                        writer.Write(entry.PositionAup.y);
+                        writer.Write(entry.PositionAup.z);
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.Sequence);
                         writer.Write(entry.TemperatureCelsius);
                         writer.Write(entry.Heat01);
                         writer.Write(entry.Flags);
-                        writer.Write(entry.Frame);
                         writer.Write(entry.ActiveVentCount);
+                        writer.Write(entry.FailureCode);
                     }
                 }
             }
-            catch (System.Exception)
+            catch (System.IO.IOException)
+            {
+            }
+            catch (System.UnauthorizedAccessException)
             {
             }
 #endif
@@ -2079,7 +2204,7 @@ namespace Hecton8.World
             if (_activeVentCount <= 0 ||
                 vegetationBridge == null ||
                 _ventCrystallizationCooldowns == null ||
-                !_crystallizationSamples.IsCreated)
+                _crystallizationSamples == null)
             {
                 return;
             }
@@ -2166,7 +2291,7 @@ namespace Hecton8.World
                     baseModule.TryInjectHostRoomTemperatureDeltaCelsius(injectedDeltaCelsius);
                     if (baseModule.TryResolveHostAtmosphereRoomIndex(out int roomIndex))
                     {
-                        IGasDynamicsSolver gasDynamics = GlobalRegistry.GasDynamics;
+                        IGasDynamicsSolver gasDynamics = _gasDynamics;
                         gasDynamics?.TrySetRoomTemperatureCelsius(roomIndex, internalTemperatureCelsius + injectedDeltaCelsius);
                     }
                 }
@@ -2183,6 +2308,9 @@ namespace Hecton8.World
 
         private void AdvanceThermalMapColdTick(float deltaSeconds)
         {
+            if (_thermalMapJobActive)
+                return;
+
             if (!UsesThermalGrid())
             {
                 _thermalMapDiffusionSlicesCompleted = 0;
@@ -2195,15 +2323,11 @@ namespace Hecton8.World
             if (_activeVentCount <= 0)
             {
                 float idleAmbientCelsius = ResolveAmbientTemperatureCelsius(ResolveThermalMapCenter());
-                if (_thermalMapReadCelsius.IsCreated)
-                    FillThermalMap(_thermalMapReadCelsius, idleAmbientCelsius);
-                if (_thermalMapWriteCelsius.IsCreated)
-                    FillThermalMap(_thermalMapWriteCelsius, idleAmbientCelsius);
-                if (_thermalMapSourceCelsius.IsCreated)
-                    FillThermalMap(_thermalMapSourceCelsius, idleAmbientCelsius);
-                if (_thermalMapInsulation01.IsCreated)
-                    FillThermalMap(_thermalMapInsulation01, 0f);
-                if (_thermalMapVisualCelsius.IsCreated)
+                FillThermalMapBuffer(in _thermalMapReadCelsiusHandle, ThermalMapReadCelsiusBufferId, idleAmbientCelsius);
+                FillThermalMapBuffer(in _thermalMapWriteCelsiusHandle, ThermalMapWriteCelsiusBufferId, idleAmbientCelsius);
+                FillThermalMapBuffer(in _thermalMapSourceCelsiusHandle, ThermalMapSourceCelsiusBufferId, idleAmbientCelsius);
+                FillThermalMapBuffer(in _thermalMapInsulation01Handle, ThermalMapInsulationBufferId, 0f);
+                if (_thermalMapVisualCelsius != null)
                     FillThermalMap(_thermalMapVisualCelsius, idleAmbientCelsius);
                 _thermalGridRleRunCount = 0;
                 _thermalGridRleByteCount = 0;
@@ -2215,9 +2339,6 @@ namespace Hecton8.World
                 PublishThermalMapMetadata(active: false);
                 return;
             }
-
-            if (_thermalMapJobActive)
-                return;
 
             if (_thermalMapDiffusionSlicesCompleted <= 0)
             {
@@ -2231,12 +2352,32 @@ namespace Hecton8.World
             }
 
             int startIndex = _thermalMapDiffusionSliceCursor * ThermalMapDiffusionSliceCellCount;
+            if (!TryReadThermalMapBuffer(
+                    in _thermalMapReadCelsiusHandle,
+                    ThermalMapReadCelsiusBufferId,
+                    out NativeArray<float> readCelsius) ||
+                !TryReadThermalMapBuffer(
+                    in _thermalMapSourceCelsiusHandle,
+                    ThermalMapSourceCelsiusBufferId,
+                    out NativeArray<float> sourceCelsius) ||
+                !TryReadThermalMapBuffer(
+                    in _thermalMapInsulation01Handle,
+                    ThermalMapInsulationBufferId,
+                    out NativeArray<float> insulation01) ||
+                !TryAcquireThermalMapWriteBuffer(
+                    in _thermalMapWriteCelsiusHandle,
+                    ThermalMapWriteCelsiusBufferId,
+                    out NativeArray<float> writeCelsius))
+            {
+                return;
+            }
+
             ThermalMapJacobiJob job = new ThermalMapJacobiJob
             {
-                Previous = _thermalMapReadCelsius,
-                Sources = _thermalMapSourceCelsius,
-                Insulation01 = _thermalMapInsulation01,
-                Next = _thermalMapWriteCelsius,
+                Previous = readCelsius,
+                Sources = sourceCelsius,
+                Insulation01 = insulation01,
+                Next = writeCelsius,
                 StartIndex = startIndex,
                 Width = ThermalMapResolution,
                 Height = ThermalMapResolution,
@@ -2246,21 +2387,22 @@ namespace Hecton8.World
                 Diffusion01 = math.saturate(thermalMapDiffusion01)
             };
 
-            _thermalMapJobHandle = job.Schedule(ThermalMapDiffusionSliceCellCount, 32);
+            _thermalMapJobHandle = job.Schedule(ThermalMapDiffusionSliceCellCount, ThermalMapDiffusionJobBatchSize);
             _thermalMapJobActive = true;
         }
 
-        private void CompleteThermalMapJobIfReady()
+        private void CompleteThermalMapJobIfReady(bool forceComplete = false)
         {
-            if (!_thermalMapJobActive || !_thermalMapJobHandle.IsCompleted)
+            if (!_thermalMapJobActive)
+            {
+                _thermalMapJobHandle = default;
+                return;
+            }
+
+            if (!DispatcherJobSwap.TryComplete(ref _thermalMapJobHandle, forceComplete))
                 return;
 
-            if (Volatile.Read(ref _thermalMapReadbackRetainCount) > 0)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _thermalMapJobHandle, forceComplete: false))
-                return;
-
+            _dataVault?.ReleaseWriteLock(in _thermalMapWriteCelsiusHandle, ThermalVaultOwnerSystem);
             _thermalMapJobActive = false;
             _thermalMapDiffusionSlicesCompleted++;
             _thermalMapDiffusionSliceCursor = (_thermalMapDiffusionSliceCursor + 1) & ThermalMapDiffusionSliceMask;
@@ -2268,14 +2410,20 @@ namespace Hecton8.World
                 return;
 
             _thermalMapDiffusionSlicesCompleted = 0;
-            NativeArray<float> previousRead = _thermalMapReadCelsius;
-            _thermalMapReadCelsius = _thermalMapWriteCelsius;
-            _thermalMapWriteCelsius = previousRead;
+            if (!CopyThermalMapBuffer(
+                    in _thermalMapWriteCelsiusHandle,
+                    ThermalMapWriteCelsiusBufferId,
+                    in _thermalMapReadCelsiusHandle,
+                    ThermalMapReadCelsiusBufferId))
+            {
+                return;
+            }
+
             _thermalMapVersion++;
             BuildThermalMapVisualProjection();
             StageThermalGridRleDelta();
             MarkThermalMapTextureDirty();
-            PublishThermalMapMetadata(active: _activeVentCount > 0 && _thermalMapReadCelsius.IsCreated);
+            PublishThermalMapMetadata(active: _activeVentCount > 0 && HasThermalMapReadBuffer());
         }
 
         private int ResolveThermalMapDiffusionSliceCursor()
@@ -2288,49 +2436,68 @@ namespace Hecton8.World
 
         private void RebuildThermalMapSources()
         {
-            if (!_thermalMapSourceCelsius.IsCreated || !_thermalMapInsulation01.IsCreated)
-                return;
-
-            Vector3 center = ResolveThermalMapCenter();
-            float worldSize = math.max(thermalMapWorldSizeMeters, 1f);
-            _thermalMapCellSizeMeters = worldSize * math.rcp(ThermalMapResolution);
-            _thermalMapOriginWS = center - new Vector3(worldSize * 0.5f, worldSize * 0.5f, worldSize * 0.5f);
-
-            for (int y = 0; y < ThermalGridResolution; y++)
+            if (!TryAcquireThermalMapWriteBuffer(
+                    in _thermalMapSourceCelsiusHandle,
+                    ThermalMapSourceCelsiusBufferId,
+                    out NativeArray<float> sourceCelsius) ||
+                !TryAcquireThermalMapWriteBuffer(
+                    in _thermalMapInsulation01Handle,
+                    ThermalMapInsulationBufferId,
+                    out NativeArray<float> insulationBuffer))
             {
-                float sampleY = _thermalMapOriginWS.y + ((y + 0.5f) * _thermalMapCellSizeMeters);
-                for (int z = 0; z < ThermalGridResolution; z++)
+                if (sourceCelsius.IsCreated)
+                    _dataVault?.ReleaseWriteLock(in _thermalMapSourceCelsiusHandle, ThermalVaultOwnerSystem);
+                return;
+            }
+
+            try
+            {
+                Vector3 center = ResolveThermalMapCenter();
+                float worldSize = math.max(thermalMapWorldSizeMeters, 1f);
+                _thermalMapCellSizeMeters = worldSize * math.rcp(ThermalMapResolution);
+                _thermalMapOriginWS = center - new Vector3(worldSize * 0.5f, worldSize * 0.5f, worldSize * 0.5f);
+
+                for (int y = 0; y < ThermalGridResolution; y++)
                 {
-                    float sampleZ = _thermalMapOriginWS.z + ((z + 0.5f) * _thermalMapCellSizeMeters);
-                    for (int x = 0; x < ThermalGridResolution; x++)
+                    float sampleY = _thermalMapOriginWS.y + ((y + 0.5f) * _thermalMapCellSizeMeters);
+                    for (int z = 0; z < ThermalGridResolution; z++)
                     {
-                        float sampleX = _thermalMapOriginWS.x + ((x + 0.5f) * _thermalMapCellSizeMeters);
-                        Vector3 samplePosition = new Vector3(sampleX, sampleY, sampleZ);
-                        float temperature = ResolveAmbientTemperatureCelsius(samplePosition);
-                        float insulation01 = ResolveVoxelInsulation01(samplePosition);
-
-                        for (int i = 0; i < _activeVentCount; i++)
+                        float sampleZ = _thermalMapOriginWS.z + ((z + 0.5f) * _thermalMapCellSizeMeters);
+                        for (int x = 0; x < ThermalGridResolution; x++)
                         {
-                            ThermalVentState vent = _ventStates[i];
-                            float radius = math.max(1f, vent.RadiusWS * ventHeatRadiusMultiplier);
-                            float planarDistance = ComputeAupPlanarDistance(samplePosition, vent.PositionWS);
-                            float verticalWeight = math.saturate(1f - math.abs(samplePosition.y - vent.PositionWS.y) * math.rcp(math.max(1f, vent.HeightWS)));
-                            float radialWeight = math.saturate(1f - (planarDistance * math.rcp(radius))) * verticalWeight;
-                            if (radialWeight <= 0f)
-                                continue;
+                            float sampleX = _thermalMapOriginWS.x + ((x + 0.5f) * _thermalMapCellSizeMeters);
+                            Vector3 samplePosition = new Vector3(sampleX, sampleY, sampleZ);
+                            float temperature = ResolveAmbientTemperatureCelsius(samplePosition);
+                            float insulation01 = ResolveVoxelInsulation01(samplePosition);
 
-                            float heatScale = ResolveVentHeatScale(i);
-                            float ventDeltaCelsius = math.max(ThermalVentInjectionDeltaCelsius, vent.HeatIntensity * ventHeatToCelsiusScale);
-                            float candidate = ResolveAmbientTemperatureCelsius(samplePosition) + (ventDeltaCelsius * heatScale * radialWeight);
-                            if (candidate > temperature && math.isfinite(candidate))
-                                temperature = candidate;
+                            for (int i = 0; i < _activeVentCount; i++)
+                            {
+                                ThermalVentState vent = _ventStates[i];
+                                float radius = math.max(1f, vent.RadiusWS * ventHeatRadiusMultiplier);
+                                float planarDistance = ComputeAupPlanarDistance(samplePosition, vent.PositionWS);
+                                float verticalWeight = math.saturate(1f - math.abs(samplePosition.y - vent.PositionWS.y) * math.rcp(math.max(1f, vent.HeightWS)));
+                                float radialWeight = math.saturate(1f - (planarDistance * math.rcp(radius))) * verticalWeight;
+                                if (radialWeight <= 0f)
+                                    continue;
+
+                                float heatScale = ResolveVentHeatScale(i);
+                                float ventDeltaCelsius = math.max(ThermalVentInjectionDeltaCelsius, vent.HeatIntensity * ventHeatToCelsiusScale);
+                                float candidate = ResolveAmbientTemperatureCelsius(samplePosition) + (ventDeltaCelsius * heatScale * radialWeight);
+                                if (candidate > temperature && math.isfinite(candidate))
+                                    temperature = candidate;
+                            }
+
+                            int index = ToThermalGridIndex(x, y, z);
+                            sourceCelsius[index] = temperature;
+                            insulationBuffer[index] = insulation01;
                         }
-
-                        int index = ToThermalGridIndex(x, y, z);
-                        _thermalMapSourceCelsius[index] = temperature;
-                        _thermalMapInsulation01[index] = insulation01;
                     }
                 }
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in _thermalMapInsulation01Handle, ThermalVaultOwnerSystem);
+                _dataVault?.ReleaseWriteLock(in _thermalMapSourceCelsiusHandle, ThermalVaultOwnerSystem);
             }
         }
 
@@ -2394,7 +2561,7 @@ namespace Hecton8.World
             _thermalMapTextureDirty = false;
             if (!UsesThermalGrid() ||
                 _activeVentCount <= 0 ||
-                !_thermalMapVisualCelsius.IsCreated)
+                _thermalMapVisualCelsius == null)
             {
                 BindInactiveThermalMapTexture();
                 return;
@@ -2477,23 +2644,26 @@ namespace Hecton8.World
                 return 0f;
 
             double3 absolutePosition = runtimeAup.ToAbsoluteDouble3();
-            float density = HectonVoxelVolume.GetSDFDensity(new float3(
-                (float)absolutePosition.x,
-                (float)absolutePosition.y,
-                (float)absolutePosition.z));
+            if (!HectonVoxelVolume.GetSDFDensity(absolutePosition, out float density))
+                return 0f;
+
             return density > 0f ? math.saturate(density) : 0f;
         }
 
         private void BuildThermalMapVisualProjection()
         {
-            if (!_thermalMapVisualCelsius.IsCreated || !_thermalMapReadCelsius.IsCreated)
+            if (_thermalMapVisualCelsius == null ||
+                !TryReadThermalMapBuffer(
+                    in _thermalMapReadCelsiusHandle,
+                    ThermalMapReadCelsiusBufferId,
+                    out NativeArray<float> readCelsius))
                 return;
 
             int centerY = ThermalGridResolution >> 1;
             for (int z = 0; z < ThermalGridResolution; z++)
             {
                 for (int x = 0; x < ThermalGridResolution; x++)
-                    _thermalMapVisualCelsius[(z * ThermalMapResolution) + x] = _thermalMapReadCelsius[ToThermalGridIndex(x, centerY, z)];
+                    _thermalMapVisualCelsius[(z * ThermalMapResolution) + x] = readCelsius[ToThermalGridIndex(x, centerY, z)];
             }
         }
 
@@ -2502,14 +2672,18 @@ namespace Hecton8.World
             _thermalGridRleRunCount = 0;
             _thermalGridRleByteCount = 0;
             _thermalGridRleChecksum = 0u;
-            if (!_thermalGridRleRuns.IsCreated || !_thermalMapReadCelsius.IsCreated)
+            if (_thermalGridRleRuns == null ||
+                !TryReadThermalMapBuffer(
+                    in _thermalMapReadCelsiusHandle,
+                    ThermalMapReadCelsiusBufferId,
+                    out NativeArray<float> readCelsius))
                 return;
 
             int index = 0;
-            while (index < _thermalMapReadCelsius.Length && _thermalGridRleRunCount < _thermalGridRleRuns.Length)
+            while (index < readCelsius.Length && _thermalGridRleRunCount < _thermalGridRleRuns.Length)
             {
                 float ambient = ResolveAmbientTemperatureCelsius(GridIndexToWorldPosition(index));
-                float temperature = _thermalMapReadCelsius[index];
+                float temperature = readCelsius[index];
                 if (math.abs(temperature - ambient) <= 0.05f)
                 {
                     index++;
@@ -2518,10 +2692,10 @@ namespace Hecton8.World
 
                 int runStart = index;
                 int runCount = 1;
-                while (index + runCount < _thermalMapReadCelsius.Length &&
+                while (index + runCount < readCelsius.Length &&
                        runCount < ushort.MaxValue &&
                        _thermalGridRleRunCount < _thermalGridRleRuns.Length &&
-                       math.abs(_thermalMapReadCelsius[index + runCount] - temperature) <= 0.05f)
+                       math.abs(readCelsius[index + runCount] - temperature) <= 0.05f)
                 {
                     runCount++;
                 }
@@ -2580,36 +2754,58 @@ namespace Hecton8.World
                 map[i] = value;
         }
 
+        private static void FillThermalMap(float[] map, float value)
+        {
+            if (map == null)
+                return;
+
+            for (int i = 0; i < map.Length; i++)
+                map[i] = value;
+        }
+
         private void ScheduleCrystallizationJobIfNeeded()
         {
             if (_crystallizationJobActive ||
                 _pendingCrystallizationSampleCount <= 0 ||
-                !_crystallizationSamples.IsCreated ||
-                !_crystallizationResults.IsCreated)
+                _crystallizationSamples == null ||
+                _crystallizationResults == null)
             {
                 return;
             }
 
             _scheduledCrystallizationSampleCount = Mathf.Min(_pendingCrystallizationSampleCount, MaxCrystallizationSampleCapacity);
-            ThermalCrystallizationBoundaryJob job = new ThermalCrystallizationBoundaryJob
-            {
-                Samples = _crystallizationSamples,
-                Results = _crystallizationResults,
-                MinimumSourceTemperatureCelsius = crystallizationMinimumSourceTemperatureCelsius,
-                DeltaTemperatureThresholdCelsius = crystallizationDeltaTemperatureThresholdCelsius,
-                MinimumRadiusMeters = 0.25f
-            };
+            for (int i = 0; i < _scheduledCrystallizationSampleCount; i++)
+                _crystallizationResults[i] = ResolveCrystallizationResult(_crystallizationSamples[i]);
 
-            _crystallizationJobHandle = job.Schedule(_scheduledCrystallizationSampleCount, 8);
             _crystallizationJobActive = true;
+        }
+
+        private ThermalCrystallizationResult ResolveCrystallizationResult(in ThermalCrystallizationSample sample)
+        {
+            ThermalCrystallizationResult result = default;
+            if (sample.Pending == 0 ||
+                sample.RadiusMeters < 0.25f ||
+                !math.all(math.isfinite(sample.PositionWS)) ||
+                !math.isfinite(sample.PreviousTemperatureCelsius) ||
+                !math.isfinite(sample.CurrentTemperatureCelsius))
+            {
+                return result;
+            }
+
+            float delta = sample.CurrentTemperatureCelsius - sample.PreviousTemperatureCelsius;
+            bool accepted = sample.PreviousTemperatureCelsius >= crystallizationMinimumSourceTemperatureCelsius &&
+                            delta <= crystallizationDeltaTemperatureThresholdCelsius;
+            result.PositionWS = sample.PositionWS;
+            result.DeltaTemperatureCelsius = delta;
+            result.RadiusMeters = math.max(0.25f, sample.RadiusMeters);
+            result.SourceId = sample.SourceId;
+            result.ShouldSpawn = accepted ? (byte)1 : (byte)0;
+            return result;
         }
 
         private void CompleteCrystallizationJobIfReady()
         {
-            if (!_crystallizationJobActive || !_crystallizationJobHandle.IsCompleted)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _crystallizationJobHandle, forceComplete: false))
+            if (!_crystallizationJobActive)
                 return;
 
             _crystallizationJobActive = false;
@@ -2661,22 +2857,8 @@ namespace Hecton8.World
 
         private void DisposeCrystallizationBuffers()
         {
-            JobHandle dependency = _crystallizationJobActive ? _crystallizationJobHandle : default;
-            if (_crystallizationSamples.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_crystallizationSamples);
-                dependency = _crystallizationSamples.Dispose(dependency);
-                _crystallizationSamples = default;
-            }
-
-            if (_crystallizationResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_crystallizationResults);
-                dependency = _crystallizationResults.Dispose(dependency);
-                _crystallizationResults = default;
-            }
-
-            _crystallizationJobHandle = dependency;
+            _crystallizationSamples = null;
+            _crystallizationResults = null;
             _crystallizationJobActive = false;
             _pendingCrystallizationSampleCount = 0;
             _scheduledCrystallizationSampleCount = 0;
@@ -2686,73 +2868,29 @@ namespace Hecton8.World
         private void EnsureThermalMapBuffers()
         {
             float defaultThermalMapAmbient = ResolveAmbientTemperatureCelsius(ResolveThermalMapCenter());
-            if (!_thermalMapReadCelsius.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<float>[32768] - front 32x32x32 thermal Celsius grid for gameplay sampling - owner: AbyssalThermalManager
-                _thermalMapReadCelsius = new NativeArray<float>(
-                    ThermalMapCellCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_thermalMapReadCelsius, NativeMemoryOwner, nameof(_thermalMapReadCelsius), NativeMemoryLifetime);
-                FillThermalMap(_thermalMapReadCelsius, defaultThermalMapAmbient);
-            }
+            EnsureThermalFloatBuffer(ref _thermalMapReadCelsiusHandle, ThermalMapReadCelsiusBufferId, defaultThermalMapAmbient);
+            EnsureThermalFloatBuffer(ref _thermalMapWriteCelsiusHandle, ThermalMapWriteCelsiusBufferId, defaultThermalMapAmbient);
+            EnsureThermalFloatBuffer(ref _thermalMapSourceCelsiusHandle, ThermalMapSourceCelsiusBufferId, defaultThermalMapAmbient);
+            EnsureThermalFloatBuffer(ref _thermalMapInsulation01Handle, ThermalMapInsulationBufferId, 0f);
 
-            if (!_thermalMapWriteCelsius.IsCreated)
+            if (_thermalMapVisualCelsius == null || _thermalMapVisualCelsius.Length != ThermalMapPlaneCellCount)
             {
-                // COLD ALLOC: NativeArray<float>[32768] - back 32x32x32 thermal Celsius grid written by Jacobi diffusion job - owner: AbyssalThermalManager
-                _thermalMapWriteCelsius = new NativeArray<float>(
-                    ThermalMapCellCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_thermalMapWriteCelsius, NativeMemoryOwner, nameof(_thermalMapWriteCelsius), NativeMemoryLifetime);
-                FillThermalMap(_thermalMapWriteCelsius, defaultThermalMapAmbient);
-            }
-
-            if (!_thermalMapSourceCelsius.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<float>[32768] - deterministic vent source heat field for ColdTick Jacobi solve - owner: AbyssalThermalManager
-                _thermalMapSourceCelsius = new NativeArray<float>(
-                    ThermalMapCellCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_thermalMapSourceCelsius, NativeMemoryOwner, nameof(_thermalMapSourceCelsius), NativeMemoryLifetime);
-                FillThermalMap(_thermalMapSourceCelsius, defaultThermalMapAmbient);
-            }
-
-            if (!_thermalMapInsulation01.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<float>[32768] - voxel-SDF insulation field; positive density damps diffusion - owner: AbyssalThermalManager
-                _thermalMapInsulation01 = new NativeArray<float>(
-                    ThermalMapCellCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_thermalMapInsulation01, NativeMemoryOwner, nameof(_thermalMapInsulation01), NativeMemoryLifetime);
-            }
-
-            if (!_thermalMapVisualCelsius.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<float>[1024] - center-slice thermal map projection for GPU/VFX readback - owner: AbyssalThermalManager
-                _thermalMapVisualCelsius = new NativeArray<float>(
-                    ThermalMapPlaneCellCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_thermalMapVisualCelsius, NativeMemoryOwner, nameof(_thermalMapVisualCelsius), NativeMemoryLifetime);
+                // COLD ALLOC: float[1024] - center-slice thermal texture staging, not simulation truth - owner: AbyssalThermalManager
+                _thermalMapVisualCelsius = new float[ThermalMapPlaneCellCount];
                 FillThermalMap(_thermalMapVisualCelsius, defaultThermalMapAmbient);
             }
 
-            if (!_thermalGridRleRuns.IsCreated)
+            if (_thermalGridRleRuns == null || _thermalGridRleRuns.Length != ThermalGridSaveRleCapacity)
             {
-                // COLD ALLOC: NativeArray<ThermalGridRleRun>[32768] - worst-case non-ambient RLE staging for SaveBinaryStorage - owner: AbyssalThermalManager
-                _thermalGridRleRuns = new NativeArray<SaveBinaryStorage.ThermalGridRleRun>(
-                    ThermalGridSaveRleCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_thermalGridRleRuns, NativeMemoryOwner, nameof(_thermalGridRleRuns), NativeMemoryLifetime);
+                // COLD ALLOC: ThermalGridRleRun[32768] - save RLE staging, not cross-frame native owner state - owner: AbyssalThermalManager
+                _thermalGridRleRuns = new SaveBinaryStorage.ThermalGridRleRun[ThermalGridSaveRleCapacity];
             }
         }
 
         private void DisposeThermalMapBuffers()
         {
+            CompleteThermalMapJobIfReady(forceComplete: true);
+
             if (Volatile.Read(ref _thermalMapReadbackRetainCount) > 0)
             {
                 _thermalMapDisposePending = true;
@@ -2760,50 +2898,15 @@ namespace Hecton8.World
             }
 
             _thermalMapDisposePending = false;
-            JobHandle dependency = _thermalMapJobActive ? _thermalMapJobHandle : default;
-            if (_thermalMapReadCelsius.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_thermalMapReadCelsius);
-                dependency = _thermalMapReadCelsius.Dispose(dependency);
-                _thermalMapReadCelsius = default;
-            }
+            ReleaseThermalFloatBuffer(_dataVault, ref _thermalMapReadCelsiusHandle, ThermalMapReadCelsiusBufferId);
+            ReleaseThermalFloatBuffer(_dataVault, ref _thermalMapWriteCelsiusHandle, ThermalMapWriteCelsiusBufferId);
+            ReleaseThermalFloatBuffer(_dataVault, ref _thermalMapSourceCelsiusHandle, ThermalMapSourceCelsiusBufferId);
+            ReleaseThermalFloatBuffer(_dataVault, ref _thermalMapInsulation01Handle, ThermalMapInsulationBufferId);
 
-            if (_thermalMapWriteCelsius.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_thermalMapWriteCelsius);
-                dependency = _thermalMapWriteCelsius.Dispose(dependency);
-                _thermalMapWriteCelsius = default;
-            }
+            _thermalMapVisualCelsius = null;
+            _thermalGridRleRuns = null;
 
-            if (_thermalMapSourceCelsius.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_thermalMapSourceCelsius);
-                dependency = _thermalMapSourceCelsius.Dispose(dependency);
-                _thermalMapSourceCelsius = default;
-            }
-
-            if (_thermalMapInsulation01.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_thermalMapInsulation01);
-                dependency = _thermalMapInsulation01.Dispose(dependency);
-                _thermalMapInsulation01 = default;
-            }
-
-            if (_thermalMapVisualCelsius.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_thermalMapVisualCelsius);
-                dependency = _thermalMapVisualCelsius.Dispose(dependency);
-                _thermalMapVisualCelsius = default;
-            }
-
-            if (_thermalGridRleRuns.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_thermalGridRleRuns);
-                dependency = _thermalGridRleRuns.Dispose(dependency);
-                _thermalGridRleRuns = default;
-            }
-
-            _thermalMapJobHandle = dependency;
+            _thermalMapJobHandle = default;
             _thermalMapJobActive = false;
             _thermalMapDiffusionSlicesCompleted = 0;
             _thermalMapDiffusionSliceCursor = 0;
@@ -2832,15 +2935,238 @@ namespace Hecton8.World
             _thermalMapTexture = null;
         }
 
+        private bool HasThermalMapReadBuffer()
+        {
+            return HasThermalVaultBuffer(
+                _dataVault,
+                in _thermalMapReadCelsiusHandle,
+                ThermalMapReadCelsiusBufferId,
+                ThermalMapCellCount);
+        }
+
+        private bool EnsureThermalFloatBuffer(
+            ref VaultGenerationHandle<float> handle,
+            BufferID bufferId,
+            float defaultValue)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                vault.IsAllocationLocked)
+            {
+                return false;
+            }
+
+            if (HasThermalVaultBuffer(vault, in handle, bufferId, ThermalMapCellCount))
+                return true;
+
+            ReleaseThermalFloatBuffer(vault, ref handle, bufferId);
+            handle = vault.EnsureGenerationHandle<float>(
+                bufferId,
+                ThermalMapCellCount,
+                ThermalVaultOwnerSystem,
+                NativeArrayOptions.ClearMemory);
+            if (!HasThermalVaultBuffer(vault, in handle, bufferId, ThermalMapCellCount))
+            {
+                ReleaseThermalFloatBuffer(vault, ref handle, bufferId);
+                return false;
+            }
+
+            return FillThermalMapBuffer(in handle, bufferId, defaultValue);
+        }
+
+        private bool TryReadThermalMapBuffer(
+            in VaultGenerationHandle<float> handle,
+            BufferID bufferId,
+            out NativeArray<float> buffer)
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   IsThermalVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= ThermalMapCellCount;
+        }
+
+        private bool TryReadOnlyThermalMapBuffer(
+            in VaultGenerationHandle<float> handle,
+            BufferID bufferId,
+            out NativeArray<float>.ReadOnly buffer)
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   IsThermalVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= ThermalMapCellCount;
+        }
+
+        private bool TryAcquireThermalMapWriteBuffer(
+            in VaultGenerationHandle<float> handle,
+            BufferID bufferId,
+            out NativeArray<float> buffer)
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsThermalVaultHandle(in handle, bufferId) ||
+                !vault.TryAcquireWriteLock(in handle, ThermalVaultOwnerSystem, out buffer))
+            {
+                return false;
+            }
+
+            if (!vault.IsCompactionFenceActive &&
+                buffer.IsCreated &&
+                buffer.Length >= ThermalMapCellCount)
+            {
+                return true;
+            }
+
+            vault.ReleaseWriteLock(in handle, ThermalVaultOwnerSystem);
+            buffer = default;
+            return false;
+        }
+
+        private bool FillThermalMapBuffer(
+            in VaultGenerationHandle<float> handle,
+            BufferID bufferId,
+            float value)
+        {
+            if (!TryAcquireThermalMapWriteBuffer(in handle, bufferId, out NativeArray<float> buffer))
+                return false;
+
+            try
+            {
+                FillThermalMap(buffer, value);
+                return true;
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in handle, ThermalVaultOwnerSystem);
+            }
+        }
+
+        private bool CopyThermalMapBuffer(
+            in VaultGenerationHandle<float> sourceHandle,
+            BufferID sourceBufferId,
+            in VaultGenerationHandle<float> destinationHandle,
+            BufferID destinationBufferId)
+        {
+            if (!TryReadThermalMapBuffer(in sourceHandle, sourceBufferId, out NativeArray<float> source) ||
+                !TryAcquireThermalMapWriteBuffer(in destinationHandle, destinationBufferId, out NativeArray<float> destination))
+            {
+                return false;
+            }
+
+            try
+            {
+                NativeArray<float>.Copy(source, destination, ThermalMapCellCount);
+                return true;
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in destinationHandle, ThermalVaultOwnerSystem);
+            }
+        }
+
+        private bool TryLockThermalMapReadback()
+        {
+            IDataVault vault = _dataVault;
+            if (!UsesThermalGrid() ||
+                vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsThermalVaultHandle(in _thermalMapReadCelsiusHandle, ThermalMapReadCelsiusBufferId) ||
+                !vault.TryLockBuffer(ThermalMapReadCelsiusBufferId, ThermalVaultOwnerSystem))
+            {
+                return false;
+            }
+
+            if (!vault.IsCompactionFenceActive)
+                return true;
+
+            vault.TryUnlockBuffer(ThermalMapReadCelsiusBufferId, ThermalVaultOwnerSystem);
+            return false;
+        }
+
+        private void ReleaseThermalFloatBuffer(
+            IDataVault vault,
+            ref VaultGenerationHandle<float> handle,
+            BufferID bufferId)
+        {
+            if (vault != null && IsThermalVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
         private void DisposeThermalTelemetry()
         {
-            if (!_thermalTelemetryRing.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(_thermalTelemetryRing);
-            _thermalTelemetryRing.Dispose();
-            _thermalTelemetryRing = default;
+            ReleaseThermalTelemetry(_dataVault);
             _thermalTelemetryIndex = 0;
+        }
+
+        private bool EnsureThermalTelemetry()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                vault.IsAllocationLocked)
+            {
+                return false;
+            }
+
+            if (HasThermalVaultBuffer(vault, in _thermalTelemetryRingHandle, BufferID.AbyssalThermalManagerTelemetryRing, ThermalTelemetryCapacity))
+                return true;
+
+            ReleaseThermalTelemetry(vault);
+            _thermalTelemetryRingHandle = vault.EnsureGenerationHandle<ThermalTelemetryEntry>(
+                BufferID.AbyssalThermalManagerTelemetryRing,
+                ThermalTelemetryCapacity,
+                ThermalVaultOwnerSystem,
+                NativeArrayOptions.ClearMemory);
+
+            if (HasThermalVaultBuffer(vault, in _thermalTelemetryRingHandle, BufferID.AbyssalThermalManagerTelemetryRing, ThermalTelemetryCapacity))
+                return true;
+
+            ReleaseThermalTelemetry(vault);
+            return false;
+        }
+
+        private void ReleaseThermalTelemetry(IDataVault vault)
+        {
+            if (vault != null && IsThermalVaultHandle(in _thermalTelemetryRingHandle, BufferID.AbyssalThermalManagerTelemetryRing))
+                vault.ReleaseBuffer(in _thermalTelemetryRingHandle);
+
+            _thermalTelemetryRingHandle = default;
+        }
+
+        private static bool HasThermalVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
+                   IsThermalVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsThermalVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)ThermalVaultOwnerSystem &&
+                   handle.Generation != 0u;
         }
 
         private void ResolveDependencies()
@@ -2865,11 +3191,8 @@ namespace Hecton8.World
                     playerTransform = bootstrapPlayer;
             }
 
-            if (_playerTransportCoordinator == null && playerTransform != null)
-                playerTransform.TryGetComponent(out _playerTransportCoordinator);
-
-            if (_playerMovement == null && playerTransform != null)
-                playerTransform.TryGetComponent(out _playerMovement);
+            RefreshPlayerComponentCaches();
+            RefreshThermalDamageReceiverCaches();
 
             if (viewCamera == null && playerTransform != null)
             {
@@ -2878,6 +3201,87 @@ namespace Hecton8.World
                     playerTransform.TryGetComponent(out viewCamera);
             }
 
+            RefreshFluidDecalOwner();
+        }
+
+        private void RefreshPlayerComponentCaches()
+        {
+            if (_playerTransportCoordinator == null && playerTransform != null)
+                playerTransform.TryGetComponent(out _playerTransportCoordinator);
+
+            if (_playerMovement == null && playerTransform != null)
+                playerTransform.TryGetComponent(out _playerMovement);
+        }
+
+        private void RefreshThermalDamageReceiverCaches()
+        {
+            RefreshPlayerThermalDamageReceiver();
+            RefreshSubmarineThermalDamageReceiver();
+        }
+
+        private void RefreshPlayerThermalDamageReceiver()
+        {
+            _playerThermalDamageReceiver = null;
+            _playerThermalDamageTransform = null;
+
+            HectonPlayerHealth playerHealth = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerHealth : null;
+            if (playerHealth != null)
+            {
+                _playerThermalDamageReceiver = playerHealth;
+                _playerThermalDamageTransform = playerHealth.transform;
+                return;
+            }
+
+            if (playerTransform != null &&
+                FindDamageReceiverInParentsCold(playerTransform, out IDamageReceiver receiver, out Transform receiverTransform))
+            {
+                _playerThermalDamageReceiver = receiver;
+                _playerThermalDamageTransform = receiverTransform;
+            }
+        }
+
+        private void RefreshSubmarineThermalDamageReceiver()
+        {
+            _submarineThermalDamageReceiver = null;
+            _submarineThermalDamageTransform = null;
+
+            Rigidbody hull = _submarineRuntimeContext != null ? _submarineRuntimeContext.HullRigidbody : null;
+            if (hull == null)
+                return;
+
+            if (FindDamageReceiverInParentsCold(hull.transform, out IDamageReceiver receiver, out Transform receiverTransform))
+            {
+                _submarineThermalDamageReceiver = receiver;
+                _submarineThermalDamageTransform = receiverTransform;
+            }
+        }
+
+        private static bool FindDamageReceiverInParentsCold(
+            Transform start,
+            out IDamageReceiver receiver,
+            out Transform receiverTransform)
+        {
+            receiver = null;
+            receiverTransform = null;
+            Transform current = start;
+            for (int depth = 0; depth < 6 && current != null; depth++)
+            {
+                IDamageReceiver candidateReceiver = current.GetComponent<IDamageReceiver>();
+                if (candidateReceiver != null)
+                {
+                    receiver = candidateReceiver;
+                    receiverTransform = current;
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private void RefreshFluidDecalOwner()
+        {
             if (_fluidDecalManager == null)
             {
                 if (fluidDecalManager != null)
@@ -2895,13 +3299,49 @@ namespace Hecton8.World
                 _fluidDecalManager.ConfigureMaterial(fluidDecalMaterial);
         }
 
+        private void RebindPlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)
+        {
+            _playerRuntimeContext = playerRuntimeContext;
+            if (_playerRuntimeContext == null)
+            {
+                playerTransform = null;
+                viewCamera = null;
+                _playerTransportCoordinator = null;
+                _playerMovement = null;
+                _playerThermalDamageReceiver = null;
+                _playerThermalDamageTransform = null;
+                return;
+            }
+
+            playerTransform = _playerRuntimeContext.PlayerTransform != null
+                ? _playerRuntimeContext.PlayerTransform
+                : playerTransform;
+            viewCamera = _playerRuntimeContext.PlayerCamera != null
+                ? _playerRuntimeContext.PlayerCamera
+                : viewCamera;
+            _playerTransportCoordinator = null;
+            _playerMovement = _playerRuntimeContext.PlayerMovement != null
+                ? _playerRuntimeContext.PlayerMovement
+                : null;
+            RefreshPlayerComponentCaches();
+            RefreshPlayerThermalDamageReceiver();
+        }
+
+        private void RebindSubmarineRuntimeContext(ISubmarineRuntimeContext submarineRuntimeContext)
+        {
+            _submarineRuntimeContext = submarineRuntimeContext;
+            RefreshSubmarineThermalDamageReceiver();
+        }
+
         private void CacheRegistryServicesCold()
         {
+            _dataVault = GlobalRegistry.DataVault;
             _playerRuntimeContext = GlobalRegistry.Player;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
             _physicsService = GlobalRegistry.Physics;
+            _gasDynamics = GlobalRegistry.GasDynamics;
             if (cutManager == null)
-                cutManager = GlobalRegistry.SargassumCut;
+                cutManager = SargassumCutManager.Instance;
             if (_simulationBucketer == null)
                 _simulationBucketer = GlobalRegistry.SimulationBucketer;
         }
@@ -2931,28 +3371,27 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Player:
-                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
-                    if (_playerRuntimeContext != null)
-                    {
-                        playerTransform = _playerRuntimeContext.PlayerTransform != null
-                            ? _playerRuntimeContext.PlayerTransform
-                            : playerTransform;
-                        viewCamera = _playerRuntimeContext.PlayerCamera != null
-                            ? _playerRuntimeContext.PlayerCamera
-                            : viewCamera;
-                    }
+                    RebindPlayerRuntimeContext(currentService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.Submarine:
-                    _submarineRuntimeContext = currentService as ISubmarineRuntimeContext;
+                    RebindSubmarineRuntimeContext(currentService as ISubmarineRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.Physics:
                     _physicsService = currentService as IPhysicsService;
+                    break;
+                case GlobalRegistryServiceSlot.GasDynamicsRuntime:
+                    _gasDynamics = currentService as IGasDynamicsSolver;
                     break;
                 case GlobalRegistryServiceSlot.SargassumCutRuntime:
                     cutManager = currentService as SargassumCutManager;
                     break;
                 case GlobalRegistryServiceSlot.SimulationBucketerRuntime:
                     _simulationBucketer = currentService as ISimulationBucketer;
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    ReleaseThermalTelemetry(previousService as IDataVault ?? _dataVault);
+                    _dataVault = currentService as IDataVault;
+                    EnsureThermalTelemetry();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registeredTick = false;
@@ -3111,41 +3550,25 @@ namespace Hecton8.World
                 _ventCrystallizationCooldowns = new float[MaxVentCapacity];
             }
 
-            if (!_crystallizationSamples.IsCreated)
+            if (_crystallizationSamples == null || _crystallizationSamples.Length != MaxCrystallizationSampleCapacity)
             {
-                // COLD ALLOC: NativeArray<ThermalCrystallizationSample>[32] - thermal boundary job input ring - owner: AbyssalThermalManager
-                _crystallizationSamples = new NativeArray<ThermalCrystallizationSample>(
-                    MaxCrystallizationSampleCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_crystallizationSamples, NativeMemoryOwner, nameof(_crystallizationSamples), NativeMemoryLifetime);
+                // COLD ALLOC: ThermalCrystallizationSample[32] - bounded thermal boundary input ring - owner: AbyssalThermalManager
+                _crystallizationSamples = new ThermalCrystallizationSample[MaxCrystallizationSampleCapacity];
             }
 
-            if (!_crystallizationResults.IsCreated)
+            if (_crystallizationResults == null || _crystallizationResults.Length != MaxCrystallizationSampleCapacity)
             {
-                // COLD ALLOC: NativeArray<ThermalCrystallizationResult>[32] - thermal boundary job output ring - owner: AbyssalThermalManager
-                _crystallizationResults = new NativeArray<ThermalCrystallizationResult>(
-                    MaxCrystallizationSampleCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_crystallizationResults, NativeMemoryOwner, nameof(_crystallizationResults), NativeMemoryLifetime);
+                // COLD ALLOC: ThermalCrystallizationResult[32] - bounded thermal boundary output ring - owner: AbyssalThermalManager
+                _crystallizationResults = new ThermalCrystallizationResult[MaxCrystallizationSampleCapacity];
             }
 
-            if (!_thermalTelemetryRing.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<ThermalTelemetryEntry>[300] - fixed black-box ring for recent thermal state - owner: AbyssalThermalManager
-                _thermalTelemetryRing = new NativeArray<ThermalTelemetryEntry>(
-                    ThermalTelemetryCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_thermalTelemetryRing, NativeMemoryOwner, nameof(_thermalTelemetryRing), NativeMemoryLifetime);
-            }
+            EnsureThermalTelemetry();
 
             if (UsesThermalGrid())
             {
                 EnsureThermalMapBuffers();
             }
-            else if (!_thermalMapJobActive)
+            else
             {
                 DisposeThermalMapBuffers();
             }
@@ -3167,8 +3590,8 @@ namespace Hecton8.World
 
         private void EnsureBuffers()
         {
-            bool particleBufferARecreated = EnsureBuffer<AshParticleData>(ref _particleBufferA, smokeParticleCount);
-            bool particleBufferBRecreated = EnsureBuffer<AshParticleData>(ref _particleBufferB, smokeParticleCount);
+            bool particleBufferARecreated = EnsureGpuWriteBuffer<AshParticleData>(ref _particleBufferA, smokeParticleCount);
+            bool particleBufferBRecreated = EnsureGpuWriteBuffer<AshParticleData>(ref _particleBufferB, smokeParticleCount);
             bool ventBufferRingRecreated = EnsureVentBufferRing();
             if (particleBufferARecreated || particleBufferBRecreated)
             {
@@ -3178,17 +3601,18 @@ namespace Hecton8.World
             if (ventBufferRingRecreated)
                 _forceVentBufferUpload = true;
 
-            if (blackSmokeCompute == null)
-                return;
-
-            if (_kernelIndex < 0)
+            if (blackSmokeCompute == null || !SystemInfo.supportsComputeShaders)
             {
-                _kernelIndex = blackSmokeCompute.FindKernel("CSMain");
-                blackSmokeCompute.GetKernelThreadGroupSizes(_kernelIndex, out uint groupSizeX, out _, out _);
-                _threadGroupSizeX = Mathf.Max(1, (int)groupSizeX);
+                _kernelIndex = -1;
+                _threadGroupSizeX = 0;
+                _dispatchGroupCount = 0;
+                return;
             }
 
-            _dispatchGroupCount = Mathf.Max(1, Mathf.CeilToInt(smokeParticleCount / (float)_threadGroupSizeX));
+            if (_kernelIndex < 0 && !TryResolveBlackSmokeKernel())
+                return;
+
+            _dispatchGroupCount = ResolveDispatchGroups(smokeParticleCount, _threadGroupSizeX);
         }
 
         private bool EnsureVentBufferRing()
@@ -3272,6 +3696,59 @@ namespace Hecton8.World
             return true;
         }
 
+        private static bool EnsureGpuWriteBuffer<T>(ref GraphicsBuffer buffer, int count) where T : struct
+        {
+            int safeCount = Mathf.Max(1, count);
+            int stride = UnsafeUtility.SizeOf<T>();
+            if (buffer != null && buffer.count == safeCount && buffer.stride == stride)
+                return false;
+
+            ReleaseBuffer(ref buffer);
+
+            // COLD ALLOC: GraphicsBuffer[count] - GPU-write-capable structured storage for RWStructuredBuffer ping-pong state - owner: AbyssalThermalManager
+            buffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<T>(safeCount);
+            return true;
+        }
+
+        private bool TryResolveBlackSmokeKernel()
+        {
+            _kernelIndex = -1;
+            _threadGroupSizeX = 0;
+            _dispatchGroupCount = 0;
+            if (blackSmokeCompute == null || !SystemInfo.supportsComputeShaders)
+                return false;
+
+            if (!blackSmokeCompute.HasKernel("CSMain"))
+                return false;
+
+            int kernelIndex = blackSmokeCompute.FindKernel("CSMain");
+            if (kernelIndex < 0 || !blackSmokeCompute.IsSupported(kernelIndex))
+                return false;
+
+            blackSmokeCompute.GetKernelThreadGroupSizes(kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ);
+            if (sizeX == 0u || sizeY != 1u || sizeZ != 1u)
+                return false;
+
+            if (sizeX > (uint)PortableMaxComputeThreadsPerGroup)
+                return false;
+
+            _kernelIndex = kernelIndex;
+            _threadGroupSizeX = (int)sizeX;
+            return true;
+        }
+
+        private static int ResolveDispatchGroups(int value, int divisor)
+        {
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            if (groups <= 0L || groups > MaxDispatchGroupsPerDimension)
+                return 0;
+
+            return (int)groups;
+        }
+
         private void ReleaseBuffers()
         {
             ReleaseBuffer(ref _particleBufferA);
@@ -3334,11 +3811,11 @@ namespace Hecton8.World
                 return;
             }
 
-            WorldZoneAnchor.CopyActiveAnchorsTo(_zoneAnchors);
+            _zoneAnchorCount = WorldZoneAnchor.CopyActiveAnchorsTo(_zoneAnchors, MaxAnchorScanCapacity);
             if (!TryResolveAupFromRuntimeOrigin(playerTransform != null ? playerTransform.position : transform.position, out AbsoluteUniversePosition playerAup))
                 return;
 
-            for (int i = 0; i < _zoneAnchors.Count && _activeVentCount < maxActiveVentCount; i++)
+            for (int i = 0; i < _zoneAnchorCount && _activeVentCount < maxActiveVentCount; i++)
             {
                 WorldZoneAnchor anchor = _zoneAnchors[i];
                 if (!IsThermalAnchor(anchor))
@@ -3413,10 +3890,10 @@ namespace Hecton8.World
 
         private void AppendRuntimeVentRegistrations()
         {
-            if (_runtimeVentRegistrations.Count <= 0)
+            if (_runtimeVentRegistrationCount <= 0)
                 return;
 
-            for (int i = 0; i < _runtimeVentRegistrations.Count && _activeVentCount < maxActiveVentCount; i++)
+            for (int i = 0; i < _runtimeVentRegistrationCount && _activeVentCount < maxActiveVentCount; i++)
             {
                 RuntimeVentRegistration registration = _runtimeVentRegistrations[i];
                 _ventStates[_activeVentCount] = new ThermalVentState
@@ -3536,10 +4013,7 @@ namespace Hecton8.World
                 double3 absoluteUniversePosition = meltAup.ToAbsoluteDouble3();
                 deltaProcessor.AcceptThermalMeltEvent(new ThermalMeltEvent
                 {
-                    AbsoluteUniversePosition = new Vector3(
-                        (float)absoluteUniversePosition.x,
-                        (float)absoluteUniversePosition.y,
-                        (float)absoluteUniversePosition.z),
+                    AbsoluteUniversePosition = Vector3.zero,
                     AbsoluteUniversePositionDouble = absoluteUniversePosition,
                     RadiusMeters = Mathf.Max(1f, radiusWS * 0.35f),
                     Heat01 = Mathf.Clamp01(heatIntensity / Mathf.Max(1f, ventHeatIntensity * seismicEruptionHeatMultiplier))
@@ -3860,8 +4334,8 @@ namespace Hecton8.World
         private void ResetParticles()
         {
             EnsureStorage();
-            EnsureBuffer<AshParticleData>(ref _particleBufferA, smokeParticleCount);
-            EnsureBuffer<AshParticleData>(ref _particleBufferB, smokeParticleCount);
+            EnsureGpuWriteBuffer<AshParticleData>(ref _particleBufferA, smokeParticleCount);
+            EnsureGpuWriteBuffer<AshParticleData>(ref _particleBufferB, smokeParticleCount);
             if (_initialParticles == null || _particleBufferA == null || _particleBufferB == null)
                 return;
 
@@ -3871,8 +4345,8 @@ namespace Hecton8.World
             if (_activeVentCount <= 0)
             {
                 System.Array.Clear(_initialParticles, 0, _initialParticles.Length);
-                GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _initialParticles, smokeParticleCount);
-                GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _initialParticles, smokeParticleCount);
+                GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferA, _initialParticles, smokeParticleCount);
+                GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferB, _initialParticles, smokeParticleCount);
                 CacheSeededVentTopology();
                 _forceParticleReset = false;
                 return;
@@ -3905,20 +4379,20 @@ namespace Hecton8.World
                 };
             }
 
-            GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _initialParticles, smokeParticleCount);
-            GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _initialParticles, smokeParticleCount);
+            GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferA, _initialParticles, smokeParticleCount);
+            GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferB, _initialParticles, smokeParticleCount);
             CacheSeededVentTopology();
             _forceParticleReset = false;
             _frameParity = 0;
         }
 
-        private void BindSmokeUniforms(float dt)
+        private bool TryBindSmokeUniforms(float dt)
         {
             GraphicsBuffer readBuffer = _frameParity == 0 ? _particleBufferA : _particleBufferB;
             GraphicsBuffer writeBuffer = _frameParity == 0 ? _particleBufferB : _particleBufferA;
             GraphicsBuffer activeVentBuffer = ResolveActiveVentBuffer();
-            if (readBuffer == null || writeBuffer == null || activeVentBuffer == null)
-                return;
+            if (readBuffer == null || writeBuffer == null || activeVentBuffer == null || _kernelIndex < 0)
+                return false;
 
             Camera activeCamera = viewCamera;
             Vector3 cameraPosition = activeCamera != null ? activeCamera.transform.position : Vector3.zero;
@@ -3946,6 +4420,7 @@ namespace Hecton8.World
             _materialPropertyBlock.SetColor(_AshTintId, smokeTint);
             _materialPropertyBlock.SetColor(_AshHotTintId, smokeHotTint);
             _materialPropertyBlock.SetFloat(_SoftnessId, smokeSoftness);
+            return true;
         }
 
         private void FlushSmokeVisualSync(float dt)
@@ -3959,7 +4434,12 @@ namespace Hecton8.World
             if (!_hasSmokeData || blackSmokeCompute == null || blackSmokeMaterial == null || _activeVentCount <= 0)
                 return;
 
-            BindSmokeUniforms(dt);
+            if (_kernelIndex < 0 || _dispatchGroupCount <= 0)
+                return;
+
+            if (!TryBindSmokeUniforms(dt))
+                return;
+
             blackSmokeCompute.Dispatch(_kernelIndex, _dispatchGroupCount, 1, 1);
             _frameParity ^= 1;
 
@@ -4598,7 +5078,7 @@ namespace Hecton8.World
 
         private void HandleSeismicShockwave(in SeismicShockwaveEvent payload)
         {
-            if (_runtimeVentRegistrations.Count <= 0 && _activeVentCount <= 0)
+            if (_runtimeVentRegistrationCount <= 0 && _activeVentCount <= 0)
                 return;
 
             float strength = Mathf.Clamp01(payload.ImpulseMagnitude / 20f);
@@ -4607,7 +5087,7 @@ namespace Hecton8.World
 
         private void TriggerSeismicEruption(float strength01, float impulseMagnitude)
         {
-            if (_activeVentCount <= 0 && _runtimeVentRegistrations.Count <= 0)
+            if (_activeVentCount <= 0 && _runtimeVentRegistrationCount <= 0)
                 return;
 
             _seismicEruptionTimer = Mathf.Max(_seismicEruptionTimer, seismicEruptionDuration + Mathf.Clamp01(impulseMagnitude / 20f) * 2f);
@@ -4730,6 +5210,8 @@ namespace Hecton8.World
             {
                 GlobalRegistry.RegisterThermodynamicsRuntime(this);
                 _registeredThermodynamicsRuntime = ReferenceEquals(GlobalRegistry.Thermodynamics, this);
+                if (_registeredThermodynamicsRuntime)
+                    s_activeRuntimeInstance = this;
             }
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -4763,6 +5245,9 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterThermodynamicsRuntime(this);
                 _registeredThermodynamicsRuntime = false;
             }
+
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
 
             if (_registeredTick)
             {
@@ -4826,42 +5311,6 @@ namespace Hecton8.World
                 float heated = math.max(blurred, Sources[index]);
                 float floor = math.min(AmbientCelsius, Sources[index]);
                 Next[index] = math.isfinite(heated) ? math.max(floor, heated) : floor;
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct ThermalCrystallizationBoundaryJob : IJobParallelFor
-        {
-            [ReadOnly, NoAlias] public NativeArray<ThermalCrystallizationSample> Samples;
-            [NoAlias]
-            public NativeArray<ThermalCrystallizationResult> Results;
-            public float MinimumSourceTemperatureCelsius;
-            public float DeltaTemperatureThresholdCelsius;
-            public float MinimumRadiusMeters;
-
-            public void Execute(int index)
-            {
-                ThermalCrystallizationSample sample = Samples[index];
-                ThermalCrystallizationResult result = default;
-                if (sample.Pending == 0 ||
-                    sample.RadiusMeters < MinimumRadiusMeters ||
-                    !math.all(math.isfinite(sample.PositionWS)) ||
-                    !math.isfinite(sample.PreviousTemperatureCelsius) ||
-                    !math.isfinite(sample.CurrentTemperatureCelsius))
-                {
-                    Results[index] = result;
-                    return;
-                }
-
-                float delta = sample.CurrentTemperatureCelsius - sample.PreviousTemperatureCelsius;
-                bool accepted = sample.PreviousTemperatureCelsius >= MinimumSourceTemperatureCelsius &&
-                                delta <= DeltaTemperatureThresholdCelsius;
-                result.PositionWS = sample.PositionWS;
-                result.DeltaTemperatureCelsius = delta;
-                result.RadiusMeters = math.max(MinimumRadiusMeters, sample.RadiusMeters);
-                result.SourceId = sample.SourceId;
-                result.ShouldSpawn = accepted ? (byte)1 : (byte)0;
-                Results[index] = result;
             }
         }
 

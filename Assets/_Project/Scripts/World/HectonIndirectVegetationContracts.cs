@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -60,7 +61,7 @@ namespace Hecton8.World
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 96)]
-    public struct HectonFloraSporeEvent
+    public struct HectonFloraSporeEvent : ISignal
     {
         [FieldOffset(0)]
         public AbsoluteUniversePositionBlit PositionAup;
@@ -89,32 +90,38 @@ namespace Hecton8.World
     }
 
     /// <summary>
-    /// NativeQueue-backed flora spore handoff for fog/scatter consumers.
+    /// Fixed-capacity flora spore handoff for fog/scatter consumers.
     /// </summary>
     public static class HectonFloraSporeEvents
     {
         public const int PendingEventCapacity = 64;
-        private const Allocator DataVaultExemptFloraSporeEventLaneAllocator = Allocator.Persistent;
 
-        private static NativeQueue<HectonFloraSporeEvent> _pendingEvents;
+        // COLD ALLOC: HectonFloraSporeEvent[64] - fixed flora spore handoff ring for fog/scatter consumers - owner: HectonFloraSporeEvents
+        private static readonly HectonFloraSporeEvent[] _pendingEvents = new HectonFloraSporeEvent[PendingEventCapacity];
+        private static int _pendingHead;
+        private static int _pendingTail;
         private static int _pendingEventCount;
         private static int _droppedEventCount;
+        private static int s_x001HectonFloraSporeEventsSignalPushDropCount;
 
         public static int PendingCount => _pendingEventCount;
         public static int DroppedEventCount => _droppedEventCount;
+        public static int SignalDroppedEventCount => s_x001HectonFloraSporeEventsSignalPushDropCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(HectonFloraSporeEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
+            ConfigureSignalLaneCold();
+            _pendingHead = 0;
+            _pendingTail = 0;
             _pendingEventCount = 0;
             _droppedEventCount = 0;
+            s_x001HectonFloraSporeEventsSignalPushDropCount = 0;
+        }
+
+        public static System.ReadOnlySpan<HectonFloraSporeEvent> GetFrameSnapshot()
+        {
+            return SignalBus<HectonFloraSporeEvent>.GetFrameSnapshot();
         }
 
         public static bool EnqueueMatureToxicSpore(
@@ -155,29 +162,30 @@ namespace Hecton8.World
 
         public static bool TryDequeue(out HectonFloraSporeEvent sporeEvent)
         {
-            if (!_pendingEvents.IsCreated || !_pendingEvents.TryDequeue(out sporeEvent))
+            if (_pendingEventCount <= 0)
             {
                 sporeEvent = default;
-                if (_pendingEvents.IsCreated)
-                    _pendingEventCount = 0;
                 return false;
             }
 
-            if (_pendingEventCount > 0)
-                _pendingEventCount--;
+            sporeEvent = _pendingEvents[_pendingHead];
+            _pendingEvents[_pendingHead] = default;
+            _pendingHead = (_pendingHead + 1) % PendingEventCapacity;
+            _pendingEventCount--;
 
             return true;
         }
 
         public static void Clear()
         {
-            if (!_pendingEvents.IsCreated)
-                return;
-
-            while (_pendingEvents.TryDequeue(out _))
+            for (int i = 0; i < _pendingEventCount; i++)
             {
+                int index = (_pendingHead + i) % PendingEventCapacity;
+                _pendingEvents[index] = default;
             }
 
+            _pendingHead = 0;
+            _pendingTail = 0;
             _pendingEventCount = 0;
         }
 
@@ -207,14 +215,13 @@ namespace Hecton8.World
                 return false;
             }
 
-            EnsureInitialized();
             if (!TryResolveRuntimeAup(runtimePosition, out AbsoluteUniversePosition positionAup))
             {
                 _droppedEventCount++;
                 return false;
             }
 
-            _pendingEvents.Enqueue(new HectonFloraSporeEvent
+            HectonFloraSporeEvent sporeEvent = new HectonFloraSporeEvent
             {
                 PositionAup = AbsoluteUniversePositionBlit.FromAup(in positionAup),
                 RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
@@ -227,9 +234,25 @@ namespace Hecton8.World
                 Kind = kind,
                 Underwater = underwater ? (byte)1 : (byte)0,
                 Reserved0 = 0
-            });
+            };
+
+            _pendingEvents[_pendingTail] = sporeEvent;
+            _pendingTail = (_pendingTail + 1) % PendingEventCapacity;
             _pendingEventCount++;
+            SignalBus<HectonFloraSporeEvent>.TryPushTracked(
+                in sporeEvent,
+                ref s_x001HectonFloraSporeEventsSignalPushDropCount);
             return true;
+        }
+
+        private static void ConfigureSignalLaneCold()
+        {
+            SignalBus<HectonFloraSporeEvent>.Configure(
+                PendingEventCapacity,
+                maxFrameSignals: PendingEventCapacity,
+                lowTierFrameSignals: 16,
+                laneHash: 0x46535052u);
+            SignalBus<HectonFloraSporeEvent>.EnsureInitialized();
         }
 
         private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
@@ -247,35 +270,6 @@ namespace Hecton8.World
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
             return positionAup.IsFinite();
-        }
-
-        private static void EnsureInitialized()
-        {
-            if (_pendingEvents.IsCreated)
-                return;
-
-            _pendingEvents = new NativeQueue<HectonFloraSporeEvent>(DataVaultExemptFloraSporeEventLaneAllocator); // COLD ALLOC: NativeQueue<HectonFloraSporeEvent>[64] - flora spore event handoff lane for GPU fog/scatter consumers - owner: HectonFloraSporeEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(HectonFloraSporeEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
-            PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-        }
-
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
         }
 
         private static bool IsFinite(Vector3 value)
@@ -533,7 +527,7 @@ namespace Hecton8.World
     /// Immutable native read token for front/back buffered vegetation export.
     /// The producer owns lifetime and the consumer must release the token after upload.
     /// </summary>
-    public readonly struct HectonIndirectVegetationNativeReadBuffer
+    public readonly ref struct HectonIndirectVegetationNativeReadBuffer
     {
         /// <summary>
         /// Creates one native read token for the indirect vegetation renderer.

@@ -32,6 +32,7 @@ namespace Hecton8.Vehicles.Automation
         public const int FlowSampleCount = FlowWidth * FlowHeight * FlowDepth;
         public const int WaypointCapacity = 256;
         public const int HandlingProfileCapacity = 32;
+        public const float AuthoritativeQualityWeight = 1f;
 #if UNITY_EDITOR
         public const int CsvScratchBytes = 4096;
 #endif
@@ -1560,8 +1561,7 @@ namespace Hecton8.Vehicles.Automation
 
             _accumulatedSolverDeltaTime = math.min(0.25f, _accumulatedSolverDeltaTime + safeDeltaTime);
             uint tick = _fixedFrame++;
-            float quality = ResolveSchedulingQualityWeight();
-            int cadenceFrames = ResolveSolverCadenceFrames(quality);
+            int cadenceFrames = ResolveAuthoritySolverCadenceFrames();
             if (cadenceFrames > 1 && tick % (uint)cadenceFrames != 0u)
                 return;
 
@@ -1741,7 +1741,7 @@ namespace Hecton8.Vehicles.Automation
                 return false;
 
             tuning = SanitizeTuning(tuningBuffer[0]);
-            tuning.ResolvedQualityWeight = ResolveRuntimeQualityWeight(tuning.GlobalQualityWeight);
+            tuning.ResolvedQualityWeight = SubmarineAutopilotConstants.AuthoritativeQualityWeight;
             return true;
         }
 
@@ -1795,7 +1795,7 @@ namespace Hecton8.Vehicles.Automation
                     return false;
 
                 AutopilotTuningDTO sanitized = SanitizeTuning(tuning);
-                sanitized.ResolvedQualityWeight = ResolveRuntimeQualityWeight(sanitized.GlobalQualityWeight);
+                sanitized.ResolvedQualityWeight = SubmarineAutopilotConstants.AuthoritativeQualityWeight;
                 tuningBuffer[0] = sanitized;
                 return true;
             }
@@ -2115,7 +2115,7 @@ namespace Hecton8.Vehicles.Automation
             bool tuningResolved = TryResolveAutopilotVaultBuffer(_dataVault, in _tuningHandle, SubmarineAutopilotVaultRoute.AutopilotTuning, 1, out NativeArray<AutopilotTuningDTO> tuningBuffer);
             if (tuningResolved)
                 tuning = SanitizeTuning(tuningBuffer[0]);
-            tuning.ResolvedQualityWeight = ResolveRuntimeQualityWeight(tuning.GlobalQualityWeight);
+            tuning.ResolvedQualityWeight = SubmarineAutopilotConstants.AuthoritativeQualityWeight;
             tuning.ActiveVehicleCount = capacity;
             if (tuningResolved)
                 tuningBuffer[0] = tuning;
@@ -2743,7 +2743,7 @@ namespace Hecton8.Vehicles.Automation
                 SubmarineAutopilotConstants.FlowHeight,
                 SubmarineAutopilotConstants.FlowDepth);
             tuning.SourceHash = SubmarineAutopilotConstants.SourceHashAutopilot;
-            tuning.ResolvedQualityWeight = ResolveRuntimeQualityWeight(tuning.GlobalQualityWeight);
+            tuning.ResolvedQualityWeight = SubmarineAutopilotConstants.AuthoritativeQualityWeight;
             return tuning;
         }
 
@@ -2761,7 +2761,7 @@ namespace Hecton8.Vehicles.Automation
             tuning.TargetSpeedFallback = math.isfinite(tuning.TargetSpeedFallback) && tuning.TargetSpeedFallback >= 0f ? tuning.TargetSpeedFallback : 8f;
             float sourceQuality = math.select(tuning.GlobalQualityWeight, 1f, missingSource);
             tuning.GlobalQualityWeight = SanitizeQualityWeight(sourceQuality, 1f);
-            tuning.ResolvedQualityWeight = SanitizeQualityWeight(tuning.ResolvedQualityWeight, tuning.GlobalQualityWeight);
+            tuning.ResolvedQualityWeight = SubmarineAutopilotConstants.AuthoritativeQualityWeight;
             if (tuning.SdfDimensions.x <= 1 || tuning.SdfDimensions.y <= 1 || tuning.SdfDimensions.z <= 1)
                 tuning.SdfDimensions = new int3(SubmarineAutopilotConstants.MockSdfWidth, SubmarineAutopilotConstants.MockSdfHeight, SubmarineAutopilotConstants.MockSdfDepth);
             if (!math.all(math.isfinite(tuning.SdfOrigin)))
@@ -2778,41 +2778,14 @@ namespace Hecton8.Vehicles.Automation
             return tuning;
         }
 
-        private float ResolveSchedulingQualityWeight()
-        {
-            float qualityCap = 1f;
-            if (_buffersReady && _dataVault != null && !_buffersLocked)
-            {
-                if (TryReadAutopilotVaultBuffer(_dataVault, in _tuningHandle, SubmarineAutopilotVaultRoute.AutopilotTuning, 1, out NativeArray<AutopilotTuningDTO> tuning))
-                    qualityCap = SanitizeQualityWeight(tuning[0].GlobalQualityWeight, 1f);
-            }
-
-            return ResolveRuntimeQualityWeight(qualityCap);
-        }
-
-        private static float ResolveRuntimeQualityWeight(float qualityCap)
-        {
-            float liveQuality;
-            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
-                liveQuality = config.GlobalQualityWeight;
-            else
-                liveQuality = HomeostasisBrain.GlobalQualityWeight;
-
-            float cap = SanitizeQualityWeight(qualityCap, 1f);
-            float quality = math.min(SanitizeQualityWeight(liveQuality, 1f), cap);
-            return QuantizeQualityWeight(quality);
-        }
-
         private static float SanitizeQualityWeight(float value, float fallback)
         {
             return math.saturate(math.select(fallback, value, math.isfinite(value)));
         }
 
-        private static float QuantizeQualityWeight(float value)
+        private static int ResolveAuthoritySolverCadenceFrames()
         {
-            float quality = math.saturate(math.select(1f, value, math.isfinite(value)));
-            int milli = math.clamp((int)math.floor(quality * 1000f + 0.5f), 0, 1000);
-            return milli * 0.001f;
+            return ResolveSolverCadenceFrames(SubmarineAutopilotConstants.AuthoritativeQualityWeight);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

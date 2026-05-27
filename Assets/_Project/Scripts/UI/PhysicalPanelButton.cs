@@ -162,6 +162,7 @@ namespace Hecton8.UI
             CacheScalarConfig();
             ResolveReferences();
             RegisterCollider();
+            InteractableRegistry.RegisterTree(this);
             TryRegisterHotSwapListener();
             AcquireAcousticRuntime();
             RefreshTickRegistration(false);
@@ -175,6 +176,7 @@ namespace Hecton8.UI
             Unregister(forceLateFrame: true);
             TryUnregisterHotSwapListener();
             ReleaseAcousticRuntime();
+            InteractableRegistry.InvalidateTree(this);
             UnregisterCollider();
             _lastHandInsideFrame = -1;
             _pressDispatched = false;
@@ -191,6 +193,7 @@ namespace Hecton8.UI
             Unregister(forceLateFrame: true);
             TryUnregisterHotSwapListener();
             ReleaseAcousticRuntime();
+            InteractableRegistry.InvalidateTree(this);
             UnregisterCollider();
         }
 
@@ -261,10 +264,7 @@ namespace Hecton8.UI
             }
 
             if (_registeredLateFrame && !_registered && !_buttonVisualDirty && !_pendingPressHaptic && !_pendingClickAudio)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-                _registeredLateFrame = false;
-            }
+                UnregisterLateFrameDirect();
         }
 
         private static float FastDecayBlend(float speed, float deltaTime)
@@ -768,13 +768,13 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if ((_registered && _registeredLateFrame) || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if ((_registered && _registeredLateFrame) || !Application.isPlaying)
                 return;
 
             if (!_registered)
                 _registered = true;
             if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = SystemDispatcher.Register(this, PriorityLayer.UI);
             if (!_registeredLateFrame)
                 _registered = false;
         }
@@ -806,10 +806,13 @@ namespace Hecton8.UI
             }
 
             if (_registeredLateFrame && (forceLateFrame || (!_buttonVisualDirty && !_pendingPressHaptic && !_pendingClickAudio)))
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-                _registeredLateFrame = false;
-            }
+                UnregisterLateFrameDirect();
+        }
+
+        private void UnregisterLateFrameDirect()
+        {
+            SystemDispatcher.Unregister(this, PriorityLayer.UI);
+            _registeredLateFrame = false;
         }
 
 #if UNITY_EDITOR

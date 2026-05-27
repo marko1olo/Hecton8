@@ -1,0 +1,66 @@
+﻿{
+    "agentId":  "1318",
+    "task":  "1318_PURGE",
+    "loop":  47,
+    "status":  "VERIFICATION_BLOCKED_CPU_COMPILER_GATE",
+    "promptReport":  "Docs/Reports/AGENT_PROMPT_1318_REEXTRACTED_LOOP47.xml",
+    "promptLineTaskCount":  20,
+    "promptLooseTaskMentions":  20,
+    "promptSha256":  "bd959f47caea5a192f4bcaba65c92efaf7e647f034b3cf6c68ecb924f262022b",
+    "scannedFiles":  1,
+    "failedGates":  [
+                        "BUILD_GATE_BLOCKED_BY_CPU_GT_50",
+                        "ROSLYN_RERUN_BLOCKED_BY_CPU_GT_50",
+                        "BUILD_GATE_BLOCKED_BY_ACTIVE_COMPILER_PROCESS"
+                    ],
+    "totalNativeFieldDeclarations":  19,
+    "persistentNativeFieldsRemaining":  0,
+    "transientVaultViews":  45,
+    "transientJobViews":  19,
+    "strictPersistentNativeFields":  0,
+    "persistentAllocatorTokens":  0,
+    "hotOwnerForbiddenHitCount":  0,
+    "passiveDecompositionRegrowthGuard":  1,
+    "passiveDecompositionRegrowthRemoveCount":  0,
+    "syncDestroyedForcesZero":  1,
+    "zeroGcHotPathHits":  0,
+    "absoluteAupCastsFound":  0,
+    "compactionAwareLocksProven":  true,
+    "telemetryRingIntegrated":  true,
+    "buildGate":  {
+                      "cpuAverage":  76,
+                      "compilerProcessCount":  0,
+                      "compilerProcesses":  [
+
+                                            ],
+                      "csprojCount":  62,
+                      "slnxMissingProjectRefs":  0
+                  },
+    "sourceSha256":  "94440eeb4013ee62f55beca378565cfbbda10ac20e8aec4f9ebf373390d833a5",
+    "verificationHashSha256":  "94440eeb4013ee62f55beca378565cfbbda10ac20e8aec4f9ebf373390d833a5",
+    "findingsFixed":  [
+                          "ApplyPassiveDecomposition could still admit a destroyed tombstone for a regrowth-owned UID and remove regrowth state.",
+                          "SyncLane could write nonzero lane health for a destroyed UID when saved health or persisted fallback was nonzero."
+                      ],
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "OrganicFloatMapEntry",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "_key":  "0:uint",
+                                               "_value":  "4:float",
+                                               "_state":  "8:byte",
+                                               "_pad0_7":  "9-15:byte[7]"
+                                           }
+                           },
+                           {
+                               "structName":  "FloraDearLieTelemetryEntry",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "FrameIndex":  "0:int",
+                                               "QueryMicroseconds":  "52:float",
+                                               "Flags":  "56:byte"
+                                           }
+                           }
+                       ]
+}

@@ -51,6 +51,7 @@ namespace Hecton8.Physics.Vehicles
         public const byte ConfigFlagThermalDilation = 1 << 0;
         public const byte ConfigFlagLegacyProfile = 1 << 1;
         public const byte ConfigFlagCsvOverride = 1 << 2;
+        public const float AuthoritativeQualityWeight = 1f;
     }
 
     /// <summary>
@@ -77,9 +78,8 @@ namespace Hecton8.Physics.Vehicles
                 ? math.clamp(baseDensityKgPerM3, MinDensityKgPerM3, MaxDensityKgPerM3)
                 : DefaultSeawaterDensityKgPerM3;
             float compressionBias = depth * 0.0042f;
-            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
             uint phase = (frame * 1103515245u) + 12345u;
-            float microLayerWeight = quality * quality * (3f - (2f * quality));
+            float microLayerWeight = SubmarineDynamicsConstants.AuthoritativeQualityWeight;
             float microLayerBias = (((phase >> 8) & 1023u) * (1f / 1023f) - 0.5f) * 0.55f * microLayerWeight;
             return math.clamp(baseDensity + compressionBias + microLayerBias, MinDensityKgPerM3, MaxDensityKgPerM3);
         }
@@ -621,9 +621,8 @@ namespace Hecton8.Physics.Vehicles
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveTensorBlend(float globalQualityWeight, float lowLodHoldSeconds, float matrixBlendBias)
         {
-            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
             float bias = math.clamp(math.isfinite(matrixBlendBias) ? matrixBlendBias : 0f, -0.5f, 0.5f);
-            float baseBlend = math.saturate((quality * 1.08f) + bias - 0.18f);
+            float baseBlend = math.saturate((SubmarineDynamicsConstants.AuthoritativeQualityWeight * 1.08f) + bias - 0.18f);
             float lodSuppression = math.saturate(1f - (SafeNonNegative(lowLodHoldSeconds) * 0.5f));
             float blended = math.saturate(baseBlend * lodSuppression);
             return blended * blended * (3f - (2f * blended));
@@ -821,10 +820,11 @@ namespace Hecton8.Physics.Vehicles
         {
             float3 angularDiag = ExtractDiagonal(in profile.AngularAddedMass);
             float trace = angularDiag.x + angularDiag.y + angularDiag.z;
-            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
             float scalar = math.clamp(SafePositive(dampingScalar, 1f), 0.1f, 6f);
             float scale = math.saturate(trace / math.max(1f, SafePositive(totalMassKg, 1f) * 42f));
-            return math.lerp(0.04f, 0.18f, scale) * math.lerp(0.65f, 1f, quality) * scalar;
+            return math.lerp(0.04f, 0.18f, scale) *
+                   math.lerp(0.65f, 1f, SubmarineDynamicsConstants.AuthoritativeQualityWeight) *
+                   scalar;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1627,7 +1627,7 @@ namespace Hecton8.Physics.Vehicles
 
             float dt = math.clamp(FixedDeltaTime, 0.001f, 0.05f);
             bool thermalDilation = (config.Flags & SubmarineDynamicsConstants.ConfigFlagThermalDilation) != 0;
-            float updateFraction = ResolveQualityUpdateFraction(GlobalQualityWeight);
+            float updateFraction = ResolveAuthorityUpdateFraction();
             if (thermalDilation)
                 updateFraction = math.min(updateFraction, 0.5f);
             bool skippedByCadence = !ShouldRunQualityCadence(Frame, index, updateFraction);
@@ -1881,11 +1881,9 @@ namespace Hecton8.Physics.Vehicles
             state.Flags |= SubmarineDynamicsConstants.StateFlagInitialized;
         }
 
-        private static float ResolveQualityUpdateFraction(float globalQualityWeight)
+        private static float ResolveAuthorityUpdateFraction()
         {
-            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            float curved = quality * quality * (3f - (2f * quality));
-            return math.lerp(0.25f, 1f, curved);
+            return 1f;
         }
 
         private static bool ShouldRunQualityCadence(uint frame, int index, float updateFraction)

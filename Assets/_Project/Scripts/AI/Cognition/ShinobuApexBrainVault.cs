@@ -87,7 +87,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Transient NativeArray views resolved from generation-checked handles.
     /// </summary>
-    public struct ApexBrainVaultBuffers
+    public ref struct ApexBrainVaultBuffers
     {
         public NativeArray<ApexStateDTO> States;
         public NativeArray<MockPlayerAUP> MockTargets;

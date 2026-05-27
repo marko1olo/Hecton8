@@ -3,18 +3,9 @@
 Status: public seed map / not outreach-ready. Operational send status lives in `Press/PRESS_TARGET_VERIFICATION_TRACKER.csv` and `Press/STEAM_CURATOR_CANDIDATE_TRACKER.csv`; recheck same-day before outreach/key use and fill `send_route_class` / `reply_consent_provenance` fields before counting replies.
 Date: 2026-05-18
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
-
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- current publication, curator, and Steamworks pages
-- fresh outreach/key logs
-
-No press contact route, curator eligibility, key policy state, demo approval, runtime build, Unity import, profiler, player-build, or marketing-performance proof is implied unless this document links a fresh evidence artifact. Rows are public target seeds and must be reverified before outreach or key distribution.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 ## Hygiene Rules
 

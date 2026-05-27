@@ -1,0 +1,233 @@
+﻿{
+    "agentId":  "1332",
+    "role":  "INPUT_CONTRACT_AND_REBIND_UI_INTERFACE_ARCHITECT",
+    "domain":  "Echelon 8 Presentation/UX, Hecton8.Input plus PauseControlsPanel/PDAControlsRebindUI",
+    "verificationState":  "STATIC_REAUDIT_GREEN_BUILD_GREEN_CONFLICT_RESOLUTION_FIX",
+    "lastUpdated":  "2026-05-26T19:32:36+04:00",
+    "build":  {
+                  "finalAttemptedAfterLatestPatch":  true,
+                  "command":  "dotnet build .\\Hecton8.Core.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly",
+                  "gate":  "Launched only after CPU and compiler-process gate opened; no dotnet/csc contention.",
+                  "result":  "success",
+                  "warnings":  0,
+                  "errors":  0,
+                  "externalError":  null,
+                  "externalFileStatus":  null,
+                  "agentDomainErrorsObserved":  0
+              },
+    "dtoLayout":  {
+                      "InputActionStateDTO":  {
+                                                  "sizeBytes":  64,
+                                                  "alignmentBytes":  8,
+                                                  "offsets":  {
+                                                                  "BindingGuidHash64":  0,
+                                                                  "EffectivePathHash64":  8,
+                                                                  "OverridePathHash64":  16,
+                                                                  "ActionIdentityHash64":  24,
+                                                                  "ActionNameHash":  32,
+                                                                  "ActionMapHash":  36,
+                                                                  "BindingGroupHash":  40,
+                                                                  "ControlPathHash":  44,
+                                                                  "BindingIndex":  48,
+                                                                  "PathByteOffset":  52,
+                                                                  "PathByteLength":  54,
+                                                                  "CompositeDepth":  56,
+                                                                  "DeviceMask":  58,
+                                                                  "DisplayStyle":  60,
+                                                                  "Flags":  61,
+                                                                  "Padding":  "62-63"
+                                                              }
+                                              },
+                      "AccessibilityConfigDTO":  {
+                                                     "sizeBytes":  16,
+                                                     "alignmentBytes":  8,
+                                                     "offsets":  {
+                                                                     "ColorMode":  0,
+                                                                     "Flags":  4,
+                                                                     "FilterStrength01":  8,
+                                                                     "GlobalQualityWeight":  12
+                                                                 }
+                                                 },
+                      "InputBindingTelemetryEntry":  {
+                                                         "sizeBytes":  64,
+                                                         "ringCapacity":  300,
+                                                         "ringBytes":  19200,
+                                                         "bufferId":  70534,
+                                                         "cursorBufferId":  70535,
+                                                         "offsets":  {
+                                                                         "RealtimeSeconds":  0,
+                                                                         "PayloadHash64":  8,
+                                                                         "Frame":  16,
+                                                                         "Operation":  20,
+                                                                         "Result":  24,
+                                                                         "Bytes":  28,
+                                                                         "DurationMicroseconds":  32,
+                                                                         "FaultFlags":  36,
+                                                                         "BindingIndex":  40,
+                                                                         "RecordCount":  44,
+                                                                         "PathBytes":  46,
+                                                                         "IoPhase":  48,
+                                                                         "Padding":  "49-63"
+                                                                     }
+                                                     },
+                      "ControlRemapIoResult":  {
+                                                   "sizeBytes":  88,
+                                                   "alignmentBytes":  8,
+                                                   "offsets":  {
+                                                                   "Telemetry":  0,
+                                                                   "ResultCode":  64,
+                                                                   "FaultFlags":  68,
+                                                                   "RecordCount":  72,
+                                                                   "ByteCount":  76,
+                                                                   "PathBytes":  80,
+                                                                   "Padding":  "84-87"
+                                                               }
+                                               },
+                      "layoutGuard":  "InputBindingLayoutGuard.Validate() plus InputBindingContractsEditTests.InputBindingDtoLayoutsStayArm64Aligned()"
+                  },
+    "nativeCollectionAudit":  {
+                                  "scanner":  "Tools/VaultNativeAliasRoslynAudit over 9 copied scoped files.",
+                                  "report":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1332.json",
+                                  "scannedCSharpFiles":  9,
+                                  "parseFailures":  0,
+                                  "nativeCollectionFieldDeclarations":  0,
+                                  "persistentNativeFieldsRemaining":  0,
+                                  "transientVaultViews":  3,
+                                  "transientJobViews":  0,
+                                  "transientColdScratchCollections":  4,
+                                  "auditHashSha256":  "d9841e268c8c81ed55869976dab50d01881ce67f259231bf7ad00aa56e633930"
+                              },
+    "hotPathAudit":  {
+                         "hotMethodsScanned":  4,
+                         "zeroGcHotPathHits":  0,
+                         "report":  "Docs/Reports/ZERO_GC_HOTPATH_AUDIT_1332_FOCUSED.json",
+                         "methods":  [
+                                         "AccessibilitySettings.PreSimulationTick",
+                                         "AccessibilitySettings.ScheduleSimulation",
+                                         "AccessibilitySettings.PostSimulationTick",
+                                         "AccessibilitySettings.VisualSyncTick"
+                                     ],
+                         "productionTokenScan":  {
+                                                     "JsonUtility":  0,
+                                                     "PlayerPrefs":  0,
+                                                     "catch (Exception)":  0,
+                                                     "throw new":  0,
+                                                     "RemoveAllListeners":  0,
+                                                     "LINQ Select/Where/Any/ToList":  0,
+                                                     "foreach":  0
+                                                 },
+                         "roslynScannerHashSha256":  "4eb86ab54f66884e133e3575195d1119134755231c727f41bc7f02fc3d71ed3b"
+                     },
+    "controlsJson":  {
+                         "serializer":  "ControlRemapper.TrySaveOverrides",
+                         "parser":  "ControlRemapper.TryLoadOverrides",
+                         "schema":  "{\"v\":1,\"bindings\":[{\"map\":uint,\"action\":uint,\"binding\":int,\"id\":ulong,\"path\":\"ASCII\"}]}",
+                         "maxBytes":  32768,
+                         "maxRecords":  128,
+                         "maxControlPathBytes":  128,
+                         "atomicWrite":  ".tmp FileStream write, flush, length verify, File.Replace/File.Move",
+                         "managedAllocationBoundary":  "Custom controls.json parser/writer avoids Unity JsonUtility/Newtonsoft/StringBuilder/Unity SaveBindingOverridesAsJson/File.ReadAllText. Cold load can allocate exactly one managed string when reviving an arbitrary valid Unity control path not already owned by InputSystem; hot UI/VisualSync paths remain static-zero-GC by scan."
+                     },
+    "userOptions":  {
+                        "runtime":  "Hecton8.Input.UserOptionsPersistence",
+                        "file":  "Application.persistentDataPath/options.h8cfg",
+                        "activeFormat":  "H8CF header plus H8OP bounded little-endian records",
+                        "legacyMigration":  "Cold strict parser for old H8CF JSON/text JSON without JsonUtility.",
+                        "readPurity":  "ScalabilityTier, HasKey, and TryGetRecord are cached-state reads and do not call EnsureLoaded.",
+                        "failClosedApply":  "Binary/legacy readers stage records and mutate _records only after the full payload is valid."
+                    },
+    "uiZeroGcEvidence":  {
+                             "delegateCaptureRemoved":  true,
+                             "pauseButtonListeners":  "Cached UnityAction fields with RemoveListener/AddListener; no RemoveAllListeners.",
+                             "eventSubscriptions":  "PauseControlsPanel and PDAControlsRebindUI subscribe/unsubscribe input and rebinding events through cached Action fields; no repeated method-group delegate allocation.",
+                             "rebindingCallbacks":  "Cached Action\u003cRebindingOperation\u003e and Action conflict callbacks; no completion/cancel capture lambdas.",
+                             "pdaHierarchySearch":  "ResolveRowReferencesByName gated by _rowReferencesResolved after cold resolution.",
+                             "textRendering":  "Audited status/binding paths use char buffers and TMP SetCharArray.",
+                             "profilerProof":  "Not run; no Unity Profiler/GCMonitor artifact exists in this session."
+                         },
+    "accessibility":  {
+                          "runtime":  "Hecton8.Input.AccessibilitySettings",
+                          "phase":  "DispatcherPhase.VisualSync",
+                          "cBufferName":  "HectonAccessibilityConfig",
+                          "fallbackVector":  "_HectonAccessibilityParams",
+                          "shader":  "Assets/_Project/Art/Shaders/Hecton_VisorGlitchACES.shader",
+                          "modes":  [
+                                        "Off",
+                                        "Protanopia",
+                                        "Deuteranopia",
+                                        "Tritanopia"
+                                    ],
+                          "quality":  "GlobalQualityWeight is continuous 0..1 and affects visual luma preservation only; it does not mutate save identity, DTO layout, or authority routes."
+                      },
+    "tests":  {
+                  "file":  "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+                  "cases":  [
+                                "InputBindingDtoLayoutsStayArm64Aligned",
+                                "AccessibilityConstantBuffersUseLockBufferUsageFlag",
+                                "UserOptionsPersistenceAvoidsDeleteGapAndBroadException",
+                                "CorruptedControlsJsonFailsClosedWithoutClearingOverrides",
+                                "ControlsJsonSerializerSurvivesBoundedInputSpam",
+                                "ControlsJsonReloadsSavedOverrideAfterRuntimeRestart",
+                                "ControlsJsonRejectsMalformedPathWithoutClearingOverrides",
+                                "InputDomainDocsAndHelpersDoNotReintroduceLegacyRebindRoutes"
+                            ],
+                  "spamIterations":  10000,
+                  "truth":  "Source guards authored; Unity Editor test runner not invoked in this session. dotnet build is green after latest patch."
+              },
+    "sha256":  [
+                   {
+                       "path":  "Assets/_Project/Scripts/Input/InputBindingContracts.cs",
+                       "sha256":  "74f73fdb549e40171bdab86bb080acb27ee14f944f24b7456f3c1bd955c455d6"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+                       "sha256":  "9b4589d6c04ecd01a70d961a0e0e24a640b1f219847d3813d309ce3f2a69fc4e"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Input/AccessibilitySettings.cs",
+                       "sha256":  "cae4ccb6feea180c199d003aa02e92859ae3dc14cfbdc65134e36c63ecf858f1"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Input/InputManager.cs",
+                       "sha256":  "b57d3400da3e44a7869b721b4dba771308e2f6c29ce96c265b057bae7f68e9bd"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+                       "sha256":  "bcc1bb06ae4571783b66a4bfa9c0974ce4e5a20d42840f8199aa3eb6bc643f4c"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Input/INPUT_MIGRATION_GUIDE.md",
+                       "sha256":  "7fa9a4057955f79ac3105dd6b50b27f54e5c6b6e5c84d1d13137d13d3b4baf58"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Core/RebindingManager.cs",
+                       "sha256":  "e8419982824df538e510b715ec859fa77e620dc53926ee3d6429c54903ab216d"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+                       "sha256":  "e4aa3d0cfff530dd96a68b2468fc290ee6a0d444dbf3eb1726ee41d488f103c7"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+                       "sha256":  "37596f23bf6b6bc873d333851f6dfd561c0e2bc48de4847c498e3826b0494825"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_VisorGlitchACES.shader",
+                       "sha256":  "0f313fe7f2489d3280164b13e9b432b6da41c1b6504bd41fe93b0036bd2b3f90"
+                   },
+                   {
+                       "path":  "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+                       "sha256":  "4e6c0561363f85acd622b6973cea96f0592685a81056ae23f61b22e7ab1f765e"
+                   },
+                   {
+                       "path":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1332.json",
+                       "sha256":  "e972845bb00e5d7b9108fc0fa9f626197f7f4041d930bb8e2143bdba5597ab33"
+                   }
+               ],
+    "combinedVerificationHashSha256":  "3c91bf78b4745433c9950a21d4279c5ebe971a42829913db9f44dadfe86ac6ca",
+    "residualRisks":  [
+                          "Unity Editor tests and Unity Profiler/GCMonitor were not run in this session; current proof is source/static plus dotnet build.",
+                          "ControlRemapper retains one bounded cold new string to revive valid arbitrary Unity control paths after restart; removing it breaks rebind persistence correctness.",
+                          "UserOptionsPersistence still uses managed string keys/values by public settings contract. These allocations are cold load/migration/settings operations, not simulation/UI hot paths."
+                      ]
+}

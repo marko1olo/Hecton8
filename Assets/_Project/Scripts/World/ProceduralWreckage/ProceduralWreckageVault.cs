@@ -57,7 +57,7 @@ namespace Hecton8.World.ProceduralWreckage
         }
     }
 
-    public struct ProceduralWreckageVaultBuffers
+    public ref struct ProceduralWreckageVaultBuffers
     {
         public NativeArray<WreckageRuleDTO> Rules;
         public NativeArray<WreckageGridCellDTO> Grid;

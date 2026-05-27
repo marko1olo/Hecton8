@@ -16,7 +16,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Tools/Flashlight Tool")]
-    public sealed class FlashlightTool : PlayerTool, IBatteryTool, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class FlashlightTool : PlayerTool, IBatteryTool, IRuntimeEquipmentIdProvider, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private readonly struct LampAssessment
         {
@@ -111,6 +111,8 @@ namespace Hecton8.Gameplay
 
         /// <summary>The battery item currently installed (null if none).</summary>
         public ItemData BatteryItem => _installedBattery;
+
+        uint IRuntimeEquipmentIdProvider.RuntimeEquipmentId => RuntimeToolId;
 
         /// <summary>
         /// Removes the battery from the tool.
@@ -744,7 +746,7 @@ namespace Hecton8.Gameplay
             const QueryTriggerInteraction triggerMode = QueryTriggerInteraction.Collide;
             if (!cache.TryGetHit(ray, contextProbeRange, contextMask, triggerMode, out InteractionSurfaceHit finalHit))
             {
-                if (!TryResolvePrimarySurfaceHit(ray.origin, ray.direction, contextProbeRange, contextMask.value, triggerMode, out InteractionSurfaceHit hit))
+                if (!RequestPrimarySurfaceHit(ray.origin, ray.direction, contextProbeRange, contextMask.value, triggerMode, out InteractionSurfaceHit hit))
                     return false;
 
                 finalHit = hit;

@@ -1,6 +1,5 @@
 using System;
 using Hecton8.Core;
-using Unity.Collections;
 
 namespace Hecton8.World
 {
@@ -23,7 +22,6 @@ namespace Hecton8.World
         private const int PendingEventCapacity = 16;
         private const int ListenerCapacity = 16;
         private const int RelaySidecarCapacity = 32;
-        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint ListenerRejectedWarningHash = 0x4552524Au;
         private const uint ListenerExceptionWarningHash = 0x45524558u;
         private const uint ListenerContextHash = 0x45524C53u;
@@ -123,10 +121,16 @@ namespace Hecton8.World
         private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static readonly RelaySlot[] _relaySlots = new RelaySlot[RelaySidecarCapacity];
-        private static NativeQueue<RelayEventPayload> _pendingEvents;
-        private static NativeQueue<RelayEventPayload> _nextFrameEvents;
+        // COLD ALLOC: RelayEventPayload[16] - bounded relay event ring flushed by SystemDispatcher - owner: EmergencyServiceRelayEvents
+        private static RelayEventPayload[] _pendingEvents = new RelayEventPayload[PendingEventCapacity];
+        // COLD ALLOC: RelayEventPayload[16] - bounded next-frame relay ring for reentrant dispatch - owner: EmergencyServiceRelayEvents
+        private static RelayEventPayload[] _nextFrameEvents = new RelayEventPayload[PendingEventCapacity];
         private static int _relaySlotCount;
+        private static int _pendingEventHead;
+        private static int _pendingEventTail;
         private static int _pendingEventCount;
+        private static int _nextFrameEventHead;
+        private static int _nextFrameEventTail;
         private static int _nextFrameEventCount;
         private static int _deferredRegisterCount;
         private static int _deferredUnregisterCount;
@@ -143,21 +147,11 @@ namespace Hecton8.World
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(EmergencyServiceRelayEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(EmergencyServiceRelayEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
-
+            _pendingEventHead = 0;
+            _pendingEventTail = 0;
             _pendingEventCount = 0;
+            _nextFrameEventHead = 0;
+            _nextFrameEventTail = 0;
             _nextFrameEventCount = 0;
             _deferredRegisterCount = 0;
             _deferredUnregisterCount = 0;
@@ -214,7 +208,6 @@ namespace Hecton8.World
             if (relay == null || _listeners.Count <= 0 || _pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return false;
 
-            EnsureInitialized();
             ulong relayEntityId = UnityEngine.EntityId.ToULong(relay.GetEntityId());
             if (!TryStoreRelay(relayEntityId, relay))
                 return false;
@@ -227,14 +220,10 @@ namespace Hecton8.World
 
             if (_isDispatching)
             {
-                _nextFrameEvents.Enqueue(payload);
-                _nextFrameEventCount++;
-                return true;
+                return TryEnqueueNextFrame(payload);
             }
 
-            _pendingEvents.Enqueue(payload);
-            _pendingEventCount++;
-            return true;
+            return TryEnqueuePending(payload);
         }
 
         [System.Obsolete("Use TryRaiseRelayActivated so bounded queue refusal is visible at the producer.", true)]
@@ -243,9 +232,6 @@ namespace Hecton8.World
 
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated)
-                return;
-
             if (_listeners.Count <= 0)
             {
                 DropQueuedEvents();
@@ -253,20 +239,20 @@ namespace Hecton8.World
             }
 
             PromoteNextFrameEventsIfFrontEmpty();
+            if (_pendingEventCount <= 0)
+                return;
+
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            while (scanBudget-- > 0 && _pendingEventCount > 0)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
-                if (!_pendingEvents.TryDequeue(out RelayEventPayload payload))
+                if (!TryDequeuePending(out RelayEventPayload payload))
                 {
                     _pendingEventCount = 0;
                     break;
                 }
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
 
                 if (!TryResolveRelay(payload.RelayEntityId, out EmergencyServiceRelay relay) || relay == null)
                     continue;
@@ -290,7 +276,7 @@ namespace Hecton8.World
                 }
             }
 
-            if (_pendingEvents.IsEmpty())
+            if (_pendingEventCount <= 0)
             {
                 _pendingEventCount = 0;
                 PromoteNextFrameEventsIfFrontEmpty();
@@ -298,66 +284,46 @@ namespace Hecton8.World
             }
         }
 
-        private static void EnsureInitialized()
+        private static bool TryEnqueuePending(RelayEventPayload payload)
         {
-            if (!_pendingEvents.IsCreated)
-            {
-                _pendingEvents = new NativeQueue<RelayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RelayEventPayload>[16] - emergency relay event lane flushed by SystemDispatcher - owner: EmergencyServiceRelayEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(EmergencyServiceRelayEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+            if (_pendingEventCount >= PendingEventCapacity)
+                return false;
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<RelayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RelayEventPayload>[16] - next-frame emergency relay event lane prevents same-frame reentrant dispatch - owner: EmergencyServiceRelayEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(EmergencyServiceRelayEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
-            }
+            _pendingEvents[_pendingEventTail] = payload;
+            _pendingEventTail = (_pendingEventTail + 1) % PendingEventCapacity;
+            _pendingEventCount++;
+            return true;
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
+        private static bool TryEnqueueNextFrame(RelayEventPayload payload)
         {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
+            if (_nextFrameEventCount >= PendingEventCapacity)
+                return false;
 
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
+            _nextFrameEvents[_nextFrameEventTail] = payload;
+            _nextFrameEventTail = (_nextFrameEventTail + 1) % PendingEventCapacity;
+            _nextFrameEventCount++;
+            return true;
+        }
 
-            while (queue.TryDequeue(out _))
+        private static bool TryDequeuePending(out RelayEventPayload payload)
+        {
+            if (_pendingEventCount <= 0)
             {
+                payload = default;
+                return false;
             }
+
+            payload = _pendingEvents[_pendingEventHead];
+            _pendingEvents[_pendingEventHead] = default;
+            _pendingEventHead = (_pendingEventHead + 1) % PendingEventCapacity;
+            _pendingEventCount--;
+            return true;
         }
 
         private static void DispatchToListener(IEmergencyServiceRelayEventListener listener, EmergencyServiceRelay relay, bool firstActivation)
         {
-            try
-            {
-                listener.OnEmergencyServiceRelayActivated(relay, firstActivation);
-            }
-            catch (Exception exception)
-            {
-                ReportListenerDispatchException(exception);
-            }
-        }
-
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-        private static void LogListenerDispatchException(Exception exception)
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.LogException(exception);
-#endif
+            listener.OnEmergencyServiceRelayActivated(relay, firstActivation);
         }
 
         private static void QueueDeferredRegister(IEmergencyServiceRelayEventListener listener)
@@ -498,39 +464,25 @@ namespace Hecton8.World
                 UnityEngine.Mathf.Max(1, _droppedListenerRegistrationCount));
         }
 
-        private static void ReportListenerDispatchException(Exception exception)
-        {
-            _listenerExceptionCount = UnityEngine.Mathf.Min(_listenerExceptionCount + 1, int.MaxValue);
-            LogListenerDispatchException(exception);
-
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (_lastListenerExceptionTelemetryFrame == frame)
-                return;
-
-            _lastListenerExceptionTelemetryFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(
-                ListenerExceptionWarningHash,
-                ListenerContextHash,
-                UnityEngine.Mathf.Max(1, _listenerExceptionCount));
-        }
-
         private static void DropQueuedEvents()
         {
-            if (_pendingEvents.IsCreated)
+            for (int i = 0; i < _pendingEventCount; i++)
             {
-                while (_pendingEvents.TryDequeue(out _))
-                {
-                }
+                int index = (_pendingEventHead + i) % PendingEventCapacity;
+                _pendingEvents[index] = default;
             }
 
-            if (_nextFrameEvents.IsCreated)
+            for (int i = 0; i < _nextFrameEventCount; i++)
             {
-                while (_nextFrameEvents.TryDequeue(out _))
-                {
-                }
+                int index = (_nextFrameEventHead + i) % PendingEventCapacity;
+                _nextFrameEvents[index] = default;
             }
 
+            _pendingEventHead = 0;
+            _pendingEventTail = 0;
             _pendingEventCount = 0;
+            _nextFrameEventHead = 0;
+            _nextFrameEventTail = 0;
             _nextFrameEventCount = 0;
             ClearRelaySlots();
         }
@@ -588,18 +540,19 @@ namespace Hecton8.World
 
         private static void PromoteNextFrameEventsIfFrontEmpty()
         {
-            if (!_pendingEvents.IsCreated ||
-                !_nextFrameEvents.IsCreated ||
-                !_pendingEvents.IsEmpty() ||
-                _nextFrameEventCount <= 0)
+            if (_pendingEventCount > 0 || _nextFrameEventCount <= 0)
             {
                 return;
             }
 
-            NativeQueue<RelayEventPayload> swap = _pendingEvents;
+            RelayEventPayload[] swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
+            _pendingEventHead = _nextFrameEventHead;
+            _pendingEventTail = _nextFrameEventTail;
             _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventHead = 0;
+            _nextFrameEventTail = 0;
             _nextFrameEventCount = 0;
         }
     }

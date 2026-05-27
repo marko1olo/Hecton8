@@ -269,6 +269,25 @@ namespace Hecton8.UI
         private static readonly int FontAtlasId = Shader.PropertyToID("_FontAtlas");
         private static readonly int BaseIntensityId = Shader.PropertyToID("_BaseIntensity");
         private static readonly int GlitchMultiplierId = Shader.PropertyToID("_GlitchMultiplier");
+        private static readonly Vector3[] RuntimeQuadVertices =
+        {
+            new Vector3(-0.5f, -0.5f, 0f),
+            new Vector3(0.5f, -0.5f, 0f),
+            new Vector3(0.5f, 0.5f, 0f),
+            new Vector3(-0.5f, 0.5f, 0f)
+        }; // COLD ALLOC: Vector3[4] - immutable wrist HUD fallback quad vertices - owner: SHINOBU_07
+        private static readonly Vector2[] RuntimeQuadUvs =
+        {
+            new Vector2(0f, 0f),
+            new Vector2(1f, 0f),
+            new Vector2(1f, 1f),
+            new Vector2(0f, 1f)
+        }; // COLD ALLOC: Vector2[4] - immutable wrist HUD fallback quad UVs - owner: SHINOBU_07
+        private static readonly int[] RuntimeQuadIndices =
+        {
+            0, 1, 2,
+            0, 2, 3
+        }; // COLD ALLOC: int[6] - immutable wrist HUD fallback quad indices - owner: SHINOBU_07
 
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_WristHudSDF.shader";
@@ -734,11 +753,19 @@ namespace Hecton8.UI
             out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
-            return _vault != null &&
-                   IsExactVaultHandle(in handle, expectedBufferId) &&
-                   _vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+            if (_vault == null ||
+                _vault.IsCompactionFenceActive ||
+                !IsExactVaultHandle(in handle, expectedBufferId) ||
+                !_vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength ||
+                _vault.IsCompactionFenceActive)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
         private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : unmanaged
@@ -1385,12 +1412,37 @@ namespace Hecton8.UI
                 if (palettePath != null)
                     TryReadBinaryPalette(palettePath);
             }
-            catch (Exception)
+            catch (IOException)
             {
-                _legacyMissing = true;
-                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_07] Legacy font atlas discovery failed.");
-                GenerateMockFontAtlas();
+                FailLegacyFontAtlasDiscovery();
             }
+            catch (UnauthorizedAccessException)
+            {
+                FailLegacyFontAtlasDiscovery();
+            }
+            catch (ObjectDisposedException)
+            {
+                FailLegacyFontAtlasDiscovery();
+            }
+            catch (InvalidOperationException)
+            {
+                FailLegacyFontAtlasDiscovery();
+            }
+            catch (ArgumentException)
+            {
+                FailLegacyFontAtlasDiscovery();
+            }
+            catch (NotSupportedException)
+            {
+                FailLegacyFontAtlasDiscovery();
+            }
+        }
+
+        private void FailLegacyFontAtlasDiscovery()
+        {
+            _legacyMissing = true;
+            Hecton8.Core.H8Debug.LogWarning("[SHINOBU_07] Legacy font atlas discovery failed.");
+            GenerateMockFontAtlas();
         }
 
         private static string FindFirstFile(string root, string fileName)
@@ -1730,18 +1782,21 @@ namespace Hecton8.UI
 
             WristHudStateDTO state = states[0];
             int entrySize = UnsafeUtility.SizeOf<WristHudTelemetryEntry>();
-            int payloadBytes = telemetry.Length * entrySize;
+            int telemetryCapacity = telemetry.Length;
+            int payloadBytes = telemetryCapacity * entrySize;
             WristHudBlackBoxDumpHeader header = new WristHudBlackBoxDumpHeader
             {
                 Magic = BlackBoxDumpMagic,
                 Version = BlackBoxDumpVersion,
                 FrameIndex = (uint)state.FrameIndex,
                 Flags = (uint)state.Flags,
-                TelemetryCapacity = telemetry.Length,
+                TelemetryCapacity = telemetryCapacity,
                 TelemetryCursor = state.TelemetryCursor,
                 TelemetryEntrySizeBytes = entrySize,
                 PayloadBytes = payloadBytes
             };
+            states = default;
+            telemetry = default;
 
             _blackBoxDumped = true;
             try
@@ -1754,15 +1809,60 @@ namespace Hecton8.UI
                     stream.Write(MemoryMarshal.CreateReadOnlySpan(
                         ref UnsafeUtility.AsRef<byte>(&header),
                         UnsafeUtility.SizeOf<WristHudBlackBoxDumpHeader>()));
-                    stream.Write(MemoryMarshal.CreateReadOnlySpan(
-                        ref UnsafeUtility.AsRef<byte>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry)),
-                        payloadBytes));
+                    WriteWristHudTelemetryDump(stream, telemetryCapacity, entrySize);
                 }
             }
-            catch (Exception)
+            catch (IOException)
             {
                 Hecton8.Core.H8Debug.LogError("SHINOBU_07 blackbox dump failed.");
             }
+            catch (UnauthorizedAccessException)
+            {
+                Hecton8.Core.H8Debug.LogError("SHINOBU_07 blackbox dump failed.");
+            }
+            catch (ObjectDisposedException)
+            {
+                Hecton8.Core.H8Debug.LogError("SHINOBU_07 blackbox dump failed.");
+            }
+            catch (InvalidOperationException)
+            {
+                Hecton8.Core.H8Debug.LogError("SHINOBU_07 blackbox dump failed.");
+            }
+            catch (ArgumentException)
+            {
+                Hecton8.Core.H8Debug.LogError("SHINOBU_07 blackbox dump failed.");
+            }
+            catch (NotSupportedException)
+            {
+                Hecton8.Core.H8Debug.LogError("SHINOBU_07 blackbox dump failed.");
+            }
+        }
+
+        private void WriteWristHudTelemetryDump(FileStream stream, int telemetryCapacity, int entrySize)
+        {
+            if (stream == null || telemetryCapacity <= 0 || entrySize <= 0)
+                return;
+
+            for (int i = 0; i < telemetryCapacity; i++)
+            {
+                if (!TryReadWristHudTelemetryRow(i, out WristHudTelemetryEntry row))
+                    return;
+
+                stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&row), entrySize));
+            }
+        }
+
+        private bool TryReadWristHudTelemetryRow(int index, out WristHudTelemetryEntry row)
+        {
+            row = default;
+            if ((uint)index >= TelemetryCapacity ||
+                !TryResolveVaultBuffer(in _telemetryHandle, BufferID.WristHudTelemetryRing, TelemetryCapacity, out NativeArray<WristHudTelemetryEntry> telemetry))
+            {
+                return false;
+            }
+
+            row = telemetry[index];
+            return true;
         }
 
         private static PlayerVitalsSignal SanitizeVitals(in PlayerVitalsSignal signal)
@@ -1808,24 +1908,9 @@ namespace Hecton8.UI
                 hideFlags = HideFlags.DontSave
             };
 
-            Vector3[] vertices =
-            {
-                new Vector3(-0.5f, -0.5f, 0f),
-                new Vector3( 0.5f, -0.5f, 0f),
-                new Vector3( 0.5f,  0.5f, 0f),
-                new Vector3(-0.5f,  0.5f, 0f)
-            }; // COLD ALLOC: Vector3[4] - fallback quad mesh vertices - owner: SHINOBU_07
-            Vector2[] uv =
-            {
-                new Vector2(0f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(1f, 1f),
-                new Vector2(0f, 1f)
-            }; // COLD ALLOC: Vector2[4] - fallback quad mesh uvs - owner: SHINOBU_07
-            int[] indices = { 0, 1, 2, 0, 2, 3 }; // COLD ALLOC: int[6] - fallback quad mesh indices - owner: SHINOBU_07
-            mesh.vertices = vertices;
-            mesh.uv = uv;
-            mesh.triangles = indices;
+            mesh.SetVertices(RuntimeQuadVertices);
+            mesh.SetUVs(0, RuntimeQuadUvs);
+            mesh.SetTriangles(RuntimeQuadIndices, 0, false);
             mesh.RecalculateBounds();
             mesh.UploadMeshData(true);
             return mesh;

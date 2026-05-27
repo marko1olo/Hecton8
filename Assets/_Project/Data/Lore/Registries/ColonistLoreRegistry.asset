@@ -287,7 +287,7 @@ MonoBehaviour:
       variants: []
     objectType: 0
     linkedAudioLog: {fileID: 0}
-    description: "Start zone. Shallow water. Safe orientation. Coral reefs and the first visibility lesson."
+    description: "Start zone. Shallow water under strain. Rock spines, silt lanes, and the first visibility lesson."
     localizedDescription:
       tableKey: COLONIST_ZONE_THE_SPINE_DESCRIPTION
       fallbackText: ""

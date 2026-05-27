@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Trailer Script, Capture, And Editing Brief
 
 Status: pre-footage production brief
-Owner lane: SHINOBU_81 / trailer planning
+Owner lane: Marketing / trailer planning
 Runtime impact: none
 
 ## Trailer Goal
@@ -14,6 +14,23 @@ The first trailer must make a cold player understand:
 - there is a base/salvage loop;
 - the Seed Ship creates mystery;
 - Steam CTA is clear only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` pass; otherwise the end card uses no-link feedback copy.
+
+## 2026-05-26 V7 Trailer Counter-Position
+
+Internal use only. The trailer must not name or attack competitors.
+
+The current market leader already owns bright/cozy ocean, approachable creature wonder, clean modular bases, and co-op/friend energy. HECTON's first trailer must open in the opposite contract:
+
+| Second range | Must prove | Reject if |
+|---:|---|---|
+| 0-3 | Black-water pressure plus machine/instrument identity. | Empty ocean, logo-only, or pretty reef mood. |
+| 3-8 | A real player verb: repair, salvage, seal, reroute, scan, or operate. | The player only swims or looks. |
+| 8-15 | Pressure as system state: leak, oxygen, pump, hull, power, warning, route cost. | Red UI alarm without a physical cause. |
+| 15-28 | Base as machinery, not a home showroom. | Clean interior beauty or decorative room tour. |
+| 28-45 | Threat creates a decision before reveal. | Monster pose with no route/tool relation. |
+| 45-60 | Seed Ship/anomaly as instrument or environment failure. | Lore wall, abstract concept UI, or cinematic-only shot. |
+
+Trailer footage can use cinematic framing only if the same shot still reads as representative gameplay. If a shot cannot survive a three-second mute test, it is B-roll, not the first trailer spine.
 
 ## Trailer Lengths
 

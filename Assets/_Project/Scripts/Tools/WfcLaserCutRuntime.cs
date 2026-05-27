@@ -413,7 +413,7 @@ namespace Hecton8.Tools
 
         private static float ResolveVisualOverkill01(float systemStress01)
         {
-            float quality01 = Clamp01Finite(HomeostasisBrain.GlobalQualityWeight);
+            float quality01 = Clamp01Finite(SignalBusRegistry.GlobalQualityWeight01);
             float stressHeadroom01 = math.saturate((StressSparkDropThreshold - Clamp01Finite(systemStress01)) * math.rcp(StressSparkDropThreshold));
             float overkillCurve = SmoothStep01((quality01 - 0.35f) * math.rcp(0.65f));
             return Clamp01Finite(overkillCurve * stressHeadroom01);

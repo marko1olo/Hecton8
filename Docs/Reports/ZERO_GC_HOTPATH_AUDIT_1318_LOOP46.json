@@ -1,0 +1,39 @@
+﻿{
+    "agentId":  "1318",
+    "loop":  46,
+    "report":  "ZERO_GC_HOTPATH_AUDIT_1318_LOOP46",
+    "scannedFile":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+    "hotOwners":  [
+                      "Tick",
+                      "SlowTick",
+                      "LateFrameTick"
+                  ],
+    "forbiddenTokens":  [
+                            "new managed collection/native collection in hot owner",
+                            "string formatting/interpolation",
+                            ".ToString",
+                            ".Where",
+                            ".Select",
+                            ".Any",
+                            ".FirstOrDefault"
+                        ],
+    "zeroGcHotPathHits":  0,
+    "strictPersistentNativeFields":  0,
+    "persistentAllocatorTokens":  0,
+    "defoliantSuppressionMissingRegrowthGuardPattern":  0,
+    "sourceSha256":  "a99dea60da2a5fa067015de3bf63110634abf95ebba602b88a07fb58e4eaa087",
+    "buildStatus":  "NOT_RUN_CPU_COMPILER_GATE",
+    "buildGate":  {
+                      "cpuAverage":  85,
+                      "compilerProcessCount":  1,
+                      "compilerProcesses":  [
+                                                {
+                                                    "ProcessName":  "VBCSCompiler",
+                                                    "Id":  20352,
+                                                    "CPU":  4.234375
+                                                }
+                                            ],
+                      "csprojCount":  62,
+                      "slnxMissingProjectRefs":  0
+                  }
+}

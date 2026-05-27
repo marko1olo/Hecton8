@@ -351,7 +351,8 @@ namespace Hecton8.World.ProceduralWreckage
 
             WreckageSectorTriggerDTO trigger = SectorTriggers[0];
             WreckageTuningDTO tuning = ResolveTuning();
-            float quality = math.saturate(trigger.GlobalQualityWeight > 0f ? trigger.GlobalQualityWeight : tuning.GlobalQualityWeight);
+            bool triggerCarriesQuality = (trigger.Flags & 1u) != 0u && math.isfinite(trigger.GlobalQualityWeight);
+            float quality = math.saturate(math.select(tuning.GlobalQualityWeight, trigger.GlobalQualityWeight, triggerCarriesQuality));
             float qualityCurve = ProceduralWreckageMath.Smooth01(quality);
             int activeRuleCount = ResolveActiveRuleCount();
             uint faultFlags = activeRuleCount <= 1 ? ProceduralWreckageConstants.FaultNoRules : 0u;
@@ -516,10 +517,45 @@ namespace Hecton8.World.ProceduralWreckage
         private byte SelectModule(ushort mask, uint salt)
         {
             ushort safeMask = mask == 0 ? (ushort)0x0002 : mask;
-            byte selected = ProceduralWreckageMath.SelectNthSetBit(safeMask, ProceduralWreckageMath.Hash(salt));
-            return selected == 0 && (safeMask & 0xFFFEu) != 0
-                ? ProceduralWreckageMath.SelectNthSetBit((ushort)(safeMask & 0xFFFEu), ProceduralWreckageMath.Hash(salt ^ 0xBADC0DEu))
-                : selected;
+            if ((safeMask & 0xFFFEu) != 0)
+                safeMask = (ushort)(safeMask & 0xFFFEu);
+
+            int maxRule = Rules.IsCreated ? math.min(Rules.Length, ProceduralWreckageConstants.MaxModuleRules) : 0;
+            uint totalWeight = 0u;
+            for (int module = 0; module < maxRule; module++)
+            {
+                if (((safeMask >> module) & 1) != 0)
+                    totalWeight += ResolveRuleWeightUnits(module);
+            }
+
+            if (totalWeight == 0u)
+                return ProceduralWreckageMath.SelectNthSetBit(safeMask, ProceduralWreckageMath.Hash(salt));
+
+            uint target = ProceduralWreckageMath.Hash(salt) % totalWeight;
+            uint runningWeight = 0u;
+            byte selected = 0;
+            for (int module = 0; module < maxRule; module++)
+            {
+                if (((safeMask >> module) & 1) == 0)
+                    continue;
+
+                selected = (byte)module;
+                runningWeight += ResolveRuleWeightUnits(module);
+                if (target < runningWeight)
+                    return selected;
+            }
+
+            return selected;
+        }
+
+        private uint ResolveRuleWeightUnits(int module)
+        {
+            if (!Rules.IsCreated || (uint)module >= (uint)Rules.Length)
+                return 1024u;
+
+            float weight = Rules[module].Weight;
+            float safeWeight = math.isfinite(weight) && weight > 0f ? weight : 1f;
+            return (uint)math.clamp((int)math.round(safeWeight * 1024f), 1, 65535);
         }
 
         private void ConstrainNeighbors(int selected, byte moduleId, int3 dims, int cellCount, ref WreckagePaddedCounterDTO counter)
@@ -701,7 +737,7 @@ namespace Hecton8.World.ProceduralWreckage
             WreckageTuningDTO tuning = Tuning.IsCreated && Tuning.Length > 0 ? Tuning[0] : default;
             float quality = math.saturate(tuning.GlobalQualityWeight);
             float severity = math.saturate(tuning.ShearSeverity);
-            uint seed = ProceduralWreckageMath.Hash(node.StableId ^ node.SectorHash ^ Frame);
+            uint seed = ProceduralWreckageMath.Hash(node.StableId ^ node.SectorHash ^ 0x9E3779B9u);
             if (seed == 0u)
                 seed = 1u;
 

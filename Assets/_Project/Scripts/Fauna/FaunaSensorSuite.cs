@@ -167,6 +167,7 @@ namespace Hecton8.AI
 
         private FaunaBrain _ownerBrain;
         private FaunaSpeciesProfile _profile;
+        private IBrineFluidDensityReadModel _brineDensityReadModel;
         private float _avoidanceTimeAccumulator;
         private NoiseSystem.PlayerNoiseSignal _lastReportedPlayerNoise;
         private bool _hasReportedPlayerNoise;
@@ -267,6 +268,11 @@ namespace Hecton8.AI
             playerFlashlightExposure01 = 0f;
             playerFlashlightThreatPosition = default;
             ClearSpatialTargets();
+        }
+
+        public void BindBrineDensityReadModel(IBrineFluidDensityReadModel readModel)
+        {
+            _brineDensityReadModel = readModel;
         }
 
         public void Tick(
@@ -1112,7 +1118,7 @@ namespace Hecton8.AI
             _hasDeferredRightObstacleHit = false;
         }
 
-        private static bool HasPlayerLineOfSightThroughNavGrid(Vector3 endPosition)
+        private bool HasPlayerLineOfSightThroughNavGrid(Vector3 endPosition)
         {
             return !TrySampleClosedNavGridCell(endPosition);
         }
@@ -1134,14 +1140,14 @@ namespace Hecton8.AI
             return true;
         }
 
-        private static bool TrySampleClosedNavGridCell(Vector3 runtimePosition)
+        private bool TrySampleClosedNavGridCell(Vector3 runtimePosition)
         {
             if (!IsFinite(runtimePosition))
                 return false;
 
-            ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;
-            if (director != null &&
-                director.TrySampleBrineLayer(runtimePosition, out BrineLayerSample brineSample))
+            IBrineFluidDensityReadModel brineDensityReadModel = _brineDensityReadModel;
+            if (brineDensityReadModel != null &&
+                brineDensityReadModel.TrySampleBrineLayer(runtimePosition, out BrineLayerSample brineSample))
             {
                 double shiftOffsetY = HectonFloatingOrigin.CurrentTotalOffsetDouble.y;
                 double runtimeHeightY = math.isfinite(brineSample.AbsoluteHeightY) && math.isfinite(shiftOffsetY)

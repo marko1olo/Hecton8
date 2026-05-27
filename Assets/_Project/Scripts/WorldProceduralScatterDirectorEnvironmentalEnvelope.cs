@@ -25,7 +25,7 @@ namespace Hecton8.World
         private float deepFloraMinDepthMeters = 800f;
 
         [SerializeField, Range(0f, 1f)]
-        [Tooltip("Maximum accepted depth-light proxy for brittle deep coral. Lower values push coral deeper into darker water.")]
+        [Tooltip("Maximum accepted depth-light proxy for brittle deep carbonate. Lower values push carbonate growth deeper into darker water.")]
         private float deepCoralMaxLightProxy = 0.1f;
 
         [SerializeField, Min(1f)]
@@ -33,7 +33,7 @@ namespace Hecton8.World
         private float deepFloraLightProxyFadeRangeMeters = 240f;
 
         [SerializeField, Min(0f)]
-        [Tooltip("Maximum accepted abyssal-flow magnitude for brittle deep coral placements.")]
+        [Tooltip("Maximum accepted abyssal-flow magnitude for brittle deep carbonate placements.")]
         private float deepCoralMaxFlowMagnitude = 0.85f;
 
         [SerializeField, Min(0f)]

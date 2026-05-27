@@ -40,6 +40,7 @@ namespace Hecton8.Construction
         public const float DefaultMassQuantumM3 = 0.001f;
         public const float DefaultGravityAssistScalar = 1.5f;
         public const float DefaultGravityResistanceScalar = 0.5f;
+        public const float AuthoritativeQualityWeight = 1f;
         public const int MaxQuantizedDrainUnitsPerPump = 1 << 24;
         public const double AupCellSizeMeters = Hecton8.Core.Contracts.HectonPhysicsContract.AupSectorSizeMetersDouble;
         public const uint FnvOffset = 2166136261u;

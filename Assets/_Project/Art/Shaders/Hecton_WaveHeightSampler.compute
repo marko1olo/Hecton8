@@ -47,21 +47,9 @@ float H8WaveFiniteOr(float value, float fallbackValue)
     return ((value == value) && abs(value) < 1.0e20) ? value : fallbackValue;
 }
 
-float H8WaveSafeQuality(float qualityWeight)
-{
-    return saturate(H8WaveFiniteOr(qualityWeight, 0.0));
-}
-
-float H8WaveDesiredCount(float qualityWeight)
-{
-    float q = H8WaveSafeQuality(qualityWeight);
-    float curve = q * q * (3.0 - 2.0 * q);
-    return lerp(1.0, 6.0, curve);
-}
-
 float H8WaveContribution(int waveIndex)
 {
-    return saturate(H8WaveDesiredCount(_H8OceanGlobalQualityWeight) - (float)waveIndex);
+    return 1.0;
 }
 
 float H8WaveWrapPhase(float phase)

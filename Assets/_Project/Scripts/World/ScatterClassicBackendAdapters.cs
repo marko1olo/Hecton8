@@ -39,11 +39,7 @@ namespace Hecton8.World
             NativeArray<float>.ReadOnly heightSamples,
             NativeArray<ScatterSimulationCellState>.ReadOnly cellStates)
         {
-            if (!IsInitialized || _evaluator.IsJobActive)
-                return false;
-
-            _evaluator.ScheduleEvaluation(config, heightSamples);
-            return true;
+            return false;
         }
 
         public bool TrySchedule(

@@ -1,0 +1,7 @@
+﻿{
+    "agent":  "1337",
+    "rerun":  "33",
+    "artifact":  "clear-lock-mask-audit",
+    "runtimeClear":  "TryAcquirePhysicsRuntimeClearLocks1337 returns mask and ReleasePhysicsRuntimeClearLocks1337 releases only mask bits",
+    "shinobuClear":  "TryAcquirePhysicsCullingClearLocks1337 returns mask and ReleasePhysicsCullingClearLocks1337 releases only mask bits"
+}

@@ -1,8 +1,8 @@
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -62,49 +62,98 @@ namespace Hecton8.World
         private const int MaxTrackedVolumeRecords = 512;
         private const int MaxRegisteredObstacleRecords = 512;
         private const int MaxPortalFaceScratchCells = 4096;
-        private const int MaxPortalsPerVolume = 4096;
         private const int MaxPortalGraphNodeCapacity = 4096;
         private const float PersistentObstacleMergeDistanceMeters = 2f;
+        private const SystemID NavGridVaultOwner = SystemID.WorldStreaming;
+        private const int NavGridVaultBufferBase = (int)BufferID.VoxelDynamicNavGridRecordBufferBase;
+        private const int NavGridVaultBufferEnd = (int)BufferID.VoxelDynamicNavGridRecordBufferEnd;
+        private const int NavGridVaultBufferStride = 6;
+        private const int NavGridLaneCurrent = 0;
+        private const int NavGridLaneNext = 1;
+        private const int NavGridLaneBaseCurrent = 2;
+        private const int NavGridLaneBaseNext = 3;
+        private const int NavGridLaneCurrentDistance = 4;
+        private const int NavGridLaneNextDistance = 5;
+        private const int NavGridTelemetryFrameCount = 300;
+        private const int NavGridTelemetryEntryStrideBytes = 64;
+        private const ushort NavGridFailureVaultMissing = 1;
+        private const ushort NavGridFailureCompactionFence = 2;
+        private const ushort NavGridFailureInvalidBufferId = 3;
+        private const ushort NavGridFailureHandleResolve = 4;
+        private const ushort NavGridFailureWriteLock = 5;
+        private const ushort NavGridFailureCapacity = 6;
+        private const ushort NavGridFailureBudget = 7;
+        private const ushort NavGridPhaseBuild = 1;
+        private const ushort NavGridPhaseDynamicUpdate = 2;
+        private const ushort NavGridPhaseVault = 3;
+        private const ushort NavGridPhaseLifecycle = 4;
+        private const uint NavGridFlagFailClosed = 1u << 0;
+        private const uint NavGridFlagCompaction = 1u << 1;
+        private const uint NavGridFlagContention = 1u << 2;
+        private const uint NavGridFlagOverBudget = 1u << 3;
+        private const ulong NavGridTelemetryStateHash = 0x313331365F4E4156UL;
         private const string NativeMemoryOwner = nameof(VoxelDynamicNavGridRuntime);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const string ObstacleSnapshotNativeMemoryLabel = "VoxelDynamicNavGridRuntime.ObstacleSnapshot";
         private const string DynamicClearanceBudgetWarningMessage = "[VoxelDynamicNavGridRuntime] Partial clearance dilation exceeded 1ms; next destroyed-flora clear uses reduced clearance radius.";
-        private const Allocator DataVaultExemptNavGridQueueAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptDynamicObstacleAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptNavGridSnapshotAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptNavGridScratchAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: Dictionary<int, VolumeRecord>(512) - capped voxel navgrid snapshots keyed by runtime volume instance ID - owner: VoxelDynamicNavGridRuntime
-        private static readonly Dictionary<int, VolumeRecord> _records = new Dictionary<int, VolumeRecord>(MaxTrackedVolumeRecords);
-        // COLD ALLOC: List<DirtyVolumeRequest>(32) - temporary dirty-volume spill buffer while consuming queue entries - owner: VoxelDynamicNavGridRuntime
-        private static readonly List<DirtyVolumeRequest> _dirtyRequestSpill = new List<DirtyVolumeRequest>(32);
-        // COLD ALLOC: List<DeferredDirtyVolumeRequest>(16) - slow-tick delayed voxel nav rebuild markers for chthonic pillar volumes - owner: VoxelDynamicNavGridRuntime
-        private static readonly List<DeferredDirtyVolumeRequest> _deferredDirtyVolumes = new List<DeferredDirtyVolumeRequest>(16);
-        // COLD ALLOC: List<PortalNode>(4096) - capped macro portal graph nodes spanning active navgrid chunks - owner: VoxelDynamicNavGridRuntime
-        private static readonly List<PortalNode> _portalGraphNodes = new List<PortalNode>(MaxPortalGraphNodeCapacity);
-        // COLD ALLOC: List<RouteNodeState>(4096) - capped portal A* node state scratch - owner: VoxelDynamicNavGridRuntime
-        private static readonly List<RouteNodeState> _routeNodeScratch = new List<RouteNodeState>(MaxPortalGraphNodeCapacity);
-        // COLD ALLOC: List<int>(4096) - capped portal A* open-set scratch - owner: VoxelDynamicNavGridRuntime
-        private static readonly List<int> _routeOpenSetScratch = new List<int>(MaxPortalGraphNodeCapacity);
-        // COLD ALLOC: List<int>(4096) - capped portal route reconstruction scratch - owner: VoxelDynamicNavGridRuntime
-        private static readonly List<int> _routePathScratch = new List<int>(MaxPortalGraphNodeCapacity);
-        // COLD ALLOC: List<int>(512) - record keys pending safe native-container disposal after dynamic jobs complete - owner: VoxelDynamicNavGridRuntime
-        private static readonly List<int> _recordRemovalScratch = new List<int>(MaxTrackedVolumeRecords);
-        // COLD ALLOC: Dictionary<int,ObstacleRegistration>(512) - capped registered habitat obstacle collider sources - owner: VoxelDynamicNavGridRuntime
-        private static readonly Dictionary<int, ObstacleRegistration> _registeredObstacles = new Dictionary<int, ObstacleRegistration>(MaxRegisteredObstacleRecords);
+        // COLD ALLOC: fixed managed slots - capped voxel navgrid snapshots keyed by runtime volume instance ID - owner: VoxelDynamicNavGridRuntime
+        private static readonly int[] _recordKeys = new int[MaxTrackedVolumeRecords];
+        private static readonly VolumeRecord[] _records = CreateRecordPool();
+        // COLD ALLOC: byte[512] - stable DataVault buffer-slot occupancy for voxel navgrid records - owner: VoxelDynamicNavGridRuntime
+        private static readonly byte[] _recordBufferSlots = new byte[MaxTrackedVolumeRecords];
+        // COLD ALLOC: fixed managed spill buffer while consuming queue entries - owner: VoxelDynamicNavGridRuntime
+        private static readonly DirtyVolumeRequest[] _dirtyRequestSpill = new DirtyVolumeRequest[DirtyVolumeQueueCapacity];
+        // COLD ALLOC: fixed managed delayed voxel nav rebuild markers for chthonic pillar volumes - owner: VoxelDynamicNavGridRuntime
+        private static readonly DeferredDirtyVolumeRequest[] _deferredDirtyVolumes = new DeferredDirtyVolumeRequest[DeferredDirtyVolumeQueueCapacity];
+        // COLD ALLOC: fixed managed macro portal graph nodes spanning active navgrid chunks - owner: VoxelDynamicNavGridRuntime
+        private static readonly PortalNode[] _portalGraphNodes = new PortalNode[MaxPortalGraphNodeCapacity];
+        // COLD ALLOC: fixed shared portal flood-fill scratch - one owner-phase graph rebuild at a time - owner: VoxelDynamicNavGridRuntime
+        private static readonly int[] _portalFaceVisitScratch = new int[MaxPortalFaceScratchCells];
+        private static readonly int[] _portalFaceQueueScratch = new int[MaxPortalFaceScratchCells];
+        // COLD ALLOC: fixed managed portal A* node state scratch - owner: VoxelDynamicNavGridRuntime
+        private static readonly RouteNodeState[] _routeNodeScratch = new RouteNodeState[MaxPortalGraphNodeCapacity];
+        // COLD ALLOC: fixed managed portal A* open-set scratch - owner: VoxelDynamicNavGridRuntime
+        private static readonly int[] _routeOpenSetScratch = new int[MaxPortalGraphNodeCapacity];
+        // COLD ALLOC: fixed managed portal route reconstruction scratch - owner: VoxelDynamicNavGridRuntime
+        private static readonly int[] _routePathScratch = new int[MaxPortalGraphNodeCapacity];
+        // COLD ALLOC: fixed managed record-key removal scratch - owner: VoxelDynamicNavGridRuntime
+        private static readonly int[] _recordRemovalScratch = new int[MaxTrackedVolumeRecords];
+        // COLD ALLOC: fixed managed habitat obstacle collider sources - owner: VoxelDynamicNavGridRuntime
+        private static readonly int[] _registeredObstacleKeys = new int[MaxRegisteredObstacleRecords];
+        private static readonly ObstacleRegistration[] _registeredObstacles = new ObstacleRegistration[MaxRegisteredObstacleRecords];
         private static readonly ProfilerMarker _partialClearanceDilationScheduleMarker = new ProfilerMarker("H8/NavGrid/PartialClearanceDilationJob.Schedule");
         private static readonly ProfilerMarker _partialClearanceDilationCompleteMarker = new ProfilerMarker("H8/NavGrid/PartialClearanceDilationJob.Complete");
-        private static NativeQueue<DirtyVolumeRequest> _dirtyVolumes;
-        private static NativeQueue<DynamicObstacleClearRequest> _pendingObstacleClears;
-        private static NativeList<NavObstaclePrimitive> _persistentDynamicObstacles;
+        private static readonly DirtyVolumeRequest[] _dirtyVolumes = new DirtyVolumeRequest[DirtyVolumeQueueCapacity];
+        private static readonly DynamicObstacleClearRequest[] _pendingObstacleClears = new DynamicObstacleClearRequest[PendingObstacleClearQueueCapacity];
+        private static readonly NavObstaclePrimitive[] _persistentDynamicObstacles = new NavObstaclePrimitive[MaxPersistentDynamicObstacleCount];
         private static VoxelDynamicNavGridRuntimeLifecycle _lifecycleOwner;
+        private static IDataVault _dataVault;
+        private static VaultGenerationHandle<NavGridTelemetryEntry> _navGridTelemetryRingHandle;
+        private static VaultGenerationHandle<int> _navGridTelemetryCursorHandle;
+        private static uint _navGridTelemetrySequence;
         private static bool _portalGraphDirty = true;
         private static bool _teardownPending;
         private static bool _clearRuntimeContainersWhenTeardownCompletes;
+        private static int _dirtyVolumeQueueHead;
+        private static int _dirtyVolumeQueueTail;
+        private static int _pendingObstacleClearQueueHead;
+        private static int _pendingObstacleClearQueueTail;
         private static int _persistentDynamicObstacleWriteCursor;
+        private static int _persistentDynamicObstacleCount;
         private static int _dynamicClearanceFallbackSchedulesRemaining;
         private static int _dirtyVolumeQueueCount;
         private static int _pendingObstacleClearQueueCount;
+        private static int _recordCount;
+        private static int _dirtyRequestSpillCount;
+        private static int _deferredDirtyVolumeCount;
+        private static int _portalGraphNodeCount;
+        private static int _portalFaceVisitStamp;
+        private static int _routeNodeScratchCount;
+        private static int _routeOpenSetCount;
+        private static int _routePathCount;
+        private static int _recordRemovalScratchCount;
+        private static int _registeredObstacleCount;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextDynamicClearanceWarningTime = float.NegativeInfinity;
 #endif
@@ -357,6 +406,21 @@ namespace Hecton8.World
         {
             [ReadOnly, NoAlias] public NativeArray<byte> Source;
             [WriteOnly, NoAlias] public NativeArray<byte> Destination;
+
+            public void Execute(int index)
+            {
+                if (!Source.IsCreated || !Destination.IsCreated || index < 0 || index >= Source.Length || index >= Destination.Length)
+                    return;
+
+                Destination[index] = Source[index];
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct CopyUShortBufferJob : IJobParallelFor
+        {
+            [ReadOnly, NoAlias] public NativeArray<ushort> Source;
+            [WriteOnly, NoAlias] public NativeArray<ushort> Destination;
 
             public void Execute(int index)
             {
@@ -628,35 +692,27 @@ namespace Hecton8.World
             public float CellSize;
             public bool IsDirty;
             public bool IsPureVoid;
-            public NativeArray<byte> Current;
-            public NativeArray<byte> Next;
-            public NativeArray<byte> BaseCurrent;
-            public NativeArray<byte> BaseNext;
-            public NativeArray<ushort> CurrentDistance;
-            public NativeArray<ushort> NextDistance;
-            public NativeArray<int> PureVoidBlockFlags;
-            public NativeArray<NavObstaclePrimitive> PendingObstacleSnapshot;
+            public int BufferSlot;
+            public VaultGenerationHandle<byte> CurrentHandle;
+            public VaultGenerationHandle<byte> NextHandle;
+            public VaultGenerationHandle<byte> BaseCurrentHandle;
+            public VaultGenerationHandle<byte> BaseNextHandle;
+            public VaultGenerationHandle<ushort> CurrentDistanceHandle;
+            public VaultGenerationHandle<ushort> NextDistanceHandle;
             public JobHandle PendingDynamicUpdateHandle;
+            public VaultGenerationHandle<byte> PendingDynamicNextHandle;
+            public VaultGenerationHandle<ushort> PendingDynamicNextDistanceHandle;
+            public long PendingDynamicScheduleTimestamp;
             public bool HasPendingDynamicUpdate;
             public bool PendingRemoval;
             public bool PortalsReady;
             public int3 PendingRegionMin;
             public int3 PendingRegionMax;
-            public int PureVoidBlockCount;
-            public PortalNode[] Portals;
             public int PortalCount;
-            public int[] FaceVisitScratch;
-            public int[] FaceQueueScratch;
-            public int FaceVisitStamp;
 
             public VolumeRecord()
             {
-                // COLD ALLOC: PortalNode[4096] - fixed macro-portal storage for one voxel volume record - owner: VoxelDynamicNavGridRuntime
-                Portals = new PortalNode[MaxPortalsPerVolume];
-                // COLD ALLOC: int[4096] - fixed face flood-fill visit stamps for portal rebuild - owner: VoxelDynamicNavGridRuntime
-                FaceVisitScratch = new int[MaxPortalFaceScratchCells];
-                // COLD ALLOC: int[4096] - fixed face flood-fill queue for portal rebuild - owner: VoxelDynamicNavGridRuntime
-                FaceQueueScratch = new int[MaxPortalFaceScratchCells];
+                ResetForReuse();
             }
 
             public bool TryDisposeCompleted()
@@ -666,28 +722,30 @@ namespace Hecton8.World
                     if (!DispatcherJobSwap.TryComplete(ref PendingDynamicUpdateHandle, forceComplete: false))
                         return false;
 
-                    HasPendingDynamicUpdate = false;
+                    VoxelDynamicNavGridRuntime.CompleteDynamicObstacleUpdate(this);
                 }
 
-                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref Current);
-                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref Next);
-                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref BaseCurrent);
-                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref BaseNext);
-                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref CurrentDistance);
-                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref NextDistance);
-                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref PureVoidBlockFlags);
+                VoxelDynamicNavGridRuntime.ReleaseVoxelBuffers(this);
+                VoxelDynamicNavGridRuntime.ReleaseRecordBufferSlot(BufferSlot);
+                ResetForReuse();
 
-                VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(PendingObstacleSnapshot);
+                return true;
+            }
 
-                Current = default;
-                Next = default;
-                BaseCurrent = default;
-                BaseNext = default;
-                CurrentDistance = default;
-                NextDistance = default;
-                PureVoidBlockFlags = default;
-                PendingObstacleSnapshot = default;
+            public void ResetForReuse()
+            {
+                BufferSlot = -1;
+                ChunkId = 0u;
+                CurrentHandle = default;
+                NextHandle = default;
+                BaseCurrentHandle = default;
+                BaseNextHandle = default;
+                CurrentDistanceHandle = default;
+                NextDistanceHandle = default;
                 PendingDynamicUpdateHandle = default;
+                PendingDynamicNextHandle = default;
+                PendingDynamicNextDistanceHandle = default;
+                PendingDynamicScheduleTimestamp = 0L;
                 HasPendingDynamicUpdate = false;
                 PendingRemoval = false;
                 PortalsReady = false;
@@ -700,23 +758,48 @@ namespace Hecton8.World
                 Origin = float3.zero;
                 Max = float3.zero;
                 CellSize = 0f;
-                PureVoidBlockCount = 0;
                 PortalCount = 0;
-                FaceVisitStamp = 0;
-                return true;
             }
         }
 
-        private sealed class ObstacleRegistration
+        [StructLayout(LayoutKind.Explicit, Size = NavGridTelemetryEntryStrideBytes)]
+        private struct NavGridTelemetryEntry
         {
-            public BoxCollider[] Boxes = System.Array.Empty<BoxCollider>();
-            public CapsuleCollider[] Capsules = System.Array.Empty<CapsuleCollider>();
+            [FieldOffset(0)] public ulong StateHash;
+            [FieldOffset(8)] public uint BufferId;
+            [FieldOffset(12)] public uint Generation;
+            [FieldOffset(16)] public uint Frame;
+            [FieldOffset(20)] public int ExpectedLength;
+            [FieldOffset(24)] public int ActualLength;
+            [FieldOffset(28)] public int RecordSlot;
+            [FieldOffset(32)] public float JobMicroseconds;
+            [FieldOffset(36)] public float QualityWeight;
+            [FieldOffset(40)] public uint Flags;
+            [FieldOffset(44)] public uint Sequence;
+            [FieldOffset(48)] public float3 Position;
+            [FieldOffset(60)] public ushort FailureCode;
+            [FieldOffset(62)] public ushort Phase;
+        }
+
+        private struct ObstacleRegistration
+        {
+            public BoxCollider[] Boxes;
+            public CapsuleCollider[] Capsules;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRuntime()
         {
             DisposeAll();
+        }
+
+        private static VolumeRecord[] CreateRecordPool()
+        {
+            VolumeRecord[] records = new VolumeRecord[MaxTrackedVolumeRecords]; // COLD ALLOC: fixed record shell pool - owner: VoxelDynamicNavGridRuntime
+            for (int i = 0; i < records.Length; i++)
+                records[i] = new VolumeRecord(); // COLD ALLOC: class shell only; portal scratch is shared and bounded.
+
+            return records;
         }
 
         internal static void QueueDirtyVolume(HectonVoxelVolume volume)
@@ -735,15 +818,11 @@ namespace Hecton8.World
 
             record.IsDirty = true;
             record.RuntimeStamp = volume.RuntimeStamp;
-            if (_dirtyVolumeQueueCount >= DirtyVolumeQueueCapacity)
-                return;
-
-            _dirtyVolumes.Enqueue(new DirtyVolumeRequest
+            _ = TryEnqueueDirtyVolume(new DirtyVolumeRequest
             {
                 VolumeInstanceId = volumeInstanceId,
                 RuntimeStamp = volume.RuntimeStamp
             });
-            _dirtyVolumeQueueCount++;
         }
 
         internal static void QueueDeferredDirtyVolume(HectonVoxelVolume volume, int slowTickDelay)
@@ -759,7 +838,7 @@ namespace Hecton8.World
 
             EnsureInitialized();
             int runtimeStamp = volume.RuntimeStamp;
-            for (int i = 0; i < _deferredDirtyVolumes.Count; i++)
+            for (int i = 0; i < _deferredDirtyVolumeCount; i++)
             {
                 DeferredDirtyVolumeRequest request = _deferredDirtyVolumes[i];
                 if (!ReferenceEquals(request.Volume, volume))
@@ -771,29 +850,30 @@ namespace Hecton8.World
                 return;
             }
 
-            if (_deferredDirtyVolumes.Count >= DeferredDirtyVolumeQueueCapacity)
+            if (_deferredDirtyVolumeCount >= DeferredDirtyVolumeQueueCapacity)
             {
                 QueueDirtyVolume(volume);
                 return;
             }
 
-            _deferredDirtyVolumes.Add(new DeferredDirtyVolumeRequest
+            _deferredDirtyVolumes[_deferredDirtyVolumeCount] = new DeferredDirtyVolumeRequest
             {
                 Volume = volume,
                 RuntimeStamp = runtimeStamp,
                 RemainingSlowTicks = slowTickDelay
-            });
+            };
+            _deferredDirtyVolumeCount++;
         }
 
         internal static void TickDeferredDirtyVolumes()
         {
-            for (int i = _deferredDirtyVolumes.Count - 1; i >= 0; i--)
+            for (int i = _deferredDirtyVolumeCount - 1; i >= 0; i--)
             {
                 DeferredDirtyVolumeRequest request = _deferredDirtyVolumes[i];
                 HectonVoxelVolume volume = request.Volume;
                 if (volume == null || !volume.MatchesRuntimeStamp(request.RuntimeStamp))
                 {
-                    _deferredDirtyVolumes.RemoveAt(i);
+                    RemoveDeferredDirtyVolumeAt(i);
                     continue;
                 }
 
@@ -804,7 +884,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                _deferredDirtyVolumes.RemoveAt(i);
+                RemoveDeferredDirtyVolumeAt(i);
                 QueueDirtyVolume(volume);
             }
         }
@@ -818,7 +898,7 @@ namespace Hecton8.World
 
             EnsureInitialized();
             int volumeInstanceId = GetStableVolumeEntityId(volume);
-            if (!_records.TryGetValue(volumeInstanceId, out VolumeRecord record) ||
+            if (!TryGetRecord(volumeInstanceId, out VolumeRecord record) ||
                 !HasValidRecordBounds(record))
             {
                 QueueDirtyVolume(volume);
@@ -866,7 +946,6 @@ namespace Hecton8.World
                 return false;
             }
 
-            int resolvedJobBatch = math.max(1, jobBatch);
             if (!TryPrepareBuild(
                     volume,
                     runtimeStamp,
@@ -874,76 +953,107 @@ namespace Hecton8.World
                     origin,
                     cellSize,
                     pointCount,
-                    out NativeArray<byte> outputBuffer,
-                    out NativeArray<byte> baseOutputBuffer,
-                    out NativeArray<ushort> distanceBuffer,
-                    out NativeArray<int> pureVoidBlockFlags))
+                    out VolumeRecord record))
             {
                 return false;
             }
 
-            JobHandle passabilityHandle = new PassabilityBuildJob
-            {
-                DensityField = densityField,
-                Output = outputBuffer,
-                SolidThreshold = 0f
-            }.Schedule(pointCount, resolvedJobBatch, dependency);
-
-            JobHandle baseCopyHandle = new CopyByteBufferJob
-            {
-                Source = outputBuffer,
-                Destination = baseOutputBuffer
-            }.Schedule(pointCount, resolvedJobBatch, passabilityHandle);
-
+            NativeArray<byte> outputBuffer = default;
+            NativeArray<byte> baseOutputBuffer = default;
+            NativeArray<ushort> distanceBuffer = default;
             NativeArray<NavObstaclePrimitive> obstacleSnapshot = default;
-            int obstacleSnapshotCount = CountObstacleSnapshotPrimitives();
-            if (obstacleSnapshotCount > 0)
+            bool outputLocked = false;
+            bool baseOutputLocked = false;
+            bool distanceLocked = false;
+            try
             {
-                obstacleSnapshot = new NativeArray<NavObstaclePrimitive>(
-                    obstacleSnapshotCount,
-                    Allocator.TempJob,
-                    NativeArrayOptions.UninitializedMemory);
-                RegisterObstacleSnapshot(obstacleSnapshot, Allocator.TempJob);
-                if (!TryFillObstacleSnapshot(obstacleSnapshot, out _))
-                {
-                    DisposeObstacleSnapshot(obstacleSnapshot);
-                    obstacleSnapshot = default;
-                }
-            }
+                if (!TryAcquireNavGridWrite(in record.NextHandle, pointCount, out outputBuffer))
+                    return false;
+                outputLocked = true;
 
-            JobHandle obstacleHandle = passabilityHandle;
-            if (obstacleSnapshot.IsCreated)
-            {
-                obstacleHandle = new ObstacleStampJob
+                if (!TryAcquireNavGridWrite(in record.BaseNextHandle, pointCount, out baseOutputBuffer))
+                    return false;
+                baseOutputLocked = true;
+
+                if (!TryAcquireNavGridWrite(in record.NextDistanceHandle, pointCount, out distanceBuffer))
+                    return false;
+                distanceLocked = true;
+
+                IDataVault vault = _dataVault;
+                if (vault == null || vault.IsCompactionFenceActive)
+                    return false;
+
+                int safeBatch = math.max(1, jobBatch);
+                JobHandle passabilityHandle = new PassabilityBuildJob
+                {
+                    DensityField = densityField,
+                    Output = outputBuffer,
+                    SolidThreshold = 0f
+                }.Schedule(pointCount, safeBatch, dependency);
+
+                JobHandle baseCopyHandle = new CopyByteBufferJob
+                {
+                    Source = outputBuffer,
+                    Destination = baseOutputBuffer
+                }.Schedule(pointCount, safeBatch, passabilityHandle);
+
+                int obstacleSnapshotCount = CountObstacleSnapshotPrimitives();
+                if (obstacleSnapshotCount > 0)
+                {
+                    obstacleSnapshot = new NativeArray<NavObstaclePrimitive>(
+                        obstacleSnapshotCount,
+                        Allocator.TempJob,
+                        NativeArrayOptions.UninitializedMemory);
+                    RegisterObstacleSnapshot(obstacleSnapshot, Allocator.TempJob);
+                    if (!TryFillObstacleSnapshot(obstacleSnapshot, out _))
+                    {
+                        DisposeObstacleSnapshot(obstacleSnapshot);
+                        obstacleSnapshot = default;
+                    }
+                }
+
+                if (obstacleSnapshot.IsCreated)
+                {
+                    baseCopyHandle = new ObstacleStampJob
+                    {
+                        Passability = outputBuffer,
+                        Obstacles = obstacleSnapshot,
+                        Dimensions = dimensions,
+                        Origin = origin,
+                        CellSize = cellSize
+                    }.Schedule(pointCount, safeBatch, baseCopyHandle);
+                }
+
+                scheduledHandle = new ClearanceDilationJob
                 {
                     Passability = outputBuffer,
-                    Obstacles = obstacleSnapshot,
+                    DistanceMap = distanceBuffer,
                     Dimensions = dimensions,
-                    Origin = origin,
-                    CellSize = cellSize
-                }.Schedule(pointCount, resolvedJobBatch, passabilityHandle);
+                    AgentRadiusCells = ResolveClearanceRadiusCells(cellSize)
+                }.Schedule(baseCopyHandle);
+
+                if (obstacleSnapshot.IsCreated)
+                {
+                    scheduledHandle = DisposeObstacleSnapshot(obstacleSnapshot, scheduledHandle);
+                    obstacleSnapshot = default;
+                }
+
+                outputLocked = false;
+                baseOutputLocked = false;
+                distanceLocked = false;
+                return true;
             }
-
-            JobHandle navGridHandle = new ClearanceDilationJob
+            finally
             {
-                Passability = outputBuffer,
-                DistanceMap = distanceBuffer,
-                Dimensions = dimensions,
-                AgentRadiusCells = ResolveClearanceRadiusCells(cellSize)
-            }.Schedule(obstacleHandle);
-
-            navGridHandle = JobHandle.CombineDependencies(navGridHandle, baseCopyHandle);
-            navGridHandle = SchedulePureVoidScan(
-                outputBuffer,
-                distanceBuffer,
-                pureVoidBlockFlags,
-                pointCount,
-                navGridHandle);
-
-            scheduledHandle = obstacleSnapshot.IsCreated
-                ? DisposeObstacleSnapshot(obstacleSnapshot, navGridHandle)
-                : navGridHandle;
-            return true;
+                if (obstacleSnapshot.IsCreated)
+                    DisposeObstacleSnapshot(obstacleSnapshot);
+                if (distanceLocked)
+                    ReleaseNavGridWrite(in record.NextDistanceHandle);
+                if (baseOutputLocked)
+                    ReleaseNavGridWrite(in record.BaseNextHandle);
+                if (outputLocked)
+                    ReleaseNavGridWrite(in record.NextHandle);
+            }
         }
 
         private static bool TryPrepareBuild(
@@ -953,15 +1063,9 @@ namespace Hecton8.World
             float3 origin,
             float cellSize,
             int pointCount,
-            out NativeArray<byte> outputBuffer,
-            out NativeArray<byte> baseOutputBuffer,
-            out NativeArray<ushort> distanceBuffer,
-            out NativeArray<int> pureVoidBlockFlags)
+            out VolumeRecord record)
         {
-            outputBuffer = default;
-            baseOutputBuffer = default;
-            distanceBuffer = default;
-            pureVoidBlockFlags = default;
+            record = null;
             if (volume == null ||
                 pointCount <= 0 ||
                 dimensions.x <= 0 ||
@@ -977,7 +1081,7 @@ namespace Hecton8.World
 
             EnsureInitialized();
             int volumeInstanceId = GetStableVolumeEntityId(volume);
-            VolumeRecord record = GetOrCreateRecord(volumeInstanceId);
+            record = GetOrCreateRecord(volumeInstanceId);
             if (record == null)
                 return false;
 
@@ -999,12 +1103,7 @@ namespace Hecton8.World
             bool needsBuild = consumedDirtyMarker ||
                               record.IsDirty ||
                               (!record.IsPureVoid &&
-                               (!record.Current.IsCreated ||
-                                !record.Next.IsCreated ||
-                                !record.BaseCurrent.IsCreated ||
-                                !record.BaseNext.IsCreated ||
-                                !record.CurrentDistance.IsCreated ||
-                                !record.NextDistance.IsCreated)) ||
+                               !HasCompleteDynamicUpdateBuffers(record)) ||
                               record.RuntimeStamp != runtimeStamp ||
                               dimensionsChanged ||
                               originChanged ||
@@ -1024,15 +1123,9 @@ namespace Hecton8.World
             if (!needsBuild)
                 return false;
 
-            EnsureBuffer(ref record.Current, pointCount, nameof(VolumeRecord.Current));
-            EnsureBuffer(ref record.Next, pointCount, nameof(VolumeRecord.Next));
-            EnsureBuffer(ref record.BaseCurrent, pointCount, nameof(VolumeRecord.BaseCurrent));
-            EnsureBuffer(ref record.BaseNext, pointCount, nameof(VolumeRecord.BaseNext));
-            EnsureBuffer(ref record.CurrentDistance, pointCount, nameof(VolumeRecord.CurrentDistance));
-            EnsureBuffer(ref record.NextDistance, pointCount, nameof(VolumeRecord.NextDistance));
-            int pureVoidBlockCount = ResolvePureVoidBlockCount(pointCount);
-            EnsureBuffer(ref record.PureVoidBlockFlags, pureVoidBlockCount, nameof(VolumeRecord.PureVoidBlockFlags));
-            record.PureVoidBlockCount = pureVoidBlockCount;
+            if (!TryEnsureRecordBuffers(record, pointCount))
+                return false;
+
             if (!EnsurePortalWorkCapacity(record))
             {
                 record.PortalCount = 0;
@@ -1041,11 +1134,6 @@ namespace Hecton8.World
 
             record.IsPureVoid = false;
             record.PortalsReady = false;
-
-            outputBuffer = record.Next;
-            baseOutputBuffer = record.BaseNext;
-            distanceBuffer = record.NextDistance;
-            pureVoidBlockFlags = record.PureVoidBlockFlags;
             return true;
         }
 
@@ -1055,21 +1143,18 @@ namespace Hecton8.World
                 return;
 
             int volumeInstanceId = GetStableVolumeEntityId(volume);
-            if (!_records.TryGetValue(volumeInstanceId, out VolumeRecord record) ||
+            if (!TryGetRecord(volumeInstanceId, out VolumeRecord record) ||
                 record.RuntimeStamp != runtimeStamp)
             {
                 return;
             }
 
-            NativeArray<byte> swap = record.Current;
-            record.Current = record.Next;
-            record.Next = swap;
-            swap = record.BaseCurrent;
-            record.BaseCurrent = record.BaseNext;
-            record.BaseNext = swap;
-            NativeArray<ushort> distanceSwap = record.CurrentDistance;
-            record.CurrentDistance = record.NextDistance;
-            record.NextDistance = distanceSwap;
+            ReleaseNavGridWrite(in record.NextDistanceHandle);
+            ReleaseNavGridWrite(in record.BaseNextHandle);
+            ReleaseNavGridWrite(in record.NextHandle);
+            SwapHandles(ref record.CurrentHandle, ref record.NextHandle);
+            SwapHandles(ref record.BaseCurrentHandle, ref record.BaseNextHandle);
+            SwapHandles(ref record.CurrentDistanceHandle, ref record.NextDistanceHandle);
             EvaluatePureVoidState(record);
             if (record.IsPureVoid)
             {
@@ -1079,7 +1164,6 @@ namespace Hecton8.World
             }
 
             RebuildPortals(record);
-            record.PortalsReady = true;
             _portalGraphDirty = true;
         }
 
@@ -1088,18 +1172,19 @@ namespace Hecton8.World
             if (obstacleId == 0)
                 return;
 
-            ObstacleRegistration registration = null;
-            if (!_registeredObstacles.TryGetValue(obstacleId, out registration))
+            int registrationIndex = FindObstacleRegistrationIndex(obstacleId);
+            if (registrationIndex < 0)
             {
-                if (_registeredObstacles.Count >= MaxRegisteredObstacleRecords)
+                if (_registeredObstacleCount >= MaxRegisteredObstacleRecords)
                     return;
 
-                registration = new ObstacleRegistration();
-                _registeredObstacles.Add(obstacleId, registration);
+                registrationIndex = _registeredObstacleCount;
+                _registeredObstacleKeys[registrationIndex] = obstacleId;
+                _registeredObstacleCount++;
             }
 
-            registration.Boxes = boxes ?? System.Array.Empty<BoxCollider>();
-            registration.Capsules = capsules ?? System.Array.Empty<CapsuleCollider>();
+            _registeredObstacles[registrationIndex].Boxes = boxes ?? System.Array.Empty<BoxCollider>();
+            _registeredObstacles[registrationIndex].Capsules = capsules ?? System.Array.Empty<CapsuleCollider>();
             MarkAllVolumesDirty();
         }
 
@@ -1108,20 +1193,16 @@ namespace Hecton8.World
             if (obstacleId == 0)
                 return;
 
-            if (_registeredObstacles.Remove(obstacleId))
+            if (RemoveObstacleRegistration(obstacleId))
                 MarkAllVolumesDirty();
         }
 
         internal static int CountObstacleSnapshotPrimitives()
         {
             int obstacleCount = 0;
-            Dictionary<int, ObstacleRegistration>.Enumerator countEnumerator = _registeredObstacles.GetEnumerator();
-            while (countEnumerator.MoveNext())
+            for (int obstacleIndex = 0; obstacleIndex < _registeredObstacleCount; obstacleIndex++)
             {
-                ObstacleRegistration registration = countEnumerator.Current.Value;
-                if (registration == null)
-                    continue;
-
+                ObstacleRegistration registration = _registeredObstacles[obstacleIndex];
                 obstacleCount += CountLiveColliders(registration.Boxes);
                 obstacleCount += CountLiveColliders(registration.Capsules);
             }
@@ -1142,13 +1223,9 @@ namespace Hecton8.World
                 return false;
 
             int writeIndex = 0;
-            Dictionary<int, ObstacleRegistration>.Enumerator writeEnumerator = _registeredObstacles.GetEnumerator();
-            while (writeEnumerator.MoveNext())
+            for (int obstacleIndex = 0; obstacleIndex < _registeredObstacleCount; obstacleIndex++)
             {
-                ObstacleRegistration registration = writeEnumerator.Current.Value;
-                if (registration == null)
-                    continue;
-
+                ObstacleRegistration registration = _registeredObstacles[obstacleIndex];
                 WriteColliderBounds(registration.Boxes, ref snapshot, ref writeIndex);
                 WriteColliderBounds(registration.Capsules, ref snapshot, ref writeIndex);
             }
@@ -1257,6 +1334,19 @@ namespace Hecton8.World
                 EnqueueDestroyedOrganicEvent(destroyedEvents[i]);
         }
 
+        internal static void EnqueueDestroyedOrganicEvents(System.ReadOnlySpan<DestroyedOrganicEvent> destroyedEvents)
+        {
+            if (destroyedEvents.Length <= 0)
+                return;
+
+            EnsureInitialized();
+            for (int i = 0; i < destroyedEvents.Length; i++)
+            {
+                DestroyedOrganicEvent destroyedEvent = destroyedEvents[i];
+                EnqueueDestroyedOrganicEvent(in destroyedEvent);
+            }
+        }
+
         private static void EnqueueDestroyedOrganicEvent(in DestroyedOrganicEvent destroyedEvent)
         {
             float3 center = destroyedEvent.NavObstacleCenter;
@@ -1274,53 +1364,47 @@ namespace Hecton8.World
 
         internal static void CompletePendingDynamicObstacleUpdates()
         {
-            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int recordIndex = 0; recordIndex < _recordCount; recordIndex++)
             {
-                VolumeRecord record = enumerator.Current.Value;
-                if (record == null || !record.HasPendingDynamicUpdate || !record.PendingDynamicUpdateHandle.IsCompleted)
+                VolumeRecord record = _records[recordIndex];
+                if (record == null || !record.HasPendingDynamicUpdate)
                     continue;
 
-                long completionStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-                using (_partialClearanceDilationCompleteMarker.Auto())
-                {
-                    if (!DispatcherJobSwap.TryComplete(ref record.PendingDynamicUpdateHandle, forceComplete: false))
-                        continue;
-                }
+                if (!DispatcherJobSwap.TryComplete(ref record.PendingDynamicUpdateHandle, forceComplete: false))
+                    continue;
 
-                EvaluateDynamicClearanceBudget(completionStartTimestamp);
-                record.HasPendingDynamicUpdate = false;
-
-                NativeArray<byte> passabilitySwap = record.Current;
-                record.Current = record.Next;
-                record.Next = passabilitySwap;
-
-                NativeArray<ushort> distanceSwap = record.CurrentDistance;
-                record.CurrentDistance = record.NextDistance;
-                record.NextDistance = distanceSwap;
-                EvaluatePureVoidState(record);
-
-                DisposeObstacleSnapshot(record.PendingObstacleSnapshot);
-                record.PendingObstacleSnapshot = default;
-
-                record.PendingRegionMin = int3.zero;
-                record.PendingRegionMax = int3.zero;
-                if (!record.IsPureVoid)
-                    RebuildPortals(record);
-                record.PortalsReady = true;
-                _portalGraphDirty = true;
+                CompleteDynamicObstacleUpdate(record);
             }
 
             if (_teardownPending)
                 DisposePendingCompletedRecords(false);
         }
 
-        internal static void SchedulePendingDynamicObstacleUpdates()
+        private static void CompleteDynamicObstacleUpdate(VolumeRecord record)
         {
-            if (!_pendingObstacleClears.IsCreated)
+            if (record == null)
                 return;
 
-            if (HasPendingDynamicObstacleUpdate())
+            EvaluateDynamicClearanceBudget(record.PendingDynamicScheduleTimestamp);
+            ReleaseNavGridWrite(in record.PendingDynamicNextDistanceHandle);
+            ReleaseNavGridWrite(in record.PendingDynamicNextHandle);
+            record.PendingDynamicNextHandle = default;
+            record.PendingDynamicNextDistanceHandle = default;
+            record.PendingDynamicScheduleTimestamp = 0L;
+            record.HasPendingDynamicUpdate = false;
+            SwapHandles(ref record.CurrentHandle, ref record.NextHandle);
+            SwapHandles(ref record.CurrentDistanceHandle, ref record.NextDistanceHandle);
+            record.PendingRegionMin = int3.zero;
+            record.PendingRegionMax = int3.zero;
+            EvaluatePureVoidState(record);
+            if (!record.IsPureVoid)
+                RebuildPortals(record);
+            _portalGraphDirty = true;
+        }
+
+        internal static void SchedulePendingDynamicObstacleUpdates()
+        {
+            if (_pendingObstacleClearQueueCount <= 0)
                 return;
 
             if (!TryDequeueValidDynamicClearRequest(out DynamicObstacleClearRequest clearRequest))
@@ -1328,10 +1412,9 @@ namespace Hecton8.World
 
             bool useReducedClearance = _dynamicClearanceFallbackSchedulesRemaining > 0;
             bool scheduledAnyRecord = false;
-            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int recordIndex = 0; recordIndex < _recordCount; recordIndex++)
             {
-                VolumeRecord record = enumerator.Current.Value;
+                VolumeRecord record = _records[recordIndex];
                 if (!HasValidRecordBounds(record) ||
                     record.HasPendingDynamicUpdate ||
                     !HasCompleteDynamicUpdateBuffers(record))
@@ -1345,79 +1428,125 @@ namespace Hecton8.World
                 if (!TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount))
                     continue;
 
-                int requiredBlockCount = ResolvePureVoidBlockCount(requiredCellCount);
-                if (requiredBlockCount <= 0 || record.PureVoidBlockFlags.Length < requiredBlockCount)
-                    continue;
-
                 int3 regionSize = regionMax - regionMin + 1;
                 long regionPointCountLong = (long)regionSize.x * regionSize.y * regionSize.z;
                 if (regionPointCountLong <= 0L || regionPointCountLong > int.MaxValue)
                     continue;
 
-                record.PureVoidBlockCount = requiredBlockCount;
                 int regionPointCount = (int)regionPointCountLong;
-                NativeArray<byte>.Copy(record.Current, record.Next, requiredCellCount);
-                NativeArray<ushort>.Copy(record.CurrentDistance, record.NextDistance, requiredCellCount);
-
-                DisposeObstacleSnapshot(record.PendingObstacleSnapshot);
-                record.PendingObstacleSnapshot = default;
-
-                int obstacleSnapshotCount = CountObstacleSnapshotPrimitives();
-                if (obstacleSnapshotCount > 0)
+                NativeArray<byte> current = default;
+                NativeArray<byte> next = default;
+                NativeArray<byte> baseCurrent = default;
+                NativeArray<ushort> currentDistance = default;
+                NativeArray<ushort> nextDistance = default;
+                NativeArray<NavObstaclePrimitive> obstacleSnapshot = default;
+                VaultGenerationHandle<byte> lockedNextHandle = record.NextHandle;
+                VaultGenerationHandle<ushort> lockedNextDistanceHandle = record.NextDistanceHandle;
+                bool nextLocked = false;
+                bool nextDistanceLocked = false;
+                try
                 {
-                    record.PendingObstacleSnapshot = new NativeArray<NavObstaclePrimitive>(
-                        obstacleSnapshotCount,
-                        Allocator.TempJob,
-                        NativeArrayOptions.UninitializedMemory);
-                    RegisterObstacleSnapshot(record.PendingObstacleSnapshot, Allocator.TempJob);
-                    if (!TryFillObstacleSnapshot(record.PendingObstacleSnapshot, out _))
+                    if (!TryResolveNavGridRead(in record.CurrentHandle, requiredCellCount, out current) ||
+                        !TryResolveNavGridRead(in record.BaseCurrentHandle, requiredCellCount, out baseCurrent) ||
+                        !TryResolveNavGridRead(in record.CurrentDistanceHandle, requiredCellCount, out currentDistance) ||
+                        !TryAcquireNavGridWrite(in record.NextHandle, requiredCellCount, out next))
                     {
-                        DisposeObstacleSnapshot(record.PendingObstacleSnapshot);
-                        record.PendingObstacleSnapshot = default;
+                        continue;
                     }
-                }
 
-                record.PendingRegionMin = regionMin;
-                record.PendingRegionMax = regionMax;
+                    nextLocked = true;
+                    if (!TryAcquireNavGridWrite(in record.NextDistanceHandle, requiredCellCount, out nextDistance))
+                        continue;
 
-                int clearanceRadiusCells = ResolveDynamicClearanceRadiusCells(record.CellSize, useReducedClearance);
-                JobHandle resetHandle = new PartialObstacleResetAndStampJob
-                {
-                    BasePassability = record.BaseCurrent,
-                    Passability = record.Next,
-                    Obstacles = record.PendingObstacleSnapshot,
-                    Dimensions = record.Dimensions,
-                    RegionMin = regionMin,
-                    RegionMax = regionMax,
-                    Origin = record.Origin,
-                    CellSize = record.CellSize
-                }.Schedule(regionPointCount, 64);
+                    nextDistanceLocked = true;
+                    IDataVault vault = _dataVault;
+                    if (vault == null || vault.IsCompactionFenceActive)
+                        continue;
 
-                JobHandle dilationHandle;
-                using (_partialClearanceDilationScheduleMarker.Auto())
-                {
-                    dilationHandle = new PartialClearanceDilationJob
+                    JobHandle passabilityCopyHandle = new CopyByteBufferJob
                     {
-                        Passability = record.Next,
-                        ReferenceDistanceMap = record.CurrentDistance,
-                        DistanceMap = record.NextDistance,
+                        Source = current,
+                        Destination = next
+                    }.Schedule(requiredCellCount, 64);
+                    JobHandle distanceCopyHandle = new CopyUShortBufferJob
+                    {
+                        Source = currentDistance,
+                        Destination = nextDistance
+                    }.Schedule(requiredCellCount, 64);
+                    JobHandle resetDependency = JobHandle.CombineDependencies(passabilityCopyHandle, distanceCopyHandle);
+
+                    int obstacleSnapshotCount = CountObstacleSnapshotPrimitives();
+                    if (obstacleSnapshotCount > 0)
+                    {
+                        obstacleSnapshot = new NativeArray<NavObstaclePrimitive>(
+                            obstacleSnapshotCount,
+                            Allocator.TempJob,
+                            NativeArrayOptions.UninitializedMemory);
+                        RegisterObstacleSnapshot(obstacleSnapshot, Allocator.TempJob);
+                        if (!TryFillObstacleSnapshot(obstacleSnapshot, out _))
+                        {
+                            DisposeObstacleSnapshot(obstacleSnapshot);
+                            obstacleSnapshot = default;
+                        }
+                    }
+
+                    record.PendingRegionMin = regionMin;
+                    record.PendingRegionMax = regionMax;
+
+                    int clearanceRadiusCells = ResolveDynamicClearanceRadiusCells(record.CellSize, useReducedClearance);
+                    JobHandle stampHandle = new PartialObstacleResetAndStampJob
+                    {
+                        BasePassability = baseCurrent,
+                        Passability = next,
+                        Obstacles = obstacleSnapshot,
                         Dimensions = record.Dimensions,
                         RegionMin = regionMin,
                         RegionMax = regionMax,
-                        AgentRadiusCells = clearanceRadiusCells
-                    }.Schedule(resetHandle);
+                        Origin = record.Origin,
+                        CellSize = record.CellSize
+                    }.Schedule(regionPointCount, 64, resetDependency);
+
+                    long completionStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                    JobHandle updateHandle;
+                    using (_partialClearanceDilationScheduleMarker.Auto())
+                    {
+                        updateHandle = new PartialClearanceDilationJob
+                        {
+                            Passability = next,
+                            ReferenceDistanceMap = currentDistance,
+                            DistanceMap = nextDistance,
+                            Dimensions = record.Dimensions,
+                            RegionMin = regionMin,
+                            RegionMax = regionMax,
+                            AgentRadiusCells = clearanceRadiusCells
+                        }.Schedule(stampHandle);
+                    }
+
+                    if (obstacleSnapshot.IsCreated)
+                    {
+                        updateHandle = DisposeObstacleSnapshot(obstacleSnapshot, updateHandle);
+                        obstacleSnapshot = default;
+                    }
+
+                    record.PendingDynamicUpdateHandle = updateHandle;
+                    record.PendingDynamicNextHandle = lockedNextHandle;
+                    record.PendingDynamicNextDistanceHandle = lockedNextDistanceHandle;
+                    record.PendingDynamicScheduleTimestamp = completionStartTimestamp;
+                    record.HasPendingDynamicUpdate = true;
+                    obstacleSnapshot = default;
+                    nextDistanceLocked = false;
+                    nextLocked = false;
+                    scheduledAnyRecord = true;
                 }
-
-                record.PendingDynamicUpdateHandle = SchedulePureVoidScan(
-                    record.Next,
-                    record.NextDistance,
-                    record.PureVoidBlockFlags,
-                    requiredCellCount,
-                    dilationHandle);
-
-                record.HasPendingDynamicUpdate = true;
-                record.PortalsReady = false;
-                scheduledAnyRecord = true;
+                finally
+                {
+                    if (obstacleSnapshot.IsCreated)
+                        DisposeObstacleSnapshot(obstacleSnapshot);
+                    if (nextDistanceLocked)
+                        ReleaseNavGridWrite(in lockedNextDistanceHandle);
+                    if (nextLocked)
+                        ReleaseNavGridWrite(in lockedNextHandle);
+                }
             }
 
             if (scheduledAnyRecord && useReducedClearance)
@@ -1426,10 +1555,9 @@ namespace Hecton8.World
 
         private static bool HasPendingDynamicObstacleUpdate()
         {
-            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int recordIndex = 0; recordIndex < _recordCount; recordIndex++)
             {
-                VolumeRecord record = enumerator.Current.Value;
+                VolumeRecord record = _records[recordIndex];
                 if (record != null && record.HasPendingDynamicUpdate)
                     return true;
             }
@@ -1441,8 +1569,6 @@ namespace Hecton8.World
         {
             return startRecord != null &&
                    endRecord != null &&
-                   !startRecord.HasPendingDynamicUpdate &&
-                   !endRecord.HasPendingDynamicUpdate &&
                    startRecord.PortalsReady &&
                    endRecord.PortalsReady;
         }
@@ -1454,11 +1580,8 @@ namespace Hecton8.World
                 ? _pendingObstacleClearQueueCount
                 : PendingObstacleClearQueueCapacity;
             while (scanBudget-- > 0 &&
-                   _pendingObstacleClears.TryDequeue(out DynamicObstacleClearRequest candidate))
+                   TryDequeuePendingObstacleClear(out DynamicObstacleClearRequest candidate))
             {
-                if (_pendingObstacleClearQueueCount > 0)
-                    _pendingObstacleClearQueueCount--;
-
                 if (!IsValidDynamicObstacleBounds(candidate.Center, candidate.Extents))
                     continue;
 
@@ -1510,13 +1633,18 @@ namespace Hecton8.World
                 return false;
 
             int volumeInstanceId = GetStableVolumeEntityId(volume);
-            if (!_records.TryGetValue(volumeInstanceId, out VolumeRecord record) ||
+            if (!TryGetRecord(volumeInstanceId, out VolumeRecord record) ||
                 !HasValidRecordBounds(record))
             {
                 return false;
             }
 
-            passability = record.Current.IsCreated ? record.Current.AsReadOnly() : default;
+            if (!TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount) ||
+                !TryReadOnlyNavGrid(in record.CurrentHandle, requiredCellCount, out passability))
+            {
+                return false;
+            }
+
             dimensions = record.Dimensions;
             origin = record.Origin;
             cellSize = record.CellSize;
@@ -1544,7 +1672,7 @@ namespace Hecton8.World
             }
 
             EnsurePortalGraphBuilt();
-            if (_portalGraphNodes.Count <= 0 ||
+            if (_portalGraphNodeCount <= 0 ||
                 startRecord.PortalCount <= 0 ||
                 endRecord.PortalCount <= 0 ||
                 !TrySolvePortalRoute(startRecord, endRecord, startWorldPosition, endWorldPosition))
@@ -1556,7 +1684,7 @@ namespace Hecton8.World
                 return false;
 
             outputWaypoints[waypointCount++] = new Vector3(startWorldPosition.x, startWorldPosition.y, startWorldPosition.z);
-            for (int i = _routePathScratch.Count - 1; i >= 0; i--)
+            for (int i = _routePathCount - 1; i >= 0; i--)
             {
                 PortalNode node = _portalGraphNodes[_routePathScratch[i]];
                 outputWaypoints[waypointCount++] = new Vector3(node.Centroid.x, node.Centroid.y, node.Centroid.z);
@@ -1583,7 +1711,12 @@ namespace Hecton8.World
                 return false;
             }
 
-            passability = record.Current.IsCreated ? record.Current.AsReadOnly() : default;
+            if (!TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount) ||
+                !TryReadOnlyNavGrid(in record.CurrentHandle, requiredCellCount, out passability))
+            {
+                return false;
+            }
+
             dimensions = record.Dimensions;
             origin = record.Origin;
             cellSize = record.CellSize;
@@ -1607,10 +1740,9 @@ namespace Hecton8.World
             bool foundContainingRecord = false;
             float nearestDistanceSq = float.MaxValue;
             VolumeRecord nearestRecord = null;
-            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int recordIndex = 0; recordIndex < _recordCount; recordIndex++)
             {
-                VolumeRecord candidate = enumerator.Current.Value;
+                VolumeRecord candidate = _records[recordIndex];
                 if (!VoxelDynamicNavGridRuntime.HasValidRecordBounds(candidate))
                 {
                     continue;
@@ -1639,7 +1771,12 @@ namespace Hecton8.World
             if (!foundContainingRecord && nearestDistanceSq > math.max(nearestRecord.CellSize * nearestRecord.CellSize, 1f))
                 return false;
 
-            passability = nearestRecord.Current.IsCreated ? nearestRecord.Current.AsReadOnly() : default;
+            if (!TryResolveVoxelCellCount(nearestRecord.Dimensions, out int requiredCellCount) ||
+                !TryReadOnlyNavGrid(in nearestRecord.CurrentHandle, requiredCellCount, out passability))
+            {
+                return false;
+            }
+
             dimensions = nearestRecord.Dimensions;
             origin = nearestRecord.Origin;
             cellSize = nearestRecord.CellSize;
@@ -1656,11 +1793,16 @@ namespace Hecton8.World
             float bestDistanceSq = float.MaxValue;
             float3 bestPosition = float3.zero;
             bool found = false;
-            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int recordIndex = 0; recordIndex < _recordCount; recordIndex++)
             {
-                VolumeRecord record = enumerator.Current.Value;
+                VolumeRecord record = _records[recordIndex];
                 if (!VoxelDynamicNavGridRuntime.HasValidRecordBounds(record))
+                {
+                    continue;
+                }
+
+                if (!TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount) ||
+                    !TryReadOnlyNavGrid(in record.CurrentHandle, requiredCellCount, out NativeArray<byte>.ReadOnly current))
                 {
                     continue;
                 }
@@ -1701,8 +1843,8 @@ namespace Hecton8.World
                                                 (candidate.y * record.Dimensions.x) +
                                                 (candidate.z * record.Dimensions.x * record.Dimensions.y);
                                 if (flatIndex < 0 ||
-                                    flatIndex >= record.Current.Length ||
-                                    record.Current[flatIndex] != OpenCell)
+                                    flatIndex >= current.Length ||
+                                    current[flatIndex] != OpenCell)
                                 {
                                     continue;
                                 }
@@ -1795,7 +1937,7 @@ namespace Hecton8.World
             }
 
             EnsurePortalGraphBuilt();
-            if (_portalGraphNodes.Count <= 0 ||
+            if (_portalGraphNodeCount <= 0 ||
                 startRecord.PortalCount <= 0 ||
                 endRecord.PortalCount <= 0)
             {
@@ -1810,7 +1952,7 @@ namespace Hecton8.World
 
             outputWaypoints.Clear();
             outputWaypoints.AddNoResize(new Vector3(startWorldPosition.x, startWorldPosition.y, startWorldPosition.z));
-            for (int i = _routePathScratch.Count - 1; i >= 0; i--)
+            for (int i = _routePathCount - 1; i >= 0; i--)
             {
                 PortalNode node = _portalGraphNodes[_routePathScratch[i]];
                 outputWaypoints.AddNoResize(new Vector3(node.Centroid.x, node.Centroid.y, node.Centroid.z));
@@ -1826,12 +1968,12 @@ namespace Hecton8.World
                 return;
 
             int volumeInstanceId = GetStableVolumeEntityId(volume);
-            if (_records.TryGetValue(volumeInstanceId, out VolumeRecord record))
+            if (TryGetRecord(volumeInstanceId, out VolumeRecord record))
             {
                 record.PendingRemoval = true;
                 if (record.TryDisposeCompleted())
                 {
-                    _records.Remove(volumeInstanceId);
+                    RemoveRecord(volumeInstanceId);
                     _portalGraphDirty = true;
                     return;
                 }
@@ -1865,16 +2007,15 @@ namespace Hecton8.World
         private static bool DisposePendingCompletedRecords(bool markAllRecordsForRemoval)
         {
             bool blockedByPendingJob = false;
-            _recordRemovalScratch.Clear();
+            _recordRemovalScratchCount = 0;
 
-            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int recordIndex = 0; recordIndex < _recordCount; recordIndex++)
             {
-                KeyValuePair<int, VolumeRecord> pair = enumerator.Current;
-                VolumeRecord record = pair.Value;
+                int recordKey = _recordKeys[recordIndex];
+                VolumeRecord record = _records[recordIndex];
                 if (record == null)
                 {
-                    _recordRemovalScratch.Add(pair.Key);
+                    AddRecordRemovalScratch(recordKey);
                     continue;
                 }
 
@@ -1886,19 +2027,17 @@ namespace Hecton8.World
 
                 if (record.TryDisposeCompleted())
                 {
-                    _recordRemovalScratch.Add(pair.Key);
+                    AddRecordRemovalScratch(recordKey);
                     continue;
                 }
 
                 blockedByPendingJob = true;
             }
 
-            for (int i = 0; i < _recordRemovalScratch.Count; i++)
-            {
-                _records.Remove(_recordRemovalScratch[i]);
-            }
+            for (int i = 0; i < _recordRemovalScratchCount; i++)
+                RemoveRecord(_recordRemovalScratch[i]);
 
-            _recordRemovalScratch.Clear();
+            _recordRemovalScratchCount = 0;
             _teardownPending = blockedByPendingJob;
             if (!blockedByPendingJob)
             {
@@ -1915,44 +2054,30 @@ namespace Hecton8.World
 
         private static void ClearRuntimeContainers()
         {
-            _records.Clear();
-            _dirtyRequestSpill.Clear();
-            _deferredDirtyVolumes.Clear();
-            _portalGraphNodes.Clear();
-            _routeNodeScratch.Clear();
-            _routeOpenSetScratch.Clear();
-            _routePathScratch.Clear();
-            _recordRemovalScratch.Clear();
-            _registeredObstacles.Clear();
+            ClearRecordStorage();
+            ReleaseNavGridTelemetryBuffers(_dataVault);
+            ClearDeferredDirtyVolumes();
+            ClearObstacleRegistrations();
+            _dirtyRequestSpillCount = 0;
+            _portalGraphNodeCount = 0;
+            _portalFaceVisitStamp = 0;
+            System.Array.Clear(_portalFaceVisitScratch, 0, _portalFaceVisitScratch.Length);
+            _routeNodeScratchCount = 0;
+            _routeOpenSetCount = 0;
+            _routePathCount = 0;
+            _recordRemovalScratchCount = 0;
             _portalGraphDirty = true;
             _teardownPending = false;
             _clearRuntimeContainersWhenTeardownCompletes = false;
             _dirtyVolumeQueueCount = 0;
             _pendingObstacleClearQueueCount = 0;
-            if (_dirtyVolumes.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(VoxelDynamicNavGridRuntime), nameof(_dirtyVolumes));
-                _dirtyVolumes.Dispose();
-                _dirtyVolumes = default;
-            }
-
-            if (_pendingObstacleClears.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(VoxelDynamicNavGridRuntime), nameof(_pendingObstacleClears));
-                _pendingObstacleClears.Dispose();
-                _pendingObstacleClears = default;
-            }
-
-            if (_persistentDynamicObstacles.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(
-                    nameof(VoxelDynamicNavGridRuntime),
-                    nameof(_persistentDynamicObstacles));
-                _persistentDynamicObstacles.Dispose();
-                _persistentDynamicObstacles = default;
-            }
-
+            _dirtyVolumeQueueHead = 0;
+            _dirtyVolumeQueueTail = 0;
+            _pendingObstacleClearQueueHead = 0;
+            _pendingObstacleClearQueueTail = 0;
             _persistentDynamicObstacleWriteCursor = 0;
+            _persistentDynamicObstacleCount = 0;
+            System.Array.Clear(_persistentDynamicObstacles, 0, _persistentDynamicObstacles.Length);
         }
 
         private static void EnsureInitialized()
@@ -1961,53 +2086,62 @@ namespace Hecton8.World
             if (_teardownPending)
                 DisposePendingCompletedRecords(false);
 
-            if (!_dirtyVolumes.IsCreated)
-            {
-                _dirtyVolumes = new NativeQueue<DirtyVolumeRequest>(DataVaultExemptNavGridQueueAllocator); // COLD ALLOC: NativeQueue<DirtyVolumeRequest>[32] - dirty voxel volume rebuild requests - owner: VoxelDynamicNavGridRuntime
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _dirtyVolumes,
-                    DirtyVolumeQueueCapacity,
-                    nameof(VoxelDynamicNavGridRuntime),
-                    nameof(_dirtyVolumes),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _dirtyVolumes, DirtyVolumeQueueCapacity);
-            }
-
-            if (!_pendingObstacleClears.IsCreated)
-            {
-                _pendingObstacleClears = new NativeQueue<DynamicObstacleClearRequest>(DataVaultExemptNavGridQueueAllocator); // COLD ALLOC: NativeQueue<DynamicObstacleClearRequest>[16] - destroyed-organic obstacle clear queue - owner: VoxelDynamicNavGridRuntime
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingObstacleClears,
-                    PendingObstacleClearQueueCapacity,
-                    nameof(VoxelDynamicNavGridRuntime),
-                    nameof(_pendingObstacleClears),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingObstacleClears, PendingObstacleClearQueueCapacity);
-            }
-
-            if (!_persistentDynamicObstacles.IsCreated)
-            {
-                _persistentDynamicObstacles = new NativeList<NavObstaclePrimitive>(MaxPersistentDynamicObstacleCount, DataVaultExemptDynamicObstacleAllocator); // COLD ALLOC: NativeList<NavObstaclePrimitive>[512] - overgrowth/vine dynamic obstacle snapshot lane - owner: VoxelDynamicNavGridRuntime
-                NativeMemorySentinel.RegisterNativeList(
-                    _persistentDynamicObstacles,
-                    nameof(VoxelDynamicNavGridRuntime),
-                    nameof(_persistentDynamicObstacles),
-                NativeAllocationLifetime.Session);
-            }
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
+        private static bool TryEnqueueDirtyVolume(DirtyVolumeRequest request)
         {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
+            if (_dirtyVolumeQueueCount >= DirtyVolumeQueueCapacity)
+                return false;
 
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
+            _dirtyVolumes[_dirtyVolumeQueueTail] = request;
+            _dirtyVolumeQueueTail++;
+            if (_dirtyVolumeQueueTail >= DirtyVolumeQueueCapacity)
+                _dirtyVolumeQueueTail = 0;
+            _dirtyVolumeQueueCount++;
+            return true;
+        }
 
-            while (queue.TryDequeue(out _))
-            {
-            }
+        private static bool TryDequeueDirtyVolume(out DirtyVolumeRequest request)
+        {
+            request = default;
+            if (_dirtyVolumeQueueCount <= 0)
+                return false;
+
+            request = _dirtyVolumes[_dirtyVolumeQueueHead];
+            _dirtyVolumes[_dirtyVolumeQueueHead] = default;
+            _dirtyVolumeQueueHead++;
+            if (_dirtyVolumeQueueHead >= DirtyVolumeQueueCapacity)
+                _dirtyVolumeQueueHead = 0;
+            _dirtyVolumeQueueCount--;
+            return true;
+        }
+
+        private static bool TryEnqueuePendingObstacleClear(DynamicObstacleClearRequest request)
+        {
+            if (_pendingObstacleClearQueueCount >= PendingObstacleClearQueueCapacity)
+                return false;
+
+            _pendingObstacleClears[_pendingObstacleClearQueueTail] = request;
+            _pendingObstacleClearQueueTail++;
+            if (_pendingObstacleClearQueueTail >= PendingObstacleClearQueueCapacity)
+                _pendingObstacleClearQueueTail = 0;
+            _pendingObstacleClearQueueCount++;
+            return true;
+        }
+
+        private static bool TryDequeuePendingObstacleClear(out DynamicObstacleClearRequest request)
+        {
+            request = default;
+            if (_pendingObstacleClearQueueCount <= 0)
+                return false;
+
+            request = _pendingObstacleClears[_pendingObstacleClearQueueHead];
+            _pendingObstacleClears[_pendingObstacleClearQueueHead] = default;
+            _pendingObstacleClearQueueHead++;
+            if (_pendingObstacleClearQueueHead >= PendingObstacleClearQueueCapacity)
+                _pendingObstacleClearQueueHead = 0;
+            _pendingObstacleClearQueueCount--;
+            return true;
         }
 
         private static void EnsureLifecycleOwner()
@@ -2022,10 +2156,9 @@ namespace Hecton8.World
 
         internal static void MarkAllVolumesDirty()
         {
-            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int recordIndex = 0; recordIndex < _recordCount; recordIndex++)
             {
-                VolumeRecord record = enumerator.Current.Value;
+                VolumeRecord record = _records[recordIndex];
                 if (record != null)
                     record.IsDirty = true;
             }
@@ -2061,6 +2194,18 @@ namespace Hecton8.World
                 _dynamicClearanceFallbackSchedulesRemaining,
                 DynamicClearanceFallbackScheduleCount);
 
+            RecordNavGridTelemetry(
+                0u,
+                0u,
+                0,
+                0,
+                -1,
+                NavGridFailureBudget,
+                NavGridPhaseDynamicUpdate,
+                NavGridFlagOverBudget,
+                (float)(elapsedMilliseconds * 1000.0d),
+                float3.zero);
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             float now = (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now >= _nextDynamicClearanceWarningTime)
@@ -2078,15 +2223,169 @@ namespace Hecton8.World
                 : 0;
         }
 
+        private static bool TryGetRecord(int volumeInstanceId, out VolumeRecord record)
+        {
+            int index = FindRecordIndex(volumeInstanceId);
+            if (index < 0)
+            {
+                record = null;
+                return false;
+            }
+
+            record = _records[index];
+            return record != null;
+        }
+
+        private static int FindRecordIndex(int volumeInstanceId)
+        {
+            for (int i = 0; i < _recordCount; i++)
+            {
+                if (_recordKeys[i] == volumeInstanceId)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static bool RemoveRecord(int volumeInstanceId)
+        {
+            int index = FindRecordIndex(volumeInstanceId);
+            if (index < 0)
+                return false;
+
+            VolumeRecord removedRecord = _records[index];
+            if (removedRecord != null)
+            {
+                ReleaseVoxelBuffers(removedRecord);
+                ReleaseRecordBufferSlot(removedRecord.BufferSlot);
+                removedRecord.ResetForReuse();
+            }
+
+            int lastIndex = _recordCount - 1;
+            if (index != lastIndex)
+            {
+                VolumeRecord lastRecord = _records[lastIndex];
+                _recordKeys[index] = _recordKeys[lastIndex];
+                _records[index] = lastRecord;
+                _records[lastIndex] = removedRecord;
+            }
+
+            _recordKeys[lastIndex] = 0;
+            _recordCount--;
+            return true;
+        }
+
+        private static void ClearRecordStorage()
+        {
+            for (int i = 0; i < _recordCount; i++)
+            {
+                VolumeRecord record = _records[i];
+                if (record != null)
+                {
+                    ReleaseVoxelBuffers(record);
+                    ReleaseRecordBufferSlot(record.BufferSlot);
+                    record.ResetForReuse();
+                }
+
+                _recordKeys[i] = 0;
+            }
+
+            _recordCount = 0;
+        }
+
+        private static void AddRecordRemovalScratch(int recordKey)
+        {
+            if (_recordRemovalScratchCount >= _recordRemovalScratch.Length)
+                return;
+
+            _recordRemovalScratch[_recordRemovalScratchCount] = recordKey;
+            _recordRemovalScratchCount++;
+        }
+
+        private static void RemoveDeferredDirtyVolumeAt(int index)
+        {
+            if ((uint)index >= (uint)_deferredDirtyVolumeCount)
+                return;
+
+            int lastIndex = _deferredDirtyVolumeCount - 1;
+            if (index != lastIndex)
+                _deferredDirtyVolumes[index] = _deferredDirtyVolumes[lastIndex];
+
+            _deferredDirtyVolumes[lastIndex] = default;
+            _deferredDirtyVolumeCount--;
+        }
+
+        private static void ClearDeferredDirtyVolumes()
+        {
+            for (int i = 0; i < _deferredDirtyVolumeCount; i++)
+                _deferredDirtyVolumes[i] = default;
+
+            _deferredDirtyVolumeCount = 0;
+        }
+
+        private static int FindObstacleRegistrationIndex(int obstacleId)
+        {
+            for (int i = 0; i < _registeredObstacleCount; i++)
+            {
+                if (_registeredObstacleKeys[i] == obstacleId)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static bool RemoveObstacleRegistration(int obstacleId)
+        {
+            int index = FindObstacleRegistrationIndex(obstacleId);
+            if (index < 0)
+                return false;
+
+            int lastIndex = _registeredObstacleCount - 1;
+            if (index != lastIndex)
+            {
+                _registeredObstacleKeys[index] = _registeredObstacleKeys[lastIndex];
+                _registeredObstacles[index] = _registeredObstacles[lastIndex];
+            }
+
+            _registeredObstacleKeys[lastIndex] = 0;
+            _registeredObstacles[lastIndex] = default;
+            _registeredObstacleCount--;
+            return true;
+        }
+
+        private static void ClearObstacleRegistrations()
+        {
+            for (int i = 0; i < _registeredObstacleCount; i++)
+            {
+                _registeredObstacleKeys[i] = 0;
+                _registeredObstacles[i] = default;
+            }
+
+            _registeredObstacleCount = 0;
+        }
+
         private static VolumeRecord GetOrCreateRecord(int volumeInstanceId)
         {
-            if (!_records.TryGetValue(volumeInstanceId, out VolumeRecord record))
+            if (!TryGetRecord(volumeInstanceId, out VolumeRecord record))
             {
-                if (_records.Count >= MaxTrackedVolumeRecords)
+                if (_recordCount >= MaxTrackedVolumeRecords)
                     return null;
 
-                record = new VolumeRecord();
-                _records.Add(volumeInstanceId, record);
+                int bufferSlot = AllocateRecordBufferSlot();
+                if (bufferSlot < 0)
+                    return null;
+
+                record = _records[_recordCount];
+                if (record == null)
+                {
+                    ReleaseRecordBufferSlot(bufferSlot);
+                    return null;
+                }
+
+                record.ResetForReuse();
+                record.BufferSlot = bufferSlot;
+                _recordKeys[_recordCount] = volumeInstanceId;
+                _recordCount++;
             }
 
             return record;
@@ -2094,20 +2393,17 @@ namespace Hecton8.World
 
         private static bool ConsumeDirtyMarker(int volumeInstanceId, int runtimeStamp)
         {
-            if (!_dirtyVolumes.IsCreated)
+            if (_dirtyVolumeQueueCount <= 0)
                 return false;
 
             bool found = false;
-            _dirtyRequestSpill.Clear();
+            _dirtyRequestSpillCount = 0;
             int scanBudget = _dirtyVolumeQueueCount > 0
                 ? _dirtyVolumeQueueCount
                 : DirtyVolumeQueueCapacity;
             while (scanBudget-- > 0 &&
-                   _dirtyVolumes.TryDequeue(out DirtyVolumeRequest request))
+                   TryDequeueDirtyVolume(out DirtyVolumeRequest request))
             {
-                if (_dirtyVolumeQueueCount > 0)
-                    _dirtyVolumeQueueCount--;
-
                 if (!found &&
                     request.VolumeInstanceId == volumeInstanceId &&
                     request.RuntimeStamp == runtimeStamp)
@@ -2116,39 +2412,38 @@ namespace Hecton8.World
                     continue;
                 }
 
-                _dirtyRequestSpill.Add(request);
+                if (_dirtyRequestSpillCount < _dirtyRequestSpill.Length)
+                {
+                    _dirtyRequestSpill[_dirtyRequestSpillCount] = request;
+                    _dirtyRequestSpillCount++;
+                }
             }
 
             _dirtyVolumeQueueCount = 0;
-            for (int i = 0; i < _dirtyRequestSpill.Count; i++)
+            _dirtyVolumeQueueHead = 0;
+            _dirtyVolumeQueueTail = 0;
+            for (int i = 0; i < _dirtyRequestSpillCount; i++)
             {
-                if (_dirtyVolumeQueueCount >= DirtyVolumeQueueCapacity)
+                if (!TryEnqueueDirtyVolume(_dirtyRequestSpill[i]))
                     break;
-
-                _dirtyVolumes.Enqueue(_dirtyRequestSpill[i]);
-                _dirtyVolumeQueueCount++;
             }
 
-            _dirtyRequestSpill.Clear();
+            _dirtyRequestSpillCount = 0;
             return found;
         }
 
         private static void TryEnqueueDynamicObstacleClear(DynamicObstacleClearRequest request)
         {
-            if (!_pendingObstacleClears.IsCreated ||
-                !IsValidDynamicObstacleBounds(request.Center, request.Extents))
+            if (!IsValidDynamicObstacleBounds(request.Center, request.Extents))
             {
                 return;
             }
 
-            if (_pendingObstacleClearQueueCount >= PendingObstacleClearQueueCapacity)
+            if (!TryEnqueuePendingObstacleClear(request))
             {
                 MarkAllVolumesDirty();
                 return;
             }
-
-            _pendingObstacleClears.Enqueue(request);
-            _pendingObstacleClearQueueCount++;
         }
 
         private static bool IsValidDynamicObstacleBounds(float3 center, float3 extents)
@@ -2165,40 +2460,442 @@ namespace Hecton8.World
                    extents.z > 0.0001f;
         }
 
-        private static void EnsureBuffer(ref NativeArray<byte> buffer, int length, string label)
+        internal static void SetDataVault(IDataVault dataVault)
         {
-            if (buffer.IsCreated && buffer.Length == length)
+            IDataVault previousVault = _dataVault;
+            if (ReferenceEquals(previousVault, dataVault))
                 return;
 
-            if (buffer.IsCreated)
-                DisposeTrackedNativeArray(ref buffer);
+            if (previousVault != null)
+                ReleaseNavGridTelemetryBuffers(previousVault);
 
-            buffer = new NativeArray<byte>(length, DataVaultExemptNavGridSnapshotAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[pointCount] - double-buffered voxel passability snapshot - owner: VoxelDynamicNavGridRuntime
-            NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeMemoryLifetime);
+            _dataVault = dataVault;
+            if (dataVault != null)
+                EnsureNavGridTelemetryBuffers(dataVault);
         }
 
-        private static void EnsureBuffer(ref NativeArray<ushort> buffer, int length, string label)
+        internal static bool IsTeardownPending()
         {
-            if (buffer.IsCreated && buffer.Length == length)
-                return;
-
-            if (buffer.IsCreated)
-                DisposeTrackedNativeArray(ref buffer);
-
-            buffer = new NativeArray<ushort>(length, DataVaultExemptNavGridSnapshotAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ushort>[pointCount] - double-buffered voxel clearance-distance snapshot - owner: VoxelDynamicNavGridRuntime
-            NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeMemoryLifetime);
+            return _teardownPending;
         }
 
-        private static void EnsureBuffer(ref NativeArray<int> buffer, int length, string label)
+        private static BufferID ResolveNavGridBufferId(int slot, int lane)
         {
-            if (buffer.IsCreated && buffer.Length == length)
+            if ((uint)slot >= (uint)MaxTrackedVolumeRecords ||
+                (uint)lane >= (uint)NavGridVaultBufferStride)
+            {
+                return BufferID.Unknown;
+            }
+
+            int bufferId = NavGridVaultBufferBase + (slot * NavGridVaultBufferStride) + lane;
+            if (bufferId < NavGridVaultBufferBase || bufferId > NavGridVaultBufferEnd)
+                return BufferID.Unknown;
+
+            return (BufferID)bufferId;
+        }
+
+        private static int AllocateRecordBufferSlot()
+        {
+            for (int i = 0; i < _recordBufferSlots.Length; i++)
+            {
+                if (_recordBufferSlots[i] != 0)
+                    continue;
+
+                _recordBufferSlots[i] = 1;
+                return i;
+            }
+
+            return -1;
+        }
+
+        private static void ReleaseRecordBufferSlot(int slot)
+        {
+            if ((uint)slot >= (uint)_recordBufferSlots.Length)
                 return;
 
-            if (buffer.IsCreated)
-                DisposeTrackedNativeArray(ref buffer);
+            _recordBufferSlots[slot] = 0;
+        }
 
-            buffer = new NativeArray<int>(length, DataVaultExemptNavGridScratchAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[pureVoidBlockCount] - Burst pure-void block scan flags - owner: VoxelDynamicNavGridRuntime
-            NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeMemoryLifetime);
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u &&
+                   handle.SystemID == (uint)NavGridVaultOwner &&
+                   handle.Generation != 0u;
+        }
+
+        private static bool HasNavGridBufferLength<T>(in VaultGenerationHandle<T> handle, int requiredLength)
+            where T : struct
+        {
+            if (requiredLength <= 0 || !IsVaultHandleCreated(in handle))
+                return false;
+
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength &&
+                   !vault.IsCompactionFenceActive;
+        }
+
+        private static bool EnsureNavGridBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            int slot,
+            int lane,
+            int requiredLength,
+            NativeArrayOptions options)
+            where T : struct
+        {
+            if ((uint)slot >= (uint)MaxTrackedVolumeRecords || requiredLength <= 0)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                RecordNavGridTelemetry(0u, 0u, requiredLength, 0, slot, NavGridFailureVaultMissing, NavGridPhaseVault, NavGridFlagFailClosed, 0f, float3.zero);
+                return false;
+            }
+
+            if (vault.IsCompactionFenceActive)
+            {
+                RecordNavGridTelemetry(0u, 0u, requiredLength, 0, slot, NavGridFailureCompactionFence, NavGridPhaseVault, NavGridFlagFailClosed | NavGridFlagCompaction, 0f, float3.zero);
+                return false;
+            }
+
+            BufferID bufferId = ResolveNavGridBufferId(slot, lane);
+            if (bufferId == BufferID.Unknown)
+            {
+                RecordNavGridTelemetry(0u, 0u, requiredLength, 0, slot, NavGridFailureInvalidBufferId, NavGridPhaseVault, NavGridFlagFailClosed, 0f, float3.zero);
+                return false;
+            }
+
+            if (handle.BufferID != (uint)bufferId ||
+                handle.SystemID != (uint)NavGridVaultOwner ||
+                !HasNavGridBufferLength(in handle, requiredLength))
+            {
+                handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, NavGridVaultOwner, options);
+            }
+
+            bool valid = handle.BufferID == (uint)bufferId &&
+                         handle.SystemID == (uint)NavGridVaultOwner &&
+                         HasNavGridBufferLength(in handle, requiredLength);
+            if (!valid)
+            {
+                RecordNavGridTelemetry(
+                    unchecked((uint)(int)bufferId),
+                    handle.Generation,
+                    requiredLength,
+                    0,
+                    slot,
+                    NavGridFailureHandleResolve,
+                    NavGridPhaseVault,
+                    NavGridFlagFailClosed,
+                    0f,
+                    float3.zero);
+            }
+
+            return valid;
+        }
+
+        private static bool TryEnsureRecordBuffers(VolumeRecord record, int requiredCellCount)
+        {
+            return record != null &&
+                   EnsureNavGridBuffer(ref record.CurrentHandle, record.BufferSlot, NavGridLaneCurrent, requiredCellCount, NativeArrayOptions.ClearMemory) &&
+                   EnsureNavGridBuffer(ref record.NextHandle, record.BufferSlot, NavGridLaneNext, requiredCellCount, NativeArrayOptions.ClearMemory) &&
+                   EnsureNavGridBuffer(ref record.BaseCurrentHandle, record.BufferSlot, NavGridLaneBaseCurrent, requiredCellCount, NativeArrayOptions.ClearMemory) &&
+                   EnsureNavGridBuffer(ref record.BaseNextHandle, record.BufferSlot, NavGridLaneBaseNext, requiredCellCount, NativeArrayOptions.ClearMemory) &&
+                   EnsureNavGridBuffer(ref record.CurrentDistanceHandle, record.BufferSlot, NavGridLaneCurrentDistance, requiredCellCount, NativeArrayOptions.ClearMemory) &&
+                   EnsureNavGridBuffer(ref record.NextDistanceHandle, record.BufferSlot, NavGridLaneNextDistance, requiredCellCount, NativeArrayOptions.ClearMemory);
+        }
+
+        private static bool IsNavGridHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)NavGridVaultOwner &&
+                   handle.Generation != 0u;
+        }
+
+        private static bool EnsureNavGridTelemetryBuffers(IDataVault vault)
+        {
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!IsNavGridHandle(in _navGridTelemetryRingHandle, BufferID.VoxelDynamicNavGridTelemetryRing) ||
+                !HasNavGridBufferLength(in _navGridTelemetryRingHandle, NavGridTelemetryFrameCount))
+            {
+                _navGridTelemetryRingHandle = vault.EnsureGenerationHandle<NavGridTelemetryEntry>(
+                    BufferID.VoxelDynamicNavGridTelemetryRing,
+                    NavGridTelemetryFrameCount,
+                    NavGridVaultOwner,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!IsNavGridHandle(in _navGridTelemetryCursorHandle, BufferID.VoxelDynamicNavGridTelemetryCursor) ||
+                !HasNavGridBufferLength(in _navGridTelemetryCursorHandle, 1))
+            {
+                _navGridTelemetryCursorHandle = vault.EnsureGenerationHandle<int>(
+                    BufferID.VoxelDynamicNavGridTelemetryCursor,
+                    1,
+                    NavGridVaultOwner,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            return IsNavGridHandle(in _navGridTelemetryRingHandle, BufferID.VoxelDynamicNavGridTelemetryRing) &&
+                   IsNavGridHandle(in _navGridTelemetryCursorHandle, BufferID.VoxelDynamicNavGridTelemetryCursor) &&
+                   HasNavGridBufferLength(in _navGridTelemetryRingHandle, NavGridTelemetryFrameCount) &&
+                   HasNavGridBufferLength(in _navGridTelemetryCursorHandle, 1);
+        }
+
+        private static void ReleaseNavGridTelemetryBuffers(IDataVault vault)
+        {
+            if (vault != null)
+            {
+                if (IsNavGridHandle(in _navGridTelemetryRingHandle, BufferID.VoxelDynamicNavGridTelemetryRing))
+                    vault.ReleaseBuffer(in _navGridTelemetryRingHandle);
+                if (IsNavGridHandle(in _navGridTelemetryCursorHandle, BufferID.VoxelDynamicNavGridTelemetryCursor))
+                    vault.ReleaseBuffer(in _navGridTelemetryCursorHandle);
+            }
+
+            _navGridTelemetryRingHandle = default;
+            _navGridTelemetryCursorHandle = default;
+            _navGridTelemetrySequence = 0u;
+        }
+
+        private static void RecordNavGridTelemetry(
+            uint bufferId,
+            uint generation,
+            int expectedLength,
+            int actualLength,
+            int recordSlot,
+            ushort failureCode,
+            ushort phase,
+            uint flags,
+            float jobMicroseconds,
+            float3 position)
+        {
+            IDataVault vault = _dataVault;
+            if (!EnsureNavGridTelemetryBuffers(vault))
+                return;
+
+            NativeArray<NavGridTelemetryEntry> ring = default;
+            NativeArray<int> cursor = default;
+            bool ringLocked = false;
+            bool cursorLocked = false;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _navGridTelemetryRingHandle, NavGridVaultOwner, out ring))
+                {
+                    return;
+                }
+
+                ringLocked = true;
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _navGridTelemetryCursorHandle, NavGridVaultOwner, out cursor))
+                {
+                    return;
+                }
+
+                cursorLocked = true;
+                if (!ring.IsCreated || ring.Length <= 0 || !cursor.IsCreated || cursor.Length <= 0)
+                    return;
+
+                int slot = cursor[0];
+                if ((uint)slot >= (uint)ring.Length)
+                    slot = 0;
+
+                uint sequence = _navGridTelemetrySequence + 1u;
+                _navGridTelemetrySequence = sequence;
+                ring[slot] = new NavGridTelemetryEntry
+                {
+                    StateHash = NavGridTelemetryStateHash,
+                    BufferId = bufferId,
+                    Generation = generation,
+                    Frame = (uint)math.max(0, Time.frameCount),
+                    ExpectedLength = expectedLength,
+                    ActualLength = actualLength,
+                    RecordSlot = recordSlot,
+                    JobMicroseconds = jobMicroseconds,
+                    QualityWeight = ResolveNavGridQualityWeight01(),
+                    FailureCode = failureCode,
+                    Phase = phase,
+                    Flags = flags,
+                    Position = position,
+                    Sequence = sequence
+                };
+
+                slot++;
+                if (slot >= ring.Length)
+                    slot = 0;
+                cursor[0] = slot;
+            }
+            finally
+            {
+                if (cursorLocked)
+                    vault.ReleaseWriteLock(in _navGridTelemetryCursorHandle, NavGridVaultOwner);
+                if (ringLocked)
+                    vault.ReleaseWriteLock(in _navGridTelemetryRingHandle, NavGridVaultOwner);
+            }
+        }
+
+        private static float ResolveNavGridQualityWeight01()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, weight, math.isfinite(weight)));
+        }
+
+        private static bool TryAcquireNavGridWrite<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || requiredLength <= 0)
+            {
+                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureVaultMissing, NavGridPhaseVault, NavGridFlagFailClosed, 0f, float3.zero);
+                return false;
+            }
+
+            if (vault.IsCompactionFenceActive)
+            {
+                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureCompactionFence, NavGridPhaseVault, NavGridFlagFailClosed | NavGridFlagCompaction, 0f, float3.zero);
+                return false;
+            }
+
+            if (!IsVaultHandleCreated(in handle))
+            {
+                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureHandleResolve, NavGridPhaseVault, NavGridFlagFailClosed, 0f, float3.zero);
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in handle, NavGridVaultOwner, out NativeArray<T> lockedBuffer))
+            {
+                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureWriteLock, NavGridPhaseVault, NavGridFlagFailClosed | NavGridFlagContention, 0f, float3.zero);
+                return false;
+            }
+
+            if (!lockedBuffer.IsCreated ||
+                lockedBuffer.Length < requiredLength ||
+                vault.IsCompactionFenceActive)
+            {
+                int actualLength = lockedBuffer.IsCreated ? lockedBuffer.Length : 0;
+                vault.ReleaseWriteLock(in handle, NavGridVaultOwner);
+                RecordNavGridTelemetry(
+                    handle.BufferID,
+                    handle.Generation,
+                    requiredLength,
+                    actualLength,
+                    -1,
+                    vault.IsCompactionFenceActive ? NavGridFailureCompactionFence : NavGridFailureCapacity,
+                    NavGridPhaseVault,
+                    vault.IsCompactionFenceActive ? NavGridFlagFailClosed | NavGridFlagCompaction : NavGridFlagFailClosed,
+                    0f,
+                    float3.zero);
+                return false;
+            }
+
+            buffer = lockedBuffer;
+            return true;
+        }
+
+        private static void ReleaseNavGridWrite<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in handle))
+                return;
+
+            vault.ReleaseWriteLock(in handle, NavGridVaultOwner);
+        }
+
+        private static bool TryResolveNavGridRead<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || requiredLength <= 0)
+            {
+                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureVaultMissing, NavGridPhaseVault, NavGridFlagFailClosed, 0f, float3.zero);
+                return false;
+            }
+
+            if (vault.IsCompactionFenceActive)
+            {
+                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureCompactionFence, NavGridPhaseVault, NavGridFlagFailClosed | NavGridFlagCompaction, 0f, float3.zero);
+                return false;
+            }
+
+            if (!IsVaultHandleCreated(in handle))
+            {
+                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureHandleResolve, NavGridPhaseVault, NavGridFlagFailClosed, 0f, float3.zero);
+                return false;
+            }
+
+            if (!vault.TryResolveHandle(in handle, out NativeArray<T> resolved) ||
+                !resolved.IsCreated ||
+                resolved.Length < requiredLength ||
+                vault.IsCompactionFenceActive)
+            {
+                int actualLength = resolved.IsCreated ? resolved.Length : 0;
+                RecordNavGridTelemetry(
+                    handle.BufferID,
+                    handle.Generation,
+                    requiredLength,
+                    actualLength,
+                    -1,
+                    vault.IsCompactionFenceActive ? NavGridFailureCompactionFence : NavGridFailureHandleResolve,
+                    NavGridPhaseVault,
+                    vault.IsCompactionFenceActive ? NavGridFlagFailClosed | NavGridFlagCompaction : NavGridFlagFailClosed,
+                    0f,
+                    float3.zero);
+                return false;
+            }
+
+            buffer = resolved;
+            return true;
+        }
+
+        private static bool TryReadOnlyNavGrid<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   !vault.IsCompactionFenceActive &&
+                   IsVaultHandleCreated(in handle) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength &&
+                   !vault.IsCompactionFenceActive;
+        }
+
+        private static void ReleaseNavGridBuffer<T>(ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static void SwapHandles<T>(ref VaultGenerationHandle<T> first, ref VaultGenerationHandle<T> second)
+            where T : struct
+        {
+            VaultGenerationHandle<T> swap = first;
+            first = second;
+            second = swap;
         }
 
         internal static JobHandle SchedulePureVoidScan(
@@ -2254,23 +2951,14 @@ namespace Hecton8.World
                 return;
             }
 
-            if (!ReleaseVoxelBuffers(record))
-            {
-                record.IsPureVoid = false;
-                return;
-            }
-
             record.IsPureVoid = true;
             record.PortalsReady = true;
             record.PortalCount = 0;
-            record.FaceVisitStamp = 0;
         }
 
         private static bool IsPureVoidSnapshot(VolumeRecord record)
         {
-            if (!HasValidRecordBounds(record) ||
-                !record.CurrentDistance.IsCreated ||
-                !record.PureVoidBlockFlags.IsCreated)
+            if (!HasValidRecordBounds(record))
             {
                 return false;
             }
@@ -2278,19 +2966,19 @@ namespace Hecton8.World
             if (!TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount))
                 return false;
 
-            int requiredBlockCount = ResolvePureVoidBlockCount(requiredCellCount);
-            if (requiredBlockCount <= 0 ||
-                record.CurrentDistance.Length < requiredCellCount ||
-                record.PureVoidBlockCount != requiredBlockCount ||
-                record.PureVoidBlockFlags.Length < requiredBlockCount)
+            if (!TryReadOnlyNavGrid(in record.CurrentHandle, requiredCellCount, out NativeArray<byte>.ReadOnly current) ||
+                !TryReadOnlyNavGrid(in record.CurrentDistanceHandle, requiredCellCount, out NativeArray<ushort>.ReadOnly currentDistance))
             {
                 return false;
             }
 
-            for (int i = 0; i < requiredBlockCount; i++)
+            for (int i = 0; i < requiredCellCount; i++)
             {
-                if (record.PureVoidBlockFlags[i] == 0)
+                if (current[i] != OpenCell ||
+                    currentDistance[i] != ushort.MaxValue)
+                {
                     return false;
+                }
             }
 
             return true;
@@ -2301,26 +2989,13 @@ namespace Hecton8.World
             if (record.HasPendingDynamicUpdate)
                 return false;
 
-            DisposeTrackedNativeArray(ref record.Current);
-            DisposeTrackedNativeArray(ref record.Next);
-            DisposeTrackedNativeArray(ref record.BaseCurrent);
-            DisposeTrackedNativeArray(ref record.BaseNext);
-            DisposeTrackedNativeArray(ref record.CurrentDistance);
-            DisposeTrackedNativeArray(ref record.NextDistance);
-            DisposeTrackedNativeArray(ref record.PureVoidBlockFlags);
-            record.PureVoidBlockCount = 0;
+            ReleaseNavGridBuffer(ref record.CurrentHandle);
+            ReleaseNavGridBuffer(ref record.NextHandle);
+            ReleaseNavGridBuffer(ref record.BaseCurrentHandle);
+            ReleaseNavGridBuffer(ref record.BaseNextHandle);
+            ReleaseNavGridBuffer(ref record.CurrentDistanceHandle);
+            ReleaseNavGridBuffer(ref record.NextDistanceHandle);
             return true;
-        }
-
-        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> buffer)
-            where T : struct
-        {
-            if (!buffer.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(buffer);
-            buffer.Dispose();
-            buffer = default;
         }
 
         private static int FlattenIndex(int x, int y, int z, int3 dimensions)
@@ -2506,11 +3181,11 @@ namespace Hecton8.World
 
         private static void WritePersistentDynamicObstacles(ref NativeArray<NavObstaclePrimitive> snapshot, ref int writeIndex)
         {
-            if (!_persistentDynamicObstacles.IsCreated || !snapshot.IsCreated)
+            if (!snapshot.IsCreated)
                 return;
 
             int capacity = snapshot.Length;
-            for (int i = 0; i < _persistentDynamicObstacles.Length && writeIndex < capacity; i++)
+            for (int i = 0; i < _persistentDynamicObstacleCount && writeIndex < capacity; i++)
             {
                 NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
                 if (!IsValidDynamicObstacleBounds(obstacle.Center, obstacle.Extents))
@@ -2523,11 +3198,11 @@ namespace Hecton8.World
 
         private static int CountPersistentDynamicObstacles()
         {
-            if (!_persistentDynamicObstacles.IsCreated || _persistentDynamicObstacles.Length <= 0)
+            if (_persistentDynamicObstacleCount <= 0)
                 return 0;
 
             int count = 0;
-            for (int i = 0; i < _persistentDynamicObstacles.Length; i++)
+            for (int i = 0; i < _persistentDynamicObstacleCount; i++)
             {
                 NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
                 if (IsValidDynamicObstacleBounds(obstacle.Center, obstacle.Extents))
@@ -2555,14 +3230,13 @@ namespace Hecton8.World
 
         private static void RegisterPersistentDynamicObstacle(float3 center, float3 extents)
         {
-            if (!_persistentDynamicObstacles.IsCreated ||
-                !IsValidDynamicObstacleBounds(center, extents))
+            if (!IsValidDynamicObstacleBounds(center, extents))
             {
                 return;
             }
 
             float mergeDistanceSq = PersistentObstacleMergeDistanceMeters * PersistentObstacleMergeDistanceMeters;
-            for (int i = 0; i < _persistentDynamicObstacles.Length; i++)
+            for (int i = 0; i < _persistentDynamicObstacleCount; i++)
             {
                 NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
                 if (!IsValidDynamicObstacleBounds(obstacle.Center, obstacle.Extents))
@@ -2596,32 +3270,32 @@ namespace Hecton8.World
                 return;
             }
 
-            if (_persistentDynamicObstacles.Length < _persistentDynamicObstacles.Capacity)
+            if (_persistentDynamicObstacleCount < MaxPersistentDynamicObstacleCount)
             {
-                _persistentDynamicObstacles.AddNoResize(new NavObstaclePrimitive
+                _persistentDynamicObstacles[_persistentDynamicObstacleCount] = new NavObstaclePrimitive
                 {
                     Center = center,
                     Extents = extents
-                });
+                };
+                _persistentDynamicObstacleCount++;
                 return;
             }
 
-            int writeIndex = math.clamp(_persistentDynamicObstacleWriteCursor, 0, math.max(0, _persistentDynamicObstacles.Length - 1));
+            int writeIndex = math.clamp(_persistentDynamicObstacleWriteCursor, 0, MaxPersistentDynamicObstacleCount - 1);
             _persistentDynamicObstacles[writeIndex] = new NavObstaclePrimitive
             {
                 Center = center,
                 Extents = extents
             };
             int nextWriteIndex = writeIndex + 1;
-            _persistentDynamicObstacleWriteCursor = nextWriteIndex >= _persistentDynamicObstacles.Length
+            _persistentDynamicObstacleWriteCursor = nextWriteIndex >= MaxPersistentDynamicObstacleCount
                 ? 0
                 : nextWriteIndex;
         }
 
         private static void RemovePersistentDynamicObstacles(float3 center, float3 extents)
         {
-            if (!_persistentDynamicObstacles.IsCreated ||
-                _persistentDynamicObstacles.Length <= 0 ||
+            if (_persistentDynamicObstacleCount <= 0 ||
                 !IsValidDynamicObstacleBounds(center, extents))
             {
                 return;
@@ -2631,20 +3305,33 @@ namespace Hecton8.World
                 PersistentObstacleMergeDistanceMeters,
                 math.max(extents.x, math.max(extents.y, extents.z)) + PersistentObstacleMergeDistanceMeters);
             float removeRadiusSq = removeRadius * removeRadius;
-            for (int i = _persistentDynamicObstacles.Length - 1; i >= 0; i--)
+            for (int i = _persistentDynamicObstacleCount - 1; i >= 0; i--)
             {
                 NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
                 if (!IsValidDynamicObstacleBounds(obstacle.Center, obstacle.Extents))
                 {
-                    _persistentDynamicObstacles.RemoveAtSwapBack(i);
+                    RemovePersistentDynamicObstacleAt(i);
                     continue;
                 }
 
                 if (math.lengthsq(obstacle.Center - center) > removeRadiusSq)
                     continue;
 
-                _persistentDynamicObstacles.RemoveAtSwapBack(i);
+                RemovePersistentDynamicObstacleAt(i);
             }
+        }
+
+        private static void RemovePersistentDynamicObstacleAt(int index)
+        {
+            if ((uint)index >= (uint)_persistentDynamicObstacleCount)
+                return;
+
+            int lastIndex = _persistentDynamicObstacleCount - 1;
+            _persistentDynamicObstacles[index] = _persistentDynamicObstacles[lastIndex];
+            _persistentDynamicObstacles[lastIndex] = default;
+            _persistentDynamicObstacleCount = lastIndex;
+            if (_persistentDynamicObstacleWriteCursor >= _persistentDynamicObstacleCount)
+                _persistentDynamicObstacleWriteCursor = 0;
         }
 
         private static void WriteMacroFloraObstacles(
@@ -2839,7 +3526,6 @@ namespace Hecton8.World
         private static bool HasValidRecordBounds(VolumeRecord record)
         {
             if (record == null ||
-                !record.Current.IsCreated ||
                 record.Dimensions.x <= 0 ||
                 record.Dimensions.y <= 0 ||
                 record.Dimensions.z <= 0 ||
@@ -2852,17 +3538,13 @@ namespace Hecton8.World
                 return false;
             }
 
-            return HasCompleteVoxelCellCoverage(record.Dimensions, record.Current.Length);
+            return TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount) &&
+                   HasNavGridBufferLength(in record.CurrentHandle, requiredCellCount);
         }
 
         private static bool HasCompleteDynamicUpdateBuffers(VolumeRecord record)
         {
-            if (!HasValidRecordBounds(record) ||
-                !record.Next.IsCreated ||
-                !record.BaseCurrent.IsCreated ||
-                !record.CurrentDistance.IsCreated ||
-                !record.NextDistance.IsCreated ||
-                !record.PureVoidBlockFlags.IsCreated)
+            if (!HasValidRecordBounds(record))
             {
                 return false;
             }
@@ -2870,17 +3552,10 @@ namespace Hecton8.World
             if (!TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount))
                 return false;
 
-            if (record.Next.Length < requiredCellCount ||
-                record.BaseCurrent.Length < requiredCellCount ||
-                record.CurrentDistance.Length < requiredCellCount ||
-                record.NextDistance.Length < requiredCellCount)
-            {
-                return false;
-            }
-
-            int requiredBlockCount = ResolvePureVoidBlockCount(requiredCellCount);
-            return requiredBlockCount > 0 &&
-                   record.PureVoidBlockFlags.Length >= requiredBlockCount;
+            return HasNavGridBufferLength(in record.NextHandle, requiredCellCount) &&
+                   HasNavGridBufferLength(in record.BaseCurrentHandle, requiredCellCount) &&
+                   HasNavGridBufferLength(in record.CurrentDistanceHandle, requiredCellCount) &&
+                   HasNavGridBufferLength(in record.NextDistanceHandle, requiredCellCount);
         }
 
         private static bool HasCompleteVoxelCellCoverage(int3 dimensions, int availableCellCount)
@@ -2921,7 +3596,7 @@ namespace Hecton8.World
 
         private static bool CanEmitPortalRoutePath(int outputCapacity)
         {
-            int routeNodeCount = _routePathScratch.Count;
+            int routeNodeCount = _routePathCount;
             if (routeNodeCount <= 0 ||
                 routeNodeCount > MaxPortalGraphNodeCapacity ||
                 outputCapacity < 2 ||
@@ -2933,7 +3608,7 @@ namespace Hecton8.World
             for (int routeIndex = 0; routeIndex < routeNodeCount; routeIndex++)
             {
                 int nodeIndex = _routePathScratch[routeIndex];
-                if (nodeIndex < 0 || nodeIndex >= _portalGraphNodes.Count)
+                if (nodeIndex < 0 || nodeIndex >= _portalGraphNodeCount)
                     return false;
 
                 PortalNode node = _portalGraphNodes[nodeIndex];
@@ -2976,34 +3651,17 @@ namespace Hecton8.World
             if (!_portalGraphDirty)
                 return;
 
-            _portalGraphNodes.Clear();
-            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
-            while (enumerator.MoveNext() && _portalGraphNodes.Count < MaxPortalGraphNodeCapacity)
+            _portalGraphNodeCount = 0;
+            for (int recordIndex = 0; recordIndex < _recordCount && _portalGraphNodeCount < MaxPortalGraphNodeCapacity; recordIndex++)
             {
-                VolumeRecord record = enumerator.Current.Value;
-                if (!HasValidRecordBounds(record) ||
-                    !record.PortalsReady ||
-                    record.PortalCount <= 0 ||
-                    record.Portals == null ||
-                    record.Portals.Length <= 0)
-                {
-                    continue;
-                }
+                VolumeRecord record = _records[recordIndex];
+                if (record != null)
+                    record.PortalCount = 0;
 
-                int safePortalCount = math.min(record.PortalCount, record.Portals.Length);
-                for (int portalIndex = 0; portalIndex < safePortalCount && _portalGraphNodes.Count < MaxPortalGraphNodeCapacity; portalIndex++)
-                {
-                    PortalNode portal = record.Portals[portalIndex];
-                    if (!IsValidPortalNode(in portal))
-                        continue;
-
-                    portal.ConnectedPortalIndex = InvalidPortalIndex;
-                    record.Portals[portalIndex] = portal;
-                    _portalGraphNodes.Add(portal);
-                }
+                AppendRecordPortalsToGraph(record);
             }
 
-            for (int portalIndex = 0; portalIndex < _portalGraphNodes.Count; portalIndex++)
+            for (int portalIndex = 0; portalIndex < _portalGraphNodeCount; portalIndex++)
             {
                 PortalNode current = _portalGraphNodes[portalIndex];
                 if (!IsValidPortalNode(in current))
@@ -3011,7 +3669,7 @@ namespace Hecton8.World
 
                 int bestMatchIndex = InvalidPortalIndex;
                 float bestMatchScore = float.MaxValue;
-                for (int candidateIndex = 0; candidateIndex < _portalGraphNodes.Count; candidateIndex++)
+                for (int candidateIndex = 0; candidateIndex < _portalGraphNodeCount; candidateIndex++)
                 {
                     if (candidateIndex == portalIndex)
                         continue;
@@ -3046,6 +3704,62 @@ namespace Hecton8.World
             _portalGraphDirty = false;
         }
 
+        private static void AppendRecordPortalsToGraph(VolumeRecord record)
+        {
+            if (!HasValidRecordBounds(record) ||
+                !record.PortalsReady ||
+                record.IsPureVoid ||
+                record.Dimensions.x <= 1 ||
+                record.Dimensions.y <= 1 ||
+                record.Dimensions.z <= 1 ||
+                _portalGraphNodeCount >= MaxPortalGraphNodeCapacity ||
+                !EnsurePortalWorkCapacity(record) ||
+                !TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount) ||
+                !TryReadOnlyNavGrid(in record.CurrentHandle, requiredCellCount, out NativeArray<byte>.ReadOnly current))
+            {
+                return;
+            }
+
+            for (byte face = 0; face < FaceCount && _portalGraphNodeCount < MaxPortalGraphNodeCapacity; face++)
+            {
+                GetFaceDimensions(record.Dimensions, face, out int width, out int height);
+                int faceCellCount = width * height;
+                if (faceCellCount <= 0 || faceCellCount > _portalFaceVisitScratch.Length)
+                    continue;
+
+                int visitStamp = NextPortalFaceVisitStamp();
+                for (int faceIndex = 0; faceIndex < faceCellCount && _portalGraphNodeCount < MaxPortalGraphNodeCapacity; faceIndex++)
+                {
+                    if (_portalFaceVisitScratch[faceIndex] == visitStamp ||
+                        !IsFaceCellOpen(record, current, face, faceIndex, width))
+                    {
+                        continue;
+                    }
+
+                    PortalNode portal = ExtractFacePortal(record, current, face, faceIndex, width, height, visitStamp);
+                    if (!IsValidPortalNode(in portal))
+                        continue;
+
+                    portal.ConnectedPortalIndex = InvalidPortalIndex;
+                    _portalGraphNodes[_portalGraphNodeCount] = portal;
+                    _portalGraphNodeCount++;
+                    record.PortalCount++;
+                }
+            }
+        }
+
+        private static int NextPortalFaceVisitStamp()
+        {
+            _portalFaceVisitStamp++;
+            if (_portalFaceVisitStamp == int.MaxValue)
+            {
+                System.Array.Clear(_portalFaceVisitScratch, 0, _portalFaceVisitScratch.Length);
+                _portalFaceVisitStamp = 1;
+            }
+
+            return _portalFaceVisitStamp;
+        }
+
         private static bool TryResolveRecord(float3 worldPosition, out VolumeRecord record)
         {
             record = null;
@@ -3053,10 +3767,9 @@ namespace Hecton8.World
                 return false;
 
             float nearestDistanceSq = float.MaxValue;
-            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int recordIndex = 0; recordIndex < _recordCount; recordIndex++)
             {
-                VolumeRecord candidate = enumerator.Current.Value;
+                VolumeRecord candidate = _records[recordIndex];
                 if (!HasValidRecordBounds(candidate))
                     continue;
 
@@ -3084,10 +3797,9 @@ namespace Hecton8.World
             if (!math.all(math.isfinite(worldPosition)))
                 return false;
 
-            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int recordIndex = 0; recordIndex < _recordCount; recordIndex++)
             {
-                VolumeRecord candidate = enumerator.Current.Value;
+                VolumeRecord candidate = _records[recordIndex];
                 if (!HasValidRecordBounds(candidate) ||
                     !ContainsPoint(candidate, worldPosition))
                 {
@@ -3106,64 +3818,39 @@ namespace Hecton8.World
             if (record == null)
                 return;
 
+            record.PortalCount = 0;
             if (!HasValidRecordBounds(record) ||
                 record.Dimensions.x <= 1 ||
                 record.Dimensions.y <= 1 ||
                 record.Dimensions.z <= 1)
             {
-                record.PortalCount = 0;
+                record.PortalsReady = false;
                 return;
             }
 
             if (!EnsurePortalWorkCapacity(record))
             {
-                record.PortalCount = 0;
+                record.PortalsReady = false;
                 return;
             }
 
-            record.PortalCount = 0;
-
-            for (byte face = 0; face < FaceCount; face++)
-            {
-                GetFaceDimensions(record.Dimensions, face, out int width, out int height);
-                int faceCellCount = width * height;
-                if (faceCellCount <= 0)
-                    continue;
-
-                record.FaceVisitStamp++;
-                if (record.FaceVisitStamp == int.MaxValue)
-                {
-                    System.Array.Clear(record.FaceVisitScratch, 0, record.FaceVisitScratch.Length);
-                    record.FaceVisitStamp = 1;
-                }
-
-                for (int faceIndex = 0; faceIndex < faceCellCount; faceIndex++)
-                {
-                    if (record.FaceVisitScratch[faceIndex] == record.FaceVisitStamp ||
-                        !IsFaceCellOpen(record, face, faceIndex, width))
-                    {
-                        continue;
-                    }
-
-                    PortalNode portal = ExtractFacePortal(record, face, faceIndex, width, height);
-                    if (!IsValidPortalNode(in portal))
-                        continue;
-
-                    if (record.PortalCount >= record.Portals.Length)
-                        return;
-
-                    record.Portals[record.PortalCount] = portal;
-                    record.PortalCount++;
-                }
-            }
+            record.PortalsReady = true;
+            _portalGraphDirty = true;
         }
 
-        private static PortalNode ExtractFacePortal(VolumeRecord record, byte face, int seedFaceIndex, int width, int height)
+        private static PortalNode ExtractFacePortal(
+            VolumeRecord record,
+            NativeArray<byte>.ReadOnly current,
+            byte face,
+            int seedFaceIndex,
+            int width,
+            int height,
+            int visitStamp)
         {
             int queueHead = 0;
             int queueTail = 0;
-            record.FaceQueueScratch[queueTail++] = seedFaceIndex;
-            record.FaceVisitScratch[seedFaceIndex] = record.FaceVisitStamp;
+            _portalFaceQueueScratch[queueTail++] = seedFaceIndex;
+            _portalFaceVisitScratch[seedFaceIndex] = visitStamp;
 
             float3 sum = float3.zero;
             int cellCount = 0;
@@ -3173,7 +3860,7 @@ namespace Hecton8.World
             int maxV = int.MinValue;
             while (queueHead < queueTail)
             {
-                int faceIndex = record.FaceQueueScratch[queueHead++];
+                int faceIndex = _portalFaceQueueScratch[queueHead++];
                 int u = faceIndex % width;
                 int v = faceIndex / width;
                 int3 voxel = ResolveFaceVoxel(record.Dimensions, face, u, v);
@@ -3184,10 +3871,10 @@ namespace Hecton8.World
                 maxU = math.max(maxU, u);
                 maxV = math.max(maxV, v);
 
-                QueueFaceNeighbor(record, face, u - 1, v, width, height, ref queueTail);
-                QueueFaceNeighbor(record, face, u + 1, v, width, height, ref queueTail);
-                QueueFaceNeighbor(record, face, u, v - 1, width, height, ref queueTail);
-                QueueFaceNeighbor(record, face, u, v + 1, width, height, ref queueTail);
+                QueueFaceNeighbor(record, current, face, u - 1, v, width, height, visitStamp, ref queueTail);
+                QueueFaceNeighbor(record, current, face, u + 1, v, width, height, visitStamp, ref queueTail);
+                QueueFaceNeighbor(record, current, face, u, v - 1, width, height, visitStamp, ref queueTail);
+                QueueFaceNeighbor(record, current, face, u, v + 1, width, height, visitStamp, ref queueTail);
             }
 
             if (cellCount <= 0)
@@ -3214,28 +3901,37 @@ namespace Hecton8.World
             };
         }
 
-        private static void QueueFaceNeighbor(VolumeRecord record, byte face, int u, int v, int width, int height, ref int queueTail)
+        private static void QueueFaceNeighbor(
+            VolumeRecord record,
+            NativeArray<byte>.ReadOnly current,
+            byte face,
+            int u,
+            int v,
+            int width,
+            int height,
+            int visitStamp,
+            ref int queueTail)
         {
             if (u < 0 || v < 0 || u >= width || v >= height)
                 return;
 
             int faceIndex = u + (v * width);
-            if (record.FaceVisitScratch[faceIndex] == record.FaceVisitStamp ||
-                !IsFaceCellOpen(record, face, faceIndex, width))
+            if (_portalFaceVisitScratch[faceIndex] == visitStamp ||
+                !IsFaceCellOpen(record, current, face, faceIndex, width))
             {
                 return;
             }
 
-            if (queueTail >= record.FaceQueueScratch.Length)
+            if (queueTail >= _portalFaceQueueScratch.Length)
                 return;
 
-            record.FaceVisitScratch[faceIndex] = record.FaceVisitStamp;
-            record.FaceQueueScratch[queueTail++] = faceIndex;
+            _portalFaceVisitScratch[faceIndex] = visitStamp;
+            _portalFaceQueueScratch[queueTail++] = faceIndex;
         }
 
         private static bool TrySolvePortalRoute(VolumeRecord startRecord, VolumeRecord endRecord, float3 startWorldPosition, float3 endWorldPosition)
         {
-            int nodeCount = _portalGraphNodes.Count;
+            int nodeCount = _portalGraphNodeCount;
             if (nodeCount <= 0 ||
                 !HasValidRecordBounds(startRecord) ||
                 !HasValidRecordBounds(endRecord) ||
@@ -3246,8 +3942,8 @@ namespace Hecton8.World
                 return false;
             }
 
-            _routeOpenSetScratch.Clear();
-            _routePathScratch.Clear();
+            _routeOpenSetCount = 0;
+            _routePathCount = 0;
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
                 RouteNodeState state = _routeNodeScratch[nodeIndex];
@@ -3274,16 +3970,17 @@ namespace Hecton8.World
                 state.ParentIndex = InvalidPortalIndex;
                 state.Flags = 1;
                 _routeNodeScratch[nodeIndex] = state;
-                if (_routeOpenSetScratch.Count >= _routeOpenSetScratch.Capacity)
+                if (_routeOpenSetCount >= _routeOpenSetScratch.Length)
                     return false;
 
-                _routeOpenSetScratch.Add(nodeIndex);
+                _routeOpenSetScratch[_routeOpenSetCount] = nodeIndex;
+                _routeOpenSetCount++;
             }
 
-            while (_routeOpenSetScratch.Count > 0)
+            while (_routeOpenSetCount > 0)
             {
                 int currentNodeIndex = PopLowestCostOpenNode();
-                if (currentNodeIndex < 0 || currentNodeIndex >= _portalGraphNodes.Count)
+                if (currentNodeIndex < 0 || currentNodeIndex >= _portalGraphNodeCount)
                     return false;
 
                 RouteNodeState currentState = _routeNodeScratch[currentNodeIndex];
@@ -3308,7 +4005,7 @@ namespace Hecton8.World
         private static void RelaxPortalNeighbors(int currentNodeIndex, float currentGScore, float3 endWorldPosition)
         {
             if (currentNodeIndex < 0 ||
-                currentNodeIndex >= _portalGraphNodes.Count ||
+                currentNodeIndex >= _portalGraphNodeCount ||
                 !math.isfinite(currentGScore))
             {
                 return;
@@ -3321,7 +4018,7 @@ namespace Hecton8.World
             if (currentNode.ConnectedPortalIndex >= 0)
                 RelaxPortalEdge(currentNodeIndex, currentNode.ConnectedPortalIndex, currentGScore, endWorldPosition);
 
-            for (int candidateIndex = 0; candidateIndex < _portalGraphNodes.Count; candidateIndex++)
+            for (int candidateIndex = 0; candidateIndex < _portalGraphNodeCount; candidateIndex++)
             {
                 if (candidateIndex == currentNodeIndex)
                     continue;
@@ -3338,8 +4035,8 @@ namespace Hecton8.World
         {
             if (currentNodeIndex < 0 ||
                 candidateIndex < 0 ||
-                currentNodeIndex >= _portalGraphNodes.Count ||
-                candidateIndex >= _portalGraphNodes.Count ||
+                currentNodeIndex >= _portalGraphNodeCount ||
+                candidateIndex >= _portalGraphNodeCount ||
                 !math.isfinite(currentGScore))
             {
                 return;
@@ -3372,11 +4069,12 @@ namespace Hecton8.World
             candidateState.ParentIndex = currentNodeIndex;
             if ((candidateState.Flags & 1) == 0)
             {
-                if (_routeOpenSetScratch.Count >= _routeOpenSetScratch.Capacity)
+                if (_routeOpenSetCount >= _routeOpenSetScratch.Length)
                     return;
 
                 candidateState.Flags |= 1;
-                _routeOpenSetScratch.Add(candidateIndex);
+                _routeOpenSetScratch[_routeOpenSetCount] = candidateIndex;
+                _routeOpenSetCount++;
             }
 
             _routeNodeScratch[candidateIndex] = candidateState;
@@ -3386,10 +4084,10 @@ namespace Hecton8.World
         {
             int bestListIndex = InvalidPortalIndex;
             float bestScore = float.MaxValue;
-            for (int listIndex = 0; listIndex < _routeOpenSetScratch.Count; listIndex++)
+            for (int listIndex = 0; listIndex < _routeOpenSetCount; listIndex++)
             {
                 int nodeIndex = _routeOpenSetScratch[listIndex];
-                if (nodeIndex < 0 || nodeIndex >= _routeNodeScratch.Count)
+                if (nodeIndex < 0 || nodeIndex >= _routeNodeScratchCount)
                     continue;
 
                 float score = _routeNodeScratch[nodeIndex].FScore;
@@ -3402,63 +4100,69 @@ namespace Hecton8.World
 
             if (bestListIndex < 0 || !math.isfinite(bestScore))
             {
-                _routeOpenSetScratch.Clear();
+                _routeOpenSetCount = 0;
                 return InvalidPortalIndex;
             }
 
             int selectedNodeIndex = _routeOpenSetScratch[bestListIndex];
-            int lastListIndex = _routeOpenSetScratch.Count - 1;
+            int lastListIndex = _routeOpenSetCount - 1;
             _routeOpenSetScratch[bestListIndex] = _routeOpenSetScratch[lastListIndex];
-            _routeOpenSetScratch.RemoveAt(lastListIndex);
+            _routeOpenSetCount--;
             return selectedNodeIndex;
         }
 
         private static bool ReconstructRoute(int endNodeIndex)
         {
-            _routePathScratch.Clear();
+            _routePathCount = 0;
             int currentIndex = endNodeIndex;
             int iterationCount = 0;
             while (currentIndex >= 0 &&
-                   currentIndex < _routeNodeScratch.Count &&
-                   _routePathScratch.Count < _routePathScratch.Capacity &&
+                   currentIndex < _routeNodeScratchCount &&
+                   _routePathCount < _routePathScratch.Length &&
                    iterationCount < MaxPortalGraphNodeCapacity)
             {
-                if (currentIndex >= _portalGraphNodes.Count)
+                if (currentIndex >= _portalGraphNodeCount)
                 {
-                    _routePathScratch.Clear();
+                    _routePathCount = 0;
                     return false;
                 }
 
                 PortalNode node = _portalGraphNodes[currentIndex];
                 if (!IsValidPortalNode(in node))
                 {
-                    _routePathScratch.Clear();
+                    _routePathCount = 0;
                     return false;
                 }
 
-                _routePathScratch.Add(currentIndex);
+                _routePathScratch[_routePathCount] = currentIndex;
+                _routePathCount++;
                 currentIndex = _routeNodeScratch[currentIndex].ParentIndex;
                 iterationCount++;
             }
 
-            if (currentIndex >= 0 || _routePathScratch.Count <= 0)
+            if (currentIndex >= 0 || _routePathCount <= 0)
             {
-                _routePathScratch.Clear();
+                _routePathCount = 0;
                 return false;
             }
 
             return true;
         }
 
-        private static bool IsFaceCellOpen(VolumeRecord record, byte face, int faceIndex, int width)
+        private static bool IsFaceCellOpen(
+            VolumeRecord record,
+            NativeArray<byte>.ReadOnly current,
+            byte face,
+            int faceIndex,
+            int width)
         {
             int u = faceIndex % width;
             int v = faceIndex / width;
             int3 voxel = ResolveFaceVoxel(record.Dimensions, face, u, v);
             int flatIndex = voxel.x + (voxel.y * record.Dimensions.x) + (voxel.z * record.Dimensions.x * record.Dimensions.y);
             return flatIndex >= 0 &&
-                   flatIndex < record.Current.Length &&
-                   record.Current[flatIndex] == OpenCell;
+                   flatIndex < current.Length &&
+                   current[flatIndex] == OpenCell;
         }
 
         private static bool TrySamplePassabilityCell(VolumeRecord record, float3 worldPosition, out int3 voxel, out byte passability)
@@ -3467,6 +4171,12 @@ namespace Hecton8.World
             passability = SolidCell;
             if (!HasValidRecordBounds(record) ||
                 !math.all(math.isfinite(worldPosition)))
+            {
+                return false;
+            }
+
+            if (!TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount) ||
+                !TryReadOnlyNavGrid(in record.CurrentHandle, requiredCellCount, out NativeArray<byte>.ReadOnly current))
             {
                 return false;
             }
@@ -3480,11 +4190,11 @@ namespace Hecton8.World
             int flatIndex = candidate.x +
                             (candidate.y * record.Dimensions.x) +
                             (candidate.z * record.Dimensions.x * record.Dimensions.y);
-            if (flatIndex < 0 || flatIndex >= record.Current.Length)
+            if (flatIndex < 0 || flatIndex >= current.Length)
                 return false;
 
             voxel = candidate;
-            passability = record.Current[flatIndex];
+            passability = current[flatIndex];
             return true;
         }
 
@@ -3570,10 +4280,7 @@ namespace Hecton8.World
             if (record == null ||
                 record.Dimensions.x <= 1 ||
                 record.Dimensions.y <= 1 ||
-                record.Dimensions.z <= 1 ||
-                record.FaceVisitScratch == null ||
-                record.FaceQueueScratch == null ||
-                record.Portals == null)
+                record.Dimensions.z <= 1)
             {
                 return false;
             }
@@ -3582,9 +4289,9 @@ namespace Hecton8.World
                 return false;
 
             return maxFaceCells > 0 &&
-                   maxFaceCells <= record.FaceVisitScratch.Length &&
-                   maxFaceCells <= record.FaceQueueScratch.Length &&
-                   record.Portals.Length > 0;
+                   maxFaceCells <= _portalFaceVisitScratch.Length &&
+                   maxFaceCells <= _portalFaceQueueScratch.Length &&
+                   _portalGraphNodes.Length > 0;
         }
 
         private static bool TryResolveMaxFaceCells(int3 dimensions, out int maxFaceCells)
@@ -3616,7 +4323,7 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         internal static void DrawEditorOpenCellGizmos(Vector3 playerRuntimePosition, float radiusMeters)
         {
-            if (radiusMeters <= 0f || _records.Count <= 0)
+            if (radiusMeters <= 0f || _recordCount <= 0)
                 return;
 
             float radiusSq = radiusMeters * radiusMeters;
@@ -3625,13 +4332,11 @@ namespace Hecton8.World
             Gizmos.color = new Color(0.1f, 0.65f, 0.95f, 0.45f);
 
             int drawnCells = 0;
-            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
-            while (enumerator.MoveNext() && drawnCells < 2048)
+            for (int recordIndex = 0; recordIndex < _recordCount && drawnCells < 2048; recordIndex++)
             {
-                VolumeRecord record = enumerator.Current.Value;
+                VolumeRecord record = _records[recordIndex];
                 if (record == null ||
                     record.IsPureVoid ||
-                    !record.Current.IsCreated ||
                     record.Dimensions.x <= 0 ||
                     record.Dimensions.y <= 0 ||
                     record.Dimensions.z <= 0)
@@ -3639,14 +4344,20 @@ namespace Hecton8.World
                     continue;
                 }
 
-                int pointCount = math.min(record.Current.Length, record.Dimensions.x * record.Dimensions.y * record.Dimensions.z);
+                if (!TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount) ||
+                    !TryReadOnlyNavGrid(in record.CurrentHandle, requiredCellCount, out NativeArray<byte>.ReadOnly current))
+                {
+                    continue;
+                }
+
+                int pointCount = math.min(current.Length, record.Dimensions.x * record.Dimensions.y * record.Dimensions.z);
                 float cellSize = math.max(record.CellSize, 0.05f);
                 Vector3 wireSize = Vector3.one * math.min(cellSize * 0.32f, 0.32f);
                 int width = record.Dimensions.x;
                 int slice = record.Dimensions.x * record.Dimensions.y;
                 for (int flatIndex = 0; flatIndex < pointCount && drawnCells < 2048; flatIndex++)
                 {
-                    if (record.Current[flatIndex] != OpenCell)
+                    if (current[flatIndex] != OpenCell)
                         continue;
 
                     int z = flatIndex / slice;
@@ -3668,11 +4379,14 @@ namespace Hecton8.World
 
         private static bool EnsureRouteNodeCapacity(int requiredCount)
         {
-            if (requiredCount < 0 || requiredCount > _routeNodeScratch.Capacity)
+            if (requiredCount < 0 || requiredCount > _routeNodeScratch.Length)
                 return false;
 
-            while (_routeNodeScratch.Count < requiredCount)
-                _routeNodeScratch.Add(default);
+            while (_routeNodeScratchCount < requiredCount)
+            {
+                _routeNodeScratch[_routeNodeScratchCount] = default;
+                _routeNodeScratchCount++;
+            }
 
             return true;
         }

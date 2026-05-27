@@ -18,7 +18,7 @@ MonoBehaviour:
   biomeName: Fracture Slabs
   minDepthMeters: 2000
   maxDepthMeters: 2500
-  shortDescription: Offset tectonic plates creating a jagged neon skyline.
+  shortDescription: Offset tectonic plates creating a jagged oxidized skyline.
   isPlaceholder: 0
   visitPurpose: Transition biome. Come here to push deeper, find better materials,
     and follow strong natural shapes and search obvious pockets.
@@ -26,7 +26,7 @@ MonoBehaviour:
   rareRewardHook: 'The rare pull is real: Iron Composite and Copper Wire.'
   landmarkIdentity: Fracture Slabs reads through spires, steps, and big natural crowns.
     Landmarks should feel large and route-defining.
-  safePocketIdentity: Safe pockets exist, but they must be earned by reading the
+  safePocketIdentity: Reorientation pockets exist, but they must be earned by reading the
     terrain.
   riskSummary: 'Main failure mode: bad drops and exposed lines, then overstaying
     for loot. Creature pressure stays medium.'

@@ -22,8 +22,8 @@ namespace Hecton8.Habitat.Deformation
         public const int BaseIntegrityLedgerDTOStrideBytes = 16;
         public const int BaseModuleStateDTOStrideBytes = 64;
         public const int MockWFCBaseArrayStrideBytes = 16;
-        public const int MockCombatDamageSignalStrideBytes = 64;
-        public const int MockDepthSignalStrideBytes = 16;
+        public const int HullMockCombatDamageSignalStrideBytes = 64;
+        public const int HullMockDepthSignalStrideBytes = 16;
         public const int MockRepairLaserSignalStrideBytes = 32;
         public const int MockHullBreachSignalStrideBytes = 32;
         public const int HullIntegrityTuningDTOStrideBytes = 32;
@@ -274,8 +274,8 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Blind combat payload proving dent generation without a combat-router dependency.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.MockCombatDamageSignalStrideBytes)]
-    public struct MockCombatDamageSignal
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.HullMockCombatDamageSignalStrideBytes)]
+    public struct HullMockCombatDamageSignal
     {
         [FieldOffset(0)] public float3 LocalPoint;
         [FieldOffset(12)] public float Magnitude;
@@ -294,8 +294,8 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Blind pressure-depth payload. Defined partial to allow other agents to extend without direct coupling.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.MockDepthSignalStrideBytes)]
-    public partial struct MockDepthSignal
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.HullMockDepthSignalStrideBytes)]
+    public partial struct HullMockDepthSignal
     {
         [FieldOffset(0)] public uint TargetHash;
         [FieldOffset(4)] public float DepthMeters;
@@ -454,7 +454,7 @@ namespace Hecton8.Habitat.Deformation
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HullIntegrityMockDepthJob : IJob
     {
-        [NoAlias] public NativeArray<MockDepthSignal> DepthSignal;
+        [NoAlias] public NativeArray<HullMockDepthSignal> DepthSignal;
         public uint BaseHash;
         public uint Frame;
         public float BaseDepthMeters;
@@ -472,7 +472,7 @@ namespace Hecton8.Habitat.Deformation
             if (!math.isfinite(depth))
                 depth = 0f;
 
-            DepthSignal[0] = new MockDepthSignal
+            DepthSignal[0] = new HullMockDepthSignal
             {
                 TargetHash = BaseHash,
                 DepthMeters = depth,
@@ -486,7 +486,7 @@ namespace Hecton8.Habitat.Deformation
     internal struct HullIntegrityDamageJob : IJob
     {
         [NoAlias] public NativeArray<BaseModuleStateDTO> Modules;
-        [ReadOnly] [NoAlias] public NativeArray<MockCombatDamageSignal> DamageSignals;
+        [ReadOnly] [NoAlias] public NativeArray<HullMockCombatDamageSignal> DamageSignals;
         [NoAlias] public NativeArray<int> Counters;
         public int ModuleCount;
         public int DamageCount;
@@ -505,7 +505,7 @@ namespace Hecton8.Habitat.Deformation
 
             for (int damageIndex = 0; damageIndex < damageCount; damageIndex++)
             {
-                MockCombatDamageSignal damage = DamageSignals[damageIndex];
+                HullMockCombatDamageSignal damage = DamageSignals[damageIndex];
                 if (damage.TargetHash != 0u && damage.TargetHash != BaseHash)
                     continue;
 
@@ -644,7 +644,7 @@ namespace Hecton8.Habitat.Deformation
     {
         [NoAlias] public NativeArray<BaseModuleStateDTO> Modules;
         [NoAlias] public NativeArray<BaseIntegrityLedgerDTO> Ledger;
-        [ReadOnly] [NoAlias] public NativeArray<MockDepthSignal> DepthSignal;
+        [ReadOnly] [NoAlias] public NativeArray<HullMockDepthSignal> DepthSignal;
         [NoAlias] public NativeArray<int> Counters;
         public int ModuleCount;
         public uint Frame;

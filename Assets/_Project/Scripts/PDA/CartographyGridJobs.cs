@@ -54,6 +54,7 @@ namespace Hecton8.Cartography
         public const uint TelemetryFlagDearLieSonar = 1u << 4;
         public const uint TelemetryFlagMutationBudgetExceeded = 1u << 5;
         public const uint TelemetryFlagDesignerVoxelReveal = 1u << 6;
+        public const uint TelemetryFlagVaultContention = 1u << 7;
         public const uint DefaultSectorHashSeed = 0xC47A133u;
     }
 
@@ -125,11 +126,19 @@ namespace Hecton8.Cartography
         [FieldOffset(48)]
         public MapRevealSignalFlags Flags;
         [FieldOffset(49)]
-        public byte _pad0;
+        private byte _pad0;
         [FieldOffset(50)]
-        public ushort _pad1;
+        private byte _pad1;
+        [FieldOffset(51)]
+        private byte _pad2;
         [FieldOffset(52)]
-        public uint _pad2;
+        private byte _pad3;
+        [FieldOffset(53)]
+        private byte _pad4;
+        [FieldOffset(54)]
+        private byte _pad5;
+        [FieldOffset(55)]
+        private byte _pad6;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 48)]
@@ -155,24 +164,44 @@ namespace Hecton8.Cartography
         [FieldOffset(16)]
         public uint Flags;
         [FieldOffset(20)]
-        public uint _pad0;
+        private byte _pad0;
+        [FieldOffset(21)]
+        private byte _pad1;
+        [FieldOffset(22)]
+        private byte _pad2;
+        [FieldOffset(23)]
+        private byte _pad3;
         [FieldOffset(24)]
-        public ulong _pad1;
+        private byte _pad4;
+        [FieldOffset(25)]
+        private byte _pad5;
+        [FieldOffset(26)]
+        private byte _pad6;
+        [FieldOffset(27)]
+        private byte _pad7;
+        [FieldOffset(28)]
+        private byte _pad8;
+        [FieldOffset(29)]
+        private byte _pad9;
+        [FieldOffset(30)]
+        private byte _pad10;
+        [FieldOffset(31)]
+        private byte _pad11;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CartographyCounterDTO
     {
         [FieldOffset(0)]
-        public int Changed;
-        [FieldOffset(4)]
-        public int DiscoveredDelta;
-        [FieldOffset(8)]
-        public uint Revision;
-        [FieldOffset(12)]
-        public uint LastBitIndex;
-        [FieldOffset(16)]
         public ulong LastSectorHash;
+        [FieldOffset(8)]
+        public int Changed;
+        [FieldOffset(12)]
+        public int DiscoveredDelta;
+        [FieldOffset(16)]
+        public uint Revision;
+        [FieldOffset(20)]
+        public uint LastBitIndex;
         [FieldOffset(24)]
         public int TotalDiscoveredVoxels;
         [FieldOffset(28)]
@@ -186,12 +215,40 @@ namespace Hecton8.Cartography
         [FieldOffset(44)]
         public uint LastFailureFlags;
         [FieldOffset(48)]
-        public ulong _pad2;
+        private byte _pad0;
+        [FieldOffset(49)]
+        private byte _pad1;
+        [FieldOffset(50)]
+        private byte _pad2;
+        [FieldOffset(51)]
+        private byte _pad3;
+        [FieldOffset(52)]
+        private byte _pad4;
+        [FieldOffset(53)]
+        private byte _pad5;
+        [FieldOffset(54)]
+        private byte _pad6;
+        [FieldOffset(55)]
+        private byte _pad7;
         [FieldOffset(56)]
-        public ulong _pad3;
+        private byte _pad8;
+        [FieldOffset(57)]
+        private byte _pad9;
+        [FieldOffset(58)]
+        private byte _pad10;
+        [FieldOffset(59)]
+        private byte _pad11;
+        [FieldOffset(60)]
+        private byte _pad12;
+        [FieldOffset(61)]
+        private byte _pad13;
+        [FieldOffset(62)]
+        private byte _pad14;
+        [FieldOffset(63)]
+        private byte _pad15;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CartographyTelemetryEntry
     {
         [FieldOffset(0)]
@@ -213,23 +270,15 @@ namespace Hecton8.Cartography
         [FieldOffset(44)]
         public uint Revision;
         [FieldOffset(48)]
-        public int LastBitIndex;
+        public uint StateHash;
         [FieldOffset(52)]
-        public uint DiscoveredVoxelCount;
+        public uint MutationMicroseconds;
         [FieldOffset(56)]
         public ushort RevealedSignalCount;
         [FieldOffset(58)]
         public ushort RevealedPoiCount;
         [FieldOffset(60)]
-        public uint StateHash;
-        [FieldOffset(64)]
-        public uint RleCompressionPermille;
-        [FieldOffset(68)]
-        public uint MutationMicroseconds;
-        [FieldOffset(72)]
         public uint MapFlags;
-        [FieldOffset(76)]
-        public uint _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -263,13 +312,69 @@ namespace Hecton8.Cartography
         [FieldOffset(28)]
         public uint Revision;
         [FieldOffset(32)]
-        public ulong _pad0;
+        private byte _pad0;
+        [FieldOffset(33)]
+        private byte _pad1;
+        [FieldOffset(34)]
+        private byte _pad2;
+        [FieldOffset(35)]
+        private byte _pad3;
+        [FieldOffset(36)]
+        private byte _pad4;
+        [FieldOffset(37)]
+        private byte _pad5;
+        [FieldOffset(38)]
+        private byte _pad6;
+        [FieldOffset(39)]
+        private byte _pad7;
         [FieldOffset(40)]
-        public ulong _pad1;
+        private byte _pad8;
+        [FieldOffset(41)]
+        private byte _pad9;
+        [FieldOffset(42)]
+        private byte _pad10;
+        [FieldOffset(43)]
+        private byte _pad11;
+        [FieldOffset(44)]
+        private byte _pad12;
+        [FieldOffset(45)]
+        private byte _pad13;
+        [FieldOffset(46)]
+        private byte _pad14;
+        [FieldOffset(47)]
+        private byte _pad15;
         [FieldOffset(48)]
-        public ulong _pad2;
+        private byte _pad16;
+        [FieldOffset(49)]
+        private byte _pad17;
+        [FieldOffset(50)]
+        private byte _pad18;
+        [FieldOffset(51)]
+        private byte _pad19;
+        [FieldOffset(52)]
+        private byte _pad20;
+        [FieldOffset(53)]
+        private byte _pad21;
+        [FieldOffset(54)]
+        private byte _pad22;
+        [FieldOffset(55)]
+        private byte _pad23;
         [FieldOffset(56)]
-        public ulong _pad3;
+        private byte _pad24;
+        [FieldOffset(57)]
+        private byte _pad25;
+        [FieldOffset(58)]
+        private byte _pad26;
+        [FieldOffset(59)]
+        private byte _pad27;
+        [FieldOffset(60)]
+        private byte _pad28;
+        [FieldOffset(61)]
+        private byte _pad29;
+        [FieldOffset(62)]
+        private byte _pad30;
+        [FieldOffset(63)]
+        private byte _pad31;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -288,7 +393,21 @@ namespace Hecton8.Cartography
         [FieldOffset(20)]
         public uint Flags;
         [FieldOffset(24)]
-        public ulong _pad0;
+        private byte _pad0;
+        [FieldOffset(25)]
+        private byte _pad1;
+        [FieldOffset(26)]
+        private byte _pad2;
+        [FieldOffset(27)]
+        private byte _pad3;
+        [FieldOffset(28)]
+        private byte _pad4;
+        [FieldOffset(29)]
+        private byte _pad5;
+        [FieldOffset(30)]
+        private byte _pad6;
+        [FieldOffset(31)]
+        private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -381,7 +500,7 @@ namespace Hecton8.Cartography
         }
     }
 
-    public struct CartographyVaultBuffers
+    public ref struct CartographyVaultBuffers
     {
         public NativeArray<ulong> DiscoveryWords;
         public NativeArray<CartographySectorDTO> SectorTable;
@@ -440,7 +559,7 @@ namespace Hecton8.Cartography
         }
     }
 
-    public struct CartographyVaultReadBuffers
+    public ref struct CartographyVaultReadBuffers
     {
         public NativeArray<ulong>.ReadOnly DiscoveryWords;
         public NativeArray<CartographySectorDTO>.ReadOnly SectorTable;
@@ -502,7 +621,13 @@ namespace Hecton8.Cartography
         private const uint DumpVersion = 2u;
         private const string ScannerProfilesFileName = "cartography_sonar_profiles.csv";
         private const string LegacyScannerProfilesFileName = "scanner_hardware_profiles.csv";
-        private const string DumpFileName = "Dump_SHINOBU_350.bin";
+        private const string DumpFileName = "Dump_1321_Cartography.bin";
+        private static readonly WaitCallback TelemetryDumpCallback = WriteTelemetryDump;
+        private static readonly CartographyTelemetryEntry[] TelemetryDumpSnapshot = new CartographyTelemetryEntry[CartographyGridConstants.BlackBoxFrameCount];
+        private static int telemetryDumpPending;
+        private static int telemetryDumpCursor;
+        private static int telemetryDumpLength;
+        private static string telemetryDumpPath = string.Empty;
 
         public static bool TryResolve(IDataVault vault, out CartographyVaultHandles handles)
         {
@@ -622,7 +747,7 @@ namespace Hecton8.Cartography
             return handles.IsCreated();
         }
 
-        public static bool TryResolveViews(
+        private static bool TryResolveViews(
             IDataVault vault,
             ref CartographyVaultHandles handles,
             out CartographyVaultBuffers buffers)
@@ -655,10 +780,10 @@ namespace Hecton8.Cartography
             }
 
             TryResolveLegacyViews(vault, in handles, ref buffers);
-            return buffers.IsCoreCreated();
+            return buffers.IsCoreCreated() && HasExpectedCoreCapacity(in buffers);
         }
 
-        public static bool TryReadOnlyViews(
+        private static bool TryReadOnlyViews(
             IDataVault vault,
             ref CartographyVaultHandles handles,
             out CartographyVaultReadBuffers buffers)
@@ -691,7 +816,61 @@ namespace Hecton8.Cartography
             }
 
             TryReadOnlyLegacyViews(vault, in handles, ref buffers);
-            return buffers.IsCoreCreated();
+            return buffers.IsCoreCreated() && HasExpectedCoreCapacity(in buffers);
+        }
+
+        private static bool HasExpectedCoreCapacity(in CartographyVaultBuffers buffers)
+        {
+            return HasMinimumLength(buffers.DiscoveryWords, CartographyGridConstants.TotalResidentWordCount) &&
+                   HasMinimumLength(buffers.SectorTable, CartographyGridConstants.ResidentSectorCount) &&
+                   HasMinimumLength(buffers.UploadPackedR8, CartographyGridConstants.PackedUploadWordCount) &&
+                   HasMinimumLength(buffers.TelemetryRing, CartographyGridConstants.BlackBoxFrameCount) &&
+                   HasMinimumLength(buffers.TelemetryCursor, 1) &&
+                   HasMinimumLength(buffers.Tuning, 1) &&
+                   HasMinimumLength(buffers.ScannerProfiles, CartographyGridConstants.ScannerProfileCapacity) &&
+                   HasMinimumLength(buffers.CsvScratch, CartographyGridConstants.CsvScratchBytes) &&
+                   HasMinimumLength(buffers.MockPings, CartographyGridConstants.MaxRevealSignalsPerSlowTick) &&
+                   HasMinimumLength(buffers.PendingPings, CartographyGridConstants.MaxRevealSignalsPerSlowTick) &&
+                   HasMinimumLength(buffers.PendingSignalCounts, 1) &&
+                   HasMinimumLength(buffers.Counters, CartographyGridConstants.ResidentSectorCount) &&
+                   HasMinimumLength(buffers.ActiveSectorHashes, CartographyGridConstants.ResidentSectorCount) &&
+                   HasMinimumLength(buffers.DebugVoxels, CartographyGridConstants.DebugVoxelCapacity) &&
+                   HasMinimumLength(buffers.RleRuns, CartographyGridConstants.RleRunCapacity) &&
+                   HasMinimumLength(buffers.SurfaceMaskWords, CartographyGridConstants.WordCount) &&
+                   HasMinimumLength(buffers.RollbackSnapshotWords, CartographyGridConstants.WordCount) &&
+                   HasMinimumLength(buffers.State, 1);
+        }
+
+        private static bool HasExpectedCoreCapacity(in CartographyVaultReadBuffers buffers)
+        {
+            return HasMinimumLength(buffers.DiscoveryWords, CartographyGridConstants.TotalResidentWordCount) &&
+                   HasMinimumLength(buffers.SectorTable, CartographyGridConstants.ResidentSectorCount) &&
+                   HasMinimumLength(buffers.UploadPackedR8, CartographyGridConstants.PackedUploadWordCount) &&
+                   HasMinimumLength(buffers.TelemetryRing, CartographyGridConstants.BlackBoxFrameCount) &&
+                   HasMinimumLength(buffers.TelemetryCursor, 1) &&
+                   HasMinimumLength(buffers.Tuning, 1) &&
+                   HasMinimumLength(buffers.ScannerProfiles, CartographyGridConstants.ScannerProfileCapacity) &&
+                   HasMinimumLength(buffers.CsvScratch, CartographyGridConstants.CsvScratchBytes) &&
+                   HasMinimumLength(buffers.MockPings, CartographyGridConstants.MaxRevealSignalsPerSlowTick) &&
+                   HasMinimumLength(buffers.PendingPings, CartographyGridConstants.MaxRevealSignalsPerSlowTick) &&
+                   HasMinimumLength(buffers.PendingSignalCounts, 1) &&
+                   HasMinimumLength(buffers.Counters, CartographyGridConstants.ResidentSectorCount) &&
+                   HasMinimumLength(buffers.ActiveSectorHashes, CartographyGridConstants.ResidentSectorCount) &&
+                   HasMinimumLength(buffers.DebugVoxels, CartographyGridConstants.DebugVoxelCapacity) &&
+                   HasMinimumLength(buffers.RleRuns, CartographyGridConstants.RleRunCapacity) &&
+                   HasMinimumLength(buffers.SurfaceMaskWords, CartographyGridConstants.WordCount) &&
+                   HasMinimumLength(buffers.RollbackSnapshotWords, CartographyGridConstants.WordCount) &&
+                   HasMinimumLength(buffers.State, 1);
+        }
+
+        private static bool HasMinimumLength<T>(NativeArray<T> buffer, int minimumLength) where T : struct
+        {
+            return buffer.IsCreated && buffer.Length >= minimumLength;
+        }
+
+        private static bool HasMinimumLength<T>(NativeArray<T>.ReadOnly buffer, int minimumLength) where T : struct
+        {
+            return buffer.IsCreated && buffer.Length >= minimumLength;
         }
 
         private static void TryResolveLegacyViews(
@@ -704,7 +883,10 @@ namespace Hecton8.Cartography
 
             if (!vault.TryResolveHandle(in handles.LegacyExplorationWords, out buffers.LegacyExplorationWords) ||
                 !vault.TryResolveHandle(in handles.LegacyExploredBitIndices, out buffers.LegacyExploredBitIndices) ||
-                !vault.TryResolveHandle(in handles.LegacyExploredBitIndexCount, out buffers.LegacyExploredBitIndexCount))
+                !vault.TryResolveHandle(in handles.LegacyExploredBitIndexCount, out buffers.LegacyExploredBitIndexCount) ||
+                !HasMinimumLength(buffers.LegacyExplorationWords, CartographyGridConstants.WordCount) ||
+                !HasMinimumLength(buffers.LegacyExploredBitIndices, CartographyGridConstants.LegacyExploredBitIndexCapacity) ||
+                !HasMinimumLength(buffers.LegacyExploredBitIndexCount, 1))
             {
                 buffers.LegacyExplorationWords = default;
                 buffers.LegacyExploredBitIndices = default;
@@ -722,7 +904,10 @@ namespace Hecton8.Cartography
 
             if (!vault.TryReadOnlyHandle(in handles.LegacyExplorationWords, out buffers.LegacyExplorationWords) ||
                 !vault.TryReadOnlyHandle(in handles.LegacyExploredBitIndices, out buffers.LegacyExploredBitIndices) ||
-                !vault.TryReadOnlyHandle(in handles.LegacyExploredBitIndexCount, out buffers.LegacyExploredBitIndexCount))
+                !vault.TryReadOnlyHandle(in handles.LegacyExploredBitIndexCount, out buffers.LegacyExploredBitIndexCount) ||
+                !HasMinimumLength(buffers.LegacyExplorationWords, CartographyGridConstants.WordCount) ||
+                !HasMinimumLength(buffers.LegacyExploredBitIndices, CartographyGridConstants.LegacyExploredBitIndexCapacity) ||
+                !HasMinimumLength(buffers.LegacyExploredBitIndexCount, 1))
             {
                 buffers.LegacyExplorationWords = default;
                 buffers.LegacyExploredBitIndices = default;
@@ -749,54 +934,73 @@ namespace Hecton8.Cartography
         public static bool TryGetTuning(IDataVault vault, ref CartographyVaultHandles handles, out CartographyTuningDTO tuning)
         {
             tuning = default;
-            if (!TryReadOnlyViews(vault, ref handles, out CartographyVaultReadBuffers buffers) || !buffers.Tuning.IsCreated)
+            if (vault == null ||
+                !handles.IsCoreCreated() ||
+                !vault.TryReadOnlyHandle(in handles.Tuning, out NativeArray<CartographyTuningDTO>.ReadOnly tuningBuffer) ||
+                !HasMinimumLength(tuningBuffer, 1))
+            {
                 return false;
+            }
 
-            tuning = buffers.Tuning[0];
+            tuning = tuningBuffer[0];
             return true;
         }
 
-        public static unsafe bool TrySetTuning(IDataVault vault, ref CartographyVaultHandles handles, in CartographyTuningDTO tuning)
+        public static bool TrySetTuning(IDataVault vault, ref CartographyVaultHandles handles, in CartographyTuningDTO tuning)
         {
-            if (!TryResolveViews(vault, ref handles, out CartographyVaultBuffers buffers) || !buffers.Tuning.IsCreated)
+            if (vault == null ||
+                !handles.IsCoreCreated() ||
+                !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.UI, out NativeArray<CartographyTuningDTO> tuningBuffer))
+            {
                 return false;
+            }
 
-            CartographyTuningDTO sanitized = tuning;
-            sanitized.SonarPingRadiusMeters = math.clamp(
-                math.isfinite(sanitized.SonarPingRadiusMeters) ? sanitized.SonarPingRadiusMeters : CartographyGridConstants.DefaultPlayerRevealRadiusMeters,
-                CartographyGridConstants.MacroCellSizeMeters,
-                CartographyGridConstants.MaxRevealRadiusMeters);
-            sanitized.SurfaceThicknessMeters = math.clamp(
-                math.isfinite(sanitized.SurfaceThicknessMeters) ? sanitized.SurfaceThicknessMeters : CartographyGridConstants.DefaultSurfaceThicknessMeters,
-                0.25f,
-                8f);
-            sanitized.VisualGlowIntensity = math.clamp(
-                math.isfinite(sanitized.VisualGlowIntensity) ? sanitized.VisualGlowIntensity : CartographyGridConstants.DefaultVisualGlowIntensity,
-                0f,
-                8f);
-            sanitized.GlobalQualityWeight = math.saturate(math.isfinite(sanitized.GlobalQualityWeight) ? sanitized.GlobalQualityWeight : 1f);
-            sanitized.CellSizeMeters = math.clamp(
-                math.isfinite(sanitized.CellSizeMeters) ? sanitized.CellSizeMeters : CartographyGridConstants.DefaultPlayerRevealRadiusMeters,
-                CartographyGridConstants.MacroCellSizeMeters,
-                CartographyGridConstants.MaxDesignerVoxelSizeMeters);
-            sanitized.UploadCadenceFrames = CartographyGridMath.ResolveUploadIntervalFrames(sanitized.GlobalQualityWeight);
-            sanitized.Revision++;
-            CartographyTuningDTO* tuningPtr = (CartographyTuningDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(buffers.Tuning);
-            ref CartographyTuningDTO tuningRef = ref UnsafeUtility.AsRef<CartographyTuningDTO>(tuningPtr);
-            tuningRef = sanitized;
-            return true;
+            try
+            {
+                if (!HasMinimumLength(tuningBuffer, 1))
+                    return false;
+
+                CartographyTuningDTO sanitized = tuning;
+                sanitized.SonarPingRadiusMeters = math.clamp(
+                    math.isfinite(sanitized.SonarPingRadiusMeters) ? sanitized.SonarPingRadiusMeters : CartographyGridConstants.DefaultPlayerRevealRadiusMeters,
+                    CartographyGridConstants.MacroCellSizeMeters,
+                    CartographyGridConstants.MaxRevealRadiusMeters);
+                sanitized.SurfaceThicknessMeters = math.clamp(
+                    math.isfinite(sanitized.SurfaceThicknessMeters) ? sanitized.SurfaceThicknessMeters : CartographyGridConstants.DefaultSurfaceThicknessMeters,
+                    0.25f,
+                    8f);
+                sanitized.VisualGlowIntensity = math.clamp(
+                    math.isfinite(sanitized.VisualGlowIntensity) ? sanitized.VisualGlowIntensity : CartographyGridConstants.DefaultVisualGlowIntensity,
+                    0f,
+                    8f);
+                sanitized.GlobalQualityWeight = math.saturate(math.isfinite(sanitized.GlobalQualityWeight) ? sanitized.GlobalQualityWeight : 1f);
+                sanitized.CellSizeMeters = math.clamp(
+                    math.isfinite(sanitized.CellSizeMeters) ? sanitized.CellSizeMeters : CartographyGridConstants.DefaultPlayerRevealRadiusMeters,
+                    CartographyGridConstants.MacroCellSizeMeters,
+                    CartographyGridConstants.MaxDesignerVoxelSizeMeters);
+                sanitized.UploadCadenceFrames = CartographyGridMath.ResolveUploadIntervalFrames(sanitized.GlobalQualityWeight);
+                sanitized.Revision++;
+                tuningBuffer[0] = sanitized;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.Tuning, SystemID.UI);
+            }
         }
 
 #if UNITY_EDITOR
         public static bool TryLoadScannerProfilesCsvForEditor(
-            IDataVault vault,
-            ref CartographyVaultHandles handles,
+            CartographyVaultBuffers buffers,
             string projectRoot,
             out int appliedRows)
         {
             appliedRows = 0;
-            if (!TryResolveViews(vault, ref handles, out CartographyVaultBuffers buffers))
+            if (!buffers.ScannerProfiles.IsCreated ||
+                !buffers.CsvScratch.IsCreated)
+            {
                 return false;
+            }
 
             string path = Path.Combine(projectRoot, "Assets", "_Project", "Data", ScannerProfilesFileName);
             if (!File.Exists(path))
@@ -883,21 +1087,53 @@ namespace Hecton8.Cartography
             if (!buffers.TelemetryRing.IsCreated)
                 return false;
 
+            if (Interlocked.CompareExchange(ref telemetryDumpPending, 1, 0) != 0)
+                return false;
+
             try
             {
                 string dir = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(dir);
-                string path = Path.Combine(dir, DumpFileName);
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+                telemetryDumpPath = Path.Combine(dir, DumpFileName);
+                telemetryDumpCursor = buffers.TelemetryCursor.IsCreated ? buffers.TelemetryCursor[0] : 0;
+                telemetryDumpLength = math.min(buffers.TelemetryRing.Length, TelemetryDumpSnapshot.Length);
+                for (int i = 0; i < telemetryDumpLength; i++)
+                    TelemetryDumpSnapshot[i] = buffers.TelemetryRing[i];
+
+                if (!ThreadPool.QueueUserWorkItem(TelemetryDumpCallback))
+                {
+                    Volatile.Write(ref telemetryDumpPending, 0);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (IOException)
+            {
+                Volatile.Write(ref telemetryDumpPending, 0);
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Volatile.Write(ref telemetryDumpPending, 0);
+                return false;
+            }
+        }
+
+        private static void WriteTelemetryDump(object state)
+        {
+            try
+            {
+                using FileStream stream = new FileStream(telemetryDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 using BinaryWriter writer = new BinaryWriter(stream);
                 writer.Write(DumpMagic);
                 writer.Write(DumpVersion);
                 writer.Write(UnsafeUtility.SizeOf<CartographyTelemetryEntry>());
-                writer.Write(buffers.TelemetryCursor.IsCreated ? buffers.TelemetryCursor[0] : 0);
-                writer.Write(buffers.TelemetryRing.Length);
-                for (int i = 0; i < buffers.TelemetryRing.Length; i++)
+                writer.Write(telemetryDumpCursor);
+                writer.Write(telemetryDumpLength);
+                for (int i = 0; i < telemetryDumpLength; i++)
                 {
-                    CartographyTelemetryEntry entry = buffers.TelemetryRing[i];
+                    CartographyTelemetryEntry entry = TelemetryDumpSnapshot[i];
                     writer.Write(entry.PlayerGridX);
                     writer.Write(entry.PlayerGridY);
                     writer.Write(entry.PlayerGridZ);
@@ -907,25 +1143,22 @@ namespace Hecton8.Cartography
                     writer.Write(entry.GlobalQualityWeight);
                     writer.Write(entry.FrameIndex);
                     writer.Write(entry.Revision);
-                    writer.Write(entry.LastBitIndex);
-                    writer.Write(entry.DiscoveredVoxelCount);
+                    writer.Write(entry.StateHash);
+                    writer.Write(entry.MutationMicroseconds);
                     writer.Write(entry.RevealedSignalCount);
                     writer.Write(entry.RevealedPoiCount);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.RleCompressionPermille);
-                    writer.Write(entry.MutationMicroseconds);
                     writer.Write(entry.MapFlags);
                 }
-
-                return true;
             }
             catch (IOException)
             {
-                return false;
             }
             catch (UnauthorizedAccessException)
             {
-                return false;
+            }
+            finally
+            {
+                Volatile.Write(ref telemetryDumpPending, 0);
             }
         }
 
@@ -1318,7 +1551,7 @@ namespace Hecton8.Cartography
                           UnsafeUtility.SizeOf<CartographyPoiRecord>() == 48 &&
                           UnsafeUtility.SizeOf<CartographySectorDTO>() == 32 &&
                           UnsafeUtility.SizeOf<CartographyCounterDTO>() == 64 &&
-                          UnsafeUtility.SizeOf<CartographyTelemetryEntry>() == 80 &&
+                          UnsafeUtility.SizeOf<CartographyTelemetryEntry>() == 64 &&
                           UnsafeUtility.SizeOf<CartographyStateDTO>() == 32 &&
                           UnsafeUtility.SizeOf<CartographyTuningDTO>() == 64 &&
                           UnsafeUtility.SizeOf<CartographyScannerProfileDTO>() == 32 &&
@@ -1330,22 +1563,28 @@ namespace Hecton8.Cartography
                    GetOffset<CartographySectorDTO>(nameof(CartographySectorDTO.BaseDataOffset)) == 8 &&
                    GetOffset<CartographySectorDTO>(nameof(CartographySectorDTO.DiscoveredVoxelCount)) == 12 &&
                    GetOffset<CartographySectorDTO>(nameof(CartographySectorDTO.Flags)) == 16 &&
-                   GetOffset<CartographySectorDTO>(nameof(CartographySectorDTO._pad0)) == 20 &&
-                   GetOffset<CartographySectorDTO>(nameof(CartographySectorDTO._pad1)) == 24 &&
-                   GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.Changed)) == 0 &&
-                   GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.LastSectorHash)) == 16 &&
+                   GetOffset<CartographySectorDTO>("_pad0") == 20 &&
+                   GetOffset<CartographySectorDTO>("_pad11") == 31 &&
+                   GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.LastSectorHash)) == 0 &&
+                   GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.Changed)) == 8 &&
+                   GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.DiscoveredDelta)) == 12 &&
+                   GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.Revision)) == 16 &&
+                   GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.LastBitIndex)) == 20 &&
                    GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.TotalDiscoveredVoxels)) == 24 &&
                    GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.PendingSignalCount)) == 28 &&
                    GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.LastRleRunCount)) == 32 &&
                    GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.LastRleCompressionPermille)) == 36 &&
                    GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.LastMutationMicroseconds)) == 40 &&
                    GetOffset<CartographyCounterDTO>(nameof(CartographyCounterDTO.LastFailureFlags)) == 44 &&
+                   GetOffset<CartographyCounterDTO>("_pad0") == 48 &&
+                   GetOffset<CartographyCounterDTO>("_pad15") == 63 &&
                    GetOffset<CartographyTelemetryEntry>(nameof(CartographyTelemetryEntry.PlayerGridX)) == 0 &&
-                   GetOffset<CartographyTelemetryEntry>(nameof(CartographyTelemetryEntry.DiscoveredVoxelCount)) == 52 &&
-                   GetOffset<CartographyTelemetryEntry>(nameof(CartographyTelemetryEntry.StateHash)) == 60 &&
-                   GetOffset<CartographyTelemetryEntry>(nameof(CartographyTelemetryEntry.RleCompressionPermille)) == 64 &&
-                   GetOffset<CartographyTelemetryEntry>(nameof(CartographyTelemetryEntry.MutationMicroseconds)) == 68 &&
-                   GetOffset<CartographyTelemetryEntry>(nameof(CartographyTelemetryEntry.MapFlags)) == 72 &&
+                   GetOffset<CartographyTelemetryEntry>(nameof(CartographyTelemetryEntry.FrameIndex)) == 40 &&
+                   GetOffset<CartographyTelemetryEntry>(nameof(CartographyTelemetryEntry.StateHash)) == 48 &&
+                   GetOffset<CartographyTelemetryEntry>(nameof(CartographyTelemetryEntry.MutationMicroseconds)) == 52 &&
+                   GetOffset<CartographyTelemetryEntry>(nameof(CartographyTelemetryEntry.RevealedSignalCount)) == 56 &&
+                   GetOffset<CartographyTelemetryEntry>(nameof(CartographyTelemetryEntry.RevealedPoiCount)) == 58 &&
+                   GetOffset<CartographyTelemetryEntry>(nameof(CartographyTelemetryEntry.MapFlags)) == 60 &&
                    GetOffset<CartographyStateDTO>(nameof(CartographyStateDTO.LastUpdatedAUP)) == 0 &&
                    GetOffset<CartographyStateDTO>(nameof(CartographyStateDTO.UpdatedVoxelCount)) == 24 &&
                    GetOffset<CartographyStateDTO>(nameof(CartographyStateDTO.MapFlags)) == 28;
@@ -1888,9 +2127,11 @@ namespace Hecton8.Cartography
         public NativeArray<CartographyCounterDTO> Counters;
         public CartographyAup Center;
         public float RadiusMeters;
+        public float GlobalQualityWeight;
 
         public void Execute()
         {
+            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
             new ApplySonarDiscoveryJob
             {
                 DiscoveredSectors = DiscoveredSectors,
@@ -1898,7 +2139,7 @@ namespace Hecton8.Cartography
                 Center = Center,
                 RadiusMeters = RadiusMeters,
                 SurfaceThicknessMeters = CartographyGridConstants.DefaultSurfaceThicknessMeters,
-                GlobalQualityWeight = 1f,
+                GlobalQualityWeight = quality,
                 UseExplicitCenterAup = 0,
                 UseSdfSurfaceMask = 0,
                 WordOffset = 0
@@ -1963,15 +2204,14 @@ namespace Hecton8.Cartography
         public void Execute(int wordIndex)
         {
             int localWordIndex = wordIndex % CartographyGridConstants.WordCount;
-            const float quality = 1f;
+            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
             ulong result = 0UL;
             for (int bit = 0; bit < 64; bit++)
             {
                 int bitIndex = (localWordIndex << 6) | bit;
                 int3 cell = CartographyGridMath.DecodeBitIndex(bitIndex);
                 float3 position = (float3)cell * CartographyGridConstants.MacroCellSizeMeters;
-                if (InsideAnyMockCluster(position, quality))
-                    result |= 1UL << bit;
+                result |= ((ulong)ResolveMockClusterHit(position, quality)) << bit;
             }
 
             int absoluteWordIndex = WordOffset + localWordIndex;
@@ -1979,11 +2219,13 @@ namespace Hecton8.Cartography
                 DiscoveredSectors[absoluteWordIndex] = result;
         }
 
-        private bool InsideAnyMockCluster(float3 position, float quality)
+        private uint ResolveMockClusterHit(float3 position, float quality)
         {
+            const int MaxMockClusterCount = 8;
             float qualityCurve = quality * quality * (3f - (2f * quality));
             int clusterCount = 3 + (int)math.round(math.lerp(0f, 5f, qualityCurve));
-            for (int i = 0; i < clusterCount; i++)
+            uint hit = 0u;
+            for (int i = 0; i < MaxMockClusterCount; i++)
             {
                 uint seed = BuildSeed((uint)i);
                 Unity.Mathematics.Random rng = new Unity.Mathematics.Random(math.max(1u, seed));
@@ -1994,11 +2236,12 @@ namespace Hecton8.Cartography
                 float radius = rng.NextFloat(180f, math.lerp(420f, 980f, qualityCurve));
                 float shell = math.lerp(80f, 24f, qualityCurve);
                 float dist = math.sqrt(math.max(0.0001f, math.lengthsq(position - center)));
-                if (dist <= radius && math.abs(dist - radius) <= shell)
-                    return true;
+                bool active = i < clusterCount;
+                bool inside = active & (dist <= radius) & (math.abs(dist - radius) <= shell);
+                hit |= math.select(0u, 1u, inside);
             }
 
-            return false;
+            return hit;
         }
 
         private uint BuildSeed(uint cluster)
@@ -2048,8 +2291,7 @@ namespace Hecton8.Cartography
                 float fakeSdf = (cell.y * CartographyGridConstants.MacroCellSizeMeters) -
                                 (fakeSinX * 46f) -
                                 (fakeCosZ * 33f);
-                if (math.abs(fakeSdf) <= lowQualityBand)
-                    word |= 1UL << bit;
+                word |= ((ulong)math.select(0u, 1u, math.abs(fakeSdf) <= lowQualityBand)) << bit;
             }
 
             SurfaceMaskWords[wordIndex] = word;
@@ -2069,6 +2311,12 @@ namespace Hecton8.Cartography
 
         public void Execute(int packedIndex)
         {
+            if (!DiscoveredSectors.IsCreated || DiscoveredSectors.Length == 0)
+            {
+                UploadPackedR8[packedIndex] = 0u;
+                return;
+            }
+
             int firstVoxel = packedIndex << 2;
             uint packed = 0u;
             float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
@@ -2078,13 +2326,11 @@ namespace Hecton8.Cartography
                 int voxelIndex = firstVoxel + lane;
                 int wordIndex = WordOffset + (voxelIndex >> 6);
                 int bitOffset = voxelIndex & 63;
-                uint value = 0u;
-                if ((uint)wordIndex < (uint)DiscoveredSectors.Length &&
-                    (DiscoveredSectors[wordIndex] & (1UL << bitOffset)) != 0UL &&
-                    PassesVisualDecimation(voxelIndex, visualKeep))
-                {
-                    value = 255u;
-                }
+                bool inRange = (uint)wordIndex < (uint)DiscoveredSectors.Length;
+                int safeWordIndex = math.select(0, wordIndex, inRange);
+                ulong sourceWord = DiscoveredSectors[safeWordIndex];
+                uint discovered = (uint)((sourceWord >> bitOffset) & 1UL);
+                uint value = math.select(0u, discovered * 255u, inRange & PassesVisualDecimation(voxelIndex, visualKeep));
 
                 packed |= value << (lane * 8);
             }
@@ -2137,7 +2383,6 @@ namespace Hecton8.Cartography
             int safeCursor = math.clamp(cursor, 0, TelemetryRing.Length - 1);
             int lastBitIndex = -1;
             int discoveredVoxels = 0;
-            uint rleCompressionPermille = 0u;
             uint mutationMicroseconds = 0u;
             uint counterFlags = 0u;
             if (Counters.IsCreated && Counters.Length > 0)
@@ -2145,7 +2390,6 @@ namespace Hecton8.Cartography
                 CartographyCounterDTO counter = Counters[0];
                 lastBitIndex = unchecked((int)counter.LastBitIndex);
                 discoveredVoxels = math.max(0, counter.TotalDiscoveredVoxels);
-                rleCompressionPermille = counter.LastRleCompressionPermille;
                 mutationMicroseconds = counter.LastMutationMicroseconds;
                 counterFlags = counter.LastFailureFlags;
             }
@@ -2162,13 +2406,10 @@ namespace Hecton8.Cartography
                 GlobalQualityWeight = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f),
                 FrameIndex = FrameIndex,
                 Revision = Revision,
-                LastBitIndex = lastBitIndex,
-                DiscoveredVoxelCount = (uint)discoveredVoxels,
+                StateHash = CartographyGridMath.BuildStateHash(in PlayerAup, Revision ^ StateFlags, lastBitIndex),
+                MutationMicroseconds = mutationMicroseconds,
                 RevealedSignalCount = (ushort)math.clamp(RevealedSignalCount, 0, ushort.MaxValue),
                 RevealedPoiCount = (ushort)math.clamp(RevealedPoiCount, 0, ushort.MaxValue),
-                StateHash = CartographyGridMath.BuildStateHash(in PlayerAup, Revision ^ StateFlags, lastBitIndex),
-                RleCompressionPermille = rleCompressionPermille,
-                MutationMicroseconds = mutationMicroseconds,
                 MapFlags = mapFlags
             };
 

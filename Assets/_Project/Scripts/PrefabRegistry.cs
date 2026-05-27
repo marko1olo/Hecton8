@@ -49,6 +49,7 @@ namespace Hecton8.Core
 
         private static bool _isShuttingDown;
         private static bool _isResolvingRuntimeInstance;
+        private static PrefabRegistry s_activeRuntimeInstance;
 #if UNITY_EDITOR
         private static bool _editorHooksInstalled;
 #endif
@@ -60,6 +61,7 @@ namespace Hecton8.Core
             ReleaseEditorHooks();
 #endif
             GlobalRegistry.ClearPrefabRegistryRuntime(null);
+            s_activeRuntimeInstance = null;
             _isShuttingDown = false;
             _isResolvingRuntimeInstance = false;
 #if UNITY_EDITOR
@@ -71,7 +73,7 @@ namespace Hecton8.Core
         //  STORAGE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        public static PrefabRegistry ActiveRuntimeInstance => GlobalRegistry.PrefabRegistryRuntime;
+        public static PrefabRegistry ActiveRuntimeInstance => s_activeRuntimeInstance;
 
         /// <summary>Forward mapping: PrefabId â†’ Prefab.</summary>
         // COLD ALLOC: Dictionary[256] â€” prefab registry â€” owner: PrefabRegistry
@@ -93,7 +95,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
             EnsureEditorHooks();
 #endif
-            PrefabRegistry runtime = GlobalRegistry.PrefabRegistryRuntime;
+            PrefabRegistry runtime = s_activeRuntimeInstance ?? GlobalRegistry.PrefabRegistryRuntime;
             if (runtime != null && runtime != this)
             {
                 Destroy(gameObject);
@@ -101,6 +103,7 @@ namespace Hecton8.Core
             }
 
             GlobalRegistry.RegisterPrefabRegistryRuntime(this);
+            s_activeRuntimeInstance = this;
         }
 
         private void OnDestroy()
@@ -110,6 +113,9 @@ namespace Hecton8.Core
                 _isShuttingDown = true;
                 GlobalRegistry.ClearPrefabRegistryRuntime(this);
             }
+
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
         }
 
         private void OnDisable()
@@ -118,7 +124,12 @@ namespace Hecton8.Core
                 return;
 
             if (!Application.isPlaying)
+            {
                 GlobalRegistry.ClearPrefabRegistryRuntime(this);
+
+                if (ReferenceEquals(s_activeRuntimeInstance, this))
+                    s_activeRuntimeInstance = null;
+            }
         }
 
         private void OnApplicationQuit()
@@ -161,7 +172,7 @@ namespace Hecton8.Core
 
         private static PrefabRegistry EnsureRuntimeInstance()
         {
-            PrefabRegistry runtime = GlobalRegistry.PrefabRegistryRuntime;
+            PrefabRegistry runtime = s_activeRuntimeInstance ?? GlobalRegistry.PrefabRegistryRuntime;
             if (runtime != null || _isResolvingRuntimeInstance || !Application.isPlaying || _isShuttingDown)
                 return runtime;
 

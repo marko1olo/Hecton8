@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Steam Tag And Search Strategy
 
 Status: pre-store-page operating plan
-Owner lane: SHINOBU_81 / Steam positioning
+Owner lane: Marketing / Steam positioning
 Public stance: single-player-first
 Runtime impact: none
 

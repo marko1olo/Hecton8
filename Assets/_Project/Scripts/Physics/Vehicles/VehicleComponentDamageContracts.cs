@@ -25,6 +25,7 @@ namespace Hecton8.Physics.Vehicles
         public const int CsvScratchBytes = 64 * 1024;
 #endif
         public const int JobBatchSize = 32;
+        public const float AuthoritativeQualityWeight = 1f;
 
         public const uint ComponentHull = 0x6EA478B6u; // fnv1a("hull")
         public const uint ComponentEngine = 0xEE05D83Bu; // fnv1a("engine")

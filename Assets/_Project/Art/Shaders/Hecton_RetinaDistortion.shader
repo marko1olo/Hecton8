@@ -18,13 +18,17 @@ Shader "Hidden/Hecton8/RetinaDistortion"
             Name "RetinaDistortion"
 
             HLSLPROGRAM
-            #pragma target 4.5
+            #pragma target 3.5
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma multi_compile _ _QUALITY_MX350
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
             CBUFFER_START(HectonRetinaDistortionGlobals)
                 float4 _HectonRetinaParams0;
@@ -44,11 +48,14 @@ Shader "Hidden/Hecton8/RetinaDistortion"
 
             struct Attributes
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 uint vertexID : SV_VertexID;
             };
 
             struct Varyings
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float2 screenUV : TEXCOORD0;
             };
@@ -56,12 +63,20 @@ Shader "Hidden/Hecton8/RetinaDistortion"
             Varyings Vert(Attributes input)
             {
                 Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.screenUV = float2((input.vertexID << 1) & 2, input.vertexID & 2);
                 output.positionCS = float4(output.screenUV * 2.0 - 1.0, 0.0, 1.0);
             #if UNITY_UV_STARTS_AT_TOP
                 output.screenUV.y = 1.0 - output.screenUV.y;
             #endif
                 return output;
+            }
+
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(uv);
             }
 
             float Hash21(float2 p)
@@ -101,11 +116,14 @@ Shader "Hidden/Hecton8/RetinaDistortion"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
                 float critical01 = saturate(_HectonRetinaCritical01);
                 float narcosis01 = saturate(_HectonNarcosisScalar);
                 [branch]
                 if (max(critical01, narcosis01) <= 0.0001)
-                    return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
+                    return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(input.screenUV));
 
                 float2 centered = input.screenUV * 2.0 - 1.0;
                 float distSq = dot(centered, centered);
@@ -126,12 +144,12 @@ Shader "Hidden/Hecton8/RetinaDistortion"
                 float2 refractedUV = saturate(input.screenUV + radialDir * distortion);
                 float2 chromaOffset = radialDir * chroma;
 
-                half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, refractedUV);
+                half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(refractedUV));
                 [branch]
                 if (abs(chroma) > 0.000001)
                 {
-                    half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV + chromaOffset)).r;
-                    half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV - chromaOffset)).b;
+                    half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(saturate(refractedUV + chromaOffset))).r;
+                    half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(saturate(refractedUV - chromaOffset))).b;
                     color.r = red;
                     color.b = blue;
                 }

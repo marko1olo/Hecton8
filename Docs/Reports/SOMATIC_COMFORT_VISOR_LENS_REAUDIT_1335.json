@@ -1,0 +1,49 @@
+{
+  "agent_id": "1335",
+  "status": "DIEGETIC_VISOR_LENS_VAULT_LOCK_READONLY_PATCH_BUILD_BLOCKED_EXTERNAL_COMPILERS",
+  "timestamp_local": "2026-05-27T14:27:11+04:00",
+  "domain": "VR somatic comfort and diegetic visor lens presentation",
+  "prompt": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "tag": "AGENT_PROMPT id=\"1335\"",
+    "task_count": 20,
+    "sha256": "CED5DA5188E0838802BA00938AFD9F382174FAA78453C32C78A6AE34BCB1C2E2"
+  },
+  "latest_reaudit": {
+    "scope": "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+    "what_was_wrong": [
+      "Mutable Vault writes were reachable through read-style views.",
+      "CSV and binary file IO were not fully separated from Vault writer lifetimes.",
+      "Preview and telemetry source reads used mutable legacy read handles."
+    ],
+    "what_was_done": [
+      "Routed mutable writes through TryAcquireVisorWriteBuffer with pre/post compaction checks.",
+      "Released every writer lease in finally.",
+      "Moved file reads to bounded stack spans before Vault writer leases.",
+      "Converted CSV parsing to ReadOnlySpan<byte>.",
+      "Converted consumer reads to TryReadOnlyHandle."
+    ],
+    "scanners": {
+      "forbidden_helper_hits": 0,
+      "broad_or_bare_catches": 0,
+      "binary_writer_hits": 0,
+      "as_native_array_hits": 0,
+      "legacy_try_read_handle_hits": 0,
+      "legacy_try_resolve_handle_hits": 0,
+      "direct_try_acquire_write_lock_calls": 1,
+      "direct_try_acquire_write_lock_scope": "TryAcquireVisorWriteBuffer helper only",
+      "git_diff_check": "passed_with_lf_to_crlf_warning_only"
+    },
+    "file_hash_sha256": "05695669F2C2125BCEF2B091EFA2099053D2ECCD6140322DCD6EE7FC5BDCE109",
+    "normal_frame_microseconds_saved_claimed": 0
+  },
+  "build": {
+    "attempted": false,
+    "command": "dotnet build .\\Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false",
+    "gate": "CPU 100 percent with 8 active external dotnet processes plus VBCSCompiler",
+    "status": "not_launched_external_compiler_gate_closed",
+    "elapsed_seconds": 0,
+    "errors": null,
+    "warnings": null
+  }
+}

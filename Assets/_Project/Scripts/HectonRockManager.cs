@@ -89,6 +89,7 @@ namespace Hecton8.World
         private bool _layerCapacityOverflowLogged;
         private bool _proximityCapacityOverflowLogged;
         private bool _missingLayerBufferLogged;
+        private bool _unknownLayerLogged;
 
         // LayerID → GPUInstancerPrefabPrototype (the actual type GPUI API wants)
         private Dictionary<int, GPUInstancerPrefabPrototype> _prototypeLookup;
@@ -187,6 +188,7 @@ namespace Hecton8.World
 #endif
                 }
             }
+            ApplyVendorGpuiManagerAdmission();
 
             if (proximityColliderSystem == null)
             {
@@ -205,6 +207,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            ApplyVendorGpuiManagerAdmission();
             TryRegisterToGlobalRegistry();
             if (Application.isPlaying)
                 GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -214,11 +217,12 @@ namespace Hecton8.World
 
         private void Start()
         {
+            ApplyVendorGpuiManagerAdmission();
             TryRegisterToGlobalRegistry();
             TryRegisterToTickManager();
 
 #if UNITY_EDITOR
-            _debugGPUIReady = gpuiManager != null;
+            _debugGPUIReady = gpuiManager != null && CanUseVendorGpuInstancerCompute();
 #endif
         }
 
@@ -315,19 +319,25 @@ namespace Hecton8.World
         {
             if (matrices == null || matrices.Length == 0) return;
 
-            if (!_chunkData.TryGetValue(layerId, out var chunkDict))
+            if (_prototypeLookup == null ||
+                !_prototypeLookup.ContainsKey(layerId))
             {
-                // COLD ALLOC: Dictionary<Vector2Int,Matrix4x4[]>[64] - late-registered rock chunk map - owner: HectonRockManager
-                chunkDict = new Dictionary<Vector2Int, Matrix4x4[]>(64);
-                _chunkData[layerId] = chunkDict;
+                LogUnknownRockLayer(layerId);
+                return;
             }
 
-            if (!_aggregatedMatrices.ContainsKey(layerId))
+            if (_chunkData == null ||
+                !_chunkData.TryGetValue(layerId, out Dictionary<Vector2Int, Matrix4x4[]> chunkDict) ||
+                chunkDict == null ||
+                _aggregatedMatrices == null ||
+                !_aggregatedMatrices.ContainsKey(layerId) ||
+                _aggregatedCounts == null ||
+                !_aggregatedCounts.ContainsKey(layerId) ||
+                _gpuiBufferCapacities == null ||
+                !_gpuiBufferCapacities.ContainsKey(layerId))
             {
-                // COLD ALLOC: Matrix4x4[_instanceCapacity] - late-registered rock layer aggregation cap - owner: HectonRockManager
-                _aggregatedMatrices[layerId] = new Matrix4x4[_instanceCapacity];
-                _aggregatedCounts[layerId] = 0;
-                _gpuiBufferCapacities[layerId] = 0;
+                LogMissingLayerBuffer(layerId);
+                return;
             }
 
             chunkDict[chunkCoord] = matrices;
@@ -365,6 +375,7 @@ namespace Hecton8.World
 
             if (gpuiManager == null) return;
 
+            bool allowVendorGpuiCompute = CanUseVendorGpuInstancerCompute();
             int totalPositionCount = 0;
 
             // ── Pass 1: Aggregate per-layer and push to GPUI ──
@@ -384,7 +395,8 @@ namespace Hecton8.World
 
                 if (layerTotal == 0)
                 {
-                    if (_prototypeLookup.TryGetValue(layerId, out GPUInstancerPrefabPrototype proto))
+                    if (allowVendorGpuiCompute &&
+                        _prototypeLookup.TryGetValue(layerId, out GPUInstancerPrefabPrototype proto))
                     {
                         if (_gpuiInitializedLayers.Contains(layerId))
                         {
@@ -426,7 +438,8 @@ namespace Hecton8.World
                 _aggregatedCounts[layerId] = writeIndex;
 
                 // Push to GPU Instancer
-                if (_prototypeLookup.TryGetValue(layerId, out GPUInstancerPrefabPrototype prototype))
+                if (allowVendorGpuiCompute &&
+                    _prototypeLookup.TryGetValue(layerId, out GPUInstancerPrefabPrototype prototype))
                 {
                     bool needsInitialize = !_gpuiInitializedLayers.Contains(layerId);
                     int requiredCapacity = layerBuffer.Length;
@@ -557,6 +570,20 @@ namespace Hecton8.World
 #endif
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogUnknownRockLayer(int layerId)
+        {
+            if (_unknownLayerLogged)
+                return;
+
+            _unknownLayerLogged = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Hecton8.Core.H8Debug.LogWarning(
+                $"[HectonRockManager] Unknown rock layerId={layerId}. Configure rockLayers/prototype lookup before runtime chunk registration.",
+                this);
+#endif
+        }
+
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void UpdateDiagnostics()
         {
@@ -582,7 +609,20 @@ namespace Hecton8.World
 
             _debugTotalChunks = totalChunks;
             _debugTotalInstances = totalInstances;
-            _debugGPUIReady = gpuiManager != null;
+            _debugGPUIReady = gpuiManager != null && CanUseVendorGpuInstancerCompute();
+        }
+
+        private static bool CanUseVendorGpuInstancerCompute()
+        {
+            return HardwareTierDetector.AllowHighResourceComputeShaders;
+        }
+
+        private void ApplyVendorGpuiManagerAdmission()
+        {
+            if (gpuiManager == null || CanUseVendorGpuInstancerCompute())
+                return;
+
+            gpuiManager.enabled = false;
         }
     }
 }

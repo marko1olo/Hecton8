@@ -966,7 +966,13 @@ namespace Hecton8.Environment
             _playerRuntimeContext ??= Hecton8.Core.GlobalRegistry.Player;
             _resolvedFluidDecals ??= GlobalRegistry.FluidDecalPresentation;
             _resolvedFluidEngine ??= GlobalRegistry.FluidSurfaceCurrent;
-            _resolvedTerrainProvider ??= GlobalRegistry.Terrain;
+            if (_resolvedTerrainProvider == null)
+            {
+                MapMagicBridge mapMagicBridge = null;
+                if (WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge))
+                    _resolvedTerrainProvider = mapMagicBridge;
+            }
+
             _resolvedAtmosphereReadModel ??= Hecton8.Core.GlobalRegistry.AtmosphereReadModel;
             ApplyPlayerRuntimeContext();
         }
@@ -1209,7 +1215,7 @@ namespace Hecton8.Environment
 #endif
             }
 
-            if (playerTransform != null && _playerMovement == null)
+            if (playerTransform != null && _playerMovement == null && !Application.isPlaying)
                 playerTransform.TryGetComponent(out _playerMovement);
         }
 

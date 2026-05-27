@@ -45,8 +45,6 @@ Shader "HECTON/Prologue/OrbitalDropReentryPlasma"
 
             TEXTURE2D(_SharedNoiseTex);
             SAMPLER(sampler_SharedNoiseTex);
-            TEXTURE3D(_HectonPrebakedVectorNoise3D);
-            SAMPLER(sampler_HectonPrebakedVectorNoise3D);
 
             CBUFFER_START(UnityPerMaterial)
                 half _PlasmaHeat;
@@ -63,6 +61,9 @@ Shader "HECTON/Prologue/OrbitalDropReentryPlasma"
                 half _CloudScatter;
                 float4 _SharedNoiseTex_ST;
             CBUFFER_END
+
+            float4 _HectonReentryPlasmaState0; // x heat, y opacity, z velocity, w altitude01
+            float4 _HectonReentryPlasmaState1; // x quality pressure, y phase
 
             struct Attributes
             {
@@ -89,7 +90,7 @@ Shader "HECTON/Prologue/OrbitalDropReentryPlasma"
                 return frac(float2(n, n * 34.37) + float2(0.13, 0.73));
             }
 
-            half Voronoi(float2 uv)
+            half Voronoi(float2 uv, half velocity01)
             {
                 float2 grid = floor(uv);
                 float2 local = frac(uv);
@@ -103,7 +104,7 @@ Shader "HECTON/Prologue/OrbitalDropReentryPlasma"
                     {
                         float2 offset = float2(x, y);
                         float2 cellPoint = Hash22(grid + offset);
-                        cellPoint = 0.5 + 0.5 * sin((_Time.y * (0.35 + _PlasmaVelocity)) + 6.28318 * cellPoint);
+                        cellPoint = 0.5 + 0.5 * sin((_Time.y * (0.35 + velocity01)) + 6.28318 * cellPoint);
                         float2 delta = offset + cellPoint - local;
                         best = min(best, dot(delta, delta));
                     }
@@ -122,29 +123,30 @@ Shader "HECTON/Prologue/OrbitalDropReentryPlasma"
 
             half4 Frag(Varyings input) : SV_Target
             {
-                half opacity = saturate(_PlasmaOpacity);
-                half heat = saturate(_PlasmaHeat);
+                half runtimeActive = saturate(max((half)_HectonReentryPlasmaState0.x, (half)_HectonReentryPlasmaState0.y));
+                half opacity = saturate(max(_PlasmaOpacity, (half)_HectonReentryPlasmaState0.y));
+                half heat = saturate(max(_PlasmaHeat, (half)_HectonReentryPlasmaState0.x));
+                half velocity01 = lerp(saturate(_PlasmaVelocity), saturate((half)_HectonReentryPlasmaState0.z), runtimeActive);
+                half altitude01 = lerp(saturate(_PlasmaAltitude01), saturate((half)_HectonReentryPlasmaState0.w), runtimeActive);
                 half whiteout = smoothstep(0.82h, 1.0h, opacity);
                 half3 whiteHot = half3(1.0h, 0.72h, 0.36h) * 4.5h;
-                half qualityPressure = saturate(_PlasmaQualityPressure);
+                half qualityPressure = lerp(saturate(_PlasmaQualityPressure), saturate((half)_HectonReentryPlasmaState1.x), runtimeActive);
                 half3 minimumQualityColor = lerp(_PlasmaCoreColor.rgb * (0.35h + heat), whiteHot, whiteout);
 
                 float2 centered = input.uv * 2.0 - 1.0;
                 half radial = (half)saturate(dot(centered, centered));
-                float speed = _Time.y * (0.45 + _VoronoiSpeed * (0.12 + _PlasmaVelocity));
+                float speed = _Time.y * (0.45 + _VoronoiSpeed * (0.12 + velocity01));
                 float2 sharedUv = TRANSFORM_TEX(input.uv, _SharedNoiseTex);
                 half sharedNoise = SAMPLE_TEXTURE2D(_SharedNoiseTex, sampler_SharedNoiseTex, sharedUv + speed * 0.015).r;
-                half sharedVectorNoise = SAMPLE_TEXTURE3D(
-                    _HectonPrebakedVectorNoise3D,
-                    sampler_HectonPrebakedVectorNoise3D,
-                    float3(frac(input.uv * 1.71 + speed * 0.017), frac(speed * 0.027))).r;
+                float2 vectorCell = floor(input.uv * (18.0 + _VoronoiScale * 0.35) + speed * float2(0.31, -0.23));
+                half sharedVectorNoise = (half)Hash21(vectorCell);
 
                 float2 flowUv = input.uv * _VoronoiScale + float2(speed, -speed * 0.37);
-                half cells0 = Voronoi(flowUv);
-                half cells1 = Voronoi(flowUv * 1.73 + float2(19.1, -7.6) - speed * 0.21);
+                half cells0 = Voronoi(flowUv, velocity01);
+                half cells1 = Voronoi(flowUv * 1.73 + float2(19.1, -7.6) - speed * 0.21, velocity01);
                 half plasma = saturate(cells0 * 0.60h + cells1 * 0.30h + sharedNoise * 0.07h + sharedVectorNoise * 0.10h);
                 half edge = smoothstep(0.18h, 0.96h, radial);
-                half altitudeScatter = saturate(1.0h - _PlasmaAltitude01);
+                half altitudeScatter = saturate(1.0h - altitude01);
                 half cloudBase = saturate(1.0h - radial * 0.72h);
                 half cloud = cloudBase * cloudBase * _CloudScatter * (0.35h + altitudeScatter);
                 half shock = smoothstep(0.42h, 0.98h, plasma + edge * 0.22h);

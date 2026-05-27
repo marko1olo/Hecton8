@@ -36,7 +36,6 @@ namespace Hecton8.Physics
         public int LatencyFrames;
         public uint FrameIndex;
         public float TimeSeconds;
-        public float GlobalQualityWeight;
 
         public unsafe void Execute()
         {
@@ -57,8 +56,7 @@ namespace Hecton8.Physics
                 request.ResultHeight = AsyncBuoyancyReadbackMath.ResolveMockLocalHeight(
                     request.LocalXZ,
                     FrameIndex,
-                    TimeSeconds,
-                    GlobalQualityWeight);
+                    TimeSeconds);
                 ref ReadbackRequestDTO ringRef = ref UnsafeUtility.AsRef<ReadbackRequestDTO>(ringPtr + writeBase + i);
                 ringRef = request;
             }
@@ -119,7 +117,6 @@ namespace Hecton8.Physics
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<AsyncReadbackCounterDTO> Counters;
         public double CameraAupY;
         public float FixedDeltaTime;
-        public float GlobalQualityWeight;
         public float SmoothingAlpha;
         public float DeadReckoningDecayRate;
         public int CompletedCount;
@@ -218,31 +215,26 @@ namespace Hecton8.Physics
     public static class AsyncBuoyancyReadbackMath
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ResolveSampleBudget(float qualityWeight, int minSampleCount, int maxSampleCount)
+        public static int ResolveSampleBudget(int minSampleCount, int maxSampleCount)
         {
             int safeMin = math.max(1, minSampleCount);
             int safeMax = math.max(safeMin, maxSampleCount);
-            float q = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 0f);
-            float curve = q * q * (3f - (2f * q));
-            return math.clamp((int)math.round(math.lerp(safeMin, safeMax, curve)), safeMin, safeMax);
+            return safeMax;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ResolveSmoothingAlpha(float qualityWeight)
+        public static float ResolveSmoothingAlpha()
         {
-            float q = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 0f);
-            float curve = q * math.rsqrt(math.max(q, 0.0001f));
-            return math.lerp(0.18f, 0.52f, curve);
+            return 0.52f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ResolveMockLocalHeight(float2 localXz, uint frameIndex, float timeSeconds, float qualityWeight)
+        public static float ResolveMockLocalHeight(float2 localXz, uint frameIndex, float timeSeconds)
         {
-            float q = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 0f);
             float coarse = TriangleSigned((localXz.x * 0.013671875f) + (frameIndex * 0.0078125f));
             float cross = TriangleSigned((localXz.y * 0.0107421875f) - (timeSeconds * 0.041666667f));
             float ripple = TriangleSigned(((localXz.x + localXz.y) * 0.03125f) + (frameIndex * 0.01953125f));
-            return (coarse * 0.62f) + (cross * 0.31f) + (ripple * math.lerp(0.03f, 0.18f, q));
+            return (coarse * 0.62f) + (cross * 0.31f) + (ripple * 0.18f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,12 +1,13 @@
 using UnityEngine;
 
+[DisallowMultipleComponent]
 public class PlanetRotation : MonoBehaviour
 {
-    [Tooltip("Скорость вращения в градусах в секунду")]
+    [Tooltip("Deprecated prototype value. Orbital presentation phase is now owned by OrbitalRelativityDirector shader globals.")]
     public float rotationSpeed = 2f;
 
-    void Update()
+    private void OnEnable()
     {
-        transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime, Space.World);
+        enabled = false;
     }
 }

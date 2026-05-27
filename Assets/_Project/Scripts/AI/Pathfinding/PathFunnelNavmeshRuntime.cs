@@ -21,7 +21,7 @@ namespace Hecton8.AI.Pathfinding
         private const int DefaultInvalidationCapacity = 64;
         private const int MaxActivePathCapacity = 4096;
         private const int MaxInvalidationCapacity = 4096;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_PATH_FUNNEL_NAVMESH_FIXER.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
 
         [Header("Path Funnel Runtime")]
         [SerializeField, Min(1), Tooltip("Maximum tracked active AI corridors for WFC door invalidation.")]

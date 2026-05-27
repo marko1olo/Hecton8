@@ -299,7 +299,7 @@ Shader "Hidden/Hecton8/VolumetricFogDearLie"
         {
             Name "DearLieProxy"
             HLSLPROGRAM
-            #pragma target 4.5
+            #pragma target 3.5
             #pragma vertex Vert
             #pragma fragment FragProxy
             ENDHLSL
@@ -309,7 +309,7 @@ Shader "Hidden/Hecton8/VolumetricFogDearLie"
         {
             Name "BilateralComposite"
             HLSLPROGRAM
-            #pragma target 4.5
+            #pragma target 3.5
             #pragma vertex Vert
             #pragma fragment FragComposite
             ENDHLSL

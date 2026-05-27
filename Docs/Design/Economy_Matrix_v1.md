@@ -5,19 +5,9 @@ Status: ECONOMY BALANCED by `Tools/EconomyValidator.py`; literal 30 kW energy pa
 Agent: ECONOMY_DATA_BALANCER
 Domain: Auxiliary Node, text/data only
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
-
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 ## Generated Files
 
@@ -53,9 +43,9 @@ Static data was checked against existing `stableId` / `m_Name` surfaces under `A
 
 This is not a Unity runtime proof. It is a static integration warning so the Data Monolith importer does not silently treat these IDs as current `ItemCatalog` entries.
 
-`Runtime_Binding_Review.json` is referenced by historical text, but `Docs/Design/Runtime_Binding_Review.json` is absent in the R20 filesystem check. Binding review remains `PENDING GENERATION` until the exact path is created and linked; suggested IDs must not be treated as valid runtime mappings.
+`Data/Economy/Runtime_Binding_Review.json` exists and records the static source scan behind the 22 unresolved economy-defined IDs. Suggested IDs in that review are candidates only; they are not runtime mappings.
 
-`Runtime_Binding_Plan.json` is referenced by historical text, but `Docs/Design/Runtime_Binding_Plan.json` is absent in the R20 filesystem check. The importer-block plan remains `PENDING GENERATION` until the exact path is created and linked; no unresolved row is runtime-approved by this document.
+`Data/Economy/Runtime_Binding_Plan.json` exists and keeps all 22 unresolved rows blocked behind owner decisions. `runtime_use_allowed_count` remains `0`; no unresolved row is runtime-approved by this document.
 
 ## Scarcity Formula
 

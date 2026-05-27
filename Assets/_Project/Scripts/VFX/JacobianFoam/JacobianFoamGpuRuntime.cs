@@ -12,8 +12,7 @@ namespace Hecton8.VFX
 {
     public sealed class JacobianFoamGpuRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        private const int FallbackThreadGroupSizeX = 8;
-        private const int FallbackThreadGroupSizeY = 8;
+        private const uint PortableMaxThreadsPerThreadGroup = 256u;
         private const float GpuDumpThresholdMicroseconds = 1500f;
         private const int ResolutionRebuildFrameCadence = 30;
         private const int ResolutionHysteresisPixels = 128;
@@ -30,6 +29,12 @@ namespace Hecton8.VFX
             public int DispatchGroups;
             public int DispatchGroupsX;
             public int DispatchGroupsY;
+            public int CalculateDispatchGroupsX;
+            public int CalculateDispatchGroupsY;
+            public int AdvectDispatchGroupsX;
+            public int AdvectDispatchGroupsY;
+            public int ClearDispatchGroupsX;
+            public int ClearDispatchGroupsY;
             public int Resolution;
             public int WakeCount;
             public uint Sequence;
@@ -82,8 +87,12 @@ namespace Hecton8.VFX
         private int _calculateKernel = -1;
         private int _advectKernel = -1;
         private int _clearKernel = -1;
-        private int _threadGroupSizeX = FallbackThreadGroupSizeX;
-        private int _threadGroupSizeY = FallbackThreadGroupSizeY;
+        private int _calculateThreadGroupSizeX;
+        private int _calculateThreadGroupSizeY;
+        private int _advectThreadGroupSizeX;
+        private int _advectThreadGroupSizeY;
+        private int _clearThreadGroupSizeX;
+        private int _clearThreadGroupSizeY;
         private float2 _previousScrollOffset;
         private float2 _currentScrollOffset;
         private float _qualityWeight;
@@ -177,7 +186,7 @@ namespace Hecton8.VFX
         {
             ConsumeRenderGraphAcknowledgement();
 
-            if (_computeShader == null || !SystemInfo.supportsComputeShaders)
+            if (_computeShader == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
             {
                 ClearPreparedPayload();
                 return;
@@ -360,6 +369,12 @@ namespace Hecton8.VFX
                 payload.DispatchGroups > 0 &&
                 payload.DispatchGroupsX > 0 &&
                 payload.DispatchGroupsY > 0 &&
+                payload.CalculateDispatchGroupsX > 0 &&
+                payload.CalculateDispatchGroupsY > 0 &&
+                payload.AdvectDispatchGroupsX > 0 &&
+                payload.AdvectDispatchGroupsY > 0 &&
+                payload.ClearDispatchGroupsX > 0 &&
+                payload.ClearDispatchGroupsY > 0 &&
                 payload.ParamsBuffer != null &&
                 payload.ParamsBuffer.IsValid() &&
                 payload.WakeBuffer != null &&
@@ -431,8 +446,29 @@ namespace Hecton8.VFX
             payload.CalculateKernel = _calculateKernel;
             payload.AdvectKernel = _advectKernel;
             payload.ClearKernel = _clearKernel;
-            payload.DispatchGroupsX = JacobianFoamContracts.ResolveDispatchGroups(_resolution, _threadGroupSizeX);
-            payload.DispatchGroupsY = JacobianFoamContracts.ResolveDispatchGroups(_resolution, _threadGroupSizeY);
+            payload.CalculateDispatchGroupsX = JacobianFoamContracts.ResolveDispatchGroups(_resolution, _calculateThreadGroupSizeX);
+            payload.CalculateDispatchGroupsY = JacobianFoamContracts.ResolveDispatchGroups(_resolution, _calculateThreadGroupSizeY);
+            payload.AdvectDispatchGroupsX = JacobianFoamContracts.ResolveDispatchGroups(_resolution, _advectThreadGroupSizeX);
+            payload.AdvectDispatchGroupsY = JacobianFoamContracts.ResolveDispatchGroups(_resolution, _advectThreadGroupSizeY);
+            payload.ClearDispatchGroupsX = JacobianFoamContracts.ResolveDispatchGroups(_resolution, _clearThreadGroupSizeX);
+            payload.ClearDispatchGroupsY = JacobianFoamContracts.ResolveDispatchGroups(_resolution, _clearThreadGroupSizeY);
+            if (payload.CalculateDispatchGroupsX <= 0 ||
+                payload.CalculateDispatchGroupsY <= 0 ||
+                payload.AdvectDispatchGroupsX <= 0 ||
+                payload.AdvectDispatchGroupsY <= 0 ||
+                payload.ClearDispatchGroupsX <= 0 ||
+                payload.ClearDispatchGroupsY <= 0)
+            {
+                ClearPreparedPayload();
+                return;
+            }
+
+            payload.DispatchGroupsX = math.max(
+                math.max(payload.CalculateDispatchGroupsX, payload.AdvectDispatchGroupsX),
+                payload.ClearDispatchGroupsX);
+            payload.DispatchGroupsY = math.max(
+                math.max(payload.CalculateDispatchGroupsY, payload.AdvectDispatchGroupsY),
+                payload.ClearDispatchGroupsY);
             payload.DispatchGroups = math.max(payload.DispatchGroupsX, payload.DispatchGroupsY);
             payload.Resolution = _resolution;
             payload.WakeCount = _lastWakeCount;
@@ -467,17 +503,73 @@ namespace Hecton8.VFX
         private void ResolveKernels()
         {
             if (_computeShader == null)
+            {
+                InvalidateKernels();
                 return;
+            }
 
-            _calculateKernel = _computeShader.HasKernel("CS_CalculateFoam") ? _computeShader.FindKernel("CS_CalculateFoam") : -1;
-            _advectKernel = _computeShader.HasKernel("CS_AdvectFoam") ? _computeShader.FindKernel("CS_AdvectFoam") : -1;
-            _clearKernel = _computeShader.HasKernel("CS_ClearFoam") ? _computeShader.FindKernel("CS_ClearFoam") : -1;
+            _calculateKernel = TryFindSupportedKernel("CS_CalculateFoam");
+            _advectKernel = TryFindSupportedKernel("CS_AdvectFoam");
+            _clearKernel = TryFindSupportedKernel("CS_ClearFoam");
             if (_calculateKernel < 0 || _advectKernel < 0 || _clearKernel < 0)
+            {
+                InvalidateKernels();
                 return;
+            }
 
-            _computeShader.GetKernelThreadGroupSizes(_calculateKernel, out uint x, out uint y, out _);
-            _threadGroupSizeX = math.max(1, (int)x);
-            _threadGroupSizeY = math.max(1, (int)y);
+            if (!TryResolveKernelThreadGroupSize2D(_calculateKernel, out _calculateThreadGroupSizeX, out _calculateThreadGroupSizeY) ||
+                !TryResolveKernelThreadGroupSize2D(_advectKernel, out _advectThreadGroupSizeX, out _advectThreadGroupSizeY) ||
+                !TryResolveKernelThreadGroupSize2D(_clearKernel, out _clearThreadGroupSizeX, out _clearThreadGroupSizeY))
+            {
+                InvalidateKernels();
+            }
+        }
+
+        private bool TryResolveKernelThreadGroupSize2D(int kernel, out int groupSizeX, out int groupSizeY)
+        {
+            groupSizeX = 0;
+            groupSizeY = 0;
+            if (_computeShader == null || kernel < 0 || !_computeShader.IsSupported(kernel))
+                return false;
+
+            _computeShader.GetKernelThreadGroupSizes(kernel, out uint x, out uint y, out uint z);
+            ulong totalThreads = (ulong)x * y * z;
+            if (x == 0u ||
+                y == 0u ||
+                z == 0u ||
+                totalThreads > PortableMaxThreadsPerThreadGroup ||
+                x > int.MaxValue ||
+                y > int.MaxValue)
+            {
+                return false;
+            }
+
+            groupSizeX = (int)x;
+            groupSizeY = (int)y;
+            return true;
+        }
+
+        private int TryFindSupportedKernel(string kernelName)
+        {
+            if (_computeShader == null || !_computeShader.HasKernel(kernelName))
+                return -1;
+
+            int kernel = _computeShader.FindKernel(kernelName);
+            return kernel >= 0 && _computeShader.IsSupported(kernel) ? kernel : -1;
+        }
+
+        private void InvalidateKernels()
+        {
+            _calculateKernel = -1;
+            _advectKernel = -1;
+            _clearKernel = -1;
+            _calculateThreadGroupSizeX = 0;
+            _calculateThreadGroupSizeY = 0;
+            _advectThreadGroupSizeX = 0;
+            _advectThreadGroupSizeY = 0;
+            _clearThreadGroupSizeX = 0;
+            _clearThreadGroupSizeY = 0;
+            ClearPreparedPayload();
         }
 
         private bool EnsureVaultState(bool allowCreate)
@@ -768,9 +860,7 @@ namespace Hecton8.VFX
                     Frame = _frame,
                     Resolution = _resolution,
                     WakeCount = _lastWakeCount,
-                    DispatchGroups = math.max(
-                        JacobianFoamContracts.ResolveDispatchGroups(_resolution, _threadGroupSizeX),
-                        JacobianFoamContracts.ResolveDispatchGroups(_resolution, _threadGroupSizeY)),
+                    DispatchGroups = ResolveMaxDispatchGroups(_resolution),
                     GlobalQualityWeight = _qualityWeight,
                     ResolutionScale = resolutionScale,
                     EstimatedGpuMicroseconds = _lastEstimatedGpuMicroseconds,
@@ -797,6 +887,27 @@ namespace Hecton8.VFX
             {
                 ReleaseWriteBuffer(in _telemetryHandle);
             }
+        }
+
+        private int ResolveMaxDispatchGroups(int resolution)
+        {
+            int calculateGroupsX = JacobianFoamContracts.ResolveDispatchGroups(resolution, _calculateThreadGroupSizeX);
+            int calculateGroupsY = JacobianFoamContracts.ResolveDispatchGroups(resolution, _calculateThreadGroupSizeY);
+            int advectGroupsX = JacobianFoamContracts.ResolveDispatchGroups(resolution, _advectThreadGroupSizeX);
+            int advectGroupsY = JacobianFoamContracts.ResolveDispatchGroups(resolution, _advectThreadGroupSizeY);
+            int clearGroupsX = JacobianFoamContracts.ResolveDispatchGroups(resolution, _clearThreadGroupSizeX);
+            int clearGroupsY = JacobianFoamContracts.ResolveDispatchGroups(resolution, _clearThreadGroupSizeY);
+            if (calculateGroupsX <= 0 ||
+                calculateGroupsY <= 0 ||
+                advectGroupsX <= 0 ||
+                advectGroupsY <= 0 ||
+                clearGroupsX <= 0 ||
+                clearGroupsY <= 0)
+                return 0;
+
+            return math.max(
+                math.max(math.max(calculateGroupsX, calculateGroupsY), math.max(advectGroupsX, advectGroupsY)),
+                math.max(clearGroupsX, clearGroupsY));
         }
 
         private static string ProjectRoot()

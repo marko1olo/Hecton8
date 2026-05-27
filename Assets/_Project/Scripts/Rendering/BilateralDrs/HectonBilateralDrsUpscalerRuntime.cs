@@ -22,7 +22,9 @@ namespace Hecton8.Rendering
         private const uint PostSimulationSystemHash = 0x4232504Fu; // B2PO
         private const uint VisualSyncSystemHash = 0x42325653u; // B2VS
         private const int QualityProfileCsvColumnCount = 8;
-        private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_236.bin";
+        private const string DumpPath = "Docs/AgentLogs/Dump_1335_BilateralDrs.bin";
+        private const uint DumpMagic = 0x42323336u; // B236
+        private const int DumpHeaderBytes = 20;
 
         private sealed class SimulationKernelBridge : IDispatcherSystem, IDispatcherFenceDomainProvider
         {
@@ -244,7 +246,7 @@ namespace Hecton8.Rendering
             if (s_runtimeInstance != null)
                 return s_runtimeInstance;
 
-            GameObject runtimeRoot = new GameObject("[HectonBilateralDrsUpscalerRuntime]"); // COLD ALLOC: GameObject[1] - scene-local SHINOBU_236 render-owner bootstrap.
+            GameObject runtimeRoot = new GameObject("[HectonBilateralDrsUpscalerRuntime]"); // COLD ALLOC: GameObject[1] - scene-local 13KRA render-owner bootstrap.
             return runtimeRoot.AddComponent<HectonBilateralDrsUpscalerRuntime>();
         }
 
@@ -322,7 +324,7 @@ namespace Hecton8.Rendering
             if (runtime == null || !runtime._vaultStateReady)
                 return false;
 
-            if (!runtime.TryResolveVaultBuffer(in runtime._tuningHandle, 1, out NativeArray<UpscalerTuningDTO> tuningArray))
+            if (!runtime.TryReadVaultBuffer(in runtime._tuningHandle, 1, out NativeArray<UpscalerTuningDTO>.ReadOnly tuningArray))
                 return false;
 
             tuning = tuningArray[0];
@@ -343,22 +345,36 @@ namespace Hecton8.Rendering
             if (runtime == null)
                 return false;
 
-            runtime.EnsureVaultState();
-            if (!runtime.TryResolveVaultBuffer(in runtime._tuningHandle, 1, out NativeArray<UpscalerTuningDTO> tuningArray))
+            runtime.EnsureVaultState(allowAllocation: true);
+            if (!runtime.TryAcquireVaultWriteBuffer(
+                    in runtime._tuningHandle,
+                    BufferID.Shinobu236BilateralDrsTuning,
+                    1,
+                    out NativeArray<UpscalerTuningDTO> tuningArray))
+            {
                 return false;
+            }
 
-            UpscalerTuningDTO tuning = tuningArray[0];
-            tuning.DepthColorRadiusSharpness.x = math.max(1f, depthWeight);
-            tuning.DepthColorRadiusSharpness.y = math.max(0.001f, colorWeight);
-            tuning.DepthColorRadiusSharpness.z = math.max(0.25f, minRadius);
-            tuning.DepthColorRadiusSharpness.w = math.max(tuning.DepthColorRadiusSharpness.z, maxRadius);
-            tuning.ScaleQualityOverride.x = math.clamp(forcedScale01, 0f, 1f);
-            tuning.ScaleQualityOverride.y = forcedQuality01 >= 0f ? math.saturate(forcedQuality01) : -1f;
-            tuning.ScaleQualityOverride.z = math.clamp(qualityBias01, -1f, 1f);
-            tuning.DebugAndFlags.x = debugEdgeMask ? 1f : 0f;
-            tuningArray[0] = tuning;
-            s_edgeMaskDebugEnabled = debugEdgeMask;
-            return true;
+            try
+            {
+                UpscalerTuningDTO tuning = tuningArray[0];
+                tuning.DepthColorRadiusSharpness.x = math.max(1f, depthWeight);
+                tuning.DepthColorRadiusSharpness.y = math.max(0.001f, colorWeight);
+                tuning.DepthColorRadiusSharpness.z = math.max(0.25f, minRadius);
+                tuning.DepthColorRadiusSharpness.w = math.max(tuning.DepthColorRadiusSharpness.z, maxRadius);
+                tuning.ScaleQualityOverride.x = math.clamp(forcedScale01, 0f, 1f);
+                tuning.ScaleQualityOverride.y = forcedQuality01 >= 0f ? math.saturate(forcedQuality01) : -1f;
+                tuning.ScaleQualityOverride.z = math.clamp(qualityBias01, -1f, 1f);
+                tuning.DebugAndFlags.x = debugEdgeMask ? 1f : 0f;
+                tuningArray[0] = tuning;
+                s_edgeMaskDebugEnabled = debugEdgeMask;
+                runtime._tuningSeeded = true;
+                return true;
+            }
+            finally
+            {
+                runtime._dataVault?.ReleaseWriteLock(in runtime._tuningHandle, OwnerSystemId);
+            }
         }
 
 #if UNITY_EDITOR
@@ -383,7 +399,7 @@ namespace Hecton8.Rendering
             }
 
             s_runtimeInstance = this;
-            InitializeServiceForVisualSync();
+            InitializeServiceForVisualSync(allowAllocation: true);
         }
 
         private void OnDisable()
@@ -431,7 +447,7 @@ namespace Hecton8.Rendering
         {
             if (!_isInitialized)
             {
-                InitializeServiceForSimulation();
+                InitializeServiceForSimulation(allowAllocation: false);
                 if (!_isInitialized)
                     return;
             }
@@ -452,60 +468,117 @@ namespace Hecton8.Rendering
             if (!_isInitialized || !_vaultStateReady)
                 return dependsOn;
 
-            if (!TryResolveVaultBuffer(in _parametersHandle, BilateralDrsUpscalerConstants.ParameterCapacity, out NativeArray<UpscalerParamsDTO> parameters))
+            IDataVault vault = _dataVault;
+            bool parametersLocked = false;
+            bool telemetryLocked = false;
+            bool telemetryCursorLocked = false;
+            uint failureFlags = 0u;
+            try
             {
-                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
-                return dependsOn;
-            }
+                if (!TryAcquireVaultWriteBuffer(
+                        in _parametersHandle,
+                        BufferID.Shinobu236BilateralDrsParams,
+                        BilateralDrsUpscalerConstants.ParameterCapacity,
+                        out NativeArray<UpscalerParamsDTO> parameters))
+                {
+                    failureFlags = BilateralDrsUpscalerConstants.FaultVaultUnavailable;
+                    return dependsOn;
+                }
 
-            if (!TryResolveVaultBuffer(in _tuningHandle, 1, out NativeArray<UpscalerTuningDTO> tuning) ||
-                !TryResolveVaultBuffer(in _telemetryHandle, BilateralDrsUpscalerConstants.TelemetryCapacity, out NativeArray<UpscalerTelemetryEntry> telemetry) ||
-                !TryResolveVaultBuffer(in _telemetryCursorHandle, 1, out NativeArray<int> telemetryCursor) ||
-                !TryResolveVaultBuffer(in _profilesHandle, BilateralDrsUpscalerConstants.ProfileCapacity, out NativeArray<UpscalerProfileDTO> profiles))
+                parametersLocked = true;
+
+                if (!TryReadVaultBuffer(in _tuningHandle, 1, out NativeArray<UpscalerTuningDTO>.ReadOnly tuning))
+                {
+                    failureFlags = BilateralDrsUpscalerConstants.FaultVaultUnavailable;
+                    return dependsOn;
+                }
+
+                if (!TryAcquireVaultWriteBuffer(
+                        in _telemetryHandle,
+                        BufferID.Shinobu236BilateralDrsTelemetry,
+                        BilateralDrsUpscalerConstants.TelemetryCapacity,
+                        out NativeArray<UpscalerTelemetryEntry> telemetry))
+                {
+                    failureFlags = BilateralDrsUpscalerConstants.FaultVaultUnavailable;
+                    return dependsOn;
+                }
+
+                telemetryLocked = true;
+
+                if (!TryAcquireVaultWriteBuffer(
+                        in _telemetryCursorHandle,
+                        BufferID.Shinobu236BilateralDrsTelemetryCursor,
+                        1,
+                        out NativeArray<int> telemetryCursor))
+                {
+                    failureFlags = BilateralDrsUpscalerConstants.FaultVaultUnavailable;
+                    return dependsOn;
+                }
+
+                telemetryCursorLocked = true;
+
+                if (!TryReadVaultBuffer(in _profilesHandle, BilateralDrsUpscalerConstants.ProfileCapacity, out NativeArray<UpscalerProfileDTO>.ReadOnly profiles))
+                {
+                    failureFlags = BilateralDrsUpscalerConstants.FaultVaultUnavailable;
+                    return dependsOn;
+                }
+
+                ResolutionScaleState scaleState = default;
+                bool hasScaleState = _resolutionScaler != null && _resolutionScaler.TryGetScaleState(out scaleState);
+                DrsStateDTO mockStateSnapshot = default;
+                bool useMock = !hasScaleState;
+                if (useMock)
+                    mockStateSnapshot = BuildMockDrsStateSnapshot();
+
+                JobHandle handle = dependsOn;
+                CalculateUpscalerParamsJob job;
+                job.Parameters = parameters;
+                job.Telemetry = telemetry;
+                job.TelemetryCursor = telemetryCursor;
+                job.Tuning = tuning;
+                job.Profiles = profiles;
+                job.ScaleStateSnapshot = scaleState;
+                job.MockStateSnapshot = mockStateSnapshot;
+                job.SubmittedLowWidth = _submittedLowWidth;
+                job.SubmittedLowHeight = _submittedLowHeight;
+                job.SubmittedFullWidth = _submittedFullWidth;
+                job.SubmittedFullHeight = _submittedFullHeight;
+                job.SubmittedJitterX = _submittedJitterX;
+                job.SubmittedJitterY = _submittedJitterY;
+                job.FallbackQuality01 = ResolveGlobalQualityWeight01();
+                job.FrameIndex = _presentationFrameIndex != 0u ? _presentationFrameIndex : context.Frame;
+                job.OutputIndex = BilateralDrsUpscalerConstants.PendingParameterIndex;
+                job.HasScaleState = hasScaleState ? (byte)1 : (byte)0;
+                job.UseMockState = useMock ? (byte)1 : (byte)0;
+                handle = job.Schedule(handle);
+                _simulationKernelScheduled = true;
+                H8Memory.RegisterActiveJob(OwnerSystemId, handle);
+                return handle;
+            }
+            finally
             {
-                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
-                return dependsOn;
+                if (telemetryCursorLocked)
+                    vault?.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
+                if (telemetryLocked)
+                    vault?.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
+                if (parametersLocked)
+                    vault?.ReleaseWriteLock(in _parametersHandle, OwnerSystemId);
+                if (failureFlags != 0u)
+                    FailClosedRuntimeRoute(failureFlags);
             }
+        }
 
-            ResolutionScaleState scaleState = default;
-            bool hasScaleState = _resolutionScaler != null && _resolutionScaler.TryGetScaleState(out scaleState);
-            NativeArray<DrsStateDTO> mockState = default;
-            bool useMock = !hasScaleState && TryResolveVaultBuffer(in _mockStateHandle, 1, out mockState);
+        private DrsStateDTO BuildMockDrsStateSnapshot()
+        {
+            float phase = _presentationTimeSeconds * 0.71f + (_presentationFrameIndex & 63u) * 0.013f;
+            float wave = math.saturate(0.5f + 0.5f * MathLodApproximation.ApproxSinBhaskara(phase));
+            float scale = math.lerp(0.4f, 0.72f, wave);
 
-            JobHandle handle = dependsOn;
-            if (useMock)
-            {
-                GenerateMockDrsStateJob mockJob;
-                mockJob.MockState = mockState;
-                mockJob.TimeSeconds = _presentationTimeSeconds;
-                mockJob.FrameIndex = _presentationFrameIndex;
-                handle = mockJob.Schedule(handle);
-            }
-
-            CalculateUpscalerParamsJob job;
-            job.Parameters = parameters;
-            job.Telemetry = telemetry;
-            job.TelemetryCursor = telemetryCursor;
-            job.Tuning = tuning;
-            job.Profiles = profiles;
-            job.MockState = mockState;
-            job.ScaleStateSnapshot = scaleState;
-            job.MockStateSnapshot = default;
-            job.SubmittedLowWidth = _submittedLowWidth;
-            job.SubmittedLowHeight = _submittedLowHeight;
-            job.SubmittedFullWidth = _submittedFullWidth;
-            job.SubmittedFullHeight = _submittedFullHeight;
-            job.SubmittedJitterX = _submittedJitterX;
-            job.SubmittedJitterY = _submittedJitterY;
-            job.FallbackQuality01 = ResolveGlobalQualityWeight01();
-            job.FrameIndex = _presentationFrameIndex != 0u ? _presentationFrameIndex : context.Frame;
-            job.OutputIndex = BilateralDrsUpscalerConstants.PendingParameterIndex;
-            job.HasScaleState = hasScaleState ? (byte)1 : (byte)0;
-            job.UseMockState = useMock ? (byte)1 : (byte)0;
-            handle = job.Schedule(handle);
-            _simulationKernelScheduled = true;
-            H8Memory.RegisterActiveJob(OwnerSystemId, handle);
-            return handle;
+            DrsStateDTO state = default;
+            state.CurrentRenderScale = scale;
+            state.TargetRenderScale = math.max(0.38f, scale - 0.035f);
+            state.UpscalerTypeHash = BilateralDrsUpscalerConstants.UpscalerTypeHash;
+            return state;
         }
 
         private void RunOwnerPostSimulation()
@@ -521,7 +594,7 @@ namespace Hecton8.Rendering
         {
             if (!_isInitialized)
             {
-                InitializeServiceForVisualSync();
+                InitializeServiceForVisualSync(allowAllocation: false);
                 if (!_isInitialized)
                     return;
             }
@@ -530,9 +603,9 @@ namespace Hecton8.Rendering
                 _pendingGpuUpload = false;
         }
 
-        private void InitializeServiceForSimulation()
+        private void InitializeServiceForSimulation(bool allowAllocation)
         {
-            if (!PrepareServiceState())
+            if (!PrepareServiceState(allowAllocation))
                 return;
 
             bool hasConstantBuffers = HasConstantBuffers();
@@ -540,37 +613,52 @@ namespace Hecton8.Rendering
             if (!_isInitialized)
                 return;
 
-            RegisterDispatcherRouteAllOrFail();
+            if (allowAllocation)
+                RegisterDispatcherRouteAllOrFail();
         }
 
-        private void InitializeServiceForVisualSync()
+        private void InitializeServiceForVisualSync(bool allowAllocation)
         {
-            if (!PrepareServiceState())
+            if (!PrepareServiceState(allowAllocation))
                 return;
 
-            bool hasConstantBuffers = EnsureConstantBuffers();
+            bool hasConstantBuffers = EnsureConstantBuffers(allowAllocation);
             _isInitialized = _vaultStateReady && hasConstantBuffers;
             if (!_isInitialized)
                 return;
 
-            RegisterDispatcherRouteAllOrFail();
+            if (allowAllocation)
+            {
+                RegisterDispatcherRouteAllOrFail();
+            }
+            else if (!_dispatcherRouteReady)
+            {
+                _isInitialized = false;
+            }
         }
 
-        private bool PrepareServiceState()
+        private bool PrepareServiceState(bool allowAllocation)
         {
             if (!Application.isPlaying)
                 return false;
 
-            EnsureBlackBoxDumpPathCold();
-            TryRegisterHotSwapListener();
+            if (allowAllocation)
+            {
+                EnsureBlackBoxDumpPathCold();
+                TryRegisterHotSwapListener();
+            }
+
             if (!_coldDependenciesCached)
             {
+                if (!allowAllocation)
+                    return false;
+
                 _dataVault = GlobalRegistry.DataVault;
                 _resolutionScaler = GlobalRegistry.ResolutionScaler;
                 _coldDependenciesCached = true;
             }
 
-            EnsureVaultState();
+            EnsureVaultState(allowAllocation);
             bool layoutValid = UpscalerParamsLayoutValidator.Validate();
             if (!layoutValid)
             {
@@ -582,7 +670,7 @@ namespace Hecton8.Rendering
             return true;
         }
 
-        private void EnsureVaultState()
+        private void EnsureVaultState(bool allowAllocation)
         {
             if (_dataVault == null)
                 return;
@@ -592,45 +680,55 @@ namespace Hecton8.Rendering
                 BilateralDrsUpscalerConstants.ParameterCapacity,
                 NativeArrayOptions.UninitializedMemory,
                 ref _parametersHandle,
-                out NativeArray<UpscalerParamsDTO> _);
+                allowAllocation,
+                out NativeArray<UpscalerParamsDTO>.ReadOnly _);
             bool hasTuning = AcquireOrRefreshOwnedVaultBuffer(
                 BufferID.Shinobu236BilateralDrsTuning,
                 1,
                 NativeArrayOptions.UninitializedMemory,
                 ref _tuningHandle,
-                out NativeArray<UpscalerTuningDTO> tuning);
+                allowAllocation,
+                out NativeArray<UpscalerTuningDTO>.ReadOnly _);
             bool hasTelemetry = AcquireOrRefreshOwnedVaultBuffer(
                 BufferID.Shinobu236BilateralDrsTelemetry,
                 BilateralDrsUpscalerConstants.TelemetryCapacity,
                 NativeArrayOptions.UninitializedMemory,
                 ref _telemetryHandle,
-                out NativeArray<UpscalerTelemetryEntry> telemetry);
+                allowAllocation,
+                out NativeArray<UpscalerTelemetryEntry>.ReadOnly _);
             bool hasTelemetryCursor = AcquireOrRefreshOwnedVaultBuffer(
                 BufferID.Shinobu236BilateralDrsTelemetryCursor,
                 1,
                 NativeArrayOptions.UninitializedMemory,
                 ref _telemetryCursorHandle,
-                out NativeArray<int> telemetryCursor);
+                allowAllocation,
+                out NativeArray<int>.ReadOnly _);
             bool hasProfiles = AcquireOrRefreshOwnedVaultBuffer(
                 BufferID.Shinobu236BilateralDrsProfiles,
                 BilateralDrsUpscalerConstants.ProfileCapacity,
                 NativeArrayOptions.UninitializedMemory,
                 ref _profilesHandle,
-                out NativeArray<UpscalerProfileDTO> profiles);
+                allowAllocation,
+                out NativeArray<UpscalerProfileDTO>.ReadOnly _);
             bool hasMockState = AcquireOrRefreshOwnedVaultBuffer(
                 BufferID.Shinobu236BilateralDrsMockState,
                 1,
                 NativeArrayOptions.UninitializedMemory,
                 ref _mockStateHandle,
-                out NativeArray<DrsStateDTO> mockState);
+                allowAllocation,
+                out NativeArray<DrsStateDTO>.ReadOnly _);
 
-            SeedTuningIfNeeded(tuning);
-            SeedTelemetryIfNeeded(telemetry);
-            SeedTelemetryCursorIfNeeded(telemetryCursor);
-            SeedProfilesIfNeeded(profiles);
-            SeedMockStateIfNeeded(mockState);
-            RefreshCachedDebugFlag(tuning);
-            EnsureCsvScratch();
+            if (allowAllocation)
+            {
+                SeedTuningIfNeeded();
+                SeedTelemetryIfNeeded();
+                SeedTelemetryCursorIfNeeded();
+                SeedProfilesIfNeeded();
+                SeedMockStateIfNeeded();
+            }
+
+            RefreshCachedDebugFlag();
+            EnsureCsvScratch(allowAllocation);
 
             _vaultStateReady = hasParameters &&
                                hasTuning &&
@@ -645,105 +743,183 @@ namespace Hecton8.Rendering
                                _mockStateSeeded;
         }
 
-        private void SeedTuningIfNeeded(NativeArray<UpscalerTuningDTO> tuning)
+        private void SeedTuningIfNeeded()
         {
-            if (_tuningSeeded || !tuning.IsCreated || tuning.Length < 1)
+            if (_tuningSeeded)
                 return;
 
-            tuning[0] = CalculateUpscalerParamsJob.DefaultTuning();
-            s_edgeMaskDebugEnabled = false;
-            _tuningSeeded = true;
+            if (!TryAcquireVaultWriteBuffer(
+                    in _tuningHandle,
+                    BufferID.Shinobu236BilateralDrsTuning,
+                    1,
+                    out NativeArray<UpscalerTuningDTO> tuning))
+            {
+                return;
+            }
+
+            try
+            {
+                tuning[0] = CalculateUpscalerParamsJob.DefaultTuning();
+                s_edgeMaskDebugEnabled = false;
+                _tuningSeeded = true;
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in _tuningHandle, OwnerSystemId);
+            }
         }
 
-        private static void RefreshCachedDebugFlag(NativeArray<UpscalerTuningDTO> tuning)
+        private void RefreshCachedDebugFlag()
         {
-            if (!tuning.IsCreated || tuning.Length < 1)
+            if (!TryReadVaultBuffer(in _tuningHandle, 1, out NativeArray<UpscalerTuningDTO>.ReadOnly tuning))
                 return;
 
             s_edgeMaskDebugEnabled = tuning[0].DebugAndFlags.x > 0.5f;
         }
 
-        private void SeedTelemetryIfNeeded(NativeArray<UpscalerTelemetryEntry> telemetry)
+        private void SeedTelemetryIfNeeded()
         {
-            if (_telemetrySeeded || !telemetry.IsCreated)
+            if (_telemetrySeeded)
                 return;
 
-            for (int i = 0; i < telemetry.Length; i++)
-                telemetry[i] = default;
-            _telemetrySeeded = true;
+            if (!TryAcquireVaultWriteBuffer(
+                    in _telemetryHandle,
+                    BufferID.Shinobu236BilateralDrsTelemetry,
+                    BilateralDrsUpscalerConstants.TelemetryCapacity,
+                    out NativeArray<UpscalerTelemetryEntry> telemetry))
+            {
+                return;
+            }
+
+            try
+            {
+                for (int i = 0; i < telemetry.Length; i++)
+                    telemetry[i] = default;
+                _telemetrySeeded = true;
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
+            }
         }
 
-        private void SeedTelemetryCursorIfNeeded(NativeArray<int> telemetryCursor)
+        private void SeedTelemetryCursorIfNeeded()
         {
-            if (_telemetryCursorSeeded || !telemetryCursor.IsCreated || telemetryCursor.Length < 1)
+            if (_telemetryCursorSeeded)
                 return;
 
-            telemetryCursor[0] = 0;
-            _telemetryCursorSeeded = true;
+            if (!TryAcquireVaultWriteBuffer(
+                    in _telemetryCursorHandle,
+                    BufferID.Shinobu236BilateralDrsTelemetryCursor,
+                    1,
+                    out NativeArray<int> telemetryCursor))
+            {
+                return;
+            }
+
+            try
+            {
+                telemetryCursor[0] = 0;
+                _telemetryCursorSeeded = true;
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
+            }
         }
 
-        private void SeedProfilesIfNeeded(NativeArray<UpscalerProfileDTO> profiles)
+        private void SeedProfilesIfNeeded()
         {
-            if (_profilesSeeded || !profiles.IsCreated)
+            if (_profilesSeeded)
                 return;
 
-            for (int i = 0; i < profiles.Length; i++)
-                profiles[i] = default;
-            _profilesSeeded = true;
+            if (!TryAcquireVaultWriteBuffer(
+                    in _profilesHandle,
+                    BufferID.Shinobu236BilateralDrsProfiles,
+                    BilateralDrsUpscalerConstants.ProfileCapacity,
+                    out NativeArray<UpscalerProfileDTO> profiles))
+            {
+                return;
+            }
+
+            try
+            {
+                for (int i = 0; i < profiles.Length; i++)
+                    profiles[i] = default;
+                _profilesSeeded = true;
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in _profilesHandle, OwnerSystemId);
+            }
         }
 
-        private void SeedMockStateIfNeeded(NativeArray<DrsStateDTO> mockState)
+        private void SeedMockStateIfNeeded()
         {
-            if (_mockStateSeeded || !mockState.IsCreated || mockState.Length < 1)
+            if (_mockStateSeeded)
                 return;
 
-            DrsStateDTO state;
-            state.CurrentRenderScale = 0.5f;
-            state.TargetRenderScale = 0.5f;
-            state.UpscalerTypeHash = BilateralDrsUpscalerConstants.UpscalerTypeHash;
-            state._pad0 = 0u;
-            mockState[0] = state;
-            _mockStateSeeded = true;
+            if (!TryAcquireVaultWriteBuffer(
+                    in _mockStateHandle,
+                    BufferID.Shinobu236BilateralDrsMockState,
+                    1,
+                    out NativeArray<DrsStateDTO> mockState))
+            {
+                return;
+            }
+
+            try
+            {
+                DrsStateDTO state = default;
+                state.CurrentRenderScale = 0.5f;
+                state.TargetRenderScale = 0.5f;
+                state.UpscalerTypeHash = BilateralDrsUpscalerConstants.UpscalerTypeHash;
+                mockState[0] = state;
+                _mockStateSeeded = true;
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in _mockStateHandle, OwnerSystemId);
+            }
         }
 
-        private void EnsureCsvScratch()
+        private bool EnsureCsvScratch(bool allowAllocation)
         {
-            if (TryResolveVaultBuffer(in _csvScratchHandle, BilateralDrsUpscalerConstants.CsvScratchBytes, out NativeArray<byte> _))
-                return;
+            if (TryReadVaultBuffer(in _csvScratchHandle, BilateralDrsUpscalerConstants.CsvScratchBytes, out NativeArray<byte>.ReadOnly _))
+                return true;
 
-            AcquireOrRefreshOwnedVaultBuffer(
+            if (!allowAllocation)
+                return false;
+
+            return AcquireOrRefreshOwnedVaultBuffer(
                 BufferID.Shinobu236BilateralDrsCsvScratch,
                 BilateralDrsUpscalerConstants.CsvScratchBytes,
                 NativeArrayOptions.UninitializedMemory,
                 ref _csvScratchHandle,
-                out NativeArray<byte> _);
+                allowAllocation,
+                out NativeArray<byte>.ReadOnly _);
         }
 
 #if UNITY_EDITOR
         private bool LoadQualityProfilesCsv(string projectRelativePath)
         {
-            EnsureVaultState();
-            EnsureCsvScratch();
-            if (!TryResolveVaultBuffer(in _csvScratchHandle, BilateralDrsUpscalerConstants.CsvScratchBytes, out NativeArray<byte> csvScratch) ||
-                !TryResolveVaultBuffer(in _profilesHandle, BilateralDrsUpscalerConstants.ProfileCapacity, out NativeArray<UpscalerProfileDTO> profiles))
-            {
-                return false;
-            }
-
-            ClearProfiles(profiles);
-            _profilesSeeded = false;
+            EnsureVaultState(allowAllocation: true);
+            EnsureCsvScratch(allowAllocation: true);
             string fullPath = BuildProjectPath(projectRelativePath);
-            int byteCount = LoadFileBytesIntoScratch(fullPath, csvScratch);
+            Span<byte> csvBytes = stackalloc byte[BilateralDrsUpscalerConstants.CsvScratchBytes];
+            int byteCount = LoadFileBytesIntoSpan(fullPath, csvBytes);
             if (byteCount <= 0)
                 return false;
 
-            byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(csvScratch);
-            ReadOnlySpan<byte> csvBytes = new ReadOnlySpan<byte>(ptr, byteCount);
-            int parsed = ParseQualityProfiles(csvBytes, profiles);
+            Span<UpscalerProfileDTO> parsedProfiles = stackalloc UpscalerProfileDTO[BilateralDrsUpscalerConstants.ProfileCapacity];
+            int parsed = ParseQualityProfiles(csvBytes.Slice(0, byteCount), parsedProfiles);
             if (parsed <= 0)
                 return false;
 
-            _profilesSeeded = true;
+            if (!TryWriteParsedProfiles(parsedProfiles.Slice(0, parsed)))
+                return false;
+
+            TryMirrorCsvScratch(csvBytes.Slice(0, byteCount));
             return true;
         }
 #endif
@@ -757,12 +933,73 @@ namespace Hecton8.Rendering
                 profiles[i] = default;
         }
 
-        private bool EnsureConstantBuffers()
+#if UNITY_EDITOR
+        private static void ClearProfiles(Span<UpscalerProfileDTO> profiles)
+        {
+            for (int i = 0; i < profiles.Length; i++)
+                profiles[i] = default;
+        }
+
+        private bool TryWriteParsedProfiles(ReadOnlySpan<UpscalerProfileDTO> parsedProfiles)
+        {
+            if (parsedProfiles.Length <= 0 || parsedProfiles.Length > BilateralDrsUpscalerConstants.ProfileCapacity)
+                return false;
+
+            if (!TryAcquireVaultWriteBuffer(
+                    in _profilesHandle,
+                    BufferID.Shinobu236BilateralDrsProfiles,
+                    BilateralDrsUpscalerConstants.ProfileCapacity,
+                    out NativeArray<UpscalerProfileDTO> profiles))
+            {
+                return false;
+            }
+
+            try
+            {
+                ClearProfiles(profiles);
+                for (int i = 0; i < parsedProfiles.Length; i++)
+                    profiles[i] = parsedProfiles[i];
+                _profilesSeeded = true;
+                return true;
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in _profilesHandle, OwnerSystemId);
+            }
+        }
+
+        private void TryMirrorCsvScratch(ReadOnlySpan<byte> csvBytes)
+        {
+            if (!TryAcquireVaultWriteBuffer(
+                    in _csvScratchHandle,
+                    BufferID.Shinobu236BilateralDrsCsvScratch,
+                    BilateralDrsUpscalerConstants.CsvScratchBytes,
+                    out NativeArray<byte> csvScratch))
+            {
+                return;
+            }
+
+            try
+            {
+                int length = math.min(csvBytes.Length, csvScratch.Length);
+                for (int i = 0; i < length; i++)
+                    csvScratch[i] = csvBytes[i];
+                for (int i = length; i < csvScratch.Length; i++)
+                    csvScratch[i] = 0;
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in _csvScratchHandle, OwnerSystemId);
+            }
+        }
+#endif
+
+        private bool EnsureConstantBuffers(bool allowAllocation)
         {
             if (!SystemInfo.supportsSetConstantBuffer)
             {
                 _lastFaultFlags = BilateralDrsUpscalerConstants.FaultConstantBufferUnsupported;
-                if (!_faultDumped)
+                if (allowAllocation && !_faultDumped)
                 {
                     DumpBlackBox();
                     _faultDumped = true;
@@ -771,13 +1008,18 @@ namespace Hecton8.Rendering
                 return false;
             }
 
+            bool missingBuffer = _constantBufferA == null || !_constantBufferA.IsValid() ||
+                                 _constantBufferB == null || !_constantBufferB.IsValid();
+            if (missingBuffer && !allowAllocation)
+                return false;
+
             if (_constantBufferA == null || !_constantBufferA.IsValid())
             {
                 _constantBufferA = new GraphicsBuffer(
                     GraphicsBuffer.Target.Constant,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
-                    BilateralDrsUpscalerConstants.CBufferBytes); // COLD ALLOC: GraphicsBuffer[32B] A - SHINOBU_236 CBuffer.
+                    BilateralDrsUpscalerConstants.CBufferBytes); // COLD ALLOC: GraphicsBuffer[32B] A - 13KRA CBuffer.
             }
 
             if (_constantBufferB == null || !_constantBufferB.IsValid())
@@ -786,7 +1028,7 @@ namespace Hecton8.Rendering
                     GraphicsBuffer.Target.Constant,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
-                    BilateralDrsUpscalerConstants.CBufferBytes); // COLD ALLOC: GraphicsBuffer[32B] B - SHINOBU_236 CBuffer.
+                    BilateralDrsUpscalerConstants.CBufferBytes); // COLD ALLOC: GraphicsBuffer[32B] B - 13KRA CBuffer.
             }
 
             return _constantBufferA != null && _constantBufferA.IsValid() &&
@@ -817,14 +1059,35 @@ namespace Hecton8.Rendering
 
         private bool PublishPendingParameters()
         {
-            if (!TryResolveVaultBuffer(in _parametersHandle, BilateralDrsUpscalerConstants.ParameterCapacity, out NativeArray<UpscalerParamsDTO> parameters))
+            UpscalerParamsDTO active = default;
+            bool hasActive = false;
+            if (!TryAcquireVaultWriteBuffer(
+                    in _parametersHandle,
+                    BufferID.Shinobu236BilateralDrsParams,
+                    BilateralDrsUpscalerConstants.ParameterCapacity,
+                    out NativeArray<UpscalerParamsDTO> parameters))
             {
                 FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
                 return false;
             }
 
-            parameters[BilateralDrsUpscalerConstants.ActiveParameterIndex] = parameters[BilateralDrsUpscalerConstants.PendingParameterIndex];
-            UpscalerParamsDTO active = parameters[BilateralDrsUpscalerConstants.ActiveParameterIndex];
+            try
+            {
+                parameters[BilateralDrsUpscalerConstants.ActiveParameterIndex] = parameters[BilateralDrsUpscalerConstants.PendingParameterIndex];
+                active = parameters[BilateralDrsUpscalerConstants.ActiveParameterIndex];
+                hasActive = true;
+            }
+            finally
+            {
+                _dataVault?.ReleaseWriteLock(in _parametersHandle, OwnerSystemId);
+            }
+
+            if (!hasActive)
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
+                return false;
+            }
+
             bool valid = CheckFaultsAndDump(in active);
             _pendingGpuUpload = valid;
             if (!valid)
@@ -835,33 +1098,101 @@ namespace Hecton8.Rendering
 
         private bool UploadParametersToGpu()
         {
-            if (!TryResolveVaultBuffer(in _parametersHandle, BilateralDrsUpscalerConstants.ParameterCapacity, out NativeArray<UpscalerParamsDTO> parameters) ||
+            if (!TryReadVaultBuffer(in _parametersHandle, BilateralDrsUpscalerConstants.ParameterCapacity, out NativeArray<UpscalerParamsDTO>.ReadOnly parameters) ||
                 !HasConstantBuffers())
             {
                 FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
                 return false;
             }
 
+            UpscalerParamsDTO activeParameters = parameters[BilateralDrsUpscalerConstants.ActiveParameterIndex];
             GraphicsBuffer target = _activeConstantBufferIndex == 0 ? _constantBufferA : _constantBufferB;
             _activeConstantBufferIndex ^= 1;
-            NativeArray<UpscalerParamsDTO> mapped = target.LockBufferForWrite<UpscalerParamsDTO>(0, 1);
+            NativeArray<UpscalerParamsDTO> mapped = default;
+            bool locked = false;
+            bool uploaded = false;
             try
             {
-                void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mapped);
-                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(parameters);
-                UnsafeUtility.MemCpy(dst, src, BilateralDrsUpscalerConstants.CBufferBytes);
+                mapped = target.LockBufferForWrite<UpscalerParamsDTO>(0, 1);
+                locked = mapped.IsCreated && mapped.Length > 0;
+                if (locked)
+                {
+                    mapped[0] = activeParameters;
+                    uploaded = true;
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultConstantBufferUnsupported);
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultConstantBufferUnsupported);
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultConstantBufferUnsupported);
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultConstantBufferUnsupported);
+                return false;
+            }
+            catch (UnityException)
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultConstantBufferUnsupported);
+                return false;
             }
             finally
             {
-                target.UnlockBufferAfterWrite<UpscalerParamsDTO>(1);
+                if (locked && !TryUnlockConstantBuffer(target))
+                    uploaded = false;
+            }
+
+            if (!uploaded)
+            {
+                FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultConstantBufferUnsupported);
+                return false;
             }
 
             _activeConstantBuffer = target;
             s_publishedConstantBuffer = target;
             s_publishedConstantBufferFrameIndex = _presentationFrameIndex;
-            s_lastPublishedParameters = parameters[BilateralDrsUpscalerConstants.ActiveParameterIndex];
+            s_lastPublishedParameters = activeParameters;
             s_hasPublishedParameters = true;
             return true;
+        }
+
+        private static bool TryUnlockConstantBuffer(GraphicsBuffer target)
+        {
+            try
+            {
+                target.UnlockBufferAfterWrite<UpscalerParamsDTO>(1);
+                return true;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
         }
 
         private bool CheckFaultsAndDump(in UpscalerParamsDTO parameters)
@@ -891,19 +1222,49 @@ namespace Hecton8.Rendering
             return math.saturate(math.select(quality, 1f, !math.isfinite(quality)));
         }
 
-        private bool TryResolveVaultBuffer<T>(
+        private bool TryReadVaultBuffer<T>(
             in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
+                   IsVaultHandleCreated(in handle) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   !vault.IsCompactionFenceActive &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryAcquireVaultWriteBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             IDataVault vault = _dataVault;
-            return vault != null &&
-                   requiredLength > 0 &&
-                   IsVaultHandleCreated(in handle) &&
-                   vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                requiredLength <= 0 ||
+                !IsOwnedVaultHandle(in handle, expectedBufferId) ||
+                !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
+            {
+                return false;
+            }
+
+            if (vault.IsCompactionFenceActive ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                vault.ReleaseWriteLock(in handle, OwnerSystemId);
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
         private bool AcquireOrRefreshOwnedVaultBuffer<T>(
@@ -911,37 +1272,49 @@ namespace Hecton8.Rendering
             int requiredLength,
             NativeArrayOptions options,
             ref VaultGenerationHandle<T> handle,
-            out NativeArray<T> buffer) where T : struct
+            bool allowAllocation,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             IDataVault vault = _dataVault;
-            if (vault == null || requiredLength <= 0)
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
             {
                 handle = default;
                 return false;
             }
 
             if (IsVaultHandleCreated(in handle) &&
-                vault.TryResolveHandle(in handle, out buffer) &&
-                buffer.IsCreated &&
+                vault.TryReadOnlyHandle(in handle, out buffer) &&
+                !vault.IsCompactionFenceActive &&
                 buffer.Length >= requiredLength)
             {
                 return true;
             }
+
+            if (!allowAllocation || vault.IsAllocationLocked)
+                return false;
 
             if (IsVaultHandleCreated(in handle))
                 ReleaseVaultHandle(vault, ref handle);
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
             return IsVaultHandleCreated(in handle) &&
-                   vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   !vault.IsCompactionFenceActive &&
                    buffer.Length >= requiredLength;
         }
 
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
@@ -967,11 +1340,11 @@ namespace Hecton8.Rendering
             }
 
             if (_simulationBridge == null)
-                _simulationBridge = new SimulationKernelBridge(this); // COLD ALLOC: IDispatcherSystem[1] - SHINOBU_236 scheduled Burst kernel bridge.
+                _simulationBridge = new SimulationKernelBridge(this); // COLD ALLOC: IDispatcherSystem[1] - 13KRA scheduled Burst kernel bridge.
             if (_postSimulationBridge == null)
-                _postSimulationBridge = new PostSimulationPublishBridge(this); // COLD ALLOC: IDispatcherSystem[1] - SHINOBU_236 post-simulation DTO publisher.
+                _postSimulationBridge = new PostSimulationPublishBridge(this); // COLD ALLOC: IDispatcherSystem[1] - 13KRA post-simulation DTO publisher.
             if (_visualSyncBridge == null)
-                _visualSyncBridge = new VisualSyncUploadBridge(this); // COLD ALLOC: IDispatcherSystem[1] - SHINOBU_236 VisualSync upload bridge.
+                _visualSyncBridge = new VisualSyncUploadBridge(this); // COLD ALLOC: IDispatcherSystem[1] - 13KRA VisualSync upload bridge.
 
             bool preRegistered = GlobalRegistry.TryRegisterDispatcherSystem(this);
             _registeredPreSimulationDispatcher = preRegistered;
@@ -1112,7 +1485,7 @@ namespace Hecton8.Rendering
                     _dataVault = currentService as IDataVault;
                     if (_dataVault != null)
                     {
-                        EnsureVaultState();
+                        InitializeServiceForVisualSync(allowAllocation: true);
                     }
                     break;
                 case GlobalRegistryServiceSlot.ResolutionScalerService:
@@ -1201,7 +1574,32 @@ namespace Hecton8.Rendering
             {
                 Directory.CreateDirectory(_blackBoxDumpDirectory);
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                _blackBoxDumpPath = null;
+                _blackBoxDumpDirectory = null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _blackBoxDumpPath = null;
+                _blackBoxDumpDirectory = null;
+            }
+            catch (ObjectDisposedException)
+            {
+                _blackBoxDumpPath = null;
+                _blackBoxDumpDirectory = null;
+            }
+            catch (InvalidOperationException)
+            {
+                _blackBoxDumpPath = null;
+                _blackBoxDumpDirectory = null;
+            }
+            catch (ArgumentException)
+            {
+                _blackBoxDumpPath = null;
+                _blackBoxDumpDirectory = null;
+            }
+            catch (NotSupportedException)
             {
                 _blackBoxDumpPath = null;
                 _blackBoxDumpDirectory = null;
@@ -1209,13 +1607,12 @@ namespace Hecton8.Rendering
         }
 
 #if UNITY_EDITOR
-        private static int LoadFileBytesIntoScratch(string fullPath, NativeArray<byte> csvScratch)
+        private static int LoadFileBytesIntoSpan(string fullPath, Span<byte> csvBytes)
         {
-            if (string.IsNullOrEmpty(fullPath) || !File.Exists(fullPath) || !csvScratch.IsCreated)
+            if (string.IsNullOrEmpty(fullPath) || !File.Exists(fullPath) || csvBytes.Length <= 0)
                 return 0;
 
-            byte* dst = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(csvScratch);
-            int capacity = csvScratch.Length;
+            int capacity = csvBytes.Length;
             int total = 0;
             Span<byte> block = stackalloc byte[256];
             try
@@ -1229,18 +1626,34 @@ namespace Hecton8.Rendering
                             break;
 
                         int copy = math.min(read, capacity - total);
-                        fixed (byte* src = block)
-                        {
-                            UnsafeUtility.MemCpy(dst + total, src, copy);
-                        }
-
+                        block.Slice(0, copy).CopyTo(csvBytes.Slice(total, copy));
                         total += copy;
                         if (copy < read)
                             break;
                     }
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                return 0;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return 0;
+            }
+            catch (ObjectDisposedException)
+            {
+                return 0;
+            }
+            catch (InvalidOperationException)
+            {
+                return 0;
+            }
+            catch (ArgumentException)
+            {
+                return 0;
+            }
+            catch (NotSupportedException)
             {
                 return 0;
             }
@@ -1248,7 +1661,7 @@ namespace Hecton8.Rendering
             return total;
         }
 
-        private static int ParseQualityProfiles(ReadOnlySpan<byte> csvBytes, NativeArray<UpscalerProfileDTO> profiles)
+        private static int ParseQualityProfiles(ReadOnlySpan<byte> csvBytes, Span<UpscalerProfileDTO> profiles)
         {
             int rowStart = 0;
             int write = 0;
@@ -1510,21 +1923,20 @@ namespace Hecton8.Rendering
 
         private void DumpBlackBox()
         {
-            if (!TryResolveVaultBuffer(in _telemetryHandle, BilateralDrsUpscalerConstants.TelemetryCapacity, out NativeArray<UpscalerTelemetryEntry> telemetry))
+            if (!TryReadTelemetryDumpShape(out int entryCount, out int telemetryWriteCursor))
                 return;
 
-            TryResolveVaultBuffer(in _telemetryCursorHandle, 1, out NativeArray<int> telemetryCursor);
             EnsureBlackBoxDumpPathCold();
             string path = _blackBoxDumpPath;
             string directory = _blackBoxDumpDirectory;
             if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
                 return;
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            try
             {
-                int entryCount = math.min(telemetry.Length, BilateralDrsUpscalerConstants.TelemetryCapacity);
-                int telemetryWriteCursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : 0;
+                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+                Span<byte> header = stackalloc byte[DumpHeaderBytes];
+                Span<byte> row = stackalloc byte[BilateralDrsUpscalerConstants.TelemetryBytes];
                 int wrappedCursor = 0;
                 if (entryCount > 0)
                 {
@@ -1533,36 +1945,124 @@ namespace Hecton8.Rendering
                         wrappedCursor += entryCount;
                 }
 
-                writer.Write(0x42323336u); // B236
-                writer.Write(entryCount);
-                writer.Write(telemetryWriteCursor);
-                writer.Write(_lastFaultFlags);
-                writer.Write(UnsafeUtility.SizeOf<UpscalerTelemetryEntry>());
+                WriteDumpHeader(header, entryCount, telemetryWriteCursor, _lastFaultFlags);
+                stream.Write(header);
                 for (int i = 0; i < entryCount; i++)
                 {
                     int index = wrappedCursor + i;
                     if (index >= entryCount)
                         index -= entryCount;
 
-                    UpscalerTelemetryEntry entry = telemetry[index];
-                    writer.Write(entry.FrameIndex);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.CurrentRenderScale01);
-                    writer.Write(entry.TargetRenderScale01);
-                    writer.Write(entry.QualityScalar);
-                    writer.Write(entry.BilateralRadiusPixels);
-                    writer.Write(entry.DepthWeight);
-                    writer.Write(entry.EstimatedGpuMicros);
-                    writer.Write(entry.ResolutionParams.x);
-                    writer.Write(entry.ResolutionParams.y);
-                    writer.Write(entry.ResolutionParams.z);
-                    writer.Write(entry.ResolutionParams.w);
-                    writer.Write(entry.FilterParams.x);
-                    writer.Write(entry.FilterParams.y);
-                    writer.Write(entry.FilterParams.z);
-                    writer.Write(entry.FilterParams.w);
+                    if (!TryReadTelemetryDumpEntry(index, out UpscalerTelemetryEntry entry))
+                        return;
+
+                    WriteTelemetryEntry(row, in entry);
+                    stream.Write(row);
                 }
             }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (UnityException)
+            {
+            }
+        }
+
+        private bool TryReadTelemetryDumpShape(out int entryCount, out int telemetryWriteCursor)
+        {
+            entryCount = 0;
+            telemetryWriteCursor = 0;
+            if (!TryReadVaultBuffer(
+                    in _telemetryHandle,
+                    BilateralDrsUpscalerConstants.TelemetryCapacity,
+                    out NativeArray<UpscalerTelemetryEntry>.ReadOnly telemetry))
+            {
+                return false;
+            }
+
+            entryCount = math.min(telemetry.Length, BilateralDrsUpscalerConstants.TelemetryCapacity);
+            if (TryReadVaultBuffer(in _telemetryCursorHandle, 1, out NativeArray<int>.ReadOnly telemetryCursor))
+                telemetryWriteCursor = telemetryCursor[0];
+            return entryCount > 0;
+        }
+
+        private bool TryReadTelemetryDumpEntry(int index, out UpscalerTelemetryEntry entry)
+        {
+            entry = default;
+            if (index < 0 ||
+                !TryReadVaultBuffer(
+                    in _telemetryHandle,
+                    BilateralDrsUpscalerConstants.TelemetryCapacity,
+                    out NativeArray<UpscalerTelemetryEntry>.ReadOnly telemetry) ||
+                index >= telemetry.Length)
+            {
+                return false;
+            }
+
+            entry = telemetry[index];
+            return true;
+        }
+
+        private static void WriteDumpHeader(Span<byte> destination, int entryCount, int telemetryWriteCursor, uint faultFlags)
+        {
+            WriteUInt32LittleEndian(destination, 0, DumpMagic);
+            WriteInt32LittleEndian(destination, 4, entryCount);
+            WriteInt32LittleEndian(destination, 8, telemetryWriteCursor);
+            WriteUInt32LittleEndian(destination, 12, faultFlags);
+            WriteInt32LittleEndian(destination, 16, BilateralDrsUpscalerConstants.TelemetryBytes);
+        }
+
+        private static void WriteTelemetryEntry(Span<byte> destination, in UpscalerTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(destination, 0, entry.FrameIndex);
+            WriteUInt32LittleEndian(destination, 4, entry.Flags);
+            WriteFloatLittleEndian(destination, 8, entry.CurrentRenderScale01);
+            WriteFloatLittleEndian(destination, 12, entry.TargetRenderScale01);
+            WriteFloatLittleEndian(destination, 16, entry.QualityScalar);
+            WriteFloatLittleEndian(destination, 20, entry.BilateralRadiusPixels);
+            WriteFloatLittleEndian(destination, 24, entry.DepthWeight);
+            WriteFloatLittleEndian(destination, 28, entry.EstimatedGpuMicros);
+            WriteFloatLittleEndian(destination, 32, entry.ResolutionParams.x);
+            WriteFloatLittleEndian(destination, 36, entry.ResolutionParams.y);
+            WriteFloatLittleEndian(destination, 40, entry.ResolutionParams.z);
+            WriteFloatLittleEndian(destination, 44, entry.ResolutionParams.w);
+            WriteFloatLittleEndian(destination, 48, entry.FilterParams.x);
+            WriteFloatLittleEndian(destination, 52, entry.FilterParams.y);
+            WriteFloatLittleEndian(destination, 56, entry.FilterParams.z);
+            WriteFloatLittleEndian(destination, 60, entry.FilterParams.w);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(Span<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, (uint)value);
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
         }
     }
 }

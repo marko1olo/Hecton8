@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Date | 2026-05-24 |
+| Date | 2026-05-26 |
 | Status | CORE BLOB BAKED; CORRUPTION STRESS PASS; FAIL-CLOSED RUNTIME SIM PASS; NATIVE READ ZERO-GC TARGET PASS |
 | Gates | RELEASE STATIC-CONFIG PASS; PLAYER CSV STAGING FENCE PASS; DIRECT FILESTREAM READBYTE PASS |
 | Pending | UNITY PROFILER PROOF |
@@ -29,12 +29,12 @@ Current artifact:
 - `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`
 - bytes: `1064384`
 - magic: `0x4D443848`
-- version: `1`
+- version: `2`
 - header bytes: `64`
-- checksum64: `0x0D49885F30E5DF35`
+- checksum64: `0x19D880780D6E1B46`
 - data start offset: `576`
 - section count: `26`
-- schema hash: `0x58303032`
+- schema hash: `0x33313331`
 
 Data Monolith readiness:
 
@@ -67,11 +67,11 @@ Fail-closed resident publish evidence:
 - `Docs/Reports/DATA_MONOLITH_FAIL_CLOSED_RUNTIME_SIM_X_002.json`
 - Release CLI status: `PASS_FAIL_CLOSED_NO_POISON_PUBLISH`
 - Scope: resident-pointer simulation of the `H8StaticDataArena` publish gate; not a real Unity player profiler trace.
-- Baseline checksum: `0x0D49885F30E5DF35`
+- Baseline checksum: `0x19D880780D6E1B46`
 - Baseline publish count: `1`
 - Corrupt candidates rejected before publish: bad stored checksum, bad payload checksum, section range out of bounds, unaligned section offset, section table pointing into void, truncated blob.
 - Final publish count after all corrupt candidates: `1`
-- Final checksum after all corrupt candidates: `0x0D49885F30E5DF35`
+- Final checksum after all corrupt candidates: `0x19D880780D6E1B46`
 - Resident validation: `256/256`, mean `382.461 us`, heap `0 bytes`
 
 Binary layout evidence:
@@ -212,7 +212,20 @@ Bootstrap route:
 
 - `GameBootstrapper.InitializeBootstrapDataMonolith` runs during MemoryPreWarm after `_globalDataVault` creation.
 - `H8StaticDataArena.TryInitializeFromStreamingAssets(IDataVault, ...)` receives the bootstrap-owned Vault explicitly.
+- 1330 RERUN4 hardening: bootstrap now calls `H8StaticDataArena.TryInitializeFromStreamingAssetsAsync(...)` from the existing MemoryPreWarm `Awaitable` phase.
+  URL-backed StreamingAssets paths are staged through `UnityWebRequest` with frame-yielding `AwaitableDebtMonitor.NextFrameAsync`, not a blocking `Thread.Sleep` spin.
+  The async route enters `Awaitable.MainThreadAsync` before platform-specific path handling so Unity API access and player-symbol branches keep an explicit Awaitable continuation.
+  The legacy synchronous `TryInitializeFromStreamingAssets(...)` route now accepts direct filesystem paths only and fails closed for URL-backed StreamingAssets paths.
 - Data Monolith buffers are named in the central `BufferID` ledger: `DataMonolithPayload`, `DataMonolithTelemetryRing`, `DataMonolithTelemetryCursor`.
+- 1330 hardening: release player loading is not Windows-only.
+  Windows keeps the native `CreateFileW` path.
+  Non-WebGL players use the same binary validation path through `Application.streamingAssetsPath`.
+  Android/JAR URL staging is cold-boot async and then re-enters the validated native/Vault arena hydration path.
+  WebGL remains fail-closed until a zero-copy browser staging route exists; managed `DownloadHandlerBuffer.data` hydration is rejected for the runtime static-data contract.
+- 1330 RERUN8 hardening: the release parser gate now distinguishes native PAL support from production H8BIN loader support.
+  `StandaloneWindows`, `StandaloneWindows64`, `StandaloneLinux64`, `StandaloneOSX`, `Android`, and `iOS` are allowed production loader targets; WebGL and unlisted targets remain blocked.
+  StreamingAssets cancellation in the async loader returns `ReadFailed` and records `PathFlagStreamingUriStagingCancelled`; it no longer throws a managed cancellation exception from the Data Monolith boot path.
+- 1330 hardening: Data Monolith DTOs require `StructLayout(LayoutKind.Explicit, Pack = 1, Size = ...)`; `H8DataMonolithLayoutGuard` rejects missing Pack=1 before bake/import proof.
 
 ## Failure Rule
 

@@ -12,6 +12,7 @@ namespace Hecton8.AI
         private int _foveatedTargetIndex = -1;
         private Transform _foveatedVisualTransform;
         private AudioSource _foveatedAudioSource;
+        private IFoveatedSimulationDirector _foveatedSimulationDirector;
         private FoveatedTickRate _foveatedTickRate = FoveatedTickRate.Center60Hz;
         private float _foveatedTickIntervalSeconds = 1.0f / 60.0f;
         private float _foveatedImportanceScore = 1.0f;
@@ -84,7 +85,7 @@ namespace Hecton8.AI
 
         private void NotifyFoveatedCombatDamageLock()
         {
-            IFoveatedSimulationDirector director = GlobalRegistry.FoveatedSimulationDirector;
+            IFoveatedSimulationDirector director = _foveatedSimulationDirector;
             if (director == null)
                 return;
 

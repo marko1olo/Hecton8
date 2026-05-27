@@ -474,7 +474,7 @@ namespace Hecton8.Physics
 
         private bool EnsureVaultHandles(IDataVault vault)
         {
-            if (vault == null || vault.IsAllocationLocked)
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                 return false;
 
             _spectrumHandle = EnsureHandle(vault, _spectrumHandle, AnalyticalGerstnerWaveBufferIds.Spectrum, AnalyticalGerstnerWaveConstants.SpectrumRows, NativeArrayOptions.UninitializedMemory);

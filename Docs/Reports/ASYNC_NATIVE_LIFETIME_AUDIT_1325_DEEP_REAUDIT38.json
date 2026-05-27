@@ -1,0 +1,131 @@
+﻿{
+    "schema":  "hecton8.async_native_lifetime_reaudit38.v3",
+    "agentId":  "1325",
+    "scannedFiles":  3,
+    "persistentWorldRegistryFindings":  0,
+    "saveManagerFindings":  17,
+    "saveBinaryStorageFindings":  0,
+    "findings":  [
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  1055,
+                         "line":  1055,
+                         "text":  "// COLD ALLOC: NativeArray\u003cbyte\u003e[10485760] - 10MB async persistence snapshot staging arena - owner: SaveManager"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "unknown_async",
+                         "startLine":  1055,
+                         "line":  1056,
+                         "text":  "_saveStagingBuffer = new NativeArray\u003cbyte\u003e(SaveStagingBufferBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2883,
+                         "line":  2937,
+                         "text":  "NativeArray\u003cPersistentWorldDeltaRecord\u003e.ReadOnly persistentWorldDeltaSnapshot = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2883,
+                         "line":  2938,
+                         "text":  "NativeArray\u003cPersistentWorldDeltaRecord\u003e persistentWorldDeltaSnapshotOwner = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2883,
+                         "line":  2939,
+                         "text":  "NativeArray\u003cEcosystemSectorSaveRecord\u003e.ReadOnly ecosystemSectorSnapshot = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2883,
+                         "line":  2940,
+                         "text":  "NativeArray\u003cEcosystemSectorSaveRecord\u003e ecosystemSectorSnapshotOwner = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2883,
+                         "line":  2941,
+                         "text":  "NativeArray\u003cuint\u003e packedQuestStateSnapshot = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2883,
+                         "line":  2943,
+                         "text":  "NativeArray\u003cbyte\u003e voxelDeltaSnapshot = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2883,
+                         "line":  3046,
+                         "text":  "persistentWorldDeltaSnapshotOwner = new NativeArray\u003cPersistentWorldDeltaRecord\u003e("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2883,
+                         "line":  3080,
+                         "text":  "NativeArray\u003cPersistentWorldDeltaRecord\u003e copiedView = copiedPersistentWorldDeltas \u003c persistentWorldDeltaSnapshotOwner.Length"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2883,
+                         "line":  3092,
+                         "text":  "NativeArray\u003cEcosystemSectorSaveRecord\u003e.ReadOnly ecosystemView = ecosystemDirector.GetSaveSnapshotArray();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2883,
+                         "line":  3095,
+                         "text":  "ecosystemSectorSnapshotOwner = new NativeArray\u003cEcosystemSectorSaveRecord\u003e("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2883,
+                         "line":  3116,
+                         "text":  "packedQuestStateSnapshot = new NativeArray\u003cuint\u003e("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "LoadGameAsync",
+                         "startLine":  3608,
+                         "line":  3652,
+                         "text":  "NativeArray\u003cbyte\u003e loadedVoxelDeltaSnapshot = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "LoadGameAsync",
+                         "startLine":  3608,
+                         "line":  3653,
+                         "text":  "NativeArray\u003cSaveLoadCandidate\u003e candidates = default;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "LoadGameAsync",
+                         "startLine":  3608,
+                         "line":  3688,
+                         "text":  "out NativeArray\u003cbyte\u003e candidateVoxelDeltaSnapshot,"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "LoadGameAsync",
+                         "startLine":  3608,
+                         "line":  3755,
+                         "text":  "out NativeArray\u003cbyte\u003e recoveryVoxelDeltaSnapshot,"
+                     }
+                 ],
+    "ownershipNote":  "PersistentWorldRegistry async methods contain no native collection declarations after Reaudit38. SaveManager async native snapshot residuals are external Save/Archivist ownership and remain declared.",
+    "generatedAtUtc":  "2026-05-27T16:55:04.0264524Z"
+}

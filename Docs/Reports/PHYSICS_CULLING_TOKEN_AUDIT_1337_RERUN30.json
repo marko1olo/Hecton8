@@ -1,0 +1,30 @@
+{
+  "schema": "hecton8.physics_culling_token_audit_1337.v1",
+  "agentId": "1337",
+  "sourceRoot": ".codex_tmp/agent1337_scope_apex_rerun30",
+  "status": "STATIC_CLASSIFIED",
+  "widePaddingHits": 0,
+  "directAbsoluteAupFloatCasts": 0,
+  "linqHits": 0,
+  "zeroGcRoslynHotPathHits": 0,
+  "coldIoCatchBlocks": [
+    {
+      "file": "GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "lines": "688,692,696,745,750,755",
+      "classification": "cold CSV/black-box file I/O; not Tick, SlowTick, LateFrameTick, or job Execute"
+    }
+  ],
+  "caseSensitiveForbiddenTokenHits": [
+    {
+      "file": "GlobalPhysicsStateManager.cs",
+      "token": "RegisterTrackedBodyInternal",
+      "classification": "full registration remains available for untracked/cold bodies; PhysicsApplySystem force-packet hot routes now use RegisterTrackedBodyIfMissing"
+    },
+    {
+      "file": "GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "token": "TryAcquirePhysicsTrackedBodyLaneMutationLocks1337",
+      "classification": "scoped owner-phase lane mutation transaction for last-valid, culling DTO, frozen velocity, and state-age buffers"
+    }
+  ],
+  "verificationHashSha256": "89396c2078f34a0a840d93ff6f026fca2c79266fa2131428896b32aeab08fc83"
+}

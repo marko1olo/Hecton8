@@ -1,0 +1,61 @@
+{
+  "date": "2026-05-26",
+  "agent": "UNKNOWN",
+  "evidenceClass": "STATIC_SOURCE + OFFICIAL_UNITY_DOCS + BUILD_GUARD_BLOCKED",
+  "domain": "Unity URP render-feature player shader reference hygiene",
+  "changedFiles": [
+    "Assets/_Project/Scripts/Rendering/OceanSinglePass/HectonSinglePassOceanFeature.cs",
+    "Assets/_Project/Scripts/Rendering/AbyssalCaustics/HectonDeferredCausticsFeature.cs",
+    "Assets/_Project/Scripts/Visor/HectonBiolumSSGIFeature.cs",
+    "Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs"
+  ],
+  "fixes": [
+    "Release-reachable Shader.Find fallback removed from four clean URP ScriptableRendererFeature owners.",
+    "Shader.Find remains only under UNITY_EDITOR || DEVELOPMENT_BUILD for local/editor diagnostics.",
+    "Editor asset loading added for Biolum SSGI composite shader and Sonar point-cloud overlay shader."
+  ],
+  "staticResults": {
+    "scopedShaderFindHits": 4,
+    "releaseReachableShaderFindHitsInTouchedFiles": 0,
+    "shaderAssetsFound": [
+      "Assets/_Project/Art/Shaders/Hidden_Hecton_OceanDepthFoam.shader",
+      "Assets/_Project/Art/Shaders/Hecton_DeferredCaustics.shader",
+      "Assets/_Project/Art/Shaders/Hecton_BiolumSSGIComposite.shader",
+      "Assets/_Project/Art/Shaders/SonarGridOverlay.shader"
+    ],
+    "diffCheck": "passed with LF/CRLF warnings only"
+  },
+  "build": {
+    "launched": false,
+    "blockedByGuard": true,
+    "log": "Docs/Reports/BUILD_UNKNOWN_RENDER_FEATURE_SHADER_FIND_RECHECK_20260526.log",
+    "reason": "No legal CPU/compiler window during 60 guarded attempts.",
+    "postBlockCpuPercent": 71,
+    "postBlockCompilerProcessCount": 0,
+    "latestCleanPreChangeBuild": "Docs/Reports/BUILD_UNKNOWN_MESH_COMPONENT_CACHE_TRAP_RECHECK3_20260526.log"
+  },
+  "documentation": {
+    "verifyDocStructure": {
+      "pass": true,
+      "activeDocCount": 702,
+      "encodingWithoutUtf8Sig": 0
+    },
+    "oopDocScanner": {
+      "finalPass": true,
+      "activeFileCount": 702,
+      "sourceSyncPass": true
+    }
+  },
+  "runtimeMicrosecondsSavedClaimed": 0,
+  "residual": [
+    "No compile proof for this source pass yet because build guard blocked launch.",
+    "No Unity Play Mode proof.",
+    "No profiler proof.",
+    "No player build or shader variant proof.",
+    "Dirty residual Shader.Find files were not edited."
+  ],
+  "sourceUrls": [
+    "https://docs.unity3d.com/ScriptReference/Shader.Find.html",
+    "https://docs.unity.cn/Manual/shader-loading.html"
+  ]
+}

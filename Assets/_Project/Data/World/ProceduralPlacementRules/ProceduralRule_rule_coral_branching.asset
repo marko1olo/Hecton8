@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: ProceduralRule_rule_coral_branching
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
   ruleId: rule.coral.branching
-  ruleLabel: Coral Reef Growth
+  ruleLabel: Branching Carbonate Growth
   familyProfile: {fileID: 11400000, guid: 20ff4b803a538544ca9a58d36bb90883, type: 2}
-  gameplayIntent: Branching reef masses for readable coral structure.
+  gameplayIntent: Branching fossil masses for readable carbonate structure.
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
   - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}

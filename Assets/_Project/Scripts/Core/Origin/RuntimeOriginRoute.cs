@@ -13,7 +13,9 @@ namespace Hecton8.Core
         public static AbsoluteUniversePosition CurrentRuntimeOriginAup()
         {
             double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            return math.all(math.isfinite(origin)) ? AbsoluteUniversePosition.FromAbsolutePosition(origin) : default;
+            return math.all(math.isfinite(origin))
+                ? AbsoluteUniversePosition.FromAbsolutePosition(origin)
+                : AbsoluteUniversePosition.Invalid();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

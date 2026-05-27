@@ -28,8 +28,8 @@ namespace Hecton8.VFX.Debris
     {
         private const int MaxCarveDebrisCount = ShinobuDeltaCrusher.MaximumQualityDebrisCap;
         private static readonly int MinQualityActiveCarveDebrisCount = ShinobuDeltaCrusher.ResolveDebrisCap(0f, MaxCarveDebrisCount);
-        private const int ThreadGroupFallbackSize = 64;
-        private const int ThreadGroupPortableMaxSize = 512;
+        private const int ThreadGroupPortableMaxSize = 256;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const int BlackBoxCapacity = 300;
         private const int JobStateLength = ShinobuDeltaCrusher.CarveDebrisJobStateLength;
         private const int JobStateActiveIndex = 0;
@@ -159,7 +159,9 @@ namespace Hecton8.VFX.Debris
         private int _advectKernel = -1;
         private int _clearArgsKernel = -1;
         private int _cullKernel = -1;
-        private int _threadGroupSize = ThreadGroupFallbackSize;
+        private int _advectThreadGroupSize;
+        private int _clearArgsThreadGroupSize;
+        private int _cullThreadGroupSize;
         private int _lastActiveCapacity = MaxCarveDebrisCount;
         private int _nextGlobalSdfRefreshFrame;
         private int _nextMissingRegistryRefreshFrame;
@@ -483,7 +485,7 @@ namespace Hecton8.VFX.Debris
                 return true;
 
             _gpuReady = false;
-            if (fluidAdvectionCompute == null)
+            if (fluidAdvectionCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
                 return false;
 
             RefreshMissingRegistryServicesIfNeeded();
@@ -502,8 +504,12 @@ namespace Hecton8.VFX.Debris
             if (_advectKernel < 0 || _clearArgsKernel < 0 || _cullKernel < 0)
                 return false;
 
-            fluidAdvectionCompute.GetKernelThreadGroupSizes(_advectKernel, out uint kernelThreads, out _, out _);
-            _threadGroupSize = kernelThreads > 0u ? (int)math.min(kernelThreads, ThreadGroupPortableMaxSize) : ThreadGroupFallbackSize;
+            if (!TryResolveKernelThreadGroupSizeX(_advectKernel, out _advectThreadGroupSize) ||
+                !TryResolveKernelThreadGroupSizeX(_clearArgsKernel, out _clearArgsThreadGroupSize) ||
+                !TryResolveKernelThreadGroupSizeX(_cullKernel, out _cullThreadGroupSize))
+            {
+                return false;
+            }
 
             _dataVault = vault;
             if (!EnsureCarveDebrisVaultBuffer(
@@ -550,7 +556,29 @@ namespace Hecton8.VFX.Debris
 
         private static int ResolveKernel(ComputeShader compute, string kernelName)
         {
-            return compute != null && compute.HasKernel(kernelName) ? compute.FindKernel(kernelName) : -1;
+            if (compute == null || !HardwareTierDetector.AllowHighResourceComputeShaders || !compute.HasKernel(kernelName))
+                return -1;
+
+            int kernel = compute.FindKernel(kernelName);
+            return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
+        }
+
+        private bool TryResolveKernelThreadGroupSizeX(int kernelIndex, out int groupSizeX)
+        {
+            groupSizeX = 0;
+            if (fluidAdvectionCompute == null ||
+                kernelIndex < 0 ||
+                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !fluidAdvectionCompute.IsSupported(kernelIndex))
+                return false;
+
+            fluidAdvectionCompute.GetKernelThreadGroupSizes(kernelIndex, out uint x, out uint y, out uint z);
+            ulong totalThreads = (ulong)x * y * z;
+            if (x == 0u || y != 1u || z != 1u || totalThreads > ThreadGroupPortableMaxSize || x > 2147483647u)
+                return false;
+
+            groupSizeX = (int)x;
+            return true;
         }
 
         private bool IsGpuStateValid()
@@ -747,20 +775,20 @@ namespace Hecton8.VFX.Debris
         private void AllocateGraphicsBuffers()
         {
             if (_positionBufferA == null || !_positionBufferA.IsValid())
-                _positionBufferA = CreateStructuredBuffer<float4>(MaxCarveDebrisCount);
+                _positionBufferA = CreateGpuWriteStructuredBuffer<float4>(MaxCarveDebrisCount);
             if (_positionBufferB == null || !_positionBufferB.IsValid())
-                _positionBufferB = CreateStructuredBuffer<float4>(MaxCarveDebrisCount);
+                _positionBufferB = CreateGpuWriteStructuredBuffer<float4>(MaxCarveDebrisCount);
             if (_velocityBufferA == null || !_velocityBufferA.IsValid())
-                _velocityBufferA = CreateStructuredBuffer<float4>(MaxCarveDebrisCount);
+                _velocityBufferA = CreateGpuWriteStructuredBuffer<float4>(MaxCarveDebrisCount);
             if (_velocityBufferB == null || !_velocityBufferB.IsValid())
-                _velocityBufferB = CreateStructuredBuffer<float4>(MaxCarveDebrisCount);
+                _velocityBufferB = CreateGpuWriteStructuredBuffer<float4>(MaxCarveDebrisCount);
             if (_visibleIndicesBuffer == null || !_visibleIndicesBuffer.IsValid())
             {
-                _visibleIndicesBuffer = CreateStructuredBuffer<uint>(MaxCarveDebrisCount);
+                _visibleIndicesBuffer = CreateGpuWriteStructuredBuffer<uint>(MaxCarveDebrisCount);
                 InvalidateRenderMaterialBindings();
             }
             if (_emptyFlowBuffer == null || !_emptyFlowBuffer.IsValid())
-                _emptyFlowBuffer = CreateStructuredBuffer<float4>(1);
+                _emptyFlowBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(1);
             if (_indirectArgsBuffer == null || !_indirectArgsBuffer.IsValid())
             {
                 _indirectArgsBuffer = new GraphicsBuffer(
@@ -770,14 +798,13 @@ namespace Hecton8.VFX.Debris
             }
         }
 
-        private static GraphicsBuffer CreateStructuredBuffer<T>(int count)
+        private static GraphicsBuffer CreateGpuWriteStructuredBuffer<T>(int count)
             where T : struct
         {
             return new GraphicsBuffer(
                 GraphicsBuffer.Target.Structured,
-                GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 math.max(1, count),
-                UnsafeUtility.SizeOf<T>()); // COLD ALLOC: GraphicsBuffer[count] - persistent carve debris GPU lane - owner: VFX_SDF_CARVE_DEBRIS
+                UnsafeUtility.SizeOf<T>()); // COLD ALLOC: GraphicsBuffer[count] - persistent carve debris GPU-write lane - owner: VFX_SDF_CARVE_DEBRIS
         }
 
         private void CreateEmptyResources()
@@ -1036,25 +1063,36 @@ namespace Hecton8.VFX.Debris
             GraphicsBuffer positionWrite = readA ? _positionBufferB : _positionBufferA;
             GraphicsBuffer velocityRead = readA ? _velocityBufferA : _velocityBufferB;
             GraphicsBuffer velocityWrite = readA ? _velocityBufferB : _velocityBufferA;
-            int dispatchGroups = ResolveDispatchGroups(activeCapacity, _threadGroupSize);
+            int advectDispatchGroups = ResolveDispatchGroups(activeCapacity, _advectThreadGroupSize);
+            int clearArgsDispatchGroups = ResolveDispatchGroups(1, _clearArgsThreadGroupSize);
+            int cullDispatchGroups = ResolveDispatchGroups(activeCapacity, _cullThreadGroupSize);
             Vector4 drawArgs = drawArgsBase;
             drawArgs.w = activeCapacity;
             float3 appliedAupShift = _pendingAupShift;
+            if (clearArgsDispatchGroups <= 0)
+                return;
+
+            if (advectDispatchGroups <= 0 || cullDispatchGroups <= 0)
+            {
+                fluidAdvectionCompute.SetBuffer(_clearArgsKernel, CarveDebrisIndirectArgsId, _indirectArgsBuffer);
+                fluidAdvectionCompute.Dispatch(_clearArgsKernel, clearArgsDispatchGroups, 1, 1);
+                return;
+            }
 
             BindSharedComputeParams(dt, qualityPressure01, activeCapacity, drawArgs);
             fluidAdvectionCompute.SetBuffer(_clearArgsKernel, CarveDebrisIndirectArgsId, _indirectArgsBuffer);
-            fluidAdvectionCompute.Dispatch(_clearArgsKernel, 1, 1, 1);
+            fluidAdvectionCompute.Dispatch(_clearArgsKernel, clearArgsDispatchGroups, 1, 1);
 
             fluidAdvectionCompute.SetBuffer(_advectKernel, CarveDebrisReadId, positionRead);
             fluidAdvectionCompute.SetBuffer(_advectKernel, CarveDebrisWriteId, positionWrite);
             fluidAdvectionCompute.SetBuffer(_advectKernel, CarveDebrisVelocityReadId, velocityRead);
             fluidAdvectionCompute.SetBuffer(_advectKernel, CarveDebrisVelocityWriteId, velocityWrite);
-            fluidAdvectionCompute.Dispatch(_advectKernel, dispatchGroups, 1, 1);
+            fluidAdvectionCompute.Dispatch(_advectKernel, advectDispatchGroups, 1, 1);
 
             fluidAdvectionCompute.SetBuffer(_cullKernel, CarveDebrisReadId, positionWrite);
             fluidAdvectionCompute.SetBuffer(_cullKernel, CarveDebrisVisibleIndicesId, _visibleIndicesBuffer);
             fluidAdvectionCompute.SetBuffer(_cullKernel, CarveDebrisIndirectArgsId, _indirectArgsBuffer);
-            fluidAdvectionCompute.Dispatch(_cullKernel, dispatchGroups, 1, 1);
+            fluidAdvectionCompute.Dispatch(_cullKernel, cullDispatchGroups, 1, 1);
 
             _bufferParity ^= 1;
             _lastAppliedAupShift = appliedAupShift;
@@ -1176,24 +1214,11 @@ namespace Hecton8.VFX.Debris
 
         private static int ResolveDispatchGroups(int count, int groupSize)
         {
-            int safeGroupSize = math.max(1, groupSize);
-            if ((safeGroupSize & (safeGroupSize - 1)) == 0)
-            {
-                int shift = 0;
-                int stride = safeGroupSize;
-                while (stride > 1)
-                {
-                    stride >>= 1;
-                    shift++;
-                }
+            if (count <= 0 || groupSize <= 0)
+                return 0;
 
-                return math.max(1, (count + safeGroupSize - 1) >> shift);
-            }
-
-            int groups = 0;
-            for (int covered = 0; covered < count; covered += safeGroupSize)
-                groups++;
-            return math.max(1, groups);
+            long groups = ((long)count + groupSize - 1L) / groupSize;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private GraphicsBuffer ResolveFlowPayload(
@@ -1713,7 +1738,11 @@ namespace Hecton8.VFX.Debris
                 return;
 
             _materialFallbackAttempted = true;
-            Shader shader = Shader.Find(DebrisShaderName);
+            RuntimeShaderReferenceCatalog.TryGetCarveDebrisIndirectShader(out Shader shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find(DebrisShaderName);
+#endif
             if (shader == null)
                 return;
 
@@ -2171,15 +2200,15 @@ namespace Hecton8.VFX.Debris
                 5, 3, 4,
                 5, 4, 1
             };
-            mesh.vertices = vertices;
-            mesh.triangles = indices;
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(indices, 0, false);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             mesh.UploadMeshData(true);
             return mesh;
         }
 
-        private static unsafe void UploadRange<T>(GraphicsBuffer destination, NativeArray<T> source, int start, int count)
+        private static void UploadRange<T>(GraphicsBuffer destination, NativeArray<T> source, int start, int count)
             where T : struct
         {
             if (destination == null || !destination.IsValid() || !source.IsCreated || count <= 0)
@@ -2190,17 +2219,7 @@ namespace Hecton8.VFX.Debris
             if (safeCount <= 0)
                 return;
 
-            NativeArray<T> mapped = destination.LockBufferForWrite<T>(safeStart, safeCount);
-            try
-            {
-                void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + UnsafeUtility.SizeOf<T>() * safeStart;
-                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, UnsafeUtility.SizeOf<T>() * safeCount);
-            }
-            finally
-            {
-                destination.UnlockBufferAfterWrite<T>(safeCount);
-            }
+            destination.SetData(source, safeStart, safeStart, safeCount);
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

@@ -16,7 +16,7 @@ namespace Hecton.Localization
             if (logical.Length == 0)
                 return ReadOnlySpan<char>.Empty;
 
-            char[] buffer = GetBuffer(logical.Length);
+            char[] buffer = EnsureBuffer(logical.Length);
             logical.CopyTo(buffer.AsSpan(0, logical.Length));
             TryReverseVisualOrderInPlace(buffer, logical.Length);
             return buffer.AsSpan(0, logical.Length);
@@ -26,12 +26,12 @@ namespace Hecton.Localization
         {
             if (logical.Length == 0)
             {
-                buffer = GetBuffer(1);
+                buffer = EnsureBuffer(1);
                 length = 0;
                 return true;
             }
 
-            buffer = GetBuffer(logical.Length);
+            buffer = EnsureBuffer(logical.Length);
             logical.CopyTo(buffer.AsSpan(0, logical.Length));
             length = logical.Length;
             TryReverseVisualOrderInPlace(buffer, length);
@@ -57,7 +57,7 @@ namespace Hecton.Localization
             return true;
         }
 
-        private static char[] GetBuffer(int requiredLength)
+        private static char[] EnsureBuffer(int requiredLength)
         {
             if (requiredLength <= 0)
                 requiredLength = 1;

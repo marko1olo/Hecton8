@@ -1,0 +1,65 @@
+{
+  "schema": "hecton8.domain_reaudit.1325.v28",
+  "agentId": "1325",
+  "status": "DOMAIN_GREEN_SAVE_BINARY_STORAGE_NATIVE_CLEAN_EXTERNAL_SAVE_MANAGER_DECLARED",
+  "prompt": {
+    "path": "Docs/Tasks/CURRENT_BATCH.md",
+    "tag": "AGENT_PROMPT id=\"1325\"",
+    "taskCount": 20,
+    "sha256": "EE975B109958AEF4F71A0B55FED9B9E339A88F3EED23829E64D2BA249AA61F94"
+  },
+  "changes": [
+    "Made SaveBinaryStorage IndexedSectorEntityStateWriteHandle a ref struct and removed PersistentWorldRegistry pending NativeArray handle queues.",
+    "Converted SaveBinaryStorage ReadOnlyMapping and IndexedSectorGroupBuffer to ref structs so native views cannot escape to managed heap fields.",
+    "Removed persistent NativeArray and raw pointer ownership from SaveBinaryStorage CachedReadWindow; cached windows now rent managed byte arrays from ArrayPool and pin only inside copy phases.",
+    "Forced indexed sector entity-state override writes to complete inside the same call boundary, so Temp/TempJob native views are disposed before returning."
+  ],
+  "sourceReports": {
+    "worldNativeAliasLedger": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT27_WORLD.json",
+    "allScriptsNativeAliasLedger": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT28_ALLSCRIPTS.json",
+    "hotPathAudit": "Docs/Reports/ZERO_GC_HOTPATH_AUDIT_1325_DEEP_REAUDIT28_RAW.json"
+  },
+  "domainNativeAliasProof": {
+    "scannedWorldFiles": 276,
+    "parseFailures": 0,
+    "persistentWorldRegistryNativeFields": 0,
+    "broaderWorldForbiddenCandidates": 1,
+    "broaderWorldResidual": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs:705 NativeArray<NavObstaclePrimitive> PendingDynamicObstacleSnapshot"
+  },
+  "touchedBoundaryNativeAliasScan": {
+    "scannedAllScriptFiles": 2441,
+    "parseFailures": 0,
+    "touchedNativeFieldDeclarations": 38,
+    "broadScannerForbiddenTouchedCandidates": 13,
+    "saveBinaryStoragePersistentNativeFields": 0,
+    "saveManagerPersistentNativeFields": 13,
+    "stackOnlyRefStructViewFieldsInTouchedFiles": 12,
+    "transientJobFieldsInTouchedFiles": 13,
+    "status": "save_binary_storage_clean; save_manager_residual_declared_external_data_archivist_scope"
+  },
+  "hotPathProof": {
+    "scannedFiles": 6,
+    "parseFailures": 0,
+    "stringFormatCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "selectedSimulationHotPathManagedGcHits": 0,
+    "rawAuditHash": "a7c5c72036c1fdcfc98b44517c2fa60489bdc6e42ed3a27091f0f77b7edf6072"
+  },
+  "hashes": {
+    "PersistentWorldRegistry": "B351DCCFE9BCFC8AB21D866F3D95477A4011802AD94710C6FCDA39866A1491E3",
+    "AUPMath": "3868E1955CC5EAD8B4C070AB92EDFEE845D267C592905C0510DAD7B655B9EC11",
+    "SaveManager": "13FD0472DCBEE8053E012E778E7DC8B44CABF3F94F3E1857305170C4C197E1FD",
+    "SaveBinaryStorage": "27FB485EC106A31A471330F64CAD5FA4CB6A9DE7383E2B0C7C2BD0DA2CA28EF7",
+    "PlayerExplorationTracker": "DA468001524EAB00B8310188D9A5C55236CE983B3DD40769734E11EDF7E8EFDB",
+    "BinaryLayoutManifest": "89C2591778B649605E553A8C9AE4F8F4AE2701AA5231D4B0A8D2221A174915AB",
+    "primaryWorldCombined": "D0569D4227C8B33B66525291538C49123B8BA92D2C51B99A62950C0D036407CC",
+    "fullTouchedIncludingBoundaries": "36545BD3C174E2C3F159EC90B5EF10DCACEDDDD944130EABA9684CD082FC3D9B"
+  },
+  "buildGuard": {
+    "buildLaunched": false,
+    "cpuPercent": 65,
+    "activeCompilerProcessCount": 1,
+    "reason": "AGENTS build guard: CPU > 50% and active dotnet process 19552; dotnet build not launched."
+  }
+}

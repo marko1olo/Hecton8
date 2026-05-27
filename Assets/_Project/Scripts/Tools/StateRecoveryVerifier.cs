@@ -18,6 +18,7 @@ namespace Hecton8.Tools
     public sealed class StateRecoveryVerifier : MonoBehaviour
     {
         private const string MainMenuSceneName = "01_MAIN_MENU";
+        private const string OrbitSceneName = "01_ORBIT";
         private const string WorldSceneName = "02_HECTON_WORLD";
 
         [Header("Verification Settings")]
@@ -244,11 +245,11 @@ namespace Hecton8.Tools
             }
 
             _mainMenuController.StartGame(string.Empty);
-            await WaitForConditionAsync(IsNewGameStateValid, "New game world handoff", cancellationToken);
+            await WaitForConditionAsync(IsNewGameStateValid, "New game orbit handoff", cancellationToken);
 
             if (!IsNewGameStateValid())
             {
-                Fail("New Game After Save", "New game context/world state is invalid after StartGame.");
+                Fail("New Game After Save", "New game context/orbit state is invalid after StartGame.");
                 return;
             }
 
@@ -424,7 +425,7 @@ namespace Hecton8.Tools
         private bool IsNewGameStateValid()
         {
             GameStartContext context = GameStartContextHolder.Current;
-            return string.Equals(SceneManager.GetActiveScene().name, WorldSceneName, System.StringComparison.Ordinal) &&
+            return string.Equals(SceneManager.GetActiveScene().name, OrbitSceneName, System.StringComparison.Ordinal) &&
                    GameBootstrapper.AreAllSystemsReady() &&
                    context.IsValid &&
                    context.StartMode == GameStartMode.NewGame;

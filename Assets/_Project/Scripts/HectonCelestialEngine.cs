@@ -126,7 +126,6 @@ namespace Hecton8.Celestial
         private const byte PlanetPhaseChangedEventType = 4;
         private const int ExpectedPendingEventCapacity = 8;
         private const int ListenerCapacity = 8;
-        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
         private struct ListenerSlot
         {
@@ -140,11 +139,17 @@ namespace Hecton8.Celestial
 
         // COLD ALLOC: ListenerSlot[8] - celestial listeners drained by SystemDispatcher without interface array dispatch - owner: CelestialEvents
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
-        private static NativeQueue<CelestialEventPayload> _pendingEvents;
-        private static NativeQueue<CelestialEventPayload> _nextFrameEvents;
+        // COLD ALLOC: CelestialEventPayload[8] - fixed deferred celestial event lane without persistent NativeQueue ownership - owner: CelestialEvents
+        private static readonly CelestialEventPayload[] _pendingEvents = new CelestialEventPayload[ExpectedPendingEventCapacity];
+        // COLD ALLOC: CelestialEventPayload[8] - next-frame reentrant celestial event lane without persistent NativeQueue ownership - owner: CelestialEvents
+        private static readonly CelestialEventPayload[] _nextFrameEvents = new CelestialEventPayload[ExpectedPendingEventCapacity];
         private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _pendingEventReadIndex;
+        private static int _pendingEventWriteIndex;
+        private static int _nextFrameEventReadIndex;
+        private static int _nextFrameEventWriteIndex;
         private static bool _isDispatching;
         private static bool _sunAngleQueued;
         private static bool _planetPhaseQueued;
@@ -159,26 +164,22 @@ namespace Hecton8.Celestial
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(CelestialEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(CelestialEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
-
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
+
+            for (int i = 0; i < ExpectedPendingEventCapacity; i++)
+            {
+                _pendingEvents[i] = default;
+                _nextFrameEvents[i] = default;
+            }
 
             _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _pendingEventReadIndex = 0;
+            _pendingEventWriteIndex = 0;
+            _nextFrameEventReadIndex = 0;
+            _nextFrameEventWriteIndex = 0;
             _isDispatching = false;
             _sunAngleQueued = false;
             _planetPhaseQueued = false;
@@ -283,24 +284,21 @@ namespace Hecton8.Celestial
         /// </summary>
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated)
+            if (_pendingEventCount <= 0 && _nextFrameEventCount <= 0)
                 return;
 
             PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : ExpectedPendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            while (scanBudget-- > 0 && _pendingEventCount > 0)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
-                if (!_pendingEvents.TryDequeue(out CelestialEventPayload payload))
+                if (!TryDequeue(_pendingEvents, ref _pendingEventReadIndex, ref _pendingEventCount, out CelestialEventPayload payload))
                 {
                     _pendingEventCount = 0;
                     break;
                 }
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
 
                 _isDispatching = true;
                 try
@@ -313,11 +311,8 @@ namespace Hecton8.Celestial
                 }
             }
 
-            if (_pendingEvents.IsEmpty())
-            {
-                _pendingEventCount = 0;
+            if (_pendingEventCount <= 0)
                 PromoteNextFrameEventsIfFrontEmpty();
-            }
         }
 
         private static bool Enqueue(byte eventType)
@@ -325,21 +320,16 @@ namespace Hecton8.Celestial
             if (_listenerCount <= 0)
                 return false;
 
-            EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
                 return false;
 
             CelestialEventPayload payload = new CelestialEventPayload { EventType = eventType };
             if (_isDispatching)
             {
-                _nextFrameEvents.Enqueue(payload);
-                _nextFrameEventCount++;
-                return true;
+                return TryEnqueue(_nextFrameEvents, ref _nextFrameEventWriteIndex, ref _nextFrameEventCount, in payload);
             }
 
-            _pendingEvents.Enqueue(payload);
-            _pendingEventCount++;
-            return true;
+            return TryEnqueue(_pendingEvents, ref _pendingEventWriteIndex, ref _pendingEventCount, in payload);
         }
 
         private static void Dispatch(in CelestialEventPayload payload)
@@ -414,67 +404,54 @@ namespace Hecton8.Celestial
             return false;
         }
 
-        private static void EnsureInitialized()
+        private static bool TryEnqueue(
+            CelestialEventPayload[] events,
+            ref int writeIndex,
+            ref int count,
+            in CelestialEventPayload payload)
         {
-            if (_pendingEvents.IsCreated)
-            {
-                if (_nextFrameEvents.IsCreated)
-                    return;
-            }
-            else
-            {
-                _pendingEvents = new NativeQueue<CelestialEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<CelestialEventPayload>[8] - deferred celestial event lane flushed by SystemDispatcher - owner: CelestialEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    ExpectedPendingEventCapacity,
-                    nameof(CelestialEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, ExpectedPendingEventCapacity);
-            }
+            if (count >= ExpectedPendingEventCapacity)
+                return false;
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<CelestialEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<CelestialEventPayload>[8] - next-frame celestial event lane prevents same-frame reentrant dispatch - owner: CelestialEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    ExpectedPendingEventCapacity,
-                    nameof(CelestialEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, ExpectedPendingEventCapacity);
-            }
+            events[writeIndex] = payload;
+            writeIndex = (writeIndex + 1) & (ExpectedPendingEventCapacity - 1);
+            count++;
+            return true;
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
+        private static bool TryDequeue(
+            CelestialEventPayload[] events,
+            ref int readIndex,
+            ref int count,
+            out CelestialEventPayload payload)
         {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
+            if (count <= 0)
             {
+                payload = default;
+                return false;
             }
+
+            payload = events[readIndex];
+            events[readIndex] = default;
+            readIndex = (readIndex + 1) & (ExpectedPendingEventCapacity - 1);
+            count--;
+            return true;
         }
 
         private static void PromoteNextFrameEventsIfFrontEmpty()
         {
-            if (!_pendingEvents.IsCreated ||
-                !_nextFrameEvents.IsCreated ||
-                !_pendingEvents.IsEmpty() ||
-                _nextFrameEventCount <= 0)
+            if (_pendingEventCount > 0 || _nextFrameEventCount <= 0)
             {
                 return;
             }
 
-            NativeQueue<CelestialEventPayload> swap = _pendingEvents;
-            _pendingEvents = _nextFrameEvents;
-            _nextFrameEvents = swap;
-            _pendingEventCount = _nextFrameEventCount;
-            _nextFrameEventCount = 0;
+            while (_nextFrameEventCount > 0 && _pendingEventCount < ExpectedPendingEventCapacity)
+            {
+                if (!TryDequeue(_nextFrameEvents, ref _nextFrameEventReadIndex, ref _nextFrameEventCount, out CelestialEventPayload payload))
+                    break;
+
+                TryEnqueue(_pendingEvents, ref _pendingEventWriteIndex, ref _pendingEventCount, in payload);
+            }
         }
     }
 
@@ -1048,6 +1025,11 @@ namespace Hecton8.Celestial
         private int _firmamentClearKernel = -1;
         private int _firmamentStarKernel = -1;
         private int _firmamentAtmosphereKernel = -1;
+        private int _firmamentClearThreadGroupSizeX;
+        private int _firmamentClearThreadGroupSizeY;
+        private int _firmamentStarThreadGroupSizeX;
+        private int _firmamentAtmosphereThreadGroupSizeX;
+        private int _firmamentAtmosphereThreadGroupSizeY;
         private bool _firmamentResolutionWarningPublished;
         private readonly Vector4[] _skyOccluders = new Vector4[CelestialBodyCacheCapacity]; // COLD ALLOC: Vector4[8] - sky star occluder upload cache - owner: HectonCelestialEngine
         private float _currentAtmosphereExposure = 1f;
@@ -1124,6 +1106,7 @@ namespace Hecton8.Celestial
         private const int CelestialAtmosphereLutResolution = 64;
         private const int FirmamentStartupStarCount = 100000;
         private const int FirmamentStarBakeThreads = 64;
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
         private const float ComputeThreadGroup8Inv = 0.125f;
         private const float FirmamentStarBakeThreadsInv = 0.015625f;
         private const float HorizonDensityQuarter = 0.25f;
@@ -1140,11 +1123,11 @@ namespace Hecton8.Celestial
         private const double InvCelestialGlobalSunUploadPeriodSeconds = 0.016666666666666666d;
         private const int CelestialTimelineMaxStepsPerSlowTick = 5;
         private const int FirmamentMinResolution = 256;
-        private const int FirmamentMx350ResolutionCap = 2048;
-        private const int FirmamentMidVramResolutionCap = 4096;
         private const int FirmamentHighVramResolutionCap = 8192;
-        private const int FirmamentMx350MemoryCapMb = 3072;
-        private const int FirmamentMidVramMemoryCapMb = 8192;
+        private const int FirmamentSurvivalResolutionCap = 2048;
+        private const float FirmamentSurvivalMemoryMb = 2048f;
+        private const float FirmamentOverkillMemoryMb = 12288f;
+        private const float FirmamentUnknownMemoryBudget01 = 0.25f;
         private const int AegirRingShadowGeneratedCookieResolution = 256;
         private const float AegirRingShadowGeneratedLineMinLuma = 0.094117647f;
         private const int BestVisualDefaultsVersion = 5;
@@ -3373,7 +3356,9 @@ namespace Hecton8.Celestial
                 return;
             }
 
-            int starResolution = ResolveFirmamentCubemapResolution();
+            int requestedStarResolution = ResolveFirmamentRequestedResolution();
+            int starResolution = ComputeFirmamentCubemapResolution(requestedStarResolution);
+            PublishFirmamentResolutionClampWarningIfNeeded(requestedStarResolution, starResolution);
             int atmosphereWidth = Mathf.Clamp(atmosphereScatteringLutWidth, 64, 512);
             int atmosphereHeight = Mathf.Clamp(atmosphereScatteringLutHeight, 16, 128);
             EnsureFirmamentStarCubemap(starResolution);
@@ -3409,14 +3394,22 @@ namespace Hecton8.Celestial
                     0f));
             firmamentBakeCompute.SetTexture(_firmamentClearKernel, _ID_BakedStarCubemap, _bakedStarCubemap);
             firmamentBakeCompute.SetTexture(_firmamentStarKernel, _ID_BakedStarCubemap, _bakedStarCubemap);
+            int clearGroupsX = CeilDividePositive(starResolution, _firmamentClearThreadGroupSizeX);
+            int clearGroupsY = CeilDividePositive(starResolution, _firmamentClearThreadGroupSizeY);
+            int starGroupsX = CeilDividePositive(FirmamentStartupStarCount, _firmamentStarThreadGroupSizeX);
+            int atmosphereGroupsX = CeilDividePositive(atmosphereWidth, _firmamentAtmosphereThreadGroupSizeX);
+            int atmosphereGroupsY = CeilDividePositive(atmosphereHeight, _firmamentAtmosphereThreadGroupSizeY);
+            if (clearGroupsX <= 0 || clearGroupsY <= 0 || starGroupsX <= 0 || atmosphereGroupsX <= 0 || atmosphereGroupsY <= 0)
+                return;
+
             firmamentBakeCompute.Dispatch(
                 _firmamentClearKernel,
-                Mathf.CeilToInt(starResolution * ComputeThreadGroup8Inv),
-                Mathf.CeilToInt(starResolution * ComputeThreadGroup8Inv),
+                clearGroupsX,
+                clearGroupsY,
                 6);
             firmamentBakeCompute.Dispatch(
                 _firmamentStarKernel,
-                Mathf.CeilToInt(FirmamentStartupStarCount * FirmamentStarBakeThreadsInv),
+                starGroupsX,
                 1,
                 1);
 
@@ -3433,8 +3426,8 @@ namespace Hecton8.Celestial
                     Mathf.Max(0f, atmosphereScatteringExposure)));
             firmamentBakeCompute.Dispatch(
                 _firmamentAtmosphereKernel,
-                Mathf.CeilToInt(atmosphereWidth * ComputeThreadGroup8Inv),
-                Mathf.CeilToInt(atmosphereHeight * ComputeThreadGroup8Inv),
+                atmosphereGroupsX,
+                atmosphereGroupsY,
                 1);
 
             _firmamentBakedSeed = seed;
@@ -3445,33 +3438,37 @@ namespace Hecton8.Celestial
             PublishFirmamentBakeGlobals();
         }
 
-        private int ResolveFirmamentCubemapResolution()
+        private int ResolveFirmamentRequestedResolution()
         {
-            int requested = Mathf.Clamp(
+            return Mathf.Clamp(
                 firmamentCubemapResolution,
                 FirmamentMinResolution,
                 FirmamentHighVramResolutionCap);
+        }
+
+        private static int ComputeFirmamentCubemapResolution(int requested)
+        {
             int hardwareMax = SystemInfo.maxTextureSize > 0
                 ? Mathf.Min(SystemInfo.maxTextureSize, FirmamentHighVramResolutionCap)
-                : FirmamentMx350ResolutionCap;
-            int memoryMb = SystemInfo.graphicsMemorySize;
-            int memoryMax = FirmamentMx350ResolutionCap;
-            if (memoryMb > FirmamentMidVramMemoryCapMb)
-                memoryMax = FirmamentHighVramResolutionCap;
-            else if (memoryMb > FirmamentMx350MemoryCapMb)
-                memoryMax = FirmamentMidVramResolutionCap;
+                : FirmamentSurvivalResolutionCap;
+            float qualityBudget01 = ResolveFirmamentQualityWeight01();
+            float memoryBudget01 = ResolveFirmamentMemoryBudget01(SystemInfo.graphicsMemorySize);
+            float qualityCurve = SmoothStep01(qualityBudget01);
+            float memoryCurve = SmoothStep01(memoryBudget01);
+            float qualityTarget = math.lerp(FirmamentMinResolution, requested, qualityCurve);
+            float memoryTarget = math.lerp(FirmamentSurvivalResolutionCap, FirmamentHighVramResolutionCap, memoryCurve);
 
             int capped = Mathf.Clamp(
-                Mathf.Min(requested, hardwareMax, memoryMax),
+                Mathf.FloorToInt(math.min(math.min(requested, hardwareMax), math.min(qualityTarget, memoryTarget))),
                 FirmamentMinResolution,
                 FirmamentHighVramResolutionCap);
-            int resolved = FirmamentMinResolution;
-            while (resolved < capped && resolved < FirmamentHighVramResolutionCap)
-                resolved <<= 1;
-            if (resolved > capped)
-                resolved >>= 1;
-            resolved = Mathf.Max(FirmamentMinResolution, resolved);
+            int resolved = ResolvePowerOfTwoFloor(capped);
 
+            return resolved;
+        }
+
+        private void PublishFirmamentResolutionClampWarningIfNeeded(int requested, int resolved)
+        {
             if (resolved < requested && !_firmamentResolutionWarningPublished)
             {
                 _firmamentResolutionWarningPublished = true;
@@ -3480,8 +3477,31 @@ namespace Hecton8.Celestial
                     _FirmamentBakeContextHash,
                     requested - resolved);
             }
+        }
 
-            return resolved;
+        private static float ResolveFirmamentQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 0f);
+        }
+
+        private static float ResolveFirmamentMemoryBudget01(int graphicsMemoryMb)
+        {
+            if (graphicsMemoryMb <= 0)
+                return FirmamentUnknownMemoryBudget01;
+
+            float range = math.max(1f, FirmamentOverkillMemoryMb - FirmamentSurvivalMemoryMb);
+            return math.saturate((graphicsMemoryMb - FirmamentSurvivalMemoryMb) / range);
+        }
+
+        private static int ResolvePowerOfTwoFloor(int value)
+        {
+            int resolved = FirmamentMinResolution;
+            while (resolved < value && resolved < FirmamentHighVramResolutionCap)
+                resolved <<= 1;
+            if (resolved > value)
+                resolved >>= 1;
+            return Mathf.Max(FirmamentMinResolution, resolved);
         }
 
         private void EnsureFirmamentBakeCompute()
@@ -3494,7 +3514,7 @@ namespace Hecton8.Celestial
 
         private bool EnsureFirmamentKernels()
         {
-            if (firmamentBakeCompute == null)
+            if (firmamentBakeCompute == null || !SystemInfo.supportsComputeShaders)
                 return false;
 
             if (_firmamentClearKernel < 0)
@@ -3503,6 +3523,12 @@ namespace Hecton8.Celestial
                     return false;
 
                 _firmamentClearKernel = firmamentBakeCompute.FindKernel("ClearStarCubemap");
+                ResolveKernelThreadGroupSizes(
+                    firmamentBakeCompute,
+                    _firmamentClearKernel,
+                    out _firmamentClearThreadGroupSizeX,
+                    out _firmamentClearThreadGroupSizeY,
+                    out _);
             }
 
             if (_firmamentStarKernel < 0)
@@ -3511,6 +3537,12 @@ namespace Hecton8.Celestial
                     return false;
 
                 _firmamentStarKernel = firmamentBakeCompute.FindKernel("BakeSpectralStars");
+                ResolveKernelThreadGroupSizes(
+                    firmamentBakeCompute,
+                    _firmamentStarKernel,
+                    out _firmamentStarThreadGroupSizeX,
+                    out _,
+                    out _);
             }
 
             if (_firmamentAtmosphereKernel < 0)
@@ -3519,9 +3551,57 @@ namespace Hecton8.Celestial
                     return false;
 
                 _firmamentAtmosphereKernel = firmamentBakeCompute.FindKernel("BakeAtmosphereLut");
+                ResolveKernelThreadGroupSizes(
+                    firmamentBakeCompute,
+                    _firmamentAtmosphereKernel,
+                    out _firmamentAtmosphereThreadGroupSizeX,
+                    out _firmamentAtmosphereThreadGroupSizeY,
+                    out _);
             }
 
             return true;
+        }
+
+        private static void ResolveKernelThreadGroupSizes(
+            ComputeShader compute,
+            int kernel,
+            out int sizeX,
+            out int sizeY,
+            out int sizeZ)
+        {
+            sizeX = 0;
+            sizeY = 0;
+            sizeZ = 0;
+            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+                return;
+
+            compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            if (queryX == 0u || queryY == 0u || queryZ == 0u ||
+                queryX > int.MaxValue || queryY > int.MaxValue || queryZ > int.MaxValue)
+            {
+                return;
+            }
+
+            ulong xyThreads = queryX * (ulong)queryY;
+            if (xyThreads > PortableMaxComputeThreadsPerGroup ||
+                queryZ > PortableMaxComputeThreadsPerGroup / xyThreads)
+            {
+                return;
+            }
+
+            sizeX = (int)queryX;
+            sizeY = (int)queryY;
+            sizeZ = (int)queryZ;
+        }
+
+        private static int CeilDividePositive(int value, int divisor)
+        {
+            const int MaxDispatchGroupsPerDimension = 65535;
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private void EnsureFirmamentStarCubemap(int resolution)
@@ -5005,7 +5085,8 @@ namespace Hecton8.Celestial
             _pendingCelestialRuntimeSnapshotShaderDirty = false;
             _pendingCelestialRuntimeSnapshotShader = default;
             CelestialRuntimeSnapshot emptySnapshot = default;
-            GlobalRegistry.PublishCelestialRuntimeSnapshot(in emptySnapshot);
+            if (Application.isPlaying)
+                GlobalRegistry.PublishCelestialRuntimeSnapshot(in emptySnapshot);
             Shader.SetGlobalVector(_ID_HectonCelestialTidePull, Vector4.zero);
             Shader.SetGlobalFloat(_ID_HectonCelestialTideHeight, 0f);
             Shader.SetGlobalVector(_ID_HectonCelestialGasGiantOffset, Vector4.zero);

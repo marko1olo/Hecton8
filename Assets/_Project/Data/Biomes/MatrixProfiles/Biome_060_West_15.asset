@@ -28,7 +28,7 @@ MonoBehaviour:
     Bracket.'
   landmarkIdentity: The Silt Shadows reads through dunes, plains, void cuts, and
     shape changes in the floor. Landmarks should feel scarce but memorable.
-  safePocketIdentity: 'Safe pockets are short-lived and mostly procedural: a lee
+  safePocketIdentity: 'Reorientation pockets are short-lived and mostly procedural: a lee
     side, a bowl edge, a dead current seam.'
   riskSummary: 'Main failure mode: orientation loss and long empty recovery swims,
     depth stress, and expensive hesitation. Creature pressure stays medium.'

@@ -11,7 +11,10 @@ namespace Hecton8.Tools.DataMonolithBakeCli
 {
     internal static unsafe class DataMonolithLoadStressProbe
     {
+        private const string AgentId = "X_002";
+        private const string AgentId1330 = "1330";
         private const string ReportPath = "Docs/Reports/DATA_MONOLITH_LOAD_STRESS_X_002.json";
+        private const string ReportPath1330 = "Docs/Reports/DATA_MONOLITH_LOAD_STRESS_1330.json";
         private const int ValidationIterations = 1024;
         private const int NativeReadTimingAttempts = 5;
         private const int ValidationTimingBatches = 5;
@@ -29,12 +32,12 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             string reportPath = Path.Combine(projectRoot, ReportPath);
             Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
 
-            if (!File.Exists(blobPath))
+            if (!TryGetBlobLength(blobPath, out int blobLength, out string setupError))
             {
                 WriteReport(
                     reportPath,
                     passed: false,
-                    setupError: "static_data.h8bin missing",
+                    setupError: setupError,
                     blobBytes: 0,
                     fileReadTicks: 0,
                     fileReadAllocatedBytes: 0,
@@ -54,13 +57,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 return false;
             }
 
-            long fileReadAllocBefore = GC.GetAllocatedBytesForCurrentThread();
-            long fileReadStart = Stopwatch.GetTimestamp();
-            byte[] blob = File.ReadAllBytes(blobPath);
-            long fileReadTicks = Stopwatch.GetTimestamp() - fileReadStart;
-            long fileReadAllocatedBytes = GC.GetAllocatedBytesForCurrentThread() - fileReadAllocBefore;
-
-            nuint allocBytes = (nuint)AlignUp(blob.Length, AlignmentBytes);
+            nuint allocBytes = (nuint)AlignUp(blobLength, AlignmentBytes);
             void* nativeReadResident = NativeMemory.AlignedAlloc(allocBytes, AlignmentBytes);
             void* resident = NativeMemory.AlignedAlloc(allocBytes, AlignmentBytes);
             if (nativeReadResident == null || resident == null)
@@ -73,9 +70,9 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                     reportPath,
                     passed: false,
                     setupError: "NativeMemory.AlignedAlloc failed",
-                    blobBytes: blob.Length,
-                    fileReadTicks: fileReadTicks,
-                    fileReadAllocatedBytes: fileReadAllocatedBytes,
+                    blobBytes: blobLength,
+                    fileReadTicks: 0,
+                    fileReadAllocatedBytes: 0,
                     residentCopyTicks: 0,
                     residentCopyAllocatedBytes: 0,
                     nativeReadTicks: 0,
@@ -94,12 +91,42 @@ namespace Hecton8.Tools.DataMonolithBakeCli
 
             try
             {
+                long fileReadAllocBefore = GC.GetAllocatedBytesForCurrentThread();
+                long fileReadStart = Stopwatch.GetTimestamp();
+                bool fileReadOk = TryReadFileToNative(blobPath, (byte*)resident, blobLength, out setupError);
+                long fileReadTicks = Stopwatch.GetTimestamp() - fileReadStart;
+                long fileReadAllocatedBytes = GC.GetAllocatedBytesForCurrentThread() - fileReadAllocBefore;
+                if (!fileReadOk)
+                {
+                    WriteReport(
+                        reportPath,
+                        passed: false,
+                        setupError: setupError,
+                        blobBytes: blobLength,
+                        fileReadTicks: fileReadTicks,
+                        fileReadAllocatedBytes: fileReadAllocatedBytes,
+                        residentCopyTicks: 0,
+                        residentCopyAllocatedBytes: 0,
+                        nativeReadTicks: 0,
+                        nativeReadAllocatedBytes: 0,
+                        validationTicks: 0,
+                        validationAllocatedBytes: 0,
+                        checksumFailureCode: 0,
+                        offsetFailureCode: 0,
+                        badChecksumRejected: false,
+                        badOffsetRejected: false,
+                        nativeReadSupported: false,
+                        nativeReadOk: false,
+                        nativeReadValid: false);
+                    return false;
+                }
+
                 bool nativeReadSupported = OperatingSystem.IsWindows();
                 bool nativeReadOk = false;
                 bool nativeReadValid = false;
                 long nativeReadTicks = 0L;
                 long nativeReadAllocatedBytes = 0L;
-                if (nativeReadSupported && TryReadViaNativeFile(blobPath, (byte*)nativeReadResident, blob.Length))
+                if (nativeReadSupported && TryReadViaNativeFile(blobPath, (byte*)nativeReadResident, blobLength))
                 {
                     GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
                     GC.WaitForPendingFinalizers();
@@ -111,7 +138,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                     {
                         long nativeReadAllocBefore = GC.GetAllocatedBytesForCurrentThread();
                         long nativeReadStart = Stopwatch.GetTimestamp();
-                        bool attemptOk = TryReadViaNativeFile(blobPath, (byte*)nativeReadResident, blob.Length);
+                        bool attemptOk = TryReadViaNativeFile(blobPath, (byte*)nativeReadResident, blobLength);
                         long attemptTicks = Stopwatch.GetTimestamp() - nativeReadStart;
                         nativeReadAllocatedTotal += GC.GetAllocatedBytesForCurrentThread() - nativeReadAllocBefore;
                         if (attemptOk && attemptTicks < bestNativeReadTicks)
@@ -123,35 +150,28 @@ namespace Hecton8.Tools.DataMonolithBakeCli
 
                     nativeReadTicks = bestNativeReadTicks == long.MaxValue ? 0L : bestNativeReadTicks;
                     nativeReadAllocatedBytes = nativeReadAllocatedTotal;
-                    nativeReadValid = nativeReadOk && ValidateResidentBlob((byte*)nativeReadResident, blob.Length, out int nativeFailureCode) && nativeFailureCode == FailureNone;
+                    nativeReadValid = nativeReadOk && ValidateResidentBlob((byte*)nativeReadResident, blobLength, out int nativeFailureCode) && nativeFailureCode == FailureNone;
                 }
 
-                long residentCopyAllocBefore = GC.GetAllocatedBytesForCurrentThread();
-                long residentCopyStart = Stopwatch.GetTimestamp();
-                fixed (byte* source = blob)
-                {
-                    Buffer.MemoryCopy(source, resident, (long)allocBytes, blob.Length);
-                }
+                long residentCopyTicks = 0L;
+                long residentCopyAllocatedBytes = 0L;
 
-                long residentCopyTicks = Stopwatch.GetTimestamp() - residentCopyStart;
-                long residentCopyAllocatedBytes = GC.GetAllocatedBytesForCurrentThread() - residentCopyAllocBefore;
-
-                bool residentValid = ValidateResidentBlob((byte*)resident, blob.Length, out int validFailureCode);
+                bool residentValid = ValidateResidentBlob((byte*)resident, blobLength, out int validFailureCode);
 
                 byte* corruptChecksum = (byte*)resident;
                 ulong originalChecksum = ReadUInt64(corruptChecksum, 8);
                 WriteUInt64(corruptChecksum, 8, 0UL);
-                bool badChecksumRejected = !ValidateResidentBlob(corruptChecksum, blob.Length, out int checksumFailureCode) &&
+                bool badChecksumRejected = !ValidateResidentBlob(corruptChecksum, blobLength, out int checksumFailureCode) &&
                                            checksumFailureCode == FailureBadChecksum;
                 WriteUInt64(corruptChecksum, 8, originalChecksum);
 
                 uint firstSectionOffset = ReadUInt32((byte*)resident, 128 + 12);
-                WriteUInt32((byte*)resident, 128 + 12, (uint)(blob.Length - AlignmentBytes));
-                RecomputeHeaderChecksum((byte*)resident, blob.Length);
-                bool badOffsetRejected = !ValidateResidentBlob((byte*)resident, blob.Length, out int offsetFailureCode) &&
+                WriteUInt32((byte*)resident, 128 + 12, (uint)(blobLength - AlignmentBytes));
+                RecomputeHeaderChecksum((byte*)resident, blobLength);
+                bool badOffsetRejected = !ValidateResidentBlob((byte*)resident, blobLength, out int offsetFailureCode) &&
                                          offsetFailureCode == FailureSectionOutOfRange;
                 WriteUInt32((byte*)resident, 128 + 12, firstSectionOffset);
-                RecomputeHeaderChecksum((byte*)resident, blob.Length);
+                RecomputeHeaderChecksum((byte*)resident, blobLength);
 
                 GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
                 GC.WaitForPendingFinalizers();
@@ -169,7 +189,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                     int failureAccumulator = 0;
                     for (int i = 0; i < ValidationIterations; i++)
                     {
-                        if (ValidateResidentBlob((byte*)resident, blob.Length, out int failureCode))
+                        if (ValidateResidentBlob((byte*)resident, blobLength, out int failureCode))
                             validCount++;
                         failureAccumulator ^= failureCode;
                     }
@@ -201,7 +221,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                     reportPath,
                     passed,
                     string.Empty,
-                    blob.Length,
+                    blobLength,
                     fileReadTicks,
                     fileReadAllocatedBytes,
                     residentCopyTicks,
@@ -224,6 +244,83 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 NativeMemory.AlignedFree(nativeReadResident);
                 NativeMemory.AlignedFree(resident);
             }
+        }
+
+        private static bool TryGetBlobLength(string path, out int blobLength, out string error)
+        {
+            blobLength = 0;
+            error = string.Empty;
+            try
+            {
+                FileInfo info = new FileInfo(path);
+                if (!info.Exists)
+                {
+                    error = "static_data.h8bin missing";
+                    return false;
+                }
+
+                if (info.Length <= 0L || info.Length > int.MaxValue)
+                {
+                    error = "static_data.h8bin length outside CLI load-stress contract: " + info.Length;
+                    return false;
+                }
+
+                blobLength = (int)info.Length;
+                return true;
+            }
+            catch (IOException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (UnauthorizedAccessException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (ArgumentException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailSetupFileOperation(ex, out error); }
+        }
+
+        private static bool TryReadFileToNative(string path, byte* destination, int expectedBytes, out string error)
+        {
+            error = string.Empty;
+            if (destination == null || expectedBytes <= 0)
+            {
+                error = "invalid native read target";
+                return false;
+            }
+
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 64 * 1024, FileOptions.SequentialScan);
+                if (stream.Length != expectedBytes)
+                {
+                    error = "static_data.h8bin length changed during load stress probe: expected=" + expectedBytes + " actual=" + stream.Length;
+                    return false;
+                }
+
+                int total = 0;
+                while (total < expectedBytes)
+                {
+                    int readSize = Math.Min(64 * 1024, expectedBytes - total);
+                    Span<byte> target = new Span<byte>(destination + total, readSize);
+                    int read = stream.Read(target);
+                    if (read <= 0)
+                    {
+                        error = "static_data.h8bin native read was incomplete: " + total + "/" + expectedBytes;
+                        return false;
+                    }
+
+                    total += read;
+                }
+
+                return true;
+            }
+            catch (IOException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (UnauthorizedAccessException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (ArgumentException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (NotSupportedException ex) { return FailSetupFileOperation(ex, out error); }
+            catch (System.Security.SecurityException ex) { return FailSetupFileOperation(ex, out error); }
+        }
+
+        private static bool FailSetupFileOperation(Exception ex, out string error)
+        {
+            error = ex.GetType().Name + ": " + ex.Message;
+            return false;
         }
 
         private const int FailureNone = 0;
@@ -479,13 +576,13 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             double nativeReadMicroseconds = TicksToMicroseconds(nativeReadTicks);
             double validationTotalMicroseconds = TicksToMicroseconds(validationTicks);
             double validationMeanMicroseconds = validationTicks == 0L ? 0.0 : validationTotalMicroseconds / ValidationIterations;
-            double residentPointerLoadEstimateMicroseconds = residentCopyMicroseconds + validationMeanMicroseconds;
+            double residentPointerLoadEstimateMicroseconds = fileReadMicroseconds + validationMeanMicroseconds;
             double nativeResidentLoadEstimateMicroseconds = nativeReadMicroseconds + validationMeanMicroseconds;
             bool targetLoadMet = nativeReadSupported && nativeReadOk && nativeReadValid && nativeResidentLoadEstimateMicroseconds < TargetLoadMicroseconds && nativeReadAllocatedBytes + validationAllocatedBytes == 0L;
             StringBuilder report = new StringBuilder(4096);
             report.AppendLine("{");
             report.AppendLine("  \"schema\": \"HECTON8_DATA_MONOLITH_LOAD_STRESS_V1\",");
-            report.AppendLine("  \"agent\": \"X_002\",");
+            report.AppendLine("  \"agent\": \"" + AgentId + "\",");
             report.Append("  \"generated\": \"").Append(DateTime.UtcNow.ToString("O")).AppendLine("\",");
             report.Append("  \"status\": \"").Append(passed ? (targetLoadMet ? "PASS_NATIVE_READ_ZERO_GC_TARGET_TIME" : "PASS_ZERO_GC_TARGET_TIME_MISSED") : "FAIL").AppendLine("\",");
             report.Append("  \"setupError\": \"").Append(Escape(setupError)).AppendLine("\",");
@@ -509,7 +606,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             report.Append("  \"residentValidationMeanMicroseconds\": ").Append(validationMeanMicroseconds.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
             report.Append("  \"residentValidationAllocatedBytes\": ").Append(validationAllocatedBytes).AppendLine(",");
             report.Append("  \"residentPointerLoadEstimateMicroseconds\": ").Append(residentPointerLoadEstimateMicroseconds.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
-            report.Append("  \"residentPointerLoadEstimateAllocatedBytes\": ").Append(residentCopyAllocatedBytes + validationAllocatedBytes).AppendLine(",");
+            report.Append("  \"residentPointerLoadEstimateAllocatedBytes\": ").Append(fileReadAllocatedBytes + validationAllocatedBytes).AppendLine(",");
             report.Append("  \"nativeResidentLoadEstimateMicroseconds\": ").Append(nativeResidentLoadEstimateMicroseconds.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
             report.Append("  \"nativeResidentLoadEstimateAllocatedBytes\": ").Append(nativeReadAllocatedBytes + validationAllocatedBytes).AppendLine(",");
             report.Append("  \"badChecksumRejected\": ").Append(badChecksumRejected ? "true" : "false").AppendLine(",");
@@ -522,7 +619,16 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             report.AppendLine("    \"8\": \"SectionOutOfRange\"");
             report.AppendLine("  }");
             report.AppendLine("}");
-            File.WriteAllText(reportPath, report.ToString(), Encoding.UTF8);
+            string text = report.ToString();
+            File.WriteAllText(reportPath, text, Encoding.UTF8);
+
+            string reportPath1330 = Path.Combine(
+                Path.GetDirectoryName(reportPath) ?? string.Empty,
+                Path.GetFileName(ReportPath1330));
+            File.WriteAllText(
+                reportPath1330,
+                text.Replace("\"agent\": \"" + AgentId + "\"", "\"agent\": \"" + AgentId1330 + "\"", StringComparison.Ordinal),
+                Encoding.UTF8);
         }
 
         private static double TicksToMicroseconds(long ticks)

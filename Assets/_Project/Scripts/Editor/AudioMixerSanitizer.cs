@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -11,7 +13,8 @@ namespace Hecton8.Editor
     /// </summary>
     internal static class AudioMixerSanitizer
     {
-        private const string TargetEffectName = "Hecton Sensory Kernel";
+        internal const string MasterMixerPath = "Assets/_Project/MasterMixer.mixer";
+        internal const string KernelEffectName = "Hecton Sensory Kernel";
 
         [MenuItem("Hecton8/Audio/Sanitize Missing Mixer Effects")]
         private static void SanitizeFromMenu()
@@ -147,11 +150,37 @@ namespace Hecton8.Editor
 
         private static bool ShouldRemoveEffect(string effectName, string effectId)
         {
-            if (string.IsNullOrEmpty(effectId))
-                return true;
+            _ = effectName;
+            return string.IsNullOrEmpty(effectId);
+        }
 
-            return !string.IsNullOrEmpty(effectName) &&
-                   effectName.IndexOf(TargetEffectName, System.StringComparison.OrdinalIgnoreCase) >= 0;
+        internal static bool HasMixerEffectAtPath(string mixerPath, string expectedEffectName)
+        {
+            if (string.IsNullOrEmpty(mixerPath) || string.IsNullOrEmpty(expectedEffectName))
+                return false;
+
+            Object[] subAssets = AssetDatabase.LoadAllAssetsAtPath(mixerPath);
+            if (subAssets == null || subAssets.Length == 0)
+                return false;
+
+            for (int i = 0; i < subAssets.Length; i++)
+            {
+                Object subAsset = subAssets[i];
+                if (subAsset == null || !IsMixerEffectController(subAsset))
+                    continue;
+
+                SerializedObject effectSerializedObject = new SerializedObject(subAsset);
+                SerializedProperty effectNameProperty = effectSerializedObject.FindProperty("m_EffectName");
+                SerializedProperty effectIdProperty = effectSerializedObject.FindProperty("m_EffectID");
+                string effectName = effectNameProperty != null ? effectNameProperty.stringValue : string.Empty;
+                string effectId = effectIdProperty != null ? effectIdProperty.stringValue : string.Empty;
+
+                if (!string.IsNullOrEmpty(effectId) &&
+                    string.Equals(effectName, expectedEffectName, System.StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool IsMixerEffectController(Object subAsset)
@@ -164,6 +193,22 @@ namespace Hecton8.Editor
         {
             System.Type subAssetType = subAsset.GetType();
             return subAssetType != null && subAssetType.Name == "AudioMixerGroupController";
+        }
+    }
+
+    internal sealed class AudioMixerNativeEffectBuildGate : IPreprocessBuildWithReport
+    {
+        public int callbackOrder => -4639;
+
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            if (AudioMixerSanitizer.HasMixerEffectAtPath(
+                    AudioMixerSanitizer.MasterMixerPath,
+                    AudioMixerSanitizer.KernelEffectName))
+                return;
+
+            throw new BuildFailedException(
+                "[AudioMixer] MasterMixer.mixer is missing native effect 'Hecton Sensory Kernel'. The 1314 master-bus bridge can register a descriptor, but Unity will not call the native ProcessCallback until this effect is authored on the mixer.");
         }
     }
 }

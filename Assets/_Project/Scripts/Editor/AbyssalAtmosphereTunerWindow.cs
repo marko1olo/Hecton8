@@ -280,7 +280,7 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            string path = Path.Combine(Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath, "Docs", "water_extinction_profiles.csv");
+            string path = Path.Combine(Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath, "Docs", "Data", "Profiles", "water_extinction_profiles.csv");
             if (!File.Exists(path))
             {
                 _status.text = "water_extinction_profiles.csv missing.";

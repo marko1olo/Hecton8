@@ -78,7 +78,12 @@ Shader "HECTON/Scanner/PulseInstanced"
 
             float TemporalFlicker01(float timeSeconds, float speed, float phaseOffset)
             {
-                return frac(sin(timeSeconds * max(speed, 0.001) + phaseOffset) * 43758.5453);
+                return Hash21(float2(timeSeconds * max(speed, 0.001), phaseOffset));
+            }
+
+            float ResolveLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) * rcp(max(edge1 - edge0, 0.0001)));
             }
 
             float2 ApproximateUnitDirectionDiamond(float2 value)
@@ -104,19 +109,19 @@ Shader "HECTON/Scanner/PulseInstanced"
                 float innerStart = max(0.0, 1.0 - _RingThickness * 2.0);
                 outerStart *= outerStart;
                 innerStart *= innerStart;
-                float outer = 1.0 - smoothstep(outerStart, 1.0, radiusSq);
-                float inner = smoothstep(innerStart, outerStart, radiusSq);
+                float outer = 1.0 - ResolveLinearRamp01(outerStart, 1.0, radiusSq);
+                float inner = ResolveLinearRamp01(innerStart, outerStart, radiusSq);
                 float radial01 = saturate(radiusSq);
                 float band = floor(radial01 * 42.0 + _Time.y * 18.0);
                 float noise = Hash21(float2(band, floor(centered.x * 19.0 + centered.y * 23.0)));
-                float sweep = smoothstep(0.92, 1.0, frac(radial01 * 6.0 - _Time.y * 1.7));
+                float sweep = ResolveLinearRamp01(0.92, 1.0, frac(radial01 * 6.0 - _Time.y * 1.7));
                 float analogJitter = lerp(1.0, 0.72 + noise * 0.56, saturate(_AnalogJitterStrength + sweep * 0.08));
                 float chromaBias = (noise - 0.5) * _AnalogJitterStrength;
                 float alpha = saturate(outer * inner * analogJitter) * _BaseColor.a;
                 float2 radialDir = ApproximateUnitDirectionDiamond(centered);
                 float sweepDot = dot(radialDir, float2(_SinTime.y, _CosTime.y));
                 float sweepLine = saturate(1.0 - abs(sweepDot - 0.91) * 16.0);
-                sweepLine = sweepLine * sweepLine * (3.0 - 2.0 * sweepLine);
+                sweepLine *= sweepLine;
                 float sweepFlicker = TemporalFlicker01(_Time.y, 24.0, band * 0.173 + noise * 5.13);
                 float sweepGlow = sweepLine * sweepFlicker * _SweepInterferenceStrength;
                 alpha = saturate(alpha + sweepGlow * outer * _BaseColor.a);

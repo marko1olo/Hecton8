@@ -131,9 +131,8 @@ namespace Hecton8.Construction
             }
         }
 
-        internal static void Dispose()
+        internal static void Dispose(IDataVault vault)
         {
-            IDataVault vault = GlobalRegistry.DataVault;
             if (vault != null)
             {
                 ReleaseBuffer(vault, ref s_EdgeOffsetsHandle);
@@ -206,7 +205,7 @@ namespace Hecton8.Construction
         {
             int safeLength = math.max(1, requiredLength);
             if (IsHandleCreated(in handle) &&
-                vault.TryResolveHandle(in handle, out NativeArray<T> existing) &&
+                vault.TryReadHandle(in handle, out NativeArray<T> existing) &&
                 existing.IsCreated &&
                 existing.Length >= safeLength)
             {
@@ -219,7 +218,7 @@ namespace Hecton8.Construction
                 OwnerSystem,
                 NativeArrayOptions.ClearMemory);
             return IsHandleCreated(in handle) &&
-                   vault.TryResolveHandle(in handle, out existing) &&
+                   vault.TryReadHandle(in handle, out existing) &&
                    existing.IsCreated &&
                    existing.Length >= safeLength;
         }

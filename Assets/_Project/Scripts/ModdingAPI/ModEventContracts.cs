@@ -54,7 +54,7 @@ namespace Hecton8.Modding
     /// Read-only player spawn snapshot for mod event hooks.
     /// No mutable engine arrays or Unity object references are exposed.
     /// </summary>
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
     public readonly struct ModPlayerSpawnedEvent
     {
         public ModPlayerSpawnedEvent(ulong playerId, float3 absoluteUniversePosition, int biomeId)
@@ -64,15 +64,20 @@ namespace Hecton8.Modding
             BiomeId = biomeId;
         }
 
+        [System.Runtime.InteropServices.FieldOffset(0)]
         public readonly ulong PlayerId;
+
+        [System.Runtime.InteropServices.FieldOffset(8)]
         public readonly float3 AbsoluteUniversePosition;
+
+        [System.Runtime.InteropServices.FieldOffset(20)]
         public readonly int BiomeId;
     }
 
     /// <summary>
     /// Read-only biome transition snapshot for mod event hooks.
     /// </summary>
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
     public readonly struct ModBiomeChangedEvent
     {
         public ModBiomeChangedEvent(int previousBiomeId, int currentBiomeId, float3 absoluteUniversePosition)
@@ -80,24 +85,33 @@ namespace Hecton8.Modding
             PreviousBiomeId = previousBiomeId;
             CurrentBiomeId = currentBiomeId;
             AbsoluteUniversePosition = absoluteUniversePosition;
+            _pad0 = 0u;
         }
 
+        [System.Runtime.InteropServices.FieldOffset(0)]
         public readonly int PreviousBiomeId;
+
+        [System.Runtime.InteropServices.FieldOffset(4)]
         public readonly int CurrentBiomeId;
+
+        [System.Runtime.InteropServices.FieldOffset(8)]
         public readonly float3 AbsoluteUniversePosition;
+
+        [System.Runtime.InteropServices.FieldOffset(20)]
+        private readonly uint _pad0;
     }
 
     /// <summary>
     /// First-party bridge for safe mod event publication.
     /// </summary>
-    public static class HectonModHooks
+    internal static class HectonModHooks
     {
-        public static void PublishPlayerSpawned(in ModPlayerSpawnedEvent payload)
+        internal static void PublishPlayerSpawned(in ModPlayerSpawnedEvent payload)
         {
             HectonEventBus.Publish(in payload);
         }
 
-        public static void PublishBiomeChanged(in ModBiomeChangedEvent payload)
+        internal static void PublishBiomeChanged(in ModBiomeChangedEvent payload)
         {
             HectonEventBus.Publish(in payload);
         }

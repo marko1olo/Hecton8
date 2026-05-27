@@ -8,7 +8,6 @@ namespace Hecton8.Inventory
 {
     using Hecton8.Core;
     using Unity.Collections;
-    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
     using Unity.Mathematics;
     using UnityEngine;
@@ -84,12 +83,6 @@ namespace Hecton8.Inventory
         public static bool IsValidDescriptor(in InventoryItemDescriptor descriptor)
         {
             return descriptor.HashId != 0 && descriptor.Width > 0 && descriptor.Height > 0;
-        }
-
-        public unsafe void* GetAnchorHashIdsUnsafeReadOnlyPtr(out int length)
-        {
-            length = _anchorHashIds.IsCreated ? _anchorHashIds.Length : 0;
-            return length > 0 ? NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_anchorHashIds) : null;
         }
 
         public InventoryGrid(int columns, int rows)

@@ -17,7 +17,7 @@ Do not mark `[x]` without current player build, Play Mode, user confirmation, pr
 
 Latest local full-solution CLI PASS:
 
-- `Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_020504.log`
+- `Docs/Reports/BUILD_UNKNOWN_RUNTIME_API_TRAP_CLEANUP_20260526.log`
 - Command: `dotnet build .\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false`
 - Exit code: `0`
 - Proof lines: `66 Build succeeded.`, `67 0 Warning(s)`, `68 0 Error(s)`

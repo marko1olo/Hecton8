@@ -71,27 +71,43 @@ namespace Hecton8.Environment
             if (!math.all(math.isfinite(deltaD)))
                 return float3.zero;
 
-            float3 delta = (float3)deltaD;
-            float distanceSq = math.lengthsq(delta);
-            if (!math.isfinite(distanceSq) || distanceSq <= 0.000001f)
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
+            float currentRadius = math.isfinite(signal.CurrentRadiusMeters) ? math.max(0f, signal.CurrentRadiusMeters) : 0f;
+            float pRadius = math.isfinite(signal.PWaveRadiusMeters) ? math.max(0f, signal.PWaveRadiusMeters) : 0f;
+            float sRadius = math.isfinite(signal.SWaveRadiusMeters) ? math.max(0f, signal.SWaveRadiusMeters) : 0f;
+            float pBand = math.lerp(96f, 24f, quality);
+            float sBand = math.lerp(128f, 36f, quality);
+            double maxWaveRadius = math.max((double)currentRadius, math.max((double)pRadius, (double)sRadius));
+            double maxInfluenceDistance = math.min(
+                SeismicDirectorConstants.MaxSeismicEvaluationDistanceMeters,
+                math.max(1d, maxWaveRadius + math.max((double)pBand, (double)sBand)));
+            double distanceSqD = math.lengthsq(deltaD);
+            if (!math.isfinite(distanceSqD) || distanceSqD > maxInfluenceDistance * maxInfluenceDistance)
+                return float3.zero;
+
+            float3 delta;
+            float distanceSq;
+            if (distanceSqD <= SeismicDirectorConstants.MinSeismicDistanceSq)
             {
                 delta = new float3(0f, 1f, 0f);
                 distanceSq = 1f;
+            }
+            else
+            {
+                delta = (float3)deltaD;
+                if (!math.all(math.isfinite(delta)))
+                    return float3.zero;
+
+                distanceSq = (float)distanceSqD;
             }
 
             float safeDistanceSq = math.max(0.000001f, distanceSq);
             float invDistance = math.rsqrt(safeDistanceSq);
             float distance = safeDistanceSq * invDistance;
             float3 radial = delta * invDistance;
-            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
-            float currentRadius = math.isfinite(signal.CurrentRadiusMeters) ? math.max(0f, signal.CurrentRadiusMeters) : 0f;
-            float pRadius = math.isfinite(signal.PWaveRadiusMeters) ? math.max(0f, signal.PWaveRadiusMeters) : 0f;
-            float sRadius = math.isfinite(signal.SWaveRadiusMeters) ? math.max(0f, signal.SWaveRadiusMeters) : 0f;
             float magnitude01 = math.saturate((math.isfinite(signal.MagnitudeRichter) ? signal.MagnitudeRichter : 0f) * 0.1f);
             float pAmplitude01 = math.saturate(math.isfinite(signal.PWaveAmplitude01) ? signal.PWaveAmplitude01 : 0f);
             float sAmplitude01 = math.saturate(math.isfinite(signal.SWaveAmplitude01) ? signal.SWaveAmplitude01 : 0f);
-            float pBand = math.lerp(96f, 24f, quality);
-            float sBand = math.lerp(128f, 36f, quality);
             float pArrival = WaveFront01(distance, pRadius, pBand);
             float sArrival = WaveFront01(distance, sRadius, sBand);
             float attenuation = 1f / math.max(0.0001f, 1f + (distance / math.max(1f, currentRadius + 1f)));
@@ -382,6 +398,8 @@ namespace Hecton8.Environment
         public const float DefaultEclipseThreshold01 = 0.2f;
         public const float DefaultTidalFlowScale = 0.65f;
         public const float DefaultSeismicFrequency = 0.071f;
+        public const double MinSeismicDistanceSq = 0.000001d;
+        public const double MaxSeismicEvaluationDistanceMeters = 1000000000d;
         public const uint EmergencyFaultHash = 0x51464B45u;
         public const uint NarrativeMockHash = 0x4E415252u;
         public const uint TectonicDebrisHash = 0x54454344u;
@@ -4660,10 +4678,29 @@ namespace Hecton8.Environment
                     maxWaveRadius = math.max(maxWaveRadius, pRadius);
                     eventHash = seismicEvent.EventTypeHash;
 
-                    float3 delta = (float3)deltaD;
-                    float distSqRaw = math.lengthsq(delta);
-                    float distSq = math.max(1f, math.isfinite(distSqRaw) ? distSqRaw : 1f);
-                    float distance = math.sqrt(distSq);
+                    double maxInfluenceDistance = math.min(
+                        SeismicDirectorConstants.MaxSeismicEvaluationDistanceMeters,
+                        math.max(1d, (double)maxRadius + math.max((double)pWaveBand, (double)sWaveBand)));
+                    double distSqD = math.lengthsq(deltaD);
+                    float3 delta = new float3(1f, 0f, 0f);
+                    float distance = (float)maxInfluenceDistance;
+                    if (math.isfinite(distSqD) && distSqD <= maxInfluenceDistance * maxInfluenceDistance)
+                    {
+                        if (distSqD <= SeismicDirectorConstants.MinSeismicDistanceSq)
+                        {
+                            distance = 1f;
+                        }
+                        else
+                        {
+                            float3 localDelta = (float3)deltaD;
+                            if (math.all(math.isfinite(localDelta)))
+                            {
+                                delta = localDelta;
+                                distance = math.sqrt(math.max(1f, (float)distSqD));
+                            }
+                        }
+                    }
+
                     float pArrival = WaveFront01(distance, pRadius, pWaveBand);
                     float sArrival = WaveFront01(distance, sRadius, sWaveBand);
                     float radiusRatio = distance / math.max(1f, maxRadius);

@@ -361,6 +361,9 @@ namespace Hecton8.Core.Bridge
 #if UNITY_EDITOR
     internal static class H8PrefabRegistryVramEstimator
     {
+        private static readonly List<Renderer> s_RendererScratch = new List<Renderer>(32);
+        private static readonly List<Material> s_MaterialScratch = new List<Material>(8);
+
         public static long EstimatePrefabBytes(GameObject prefab)
         {
             if (prefab == null)
@@ -368,17 +371,19 @@ namespace Hecton8.Core.Bridge
 
             long total = 0L;
             HashSet<int> countedTextures = new HashSet<int>();
-            Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < renderers.Length; i++)
+            s_RendererScratch.Clear();
+            prefab.GetComponentsInChildren(true, s_RendererScratch);
+            for (int i = 0; i < s_RendererScratch.Count; i++)
             {
-                Renderer renderer = renderers[i];
+                Renderer renderer = s_RendererScratch[i];
                 if (renderer == null)
                     continue;
 
-                Material[] materials = renderer.sharedMaterials;
-                for (int j = 0; j < materials.Length; j++)
+                s_MaterialScratch.Clear();
+                renderer.GetSharedMaterials(s_MaterialScratch);
+                for (int j = 0; j < s_MaterialScratch.Count; j++)
                 {
-                    Material material = materials[j];
+                    Material material = s_MaterialScratch[j];
                     if (material == null)
                         continue;
 
@@ -398,6 +403,8 @@ namespace Hecton8.Core.Bridge
                 }
             }
 
+            s_MaterialScratch.Clear();
+            s_RendererScratch.Clear();
             return total;
         }
 

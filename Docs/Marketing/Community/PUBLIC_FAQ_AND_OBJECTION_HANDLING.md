@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Public FAQ And Objection Handling
 
 Status: public-response draft bank
-Owner lane: SHINOBU_81 / community and press response
+Owner lane: Marketing / community and press response
 Runtime impact: none
 
 ## Purpose

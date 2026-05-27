@@ -29,6 +29,23 @@ namespace Hecton8.Construction
         private const float AuthoritativeQualityWeight = 1f;
         private const uint MockSeed = 0x53484E42u;
         private const SystemID OwnerSystemId = SystemID.Construction;
+        private const uint BulkheadJobPinStates = 1u << 0;
+        private const uint BulkheadJobPinAups = 1u << 1;
+        private const uint BulkheadJobPinPlanes = 1u << 2;
+        private const uint BulkheadJobPinCsrEdges = 1u << 3;
+        private const uint BulkheadJobPinEdgeConductivity = 1u << 4;
+        private const uint BulkheadJobPinFluidFlow = 1u << 5;
+        private const uint BulkheadJobPinModuleIntegrity = 1u << 6;
+        private const uint BulkheadJobPinCollisionResults = 1u << 7;
+        private const uint BulkheadJobPinTelemetry = 1u << 8;
+        private const uint BulkheadJobPinTelemetryCursor = 1u << 9;
+        private const uint BulkheadJobPinHatchStates = 1u << 10;
+        private const uint BulkheadJobPinHatchTelemetry = 1u << 11;
+        private const uint BulkheadJobPinHatchTelemetryCursor = 1u << 12;
+        private const uint BulkheadJobPinHatchTuning = 1u << 13;
+        private const uint BulkheadJobPinHatchMockFluid = 1u << 14;
+        private const uint BulkheadJobPinHatchFluidFront = 1u << 15;
+        private const uint BulkheadJobPinHatchStructural = 1u << 16;
 
         private static readonly int GlobalBulkheadStatesId = Shader.PropertyToID("_GlobalBulkheadStates");
         private static readonly int GlobalBulkheadParamsId = Shader.PropertyToID("_GlobalBulkheadParams");
@@ -91,6 +108,8 @@ namespace Hecton8.Construction
         private JobHandle _simulationHandle;
         private bool _preSimulationScheduled;
         private bool _simulationScheduled;
+        private IDataVault _bulkheadJobPinVault;
+        private uint _bulkheadJobPinMask;
         private GraphicsBuffer _shaderStateBufferA;
         private GraphicsBuffer _shaderStateBufferB;
         private uint _lastShaderUploadHash;
@@ -132,7 +151,7 @@ namespace Hecton8.Construction
 
             activeCount = runtime._activeCount;
             quality = ResolveBulkheadQualityWeight();
-            cadenceHz = runtime.ResolveAuthorityCadenceHz(quality);
+            cadenceHz = ResolveAuthorityCadenceHz();
             lastScheduleMicroseconds = runtime._lastScheduleMicroseconds;
             telemetryFrame = runtime._lastTelemetryFrame;
             averageClosure = runtime._lastTelemetryAverageClosure;
@@ -167,9 +186,17 @@ namespace Hecton8.Construction
             if (vault == null || !runtime.BootstrapVaultState(vault))
                 return false;
 
-            if (!runtime.Resolve(in runtime._profilesHandle, out NativeArray<BulkheadProfileDTO> profiles))
+            if (!TryAcquireWriteLane(vault, in runtime._profilesHandle, 1, out NativeArray<BulkheadProfileDTO> profiles))
                 return false;
-            return profiles.IsCreated && ParseProfiles(csv, profiles) > 0;
+
+            try
+            {
+                return ParseProfiles(csv, profiles) > 0;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in runtime._profilesHandle, OwnerSystemId);
+            }
         }
 
         public static bool TryLoadProfilesFromCsvFile(string path)
@@ -182,18 +209,16 @@ namespace Hecton8.Construction
             if (vault == null || !runtime.BootstrapVaultState(vault))
                 return false;
 
-            if (!runtime.Resolve(in runtime._profilesHandle, out NativeArray<BulkheadProfileDTO> profiles) ||
-                !runtime.Resolve(in runtime._csvScratchHandle, out NativeArray<byte> scratch) ||
-                !profiles.IsCreated ||
-                !scratch.IsCreated ||
-                profiles.Length <= 0 ||
-                scratch.Length <= 0)
-            {
+            if (!TryAcquireWriteLane(vault, in runtime._profilesHandle, 1, out NativeArray<BulkheadProfileDTO> profiles))
                 return false;
-            }
+            bool scratchLocked = false;
 
             try
             {
+                if (!TryAcquireWriteLane(vault, in runtime._csvScratchHandle, 1, out NativeArray<byte> scratch))
+                    return false;
+
+                scratchLocked = true;
                 using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 if (stream.Length <= 0L || stream.Length > scratch.Length)
                     return false;
@@ -216,6 +241,12 @@ namespace Hecton8.Construction
             {
                 return false;
             }
+            finally
+            {
+                if (scratchLocked)
+                    vault.ReleaseWriteLock(in runtime._csvScratchHandle, OwnerSystemId);
+                vault.ReleaseWriteLock(in runtime._profilesHandle, OwnerSystemId);
+            }
         }
 #endif
 
@@ -226,7 +257,7 @@ namespace Hecton8.Construction
             _postSimulationPhase = new PostSimulationPhaseSystem(this);
             _visualSyncPhase = new VisualSyncPhaseSystem(this);
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            _dumpPath = Path.GetFullPath(Path.Combine(projectRoot, "Docs/AgentLogs/Dump_SHINOBU_220.bin"));
+            _dumpPath = Path.GetFullPath(Path.Combine(projectRoot, "Docs/AgentLogs/Dump_1306_Construction_Bulkhead.bin"));
             InitializeHatchLockColdPaths();
         }
 
@@ -362,6 +393,9 @@ namespace Hecton8.Construction
             if (!_vaultRebindPending)
                 return true;
 
+            if (!TryFinalizeBulkheadJobsNoWait())
+                return false;
+
             if (!_preSimulationHandle.IsCompleted || !_simulationHandle.IsCompleted)
                 return false;
 
@@ -390,6 +424,8 @@ namespace Hecton8.Construction
                 DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
                 _simulationScheduled = false;
             }
+
+            ReleaseBulkheadJobPins();
         }
 
         private void ResetVaultRuntimeState(bool clearScheduledFlags)
@@ -435,6 +471,18 @@ namespace Hecton8.Construction
             return vault.TryResolveHandle(in handle, out buffer);
         }
 
+        private bool Read<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        {
+            IDataVault vault = ResolveVault();
+            if (vault == null || handle.Generation == 0u)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return vault.TryReadHandle(in handle, out buffer);
+        }
+
         private bool EnsureLayoutValid(IDataVault vault)
         {
             if (!_layoutChecked)
@@ -459,37 +507,46 @@ namespace Hecton8.Construction
                 vault == null ||
                 !IsVaultHandleCreated(in _telemetryHandle) ||
                 !IsVaultHandleCreated(in _telemetryCursorHandle) ||
-                !vault.TryResolveHandle(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
-                !vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<uint> cursor) ||
-                !telemetry.IsCreated ||
-                !cursor.IsCreated ||
-                telemetry.Length <= 0 ||
-                cursor.Length <= 0)
+                !TryAcquireWriteLane(vault, in _telemetryHandle, 1, out NativeArray<BulkheadTelemetryEntry> telemetry))
             {
                 return;
             }
 
-            uint writeCursor = cursor[0];
-            int telemetryIndex = (int)(writeCursor % (uint)telemetry.Length);
-            telemetry[telemetryIndex] = new BulkheadTelemetryEntry
+            bool cursorLocked = false;
+            try
             {
-                Frame = _lastFrame,
-                ActiveCount = 0u,
-                SealedCount = 0u,
-                JammedCount = 0u,
-                AverageClosure = 0f,
-                AuthorityCadenceHz = 0f,
-                GlobalQualityWeight = AuthoritativeQualityWeight,
-                LastScheduleMicroseconds = 0f,
-                StateHash = 0x4C41594Fu,
-                CollisionEdgeHash = 0u,
-                CollisionDepthMeters = 0f,
-                Flags = BulkheadTelemetryFlags.NonFinite |
-                        BulkheadTelemetryFlags.DumpRequested |
-                        BulkheadTelemetryFlags.ScheduleTimeOnly
-            };
-            cursor[0] = unchecked(writeCursor + 1u);
-            _layoutFaultTelemetryWritten = true;
+                if (!TryAcquireWriteLane(vault, in _telemetryCursorHandle, 1, out NativeArray<uint> cursor))
+                    return;
+
+                cursorLocked = true;
+                uint writeCursor = cursor[0];
+                int telemetryIndex = (int)(writeCursor % (uint)telemetry.Length);
+                telemetry[telemetryIndex] = new BulkheadTelemetryEntry
+                {
+                    Frame = _lastFrame,
+                    ActiveCount = 0u,
+                    SealedCount = 0u,
+                    JammedCount = 0u,
+                    AverageClosure = 0f,
+                    AuthorityCadenceHz = 0f,
+                    GlobalQualityWeight = AuthoritativeQualityWeight,
+                    LastScheduleMicroseconds = 0f,
+                    StateHash = 0x4C41594Fu,
+                    CollisionEdgeHash = 0u,
+                    CollisionDepthMeters = 0f,
+                    Flags = BulkheadTelemetryFlags.NonFinite |
+                            BulkheadTelemetryFlags.DumpRequested |
+                            BulkheadTelemetryFlags.ScheduleTimeOnly
+                };
+                cursor[0] = unchecked(writeCursor + 1u);
+                _layoutFaultTelemetryWritten = true;
+            }
+            finally
+            {
+                if (cursorLocked)
+                    vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
+                vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
+            }
         }
 
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle)
@@ -498,8 +555,165 @@ namespace Hecton8.Construction
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
+        private static bool TryAcquireWriteLane<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsVaultHandleCreated(in handle) ||
+                !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= requiredLength)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, OwnerSystemId);
+            buffer = default;
+            return false;
+        }
+
+        private bool TryFinalizeBulkheadJobsNoWait()
+        {
+            bool preDone = true;
+            bool simulationDone = true;
+            if (_preSimulationScheduled)
+            {
+                preDone = DispatcherJobFence.TryFinalizeCompleted(ref _preSimulationHandle);
+                if (preDone)
+                    _preSimulationScheduled = false;
+            }
+
+            if (_simulationScheduled)
+            {
+                simulationDone = DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle);
+                if (simulationDone)
+                    _simulationScheduled = false;
+            }
+
+            if (preDone && simulationDone)
+                ReleaseBulkheadJobPins();
+
+            return preDone && simulationDone;
+        }
+
+        private bool TryEnsureBulkheadJobPins(IDataVault vault)
+        {
+            if (vault == null)
+                return false;
+
+            if (_bulkheadJobPinVault != null)
+                return ReferenceEquals(_bulkheadJobPinVault, vault);
+
+            uint mask = 0u;
+            if (!TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadStates, BulkheadJobPinStates, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadAups, BulkheadJobPinAups, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadPlanes, BulkheadJobPinPlanes, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadCsrEdges, BulkheadJobPinCsrEdges, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadEdgeConductivity, BulkheadJobPinEdgeConductivity, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadFluidFlow, BulkheadJobPinFluidFlow, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadModuleIntegrity, BulkheadJobPinModuleIntegrity, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadCollisionResults, BulkheadJobPinCollisionResults, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadTelemetryRing, BulkheadJobPinTelemetry, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu220BulkheadTelemetryCursor, BulkheadJobPinTelemetryCursor, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu343HatchStates, BulkheadJobPinHatchStates, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu343HatchTelemetryRing, BulkheadJobPinHatchTelemetry, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu343HatchTelemetryCursor, BulkheadJobPinHatchTelemetryCursor, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu343HatchTuning, BulkheadJobPinHatchTuning, ref mask) ||
+                !TryLockBulkheadJobPin(vault, BufferID.Shinobu343HatchMockFluidCompartments, BulkheadJobPinHatchMockFluid, ref mask))
+            {
+                ReleaseBulkheadJobPins(vault, mask);
+                return false;
+            }
+
+            _bulkheadJobPinVault = vault;
+            _bulkheadJobPinMask = mask;
+            return true;
+        }
+
+        private static bool TryLockBulkheadJobPin(IDataVault vault, BufferID bufferId, uint bit, ref uint mask)
+        {
+            if (vault == null || bufferId == BufferID.Unknown)
+                return false;
+
+            if ((mask & bit) != 0u)
+                return true;
+
+            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
+                return false;
+
+            mask |= bit;
+            return true;
+        }
+
+        private bool TryLockOptionalBulkheadJobPin(BufferID bufferId, uint bit)
+        {
+            IDataVault vault = _bulkheadJobPinVault;
+            if (vault == null || bufferId == BufferID.Unknown)
+                return false;
+
+            if ((_bulkheadJobPinMask & bit) != 0u)
+                return true;
+
+            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
+                return false;
+
+            _bulkheadJobPinMask |= bit;
+            return true;
+        }
+
+        private void ReleaseOptionalBulkheadJobPin(BufferID bufferId, uint bit)
+        {
+            IDataVault vault = _bulkheadJobPinVault;
+            if (vault == null || (_bulkheadJobPinMask & bit) == 0u)
+                return;
+
+            vault.TryUnlockBuffer(bufferId, OwnerSystemId);
+            _bulkheadJobPinMask &= ~bit;
+        }
+
+        private void ReleaseBulkheadJobPins()
+        {
+            IDataVault vault = _bulkheadJobPinVault;
+            uint mask = _bulkheadJobPinMask;
+            _bulkheadJobPinVault = null;
+            _bulkheadJobPinMask = 0u;
+            ReleaseBulkheadJobPins(vault, mask);
+        }
+
+        private static void ReleaseBulkheadJobPins(IDataVault vault, uint mask)
+        {
+            if (vault == null || mask == 0u)
+                return;
+
+            if ((mask & BulkheadJobPinHatchStructural) != 0u) vault.TryUnlockBuffer(BufferID.StructuralIntegrityStates, OwnerSystemId);
+            if ((mask & BulkheadJobPinHatchFluidFront) != 0u) vault.TryUnlockBuffer(BufferID.ShinobuFluidCompartmentFront, OwnerSystemId);
+            if ((mask & BulkheadJobPinHatchMockFluid) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu343HatchMockFluidCompartments, OwnerSystemId);
+            if ((mask & BulkheadJobPinHatchTuning) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu343HatchTuning, OwnerSystemId);
+            if ((mask & BulkheadJobPinHatchTelemetryCursor) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu343HatchTelemetryCursor, OwnerSystemId);
+            if ((mask & BulkheadJobPinHatchTelemetry) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu343HatchTelemetryRing, OwnerSystemId);
+            if ((mask & BulkheadJobPinHatchStates) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu343HatchStates, OwnerSystemId);
+            if ((mask & BulkheadJobPinTelemetryCursor) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadTelemetryCursor, OwnerSystemId);
+            if ((mask & BulkheadJobPinTelemetry) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadTelemetryRing, OwnerSystemId);
+            if ((mask & BulkheadJobPinCollisionResults) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadCollisionResults, OwnerSystemId);
+            if ((mask & BulkheadJobPinModuleIntegrity) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadModuleIntegrity, OwnerSystemId);
+            if ((mask & BulkheadJobPinFluidFlow) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadFluidFlow, OwnerSystemId);
+            if ((mask & BulkheadJobPinEdgeConductivity) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadEdgeConductivity, OwnerSystemId);
+            if ((mask & BulkheadJobPinCsrEdges) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadCsrEdges, OwnerSystemId);
+            if ((mask & BulkheadJobPinPlanes) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadPlanes, OwnerSystemId);
+            if ((mask & BulkheadJobPinAups) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadAups, OwnerSystemId);
+            if ((mask & BulkheadJobPinStates) != 0u) vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadStates, OwnerSystemId);
+        }
+
         private void ReleaseVaultHandles()
         {
+            ReleaseBulkheadJobPins();
             IDataVault vault = _vault;
             if (vault != null)
             {
@@ -608,58 +822,87 @@ namespace Hecton8.Construction
                 return false;
 
             int capacity = math.clamp(bulkheadCapacity, 1, BulkheadContainmentConstants.DefaultBulkheadCapacity);
-            if (!Resolve(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
-                !Resolve(in _aupsHandle, out NativeArray<double3> aups) ||
-                !Resolve(in _planesHandle, out NativeArray<BulkheadPlaneDTO> planes) ||
-                !Resolve(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> csrEdges) ||
-                !Resolve(in _edgeConductivityHandle, out NativeArray<float> conductivity) ||
-                !Resolve(in _fluidFlowHandle, out NativeArray<float> fluidFlow) ||
-                !Resolve(in _moduleIntegrityHandle, out NativeArray<float> moduleIntegrity) ||
-                !Resolve(in _tuningHandle, out NativeArray<BulkheadTuningDTO> tuning))
+            if (!Read(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
+                !Read(in _aupsHandle, out NativeArray<double3> aups) ||
+                !Read(in _planesHandle, out NativeArray<BulkheadPlaneDTO> planes) ||
+                !Read(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> csrEdges))
             {
                 return false;
             }
 
             if (!states.IsCreated || !aups.IsCreated || !planes.IsCreated || !csrEdges.IsCreated ||
-                !conductivity.IsCreated || !fluidFlow.IsCreated || !moduleIntegrity.IsCreated || !tuning.IsCreated ||
                 states.Length <= 0 || aups.Length <= 0 || planes.Length <= 0 || csrEdges.Length <= 0 ||
-                conductivity.Length <= 0 || fluidFlow.Length <= 0 || moduleIntegrity.Length <= 0 || tuning.Length <= 0)
+                !TryAcquireWriteLane(vault, in _edgeConductivityHandle, 1, out NativeArray<float> conductivity))
             {
                 return false;
             }
 
-            if (!_defaultsInitialized)
+            bool fluidLocked = false;
+            bool integrityLocked = false;
+            bool tuningLocked = false;
+            try
             {
-                int scalarCount = math.min(conductivity.Length, math.min(fluidFlow.Length, moduleIntegrity.Length));
-                for (int i = 0; i < scalarCount; i++)
+                if (!TryAcquireWriteLane(vault, in _fluidFlowHandle, 1, out NativeArray<float> fluidFlow))
+                    return false;
+                fluidLocked = true;
+
+                if (!TryAcquireWriteLane(vault, in _moduleIntegrityHandle, 1, out NativeArray<float> moduleIntegrity))
+                    return false;
+                integrityLocked = true;
+
+                if (!TryAcquireWriteLane(vault, in _tuningHandle, 1, out NativeArray<BulkheadTuningDTO> tuning))
+                    return false;
+                tuningLocked = true;
+
+                if (!_defaultsInitialized)
                 {
-                    conductivity[i] = 1f;
-                    fluidFlow[i] = 1f;
-                    moduleIntegrity[i] = 1f;
+                    int scalarCount = math.min(conductivity.Length, math.min(fluidFlow.Length, moduleIntegrity.Length));
+                    for (int i = 0; i < scalarCount; i++)
+                    {
+                        conductivity[i] = 1f;
+                        fluidFlow[i] = 1f;
+                        moduleIntegrity[i] = 1f;
+                    }
+
+                    _defaultsInitialized = true;
                 }
 
-                _defaultsInitialized = true;
+                float q = ResolveBulkheadQualityWeight();
+                WriteTuningRow(tuning, capacity, q);
             }
-
-            float q = ResolveBulkheadQualityWeight();
-            WriteTuningRow(tuning, capacity, q);
+            finally
+            {
+                if (tuningLocked)
+                    vault.ReleaseWriteLock(in _tuningHandle, OwnerSystemId);
+                if (integrityLocked)
+                    vault.ReleaseWriteLock(in _moduleIntegrityHandle, OwnerSystemId);
+                if (fluidLocked)
+                    vault.ReleaseWriteLock(in _fluidFlowHandle, OwnerSystemId);
+                vault.ReleaseWriteLock(in _edgeConductivityHandle, OwnerSystemId);
+            }
 
             return !refreshHatchLocks || RefreshHatchLockVaultState(vault, capacity, allowDefaultProfileLoad: false);
         }
 
         private bool TryWriteTuningRow()
         {
-            if (!Resolve(in _tuningHandle, out NativeArray<BulkheadTuningDTO> tuning) ||
-                !tuning.IsCreated ||
-                tuning.Length <= 0)
+            IDataVault vault = ResolveVault();
+            if (!TryAcquireWriteLane(vault, in _tuningHandle, 1, out NativeArray<BulkheadTuningDTO> tuning))
             {
                 return false;
             }
 
-            int capacity = math.clamp(bulkheadCapacity, 1, BulkheadContainmentConstants.DefaultBulkheadCapacity);
-            float q = ResolveBulkheadQualityWeight();
-            WriteTuningRow(tuning, capacity, q);
-            return true;
+            try
+            {
+                int capacity = math.clamp(bulkheadCapacity, 1, BulkheadContainmentConstants.DefaultBulkheadCapacity);
+                float q = ResolveBulkheadQualityWeight();
+                WriteTuningRow(tuning, capacity, q);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _tuningHandle, OwnerSystemId);
+            }
         }
 
         private void WriteTuningRow(NativeArray<BulkheadTuningDTO> tuning, int capacity, float quality)
@@ -675,7 +918,7 @@ namespace Hecton8.Construction
                 OverrideDistanceMeters = math.max(0.5f, BulkheadContainmentMath.SanitizePositive(overrideDistanceMeters, 3f)),
                 CatastrophicIntegrity01 = BulkheadContainmentMath.Sanitize01(catastrophicIntegrity01, 0.35f),
                 GlobalQualityWeight = q,
-                AuthorityCadenceHz = ResolveAuthorityCadenceHz(q),
+                AuthorityCadenceHz = ResolveAuthorityCadenceHz(),
                 ActiveCount = (uint)math.clamp(_activeCount, 0, capacity),
                 Flags = uploadShaderBuffer ? 1u : 0u
             };
@@ -714,6 +957,7 @@ namespace Hecton8.Construction
                 Seed = MockSeed
             };
             JobHandle handle = job.Schedule(count, 32, dependency);
+            TrackScheduledSimulationJob(handle);
             _activeCount = math.max(_activeCount, count);
             _mockGenerated = true;
             return handle;
@@ -835,58 +1079,66 @@ namespace Hecton8.Construction
             if (writableCount <= 0)
                 return;
 
-            if (!Resolve(in _intentRingHandle, out NativeArray<BulkheadContainmentIntentDTO> intents) ||
-                !Resolve(in _intentControlHandle, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows) ||
-                !intents.IsCreated ||
-                !controlRows.IsCreated ||
-                intents.Length == 0 ||
-                controlRows.Length == 0)
+            IDataVault vault = ResolveVault();
+            if (!TryAcquireWriteLane(vault, in _intentRingHandle, 1, out NativeArray<BulkheadContainmentIntentDTO> intents))
+                return;
+
+            bool controlLocked = false;
+            try
             {
-                return;
-            }
+                if (!TryAcquireWriteLane(vault, in _intentControlHandle, 1, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows))
+                    return;
 
-            BulkheadContainmentIntentControlDTO control = controlRows[0];
-            uint write = control.WriteCursor;
-            uint read = control.ReadCursor;
-            if (write == read)
-                return;
+                controlLocked = true;
+                BulkheadContainmentIntentControlDTO control = controlRows[0];
+                uint write = control.WriteCursor;
+                uint read = control.ReadCursor;
+                if (write == read)
+                    return;
 
-            uint capacity = control.Capacity == 0u
-                ? (uint)math.min(BulkheadContainmentIntentBus.IntentCapacity, intents.Length)
-                : math.min(control.Capacity, (uint)intents.Length);
-            if (capacity == 0u)
-                return;
+                uint capacity = control.Capacity == 0u
+                    ? (uint)math.min(BulkheadContainmentIntentBus.IntentCapacity, intents.Length)
+                    : math.min(control.Capacity, (uint)intents.Length);
+                if (capacity == 0u)
+                    return;
 
-            uint pending = math.min(write - read, capacity);
-            for (uint offset = 0u; offset < pending; offset++)
-            {
-                BulkheadContainmentIntentDTO intent = intents[(int)((read + offset) % capacity)];
-                if ((intent.Flags & BulkheadContainmentIntentFlags.Valid) == 0u ||
-                    (intent.Flags & BulkheadContainmentIntentFlags.NonFinite) != 0u ||
-                    !IsIntentFrameAccepted(intent.Frame, currentFrame))
+                uint pending = math.min(write - read, capacity);
+                for (uint offset = 0u; offset < pending; offset++)
                 {
-                    continue;
+                    BulkheadContainmentIntentDTO intent = intents[(int)((read + offset) % capacity)];
+                    if ((intent.Flags & BulkheadContainmentIntentFlags.Valid) == 0u ||
+                        (intent.Flags & BulkheadContainmentIntentFlags.NonFinite) != 0u ||
+                        !IsIntentFrameAccepted(intent.Frame, currentFrame))
+                    {
+                        continue;
+                    }
+
+                    ApplyAirlockBulkheadStateIntent(
+                        states,
+                        aups,
+                        planes,
+                        csrEdges,
+                        moduleIntegrity,
+                        writableCount,
+                        intent.EdgeHashID,
+                        (intent.Flags & BulkheadContainmentIntentFlags.Locked) != 0u,
+                        intent.CenterAup,
+                        intent.Normal,
+                        intent.WidthMeters,
+                        intent.HeightMeters,
+                        intent.ParentIntegrity01,
+                        intent.SiblingNodeHash);
                 }
 
-                ApplyAirlockBulkheadStateIntent(
-                    states,
-                    aups,
-                    planes,
-                    csrEdges,
-                    moduleIntegrity,
-                    writableCount,
-                    intent.EdgeHashID,
-                    (intent.Flags & BulkheadContainmentIntentFlags.Locked) != 0u,
-                    intent.CenterAup,
-                    intent.Normal,
-                    intent.WidthMeters,
-                    intent.HeightMeters,
-                    intent.ParentIntegrity01,
-                    intent.SiblingNodeHash);
+                control.ReadCursor = write;
+                controlRows[0] = control;
             }
-
-            control.ReadCursor = write;
-            controlRows[0] = control;
+            finally
+            {
+                if (controlLocked)
+                    vault.ReleaseWriteLock(in _intentControlHandle, OwnerSystemId);
+                vault.ReleaseWriteLock(in _intentRingHandle, OwnerSystemId);
+            }
         }
 
         private static bool IsIntentFrameAccepted(uint intentFrame, uint currentFrame)
@@ -939,6 +1191,9 @@ namespace Hecton8.Construction
 
         private void PreSimulationTick(in DispatcherTimingDTO timing)
         {
+            if (!TryFinalizeBulkheadJobsNoWait())
+                return;
+
             if (_vaultRebindPending && !TryFlushPendingDataVaultRebind())
             {
                 _preSimulationScheduled = false;
@@ -952,76 +1207,90 @@ namespace Hecton8.Construction
             if (vault == null || !RefreshVaultState(vault))
                 return;
 
-            if (!Resolve(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
-                !Resolve(in _aupsHandle, out NativeArray<double3> aups) ||
-                !Resolve(in _planesHandle, out NativeArray<BulkheadPlaneDTO> planes) ||
-                !Resolve(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> csrEdges) ||
-                !Resolve(in _moduleIntegrityHandle, out NativeArray<float> moduleIntegrity) ||
-                !Resolve(in _collisionResultsHandle, out NativeArray<BulkheadCollisionResultDTO> collisions))
-            {
-                return;
-            }
-            if (!states.IsCreated || !aups.IsCreated || !planes.IsCreated || !csrEdges.IsCreated ||
-                !moduleIntegrity.IsCreated || !collisions.IsCreated)
-                return;
-            if (collisions.Length <= 0)
+            if (!TryEnsureBulkheadJobPins(vault))
                 return;
 
-            ConsumePublishedIntents(states, aups, planes, csrEdges, moduleIntegrity, timing.FrameId);
-            int count = math.clamp(_activeCount, 0, ResolveCollisionLaneCount(states, aups, planes));
-            if (count <= 0)
+            bool keepPins = false;
+            try
             {
-                collisions[0] = new BulkheadCollisionResultDTO
+                if (!Resolve(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
+                    !Resolve(in _aupsHandle, out NativeArray<double3> aups) ||
+                    !Resolve(in _planesHandle, out NativeArray<BulkheadPlaneDTO> planes) ||
+                    !Resolve(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> csrEdges) ||
+                    !Resolve(in _moduleIntegrityHandle, out NativeArray<float> moduleIntegrity) ||
+                    !Resolve(in _collisionResultsHandle, out NativeArray<BulkheadCollisionResultDTO> collisions))
                 {
+                    return;
+                }
+                if (!states.IsCreated || !aups.IsCreated || !planes.IsCreated || !csrEdges.IsCreated ||
+                    !moduleIntegrity.IsCreated || !collisions.IsCreated)
+                    return;
+                if (collisions.Length <= 0)
+                    return;
+
+                ConsumePublishedIntents(states, aups, planes, csrEdges, moduleIntegrity, timing.FrameId);
+                int count = math.clamp(_activeCount, 0, ResolveCollisionLaneCount(states, aups, planes));
+                if (count <= 0)
+                {
+                    collisions[0] = new BulkheadCollisionResultDTO
+                    {
+                        Frame = timing.FrameId
+                    };
+                    return;
+                }
+
+                if (!TryAcquirePlayerState(vault, timing.FrameId, out double3 playerAup, out float3 velocity))
+                {
+                    collisions[0] = new BulkheadCollisionResultDTO
+                    {
+                        Frame = timing.FrameId
+                    };
+                    return;
+                }
+
+                float simulationTickDelta = ResolveSimulationTickDelta(in timing);
+                double3 predictedAup = playerAup + (double3)(velocity * simulationTickDelta);
+                JobHandle dependency = _simulationScheduled ? _simulationHandle : default;
+
+                NativeArray<InteractionUiSignal>.ReadOnly signals = SignalBus<InteractionUiSignal>.GetFrameSnapshotArray();
+                int signalCount = signals.IsCreated ? signals.Length : 0;
+                if (ContainsBulkheadOverrideSignal(signals, signalCount))
+                {
+                    ProcessDoorOverrideJob overrideJob = new ProcessDoorOverrideJob
+                    {
+                        Signals = signals,
+                        States = (BulkheadStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(states),
+                        Aups = (double3*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(aups),
+                        SignalCount = signalCount,
+                        StateCount = count,
+                        PlayerAup = playerAup,
+                        OverrideDistanceMeters = overrideDistanceMeters
+                    };
+                    dependency = overrideJob.Schedule(dependency);
+                    TrackScheduledPreSimulationJob(dependency);
+                    keepPins = true;
+                }
+
+                EvaluateDoorCollisionsJob collisionJob = new EvaluateDoorCollisionsJob
+                {
+                    States = (BulkheadStateDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states),
+                    Planes = (BulkheadPlaneDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(planes),
+                    Result = (BulkheadCollisionResultDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(collisions),
+                    Count = count,
+                    PlayerStartAup = playerAup,
+                    PlayerEndAup = predictedAup,
+                    PlayerRadiusMeters = DefaultPlayerRadiusMeters,
                     Frame = timing.FrameId
                 };
-                return;
+                JobHandle preSimulationHandle = collisionJob.Schedule(dependency);
+                TrackScheduledPreSimulationJob(preSimulationHandle);
+                keepPins = true;
             }
-
-            if (!TryAcquirePlayerState(vault, timing.FrameId, out double3 playerAup, out float3 velocity))
+            finally
             {
-                collisions[0] = new BulkheadCollisionResultDTO
-                {
-                    Frame = timing.FrameId
-                };
-                return;
+                if (!keepPins && !_simulationScheduled && !_preSimulationScheduled)
+                    ReleaseBulkheadJobPins();
             }
-
-            float simulationTickDelta = ResolveSimulationTickDelta(in timing);
-            double3 predictedAup = playerAup + (double3)(velocity * simulationTickDelta);
-            JobHandle dependency = _simulationScheduled ? _simulationHandle : default;
-
-            NativeArray<InteractionUiSignal>.ReadOnly signals = SignalBus<InteractionUiSignal>.GetFrameSnapshotArray();
-            int signalCount = signals.IsCreated ? signals.Length : 0;
-            if (ContainsBulkheadOverrideSignal(signals, signalCount))
-            {
-                ProcessDoorOverrideJob overrideJob = new ProcessDoorOverrideJob
-                {
-                    Signals = signals,
-                    States = (BulkheadStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(states),
-                    Aups = (double3*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(aups),
-                    SignalCount = signalCount,
-                    StateCount = count,
-                    PlayerAup = playerAup,
-                    OverrideDistanceMeters = overrideDistanceMeters
-                };
-                dependency = overrideJob.Schedule(dependency);
-            }
-
-            EvaluateDoorCollisionsJob collisionJob = new EvaluateDoorCollisionsJob
-            {
-                States = (BulkheadStateDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states),
-                Planes = (BulkheadPlaneDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(planes),
-                Result = (BulkheadCollisionResultDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(collisions),
-                Count = count,
-                PlayerStartAup = playerAup,
-                PlayerEndAup = predictedAup,
-                PlayerRadiusMeters = DefaultPlayerRadiusMeters,
-                Frame = timing.FrameId
-            };
-            _preSimulationHandle = collisionJob.Schedule(dependency);
-            _preSimulationScheduled = true;
-            H8Memory.RegisterActiveJob(SystemID.Construction, _preSimulationHandle);
         }
 
         private JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
@@ -1031,11 +1300,16 @@ namespace Hecton8.Construction
                 return dependency;
 
             IDataVault vault = ResolveVault();
-            if (vault == null || !RefreshVaultState(vault))
+            bool pinsAlreadyHeld = _bulkheadJobPinVault != null;
+            if (vault == null || (!pinsAlreadyHeld && !RefreshVaultState(vault)))
+                return dependency;
+            if (!TryEnsureBulkheadJobPins(vault))
                 return dependency;
 
+            try
+            {
             float q = ResolveBulkheadQualityWeight();
-            float cadenceHz = ResolveAuthorityCadenceHz(q);
+            float cadenceHz = ResolveAuthorityCadenceHz();
             float dt = ResolveSimulationTickDelta(in timing);
             _lastFrame = context.Frame;
             float accumulated = BulkheadContainmentMath.SanitizeNonNegative(_authorityAccumulator, 0f) + dt;
@@ -1050,7 +1324,7 @@ namespace Hecton8.Construction
                 !Resolve(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
                 !Resolve(in _telemetryCursorHandle, out NativeArray<uint> cursor))
             {
-                return dependency;
+                return FailSimulationSchedule(dependency);
             }
             if (!states.IsCreated ||
                 !collisions.IsCreated ||
@@ -1061,7 +1335,7 @@ namespace Hecton8.Construction
                 telemetry.Length <= 0 ||
                 cursor.Length <= 0)
             {
-                return dependency;
+                return FailSimulationSchedule(dependency);
             }
 
             if (generateMockBulkheads && !_mockGenerated && _activeCount <= 0)
@@ -1076,7 +1350,7 @@ namespace Hecton8.Construction
                     planes.Length <= 0 ||
                     mockCsrEdges.Length <= 0)
                 {
-                    return dependency;
+                    return FailSimulationSchedule(dependency);
                 }
 
                 dependency = ScheduleMockDataIfRequired(states, mockAups, planes, mockCsrEdges, dependency);
@@ -1103,7 +1377,7 @@ namespace Hecton8.Construction
                 }
 
                 RecordEmptyTelemetryFrame(telemetry, cursor, collisions, context.Frame, q, cadenceHz);
-                return dependency;
+                return FailSimulationSchedule(dependency);
             }
 
             if (_authorityAccumulator < period)
@@ -1202,10 +1476,10 @@ namespace Hecton8.Construction
                 Count = count,
                 DeltaSeconds = authorityDelta,
                 CloseSpeedPerSecond = closeSpeedPerSecond,
-                OpenSpeedPerSecond = openSpeedPerSecond,
-                GlobalQualityWeight = q
+                OpenSpeedPerSecond = openSpeedPerSecond
             };
             handle = updateJob.Schedule(count, 32, handle);
+            TrackScheduledSimulationJob(handle);
 
             ApplyCatastrophicDoorDamageJob damageJob = new ApplyCatastrophicDoorDamageJob
             {
@@ -1217,6 +1491,7 @@ namespace Hecton8.Construction
                 CatastrophicIntegrity01 = catastrophicIntegrity01
             };
             handle = damageJob.Schedule(count, 32, handle);
+            TrackScheduledSimulationJob(handle);
 
             ApplyBulkheadLockJob lockJob = new ApplyBulkheadLockJob
             {
@@ -1229,6 +1504,7 @@ namespace Hecton8.Construction
                 FluidFlowCount = fluidFlow.Length
             };
             handle = lockJob.Schedule(count, 32, handle);
+            TrackScheduledSimulationJob(handle);
 
             return ScheduleTelemetryJob(
                 handle,
@@ -1242,6 +1518,33 @@ namespace Hecton8.Construction
                 cadenceHz,
                 start,
                 BulkheadTelemetryFlags.ScheduleTimeOnly);
+            }
+            finally
+            {
+                if (!_preSimulationScheduled && !_simulationScheduled)
+                    ReleaseBulkheadJobPins();
+            }
+        }
+
+        private JobHandle FailSimulationSchedule(JobHandle dependency)
+        {
+            if (!_preSimulationScheduled && !_simulationScheduled)
+                ReleaseBulkheadJobPins();
+            return dependency;
+        }
+
+        private void TrackScheduledSimulationJob(JobHandle handle)
+        {
+            _simulationHandle = handle;
+            _simulationScheduled = true;
+            H8Memory.RegisterActiveJob(SystemID.Construction, handle);
+        }
+
+        private void TrackScheduledPreSimulationJob(JobHandle handle)
+        {
+            _preSimulationHandle = handle;
+            _preSimulationScheduled = true;
+            H8Memory.RegisterActiveJob(SystemID.Construction, handle);
         }
 
         private JobHandle ScheduleTelemetryJob(
@@ -1285,9 +1588,7 @@ namespace Hecton8.Construction
             };
             JobHandle handle = telemetryJob.Schedule(dependency);
             _lastScheduleMicroseconds = ElapsedMicroseconds(scheduleStart);
-            _simulationHandle = handle;
-            _simulationScheduled = true;
-            H8Memory.RegisterActiveJob(SystemID.Construction, handle);
+            TrackScheduledSimulationJob(handle);
             return handle;
         }
 
@@ -1333,13 +1634,19 @@ namespace Hecton8.Construction
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
         {
-            _preSimulationScheduled = false;
-            _simulationScheduled = false;
+            TryFinalizeBulkheadJobsNoWait();
             TryFlushPendingDataVaultRebind();
         }
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)
         {
+            if (!TryFinalizeBulkheadJobsNoWait())
+            {
+                DisableShaderGlobals();
+                DisableHatchShaderGlobals();
+                return;
+            }
+
             if (_vaultRebindPending && !TryFlushPendingDataVaultRebind())
             {
                 DisableShaderGlobals();
@@ -1368,9 +1675,9 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (!Resolve(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
-                !Resolve(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
-                !Resolve(in _telemetryCursorHandle, out NativeArray<uint> cursor))
+            if (!Read(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
+                !Read(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
+                !Read(in _telemetryCursorHandle, out NativeArray<uint> cursor))
             {
                 DisableShaderGlobals();
                 return;
@@ -1431,28 +1738,47 @@ namespace Hecton8.Construction
             if (vault == null ||
                 _telemetryHandle.Generation == 0u ||
                 _telemetryCursorHandle.Generation == 0u ||
-                !vault.TryResolveHandle(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
-                !vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<uint> cursor) ||
-                !telemetry.IsCreated ||
-                !cursor.IsCreated ||
-                telemetry.Length <= 0 ||
-                cursor.Length <= 0 ||
-                cursor[0] == 0u)
+                !vault.TryLockBuffer(BufferID.Shinobu220BulkheadTelemetryRing, OwnerSystemId))
             {
                 return;
             }
 
-            uint cursorValue = cursor[0];
-            if (cursorValue == _lastDumpedTelemetryCursor ||
-                cursorValue == _lastDumpAttemptTelemetryCursor)
-                return;
-
-            BulkheadTelemetryEntry entry = telemetry[(int)((cursorValue - 1u) % (uint)telemetry.Length)];
-            if ((entry.Flags & BulkheadTelemetryFlags.DumpRequested) != 0u)
+            bool cursorPinned = false;
+            try
             {
-                _lastDumpAttemptTelemetryCursor = cursorValue;
-                if (TryDumpBlackBox(telemetry, cursorValue))
-                    _lastDumpedTelemetryCursor = cursorValue;
+                if (!vault.TryLockBuffer(BufferID.Shinobu220BulkheadTelemetryCursor, OwnerSystemId))
+                    return;
+                cursorPinned = true;
+
+                if (!vault.TryResolveHandle(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
+                    !vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<uint> cursor) ||
+                    !telemetry.IsCreated ||
+                    !cursor.IsCreated ||
+                    telemetry.Length <= 0 ||
+                    cursor.Length <= 0 ||
+                    cursor[0] == 0u)
+                {
+                    return;
+                }
+
+                uint cursorValue = cursor[0];
+                if (cursorValue == _lastDumpedTelemetryCursor ||
+                    cursorValue == _lastDumpAttemptTelemetryCursor)
+                    return;
+
+                BulkheadTelemetryEntry entry = telemetry[(int)((cursorValue - 1u) % (uint)telemetry.Length)];
+                if ((entry.Flags & BulkheadTelemetryFlags.DumpRequested) != 0u)
+                {
+                    _lastDumpAttemptTelemetryCursor = cursorValue;
+                    if (TryDumpBlackBox(telemetry, cursorValue))
+                        _lastDumpedTelemetryCursor = cursorValue;
+                }
+            }
+            finally
+            {
+                if (cursorPinned)
+                    vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadTelemetryCursor, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadTelemetryRing, OwnerSystemId);
             }
         }
 
@@ -1460,7 +1786,7 @@ namespace Hecton8.Construction
         {
             playerAup = double3.zero;
             velocity = float3.zero;
-            if (!TryAcquirePlayerKinematicStateBuffer(vault, currentFrame, out NativeArray<LockstepPlayerKinematicState> playerStates))
+            if (!TryAcquirePlayerKinematicStateBuffer(vault, currentFrame, out NativeArray<LockstepPlayerKinematicState>.ReadOnly playerStates))
             {
                 return false;
             }
@@ -1477,15 +1803,14 @@ namespace Hecton8.Construction
         private bool TryAcquirePlayerKinematicStateBuffer(
             IDataVault vault,
             uint currentFrame,
-            out NativeArray<LockstepPlayerKinematicState> playerStates)
+            out NativeArray<LockstepPlayerKinematicState>.ReadOnly playerStates)
         {
             playerStates = default;
             if (vault == null)
                 return false;
 
             if (IsVaultHandleCreated(in _playerKinematicStateHandle) &&
-                vault.TryResolveHandle(in _playerKinematicStateHandle, out playerStates) &&
-                playerStates.IsCreated &&
+                vault.TryReadOnlyHandle(in _playerKinematicStateHandle, out playerStates) &&
                 playerStates.Length > 0)
             {
                 return true;
@@ -1505,8 +1830,7 @@ namespace Hecton8.Construction
             }
 
             return TryBindPlayerKinematicStateHandle(vault) &&
-                   vault.TryResolveHandle(in _playerKinematicStateHandle, out playerStates) &&
-                   playerStates.IsCreated &&
+                   vault.TryReadOnlyHandle(in _playerKinematicStateHandle, out playerStates) &&
                    playerStates.Length > 0;
         }
 
@@ -1538,9 +1862,9 @@ namespace Hecton8.Construction
             return currentFrame - playerFrame <= 1u;
         }
 
-        private float ResolveAuthorityCadenceHz(float q)
+        private static float ResolveAuthorityCadenceHz()
         {
-            float weight = BulkheadContainmentMath.Sanitize01(q, 0f);
+            float weight = BulkheadContainmentMath.Sanitize01(AuthoritativeQualityWeight, 1f);
             return math.lerp(5f, 30f, weight * weight);
         }
 
@@ -1931,8 +2255,8 @@ namespace Hecton8.Construction
         private void OnDrawGizmos()
         {
             if (!_vaultInitialized ||
-                !Resolve(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
-                !Resolve(in _planesHandle, out NativeArray<BulkheadPlaneDTO> planes) ||
+                !Read(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
+                !Read(in _planesHandle, out NativeArray<BulkheadPlaneDTO> planes) ||
                 !states.IsCreated ||
                 !planes.IsCreated)
             {

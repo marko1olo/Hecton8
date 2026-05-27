@@ -1,0 +1,86 @@
+﻿{
+    "schema":  "hecton8.physics_apply_quaternion_validity_audit_1337.rerun40.v1",
+    "agentId":  "1337",
+    "task":  "PHYSICS_APPLY_QUATERNION_VALIDITY_RERUN40",
+    "status":  "STATIC_GREEN_BUILD_BLOCKED_BY_HOST_GATE",
+    "promptHashSha256":  "3e605cefcb2f812e4e2febd79f1e87c3d527fb27627de85b3f5c8ffa05c01387",
+    "scannedFiles":  6,
+    "changedFiles":  [
+                         "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                         "Docs/Tasks/Status_1337.md",
+                         "Docs/AgentLogs/Rationale_1337.md",
+                         "Docs/AgentLogs/LOG_1337.md"
+                     ],
+    "defect":  {
+                   "id":  "PHYS_APPLY_ZERO_LENGTH_QUATERNION_ACCEPTED",
+                   "location":  "Assets/_Project/Scripts/PhysicsApplySystem.cs:4172",
+                   "before":  "IsFiniteQuaternion accepted any finite quaternion, including zero-length rotations.",
+                   "after":  "IsFiniteQuaternion now requires finite components, finite length squared, and length squared above MinMagnitudeSq.",
+                   "failureMode":  "Zero-length Rigidbody rotation could bypass toxic-state recovery or be written back during quarantine."
+               },
+    "scannerReports":  {
+                           "nativeAlias":  {
+                                               "path":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN40.json",
+                                               "totalFields":  18,
+                                               "persistent":  0,
+                                               "jobTransient":  18,
+                                               "hash":  "5cc218b8b57842364e1faaf95690c41add3f4072c071d03d5ca494a6c0f87451"
+                                           },
+                           "zeroGcHotpath":  {
+                                                 "path":  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN40.json",
+                                                 "scannedHotMethods":  25,
+                                                 "hits":  0,
+                                                 "hash":  "0f2d5e666aa8ad269f6257f61a85c6c3b8f1d25515eb4e8f3923ed7491defaef"
+                                             },
+                           "branch":  {
+                                          "path":  "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN40.json",
+                                          "jobExecuteIfStatements":  5,
+                                          "failClosedGuardIfStatements":  5,
+                                          "jobExecuteNonGuardIfStatements":  0,
+                                          "distanceSolverDecisionIfStatements":  0,
+                                          "hash":  "6b61ef1d79d1447401941dad7f13b26b6ed5c047789a4223f2d0f543e4f3b7cb"
+                                      },
+                           "directToken":  {
+                                               "path":  "Docs/Reports/PHYSICS_APPLY_DIRECT_TOKEN_AUDIT_1337_RERUN40.json",
+                                               "counts":  {
+                                                              "nativeArrayAlloc":  0,
+                                                              "nativeListAlloc":  0,
+                                                              "nativeQueueAlloc":  0,
+                                                              "nativeParallelHashMapAlloc":  0,
+                                                              "nativeParallelMultiHashMapAlloc":  0,
+                                                              "unsafeListAlloc":  0,
+                                                              "throwNew":  0,
+                                                              "catchException":  0,
+                                                              "cameraMain":  0,
+                                                              "vector3Distance":  0,
+                                                              "toArray":  0,
+                                                              "toList":  0,
+                                                              "enumerableNamespace":  0,
+                                                              "whereCall":  0,
+                                                              "stringFormat":  0,
+                                                              "interpolatedString":  0,
+                                                              "hiddenComplete":  0,
+                                                              "directFloat3AbsoluteAup":  0,
+                                                              "widePadding":  0
+                                                          }
+                                           }
+                       },
+    "buildGate":  {
+                      "attempted":  false,
+                      "reason":  "CPU \u003e 50% and dotnet process count \u003e 0",
+                      "cpuPercent":  65,
+                      "dotnetProcesses":  7,
+                      "cscProcesses":  0
+                  },
+    "verificationHashInput":  [
+                                  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                                  "Docs/Tasks/Status_1337.md",
+                                  "Docs/AgentLogs/Rationale_1337.md",
+                                  "Docs/AgentLogs/LOG_1337.md",
+                                  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN40.json",
+                                  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN40.json",
+                                  "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN40.json",
+                                  "Docs/Reports/PHYSICS_APPLY_DIRECT_TOKEN_AUDIT_1337_RERUN40.json"
+                              ],
+    "verificationHashSha256":  "310de5ec6e20f4aea2547c6321694816afc8aa3b14304c5787209c393a97213e"
+}

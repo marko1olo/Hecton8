@@ -81,7 +81,7 @@ The ambient current overlay is also visual-only and is excluded from save, rollb
 - Biome profile CSV is a cold authoring bridge only.
 - Player runtime does not read `StreamingAssets` or perform text file IO for this lane.
 - Current `flora_biome_sway_profiles.csv` ingest is behind `UNITY_EDITOR`.
-- Editor ingest reads `Docs/flora_biome_sway_profiles.csv`, parses bytes through `ReadOnlySpan<byte>`, and commits finite 32-byte profile DTOs into Vault.
+- Editor ingest reads `Docs/Data/Profiles/flora_biome_sway_profiles.csv`, parses bytes through `ReadOnlySpan<byte>`, and commits finite 32-byte profile DTOs into Vault.
 - Cold profile/generic Vault clearing uses `UnsafeUtility.MemClear`, not NativeArray indexer setter loops.
 - The eventual production source remains the project DataMonolith/static-data route without changing BufferIDs or shader ABI.
 

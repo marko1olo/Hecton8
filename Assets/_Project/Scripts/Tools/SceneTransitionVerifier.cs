@@ -15,6 +15,10 @@ namespace Hecton8.Tools
     [DefaultExecutionOrder(1000)]
     public sealed class SceneTransitionVerifier : MonoBehaviour
     {
+        private const string MainMenuSceneName = "01_MAIN_MENU";
+        private const string OrbitSceneName = "01_ORBIT";
+        private const string WorldSceneName = "02_HECTON_WORLD";
+
         [Header("Verification Settings")]
         [SerializeField, Tooltip("Enable automatic verification logging")]
         private bool _enableLogging = true;
@@ -56,9 +60,9 @@ namespace Hecton8.Tools
 
             _ = VerifyTransitionAsync(
                 "New Game",
-                () => string.Equals(SceneManager.GetActiveScene().name, "02_HECTON_WORLD", System.StringComparison.Ordinal),
+                () => string.Equals(SceneManager.GetActiveScene().name, OrbitSceneName, System.StringComparison.Ordinal),
                 VerifyNewGameContext,
-                "GameStartContext.StartMode should be NewGame and bootstrap should be alive",
+                "GameStartContext.StartMode should be NewGame and prologue route should be active",
                 destroyCancellationToken);
         }
 
@@ -69,7 +73,7 @@ namespace Hecton8.Tools
 
             _ = VerifyTransitionAsync(
                 $"Load Game (Slot {expectedSlot})",
-                () => string.Equals(SceneManager.GetActiveScene().name, "02_HECTON_WORLD", System.StringComparison.Ordinal),
+                () => string.Equals(SceneManager.GetActiveScene().name, WorldSceneName, System.StringComparison.Ordinal),
                 () => VerifyLoadGameContext(expectedSlot),
                 $"GameStartContext should have LoadGame start mode and slot '{expectedSlot}'",
                 destroyCancellationToken);
@@ -82,7 +86,7 @@ namespace Hecton8.Tools
 
             _ = VerifyTransitionAsync(
                 "Return to Menu",
-                () => string.Equals(SceneManager.GetActiveScene().name, "01_MAIN_MENU", System.StringComparison.Ordinal),
+                () => string.Equals(SceneManager.GetActiveScene().name, MainMenuSceneName, System.StringComparison.Ordinal),
                 VerifyMenuReturnContext,
                 "Menu should be active, bootstrap should be alive, and stale game-start context should be cleared",
                 destroyCancellationToken);
@@ -121,9 +125,15 @@ namespace Hecton8.Tools
                 LogVerification($"Starting verification: {transitionName}");
 
                 double deadline = SystemDispatcher.CurrentUnscaledTimeSeconds + Mathf.Max(0.1f, _transitionTimeout);
-                while (_isTransitioning && SystemDispatcher.CurrentUnscaledTimeSeconds < deadline)
+                while (SystemDispatcher.CurrentUnscaledTimeSeconds < deadline)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
+                    if (sceneCheck() && contextCheck())
+                    {
+                        LogVerification($"PASS {transitionName} - verification passed");
+                        return;
+                    }
+
                     await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
                 }
 
@@ -139,13 +149,7 @@ namespace Hecton8.Tools
                     return;
                 }
 
-                if (!contextCheck())
-                {
-                    LogVerification($"FAIL {transitionName} - context check failed: {contextDescription}");
-                    return;
-                }
-
-                LogVerification($"PASS {transitionName} - verification passed");
+                LogVerification($"FAIL {transitionName} - context check failed: {contextDescription}");
             }
             catch (OperationCanceledException)
             {

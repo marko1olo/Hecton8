@@ -1,0 +1,180 @@
+﻿{
+    "agentId":  "1325",
+    "task":  "1325_PURGE",
+    "status":  "PRIMARY_DOMAIN_VERIFIED_EXTERNAL_RESIDUAL_DECLARED",
+    "scannedFiles":  276,
+    "failedGates":  [
+                        "BOUNDARY_NATIVE_ALIAS_RESIDUALS_IN_SAVE_MANAGER_OUTSIDE_1325_PRIMARY_DOMAIN",
+                        "BOUNDARY_ASYNC_NATIVE_RESIDUALS_IN_SAVE_MANAGER_OUTSIDE_1325_PRIMARY_DOMAIN",
+                        "BUILD_GUARD_BLOCKED_CPU_100"
+                    ],
+    "totalNativeFieldDeclarations":  1115,
+    "persistentNativeFieldsRemaining":  0,
+    "transientVaultViews":  118,
+    "transientJobViews":  997,
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "AbsoluteUniversePosition",
+                               "sizeBytes":  48,
+                               "offsets":  {
+                                               "GridX":  "0:long",
+                                               "GridY":  "8:long",
+                                               "GridZ":  "16:long",
+                                               "LocalX":  "24:float",
+                                               "LocalY":  "28:float",
+                                               "LocalZ":  "32:float",
+                                               "_pad0":  "36:float",
+                                               "_pad1":  "40:ulong"
+                                           }
+                           },
+                           {
+                               "structName":  "AbsoluteUniversePositionBlit128",
+                               "sizeBytes":  48,
+                               "offsets":  {
+                                               "GridX":  "0:long",
+                                               "GridY":  "8:long",
+                                               "GridZ":  "16:long",
+                                               "Local":  "24:float4",
+                                               "Reserved":  "40:ulong"
+                                           }
+                           },
+                           {
+                               "structName":  "PoolSlotData",
+                               "sizeBytes":  72,
+                               "offsets":  {
+                                               "BoundGuid":  "0:ulong",
+                                               "GridX":  "8:long",
+                                               "GridY":  "16:long",
+                                               "GridZ":  "24:long",
+                                               "LocalOffset":  "32:float3",
+                                               "HydrationFrame":  "44:ushort",
+                                               "RefCount":  "46:byte",
+                                               "StateFlags":  "47:byte",
+                                               "StableFrames":  "48:ushort",
+                                               "LastVisibleFrame":  "50:ushort",
+                                               "_pad0":  "52:uint",
+                                               "_pad1":  "56:ulong",
+                                               "_pad2":  "64:ulong"
+                                           }
+                           },
+                           {
+                               "structName":  "EntityDataRecord",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Position":  "0:AbsoluteUniversePositionBlit128",
+                                               "Quantity":  "48:int",
+                                               "Integrity01":  "52:float",
+                                               "InventoryHash":  "56:int",
+                                               "InstanceUid":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "ResourceNodeTombstoneRecord",
+                               "sizeBytes":  80,
+                               "offsets":  {
+                                               "TombstoneId":  "0:ulong",
+                                               "Position":  "8:AbsoluteUniversePosition",
+                                               "ChunkId":  "56:int3",
+                                               "InstanceUid":  "68:uint",
+                                               "Reserved0":  "72:uint",
+                                               "Reserved1":  "76:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "PersistentWorldItemRecord",
+                               "sizeBytes":  256,
+                               "offsets":  {
+                                               "Position":  "0:AbsoluteUniversePosition",
+                                               "ItemPersistentIdHash":  "48:ulong",
+                                               "ItemPersistentId":  "56:FixedString128Bytes",
+                                               "ChunkId":  "184:int3",
+                                               "Quantity":  "196:int",
+                                               "InstanceUid":  "200:uint",
+                                               "Flags":  "204:byte",
+                                               "_padFlags0":  "205:byte",
+                                               "_padFlags1":  "206:byte",
+                                               "_padFlags2":  "207:byte",
+                                               "_pad1":  "208:ulong",
+                                               "_pad2":  "216:ulong",
+                                               "_pad3":  "224:ulong",
+                                               "_pad4":  "232:ulong",
+                                               "_pad5":  "240:ulong",
+                                               "_pad6":  "248:ulong"
+                                           }
+                           },
+                           {
+                               "structName":  "PersistentWorldDeltaRecord",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "ItemPersistentIdHash":  "0:ulong",
+                                               "ChunkId":  "8:int3",
+                                               "InstanceUid":  "20:uint",
+                                               "PackedLocalPosition":  "24:uint",
+                                               "Quantity":  "28:ushort",
+                                               "ItemFlags":  "30:byte",
+                                               "Reserved":  "31:byte",
+                                               "_pad0":  "32:ulong",
+                                               "_pad1":  "40:ulong",
+                                               "_pad2":  "48:ulong",
+                                               "_pad3":  "56:ulong"
+                                           }
+                           },
+                           {
+                               "structName":  "PersistentWorldCompactDeltaRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "PackedLocalPosition":  "0:uint",
+                                               "InstanceUid":  "4:uint",
+                                               "Quantity":  "8:ushort",
+                                               "ItemFlags":  "10:byte",
+                                               "Reserved":  "11:byte",
+                                               "ChunkIndex":  "12:ushort",
+                                               "ItemHashIndex":  "14:ushort"
+                                           }
+                           },
+                           {
+                               "structName":  "WorldTelemetryEntry",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Sequence":  "0:ulong",
+                                               "BufferId":  "8:uint",
+                                               "Generation":  "12:uint",
+                                               "SystemId":  "16:uint",
+                                               "EventCode":  "20:uint",
+                                               "ActualLength":  "24:int",
+                                               "ExpectedLength":  "28:int",
+                                               "ChunkId":  "32:int3",
+                                               "Microseconds":  "44:float",
+                                               "InstanceUid":  "48:uint",
+                                               "Flags":  "52:uint",
+                                               "Reserved0":  "56:uint",
+                                               "Reserved1":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "PagedSectorHashWindow",
+                               "sizeBytes":  72,
+                               "offsets":  {
+                                               "Hash0":  "0:long",
+                                               "Hash1":  "8:long",
+                                               "Hash2":  "16:long",
+                                               "Hash3":  "24:long",
+                                               "Hash4":  "32:long",
+                                               "Hash5":  "40:long",
+                                               "Hash6":  "48:long",
+                                               "Hash7":  "56:long",
+                                               "Hash8":  "64:long"
+                                           }
+                           }
+                       ],
+    "zeroGcHotPathHits":  0,
+    "absoluteAupCastsFound":  0,
+    "invalidPersistenceDimensionClampHits":  0,
+    "compactionAwareLocksProven":  true,
+    "telemetryRingIntegrated":  true,
+    "asyncNativePersistentWorldRegistryFindings":  0,
+    "boundarySaveManagerForbiddenNativeFields":  13,
+    "boundarySaveManagerAsyncNativeFindings":  17,
+    "verificationHashSha256":  "12188C06EDC52B6A02E646C1A226236FA7DA1E80469BC2FE72148D0E204F9837",
+    "report":  "Docs\\\\Reports\\\\DOMAIN_REAUDIT38_REPORT_1325.json"
+}

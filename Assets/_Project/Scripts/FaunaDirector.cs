@@ -46,7 +46,9 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.AI;
+using Hecton8.AI.Sensory;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -208,13 +210,21 @@ namespace Hecton8.AI
             public float Hunger01;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct AcousticPanicCommand
         {
+            [FieldOffset(0)]
             public Vector3 RuntimePosition;
+            [FieldOffset(12)]
             public float RadiusMeters;
+            [FieldOffset(16)]
             public float DurationSeconds;
+            [FieldOffset(20)]
             public float Intensity01;
+            [FieldOffset(24)]
             public uint Seed;
+            [FieldOffset(28)]
+            private uint _pad0;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -272,11 +282,11 @@ namespace Hecton8.AI
         [SerializeField, Range(0.25f, 2f)] private float hostilePassiveSelectionScale = 0.72f;
         [Tooltip("Aggressive fauna weight multiplier when the active matrix biome reads as hostile.")]
         [SerializeField, Range(0.1f, 2f)] private float hostileAggressiveSelectionScale = 1.35f;
-        [Tooltip("Passive fauna weight multiplier inside fabrication/service/support safe pockets.")]
+        [Tooltip("Passive fauna weight multiplier inside fabrication/service/support reorientation pockets.")]
         [SerializeField, Range(0.25f, 2f)] private float safePocketPassiveSelectionScale = 1.4f;
-        [Tooltip("Aggressive fauna weight multiplier inside fabrication/service/support safe pockets.")]
+        [Tooltip("Aggressive fauna weight multiplier inside fabrication/service/support reorientation pockets.")]
         [SerializeField, Range(0.05f, 2f)] private float safePocketAggressiveSelectionScale = 0.4f;
-        [Tooltip("Large-threat weight multiplier inside fabrication/service/support safe pockets.")]
+        [Tooltip("Large-threat weight multiplier inside fabrication/service/support reorientation pockets.")]
         [SerializeField, Range(0f, 2f)] private float safePocketLargeThreatSelectionScale = 0.08f;
         [Tooltip("Passive fauna weight multiplier inside combat/trial water.")]
         [SerializeField, Range(0.1f, 2f)] private float hostileZonePassiveSelectionScale = 0.68f;
@@ -443,9 +453,19 @@ namespace Hecton8.AI
         private Vector3 _playerLookViewPosition;
         private Vector3 _playerLookViewForward;
         private bool _hasPlayerLookView;
+        private struct FaunaDirectorPlayerRuntimeContextSnapshot
+        {
+            public Transform PlayerTransform;
+            public PlayerMovementRuntimeState MovementState;
+            public PlayerLookState LookState;
+            public bool IsBound;
+        }
+
         private int _playerRuntimeContextCacheFrame = -1;
         private bool _playerRuntimeContextCacheValid;
-        private PlayerRuntimeContext _playerRuntimeContextCache;
+        private FaunaDirectorPlayerRuntimeContextSnapshot _playerRuntimeContextCache;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private SystemDispatcher _dispatcherRuntime;
         private IPhysicsService _physicsService;
         private IVegetationThreatReadModel _vegetationThreatBridge;
         private bool _dispatcherRegistered;
@@ -540,6 +560,8 @@ namespace Hecton8.AI
         private IMicroFaunaPresentationPulseSink _sargassumMicroFauna;
         private IObjectPoolService _objectPool;
         private IEcosystemDirectorService _ecosystemDirector;
+        private FaunaGeneticsManager _faunaGenetics;
+        private EcosystemHealthDirector _ecosystemHealth;
         private IFaunaPersistentWorldStateService _persistentWorldRegistry;
         private IThermodynamicsService _thermalRuntime;
         private IDynamicResolutionRuntime _dynamicResolutionRuntime;
@@ -634,7 +656,6 @@ namespace Hecton8.AI
             ResolveBiomeMatrixDirector();
             ResolveWorldZoneDirector();
             ResolveDepthZoneDirector();
-            ResolveVegetationThreatBridge();
             RefreshRuntimeStreamingSettings();
             TryWarmupCreaturePools();
             _runtimeSettingsDirty = false;
@@ -671,8 +692,6 @@ namespace Hecton8.AI
 
             if (depthZoneDirector == null)
                 ResolveDepthZoneDirector();
-            if (_vegetationThreatBridge == null)
-                ResolveVegetationThreatBridge();
 
             if (!_creaturePoolsWarmed)
                 TryWarmupCreaturePools();
@@ -780,13 +799,18 @@ namespace Hecton8.AI
         {
             _mapMagicRuntime = GlobalRegistry.Terrain;
             _physicsService = GlobalRegistry.Physics;
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _dispatcherRuntime = GlobalRegistry.Dispatcher;
             _sargassumMicroFauna = GlobalRegistry.MicroFaunaPresentationPulses;
             _objectPool = GlobalRegistry.ObjectPoolService;
             _ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            _faunaGenetics = GlobalRegistry.FaunaGenetics;
+            _ecosystemHealth = GlobalRegistry.EcosystemHealth;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             _thermalRuntime = GlobalRegistry.ThermodynamicsService;
             _dynamicResolutionRuntime = GlobalRegistry.DynamicResolutionRuntime;
             _depthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
+            _faunaPresentationService?.Bind(_faunaGenetics, _ecosystemHealth);
             if (depthZoneDirector == null)
                 depthZoneDirector = GlobalRegistry.DepthZone;
             if (_depthZoneReadModel == null && depthZoneDirector != null)
@@ -804,6 +828,13 @@ namespace Hecton8.AI
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    InvalidatePlayerRuntimeContextCache();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _dispatcherRuntime = currentService as SystemDispatcher;
+                    break;
                 case GlobalRegistryServiceSlot.MapMagicRuntime:
                 case GlobalRegistryServiceSlot.TerrainProviderRuntime:
                     _mapMagicRuntime = currentService as ITerrainProvider;
@@ -822,6 +853,14 @@ namespace Hecton8.AI
                     break;
                 case GlobalRegistryServiceSlot.EcosystemDirector:
                     _ecosystemDirector = currentService as IEcosystemDirectorService;
+                    break;
+                case GlobalRegistryServiceSlot.FaunaGeneticsRuntime:
+                    _faunaGenetics = currentService as FaunaGeneticsManager;
+                    _faunaPresentationService?.Bind(_faunaGenetics, _ecosystemHealth);
+                    break;
+                case GlobalRegistryServiceSlot.EcosystemHealthRuntime:
+                    _ecosystemHealth = currentService as EcosystemHealthDirector;
+                    _faunaPresentationService?.Bind(_faunaGenetics, _ecosystemHealth);
                     break;
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
                     _persistentWorldRegistry = currentService as IFaunaPersistentWorldStateService;
@@ -938,6 +977,9 @@ namespace Hecton8.AI
 
             ConsumeAcousticPingSignals();
             DrainAcousticPanicCommands();
+            AcousticEchoLocationRuntime.TickOwnerFrame(
+                SystemDispatcher.CurrentFrameIndex,
+                (float)SystemDispatcher.CurrentUnscaledTimeSeconds);
             AccumulateResidentDataOnlyLodDelta(deltaTime);
 
             _slowTickAccumulator += deltaTime;
@@ -1088,7 +1130,6 @@ namespace Hecton8.AI
             ResolveBiomeMatrixDirector();
             ResolveWorldZoneDirector();
             ResolveDepthZoneDirector();
-            ResolveVegetationThreatBridge();
             if (!_creaturePoolsWarmed)
                 TryWarmupCreaturePools();
             float nowSeconds = ReadDispatcherTimeSeconds();
@@ -3410,6 +3451,16 @@ namespace Hecton8.AI
                 return;
 
             _nextPlayerResolveTime = nowSeconds + PlayerResolveRetryInterval;
+            if (TryResolveCachedPlayerRuntimeContext(out FaunaDirectorPlayerRuntimeContextSnapshot runtimeContext) &&
+                runtimeContext.IsBound &&
+                runtimeContext.PlayerTransform != null)
+            {
+                _playerTransform = runtimeContext.PlayerTransform;
+                _nextPlayerResolveTime = float.NegativeInfinity;
+                ResolvePlayerViewTransform();
+                return;
+            }
+
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
 
             if (_playerTransform != null)
@@ -3429,8 +3480,8 @@ namespace Hecton8.AI
             }
 
             _hasPlayerLookView = false;
-            if (TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null)
+            if (TryResolveCachedPlayerRuntimeContext(out FaunaDirectorPlayerRuntimeContextSnapshot runtimeContext) &&
+                runtimeContext.IsBound)
             {
                 PlayerLookState lookState = runtimeContext.LookState;
                 float aimForwardLengthSq = math.lengthsq(lookState.AimForward);
@@ -3448,8 +3499,8 @@ namespace Hecton8.AI
 
         private bool TryResolvePlayerLogicPose(out Vector3 playerPosition, out AbsoluteUniversePosition playerAup)
         {
-            if (TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
+            if (TryResolveCachedPlayerRuntimeContext(out FaunaDirectorPlayerRuntimeContextSnapshot runtimeContext) &&
+                runtimeContext.IsBound &&
                 (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
                 playerAup = runtimeContext.MovementState.PredictedAup;
@@ -3481,9 +3532,9 @@ namespace Hecton8.AI
             return positionAup.IsFinite();
         }
 
-        private static float ReadDispatcherTimeSeconds()
+        private float ReadDispatcherTimeSeconds()
         {
-            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            SystemDispatcher dispatcher = _dispatcherRuntime;
             double seconds = dispatcher != null ? dispatcher.DilatedTimeSeconds : 0d;
             if (!math.isfinite(seconds) || seconds <= 0d)
                 return 0f;
@@ -3507,17 +3558,23 @@ namespace Hecton8.AI
             return frame != 0u ? frame : 1u;
         }
 
-        private bool TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext)
+        private bool TryResolveCachedPlayerRuntimeContext(out FaunaDirectorPlayerRuntimeContextSnapshot runtimeContext)
         {
             int frame = ReadDispatcherFrameInt();
             if (_playerRuntimeContextCacheFrame != frame)
             {
                 _playerRuntimeContextCacheFrame = frame;
-                _playerRuntimeContextCacheValid =
-                    PlayerRuntimeContextService.TryGetActiveRuntimeContext(out _playerRuntimeContextCache) &&
-                    _playerRuntimeContextCache != null;
-                if (!_playerRuntimeContextCacheValid)
-                    _playerRuntimeContextCache = null;
+                _playerRuntimeContextCache = default;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+                if (playerContext != null)
+                {
+                    _playerRuntimeContextCache.PlayerTransform = playerContext.PlayerTransform;
+                    playerContext.TryGetMovementRuntimeState(out _playerRuntimeContextCache.MovementState);
+                    playerContext.TryGetLookRuntimeState(out _playerRuntimeContextCache.LookState);
+                    _playerRuntimeContextCache.IsBound = _playerRuntimeContextCache.PlayerTransform != null;
+                }
+
+                _playerRuntimeContextCacheValid = _playerRuntimeContextCache.IsBound;
             }
 
             runtimeContext = _playerRuntimeContextCache;
@@ -3528,7 +3585,7 @@ namespace Hecton8.AI
         {
             _playerRuntimeContextCacheFrame = -1;
             _playerRuntimeContextCacheValid = false;
-            _playerRuntimeContextCache = null;
+            _playerRuntimeContextCache = default;
         }
 
         private void ResolveSpawnRegistry()
@@ -3563,17 +3620,8 @@ namespace Hecton8.AI
 
         private void ResolveDepthZoneDirector()
         {
-            if (_depthZoneReadModel == null)
-                _depthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
-
             if (_depthZoneReadModel == null && depthZoneDirector != null)
                 _depthZoneReadModel = depthZoneDirector;
-        }
-
-        private void ResolveVegetationThreatBridge()
-        {
-            if (_vegetationThreatBridge == null)
-                _vegetationThreatBridge = GlobalRegistry.VegetationThreat;
         }
 
         private int ResolveEffectiveGlobalMaxCount(WorldProceduralFaunaMood faunaMood, DepthZoneProfile depthZone)

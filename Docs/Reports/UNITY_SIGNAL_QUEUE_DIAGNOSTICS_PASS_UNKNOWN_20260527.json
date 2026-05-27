@@ -1,0 +1,46 @@
+{
+  "agent": "UNKNOWN",
+  "date": "2026-05-27",
+  "evidenceClass": "STATIC_SOURCE_TOOL_BUILD_CONTRACT_SCAN",
+  "changedFiles": [
+    "Tools/SignalBusContractAuditCli/Program.cs",
+    "Tools/SignalBusContractAuditCli/SignalBusContractAuditCli.csproj",
+    "Assets/_Project/Scripts/RuntimeDiagnosticsTrace.cs"
+  ],
+  "toolBuild": {
+    "guardCpuPercent": 45,
+    "compilerProcessCount": 0,
+    "warnings": 0,
+    "errors": 0
+  },
+  "contractScan": {
+    "artifact": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_QUEUE_RECHECK.json",
+    "filesScanned": 2439,
+    "shaderFilesScanned": 71,
+    "errors": 0,
+    "warnings": 521,
+    "infos": 692,
+    "confirmedErrors": 0,
+    "possibleOrphanedSignalQueue": 0,
+    "registeredLocalSignalQueueReview": 17,
+    "declaredOnlySignalQueueReview": 1,
+    "localNativeTelemetryRingRegisteredNonVault": 8
+  },
+  "solutionBuild": {
+    "artifact": "Docs/Reports/BUILD_UNKNOWN_SIGNAL_QUEUE_DIAGNOSTICS_RECHECK_20260527.log",
+    "launched": false,
+    "reason": "CPU guard stayed above 50 percent for 30 attempts"
+  },
+  "documentationValidation": {
+    "verifyDocStructurePass": true,
+    "activeDocCount": 670,
+    "encodingWithoutUtf8Sig": 0,
+    "oopDocScannerFinalPass": true,
+    "oopDocScannerSourceSyncPass": true
+  },
+  "runtimeMicrosecondsSavedClaimed": 0,
+  "residuals": [
+    "8 registered non-Vault telemetry rings still require owner-by-owner route decisions",
+    "No Unity import, Play Mode, profiler, Memory Profiler, player build, or visual proof"
+  ]
+}

@@ -1,0 +1,37 @@
+﻿{
+    "schema":  "hecton8.aup_determinism_reaudit37.v1",
+    "agentId":  "1325",
+    "scannedFiles":  4,
+    "findingCount":  0,
+    "findings":  [
+
+                 ],
+    "invalidDimensionClampHits":  [
+
+                                  ],
+    "bridgeProof":  {
+                        "resolveCameraRelativeRejectsInvalidAup":  true,
+                        "toRuntimeFloat3RejectsInvalidAup":  true,
+                        "weightedAupAverageRejectsNonFiniteWeight":  true,
+                        "weightedAverageUsesAnchoredDelta":  true,
+                        "snapshotWriterReturnChecked":  true,
+                        "snapshotDeltaPrevalidatesBeforeNativeAllocation":  true,
+                        "sectorCommitStateMutatesOnMainThread":  true,
+                        "sectorOverrideReadWorkCapturedBeforeBackground":  true,
+                        "backgroundSectorOverrideMergeDoesNotReadRuntimeDictionary":  true,
+                        "indexedQuarantineResetUsesCapturedSavePathAndChunkSize":  true,
+                        "indexedAsyncGenerationFenceIntegrated":  true,
+                        "sectorOverrideCommitUsesPerOperationSnapshot":  true,
+                        "backgroundSnapshotWriterUsesCapturedPathAndChunkSize":  true,
+                        "tryCommitDeletesFailClosed":  true,
+                        "invalidChunkDimensionsFailClosed":  true
+                    },
+    "notes":  [
+                  "Reaudit37 added an indexed async generation fence invalidated by restore, disable, OnDisable, and OnDestroy.",
+                  "Indexed paging applies loaded records/entity states only if its generation is still current after each main/background boundary.",
+                  "Sector override read work is a fixed value window captured on the main thread; no shared mutable read list survives across await.",
+                  "Sector override commit copies due work to a per-operation array before background IO and reconciles the runtime dictionary only on main thread if generation is current.",
+                  "Resident sector snapshot writer now uses captured override directory and chunk size on the background thread."
+              ],
+    "generatedAtUtc":  "2026-05-27T14:08:39.5852347Z"
+}

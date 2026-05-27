@@ -40,6 +40,7 @@ namespace Hecton8.Physics
         private AbsoluteUniversePosition _restAup;
         private bool _hasRestAup;
         private float _phase;
+        private byte _managerDistanceLodBand;
 
         public Transform CachedTransform => _cachedTransform;
         public Vector3 RestLocalPosition => _restLocalPosition;
@@ -55,6 +56,11 @@ namespace Hecton8.Physics
         public float LodBias => lodBias;
         public float Phase => _phase;
         public AmbientWaterMotionProfile Profile => profile;
+        internal byte ManagerDistanceLodBand
+        {
+            get => _managerDistanceLodBand;
+            set => _managerDistanceLodBand = value;
+        }
 
         private void Awake()
         {
@@ -86,8 +92,8 @@ namespace Hecton8.Physics
             _cachedTransform ??= transform;
             _restLocalPosition = _cachedTransform.localPosition;
             _restLocalRotation = _cachedTransform.localRotation;
-            _restAup = default;
-            _hasRestAup = false;
+            _restAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform.position);
+            _hasRestAup = _restAup.IsFinite();
         }
 
         public void ApplyProfile()

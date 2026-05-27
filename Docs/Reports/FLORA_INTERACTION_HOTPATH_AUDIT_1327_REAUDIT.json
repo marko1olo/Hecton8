@@ -1,0 +1,1032 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\FLORA_INTERACTION_HOTPATH_AUDIT_1327_REAUDIT.json",
+  "auditHashSha256": "63493df7978b98c76a13c8befdb6989ef240697fb805cc006ce8fda34c7e9706",
+  "summary": {
+    "scannedFiles": 2,
+    "parseFailures": 0,
+    "totalFindings": 125,
+    "objectCreations": 125,
+    "valueTypeCreations": 47,
+    "managedRiskCreations": 78,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\FloraInteractionManager.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\Editor\\FloraInteractionMemorySovereigntyValidator1327.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 264,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(Matrices[index].m03, Matrices[index].m13, Matrices[index].m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 289,
+      "owner": "BuildDeterministicFrameOffset",
+      "kind": "value_type_creation",
+      "detail": "uint3",
+      "snippet": "new uint3(                      (uint)math.max(0, instanceIndex),                      math.asuint(instanceData.Variation),                      math.asuint(instanceData.TemplateIndex))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 461,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      (x - halfIndex) * safeCellSize,                      (y - halfIndex) * safeCellSize,                      (z - halfIndex) * safeCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 536,
+      "owner": "ResolveAmbientCurrent",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.35f, 0.04f, 0.72f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 544,
+      "owner": "ResolveAmbientCurrent",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(n0 - 0.5f, (n2 - 0.5f) * 0.35f, n1 - 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 578,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      (x - halfIndex) * safeCellSize,                      (y - halfIndex) * safeCellSize,                      (z - halfIndex) * safeCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 585,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      (Triangle01(FramePhase * 0.31f) - 0.5f) * safeResolution * safeCellSize * 0.42f,                      (Triangle01(FramePhase * 0.19f + 0.27f) - 0.5f) * safeResolution * safeCellSize * 0.18f,                 "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 597,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.42f, -0.08f, 0.82f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 597,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 653,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(FieldCenterWS.x, FieldCenterWS.y, FieldCenterWS.z, CellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 654,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(Resolution, math.select(0f, 1f, maxMagnitude > 0.0001f), QualityWeight, maxMagnitude)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 655,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(NodeCount, UpdateIntervalSeconds, ActiveWakeCount, nonZeroCells)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 656,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                      math.max(0, FrameIndex),                      AupShiftSequence,                      math.max(0, BlackBoxCursor),                      outputFlags)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 735,
+      "owner": "ResolveAupLocalDelta",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(                 (((double)source.GridX - origin.GridX) * cellSize) + ((double)source.LocalX - origin.LocalX),                 (((double)source.GridY - origin.GridY) * cellSize) + ((double)source.LocalY - origin.LocalY),        "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 739,
+      "owner": "ResolveAupLocalDelta",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-maxLocalDeltaMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 739,
+      "owner": "ResolveAupLocalDelta",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(maxLocalDeltaMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 740,
+      "owner": "ResolveAupLocalDelta",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)delta.x, (float)delta.y, (float)delta.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 1559,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Dictionary<BaseModule, ModuleParasiteState>",
+      "snippet": "new Dictionary<BaseModule, ModuleParasiteState>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 1560,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Dictionary<BaseModule, ModuleParasiteState>",
+      "snippet": "new Dictionary<BaseModule, ModuleParasiteState>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 1561,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Dictionary<BaseModule, float>",
+      "snippet": "new Dictionary<BaseModule, float>(8)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 1562,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<BaseModule>",
+      "snippet": "new List<BaseModule>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 1980,
+      "owner": "Tick",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  math.lerp(_smoothPosition.x, targetPosition.x, positionBlend),                  math.lerp(_smoothPosition.y, targetPosition.y, positionBlend),                  math.lerp(_smoothPosition.z, targetPosition.z, pos"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2005,
+      "owner": "Tick",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_smoothPosition.x, _smoothPosition.y, _smoothPosition.z, _smoothRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2092,
+      "owner": "RegisterExternalInteraction",
+      "kind": "object_creation",
+      "detail": "FloraInteractionPointGpuData",
+      "snippet": "new FloraInteractionPointGpuData              {                  PositionRadius = new Vector4(                      positionWS.x,                      positionWS.y,                      positionWS.z,                      safeRadius),       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2094,
+      "owner": "RegisterExternalInteraction",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      positionWS.x,                      positionWS.y,                      positionWS.z,                      safeRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2099,
+      "owner": "RegisterExternalInteraction",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      velocityWS.x,                      velocityWS.y,                      velocityWS.z,                      EstimateLength3D(velocityWS))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2455,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"__VegetationSedimentBursts\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2465,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(1.2f, 2.1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2466,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(0.15f, 1.1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2467,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(0.08f, 0.22f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2468,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxGradient",
+      "snippet": "new ParticleSystem.MinMaxGradient(new Color(0.58f, 0.64f, 0.56f, 0.34f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2468,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.58f, 0.64f, 0.56f, 0.34f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2469,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(-0.02f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2479,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(0.18f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2485,
+      "owner": "EnsureSedimentParticleSystem",
+      "kind": "object_creation",
+      "detail": "ParticleSystem.MinMaxCurve",
+      "snippet": "new ParticleSystem.MinMaxCurve(0.06f, 0.22f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2560,
+      "owner": "EmitSedimentBurst",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(velocityWS.x, 0f, velocityWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2572,
+      "owner": "EmitSedimentBurst",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.62f, 0.7f, 0.62f, 0.36f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2573,
+      "owner": "EmitSedimentBurst",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.55f, 0.6f, 0.54f, 0.28f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2589,
+      "owner": "AppendInteractionPoint",
+      "kind": "object_creation",
+      "detail": "FloraInteractionPointGpuData",
+      "snippet": "new FloraInteractionPointGpuData              {                  PositionRadius = new Vector4(                      position.x,                      position.y,                      position.z,                      Mathf.Max(0.05f, radius))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2591,
+      "owner": "AppendInteractionPoint",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      position.x,                      position.y,                      position.z,                      Mathf.Max(0.05f, radius))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2596,
+      "owner": "AppendInteractionPoint",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      velocity.x,                      velocity.y,                      velocity.z,                      EstimateLength3D(velocity))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2771,
+      "owner": "PublishEnvironmentGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(currentVector.x, currentVector.y, currentVector.z, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2774,
+      "owner": "PublishEnvironmentGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(currentVector.x, currentVector.y, currentVector.z, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2811,
+      "owner": "PublishLifecycleGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      bloomWeight,                      decayWeight,                      math.lerp(1f, _bloomEmissionBoost, bloomWeight),                      _decayWiltStrength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2824,
+      "owner": "PublishCascadeGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      GetCurrentSimulationTimeSeconds(),                      _cascadePulseDurationSeconds,                      _cascadeEmissionBoost,                      _cascadeReleaseDurationSeconds)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2887,
+      "owner": "FlushSubmarineWashGlobals",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(velocity.x, velocity.y, velocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2962,
+      "owner": "FlushSubmarineWashGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      worldCenterOfMass.x,                      worldCenterOfMass.y,                      worldCenterOfMass.z,                      radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2969,
+      "owner": "FlushSubmarineWashGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      safeVelocityDirection.x,                      safeVelocityDirection.y,                      safeVelocityDirection.z,                      speed)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2976,
+      "owner": "FlushSubmarineWashGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      -safeVelocityDirection.x,                      -safeVelocityDirection.y,                      -safeVelocityDirection.z,                      normalizedPropwashStrength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2983,
+      "owner": "FlushSubmarineWashGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                     submarineAupDelta.x,                     submarineAupDelta.y,                     submarineAupDelta.z,                     AbsoluteUniversePosition.CellSizeMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 2990,
+      "owner": "FlushSubmarineWashGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                     0f,                     0f,                     0f,                     radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3124,
+      "owner": "PublishWakeGeneratedSignal",
+      "kind": "value_type_creation",
+      "detail": "WakeGeneratedSignal",
+      "snippet": "new WakeGeneratedSignal              {                  PositionAup = positionAup,                  Velocity = new float3(velocity.x, velocity.y, velocity.z),                  SourceFlags = sourceKind              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3127,
+      "owner": "PublishWakeGeneratedSignal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(velocity.x, velocity.y, velocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3173,
+      "owner": "QueueProceduralWake",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(velocity.x, velocity.y, velocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3294,
+      "owner": "ScheduleWakeDecayJob",
+      "kind": "value_type_creation",
+      "detail": "WakeDecayJob",
+      "snippet": "new WakeDecayJob              {                  WakeSources = wakeSources,                  DeltaTime = elapsedSeconds,                  DecayRate = WakeDecayPerSecond,                  SlotLimit = ResolveWakeSlotLimit()              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3361,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                          point.PositionWS.x,                          point.PositionWS.y,                          point.PositionWS.z,                          packedRadiusIntensity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3367,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                          point.PositionWS.x,                          point.PositionWS.y,                          point.PositionWS.z,                          point.Intensity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3372,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                          wakeDirection.x,                          wakeDirection.y,                          wakeDirection.z,                          point.Radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3380,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(globalWake.x, globalWake.y, globalWake.z, globalWake.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3382,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(globalWakeVector.x, globalWakeVector.y, globalWakeVector.z, globalWakeVector.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3421,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(publishedCount, MaxProceduralWakePoints, maxWakeIntensity, shearFoamAmount)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3424,
+      "owner": "FlushProceduralWakeBuffer",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(slotLimit, ResolveWakeBudgetPressure01(), publishedCount, maxWakeIntensity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3657,
+      "owner": "ResolveFloraSwayCenterShiftCells",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  ResolveFloraSwayShiftCell(delta.x, safeCellSize),                  ResolveFloraSwayShiftCell(delta.y, safeCellSize),                  ResolveFloraSwayShiftCell(delta.z, safeCellSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3699,
+      "owner": "ResolveFloraSwayRingOffset",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  WrapFloraSwayGridCoordJob(currentOffset.x + centerShiftCells.x, safeResolution),                  WrapFloraSwayGridCoordJob(currentOffset.y + centerShiftCells.y, safeResolution),                  WrapFloraSwayGrid"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3737,
+      "owner": "ScheduleFloraSwayDisplacementField",
+      "kind": "value_type_creation",
+      "detail": "DecayFloraForcesJob",
+      "snippet": "new DecayFloraForcesJob              {                  FieldValues = fieldValues,                  NodeCount = nodeCount,                  Resolution = safeResolution,                  RingOffset = ringOffset,                  CenterShiftC"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3749,
+      "owner": "ScheduleFloraSwayDisplacementField",
+      "kind": "value_type_creation",
+      "detail": "AccumulateFloraForcesJob",
+      "snippet": "new AccumulateFloraForcesJob              {                  WakeSources = wakeSources,                  FieldValues = fieldValues,                  FieldCenterAup = fieldCenterAup,                  AmbientCurrentWS = ambientCurrent,       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3769,
+      "owner": "ScheduleFloraSwayDisplacementField",
+      "kind": "value_type_creation",
+      "detail": "MockDisplacementInjectorJob",
+      "snippet": "new MockDisplacementInjectorJob                  {                      FieldValues = fieldValues,                      Resolution = safeResolution,                      NodeCount = nodeCount,                      RingOffset = ringOffset,  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3781,
+      "owner": "ScheduleFloraSwayDisplacementField",
+      "kind": "value_type_creation",
+      "detail": "UploadDisplacementTextureJob",
+      "snippet": "new UploadDisplacementTextureJob              {                  FieldValues = fieldValues,                  FieldMeta = fieldMeta,                  Resolution = safeResolution,                  NodeCount = nodeCount,                  CellS"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3878,
+      "owner": "FinishFloraSwayFieldJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(_floraSwayFieldCenterWS.x, _floraSwayFieldCenterWS.y, _floraSwayFieldCenterWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3892,
+      "owner": "FinishFloraSwayFieldJob",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(fieldMeta[0].x, fieldMeta[0].y, fieldMeta[0].z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3908,
+      "owner": "FinishFloraSwayFieldJob",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(_floraSwayFieldCenterWS.x, _floraSwayFieldCenterWS.y, _floraSwayFieldCenterWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3920,
+      "owner": "ResolveFloraSwayAmbientCurrent",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(current.x, current.y, current.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3931,
+      "owner": "RecordDiscardedFloraSwayFieldUpload",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(_floraSwayFieldCenterWS.x, _floraSwayFieldCenterWS.y, _floraSwayFieldCenterWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 3952,
+      "owner": "RecordDiscardedFloraSwayFieldUpload",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(meta0.x, meta0.y, meta0.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4231,
+      "owner": "BuildFloraStiffnessRule",
+      "kind": "value_type_creation",
+      "detail": "FloraStiffnessRuleDTO",
+      "snippet": "new FloraStiffnessRuleDTO              {                  PlantHash = plantHash,                  Stiffness01 = math.saturate(math.isfinite(stiffness) ? stiffness : 0.5f),                  Damping = math.max(0.01f, math.isfinite(damping) ? "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4453,
+      "owner": "FlushFloraSwayFieldGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_floraSwayFieldCenterWS.x, _floraSwayFieldCenterWS.y, _floraSwayFieldCenterWS.z, _floraSwayFieldCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4456,
+      "owner": "FlushFloraSwayFieldGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      _floraSwayFieldResolution,                      _floraSwayFieldActive ? 1f : 0f,                      _floraSwayFieldQualityWeight,                      _floraSwayFieldMaxMagnitude)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4463,
+      "owner": "FlushFloraSwayFieldGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_floraSwayFieldRingOffset.x, _floraSwayFieldRingOffset.y, _floraSwayFieldRingOffset.z, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4694,
+      "owner": "PublishWakeFluidImpulse",
+      "kind": "value_type_creation",
+      "detail": "FluidImpulseSignal",
+      "snippet": "new FluidImpulseSignal              {                  PositionAup = signal.PositionAup,                  Vector = signal.Velocity,                  Radius = math.max(0.5f, radius),                  Lifetime = math.lerp(0.35f, 1.4f, math.sa"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4778,
+      "owner": "DumpWakeBlackBoxOnce",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 4929,
+      "owner": "DumpFloraSwayFieldBlackBoxOnce",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5710,
+      "owner": "AppendHeadlessParasiteNode",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(positionWS.x, positionWS.y, positionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5734,
+      "owner": "AppendHeadlessParasiteNode",
+      "kind": "object_creation",
+      "detail": "ParasiteNode",
+      "snippet": "new ParasiteNode                 {                     PositionWS = nextPosition,                     HostModuleRuntimeId = moduleRuntimeId,                     GrowthLevel = growth01,                     BirthTimeSeconds = birthTimeSeconds"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5776,
+      "owner": "ScheduleHeadlessParasiteSimulation",
+      "kind": "value_type_creation",
+      "detail": "ParasiteGrowthJob",
+      "snippet": "new ParasiteGrowthJob                 {                     Nodes = parasiteNodes,                     NodeCount = _parasiteNodeCount,                     DeltaTime = Mathf.Max(0f, deltaTime),                     CurrentTimeSeconds = Time.t"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5863,
+      "owner": "ApplyHeadlessParasiteStateFromNodes",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(node.PositionWS.x, node.PositionWS.y, node.PositionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5912,
+      "owner": "AccumulateModuleParasiteState",
+      "kind": "value_type_creation",
+      "detail": "ModuleParasiteState",
+      "snippet": "new ModuleParasiteState              {                  PowerDrainWatts = Mathf.Max(0f, drainWatts),                  InfectionLevel = Mathf.Clamp01(infectionLevel),                  RootPowerDrainWatts = Mathf.Max(0f, rootDrainWatts),     "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5931,
+      "owner": "AppendParasiteAnchor",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  positionWS.x,                  positionWS.y,                  positionWS.z,                  Mathf.Max(0.25f, radiusMeters))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5936,
+      "owner": "AppendParasiteAnchor",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  Mathf.Clamp01(infectionLevel),                  Mathf.Max(0.01f, pulseFrequency),                  thermalGrowthFlag,                  0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5957,
+      "owner": "TryResolveNearestModuleParasite",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(anchorData.x, anchorData.y, anchorData.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 5981,
+      "owner": "TryResolveNearestModuleParasite",
+      "kind": "object_creation",
+      "detail": "ModuleParasiteTarget",
+      "snippet": "new ModuleParasiteTarget(resolvedHost, anchorPosition, anchorRadius, infectionLevel, criticalityWeight)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 6068,
+      "owner": "FlushDamageReactionGlobal",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_damageReactionPositionWS.x, _damageReactionPositionWS.y, _damageReactionPositionWS.z, strength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 6440,
+      "owner": "FlushParasiteInfectionGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      _publishedParasiteAnchorCount,                      GetCurrentSimulationTimeSeconds(),                      0.35f,                      1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 6465,
+      "owner": "RegisterDefensiveSporeBurst",
+      "kind": "value_type_creation",
+      "detail": "DefensiveSporeBurstState",
+      "snippet": "new DefensiveSporeBurstState              {                  PositionWS = positionWS,                  Radius = _defensiveSporeBurstRadius,                  Intensity = clampedIntensity,                  ExpireTimeSeconds = simulationTime +"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 6852,
+      "owner": "RegisterCascadeEvent",
+      "kind": "object_creation",
+      "detail": "FloraCascadeEventPayload",
+      "snippet": "new FloraCascadeEventPayload                 {                     Center = new float3(centerWS.x, centerWS.y, centerWS.z),                     StartTimeSeconds = simulationTime,                     RadiusMeters = _cascadePropagationRadius "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 6854,
+      "owner": "RegisterCascadeEvent",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(centerWS.x, centerWS.y, centerWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 6918,
+      "owner": "RecomputeCascadePhaseSeeds",
+      "kind": "value_type_creation",
+      "detail": "PopulateCascadePhaseSeedsJob",
+      "snippet": "new PopulateCascadePhaseSeedsJob                 {                     Matrices = matrices,                     Metadata = metadata,                     ReactiveTemplateMask = cascadeReactiveTemplateMask,                     Events = cascad"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7155,
+      "owner": "EnsureReactiveFloraHashCapacity",
+      "kind": "object_creation",
+      "detail": "HectonSpatialHash",
+      "snippet": "new HectonSpatialHash(safeCapacity, safeCapacity * 4)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7179,
+      "owner": "ResolveReactiveFloraHalfExtents",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(width, math.max(0.35f, height * 0.5f), width)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7498,
+      "owner": "ExtractTranslation",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(matrix.m03, matrix.m13, matrix.m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7538,
+      "owner": "PublishPredatorThreatGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(hit.Position.x, hit.Position.y, hit.Position.z, predatorDimRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7546,
+      "owner": "PublishPredatorThreatGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      threatExposure,                      predatorDimRadius,                      _predatorBiolumDimStrength,                      aggressiveBioformThreat)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7670,
+      "owner": "FlushFlowFieldGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_flowFieldCenterWS.x, _flowFieldCenterWS.y, _flowFieldCenterWS.z, _flowFieldCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7712,
+      "owner": "PublishPlayerRuntimePosition",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  playerRuntimePosition.x,                  playerRuntimePosition.y,                  playerRuntimePosition.z,                  Mathf.Max(0.05f, playerBendRadius))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7717,
+      "owner": "PublishPlayerRuntimePosition",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  playerSpeed,                  normalizedForce,                  _hasActiveScooterWake ? 1f : 0f,                  1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7962,
+      "owner": "RefreshWakeTrailWorldRect",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(anchorPosition.x, anchorPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7982,
+      "owner": "RefreshWakeTrailWorldRect",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  desiredCenterXZ.x - halfSize,                  desiredCenterXZ.y - halfSize,                  wakeTrailInvWorldSize,                  wakeTrailInvWorldSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8019,
+      "owner": "QueueWakeTrailStamp",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(                  (positionWS.x - _wakeTrailWorldRect.x) * _wakeTrailWorldRect.z,                  (positionWS.z - _wakeTrailWorldRect.y) * _wakeTrailWorldRect.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8022,
+      "owner": "QueueWakeTrailStamp",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(directionWS.x, directionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8032,
+      "owner": "QueueWakeTrailStamp",
+      "kind": "object_creation",
+      "detail": "WakeTrailStampCommand",
+      "snippet": "new WakeTrailStampCommand              {                  UvEllipse = new Vector4(uvCenter.x, uvCenter.y, uvRadius, uvLength),                  DirectionStrengthVertical = new Vector4(directionXZ.x, directionXZ.y, safeStrength, verticalImpu"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8034,
+      "owner": "QueueWakeTrailStamp",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(uvCenter.x, uvCenter.y, uvRadius, uvLength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8035,
+      "owner": "QueueWakeTrailStamp",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(directionXZ.x, directionXZ.y, safeStrength, verticalImpulse)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8070,
+      "owner": "ExecuteWakeTrailSimulation",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_pendingWakeTrailScrollUv.x, _pendingWakeTrailScrollUv.y, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8080,
+      "owner": "ExecuteWakeTrailSimulation",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      wakeTrailInvResolution,                      wakeTrailInvResolution,                      _wakeTrailRuntimeResolution,                      _wakeTrailRuntimeResolution)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8148,
+      "owner": "PublishWakeTrailGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      wakeTrailInvResolution,                      wakeTrailInvResolution,                      _wakeTrailRuntimeResolution,                      _wakeTrailRuntimeResolution)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8157,
+      "owner": "CreateWakeTrailTexture",
+      "kind": "object_creation",
+      "detail": "RenderTexture",
+      "snippet": "new RenderTexture(_wakeTrailRuntimeResolution, _wakeTrailRuntimeResolution, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear)              {                  name = textureName,                  wrapMode = TextureWrapMode.Clam"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8192,
+      "owner": "QuantizeWakeTrailCenter",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(                  Mathf.Round(centerXZ.x / stride) * stride,                  Mathf.Round(centerXZ.y / stride) * stride)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8270,
+      "owner": "ApplyRuntimeOffsetToCachedState",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(runtimeOffset.x, runtimeOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8278,
+      "owner": "ApplyRuntimeOffsetToCachedState",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8311,
+      "owner": "ApplyRuntimeOffsetToCachedState",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 8379,
+      "owner": "FlushInteractionResetGlobals",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(0f, 0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 9233,
+      "owner": "RecordFloraMemoryTelemetry",
+      "kind": "value_type_creation",
+      "detail": "FloraMemoryTelemetryEntry",
+      "snippet": "new FloraMemoryTelemetryEntry                 {                     Frame = (uint)Time.frameCount,                     EventHash = eventHash,                     BufferID = (uint)bufferId,                     SystemID = (uint)SystemID.Vfx, "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 9285,
+      "owner": "DumpFloraMemoryTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "MemoryStream",
+      "snippet": "new MemoryStream(8 + telemetry.Length * 64)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 9286,
+      "owner": "DumpFloraMemoryTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(memoryStream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 9311,
+      "owner": "DumpFloraMemoryTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "FloraMemoryTelemetryDumpWork",
+      "snippet": "new FloraMemoryTelemetryDumpWork                 {                     Path = fullPath,                     Payload = memoryStream.GetBuffer()                 }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 9791,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

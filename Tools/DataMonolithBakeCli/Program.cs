@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using Hecton8.EditorValidation;
 
 namespace Hecton8.Tools.DataMonolithBakeCli
@@ -90,7 +91,28 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             if (!File.Exists(path))
                 return "0.0.0";
 
-            string[] lines = File.ReadAllLines(path);
+            string[] lines;
+            try
+            {
+                lines = File.ReadAllLines(path, Encoding.UTF8);
+            }
+            catch (IOException)
+            {
+                return "0.0.0";
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return "0.0.0";
+            }
+            catch (ArgumentException)
+            {
+                return "0.0.0";
+            }
+            catch (NotSupportedException)
+            {
+                return "0.0.0";
+            }
+
             for (int i = 0; i < lines.Length; i++)
             {
                 string line = lines[i].Trim();

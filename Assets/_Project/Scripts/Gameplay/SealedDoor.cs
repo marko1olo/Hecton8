@@ -323,11 +323,13 @@ namespace Hecton8.Gameplay
             RefreshCachedRuntimeOriginAup();
             TryRegisterHotSwapListener();
             LaserCutterTargetRegistry.RegisterDoor(this, _collider);
+            InteractableRegistry.RegisterTree(this);
             ResetState();
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             LaserCutterTargetRegistry.UnregisterDoor(this, _collider);
             StopLateFrameTicking();
             TryUnregisterHotSwapListener();
@@ -339,6 +341,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             LaserCutterTargetRegistry.UnregisterDoor(this, _collider);
             StopLateFrameTicking();
             TryUnregisterHotSwapListener();

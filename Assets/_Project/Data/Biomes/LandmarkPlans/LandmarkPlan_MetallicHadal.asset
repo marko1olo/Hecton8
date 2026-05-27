@@ -20,5 +20,5 @@ MonoBehaviour:
   farReferenceShape: cold industrial skyline made by geology
   routeUse: Player should read a few hard metallic anchors and ignore most empty
     space.
-  safePocketUse: Safe pockets are mostly created by shard shadows and pressure slabs.
+  safePocketUse: Reorientation pockets are mostly created by shard shadows and pressure slabs.
   emotionalRead: Hard, expensive, and purposeful.

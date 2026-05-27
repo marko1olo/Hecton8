@@ -1,0 +1,196 @@
+{
+  "schema": "hecton8.zero_gc_hot_path_roslyn.v1",
+  "agentId": "1317",
+  "scannedFiles": 6,
+  "scannedHotMethods": 31,
+  "totalHits": 0,
+  "methods": [
+    {
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs",
+      "member": "Execute",
+      "startLine": 187,
+      "endLine": 212
+    },
+    {
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs",
+      "member": "Execute",
+      "startLine": 232,
+      "endLine": 321
+    },
+    {
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs",
+      "member": "Execute",
+      "startLine": 342,
+      "endLine": 414
+    },
+    {
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs",
+      "member": "SlowTick",
+      "startLine": 1753,
+      "endLine": 1769
+    },
+    {
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs",
+      "member": "LateFrameTick",
+      "startLine": 1771,
+      "endLine": 1778
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "member": "Execute",
+      "startLine": 1311,
+      "endLine": 1315
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "member": "Execute",
+      "startLine": 1326,
+      "endLine": 1333
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "member": "Execute",
+      "startLine": 1358,
+      "endLine": 1384
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "member": "Execute",
+      "startLine": 1397,
+      "endLine": 1423
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "member": "Execute",
+      "startLine": 1440,
+      "endLine": 1508
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "member": "Execute",
+      "startLine": 1553,
+      "endLine": 1597
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "member": "Execute",
+      "startLine": 1613,
+      "endLine": 1627
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.CargoSync.cs",
+      "member": "Execute",
+      "startLine": 721,
+      "endLine": 779
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.CargoSync.cs",
+      "member": "Execute",
+      "startLine": 827,
+      "endLine": 947
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1103,
+      "endLine": 1125
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1134,
+      "endLine": 1145
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1153,
+      "endLine": 1157
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1172,
+      "endLine": 1200
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1214,
+      "endLine": 1263
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1272,
+      "endLine": 1280
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1294,
+      "endLine": 1323
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1334,
+      "endLine": 1365
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1376,
+      "endLine": 1397
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1427,
+      "endLine": 1437
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1576,
+      "endLine": 1595
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1605,
+      "endLine": 1611
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1632,
+      "endLine": 1686
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1896,
+      "endLine": 1935
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 1969,
+      "endLine": 1989
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 2008,
+      "endLine": 2058
+    },
+    {
+      "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+      "member": "Execute",
+      "startLine": 2074,
+      "endLine": 2148
+    }
+  ],
+  "hits": []
+}

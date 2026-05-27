@@ -1,0 +1,138 @@
+{
+  "agentId": "1332",
+  "task": "1332_PURGE_INPUT_CONTRACT_STALE_PARAM_REAUDIT",
+  "status": "STATIC_GREEN_BUILD_BLOCKED_BY_HOST_CPU_GATE",
+  "timestamp": "2026-05-26T20:56:59.0052547+04:00",
+  "scannedFiles": 10,
+  "modifiedFilesThisPass": [
+    "Assets/_Project/Scripts/Core/BootstrapContracts/InputBindingServiceContracts.cs",
+    "Assets/_Project/Scripts/Input/InputManager.cs",
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs"
+  ],
+  "failedGates": [
+    "dotnet_build_blocked_by_host_cpu_gate",
+    "unity_editor_tests_not_run",
+    "unity_profiler_gcmonitor_not_run",
+    "roslyn_native_audit_not_run_due_host_cpu_gate"
+  ],
+  "totalNativeFieldDeclarations": 0,
+  "persistentNativeFieldsRemaining": 0,
+  "transientVaultViews": 3,
+  "transientJobViews": 0,
+  "transientNativeMethodLocals": 8,
+  "byteOffsetMaps": [
+    {
+      "structName": "InputActionStateDTO",
+      "sizeBytes": 64,
+      "offsets": {
+        "BindingGuidHash64": "0:ulong",
+        "EffectivePathHash64": "8:ulong",
+        "OverridePathHash64": "16:ulong",
+        "ActionIdentityHash64": "24:ulong",
+        "ActionNameHash": "32:uint",
+        "ActionMapHash": "36:uint",
+        "BindingGroupHash": "40:uint",
+        "ControlPathHash": "44:uint",
+        "BindingIndex": "48:int",
+        "PathByteOffset": "52:ushort",
+        "PathByteLength": "54:ushort",
+        "CompositeDepth": "56:ushort",
+        "DeviceMask": "58:ushort",
+        "DisplayStyle": "60:byte",
+        "Flags": "61:byte",
+        "_pad0": "62:byte",
+        "_pad1": "63:byte"
+      }
+    },
+    {
+      "structName": "AccessibilityConfigDTO",
+      "sizeBytes": 16,
+      "offsets": {
+        "ColorMode": "0:uint",
+        "Flags": "4:uint",
+        "FilterStrength01": "8:float",
+        "GlobalQualityWeight": "12:float"
+      }
+    },
+    {
+      "structName": "InputBindingTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "RealtimeSeconds": "0:double",
+        "PayloadHash64": "8:ulong",
+        "Frame": "16:uint",
+        "Operation": "20:uint",
+        "Result": "24:uint",
+        "Bytes": "28:uint",
+        "DurationMicroseconds": "32:uint",
+        "FaultFlags": "36:uint",
+        "BindingIndex": "40:int",
+        "RecordCount": "44:ushort",
+        "PathBytes": "46:ushort",
+        "IoPhase": "48:byte",
+        "_pad0": "49:byte",
+        "_pad1": "50:byte",
+        "_pad2": "51:byte",
+        "_pad3": "52:byte",
+        "_pad4": "53:byte",
+        "_pad5": "54:byte",
+        "_pad6": "55:byte",
+        "_pad7": "56:byte",
+        "_pad8": "57:byte",
+        "_pad9": "58:byte",
+        "_pad10": "59:byte",
+        "_pad11": "60:byte",
+        "_pad12": "61:byte",
+        "_pad13": "62:byte",
+        "_pad14": "63:byte"
+      }
+    },
+    {
+      "structName": "ControlRemapIoResult",
+      "sizeBytes": 88,
+      "offsets": {
+        "Telemetry": "0:InputBindingTelemetryEntry",
+        "ResultCode": "64:uint",
+        "FaultFlags": "68:uint",
+        "RecordCount": "72:int",
+        "ByteCount": "76:int",
+        "PathBytes": "80:int",
+        "_pad0": "84:byte",
+        "_pad1": "85:byte",
+        "_pad2": "86:byte",
+        "_pad3": "87:byte"
+      }
+    }
+  ],
+  "zeroGcHotPathHits": 0,
+  "absoluteAupCastsFound": 0,
+  "compactionAwareLocksProven": true,
+  "telemetryRingIntegrated": true,
+  "staticScan": {
+    "bareCatch": 0,
+    "catchException": 0,
+    "throwNew": 0,
+    "jsonUtility": 0,
+    "playerPrefs": 0,
+    "removeAllListeners": 0,
+    "stringFormat": 0,
+    "stringInterpolation": 0,
+    "linqSelect": 0,
+    "linqWhere": 0,
+    "linqAny": 0,
+    "linqToList": 0,
+    "foreach": 0,
+    "clearPlayerPrefs": 0
+  },
+  "nativeTokenHits": {
+    "total": 11,
+    "persistentFieldDeclarations": 0,
+    "classification": "method-local Temp NativeArray buffers, method-local DataVault views, and one GraphicsBuffer LockBufferForWrite view only"
+  },
+  "buildGate": {
+    "dotnetOrCscCount": 0,
+    "cpuAverageSamplesPercent": [89.41, 100.0, 100.0, 99.52, 91.08, 84.37, 70.76, 62.41],
+    "decision": "blocked: no build or dotnet Roslyn audit launched above 50 percent CPU"
+  },
+  "verificationHashSha256": "d324aca10534147c949bda3ff0d62e8d270bdf15c32b15970bac6d701144fd88"
+}

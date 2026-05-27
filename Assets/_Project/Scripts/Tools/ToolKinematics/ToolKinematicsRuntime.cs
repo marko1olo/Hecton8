@@ -24,7 +24,14 @@ namespace Hecton8.Tools.ToolKinematics
         private const int CsvBufferBytes = 4096;
         private const string EquipmentStatsFileName = "equipment_stats.csv";
 #endif
-        private const string BlackBoxDumpFileName = "Dump_TOOL_KINEMATICS.h8dump";
+        private const string BlackBoxDumpFileName = "Dump_13US.bin";
+        private const int MaxBlackBoxDumpEntries = MaxToolCapacity * ToolKinematicsMath.BlackBoxCapacity;
+        private const int BlackBoxDumpWorkerJoinMilliseconds = 50;
+        private const int BlackBoxDumpWorkerPollMilliseconds = 250;
+        private const int DumpStateIdle = 0;
+        private const int DumpStateSnapshotting = 1;
+        private const int DumpStatePending = 2;
+        private const int DumpStateWriting = 3;
 
         [SerializeField] private int toolCapacity = 2;
         [SerializeField] private Transform cameraAnchor;
@@ -49,6 +56,7 @@ namespace Hecton8.Tools.ToolKinematics
         private readonly byte[] _csvConsumeBuffer = new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - main-thread parse buffer - owner: ToolKinematicsRuntime
         private readonly object _csvGate = new object(); // COLD ALLOC: object[1] - background-to-main CSV handoff lock - owner: ToolKinematicsRuntime
 #endif
+        private readonly ToolKinematicsTelemetryEntry[] _blackBoxDumpEntries = new ToolKinematicsTelemetryEntry[MaxBlackBoxDumpEntries]; // COLD ALLOC: ToolKinematicsTelemetryEntry[2400] - fault snapshot handoff buffer - owner: ToolKinematicsRuntime
 
         private IDataVault _dataVault;
         private VaultGenerationHandle<ToolStateDTO> _statesHandle;
@@ -78,6 +86,16 @@ namespace Hecton8.Tools.ToolKinematics
         private int _csvConsumedSequence;
         private int _csvThreadFaultCode;
 #endif
+        private AutoResetEvent _blackBoxDumpSignal;
+        private Thread _blackBoxDumpThread;
+        private string _blackBoxDumpPath;
+        private int _blackBoxDumpRun;
+        private int _blackBoxDumpState;
+        private int _blackBoxDumpEntryCount;
+        private int _blackBoxDumpToolCapacity;
+        private int _blackBoxDumpTelemetryCursor;
+        private int _blackBoxDumpFailureCode;
+        private uint _blackBoxDumpFrameIndex;
         private int _tuningDirty = 1;
         private uint _frameIndex;
         private int _activeToolCapacity;
@@ -115,6 +133,7 @@ namespace Hecton8.Tools.ToolKinematics
 #if UNITY_EDITOR
             _equipmentStatsPath = ResolveEquipmentStatsPath();
 #endif
+            _blackBoxDumpPath = ResolveBlackBoxDumpPath();
             CacheRegistryDependenciesCold();
         }
 
@@ -137,6 +156,7 @@ namespace Hecton8.Tools.ToolKinematics
         private void OnDisable()
         {
             CompletePendingFrameForTeardown();
+            StopBlackBoxDumpWorker();
 #if UNITY_EDITOR
             StopCsvWatcher();
 #endif
@@ -151,6 +171,7 @@ namespace Hecton8.Tools.ToolKinematics
         private void OnDestroy()
         {
             CompletePendingFrameForTeardown();
+            StopBlackBoxDumpWorker();
             TryUnregisterHotSwap();
 #if UNITY_EDITOR
             StopCsvWatcher();
@@ -166,7 +187,7 @@ namespace Hecton8.Tools.ToolKinematics
 
             ApplyPendingDataVaultRebindIfIdle();
             float safeDeltaTime = math.clamp(ToolKinematicsMath.ClampPositiveFinite(fixedDeltaTime, 0.0166667f), 0.001f, 0.05f);
-            if (!TryResolveAllBuffers(out ToolKinematicsBufferSet buffers))
+            if (!TryResolveAllBuffers(false, out ToolKinematicsBufferSet buffers))
                 return;
 
             _frameIndex = _frameIndex == uint.MaxValue ? 1u : _frameIndex + 1u;
@@ -270,6 +291,8 @@ namespace Hecton8.Tools.ToolKinematics
             return true;
         }
 
+        internal int LastBlackBoxDumpFailureCode => Volatile.Read(ref _blackBoxDumpFailureCode);
+
         private void TryFinalizePendingFrameNoWait()
         {
             if (!_frameScheduled)
@@ -298,11 +321,11 @@ namespace Hecton8.Tools.ToolKinematics
         private void FinishPendingFrameCompletion()
         {
             _frameScheduled = false;
-            if (TryResolveAllBuffers(out ToolKinematicsBufferSet buffers))
+            if (TryResolveAllBuffers(false, out ToolKinematicsBufferSet buffers))
             {
                 PublishFrameSignals(buffers);
                 if (TelemetryRequiresDump(buffers.TelemetryRing))
-                    DumpBlackBox(buffers.TelemetryRing);
+                    TryQueueBlackBoxDump(buffers.TelemetryRing);
             }
 
             _telemetryCursor++;
@@ -516,25 +539,189 @@ namespace Hecton8.Tools.ToolKinematics
             return false;
         }
 
-        private void DumpBlackBox(NativeArray<ToolKinematicsTelemetryEntry> telemetryRing)
+        private bool TryQueueBlackBoxDump(NativeArray<ToolKinematicsTelemetryEntry> telemetryRing)
         {
             if (!telemetryRing.IsCreated)
+                return false;
+
+            int max = math.min(telemetryRing.Length, _activeToolCapacity * ToolKinematicsMath.BlackBoxCapacity);
+            max = math.min(max, MaxBlackBoxDumpEntries);
+            if (max <= 0)
+                return false;
+
+            if (Interlocked.CompareExchange(ref _blackBoxDumpState, DumpStateSnapshotting, DumpStateIdle) != DumpStateIdle)
+                return false;
+
+            for (int i = 0; i < max; i++)
+                _blackBoxDumpEntries[i] = telemetryRing[i];
+
+            _blackBoxDumpFrameIndex = _frameIndex;
+            _blackBoxDumpToolCapacity = _activeToolCapacity;
+            _blackBoxDumpTelemetryCursor = _telemetryCursor;
+            Volatile.Write(ref _blackBoxDumpEntryCount, max);
+            Thread.MemoryBarrier();
+            Volatile.Write(ref _blackBoxDumpState, DumpStatePending);
+
+            AutoResetEvent signal = _blackBoxDumpSignal;
+            if (signal == null)
+            {
+                Volatile.Write(ref _blackBoxDumpState, DumpStateIdle);
+                return false;
+            }
+
+            try
+            {
+                signal.Set();
+                return true;
+            }
+            catch (ObjectDisposedException)
+            {
+                Volatile.Write(ref _blackBoxDumpState, DumpStateIdle);
+                return false;
+            }
+        }
+
+        private void EnsureBlackBoxDumpWorkerCold()
+        {
+            if (_blackBoxDumpSignal == null)
+                _blackBoxDumpSignal = new AutoResetEvent(false); // COLD ALLOC: AutoResetEvent[1] - fault dump worker signal - owner: ToolKinematicsRuntime
+
+            if (_blackBoxDumpThread != null)
+            {
+                if (_blackBoxDumpThread.IsAlive)
+                    return;
+
+                _blackBoxDumpThread = null;
+            }
+
+            Volatile.Write(ref _blackBoxDumpRun, 1);
+            _blackBoxDumpThread = new Thread(BlackBoxDumpWorkerLoop)
+            {
+                IsBackground = true,
+                Name = "13US_ToolKinematicsDump"
+            }; // COLD ALLOC: Thread[1] - black-box dump export worker - owner: ToolKinematicsRuntime
+            _blackBoxDumpThread.Start();
+        }
+
+        private void StopBlackBoxDumpWorker()
+        {
+            Volatile.Write(ref _blackBoxDumpRun, 0);
+            AutoResetEvent signal = _blackBoxDumpSignal;
+            if (signal != null)
+            {
+                try
+                {
+                    signal.Set();
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+            }
+
+            Thread thread = _blackBoxDumpThread;
+            if (thread != null && thread.IsAlive)
+            {
+                thread.Join(BlackBoxDumpWorkerJoinMilliseconds);
+                if (thread.IsAlive)
+                    return;
+            }
+
+            DrainPendingBlackBoxDump();
+            _blackBoxDumpThread = null;
+            if (signal != null)
+                signal.Dispose();
+            _blackBoxDumpSignal = null;
+            Volatile.Write(ref _blackBoxDumpEntryCount, 0);
+            Volatile.Write(ref _blackBoxDumpState, DumpStateIdle);
+        }
+
+        private void BlackBoxDumpWorkerLoop()
+        {
+            while (Volatile.Read(ref _blackBoxDumpRun) != 0)
+            {
+                AutoResetEvent signal = _blackBoxDumpSignal;
+                if (signal == null)
+                    return;
+
+                try
+                {
+                    signal.WaitOne(BlackBoxDumpWorkerPollMilliseconds);
+                }
+                catch (ObjectDisposedException)
+                {
+                    return;
+                }
+
+                DrainPendingBlackBoxDump();
+            }
+
+            DrainPendingBlackBoxDump();
+        }
+
+        private void DrainPendingBlackBoxDump()
+        {
+            if (Interlocked.CompareExchange(ref _blackBoxDumpState, DumpStateWriting, DumpStatePending) != DumpStatePending)
                 return;
 
-            string projectRoot = ResolveProjectRootPath();
-            string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-            Directory.CreateDirectory(logDirectory);
-            string dumpPath = Path.Combine(logDirectory, BlackBoxDumpFileName);
-            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+            bool wrote = false;
+            int failureCode = 0;
+            try
+            {
+                wrote = TryWriteQueuedBlackBoxDump();
+            }
+            catch (IOException)
+            {
+                failureCode = 2;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                failureCode = 3;
+            }
+            catch (Exception)
+            {
+                failureCode = 4;
+            }
+            finally
+            {
+                if (!wrote)
+                {
+                    if (failureCode == 0)
+                        failureCode = 1;
+
+                    Interlocked.Exchange(ref _blackBoxDumpFailureCode, failureCode);
+                }
+                else
+                {
+                    Interlocked.Exchange(ref _blackBoxDumpFailureCode, 0);
+                }
+
+                Volatile.Write(ref _blackBoxDumpEntryCount, 0);
+                Volatile.Write(ref _blackBoxDumpState, DumpStateIdle);
+            }
+        }
+
+        private bool TryWriteQueuedBlackBoxDump()
+        {
+            string dumpPath = _blackBoxDumpPath;
+            if (string.IsNullOrEmpty(dumpPath))
+                return false;
+
+            string logDirectory = Path.GetDirectoryName(dumpPath);
+            if (!string.IsNullOrEmpty(logDirectory))
+                Directory.CreateDirectory(logDirectory);
+
+            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough);
             using BinaryWriter writer = new BinaryWriter(stream);
             writer.Write(0x544B4242u);
-            writer.Write(_frameIndex);
-            writer.Write(_activeToolCapacity);
-            writer.Write(_telemetryCursor);
-            int max = math.min(telemetryRing.Length, _activeToolCapacity * ToolKinematicsMath.BlackBoxCapacity);
+            writer.Write(_blackBoxDumpFrameIndex);
+            writer.Write(_blackBoxDumpToolCapacity);
+            writer.Write(_blackBoxDumpTelemetryCursor);
+            int max = math.min(Volatile.Read(ref _blackBoxDumpEntryCount), MaxBlackBoxDumpEntries);
             writer.Write(max);
             for (int i = 0; i < max; i++)
-                WriteTelemetryEntry(writer, telemetryRing[i]);
+                WriteTelemetryEntry(writer, _blackBoxDumpEntries[i]);
+
+            return true;
         }
 
         private static void WriteTelemetryEntry(BinaryWriter writer, in ToolKinematicsTelemetryEntry entry)
@@ -560,7 +747,7 @@ namespace Hecton8.Tools.ToolKinematics
             writer.Write(value.z);
         }
 
-        private bool TryResolveAllBuffers(out ToolKinematicsBufferSet buffers)
+        private bool TryResolveAllBuffers(bool allowCreate, out ToolKinematicsBufferSet buffers)
         {
             buffers = default;
             IDataVault vault = _dataVault;
@@ -573,21 +760,21 @@ namespace Hecton8.Tools.ToolKinematics
             int beamVertexLength = count * BeamVerticesPerTool;
 
             bool ok =
-                TryResolveVaultView(vault, ref _statesHandle, BufferID.ToolKinematicsStates, count, NativeArrayOptions.ClearMemory, out buffers.States) &&
-                TryResolveVaultView(vault, ref _frameInputsHandle, BufferID.ToolKinematicsFrameInputs, count, NativeArrayOptions.ClearMemory, out buffers.FrameInputs) &&
-                TryResolveVaultView(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, count, NativeArrayOptions.ClearMemory, out buffers.HitResults) &&
-                TryResolveVaultView(vault, ref _ikOutputsHandle, BufferID.ToolKinematicsIkOutputs, count, NativeArrayOptions.ClearMemory, out buffers.IkOutputs) &&
-                TryResolveVaultView(vault, ref _recoilStatesHandle, BufferID.ToolKinematicsRecoilStates, count, NativeArrayOptions.ClearMemory, out buffers.RecoilStates) &&
-                TryResolveVaultView(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning, 1, NativeArrayOptions.ClearMemory, out buffers.Tuning) &&
-                TryResolveVaultView(vault, ref _screenExportsHandle, BufferID.ToolKinematicsScreenExports, count, NativeArrayOptions.ClearMemory, out buffers.ScreenExports) &&
-                TryResolveVaultView(vault, ref _telemetryHandle, BufferID.ToolKinematicsTelemetryRing, telemetryLength, NativeArrayOptions.ClearMemory, out buffers.TelemetryRing) &&
-                TryResolveVaultView(vault, ref _mockTriggerSignalsHandle, BufferID.ToolKinematicsMockTriggerSignals, count, NativeArrayOptions.ClearMemory, out buffers.MockTriggerSignals) &&
-                TryResolveVaultView(vault, ref _carveRequestsHandle, BufferID.ToolKinematicsMockCarveRequests, count, NativeArrayOptions.ClearMemory, out buffers.CarveRequests) &&
-                TryResolveVaultView(vault, ref _heatSignalsHandle, BufferID.ToolKinematicsHeatSignals, count, NativeArrayOptions.ClearMemory, out buffers.HeatSignals) &&
-                TryResolveVaultView(vault, ref _sparkRequestsHandle, BufferID.ToolKinematicsSparkRequests, count, NativeArrayOptions.ClearMemory, out buffers.SparkRequests) &&
-                TryResolveVaultView(vault, ref _beamVerticesHandle, BufferID.ToolKinematicsBeamVertices, beamVertexLength, NativeArrayOptions.ClearMemory, out buffers.BeamVertices) &&
-                TryResolveVaultView(vault, ref _beamVertexCountsHandle, BufferID.ToolKinematicsBeamVertexCounts, count, NativeArrayOptions.ClearMemory, out buffers.BeamVertexCounts) &&
-                TryResolveVaultView(vault, ref _poseOutputsHandle, BufferID.ToolKinematicsPoseOutputs, count, NativeArrayOptions.ClearMemory, out buffers.PoseOutputs);
+                TryResolveVaultView(vault, ref _statesHandle, BufferID.ToolKinematicsStates, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.States) &&
+                TryResolveVaultView(vault, ref _frameInputsHandle, BufferID.ToolKinematicsFrameInputs, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.FrameInputs) &&
+                TryResolveVaultView(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.HitResults) &&
+                TryResolveVaultView(vault, ref _ikOutputsHandle, BufferID.ToolKinematicsIkOutputs, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.IkOutputs) &&
+                TryResolveVaultView(vault, ref _recoilStatesHandle, BufferID.ToolKinematicsRecoilStates, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.RecoilStates) &&
+                TryResolveVaultView(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning, 1, NativeArrayOptions.ClearMemory, allowCreate, out buffers.Tuning) &&
+                TryResolveVaultView(vault, ref _screenExportsHandle, BufferID.ToolKinematicsScreenExports, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.ScreenExports) &&
+                TryResolveVaultView(vault, ref _telemetryHandle, BufferID.ToolKinematicsTelemetryRing, telemetryLength, NativeArrayOptions.ClearMemory, allowCreate, out buffers.TelemetryRing) &&
+                TryResolveVaultView(vault, ref _mockTriggerSignalsHandle, BufferID.ToolKinematicsMockTriggerSignals, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.MockTriggerSignals) &&
+                TryResolveVaultView(vault, ref _carveRequestsHandle, BufferID.ToolKinematicsMockCarveRequests, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.CarveRequests) &&
+                TryResolveVaultView(vault, ref _heatSignalsHandle, BufferID.ToolKinematicsHeatSignals, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.HeatSignals) &&
+                TryResolveVaultView(vault, ref _sparkRequestsHandle, BufferID.ToolKinematicsSparkRequests, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.SparkRequests) &&
+                TryResolveVaultView(vault, ref _beamVerticesHandle, BufferID.ToolKinematicsBeamVertices, beamVertexLength, NativeArrayOptions.ClearMemory, allowCreate, out buffers.BeamVertices) &&
+                TryResolveVaultView(vault, ref _beamVertexCountsHandle, BufferID.ToolKinematicsBeamVertexCounts, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.BeamVertexCounts) &&
+                TryResolveVaultView(vault, ref _poseOutputsHandle, BufferID.ToolKinematicsPoseOutputs, count, NativeArrayOptions.ClearMemory, allowCreate, out buffers.PoseOutputs);
 
             return ok;
         }
@@ -595,19 +782,19 @@ namespace Hecton8.Tools.ToolKinematics
         private bool TryResolveTuning(out NativeArray<ToolKinematicsTuningDTO> tuning)
         {
             IDataVault vault = _dataVault;
-            return TryResolveVaultView(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning, 1, NativeArrayOptions.ClearMemory, out tuning);
+            return TryResolveVaultView(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning, 1, NativeArrayOptions.ClearMemory, false, out tuning);
         }
 
         private bool TryResolveStates(out NativeArray<ToolStateDTO> states)
         {
             IDataVault vault = _dataVault;
-            return TryResolveVaultView(vault, ref _statesHandle, BufferID.ToolKinematicsStates, _activeToolCapacity, NativeArrayOptions.ClearMemory, out states);
+            return TryResolveVaultView(vault, ref _statesHandle, BufferID.ToolKinematicsStates, _activeToolCapacity, NativeArrayOptions.ClearMemory, false, out states);
         }
 
         private bool TryResolveHits(out NativeArray<ToolHitResultDTO> hits)
         {
             IDataVault vault = _dataVault;
-            return TryResolveVaultView(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, _activeToolCapacity, NativeArrayOptions.ClearMemory, out hits);
+            return TryResolveVaultView(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, _activeToolCapacity, NativeArrayOptions.ClearMemory, false, out hits);
         }
 
         private void CacheRegistryDependenciesCold()
@@ -618,12 +805,13 @@ namespace Hecton8.Tools.ToolKinematics
 
         private bool TryBootstrapRuntime()
         {
-            if (!TryResolveAllBuffers(out ToolKinematicsBufferSet buffers))
+            if (!TryResolveAllBuffers(true, out ToolKinematicsBufferSet buffers))
                 return false;
 
             WriteTuning(buffers.Tuning);
             SeedEmergencyMockTools(buffers.States, buffers.RecoilStates);
             EnsureSignalLanesReady();
+            EnsureBlackBoxDumpWorkerCold();
 #if UNITY_EDITOR
             StartCsvWatcher();
 #endif
@@ -707,6 +895,7 @@ namespace Hecton8.Tools.ToolKinematics
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
+            bool allowCreate,
             out NativeArray<T> buffer)
             where T : struct
         {
@@ -721,6 +910,9 @@ namespace Hecton8.Tools.ToolKinematics
             {
                 return true;
             }
+
+            if (!allowCreate)
+                return false;
 
             VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, options);
             if (!IsHandleCreated(in acquired) ||
@@ -1163,7 +1355,7 @@ namespace Hecton8.Tools.ToolKinematics
 
         private void TryRegisterFixed()
         {
-            if (_fixedRegistered)
+            if (_fixedRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
@@ -1171,7 +1363,7 @@ namespace Hecton8.Tools.ToolKinematics
 
         private void TryRegisterPostFixed()
         {
-            if (_postFixedRegistered)
+            if (_postFixedRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Player);
@@ -1179,7 +1371,7 @@ namespace Hecton8.Tools.ToolKinematics
 
         private void TryRegisterSlow()
         {
-            if (_slowRegistered)
+            if (_slowRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _slowRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
@@ -1187,7 +1379,7 @@ namespace Hecton8.Tools.ToolKinematics
 
         private void TryRegisterHotSwap()
         {
-            if (_registeredHotSwap)
+            if (_registeredHotSwap || !Application.isPlaying)
                 return;
 
             _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -1257,6 +1449,11 @@ namespace Hecton8.Tools.ToolKinematics
         }
 #endif
 
+        private static string ResolveBlackBoxDumpPath()
+        {
+            return Path.Combine(ResolveProjectRootPath(), "Docs", "AgentLogs", BlackBoxDumpFileName);
+        }
+
         private static string ResolveProjectRootPath()
         {
             string dataPath = Application.dataPath;
@@ -1321,7 +1518,7 @@ namespace Hecton8.Tools.ToolKinematics
             _pendingDataVault = null;
         }
 
-        private struct ToolKinematicsBufferSet
+        private ref struct ToolKinematicsBufferSet
         {
             public NativeArray<ToolStateDTO> States;
             public NativeArray<ToolKinematicsFrameInputDTO> FrameInputs;

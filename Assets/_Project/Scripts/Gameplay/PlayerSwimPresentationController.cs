@@ -14,7 +14,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player Swim Presentation Controller")]
-    public sealed class PlayerSwimPresentationController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class PlayerSwimPresentationController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float Pi = 3.14159265359f;
         private const float TwoPi = 6.28318530718f;
@@ -554,7 +554,6 @@ namespace Hecton8.Gameplay
         [SerializeField] private string _debugProfileSource;
 #endif
 
-        private bool _registered;
         private bool _registeredLateFrame;
         private bool _hotSwapListenerRegistered;
         private SwimPresentationProfile _activeProfile;
@@ -871,12 +870,6 @@ namespace Hecton8.Gameplay
         }
 #endif
 
-        /// <inheritdoc />
-        public void Tick(float dt)
-        {
-            SyncFromLocomotion(dt);
-        }
-
         public void LateFrameTick()
         {
             FlushQueuedSwimShaderFloats();
@@ -997,15 +990,13 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if (_registeredLateFrame || !Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
@@ -1014,12 +1005,6 @@ namespace Hecton8.Gameplay
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
                 _registeredLateFrame = false;
-            }
-
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-                _registered = false;
             }
         }
 
@@ -2988,9 +2973,6 @@ namespace Hecton8.Gameplay
 
         private float ResolveTransportBoost01()
         {
-            if (playerTransportCoordinator == null)
-                gameObject.TryGetComponent(out playerTransportCoordinator);
-
             bool coordinatorOwnsTransport = playerTransportCoordinator != null && playerTransportCoordinator.HasActiveTransportSource();
             if (coordinatorOwnsTransport)
                 return playerTransportCoordinator.ResolveTransportBoost01();
@@ -3012,9 +2994,6 @@ namespace Hecton8.Gameplay
 
         private PlayerTransportFeelContract ResolveTransportFeelContract()
         {
-            if (playerTransportCoordinator == null)
-                gameObject.TryGetComponent(out playerTransportCoordinator);
-
             bool coordinatorOwnsTransport = playerTransportCoordinator != null && playerTransportCoordinator.HasActiveTransportSource();
             if (coordinatorOwnsTransport)
                 return playerTransportCoordinator.ResolveTransportFeelContract();

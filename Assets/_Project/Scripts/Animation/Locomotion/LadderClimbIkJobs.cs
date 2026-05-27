@@ -97,7 +97,7 @@ namespace Hecton8.Animation.Locomotion
         [FieldOffset(120)] private ulong _pad4;
     }
 
-    internal struct LadderClimbIkVaultViews
+    internal ref struct LadderClimbIkVaultViews
     {
         public NativeArray<LadderClimbIkInput> Inputs;
         public NativeArray<LadderClimbIkOutput> Outputs;

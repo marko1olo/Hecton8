@@ -9,7 +9,3 @@
 0xE9C540EF # ModMemoryWrite
 0xCC5BAC8D # FaunaAcousticStimulus
 0x1B7770D3 # FaunaDamageStimulus
-0xBCEE082A # TriggerSubtitleCue
-0x85C0241F # SurvivalOverride
-0xE6E4AEBB # HapticPulse
-0xA1B1CCCC # SubtitleCue

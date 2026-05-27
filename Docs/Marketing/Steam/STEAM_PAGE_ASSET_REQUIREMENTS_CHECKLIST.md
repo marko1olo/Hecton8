@@ -4,13 +4,9 @@ Status: working checklist / recheck official Steamworks docs before upload
 Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-18 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with current official Steamworks documentation, current project authority docs, and fresh asset/build evidence.
-
-No Steam page, approved assets, trailer, demo, release date, Early Access plan, Next Fest eligibility, runtime feature proof, profiler proof, or player-build proof is implied unless this document links a fresh evidence artifact.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 Official source to recheck before spending money or uploading:
 

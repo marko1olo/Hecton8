@@ -72,6 +72,11 @@ namespace Hecton8.Construction
         private bool _hasPower = true;
         private ItemData _slottedToolItem;
         private ToolMetadata _slottedToolMetadata;
+        private uint _slottedToolItemHashId;
+        private int _fallbackStructuralRepairItemHashId;
+        private int _lubricantRepairItemHashId;
+        private int _slottedStructuralRepairItemHashId;
+        private int _slottedLubricantRepairItemHashId;
         private BaseLogisticsNetwork.LogisticsReservation _activeReservation;
         private float _repairTargetDurability;
         private float _reservationRetryCooldownSeconds;
@@ -180,7 +185,7 @@ namespace Hecton8.Construction
             }
 
             float maxDurability = Mathf.Max(1f, _slottedToolMetadata.maxDurability);
-            float currentDurability = durabilitySystem.GetDurability(_slottedToolMetadata.toolID, maxDurability);
+            float currentDurability = ReadSlottedDurability(durabilitySystem, maxDurability);
             _debugDurabilityNormalized = currentDurability / maxDurability;
 
             if (currentDurability >= maxDurability - 0.001f)
@@ -229,12 +234,17 @@ namespace Hecton8.Construction
             float normalizedMissing = missingDurability / maxDurability;
             float duration = Mathf.Max(0.1f, fullRepairDuration * Mathf.Clamp(normalizedMissing, 0.1f, 1f));
             float repairDelta = maxDurability * (deltaTime / duration);
-            durabilitySystem.RepairTool(_slottedToolMetadata.toolID, repairDelta, maxDurability);
+            if (_slottedToolItemHashId == 0u || !durabilitySystem.TryRepairTool(_slottedToolItemHashId, repairDelta, maxDurability))
+            {
+                _isRepairing = false;
+                _debugIsRepairing = false;
+                return;
+            }
 
             _isRepairing = true;
             _debugIsRepairing = true;
 
-            if (durabilitySystem.GetDurability(_slottedToolMetadata.toolID, maxDurability) >= targetDurability - 0.001f)
+            if (ReadSlottedDurability(durabilitySystem, maxDurability) >= targetDurability - 0.001f)
                 CompleteActiveRepair();
         }
 
@@ -298,8 +308,14 @@ namespace Hecton8.Construction
             if (durabilitySystem == null || string.IsNullOrEmpty(metadata.toolID))
                 return false;
 
+            int itemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
+            if (itemHashId == 0)
+                return false;
+
             float maxDurability = Mathf.Max(1f, metadata.maxDurability);
-            float currentDurability = durabilitySystem.GetDurability(metadata.toolID, maxDurability);
+            uint itemHash = unchecked((uint)itemHashId);
+            durabilitySystem.RegisterCentralizedEquipmentMirror(metadata.toolID, itemHash, maxDurability);
+            float currentDurability = durabilitySystem.GetDurability(itemHash, maxDurability);
             if (currentDurability >= maxDurability - 0.001f)
                 return false;
 
@@ -311,11 +327,14 @@ namespace Hecton8.Construction
                 playerToolManager.Holster();
             }
 
-            if (!inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
+            if (!inventory.TryRemoveQuantity(itemHashId, 1))
                 return false;
 
             _slottedToolItem = item;
             _slottedToolMetadata = metadata;
+            _slottedToolItemHashId = itemHash;
+            CacheSlottedRepairCostHashes(inventory.ItemCatalog);
+            RegisterSlottedToolDurabilityMirror(durabilitySystem);
             _repairTargetDurability = maxDurability;
             _debugToolId = metadata.toolID;
             _debugDurabilityNormalized = currentDurability / maxDurability;
@@ -332,7 +351,10 @@ namespace Hecton8.Construction
 
             CancelActiveRepair();
 
-            if (!inventory.TryAddItem(Hecton.Localization.LocHash.Compute(_slottedToolItem.PersistentId), 1))
+            int itemHashId = _slottedToolItemHashId != 0u
+                ? unchecked((int)_slottedToolItemHashId)
+                : Hecton.Localization.LocHash.Compute(_slottedToolItem.PersistentId);
+            if (itemHashId == 0 || !inventory.TryAddItem(itemHashId, 1))
                 return false;
 
             ClearSlotState();
@@ -351,17 +373,27 @@ namespace Hecton8.Construction
             if (!TryResolveToolMetadata(item, out metadata))
                 return false;
 
+            CacheRegistryServicesCold();
+            ResolveFallbackItems();
+
+            int itemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
+            if (itemHashId == 0)
+                return false;
+
             CancelActiveRepair();
             _slottedToolItem = item;
             _slottedToolMetadata = metadata;
+            _slottedToolItemHashId = unchecked((uint)itemHashId);
             _repairTargetDurability = Mathf.Max(1f, metadata.maxDurability);
             _debugToolId = metadata.toolID;
+            CacheSlottedRepairCostHashes(ResolveItemCatalog());
 
             IToolDurabilityService durabilitySystem = _toolDurabilitySystem;
             if (durabilitySystem != null && !string.IsNullOrEmpty(metadata.toolID))
             {
                 float maxDurability = Mathf.Max(1f, metadata.maxDurability);
-                float currentDurability = durabilitySystem.GetDurability(metadata.toolID, maxDurability);
+                RegisterSlottedToolDurabilityMirror(durabilitySystem);
+                float currentDurability = ReadSlottedDurability(durabilitySystem, maxDurability);
                 _debugDurabilityNormalized = currentDurability / maxDurability;
             }
             else
@@ -376,9 +408,9 @@ namespace Hecton8.Construction
 
         internal bool TryExtractSlottedToolHashForDeconstruct(out int itemHashId)
         {
-            itemHashId = _slottedToolItem != null
-                ? Hecton.Localization.LocHash.Compute(_slottedToolItem.PersistentId)
-                : 0;
+            itemHashId = _slottedToolItemHashId != 0u
+                ? unchecked((int)_slottedToolItemHashId)
+                : (_slottedToolItem != null ? Hecton.Localization.LocHash.Compute(_slottedToolItem.PersistentId) : 0);
             if (itemHashId == 0)
                 return false;
 
@@ -444,6 +476,7 @@ namespace Hecton8.Construction
                     break;
                 case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
                     _toolDurabilitySystem = currentService as IToolDurabilityService;
+                    RegisterSlottedToolDurabilityMirror(_toolDurabilitySystem);
                     break;
                 case GlobalRegistryServiceSlot.PlayerInventory:
                     _playerInventoryService = currentService as IPlayerInventoryService;
@@ -473,16 +506,17 @@ namespace Hecton8.Construction
 
         private void ResolveFallbackItems()
         {
-            PlayerInventory inventory = ResolvePlayerInventory();
-            ItemCatalog catalog = inventory != null ? inventory.ItemCatalog : null;
-            if (catalog == null)
-                return;
+            ItemCatalog catalog = ResolveItemCatalog();
 
-            if (fallbackStructuralRepairItem == null)
+            if (fallbackStructuralRepairItem == null && catalog != null)
                 fallbackStructuralRepairItem = catalog.FindById(DefaultTitaniumRepairItemId);
 
-            if (lubricantRepairItem == null)
+            if (lubricantRepairItem == null && catalog != null)
                 lubricantRepairItem = catalog.FindById(DefaultLubricantItemId);
+
+            _fallbackStructuralRepairItemHashId = ResolveItemHash(fallbackStructuralRepairItem);
+            _lubricantRepairItemHashId = ResolveItemHash(lubricantRepairItem);
+            CacheSlottedRepairCostHashes(catalog);
         }
 
         private bool TryInsertFirstRepairableTool(PlayerInventory inventory)
@@ -534,15 +568,11 @@ namespace Hecton8.Construction
         private bool TryPrepareRepairReservation(float currentDurability, float maxDurability)
         {
             PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
-            PlayerInventory inventory = ResolvePlayerInventory();
-            ItemCatalog catalog = inventory != null ? inventory.ItemCatalog : null;
-            ResolveFallbackItems();
-
-            if (grid == null || catalog == null)
+            if (grid == null)
                 return false;
 
             ClearReservationCostBuffer();
-            PopulateRepairCosts(currentDurability, maxDurability, catalog);
+            PopulateRepairCosts(currentDurability, maxDurability);
             if (_reservationCostOverflowed || _reservationCostCount <= 0)
                 return false;
 
@@ -569,21 +599,26 @@ namespace Hecton8.Construction
                 : null;
         }
 
-        private void PopulateRepairCosts(float currentDurability, float maxDurability, ItemCatalog catalog)
+        private ItemCatalog ResolveItemCatalog()
+        {
+            PlayerInventory inventory = ResolvePlayerInventory();
+            return inventory != null ? inventory.ItemCatalog : null;
+        }
+
+        private void PopulateRepairCosts(float currentDurability, float maxDurability)
         {
             float missingRatio = 1f - Mathf.Clamp01(currentDurability / Mathf.Max(1f, maxDurability));
             if (missingRatio <= 0.0001f)
                 return;
 
-            ItemData structuralItem = ResolveStructuralRepairItem(catalog);
             int structuralCost = Mathf.Max(
                 minimumStructuralCost,
                 Mathf.CeilToInt(Mathf.Max(1f, _slottedToolMetadata != null ? _slottedToolMetadata.repairCostFull : 1f) * missingRatio));
 
-            AppendRepairCost(structuralItem, structuralCost);
+            AppendRepairCostHash(_slottedStructuralRepairItemHashId, structuralCost);
 
-            if (lubricantRepairItem != null && lubricantCostPerSession > 0)
-                AppendRepairCost(lubricantRepairItem, lubricantCostPerSession);
+            if (_slottedLubricantRepairItemHashId != 0 && lubricantCostPerSession > 0)
+                AppendRepairCostHash(_slottedLubricantRepairItemHashId, lubricantCostPerSession);
         }
 
         private void ClearReservationCostBuffer()
@@ -598,13 +633,9 @@ namespace Hecton8.Construction
             _reservationCostOverflowed = false;
         }
 
-        private void AppendRepairCost(ItemData item, int amount)
+        private void AppendRepairCostHash(int itemHashId, int amount)
         {
-            if (item == null || amount <= 0 || string.IsNullOrWhiteSpace(item.PersistentId))
-                return;
-
-            int itemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
-            if (itemHashId == 0)
+            if (itemHashId == 0 || amount <= 0)
                 return;
 
             for (int i = 0; i < _reservationCostCount; i++)
@@ -627,23 +658,36 @@ namespace Hecton8.Construction
             _reservationCostCount++;
         }
 
-        private ItemData ResolveStructuralRepairItem(ItemCatalog catalog)
+        private void CacheSlottedRepairCostHashes(ItemCatalog catalog)
         {
-            if (_slottedToolMetadata != null && !string.IsNullOrWhiteSpace(_slottedToolMetadata.repairResourceID) && catalog != null)
+            _slottedStructuralRepairItemHashId = 0;
+            _slottedLubricantRepairItemHashId = lubricantCostPerSession > 0 ? _lubricantRepairItemHashId : 0;
+
+            if (_slottedToolMetadata == null)
+                return;
+
+            if (!string.IsNullOrWhiteSpace(_slottedToolMetadata.repairResourceID) && catalog != null)
             {
                 ItemData authoredItem = catalog.FindById(_slottedToolMetadata.repairResourceID);
-                if (authoredItem != null)
-                    return authoredItem;
+                _slottedStructuralRepairItemHashId = ResolveItemHash(authoredItem);
             }
 
-            return fallbackStructuralRepairItem;
+            if (_slottedStructuralRepairItemHashId == 0)
+                _slottedStructuralRepairItemHashId = _fallbackStructuralRepairItemHashId;
+        }
+
+        private static int ResolveItemHash(ItemData item)
+        {
+            return item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
+                ? Hecton.Localization.LocHash.Compute(item.PersistentId)
+                : 0;
         }
 
         private void CompleteActiveRepair()
         {
             IToolDurabilityService durabilitySystem = _toolDurabilitySystem;
-            if (durabilitySystem != null && _slottedToolMetadata != null && !string.IsNullOrEmpty(_slottedToolMetadata.toolID))
-                durabilitySystem.RepairToolFull(_slottedToolMetadata.toolID, Mathf.Max(1f, _slottedToolMetadata.maxDurability));
+            if (durabilitySystem != null && _slottedToolMetadata != null && _slottedToolItemHashId != 0u)
+                durabilitySystem.TryRepairToolFull(_slottedToolItemHashId, Mathf.Max(1f, _slottedToolMetadata.maxDurability));
 
             if (_activeReservation != null)
             {
@@ -672,12 +716,42 @@ namespace Hecton8.Construction
         {
             _slottedToolItem = null;
             _slottedToolMetadata = null;
+            _slottedToolItemHashId = 0u;
+            _slottedStructuralRepairItemHashId = 0;
+            _slottedLubricantRepairItemHashId = 0;
             _repairTargetDurability = 0f;
             _debugToolId = string.Empty;
             _debugDurabilityNormalized = 0f;
             _reservationRetryCooldownSeconds = 0f;
             _isRepairing = false;
             _debugIsRepairing = false;
+        }
+
+        private float ReadSlottedDurability(IToolDurabilityService durabilitySystem, float maxDurability)
+        {
+            if (durabilitySystem == null || _slottedToolMetadata == null)
+                return Mathf.Max(1f, maxDurability);
+
+            float safeMaxDurability = Mathf.Max(1f, maxDurability);
+            return _slottedToolItemHashId != 0u
+                ? durabilitySystem.GetDurability(_slottedToolItemHashId, safeMaxDurability)
+                : safeMaxDurability;
+        }
+
+        private void RegisterSlottedToolDurabilityMirror(IToolDurabilityService durabilitySystem)
+        {
+            if (durabilitySystem == null ||
+                _slottedToolMetadata == null ||
+                _slottedToolItemHashId == 0u ||
+                string.IsNullOrEmpty(_slottedToolMetadata.toolID))
+            {
+                return;
+            }
+
+            durabilitySystem.RegisterCentralizedEquipmentMirror(
+                _slottedToolMetadata.toolID,
+                _slottedToolItemHashId,
+                Mathf.Max(1f, _slottedToolMetadata.maxDurability));
         }
 
     }

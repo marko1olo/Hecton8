@@ -186,9 +186,15 @@ namespace Hecton8.EditorTools
                 requiredLength,
                 SystemID.Vfx,
                 NativeArrayOptions.ClearMemory);
-            return vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
+                return false;
+
+            if (buffer.IsCreated && buffer.Length >= requiredLength)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            buffer = default;
+            return false;
         }
     }
 }

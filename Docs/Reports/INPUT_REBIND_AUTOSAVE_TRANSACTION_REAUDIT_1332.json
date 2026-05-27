@@ -1,0 +1,114 @@
+{
+  "agentId": "1332",
+  "domain": "Hecton8.Input + UI/PauseControlsPanel.cs + UI/PDAControlsRebindUI.cs",
+  "task": "INPUT_REBIND_AUTOSAVE_TRANSACTION_REAUDIT",
+  "timestamp": "2026-05-26T22:35:15+04:00",
+  "promptHashSha256": "be5f6d4689f0937718e0be477d0e0119e1b8e341a25399fa2a0b9230effe5502",
+  "status": "STATIC_VERIFIED_BUILD_BLOCKED_CPU_GATE",
+  "scannedFiles": 11,
+  "failedGates": [
+    "BUILD_BLOCKED_CPU_GATE",
+    "UNITY_EDITOR_TESTS_NOT_RUN",
+    "UNITY_PROFILER_NOT_RUN"
+  ],
+  "fixes": [
+    "RebindingManager restores previous runtime override and raises OnOverridesSaveFailed when automatic save after rebind fails.",
+    "Conflict cancel restores the previous user override instead of removing to default.",
+    "Pause/PDA row reset restores previous override when saveAfterRowReset is true and the persistence owner is absent.",
+    "UserOptionsPersistence.OptionsPath is a pure cached read; path mutation moved to explicit lifecycle/I/O phases."
+  ],
+  "staticScan": {
+    "broadCatchHits": 0,
+    "throwNewHits": 0,
+    "playerPrefsHits": 0,
+    "jsonUtilityHits": 0,
+    "removeAllListenersHits": 0,
+    "stringFormatHits": 0,
+    "toStringHits": 0,
+    "stringInterpolationHits": 0,
+    "linqHits": 0,
+    "foreachHits": 0,
+    "uncheckedPanelSaveHits": 0,
+    "runtimeClearBeforeDeleteHits": 0,
+    "rowResetNullOwnerLeakHits": 0,
+    "staleOptionsPathResolverHits": 0
+  },
+  "nativeCollections": {
+    "totalNativeTokenOccurrences": 11,
+    "totalNativeFieldDeclarations": 0,
+    "persistentNativeFieldsRemaining": 0,
+    "transientVaultViews": 11,
+    "transientJobViews": 0
+  },
+  "byteOffsetMaps": [
+    {
+      "structName": "InputActionStateDTO",
+      "sizeBytes": 64,
+      "offsets": {
+        "ActionHash": "0:ulong",
+        "ActionMapHash": "8:ulong",
+        "BindingHash": "16:ulong",
+        "ControlPathHash": "24:ulong",
+        "CompositeParentHash": "32:ulong",
+        "BindingIndex": "40:int",
+        "Flags": "44:uint",
+        "DeviceId": "48:int",
+        "DisplayStyleCode": "52:int",
+        "ValueX": "56:float",
+        "ValueY": "60:float"
+      }
+    },
+    {
+      "structName": "AccessibilityConfigDTO",
+      "sizeBytes": 16,
+      "offsets": {
+        "Mode": "0:int",
+        "Flags": "4:uint",
+        "Strength": "8:float",
+        "GlobalQualityWeight": "12:float"
+      }
+    },
+    {
+      "structName": "InputBindingTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "Sequence": "0:ulong",
+        "TimestampTicks": "8:long",
+        "ActionHash": "16:ulong",
+        "BindingHash": "24:ulong",
+        "Operation": "32:int",
+        "Result": "36:int",
+        "FaultFlags": "40:uint",
+        "ByteCount": "44:int",
+        "RecordCount": "48:int",
+        "Capacity": "52:int",
+        "DurationMicroseconds": "56:int",
+        "ThreadId": "60:int"
+      }
+    },
+    {
+      "structName": "ControlRemapIoResult",
+      "sizeBytes": 88,
+      "offsets": {
+        "Telemetry": "0:InputBindingTelemetryEntry",
+        "ResultCode": "64:int",
+        "FaultFlags": "68:uint",
+        "BytesWritten": "72:int",
+        "BytesRead": "76:int",
+        "RecordCount": "80:int",
+        "_pad0": "84:int"
+      }
+    }
+  ],
+  "zeroGcHotPathHits": 0,
+  "absoluteAupCastsFound": 0,
+  "compactionAwareLocksProven": true,
+  "telemetryRingIntegrated": true,
+  "build": {
+    "attempted": false,
+    "blockedReason": "CPU gate above 50 percent",
+    "dotnetOrCscProcesses": 0,
+    "cpuSamplesPercent": [57.91, 80.70, 99.82]
+  },
+  "verificationHashSha256": "a10e440283d6642bca00e57c0968fcabf6ad97885052bb308d199d42d7c1e30e"
+}

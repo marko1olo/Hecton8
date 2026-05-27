@@ -18,7 +18,7 @@ MonoBehaviour:
   biomeName: Fossil Gallows
   minDepthMeters: 3000
   maxDepthMeters: 3500
-  shortDescription: Calcified branching bone-coral structures.
+  shortDescription: Calcified branching bone-carbonate structures.
   isPlaceholder: 0
   visitPurpose: Transition biome. Come here to push deeper, find better materials,
     and work around bowls, pools, and local hotspots.
@@ -26,15 +26,15 @@ MonoBehaviour:
   rareRewardHook: 'The rare pull is real: Biolum Paste and Fiber Mesh.'
   landmarkIdentity: Fossil Gallows reads through bowls, pools, domes, and hotspot
     basins. Landmarks should feel large and route-defining.
-  safePocketIdentity: Safe pockets exist, but they must be earned by reading the
+  safePocketIdentity: Reorientation pockets exist, but they must be earned by reading the
     terrain.
   riskSummary: 'Main failure mode: localized danger pockets and hostile basins, then
     overstaying for loot. Creature pressure stays medium.'
-  extractionFocus: 'Mixed salvage, harvest pockets, and risky reef-node peels. Mid-depth:
+  extractionFocus: 'Mixed salvage, harvest pockets, and risky carbonate-node peels. Mid-depth:
     expect basin pockets, salvage traps, and local hotspots, then return before greed
     stretches the route.'
-  landmarkGuidance: Dominant landmark is reef crown or porous fossil wall. This slot
-    should read through branching reef crown or fossil gallows; use bowls and hotspot
+  landmarkGuidance: Dominant landmark is carbonate crown or porous fossil wall. This slot
+    should read through branching fossil crown or fossil gallows; use bowls and hotspot
     rims to remember loops.
   loosePickupBias: 3
   nodeExtractionBias: 3

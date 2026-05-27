@@ -1,5 +1,6 @@
 using UnityEngine;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 
 namespace Hecton8.World
 {
@@ -14,6 +15,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            VoxelDynamicNavGridRuntime.SetDataVault(GlobalRegistry.DataVault);
             TryRegisterHotSwapListener();
             TryRegisterSlowTick();
         }
@@ -23,6 +25,8 @@ namespace Hecton8.World
             TryUnregisterSlowTick();
             TryUnregisterHotSwapListener();
             VoxelDynamicNavGridRuntime.DisposeAll();
+            if (!VoxelDynamicNavGridRuntime.IsTeardownPending())
+                VoxelDynamicNavGridRuntime.SetDataVault(null);
         }
 
         private void OnDestroy()
@@ -31,6 +35,8 @@ namespace Hecton8.World
             TryUnregisterHotSwapListener();
             VoxelDynamicNavGridRuntime.DisposeAll();
             VoxelDynamicNavGridRuntime.ClearLifecycleOwner(this);
+            if (!VoxelDynamicNavGridRuntime.IsTeardownPending())
+                VoxelDynamicNavGridRuntime.SetDataVault(null);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -38,6 +44,20 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                if (previousService != null && !ReferenceEquals(previousService, currentService))
+                {
+                    VoxelDynamicNavGridRuntime.SetDataVault(previousService as IDataVault);
+                    VoxelDynamicNavGridRuntime.DisposeAll();
+                    if (VoxelDynamicNavGridRuntime.IsTeardownPending())
+                        return;
+                }
+
+                VoxelDynamicNavGridRuntime.SetDataVault(currentService as IDataVault);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 

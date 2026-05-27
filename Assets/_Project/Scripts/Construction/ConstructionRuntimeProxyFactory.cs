@@ -144,12 +144,19 @@ namespace Hecton8.Construction
 
         private static Material CreateUnlitColorMaterial(Color color)
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+            Shader shader = null;
+            RuntimeShaderReferenceCatalog.TryGetRuntimeFlatColorShader(out shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find("Universal Render Pipeline/Unlit");
             if (shader == null)
                 shader = Shader.Find("Unlit/Color");
-
             if (shader == null)
                 shader = Shader.Find("Sprites/Default");
+#endif
+
+            if (shader == null)
+                return null;
 
             Material material = new Material(shader);
             if (material.HasProperty(s_baseColorPropertyId))

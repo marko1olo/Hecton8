@@ -436,7 +436,7 @@ namespace Hecton8.Physics.KCC
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveIterationCount(float globalQualityWeight)
         {
-            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float quality = AuthoritativeQualityWeight;
             return math.clamp((int)math.round(math.lerp(3f, 8f, quality)), 3, 8);
         }
 
@@ -449,7 +449,7 @@ namespace Hecton8.Physics.KCC
             int maxStride)
         {
             int stride = math.clamp(maxStride, 1, 8);
-            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float quality = AuthoritativeQualityWeight;
             int qualitySteps = math.clamp((int)math.round(math.lerp(3f, (float)stride, quality)), 1, stride);
             float safeCastDistance = math.max(0f, math.isfinite(castDistance) ? castDistance : 0f);
             float radius = math.max(0.05f, math.isfinite(capsuleRadius) ? capsuleRadius : 0.35f);
@@ -1480,7 +1480,7 @@ namespace Hecton8.Physics.KCC
 
             KinematicStateDTO state = States[index];
             float dt = math.max(HydrodynamicKccMath.MinDenominator, math.isfinite(SimulationTickDelta) ? SimulationTickDelta : 0.016666667f);
-            float quality = math.saturate(math.isfinite(Tuning.GlobalQualityWeight) ? Tuning.GlobalQualityWeight : 1f);
+            float quality = HydrodynamicKccMath.AuthoritativeQualityWeight;
             float3 velocity = HydrodynamicKccMath.Sanitize(ProposedVelocities[index], float3.zero);
             float3 delta = velocity * dt;
             double3 deltaAup = new double3(delta.x, delta.y, delta.z);
@@ -1490,7 +1490,7 @@ namespace Hecton8.Physics.KCC
             float height = math.max(radius * 2f, math.isfinite(Tuning.CapsuleHeight) ? Tuning.CapsuleHeight : 1.8f);
             float halfSegment = math.max(0f, (height * 0.5f) - radius);
             int sampleSteps = HydrodynamicKccMath.ResolveSpeculativeSampleCount(
-                Tuning.GlobalQualityWeight,
+                HydrodynamicKccMath.AuthoritativeQualityWeight,
                 castDistance,
                 radius,
                 skin,
@@ -2060,7 +2060,7 @@ namespace Hecton8.Physics.KCC
             float computeUs = 0f;
             uint flags = 0u;
             uint hash = 2166136261u;
-            float quality = math.saturate(math.isfinite(Tuning.GlobalQualityWeight) ? Tuning.GlobalQualityWeight : 1f);
+            float quality = HydrodynamicKccMath.AuthoritativeQualityWeight;
             float maxConfiguredSpeed = math.max(0.1f, math.isfinite(Tuning.MaxSpeed) ? Tuning.MaxSpeed : 6f);
             uint executedIterations = (uint)math.max(0, ExecutedIterations);
 
@@ -2934,7 +2934,7 @@ namespace Hecton8.Physics.KCC
 
         public void FixedTick(float fixedDeltaTime)
         {
-            if (_collisionScheduled || _postScheduled || !EnsureVaultBuffers())
+            if (_collisionScheduled || _postScheduled || !EnsureVaultBuffers(allowAcquire: false))
                 return;
 
             bool collisionBypass = ConsumeRespawnCollisionSuspendSignals();
@@ -3382,7 +3382,7 @@ namespace Hecton8.Physics.KCC
 
             ReleaseMetabolismStateReadGuard();
             _postScheduled = false;
-            if (!EnsureVaultBuffers())
+            if (!EnsureVaultBuffers(allowAcquire: false))
                 return;
 
             int entityCapacity = math.max(DefaultCapacity, _entityCapacity);
@@ -3778,7 +3778,7 @@ namespace Hecton8.Physics.KCC
                    handle.Generation != 0u;
         }
 
-        private bool EnsureVaultBuffers()
+        private bool EnsureVaultBuffers(bool allowAcquire = true)
         {
             if (_dataVault == null)
                 return false;
@@ -3786,6 +3786,12 @@ namespace Hecton8.Physics.KCC
             _entityCapacity = math.max(DefaultCapacity, _entityCapacity);
             if (AreVaultBuffersReady(_entityCapacity))
                 return true;
+
+            if (!allowAcquire)
+            {
+                _resolvedBufferCapacity = 0;
+                return false;
+            }
 
             int hitCapacity = _entityCapacity * MaxCollisionHitsPerCommand;
             int rollbackByteCapacity = _entityCapacity * UnsafeUtility.SizeOf<KinematicStateDTO>();

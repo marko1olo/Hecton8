@@ -32,7 +32,8 @@ namespace Hecton8.Atmosphere
         private const float SimulationTickDeltaSeconds = 1f / 60f;
         private const float MinWaveEvaluationHz = 5f;
         private const float MaxWaveEvaluationHz = 60f;
-        private const int WaveSamplerThreadGroupSizeFallback = 64;
+        private const int PortableMaxComputeThreadsPerGroup = 256;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const int TelemetryDumpCooldownFrames = OceanSurfaceAtmosphereConstants.TelemetryFrameCount;
         private const uint QualityStepTuningHash = OceanSurfaceAtmosphereConstants.QualityStepTuningHash;
         private const string WaveHeightSamplerKernelName = "SampleWaveHeights";
@@ -132,7 +133,7 @@ namespace Hecton8.Atmosphere
         private int _lastUploadedWaveCount = -1;
         private int _waveGraphicsBufferWriteIndex;
         private int _waveSamplerKernel = -1;
-        private int _waveSamplerThreadGroupSize = WaveSamplerThreadGroupSizeFallback;
+        private int _waveSamplerThreadGroupSize;
         private int _readbackActiveMask;
         private int _readbackWriteIndex;
         private int _readbackFrame0;
@@ -155,7 +156,7 @@ namespace Hecton8.Atmosphere
         private uint _simulationFrameCounter;
         private float _rawSimulationTimeSeconds;
         private bool _vaultBuffersReady;
-        private bool _readbackDispatchEnabled = true;
+        private bool _readbackDispatchEnabled;
         private bool _readbackDisposePending;
         private bool _telemetryDumpRequested;
         private bool _waveParameterJobScheduled;
@@ -174,6 +175,9 @@ namespace Hecton8.Atmosphere
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
             _readbackDispatchEnabled = true;
             ConfigureSignalLanes();
             TryRegisterHotSwapListener();
@@ -336,9 +340,6 @@ namespace Hecton8.Atmosphere
         public bool TryGetSurfaceWeatherState(out HectonOceanSurfaceWeatherState state)
         {
             state = default;
-            if (!TryCompleteWaveParameterKernel())
-                return false;
-
             if (!ResolveWeather(out WeatherStateDTO weather))
                 return false;
 
@@ -370,7 +371,7 @@ namespace Hecton8.Atmosphere
             if ((state.Flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamScale) != 0u)
                 weather.SurfaceScalars.y = math.max(0.01f, state.FoamScale);
             if ((state.Flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamStrength) != 0u)
-            weather.SurfaceScalars.z = math.saturate(state.FoamStrength);
+                weather.SurfaceScalars.z = math.saturate(state.FoamStrength);
             weatherArray[0] = weather;
             RefreshCachedSurfaceSnapshot();
             _shaderGlobalsDirty = true;
@@ -422,12 +423,10 @@ namespace Hecton8.Atmosphere
             surfaceVelocity = ResolveSurfaceFlow();
             displacement = float3.zero;
 
-            QueueWaveHeightSample(position);
-            if (!TryResolveCompletedWaveSample(position, minSpatialLength, out float relativeHeight, out waveNormal))
+            if (!TryEvaluateWaveKinematicsSnapshot(position, minSpatialLength, out float relativeHeight, out waveNormal, out surfaceVelocity, out displacement))
                 return false;
 
             waterHeight = SeaLevel + relativeHeight;
-            displacement.y = relativeHeight;
             return true;
         }
 
@@ -442,8 +441,7 @@ namespace Hecton8.Atmosphere
             {
                 Vector3 position = samplePositions[i];
                 float3 sample = new float3(position.x, position.y, position.z);
-                QueueWaveHeightSample(sample);
-                TryResolveCompletedWaveSample(sample, minSpatialLength, out float relativeHeight, out _);
+                TryEvaluateWaveKinematicsSnapshot(sample, minSpatialLength, out float relativeHeight, out _, out _, out _);
                 waterHeights[i] = currentSeaLevel + relativeHeight;
             }
 
@@ -461,8 +459,7 @@ namespace Hecton8.Atmosphere
             {
                 Vector3 position = samplePositions[i];
                 float3 sample = new float3(position.x, position.y, position.z);
-                QueueWaveHeightSample(sample);
-                TryResolveCompletedWaveSample(sample, minSpatialLength, out float relativeHeight, out _);
+                TryEvaluateWaveKinematicsSnapshot(sample, minSpatialLength, out float relativeHeight, out _, out _, out _);
                 waterHeights[i] = currentSeaLevel + relativeHeight;
             }
 
@@ -515,9 +512,7 @@ namespace Hecton8.Atmosphere
             {
                 Vector3 position = samplePositions[i];
                 float3 sample = new float3(position.x, position.y, position.z);
-                QueueWaveHeightSample(sample);
-                TryResolveCompletedWaveSample(sample, minSpatialLength, out float relativeHeight, out float3 normal);
-                float3 displacement = new float3(0f, relativeHeight, 0f);
+                TryEvaluateWaveKinematicsSnapshot(sample, minSpatialLength, out float relativeHeight, out float3 normal, out _, out float3 displacement);
                 waveNormals[i] = new Vector3(normal.x, normal.y, normal.z);
                 surfaceVelocities[i] = flowVector;
                 displacements[i] = new Vector3(displacement.x, displacement.y, displacement.z);
@@ -544,9 +539,7 @@ namespace Hecton8.Atmosphere
             {
                 Vector3 position = samplePositions[i];
                 float3 sample = new float3(position.x, position.y, position.z);
-                QueueWaveHeightSample(sample);
-                TryResolveCompletedWaveSample(sample, minSpatialLength, out float relativeHeight, out float3 normal);
-                float3 displacement = new float3(0f, relativeHeight, 0f);
+                TryEvaluateWaveKinematicsSnapshot(sample, minSpatialLength, out float relativeHeight, out float3 normal, out _, out float3 displacement);
                 waveNormals[i] = new Vector3(normal.x, normal.y, normal.z);
                 surfaceVelocities[i] = flowVector;
                 displacements[i] = new Vector3(displacement.x, displacement.y, displacement.z);
@@ -738,7 +731,7 @@ namespace Hecton8.Atmosphere
             }
             else
             {
-                if (vault.IsAllocationLocked)
+                if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                     return false;
 
                 handle = vault.EnsureGenerationHandle<T>(
@@ -779,6 +772,25 @@ namespace Hecton8.Atmosphere
                 return false;
 
             _vault = vault;
+            bool requiresAllocation =
+                !IsHandleValid(in _waveHandle) ||
+                !IsHandleValid(in _atmosphereHandle) ||
+                !IsHandleValid(in _weatherHandle) ||
+                !IsHandleValid(in _telemetryHandle) ||
+#if UNITY_EDITOR
+                !IsHandleValid(in _csvScratchHandle) ||
+#endif
+                !IsHandleValid(in _dumpScratchHandle) ||
+                !IsHandleValid(in _lodHandle) ||
+                !IsHandleValid(in _readbackQueryHandle) ||
+                !IsHandleValid(in _readbackResultHandle) ||
+                !IsHandleValid(in _readbackCompletedQueryHandle) ||
+                !IsHandleValid(in _readbackRingQueryHandle) ||
+                !IsHandleValid(in _beaufortProfileHandle) ||
+                !IsHandleValid(in _surfaceSwellHandle);
+            if (requiresAllocation && (vault.IsCompactionFenceActive || vault.IsAllocationLocked))
+                return false;
+
             if (!IsHandleValid(in _waveHandle))
                 _waveHandle = vault.EnsureGenerationHandle<WaveParametersDTO>(BufferID.ShinobuOceanWaveParameters, OceanSurfaceAtmosphereConstants.WaveCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!IsHandleValid(in _atmosphereHandle))
@@ -1212,6 +1224,56 @@ namespace Hecton8.Atmosphere
             return math.all(math.isfinite(normal));
         }
 
+        private bool TryEvaluateWaveKinematicsSnapshot(
+            float3 position,
+            float minSpatialLength,
+            out float relativeHeight,
+            out float3 normal,
+            out float3 surfaceVelocity,
+            out float3 displacement)
+        {
+            relativeHeight = 0f;
+            normal = new float3(0f, 1f, 0f);
+            surfaceVelocity = ResolveSurfaceFlow();
+            displacement = float3.zero;
+
+            if (TryResolveCompletedWaveSample(position, minSpatialLength, out relativeHeight, out normal))
+            {
+                displacement.y = relativeHeight;
+                return true;
+            }
+
+            if (_waveParameterJobScheduled || !ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves))
+                return false;
+
+            Vector3 runtimePosition = new Vector3(position.x, position.y, position.z);
+            if (!TryResolveAbsoluteFromRuntimeOrigin(runtimePosition, out double3 absolutePosition))
+                return false;
+
+            HectonOceanSurfaceMath.EvaluateWavesDetailed(
+                absolutePosition,
+                _timeSeconds,
+                waves,
+                _globalQualityWeight,
+                out relativeHeight,
+                out normal,
+                out displacement,
+                out _,
+                out _);
+
+            if (!math.isfinite(relativeHeight) ||
+                !math.all(math.isfinite(normal)) ||
+                !math.all(math.isfinite(displacement)))
+            {
+                relativeHeight = 0f;
+                normal = new float3(0f, 1f, 0f);
+                displacement = float3.zero;
+                return false;
+            }
+
+            return true;
+        }
+
         private void ConsumeWaveHeightReadbacks()
         {
             for (int slot = 0; slot < OceanSurfaceAtmosphereConstants.WaveReadbackRingSize; slot++)
@@ -1319,11 +1381,17 @@ namespace Hecton8.Atmosphere
             waveHeightSamplerCompute.SetVector(OceanWavePhaseBase1Id, ToVector4(phase.PhaseBase1));
             waveHeightSamplerCompute.SetVector(WaveSampleLodId, new Vector4(maxWavelength, activeWaveCount, _globalQualityWeight, _timeSeconds));
 
-            int groupSize = math.max(1, _waveSamplerThreadGroupSize);
-            int groupCount = math.max(1, (count + groupSize - 1) / groupSize);
+            int groupCount = ResolveDispatchGroups(count, _waveSamplerThreadGroupSize);
+            if (groupCount <= 0)
+                return;
+
             waveHeightSamplerCompute.Dispatch(_waveSamplerKernel, groupCount, 1, 1);
+            int readbackBytes = ResolveReadbackByteCount(resultBuffer, count);
+            if (readbackBytes <= 0)
+                return;
+
             ref AsyncGPUReadbackRequest request = ref ResolveReadbackRequest(slot);
-            request = AsyncGPUReadback.Request(resultBuffer);
+            request = AsyncGPUReadback.Request(resultBuffer, readbackBytes, 0, null);
             SetReadbackFrame(slot, unchecked((int)_simulationFrameCounter));
             SetReadbackCount(slot, count);
             SetReadbackSlotActive(slot);
@@ -1338,16 +1406,64 @@ namespace Hecton8.Atmosphere
 
             _waveSamplerKernelResolved = true;
             _waveSamplerKernel = -1;
-            if (waveHeightSamplerCompute == null)
+            _waveSamplerThreadGroupSize = 0;
+            if (waveHeightSamplerCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
                 return false;
 
             if (!waveHeightSamplerCompute.HasKernel(WaveHeightSamplerKernelName))
                 return false;
 
             _waveSamplerKernel = waveHeightSamplerCompute.FindKernel(WaveHeightSamplerKernelName);
-            waveHeightSamplerCompute.GetKernelThreadGroupSizes(_waveSamplerKernel, out uint threadGroupX, out _, out _);
-            _waveSamplerThreadGroupSize = threadGroupX > 0u ? math.clamp((int)threadGroupX, 1, 1024) : WaveSamplerThreadGroupSizeFallback;
-            return _waveSamplerKernel >= 0;
+            if (!waveHeightSamplerCompute.IsSupported(_waveSamplerKernel) ||
+                !TryResolveKernelThreadGroupSize1D(waveHeightSamplerCompute, _waveSamplerKernel, out _waveSamplerThreadGroupSize))
+            {
+                _waveSamplerKernel = -1;
+                _waveSamplerThreadGroupSize = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryResolveKernelThreadGroupSize1D(ComputeShader compute, int kernelIndex, out int threadGroupSize)
+        {
+            threadGroupSize = 0;
+            if (compute == null || kernelIndex < 0)
+                return false;
+
+            compute.GetKernelThreadGroupSizes(kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ);
+            if (sizeX == 0u || sizeY != 1u || sizeZ != 1u)
+                return false;
+
+            if (sizeX > (uint)PortableMaxComputeThreadsPerGroup)
+                return false;
+
+            threadGroupSize = (int)sizeX;
+            return true;
+        }
+
+        private static int ResolveReadbackByteCount(GraphicsBuffer buffer, int sampleCount)
+        {
+            if (buffer == null || sampleCount <= 0)
+                return 0;
+
+            int stride = UnsafeUtility.SizeOf<float4>();
+            int safeCount = math.min(sampleCount, math.max(0, buffer.count));
+            long byteCount = (long)safeCount * stride;
+            long maxBytes = (long)math.max(0, buffer.count) * math.max(1, buffer.stride);
+            return byteCount > 0L && byteCount <= maxBytes ? (int)byteCount : 0;
+        }
+
+        private static int ResolveDispatchGroups(int value, int divisor)
+        {
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            if (groups <= 0L || groups > MaxDispatchGroupsPerDimension)
+                return 0;
+
+            return (int)groups;
         }
 
         private bool EnsureWaveReadbackGraphicsBuffers()
@@ -1683,7 +1799,11 @@ namespace Hecton8.Atmosphere
             entry.SurfaceDisturbance = weather.SurfaceScalars.w;
             entry.FoamScalar = math.saturate((weather.WindDirectionSpeedStorm.w + weather.SurfaceScalars.w) * 0.5f);
             entry.LastNormal = new float3(0f, 1f, 0f);
-            entry.StateHash = HectonOceanSurfaceMath.HashWaveState(waves, math.min(waves.Length, OceanSurfaceAtmosphereConstants.WaveCapacity), _timeSeconds, _globalQualityWeight);
+            entry.StateHash = HectonOceanSurfaceMath.HashWaveState(
+                waves,
+                math.min(waves.Length, OceanSurfaceAtmosphereConstants.WaveCapacity),
+                _timeSeconds,
+                _globalQualityWeight);
             entry.Flags = _lastReadbackLatencyFrames > 4 || _lastWaveComputeNs > OceanSurfaceAtmosphereConstants.TelemetryDumpBudgetNs ? 1u : 0u;
             entry.ReadbackLatencyFrames = _lastReadbackLatencyFrames;
             entry.ReadbackSampleCount = _lastReadbackSampleCount;

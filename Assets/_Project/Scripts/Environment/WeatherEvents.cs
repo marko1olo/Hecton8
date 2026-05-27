@@ -176,6 +176,11 @@ namespace Hecton8.Environment
             _isDispatching = false;
         }
 
+        public static void PrepareCold()
+        {
+            EnsureInitialized();
+        }
+
         public static void Register(IWeatherEventListener listener)
         {
             if (listener == null)

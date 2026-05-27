@@ -1,0 +1,48 @@
+{
+  "agentId": "1332",
+  "timestamp": "2026-05-27T09:30:54.0041576+04:00",
+  "domain": "Hecton8.Input + UI/PauseControlsPanel.cs + UI/PDAControlsRebindUI.cs",
+  "task": "INPUT_OPTIONS_PAYLOAD_STRICTNESS_REAUDIT",
+  "status": "STATIC_VERIFIED_BUILD_BLOCKED_BY_HOST_GATE",
+  "whatWasWrong": [
+    "TryApplyBinaryOptionsPayload accepted a valid prefix without requiring full payload consumption.",
+    "TryApplyLegacyOptionsJson skipped malformed option objects instead of failing closed.",
+    "TryApplyLegacyOptionsJson accepted trailing garbage after the root JSON object and did not validate the top-level Records property range before applying staged records."
+  ],
+  "whatChanged": [
+    "Binary options payload now requires index == payloadLength before ApplyStagedOptionRecords.",
+    "Legacy JSON option migration now returns false on the first malformed record object.",
+    "Legacy JSON migration now validates the root object tail, validates the top-level property list, rejects duplicate Records properties, and parses only the validated Records array range.",
+    "Editor source guards were extended to lock the fail-closed binary and legacy migration contracts."
+  ],
+  "scannedFiles": [
+    "Assets/_Project/Scripts/Input/InputBindingContracts.cs",
+    "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+    "Assets/_Project/Scripts/Input/AccessibilitySettings.cs",
+    "Assets/_Project/Scripts/Input/InputManager.cs",
+    "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+    "Assets/_Project/Scripts/Core/RebindingManager.cs",
+    "Assets/_Project/Scripts/Core/BootstrapContracts/InputBindingServiceContracts.cs",
+    "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+    "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+    "Assets/_Project/Scripts/Input/INPUT_MIGRATION_GUIDE.md"
+  ],
+  "verification": {
+    "forbiddenProductionTokenHits": 0,
+    "uiDelegateChurnHits": 0,
+    "absoluteAupCastCandidates": 0,
+    "nativeTokenOccurrencesIncludingTests": 15,
+    "nativeTokenOccurrencesProduction": 14,
+    "nativeFieldDeclarations": 0,
+    "persistentNativeFieldsRemaining": 0,
+    "gitDiffCheck": "no whitespace errors; UserOptionsPersistence line-ending warning only",
+    "build": "blocked: dotnet processes 33572/35340 were active and CPU sampled at 80%, above the 50% project gate"
+  },
+  "residualRisks": [
+    "Unity Editor tests and Profiler/GCMonitor were not run in this tool context.",
+    "Build/Roslyn dotnet audits were not launched because the host gate was closed.",
+    "Shared Core scalability profile remains two-tier LowMx350/HighRtx; this is a cross-domain policy defect and was not patched from input/UI ownership."
+  ],
+  "verificationHashSha256": "27351f49236fe1c42585241be9abbe5b6377b3a731d93ab3f94a67607413a683"
+}

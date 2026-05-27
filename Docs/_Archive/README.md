@@ -24,3 +24,5 @@ Current bundles:
 - `Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/` - pre-line-split snapshots for architecture files whose long list items were split; active replacements remain under `Docs/ARCHITECTURE/`.
 - `Architecture_X_012_APEX_2026-05-24_FILE_CAP/` - full snapshots for six active architecture files compressed under the 2500-word file cap; active replacements remain under `Docs/ARCHITECTURE/`.
 - `Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/` - active `.diff` provenance moved out of `Docs/ARCHITECTURE/` and pre-rewrite copies for the 55-word/35-word residual prose pass.
+- `TokenUsage_2026-05-25/` - superseded token audit snapshot; token telemetry is no longer active architecture authority. Root copy moved to `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/`.
+- `Reports_1334_2026-05-26/SignalBus1303Superseded/` - superseded 1303 SignalBus/tether report revisions before V16; current active replacement is `Docs/Reports/SIGNALBUS_HOTPATH_AUDIT_1303_APEX_V16.md`.

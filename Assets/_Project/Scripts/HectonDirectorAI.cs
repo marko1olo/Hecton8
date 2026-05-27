@@ -517,7 +517,15 @@ namespace Hecton8.Systems.AI
     [DefaultExecutionOrder(-4500)]
     public sealed class HectonDirectorAI : MonoBehaviour, IUpdatable, ILateFrameTickable, IEncounterDirectorService, ISonarPingEventListener, IGlobalRegistryHotSwapListener
     {
-        internal static HectonDirectorAI ActiveRuntimeInstance => GlobalRegistry.EncounterDirector as HectonDirectorAI;
+        private static HectonDirectorAI s_activeRuntimeInstance;
+
+        internal static HectonDirectorAI ActiveRuntimeInstance => s_activeRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeInstance()
+        {
+            s_activeRuntimeInstance = null;
+        }
 
         [Header("References")]
         [Tooltip("Authoritative player transform. Resolved from bootstrap when left null.")]
@@ -624,6 +632,8 @@ namespace Hecton8.Systems.AI
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IEcosystemDirectorService _ecosystemDirector;
         private SargassumMicroFaunaBoids _sargassumMicroFauna;
+        private ITerrainProvider _terrainProvider;
+        private HectonMapMagicVegetationBridge _vegetationBridge;
         private bool _encounterDirectorServiceRegistered;
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
@@ -742,6 +752,8 @@ namespace Hecton8.Systems.AI
 
             GlobalRegistry.RegisterEncounterDirectorService(this);
             _encounterDirectorServiceRegistered = ReferenceEquals(GlobalRegistry.EncounterDirector, this);
+            if (_encounterDirectorServiceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryRegisterDispatcherLanes()
@@ -776,6 +788,8 @@ namespace Hecton8.Systems.AI
             if (_encounterDirectorServiceRegistered)
             {
                 GlobalRegistry.UnregisterEncounterDirectorService(this);
+                if (ReferenceEquals(s_activeRuntimeInstance, this))
+                    s_activeRuntimeInstance = null;
                 _encounterDirectorServiceRegistered = false;
             }
 
@@ -828,6 +842,8 @@ namespace Hecton8.Systems.AI
             if (_encounterDirectorServiceRegistered && ReferenceEquals(GlobalRegistry.EncounterDirector, this))
             {
                 GlobalRegistry.UnregisterEncounterDirectorService(this);
+                if (ReferenceEquals(s_activeRuntimeInstance, this))
+                    s_activeRuntimeInstance = null;
                 _encounterDirectorServiceRegistered = false;
             }
 
@@ -881,7 +897,7 @@ namespace Hecton8.Systems.AI
             UpdateActiveSonarPingDebounce(deltaTime);
             float internalStress = ResolveInternalStress(healthNormalized, oxygenNormalized, sonarStress);
             float acousticThreatLevel = 0f;
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = _vegetationBridge;
             if (vegetationBridge != null)
                 acousticThreatLevel = math.saturate(vegetationBridge.GetThreatLevel(playerPosition));
             acousticThreatLevel = math.max(acousticThreatLevel, sonarStress);
@@ -1138,7 +1154,7 @@ namespace Hecton8.Systems.AI
                 return;
             }
 
-            if (!EnsurePredatorSpatialHashBuffersAllocated(
+            if (!TryResolvePredatorSpatialHashBuffers(
                     out NativeArray<double3> spatialAbsolutePositions,
                     out NativeArray<int3> spatialCellCoords))
             {
@@ -1214,7 +1230,10 @@ namespace Hecton8.Systems.AI
             if (distanceSqr <= 0.25f)
                 return;
 
-            Vector3 predatorForward = contact.Transform != null ? contact.Transform.forward : Vector3.forward;
+            Vector3 predatorForward = SanitizeFiniteVector(faunaCue.ResolveContactForward());
+            predatorForward = predatorForward.sqrMagnitude > 0.0001f
+                ? ResolveDominantAxisDirection(predatorForward)
+                : Vector3.forward;
             if (!IsInsidePredatorSightCone(predatorForward, toPlayer, distanceSqr))
             {
                 faunaCue.ApplyDirectorLineOfSight(false, playerPosition, safePlayerForward, playerVelocity);
@@ -1238,7 +1257,7 @@ namespace Hecton8.Systems.AI
             processedCount++;
         }
 
-        private static bool IsPredatorSightTerrainBlocked(Vector3 origin, Vector3 target)
+        private bool IsPredatorSightTerrainBlocked(Vector3 origin, Vector3 target)
         {
             if (!math.isfinite(origin.x) ||
                 !math.isfinite(origin.y) ||
@@ -1250,8 +1269,8 @@ namespace Hecton8.Systems.AI
                 return true;
             }
 
-            MapMagicBridge bridge = GlobalRegistry.MapMagic;
-            if (bridge == null)
+            ITerrainProvider terrainProvider = _terrainProvider;
+            if (terrainProvider == null || !terrainProvider.IsAvailable)
                 return false;
 
             const int sampleCount = 3;
@@ -1259,7 +1278,7 @@ namespace Hecton8.Systems.AI
             {
                 float t = i * 0.25f;
                 Vector3 sample = Vector3.LerpUnclamped(origin, target, t);
-                if (!bridge.TryGetHeight(sample.x, sample.z, out float terrainHeight) ||
+                if (!terrainProvider.TryGetHeight(sample.x, sample.z, out float terrainHeight) ||
                     !math.isfinite(terrainHeight))
                 {
                     continue;
@@ -1299,36 +1318,37 @@ namespace Hecton8.Systems.AI
             if (!TryLockPredatorSpatialHashVaultBuffers())
                 return;
 
-            int contactCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
-                in playerAup,
-                PredatorSpatialHashActiveChunkRadiusMeters,
-                SpatialTargetKind.Bioform,
-                _predatorSpatialContacts);
-            _predatorSpatialContactCount = math.min(contactCount, PredatorSpatialHashContactCapacity);
-            for (int i = 0; i < _predatorSpatialContactCount; i++)
+            try
             {
-                AbsoluteUniversePosition contactAup = _predatorSpatialContacts[i].PositionAup;
-                spatialAbsolutePositions[i] = contactAup.ToAbsoluteDouble3();
-                spatialCellCoords[i] = default;
-            }
+                int contactCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                    in playerAup,
+                    PredatorSpatialHashActiveChunkRadiusMeters,
+                    SpatialTargetKind.Bioform,
+                    _predatorSpatialContacts);
+                _predatorSpatialContactCount = math.min(contactCount, PredatorSpatialHashContactCapacity);
+                for (int i = 0; i < _predatorSpatialContactCount; i++)
+                {
+                    AbsoluteUniversePosition contactAup = _predatorSpatialContacts[i].PositionAup;
+                    double3 absolutePosition = contactAup.ToAbsoluteDouble3();
+                    spatialAbsolutePositions[i] = absolutePosition;
+                    spatialCellCoords[i] = PredatorSpatialHashMath.ResolveCellCoord(
+                        absolutePosition,
+                        PredatorSpatialHashCellSizeMeters);
+                }
 
-            for (int i = _predatorSpatialContactCount; i < PredatorSpatialHashContactCapacity; i++)
-            {
-                _predatorSpatialContacts[i] = default;
-                spatialAbsolutePositions[i] = default;
-                spatialCellCoords[i] = default;
-            }
+                for (int i = _predatorSpatialContactCount; i < PredatorSpatialHashContactCapacity; i++)
+                {
+                    _predatorSpatialContacts[i] = default;
+                    spatialAbsolutePositions[i] = default;
+                    spatialCellCoords[i] = default;
+                }
 
-            PredatorSpatialHashInsertJob insertJob = new PredatorSpatialHashInsertJob
+                _predatorSpatialHashReady = _predatorSpatialContactCount > 0;
+            }
+            finally
             {
-                AbsolutePositions = spatialAbsolutePositions,
-                CellCoords = spatialCellCoords,
-                Count = _predatorSpatialContactCount,
-                CellSizeMeters = PredatorSpatialHashCellSizeMeters
-            };
-            _predatorSpatialHashBuildHandle = insertJob.Schedule(PredatorSpatialHashContactCapacity, 16);
-            _predatorSpatialHashJobScheduled = true;
-            _predatorSpatialHashReady = false;
+                UnlockPredatorSpatialHashVaultBuffers();
+            }
         }
 
         private bool CompletePredatorSpatialHashBuild(bool forceComplete)
@@ -1415,6 +1435,22 @@ namespace Hecton8.Systems.AI
                        PredatorSpatialCellCoordsBufferId,
                        PredatorSpatialHashContactCapacity,
                        NativeArrayOptions.ClearMemory,
+                       out spatialCellCoords);
+        }
+
+        private bool TryResolvePredatorSpatialHashBuffers(
+            out NativeArray<double3> spatialAbsolutePositions,
+            out NativeArray<int3> spatialCellCoords)
+        {
+            spatialAbsolutePositions = default;
+            spatialCellCoords = default;
+            return TryOpenDirectorVaultView(
+                       in _predatorSpatialAbsolutePositionsHandle,
+                       PredatorSpatialHashContactCapacity,
+                       out spatialAbsolutePositions) &&
+                   TryOpenDirectorVaultView(
+                       in _predatorSpatialCellCoordsHandle,
+                       PredatorSpatialHashContactCapacity,
                        out spatialCellCoords);
         }
 
@@ -1660,6 +1696,13 @@ namespace Hecton8.Systems.AI
             }
 
             _resolveRetryTimer = 1f;
+            ApplyPlayerRuntimeContextReferences(_playerRuntimeContext, replaceExisting: false);
+
+            if (!force)
+            {
+                RefreshMetaCampaignService();
+                return;
+            }
 
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
@@ -1685,12 +1728,36 @@ namespace Hecton8.Systems.AI
             RefreshMetaCampaignService();
         }
 
+        private void ApplyPlayerRuntimeContextReferences(IPlayerRuntimeContext playerContext, bool replaceExisting)
+        {
+            if (playerContext == null)
+                return;
+
+            Transform contextTransform = playerContext.PlayerTransform;
+            if (contextTransform != null && (replaceExisting || playerTransform == null))
+                playerTransform = contextTransform;
+
+            HectonSurvivalSystem contextSurvival = playerContext.SurvivalSystem;
+            if (contextSurvival != null && (replaceExisting || survivalSystem == null))
+                survivalSystem = contextSurvival;
+
+            HectonPlayerMovement contextMovement = playerContext.PlayerMovement;
+            if (contextMovement != null && (replaceExisting || _playerMovement == null))
+                _playerMovement = contextMovement;
+
+            Camera contextCamera = playerContext.PlayerCamera;
+            if (contextCamera != null && (replaceExisting || playerCamera == null))
+                playerCamera = contextCamera;
+        }
+
         private void RefreshColdRegistryReferences()
         {
             _playerRuntimeContext = GlobalRegistry.Player;
             _ecosystemDirector = GlobalRegistry.EcosystemDirector;
             _sargassumMicroFauna = GlobalRegistry.SargassumMicroFauna;
             _dataVault = GlobalRegistry.DataVault;
+            _terrainProvider = GlobalRegistry.Terrain;
+            _vegetationBridge = GlobalRegistry.MapMagicVegetation;
             BindMetaCampaignService(GlobalRegistry.MetaCampaign);
         }
 
@@ -1717,8 +1784,7 @@ namespace Hecton8.Systems.AI
             {
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
-                    if (playerCamera == null && _playerRuntimeContext != null)
-                        playerCamera = _playerRuntimeContext.PlayerCamera;
+                    ApplyPlayerRuntimeContextReferences(_playerRuntimeContext, replaceExisting: true);
                     break;
                 case GlobalRegistryServiceSlot.EcosystemDirector:
                     _ecosystemDirector = currentService as IEcosystemDirectorService;
@@ -1726,12 +1792,19 @@ namespace Hecton8.Systems.AI
                 case GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime:
                     _sargassumMicroFauna = currentService as SargassumMicroFaunaBoids;
                     break;
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    _terrainProvider = currentService as ITerrainProvider;
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    break;
                 case GlobalRegistryServiceSlot.DataVault:
                     CompletePredatorSightBatch(forceComplete: true);
                     CompletePredatorSpatialHashBuild(forceComplete: true);
                     ReleasePredatorSightBuffers(_dataVault ?? (previousService as IDataVault));
                     ReleasePredatorSpatialHashBuffers(_dataVault ?? (previousService as IDataVault));
                     _dataVault = currentService as IDataVault;
+                    EnsurePredatorSpatialHashBuffersAllocated(out _, out _);
                     break;
                 case GlobalRegistryServiceSlot.MetaCampaignRuntime:
                     BindMetaCampaignService(currentService as IMetaCampaignService);
@@ -1811,17 +1884,17 @@ namespace Hecton8.Systems.AI
             return true;
         }
 
-        private static bool TryResolvePlayerRuntimePosition(out Vector3 playerPosition)
+        private bool TryResolvePlayerRuntimePosition(out Vector3 playerPosition)
         {
             playerPosition = Vector3.zero;
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
-                runtimeContext == null ||
-                (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
             {
                 return false;
             }
 
-            playerPosition = ToVector3(runtimeContext.MovementState.PredictedAup.ToRuntimeFloat3());
+            playerPosition = ToVector3(movementState.PredictedAup.ToRuntimeFloat3());
             return true;
         }
 
@@ -1866,15 +1939,14 @@ namespace Hecton8.Systems.AI
                 : Vector3.forward;
             playerAup = default;
 
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
-                runtimeContext == null ||
-                (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
             {
                 return false;
             }
 
-            PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-            PlayerLookState lookState = runtimeContext.LookState;
+            playerContext.TryGetLookRuntimeState(out PlayerLookState lookState);
             playerAup = movementState.PredictedAup;
             playerPosition = ToVector3(playerAup.ToRuntimeFloat3());
             playerVelocity = SanitizeFiniteVector(ToVector3(movementState.Velocity));

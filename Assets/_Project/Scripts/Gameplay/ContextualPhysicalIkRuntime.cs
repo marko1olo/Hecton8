@@ -1359,16 +1359,19 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: int[128] - free-slot stack for contextual IK stable indexing - owner: ContextualPhysicalIkRuntime
         private readonly int[] _freeSlots = new int[MaxEntities];
 
-        private NativeArray<ContextualPhysicalIkEntityState> _scheduledEntityStates;
-        private NativeArray<KinematicSurfaceHit> _scheduledHits;
-        private NativeArray<ContextualPhysicalIkTargetFrame> _frontTargetFrames;
-        private NativeArray<ContextualPhysicalIkTargetFrame> _backTargetFrames;
-        private NativeArray<float3> _ikTargets;
-        private NativeArray<float> _ikWeights;
-        private NativeArray<ContextualPhysicalIkFootData> _footIkData;
-        private NativeArray<float3> _footTargets;
-        private NativeArray<float3> _footCurrentPos;
-        private NativeArray<ContextualPhysicalIkTelemetryEntry> _telemetryRing;
+        // COLD ALLOC: RuntimeNativeBufferSet[1] - native IK buffer owner indirection - owner: ContextualPhysicalIkRuntime
+        private RuntimeNativeBufferSet _nativeBuffers = new RuntimeNativeBufferSet();
+
+        private ref NativeArray<ContextualPhysicalIkEntityState> _scheduledEntityStates => ref _nativeBuffers.ScheduledEntityStates;
+        private ref NativeArray<KinematicSurfaceHit> _scheduledHits => ref _nativeBuffers.ScheduledHits;
+        private ref NativeArray<ContextualPhysicalIkTargetFrame> _frontTargetFrames => ref _nativeBuffers.FrontTargetFrames;
+        private ref NativeArray<ContextualPhysicalIkTargetFrame> _backTargetFrames => ref _nativeBuffers.BackTargetFrames;
+        private ref NativeArray<float3> _ikTargets => ref _nativeBuffers.IkTargets;
+        private ref NativeArray<float> _ikWeights => ref _nativeBuffers.IkWeights;
+        private ref NativeArray<ContextualPhysicalIkFootData> _footIkData => ref _nativeBuffers.FootIkData;
+        private ref NativeArray<float3> _footTargets => ref _nativeBuffers.FootTargets;
+        private ref NativeArray<float3> _footCurrentPos => ref _nativeBuffers.FootCurrentPos;
+        private ref NativeArray<ContextualPhysicalIkTelemetryEntry> _telemetryRing => ref _nativeBuffers.TelemetryRing;
 
         private JobHandle _pendingGroundResponseHandle;
         private JobHandle _disposeHandle;
@@ -1711,16 +1714,16 @@ namespace Hecton8.Gameplay
         private void DisposeBuffers(JobHandle dependency)
         {
             _disposeHandle = default;
-            DisposeNativeArray(ref _scheduledEntityStates, dependency);
-            DisposeNativeArray(ref _scheduledHits, dependency);
-            DisposeNativeArray(ref _frontTargetFrames, dependency);
-            DisposeNativeArray(ref _backTargetFrames, dependency);
-            DisposeNativeArray(ref _ikTargets, dependency);
-            DisposeNativeArray(ref _ikWeights, dependency);
-            DisposeNativeArray(ref _footIkData, dependency);
-            DisposeNativeArray(ref _footTargets, dependency);
-            DisposeNativeArray(ref _footCurrentPos, dependency);
-            DisposeNativeArray(ref _telemetryRing, dependency);
+            DisposeNativeArray(ref _nativeBuffers.ScheduledEntityStates, dependency);
+            DisposeNativeArray(ref _nativeBuffers.ScheduledHits, dependency);
+            DisposeNativeArray(ref _nativeBuffers.FrontTargetFrames, dependency);
+            DisposeNativeArray(ref _nativeBuffers.BackTargetFrames, dependency);
+            DisposeNativeArray(ref _nativeBuffers.IkTargets, dependency);
+            DisposeNativeArray(ref _nativeBuffers.IkWeights, dependency);
+            DisposeNativeArray(ref _nativeBuffers.FootIkData, dependency);
+            DisposeNativeArray(ref _nativeBuffers.FootTargets, dependency);
+            DisposeNativeArray(ref _nativeBuffers.FootCurrentPos, dependency);
+            DisposeNativeArray(ref _nativeBuffers.TelemetryRing, dependency);
             JobHandle.ScheduleBatchedJobs();
             _groundResponseScheduled = false;
             _pendingGroundResponseHandle = default;
@@ -1734,6 +1737,20 @@ namespace Hecton8.Gameplay
             NativeMemorySentinel.UnregisterNativeArray(array);
             _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, array.Dispose(dependency));
             array = default;
+        }
+
+        private sealed class RuntimeNativeBufferSet
+        {
+            public NativeArray<ContextualPhysicalIkEntityState> ScheduledEntityStates;
+            public NativeArray<KinematicSurfaceHit> ScheduledHits;
+            public NativeArray<ContextualPhysicalIkTargetFrame> FrontTargetFrames;
+            public NativeArray<ContextualPhysicalIkTargetFrame> BackTargetFrames;
+            public NativeArray<float3> IkTargets;
+            public NativeArray<float> IkWeights;
+            public NativeArray<ContextualPhysicalIkFootData> FootIkData;
+            public NativeArray<float3> FootTargets;
+            public NativeArray<float3> FootCurrentPos;
+            public NativeArray<ContextualPhysicalIkTelemetryEntry> TelemetryRing;
         }
 
         private void TryRegister()

@@ -69,9 +69,9 @@ namespace Hecton8.Gameplay
     /// Raised when the equipped tool is exhausted and removed from the inventory.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 8)]
-    public readonly struct ToolDepletedSignal
+    public readonly struct PlayerToolDepletedSignal
     {
-        public ToolDepletedSignal(int toolHashId)
+        public PlayerToolDepletedSignal(int toolHashId)
         {
             ToolHashId = toolHashId;
             _pad0 = 0;
@@ -96,7 +96,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>Called when an equipped tool was depleted.</summary>
         /// <param name="signal">Tool depletion payload.</param>
-        void OnToolDepletedSignal(in ToolDepletedSignal signal);
+        void OnToolDepletedSignal(in PlayerToolDepletedSignal signal);
     }
 
     /// <summary>
@@ -186,8 +186,8 @@ namespace Hecton8.Gameplay
         private static NativeQueue<TraumaHudSignal> _nextFrameTraumaHudSignals;
         private static NativeQueue<PlayerInteractionStressSignal> _pendingInteractionSignals;
         private static NativeQueue<PlayerInteractionStressSignal> _nextFrameInteractionSignals;
-        private static NativeQueue<ToolDepletedSignal> _pendingToolDepletedSignals;
-        private static NativeQueue<ToolDepletedSignal> _nextFrameToolDepletedSignals;
+        private static NativeQueue<PlayerToolDepletedSignal> _pendingToolDepletedSignals;
+        private static NativeQueue<PlayerToolDepletedSignal> _nextFrameToolDepletedSignals;
         private static int _pendingTraumaHudSignalCount;
         private static int _nextFrameTraumaHudSignalCount;
         private static int _pendingInteractionSignalCount;
@@ -397,7 +397,7 @@ namespace Hecton8.Gameplay
         /// Queues one tool depletion signal.
         /// </summary>
         /// <param name="signal">Signal payload.</param>
-        public static bool TryRaiseToolDepletedSignal(in ToolDepletedSignal signal)
+        public static bool TryRaiseToolDepletedSignal(in PlayerToolDepletedSignal signal)
         {
             if (_listeners.Count <= 0)
                 return false;
@@ -421,7 +421,7 @@ namespace Hecton8.Gameplay
         }
 
         [Obsolete("Player signal producers must use TryRaiseToolDepletedSignal and handle bounded enqueue failure.", true)]
-        public static void RaiseToolDepletedSignal(in ToolDepletedSignal signal)
+        public static void RaiseToolDepletedSignal(in PlayerToolDepletedSignal signal)
         {
             TryRaiseToolDepletedSignal(in signal);
         }
@@ -474,7 +474,7 @@ namespace Hecton8.Gameplay
             }
             if (!_pendingToolDepletedSignals.IsCreated)
             {
-                _pendingToolDepletedSignals = new NativeQueue<ToolDepletedSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ToolDepletedSignal>[16] - deferred tool depletion lane - owner: PlayerSignalEvents
+                _pendingToolDepletedSignals = new NativeQueue<PlayerToolDepletedSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerToolDepletedSignal>[16] - deferred tool depletion lane - owner: PlayerSignalEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingToolDepletedSignals,
                     PendingToolDepletedCapacity,
@@ -485,7 +485,7 @@ namespace Hecton8.Gameplay
             }
             if (!_nextFrameToolDepletedSignals.IsCreated)
             {
-                _nextFrameToolDepletedSignals = new NativeQueue<ToolDepletedSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ToolDepletedSignal>[16] - next-frame tool depletion lane - owner: PlayerSignalEvents
+                _nextFrameToolDepletedSignals = new NativeQueue<PlayerToolDepletedSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerToolDepletedSignal>[16] - next-frame tool depletion lane - owner: PlayerSignalEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameToolDepletedSignals,
                     PendingToolDepletedCapacity,
@@ -593,7 +593,7 @@ namespace Hecton8.Gameplay
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return false;
 
-                if (!_pendingToolDepletedSignals.TryDequeue(out ToolDepletedSignal signal))
+                if (!_pendingToolDepletedSignals.TryDequeue(out PlayerToolDepletedSignal signal))
                 {
                     _pendingToolDepletedSignalCount = 0;
                     return true;
@@ -720,7 +720,7 @@ namespace Hecton8.Gameplay
 
             if (_nextFrameToolDepletedSignals.IsCreated)
             {
-                while (_nextFrameToolDepletedSignalCount > 0 && _nextFrameToolDepletedSignals.TryDequeue(out ToolDepletedSignal signal))
+                while (_nextFrameToolDepletedSignalCount > 0 && _nextFrameToolDepletedSignals.TryDequeue(out PlayerToolDepletedSignal signal))
                 {
                     _nextFrameToolDepletedSignalCount--;
                     _pendingToolDepletedSignals.Enqueue(signal);

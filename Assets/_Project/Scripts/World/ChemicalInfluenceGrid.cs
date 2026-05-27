@@ -324,6 +324,12 @@ namespace Hecton8.World
             EnsureRuntimeInstance().PublishFrame(frameId);
         }
 
+        private static bool TryGetReadableRuntime(out ChemicalInfluenceGrid instance)
+        {
+            instance = _activeRuntimeInstance;
+            return instance != null && instance._buffersReady;
+        }
+
         internal static bool TryGetPublishedSnapshot(
             out NativeArray<float4>.ReadOnly frontGrid,
             out NativeArray<float4>.ReadOnly overlayGrid,
@@ -331,8 +337,16 @@ namespace Hecton8.World
             out float3 origin,
             out float3 cellSize)
         {
-            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
-            instance.PublishFrame(instance.ResolveDeterministicFrameId(false));
+            if (!TryGetReadableRuntime(out ChemicalInfluenceGrid instance))
+            {
+                frontGrid = default;
+                overlayGrid = default;
+                dimensions = int3.zero;
+                origin = float3.zero;
+                cellSize = new float3(DefaultCellSizeMeters);
+                return false;
+            }
+
             return instance.TryGetPublishedSnapshotInternal(out frontGrid, out overlayGrid, out dimensions, out origin, out cellSize);
         }
 
@@ -343,8 +357,7 @@ namespace Hecton8.World
             out float3 origin,
             out float3 cellSize)
         {
-            ChemicalInfluenceGrid instance = _activeRuntimeInstance;
-            if (instance == null)
+            if (!TryGetReadableRuntime(out ChemicalInfluenceGrid instance))
             {
                 frontGrid = default;
                 overlayGrid = default;
@@ -354,7 +367,6 @@ namespace Hecton8.World
                 return false;
             }
 
-            instance.PublishFrame(instance.ResolveDeterministicFrameId(false));
             return instance.TryGetPublishedSnapshotInternal(out frontGrid, out overlayGrid, out dimensions, out origin, out cellSize);
         }
 
@@ -363,8 +375,14 @@ namespace Hecton8.World
             out int count,
             out float followStepMeters)
         {
-            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
-            instance.PublishFrame(instance.ResolveDeterministicFrameId(false));
+            if (!TryGetReadableRuntime(out ChemicalInfluenceGrid instance))
+            {
+                breadcrumbs = default;
+                count = 0;
+                followStepMeters = math.max(1f, DefaultCellSizeMeters * 0.5f);
+                return false;
+            }
+
             NativeArray<ChemicalBreadcrumbWaypoint> mutableBreadcrumbs =
                 instance.OpenChemicalVaultArray(ref instance._breadcrumbsHandle, BreadcrumbBufferId, DefaultBreadcrumbCapacity);
             breadcrumbs = mutableBreadcrumbs.IsCreated ? mutableBreadcrumbs.AsReadOnly() : default;
@@ -375,8 +393,12 @@ namespace Hecton8.World
 
         internal static bool TrySampleNormalizedChannels(Vector3 worldPosition, out float4 normalizedChannels)
         {
-            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
-            instance.PublishFrame(instance.ResolveDeterministicFrameId(false));
+            if (!TryGetReadableRuntime(out ChemicalInfluenceGrid instance))
+            {
+                normalizedChannels = float4.zero;
+                return false;
+            }
+
             return instance.TrySampleNormalizedChannelsInternal(
                 new float3(worldPosition.x, worldPosition.y, worldPosition.z),
                 out normalizedChannels);
@@ -384,8 +406,12 @@ namespace Hecton8.World
 
         internal static bool TrySampleScentGrid01(Vector3 worldPosition, out float scent01)
         {
-            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
-            instance.PublishFrame(instance.ResolveDeterministicFrameId(false));
+            if (!TryGetReadableRuntime(out ChemicalInfluenceGrid instance))
+            {
+                scent01 = 0f;
+                return false;
+            }
+
             return instance.TrySampleScentGrid01Internal(worldPosition, out scent01);
         }
 
@@ -396,8 +422,14 @@ namespace Hecton8.World
             out float distanceMeters,
             out float intensity01)
         {
-            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
-            instance.PublishFrame(instance.ResolveDeterministicFrameId(false));
+            if (!TryGetReadableRuntime(out ChemicalInfluenceGrid instance))
+            {
+                waypoint = default;
+                distanceMeters = 0f;
+                intensity01 = 0f;
+                return false;
+            }
+
             return instance.TryFindNearestScentWaypointInternal(
                 new float3(worldPosition.x, worldPosition.y, worldPosition.z),
                 channel,
@@ -484,9 +516,7 @@ namespace Hecton8.World
 
         public static bool TryGetTuningSnapshot(out ChemicalTuningDTO tuning)
         {
-            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
-            instance.InitializeRuntime();
-            if (!instance._buffersReady)
+            if (!TryGetReadableRuntime(out ChemicalInfluenceGrid instance))
             {
                 tuning = default;
                 return false;

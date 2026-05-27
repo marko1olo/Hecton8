@@ -1,0 +1,74 @@
+﻿{
+    "schema":  "hecton8.organics_zero_gc_hotpath_audit.v1",
+    "agentId":  "1318",
+    "scannedFiles":  2,
+    "scannedHotMethods":  10,
+    "forbiddenHits":  0,
+    "methods":  [
+                    {
+                        "file":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+                        "method":  "Tick",
+                        "startLine":  2185,
+                        "lineCount":  24
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+                        "method":  "LateFrameTick",
+                        "startLine":  2210,
+                        "lineCount":  29
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+                        "method":  "SlowTick",
+                        "startLine":  2243,
+                        "lineCount":  13
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+                        "method":  "Execute",
+                        "startLine":  2926,
+                        "lineCount":  7
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+                        "method":  "Execute",
+                        "startLine":  2941,
+                        "lineCount":  7
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+                        "method":  "Execute",
+                        "startLine":  2963,
+                        "lineCount":  32
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+                        "method":  "Execute",
+                        "startLine":  3027,
+                        "lineCount":  116
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+                        "method":  "Execute",
+                        "startLine":  3188,
+                        "lineCount":  17
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+                        "method":  "Execute",
+                        "startLine":  87,
+                        "lineCount":  30
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+                        "method":  "Execute",
+                        "startLine":  148,
+                        "lineCount":  86
+                    }
+                ],
+    "findings":  [
+
+                 ],
+    "hashSha256":  "b47c995c9122a84838b4d816bf5515f988671762306aa2a37736212dc84c832e",
+    "note":  "Regex hot-method scan used because dotnet/Roslyn gate was locked by active compiler processes at audit time."
+}

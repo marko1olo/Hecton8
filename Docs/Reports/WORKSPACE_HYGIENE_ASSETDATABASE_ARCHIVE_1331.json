@@ -1,0 +1,165 @@
+{
+  "agent_id": "1331",
+  "task": "WORKSPACE_HYGIENE_ASSETDATABASE_ARCHIVE",
+  "evidence_class": [
+    "STATIC_FS",
+    "STATIC_DOC_ONLINE",
+    "STATIC_PROJECT_DOC"
+  ],
+  "generated_local": "2026-05-26T20:45:00+04:00",
+  "prompt_artifact": "Docs/AgentLogs/AGENT_PROMPT_1331_REEXTRACTED_LOOP16.xml",
+  "online_sources": [
+    "https://docs.unity.cn/Manual/AssetMetadata.html",
+    "https://docs.unity.cn/Manual/SpecialFolders.html",
+    "https://docs.unity.cn/Manual/AssetDatabaseRefreshing.html",
+    "https://docs.unity.cn/Packages/com.unity.ide.visualstudio@2.0/manual/using-visual-studio-editor.html",
+    "https://learn.microsoft.com/en-us/visualstudio/ide/reference/projects-and-solutions-options-dialog-box?view=vs-2022",
+    "https://github.com/github/gitignore/blob/main/Unity.gitignore",
+    "https://www.reddit.com/r/Unity3D/comments/cw1kyv"
+  ],
+  "project_sources": [
+    "Docs/Flora_Pipeline/FLORA_TEXTURE_IMPORT_LOG.md",
+    "Assets/_Project/Art/Textures/WorldProceduralFlora/Imported/family.kelp.tall"
+  ],
+  "authoritative_source_notes": [
+    "Unity Asset Metadata: .meta files carry GUID/import settings and must move with their assets.",
+    "Unity Special Folder Names: .tmp files are ignored by Unity; proof PNGs, docs, projectauditor outputs, py files, generated scene YAML, and transfer staging PNGs are not ignored just because they are non-runtime.",
+    "Unity AssetDatabase Refresh: Unity scans Assets and Packages for file changes.",
+    "Unity Visual Studio Editor: Regenerate project files updates/creates .csproj files from External Tools settings.",
+    "Microsoft Visual Studio docs: .slnx is an XML solution file format option.",
+    "GitHub Unity .gitignore: root .csproj/.sln and InitTestScene*.unity* are generated ignore classes.",
+    "Project flora import log: family.kelp.tall was imported from Assets/TRANSFER HUB/family kelp tall into the routed _Project texture folder.",
+    "Reddit is anecdotal only and was not used as deletion authority."
+  ],
+  "loop13_archive": {
+    "archived_files": 243,
+    "archived_bytes": 27823174,
+    "empty_asset_dirs_deleted": 3,
+    "categories": [
+      "Assets/DOCS",
+      "Assets/Screenshots",
+      "Assets/*.projectauditor",
+      "Assets/tri.py"
+    ]
+  },
+  "loop14_archive": {
+    "archived_files": 10,
+    "archived_bytes": 29660,
+    "empty_asset_dirs_deleted": 0,
+    "categories": [
+      "Assets/InitTestScene*.unity*"
+    ]
+  },
+  "loop15_archive": {
+    "archived_files": 8,
+    "archived_bytes": 781112,
+    "empty_asset_dirs_deleted": 0,
+    "categories": [
+      "Assets/kuchka_melka_1_lod_1.asset",
+      "Assets/pillar2_lod1.asset",
+      "Assets/UniversalRenderPipelineGlobalSettings 1.asset",
+      "Assets/UniversalRenderPipelineGlobalSettings.asset"
+    ],
+    "safety_repairs": [
+      "Removed broad root .unity archive suffix; only InitTestScene*.unity remains eligible.",
+      "Added *.slnx ignore policy for future Visual Studio XML solution variants."
+    ]
+  },
+  "loop16_archive": {
+    "archived_files": 10,
+    "archived_bytes": 23104171,
+    "empty_asset_dirs_deleted": 2,
+    "categories": [
+      "Assets/TRANSFER HUB/family kelp tall"
+    ],
+    "proof": [
+      "4 transfer PNG GUIDs had zero active refs outside docs/metas.",
+      "Flora import log records transfer source was imported into Assets/_Project/Art/Textures/WorldProceduralFlora/Imported/family.kelp.tall.",
+      "Imported destination PNG/metas exist."
+    ]
+  },
+  "cumulative_workspace_hygiene_archive": {
+    "files": 271,
+    "bytes": 51738117,
+    "path": "Docs/_Archive/WorkspaceHygiene_1331/Assets"
+  },
+  "latest_verify_counts": {
+    "archive_moves": 0,
+    "meta_scanned": 11867,
+    "orphan_meta": 0,
+    "recovery_dirs": 0,
+    "root_unrouted": 0,
+    "scan_elapsed_microseconds": 76882276,
+    "temp_files": 0
+  },
+  "tracked_ignored_counts": {
+    "assets_docs": 38,
+    "assets_init_test_scene": 10,
+    "assets_projectauditor": 2,
+    "assets_screenshots": 201,
+    "assets_stale_root_assets": 8,
+    "assets_transfer_hub": 10,
+    "assets_tri_py": 2,
+    "codex_build": 90,
+    "lscache": 54,
+    "other": 2921,
+    "slnx_tracked": 1
+  },
+  "root_assets_static_guid_scan_after_loop16": [
+    {
+      "path": "Assets/HectonWaterMesh.asset",
+      "bytes": 3549093,
+      "decision": "retain_referenced"
+    },
+    {
+      "path": "Assets/InputSystem.inputsettings.asset",
+      "bytes": 1144,
+      "decision": "retain_referenced"
+    },
+    {
+      "path": "Assets/InputSystem_Actions.inputactions",
+      "bytes": 41005,
+      "decision": "retain_referenced"
+    },
+    {
+      "path": "Assets/link.xml",
+      "bytes": 1499,
+      "decision": "retain_unity_managed_stripping_policy"
+    }
+  ],
+  "boundary": {
+    "excluded_paths": [
+      "Assets/_Project/Scripts",
+      "Assets/Project/Scripts"
+    ],
+    "script_boundary_violations": 0,
+    "dotnet_msbuild_unity_invoked": false
+  },
+  "action_log_scope": {
+    "current_action_log": "Docs/AgentLogs/WORKSPACE_HYGIENE_ACTIONS_1331.json",
+    "scope": "latest_apply_only",
+    "latest_apply_actions": 10,
+    "cumulative_archive_proof": "Docs/_Archive/WorkspaceHygiene_1331/Assets directory enumeration"
+  },
+  "residual_risks": [
+    "Tracked Hecton8.slnx remains because it has explicit commit history and may be a deliberate owner-controlled solution file. Ignore policy now blocks future untracked .slnx variants.",
+    "Third-party/vendor root folders remain because no explicit owner-approved archive route exists and several are active packages/editor tooling.",
+    "Assets/Feel/MMTools/Tools/MMUtilities/MMScreenshot.cs can recreate Assets/Screenshots locally if invoked; .gitignore prevents tracking, third-party code was not edited.",
+    "Tracked ignored .codex-build/codex evidence lanes and broad 'other' ignored generated files remain coordinated cleanup debt, not safe blind-delete material under parallel agents.",
+    "Docs/DEPENDENCY_GRAPH.* still contains historical references to archived transfer files; documentation graph regeneration belongs to the documentation/dependency owner lane."
+  ],
+  "verification_input_files": [
+    ".gitignore",
+    "Tools/workspace_hygiene_1331.py",
+    "Tools/Crest_Quarantine_Polish_Audit.py",
+    "Docs/Tasks/Status_1331.md",
+    "Docs/AgentLogs/Rationale_1331.md",
+    "Docs/AgentLogs/LOG_1331.md",
+    "Docs/AgentLogs/WORKSPACE_HYGIENE_ACTIONS_1331.json",
+    "Docs/Reports/WORKSPACE_HYGIENE_REPORT_1331.json",
+    "Docs/Reports/WORKSPACE_HYGIENE_VERIFY_1331.json",
+    "Docs/AgentLogs/AGENT_PROMPT_1331_REEXTRACTED_LOOP16.xml"
+  ],
+  "verification_hash_scope": "verification_input_files only; this report excludes itself to avoid self-referential hashing",
+  "verification_hash_sha256": "88abcc2cfa1ca1828bb7fed224c8465ba2891d5adfee1dd7fc9d17aff4389b36"
+}

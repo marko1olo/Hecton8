@@ -21,7 +21,10 @@ namespace Hecton8.World
         [FieldOffset(48)] public uint InstanceUid;
         [FieldOffset(52)] public int TemplateIndex;
         [FieldOffset(56)] public int MaterialClassId;
-        [FieldOffset(60)] private uint _pad0;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -29,13 +32,17 @@ namespace Hecton8.World
     {
         [FieldOffset(0)] public float3 Position;
         [FieldOffset(12)] public int ItemHashId;
-        [FieldOffset(16)] public ushort Quantity;
-        [FieldOffset(18)] public half QualityFactor;
-        [FieldOffset(20)] public byte MaterialClassId;
-        [FieldOffset(21)] public byte RarityTier;
-        [FieldOffset(22)] public ushort Reserved0;
-        [FieldOffset(24)] public uint SourceInstanceUid;
-        [FieldOffset(28)] private uint _pad0;
+        [FieldOffset(16)] public uint SourceInstanceUid;
+        [FieldOffset(20)] public ushort Quantity;
+        [FieldOffset(22)] public half QualityFactor;
+        [FieldOffset(24)] public byte MaterialClassId;
+        [FieldOffset(25)] public byte RarityTier;
+        [FieldOffset(26)] private byte _pad0;
+        [FieldOffset(27)] private byte _pad1;
+        [FieldOffset(28)] private byte _pad2;
+        [FieldOffset(29)] private byte _pad3;
+        [FieldOffset(30)] private byte _pad4;
+        [FieldOffset(31)] private byte _pad5;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -58,9 +65,30 @@ namespace Hecton8.World
         [FieldOffset(28)] public float FractionalMassRemainderKg;
         [FieldOffset(32)] public int ItemHashId;
         [FieldOffset(36)] public uint SourceInstanceUid;
-        [FieldOffset(40)] private ulong _pad0;
-        [FieldOffset(48)] private ulong _pad1;
-        [FieldOffset(56)] private ulong _pad2;
+        [FieldOffset(40)] private byte _pad0;
+        [FieldOffset(41)] private byte _pad1;
+        [FieldOffset(42)] private byte _pad2;
+        [FieldOffset(43)] private byte _pad3;
+        [FieldOffset(44)] private byte _pad4;
+        [FieldOffset(45)] private byte _pad5;
+        [FieldOffset(46)] private byte _pad6;
+        [FieldOffset(47)] private byte _pad7;
+        [FieldOffset(48)] private byte _pad8;
+        [FieldOffset(49)] private byte _pad9;
+        [FieldOffset(50)] private byte _pad10;
+        [FieldOffset(51)] private byte _pad11;
+        [FieldOffset(52)] private byte _pad12;
+        [FieldOffset(53)] private byte _pad13;
+        [FieldOffset(54)] private byte _pad14;
+        [FieldOffset(55)] private byte _pad15;
+        [FieldOffset(56)] private byte _pad16;
+        [FieldOffset(57)] private byte _pad17;
+        [FieldOffset(58)] private byte _pad18;
+        [FieldOffset(59)] private byte _pad19;
+        [FieldOffset(60)] private byte _pad20;
+        [FieldOffset(61)] private byte _pad21;
+        [FieldOffset(62)] private byte _pad22;
+        [FieldOffset(63)] private byte _pad23;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -71,7 +99,10 @@ namespace Hecton8.World
         [FieldOffset(16)] public int WholeItemCount;
         [FieldOffset(20)] public int ItemHashId;
         [FieldOffset(24)] public uint SourceInstanceUid;
-        [FieldOffset(28)] private uint _pad0;
+        [FieldOffset(28)] private byte _pad0;
+        [FieldOffset(29)] private byte _pad1;
+        [FieldOffset(30)] private byte _pad2;
+        [FieldOffset(31)] private byte _pad3;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -105,14 +136,13 @@ namespace Hecton8.World
             long consumedGrams = wholeItemCountLong * unitItemMassGrams;
             long remainingGrams = availableGrams > consumedGrams ? availableGrams - consumedGrams : 0L;
 
-            Results[index] = new FractionalDrillingYieldResult
-            {
-                Position = sample.Position,
-                FractionalMassRemainderKg = remainingGrams * KilogramsPerGram,
-                WholeItemCount = (int)wholeItemCountLong,
-                ItemHashId = sample.ItemHashId,
-                SourceInstanceUid = sample.SourceInstanceUid
-            };
+            FractionalDrillingYieldResult result = default;
+            result.Position = sample.Position;
+            result.FractionalMassRemainderKg = remainingGrams * KilogramsPerGram;
+            result.WholeItemCount = (int)wholeItemCountLong;
+            result.ItemHashId = sample.ItemHashId;
+            result.SourceInstanceUid = sample.SourceInstanceUid;
+            Results[index] = result;
         }
 
         private static long KilogramsToGrams(float kilograms)
@@ -141,7 +171,17 @@ namespace Hecton8.World
         [NoAlias] [ReadOnly] public NativeArray<HarvestableTemplate.RuntimeDescriptor> TemplateDescriptors;
         [NoAlias] [ReadOnly] public NativeArray<HarvestableTemplate.LootRuntimeEntry> LootEntries;
         [NoAlias] [ReadOnly] public NativeArray<EntropyYieldMaterialLutEntry> MaterialLut;
-        public NativeQueue<ItemDropData>.ParallelWriter DropWriter;
+
+        // SAFETY: all workers write through a single atomic budget claim; no worker writes DropOutput
+        // before Interlocked.Decrement returns a unique slot, and bounds are checked before the store.
+        //
+        // SAFETY: DropOutput and DropBudget are Vault-pinned only inside the LateFrame batch window.
+        // DestructibleOrganicManager invokes Execute directly for the bounded yield slice before
+        // releasing the lock, so compaction cannot relocate either buffer while this solver owns a view.
+        //
+        // SAFETY: the result order is intentionally unstable. The downstream drain treats the buffer as
+        // a bounded unordered drop batch, which avoids a serial merge and keeps overflow fail-closed.
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<ItemDropData> DropOutput;
         [NativeDisableParallelForRestriction] public NativeArray<int> DropBudget;
         public int EventCount;
 
@@ -188,18 +228,18 @@ namespace Hecton8.World
 
             int weightedPick = (int)math.floor(Next01(ref rng) * totalWeight);
             int runningWeight = 0;
-            HarvestableTemplate.LootRuntimeEntry resolvedLoot = LootEntries[lootStart];
+            int resolvedLootIndex = lootStart;
+            int resolvedLootSet = 0;
             for (int lootIndex = 0; lootIndex < lootCount; lootIndex++)
             {
-                HarvestableTemplate.LootRuntimeEntry candidate = LootEntries[lootStart + lootIndex];
-                runningWeight += math.max(1, candidate.Weight);
-                if (weightedPick < runningWeight)
-                {
-                    resolvedLoot = candidate;
-                    break;
-                }
+                int candidateIndex = lootStart + lootIndex;
+                runningWeight += math.max(1, LootEntries[candidateIndex].Weight);
+                bool selectCandidate = resolvedLootSet == 0 & weightedPick < runningWeight;
+                resolvedLootIndex = math.select(resolvedLootIndex, candidateIndex, selectCandidate);
+                resolvedLootSet = math.select(resolvedLootSet, 1, selectCandidate);
             }
 
+            HarvestableTemplate.LootRuntimeEntry resolvedLoot = LootEntries[resolvedLootIndex];
             int authoredMin = math.max(1, resolvedLoot.MinimumAmount);
             int authoredMax = math.max(authoredMin, resolvedLoot.MaximumAmount);
             int authoredQuantity = authoredMin;
@@ -219,39 +259,44 @@ namespace Hecton8.World
             int rarityBonus = rarityTier >= 3 ? 2 : rarityTier;
             int finalQuantity = authoredQuantity + math.max(0, massQuantity - 1) + volumeBonus + rarityBonus;
 
-            TryEnqueueBounded(DropWriter, DropBudget, new ItemDropData
-            {
-                Position = organicEvent.Position,
-                ItemHashId = resolvedLoot.ItemHashId,
-                Quantity = (ushort)math.clamp(finalQuantity, 1, ushort.MaxValue),
-                QualityFactor = (half)quality01,
-                MaterialClassId = (byte)organicEvent.MaterialClassId,
-                RarityTier = rarityTier,
-                Reserved0 = 0,
-                SourceInstanceUid = organicEvent.InstanceUid
-            });
+            ItemDropData drop = default;
+            drop.Position = organicEvent.Position;
+            drop.ItemHashId = resolvedLoot.ItemHashId;
+            drop.Quantity = (ushort)math.clamp(finalQuantity, 1, ushort.MaxValue);
+            drop.QualityFactor = (half)quality01;
+            drop.MaterialClassId = (byte)organicEvent.MaterialClassId;
+            drop.RarityTier = rarityTier;
+            drop.SourceInstanceUid = organicEvent.InstanceUid;
+            TryWriteBounded(DropOutput, DropBudget, drop);
         }
 
-        private static unsafe bool TryEnqueueBounded(
-            NativeQueue<ItemDropData>.ParallelWriter writer,
+        private static unsafe bool TryWriteBounded(
+            NativeArray<ItemDropData> output,
             NativeArray<int> writerBudget,
             ItemDropData drop)
         {
             const int remainingIndex = 0;
             const int droppedIndex = 1;
             const int budgetLength = 2;
-            if (!writerBudget.IsCreated || writerBudget.Length < budgetLength)
+            if (!output.IsCreated || !writerBudget.IsCreated || writerBudget.Length < budgetLength)
                 return false;
 
             int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writerBudget);
             int remainingAfterClaim = Interlocked.Decrement(ref budget[remainingIndex]);
-            if (remainingAfterClaim < 0)
+            if (remainingAfterClaim < 0 || remainingAfterClaim >= output.Length)
             {
                 Interlocked.Increment(ref budget[droppedIndex]);
                 return false;
             }
 
-            writer.Enqueue(drop);
+            int writeIndex = output.Length - 1 - remainingAfterClaim;
+            if ((uint)writeIndex >= (uint)output.Length)
+            {
+                Interlocked.Increment(ref budget[droppedIndex]);
+                return false;
+            }
+
+            output[writeIndex] = drop;
             return true;
         }
 

@@ -25,14 +25,22 @@ namespace Hecton8.Economy
         private bool _hotSwapRegistered;
         private IPlayerInventoryService _playerInventoryService;
 
+        private static ScrapManager s_activeRuntimeInstance;
+
         /// <summary>
         /// Active runtime owner while the gameplay scene is loaded.
         /// </summary>
-        public static ScrapManager Instance => GlobalRegistry.Scrap;
+        public static ScrapManager Instance => s_activeRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_activeRuntimeInstance = null;
+        }
 
         private void Awake()
         {
-            ScrapManager registered = GlobalRegistry.Scrap;
+            ScrapManager registered = s_activeRuntimeInstance ?? GlobalRegistry.Scrap;
             if (registered != null && registered != this)
             {
                 Destroy(gameObject);
@@ -81,6 +89,8 @@ namespace Hecton8.Economy
 
             GlobalRegistry.RegisterScrapRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Scrap, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterFromGlobalRegistry()
@@ -89,6 +99,8 @@ namespace Hecton8.Economy
                 return;
 
             GlobalRegistry.UnregisterScrapRuntime(this);
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
             _serviceRegistered = false;
         }
 

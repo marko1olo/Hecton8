@@ -1,0 +1,21 @@
+﻿{
+    "schema":  "hecton8.data_monolith_focused_hotpath_audit.v3",
+    "agentId":  "1330",
+    "generatedUtc":  "2026-05-26T17:19:55.3352077Z",
+    "scannedFiles":  4,
+    "rawAudit":  "Docs/Reports/DATA_MONOLITH_HOTPATH_AUDIT_1330_RERUN15_RAW.json",
+    "rawParseFailures":  0,
+    "focusedMethods":  [
+                           "H8CreatureSoAReconstructJob.Execute",
+                           "H8StaticDataArena.TryGetCreatureGenomeBlock",
+                           "H8StaticDataArena.TrySampleDepthPressure",
+                           "GameBootstrapper.SlowTick"
+                       ],
+    "zeroGcHotPathHits":  0,
+    "coldToolingFindings":  69,
+    "status":  "PASS",
+    "notes":  [
+                  "Raw findings are cold bootstrap/editor/CLI proof-tool allocations, not Tick/SlowTick/LateFrameTick/job hot-path hits.",
+                  "RERUN15 changes are editor/CLI prefix-read fail-closed hardening only."
+              ]
+}

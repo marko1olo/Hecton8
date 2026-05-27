@@ -96,6 +96,7 @@ namespace Hecton8.VFX
         public const int TelemetryCapacity = 300;
         public const int WakeImpactCapacity = 64;
         public const int ProfileCapacity = 32;
+        public const int MaxDispatchGroupsPerDimension = 65535;
         public const int CsvScratchBytes = 16 * 1024;
         public const uint LayoutHash = 0x53463236u;
         public const uint DefaultProfileHash = 0xD2E69F10u;
@@ -187,9 +188,11 @@ namespace Hecton8.VFX
 
         public static int ResolveDispatchGroups(int resolution, int threadGroupSize)
         {
-            int safeResolution = math.max(1, resolution);
-            int safeGroup = math.max(1, threadGroupSize);
-            return (safeResolution + safeGroup - 1) / safeGroup;
+            if (resolution <= 0 || threadGroupSize <= 0)
+                return 0;
+
+            long groups = ((long)resolution + threadGroupSize - 1L) / threadGroupSize;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         public static float2 ResolveWrappedScrollOffset(double2 cameraAupXz, float textureWorldSizeMeters)

@@ -101,11 +101,14 @@ namespace Hecton8.Gameplay
         private uint _signalSourceId;
         private uint _changeRevision;
 
-        public static ScanLogSystem Instance => GlobalRegistry.ScanLog;
+        private static ScanLogSystem s_activeRuntimeInstance;
+
+        public static ScanLogSystem Instance => s_activeRuntimeInstance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_activeRuntimeInstance = null;
         }
 
         public int SavePriority => 35;
@@ -165,6 +168,8 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.RegisterScanLogRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.ScanLog, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -174,6 +179,9 @@ namespace Hecton8.Gameplay
 
             if (ReferenceEquals(GlobalRegistry.ScanLog, this))
                 GlobalRegistry.UnregisterScanLogRuntime(this);
+
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
 
             _serviceRegistered = false;
         }

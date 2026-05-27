@@ -116,6 +116,11 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 return clamped * clamped;
             }
 
+            float ResolveLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) * rcp(max(edge1 - edge0, 0.0001)));
+            }
+
             float FastTriangleSine01(float phase)
             {
                 return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
@@ -195,8 +200,8 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 float outerEdge = saturate(_InnerEdge + dynamicBandThickness);
                 float innerEdgeSqr = SquareSaturate(_InnerEdge);
                 float outerEdgeSqr = SquareSaturate(outerEdge);
-                float edgeMask = smoothstep(innerEdgeSqr, SquareSaturate(_InnerEdge + 0.04), radialSqr) *
-                                 (1.0 - smoothstep(outerEdgeSqr, SquareSaturate(min(0.999, outerEdge + 0.14 + intensity * 0.05)), radialSqr));
+                float edgeMask = ResolveLinearRamp01(innerEdgeSqr, SquareSaturate(_InnerEdge + 0.04), radialSqr) *
+                                 (1.0 - ResolveLinearRamp01(outerEdgeSqr, SquareSaturate(min(0.999, outerEdge + 0.14 + intensity * 0.05)), radialSqr));
                 if (edgeMask <= 0.0001)
                     clip(-1.0);
 
@@ -208,12 +213,12 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 float screamDistortion = saturate(_HectonSonarRadarDistortion.y);
                 float speedDistortion = saturate(_HectonSonarRadarDistortion.x);
                 float distortionSeed = Hash21(float2(floor(angle01 * 48.0), floor(radialSqr * 18.0)) + floor(timeValue * lerp(9.0, 22.0, sonarDistortion)));
-                float ghostRing = smoothstep(0.83, 1.0, distortionSeed) *
-                                  smoothstep(SquareSaturate(_InnerEdge + 0.02), outerEdgeSqr, radialSqr) *
-                                  (1.0 - smoothstep(outerEdgeSqr, SquareSaturate(min(0.999, outerEdge + 0.08)), radialSqr));
+                float ghostRing = ResolveLinearRamp01(0.83, 1.0, distortionSeed) *
+                                  ResolveLinearRamp01(SquareSaturate(_InnerEdge + 0.02), outerEdgeSqr, radialSqr) *
+                                  (1.0 - ResolveLinearRamp01(outerEdgeSqr, SquareSaturate(min(0.999, outerEdge + 0.08)), radialSqr));
                 float ghostBlip = ghostRing * sonarDistortion * (0.18 + screamDistortion * 0.46 + speedDistortion * 0.24);
                 intensity = saturate(max(intensity, ghostBlip));
-                float glitch = saturate(smoothstep(0.78, 1.0, glitchSeed) * _GlitchAmount + ghostRing * sonarDistortion * 0.42);
+                float glitch = saturate(ResolveLinearRamp01(0.78, 1.0, glitchSeed) * _GlitchAmount + ghostRing * sonarDistortion * 0.42);
                 float blipScale = 1.0 + (intensity * 1.4);
                 float blip = saturate(intensity * (0.5 + (wave * 0.8 * blipScale)) + (_RadarIntensity * 0.2 * sweep) + glitch * 0.18);
 

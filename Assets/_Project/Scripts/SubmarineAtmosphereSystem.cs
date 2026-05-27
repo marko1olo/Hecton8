@@ -5,6 +5,7 @@ using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Crafting;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
@@ -23,22 +24,47 @@ using SubmarineFluidDynamics = Hecton8.Physics.SubmarineFluidDynamics;
 
 namespace Hecton8.Atmosphere
 {
-    internal static class DeferredAtmosphereNativeQueueWarmup
+    internal static class SubmarineAtmosphereVaultBufferIds
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Prewarm<T>(NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
-        }
+        public const BufferID HighPressurePendingEvents = (BufferID)72200;
+        public const BufferID HighPressureNextFrameEvents = (BufferID)72201;
+        public const BufferID FatalPressurePendingEvents = (BufferID)72202;
+        public const BufferID FatalPressureNextFrameEvents = (BufferID)72203;
+        public const BufferID RoomVolumes = (BufferID)72204;
+        public const BufferID FloodVolumes = (BufferID)72205;
+        public const BufferID O2Front = (BufferID)72206;
+        public const BufferID O2Back = (BufferID)72207;
+        public const BufferID Co2Front = (BufferID)72208;
+        public const BufferID Co2Back = (BufferID)72209;
+        public const BufferID InertFront = (BufferID)72210;
+        public const BufferID InertBack = (BufferID)72211;
+        public const BufferID PressureFront = (BufferID)72212;
+        public const BufferID PressureBack = (BufferID)72213;
+        public const BufferID O2PartialPressureFront = (BufferID)72214;
+        public const BufferID O2PartialPressureBack = (BufferID)72215;
+        public const BufferID Co2PartialPressureFront = (BufferID)72216;
+        public const BufferID Co2PartialPressureBack = (BufferID)72217;
+        public const BufferID N2PartialPressureFront = (BufferID)72218;
+        public const BufferID N2PartialPressureBack = (BufferID)72219;
+        public const BufferID GasVolumeFront = (BufferID)72220;
+        public const BufferID GasVolumeBack = (BufferID)72221;
+        public const BufferID O2ConsumptionRates = (BufferID)72222;
+        public const BufferID Co2GenerationRates = (BufferID)72223;
+        public const BufferID RoomPlayerCounts = (BufferID)72224;
+        public const BufferID TemperatureFront = (BufferID)72225;
+        public const BufferID TemperatureBack = (BufferID)72226;
+        public const BufferID SteamFront = (BufferID)72227;
+        public const BufferID SteamBack = (BufferID)72228;
+        public const BufferID HydrogenPocketFront = (BufferID)72229;
+        public const BufferID OxygenPocketFront = (BufferID)72230;
+        public const BufferID RoomHeatWatts = (BufferID)72231;
+        public const BufferID RoomStatusMaskFront = (BufferID)72232;
+        public const BufferID RoomStatusMaskBack = (BufferID)72233;
+        public const BufferID DoorPairs = (BufferID)72234;
+        public const BufferID DoorSealed = (BufferID)72235;
+        public const BufferID DoorSealedPrevious = (BufferID)72236;
+        public const BufferID TelemetryRing = (BufferID)72237;
+        public const BufferID TelemetryCursor = (BufferID)72238;
     }
 
     internal static class AtmosphereEventPayloadSanitizer
@@ -113,7 +139,11 @@ namespace Hecton8.Atmosphere
     public struct HighPressureEventPayload
     {
         [FieldOffset(0)]
-        public Vector3 RuntimePosition;
+        public float RuntimePositionX;
+        [FieldOffset(4)]
+        public float RuntimePositionY;
+        [FieldOffset(8)]
+        public float RuntimePositionZ;
         [FieldOffset(12)]
         public float PressureAKPa;
         [FieldOffset(16)]
@@ -124,6 +154,18 @@ namespace Hecton8.Atmosphere
         public int RoomA;
         [FieldOffset(28)]
         public int RoomB;
+
+        public Vector3 RuntimePosition
+        {
+            readonly get => new Vector3(RuntimePositionX, RuntimePositionY, RuntimePositionZ);
+            set
+            {
+                Vector3 safePosition = AtmosphereEventPayloadSanitizer.RuntimePositionOrZero(value);
+                RuntimePositionX = safePosition.x;
+                RuntimePositionY = safePosition.y;
+                RuntimePositionZ = safePosition.z;
+            }
+        }
     }
 
     /// <summary>
@@ -135,20 +177,21 @@ namespace Hecton8.Atmosphere
     }
 
     /// <summary>
-    /// NativeQueue-backed high-pressure warning bus for submarine bulkhead events.
+    /// DataVault-backed high-pressure warning bus for submarine bulkhead events.
     /// </summary>
     public static class HighPressureEvents
     {
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 32;
-        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+        private const SystemID EventOwnerSystemId = SystemID.HabitatAtmosphere;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("HighPressureEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("HighPressureEvents"));
 
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - high-pressure listeners drained by SystemDispatcher LateUpdate - owner: HighPressureEvents
+        private static IDataVault _dataVault;
+        private static VaultGenerationHandle<HighPressureEventPayload> _pendingEventsHandle;
+        private static VaultGenerationHandle<HighPressureEventPayload> _nextFrameEventsHandle;
         private static int _listenerCount;
-        private static NativeQueue<HighPressureEventPayload> _pendingEvents;
-        private static NativeQueue<HighPressureEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -160,19 +203,8 @@ namespace Hecton8.Atmosphere
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(HighPressureEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(HighPressureEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseEventBuffer(ref _pendingEventsHandle);
+            ReleaseEventBuffer(ref _nextFrameEventsHandle);
 
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
@@ -181,6 +213,7 @@ namespace Hecton8.Atmosphere
             _nextFrameEventCount = 0;
             _isDispatching = false;
             _lastOverflowWarningFrame = -1;
+            _dataVault = null;
         }
 
         /// <summary>Registers one high-pressure warning listener.</summary>
@@ -210,24 +243,21 @@ namespace Hecton8.Atmosphere
         /// <summary>Flushes queued high-pressure warnings.</summary>
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated)
+            if (!TryResolveEventBuffer(in _pendingEventsHandle, out _))
                 return;
 
             PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            while (scanBudget-- > 0 && _pendingEventCount > 0)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
-                if (!_pendingEvents.TryDequeue(out HighPressureEventPayload payload))
+                if (!TryDequeuePending(out HighPressureEventPayload payload))
                 {
                     _pendingEventCount = 0;
                     break;
                 }
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
 
                 _isDispatching = true;
                 try
@@ -240,7 +270,7 @@ namespace Hecton8.Atmosphere
                 }
             }
 
-            if (_pendingEvents.IsEmpty())
+            if (_pendingEventCount <= 0)
             {
                 _pendingEventCount = 0;
                 PromoteNextFrameEventsIfFrontEmpty();
@@ -270,31 +300,20 @@ namespace Hecton8.Atmosphere
             });
         }
 
-        private static void EnsureInitialized()
+        private static bool EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
-            {
-                _pendingEvents = new NativeQueue<HighPressureEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<HighPressureEventPayload>[32] - deferred submarine high-pressure warning lane flushed by SystemDispatcher LateUpdate - owner: HighPressureEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(HighPressureEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                DeferredAtmosphereNativeQueueWarmup.Prewarm(_pendingEvents, PendingEventCapacity);
-            }
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return false;
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<HighPressureEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<HighPressureEventPayload>[32] - next-frame high-pressure warning lane prevents same-frame reentrant dispatch - owner: HighPressureEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(HighPressureEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                DeferredAtmosphereNativeQueueWarmup.Prewarm(_nextFrameEvents, PendingEventCapacity);
-            }
+            return EnsureEventBuffer(
+                    vault,
+                    ref _pendingEventsHandle,
+                    SubmarineAtmosphereVaultBufferIds.HighPressurePendingEvents) &&
+                EnsureEventBuffer(
+                    vault,
+                    ref _nextFrameEventsHandle,
+                    SubmarineAtmosphereVaultBufferIds.HighPressureNextFrameEvents);
         }
 
         private static bool Enqueue(in HighPressureEventPayload payload)
@@ -308,15 +327,22 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            EnsureInitialized();
+            if (!EnsureInitialized())
+                return false;
+
+            VaultGenerationHandle<HighPressureEventPayload> handle = _isDispatching
+                ? _nextFrameEventsHandle
+                : _pendingEventsHandle;
+            int writeIndex = _isDispatching ? _nextFrameEventCount : _pendingEventCount;
+            if (!TryWriteEvent(in handle, writeIndex, in payload))
+                return false;
+
             if (_isDispatching)
             {
-                _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
                 return true;
             }
 
-            _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
             return true;
         }
@@ -402,19 +428,134 @@ namespace Hecton8.Atmosphere
 
         private static void PromoteNextFrameEventsIfFrontEmpty()
         {
-            if (!_pendingEvents.IsCreated ||
-                !_nextFrameEvents.IsCreated ||
-                !_pendingEvents.IsEmpty() ||
+            if (!HasValidHandle(in _pendingEventsHandle) ||
+                !HasValidHandle(in _nextFrameEventsHandle) ||
+                _pendingEventCount > 0 ||
                 _nextFrameEventCount <= 0)
             {
                 return;
             }
 
-            NativeQueue<HighPressureEventPayload> swap = _pendingEvents;
-            _pendingEvents = _nextFrameEvents;
-            _nextFrameEvents = swap;
+            VaultGenerationHandle<HighPressureEventPayload> swap = _pendingEventsHandle;
+            _pendingEventsHandle = _nextFrameEventsHandle;
+            _nextFrameEventsHandle = swap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
+        }
+
+        private static IDataVault ResolveDataVault()
+        {
+            if (_dataVault != null)
+                return _dataVault;
+
+            _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
+        }
+
+        private static bool EnsureEventBuffer(
+            IDataVault vault,
+            ref VaultGenerationHandle<HighPressureEventPayload> handle,
+            BufferID bufferId)
+        {
+            if (HasValidHandle(in handle) &&
+                handle.BufferID == (uint)bufferId &&
+                handle.SystemID == (uint)EventOwnerSystemId)
+            {
+                return true;
+            }
+
+            handle = vault.EnsureGenerationHandle<HighPressureEventPayload>(
+                bufferId,
+                PendingEventCapacity,
+                EventOwnerSystemId,
+                NativeArrayOptions.UninitializedMemory);
+            return HasValidHandle(in handle) &&
+                handle.BufferID == (uint)bufferId &&
+                handle.SystemID == (uint)EventOwnerSystemId;
+        }
+
+        private static bool TryResolveEventBuffer(
+            in VaultGenerationHandle<HighPressureEventPayload> handle,
+            out NativeArray<HighPressureEventPayload>.ReadOnly buffer)
+        {
+            buffer = default;
+            IDataVault vault = ResolveDataVault();
+            return vault != null &&
+                HasValidHandle(in handle) &&
+                vault.TryReadOnlyHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= PendingEventCapacity;
+        }
+
+        private static bool TryWriteEvent(
+            in VaultGenerationHandle<HighPressureEventPayload> handle,
+            int index,
+            in HighPressureEventPayload payload)
+        {
+            if ((uint)index >= (uint)PendingEventCapacity)
+                return false;
+
+            IDataVault vault = ResolveDataVault();
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in handle, EventOwnerSystemId, out NativeArray<HighPressureEventPayload> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < PendingEventCapacity)
+            {
+                return false;
+            }
+
+            try
+            {
+                buffer[index] = payload;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, EventOwnerSystemId);
+            }
+        }
+
+        private static bool TryDequeuePending(out HighPressureEventPayload payload)
+        {
+            payload = default;
+            IDataVault vault = ResolveDataVault();
+            if (vault == null ||
+                _pendingEventCount <= 0 ||
+                !vault.TryAcquireWriteLock(in _pendingEventsHandle, EventOwnerSystemId, out NativeArray<HighPressureEventPayload> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < PendingEventCapacity)
+            {
+                return false;
+            }
+
+            try
+            {
+                payload = buffer[0];
+                int lastIndex = _pendingEventCount - 1;
+                for (int i = 0; i < lastIndex; i++)
+                    buffer[i] = buffer[i + 1];
+                buffer[lastIndex] = default;
+                _pendingEventCount = lastIndex;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _pendingEventsHandle, EventOwnerSystemId);
+            }
+        }
+
+        private static void ReleaseEventBuffer(ref VaultGenerationHandle<HighPressureEventPayload> handle)
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && HasValidHandle(in handle))
+                vault.ReleaseBuffer(in handle);
+            handle = default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasValidHandle(in VaultGenerationHandle<HighPressureEventPayload> handle)
+        {
+            return handle.BufferID != 0u && handle.SystemID != 0u && handle.Generation != 0u;
         }
     }
 
@@ -444,7 +585,11 @@ namespace Hecton8.Atmosphere
     public struct FatalPressureImplosionEventPayload
     {
         [FieldOffset(0)]
-        public Vector3 RuntimePosition;
+        public float RuntimePositionX;
+        [FieldOffset(4)]
+        public float RuntimePositionY;
+        [FieldOffset(8)]
+        public float RuntimePositionZ;
         [FieldOffset(12)]
         public float TemperatureCelsius;
         [FieldOffset(16)]
@@ -452,7 +597,33 @@ namespace Hecton8.Atmosphere
         [FieldOffset(20)]
         public int RoomIndex;
         [FieldOffset(24)]
-        private ulong _pad0;
+        private byte _pad0;
+        [FieldOffset(25)]
+        private byte _pad1;
+        [FieldOffset(26)]
+        private byte _pad2;
+        [FieldOffset(27)]
+        private byte _pad3;
+        [FieldOffset(28)]
+        private byte _pad4;
+        [FieldOffset(29)]
+        private byte _pad5;
+        [FieldOffset(30)]
+        private byte _pad6;
+        [FieldOffset(31)]
+        private byte _pad7;
+
+        public Vector3 RuntimePosition
+        {
+            readonly get => new Vector3(RuntimePositionX, RuntimePositionY, RuntimePositionZ);
+            set
+            {
+                Vector3 safePosition = AtmosphereEventPayloadSanitizer.RuntimePositionOrZero(value);
+                RuntimePositionX = safePosition.x;
+                RuntimePositionY = safePosition.y;
+                RuntimePositionZ = safePosition.z;
+            }
+        }
     }
 
     /// <summary>
@@ -464,20 +635,21 @@ namespace Hecton8.Atmosphere
     }
 
     /// <summary>
-    /// NativeQueue-backed fatal-implosion bus for catastrophic overload failures.
+    /// DataVault-backed fatal-implosion bus for catastrophic overload failures.
     /// </summary>
     public static class FatalPressureImplosionEvents
     {
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 8;
-        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+        private const SystemID EventOwnerSystemId = SystemID.HabitatAtmosphere;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("FatalPressureImplosionEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("FatalPressureImplosionEvents"));
 
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - fatal implosion listeners drained by SystemDispatcher LateUpdate - owner: FatalPressureImplosionEvents
+        private static IDataVault _dataVault;
+        private static VaultGenerationHandle<FatalPressureImplosionEventPayload> _pendingEventsHandle;
+        private static VaultGenerationHandle<FatalPressureImplosionEventPayload> _nextFrameEventsHandle;
         private static int _listenerCount;
-        private static NativeQueue<FatalPressureImplosionEventPayload> _pendingEvents;
-        private static NativeQueue<FatalPressureImplosionEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -489,19 +661,8 @@ namespace Hecton8.Atmosphere
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(FatalPressureImplosionEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(FatalPressureImplosionEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseEventBuffer(ref _pendingEventsHandle);
+            ReleaseEventBuffer(ref _nextFrameEventsHandle);
 
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
@@ -510,6 +671,7 @@ namespace Hecton8.Atmosphere
             _nextFrameEventCount = 0;
             _isDispatching = false;
             _lastOverflowWarningFrame = -1;
+            _dataVault = null;
         }
 
         /// <summary>Registers one fatal pressure implosion listener.</summary>
@@ -539,24 +701,21 @@ namespace Hecton8.Atmosphere
         /// <summary>Flushes queued fatal pressure implosion payloads.</summary>
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated)
+            if (!TryResolveEventBuffer(in _pendingEventsHandle, out _))
                 return;
 
             PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            while (scanBudget-- > 0 && _pendingEventCount > 0)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
-                if (!_pendingEvents.TryDequeue(out FatalPressureImplosionEventPayload payload))
+                if (!TryDequeuePending(out FatalPressureImplosionEventPayload payload))
                 {
                     _pendingEventCount = 0;
                     break;
                 }
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
 
                 _isDispatching = true;
                 try
@@ -569,7 +728,7 @@ namespace Hecton8.Atmosphere
                 }
             }
 
-            if (_pendingEvents.IsEmpty())
+            if (_pendingEventCount <= 0)
             {
                 _pendingEventCount = 0;
                 PromoteNextFrameEventsIfFrontEmpty();
@@ -596,31 +755,20 @@ namespace Hecton8.Atmosphere
             });
         }
 
-        private static void EnsureInitialized()
+        private static bool EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
-            {
-                _pendingEvents = new NativeQueue<FatalPressureImplosionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FatalPressureImplosionEventPayload>[8] - deferred fatal pressure implosion lane flushed by SystemDispatcher LateUpdate - owner: FatalPressureImplosionEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(FatalPressureImplosionEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                DeferredAtmosphereNativeQueueWarmup.Prewarm(_pendingEvents, PendingEventCapacity);
-            }
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return false;
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<FatalPressureImplosionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FatalPressureImplosionEventPayload>[8] - next-frame fatal pressure implosion lane prevents same-frame reentrant dispatch - owner: FatalPressureImplosionEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(FatalPressureImplosionEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                DeferredAtmosphereNativeQueueWarmup.Prewarm(_nextFrameEvents, PendingEventCapacity);
-            }
+            return EnsureEventBuffer(
+                    vault,
+                    ref _pendingEventsHandle,
+                    SubmarineAtmosphereVaultBufferIds.FatalPressurePendingEvents) &&
+                EnsureEventBuffer(
+                    vault,
+                    ref _nextFrameEventsHandle,
+                    SubmarineAtmosphereVaultBufferIds.FatalPressureNextFrameEvents);
         }
 
         private static bool Enqueue(in FatalPressureImplosionEventPayload payload)
@@ -634,15 +782,22 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            EnsureInitialized();
+            if (!EnsureInitialized())
+                return false;
+
+            VaultGenerationHandle<FatalPressureImplosionEventPayload> handle = _isDispatching
+                ? _nextFrameEventsHandle
+                : _pendingEventsHandle;
+            int writeIndex = _isDispatching ? _nextFrameEventCount : _pendingEventCount;
+            if (!TryWriteEvent(in handle, writeIndex, in payload))
+                return false;
+
             if (_isDispatching)
             {
-                _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
                 return true;
             }
 
-            _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
             return true;
         }
@@ -726,19 +881,134 @@ namespace Hecton8.Atmosphere
 
         private static void PromoteNextFrameEventsIfFrontEmpty()
         {
-            if (!_pendingEvents.IsCreated ||
-                !_nextFrameEvents.IsCreated ||
-                !_pendingEvents.IsEmpty() ||
+            if (!HasValidHandle(in _pendingEventsHandle) ||
+                !HasValidHandle(in _nextFrameEventsHandle) ||
+                _pendingEventCount > 0 ||
                 _nextFrameEventCount <= 0)
             {
                 return;
             }
 
-            NativeQueue<FatalPressureImplosionEventPayload> swap = _pendingEvents;
-            _pendingEvents = _nextFrameEvents;
-            _nextFrameEvents = swap;
+            VaultGenerationHandle<FatalPressureImplosionEventPayload> swap = _pendingEventsHandle;
+            _pendingEventsHandle = _nextFrameEventsHandle;
+            _nextFrameEventsHandle = swap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
+        }
+
+        private static IDataVault ResolveDataVault()
+        {
+            if (_dataVault != null)
+                return _dataVault;
+
+            _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
+        }
+
+        private static bool EnsureEventBuffer(
+            IDataVault vault,
+            ref VaultGenerationHandle<FatalPressureImplosionEventPayload> handle,
+            BufferID bufferId)
+        {
+            if (HasValidHandle(in handle) &&
+                handle.BufferID == (uint)bufferId &&
+                handle.SystemID == (uint)EventOwnerSystemId)
+            {
+                return true;
+            }
+
+            handle = vault.EnsureGenerationHandle<FatalPressureImplosionEventPayload>(
+                bufferId,
+                PendingEventCapacity,
+                EventOwnerSystemId,
+                NativeArrayOptions.UninitializedMemory);
+            return HasValidHandle(in handle) &&
+                handle.BufferID == (uint)bufferId &&
+                handle.SystemID == (uint)EventOwnerSystemId;
+        }
+
+        private static bool TryResolveEventBuffer(
+            in VaultGenerationHandle<FatalPressureImplosionEventPayload> handle,
+            out NativeArray<FatalPressureImplosionEventPayload>.ReadOnly buffer)
+        {
+            buffer = default;
+            IDataVault vault = ResolveDataVault();
+            return vault != null &&
+                HasValidHandle(in handle) &&
+                vault.TryReadOnlyHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= PendingEventCapacity;
+        }
+
+        private static bool TryWriteEvent(
+            in VaultGenerationHandle<FatalPressureImplosionEventPayload> handle,
+            int index,
+            in FatalPressureImplosionEventPayload payload)
+        {
+            if ((uint)index >= (uint)PendingEventCapacity)
+                return false;
+
+            IDataVault vault = ResolveDataVault();
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in handle, EventOwnerSystemId, out NativeArray<FatalPressureImplosionEventPayload> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < PendingEventCapacity)
+            {
+                return false;
+            }
+
+            try
+            {
+                buffer[index] = payload;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, EventOwnerSystemId);
+            }
+        }
+
+        private static bool TryDequeuePending(out FatalPressureImplosionEventPayload payload)
+        {
+            payload = default;
+            IDataVault vault = ResolveDataVault();
+            if (vault == null ||
+                _pendingEventCount <= 0 ||
+                !vault.TryAcquireWriteLock(in _pendingEventsHandle, EventOwnerSystemId, out NativeArray<FatalPressureImplosionEventPayload> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < PendingEventCapacity)
+            {
+                return false;
+            }
+
+            try
+            {
+                payload = buffer[0];
+                int lastIndex = _pendingEventCount - 1;
+                for (int i = 0; i < lastIndex; i++)
+                    buffer[i] = buffer[i + 1];
+                buffer[lastIndex] = default;
+                _pendingEventCount = lastIndex;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _pendingEventsHandle, EventOwnerSystemId);
+            }
+        }
+
+        private static void ReleaseEventBuffer(ref VaultGenerationHandle<FatalPressureImplosionEventPayload> handle)
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && HasValidHandle(in handle))
+                vault.ReleaseBuffer(in handle);
+            handle = default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasValidHandle(in VaultGenerationHandle<FatalPressureImplosionEventPayload> handle)
+        {
+            return handle.BufferID != 0u && handle.SystemID != 0u && handle.Generation != 0u;
         }
     }
 
@@ -802,6 +1072,12 @@ namespace Hecton8.Atmosphere
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int PressureImpulseOverlapCapacity = 32;
         private const int HeatEmitterCapacity = 24;
+        private const int TelemetryCapacity = 300;
+        private const int TelemetryEntrySizeBytes = 64;
+        private const uint TelemetryDumpMagic = 0x53415442u; // SATB: Submarine Atmosphere Telemetry Blackbox.
+        private const ushort TelemetryDumpFormatVersion = 1;
+        private const ushort TelemetryFlagNaN = 1 << 0;
+        private const string TelemetryDumpFileName = "Dump_1323_SubmarineAtmosphere.bin";
         private const float DefaultReferenceTemperatureCelsius = 20f;
         private const float DefaultFloodWaterTemperatureCelsius = 4f;
         private const float DefaultMinimumTemperatureCelsius = -5f;
@@ -1080,21 +1356,7 @@ namespace Hecton8.Atmosphere
                     maximumTemperature);
                 for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
                 {
-                    if (roomIndex >= RoomCount)
-                    {
-                        O2Back[roomIndex] = 0f;
-                        CO2Back[roomIndex] = 0f;
-                        InertBack[roomIndex] = 0f;
-                        PressureBack[roomIndex] = referencePressure;
-                        GasVolumeBack[roomIndex] = minimumGasVolume;
-                        TemperatureBack[roomIndex] = referenceTemperature;
-                        SteamBack[roomIndex] = 0f;
-                        O2PartialPressureBack[roomIndex] = 0f;
-                        CO2PartialPressureBack[roomIndex] = 0f;
-                        N2PartialPressureBack[roomIndex] = 0f;
-                        continue;
-                    }
-
+                    bool activeRoom = roomIndex < RoomCount;
                     float roomVolume = math.max(SanitizeFinite(RoomVolumes[roomIndex], minimumGasVolume), minimumGasVolume);
                     float floodVolume = math.clamp(SanitizeNonNegative(FloodVolumes[roomIndex]), 0f, roomVolume - Epsilon);
                     float gasVolume = math.max(minimumGasVolume, roomVolume - floodVolume);
@@ -1109,11 +1371,11 @@ namespace Hecton8.Atmosphere
                     float inert = math.clamp(SanitizeNonNegative(InertFront[roomIndex]), 0f, tankCapacity);
                     float steam = SanitizeNonNegative(SteamFront[roomIndex]);
 
-                    O2Back[roomIndex] = oxygen;
-                    CO2Back[roomIndex] = carbonDioxide;
-                    InertBack[roomIndex] = inert;
-                    SteamBack[roomIndex] = steam;
-                    GasVolumeBack[roomIndex] = gasVolume;
+                    O2Back[roomIndex] = math.select(0f, oxygen, activeRoom);
+                    CO2Back[roomIndex] = math.select(0f, carbonDioxide, activeRoom);
+                    InertBack[roomIndex] = math.select(0f, inert, activeRoom);
+                    SteamBack[roomIndex] = math.select(0f, steam, activeRoom);
+                    GasVolumeBack[roomIndex] = math.select(minimumGasVolume, gasVolume, activeRoom);
 
                     float previousTemperature = SanitizeRange(TemperatureFront[roomIndex], referenceTemperature, minimumTemperature, maximumTemperature);
                     float floodFill01 = math.saturate(floodVolume / math.max(roomVolume, Epsilon));
@@ -1124,20 +1386,21 @@ namespace Hecton8.Atmosphere
                         mixedTemperature + temperatureDelta,
                         minimumTemperature,
                         maximumTemperature);
-                    TemperatureBack[roomIndex] = roomTemperature;
+                    TemperatureBack[roomIndex] = math.select(referenceTemperature, roomTemperature, activeRoom);
                     PressureBack[roomIndex] = referencePressure;
+                    O2PartialPressureBack[roomIndex] = 0f;
+                    CO2PartialPressureBack[roomIndex] = 0f;
+                    N2PartialPressureBack[roomIndex] = 0f;
                 }
 
                 for (int doorIndex = 0; doorIndex < DoorCapacity; doorIndex++)
                 {
-                    if (doorIndex >= DoorCount || DoorSealed[doorIndex] != 0)
-                        continue;
-
                     int2 pair = DoorPairs[doorIndex];
-                    int roomA = pair.x;
-                    int roomB = pair.y;
-                    if (roomA < 0 || roomA >= RoomCount || roomB < 0 || roomB >= RoomCount)
-                        continue;
+                    bool openDoor = doorIndex < DoorCount & DoorSealed[doorIndex] == 0;
+                    bool validPair = openDoor & pair.x >= 0 & pair.x < RoomCount & pair.y >= 0 & pair.y < RoomCount;
+                    int roomA = math.clamp(pair.x, 0, RoomCapacity - 1);
+                    int roomB = math.clamp(pair.y, 0, RoomCapacity - 1);
+                    float blend = math.select(0f, 1f, validPair);
 
                     float averageOxygen = (O2Back[roomA] + O2Back[roomB]) * 0.5f;
                     float averageToxicity = (CO2Back[roomA] + CO2Back[roomB]) * 0.5f;
@@ -1145,16 +1408,16 @@ namespace Hecton8.Atmosphere
                     float averageSteam = (SteamBack[roomA] + SteamBack[roomB]) * 0.5f;
                     float averageHeat = (TemperatureBack[roomA] + TemperatureBack[roomB]) * 0.5f;
 
-                    O2Back[roomA] = averageOxygen;
-                    O2Back[roomB] = averageOxygen;
-                    CO2Back[roomA] = averageToxicity;
-                    CO2Back[roomB] = averageToxicity;
-                    InertBack[roomA] = averageInert;
-                    InertBack[roomB] = averageInert;
-                    SteamBack[roomA] = averageSteam;
-                    SteamBack[roomB] = averageSteam;
-                    TemperatureBack[roomA] = averageHeat;
-                    TemperatureBack[roomB] = averageHeat;
+                    O2Back[roomA] = math.lerp(O2Back[roomA], averageOxygen, blend);
+                    O2Back[roomB] = math.lerp(O2Back[roomB], averageOxygen, blend);
+                    CO2Back[roomA] = math.lerp(CO2Back[roomA], averageToxicity, blend);
+                    CO2Back[roomB] = math.lerp(CO2Back[roomB], averageToxicity, blend);
+                    InertBack[roomA] = math.lerp(InertBack[roomA], averageInert, blend);
+                    InertBack[roomB] = math.lerp(InertBack[roomB], averageInert, blend);
+                    SteamBack[roomA] = math.lerp(SteamBack[roomA], averageSteam, blend);
+                    SteamBack[roomB] = math.lerp(SteamBack[roomB], averageSteam, blend);
+                    TemperatureBack[roomA] = math.lerp(TemperatureBack[roomA], averageHeat, blend);
+                    TemperatureBack[roomB] = math.lerp(TemperatureBack[roomB], averageHeat, blend);
                 }
 
                 uint statusMask = 0u;
@@ -1165,9 +1428,7 @@ namespace Hecton8.Atmosphere
                 float pressureThreshold = math.max(referencePressure, SanitizeFinite(HighPressureStatusKPa, referencePressure));
                 for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
                 {
-                    if (roomIndex >= RoomCount)
-                        continue;
-
+                    bool activeRoom = roomIndex < RoomCount;
                     float roomVolume = math.max(SanitizeFinite(RoomVolumes[roomIndex], minimumGasVolume), minimumGasVolume);
                     float gasVolume = math.max(minimumGasVolume, SanitizeFinite(GasVolumeBack[roomIndex], minimumGasVolume));
                     float pressure = ResolveDaltonPressureKPa(
@@ -1191,17 +1452,16 @@ namespace Hecton8.Atmosphere
                     N2PartialPressureBack[roomIndex] = nitrogenPartialPressureKPa;
 
                     uint roomBit = 1u << roomIndex;
-                    float carbonDioxidePressureFraction = pressure > Epsilon
-                        ? carbonDioxidePartialPressureKPa * math.rcp(pressure)
-                        : 0f;
-                    if (O2Back[roomIndex] < lowOxygenThreshold || carbonDioxidePressureFraction >= carbonDioxideToxicityFraction)
-                        statusMask |= roomBit << RoomStatusToxicShift;
-
-                    if (TemperatureBack[roomIndex] <= FreezingTemperatureCelsius)
-                        statusMask |= roomBit << RoomStatusFreezingShift;
-
-                    if (PressureBack[roomIndex] >= pressureThreshold)
-                        statusMask |= roomBit << RoomStatusPressureShift;
+                    float carbonDioxidePressureFraction = math.select(
+                        0f,
+                        carbonDioxidePartialPressureKPa * math.rcp(math.max(pressure, Epsilon)),
+                        pressure > Epsilon);
+                    bool toxicRoom = activeRoom & (O2Back[roomIndex] < lowOxygenThreshold | carbonDioxidePressureFraction >= carbonDioxideToxicityFraction);
+                    bool freezingRoom = activeRoom & TemperatureBack[roomIndex] <= FreezingTemperatureCelsius;
+                    bool pressureRoom = activeRoom & PressureBack[roomIndex] >= pressureThreshold;
+                    statusMask |= math.select(0u, roomBit << RoomStatusToxicShift, toxicRoom);
+                    statusMask |= math.select(0u, roomBit << RoomStatusFreezingShift, freezingRoom);
+                    statusMask |= math.select(0u, roomBit << RoomStatusPressureShift, pressureRoom);
                 }
 
                 RoomStatusMaskBack[0] = statusMask;
@@ -1210,19 +1470,19 @@ namespace Hecton8.Atmosphere
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static float SanitizeFinite(float value, float fallback)
             {
-                return math.isfinite(value) ? value : fallback;
+                return math.select(fallback, value, math.isfinite(value));
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static float SanitizeNonNegative(float value)
             {
-                return math.isfinite(value) ? math.max(0f, value) : 0f;
+                return math.select(0f, math.max(0f, value), math.isfinite(value));
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static float SanitizeRange(float value, float fallback, float minimum, float maximum)
             {
-                return math.clamp(math.isfinite(value) ? value : fallback, minimum, maximum);
+                return math.clamp(math.select(fallback, value, math.isfinite(value)), minimum, maximum);
             }
         }
 
@@ -1530,40 +1790,79 @@ namespace Hecton8.Atmosphere
         private JobHandle _disposeHandle;
         private bool _atmosphereJobRunning;
         private float _scheduledAtmosphereDeltaTime;
+        private ulong _atmosphereJobLockMask;
+        private ulong _atmospherePhaseWriteLockMask;
+        private IDataVault _dataVault;
 
-        private NativeArray<float> _roomVolumes;
-        private NativeArray<float> _floodVolumes;
-        private NativeArray<float> _o2Front;
-        private NativeArray<float> _o2Back;
-        private NativeArray<float> _co2Front;
-        private NativeArray<float> _co2Back;
-        private NativeArray<float> _inertFront;
-        private NativeArray<float> _inertBack;
-        private NativeArray<float> _pressureFront;
-        private NativeArray<float> _pressureBack;
-        private NativeArray<float> _o2PartialPressureFront;
-        private NativeArray<float> _o2PartialPressureBack;
-        private NativeArray<float> _co2PartialPressureFront;
-        private NativeArray<float> _co2PartialPressureBack;
-        private NativeArray<float> _n2PartialPressureFront;
-        private NativeArray<float> _n2PartialPressureBack;
-        private NativeArray<float> _gasVolumeFront;
-        private NativeArray<float> _gasVolumeBack;
-        private NativeArray<float> _o2ConsumptionRates;
-        private NativeArray<float> _co2GenerationRates;
-        private NativeArray<int> _roomPlayerCounts;
-        private NativeArray<float> _temperatureFront;
-        private NativeArray<float> _temperatureBack;
-        private NativeArray<float> _steamFront;
-        private NativeArray<float> _steamBack;
-        private NativeArray<float> _hydrogenPocketFront;
-        private NativeArray<float> _oxygenPocketFront;
-        private NativeArray<float> _roomHeatWatts;
-        private NativeArray<uint> _roomStatusMaskFront;
-        private NativeArray<uint> _roomStatusMaskBack;
-        private NativeArray<int2> _doorPairs;
-        private NativeArray<byte> _doorSealed;
-        private NativeArray<byte> _doorSealedPrevious;
+        private VaultGenerationHandle<float> _roomVolumesHandle;
+        private VaultGenerationHandle<float> _floodVolumesHandle;
+        private VaultGenerationHandle<float> _o2FrontHandle;
+        private VaultGenerationHandle<float> _o2BackHandle;
+        private VaultGenerationHandle<float> _co2FrontHandle;
+        private VaultGenerationHandle<float> _co2BackHandle;
+        private VaultGenerationHandle<float> _inertFrontHandle;
+        private VaultGenerationHandle<float> _inertBackHandle;
+        private VaultGenerationHandle<float> _pressureFrontHandle;
+        private VaultGenerationHandle<float> _pressureBackHandle;
+        private VaultGenerationHandle<float> _o2PartialPressureFrontHandle;
+        private VaultGenerationHandle<float> _o2PartialPressureBackHandle;
+        private VaultGenerationHandle<float> _co2PartialPressureFrontHandle;
+        private VaultGenerationHandle<float> _co2PartialPressureBackHandle;
+        private VaultGenerationHandle<float> _n2PartialPressureFrontHandle;
+        private VaultGenerationHandle<float> _n2PartialPressureBackHandle;
+        private VaultGenerationHandle<float> _gasVolumeFrontHandle;
+        private VaultGenerationHandle<float> _gasVolumeBackHandle;
+        private VaultGenerationHandle<float> _o2ConsumptionRatesHandle;
+        private VaultGenerationHandle<float> _co2GenerationRatesHandle;
+        private VaultGenerationHandle<int> _roomPlayerCountsHandle;
+        private VaultGenerationHandle<float> _temperatureFrontHandle;
+        private VaultGenerationHandle<float> _temperatureBackHandle;
+        private VaultGenerationHandle<float> _steamFrontHandle;
+        private VaultGenerationHandle<float> _steamBackHandle;
+        private VaultGenerationHandle<float> _hydrogenPocketFrontHandle;
+        private VaultGenerationHandle<float> _oxygenPocketFrontHandle;
+        private VaultGenerationHandle<float> _roomHeatWattsHandle;
+        private VaultGenerationHandle<uint> _roomStatusMaskFrontHandle;
+        private VaultGenerationHandle<uint> _roomStatusMaskBackHandle;
+        private VaultGenerationHandle<int2> _doorPairsHandle;
+        private VaultGenerationHandle<byte> _doorSealedHandle;
+        private VaultGenerationHandle<byte> _doorSealedPreviousHandle;
+        private VaultGenerationHandle<SubmarineAtmosphereTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<int> _telemetryCursorHandle;
+
+        private NativeArray<float> _roomVolumes => ResolveVaultArray(in _roomVolumesHandle);
+        private NativeArray<float> _floodVolumes => ResolveVaultArray(in _floodVolumesHandle);
+        private NativeArray<float> _o2Front => ResolveVaultArray(in _o2FrontHandle);
+        private NativeArray<float> _o2Back => ResolveVaultArray(in _o2BackHandle);
+        private NativeArray<float> _co2Front => ResolveVaultArray(in _co2FrontHandle);
+        private NativeArray<float> _co2Back => ResolveVaultArray(in _co2BackHandle);
+        private NativeArray<float> _inertFront => ResolveVaultArray(in _inertFrontHandle);
+        private NativeArray<float> _inertBack => ResolveVaultArray(in _inertBackHandle);
+        private NativeArray<float> _pressureFront => ResolveVaultArray(in _pressureFrontHandle);
+        private NativeArray<float> _pressureBack => ResolveVaultArray(in _pressureBackHandle);
+        private NativeArray<float> _o2PartialPressureFront => ResolveVaultArray(in _o2PartialPressureFrontHandle);
+        private NativeArray<float> _o2PartialPressureBack => ResolveVaultArray(in _o2PartialPressureBackHandle);
+        private NativeArray<float> _co2PartialPressureFront => ResolveVaultArray(in _co2PartialPressureFrontHandle);
+        private NativeArray<float> _co2PartialPressureBack => ResolveVaultArray(in _co2PartialPressureBackHandle);
+        private NativeArray<float> _n2PartialPressureFront => ResolveVaultArray(in _n2PartialPressureFrontHandle);
+        private NativeArray<float> _n2PartialPressureBack => ResolveVaultArray(in _n2PartialPressureBackHandle);
+        private NativeArray<float> _gasVolumeFront => ResolveVaultArray(in _gasVolumeFrontHandle);
+        private NativeArray<float> _gasVolumeBack => ResolveVaultArray(in _gasVolumeBackHandle);
+        private NativeArray<float> _o2ConsumptionRates => ResolveVaultArray(in _o2ConsumptionRatesHandle);
+        private NativeArray<float> _co2GenerationRates => ResolveVaultArray(in _co2GenerationRatesHandle);
+        private NativeArray<int> _roomPlayerCounts => ResolveVaultArray(in _roomPlayerCountsHandle);
+        private NativeArray<float> _temperatureFront => ResolveVaultArray(in _temperatureFrontHandle);
+        private NativeArray<float> _temperatureBack => ResolveVaultArray(in _temperatureBackHandle);
+        private NativeArray<float> _steamFront => ResolveVaultArray(in _steamFrontHandle);
+        private NativeArray<float> _steamBack => ResolveVaultArray(in _steamBackHandle);
+        private NativeArray<float> _hydrogenPocketFront => ResolveVaultArray(in _hydrogenPocketFrontHandle);
+        private NativeArray<float> _oxygenPocketFront => ResolveVaultArray(in _oxygenPocketFrontHandle);
+        private NativeArray<float> _roomHeatWatts => ResolveVaultArray(in _roomHeatWattsHandle);
+        private NativeArray<uint> _roomStatusMaskFront => ResolveVaultArray(in _roomStatusMaskFrontHandle);
+        private NativeArray<uint> _roomStatusMaskBack => ResolveVaultArray(in _roomStatusMaskBackHandle);
+        private NativeArray<int2> _doorPairs => ResolveVaultArray(in _doorPairsHandle);
+        private NativeArray<byte> _doorSealed => ResolveVaultArray(in _doorSealedHandle);
+        private NativeArray<byte> _doorSealedPrevious => ResolveVaultArray(in _doorSealedPreviousHandle);
         // COLD ALLOC: SpatialQueryHit[32] - registered bulkhead blowout contact scratch - owner: SubmarineAtmosphereSystem
         private readonly SpatialQueryHit[] _pressureImpulseContacts = new SpatialQueryHit[PressureImpulseOverlapCapacity];
         // COLD ALLOC: Rigidbody[32] - unique-body scratch for pressure blowout dispatch - owner: SubmarineAtmosphereSystem
@@ -1611,6 +1910,9 @@ namespace Hecton8.Atmosphere
         private int _drillHeatEmitterCount;
         private int _reactorHeatEmitterCount;
         private int _droppedSignalCount;
+        private int _telemetryWriteIndex;
+        private uint _atmosphereTickCount;
+        private bool _blackBoxDumped;
         private float _atmosphereStepAccumulator;
         private float _lowOxygenAudioCooldownRemaining;
         private float _pressureScreechCooldownRemaining;
@@ -1692,50 +1994,71 @@ namespace Hecton8.Atmosphere
 
         public float GetRoomPressureKPa(int roomIndex)
         {
-            if (!_pressureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+            if (roomIndex < 0 || roomIndex >= RoomCount ||
+                !TryReadVaultValue(in _pressureFrontHandle, roomIndex, out float pressure))
+            {
                 return ResolveSafeReferencePressureKPa();
+            }
 
-            return FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
+            return FiniteClampedOr(pressure, ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
         }
 
         public float GetRoomOxygenFraction(int roomIndex)
         {
-            if (!_o2Front.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+            if (roomIndex < 0 || roomIndex >= RoomCount ||
+                !TryReadVaultValue(in _o2FrontHandle, roomIndex, out float oxygenUnits))
+            {
                 return DefaultInitialOxygenFraction;
+            }
 
-            return math.saturate(FiniteNonNegativeOrZero(_o2Front[roomIndex]) / math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity)));
+            return math.saturate(FiniteNonNegativeOrZero(oxygenUnits) / math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity)));
         }
 
         public float GetRoomCarbonDioxideFraction(int roomIndex)
         {
-            if (!_co2Front.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+            if (roomIndex < 0 || roomIndex >= RoomCount ||
+                !TryReadVaultValue(in _co2FrontHandle, roomIndex, out float carbonDioxideUnits))
+            {
                 return DefaultInitialCarbonDioxideFraction;
+            }
 
-            return math.saturate(FiniteNonNegativeOrZero(_co2Front[roomIndex]) / math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity)));
+            return math.saturate(FiniteNonNegativeOrZero(carbonDioxideUnits) / math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity)));
         }
 
         public float GetRoomOxygenPartialPressureKPa(int roomIndex)
         {
-            if (!_o2PartialPressureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
-                return DefaultInitialOxygenFraction * ResolveSafeReferencePressureKPa();
+            float fallback = DefaultInitialOxygenFraction * ResolveSafeReferencePressureKPa();
+            if (roomIndex < 0 || roomIndex >= RoomCount ||
+                !TryReadVaultValue(in _o2PartialPressureFrontHandle, roomIndex, out float oxygenPressure))
+            {
+                return fallback;
+            }
 
-            return FiniteClampedOr(_o2PartialPressureFront[roomIndex], DefaultInitialOxygenFraction * ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
+            return FiniteClampedOr(oxygenPressure, fallback, 0f, ResolveSafeMaximumPressureKPa());
         }
 
         public float GetRoomCarbonDioxidePartialPressureKPa(int roomIndex)
         {
-            if (!_co2PartialPressureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
-                return DefaultInitialCarbonDioxideFraction * ResolveSafeReferencePressureKPa();
+            float fallback = DefaultInitialCarbonDioxideFraction * ResolveSafeReferencePressureKPa();
+            if (roomIndex < 0 || roomIndex >= RoomCount ||
+                !TryReadVaultValue(in _co2PartialPressureFrontHandle, roomIndex, out float carbonDioxidePressure))
+            {
+                return fallback;
+            }
 
-            return FiniteClampedOr(_co2PartialPressureFront[roomIndex], DefaultInitialCarbonDioxideFraction * ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
+            return FiniteClampedOr(carbonDioxidePressure, fallback, 0f, ResolveSafeMaximumPressureKPa());
         }
 
         public float GetRoomNitrogenPartialPressureKPa(int roomIndex)
         {
-            if (!_n2PartialPressureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
-                return DefaultInertFraction * ResolveSafeReferencePressureKPa();
+            float fallback = DefaultInertFraction * ResolveSafeReferencePressureKPa();
+            if (roomIndex < 0 || roomIndex >= RoomCount ||
+                !TryReadVaultValue(in _n2PartialPressureFrontHandle, roomIndex, out float nitrogenPressure))
+            {
+                return fallback;
+            }
 
-            return FiniteClampedOr(_n2PartialPressureFront[roomIndex], DefaultInertFraction * ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
+            return FiniteClampedOr(nitrogenPressure, fallback, 0f, ResolveSafeMaximumPressureKPa());
         }
 
         public float GetRoomCarbonDioxidePressureFraction(int roomIndex)
@@ -1745,20 +2068,28 @@ namespace Hecton8.Atmosphere
 
         public float GetRoomTemperatureCelsius(int roomIndex)
         {
-            if (!_temperatureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
-                return FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius);
+            float fallback = FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius);
+            if (roomIndex < 0 || roomIndex >= RoomCount ||
+                !TryReadVaultValue(in _temperatureFrontHandle, roomIndex, out float temperature))
+            {
+                return fallback;
+            }
 
             ResolveSafeTemperatureBounds(out float minimumTemperature, out float maximumTemperature);
-            return FiniteClampedOr(_temperatureFront[roomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minimumTemperature, maximumTemperature);
+            return FiniteClampedOr(temperature, fallback, minimumTemperature, maximumTemperature);
         }
 
         public float GetRoomFloodFillRatio(int roomIndex)
         {
-            if (!_floodVolumes.IsCreated || !_roomVolumes.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+            if (roomIndex < 0 || roomIndex >= RoomCount ||
+                !TryReadVaultValue(in _roomVolumesHandle, roomIndex, out float rawRoomVolume) ||
+                !TryReadVaultValue(in _floodVolumesHandle, roomIndex, out float rawFloodVolume))
+            {
                 return 0f;
+            }
 
-            float roomVolume = math.max(Epsilon, FiniteOr(_roomVolumes[roomIndex], Epsilon));
-            return math.saturate(FiniteNonNegativeOrZero(_floodVolumes[roomIndex]) / roomVolume);
+            float roomVolume = math.max(Epsilon, FiniteOr(rawRoomVolume, Epsilon));
+            return math.saturate(FiniteNonNegativeOrZero(rawFloodVolume) / roomVolume);
         }
 
         public void InjectOxygenUnits(int roomIndex, float oxygenUnits)
@@ -1770,21 +2101,35 @@ namespace Hecton8.Atmosphere
         {
             if (oxygenUnits <= 0f ||
                 !math.isfinite(oxygenUnits) ||
-                !_o2Front.IsCreated ||
-                !_co2Front.IsCreated ||
-                !_inertFront.IsCreated ||
-                !_pressureFront.IsCreated ||
-                !_gasVolumeFront.IsCreated ||
                 roomIndex < 0 ||
                 roomIndex >= RoomCount)
             {
                 return 0f;
             }
 
-            if (!TryPrepareAtmosphereFrontForWrite())
-                return QueuePendingOxygenUnits(roomIndex, oxygenUnits);
+            if (!TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
+                return 0f;
 
-            return ApplyOxygenUnitsImmediate(roomIndex, oxygenUnits);
+            try
+            {
+                if (!_o2Front.IsCreated ||
+                    !_co2Front.IsCreated ||
+                    !_inertFront.IsCreated ||
+                    !_pressureFront.IsCreated ||
+                    !_gasVolumeFront.IsCreated)
+                {
+                    return 0f;
+                }
+
+                if (!TryPrepareAtmosphereFrontForWrite())
+                    return QueuePendingOxygenUnits(roomIndex, oxygenUnits);
+
+                return ApplyOxygenUnitsImmediate(roomIndex, oxygenUnits);
+            }
+            finally
+            {
+                ExitAtmosphereWritePhase(ownsWriteLock);
+            }
         }
 
         internal float TransferOxygenFromStorage(int roomIndex, float requestedOxygenUnits, ref float storageOxygenUnits)
@@ -1793,29 +2138,41 @@ namespace Hecton8.Atmosphere
                 !math.isfinite(requestedOxygenUnits) ||
                 storageOxygenUnits <= 0f ||
                 !math.isfinite(storageOxygenUnits) ||
-                !_o2Front.IsCreated ||
                 roomIndex < 0 ||
                 roomIndex >= RoomCount)
             {
                 return 0f;
             }
 
-            if (!TryPrepareAtmosphereFrontForWrite())
-            {
-                float queuedTransfer = QueuePendingOxygenUnits(roomIndex, math.min(requestedOxygenUnits, storageOxygenUnits));
-                if (queuedTransfer <= 0f)
-                    return 0f;
-
-                storageOxygenUnits = math.max(0f, storageOxygenUnits - queuedTransfer);
-                return queuedTransfer;
-            }
-
-            float transfer = ApplyOxygenUnitsImmediate(roomIndex, math.min(requestedOxygenUnits, storageOxygenUnits));
-            if (transfer <= 0f)
+            if (!TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
                 return 0f;
 
-            storageOxygenUnits = math.max(0f, storageOxygenUnits - transfer);
-            return transfer;
+            try
+            {
+                if (!_o2Front.IsCreated)
+                    return 0f;
+
+                if (!TryPrepareAtmosphereFrontForWrite())
+                {
+                    float queuedTransfer = QueuePendingOxygenUnits(roomIndex, math.min(requestedOxygenUnits, storageOxygenUnits));
+                    if (queuedTransfer <= 0f)
+                        return 0f;
+
+                    storageOxygenUnits = math.max(0f, storageOxygenUnits - queuedTransfer);
+                    return queuedTransfer;
+                }
+
+                float transfer = ApplyOxygenUnitsImmediate(roomIndex, math.min(requestedOxygenUnits, storageOxygenUnits));
+                if (transfer <= 0f)
+                    return 0f;
+
+                storageOxygenUnits = math.max(0f, storageOxygenUnits - transfer);
+                return transfer;
+            }
+            finally
+            {
+                ExitAtmosphereWritePhase(ownsWriteLock);
+            }
         }
 
         /// <summary>
@@ -1861,67 +2218,92 @@ namespace Hecton8.Atmosphere
         {
             if (deltaCelsius == 0f ||
                 !math.isfinite(deltaCelsius) ||
-                !_temperatureFront.IsCreated ||
                 roomIndex < 0 ||
                 roomIndex >= RoomCount)
             {
                 return;
             }
 
-            if (!TryPrepareAtmosphereFrontForWrite())
-            {
-                QueuePendingTemperatureDelta(roomIndex, deltaCelsius);
+            if (!TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
                 return;
-            }
 
-            ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
-            float currentTemperature = FiniteClampedOr(_temperatureFront[roomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
-            _temperatureFront[roomIndex] = math.clamp(
-                currentTemperature + deltaCelsius,
-                minTemperature,
-                maxTemperature);
-            RefreshRoomPressureImmediate(roomIndex);
+            try
+            {
+                NativeArray<float> _temperatureFront = this._temperatureFront;
+                if (!_temperatureFront.IsCreated)
+                    return;
+
+                if (!TryPrepareAtmosphereFrontForWrite())
+                {
+                    QueuePendingTemperatureDelta(roomIndex, deltaCelsius);
+                    return;
+                }
+
+                ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
+                float currentTemperature = FiniteClampedOr(_temperatureFront[roomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
+                _temperatureFront[roomIndex] = math.clamp(
+                    currentTemperature + deltaCelsius,
+                    minTemperature,
+                    maxTemperature);
+                RefreshRoomPressureImmediate(roomIndex);
+            }
+            finally
+            {
+                ExitAtmosphereWritePhase(ownsWriteLock);
+            }
         }
 
         public void InjectRoomHeatEnergyJoules(int roomIndex, float heatEnergyJoules)
         {
             if (heatEnergyJoules <= 0f ||
                 !math.isfinite(heatEnergyJoules) ||
-                !_temperatureFront.IsCreated ||
                 roomIndex < 0 ||
                 roomIndex >= RoomCount)
             {
                 return;
             }
 
-            if (!TryPrepareAtmosphereFrontForWrite())
+            if (!TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
+                return;
+
+            try
             {
-                QueuePendingHeatEnergy(roomIndex, heatEnergyJoules);
-                return;
+                NativeArray<float> _temperatureFront = this._temperatureFront;
+                if (!_temperatureFront.IsCreated)
+                    return;
+
+                if (!TryPrepareAtmosphereFrontForWrite())
+                {
+                    QueuePendingHeatEnergy(roomIndex, heatEnergyJoules);
+                    return;
+                }
+
+                float thermalCapacity = ResolveInstantThermalCapacity(roomIndex);
+                if (thermalCapacity <= Epsilon)
+                    return;
+
+                float deltaCelsius = heatEnergyJoules / thermalCapacity;
+                if (!math.isfinite(deltaCelsius) || deltaCelsius <= 0f)
+                    return;
+
+                ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
+                float currentTemperature = FiniteClampedOr(_temperatureFront[roomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
+                _temperatureFront[roomIndex] = math.clamp(
+                    currentTemperature + deltaCelsius,
+                    minTemperature,
+                    maxTemperature);
+                RefreshRoomPressureImmediate(roomIndex);
             }
-
-            float thermalCapacity = ResolveInstantThermalCapacity(roomIndex);
-            if (thermalCapacity <= Epsilon)
-                return;
-
-            float deltaCelsius = heatEnergyJoules / thermalCapacity;
-            if (!math.isfinite(deltaCelsius) || deltaCelsius <= 0f)
-                return;
-
-            ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
-            float currentTemperature = FiniteClampedOr(_temperatureFront[roomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
-            _temperatureFront[roomIndex] = math.clamp(
-                currentTemperature + deltaCelsius,
-                minTemperature,
-                maxTemperature);
-            RefreshRoomPressureImmediate(roomIndex);
+            finally
+            {
+                ExitAtmosphereWritePhase(ownsWriteLock);
+            }
         }
 
         public void TransferRoomHeatEnergyJoules(int sourceRoomIndex, int destinationRoomIndex, float heatEnergyJoules)
         {
             if (heatEnergyJoules <= 0f ||
                 !math.isfinite(heatEnergyJoules) ||
-                !_temperatureFront.IsCreated ||
                 sourceRoomIndex < 0 || sourceRoomIndex >= RoomCount ||
                 destinationRoomIndex < 0 || destinationRoomIndex >= RoomCount ||
                 sourceRoomIndex == destinationRoomIndex)
@@ -1929,75 +2311,103 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            if (!TryPrepareAtmosphereFrontForWrite())
+            if (!TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
+                return;
+
+            try
             {
-                QueuePendingHeatEnergy(sourceRoomIndex, -heatEnergyJoules);
-                QueuePendingHeatEnergy(destinationRoomIndex, heatEnergyJoules);
-                return;
+                NativeArray<float> _temperatureFront = this._temperatureFront;
+                if (!_temperatureFront.IsCreated)
+                    return;
+
+                if (!TryPrepareAtmosphereFrontForWrite())
+                {
+                    QueuePendingHeatEnergy(sourceRoomIndex, -heatEnergyJoules);
+                    QueuePendingHeatEnergy(destinationRoomIndex, heatEnergyJoules);
+                    return;
+                }
+
+                float sourceCapacity = ResolveInstantThermalCapacity(sourceRoomIndex);
+                float destinationCapacity = ResolveInstantThermalCapacity(destinationRoomIndex);
+                if (sourceCapacity <= Epsilon || destinationCapacity <= Epsilon)
+                    return;
+
+                float sourceDelta = heatEnergyJoules / sourceCapacity;
+                float destinationDelta = heatEnergyJoules / destinationCapacity;
+                if (!math.isfinite(sourceDelta) || !math.isfinite(destinationDelta) || sourceDelta <= 0f || destinationDelta <= 0f)
+                    return;
+
+                ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
+                float sourceTemperature = FiniteClampedOr(_temperatureFront[sourceRoomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
+                float destinationTemperature = FiniteClampedOr(_temperatureFront[destinationRoomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
+                _temperatureFront[sourceRoomIndex] = math.clamp(
+                    sourceTemperature - sourceDelta,
+                    minTemperature,
+                    maxTemperature);
+                _temperatureFront[destinationRoomIndex] = math.clamp(
+                    destinationTemperature + destinationDelta,
+                    minTemperature,
+                    maxTemperature);
+                RefreshRoomPressureImmediate(sourceRoomIndex);
+                RefreshRoomPressureImmediate(destinationRoomIndex);
             }
-
-            float sourceCapacity = ResolveInstantThermalCapacity(sourceRoomIndex);
-            float destinationCapacity = ResolveInstantThermalCapacity(destinationRoomIndex);
-            if (sourceCapacity <= Epsilon || destinationCapacity <= Epsilon)
-                return;
-
-            float sourceDelta = heatEnergyJoules / sourceCapacity;
-            float destinationDelta = heatEnergyJoules / destinationCapacity;
-            if (!math.isfinite(sourceDelta) || !math.isfinite(destinationDelta) || sourceDelta <= 0f || destinationDelta <= 0f)
-                return;
-
-            ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
-            float sourceTemperature = FiniteClampedOr(_temperatureFront[sourceRoomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
-            float destinationTemperature = FiniteClampedOr(_temperatureFront[destinationRoomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
-            _temperatureFront[sourceRoomIndex] = math.clamp(
-                sourceTemperature - sourceDelta,
-                minTemperature,
-                maxTemperature);
-            _temperatureFront[destinationRoomIndex] = math.clamp(
-                destinationTemperature + destinationDelta,
-                minTemperature,
-                maxTemperature);
-            RefreshRoomPressureImmediate(sourceRoomIndex);
-            RefreshRoomPressureImmediate(destinationRoomIndex);
+            finally
+            {
+                ExitAtmosphereWritePhase(ownsWriteLock);
+            }
         }
 
         public void InjectElectrolysisGasPocket(int roomIndex, float hydrogenUnits, float oxygenUnits, float pressureSpikeKPa)
         {
             if (roomIndex < 0 ||
                 roomIndex >= RoomCount ||
-                !_hydrogenPocketFront.IsCreated ||
-                !_oxygenPocketFront.IsCreated ||
                 (!IsPositiveFinite(hydrogenUnits) && !IsPositiveFinite(oxygenUnits) && !IsPositiveFinite(pressureSpikeKPa)))
             {
                 return;
             }
 
-            if (!TryPrepareAtmosphereFrontForWrite())
-            {
-                QueuePendingElectrolysisPocket(roomIndex, hydrogenUnits, oxygenUnits, pressureSpikeKPa);
+            if (!TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
                 return;
-            }
 
-            if (IsPositiveFinite(hydrogenUnits))
-                _hydrogenPocketFront[roomIndex] = FiniteNonNegativeOrZero(_hydrogenPocketFront[roomIndex]) + hydrogenUnits;
-
-            if (IsPositiveFinite(oxygenUnits))
-                _oxygenPocketFront[roomIndex] = FiniteNonNegativeOrZero(_oxygenPocketFront[roomIndex]) + oxygenUnits;
-
-            if (_pressureFront.IsCreated && IsPositiveFinite(pressureSpikeKPa))
+            try
             {
-                float currentPressure = FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
-                _pressureFront[roomIndex] = math.clamp(
-                    currentPressure + pressureSpikeKPa,
-                    0f,
-                    ResolveSafeMaximumPressureKPa());
-                RefreshRoomStatusBitsImmediate(roomIndex);
+                NativeArray<float> _hydrogenPocketFront = this._hydrogenPocketFront;
+                NativeArray<float> _oxygenPocketFront = this._oxygenPocketFront;
+                NativeArray<float> _pressureFront = this._pressureFront;
+                if (!_hydrogenPocketFront.IsCreated || !_oxygenPocketFront.IsCreated)
+                    return;
+
+                if (!TryPrepareAtmosphereFrontForWrite())
+                {
+                    QueuePendingElectrolysisPocket(roomIndex, hydrogenUnits, oxygenUnits, pressureSpikeKPa);
+                    return;
+                }
+
+                if (IsPositiveFinite(hydrogenUnits))
+                    _hydrogenPocketFront[roomIndex] = FiniteNonNegativeOrZero(_hydrogenPocketFront[roomIndex]) + hydrogenUnits;
+
+                if (IsPositiveFinite(oxygenUnits))
+                    _oxygenPocketFront[roomIndex] = FiniteNonNegativeOrZero(_oxygenPocketFront[roomIndex]) + oxygenUnits;
+
+                if (_pressureFront.IsCreated && IsPositiveFinite(pressureSpikeKPa))
+                {
+                    float currentPressure = FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
+                    _pressureFront[roomIndex] = math.clamp(
+                        currentPressure + pressureSpikeKPa,
+                        0f,
+                        ResolveSafeMaximumPressureKPa());
+                    RefreshRoomStatusBitsImmediate(roomIndex);
+                }
+            }
+            finally
+            {
+                ExitAtmosphereWritePhase(ownsWriteLock);
             }
         }
 
         private bool TryPrepareAtmosphereFrontForWrite()
         {
-            if (_atmosphereJobRunning)
+            if (_atmosphereJobRunning || _atmospherePhaseWriteLockMask == 0ul)
                 return false;
 
             ApplyPendingAtmosphereMutations();
@@ -2006,6 +2416,7 @@ namespace Hecton8.Atmosphere
 
         private float ApplyOxygenUnitsImmediate(int roomIndex, float oxygenUnits)
         {
+            NativeArray<float> _o2Front = this._o2Front;
             if (oxygenUnits <= 0f || !math.isfinite(oxygenUnits) || !_o2Front.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
                 return 0f;
 
@@ -2132,6 +2543,10 @@ namespace Hecton8.Atmosphere
 
         private void ApplyPendingAtmosphereMutations()
         {
+            NativeArray<float> _temperatureFront = this._temperatureFront;
+            NativeArray<float> _hydrogenPocketFront = this._hydrogenPocketFront;
+            NativeArray<float> _oxygenPocketFront = this._oxygenPocketFront;
+            NativeArray<float> _pressureFront = this._pressureFront;
             uint mutationMask = _pendingAtmosphereMutationMask;
             if (mutationMask == 0u)
                 return;
@@ -2189,10 +2604,13 @@ namespace Hecton8.Atmosphere
 
         public float GetRoomSteamVolumeCubicMeters(int roomIndex)
         {
-            if (!_steamFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+            if (roomIndex < 0 || roomIndex >= RoomCount ||
+                !TryReadVaultValue(in _steamFrontHandle, roomIndex, out float steamVolume))
+            {
                 return 0f;
+            }
 
-            return FiniteNonNegativeOrZero(_steamFront[roomIndex]);
+            return FiniteNonNegativeOrZero(steamVolume);
         }
 
         public void HandleExternalModuleBreach(Vector3 breachWorldPosition, float breachAreaSquareMeters)
@@ -2211,7 +2629,7 @@ namespace Hecton8.Atmosphere
 
         public float ResolveThermalFatigueMultiplier(int roomIndex)
         {
-            if (roomIndex < 0 || roomIndex >= RoomCount || !_temperatureFront.IsCreated)
+            if (roomIndex < 0 || roomIndex >= RoomCount)
                 return 1f;
 
             float thresholdTemperature = math.max(FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), FiniteOr(thermalFatigueThresholdCelsius, DefaultThermalFatigueThresholdCelsius));
@@ -2232,20 +2650,32 @@ namespace Hecton8.Atmosphere
             if (fluidDynamics == null || breachedRoomIndex < 0)
                 return;
 
-            int doorCount = math.min(fluidDynamics.ConfiguredBulkheadCount, DoorCapacity);
-            for (int doorIndex = 0; doorIndex < doorCount; doorIndex++)
+            if (!TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
+                return;
+
+            try
             {
-                if (!fluidDynamics.TryGetBulkheadDefinition(doorIndex, out int compartmentA, out int compartmentB, out bool isSealed))
-                    continue;
+                NativeArray<byte> _doorSealed = this._doorSealed;
+                NativeArray<byte> _doorSealedPrevious = this._doorSealedPrevious;
+                int doorCount = math.min(fluidDynamics.ConfiguredBulkheadCount, DoorCapacity);
+                for (int doorIndex = 0; doorIndex < doorCount; doorIndex++)
+                {
+                    if (!fluidDynamics.TryGetBulkheadDefinition(doorIndex, out int compartmentA, out int compartmentB, out bool isSealed))
+                        continue;
 
-                if (isSealed || (compartmentA != breachedRoomIndex && compartmentB != breachedRoomIndex))
-                    continue;
+                    if (isSealed || (compartmentA != breachedRoomIndex && compartmentB != breachedRoomIndex))
+                        continue;
 
-                fluidDynamics.SetBulkheadSealed(compartmentA, compartmentB, true);
-                if (_doorSealed.IsCreated && doorIndex < _doorSealed.Length)
-                    _doorSealed[doorIndex] = 1;
-                if (_doorSealedPrevious.IsCreated && doorIndex < _doorSealedPrevious.Length)
-                    _doorSealedPrevious[doorIndex] = 1;
+                    fluidDynamics.SetBulkheadSealed(compartmentA, compartmentB, true);
+                    if (_doorSealed.IsCreated && doorIndex < _doorSealed.Length)
+                        _doorSealed[doorIndex] = 1;
+                    if (_doorSealedPrevious.IsCreated && doorIndex < _doorSealedPrevious.Length)
+                        _doorSealedPrevious[doorIndex] = 1;
+                }
+            }
+            finally
+            {
+                ExitAtmosphereWritePhase(ownsWriteLock);
             }
         }
 
@@ -2305,14 +2735,27 @@ namespace Hecton8.Atmosphere
             }
 
             int roomIndex = ResolveNearestRoomIndex(runtimeHitPoint);
-            if (roomIndex < 0 || roomIndex >= RoomCount || !_hydrogenPocketFront.IsCreated || !_oxygenPocketFront.IsCreated)
+            if (roomIndex < 0 || roomIndex >= RoomCount)
                 return;
 
-            float pocketIntensity = math.min(FiniteNonNegativeOrZero(_hydrogenPocketFront[roomIndex]), FiniteNonNegativeOrZero(_oxygenPocketFront[roomIndex]));
-            if (pocketIntensity < math.saturate(FiniteOr(explosivePocketThreshold, DefaultExplosionPocketThreshold)))
+            if (!TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
                 return;
 
-            TriggerExplosivePocketDetonation(roomIndex, runtimeHitPoint, pocketIntensity);
+            try
+            {
+                if (!_hydrogenPocketFront.IsCreated || !_oxygenPocketFront.IsCreated)
+                    return;
+
+                float pocketIntensity = math.min(FiniteNonNegativeOrZero(_hydrogenPocketFront[roomIndex]), FiniteNonNegativeOrZero(_oxygenPocketFront[roomIndex]));
+                if (pocketIntensity < math.saturate(FiniteOr(explosivePocketThreshold, DefaultExplosionPocketThreshold)))
+                    return;
+
+                TriggerExplosivePocketDetonation(roomIndex, runtimeHitPoint, pocketIntensity);
+            }
+            finally
+            {
+                ExitAtmosphereWritePhase(ownsWriteLock);
+            }
         }
 
         private void Awake()
@@ -2328,7 +2771,7 @@ namespace Hecton8.Atmosphere
             _droppedSignalCount = 0;
             CacheReferencesCold();
             EnsureNativeState();
-            if (_roomVolumes.IsCreated)
+            if (IsAtmosphereVaultStateReady())
                 PrewarmAtmosphereAuthoringCaches();
 
             TryRegisterHotSwapListener();
@@ -2367,7 +2810,7 @@ namespace Hecton8.Atmosphere
             }
 
             EnsureNativeState();
-            if (!_roomVolumes.IsCreated)
+            if (!IsAtmosphereVaultStateReady())
             {
                 RefreshDebugState();
                 return;
@@ -2381,12 +2824,41 @@ namespace Hecton8.Atmosphere
             }
 
             InvalidateTopologyIfShapeChanged();
-            SyncFluidSnapshot();
-            SeedTopologyIfNeeded();
+            if (!TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
+            {
+                AccumulateAtmosphereStepTime(fixedDeltaTime);
+                RefreshDebugState();
+                return;
+            }
+
+            try
+            {
+                SyncFluidSnapshot();
+                SeedTopologyIfNeeded();
+            }
+            finally
+            {
+                ExitAtmosphereWritePhase(ownsWriteLock);
+            }
+
             SeedThermalEmittersIfNeeded();
             SeedEmergencyVentPipesIfNeeded();
-            AccumulateRoomHeatSources();
-            PublishDoorOpeningPressureEvents();
+            if (!TryEnterAtmosphereWritePhase(out ownsWriteLock))
+            {
+                AccumulateAtmosphereStepTime(fixedDeltaTime);
+                RefreshDebugState();
+                return;
+            }
+
+            try
+            {
+                AccumulateRoomHeatSources();
+                PublishDoorOpeningPressureEvents();
+            }
+            finally
+            {
+                ExitAtmosphereWritePhase(ownsWriteLock);
+            }
 
             AccumulateAtmosphereStepTime(fixedDeltaTime);
             float slowTickSeconds = math.max(0.02f, FiniteOr(atmosphereSlowTickSeconds, DefaultAtmosphereSlowTickSeconds));
@@ -2404,7 +2876,18 @@ namespace Hecton8.Atmosphere
 
         private void PrewarmAtmosphereAuthoringCaches()
         {
-            SeedTopologyIfNeeded();
+            if (TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
+            {
+                try
+                {
+                    SeedTopologyIfNeeded();
+                }
+                finally
+                {
+                    ExitAtmosphereWritePhase(ownsWriteLock);
+                }
+            }
+
             SeedThermalEmittersIfNeeded();
             SeedEmergencyVentPipesIfNeeded();
         }
@@ -2430,6 +2913,9 @@ namespace Hecton8.Atmosphere
 
         private void ApplyAbyssalBlackoutFreeze(float fixedDeltaTime)
         {
+            NativeArray<float> _temperatureFront = this._temperatureFront;
+            NativeArray<float> _floodVolumes = this._floodVolumes;
+            NativeArray<float> _roomVolumes = this._roomVolumes;
             if (fluidDynamics == null || !_temperatureFront.IsCreated || !_floodVolumes.IsCreated || !_roomVolumes.IsCreated)
                 return;
 
@@ -2465,6 +2951,11 @@ namespace Hecton8.Atmosphere
 
         private void ProcessSteamPhaseCycle(float fixedDeltaTime)
         {
+            NativeArray<float> _steamFront = this._steamFront;
+            NativeArray<float> _temperatureFront = this._temperatureFront;
+            NativeArray<float> _floodVolumes = this._floodVolumes;
+            NativeArray<float> _roomVolumes = this._roomVolumes;
+            NativeArray<float> _gasVolumeFront = this._gasVolumeFront;
             if (fluidDynamics == null ||
                 !_steamFront.IsCreated ||
                 !_temperatureFront.IsCreated ||
@@ -2530,6 +3021,13 @@ namespace Hecton8.Atmosphere
 
         private void TryEmergencyAtmosphericVenting(float fixedDeltaTime)
         {
+            NativeArray<float> _pressureFront = this._pressureFront;
+            NativeArray<float> _steamFront = this._steamFront;
+            NativeArray<float> _hydrogenPocketFront = this._hydrogenPocketFront;
+            NativeArray<float> _oxygenPocketFront = this._oxygenPocketFront;
+            NativeArray<float> _o2Front = this._o2Front;
+            NativeArray<float> _co2Front = this._co2Front;
+            NativeArray<float> _inertFront = this._inertFront;
             if (_submarineBody == null || fluidDynamics == null || !_pressureFront.IsCreated || !_steamFront.IsCreated)
                 return;
 
@@ -2616,6 +3114,8 @@ namespace Hecton8.Atmosphere
 
         private void DecayExplosivePockets(float fixedDeltaTime)
         {
+            NativeArray<float> _hydrogenPocketFront = this._hydrogenPocketFront;
+            NativeArray<float> _oxygenPocketFront = this._oxygenPocketFront;
             float safeDeltaTime = FiniteNonNegativeOrZero(fixedDeltaTime);
             if (!_hydrogenPocketFront.IsCreated || !_oxygenPocketFront.IsCreated || safeDeltaTime <= 0f)
                 return;
@@ -2630,6 +3130,9 @@ namespace Hecton8.Atmosphere
 
         private void TriggerExplosivePocketDetonation(int roomIndex, Vector3 runtimeHitPoint, float pocketIntensity)
         {
+            NativeArray<float> _hydrogenPocketFront = this._hydrogenPocketFront;
+            NativeArray<float> _oxygenPocketFront = this._oxygenPocketFront;
+            NativeArray<float> _pressureFront = this._pressureFront;
             if (_submarineBody == null || roomIndex < 0 || roomIndex >= RoomCount)
                 return;
 
@@ -2683,6 +3186,9 @@ namespace Hecton8.Atmosphere
 
         private void RecomputeInstantRoomPressure(int roomIndex)
         {
+            NativeArray<float> _pressureFront = this._pressureFront;
+            NativeArray<float> _temperatureFront = this._temperatureFront;
+            NativeArray<float> _gasVolumeFront = this._gasVolumeFront;
             if (roomIndex < 0 || roomIndex >= RoomCount || !_pressureFront.IsCreated || !_gasVolumeFront.IsCreated)
                 return;
 
@@ -2695,12 +3201,13 @@ namespace Hecton8.Atmosphere
             if (roomIndex < 0 || roomIndex >= RoomCount)
                 return DefaultInitialCarbonDioxideFraction;
 
-            float pressure = _pressureFront.IsCreated
-                ? FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa())
+            float pressure = TryReadVaultValue(in _pressureFrontHandle, roomIndex, out float rawPressure)
+                ? FiniteClampedOr(rawPressure, ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa())
                 : ResolveSafeReferencePressureKPa();
-            float carbonDioxidePartialPressure = _co2PartialPressureFront.IsCreated
-                ? FiniteClampedOr(_co2PartialPressureFront[roomIndex], DefaultInitialCarbonDioxideFraction * ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa())
-                : DefaultInitialCarbonDioxideFraction * ResolveSafeReferencePressureKPa();
+            float fallbackCarbonDioxide = DefaultInitialCarbonDioxideFraction * ResolveSafeReferencePressureKPa();
+            float carbonDioxidePartialPressure = TryReadVaultValue(in _co2PartialPressureFrontHandle, roomIndex, out float rawCarbonDioxidePressure)
+                ? FiniteClampedOr(rawCarbonDioxidePressure, fallbackCarbonDioxide, 0f, ResolveSafeMaximumPressureKPa())
+                : fallbackCarbonDioxide;
             if (pressure <= Epsilon)
                 return 0f;
 
@@ -2716,6 +3223,7 @@ namespace Hecton8.Atmosphere
 
         private void RefreshRoomStatusBitsOnly(int roomIndex)
         {
+            NativeArray<uint> _roomStatusMaskFront = this._roomStatusMaskFront;
             if (roomIndex < 0 || roomIndex >= RoomCount || !_roomStatusMaskFront.IsCreated)
                 return;
 
@@ -2728,6 +3236,7 @@ namespace Hecton8.Atmosphere
 
         private void RefreshRoomStatusBitsImmediate(int roomIndex)
         {
+            NativeArray<uint> _roomStatusMaskFront = this._roomStatusMaskFront;
             if (roomIndex < 0 || roomIndex >= RoomCount || !_roomStatusMaskFront.IsCreated)
                 return;
 
@@ -2902,6 +3411,7 @@ namespace Hecton8.Atmosphere
         private void CacheReferencesCold()
         {
             CachePlayerRuntimeContext(GlobalRegistry.Player);
+            _dataVault = GlobalRegistry.DataVault;
             _powerGridService = GlobalRegistry.PowerGrid;
             _audioLogs = GlobalRegistry.AudioLogs;
             _playerSensoryService = GlobalRegistry.PlayerSensory;
@@ -3487,11 +3997,23 @@ namespace Hecton8.Atmosphere
 
         private void ClearRoomStatusMasks()
         {
-            if (_roomStatusMaskFront.IsCreated)
-                _roomStatusMaskFront[0] = 0u;
+            if (!TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
+                return;
 
-            if (_roomStatusMaskBack.IsCreated)
-                _roomStatusMaskBack[0] = 0u;
+            try
+            {
+                NativeArray<uint> _roomStatusMaskFront = this._roomStatusMaskFront;
+                NativeArray<uint> _roomStatusMaskBack = this._roomStatusMaskBack;
+                if (_roomStatusMaskFront.IsCreated)
+                    _roomStatusMaskFront[0] = 0u;
+
+                if (_roomStatusMaskBack.IsCreated)
+                    _roomStatusMaskBack[0] = 0u;
+            }
+            finally
+            {
+                ExitAtmosphereWritePhase(ownsWriteLock);
+            }
         }
 
         private static bool IsPositiveFinite(float value)
@@ -3639,6 +4161,32 @@ namespace Hecton8.Atmosphere
                 case GlobalRegistryServiceSlot.ThermodynamicsService:
                     _thermodynamicsService = currentService as IThermodynamicsService;
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    IDataVault previousVault = previousService as IDataVault ?? _dataVault;
+                    if (_atmosphereJobRunning)
+                        DispatcherJobSwap.TryComplete(ref _atmosphereJobHandle, forceComplete: true);
+                    if (_atmosphereJobLockMask != 0ul)
+                    {
+                        ulong lockMask = _atmosphereJobLockMask;
+                        _atmosphereJobLockMask = 0ul;
+                        ReleaseAtmosphereJobBufferLocks(previousVault, lockMask);
+                    }
+
+                    if (_atmospherePhaseWriteLockMask != 0ul)
+                    {
+                        ulong phaseMask = _atmospherePhaseWriteLockMask;
+                        _atmospherePhaseWriteLockMask = 0ul;
+                        ReleaseAtmospherePhaseWriteLocks(previousVault, phaseMask);
+                    }
+
+                    _atmosphereJobRunning = false;
+                    _scheduledAtmosphereDeltaTime = 0f;
+                    ReleaseAtmosphereVaultHandles(previousVault);
+                    _dataVault = currentService as IDataVault;
+                    _topologySeeded = false;
+                    _thermalEmittersSeeded = false;
+                    _emergencyVentPipesSeeded = false;
+                    break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registered = false;
                     _lateFrameRegistered = false;
@@ -3695,166 +4243,305 @@ namespace Hecton8.Atmosphere
             if (!TryFinalizeDeferredNativeDisposal())
                 return;
 
-            if (_roomVolumes.IsCreated)
+            if (IsAtmosphereVaultStateReady())
                 return;
 
-            // COLD ALLOC: NativeArray<float>[8] - room gas-capacity snapshot aligned to submarine compartments - owner: SubmarineAtmosphereSystem
-            _roomVolumes = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - flood-volume snapshot consumed by the atmosphere solver - owner: SubmarineAtmosphereSystem
-            _floodVolumes = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - front O2 double buffer in reference-gas-volume units - owner: SubmarineAtmosphereSystem
-            _o2Front = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - back O2 double buffer in reference-gas-volume units - owner: SubmarineAtmosphereSystem
-            _o2Back = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - front CO2 double buffer in reference-gas-volume units - owner: SubmarineAtmosphereSystem
-            _co2Front = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - back CO2 double buffer in reference-gas-volume units - owner: SubmarineAtmosphereSystem
-            _co2Back = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - front inert-gas double buffer - owner: SubmarineAtmosphereSystem
-            _inertFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - back inert-gas double buffer - owner: SubmarineAtmosphereSystem
-            _inertBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - front room-pressure snapshot - owner: SubmarineAtmosphereSystem
-            _pressureFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - back room-pressure snapshot - owner: SubmarineAtmosphereSystem
-            _pressureBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - front O2 partial-pressure snapshot in kPa - owner: SubmarineAtmosphereSystem
-            _o2PartialPressureFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - back O2 partial-pressure snapshot in kPa - owner: SubmarineAtmosphereSystem
-            _o2PartialPressureBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - front CO2 partial-pressure snapshot in kPa - owner: SubmarineAtmosphereSystem
-            _co2PartialPressureFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - back CO2 partial-pressure snapshot in kPa - owner: SubmarineAtmosphereSystem
-            _co2PartialPressureBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - front N2 partial-pressure snapshot in kPa - owner: SubmarineAtmosphereSystem
-            _n2PartialPressureFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - back N2 partial-pressure snapshot in kPa - owner: SubmarineAtmosphereSystem
-            _n2PartialPressureBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - front available gas volume snapshot - owner: SubmarineAtmosphereSystem
-            _gasVolumeFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - back available gas volume snapshot - owner: SubmarineAtmosphereSystem
-            _gasVolumeBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - room O2 metabolic sink rates - owner: SubmarineAtmosphereSystem
-            _o2ConsumptionRates = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - room CO2 metabolic source rates - owner: SubmarineAtmosphereSystem
-            _co2GenerationRates = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[8] - local player occupancy counts consumed by the cheap atmosphere job - owner: SubmarineAtmosphereSystem
-            _roomPlayerCounts = new NativeArray<int>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - front room heat snapshot for cheap atmosphere solve - owner: SubmarineAtmosphereSystem
-            _temperatureFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - back room heat snapshot for cheap atmosphere solve - owner: SubmarineAtmosphereSystem
-            _temperatureBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - front steam phase accumulator for room VFX state - owner: SubmarineAtmosphereSystem
-            _steamFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - back steam phase accumulator for room VFX state - owner: SubmarineAtmosphereSystem
-            _steamBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - hydrogen-pocket accumulator for submerged overload electrolysis - owner: SubmarineAtmosphereSystem
-            _hydrogenPocketFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - oxygen-pocket accumulator for submerged overload electrolysis - owner: SubmarineAtmosphereSystem
-            _oxygenPocketFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - room heat watt source cache consumed by Burst atmosphere job - owner: SubmarineAtmosphereSystem
-            _roomHeatWatts = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<uint>[1] - front packed Safe/Toxic/Freezing/Pressure/Fire room status bitmask - owner: SubmarineAtmosphereSystem
-            _roomStatusMaskFront = new NativeArray<uint>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<uint>[1] - back packed Safe/Toxic/Freezing/Pressure/Fire room status bitmask - owner: SubmarineAtmosphereSystem
-            _roomStatusMaskBack = new NativeArray<uint>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int2>[7] - door graph edges aligned to submarine bulkheads - owner: SubmarineAtmosphereSystem
-            _doorPairs = new NativeArray<int2>(DoorCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[7] - sealed-door state copied from submarine bulkheads - owner: SubmarineAtmosphereSystem
-            _doorSealed = new NativeArray<byte>(DoorCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[7] - previous sealed-door state used for door-opening pressure warnings - owner: SubmarineAtmosphereSystem
-            _doorSealedPrevious = new NativeArray<byte>(DoorCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            IDataVault vault = ResolveDataVaultCold();
+            if (vault == null)
+                return;
 
-            RegisterNativeState();
+            EnsureVaultHandle(vault, ref _roomVolumesHandle, SubmarineAtmosphereVaultBufferIds.RoomVolumes, RoomCapacity);
+            EnsureVaultHandle(vault, ref _floodVolumesHandle, SubmarineAtmosphereVaultBufferIds.FloodVolumes, RoomCapacity);
+            EnsureVaultHandle(vault, ref _o2FrontHandle, SubmarineAtmosphereVaultBufferIds.O2Front, RoomCapacity);
+            EnsureVaultHandle(vault, ref _o2BackHandle, SubmarineAtmosphereVaultBufferIds.O2Back, RoomCapacity);
+            EnsureVaultHandle(vault, ref _co2FrontHandle, SubmarineAtmosphereVaultBufferIds.Co2Front, RoomCapacity);
+            EnsureVaultHandle(vault, ref _co2BackHandle, SubmarineAtmosphereVaultBufferIds.Co2Back, RoomCapacity);
+            EnsureVaultHandle(vault, ref _inertFrontHandle, SubmarineAtmosphereVaultBufferIds.InertFront, RoomCapacity);
+            EnsureVaultHandle(vault, ref _inertBackHandle, SubmarineAtmosphereVaultBufferIds.InertBack, RoomCapacity);
+            EnsureVaultHandle(vault, ref _pressureFrontHandle, SubmarineAtmosphereVaultBufferIds.PressureFront, RoomCapacity);
+            EnsureVaultHandle(vault, ref _pressureBackHandle, SubmarineAtmosphereVaultBufferIds.PressureBack, RoomCapacity);
+            EnsureVaultHandle(vault, ref _o2PartialPressureFrontHandle, SubmarineAtmosphereVaultBufferIds.O2PartialPressureFront, RoomCapacity);
+            EnsureVaultHandle(vault, ref _o2PartialPressureBackHandle, SubmarineAtmosphereVaultBufferIds.O2PartialPressureBack, RoomCapacity);
+            EnsureVaultHandle(vault, ref _co2PartialPressureFrontHandle, SubmarineAtmosphereVaultBufferIds.Co2PartialPressureFront, RoomCapacity);
+            EnsureVaultHandle(vault, ref _co2PartialPressureBackHandle, SubmarineAtmosphereVaultBufferIds.Co2PartialPressureBack, RoomCapacity);
+            EnsureVaultHandle(vault, ref _n2PartialPressureFrontHandle, SubmarineAtmosphereVaultBufferIds.N2PartialPressureFront, RoomCapacity);
+            EnsureVaultHandle(vault, ref _n2PartialPressureBackHandle, SubmarineAtmosphereVaultBufferIds.N2PartialPressureBack, RoomCapacity);
+            EnsureVaultHandle(vault, ref _gasVolumeFrontHandle, SubmarineAtmosphereVaultBufferIds.GasVolumeFront, RoomCapacity);
+            EnsureVaultHandle(vault, ref _gasVolumeBackHandle, SubmarineAtmosphereVaultBufferIds.GasVolumeBack, RoomCapacity);
+            EnsureVaultHandle(vault, ref _o2ConsumptionRatesHandle, SubmarineAtmosphereVaultBufferIds.O2ConsumptionRates, RoomCapacity);
+            EnsureVaultHandle(vault, ref _co2GenerationRatesHandle, SubmarineAtmosphereVaultBufferIds.Co2GenerationRates, RoomCapacity);
+            EnsureVaultHandle(vault, ref _roomPlayerCountsHandle, SubmarineAtmosphereVaultBufferIds.RoomPlayerCounts, RoomCapacity);
+            EnsureVaultHandle(vault, ref _temperatureFrontHandle, SubmarineAtmosphereVaultBufferIds.TemperatureFront, RoomCapacity);
+            EnsureVaultHandle(vault, ref _temperatureBackHandle, SubmarineAtmosphereVaultBufferIds.TemperatureBack, RoomCapacity);
+            EnsureVaultHandle(vault, ref _steamFrontHandle, SubmarineAtmosphereVaultBufferIds.SteamFront, RoomCapacity);
+            EnsureVaultHandle(vault, ref _steamBackHandle, SubmarineAtmosphereVaultBufferIds.SteamBack, RoomCapacity);
+            EnsureVaultHandle(vault, ref _hydrogenPocketFrontHandle, SubmarineAtmosphereVaultBufferIds.HydrogenPocketFront, RoomCapacity);
+            EnsureVaultHandle(vault, ref _oxygenPocketFrontHandle, SubmarineAtmosphereVaultBufferIds.OxygenPocketFront, RoomCapacity);
+            EnsureVaultHandle(vault, ref _roomHeatWattsHandle, SubmarineAtmosphereVaultBufferIds.RoomHeatWatts, RoomCapacity);
+            EnsureVaultHandle(vault, ref _roomStatusMaskFrontHandle, SubmarineAtmosphereVaultBufferIds.RoomStatusMaskFront, 1);
+            EnsureVaultHandle(vault, ref _roomStatusMaskBackHandle, SubmarineAtmosphereVaultBufferIds.RoomStatusMaskBack, 1);
+            EnsureVaultHandle(vault, ref _doorPairsHandle, SubmarineAtmosphereVaultBufferIds.DoorPairs, DoorCapacity);
+            EnsureVaultHandle(vault, ref _doorSealedHandle, SubmarineAtmosphereVaultBufferIds.DoorSealed, DoorCapacity);
+            EnsureVaultHandle(vault, ref _doorSealedPreviousHandle, SubmarineAtmosphereVaultBufferIds.DoorSealedPrevious, DoorCapacity);
+            EnsureVaultHandle(vault, ref _telemetryRingHandle, SubmarineAtmosphereVaultBufferIds.TelemetryRing, TelemetryCapacity);
+            EnsureVaultHandle(vault, ref _telemetryCursorHandle, SubmarineAtmosphereVaultBufferIds.TelemetryCursor, 1);
+
+            if (IsAtmosphereVaultStateReady() && TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
+            {
+                try
+                {
+                    ClearAtmosphereVaultBuffersCold();
+                }
+                finally
+                {
+                    ExitAtmosphereWritePhase(ownsWriteLock);
+                }
+            }
         }
 
         private bool TryFinalizeDeferredNativeDisposal()
         {
-            return DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
+            return true;
         }
 
-        private void RegisterNativeState()
+        private IDataVault ResolveDataVaultCold()
         {
-            RegisterNativeArray(_roomVolumes, nameof(_roomVolumes));
-            RegisterNativeArray(_floodVolumes, nameof(_floodVolumes));
-            RegisterNativeArray(_o2Front, nameof(_o2Front));
-            RegisterNativeArray(_o2Back, nameof(_o2Back));
-            RegisterNativeArray(_co2Front, nameof(_co2Front));
-            RegisterNativeArray(_co2Back, nameof(_co2Back));
-            RegisterNativeArray(_inertFront, nameof(_inertFront));
-            RegisterNativeArray(_inertBack, nameof(_inertBack));
-            RegisterNativeArray(_pressureFront, nameof(_pressureFront));
-            RegisterNativeArray(_pressureBack, nameof(_pressureBack));
-            RegisterNativeArray(_o2PartialPressureFront, nameof(_o2PartialPressureFront));
-            RegisterNativeArray(_o2PartialPressureBack, nameof(_o2PartialPressureBack));
-            RegisterNativeArray(_co2PartialPressureFront, nameof(_co2PartialPressureFront));
-            RegisterNativeArray(_co2PartialPressureBack, nameof(_co2PartialPressureBack));
-            RegisterNativeArray(_n2PartialPressureFront, nameof(_n2PartialPressureFront));
-            RegisterNativeArray(_n2PartialPressureBack, nameof(_n2PartialPressureBack));
-            RegisterNativeArray(_gasVolumeFront, nameof(_gasVolumeFront));
-            RegisterNativeArray(_gasVolumeBack, nameof(_gasVolumeBack));
-            RegisterNativeArray(_o2ConsumptionRates, nameof(_o2ConsumptionRates));
-            RegisterNativeArray(_co2GenerationRates, nameof(_co2GenerationRates));
-            RegisterNativeArray(_roomPlayerCounts, nameof(_roomPlayerCounts));
-            RegisterNativeArray(_temperatureFront, nameof(_temperatureFront));
-            RegisterNativeArray(_temperatureBack, nameof(_temperatureBack));
-            RegisterNativeArray(_steamFront, nameof(_steamFront));
-            RegisterNativeArray(_steamBack, nameof(_steamBack));
-            RegisterNativeArray(_hydrogenPocketFront, nameof(_hydrogenPocketFront));
-            RegisterNativeArray(_oxygenPocketFront, nameof(_oxygenPocketFront));
-            RegisterNativeArray(_roomHeatWatts, nameof(_roomHeatWatts));
-            RegisterNativeArray(_roomStatusMaskFront, nameof(_roomStatusMaskFront));
-            RegisterNativeArray(_roomStatusMaskBack, nameof(_roomStatusMaskBack));
-            RegisterNativeArray(_doorPairs, nameof(_doorPairs));
-            RegisterNativeArray(_doorSealed, nameof(_doorSealed));
-            RegisterNativeArray(_doorSealedPrevious, nameof(_doorSealedPrevious));
+            if (_dataVault != null)
+                return _dataVault;
+
+            _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
         }
 
-        private void UnregisterNativeState()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private NativeArray<T> ResolveVaultArray<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
-            UnregisterNativeArray(_roomVolumes);
-            UnregisterNativeArray(_floodVolumes);
-            UnregisterNativeArray(_o2Front);
-            UnregisterNativeArray(_o2Back);
-            UnregisterNativeArray(_co2Front);
-            UnregisterNativeArray(_co2Back);
-            UnregisterNativeArray(_inertFront);
-            UnregisterNativeArray(_inertBack);
-            UnregisterNativeArray(_pressureFront);
-            UnregisterNativeArray(_pressureBack);
-            UnregisterNativeArray(_o2PartialPressureFront);
-            UnregisterNativeArray(_o2PartialPressureBack);
-            UnregisterNativeArray(_co2PartialPressureFront);
-            UnregisterNativeArray(_co2PartialPressureBack);
-            UnregisterNativeArray(_n2PartialPressureFront);
-            UnregisterNativeArray(_n2PartialPressureBack);
-            UnregisterNativeArray(_gasVolumeFront);
-            UnregisterNativeArray(_gasVolumeBack);
-            UnregisterNativeArray(_o2ConsumptionRates);
-            UnregisterNativeArray(_co2GenerationRates);
-            UnregisterNativeArray(_roomPlayerCounts);
-            UnregisterNativeArray(_temperatureFront);
-            UnregisterNativeArray(_temperatureBack);
-            UnregisterNativeArray(_steamFront);
-            UnregisterNativeArray(_steamBack);
-            UnregisterNativeArray(_hydrogenPocketFront);
-            UnregisterNativeArray(_oxygenPocketFront);
-            UnregisterNativeArray(_roomHeatWatts);
-            UnregisterNativeArray(_roomStatusMaskFront);
-            UnregisterNativeArray(_roomStatusMaskBack);
-            UnregisterNativeArray(_doorPairs);
-            UnregisterNativeArray(_doorSealed);
-            UnregisterNativeArray(_doorSealedPrevious);
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                HasValidVaultHandle(in handle) &&
+                vault.TryResolveHandle(in handle, out NativeArray<T> buffer)
+                    ? buffer
+                    : default;
         }
 
-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryResolveVaultArray<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                HasValidVaultHandle(in handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated;
         }
 
-        private static void UnregisterNativeArray<T>(NativeArray<T> array) where T : struct
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryReadVaultArray<T>(in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer) where T : struct
         {
-            NativeMemorySentinel.UnregisterNativeArray(array);
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                HasValidVaultHandle(in handle) &&
+                vault.TryReadOnlyHandle(in handle, out buffer) &&
+                buffer.IsCreated;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryReadVaultValue<T>(in VaultGenerationHandle<T> handle, int index, out T value) where T : struct
+        {
+            value = default;
+            if (!TryReadVaultArray(in handle, out NativeArray<T>.ReadOnly buffer) ||
+                (uint)index >= (uint)buffer.Length)
+            {
+                return false;
+            }
+
+            value = buffer[index];
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasValidVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.SystemID != 0u && handle.Generation != 0u;
+        }
+
+        private static void EnsureVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int length) where T : struct
+        {
+            if (vault == null || length <= 0)
+                return;
+
+            if (HasValidVaultHandle(in handle) &&
+                handle.BufferID == (uint)bufferId &&
+                handle.SystemID == (uint)SystemID.HabitatAtmosphere)
+            {
+                return;
+            }
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                length,
+                SystemID.HabitatAtmosphere,
+                NativeArrayOptions.UninitializedMemory);
+        }
+
+        private bool IsAtmosphereVaultStateReady()
+        {
+            return HasValidVaultHandle(in _roomVolumesHandle) &&
+                HasValidVaultHandle(in _floodVolumesHandle) &&
+                HasValidVaultHandle(in _o2FrontHandle) &&
+                HasValidVaultHandle(in _o2BackHandle) &&
+                HasValidVaultHandle(in _co2FrontHandle) &&
+                HasValidVaultHandle(in _co2BackHandle) &&
+                HasValidVaultHandle(in _inertFrontHandle) &&
+                HasValidVaultHandle(in _inertBackHandle) &&
+                HasValidVaultHandle(in _pressureFrontHandle) &&
+                HasValidVaultHandle(in _pressureBackHandle) &&
+                HasValidVaultHandle(in _o2PartialPressureFrontHandle) &&
+                HasValidVaultHandle(in _o2PartialPressureBackHandle) &&
+                HasValidVaultHandle(in _co2PartialPressureFrontHandle) &&
+                HasValidVaultHandle(in _co2PartialPressureBackHandle) &&
+                HasValidVaultHandle(in _n2PartialPressureFrontHandle) &&
+                HasValidVaultHandle(in _n2PartialPressureBackHandle) &&
+                HasValidVaultHandle(in _gasVolumeFrontHandle) &&
+                HasValidVaultHandle(in _gasVolumeBackHandle) &&
+                HasValidVaultHandle(in _o2ConsumptionRatesHandle) &&
+                HasValidVaultHandle(in _co2GenerationRatesHandle) &&
+                HasValidVaultHandle(in _roomPlayerCountsHandle) &&
+                HasValidVaultHandle(in _temperatureFrontHandle) &&
+                HasValidVaultHandle(in _temperatureBackHandle) &&
+                HasValidVaultHandle(in _steamFrontHandle) &&
+                HasValidVaultHandle(in _steamBackHandle) &&
+                HasValidVaultHandle(in _hydrogenPocketFrontHandle) &&
+                HasValidVaultHandle(in _oxygenPocketFrontHandle) &&
+                HasValidVaultHandle(in _roomHeatWattsHandle) &&
+                HasValidVaultHandle(in _roomStatusMaskFrontHandle) &&
+                HasValidVaultHandle(in _roomStatusMaskBackHandle) &&
+                HasValidVaultHandle(in _doorPairsHandle) &&
+                HasValidVaultHandle(in _doorSealedHandle) &&
+                HasValidVaultHandle(in _doorSealedPreviousHandle) &&
+                IsTelemetryRingReady();
+        }
+
+        private bool IsTelemetryRingReady()
+        {
+            return HasValidVaultHandle(in _telemetryRingHandle) &&
+                HasValidVaultHandle(in _telemetryCursorHandle);
+        }
+
+        private void ClearAtmosphereVaultBuffersCold()
+        {
+            NativeArray<float> _roomVolumes = this._roomVolumes;
+            NativeArray<float> _floodVolumes = this._floodVolumes;
+            NativeArray<float> _o2Front = this._o2Front;
+            NativeArray<float> _o2Back = this._o2Back;
+            NativeArray<float> _co2Front = this._co2Front;
+            NativeArray<float> _co2Back = this._co2Back;
+            NativeArray<float> _inertFront = this._inertFront;
+            NativeArray<float> _inertBack = this._inertBack;
+            NativeArray<float> _pressureFront = this._pressureFront;
+            NativeArray<float> _pressureBack = this._pressureBack;
+            NativeArray<float> _o2PartialPressureFront = this._o2PartialPressureFront;
+            NativeArray<float> _o2PartialPressureBack = this._o2PartialPressureBack;
+            NativeArray<float> _co2PartialPressureFront = this._co2PartialPressureFront;
+            NativeArray<float> _co2PartialPressureBack = this._co2PartialPressureBack;
+            NativeArray<float> _n2PartialPressureFront = this._n2PartialPressureFront;
+            NativeArray<float> _n2PartialPressureBack = this._n2PartialPressureBack;
+            NativeArray<float> _gasVolumeFront = this._gasVolumeFront;
+            NativeArray<float> _gasVolumeBack = this._gasVolumeBack;
+            NativeArray<float> _o2ConsumptionRates = this._o2ConsumptionRates;
+            NativeArray<float> _co2GenerationRates = this._co2GenerationRates;
+            NativeArray<int> _roomPlayerCounts = this._roomPlayerCounts;
+            NativeArray<float> _temperatureFront = this._temperatureFront;
+            NativeArray<float> _temperatureBack = this._temperatureBack;
+            NativeArray<float> _steamFront = this._steamFront;
+            NativeArray<float> _steamBack = this._steamBack;
+            NativeArray<float> _hydrogenPocketFront = this._hydrogenPocketFront;
+            NativeArray<float> _oxygenPocketFront = this._oxygenPocketFront;
+            NativeArray<float> _roomHeatWatts = this._roomHeatWatts;
+            NativeArray<uint> _roomStatusMaskFront = this._roomStatusMaskFront;
+            NativeArray<uint> _roomStatusMaskBack = this._roomStatusMaskBack;
+            NativeArray<int2> _doorPairs = this._doorPairs;
+            NativeArray<byte> _doorSealed = this._doorSealed;
+            NativeArray<byte> _doorSealedPrevious = this._doorSealedPrevious;
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+            {
+                _roomVolumes[roomIndex] = 0f;
+                _floodVolumes[roomIndex] = 0f;
+                _o2Front[roomIndex] = 0f;
+                _o2Back[roomIndex] = 0f;
+                _co2Front[roomIndex] = 0f;
+                _co2Back[roomIndex] = 0f;
+                _inertFront[roomIndex] = 0f;
+                _inertBack[roomIndex] = 0f;
+                _pressureFront[roomIndex] = 0f;
+                _pressureBack[roomIndex] = 0f;
+                _o2PartialPressureFront[roomIndex] = 0f;
+                _o2PartialPressureBack[roomIndex] = 0f;
+                _co2PartialPressureFront[roomIndex] = 0f;
+                _co2PartialPressureBack[roomIndex] = 0f;
+                _n2PartialPressureFront[roomIndex] = 0f;
+                _n2PartialPressureBack[roomIndex] = 0f;
+                _gasVolumeFront[roomIndex] = 0f;
+                _gasVolumeBack[roomIndex] = 0f;
+                _o2ConsumptionRates[roomIndex] = 0f;
+                _co2GenerationRates[roomIndex] = 0f;
+                _roomPlayerCounts[roomIndex] = 0;
+                _temperatureFront[roomIndex] = 0f;
+                _temperatureBack[roomIndex] = 0f;
+                _steamFront[roomIndex] = 0f;
+                _steamBack[roomIndex] = 0f;
+                _hydrogenPocketFront[roomIndex] = 0f;
+                _oxygenPocketFront[roomIndex] = 0f;
+                _roomHeatWatts[roomIndex] = 0f;
+            }
+
+            _roomStatusMaskFront[0] = 0u;
+            _roomStatusMaskBack[0] = 0u;
+            IDataVault vault = _dataVault;
+            if (vault != null &&
+                HasValidVaultHandle(in _telemetryRingHandle) &&
+                vault.TryAcquireWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere, out NativeArray<SubmarineAtmosphereTelemetryEntry> telemetryRing))
+            {
+                try
+                {
+                    for (int i = 0; i < telemetryRing.Length; i++)
+                        telemetryRing[i] = default;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere);
+                }
+            }
+
+            if (vault != null &&
+                HasValidVaultHandle(in _telemetryCursorHandle) &&
+                vault.TryAcquireWriteLock(in _telemetryCursorHandle, SystemID.HabitatAtmosphere, out NativeArray<int> telemetryCursor))
+            {
+                try
+                {
+                    if (telemetryCursor.Length > 0)
+                        telemetryCursor[0] = 0;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _telemetryCursorHandle, SystemID.HabitatAtmosphere);
+                }
+            }
+
+            _telemetryWriteIndex = 0;
+            _atmosphereTickCount = 0u;
+            _blackBoxDumped = false;
+            for (int doorIndex = 0; doorIndex < DoorCapacity; doorIndex++)
+            {
+                _doorPairs[doorIndex] = new int2(-1, -1);
+                _doorSealed[doorIndex] = 1;
+                _doorSealedPrevious[doorIndex] = 1;
+            }
         }
 
         private void SeedTopologyIfNeeded()
@@ -3862,6 +4549,21 @@ namespace Hecton8.Atmosphere
             if (_topologySeeded || fluidDynamics == null)
                 return;
 
+            NativeArray<float> _roomVolumes = this._roomVolumes;
+            NativeArray<float> _gasVolumeFront = this._gasVolumeFront;
+            NativeArray<float> _pressureFront = this._pressureFront;
+            NativeArray<float> _o2Front = this._o2Front;
+            NativeArray<float> _co2Front = this._co2Front;
+            NativeArray<float> _inertFront = this._inertFront;
+            NativeArray<float> _o2PartialPressureFront = this._o2PartialPressureFront;
+            NativeArray<float> _co2PartialPressureFront = this._co2PartialPressureFront;
+            NativeArray<float> _n2PartialPressureFront = this._n2PartialPressureFront;
+            NativeArray<float> _temperatureFront = this._temperatureFront;
+            NativeArray<float> _o2ConsumptionRates = this._o2ConsumptionRates;
+            NativeArray<float> _co2GenerationRates = this._co2GenerationRates;
+            NativeArray<int2> _doorPairs = this._doorPairs;
+            NativeArray<byte> _doorSealed = this._doorSealed;
+            NativeArray<byte> _doorSealedPrevious = this._doorSealedPrevious;
             int roomCount = RoomCount;
             if (roomCount <= 0)
                 return;
@@ -4090,6 +4792,15 @@ namespace Hecton8.Atmosphere
             if (fluidDynamics == null)
                 return;
 
+            NativeArray<int> _roomPlayerCounts = this._roomPlayerCounts;
+            NativeArray<float> _roomVolumes = this._roomVolumes;
+            NativeArray<float> _floodVolumes = this._floodVolumes;
+            NativeArray<float> _gasVolumeFront = this._gasVolumeFront;
+            NativeArray<float> _o2ConsumptionRates = this._o2ConsumptionRates;
+            NativeArray<float> _co2GenerationRates = this._co2GenerationRates;
+            NativeArray<float> _roomHeatWatts = this._roomHeatWatts;
+            NativeArray<int2> _doorPairs = this._doorPairs;
+            NativeArray<byte> _doorSealed = this._doorSealed;
             int roomCount = RoomCount;
             float minimumGasVolume = math.max(0.001f, FiniteOr(minimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters));
             for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
@@ -4224,7 +4935,9 @@ namespace Hecton8.Atmosphere
                 !module.TryGetInteriorAabbBounds(out Vector3 worldCenter, out Vector3 halfExtents))
                 return false;
 
-            float3 playerRuntime = playerAup.ToRuntimeFloat3();
+            if (!TryResolveRuntimeDeltaFromCurrentOrigin(in playerAup, out float3 playerRuntime))
+                return false;
+
             Vector3 delta = new Vector3(playerRuntime.x, playerRuntime.y, playerRuntime.z) - worldCenter;
             return math.abs(delta.x) <= FiniteNonNegativeOrZero(halfExtents.x) &&
                    math.abs(delta.y) <= FiniteNonNegativeOrZero(halfExtents.y) &&
@@ -4260,8 +4973,32 @@ namespace Hecton8.Atmosphere
             return AbsoluteUniversePosition.IsFinite(in positionAup);
         }
 
+        private static bool TryResolveRuntimeDeltaFromCurrentOrigin(in AbsoluteUniversePosition targetAup, out float3 runtimePosition)
+        {
+            runtimePosition = float3.zero;
+            if (!AbsoluteUniversePosition.IsFinite(in targetAup))
+                return false;
+
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            double3 deltaAup = AbsoluteUniversePosition.DeltaMetersClamped(in targetAup, in originAup);
+            if (!math.all(math.isfinite(deltaAup)))
+                return false;
+
+            const double maxRuntimeDeltaMeters = 1048576.0d;
+            deltaAup = math.clamp(
+                deltaAup,
+                new double3(-maxRuntimeDeltaMeters, -maxRuntimeDeltaMeters, -maxRuntimeDeltaMeters),
+                new double3(maxRuntimeDeltaMeters, maxRuntimeDeltaMeters, maxRuntimeDeltaMeters));
+            runtimePosition = new float3((float)deltaAup.x, (float)deltaAup.y, (float)deltaAup.z);
+            return math.all(math.isfinite(runtimePosition));
+        }
+
         private void AccumulateRoomHeatSources()
         {
+            NativeArray<float> _roomHeatWatts = this._roomHeatWatts;
             if (!_roomHeatWatts.IsCreated || fluidDynamics == null)
                 return;
 
@@ -4367,6 +5104,10 @@ namespace Hecton8.Atmosphere
 
         private void PublishDoorOpeningPressureEvents()
         {
+            NativeArray<float> _pressureFront = this._pressureFront;
+            NativeArray<byte> _doorSealedPrevious = this._doorSealedPrevious;
+            NativeArray<byte> _doorSealed = this._doorSealed;
+            NativeArray<int2> _doorPairs = this._doorPairs;
             if (!_topologySeeded || !_pressureFront.IsCreated || !_doorSealedPrevious.IsCreated || fluidDynamics == null)
                 return;
 
@@ -4625,9 +5366,293 @@ namespace Hecton8.Atmosphere
             return safeValue.z >= 0f ? Vector3.forward : Vector3.back;
         }
 
+        private bool TryEnterAtmosphereWritePhase(out bool ownsWriteLock)
+        {
+            ownsWriteLock = false;
+            if (_atmospherePhaseWriteLockMask != 0ul)
+                return true;
+
+            if (!TryAcquireAtmospherePhaseWriteLocks())
+            {
+                RecordAtmosphereFailure(4);
+                return false;
+            }
+
+            ownsWriteLock = true;
+            return true;
+        }
+
+        private void ExitAtmosphereWritePhase(bool ownsWriteLock)
+        {
+            if (ownsWriteLock)
+                ReleaseAtmospherePhaseWriteLocks();
+        }
+
+        private bool TryAcquireAtmospherePhaseWriteLocks()
+        {
+            if (_atmospherePhaseWriteLockMask != 0ul)
+                return false;
+
+            IDataVault vault = _dataVault;
+            ulong mask = 0ul;
+            bool success = false;
+            try
+            {
+                if (vault == null ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _roomVolumesHandle, ref mask, 0) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _floodVolumesHandle, ref mask, 1) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _o2FrontHandle, ref mask, 2) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _o2BackHandle, ref mask, 3) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _co2FrontHandle, ref mask, 4) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _co2BackHandle, ref mask, 5) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _inertFrontHandle, ref mask, 6) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _inertBackHandle, ref mask, 7) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _pressureFrontHandle, ref mask, 8) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _pressureBackHandle, ref mask, 9) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _o2PartialPressureFrontHandle, ref mask, 10) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _o2PartialPressureBackHandle, ref mask, 11) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _co2PartialPressureFrontHandle, ref mask, 12) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _co2PartialPressureBackHandle, ref mask, 13) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _n2PartialPressureFrontHandle, ref mask, 14) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _n2PartialPressureBackHandle, ref mask, 15) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _gasVolumeFrontHandle, ref mask, 16) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _gasVolumeBackHandle, ref mask, 17) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _o2ConsumptionRatesHandle, ref mask, 18) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _co2GenerationRatesHandle, ref mask, 19) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _roomPlayerCountsHandle, ref mask, 20) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _temperatureFrontHandle, ref mask, 21) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _temperatureBackHandle, ref mask, 22) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _steamFrontHandle, ref mask, 23) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _steamBackHandle, ref mask, 24) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _hydrogenPocketFrontHandle, ref mask, 25) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _oxygenPocketFrontHandle, ref mask, 26) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _roomHeatWattsHandle, ref mask, 27) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _roomStatusMaskFrontHandle, ref mask, 28) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _roomStatusMaskBackHandle, ref mask, 29) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _doorPairsHandle, ref mask, 30) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _doorSealedHandle, ref mask, 31) ||
+                    !TryAcquireAtmosphereWriteLock(vault, in _doorSealedPreviousHandle, ref mask, 32))
+                {
+                    return false;
+                }
+
+                _atmospherePhaseWriteLockMask = mask;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    ReleaseAtmospherePhaseWriteLocks(vault, mask);
+            }
+        }
+
+        private static bool TryAcquireAtmosphereWriteLock<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            ref ulong mask,
+            int bitIndex) where T : struct
+        {
+            if (!HasValidVaultHandle(in handle) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.HabitatAtmosphere, out NativeArray<T> buffer) ||
+                !buffer.IsCreated)
+            {
+                return false;
+            }
+
+            mask |= 1ul << bitIndex;
+            return true;
+        }
+
+        private void ReleaseAtmospherePhaseWriteLocks()
+        {
+            ulong mask = _atmospherePhaseWriteLockMask;
+            if (mask == 0ul)
+                return;
+
+            _atmospherePhaseWriteLockMask = 0ul;
+            ReleaseAtmospherePhaseWriteLocks(_dataVault, mask);
+        }
+
+        private void ReleaseAtmospherePhaseWriteLocks(IDataVault vault, ulong mask)
+        {
+            if (vault == null || mask == 0ul)
+                return;
+
+            ReleaseAtmosphereWriteLock(vault, in _roomVolumesHandle, mask, 0);
+            ReleaseAtmosphereWriteLock(vault, in _floodVolumesHandle, mask, 1);
+            ReleaseAtmosphereWriteLock(vault, in _o2FrontHandle, mask, 2);
+            ReleaseAtmosphereWriteLock(vault, in _o2BackHandle, mask, 3);
+            ReleaseAtmosphereWriteLock(vault, in _co2FrontHandle, mask, 4);
+            ReleaseAtmosphereWriteLock(vault, in _co2BackHandle, mask, 5);
+            ReleaseAtmosphereWriteLock(vault, in _inertFrontHandle, mask, 6);
+            ReleaseAtmosphereWriteLock(vault, in _inertBackHandle, mask, 7);
+            ReleaseAtmosphereWriteLock(vault, in _pressureFrontHandle, mask, 8);
+            ReleaseAtmosphereWriteLock(vault, in _pressureBackHandle, mask, 9);
+            ReleaseAtmosphereWriteLock(vault, in _o2PartialPressureFrontHandle, mask, 10);
+            ReleaseAtmosphereWriteLock(vault, in _o2PartialPressureBackHandle, mask, 11);
+            ReleaseAtmosphereWriteLock(vault, in _co2PartialPressureFrontHandle, mask, 12);
+            ReleaseAtmosphereWriteLock(vault, in _co2PartialPressureBackHandle, mask, 13);
+            ReleaseAtmosphereWriteLock(vault, in _n2PartialPressureFrontHandle, mask, 14);
+            ReleaseAtmosphereWriteLock(vault, in _n2PartialPressureBackHandle, mask, 15);
+            ReleaseAtmosphereWriteLock(vault, in _gasVolumeFrontHandle, mask, 16);
+            ReleaseAtmosphereWriteLock(vault, in _gasVolumeBackHandle, mask, 17);
+            ReleaseAtmosphereWriteLock(vault, in _o2ConsumptionRatesHandle, mask, 18);
+            ReleaseAtmosphereWriteLock(vault, in _co2GenerationRatesHandle, mask, 19);
+            ReleaseAtmosphereWriteLock(vault, in _roomPlayerCountsHandle, mask, 20);
+            ReleaseAtmosphereWriteLock(vault, in _temperatureFrontHandle, mask, 21);
+            ReleaseAtmosphereWriteLock(vault, in _temperatureBackHandle, mask, 22);
+            ReleaseAtmosphereWriteLock(vault, in _steamFrontHandle, mask, 23);
+            ReleaseAtmosphereWriteLock(vault, in _steamBackHandle, mask, 24);
+            ReleaseAtmosphereWriteLock(vault, in _hydrogenPocketFrontHandle, mask, 25);
+            ReleaseAtmosphereWriteLock(vault, in _oxygenPocketFrontHandle, mask, 26);
+            ReleaseAtmosphereWriteLock(vault, in _roomHeatWattsHandle, mask, 27);
+            ReleaseAtmosphereWriteLock(vault, in _roomStatusMaskFrontHandle, mask, 28);
+            ReleaseAtmosphereWriteLock(vault, in _roomStatusMaskBackHandle, mask, 29);
+            ReleaseAtmosphereWriteLock(vault, in _doorPairsHandle, mask, 30);
+            ReleaseAtmosphereWriteLock(vault, in _doorSealedHandle, mask, 31);
+            ReleaseAtmosphereWriteLock(vault, in _doorSealedPreviousHandle, mask, 32);
+        }
+
+        private static void ReleaseAtmosphereWriteLock<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            ulong mask,
+            int bitIndex) where T : struct
+        {
+            if ((mask & (1ul << bitIndex)) == 0ul || !HasValidVaultHandle(in handle))
+                return;
+
+            vault.ReleaseWriteLock(in handle, SystemID.HabitatAtmosphere);
+        }
+
+        private bool TryLockAtmosphereJobBuffers()
+        {
+            if (_atmosphereJobLockMask != 0ul)
+                return false;
+
+            IDataVault vault = _dataVault;
+            ulong mask = 0ul;
+            bool success = false;
+            try
+            {
+                if (vault == null ||
+                    !TryLockAtmosphereJobBuffer(vault, in _o2FrontHandle, ref mask, 0) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _co2FrontHandle, ref mask, 1) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _inertFrontHandle, ref mask, 2) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _floodVolumesHandle, ref mask, 3) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _roomVolumesHandle, ref mask, 4) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _pressureFrontHandle, ref mask, 5) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _gasVolumeFrontHandle, ref mask, 6) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _o2ConsumptionRatesHandle, ref mask, 7) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _co2GenerationRatesHandle, ref mask, 8) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _roomPlayerCountsHandle, ref mask, 9) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _temperatureFrontHandle, ref mask, 10) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _roomHeatWattsHandle, ref mask, 11) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _steamFrontHandle, ref mask, 12) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _doorPairsHandle, ref mask, 13) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _doorSealedHandle, ref mask, 14) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _o2BackHandle, ref mask, 15) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _co2BackHandle, ref mask, 16) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _inertBackHandle, ref mask, 17) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _pressureBackHandle, ref mask, 18) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _gasVolumeBackHandle, ref mask, 19) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _temperatureBackHandle, ref mask, 20) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _steamBackHandle, ref mask, 21) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _o2PartialPressureBackHandle, ref mask, 22) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _co2PartialPressureBackHandle, ref mask, 23) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _n2PartialPressureBackHandle, ref mask, 24) ||
+                    !TryLockAtmosphereJobBuffer(vault, in _roomStatusMaskBackHandle, ref mask, 25))
+                {
+                    RecordAtmosphereFailure(3);
+                    return false;
+                }
+
+                _atmosphereJobLockMask = mask;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    ReleaseAtmosphereJobBufferLocks(vault, mask);
+            }
+        }
+
+        private static bool TryLockAtmosphereJobBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            ref ulong mask,
+            int bitIndex) where T : struct
+        {
+            if (!HasValidVaultHandle(in handle) ||
+                !vault.TryLockBuffer((BufferID)unchecked((int)handle.BufferID), SystemID.HabitatAtmosphere))
+            {
+                return false;
+            }
+
+            mask |= 1ul << bitIndex;
+            return true;
+        }
+
+        private void ReleaseAtmosphereJobBufferLocks()
+        {
+            ulong mask = _atmosphereJobLockMask;
+            if (mask == 0ul)
+                return;
+
+            _atmosphereJobLockMask = 0ul;
+            ReleaseAtmosphereJobBufferLocks(_dataVault, mask);
+        }
+
+        private void ReleaseAtmosphereJobBufferLocks(IDataVault vault, ulong mask)
+        {
+            if (vault == null || mask == 0ul)
+                return;
+
+            ReleaseAtmosphereJobBuffer(vault, in _o2FrontHandle, mask, 0);
+            ReleaseAtmosphereJobBuffer(vault, in _co2FrontHandle, mask, 1);
+            ReleaseAtmosphereJobBuffer(vault, in _inertFrontHandle, mask, 2);
+            ReleaseAtmosphereJobBuffer(vault, in _floodVolumesHandle, mask, 3);
+            ReleaseAtmosphereJobBuffer(vault, in _roomVolumesHandle, mask, 4);
+            ReleaseAtmosphereJobBuffer(vault, in _pressureFrontHandle, mask, 5);
+            ReleaseAtmosphereJobBuffer(vault, in _gasVolumeFrontHandle, mask, 6);
+            ReleaseAtmosphereJobBuffer(vault, in _o2ConsumptionRatesHandle, mask, 7);
+            ReleaseAtmosphereJobBuffer(vault, in _co2GenerationRatesHandle, mask, 8);
+            ReleaseAtmosphereJobBuffer(vault, in _roomPlayerCountsHandle, mask, 9);
+            ReleaseAtmosphereJobBuffer(vault, in _temperatureFrontHandle, mask, 10);
+            ReleaseAtmosphereJobBuffer(vault, in _roomHeatWattsHandle, mask, 11);
+            ReleaseAtmosphereJobBuffer(vault, in _steamFrontHandle, mask, 12);
+            ReleaseAtmosphereJobBuffer(vault, in _doorPairsHandle, mask, 13);
+            ReleaseAtmosphereJobBuffer(vault, in _doorSealedHandle, mask, 14);
+            ReleaseAtmosphereJobBuffer(vault, in _o2BackHandle, mask, 15);
+            ReleaseAtmosphereJobBuffer(vault, in _co2BackHandle, mask, 16);
+            ReleaseAtmosphereJobBuffer(vault, in _inertBackHandle, mask, 17);
+            ReleaseAtmosphereJobBuffer(vault, in _pressureBackHandle, mask, 18);
+            ReleaseAtmosphereJobBuffer(vault, in _gasVolumeBackHandle, mask, 19);
+            ReleaseAtmosphereJobBuffer(vault, in _temperatureBackHandle, mask, 20);
+            ReleaseAtmosphereJobBuffer(vault, in _steamBackHandle, mask, 21);
+            ReleaseAtmosphereJobBuffer(vault, in _o2PartialPressureBackHandle, mask, 22);
+            ReleaseAtmosphereJobBuffer(vault, in _co2PartialPressureBackHandle, mask, 23);
+            ReleaseAtmosphereJobBuffer(vault, in _n2PartialPressureBackHandle, mask, 24);
+            ReleaseAtmosphereJobBuffer(vault, in _roomStatusMaskBackHandle, mask, 25);
+        }
+
+        private static void ReleaseAtmosphereJobBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            ulong mask,
+            int bitIndex) where T : struct
+        {
+            if ((mask & (1ul << bitIndex)) == 0ul || !HasValidVaultHandle(in handle))
+                return;
+
+            vault.TryUnlockBuffer((BufferID)unchecked((int)handle.BufferID), SystemID.HabitatAtmosphere);
+        }
+
         private void ScheduleAtmosphereJob(float fixedDeltaTime)
         {
-            if (_atmosphereJobRunning || fluidDynamics == null || !_o2Front.IsCreated)
+            if (_atmosphereJobRunning || fluidDynamics == null || !IsAtmosphereVaultStateReady())
                 return;
 
             int roomCount = RoomCount;
@@ -4636,6 +5661,9 @@ namespace Hecton8.Atmosphere
             float referencePressure = ResolveSafeReferencePressureKPa();
             float maximumPressure = ResolveSafeMaximumPressureKPa();
             float tankCapacity = math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity));
+            if (!TryLockAtmosphereJobBuffers())
+                return;
+
             AtmosphereStepJob job = new AtmosphereStepJob
             {
                 O2Front = _o2Front,
@@ -4683,7 +5711,16 @@ namespace Hecton8.Atmosphere
             };
 
             _scheduledAtmosphereDeltaTime = FiniteNonNegativeOrZero(fixedDeltaTime);
-            _atmosphereJobHandle = job.Schedule();
+            try
+            {
+                job.Run();
+            }
+            finally
+            {
+                ReleaseAtmosphereJobBufferLocks();
+            }
+
+            _atmosphereJobHandle = default;
             _atmosphereJobRunning = true;
         }
 
@@ -4696,9 +5733,26 @@ namespace Hecton8.Atmosphere
                 return;
 
             _atmosphereJobRunning = false;
+            ReleaseAtmosphereJobBufferLocks();
             SwapAtmosphereBuffers();
-            ApplyPendingAtmosphereMutations();
-            ApplyCompletedAtmosphereStepSideEffects(ResolveCompletedAtmosphereDeltaTime(fixedDeltaTime));
+            float atmosphereDeltaTime = ResolveCompletedAtmosphereDeltaTime(fixedDeltaTime);
+            if (!TryEnterAtmosphereWritePhase(out bool ownsWriteLock))
+            {
+                RecordAtmosphereFailure(5);
+                return;
+            }
+
+            try
+            {
+                ApplyPendingAtmosphereMutations();
+                ApplyCompletedAtmosphereStepSideEffects(atmosphereDeltaTime);
+            }
+            finally
+            {
+                ExitAtmosphereWritePhase(ownsWriteLock);
+            }
+
+            RecordAtmosphereBlackBox(atmosphereDeltaTime);
         }
 
         private float ResolveCompletedAtmosphereDeltaTime(float fallbackDeltaTime)
@@ -4720,6 +5774,254 @@ namespace Hecton8.Atmosphere
             UpdateBoilingFloodHazards(atmosphereDeltaTime);
             PublishCompartmentPartialPressureSnapshot();
             PublishAtmosphereFakes(atmosphereDeltaTime);
+        }
+
+        private void RecordAtmosphereBlackBox(float atmosphereDeltaTime)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !HasValidVaultHandle(in _telemetryRingHandle) ||
+                !HasValidVaultHandle(in _telemetryCursorHandle) ||
+                !vault.TryAcquireWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere, out NativeArray<SubmarineAtmosphereTelemetryEntry> telemetryRing) ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length < TelemetryCapacity)
+            {
+                return;
+            }
+
+            bool dumpRequired = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _telemetryCursorHandle, SystemID.HabitatAtmosphere, out NativeArray<int> telemetryCursor) ||
+                    !telemetryCursor.IsCreated ||
+                    telemetryCursor.Length <= 0)
+                {
+                    return;
+                }
+
+                try
+                {
+                    int writeIndex = telemetryCursor[0];
+                    if ((uint)writeIndex >= (uint)telemetryRing.Length)
+                        writeIndex = 0;
+
+                    SubmarineAtmosphereTelemetryEntry entry = BuildAtmosphereTelemetryEntry(atmosphereDeltaTime);
+                    telemetryRing[writeIndex] = entry;
+                    writeIndex = (writeIndex + 1) % telemetryRing.Length;
+                    telemetryCursor[0] = writeIndex;
+                    _telemetryWriteIndex = writeIndex;
+                    _atmosphereTickCount++;
+
+                    if ((entry.Flags & TelemetryFlagNaN) != 0)
+                        dumpRequired = true;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _telemetryCursorHandle, SystemID.HabitatAtmosphere);
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere);
+            }
+
+            if (dumpRequired)
+                DumpBlackBoxOnce();
+        }
+
+        private void RecordAtmosphereFailure(ushort failureCode)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !HasValidVaultHandle(in _telemetryRingHandle) ||
+                !HasValidVaultHandle(in _telemetryCursorHandle) ||
+                !vault.TryAcquireWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere, out NativeArray<SubmarineAtmosphereTelemetryEntry> telemetryRing) ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length < TelemetryCapacity)
+            {
+                return;
+            }
+
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _telemetryCursorHandle, SystemID.HabitatAtmosphere, out NativeArray<int> telemetryCursor) ||
+                    !telemetryCursor.IsCreated ||
+                    telemetryCursor.Length <= 0)
+                {
+                    return;
+                }
+
+                try
+                {
+                    int writeIndex = telemetryCursor[0];
+                    if ((uint)writeIndex >= (uint)telemetryRing.Length)
+                        writeIndex = 0;
+
+                    SubmarineAtmosphereTelemetryEntry entry = BuildAtmosphereTelemetryEntry(0f);
+                    entry.FailureCode = failureCode;
+                    telemetryRing[writeIndex] = entry;
+                    writeIndex = (writeIndex + 1) % telemetryRing.Length;
+                    telemetryCursor[0] = writeIndex;
+                    _telemetryWriteIndex = writeIndex;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _telemetryCursorHandle, SystemID.HabitatAtmosphere);
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere);
+            }
+        }
+
+        private SubmarineAtmosphereTelemetryEntry BuildAtmosphereTelemetryEntry(float atmosphereDeltaTime)
+        {
+            int roomCount = RoomCount;
+            float totalO2KPa = 0f;
+            float totalCo2KPa = 0f;
+            float totalN2KPa = 0f;
+            float maxPressureKPa = 0f;
+            ushort flags = 0;
+            uint stateHash = 2166136261u;
+
+            bool hasO2 = TryReadVaultArray(in _o2PartialPressureFrontHandle, out NativeArray<float>.ReadOnly o2PartialPressure);
+            bool hasCo2 = TryReadVaultArray(in _co2PartialPressureFrontHandle, out NativeArray<float>.ReadOnly co2PartialPressure);
+            bool hasN2 = TryReadVaultArray(in _n2PartialPressureFrontHandle, out NativeArray<float>.ReadOnly n2PartialPressure);
+            bool hasPressure = TryReadVaultArray(in _pressureFrontHandle, out NativeArray<float>.ReadOnly pressure);
+            for (int roomIndex = 0; roomIndex < roomCount; roomIndex++)
+            {
+                float o2 = hasO2 && roomIndex < o2PartialPressure.Length ? o2PartialPressure[roomIndex] : 0f;
+                float co2 = hasCo2 && roomIndex < co2PartialPressure.Length ? co2PartialPressure[roomIndex] : 0f;
+                float n2 = hasN2 && roomIndex < n2PartialPressure.Length ? n2PartialPressure[roomIndex] : 0f;
+                float roomPressure = hasPressure && roomIndex < pressure.Length ? pressure[roomIndex] : 0f;
+
+                if (!math.isfinite(o2) || !math.isfinite(co2) || !math.isfinite(n2) || !math.isfinite(roomPressure))
+                    flags |= TelemetryFlagNaN;
+
+                o2 = FiniteNonNegativeOrZero(o2);
+                co2 = FiniteNonNegativeOrZero(co2);
+                n2 = FiniteNonNegativeOrZero(n2);
+                roomPressure = FiniteNonNegativeOrZero(roomPressure);
+                totalO2KPa += o2;
+                totalCo2KPa += co2;
+                totalN2KPa += n2;
+                maxPressureKPa = math.max(maxPressureKPa, roomPressure);
+                stateHash = MixTelemetryHash(stateHash, o2);
+                stateHash = MixTelemetryHash(stateHash, co2);
+                stateHash = MixTelemetryHash(stateHash, n2);
+                stateHash = MixTelemetryHash(stateHash, roomPressure);
+            }
+
+            stateHash = MixTelemetryHash(stateHash, (uint)_runtimeRoomStatusMask);
+            stateHash = MixTelemetryHash(stateHash, (uint)_droppedSignalCount);
+            if (!math.isfinite(atmosphereDeltaTime))
+                flags |= TelemetryFlagNaN;
+
+            return new SubmarineAtmosphereTelemetryEntry
+            {
+                PackedOwner = ((ulong)_telemetryRingHandle.BufferID << 32) | _telemetryRingHandle.SystemID,
+                FrameIndex = unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex),
+                RoomCount = roomCount,
+                DeltaTimeSeconds = FiniteNonNegativeOrZero(atmosphereDeltaTime),
+                TotalO2KPa = totalO2KPa,
+                TotalCO2KPa = totalCo2KPa,
+                TotalNitrogenKPa = totalN2KPa,
+                MaxPressureKPa = maxPressureKPa,
+                StateHash = stateHash,
+                BufferId = _telemetryRingHandle.BufferID,
+                SystemId = _telemetryRingHandle.SystemID,
+                Generation = _telemetryRingHandle.Generation,
+                RuntimeRoomStatusMask = _runtimeRoomStatusMask,
+                Flags = flags,
+                FailureCode = 0,
+                DroppedSignals = _droppedSignalCount
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint MixTelemetryHash(uint hash, float value)
+        {
+            return MixTelemetryHash(hash, math.asuint(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint MixTelemetryHash(uint hash, uint value)
+        {
+            hash ^= value;
+            return hash * 16777619u;
+        }
+
+        private bool TryReadTelemetryRing(out NativeArray<SubmarineAtmosphereTelemetryEntry>.ReadOnly telemetryRing)
+        {
+            return TryReadVaultArray(in _telemetryRingHandle, out telemetryRing) &&
+                telemetryRing.Length >= TelemetryCapacity;
+        }
+
+        private bool TryReadTelemetryCursor(out int cursor)
+        {
+            cursor = _telemetryWriteIndex;
+            if (!TryReadVaultArray(in _telemetryCursorHandle, out NativeArray<int>.ReadOnly telemetryCursor) ||
+                telemetryCursor.Length <= 0)
+            {
+                return false;
+            }
+
+            cursor = telemetryCursor[0];
+            return true;
+        }
+
+        private void DumpBlackBoxOnce()
+        {
+            if (_blackBoxDumped ||
+                !TryReadTelemetryRing(out NativeArray<SubmarineAtmosphereTelemetryEntry>.ReadOnly telemetryRing))
+            {
+                return;
+            }
+
+            _blackBoxDumped = true;
+            int cursor = _telemetryWriteIndex;
+            TryReadTelemetryCursor(out cursor);
+            try
+            {
+                string directory = System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
+                System.IO.Directory.CreateDirectory(directory);
+                string path = System.IO.Path.Combine(directory, TelemetryDumpFileName);
+                using (System.IO.FileStream stream = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
+                using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
+                {
+                    writer.Write(TelemetryDumpMagic);
+                    writer.Write(TelemetryDumpFormatVersion);
+                    writer.Write(TelemetryEntrySizeBytes);
+                    writer.Write(telemetryRing.Length);
+                    writer.Write(cursor);
+                    writer.Write(_atmosphereTickCount);
+                    for (int i = 0; i < telemetryRing.Length; i++)
+                    {
+                        SubmarineAtmosphereTelemetryEntry entry = telemetryRing[i];
+                        writer.Write(entry.PackedOwner);
+                        writer.Write(entry.FrameIndex);
+                        writer.Write(entry.RoomCount);
+                        writer.Write(entry.DeltaTimeSeconds);
+                        writer.Write(entry.TotalO2KPa);
+                        writer.Write(entry.TotalCO2KPa);
+                        writer.Write(entry.TotalNitrogenKPa);
+                        writer.Write(entry.MaxPressureKPa);
+                        writer.Write(entry.StateHash);
+                        writer.Write(entry.BufferId);
+                        writer.Write(entry.SystemId);
+                        writer.Write(entry.Generation);
+                        writer.Write(entry.RuntimeRoomStatusMask);
+                        writer.Write(entry.DroppedSignals);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.FailureCode);
+                    }
+                }
+            }
+            catch (System.Exception)
+            {
+                GlobalTelemetryBus.PublishUnityLogFault(TelemetryDumpMagic, 0u, 1u);
+            }
         }
 
         private void PublishCompartmentPartialPressureSnapshot()
@@ -4753,12 +6055,19 @@ namespace Hecton8.Atmosphere
             _debugRoomCount = roomCount;
             _debugDoorCount = doorCount;
 
-            if (!_pressureFront.IsCreated || roomCount <= 0)
+            bool hasPressure = TryReadVaultArray(in _pressureFrontHandle, out NativeArray<float>.ReadOnly pressureFront);
+            bool hasTemperature = TryReadVaultArray(in _temperatureFrontHandle, out NativeArray<float>.ReadOnly temperatureFront);
+            bool hasSteam = TryReadVaultArray(in _steamFrontHandle, out NativeArray<float>.ReadOnly steamFront);
+            bool hasOxygen = TryReadVaultArray(in _o2FrontHandle, out NativeArray<float>.ReadOnly o2Front);
+            bool hasCarbonDioxide = TryReadVaultArray(in _co2FrontHandle, out NativeArray<float>.ReadOnly co2Front);
+            if (!hasPressure || roomCount <= 0)
             {
                 _debugAveragePressureKPa = 0f;
                 _debugMaxPressureKPa = 0f;
                 _debugAverageOxygenFraction = 0f;
                 _debugAverageCarbonDioxideFraction = 0f;
+                _debugAverageTemperatureCelsius = 0f;
+                _debugMaxTemperatureCelsius = 0f;
                 _debugAverageSteamVolumeCubicMeters = 0f;
                 _debugMaxSteamVolumeCubicMeters = 0f;
                 return;
@@ -4773,20 +6082,33 @@ namespace Hecton8.Atmosphere
             float steamSum = 0f;
             float maxSteam = 0f;
             float tankCapacity = math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity));
+            float fallbackTemperature = FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius);
             for (int roomIndex = 0; roomIndex < roomCount; roomIndex++)
             {
-                float pressure = FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
+                float pressure = (uint)roomIndex < (uint)pressureFront.Length
+                    ? FiniteClampedOr(pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa())
+                    : 0f;
                 pressureSum += pressure;
                 maxPressure = math.max(maxPressure, pressure);
-                float temperature = _temperatureFront.IsCreated ? GetRoomTemperatureCelsius(roomIndex) : FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius);
+                float temperature = hasTemperature && (uint)roomIndex < (uint)temperatureFront.Length
+                    ? FiniteClampedOr(temperatureFront[roomIndex], fallbackTemperature, minimumTemperatureCelsius, maximumTemperatureCelsius)
+                    : fallbackTemperature;
                 temperatureSum += temperature;
                 maxTemperature = math.max(maxTemperature, temperature);
-                float steamVolume = _steamFront.IsCreated ? FiniteNonNegativeOrZero(_steamFront[roomIndex]) : 0f;
+                float steamVolume = hasSteam && (uint)roomIndex < (uint)steamFront.Length
+                    ? FiniteNonNegativeOrZero(steamFront[roomIndex])
+                    : 0f;
                 steamSum += steamVolume;
                 maxSteam = math.max(maxSteam, steamVolume);
 
-                oxygenFractionSum += math.saturate(FiniteNonNegativeOrZero(_o2Front[roomIndex]) / tankCapacity);
-                carbonDioxideFractionSum += math.saturate(FiniteNonNegativeOrZero(_co2Front[roomIndex]) / tankCapacity);
+                float oxygenUnits = hasOxygen && (uint)roomIndex < (uint)o2Front.Length
+                    ? FiniteNonNegativeOrZero(o2Front[roomIndex])
+                    : 0f;
+                float carbonDioxideUnits = hasCarbonDioxide && (uint)roomIndex < (uint)co2Front.Length
+                    ? FiniteNonNegativeOrZero(co2Front[roomIndex])
+                    : 0f;
+                oxygenFractionSum += math.saturate(oxygenUnits / tankCapacity);
+                carbonDioxideFractionSum += math.saturate(carbonDioxideUnits / tankCapacity);
             }
 
             float inverseRoomCount = 1f / math.max(roomCount, 1);
@@ -4805,43 +6127,13 @@ namespace Hecton8.Atmosphere
             ClearBoilingFloodHazards();
             ClearAtmosphereFakes();
             FlushQueuedAtmospherePresentation();
-            UnregisterNativeState();
-            JobHandle dependency = _atmosphereJobRunning ? _atmosphereJobHandle : default;
+            if (_atmosphereJobRunning)
+                DispatcherJobSwap.TryComplete(ref _atmosphereJobHandle, forceComplete: true);
+            ReleaseAtmosphereJobBufferLocks();
+            ReleaseAtmospherePhaseWriteLocks();
             _atmosphereJobRunning = false;
             _scheduledAtmosphereDeltaTime = 0f;
-            DisposeDeferred(ref _roomVolumes, dependency);
-            DisposeDeferred(ref _floodVolumes, dependency);
-            DisposeDeferred(ref _o2Front, dependency);
-            DisposeDeferred(ref _o2Back, dependency);
-            DisposeDeferred(ref _co2Front, dependency);
-            DisposeDeferred(ref _co2Back, dependency);
-            DisposeDeferred(ref _inertFront, dependency);
-            DisposeDeferred(ref _inertBack, dependency);
-            DisposeDeferred(ref _pressureFront, dependency);
-            DisposeDeferred(ref _pressureBack, dependency);
-            DisposeDeferred(ref _o2PartialPressureFront, dependency);
-            DisposeDeferred(ref _o2PartialPressureBack, dependency);
-            DisposeDeferred(ref _co2PartialPressureFront, dependency);
-            DisposeDeferred(ref _co2PartialPressureBack, dependency);
-            DisposeDeferred(ref _n2PartialPressureFront, dependency);
-            DisposeDeferred(ref _n2PartialPressureBack, dependency);
-            DisposeDeferred(ref _gasVolumeFront, dependency);
-            DisposeDeferred(ref _gasVolumeBack, dependency);
-            DisposeDeferred(ref _o2ConsumptionRates, dependency);
-            DisposeDeferred(ref _co2GenerationRates, dependency);
-            DisposeDeferred(ref _roomPlayerCounts, dependency);
-            DisposeDeferred(ref _temperatureFront, dependency);
-            DisposeDeferred(ref _temperatureBack, dependency);
-            DisposeDeferred(ref _steamFront, dependency);
-            DisposeDeferred(ref _steamBack, dependency);
-            DisposeDeferred(ref _hydrogenPocketFront, dependency);
-            DisposeDeferred(ref _oxygenPocketFront, dependency);
-            DisposeDeferred(ref _roomHeatWatts, dependency);
-            DisposeDeferred(ref _roomStatusMaskFront, dependency);
-            DisposeDeferred(ref _roomStatusMaskBack, dependency);
-            DisposeDeferred(ref _doorPairs, dependency);
-            DisposeDeferred(ref _doorSealed, dependency);
-            DisposeDeferred(ref _doorSealedPrevious, dependency);
+            ReleaseAtmosphereVaultHandles(_dataVault);
             _topologySeeded = false;
             _topologyRoomCount = -1;
             _topologyDoorCount = -1;
@@ -4853,28 +6145,65 @@ namespace Hecton8.Atmosphere
             ClearPendingAtmosphereMutations();
         }
 
-        private void DisposeDeferred<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        private void ReleaseAtmosphereVaultHandles(IDataVault vault)
         {
-            if (!array.IsCreated)
-                return;
+            ReleaseVaultHandle(vault, ref _roomVolumesHandle);
+            ReleaseVaultHandle(vault, ref _floodVolumesHandle);
+            ReleaseVaultHandle(vault, ref _o2FrontHandle);
+            ReleaseVaultHandle(vault, ref _o2BackHandle);
+            ReleaseVaultHandle(vault, ref _co2FrontHandle);
+            ReleaseVaultHandle(vault, ref _co2BackHandle);
+            ReleaseVaultHandle(vault, ref _inertFrontHandle);
+            ReleaseVaultHandle(vault, ref _inertBackHandle);
+            ReleaseVaultHandle(vault, ref _pressureFrontHandle);
+            ReleaseVaultHandle(vault, ref _pressureBackHandle);
+            ReleaseVaultHandle(vault, ref _o2PartialPressureFrontHandle);
+            ReleaseVaultHandle(vault, ref _o2PartialPressureBackHandle);
+            ReleaseVaultHandle(vault, ref _co2PartialPressureFrontHandle);
+            ReleaseVaultHandle(vault, ref _co2PartialPressureBackHandle);
+            ReleaseVaultHandle(vault, ref _n2PartialPressureFrontHandle);
+            ReleaseVaultHandle(vault, ref _n2PartialPressureBackHandle);
+            ReleaseVaultHandle(vault, ref _gasVolumeFrontHandle);
+            ReleaseVaultHandle(vault, ref _gasVolumeBackHandle);
+            ReleaseVaultHandle(vault, ref _o2ConsumptionRatesHandle);
+            ReleaseVaultHandle(vault, ref _co2GenerationRatesHandle);
+            ReleaseVaultHandle(vault, ref _roomPlayerCountsHandle);
+            ReleaseVaultHandle(vault, ref _temperatureFrontHandle);
+            ReleaseVaultHandle(vault, ref _temperatureBackHandle);
+            ReleaseVaultHandle(vault, ref _steamFrontHandle);
+            ReleaseVaultHandle(vault, ref _steamBackHandle);
+            ReleaseVaultHandle(vault, ref _hydrogenPocketFrontHandle);
+            ReleaseVaultHandle(vault, ref _oxygenPocketFrontHandle);
+            ReleaseVaultHandle(vault, ref _roomHeatWattsHandle);
+            ReleaseVaultHandle(vault, ref _roomStatusMaskFrontHandle);
+            ReleaseVaultHandle(vault, ref _roomStatusMaskBackHandle);
+            ReleaseVaultHandle(vault, ref _doorPairsHandle);
+            ReleaseVaultHandle(vault, ref _doorSealedHandle);
+            ReleaseVaultHandle(vault, ref _doorSealedPreviousHandle);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+        }
 
-            _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, array.Dispose(dependency));
-            array = default;
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && HasValidVaultHandle(in handle))
+                vault.ReleaseBuffer(in handle);
+            handle = default;
         }
 
         private void SwapAtmosphereBuffers()
         {
-            SwapBuffers(ref _o2Front, ref _o2Back);
-            SwapBuffers(ref _co2Front, ref _co2Back);
-            SwapBuffers(ref _inertFront, ref _inertBack);
-            SwapBuffers(ref _pressureFront, ref _pressureBack);
-            SwapBuffers(ref _o2PartialPressureFront, ref _o2PartialPressureBack);
-            SwapBuffers(ref _co2PartialPressureFront, ref _co2PartialPressureBack);
-            SwapBuffers(ref _n2PartialPressureFront, ref _n2PartialPressureBack);
-            SwapBuffers(ref _gasVolumeFront, ref _gasVolumeBack);
-            SwapBuffers(ref _temperatureFront, ref _temperatureBack);
-            SwapBuffers(ref _steamFront, ref _steamBack);
-            SwapBuffers(ref _roomStatusMaskFront, ref _roomStatusMaskBack);
+            SwapBuffers(ref _o2FrontHandle, ref _o2BackHandle);
+            SwapBuffers(ref _co2FrontHandle, ref _co2BackHandle);
+            SwapBuffers(ref _inertFrontHandle, ref _inertBackHandle);
+            SwapBuffers(ref _pressureFrontHandle, ref _pressureBackHandle);
+            SwapBuffers(ref _o2PartialPressureFrontHandle, ref _o2PartialPressureBackHandle);
+            SwapBuffers(ref _co2PartialPressureFrontHandle, ref _co2PartialPressureBackHandle);
+            SwapBuffers(ref _n2PartialPressureFrontHandle, ref _n2PartialPressureBackHandle);
+            SwapBuffers(ref _gasVolumeFrontHandle, ref _gasVolumeBackHandle);
+            SwapBuffers(ref _temperatureFrontHandle, ref _temperatureBackHandle);
+            SwapBuffers(ref _steamFrontHandle, ref _steamBackHandle);
+            SwapBuffers(ref _roomStatusMaskFrontHandle, ref _roomStatusMaskBackHandle);
         }
 
         private void ClearPendingAtmosphereMutations()
@@ -4914,6 +6243,16 @@ namespace Hecton8.Atmosphere
             if (roomIndex < 0 || roomIndex >= RoomCount)
                 return ResolveSafeReferencePressureKPa();
 
+            NativeArray<float> _roomVolumes = this._roomVolumes;
+            NativeArray<float> _floodVolumes = this._floodVolumes;
+            NativeArray<float> _steamFront = this._steamFront;
+            NativeArray<float> _o2Front = this._o2Front;
+            NativeArray<float> _co2Front = this._co2Front;
+            NativeArray<float> _inertFront = this._inertFront;
+            NativeArray<float> _gasVolumeFront = this._gasVolumeFront;
+            NativeArray<float> _o2PartialPressureFront = this._o2PartialPressureFront;
+            NativeArray<float> _co2PartialPressureFront = this._co2PartialPressureFront;
+            NativeArray<float> _n2PartialPressureFront = this._n2PartialPressureFront;
             float minimumGasVolume = math.max(0.001f, FiniteOr(minimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters));
             float roomVolume = _roomVolumes.IsCreated
                 ? math.max(FiniteOr(_roomVolumes[roomIndex], minimumGasVolume), minimumGasVolume)
@@ -5327,7 +6666,9 @@ namespace Hecton8.Atmosphere
             if (fluidDynamics == null || _cachedTransform == null)
                 return -1;
 
-            float3 runtimePosition = worldAup.ToRuntimeFloat3();
+            if (!TryResolveRuntimeDeltaFromCurrentOrigin(in worldAup, out float3 runtimePosition))
+                return -1;
+
             return ResolveNearestRoomIndex(new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
         }
 
@@ -5353,11 +6694,48 @@ namespace Hecton8.Atmosphere
             return bestRoomIndex;
         }
 
-        private static void SwapBuffers<T>(ref NativeArray<T> front, ref NativeArray<T> back) where T : struct
+        private static void SwapBuffers<T>(ref VaultGenerationHandle<T> front, ref VaultGenerationHandle<T> back) where T : struct
         {
-            NativeArray<T> swap = front;
+            VaultGenerationHandle<T> swap = front;
             front = back;
             back = swap;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = TelemetryEntrySizeBytes)]
+        internal struct SubmarineAtmosphereTelemetryEntry
+        {
+            [FieldOffset(0)]
+            public ulong PackedOwner;
+            [FieldOffset(8)]
+            public uint FrameIndex;
+            [FieldOffset(12)]
+            public int RoomCount;
+            [FieldOffset(16)]
+            public float DeltaTimeSeconds;
+            [FieldOffset(20)]
+            public float TotalO2KPa;
+            [FieldOffset(24)]
+            public float TotalCO2KPa;
+            [FieldOffset(28)]
+            public float TotalNitrogenKPa;
+            [FieldOffset(32)]
+            public float MaxPressureKPa;
+            [FieldOffset(36)]
+            public uint StateHash;
+            [FieldOffset(40)]
+            public uint BufferId;
+            [FieldOffset(44)]
+            public uint SystemId;
+            [FieldOffset(48)]
+            public uint Generation;
+            [FieldOffset(52)]
+            public uint RuntimeRoomStatusMask;
+            [FieldOffset(56)]
+            public int DroppedSignals;
+            [FieldOffset(60)]
+            public ushort Flags;
+            [FieldOffset(62)]
+            public ushort FailureCode;
         }
     }
 }

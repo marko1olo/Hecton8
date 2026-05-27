@@ -79,12 +79,12 @@ namespace Hecton8.Interaction
         /// <summary>
         /// True when the bound battery-capable tool currently owns an installed cell.
         /// </summary>
-        public bool HasInstalledCell => TryResolveTool(out IBatteryTool tool) && tool.HasBattery;
+        public bool HasInstalledCell => TryGetCachedTool(out IBatteryTool tool) && tool.HasBattery;
 
         /// <summary>
         /// Current installed cell charge in normalized 0..1 space.
         /// </summary>
-        public float InstalledCharge01 => TryResolveTool(out IBatteryTool tool) ? SanitizeCharge01(tool.BatteryCharge) : 0f;
+        public float InstalledCharge01 => TryGetCachedTool(out IBatteryTool tool) ? SanitizeCharge01(tool.BatteryCharge) : 0f;
 
         private void Awake()
         {
@@ -140,7 +140,9 @@ namespace Hecton8.Interaction
             bool shouldRestoreTick = (_registeredTick && !_tickDormant)
                 || _registeredLateFrame
                 || HasPendingRuntimeWork();
-            TryUnregisterTick(false);
+            _registeredTick = false;
+            _registeredLateFrame = false;
+            _tickDormant = false;
             if (shouldRestoreTick && currentService != null && isActiveAndEnabled)
                 TryRegisterTick();
         }
@@ -156,7 +158,7 @@ namespace Hecton8.Interaction
             removedBattery = null;
             removedCharge01 = 0f;
 
-            if (_snapInProgress || !DoorOpenEnoughForSwap || !TryResolveTool(out IBatteryTool tool) || !tool.HasBattery)
+            if (_snapInProgress || !DoorOpenEnoughForSwap || !TryGetCachedTool(out IBatteryTool tool) || !tool.HasBattery)
                 return false;
 
             removedCharge01 = SanitizeCharge01(tool.BatteryCharge);
@@ -170,9 +172,15 @@ namespace Hecton8.Interaction
             return TryInsertCell(battery, charge01, batteryCellVisual);
         }
 
+        internal void RefreshBatteryToolCacheCold()
+        {
+            RefreshBatteryToolCache();
+            _batteryVisualStateCached = false;
+        }
+
         public bool TryInsertCell(ItemData battery, float charge01, Transform insertedCellTransform)
         {
-            if (_snapInProgress || !DoorOpenEnoughForSwap || battery == null || !TryResolveTool(out IBatteryTool tool) || tool.HasBattery)
+            if (_snapInProgress || !DoorOpenEnoughForSwap || battery == null || !TryGetCachedTool(out IBatteryTool tool) || tool.HasBattery)
                 return false;
 
             if (acceptedBatteryItem != null && !ReferenceEquals(acceptedBatteryItem, battery))
@@ -193,11 +201,15 @@ namespace Hecton8.Interaction
         public void Tick(float deltaTime)
         {
             if (_tickDormant)
+            {
+                TryRetireDormantTickRegistration();
                 return;
+            }
 
             if (!_snapInProgress)
             {
                 _tickDormant = true;
+                TryRetireDormantTickRegistration();
                 return;
             }
 
@@ -212,6 +224,7 @@ namespace Hecton8.Interaction
             _snapElapsedSeconds = math.min(_resolvedBatterySnapDurationSeconds, _snapElapsedSeconds + safeDeltaTime);
             float t = math.saturate(_snapElapsedSeconds / _resolvedBatterySnapDurationSeconds);
             QueueBatterySnapPose(t);
+            TryRegisterLateFrameTick();
 
             if (t >= 1f)
                 CompleteBatterySnap(false);
@@ -221,15 +234,11 @@ namespace Hecton8.Interaction
         {
             FlushBatteryVisualRefresh();
             FlushPendingSnapPose();
+            TryRetireDormantTickRegistration();
         }
 
-        private bool TryResolveTool(out IBatteryTool tool)
+        private bool TryGetCachedTool(out IBatteryTool tool)
         {
-            tool = _cachedBatteryTool;
-            if (tool != null)
-                return true;
-
-            RefreshBatteryToolCache();
             tool = _cachedBatteryTool;
             return tool != null;
         }
@@ -252,7 +261,7 @@ namespace Hecton8.Interaction
             if (batteryCellVisual == null)
                 return;
 
-            bool hasBattery = _snapInProgress || TryResolveTool(out IBatteryTool tool) && tool.HasBattery;
+            bool hasBattery = _snapInProgress || TryGetCachedTool(out IBatteryTool tool) && tool.HasBattery;
             if (_batteryVisualStateCached && _batteryVisualActive == hasBattery)
                 return;
 
@@ -371,7 +380,7 @@ namespace Hecton8.Interaction
         private void CompleteBatterySnap(bool unregisterTick = true)
         {
             QueueBatterySnapPose(1f);
-            bool inserted = TryResolveTool(out IBatteryTool tool) && !tool.HasBattery &&
+            bool inserted = TryGetCachedTool(out IBatteryTool tool) && !tool.HasBattery &&
                             tool.InsertBattery(_pendingBattery, _pendingCharge01);
             if (!inserted)
             {
@@ -490,10 +499,11 @@ namespace Hecton8.Interaction
             if (linearDelta.sqrMagnitude > 0.000001f)
                 physicsService.QueueForce(body, linearDelta, ForceMode.VelocityChange);
 
+            Vector3 restoredAngularVelocity = SanitizeVector(targetAngularVelocity, Vector3.zero);
             Vector3 currentAngularVelocity = SanitizeVector(body.angularVelocity, Vector3.zero);
-            Vector3 angularDelta = SanitizeVector(targetAngularVelocity - currentAngularVelocity, Vector3.zero);
+            Vector3 angularDelta = SanitizeVector(restoredAngularVelocity - currentAngularVelocity, Vector3.zero);
             if (angularDelta.sqrMagnitude > 0.000001f)
-                physicsService.QueueTorque(body, angularDelta, ForceMode.VelocityChange);
+                physicsService.QueueAngularVelocitySet(body, restoredAngularVelocity);
         }
 
         private static void ResolveSnapTargetLocalPose(
@@ -537,15 +547,43 @@ namespace Hecton8.Interaction
 
         private void TryRegisterTick()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredTick)
-                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            TryRegisterUpdateTick();
+            TryRegisterLateFrameTick();
+        }
+
+        private void TryRegisterUpdateTick()
+        {
+            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             if (_registeredTick)
                 _tickDormant = false;
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryRetireDormantTickRegistration()
+        {
+            if (!_tickDormant)
+                return;
+
+            if (HasPendingRuntimeWork())
+            {
+                TryRegisterLateFrameTick();
+                return;
+            }
+
+            TryUnregisterTick(false);
         }
 
         private void TryUnregisterTick(bool clearPending = true)
@@ -747,7 +785,7 @@ namespace Hecton8.Interaction
             if (!math.isfinite(batterySnapDurationSeconds) || batterySnapDurationSeconds < 0.01f)
                 batterySnapDurationSeconds = 0.2f;
             batterySnapDurationSeconds = math.min(batterySnapDurationSeconds, MaxBatterySnapDurationSeconds);
-            _cachedBatteryTool = null;
+            RefreshBatteryToolCache();
             _batteryVisualStateCached = false;
             CacheScalarConfig();
             CacheDoorAxis();

@@ -325,7 +325,7 @@ namespace Hecton8.Core
         }
     }
 
-    internal struct AupPrecisionVaultViews
+    internal ref struct AupPrecisionVaultViews
     {
         internal NativeArray<double3> TargetAups;
         internal NativeArray<AupPrecisionRuntimeStateDTO> RuntimeState;

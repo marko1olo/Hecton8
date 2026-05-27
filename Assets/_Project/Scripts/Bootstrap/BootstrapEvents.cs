@@ -1,8 +1,7 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
-using Unity.Collections;
+using Hecton8.Core.Contracts.Signals;
 using UnityEngine;
 
 namespace Hecton8.Bootstrap
@@ -19,8 +18,13 @@ namespace Hecton8.Bootstrap
     /// Deferred unmanaged bootstrap event payload flushed by <see cref="SystemDispatcher"/>.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public struct BootstrapEventPayload
+    public struct BootstrapEventPayload : ISignal
     {
+        public const int ExpectedCapacity = 4;
+        public const int MaxFrameSignals = 4;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = 0x42545650u; // BTVP
+
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public ushort EventType;
         [FieldOffset(6)] public ushort StatusBits;
@@ -45,17 +49,14 @@ namespace Hecton8.Bootstrap
     }
 
     /// <summary>
-    /// Queue-backed bootstrap event lane. Replaces legacy direct static bootstrap callbacks.
+    /// SignalBus-backed bootstrap event lane. Replaces legacy direct static bootstrap callbacks.
     /// </summary>
     public static class BootstrapEvents
     {
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 4;
-        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint BootstrapListenerOverflowWarningHash = 0x4254564Cu; // BTVL
         private const uint BootstrapListenerContextHash = 0x42545652u; // BTVR
-        private const uint BootstrapListenerExceptionWarningHash = 0x42545645u; // BTVE
-        private const uint BootstrapListenerExceptionContextHash = 0x42545658u; // BTVX
 
         private struct ListenerSlot
         {
@@ -133,56 +134,37 @@ namespace Hecton8.Bootstrap
         private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: ListenerSlot[16] - listener removals deferred while dispatching bootstrap events - owner: BootstrapEvents
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
-        private static NativeQueue<BootstrapEventPayload> _pendingEvents;
-        private static NativeQueue<BootstrapEventPayload> _nextFrameEvents;
-        private static int _pendingEventCount;
-        private static int _nextFrameEventCount;
         private static int _deferredRegisterCount;
         private static int _deferredUnregisterCount;
         private static int _droppedListenerRegistrationCount;
-        private static int _listenerExceptionCount;
+        private static int _droppedBootstrapEventCount;
         private static int _lastListenerOverflowTelemetryFrame = -1;
-        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         /// <summary>
         /// Pending payload count in the bootstrap event lane.
         /// </summary>
-        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int PendingCount => SignalBus<BootstrapEventPayload>.SnapshotCount;
 
         public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
 
-        public static int ListenerExceptionCount => _listenerExceptionCount;
+        public static int DroppedBootstrapEventCount => _droppedBootstrapEventCount;
+
+        public static int ListenerExceptionCount => 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(BootstrapEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(BootstrapEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
-
             _listeners.Clear();
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
             Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
-            _pendingEventCount = 0;
-            _nextFrameEventCount = 0;
             _deferredRegisterCount = 0;
             _deferredUnregisterCount = 0;
             _droppedListenerRegistrationCount = 0;
-            _listenerExceptionCount = 0;
+            _droppedBootstrapEventCount = 0;
             _lastListenerOverflowTelemetryFrame = -1;
-            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
+            ConfigureSignalLane();
         }
 
         /// <summary>
@@ -234,9 +216,6 @@ namespace Hecton8.Bootstrap
         public static bool TryNotifyBootstrapComplete()
         {
             EnsureInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-                return false;
-
             BootstrapEventPayload payload = new BootstrapEventPayload
             {
                 Frame = SystemDispatcher.CurrentFrameId,
@@ -244,16 +223,7 @@ namespace Hecton8.Bootstrap
                 StatusBits = 0
             };
 
-            if (_isDispatching)
-            {
-                _nextFrameEvents.Enqueue(payload);
-                _nextFrameEventCount++;
-                return true;
-            }
-
-            _pendingEvents.Enqueue(payload);
-            _pendingEventCount++;
-            return true;
+            return SignalBus<BootstrapEventPayload>.TryPushTracked(in payload, ref _droppedBootstrapEventCount);
         }
 
         /// <summary>
@@ -261,31 +231,21 @@ namespace Hecton8.Bootstrap
         /// </summary>
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated)
+            ReadOnlySpan<BootstrapEventPayload> events = SignalBus<BootstrapEventPayload>.GetFrameSnapshot();
+            int eventCount = events.Length;
+            if (eventCount <= 0)
                 return;
 
             if (_listeners.Count <= 0)
-            {
-                DrainWithoutDispatch();
                 return;
-            }
 
-            PromoteNextFrameEventsIfFrontEmpty();
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            int scanBudget = eventCount;
+            for (int eventIndex = 0; eventIndex < eventCount && scanBudget-- > 0; eventIndex++)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
-                if (!_pendingEvents.TryDequeue(out BootstrapEventPayload payload))
-                {
-                    _pendingEventCount = 0;
-                    return;
-                }
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
-
+                BootstrapEventPayload payload = events[eventIndex];
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
@@ -296,7 +256,7 @@ namespace Hecton8.Bootstrap
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
-                        DispatchToListener(listener, in payload);
+                        listener.OnBootstrapEvent(in payload);
                     }
                 }
                 finally
@@ -305,136 +265,21 @@ namespace Hecton8.Bootstrap
                     ApplyDeferredListenerMutations();
                 }
             }
-
-            if (_pendingEvents.IsEmpty())
-            {
-                _pendingEventCount = 0;
-                PromoteNextFrameEventsIfFrontEmpty();
-            }
         }
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
-            {
-                _pendingEvents = new NativeQueue<BootstrapEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BootstrapEventPayload>[4] - deferred bootstrap event lane flushed by SystemDispatcher LateUpdate - owner: BootstrapEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(BootstrapEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
-
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<BootstrapEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BootstrapEventPayload>[4] - next-frame bootstrap event lane prevents same-frame reentrant dispatch - owner: BootstrapEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(BootstrapEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
-            }
+            ConfigureSignalLane();
+            SignalBus<BootstrapEventPayload>.EnsureInitialized();
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
+        private static void ConfigureSignalLane()
         {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
-        }
-
-        private static void DrainWithoutDispatch()
-        {
-            if (!_pendingEvents.IsCreated)
-                return;
-
-            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
-                return;
-
-            if (_pendingEvents.IsEmpty())
-                PromoteNextFrameEventsIfFrontEmpty();
-
-            if (_pendingEventCount > 0 &&
-                !DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
-            {
-                return;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
-        }
-
-        private static bool DrainQueueWithoutDispatch(
-            ref NativeQueue<BootstrapEventPayload> queue,
-            ref int pendingCount)
-        {
-            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !queue.IsEmpty())
-            {
-                if (!queue.TryDequeue(out _))
-                {
-                    pendingCount = 0;
-                    break;
-                }
-
-                if (pendingCount > 0)
-                    pendingCount--;
-            }
-
-            if (queue.IsEmpty())
-                pendingCount = 0;
-
-            return true;
-        }
-
-        private static void PromoteNextFrameEventsIfFrontEmpty()
-        {
-            if (!_pendingEvents.IsCreated ||
-                !_nextFrameEvents.IsCreated ||
-                !_pendingEvents.IsEmpty() ||
-                _nextFrameEventCount <= 0)
-            {
-                return;
-            }
-
-            NativeQueue<BootstrapEventPayload> swap = _pendingEvents;
-            _pendingEvents = _nextFrameEvents;
-            _nextFrameEvents = swap;
-            _pendingEventCount = _nextFrameEventCount;
-            _nextFrameEventCount = 0;
-        }
-
-        private static void DispatchToListener(IBootstrapEventListener listener, in BootstrapEventPayload payload)
-        {
-            try
-            {
-                listener.OnBootstrapEvent(in payload);
-            }
-            catch (Exception exception)
-            {
-                ReportListenerDispatchException();
-                LogListenerDispatchException(exception);
-            }
-        }
-
-        [Conditional("UNITY_EDITOR")]
-        [Conditional("DEVELOPMENT_BUILD")]
-        private static void LogListenerDispatchException(Exception exception)
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.LogException(exception);
-#endif
+            SignalBus<BootstrapEventPayload>.Configure(
+                BootstrapEventPayload.ExpectedCapacity,
+                BootstrapEventPayload.MaxFrameSignals,
+                BootstrapEventPayload.LowTierFrameSignals,
+                BootstrapEventPayload.LaneHash);
         }
 
         private static void QueueDeferredRegister(IBootstrapEventListener listener)
@@ -573,20 +418,6 @@ namespace Hecton8.Bootstrap
                 BootstrapListenerOverflowWarningHash,
                 BootstrapListenerContextHash,
                 Mathf.Max(1, _droppedListenerRegistrationCount));
-        }
-
-        private static void ReportListenerDispatchException()
-        {
-            _listenerExceptionCount++;
-            int frame = SystemDispatcher.CurrentFrameIndex;
-            if (_lastListenerExceptionTelemetryFrame == frame)
-                return;
-
-            _lastListenerExceptionTelemetryFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(
-                BootstrapListenerExceptionWarningHash,
-                BootstrapListenerExceptionContextHash,
-                Mathf.Max(1, _listenerExceptionCount));
         }
     }
 }

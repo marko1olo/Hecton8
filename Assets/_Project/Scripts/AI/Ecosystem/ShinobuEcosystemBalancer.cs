@@ -36,6 +36,7 @@ namespace Hecton8.AI.Ecosystem
         private const int SpatialHashBucketCapacity = 32768;
         private const int SpatialHashBucketMask = SpatialHashBucketCapacity - 1;
         private const int FrameJobBatchSize = 64;
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
         private const float TrigPi = 3.14159265358979323846f;
         private const float TrigTwoPi = 6.28318530717958647692f;
         private const float TrigHalfPi = 1.57079632679489661923f;
@@ -81,7 +82,7 @@ namespace Hecton8.AI.Ecosystem
         private const string DumpH8RelativePath = "Docs/AgentLogs/Dump_SHINOBU_105.h8dump";
         private const string FlockingDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_307.bin";
         private const ulong DumpMagic = 0x414259535357524DUL; // ABYSSWRM
-        private const int DumpVersion = 3;
+        private const int DumpVersion = 4;
         private const uint SourceHash = 0x5348494Eu; // SHIN
 
         internal const uint EntityFlagActive = 1u << 0;
@@ -196,7 +197,6 @@ namespace Hecton8.AI.Ecosystem
         private bool _jobScheduled;
         private bool _jobLocksHeld;
         private bool _vaultBuffersReady;
-        private bool _gpuUploadCapacityDirty;
         private bool _dumpedFault;
         private bool _dumpedFlockingFault;
         private bool _dumpedSpatialGridFault;
@@ -215,6 +215,8 @@ namespace Hecton8.AI.Ecosystem
         private bool _proceduralCullHasValidZBufferParams;
         private int _proceduralClearArgsKernel = -1;
         private int _proceduralCullKernel = -1;
+        private int _proceduralClearArgsThreadGroupSizeX;
+        private int _proceduralCullThreadGroupSizeX;
         private int _proceduralCullDepthMipCount;
         private int _proceduralCullDensityStep = 1;
         private float _proceduralCullDepthBias = 0.04f;
@@ -292,7 +294,7 @@ namespace Hecton8.AI.Ecosystem
         private void TryEnsureSpatialGridDumpWorker(IDataVault vault)
         {
             if (!ShinobuSpatialGridForensics.EnsureDumpWorker(
-                    ResolveProjectRoot(),
+                    BuildProjectRootForIo(),
                     vault,
                     in _spatialGridDumpSnapshotHandle))
             {
@@ -362,7 +364,7 @@ namespace Hecton8.AI.Ecosystem
             if (_jobScheduled)
                 return;
 
-            if (!EnsureVaultState())
+            if (!HasVaultStateReady())
                 return;
 
             IDataVault vault = _dataVault;
@@ -660,7 +662,7 @@ namespace Hecton8.AI.Ecosystem
             if (_jobScheduled)
                 return;
 
-            if (!EnsureVaultState())
+            if (!HasVaultStateReady())
                 return;
 
             IDataVault vault = _dataVault;
@@ -678,7 +680,6 @@ namespace Hecton8.AI.Ecosystem
 
         public void LateFrameTick()
         {
-            FlushGpuUploadCapacityVisualSync();
             TryFinalizeFrameJobNoWait();
         }
 
@@ -728,19 +729,24 @@ namespace Hecton8.AI.Ecosystem
             _proceduralCullBoundsRadius = math.max(0.001f, boundsRadius);
             _proceduralCullDensityStep = math.clamp(densityStep, 1, 8);
 
-            if (cullingCompute == null)
+            if (cullingCompute == null || !SystemInfo.supportsComputeShaders)
             {
+                _proceduralCullCompute = null;
                 _proceduralClearArgsKernel = -1;
                 _proceduralCullKernel = -1;
+                _proceduralClearArgsThreadGroupSizeX = 0;
+                _proceduralCullThreadGroupSizeX = 0;
                 return;
             }
 
-            _proceduralClearArgsKernel = cullingCompute.HasKernel(ShinobuSwarmGpuCullingParams.ClearKernelName)
-                ? cullingCompute.FindKernel(ShinobuSwarmGpuCullingParams.ClearKernelName)
-                : -1;
-            _proceduralCullKernel = cullingCompute.HasKernel(ShinobuSwarmGpuCullingParams.CullKernelName)
-                ? cullingCompute.FindKernel(ShinobuSwarmGpuCullingParams.CullKernelName)
-                : -1;
+            _proceduralClearArgsKernel = ResolveSupportedKernel(cullingCompute, ShinobuSwarmGpuCullingParams.ClearKernelName);
+            _proceduralCullKernel = ResolveSupportedKernel(cullingCompute, ShinobuSwarmGpuCullingParams.CullKernelName);
+            _proceduralClearArgsThreadGroupSizeX = _proceduralClearArgsKernel >= 0
+                ? ResolveKernelThreadGroupSizeX(cullingCompute, _proceduralClearArgsKernel)
+                : 0;
+            _proceduralCullThreadGroupSizeX = _proceduralCullKernel >= 0
+                ? ResolveKernelThreadGroupSizeX(cullingCompute, _proceduralCullKernel)
+                : 0;
         }
 
         /// <summary>
@@ -811,6 +817,8 @@ namespace Hecton8.AI.Ecosystem
             culling.CullingCompute = _proceduralCullCompute;
             culling.ClearArgsKernel = _proceduralClearArgsKernel;
             culling.CullKernel = _proceduralCullKernel;
+            culling.ClearArgsThreadGroupSizeX = _proceduralClearArgsThreadGroupSizeX;
+            culling.CullThreadGroupSizeX = _proceduralCullThreadGroupSizeX;
             culling.ViewProjection = _proceduralCullViewProjection;
             culling.ViewMatrix = _proceduralCullViewMatrix;
             culling.ZBufferParams = _proceduralCullZBufferParams;
@@ -823,6 +831,28 @@ namespace Hecton8.AI.Ecosystem
             culling.QualityWeight = quality;
             culling.DensityStep = math.clamp(_proceduralCullDensityStep, 1, 8);
             return culling;
+        }
+
+        private static int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel)
+        {
+            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+                return 0;
+
+            compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
+            if (sizeX == 0u || sizeY != 1u || sizeZ != 1u || sizeX > int.MaxValue)
+                return 0;
+
+            ulong totalThreads = sizeX * (ulong)sizeY * sizeZ;
+            return totalThreads <= PortableMaxComputeThreadsPerGroup ? (int)sizeX : 0;
+        }
+
+        private static int ResolveSupportedKernel(ComputeShader compute, string kernelName)
+        {
+            if (compute == null || !SystemInfo.supportsComputeShaders || !compute.HasKernel(kernelName))
+                return -1;
+
+            int kernel = compute.FindKernel(kernelName);
+            return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
         }
 
         private static int SanitizeDepthPyramidMipCount(Texture depthPyramid, int requestedMipCount)
@@ -1091,11 +1121,19 @@ namespace Hecton8.AI.Ecosystem
             if (!ready)
                 return false;
 
-            _gpuUploadCapacityDirty = true;
+            EnsureGpuUploadCapacity();
             EnsureProfilesLoaded(vault);
             EnsureSpatialGridProfilesLoaded(vault);
             EnsureInitialPopulation(vault);
             return true;
+        }
+
+        private bool HasVaultStateReady()
+        {
+            IDataVault vault = _dataVault;
+            return _vaultBuffersReady &&
+                   vault != null &&
+                   AreVaultHandlesCreated(vault);
         }
 
         private bool AreVaultHandlesCreated(IDataVault vault)
@@ -1145,21 +1183,19 @@ namespace Hecton8.AI.Ecosystem
             }
             catch (InvalidOperationException)
             {
+                _gpuUploadDispatcher.Dispose();
                 GlobalTelemetryBus.PublishPerformanceWarning(0x47505543u, SourceHash, 0f);
             }
             catch (ArgumentException)
             {
+                _gpuUploadDispatcher.Dispose();
                 GlobalTelemetryBus.PublishPerformanceWarning(0x47505543u, SourceHash, 0f);
             }
-        }
-
-        private void FlushGpuUploadCapacityVisualSync()
-        {
-            if (!_gpuUploadCapacityDirty || !_vaultBuffersReady)
-                return;
-
-            EnsureGpuUploadCapacity();
-            _gpuUploadCapacityDirty = false;
+            catch (UnityException)
+            {
+                _gpuUploadDispatcher.Dispose();
+                GlobalTelemetryBus.PublishPerformanceWarning(0x47505543u, SourceHash, 0f);
+            }
         }
 
         private IDataVault EnsureDataVaultCold()
@@ -1355,13 +1391,13 @@ namespace Hecton8.AI.Ecosystem
             try
             {
                 string profilePath = TryFindLegacyProfilePath();
-                if (string.IsNullOrEmpty(profilePath) || !File.Exists(profilePath))
+                if (profilePath == null || profilePath.Length == 0 || !File.Exists(profilePath))
                     return false;
 
                 if (!TryOpenVaultView(vault, in _legacyScratchHandle, LegacyProfileReadBytes, out NativeArray<byte> scratch))
                     return false;
 
-                int bytesRead = ReadFileIntoNativeScratch(profilePath, scratch, LegacyProfileReadBytes, FileShare.Read);
+                int bytesRead = LoadFileIntoNativeScratch(profilePath, scratch, LegacyProfileReadBytes, FileShare.Read);
 
                 if (bytesRead < 24)
                     return false;
@@ -1401,9 +1437,9 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
-        private static unsafe int ReadFileIntoNativeScratch(string path, NativeArray<byte> scratch, int maxBytes, FileShare share)
+        private static unsafe int LoadFileIntoNativeScratch(string path, NativeArray<byte> scratch, int maxBytes, FileShare share)
         {
-            if (!scratch.IsCreated || string.IsNullOrEmpty(path))
+            if (!scratch.IsCreated || path == null || path.Length == 0)
                 return 0;
 
             int limit = math.min(math.max(0, maxBytes), scratch.Length);
@@ -1494,8 +1530,8 @@ namespace Hecton8.AI.Ecosystem
             }
 
 #if UNITY_EDITOR
-            string path = ResolveSpatialGridCsvPath();
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            string path = BuildSpatialGridCsvPath();
+            if (path == null || path.Length == 0 || !File.Exists(path))
             {
                 if (profiles.Length > 0 && profiles[0].LayerHash == 0u)
                 {
@@ -1518,7 +1554,7 @@ namespace Hecton8.AI.Ecosystem
             if (lastWriteUtc.Ticks == _spatialGridCsvTimestampTicks)
                 return;
 
-            int bytesRead = ReadFileIntoNativeScratch(path, scratch, SpatialGridCsvMaxBytes, FileShare.ReadWrite);
+            int bytesRead = LoadFileIntoNativeScratch(path, scratch, SpatialGridCsvMaxBytes, FileShare.ReadWrite);
             if (bytesRead <= 0)
                 return;
 
@@ -1542,8 +1578,8 @@ namespace Hecton8.AI.Ecosystem
         {
             try
             {
-                string path = ResolveTuningCsvPath();
-                if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                string path = BuildTuningCsvPath();
+                if (path == null || path.Length == 0 || !File.Exists(path))
                     return;
 
                 DateTime lastWriteUtc = File.GetLastWriteTimeUtc(path);
@@ -1553,7 +1589,7 @@ namespace Hecton8.AI.Ecosystem
                 if (!TryOpenVaultView(vault, in _csvScratchHandle, CsvMaxBytes, out NativeArray<byte> scratch))
                     return;
 
-                int bytesRead = ReadFileIntoNativeScratch(path, scratch, CsvMaxBytes, FileShare.ReadWrite);
+                int bytesRead = LoadFileIntoNativeScratch(path, scratch, CsvMaxBytes, FileShare.ReadWrite);
 
                 if (bytesRead <= 0)
                     return;
@@ -1597,8 +1633,8 @@ namespace Hecton8.AI.Ecosystem
         {
             try
             {
-                string path = ResolveSwarmSpeciesCsvPath();
-                if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                string path = BuildSwarmSpeciesCsvPath();
+                if (path == null || path.Length == 0 || !File.Exists(path))
                     return;
 
                 DateTime lastWriteUtc = File.GetLastWriteTimeUtc(path);
@@ -1611,7 +1647,7 @@ namespace Hecton8.AI.Ecosystem
                     return;
                 }
 
-                int bytesRead = ReadFileIntoNativeScratch(path, scratch, CsvMaxBytes, FileShare.ReadWrite);
+                int bytesRead = LoadFileIntoNativeScratch(path, scratch, CsvMaxBytes, FileShare.ReadWrite);
                 if (bytesRead <= 0)
                     return;
 
@@ -1882,6 +1918,7 @@ namespace Hecton8.AI.Ecosystem
                 ReproducedCount = ReadCounter(counters, CounterReproduced),
                 TombstonedCount = ReadCounter(counters, CounterTombstoned),
                 DebugCellCount = ReadCounter(counters, CounterDebugCellCount),
+                Pad0 = 0u,
                 CsvLoadedCount = (ushort)math.clamp(ReadCounter(counters, CounterCsvLoaded), 0, ushort.MaxValue),
                 ProfileLoadedCount = (ushort)math.clamp(ReadCounter(counters, CounterProfileLoaded), 0, ushort.MaxValue)
             };
@@ -2116,7 +2153,6 @@ namespace Hecton8.AI.Ecosystem
         private void ResetVaultHandles()
         {
             _vaultBuffersReady = false;
-            _gpuUploadCapacityDirty = false;
             _entityHandle = default;
             _aupHandle = default;
             _boidStateHandle = default;
@@ -2172,7 +2208,6 @@ namespace Hecton8.AI.Ecosystem
             _swarmSpeciesCsvTimestampTicks = 0L;
             _spatialGridCsvTimestampTicks = 0L;
             _runtimeFlags = 0u;
-            _gpuUploadCapacityDirty = false;
             _dumpedFault = false;
             _dumpedFlockingFault = false;
             _dumpedSpatialGridFault = false;
@@ -2559,21 +2594,21 @@ namespace Hecton8.AI.Ecosystem
 
         private string TryFindLegacyProfilePath()
         {
-            string root = ResolveProjectRoot();
+            string root = BuildProjectRootForIo();
             string archivePath = Path.Combine(root, "Docs", "Archive");
             string streamingPath = Path.Combine(Application.dataPath, "StreamingAssets");
             string directStreamingPath = Path.Combine(root, "StreamingAssets");
             string path = FindFileRecursive(archivePath, LegacyBoidProfileFile);
-            if (!string.IsNullOrEmpty(path))
+            if (path != null && path.Length != 0)
                 return path;
             path = FindFileRecursive(archivePath, LegacyFaunaCapsFile);
-            if (!string.IsNullOrEmpty(path))
+            if (path != null && path.Length != 0)
                 return path;
             path = FindFileRecursive(streamingPath, LegacyBoidProfileFile);
-            if (!string.IsNullOrEmpty(path))
+            if (path != null && path.Length != 0)
                 return path;
             path = FindFileRecursive(directStreamingPath, LegacyBoidProfileFile);
-            if (!string.IsNullOrEmpty(path))
+            if (path != null && path.Length != 0)
                 return path;
             return null;
         }
@@ -2582,7 +2617,7 @@ namespace Hecton8.AI.Ecosystem
         {
             try
             {
-                if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
+                if (root == null || root.Length == 0 || !Directory.Exists(root))
                     return null;
 
                 string[] files = Directory.GetFiles(root, fileName, SearchOption.AllDirectories);
@@ -2607,9 +2642,9 @@ namespace Hecton8.AI.Ecosystem
         }
 
 #if UNITY_EDITOR
-        private static string ResolveSwarmSpeciesCsvPath()
+        private static string BuildSwarmSpeciesCsvPath()
         {
-            string root = ResolveProjectRoot();
+            string root = BuildProjectRootForIo();
             string path = Path.Combine(root, SwarmSpeciesCsvPrecomputedRelativePath);
             if (File.Exists(path))
                 return path;
@@ -2623,9 +2658,9 @@ namespace Hecton8.AI.Ecosystem
             return File.Exists(path) ? path : null;
         }
 
-        private static string ResolveTuningCsvPath()
+        private static string BuildTuningCsvPath()
         {
-            string root = ResolveProjectRoot();
+            string root = BuildProjectRootForIo();
             string path = Path.Combine(root, CsvPrecomputedRelativePath);
             if (File.Exists(path))
                 return path;
@@ -2633,9 +2668,9 @@ namespace Hecton8.AI.Ecosystem
             return File.Exists(path) ? path : null;
         }
 
-        private static string ResolveSpatialGridCsvPath()
+        private static string BuildSpatialGridCsvPath()
         {
-            string root = ResolveProjectRoot();
+            string root = BuildProjectRootForIo();
             string path = Path.Combine(root, SpatialGridCsvPrecomputedRelativePath);
             if (File.Exists(path))
                 return path;
@@ -2644,7 +2679,7 @@ namespace Hecton8.AI.Ecosystem
         }
 #endif
 
-        private static string ResolveProjectRoot()
+        private static string BuildProjectRootForIo()
         {
             string assetsPath = Application.dataPath;
             DirectoryInfo parent = Directory.GetParent(assetsPath);
@@ -2655,7 +2690,7 @@ namespace Hecton8.AI.Ecosystem
         {
             try
             {
-                string root = ResolveProjectRoot();
+                string root = BuildProjectRootForIo();
                 WriteBlackBoxFile(Path.Combine(root, DumpRelativePath), telemetry, cursor);
                 WriteBlackBoxFile(Path.Combine(root, DumpH8RelativePath), telemetry, cursor);
             }
@@ -2684,10 +2719,10 @@ namespace Hecton8.AI.Ecosystem
         private static void WriteBlackBoxFile(string path, NativeArray<ShinobuTelemetryEntry> telemetry, int cursor)
         {
             string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            if (directory != null && directory.Length != 0 && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
                 int capacity = telemetry.Length;
@@ -2718,9 +2753,9 @@ namespace Hecton8.AI.Ecosystem
                     writer.Write(entry.ReproducedCount);
                     writer.Write(entry.TombstonedCount);
                     writer.Write(entry.DebugCellCount);
+                    writer.Write(entry.Pad0);
                     writer.Write(entry.CsvLoadedCount);
                     writer.Write(entry.ProfileLoadedCount);
-                    writer.Write(entry.Pad0);
                 }
             }
         }
@@ -2962,7 +2997,30 @@ namespace Hecton8.AI.Ecosystem
                 (((double)position.GridX - center.GridX) * AupCellSizeMetersDouble) + (position.LocalX - center.LocalX),
                 (((double)position.GridY - center.GridY) * AupCellSizeMetersDouble) + (position.LocalY - center.LocalY),
                 (((double)position.GridZ - center.GridZ) * AupCellSizeMetersDouble) + (position.LocalZ - center.LocalZ));
-            return math.all(math.isfinite(delta)) ? (float3)delta : new float3(0f);
+            return ToFiniteLocalFloat3(delta);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float3 ToFiniteLocalFloat3(double3 delta)
+        {
+            return TryToFiniteLocalFloat3(delta, out float3 local) ? local : float3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool TryToFiniteLocalFloat3(double3 delta, out float3 local)
+        {
+            if (!math.all(math.isfinite(delta)))
+            {
+                local = float3.zero;
+                return false;
+            }
+
+            local = (float3)delta;
+            if (math.all(math.isfinite(local)))
+                return true;
+
+            local = float3.zero;
+            return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3235,6 +3293,8 @@ namespace Hecton8.AI.Ecosystem
         public Vector4 DepthPyramidTexelSize;
         public int ClearArgsKernel;
         public int CullKernel;
+        public int ClearArgsThreadGroupSizeX;
+        public int CullThreadGroupSizeX;
         public int DepthPyramidMipCount;
         public int OcclusionEnabled;
         public int DensityStep;
@@ -3281,6 +3341,11 @@ namespace Hecton8.AI.Ecosystem
         private int _activeCount;
         private int _writeIndex;
         private int _activeIndex = -1;
+        private GraphicsBuffer _publishedMatrixBuffer;
+        private GraphicsBuffer _publishedCustomDataBuffer;
+        private GraphicsBuffer _publishedVisibleIndexBuffer;
+        private int _publishedActiveCount = -1;
+        private bool _publishedUseVisibleIndices;
 
         /// <summary>
         /// Allocates or validates double-buffered GPU resources for the requested boid capacity.
@@ -3288,17 +3353,7 @@ namespace Hecton8.AI.Ecosystem
         public bool EnsureGraphicsResources(int requiredCapacity)
         {
             int capacity = math.max(1, requiredCapacity);
-            if (_capacity >= capacity &&
-                IsValid(_matrixBufferA, _capacity, UnsafeUtility.SizeOf<BoidMatrixDTO>()) &&
-                IsValid(_matrixBufferB, _capacity, UnsafeUtility.SizeOf<BoidMatrixDTO>()) &&
-                IsValid(_customDataBufferA, _capacity, UnsafeUtility.SizeOf<BoidCustomDataDTO>()) &&
-                IsValid(_customDataBufferB, _capacity, UnsafeUtility.SizeOf<BoidCustomDataDTO>()) &&
-                IsValid(_argsBufferA, 1, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>()) &&
-                IsValid(_argsBufferB, 1, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>()) &&
-                IsValid(_visibleIndexBufferA, _capacity, UnsafeUtility.SizeOf<uint>()) &&
-                IsValid(_visibleIndexBufferB, _capacity, UnsafeUtility.SizeOf<uint>()) &&
-                IsValidByteAddress(_culledArgsBufferA, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>()) &&
-                IsValidByteAddress(_culledArgsBufferB, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>()))
+            if (HasGraphicsResources(capacity))
             {
                 return true;
             }
@@ -3329,6 +3384,22 @@ namespace Hecton8.AI.Ecosystem
                    IsValidByteAddress(_culledArgsBufferB, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>());
         }
 
+        public bool HasGraphicsResources(int requiredCapacity)
+        {
+            int capacity = math.max(1, requiredCapacity);
+            return _capacity >= capacity &&
+                   IsValid(_matrixBufferA, _capacity, UnsafeUtility.SizeOf<BoidMatrixDTO>()) &&
+                   IsValid(_matrixBufferB, _capacity, UnsafeUtility.SizeOf<BoidMatrixDTO>()) &&
+                   IsValid(_customDataBufferA, _capacity, UnsafeUtility.SizeOf<BoidCustomDataDTO>()) &&
+                   IsValid(_customDataBufferB, _capacity, UnsafeUtility.SizeOf<BoidCustomDataDTO>()) &&
+                   IsValid(_argsBufferA, 1, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>()) &&
+                   IsValid(_argsBufferB, 1, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>()) &&
+                   IsValid(_visibleIndexBufferA, _capacity, UnsafeUtility.SizeOf<uint>()) &&
+                   IsValid(_visibleIndexBufferB, _capacity, UnsafeUtility.SizeOf<uint>()) &&
+                   IsValidByteAddress(_culledArgsBufferA, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>()) &&
+                   IsValidByteAddress(_culledArgsBufferB, UnsafeUtility.SizeOf<BoidIndirectArgsDTO>());
+        }
+
         /// <summary>
         /// Copies Vault-produced matrices, scalar lanes, and indirect arguments into the inactive GPU buffer pair.
         /// </summary>
@@ -3347,7 +3418,7 @@ namespace Hecton8.AI.Ecosystem
 
             BoidIndirectArgsDTO args = indirectArgs[0];
             int requested = math.min((int)args.InstanceCount, math.min(matrices.Length, customData.Length));
-            if (requested <= 0 || args.VertexCountPerInstance == 0u || !EnsureGraphicsResources(requested))
+            if (requested <= 0 || args.VertexCountPerInstance == 0u || !HasGraphicsResources(requested))
                 return false;
 
             GraphicsBuffer matrixTarget = _writeIndex == 0 ? _matrixBufferA : _matrixBufferB;
@@ -3483,19 +3554,34 @@ namespace Hecton8.AI.Ecosystem
             ReleaseGraphicsResources();
         }
 
-        private static void PublishBuffers(
+        private void PublishBuffers(
             GraphicsBuffer matrixBuffer,
             GraphicsBuffer customDataBuffer,
             GraphicsBuffer visibleIndexBuffer,
             int activeCount,
             bool useVisibleIndices)
         {
+            int safeActiveCount = math.max(0, activeCount);
+            if (ReferenceEquals(_publishedMatrixBuffer, matrixBuffer) &&
+                ReferenceEquals(_publishedCustomDataBuffer, customDataBuffer) &&
+                ReferenceEquals(_publishedVisibleIndexBuffer, visibleIndexBuffer) &&
+                _publishedActiveCount == safeActiveCount &&
+                _publishedUseVisibleIndices == useVisibleIndices)
+            {
+                return;
+            }
+
             Shader.SetGlobalBuffer(_ShinobuBoidMatricesId, matrixBuffer);
             Shader.SetGlobalBuffer(_ShinobuBoidCustomDataId, customDataBuffer);
             if (visibleIndexBuffer != null)
                 Shader.SetGlobalBuffer(_ShinobuBoidVisibleIndicesId, visibleIndexBuffer);
-            Shader.SetGlobalInt(_ShinobuBoidActiveCountId, math.max(0, activeCount));
+            Shader.SetGlobalInt(_ShinobuBoidActiveCountId, safeActiveCount);
             Shader.SetGlobalInt(_ShinobuBoidUseVisibleIndicesId, useVisibleIndices ? 1 : 0);
+            _publishedMatrixBuffer = matrixBuffer;
+            _publishedCustomDataBuffer = customDataBuffer;
+            _publishedVisibleIndexBuffer = visibleIndexBuffer;
+            _publishedActiveCount = safeActiveCount;
+            _publishedUseVisibleIndices = useVisibleIndices;
         }
 
         private bool TryDispatchVisibilityCulling(
@@ -3508,6 +3594,8 @@ namespace Hecton8.AI.Ecosystem
             if (cullingParams.CullingCompute == null ||
                 cullingParams.ClearArgsKernel < 0 ||
                 cullingParams.CullKernel < 0 ||
+                cullingParams.ClearArgsThreadGroupSizeX <= 0 ||
+                cullingParams.CullThreadGroupSizeX <= 0 ||
                 activeCount <= 0 ||
                 !IsValid(matrixBuffer, 1, UnsafeUtility.SizeOf<BoidMatrixDTO>()) ||
                 !IsValid(visibleIndexBuffer, 1, UnsafeUtility.SizeOf<uint>()) ||
@@ -3521,8 +3609,12 @@ namespace Hecton8.AI.Ecosystem
                 return false;
 
             ComputeShader compute = cullingParams.CullingCompute;
+            int clearGroups = CeilDividePositive(1, cullingParams.ClearArgsThreadGroupSizeX);
+            if (clearGroups <= 0)
+                return false;
+
             compute.SetBuffer(cullingParams.ClearArgsKernel, _ShinobuBoidCulledIndirectArgsId, culledArgsBuffer);
-            compute.Dispatch(cullingParams.ClearArgsKernel, 1, 1, 1);
+            compute.Dispatch(cullingParams.ClearArgsKernel, clearGroups, 1, 1);
 
             compute.SetInt(_ShinobuSourceCountId, sourceCount);
             compute.SetInt(_ShinobuDepthPyramidMipCountId, math.max(0, cullingParams.DepthPyramidMipCount));
@@ -3543,8 +3635,11 @@ namespace Hecton8.AI.Ecosystem
                 _ShinobuDepthPyramidId,
                 cullingParams.DepthPyramid != null ? cullingParams.DepthPyramid : Texture2D.blackTexture);
 
-            int groups = (sourceCount + 63) >> 6;
-            compute.Dispatch(cullingParams.CullKernel, math.max(1, groups), 1, 1);
+            int groups = CeilDividePositive(sourceCount, cullingParams.CullThreadGroupSizeX);
+            if (groups <= 0)
+                return false;
+
+            compute.Dispatch(cullingParams.CullKernel, groups, 1, 1);
             return true;
         }
 
@@ -3564,6 +3659,11 @@ namespace Hecton8.AI.Ecosystem
             _activeCount = 0;
             _writeIndex = 0;
             _activeIndex = -1;
+            _publishedMatrixBuffer = null;
+            _publishedCustomDataBuffer = null;
+            _publishedVisibleIndexBuffer = null;
+            _publishedActiveCount = -1;
+            _publishedUseVisibleIndices = false;
         }
 
         private static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : struct
@@ -3636,6 +3736,16 @@ namespace Hecton8.AI.Ecosystem
             v++;
             return v;
         }
+
+        private static int CeilDividePositive(int value, int divisor)
+        {
+            const int MaxDispatchGroupsPerDimension = 65535;
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
+        }
     }
 
     internal static class ShinobuEcosystemLayoutManifest
@@ -3691,6 +3801,10 @@ namespace Hecton8.AI.Ecosystem
             AssertOffset<BoidStateDTO>(nameof(BoidStateDTO.Velocity), 12);
             AssertOffset<BoidStateDTO>(nameof(BoidStateDTO.FlockHashID), 24);
             AssertOffset<BoidStateDTO>(nameof(BoidStateDTO.PanicScalar), 28);
+            AssertOffset<BoidTargetDTO>(nameof(BoidTargetDTO.AUP), 0);
+            AssertOffset<BoidTargetDTO>(nameof(BoidTargetDTO.Weight01), 24);
+            AssertOffset<BoidTargetDTO>(nameof(BoidTargetDTO.SpeciesID), 28);
+            AssertOffset<BoidTargetDTO>(nameof(BoidTargetDTO.Flags), 30);
             AssertOffset<FlockingThreatDTO>(nameof(FlockingThreatDTO.LocalPosition), 0);
             AssertOffset<FlockingThreatDTO>(nameof(FlockingThreatDTO.RadiusMeters), 12);
             AssertOffset<FlockingThreatDTO>(nameof(FlockingThreatDTO.Intensity01), 16);
@@ -3706,6 +3820,15 @@ namespace Hecton8.AI.Ecosystem
             AssertOffset<BoidIndirectArgsDTO>(nameof(BoidIndirectArgsDTO.InstanceCount), 4);
             AssertOffset<BoidIndirectArgsDTO>(nameof(BoidIndirectArgsDTO.StartVertex), 8);
             AssertOffset<BoidIndirectArgsDTO>(nameof(BoidIndirectArgsDTO.StartInstance), 12);
+            AssertOffset<SwarmSpeciesProfileDTO>(nameof(SwarmSpeciesProfileDTO.BiomassHash), 0);
+            AssertOffset<SwarmSpeciesProfileDTO>(nameof(SwarmSpeciesProfileDTO.MeshHash), 4);
+            AssertOffset<SwarmSpeciesProfileDTO>(nameof(SwarmSpeciesProfileDTO.MaterialHash), 8);
+            AssertOffset<SwarmSpeciesProfileDTO>(nameof(SwarmSpeciesProfileDTO.Scale), 12);
+            AssertOffset<SwarmSpeciesProfileDTO>(nameof(SwarmSpeciesProfileDTO.Speed), 16);
+            AssertOffset<SwarmSpeciesProfileDTO>(nameof(SwarmSpeciesProfileDTO.FearResponse), 20);
+            AssertOffset<SwarmSpeciesProfileDTO>(nameof(SwarmSpeciesProfileDTO.Pad0), 24);
+            AssertOffset<SwarmSpeciesProfileDTO>(nameof(SwarmSpeciesProfileDTO.SpeciesID), 28);
+            AssertOffset<SwarmSpeciesProfileDTO>(nameof(SwarmSpeciesProfileDTO.Flags), 30);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.SectorHash), 0);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.HerbivoreMass), 4);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.CarnivoreMass), 8);
@@ -3714,7 +3837,9 @@ namespace Hecton8.AI.Ecosystem
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.SectorY), 20);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.SectorZ), 24);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.Flags), 28);
-            AssertOffset<ShinobuTelemetryEntry>(nameof(ShinobuTelemetryEntry.Pad0), 60);
+            AssertOffset<ShinobuTelemetryEntry>(nameof(ShinobuTelemetryEntry.Pad0), 56);
+            AssertOffset<ShinobuTelemetryEntry>(nameof(ShinobuTelemetryEntry.CsvLoadedCount), 60);
+            AssertOffset<ShinobuTelemetryEntry>(nameof(ShinobuTelemetryEntry.ProfileLoadedCount), 62);
             AssertOffset<SpatialGridEntryDTO>(nameof(SpatialGridEntryDTO.EntityHashID), 0);
             AssertOffset<SpatialGridEntryDTO>(nameof(SpatialGridEntryDTO.EntityRowIndex), 0);
             AssertOffset<SpatialGridEntryDTO>(nameof(SpatialGridEntryDTO.CellHash), 4);
@@ -3825,9 +3950,9 @@ namespace Hecton8.AI.Ecosystem
     public struct BoidTargetDTO
     {
         [FieldOffset(0)] public double3 AUP;
-        [FieldOffset(24)] public ushort SpeciesID;
-        [FieldOffset(26)] public ushort Flags;
-        [FieldOffset(28)] public float Weight01;
+        [FieldOffset(24)] public float Weight01;
+        [FieldOffset(28)] public ushort SpeciesID;
+        [FieldOffset(30)] public ushort Flags;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -3875,12 +4000,12 @@ namespace Hecton8.AI.Ecosystem
         [FieldOffset(0)] public uint BiomassHash;
         [FieldOffset(4)] public uint MeshHash;
         [FieldOffset(8)] public uint MaterialHash;
-        [FieldOffset(12)] public ushort SpeciesID;
-        [FieldOffset(14)] public ushort Flags;
-        [FieldOffset(16)] public float Scale;
-        [FieldOffset(20)] public float Speed;
-        [FieldOffset(24)] public float FearResponse;
-        [FieldOffset(28)] public uint Pad0;
+        [FieldOffset(12)] public float Scale;
+        [FieldOffset(16)] public float Speed;
+        [FieldOffset(20)] public float FearResponse;
+        [FieldOffset(24)] public uint Pad0;
+        [FieldOffset(28)] public ushort SpeciesID;
+        [FieldOffset(30)] public ushort Flags;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -4002,9 +4127,9 @@ namespace Hecton8.AI.Ecosystem
         [FieldOffset(44)] public int ReproducedCount;
         [FieldOffset(48)] public int TombstonedCount;
         [FieldOffset(52)] public int DebugCellCount;
-        [FieldOffset(56)] public ushort CsvLoadedCount;
-        [FieldOffset(58)] public ushort ProfileLoadedCount;
-        [FieldOffset(60)] public uint Pad0;
+        [FieldOffset(56)] public uint Pad0;
+        [FieldOffset(60)] public ushort CsvLoadedCount;
+        [FieldOffset(62)] public ushort ProfileLoadedCount;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]

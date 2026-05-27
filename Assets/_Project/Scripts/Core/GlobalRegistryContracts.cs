@@ -2445,6 +2445,12 @@ namespace Hecton8.Core
             float deliveredDamage,
             float normalizedPower,
             uint toolCapabilityMask);
+
+        bool TryResolveNearestHarvestInteractionPoint(
+            Vector3 handRuntimePosition,
+            float searchRadius,
+            uint toolCapabilityMask,
+            out FloraHarvestInteractionPoint interactionPoint);
     }
 
     /// <summary>
@@ -2640,6 +2646,11 @@ namespace Hecton8.Core
         /// Reads the latest owner-published movement snapshot without synchronizing scene state.
         /// </summary>
         bool TryGetMovementRuntimeState(out PlayerMovementRuntimeState state);
+
+        /// <summary>
+        /// Reads the latest owner-published look snapshot without synchronizing scene state.
+        /// </summary>
+        bool TryGetLookRuntimeState(out PlayerLookState state);
 
         /// <summary>
         /// Reads the latest owner-published movement stress snapshot without exposing the concrete movement owner.
@@ -4235,15 +4246,15 @@ namespace Hecton8.Core
             _pad0 = 0u;
         }
 
-        [FieldOffset(0)] public readonly int RoomCapacity;
-        [FieldOffset(4)] public readonly int BulkheadCapacity;
-        [FieldOffset(8)] public readonly int LocalAllocationCount;
-        [FieldOffset(12)] private readonly uint _pad0;
-        [FieldOffset(16)] public readonly long LocalRegisteredBytes;
-        [FieldOffset(24)] public readonly long LargestAllocationBytes;
-        [FieldOffset(32)] public readonly uint LargestAllocationLabelHash;
+        [FieldOffset(0)] public readonly long LocalRegisteredBytes;
+        [FieldOffset(8)] public readonly long LargestAllocationBytes;
+        [FieldOffset(16)] public readonly long SentinelTrackedBytes;
+        [FieldOffset(24)] public readonly int RoomCapacity;
+        [FieldOffset(28)] public readonly int BulkheadCapacity;
+        [FieldOffset(32)] public readonly int LocalAllocationCount;
         [FieldOffset(36)] public readonly int SentinelActiveAllocationCount;
-        [FieldOffset(40)] public readonly long SentinelTrackedBytes;
+        [FieldOffset(40)] public readonly uint LargestAllocationLabelHash;
+        [FieldOffset(44)] private readonly uint _pad0;
     }
 
     /// <summary>
@@ -4254,10 +4265,6 @@ namespace Hecton8.Core
         bool IsInitialized { get; }
         int RoomCount { get; }
         int BaseCount { get; }
-        NativeArray<float>.ReadOnly RoomO2 { get; }
-        NativeArray<float>.ReadOnly RoomCO2 { get; }
-        NativeArray<float>.ReadOnly RoomPressure { get; }
-        NativeArray<byte>.ReadOnly BaseAwakeState { get; }
 
         bool TryGetRoomSnapshot(int roomId, out GasRoomSnapshot snapshot);
         bool TryGetBaseHibernationSnapshot(int baseId, out GasBaseHibernationSnapshot snapshot);
@@ -4965,11 +4972,11 @@ namespace Hecton8.Core
     }
 
     /// <summary>
-    /// RenderGraph fluid advection route exposed without binding presentation to the concrete physics runtime.
+    /// RenderGraph fluid advection dispatch route exposed without binding presentation to the concrete physics runtime.
     /// </summary>
-    public interface IFluidAdvectionRenderGraphReadModel : ISystem
+    public interface IFluidAdvectionRenderGraphDispatchSource : ISystem
     {
-        bool TryBuildFluidAdvectionRenderGraphPayload(out FluidAdvectionRenderGraphPayload payload);
+        bool TryClaimFluidAdvectionRenderGraphPayload(out FluidAdvectionRenderGraphPayload payload);
 
         void BindFluidAdvectionCompute(
             IComputeCommandBuffer cmd,
@@ -5296,15 +5303,29 @@ namespace Hecton8.Core
     {
         float GetDurability(string toolID, float maxDurability);
 
+        float GetDurability(uint itemHashId, float maxDurability);
+
+        bool TryReadDurability(uint itemHashId, float maxDurability, out float durability);
+
         float GetDurabilityNormalized(string toolID, float maxDurability);
+
+        float GetDurabilityNormalized(uint itemHashId, float maxDurability);
 
         bool IsBroken(string toolID);
 
+        bool IsBroken(uint itemHashId);
+
+        bool TryReadBroken(uint itemHashId, out bool broken);
+
         bool IsDegraded(string toolID);
+
+        bool IsDegraded(uint itemHashId);
 
         void DrainDurability(string toolID, float amount, float maxDurability);
 
         void DrainDurabilityByTime(string toolID, uint itemHashId, float scaledDeltaTime, float maxDurability);
+
+        bool TryDrainDurabilityByTime(uint itemHashId, float scaledDeltaTime, float maxDurability);
 
         void RegisterCentralizedEquipmentMirror(string toolID, uint itemHashId, float maxDurability);
 
@@ -5314,11 +5335,19 @@ namespace Hecton8.Core
 
         void RepairTool(string toolID, float amount, float maxDurability);
 
+        bool TryRepairTool(uint itemHashId, float amount, float maxDurability);
+
         void RepairToolFull(string toolID, float maxDurability);
+
+        bool TryRepairToolFull(uint itemHashId, float maxDurability);
 
         void BreakTool(string toolID);
 
+        bool TryBreakTool(uint itemHashId);
+
         void ResetDurability(string toolID, float maxDurability);
+
+        bool TryResetDurability(uint itemHashId, float maxDurability);
     }
 
     /// <summary>
@@ -5618,7 +5647,7 @@ namespace Hecton8.Core
         bool Publish(in Hecton8.Interaction.InteractionSignal signal, Collider targetCollider);
 
         /// <summary>
-        /// Performs the shared zero-allocation tool surface query from a preformatted interaction packet.
+        /// Requests the shared zero-allocation tool surface query from a preformatted interaction packet and returns the latest completed frame-latent result.
         /// </summary>
         /// <param name="requesterId">Stable per-requester identifier used to map frame-latent results.</param>
         /// <param name="packet">Blittable tool request packet copied by value into the service-owned surface-query lane.</param>
@@ -5626,10 +5655,10 @@ namespace Hecton8.Core
         /// <param name="queryTriggerInteraction">Whether trigger colliders participate in the batched query.</param>
         /// <param name="hit">Nearest valid hit when one is found.</param>
         /// <returns>True when a valid hit was resolved.</returns>
-        bool TryResolvePrimarySurfaceHit(ulong requesterId, in Hecton8.Interaction.InteractionPacket packet, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out InteractionSurfaceHit hit);
+        bool RequestPrimarySurfaceHit(ulong requesterId, in Hecton8.Interaction.InteractionPacket packet, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out InteractionSurfaceHit hit);
 
         /// <summary>
-        /// Performs the shared zero-allocation tool surface query using the service-owned buffers.
+        /// Requests the shared zero-allocation tool surface query using the service-owned buffers and returns the latest completed frame-latent result.
         /// </summary>
         /// <param name="requesterId">Stable per-requester identifier used to map frame-latent results.</param>
         /// <param name="origin">Runtime-space query origin.</param>
@@ -5639,7 +5668,7 @@ namespace Hecton8.Core
         /// <param name="queryTriggerInteraction">Whether trigger colliders participate in the batched query.</param>
         /// <param name="hit">Nearest valid hit when one is found.</param>
         /// <returns>True when a valid hit was resolved.</returns>
-        bool TryResolvePrimarySurfaceHit(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out InteractionSurfaceHit hit);
+        bool RequestPrimarySurfaceHit(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out InteractionSurfaceHit hit);
 
         /// <summary>
         /// Clears all queued interaction signals and associated transient target references.

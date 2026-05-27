@@ -176,28 +176,34 @@ namespace Hecton8.Atmosphere
             }
 
             IDataVault vault = active.ResolveVault();
-            if (vault == null || !vault.TryLockBuffer(AtmosphereLogisticsBufferIds.Tuning, OwnerSystemId))
+            if (vault == null || vault.IsCompactionFenceActive ||
+                !vault.TryLockBuffer(AtmosphereLogisticsBufferIds.Tuning, OwnerSystemId))
                 return;
 
-            if (!active.Resolve(in active._tuning, out NativeArray<AtmosphereTuningDTO> tuningBuffer) ||
-                tuningBuffer.Length == 0)
+            try
+            {
+                if (!active.Resolve(in active._tuning, out NativeArray<AtmosphereTuningDTO> tuningBuffer) ||
+                    tuningBuffer.Length == 0)
+                {
+                    return;
+                }
+
+                ref AtmosphereTuningDTO tuning = ref UnsafeUtility.AsRef<AtmosphereTuningDTO>(NativeArrayUnsafeUtility.GetUnsafePtr(tuningBuffer));
+                tuning.BaseDiffusionRate = s_pendingBaseDiffusionRate;
+                tuning.InhalationMultiplier = s_pendingInhalationMultiplier;
+                tuning.ToxinDissipationSpeed = s_pendingToxinDissipationSpeed;
+            }
+            finally
             {
                 vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.Tuning, OwnerSystemId);
-                return;
             }
-
-            ref AtmosphereTuningDTO tuning = ref UnsafeUtility.AsRef<AtmosphereTuningDTO>(NativeArrayUnsafeUtility.GetUnsafePtr(tuningBuffer));
-            tuning.BaseDiffusionRate = s_pendingBaseDiffusionRate;
-            tuning.InhalationMultiplier = s_pendingInhalationMultiplier;
-            tuning.ToxinDissipationSpeed = s_pendingToxinDissipationSpeed;
-            vault.TryUnlockBuffer(AtmosphereLogisticsBufferIds.Tuning, OwnerSystemId);
         }
 
         public static bool TryGetEditorTuning(out AtmosphereTuningDTO tuning)
         {
             BaseAtmosphereLogisticsRuntime active = s_active;
             if (active == null || active._vault == null || active._simulationScheduled ||
-                !active.Resolve(in active._tuning, out NativeArray<AtmosphereTuningDTO> tuningBuffer) ||
+                !active.ResolveReadOnly(in active._tuning, out NativeArray<AtmosphereTuningDTO>.ReadOnly tuningBuffer) ||
                 tuningBuffer.Length == 0)
             {
                 tuning = default;
@@ -212,8 +218,8 @@ namespace Hecton8.Atmosphere
         {
             BaseAtmosphereLogisticsRuntime active = s_active;
             if (active == null || active._vault == null || active._simulationScheduled ||
-                !active.Resolve(in active._telemetry, out NativeArray<AtmosphereTelemetryEntry> telemetry) ||
-                !active.Resolve(in active._counters, out NativeArray<AtmosphereGraphCountersDTO> counters) ||
+                !active.ResolveReadOnly(in active._telemetry, out NativeArray<AtmosphereTelemetryEntry>.ReadOnly telemetry) ||
+                !active.ResolveReadOnly(in active._counters, out NativeArray<AtmosphereGraphCountersDTO>.ReadOnly counters) ||
                 telemetry.Length == 0 || counters.Length == 0)
             {
                 entry = default;
@@ -234,16 +240,16 @@ namespace Hecton8.Atmosphere
             telemetry = default;
             cursor = 0;
             BaseAtmosphereLogisticsRuntime active = s_active;
-            NativeArray<AtmosphereTelemetryEntry> telemetryBuffer;
+            NativeArray<AtmosphereTelemetryEntry>.ReadOnly telemetryBuffer;
             if (active == null || active._vault == null || active._simulationScheduled ||
-                !active.Resolve(in active._telemetry, out telemetryBuffer) ||
-                !active.Resolve(in active._counters, out NativeArray<AtmosphereGraphCountersDTO> counters) ||
+                !active.ResolveReadOnly(in active._telemetry, out telemetryBuffer) ||
+                !active.ResolveReadOnly(in active._counters, out NativeArray<AtmosphereGraphCountersDTO>.ReadOnly counters) ||
                 telemetryBuffer.Length == 0 || counters.Length == 0)
             {
                 return false;
             }
 
-            telemetry = telemetryBuffer.AsReadOnly();
+            telemetry = telemetryBuffer;
             cursor = counters[0].TelemetryCursor;
             return true;
         }
@@ -253,9 +259,9 @@ namespace Hecton8.Atmosphere
         {
             BaseAtmosphereLogisticsRuntime active = s_active;
             if (active == null || active._vault == null || active._simulationScheduled ||
-                !active.Resolve(in active._nodes, out NativeArray<AtmosphereNodeDTO> nodes) ||
-                !active.Resolve(in active._frontCells, out NativeArray<AtmosphereCellDTO> cells) ||
-                !active.Resolve(in active._counters, out NativeArray<AtmosphereGraphCountersDTO> counters) ||
+                !active.ResolveReadOnly(in active._nodes, out NativeArray<AtmosphereNodeDTO>.ReadOnly nodes) ||
+                !active.ResolveReadOnly(in active._frontCells, out NativeArray<AtmosphereCellDTO>.ReadOnly cells) ||
+                !active.ResolveReadOnly(in active._counters, out NativeArray<AtmosphereGraphCountersDTO>.ReadOnly counters) ||
                 counters.Length == 0)
             {
                 node = default;
@@ -473,18 +479,20 @@ namespace Hecton8.Atmosphere
             if (!TryLockJobBuffers(vault))
                 return dependsOn;
 
-            AtmosphereGraphCountersDTO counter = counters[0];
-            int nodeCount = math.clamp(counter.NodeCount, 0, math.min(front.Length, back.Length));
-            if (nodeCount <= 0)
+            bool keepLocksForScheduledJob = false;
+            try
             {
-                UnlockJobBuffers();
-                return dependsOn;
-            }
+                AtmosphereGraphCountersDTO counter = counters[0];
+                int nodeCount = math.clamp(counter.NodeCount, 0, math.min(front.Length, back.Length));
+                if (nodeCount <= 0)
+                {
+                    return dependsOn;
+                }
 
-            AtmosphereTuningDTO tune = tuning.Length > 0 ? tuning[0] : DefaultTuning();
-            float qualityWeight = MathLodApproximation.SaturateFinite(tune.GlobalQualityWeight, AuthoritativeQualityWeight);
-            int iterations = ResolveDiffusionIterations(qualityWeight);
-            float dt = ResolveSimulationTickDelta(in timing);
+                AtmosphereTuningDTO tune = tuning.Length > 0 ? tuning[0] : DefaultTuning();
+                float qualityWeight = MathLodApproximation.SaturateFinite(tune.GlobalQualityWeight, AuthoritativeQualityWeight);
+                int iterations = ResolveDiffusionIterations(qualityWeight);
+                float dt = ResolveSimulationTickDelta(in timing);
 
                 JobHandle handle = new AtmosphereClearDeltaJob
                 {
@@ -610,8 +618,15 @@ namespace Hecton8.Atmosphere
 
                 _simulationScheduled = true;
                 _jobScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            H8Memory.RegisterActiveJob(OwnerSystemId, handle);
-            return handle;
+                H8Memory.RegisterActiveJob(OwnerSystemId, handle);
+                keepLocksForScheduledJob = true;
+                return handle;
+            }
+            finally
+            {
+                if (!keepLocksForScheduledJob)
+                    UnlockJobBuffers();
+            }
         }
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
@@ -1075,7 +1090,7 @@ namespace Hecton8.Atmosphere
         private bool Resolve<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
         {
             IDataVault vault = ResolveVault();
-            if (vault == null || handle.Generation == 0u)
+            if (vault == null || vault.IsCompactionFenceActive || handle.Generation == 0u)
             {
                 buffer = default;
                 return false;
@@ -1084,9 +1099,25 @@ namespace Hecton8.Atmosphere
             return vault.TryResolveHandle(in handle, out buffer);
         }
 
+        private bool ResolveReadOnly<T>(in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _vault;
+            if (vault == null || vault.IsCompactionFenceActive || handle.Generation == 0u)
+            {
+                return false;
+            }
+
+            return vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
         private bool TryLockJobBuffers(IDataVault vault)
         {
             UnlockJobBuffers();
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
             _lockedVault = vault;
             _lockedFrontBufferId = ActiveFrontBufferId();
             _lockedBackBufferId = ActiveBackBufferId();
@@ -1114,7 +1145,7 @@ namespace Hecton8.Atmosphere
 
         private bool TryLock(IDataVault vault, BufferID bufferId, int bit)
         {
-            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
+            if (vault.IsCompactionFenceActive || !vault.TryLockBuffer(bufferId, OwnerSystemId))
             {
                 UnlockJobBuffers();
                 return false;

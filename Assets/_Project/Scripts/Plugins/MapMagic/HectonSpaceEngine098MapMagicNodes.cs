@@ -535,9 +535,8 @@ namespace MapMagic.Nodes.MatrixGenerators
             unchecked
             {
                 uint seed = (uint)nodeSeed;
-                IWorldSeedProvider provider = GlobalRegistry.WorldSeedProvider;
-                if (provider != null && provider.IsInitialized)
-                    seed ^= (uint)provider.RuntimeWorldSeed * 0x9E3779B9u;
+                if (global::HectonWorldGenerator.TryGetActiveRuntimeWorldSeed(out int runtimeWorldSeed))
+                    seed ^= (uint)runtimeWorldSeed * 0x9E3779B9u;
 
                 int aupCellX = (int)math.floor(matrix.worldPos.x / AupCellSizeMeters);
                 int aupCellZ = (int)math.floor(matrix.worldPos.z / AupCellSizeMeters);

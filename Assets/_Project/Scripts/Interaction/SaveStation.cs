@@ -71,6 +71,11 @@ namespace Hecton8.Interaction
             LocalizationEvents.UnregisterLanguageListener(this);
         }
 
+        private void OnDestroy()
+        {
+            InteractableRegistry.InvalidateTree(this);
+        }
+
         /// <inheritdoc />
         public void OnHoverStart()
         {

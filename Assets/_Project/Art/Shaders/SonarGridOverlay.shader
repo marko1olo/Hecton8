@@ -29,10 +29,12 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
         ZTest Always
 
         HLSLINCLUDE
-        #pragma target 4.5
+        #pragma target 3.5
 
+        #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+        #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
         #ifndef UNITY_PASS_STEREO_INSTANCE_ID
         #define UNITY_PASS_STEREO_INSTANCE_ID(input) UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input)
@@ -148,6 +150,16 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             return clamp(screenUV, texel, 1.0 - texel);
         }
 
+        float ResolveLinearRamp01(float edge0, float edge1, float value)
+        {
+            return saturate((value - edge0) * rcp(max(0.0001, edge1 - edge0)));
+        }
+
+        float2 ResolveFoveatedSourceUV(float2 uv)
+        {
+            return FoveatedRemapLinearToNonUniform(saturate(uv));
+        }
+
         float2 ClampSceneDepthUV(float2 screenUV)
         {
             float2 texel = rcp(max(_ScaledScreenParams.xy, float2(1.0, 1.0)));
@@ -157,7 +169,7 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
         float3 SampleSceneWorldPosition(float2 screenUV, out float rawDepth, out float validMask)
         {
             screenUV = ClampSceneDepthUV(screenUV);
-            rawDepth = SampleSceneDepth(screenUV);
+            rawDepth = SampleSceneDepth(ResolveFoveatedSourceUV(screenUV));
 #if UNITY_REVERSED_Z
             validMask = step(0.0001, rawDepth);
 #else
@@ -170,10 +182,14 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
         {
             float2 texel = rcp(max(_ScaledScreenParams.xy, float2(1.0, 1.0)));
             screenUV = ClampSceneDepthUVWithTexel(screenUV, texel);
-            float depthLeft = SampleSceneDepth(ClampSceneDepthUVWithTexel(screenUV - float2(texel.x, 0.0), texel));
-            float depthRight = SampleSceneDepth(ClampSceneDepthUVWithTexel(screenUV + float2(texel.x, 0.0), texel));
-            float depthDown = SampleSceneDepth(ClampSceneDepthUVWithTexel(screenUV - float2(0.0, texel.y), texel));
-            float depthUp = SampleSceneDepth(ClampSceneDepthUVWithTexel(screenUV + float2(0.0, texel.y), texel));
+            float2 leftUv = ClampSceneDepthUVWithTexel(screenUV - float2(texel.x, 0.0), texel);
+            float2 rightUv = ClampSceneDepthUVWithTexel(screenUV + float2(texel.x, 0.0), texel);
+            float2 downUv = ClampSceneDepthUVWithTexel(screenUV - float2(0.0, texel.y), texel);
+            float2 upUv = ClampSceneDepthUVWithTexel(screenUV + float2(0.0, texel.y), texel);
+            float depthLeft = SampleSceneDepth(ResolveFoveatedSourceUV(leftUv));
+            float depthRight = SampleSceneDepth(ResolveFoveatedSourceUV(rightUv));
+            float depthDown = SampleSceneDepth(ResolveFoveatedSourceUV(downUv));
+            float depthUp = SampleSceneDepth(ResolveFoveatedSourceUV(upUv));
             float depthDx = depthRight - depthLeft;
             float depthDy = depthUp - depthDown;
             float depthGradient = abs(depthDx) + abs(depthDy);
@@ -186,7 +202,7 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             float lineScale = max(0.1, _SonarGridParams0.y);
             float lineWidth = max(0.001, _SonarGridParams0.z);
             float2 cell = abs(frac(sceneWorldPos.xz * lineScale) - 0.5);
-            return 1.0 - smoothstep(lineWidth, lineWidth * 2.5, min(cell.x, cell.y));
+            return 1.0 - ResolveLinearRamp01(lineWidth, lineWidth * 2.5, min(cell.x, cell.y));
         }
 
         float ComputeTopographicBands(float3 sceneWorldPos)
@@ -194,12 +210,12 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             float bandScale = max(0.01, _TopoBandScale);
             float bandWidth = max(0.001, _TopoBandWidth);
             float bandCoord = abs(frac(sceneWorldPos.y * bandScale) - 0.5);
-            return 1.0 - smoothstep(bandWidth, bandWidth * 2.6, bandCoord);
+            return 1.0 - ResolveLinearRamp01(bandWidth, bandWidth * 2.6, bandCoord);
         }
 
         float ResolveWavefrontMask(float distanceToOrigin, float waveRadius, float waveBandWidth)
         {
-            return 1.0 - smoothstep(waveBandWidth, waveBandWidth * 2.0, abs(distanceToOrigin - waveRadius));
+            return 1.0 - ResolveLinearRamp01(waveBandWidth, waveBandWidth * 2.0, abs(distanceToOrigin - waveRadius));
         }
 
         float ApproximatePulseDistance(float3 a, float3 b)
@@ -494,7 +510,7 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             float eventEchoWave = EvaluateWorldMemoryPulseBand(_HectonSonarEchoPulse, _HectonSonarEchoParams, absoluteXZ, 0.0, 1.0);
             float reflectedWave = saturate(automaticEchoWave * 0.72 + eventEchoWave);
             float2 cell = abs(frac(absoluteXZ * max(0.1, _SonarGridParams0.y)) - 0.5);
-            float gridMask = 1.0 - smoothstep(max(0.001, _SonarGridParams0.z), max(0.001, _SonarGridParams0.z) * 2.5, min(cell.x, cell.y));
+            float gridMask = 1.0 - ResolveLinearRamp01(max(0.001, _SonarGridParams0.z), max(0.001, _SonarGridParams0.z) * 2.5, min(cell.x, cell.y));
             float worldPulseMask = saturate((primaryWave + reflectedWave) * (0.28 + gridMask * 0.92) * saturate(_SonarGridParams0.x));
             half3 worldColor =
                 _SonarGridHardColor.rgb * (half)(worldPulseMask * (0.72 + primaryWave)) +
@@ -508,7 +524,7 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
             UNITY_PASS_STEREO_INSTANCE_ID(input);
             float2 screenUV = ResolveXRStereoScreenUV(input.screenUV);
-            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, screenUV);
+            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(screenUV));
             float rawDepth;
             float depthValid;
             float3 sceneWorldPos = SampleSceneWorldPosition(screenUV, rawDepth, depthValid);
@@ -522,7 +538,7 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             float pingActive = saturate(_SonarPingCenter.w) * step(_Time.y, _SonarPingParams.w);
             float pingBandWidth = max(0.25, _SonarPingParams.y);
             float pingDistance = depthValid > 0.5 ? ApproximatePulseDistance(sceneWorldPos, _SonarPingCenter.xyz) : 0.0;
-            float pingShell = pingActive * (1.0 - smoothstep(pingBandWidth, pingBandWidth * 2.0, abs(pingDistance - _SonarRadius)));
+            float pingShell = pingActive * (1.0 - ResolveLinearRamp01(pingBandWidth, pingBandWidth * 2.0, abs(pingDistance - _SonarRadius)));
             float pingContour = ComputeSonarContourMask(screenUV, rawDepth);
             float depthEdgePulse = saturate(pingContour * (0.72 + pingShell * 2.2));
             half3 pingColor = half3(0.0h, 0.92h, 1.0h) * (half)(pingShell * (1.0 + depthEdgePulse * 2.25));

@@ -176,6 +176,7 @@ namespace Hecton8.Gameplay
         private AbsoluteUniversePosition _gridOriginAup;
         private IDataVault _dataVault;
         private VoxelSdfReadModel _voxelSdfReadModel;
+        private IVoxelSonarSdfReadLeaseModel _voxelSdfReadLeaseModel;
         private SimulationPhaseSystem _simulationPhase;
         private PostSimulationPhaseSystem _postSimulationPhase;
         private VisualSyncPhaseSystem _visualSyncPhase;
@@ -189,6 +190,7 @@ namespace Hecton8.Gameplay
         private float _radiationCadenceAccumulatorSeconds;
         private float _lastCompletedIntegrationDeltaSeconds;
         private long _radiationSimulationStartTicks;
+        private VoxelSonarSdfReadLease _radiationSdfReadLease;
         private RadiationStateDTO _lastRadiationState;
         private AbsoluteUniversePosition _lastSimulationPlayerAup;
         private PlayerRuntimeContext _lastSimulationPlayerContext;
@@ -215,6 +217,7 @@ namespace Hecton8.Gameplay
         private bool _hasGridOrigin;
         private bool _diffusionJobActive;
         private bool _radiationSimulationJobActive;
+        private bool _radiationSdfReadLeaseLocked;
         private bool _radiationEvaluatedThisFrame;
         private bool _gridBuffersSwapped;
         private bool _registeredSimulationPhase;
@@ -474,6 +477,7 @@ namespace Hecton8.Gameplay
                     return;
 
                 _radiationSimulationJobActive = false;
+                ReleaseRadiationSdfReadLease();
                 _lastBurstExecutionMicroseconds = TicksToMicroseconds(Stopwatch.GetTimestamp() - _radiationSimulationStartTicks);
             }
 
@@ -1376,6 +1380,7 @@ namespace Hecton8.Gameplay
             _saveService = GlobalRegistry.Save;
             _dataVault = GlobalRegistry.DataVault;
             _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
+            _voxelSdfReadLeaseModel = _voxelSdfReadModel as IVoxelSonarSdfReadLeaseModel;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1431,6 +1436,7 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
                     _voxelSdfReadModel = currentService as VoxelSdfReadModel;
+                    _voxelSdfReadLeaseModel = currentService as IVoxelSonarSdfReadLeaseModel;
                     break;
             }
         }
@@ -1590,9 +1596,23 @@ namespace Hecton8.Gameplay
             {
                 DispatcherJobFence.TryComplete(ref _radiationSimulationJobHandle, forceComplete: true);
                 _radiationSimulationJobActive = false;
+                ReleaseRadiationSdfReadLease();
             }
 
             CompleteDiffusionJobForTeardownRelease();
+        }
+
+        private void ReleaseRadiationSdfReadLease()
+        {
+            if (!_radiationSdfReadLeaseLocked)
+                return;
+
+            IVoxelSonarSdfReadLeaseModel leaseModel = _voxelSdfReadLeaseModel;
+            if (leaseModel != null)
+                leaseModel.ReleaseNearestSonarSdfReadLease(in _radiationSdfReadLease);
+
+            _radiationSdfReadLease = default;
+            _radiationSdfReadLeaseLocked = false;
         }
 
         private float SampleGridNearest(in AbsoluteUniversePosition sampleAup)
@@ -1666,16 +1686,19 @@ namespace Hecton8.Gameplay
             float3 sdfCellSize = default;
             float sdfRange = 0f;
             float3 playerRuntime = playerAup.ToRuntimeFloat3();
-            VoxelSdfReadModel sdfReadModel = _voxelSdfReadModel;
-            if (sdfReadModel != null)
+            IVoxelSonarSdfReadLeaseModel sdfReadLeaseModel = _voxelSdfReadLeaseModel;
+            VoxelSonarSdfReadLease sdfReadLease = default;
+            bool sdfReadLeaseLocked = false;
+            if (sdfReadLeaseModel != null)
             {
-                sdfReadModel.TryReadNearestSonarSdf(
+                sdfReadLeaseLocked = sdfReadLeaseModel.TryAcquireNearestSonarSdfReadLease(
                     playerRuntime,
                     out encodedSdf,
                     out sdfDimensions,
                     out sdfVolumeOrigin,
                     out sdfCellSize,
-                    out sdfRange);
+                    out sdfRange,
+                    out sdfReadLease);
             }
 
             NativeArray<BulkheadStateDTO> bulkheadStates = default;
@@ -1729,7 +1752,24 @@ namespace Hecton8.Gameplay
                 SdfRange = SanitizeRange(sdfRange, 0.001f, 0.001f, 100000f),
                 SdfSampleCount = sdfSampleCount
             };
-            return job.Schedule(dependsOn);
+            bool leaseClaimed = false;
+            try
+            {
+                JobHandle handle = job.Schedule(dependsOn);
+                if (sdfReadLeaseLocked)
+                {
+                    _radiationSdfReadLease = sdfReadLease;
+                    _radiationSdfReadLeaseLocked = true;
+                    leaseClaimed = true;
+                }
+
+                return handle;
+            }
+            finally
+            {
+                if (!leaseClaimed && sdfReadLeaseLocked && sdfReadLeaseModel != null)
+                    sdfReadLeaseModel.ReleaseNearestSonarSdfReadLease(in sdfReadLease);
+            }
         }
 
         private void ResolveBulkheadReadBuffers(

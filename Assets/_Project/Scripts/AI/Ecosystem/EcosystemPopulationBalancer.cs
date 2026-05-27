@@ -89,6 +89,8 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             TryRegisterHotSwapListener();
+            _dataVault = GlobalRegistry.DataVault;
+            _ecosystemDirector = GlobalRegistry.EcosystemDirector;
             if (!EnsureVaultState())
                 return;
 
@@ -156,7 +158,7 @@ namespace Hecton8.AI.Ecosystem
             if (_jobScheduled)
                 return;
 
-            if (!EnsureVaultState())
+            if (!RefreshVaultStateReadinessNoGrow())
                 return;
 
             IDataVault vault = _dataVault;
@@ -278,15 +280,46 @@ namespace Hecton8.AI.Ecosystem
             return _coefficientsLoaded;
         }
 
-        private IDataVault EnsureDataVaultDependency()
+        private bool RefreshVaultStateReadinessNoGrow()
         {
             IDataVault vault = _dataVault;
-            if (vault != null)
-                return vault;
+            if (vault == null)
+            {
+                _runtimeFlags |= TelemetryVaultMissingFlag;
+                return false;
+            }
 
-            vault = GlobalRegistry.DataVault;
-            _dataVault = vault;
-            return vault;
+            bool ownedReady =
+                TryOpenVaultView(vault, in _coefficientHandle, CoefficientCapacity, out NativeArray<EcosystemPopulationCoefficient> _) &&
+                TryOpenVaultView(vault, in _sectorStateHandle, math.max(1, maxSectors), out NativeArray<EcosystemPopulationSectorState> _) &&
+                TryOpenVaultView(vault, in _cullEventHandle, math.clamp(cullEventCapacity, 1, EntityDeathSignalLaneCapacity), out NativeArray<EcosystemPopulationCullEvent> _) &&
+                TryOpenVaultView(vault, in _telemetryHandle, TelemetryCapacity, out NativeArray<EcosystemPopulationTelemetryEntry> _) &&
+                TryOpenVaultView(vault, in _freeRingHandle, math.max(1, freeRingCapacity), out NativeArray<EcosystemPopulationFreeSlot> _) &&
+                TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> _);
+
+            if (!ownedReady || !_coefficientsLoaded)
+            {
+                _runtimeFlags |= TelemetryVaultMissingFlag;
+                return false;
+            }
+
+            _runtimeFlags &= ~TelemetryVaultMissingFlag;
+
+            bool entityReady =
+                TryOpenVaultView(vault, in _entityAupHandle, 1, out NativeArray<AbsoluteUniversePosition> _) &&
+                TryOpenVaultView(vault, in _entityFlagHandle, 1, out NativeArray<uint> _);
+
+            if (entityReady)
+                _runtimeFlags &= ~TelemetryEntityBuffersMissingFlag;
+            else
+                _runtimeFlags |= TelemetryEntityBuffersMissingFlag;
+
+            return entityReady;
+        }
+
+        private IDataVault EnsureDataVaultDependency()
+        {
+            return _dataVault;
         }
 
         private IEcosystemDirectorService EnsureDirectorDependency()
@@ -295,9 +328,7 @@ namespace Hecton8.AI.Ecosystem
             if (director != null && director.IsInitialized)
                 return director;
 
-            director = GlobalRegistry.EcosystemDirector;
-            _ecosystemDirector = director;
-            return director;
+            return null;
         }
 
         private bool EnsureEntityHandles(IDataVault vault)
@@ -352,9 +383,9 @@ namespace Hecton8.AI.Ecosystem
             coefficient = default;
             try
             {
-                string path = ResolveProjectRelativePath(CoefficientsRelativePath);
+                string path = BuildProjectRelativePath(CoefficientsRelativePath);
                 if (!File.Exists(path))
-                    path = ResolveProjectRelativePath(LegacyCoefficientsRelativePath);
+                    path = BuildProjectRelativePath(LegacyCoefficientsRelativePath);
                 if (!File.Exists(path))
                     return false;
 
@@ -375,7 +406,7 @@ namespace Hecton8.AI.Ecosystem
                     json = reader.ReadToEnd();
                 }
 
-                if (string.IsNullOrWhiteSpace(json))
+                if (!HasNonWhiteSpace(json != null ? json.AsSpan() : ReadOnlySpan<char>.Empty))
                     return false;
 
                 coefficient = JsonUtility.FromJson<EcosystemCoefficientJson>(json);
@@ -1006,19 +1037,39 @@ namespace Hecton8.AI.Ecosystem
 
         private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition aup, out Vector3 runtimePosition)
         {
+            runtimePosition = default;
+            if (!AbsoluteUniversePosition.IsFinite(in aup))
+                return false;
+
             float3 runtime = aup.ToRuntimeFloat3();
             bool finite = math.all(math.isfinite(runtime));
             runtimePosition = finite ? new Vector3(runtime.x, runtime.y, runtime.z) : default;
             return finite;
         }
 
-        private static string ResolveProjectRelativePath(string relativePath)
+        private static string BuildProjectRelativePath(string relativePath)
         {
             string assetsPath = Application.dataPath;
             string root = Directory.GetParent(assetsPath) != null
                 ? Directory.GetParent(assetsPath).FullName
                 : assetsPath;
             return Path.Combine(root, relativePath);
+        }
+
+        private static bool HasNonWhiteSpace(ReadOnlySpan<char> value)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (!IsAsciiWhiteSpace(value[i]))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsAsciiWhiteSpace(char value)
+        {
+            return value == ' ' || (uint)(value - '\t') <= 4u;
         }
 
         private static void DumpBlackBox(NativeArray<EcosystemPopulationTelemetryEntry> telemetry, int telemetryCursor)
@@ -1032,12 +1083,12 @@ namespace Hecton8.AI.Ecosystem
 
             try
             {
-                string path = ResolveProjectRelativePath(DumpRelativePath);
+                string path = BuildProjectRelativePath(DumpRelativePath);
                 string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                if (directory != null && directory.Length != 0 && !Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     int capacity = telemetry.Length;
@@ -1708,6 +1759,7 @@ namespace Hecton8.AI.Ecosystem
     internal static class EcosystemPopulationLayoutManifest
     {
         private const string LayoutSizeMismatchMessage = "[EcosystemPopulationLayoutManifest] Size mismatch";
+        private const string LayoutOffsetMismatchMessage = "[EcosystemPopulationLayoutManifest] Offset mismatch";
 
         private static bool _verified;
 
@@ -1727,6 +1779,19 @@ namespace Hecton8.AI.Ecosystem
             AssertSize<EcosystemPopulationCullEvent>(96);
             AssertSize<EcosystemPopulationFreeSlot>(32);
             AssertSize<EcosystemPopulationTelemetryEntry>(64);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.SampleAup), 0);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.SectorHash), 48);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.PreyBiomass), 56);
+            AssertOffset<EcosystemPopulationSectorState>(nameof(EcosystemPopulationSectorState.Flags), 96);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.PositionAup), 0);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.SectorHash), 48);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.EntityHash), 56);
+            AssertOffset<EcosystemPopulationCullEvent>(nameof(EcosystemPopulationCullEvent.Flags), 68);
+            AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.SectorHash), 0);
+            AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.EntityIndex), 8);
+            AssertOffset<EcosystemPopulationFreeSlot>(nameof(EcosystemPopulationFreeSlot.Flags), 16);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.Frame), 0);
+            AssertOffset<EcosystemPopulationTelemetryEntry>(nameof(EcosystemPopulationTelemetryEntry.Flags), 36);
             _verified = true;
         }
 
@@ -1736,6 +1801,14 @@ namespace Hecton8.AI.Ecosystem
             int observed = UnsafeUtility.SizeOf<T>();
             if (observed != expected)
                 throw new CriticalBootException(LayoutSizeMismatchMessage);
+        }
+
+        private static void AssertOffset<T>(string fieldName, int expected)
+            where T : struct
+        {
+            int observed = (int)Marshal.OffsetOf<T>(fieldName);
+            if (observed != expected)
+                throw new CriticalBootException(LayoutOffsetMismatchMessage);
         }
     }
 

@@ -1493,6 +1493,7 @@ MonoBehaviour:
   survivalSystem: {fileID: 9217988090672240742}
   pdaSonarPointCloudShader: {fileID: 4800000, guid: 534bedadf69d41343b2dcf2900bbc44c, type: 3}
   pdaSonarMapCompute: {fileID: 7200000, guid: a3f2b5e8d9a74c34aa4fba2a5ce18277, type: 3}
+  pdaHologramMapShader: {fileID: 4800000, guid: 008170efd67158d4c99647a8518cdba7, type: 3}
   defaultTab: 0
   fadeSpeed: 5
   enableBatteryDrain: 1

@@ -12,6 +12,10 @@ namespace Hecton8.World
         private const string SurfaceBudgetBandLabel = "Surface";
         private const string MidDepthBudgetBandLabel = "MidDepth";
         private const string DeepBudgetBandLabel = "Deep";
+        private const float MinimumDepthBandHysteresisMeters = 3f;
+        private const float DefaultDepthBandHysteresisMeters = 5f;
+        private const float MinimumBudgetRefreshDepthDelta = 1f;
+        private const float MinimumBudgetRefreshQualityDelta = 0.025f;
 
         internal static ScatterBudgetController ActiveRuntimeInstance { get; private set; }
 
@@ -47,6 +51,7 @@ namespace Hecton8.World
         [Header("Depth Thresholds")]
         [SerializeField] private float midDepthStart = 60f;
         [SerializeField] private float deepDepthStart = 180f;
+        [SerializeField, Range(MinimumDepthBandHysteresisMeters, 12f)] private float depthBandHysteresisMeters = DefaultDepthBandHysteresisMeters;
 
         [Header("Profiles")]
         [SerializeField] private BudgetProfile surfaceProfile;
@@ -95,6 +100,9 @@ namespace Hecton8.World
         private float _zoneColliderRadiusScale = 1f;
         private float _zoneColliderOpsScale = 1f;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
+        private float _lastAppliedDepth = float.NaN;
+        private float _lastAppliedQualityWeight = -1f;
+        private float _cachedGlobalQualityWeight = 1f;
         private HectonPlayerMovement _playerMovement;
 
         private void Reset()
@@ -321,18 +329,23 @@ namespace Hecton8.World
                 return;
             }
 
-            BudgetBand band = GetBandForDepth(depth);
+            float globalQualityWeight = ResolveGlobalQualityWeight();
+            BudgetBand stableBand = ResolveStableBudgetBand(depth);
 
             _debugCurrentDepth = depth;
-            _debugCurrentBand = ResolveBudgetBandLabel(band);
+            _debugCurrentBand = ResolveBudgetBandLabel(stableBand);
 
-            if (!force && band == _lastAppliedBand)
+            if (!force &&
+                stableBand == _lastAppliedBand &&
+                Mathf.Abs(depth - _lastAppliedDepth) < MinimumBudgetRefreshDepthDelta &&
+                Mathf.Abs(globalQualityWeight - _lastAppliedQualityWeight) < MinimumBudgetRefreshQualityDelta)
             {
                 UpdateDiagnostics();
                 return;
             }
 
-            BudgetProfile profile = GetProfile(band);
+            BudgetProfile profile = ResolveContinuousDepthProfile(depth);
+            profile = ApplyGlobalQualityWeight(profile, globalQualityWeight);
 
             if (scavengePopulator != null)
             {
@@ -354,7 +367,9 @@ namespace Hecton8.World
                     Mathf.Max(4, Mathf.RoundToInt(profile.colliderOpsPerTick * colliderOpsScale)));
             }
 
-            _lastAppliedBand = band;
+            _lastAppliedBand = stableBand;
+            _lastAppliedDepth = depth;
+            _lastAppliedQualityWeight = globalQualityWeight;
             _debugApplied = true;
             _debugLastBlocker = "None";
             UpdateDiagnostics();
@@ -371,15 +386,61 @@ namespace Hecton8.World
             return BudgetBand.Surface;
         }
 
-        private BudgetProfile GetProfile(BudgetBand band)
+        private BudgetBand ResolveStableBudgetBand(float depth)
         {
-            if (band == BudgetBand.Deep)
-                return deepProfile;
+            BudgetBand current = _lastAppliedBand == (BudgetBand)(-1) ? GetBandForDepth(depth) : _lastAppliedBand;
+            float hysteresis = ResolveDepthBandHysteresisMeters();
 
-            if (band == BudgetBand.MidDepth)
-                return midDepthProfile;
+            switch (current)
+            {
+                case BudgetBand.Deep:
+                    return depth < deepDepthStart - hysteresis ? BudgetBand.MidDepth : BudgetBand.Deep;
+                case BudgetBand.MidDepth:
+                    if (depth < midDepthStart - hysteresis)
+                        return BudgetBand.Surface;
+                    return depth >= deepDepthStart + hysteresis ? BudgetBand.Deep : BudgetBand.MidDepth;
+                default:
+                    return depth >= midDepthStart + hysteresis ? BudgetBand.MidDepth : BudgetBand.Surface;
+            }
+        }
 
-            return surfaceProfile;
+        private BudgetProfile ResolveContinuousDepthProfile(float depth)
+        {
+            float hysteresis = ResolveDepthBandHysteresisMeters();
+            float midBlend = Smooth01(InvLerp(midDepthStart - hysteresis, midDepthStart + hysteresis, depth));
+            float deepBlend = Smooth01(InvLerp(deepDepthStart - hysteresis, deepDepthStart + hysteresis, depth));
+            BudgetProfile midProfile = LerpProfile(surfaceProfile, midDepthProfile, midBlend);
+            return LerpProfile(midProfile, deepProfile, deepBlend);
+        }
+
+        private BudgetProfile ApplyGlobalQualityWeight(BudgetProfile profile, float globalQualityWeight)
+        {
+            float q = Smooth01(globalQualityWeight);
+            float scavengeRadiusScale = Mathf.Lerp(0.78f, 1.12f, q);
+            float scavengeSpawnScale = Mathf.Lerp(0.55f, 1.25f, q);
+            float colliderRadiusScale = Mathf.Lerp(0.85f, 1.08f, q);
+            float colliderOpsScale = Mathf.Lerp(0.60f, 1.20f, q);
+
+            profile.scavengeUnloadDistance *= scavengeRadiusScale;
+            profile.scavengePriorityRadius *= scavengeRadiusScale;
+            profile.scavengeSpawnsPerTick = Mathf.Max(1, Mathf.RoundToInt(profile.scavengeSpawnsPerTick * scavengeSpawnScale));
+            profile.colliderActivateRadius *= colliderRadiusScale;
+            profile.colliderDeactivateRadius *= colliderRadiusScale;
+            profile.colliderOpsPerTick = Mathf.Max(4, Mathf.RoundToInt(profile.colliderOpsPerTick * colliderOpsScale));
+            return ClampProfile(profile);
+        }
+
+        private static BudgetProfile LerpProfile(BudgetProfile a, BudgetProfile b, float t)
+        {
+            return new BudgetProfile
+            {
+                scavengeUnloadDistance = Mathf.Lerp(a.scavengeUnloadDistance, b.scavengeUnloadDistance, t),
+                scavengePriorityRadius = Mathf.Lerp(a.scavengePriorityRadius, b.scavengePriorityRadius, t),
+                scavengeSpawnsPerTick = Mathf.Max(1, Mathf.RoundToInt(Mathf.Lerp(a.scavengeSpawnsPerTick, b.scavengeSpawnsPerTick, t))),
+                colliderActivateRadius = Mathf.Lerp(a.colliderActivateRadius, b.colliderActivateRadius, t),
+                colliderDeactivateRadius = Mathf.Lerp(a.colliderDeactivateRadius, b.colliderDeactivateRadius, t),
+                colliderOpsPerTick = Mathf.Max(4, Mathf.RoundToInt(Mathf.Lerp(a.colliderOpsPerTick, b.colliderOpsPerTick, t)))
+            };
         }
 
         private static string ResolveBudgetBandLabel(BudgetBand band)
@@ -553,6 +614,41 @@ namespace Hecton8.World
                 return "collider-missing";
 
             return "depth-unresolved";
+        }
+
+        private float ResolveGlobalQualityWeight()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            _cachedGlobalQualityWeight = Sanitize01(weight, _cachedGlobalQualityWeight);
+            return _cachedGlobalQualityWeight;
+        }
+
+        private float ResolveDepthBandHysteresisMeters()
+        {
+            depthBandHysteresisMeters = Mathf.Max(MinimumDepthBandHysteresisMeters, depthBandHysteresisMeters);
+            return depthBandHysteresisMeters;
+        }
+
+        private static float InvLerp(float min, float max, float value)
+        {
+            float span = max - min;
+            if (span <= 0.0001f)
+                return value >= max ? 1f : 0f;
+            return Mathf.Clamp01((value - min) / span);
+        }
+
+        private static float Smooth01(float value)
+        {
+            float t = Mathf.Clamp01(value);
+            return t * t * (3f - (2f * t));
+        }
+
+        private static float Sanitize01(float value, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+                return Mathf.Clamp01(fallback);
+
+            return Mathf.Clamp01(value);
         }
     }
 }

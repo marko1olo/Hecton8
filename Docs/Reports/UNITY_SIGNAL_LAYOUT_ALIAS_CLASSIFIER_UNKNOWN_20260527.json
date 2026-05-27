@@ -1,0 +1,50 @@
+{
+  "agent": "UNKNOWN",
+  "date": "2026-05-27",
+  "domain": "Core signal/native ownership tooling",
+  "evidenceClass": "STATIC_SOURCE_TOOLING_PARTIAL_FINAL_VERIFICATION",
+  "changedSourceFiles": [
+    "Tools/SignalBusContractAuditCli/Program.cs",
+    "Assets/_Project/Scripts/FaunaDirector.cs",
+    "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs"
+  ],
+  "verifiedBuild": {
+    "path": "Docs/Reports/BUILD_UNKNOWN_SIGNAL_CLI_LAYOUT_ALIAS_RECHECK10_20260527.log",
+    "scope": "SignalBusContractAuditCli before final borrowed-view classifier refinement",
+    "warnings": 0,
+    "errors": 0
+  },
+  "verifiedAudit": {
+    "json": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LAYOUT_ALIAS_RECHECK2.json",
+    "markdown": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LAYOUT_ALIAS_RECHECK2.md",
+    "errors": 0,
+    "confirmedErrors": 0,
+    "warnings": 245,
+    "infos": 1082,
+    "cacheLineCriticalStrideDebt": 1,
+    "signalLayoutReview": 0,
+    "ownerLocalTelemetryRings": 7,
+    "ownerLocalTelemetryStagingBuffers": 1,
+    "registeredNonVaultTelemetryRings": 3
+  },
+  "staticProofAfterFinalPatch": {
+    "scopedDiffCheck": "passed; line-ending warnings only",
+    "runtimeBraceBalance": {
+      "Assets/_Project/Scripts/FaunaDirector.cs": 0,
+      "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs": 0
+    }
+  },
+  "finalVerificationGap": {
+    "reason": "CPU guard stayed above 50 after final borrowed-view classifier refinement; later sample reached 100; no final dotnet build was launched.",
+    "requiredNextProof": [
+      "Build SignalBusContractAuditCli after final classifier patch",
+      "Run full SignalBusContractAuditCli audit after that build"
+    ]
+  },
+  "residualRealDebt": [
+    "TetherTensionSignal is still a 192-byte cache-line-critical lane; future fix is payload split, not padding.",
+    "ModEventProjectionBridge._cullTelemetry remains registered non-Vault blackbox state without a proven dump route.",
+    "TBDRPipelineSurgeonTypes has two registered non-Vault telemetry buffers outside core ownership."
+  ],
+  "runtimeMicrosecondsSavedClaimed": 0
+}

@@ -50,6 +50,15 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(128, UnsafeUtility.SizeOf<LockstepReplayBlockHeader>());
             Assert.AreEqual(0, OffsetOf<RollbackRuntimeStateDTO>(nameof(RollbackRuntimeStateDTO.LastFrameHash64)));
             Assert.AreEqual(8, OffsetOf<RollbackRuntimeStateDTO>(nameof(RollbackRuntimeStateDTO.LastRemoteHash64)));
+            Assert.AreEqual(16, OffsetOf<RollbackRuntimeStateDTO>(nameof(RollbackRuntimeStateDTO.LastBranchHash64)));
+            Assert.AreEqual(24, OffsetOf<RollbackRuntimeStateDTO>(nameof(RollbackRuntimeStateDTO.LastRemoteBranchHash64)));
+            Assert.AreEqual(32, OffsetOf<RollbackRuntimeStateDTO>(nameof(RollbackRuntimeStateDTO.CurrentFrame)));
+            Assert.AreEqual(92, OffsetOf<RollbackRuntimeStateDTO>(nameof(RollbackRuntimeStateDTO.FirstMismatchByteOffset)));
+            Assert.AreEqual(32, OffsetOf<MockNetworkJitterPacket64>(nameof(MockNetworkJitterPacket64.HashSalt)));
+            Assert.AreEqual(40, OffsetOf<MockNetworkJitterPacket64>(nameof(MockNetworkJitterPacket64.SourceFrame)));
+            Assert.AreEqual(0, OffsetOf<MockNetworkJitterState64>(nameof(MockNetworkJitterState64.RngState)));
+            Assert.AreEqual(24, OffsetOf<MockNetworkJitterState64>(nameof(MockNetworkJitterState64.Head)));
+            Assert.AreEqual(60, OffsetOf<MockNetworkJitterState64>(nameof(MockNetworkJitterState64.LastFrame)));
             Assert.AreEqual(64, UnsafeUtility.SizeOf<LockstepPlayerKinematicState>());
             Assert.AreEqual(0, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.PositionAup)));
             Assert.AreEqual(24, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.Velocity)));

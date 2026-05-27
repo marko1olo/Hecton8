@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Jobs;
@@ -120,16 +120,17 @@ namespace Hecton8.World
                 _predatorFearNodeCount = copyCount;
             }
 
-            if (!_nativeMemory.PredatorFearNodesSnapshotNative.IsCreated || _nativeMemory.PredatorFearNodesSnapshotNative.Length != safeCapacity)
+            if (_vegetationMemoryVault != null &&
+                !IsExactVegetationMemoryHandle(
+                    in _nativeMemory.PredatorFearNodesSnapshotHandle,
+                    BufferID.VegetationPredatorFearNodeSnapshot))
             {
-                DisposeNativeArray(ref _nativeMemory.PredatorFearNodesSnapshotNative);
-                // COLD ALLOC: NativeArray<PredatorFearNodeSnapshot>[safeCapacity] - path-job snapshot of predator fear memory - owner: HectonMapMagicVegetationBridge
-                _nativeMemory.PredatorFearNodesSnapshotNative = new NativeArray<PredatorFearNodeSnapshot>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _nativeMemory.PredatorFearNodesSnapshotNative,
-                    NativeMemoryOwner,
-                    nameof(_nativeMemory.PredatorFearNodesSnapshotNative),
-                    NativeMemoryLifetime);
+                _nativeMemory.PredatorFearNodesSnapshotHandle =
+                    _vegetationMemoryVault.EnsureGenerationHandle<PredatorFearNodeSnapshot>(
+                        BufferID.VegetationPredatorFearNodeSnapshot,
+                        safeCapacity,
+                        VegetationMemorySovereigntyConstants.OwnerSystemId,
+                        NativeArrayOptions.ClearMemory);
             }
         }
 
@@ -192,28 +193,47 @@ namespace Hecton8.World
 
         private void SyncPredatorFearNodeSnapshot(float currentTime)
         {
-            if (!_nativeMemory.PredatorFearNodesSnapshotNative.IsCreated)
-                return;
-
-            CompactPredatorFearNodes(currentTime);
-            float lifetime = Mathf.Max(120f, predatorFearLifetimeSeconds);
-            int safeLength = _nativeMemory.PredatorFearNodesSnapshotNative.Length;
-            int activeCount = Mathf.Min(_predatorFearNodeCount, safeLength);
-            for (int i = 0; i < safeLength; i++)
+            int safeCapacity = Mathf.Clamp(predatorFearNodeCapacity, 4, 128);
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.PredatorFearNodesSnapshotHandle,
+                    BufferID.VegetationPredatorFearNodeSnapshot,
+                    safeCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out IDataVault vault,
+                    out NativeArray<PredatorFearNodeSnapshot> snapshots))
             {
-                PredatorFearNodeSnapshot snapshot = default;
-                if (i < activeCount)
-                {
-                    PredatorFearNodeState node = _predatorFearNodes[i];
-                    float freshness = Mathf.Clamp01((node.ExpireTime - currentTime) / lifetime);
-                    snapshot.Position = node.Position;
-                    snapshot.Radius = node.Radius;
-                    snapshot.Weight = node.Weight * freshness;
-                    snapshot.SpeciesId = node.SpeciesId;
-                    snapshot.Padding = 0f;
-                }
+                return;
+            }
 
-                _nativeMemory.PredatorFearNodesSnapshotNative[i] = snapshot;
+            int activeCount = 0;
+            try
+            {
+                CompactPredatorFearNodes(currentTime);
+                float lifetime = Mathf.Max(120f, predatorFearLifetimeSeconds);
+                int safeLength = snapshots.Length;
+                activeCount = Mathf.Min(_predatorFearNodeCount, safeLength);
+                for (int i = 0; i < safeLength; i++)
+                {
+                    PredatorFearNodeSnapshot snapshot = default;
+                    if (i < activeCount)
+                    {
+                        PredatorFearNodeState node = _predatorFearNodes[i];
+                        float freshness = Mathf.Clamp01((node.ExpireTime - currentTime) / lifetime);
+                        snapshot.Position = node.Position;
+                        snapshot.Radius = node.Radius;
+                        snapshot.Weight = node.Weight * freshness;
+                        snapshot.SpeciesId = node.SpeciesId;
+                        snapshot.Padding = 0f;
+                    }
+
+                    snapshots[i] = snapshot;
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in _nativeMemory.PredatorFearNodesSnapshotHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
 
             QueuePredatorFearShaderPayload(activeCount);
@@ -238,14 +258,20 @@ namespace Hecton8.World
         {
             int safeCount = Mathf.Max(1, activeCount);
             EnsurePredatorFearShaderBuffer(safeCount);
-            if (!_nativeMemory.PredatorFearNodesSnapshotNative.IsCreated)
+            if (!TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.PredatorFearNodesSnapshotHandle,
+                    BufferID.VegetationPredatorFearNodeSnapshot,
+                    safeCount,
+                    out NativeArray<PredatorFearNodeSnapshot> snapshots))
+            {
                 return;
+            }
 
             GraphicsBuffer writeBuffer = ResolvePredatorFearShaderWriteBuffer();
             if (writeBuffer == null)
                 return;
 
-            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _nativeMemory.PredatorFearNodesSnapshotNative, safeCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, snapshots, safeCount);
             _activePredatorFearNodeBuffer = writeBuffer;
             _predatorFearNodeBufferWriteIndex ^= 1;
             Shader.SetGlobalBuffer(_PredatorFearNodeBufferId, _activePredatorFearNodeBuffer);

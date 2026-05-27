@@ -1,0 +1,56 @@
+﻿{
+  "agent": "UNKNOWN",
+  "date": "2026-05-26",
+  "evidenceClass": "STATIC_SOURCE_PLUS_MICROSOFT_DOCS_PLUS_CLI_COMPILE",
+  "verdict": "Removed runtime front-pop List.RemoveAt(0) routes from clean owner files; only editor-only LODStatisticsWindow residual remains.",
+  "sourceFilesChanged": [
+    "Assets/_Project/Scripts/BeaconNetworkSystem.cs",
+    "Assets/_Project/Scripts/SaveThumbnailSystem.cs",
+    "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
+    "Assets/_Project/Scripts/Core/Data/H8DataBaker.cs"
+  ],
+  "removed": [
+    "BeaconNetworkSystem active-beacon cap loop RemoveAt(0)",
+    "SaveThumbnailSystem thumbnail LRU RemoveAt(0)",
+    "BioReactor depleted fuel item RemoveAt(0)",
+    "H8DataBaker CSV header rows.RemoveAt(0)"
+  ],
+  "keptResidual": [
+    "Assets/_Project/Scripts/Editor/LODStatisticsWindow.cs editor-only CPU history RemoveAt(0)"
+  ],
+  "postPatchCliBuildVerification": {
+    "finalLog": "Docs/Reports/BUILD_UNKNOWN_REMOVEAT_FRONTPOP_RECHECK_20260526.log",
+    "guardAttemptsBeforeLaunch": 29,
+    "guardCpuPercent": 48.6,
+    "guardCompilerProcessCount": 0,
+    "command": "dotnet build .\\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false",
+    "exitCode": 0,
+    "warnings": 0,
+    "errors": 0,
+    "result": "Build succeeded"
+  },
+  "verificationMissing": [
+    "Unity Editor import",
+    "Unity Console",
+    "PlayMode",
+    "player build",
+    "profiler",
+    "GC allocation capture",
+    "scene wiring",
+    "visual output",
+    "platform gate"
+  ],
+  "documentationGateVerification": {
+    "verifyDocStructure": {
+      "pass": true,
+      "activeDocCount": 700,
+      "encodingWithoutUtf8Sig": 0
+    },
+    "oopDocScanner": {
+      "finalPass": true,
+      "activeFileCount": 700,
+      "sourceSyncPass": true
+    }
+  },
+  "runtimeMicrosecondsSavedClaimed": 0
+}

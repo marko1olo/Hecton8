@@ -1,12 +1,8 @@
 ﻿# Agent Marketing Workflows
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only as static documentation/source/platform-orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current official platform rules, current verification artifacts, and the latest DOC_GLOBAL reports.
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, public Steam page, public demo, wishlist performance, creator outreach readiness, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters, platform rules, dates, and marketing claims inside this file are subordinate to fresh official sources and current project proof.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 Status: operational playbook for future agents
 
@@ -43,15 +39,15 @@ After any changed file, run `Operations/DAILY_AGENT_TASK_LOOP.md` End-Of-Change 
 
 ## AgentOps Script Safety Gates
 
-- `scrape_letsplayindex_public_leads.ps1` is hold-by-default. Run it only with `-ForceRefresh` after a source-backed raw-lead sprint is opened, output overwrite is intentional, and source-ledger/status/rationale trace is ready.
+- `scrape_letsplayindex_public_leads.ps1` is hold-by-default. Run it only with `-ForceRefresh` after a source-backed raw-lead sprint is opened, output overwrite is intentional, generated summaries are kept out of active `Data`, and source-ledger/status/rationale trace is ready.
 - `generate_priority50_messages.ps1` is hold-by-default when `CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md` already exists. Run it with `-ForceRegenerate` only after preserving hand-curated gates and recording the regeneration decision.
 - No AgentOps script output is outreach permission. Raw rows remain raw, generated drafts remain non-send-ready, and current CRM/asset/route gates still own send readiness.
 
 ## Verification Batch Safety Gate
 
-- `AgentOps/VerificationBatches_2026-05-19/VERIFY_BATCH_*.md` files are parked raw-sprint scratchpads, not live CRM, not a send queue, and not outreach permission.
+- Old verification batch files are archived under `Docs/DEPRECATED/Active_Doc_Deprecation_2026-05-26/Marketing/AgentOps/VerificationBatches_2026-05-19/`. They are historical raw-sprint scratchpads, not live CRM, not active input, not a send queue, and not outreach permission.
 - `TODO`, `Custom opener`, `Required asset`, checked verification boxes, contact-route notes, public-index metrics, and `RAW_PUBLIC_INDEX_NOT_CONTACT_READY` inside a batch are local scratch values only.
-- Open a verification batch only after first HECTON assets prove a segment gap the live CRM cannot cover and a source-backed raw sprint is explicitly opened.
+- Create a fresh raw-sprint file only after first HECTON assets prove a segment gap the live CRM cannot cover and a source-backed raw sprint is explicitly opened.
 - Promotion into `Data/CREATOR_VERIFICATION_TEMPLATE.csv` must use the live schema fields, including `asset_ids_sent`, `creator_utility_score`, `paid_creator_permission_gate`, `send_route_class`, `reply_consent_provenance`, and the current asset metadata gates where creator-facing copy depends on asset proof.
 - If the exact matching asset is missing, keep the batch row parked. Do not convert `Required asset: TODO` or `Custom opener: TODO` into `NEEDS_ASSET`, `VERIFY_BEFORE_CONTACT`, or send-ready CRM state without the current CRM/asset/source-ledger trace.
 

@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: ProceduralRule_rule_coral_plate
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
   ruleId: rule.coral.plate
-  ruleLabel: Plate Coral Ledges
+  ruleLabel: Carbonate Plate Ledges
   familyProfile: {fileID: 11400000, guid: 64d81c99ce34b9d4eb1ac1073702564a, type: 2}
-  gameplayIntent: Layered plate coral that catches side light and turns reef walls
-    into readable shelves.
+  gameplayIntent: Layered carbonate plates that catch side light and turn fossil
+    walls into readable shelves.
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
   - {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}

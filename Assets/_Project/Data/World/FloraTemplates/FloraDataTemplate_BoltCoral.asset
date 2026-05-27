@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: FloraDataTemplate_BoltCoral
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.World.FloraDataTemplate
   stableId: flora.bolt_coral
-  displayName: Bolt Coral
+  displayName: Bolt Carbonate
   vegetationType: 0
   category: 2
   semanticType: 6

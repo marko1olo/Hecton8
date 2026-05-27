@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Jobs;
@@ -22,9 +22,54 @@ namespace Hecton8.World
             }
 
             EnsureDensityQueryCapacity(_selectedChunkCount);
-            _densityQueryChunkLookup.Clear();
-            for (int i = 0; i < _densityQueryChunkCount; i++)
-                _densityQueryChunkLookup[_densityQueryChunkKeys[i]] = i;
+            bool hasPreviousDensitySnapshot = TryReadDensityQuerySnapshot(
+                out NativeArray<VegetationDensityChunkRecord> previousChunks,
+                out NativeArray<float3> previousDensityGrid);
+            int scratchChunkCapacity = _selectedChunkCount;
+            int scratchGridCapacity = scratchChunkCapacity * DensityGridCellCount;
+            NativeArray<VegetationDensityChunkRecord> scratchChunks = default;
+            NativeArray<float3> scratchDensityGrid = default;
+            NativeArray<float2> scratchThreatAttractorGrid = default;
+            try
+            {
+                scratchChunks = H8Memory.Allocate<VegetationDensityChunkRecord>(
+                    scratchChunkCapacity,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                scratchDensityGrid = H8Memory.Allocate<float3>(
+                    scratchGridCapacity,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                scratchThreatAttractorGrid = H8Memory.Allocate<float2>(
+                    scratchGridCapacity,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+
+                if (!scratchChunks.IsCreated ||
+                    scratchChunks.Length < scratchChunkCapacity ||
+                    !scratchDensityGrid.IsCreated ||
+                    scratchDensityGrid.Length < scratchGridCapacity ||
+                    !scratchThreatAttractorGrid.IsCreated ||
+                    scratchThreatAttractorGrid.Length < scratchGridCapacity)
+                {
+                    RecordVegetationMemoryTelemetry(
+                        BufferID.VegetationDensityQueryScratch,
+                        0u,
+                        scratchGridCapacity,
+                        math.min(
+                            scratchDensityGrid.IsCreated ? scratchDensityGrid.Length : 0,
+                            scratchThreatAttractorGrid.IsCreated ? scratchThreatAttractorGrid.Length : 0),
+                        0,
+                        0f,
+                        VegetationMemoryTelemetryCode.StagingCapacityExceeded,
+                        VegetationMemoryTelemetryPhase.SlowTick,
+                        VegetationMemorySovereigntyConstants.FlagCapacity,
+                        default);
+                    return;
+                }
 
             int nextChunkCount = 0;
             for (int i = 0; i < _selectedChunkCount; i++)
@@ -34,10 +79,10 @@ namespace Hecton8.World
                     continue;
 
                 int gridOffset = nextChunkCount * DensityGridCellCount;
-                ClearDensityGridCells(_nativeMemory.DensityQueryGridScratchNative, gridOffset, DensityGridCellCount);
-                ClearThreatAttractorGridCells(_nativeMemory.ThreatAttractorGridScratchNative, gridOffset, DensityGridCellCount);
-                AccumulateChunkDensityGrid(payload, ref _nativeMemory.DensityQueryGridScratchNative, gridOffset);
-                AccumulateChunkThreatAttractorGrid(payload, ref _nativeMemory.ThreatAttractorGridScratchNative, gridOffset);
+                ClearDensityGridCells(scratchDensityGrid, gridOffset, DensityGridCellCount);
+                ClearThreatAttractorGridCells(scratchThreatAttractorGrid, gridOffset, DensityGridCellCount);
+                AccumulateChunkDensityGrid(payload, ref scratchDensityGrid, gridOffset);
+                AccumulateChunkThreatAttractorGrid(payload, ref scratchThreatAttractorGrid, gridOffset);
 
                 VegetationDensityChunkRecord record = new VegetationDensityChunkRecord
                 {
@@ -49,23 +94,311 @@ namespace Hecton8.World
                     GrassLodTier = payload.GrassLodTier
                 };
 
-                if (_densityQueryChunkLookup.TryGetValue(key, out int previousIndex))
+                int previousIndex = FindDensityQueryChunkIndex(key);
+                if (previousIndex >= 0)
                 {
-                    VegetationDensityChunkRecord previousRecord = _nativeMemory.DensityQueryChunksNative[previousIndex];
-                    if (previousRecord.GrassLodTier != payload.GrassLodTier)
-                        BlendDensityGrid(_nativeMemory.DensityQueryGridNative, previousRecord.GridOffset, _nativeMemory.DensityQueryGridScratchNative, gridOffset, DensityGridCellCount, 0.35f);
+                    if (hasPreviousDensitySnapshot &&
+                        (uint)previousIndex < (uint)previousChunks.Length)
+                    {
+                        VegetationDensityChunkRecord previousRecord = previousChunks[previousIndex];
+                        if (previousRecord.GrassLodTier != payload.GrassLodTier)
+                            BlendDensityGrid(previousDensityGrid, previousRecord.GridOffset, scratchDensityGrid, gridOffset, DensityGridCellCount, 0.35f);
+                    }
                 }
 
-                _nativeMemory.DensityQueryChunksScratchNative[nextChunkCount] = record;
+                scratchChunks[nextChunkCount] = record;
                 _densityQueryChunkKeys[nextChunkCount] = key;
                 nextChunkCount++;
             }
 
-            SwapDensityQueryBuffers();
+                if (nextChunkCount > 0)
+                {
+                    int gridCopyLength = nextChunkCount * DensityGridCellCount;
+                    if (!TryPublishDensityQuerySnapshot(
+                            scratchChunks,
+                            scratchDensityGrid,
+                            scratchThreatAttractorGrid,
+                            nextChunkCount,
+                            gridCopyLength))
+                    {
+                        _densityQueryChunkCount = 0;
+                        return;
+                    }
+                }
+
             for (int i = nextChunkCount; i < _densityQueryChunkCount; i++)
                 _densityQueryChunkKeys[i] = default;
 
             _densityQueryChunkCount = nextChunkCount;
+            }
+            finally
+            {
+                H8Memory.Release(ref scratchThreatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref scratchDensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref scratchChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private int FindDensityQueryChunkIndex(ChunkKey key)
+        {
+            for (int i = 0; i < _densityQueryChunkCount; i++)
+            {
+                if (_densityQueryChunkKeys[i].Equals(key))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private bool TryPublishDensityQuerySnapshot(
+            NativeArray<VegetationDensityChunkRecord> scratchChunks,
+            NativeArray<float3> scratchDensityGrid,
+            NativeArray<float2> scratchThreatAttractorGrid,
+            int chunkCount,
+            int gridLength)
+        {
+            if (chunkCount <= 0 ||
+                gridLength <= 0 ||
+                !scratchChunks.IsCreated ||
+                !scratchDensityGrid.IsCreated ||
+                !scratchThreatAttractorGrid.IsCreated ||
+                scratchChunks.Length < chunkCount ||
+                scratchDensityGrid.Length < gridLength ||
+                scratchThreatAttractorGrid.Length < gridLength)
+            {
+                return false;
+            }
+
+            bool chunksLocked = false;
+            bool densityLocked = false;
+            bool attractorLocked = false;
+            IDataVault chunksVault = null;
+            IDataVault densityVault = null;
+            IDataVault attractorVault = null;
+            try
+            {
+                if (!TryAcquireVegetationMemoryBuffer(
+                        ref _nativeMemory.DensityQueryChunksHandle,
+                        BufferID.VegetationDensityQueryChunks,
+                        chunkCount,
+                        NativeArrayOptions.UninitializedMemory,
+                        out chunksVault,
+                        out NativeArray<VegetationDensityChunkRecord> chunks))
+                {
+                    return false;
+                }
+
+                chunksLocked = true;
+                if (!TryAcquireVegetationMemoryBuffer(
+                        ref _nativeMemory.DensityQueryGridHandle,
+                        BufferID.VegetationDensityQueryGrid,
+                        gridLength,
+                        NativeArrayOptions.UninitializedMemory,
+                        out densityVault,
+                        out NativeArray<float3> densityGrid))
+                {
+                    return false;
+                }
+
+                densityLocked = true;
+                if (!TryAcquireVegetationMemoryBuffer(
+                        ref _nativeMemory.ThreatAttractorGridHandle,
+                        BufferID.VegetationThreatAttractorGrid,
+                        gridLength,
+                        NativeArrayOptions.UninitializedMemory,
+                        out attractorVault,
+                        out NativeArray<float2> threatAttractorGrid))
+                {
+                    return false;
+                }
+
+                attractorLocked = true;
+                NativeArray<VegetationDensityChunkRecord>.Copy(scratchChunks, chunks, chunkCount);
+                NativeArray<float3>.Copy(scratchDensityGrid, densityGrid, gridLength);
+                NativeArray<float2>.Copy(scratchThreatAttractorGrid, threatAttractorGrid, gridLength);
+                return true;
+            }
+            finally
+            {
+                if (attractorLocked)
+                {
+                    attractorVault.ReleaseWriteLock(
+                        in _nativeMemory.ThreatAttractorGridHandle,
+                        VegetationMemorySovereigntyConstants.OwnerSystemId);
+                }
+
+                if (densityLocked)
+                {
+                    densityVault.ReleaseWriteLock(
+                        in _nativeMemory.DensityQueryGridHandle,
+                        VegetationMemorySovereigntyConstants.OwnerSystemId);
+                }
+
+                if (chunksLocked)
+                {
+                    chunksVault.ReleaseWriteLock(
+                        in _nativeMemory.DensityQueryChunksHandle,
+                        VegetationMemorySovereigntyConstants.OwnerSystemId);
+                }
+            }
+        }
+
+        private bool TryResolveDensityQueryLengths(out int chunkCount, out int gridLength)
+        {
+            chunkCount = 0;
+            gridLength = 0;
+            int currentChunkCount = _densityQueryChunkCount;
+            long requiredGridLength = (long)currentChunkCount * DensityGridCellCount;
+            if (currentChunkCount <= 0 ||
+                requiredGridLength <= 0L ||
+                requiredGridLength > int.MaxValue)
+            {
+                return false;
+            }
+
+            chunkCount = currentChunkCount;
+            gridLength = (int)requiredGridLength;
+            return true;
+        }
+
+        private bool TryReadDensityQuerySnapshot(
+            out NativeArray<VegetationDensityChunkRecord> chunks,
+            out NativeArray<float3> densityGrid)
+        {
+            chunks = default;
+            densityGrid = default;
+            return TryResolveDensityQueryLengths(out int chunkCount, out int gridLength) &&
+                   TryReadVegetationMemoryBuffer(
+                       in _nativeMemory.DensityQueryChunksHandle,
+                       BufferID.VegetationDensityQueryChunks,
+                       chunkCount,
+                       out chunks) &&
+                   TryReadVegetationMemoryBuffer(
+                       in _nativeMemory.DensityQueryGridHandle,
+                       BufferID.VegetationDensityQueryGrid,
+                       gridLength,
+                       out densityGrid);
+        }
+
+        private bool TryReadDensityThreatAttractorSnapshot(
+            out NativeArray<VegetationDensityChunkRecord> chunks,
+            out NativeArray<float3> densityGrid,
+            out NativeArray<float2> threatAttractorGrid)
+        {
+            chunks = default;
+            densityGrid = default;
+            threatAttractorGrid = default;
+            return TryReadDensityQuerySnapshot(out chunks, out densityGrid) &&
+                   TryResolveDensityQueryLengths(out _, out int gridLength) &&
+                   TryReadVegetationMemoryBuffer(
+                       in _nativeMemory.ThreatAttractorGridHandle,
+                       BufferID.VegetationThreatAttractorGrid,
+                       gridLength,
+                       out threatAttractorGrid);
+        }
+
+        private bool TryPrepareDensityQueryJobSnapshot(
+            bool includeDensityGrid,
+            bool includeThreatAttractorGrid,
+            out NativeArray<VegetationDensityChunkRecord> chunks,
+            out NativeArray<float3> densityGrid,
+            out NativeArray<float2> threatAttractorGrid)
+        {
+            chunks = default;
+            densityGrid = default;
+            threatAttractorGrid = default;
+            if (!TryResolveDensityQueryLengths(out int chunkCount, out int gridLength))
+                return true;
+
+            NativeArray<VegetationDensityChunkRecord> sourceChunks = default;
+            NativeArray<float3> sourceDensityGrid = default;
+            NativeArray<float2> sourceThreatAttractorGrid = default;
+            if (!TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.DensityQueryChunksHandle,
+                    BufferID.VegetationDensityQueryChunks,
+                    chunkCount,
+                    out sourceChunks) ||
+                (includeDensityGrid &&
+                 !TryReadVegetationMemoryBuffer(
+                     in _nativeMemory.DensityQueryGridHandle,
+                     BufferID.VegetationDensityQueryGrid,
+                     gridLength,
+                     out sourceDensityGrid)) ||
+                (includeThreatAttractorGrid &&
+                 !TryReadVegetationMemoryBuffer(
+                     in _nativeMemory.ThreatAttractorGridHandle,
+                     BufferID.VegetationThreatAttractorGrid,
+                     gridLength,
+                     out sourceThreatAttractorGrid)))
+            {
+                RecordVegetationMemoryTelemetry(
+                    BufferID.VegetationDensityQueryChunks,
+                    _nativeMemory.DensityQueryChunksHandle.Generation,
+                    chunkCount,
+                    0,
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.VaultResolveFailed,
+                    VegetationMemoryTelemetryPhase.SlowTick,
+                    VegetationMemorySovereigntyConstants.FlagStaleHandle,
+                    default);
+                return false;
+            }
+
+            chunks = H8Memory.Allocate<VegetationDensityChunkRecord>(
+                chunkCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            if (includeDensityGrid)
+            {
+                densityGrid = H8Memory.Allocate<float3>(
+                    gridLength,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (includeThreatAttractorGrid)
+            {
+                threatAttractorGrid = H8Memory.Allocate<float2>(
+                    gridLength,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (!chunks.IsCreated ||
+                chunks.Length < chunkCount ||
+                (includeDensityGrid && (!densityGrid.IsCreated || densityGrid.Length < gridLength)) ||
+                (includeThreatAttractorGrid && (!threatAttractorGrid.IsCreated || threatAttractorGrid.Length < gridLength)))
+            {
+                int actualLength = (chunks.IsCreated ? chunks.Length : 0) +
+                                   (densityGrid.IsCreated ? densityGrid.Length : 0) +
+                                   (threatAttractorGrid.IsCreated ? threatAttractorGrid.Length : 0);
+                H8Memory.Release(ref chunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref densityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                RecordVegetationMemoryTelemetry(
+                    BufferID.VegetationDensityQueryChunks,
+                    _nativeMemory.DensityQueryChunksHandle.Generation,
+                    chunkCount + (includeDensityGrid ? gridLength : 0) + (includeThreatAttractorGrid ? gridLength : 0),
+                    actualLength,
+                    0,
+                    0f,
+                    VegetationMemoryTelemetryCode.StagingCapacityExceeded,
+                    VegetationMemoryTelemetryPhase.SlowTick,
+                    VegetationMemorySovereigntyConstants.FlagCapacity,
+                    default);
+                return false;
+            }
+
+            NativeArray<VegetationDensityChunkRecord>.Copy(sourceChunks, chunks, chunkCount);
+            if (includeDensityGrid)
+                NativeArray<float3>.Copy(sourceDensityGrid, densityGrid, gridLength);
+            if (includeThreatAttractorGrid)
+                NativeArray<float2>.Copy(sourceThreatAttractorGrid, threatAttractorGrid, gridLength);
+            return true;
         }
 
         private void RebuildAbyssalAnchorSnapshot()
@@ -84,24 +417,66 @@ namespace Hecton8.World
                 return;
 
             EnsureVector3Capacity(ref _abyssalAnchorPositions, anchorCount);
-            EnsureVector3NativeCapacity(ref _nativeMemory.AbyssalAnchorPositionsNative, anchorCount);
-            EnsureAupNativeCapacity(ref _nativeMemory.AbyssalAnchorAupPositionsNative, anchorCount);
-            int writeIndex = 0;
-            for (int i = 0; i < _selectedChunkCount; i++)
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.AbyssalAnchorPositionsHandle,
+                    BufferID.VegetationAbyssalAnchorPositions,
+                    anchorCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault anchorVault,
+                    out NativeArray<Vector3> nativeAnchorPositions))
             {
-                if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasUnderwater)
-                    continue;
+                _abyssalAnchorCount = 0;
+                return;
+            }
 
-                CopySemanticAnchorPositions(
-                    ResolveChunkPool(isSurface: false, payload),
-                    payload.UnderwaterOffset,
-                    payload.UnderwaterCount,
-                    (int)VegetationSemanticType.DeadZoneMassiveStructure,
-                    _abyssalAnchorPositions,
-                    _nativeMemory.AbyssalAnchorPositionsNative,
-                    _nativeMemory.AbyssalAnchorAupPositionsNative,
-                    _totalUniverseOffsetDouble,
-                    ref writeIndex);
+            try
+            {
+                if (!TryAcquireVegetationMemoryBuffer(
+                        ref _nativeMemory.AbyssalAnchorAupPositionsHandle,
+                        BufferID.VegetationAbyssalAnchorAupPositions,
+                        anchorCount,
+                        NativeArrayOptions.UninitializedMemory,
+                        out IDataVault anchorAupVault,
+                        out NativeArray<AbsoluteUniversePosition> nativeAnchorAupPositions))
+                {
+                    _abyssalAnchorCount = 0;
+                    return;
+                }
+
+                try
+                {
+                    int writeIndex = 0;
+                    for (int i = 0; i < _selectedChunkCount; i++)
+                    {
+                        if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasUnderwater)
+                            continue;
+
+                        CopySemanticAnchorPositions(
+                            ResolveChunkPool(isSurface: false, payload),
+                            payload.UnderwaterOffset,
+                            payload.UnderwaterCount,
+                            (int)VegetationSemanticType.DeadZoneMassiveStructure,
+                            _abyssalAnchorPositions,
+                            nativeAnchorPositions,
+                            nativeAnchorAupPositions,
+                            _totalUniverseOffsetDouble,
+                            ref writeIndex);
+                    }
+
+                    _abyssalAnchorCount = math.min(anchorCount, writeIndex);
+                }
+                finally
+                {
+                    anchorAupVault.ReleaseWriteLock(
+                        in _nativeMemory.AbyssalAnchorAupPositionsHandle,
+                        VegetationMemorySovereigntyConstants.OwnerSystemId);
+                }
+            }
+            finally
+            {
+                anchorVault.ReleaseWriteLock(
+                    in _nativeMemory.AbyssalAnchorPositionsHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
         }
 
@@ -112,7 +487,7 @@ namespace Hecton8.World
             for (int i = 0; i < _selectedChunkCount; i++)
             {
                 ChunkKey key = _selectedChunkKeys[i];
-                if (!_chunkAbyssalNavPayloads.TryGetValue(key, out ChunkAbyssalNavPayload payload) || payload.Count <= 0 || !payload.Nodes.IsCreated)
+                if (!TryGetChunkAbyssalNavPayload(key, out ChunkAbyssalNavPayload payload) || payload.Count <= 0 || payload.Nodes == null)
                     continue;
 
                 nodeCount += math.min(payload.Count, payload.Nodes.Length);
@@ -125,19 +500,10 @@ namespace Hecton8.World
             _abyssalNavNodeCount = nodeCount;
             if (nodeCount <= 0)
             {
-                if (_nativeMemory.AbyssalNavNodes.IsCreated)
-                    _nativeMemory.AbyssalNavNodes.Clear();
-
                 _abyssalNavGraphOrigin = Vector3.zero;
-                if (_nativeMemory.AbyssalNavGraphHashNative.IsCreated)
-                    _nativeMemory.AbyssalNavGraphHashNative.Clear();
                 return;
             }
 
-            if (_nativeMemory.AbyssalNavNodes.IsCreated)
-                _nativeMemory.AbyssalNavNodes.Clear();
-            if (_nativeMemory.AbyssalNavGraphHashNative.IsCreated)
-                _nativeMemory.AbyssalNavGraphHashNative.Clear();
             if (!EnsureAbyssalNavNodeListCapacity(nodeCount))
             {
                 _abyssalNavNodeCount = 0;
@@ -148,11 +514,7 @@ namespace Hecton8.World
             EnsureVector3Capacity(ref _abyssalNavConduitVectorsSnapshot, fixedNodeCapacity);
             EnsureFloatCapacity(ref _abyssalNavConduitStrengthSnapshot, fixedNodeCapacity);
             EnsureByteCapacity(ref _abyssalNavNodeTypesSnapshot, fixedNodeCapacity);
-            EnsureVector3NativeCapacity(ref _nativeMemory.AbyssalNavNodeSnapshotNative, fixedNodeCapacity);
-            EnsureVector3NativeCapacity(ref _nativeMemory.AbyssalNavConduitVectorsSnapshotNative, fixedNodeCapacity);
-            EnsureFloatNativeCapacity(ref _nativeMemory.AbyssalNavConduitStrengthSnapshotNative, fixedNodeCapacity);
-            EnsureByteNativeCapacity(ref _nativeMemory.AbyssalNavNodeTypesSnapshotNative, fixedNodeCapacity);
-            if (!EnsureAbyssalNavGraphHashCapacity(nodeCount * 4))
+            if (!EnsureAbyssalNavSnapshotHandles(fixedNodeCapacity))
             {
                 _abyssalNavNodeCount = 0;
                 return;
@@ -165,7 +527,7 @@ namespace Hecton8.World
             for (int i = 0; i < _selectedChunkCount && writeIndex < nodeCount; i++)
             {
                 ChunkKey key = _selectedChunkKeys[i];
-                if (!_chunkAbyssalNavPayloads.TryGetValue(key, out ChunkAbyssalNavPayload payload) || payload.Count <= 0 || !payload.Nodes.IsCreated)
+                if (!TryGetChunkAbyssalNavPayload(key, out ChunkAbyssalNavPayload payload) || payload.Count <= 0 || payload.Nodes == null)
                     continue;
 
                 int payloadNodeCount = math.min(payload.Count, payload.Nodes.Length);
@@ -175,10 +537,10 @@ namespace Hecton8.World
                     if (!IsFinite(node))
                         continue;
 
-                    Vector3 conduitVector = payload.ConduitVectors.IsCreated && nodeIndex < payload.ConduitVectors.Length
+                    Vector3 conduitVector = payload.ConduitVectors != null && nodeIndex < payload.ConduitVectors.Length
                         ? payload.ConduitVectors[nodeIndex]
                         : Vector3.zero;
-                    float conduitStrength = payload.ConduitStrengths.IsCreated && nodeIndex < payload.ConduitStrengths.Length
+                    float conduitStrength = payload.ConduitStrengths != null && nodeIndex < payload.ConduitStrengths.Length
                         ? payload.ConduitStrengths[nodeIndex]
                         : 0f;
                     if (!IsFinite(conduitVector))
@@ -186,18 +548,13 @@ namespace Hecton8.World
                     if (!math.isfinite(conduitStrength))
                         conduitStrength = 0f;
 
-                    byte nodeType = payload.NodeTypes.IsCreated && nodeIndex < payload.NodeTypes.Length
+                    byte nodeType = payload.NodeTypes != null && nodeIndex < payload.NodeTypes.Length
                         ? payload.NodeTypes[nodeIndex]
                         : (byte)NavNodeType.Water;
-                    _nativeMemory.AbyssalNavNodes.AddNoResize(node);
                     _abyssalNavNodeSnapshot[writeIndex] = node;
                     _abyssalNavConduitVectorsSnapshot[writeIndex] = conduitVector;
                     _abyssalNavConduitStrengthSnapshot[writeIndex] = conduitStrength;
                     _abyssalNavNodeTypesSnapshot[writeIndex] = nodeType;
-                    _nativeMemory.AbyssalNavNodeSnapshotNative[writeIndex] = node;
-                    _nativeMemory.AbyssalNavConduitVectorsSnapshotNative[writeIndex] = conduitVector;
-                    _nativeMemory.AbyssalNavConduitStrengthSnapshotNative[writeIndex] = conduitStrength;
-                    _nativeMemory.AbyssalNavNodeTypesSnapshotNative[writeIndex] = nodeType;
                     if (!hasOrigin)
                     {
                         minNode = node;
@@ -215,14 +572,10 @@ namespace Hecton8.World
 
             _abyssalNavNodeCount = writeIndex;
             _abyssalNavGraphOrigin = hasOrigin ? minNode : Vector3.zero;
-            if (_nativeMemory.AbyssalNavGraphHashNative.IsCreated)
+            if (!TryMirrorAbyssalNavSnapshotsToVault(_abyssalNavNodeCount))
             {
-                _nativeMemory.AbyssalNavGraphHashNative.Clear();
-                for (int i = 0; i < _abyssalNavNodeCount; i++)
-                {
-                    int key = ComputeAbyssalNavGraphHashKey(_abyssalNavNodeSnapshot[i], _abyssalNavGraphOrigin, abyssalNavGraphCellSize);
-                    _nativeMemory.AbyssalNavGraphHashNative.Add(key, i);
-                }
+                _abyssalNavNodeCount = 0;
+                return;
             }
         }
 
@@ -232,7 +585,7 @@ namespace Hecton8.World
             for (int i = 0; i < _selectedChunkCount; i++)
             {
                 ChunkKey key = _selectedChunkKeys[i];
-                if (!_chunkMegaWreckPayloads.TryGetValue(key, out ChunkMegaWreckPayload payload) || payload.Count <= 0 || payload.Sections == null)
+                if (!TryGetChunkMegaWreckPayload(key, out ChunkMegaWreckPayload payload) || payload.Count <= 0 || payload.Sections == null)
                     continue;
 
                 sectionCount += payload.Count;
@@ -243,50 +596,79 @@ namespace Hecton8.World
                 return;
 
             EnsureMegaWreckSectionCapacity(ref _megaWreckStreamSnapshot, sectionCount);
-            EnsureNativeCapacity(ref _nativeMemory.MegaWreckStreamSnapshotNative, sectionCount);
-            int writeIndex = 0;
-            for (int i = 0; i < _selectedChunkCount; i++)
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref _nativeMemory.MegaWreckStreamSnapshotHandle,
+                    BufferID.VegetationMegaWreckStreamSnapshot,
+                    sectionCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<MegaWreckStreamSection> nativeSections))
             {
-                ChunkKey key = _selectedChunkKeys[i];
-                if (!_chunkMegaWreckPayloads.TryGetValue(key, out ChunkMegaWreckPayload payload) || payload.Count <= 0 || payload.Sections == null)
-                    continue;
+                _megaWreckStreamCount = 0;
+                return;
+            }
 
-                for (int sectionIndex = 0; sectionIndex < payload.Count; sectionIndex++)
+            int writeIndex = 0;
+            try
+            {
+                for (int i = 0; i < _selectedChunkCount; i++)
                 {
-                    MegaWreckStreamSection section = payload.Sections[sectionIndex];
-                    _megaWreckStreamSnapshot[writeIndex] = section;
-                    _nativeMemory.MegaWreckStreamSnapshotNative[writeIndex] = section;
-                    writeIndex++;
+                    ChunkKey key = _selectedChunkKeys[i];
+                    if (!TryGetChunkMegaWreckPayload(key, out ChunkMegaWreckPayload payload) || payload.Count <= 0 || payload.Sections == null)
+                        continue;
+
+                    for (int sectionIndex = 0; sectionIndex < payload.Count; sectionIndex++)
+                    {
+                        MegaWreckStreamSection section = payload.Sections[sectionIndex];
+                        _megaWreckStreamSnapshot[writeIndex] = section;
+                        nativeSections[writeIndex] = section;
+                        writeIndex++;
+                    }
                 }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in _nativeMemory.MegaWreckStreamSnapshotHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
         }
 
         private void RebuildCanopyHeightGrid()
         {
-            EnsureCanopyGridBuffer();
             _canopyGridCenter = playerTransform != null ? playerTransform.position : _ecosystemThreatGridCenter;
-            if (!_nativeMemory.CanopyHeightGridNative.IsCreated || _canopyGridResolution <= 0)
+            if (_canopyGridResolution <= 0 ||
+                !TryAcquireCanopyGridBuffer(out IDataVault vault, out NativeArray<float> canopyGrid))
             {
                 _canopyGridInitialized = false;
                 return;
             }
 
-            for (int i = 0; i < _canopyGridCellCount; i++)
-                _nativeMemory.CanopyHeightGridNative[i] = float.NegativeInfinity;
-
-            for (int i = 0; i < _megaWreckStreamCount; i++)
+            try
             {
-                MegaWreckStreamSection section = _megaWreckStreamSnapshot[i];
-                Bounds bounds = GetMegaWreckSectionBounds(section);
-                StampCanopyBounds(bounds.min.x, bounds.max.x, bounds.min.z, bounds.max.z, bounds.max.y);
-            }
+                for (int i = 0; i < _canopyGridCellCount; i++)
+                    canopyGrid[i] = float.NegativeInfinity;
 
-            StampCanopyFromChunkPool(useStructuralThickness: false);
-            StampCanopyFromChunkPool(useStructuralThickness: true);
-            _canopyGridInitialized = true;
+                for (int i = 0; i < _megaWreckStreamCount; i++)
+                {
+                    MegaWreckStreamSection section = _megaWreckStreamSnapshot[i];
+                    Bounds bounds = GetMegaWreckSectionBounds(section);
+                    StampCanopyBounds(bounds.min.x, bounds.max.x, bounds.min.z, bounds.max.z, bounds.max.y, canopyGrid);
+                }
+
+                StampCanopyFromChunkPool(useStructuralThickness: false, canopyGrid);
+                StampCanopyFromChunkPool(useStructuralThickness: true, canopyGrid);
+                _canopyGridInitialized = true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in _nativeMemory.CanopyHeightGridHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
         }
 
-        private void StampCanopyFromChunkPool(bool useStructuralThickness)
+        private void StampCanopyFromChunkPool(bool useStructuralThickness, NativeArray<float> canopyGrid)
         {
             if (_selectedChunkCount <= 0)
             {
@@ -304,13 +686,18 @@ namespace Hecton8.World
                     continue;
 
                 NativeChunkPool pool = ResolveChunkPool(isSurface: !useStructuralThickness, payload);
-                if (!pool.Matrices.IsCreated || !pool.SemanticTypes.IsCreated || !pool.Metadata.IsCreated)
+                int requiredPoolCount = offset + count;
+                if (offset < 0 ||
+                    requiredPoolCount < offset ||
+                    !TryReadChunkPoolView(in pool, requiredPoolCount, out NativeChunkPoolView poolView))
+                {
                     continue;
+                }
 
-                int end = Mathf.Min(pool.Matrices.Length, offset + count);
+                int end = Mathf.Min(poolView.Capacity, requiredPoolCount);
                 for (int poolIndex = Mathf.Max(0, offset); poolIndex < end; poolIndex++)
                 {
-                    int semanticType = pool.SemanticTypes[poolIndex];
+                    int semanticType = poolView.SemanticTypes[poolIndex];
                     if (useStructuralThickness)
                     {
                         if (semanticType != (int)VegetationSemanticType.ColonyHullPlating &&
@@ -325,8 +712,8 @@ namespace Hecton8.World
                         continue;
                     }
 
-                    Vector3 position = ResolveRuntimePosition(pool.Matrices[poolIndex]);
-                    HectonVegetationInstanceData metadata = pool.Metadata[poolIndex];
+                    Vector3 position = ResolveRuntimePosition(poolView.Matrices[poolIndex]);
+                    HectonVegetationInstanceData metadata = poolView.Metadata[poolIndex];
                     float halfExtent = Mathf.Max(2f, metadata.WidthScale * (useStructuralThickness ? canopyStructureThickness : canopySargassumThickness));
                     float canopyTopY = position.y + Mathf.Max(metadata.HeightScale, useStructuralThickness ? canopyStructureThickness : canopySargassumThickness);
                     StampCanopyBounds(
@@ -334,14 +721,15 @@ namespace Hecton8.World
                         position.x + halfExtent,
                         position.z - halfExtent,
                         position.z + halfExtent,
-                        canopyTopY);
+                        canopyTopY,
+                        canopyGrid);
                 }
             }
         }
 
-        private void StampCanopyBounds(float minX, float maxX, float minZ, float maxZ, float canopyY)
+        private void StampCanopyBounds(float minX, float maxX, float minZ, float maxZ, float canopyY, NativeArray<float> canopyGrid)
         {
-            if (!_nativeMemory.CanopyHeightGridNative.IsCreated || _canopyGridResolution <= 0)
+            if (!canopyGrid.IsCreated || _canopyGridResolution <= 0)
                 return;
 
             int halfExtent = _canopyGridResolution >> 1;
@@ -355,16 +743,20 @@ namespace Hecton8.World
                 for (int cellX = minCellX; cellX <= maxCellX; cellX++)
                 {
                     int index = rowOffset + cellX;
-                    if (canopyY > _nativeMemory.CanopyHeightGridNative[index])
-                        _nativeMemory.CanopyHeightGridNative[index] = canopyY;
+                    if (canopyY > canopyGrid[index])
+                        canopyGrid[index] = canopyY;
                 }
             }
         }
 
-        private void DistortAggregateFlowVectorsByThreat(ActiveAggregateNativeBufferSet buffers, int count)
+        private void DistortAggregateFlowVectorsByThreat(ref ActiveAggregateNativeBufferSet buffers, int count)
         {
             if (!_threatGridInitialized ||
-                !_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated ||
+                !TryReadVegetationMemoryBuffer(
+                    in _nativeMemory.EcosystemThreatGridHandle,
+                    BufferID.VegetationEcosystemThreatGrid,
+                    _ecosystemThreatGridCellCount,
+                    out _) ||
                 _ecosystemThreatGridResolution <= 0 ||
                 count <= 0 ||
                 threatWhirlpoolStrength <= 0f ||
@@ -373,29 +765,50 @@ namespace Hecton8.World
                 return;
             }
 
-            float radiusSq = threatWhirlpoolRadius * threatWhirlpoolRadius;
-            for (int i = 0; i < count; i++)
+            if (!TryReadAggregateBuffer(in buffers.MatricesHandle, count, out NativeArray<Matrix4x4> matrices) ||
+                !TryAcquireAggregateWriteBuffer(ref buffers.FlowVectorsHandle, count, out IDataVault flowVectorsVault, out NativeArray<Vector3> flowVectors))
             {
-                Vector3 position = ResolveRuntimePosition(buffers.Matrices[i]);
-                float localThreat = GetThreatLevel(position);
-                if (localThreat < threatWhirlpoolThreshold)
-                    continue;
+                return;
+            }
 
-                Vector3 radial = position - _currentThreatHotspotPosition;
-                float radialSq = (radial.x * radial.x) + (radial.z * radial.z);
-                if (radialSq <= 0.0001f || radialSq > radiusSq)
-                    continue;
+            bool flowDirectionsLocked = false;
+            IDataVault flowDirectionsVault = null;
+            try
+            {
+                if (!TryAcquireAggregateWriteBuffer(ref buffers.FlowDirectionsHandle, count, out flowDirectionsVault, out NativeArray<Vector2> flowDirections))
+                    return;
 
-                float swirl01 = Mathf.Clamp01((localThreat - threatWhirlpoolThreshold) / Mathf.Max(0.01f, 1f - threatWhirlpoolThreshold));
-                swirl01 *= 1f - Mathf.Clamp01(radialSq / radiusSq);
-                Vector3 tangent = NormalizeVector3Fast(new Vector3(-radial.z, 0f, radial.x), Vector3.forward);
-                Vector3 baseFlow = buffers.FlowVectors[i];
-                float fakeMagnitude = Mathf.Max(EstimateLength3D(baseFlow), 1f);
-                float blend = Mathf.Clamp01(swirl01 * threatWhirlpoolStrength);
-                Vector3 distortedFlow = baseFlow + ((tangent * fakeMagnitude) - baseFlow) * blend;
-                Vector2 distortedDirection = NormalizeFlowDirection(new Vector2(distortedFlow.x, distortedFlow.z));
-                buffers.FlowVectors[i] = distortedFlow;
-                buffers.FlowDirections[i] = distortedDirection;
+                flowDirectionsLocked = true;
+                float radiusSq = threatWhirlpoolRadius * threatWhirlpoolRadius;
+                for (int i = 0; i < count; i++)
+                {
+                    Vector3 position = ResolveRuntimePosition(matrices[i]);
+                    float localThreat = GetThreatLevel(position);
+                    if (localThreat < threatWhirlpoolThreshold)
+                        continue;
+
+                    Vector3 radial = position - _currentThreatHotspotPosition;
+                    float radialSq = (radial.x * radial.x) + (radial.z * radial.z);
+                    if (radialSq <= 0.0001f || radialSq > radiusSq)
+                        continue;
+
+                    float swirl01 = Mathf.Clamp01((localThreat - threatWhirlpoolThreshold) / Mathf.Max(0.01f, 1f - threatWhirlpoolThreshold));
+                    swirl01 *= 1f - Mathf.Clamp01(radialSq / radiusSq);
+                    Vector3 tangent = NormalizeVector3Fast(new Vector3(-radial.z, 0f, radial.x), Vector3.forward);
+                    Vector3 baseFlow = flowVectors[i];
+                    float fakeMagnitude = Mathf.Max(EstimateLength3D(baseFlow), 1f);
+                    float blend = Mathf.Clamp01(swirl01 * threatWhirlpoolStrength);
+                    Vector3 distortedFlow = baseFlow + ((tangent * fakeMagnitude) - baseFlow) * blend;
+                    Vector2 distortedDirection = NormalizeFlowDirection(new Vector2(distortedFlow.x, distortedFlow.z));
+                    flowVectors[i] = distortedFlow;
+                    flowDirections[i] = distortedDirection;
+                }
+            }
+            finally
+            {
+                if (flowDirectionsLocked)
+                    flowDirectionsVault.ReleaseWriteLock(in buffers.FlowDirectionsHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                flowVectorsVault.ReleaseWriteLock(in buffers.FlowVectorsHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
         }
 
@@ -510,21 +923,30 @@ namespace Hecton8.World
         {
             float width = Mathf.Max(0.01f, maxX - minX);
             float depth = Mathf.Max(0.01f, maxZ - minZ);
-            float inverseWidth = 1f / width;
-            float inverseDepth = 1f / depth;
+            double inverseWidth = 1.0 / width;
+            double inverseDepth = 1.0 / depth;
+            int requiredPoolCount = offset + count;
+            if (offset < 0 ||
+                count <= 0 ||
+                requiredPoolCount < offset ||
+                !TryReadChunkPoolView(in pool, requiredPoolCount, out NativeChunkPoolView poolView))
+            {
+                return;
+            }
+
             for (int i = 0; i < count; i++)
             {
                 int poolIndex = offset + i;
-                double xDouble = pool.Matrices[poolIndex].m03 + _totalUniverseOffsetDouble.x;
-                double zDouble = pool.Matrices[poolIndex].m23 + _totalUniverseOffsetDouble.z;
-                if (xDouble < minX || xDouble > maxX || zDouble < minZ || zDouble > maxZ)
+                double xDouble = poolView.Matrices[poolIndex].m03 + _totalUniverseOffsetDouble.x;
+                double zDouble = poolView.Matrices[poolIndex].m23 + _totalUniverseOffsetDouble.z;
+                double localX = xDouble - minX;
+                double localZ = zDouble - minZ;
+                if (localX < 0.0 || localX > width || localZ < 0.0 || localZ > depth)
                     continue;
 
-                float x = (float)xDouble;
-                float z = (float)zDouble;
-                int type = pool.Types[poolIndex];
-                float normalizedX = Mathf.Clamp01((x - minX) * inverseWidth) * (DensityGridResolution - 1);
-                float normalizedZ = Mathf.Clamp01((z - minZ) * inverseDepth) * (DensityGridResolution - 1);
+                int type = poolView.Types[poolIndex];
+                float normalizedX = (float)math.saturate(localX * inverseWidth) * (DensityGridResolution - 1);
+                float normalizedZ = (float)math.saturate(localZ * inverseDepth) * (DensityGridResolution - 1);
                 int cellX = Mathf.Clamp(Mathf.FloorToInt(normalizedX), 0, DensityGridResolution - 1);
                 int cellZ = Mathf.Clamp(Mathf.FloorToInt(normalizedZ), 0, DensityGridResolution - 1);
                 int nextCellX = Mathf.Min(cellX + 1, DensityGridResolution - 1);
@@ -533,7 +955,7 @@ namespace Hecton8.World
                 float fracZ = normalizedZ - cellZ;
 
                 float representedArea = ResolveRepresentedArea(type, grassRepresentedArea, kelpRepresentedArea, sargassumRepresentedArea);
-                float edgeCompensation = ResolveEdgeCompensation(pool.EdgeDistances[poolIndex]);
+                float edgeCompensation = ResolveEdgeCompensation(poolView.EdgeDistances[poolIndex]);
                 float densityWeight = (representedArea / cellArea) * edgeCompensation;
                 float3 channel = ResolveDensityChannel(type, densityWeight);
                 AddDensityCell(ref destination, gridOffset, cellX, cellZ, channel * ((1f - fracX) * (1f - fracZ)));
@@ -560,20 +982,29 @@ namespace Hecton8.World
         {
             float width = Mathf.Max(0.01f, maxX - minX);
             float depth = Mathf.Max(0.01f, maxZ - minZ);
-            float inverseWidth = 1f / width;
-            float inverseDepth = 1f / depth;
+            double inverseWidth = 1.0 / width;
+            double inverseDepth = 1.0 / depth;
+            int requiredPoolCount = offset + count;
+            if (offset < 0 ||
+                count <= 0 ||
+                requiredPoolCount < offset ||
+                !TryReadChunkPoolView(in pool, requiredPoolCount, out NativeChunkPoolView poolView))
+            {
+                return;
+            }
+
             for (int i = 0; i < count; i++)
             {
                 int poolIndex = offset + i;
-                double xDouble = pool.Matrices[poolIndex].m03 + _totalUniverseOffsetDouble.x;
-                double zDouble = pool.Matrices[poolIndex].m23 + _totalUniverseOffsetDouble.z;
-                if (xDouble < minX || xDouble > maxX || zDouble < minZ || zDouble > maxZ)
+                double xDouble = poolView.Matrices[poolIndex].m03 + _totalUniverseOffsetDouble.x;
+                double zDouble = poolView.Matrices[poolIndex].m23 + _totalUniverseOffsetDouble.z;
+                double localX = xDouble - minX;
+                double localZ = zDouble - minZ;
+                if (localX < 0.0 || localX > width || localZ < 0.0 || localZ > depth)
                     continue;
 
-                float x = (float)xDouble;
-                float z = (float)zDouble;
-                float normalizedX = Mathf.Clamp01((x - minX) * inverseWidth) * (DensityGridResolution - 1);
-                float normalizedZ = Mathf.Clamp01((z - minZ) * inverseDepth) * (DensityGridResolution - 1);
+                float normalizedX = (float)math.saturate(localX * inverseWidth) * (DensityGridResolution - 1);
+                float normalizedZ = (float)math.saturate(localZ * inverseDepth) * (DensityGridResolution - 1);
                 int cellX = Mathf.Clamp(Mathf.FloorToInt(normalizedX), 0, DensityGridResolution - 1);
                 int cellZ = Mathf.Clamp(Mathf.FloorToInt(normalizedZ), 0, DensityGridResolution - 1);
                 int nextCellX = Mathf.Min(cellX + 1, DensityGridResolution - 1);
@@ -581,10 +1012,10 @@ namespace Hecton8.World
                 float fracX = normalizedX - cellX;
                 float fracZ = normalizedZ - cellZ;
 
-                int type = pool.Types[poolIndex];
-                int semanticType = pool.SemanticTypes[poolIndex];
+                int type = poolView.Types[poolIndex];
+                int semanticType = poolView.SemanticTypes[poolIndex];
                 float representedArea = ResolveRepresentedArea(type, grassRepresentedArea, kelpRepresentedArea, sargassumRepresentedArea);
-                float edgeCompensation = ResolveEdgeCompensation(pool.EdgeDistances[poolIndex]);
+                float edgeCompensation = ResolveEdgeCompensation(poolView.EdgeDistances[poolIndex]);
                 float densityWeight = (representedArea / cellArea) * edgeCompensation;
                 float2 channel = ResolveThreatAttractorChannel(semanticType, densityWeight);
                 if (math.lengthsq(channel) <= 0.000001f)
@@ -733,21 +1164,6 @@ namespace Hecton8.World
             float currentWeight = 1f - previousWeight;
             for (int i = 0; i < count; i++)
                 current[currentOffset + i] = (previous[previousOffset + i] * previousWeight) + (current[currentOffset + i] * currentWeight);
-        }
-
-        private void SwapDensityQueryBuffers()
-        {
-            NativeArray<VegetationDensityChunkRecord> chunkSwap = _nativeMemory.DensityQueryChunksNative;
-            _nativeMemory.DensityQueryChunksNative = _nativeMemory.DensityQueryChunksScratchNative;
-            _nativeMemory.DensityQueryChunksScratchNative = chunkSwap;
-
-            NativeArray<float3> gridSwap = _nativeMemory.DensityQueryGridNative;
-            _nativeMemory.DensityQueryGridNative = _nativeMemory.DensityQueryGridScratchNative;
-            _nativeMemory.DensityQueryGridScratchNative = gridSwap;
-
-            NativeArray<float2> attractorSwap = _nativeMemory.ThreatAttractorGridNative;
-            _nativeMemory.ThreatAttractorGridNative = _nativeMemory.ThreatAttractorGridScratchNative;
-            _nativeMemory.ThreatAttractorGridScratchNative = attractorSwap;
         }
 
         private static float SampleDensityAtPosition(
@@ -1004,7 +1420,9 @@ namespace Hecton8.World
 
         private float3 SampleVegetationAudioDensity(Vector3 origin)
         {
-            if (!_nativeMemory.DensityQueryChunksNative.IsCreated || !_nativeMemory.DensityQueryGridNative.IsCreated || _densityQueryChunkCount <= 0)
+            if (!TryReadDensityQuerySnapshot(
+                    out NativeArray<VegetationDensityChunkRecord> chunks,
+                    out NativeArray<float3> densityGrid))
                 return float3.zero;
 
             Vector3 forward = playerTransform != null ? playerTransform.forward : Vector3.forward;
@@ -1019,13 +1437,13 @@ namespace Hecton8.World
             Vector3 right = new Vector3(forward.z, 0f, -forward.x);
             float3 sum = float3.zero;
 
-            sum += SampleDensityChannelsAtPosition(new float3(origin.x, origin.y, origin.z), _nativeMemory.DensityQueryChunksNative, _nativeMemory.DensityQueryGridNative, _densityQueryChunkCount);
+            sum += SampleDensityChannelsAtPosition(new float3(origin.x, origin.y, origin.z), chunks, densityGrid, _densityQueryChunkCount);
             Vector3 offset = forward * vegetationAudioProbeRadius;
-            sum += SampleDensityChannelsAtPosition(new float3(origin.x + offset.x, origin.y + offset.y, origin.z + offset.z), _nativeMemory.DensityQueryChunksNative, _nativeMemory.DensityQueryGridNative, _densityQueryChunkCount);
-            sum += SampleDensityChannelsAtPosition(new float3(origin.x - offset.x, origin.y - offset.y, origin.z - offset.z), _nativeMemory.DensityQueryChunksNative, _nativeMemory.DensityQueryGridNative, _densityQueryChunkCount);
+            sum += SampleDensityChannelsAtPosition(new float3(origin.x + offset.x, origin.y + offset.y, origin.z + offset.z), chunks, densityGrid, _densityQueryChunkCount);
+            sum += SampleDensityChannelsAtPosition(new float3(origin.x - offset.x, origin.y - offset.y, origin.z - offset.z), chunks, densityGrid, _densityQueryChunkCount);
             offset = right * vegetationAudioProbeRadius;
-            sum += SampleDensityChannelsAtPosition(new float3(origin.x + offset.x, origin.y + offset.y, origin.z + offset.z), _nativeMemory.DensityQueryChunksNative, _nativeMemory.DensityQueryGridNative, _densityQueryChunkCount);
-            sum += SampleDensityChannelsAtPosition(new float3(origin.x - offset.x, origin.y - offset.y, origin.z - offset.z), _nativeMemory.DensityQueryChunksNative, _nativeMemory.DensityQueryGridNative, _densityQueryChunkCount);
+            sum += SampleDensityChannelsAtPosition(new float3(origin.x + offset.x, origin.y + offset.y, origin.z + offset.z), chunks, densityGrid, _densityQueryChunkCount);
+            sum += SampleDensityChannelsAtPosition(new float3(origin.x - offset.x, origin.y - offset.y, origin.z - offset.z), chunks, densityGrid, _densityQueryChunkCount);
 
             return sum / (float)VegetationAudioProbeCount;
         }

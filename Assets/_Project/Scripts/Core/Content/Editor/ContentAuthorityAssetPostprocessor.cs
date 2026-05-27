@@ -204,8 +204,8 @@ namespace Hecton8.Core.Content.Editor
             {
                 name = "GEN_PhysicsProxyHull"
             };
-            mesh.vertices = vertices;
-            mesh.triangles = triangles;
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles, 0, false);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;

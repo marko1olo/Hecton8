@@ -150,6 +150,55 @@ After a creator plays or reviews:
 9. Would you wishlist after this demo?
 10. What one screenshot or clip would you show someone else?
 
+## 2026-05-26 Survey And Poll Plan V0
+
+Surveys are research routes, not mailing-list capture. Keep feedback, tester recruitment, newsletter, creator, press, support, and private-access consent separate.
+
+### Survey Gates
+
+| Gate | Required state | Kill if |
+|---|---|---|
+| Route | `route_class` is known before collection. | Survey source is copied into CRM/newsletter without explicit opt-in. |
+| Consent | `consent_provenance` is stated in the form/log. | Form asks for email, Discord, key interest, or newsletter in the same required path as critique. |
+| Asset | Exact `asset_id` or build ID is named. | Respondents judge vague concept, lore, or future promise. |
+| Blindness | Prompt avoids target nouns before first read. | Survey teaches the answer before asking. |
+| Privacy | No personal data unless a separate owner-controlled form and deletion path exist. | Free-text asks for personal contact or account data. |
+| Incentive | No reward unless route and disclosure are approved. | Reward/key chance turns feedback into promotion or access route. |
+
+### Survey Packets
+
+| Packet | When | Core question | Required fields | Pass / fail |
+|---|---|---|---|---|
+| `SURVEY_ASSET_5SEC` | First screenshots/capsules. | What is this game and what would you do? | `reader_id`, `asset_id`, `context_exposure`, `what_genre`, `what_do_you_do`, `what_decision_next`, `mode_assumption`, `proof_belief`. | Pass if genre and player verb clear; fail if clone, co-op, AI/concept, or mood-only dominates. |
+| `SURVEY_CLIP_15SEC` | First clips. | What changed by second 3 and what should the player do? | `clip_id`, `view_time_seconds`, `first_event_read`, `decision_read`, `confusion_point`, `would_keep_watching`. | Pass if decision appears before caption/audio rescue. |
+| `SURVEY_PAGE_READ` | itch/Steam/page draft. | What feature/mode/platform do you think exists right now? | `surface`, `page_url_or_mock`, `feature_assumption`, `mode_assumption`, `platform_assumption`, `misleading_claim`. | Fail if page implies unsupported mode/platform/performance. |
+| `SURVEY_SURFACE_FIT` | DTF/Habr/Reddit/itch/wiki route prep. | Is this useful for this platform, or does it read as ad spam? | `surface`, `route_class`, `shill_read`, `asset_specific_answer`, `rule_risk`, `stop_condition`. | Pass only if readers name concrete value beyond promotion. |
+| `SURVEY_DEMO_EXIT` | Demo/playtest. | What system did you understand first and what blocked you? | `build`, `route`, `consent`, `objective`, `first_understood_system`, `blocker`, `pressure_fairness`, `base_function`, `distinctiveness`, `wishlist_intent`. | Product triage only until public CTA/demo gates pass. |
+
+### Minimal RU Poll For DTF / Dvach / RU Readers
+
+```text
+1. Что это за игра по первому кадру/гифке?
+2. Что игрок должен сделать дальше?
+3. Что здесь отличается от обычного underwater survival?
+4. Кадр выглядит как gameplay, concept/AI, или непонятно?
+5. Есть ли ложное ожидание коопа/мультиплеера?
+6. Что первым ломает доверие: темнота, чистая sci-fi база, клоновость, отсутствие действия, UI, другое?
+```
+
+### Minimal EN Poll
+
+```text
+1. What genre do you think this is?
+2. What would the player do next?
+3. What looks distinct?
+4. Does this look like gameplay, concept/AI, or unclear?
+5. Does it imply co-op or multiplayer?
+6. What breaks trust first: darkness, clean sci-fi, clone read, no action, UI, other?
+```
+
+Survey result rule: do not report percentages below 10 valid blind readers. Below that, report counts and exact nouns only.
+
 ## Weekly Feedback Digest
 
 ```md

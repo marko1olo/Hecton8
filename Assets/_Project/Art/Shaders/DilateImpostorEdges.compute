@@ -25,7 +25,26 @@ float4 HectonFiniteOr4(float4 value, float4 fallback)
 [numthreads(8, 8, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
-    int2 atlasSize = max(int2(HectonFiniteOr2(_AtlasSize.xy, float2(1.0, 1.0))), int2(1, 1));
+    uint sourceWidth;
+    uint sourceHeight;
+    uint maskWidth;
+    uint maskHeight;
+    uint outputWidth;
+    uint outputHeight;
+    _SourceAtlas.GetDimensions(sourceWidth, sourceHeight);
+    _SourceMaskAtlas.GetDimensions(maskWidth, maskHeight);
+    _OutputAtlas.GetDimensions(outputWidth, outputHeight);
+
+    if (sourceWidth == 0u || sourceHeight == 0u ||
+        maskWidth == 0u || maskHeight == 0u ||
+        outputWidth == 0u || outputHeight == 0u)
+        return;
+
+    int2 requestedAtlasSize = max(int2(HectonFiniteOr2(_AtlasSize.xy, float2(1.0, 1.0))), int2(1, 1));
+    int2 realAtlasSize = int2(
+        (int)min(min(sourceWidth, maskWidth), outputWidth),
+        (int)min(min(sourceHeight, maskHeight), outputHeight));
+    int2 atlasSize = max(min(requestedAtlasSize, realAtlasSize), int2(1, 1));
     if (id.x >= (uint)atlasSize.x || id.y >= (uint)atlasSize.y)
         return;
 

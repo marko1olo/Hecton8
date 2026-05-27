@@ -236,7 +236,7 @@ Proof required before GREEN:
 
 Reviewer: Integrator / Global Authority reviewer.
 
-## R48 Exact Route Field Normalization
+## Route Field Contract
 
 Route ID: SHINOBU_229_AUXILIARY_EQUIPMENT_ROUTE_CARD
 

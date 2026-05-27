@@ -3,29 +3,19 @@
 Date: 2026-05-17
 Status: PENDING VERIFICATION
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
-
-Owner: MISSION_FAIL_SAFE_ARCHITECT
+Owner: Design/Missions
 Domain: Documentation/Logic, Echelon 8 AUP Narrative Triggers
 Evidence Class: STATIC_DOC / STATIC_SOURCE
 
 ## Source Boundary
 
-The requested `CURRENT_BATCH_OSHINO.md` file is absent in this workspace. Historical extraction source: the Mission Fail-Safe prompt was originally extracted from `Docs/Tasks/CURRENT_BATCH.md` when that file contained `<AGENT_PROMPT id="MISSION_FAIL_SAFE_ARCHITECT">`.
+Source authority: `STATIC_MISSION_CONTRACT`.
 
-Current source authority: `ACTIVE_BATCH_DRIFT_DETECTED`. The live `Docs/Tasks/CURRENT_BATCH.md` no longer contains `MISSION_FAIL_SAFE_ARCHITECT` or `SCENARIO_DESIGNER`. Treat this document and `Docs/Design/Missions/Outpost_FailSafe_Handoff.json` as historical static design artifacts until the Mission Fail-Safe prompt is restored to the live batch file or an archived prompt is explicitly accepted as source authority.
+This file and `Docs/Design/Missions/Outpost_FailSafe_Handoff.json` are the stable mission/design contract. Active task files, prompt batches, status logs, agent logs, and dated reports are evidence at most; they are not source authority for this contract unless their durable rule is promoted back into this file or the JSON handoff.
 
 `Docs/Tasks/Status_META_CAMPAIGN_DIRECTOR.md` is also absent. Current source evidence shows `MetaCampaignService` has four implemented global variables: `CampaignStageHash`, `ToxicityLevelHash`, `LeviathanAwakenedHash`, and `BaseDeltaDestroyedHash`. The outpost mission therefore needs its own compiled quest/DAG flags and must not assume a richer campaign-state file exists.
 

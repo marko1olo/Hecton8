@@ -607,9 +607,8 @@ namespace Hecton8.Core
                 return;
             }
 
-            // ── Kopiruem managed → native (memcpy, zero GC) ──
-            // NativeArray<byte>.CopyFrom(byte[]) — spetsializirovannyy fast path.
-            prevStatus.CopyFrom(_prevStatus);
+            // Copy the active logical range; DataVault may legally reuse a larger buffer.
+            NativeArray<byte>.Copy(_prevStatus, 0, prevStatus, 0, _pointCount);
 
             // ── Sozdaem i planiruem Job ──
             var job = new DistanceCalcJob

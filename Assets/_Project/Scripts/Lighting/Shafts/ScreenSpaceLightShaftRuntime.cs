@@ -119,6 +119,7 @@ namespace Hecton8.Lighting.Shafts
         private bool _ownsTopContributions;
         private bool _ownsHistoryContributions;
         private bool _ownsTelemetry;
+        private bool _shaderGlobalsCleared;
         private bool _disposed;
 
         /// <inheritdoc />
@@ -127,7 +128,7 @@ namespace Hecton8.Lighting.Shafts
             if (!isActiveAndEnabled || !Application.isPlaying)
                 return;
 
-            if (!EnsureBuffers() ||
+            if (!EnsureBuffers(false) ||
                 !TryLockFrameBuffers(out NativeArray<LightShaftContribution> topContributions,
                     out NativeArray<LightShaftContribution> historyContributions,
                     out NativeArray<LightShaftTelemetryEntry> telemetry))
@@ -194,7 +195,7 @@ namespace Hecton8.Lighting.Shafts
             CacheDataVaultCold(GlobalRegistry.DataVault);
             CachePlayerCold(GlobalRegistry.Player);
             SignalCorridorRuntime.EnsureInitialized();
-            EnsureBuffers();
+            EnsureBuffers(true);
             ResolveRenderCamera();
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             ClearShaderGlobals();
@@ -229,6 +230,7 @@ namespace Hecton8.Lighting.Shafts
             {
                 ReleaseOwnedVaultHandles();
                 CacheDataVaultCold(currentService as IDataVault);
+                EnsureBuffers(true);
                 return;
             }
 
@@ -238,7 +240,7 @@ namespace Hecton8.Lighting.Shafts
             }
         }
 
-        private bool EnsureBuffers()
+        private bool EnsureBuffers(bool allowAllocation)
         {
             IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive)
@@ -251,24 +253,28 @@ namespace Hecton8.Lighting.Shafts
                     ref _topContributionsHandle,
                     ref _ownsTopContributions,
                     BufferID.LightShaftTopContributions,
-                    MaxTrackedSources) &&
+                    MaxTrackedSources,
+                    allowAllocation) &&
                 EnsureVaultHandle(
                     ref _historyContributionsHandle,
                     ref _ownsHistoryContributions,
                     BufferID.LightShaftHistoryContributions,
-                    MaxTrackedSources) &&
+                    MaxTrackedSources,
+                    allowAllocation) &&
                 EnsureVaultHandle(
                     ref _telemetryHandle,
                     ref _ownsTelemetry,
                     BufferID.LightShaftTelemetryRing,
-                    TelemetryCapacity);
+                    TelemetryCapacity,
+                    allowAllocation);
         }
 
         private bool EnsureVaultHandle<T>(
             ref VaultGenerationHandle<T> handle,
             ref bool ownsHandle,
             BufferID bufferId,
-            int requiredLength) where T : struct
+            int requiredLength,
+            bool allowAllocation) where T : struct
         {
             IDataVault vault = _dataVault;
             if (vault == null)
@@ -295,7 +301,7 @@ namespace Hecton8.Lighting.Shafts
                 return true;
             }
 
-            if (vault.IsAllocationLocked)
+            if (!allowAllocation || vault.IsAllocationLocked)
                 return false;
 
             VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
@@ -651,6 +657,7 @@ namespace Hecton8.Lighting.Shafts
             PushContributionGlobals(0, activeCount > 0 ? topContributions[0] : default);
             PushContributionGlobals(1, activeCount > 1 ? topContributions[1] : default);
             PushContributionGlobals(2, activeCount > 2 ? topContributions[2] : default);
+            _shaderGlobalsCleared = false;
         }
 
         private void PushContributionGlobals(int index, in LightShaftContribution contribution)
@@ -677,12 +684,16 @@ namespace Hecton8.Lighting.Shafts
 
         private void ClearShaderGlobals()
         {
+            if (_shaderGlobalsCleared)
+                return;
+
             Shader.SetGlobalVector(_LightShaftParamsId, Vector4.zero);
             Shader.SetGlobalVector(_LightShaftQualityId, Vector4.zero);
             Shader.SetGlobalFloat(_AtmosphereSootId, 0f);
             PushContributionGlobals(0, default);
             PushContributionGlobals(1, default);
             PushContributionGlobals(2, default);
+            _shaderGlobalsCleared = true;
         }
 
         private void EmitVisualFlareSignals(int activeCount, NativeArray<LightShaftContribution> topContributions)
@@ -758,7 +769,7 @@ namespace Hecton8.Lighting.Shafts
             if (!telemetry.IsCreated)
                 return;
 
-            string path = Path.Combine(Application.dataPath, "../Docs/AgentLogs/Dump_ABYSSAL_LIGHTING_TECH.bin");
+            string path = Path.Combine(Application.dataPath, "../Docs/AgentLogs/Dump_13KRA.bin");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (BinaryWriter writer = new BinaryWriter(stream))

@@ -166,7 +166,7 @@ namespace Hecton8.Lighting.Editor
                 }
             }
 
-            Debug.Log("[SHINOBU_131] Loaded-scene Unity probe group count: " + sceneGroups);
+            Debug.Log("[13KRA] Loaded-scene Unity probe group count: " + sceneGroups);
         }
 
         private sealed class ProbeTelemetryGraphElement : VisualElement

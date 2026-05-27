@@ -1,10 +1,8 @@
-using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -42,21 +40,20 @@ namespace Hecton8.World
         private const int DeferredCleanupHandlesPerFrame = (MaxEntryCapacity + DeferredCleanupFrameSpan - 1) / DeferredCleanupFrameSpan;
         private const float AdjacentQueryCompleteRadiusMeters = 50f;
         private const float AdjacentQueryCompleteRadiusSqr = AdjacentQueryCompleteRadiusMeters * AdjacentQueryCompleteRadiusMeters;
-        private const string NativeMemoryOwner = nameof(FaunaSpatialHashRegistry);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
-        private const Allocator DataVaultExemptFaunaSpatialQueryAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: Dictionary<int,Entry>[1024] - fauna-only AUP spatial metadata registry layered over HectonSpatialHash - owner: FaunaSpatialHashRegistry
-        private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(MaxEntryCapacity);
         // COLD ALLOC: int[1024] - dense fauna spatial handles for index-based cleanup scans - owner: FaunaSpatialHashRegistry
         private static readonly int[] _entryHandles = new int[MaxEntryCapacity];
+        // COLD ALLOC: Entry[1024] - dense fauna spatial metadata rows keyed by _entryHandles index; no managed collection growth.
+        private static readonly Entry[] _entries = new Entry[MaxEntryCapacity];
+        // COLD ALLOC: int[128] - bounded fauna query handle scratch; no native ownership, no hot growth.
+        private static readonly int[] _queryHandles = new int[DefaultQueryCapacity];
         // COLD ALLOC: int[18] - deferred despawn cleanup handles, amortized across 60 frames - owner: FaunaSpatialHashRegistry
         private static readonly int[] _deferredCleanupHandles = new int[DeferredCleanupHandlesPerFrame];
 
         private static HectonSpatialHash _nativeHash;
-        private static NativeList<int> _queryHandles;
         private static bool _lastResultBufferSaturated;
         private static bool _lastAdjacentRadiusClamped;
+        private static bool _lastStaleHandleObserved;
         private static int _deferredCleanupCursor;
         private static int _entryHandleCount;
 
@@ -64,22 +61,16 @@ namespace Hecton8.World
         public static bool LastNativeQuerySaturated => _nativeHash != null && _nativeHash.LastQueryStats.IsSaturated;
         public static bool LastResultBufferSaturated => _lastResultBufferSaturated;
         public static bool LastAdjacentRadiusClamped => _lastAdjacentRadiusClamped;
+        public static bool LastStaleHandleObserved => _lastStaleHandleObserved;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _entries.Clear();
+            ClearEntries();
             _lastResultBufferSaturated = false;
             _lastAdjacentRadiusClamped = false;
+            _lastStaleHandleObserved = false;
             _deferredCleanupCursor = 0;
-            _entryHandleCount = 0;
-
-            if (_queryHandles.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_queryHandles));
-                _queryHandles.Dispose();
-                _queryHandles = default;
-            }
 
             _nativeHash?.Dispose();
             _nativeHash = null;
@@ -113,7 +104,7 @@ namespace Hecton8.World
 
         public static void Refresh(int handle)
         {
-            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry))
+            if (handle <= 0 || !TryGetEntry(handle, out Entry entry))
                 return;
 
             if (!IsEntryQueryEligible(entry))
@@ -130,10 +121,11 @@ namespace Hecton8.World
             if (handle <= 0)
                 return;
 
-            if (!_entries.Remove(handle))
+            int entryIndex = FindEntryIndex(handle);
+            if (entryIndex < 0)
                 return;
 
-            RemoveDenseHandle(handle);
+            RemoveEntryAt(entryIndex);
             if (_nativeHash != null)
                 _nativeHash.Unregister(handle);
         }
@@ -160,7 +152,7 @@ namespace Hecton8.World
                     slot = 0;
 
                 if (handle > 0 &&
-                    _entries.TryGetValue(handle, out Entry entry) &&
+                    TryGetEntry(handle, out Entry entry) &&
                     !IsEntryQueryEligible(entry) &&
                     removeCount < _deferredCleanupHandles.Length)
                 {
@@ -202,15 +194,15 @@ namespace Hecton8.World
             for (int i = 0; i < handleCount; i++)
             {
                 int handle = _queryHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
+                if (!TryGetEntry(handle, out Entry entry))
                 {
-                    DropNativeOnlyHandle(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
                 if (!IsEntryQueryEligible(entry))
                 {
-                    Unregister(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
@@ -274,15 +266,15 @@ namespace Hecton8.World
             for (int i = 0; i < handleCount; i++)
             {
                 int handle = _queryHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
+                if (!TryGetEntry(handle, out Entry entry))
                 {
-                    DropNativeOnlyHandle(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
                 if (!IsEntryQueryEligible(entry))
                 {
-                    Unregister(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
@@ -340,15 +332,15 @@ namespace Hecton8.World
             for (int i = 0; i < handleCount && count < results.Length; i++)
             {
                 int handle = _queryHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
+                if (!TryGetEntry(handle, out Entry entry))
                 {
-                    DropNativeOnlyHandle(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
                 if (!IsEntryQueryEligible(entry))
                 {
-                    Unregister(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
@@ -394,15 +386,15 @@ namespace Hecton8.World
             for (int i = 0; i < handleCount && count < results.Length; i++)
             {
                 int handle = _queryHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
+                if (!TryGetEntry(handle, out Entry entry))
                 {
-                    DropNativeOnlyHandle(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
                 if (!IsEntryQueryEligible(entry))
                 {
-                    Unregister(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
@@ -452,15 +444,15 @@ namespace Hecton8.World
             for (int i = 0; i < handleCount; i++)
             {
                 int handle = _queryHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
+                if (!TryGetEntry(handle, out Entry entry))
                 {
-                    DropNativeOnlyHandle(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
                 if (!IsEntryQueryEligible(entry))
                 {
-                    Unregister(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
@@ -520,15 +512,15 @@ namespace Hecton8.World
             for (int i = 0; i < handleCount && count < results.Length; i++)
             {
                 int handle = _queryHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
+                if (!TryGetEntry(handle, out Entry entry))
                 {
-                    DropNativeOnlyHandle(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
                 if (!IsEntryQueryEligible(entry))
                 {
-                    Unregister(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
@@ -562,7 +554,7 @@ namespace Hecton8.World
         {
             penaltyDirection = default;
             densityCount = 0;
-            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry sourceEntry))
+            if (handle <= 0 || !TryGetEntry(handle, out Entry sourceEntry))
                 return false;
 
             if (!IsEntryQueryEligible(sourceEntry))
@@ -573,15 +565,15 @@ namespace Hecton8.World
             for (int i = 0; i < handleCount; i++)
             {
                 int candidateHandle = _queryHandles[i];
-                if (!_entries.TryGetValue(candidateHandle, out Entry candidateEntry))
+                if (!TryGetEntry(candidateHandle, out Entry candidateEntry))
                 {
-                    DropNativeOnlyHandle(candidateHandle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
                 if (!IsEntryQueryEligible(candidateEntry))
                 {
-                    Unregister(candidateHandle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
@@ -646,13 +638,6 @@ namespace Hecton8.World
         {
             if (_nativeHash == null)
                 _nativeHash = new HectonSpatialHash(MaxEntryCapacity, MaxEntryCapacity * 4, CellSizeMeters);
-
-            if (!_queryHandles.IsCreated)
-            {
-                // COLD ALLOC: NativeList<int>[DefaultQueryCapacity] - fauna AUP query handle scratch buffer - owner: FaunaSpatialHashRegistry
-                _queryHandles = new NativeList<int>(DefaultQueryCapacity, DataVaultExemptFaunaSpatialQueryAllocator);
-                NativeMemorySentinel.RegisterNativeList(_queryHandles, NativeMemoryOwner, nameof(_queryHandles), NativeMemoryLifetime);
-            }
         }
 
         private static void DropNativeOnlyHandle(int handle)
@@ -661,6 +646,11 @@ namespace Hecton8.World
                 return;
 
             _nativeHash.Unregister(handle);
+        }
+
+        private static void MarkStaleHandleObserved()
+        {
+            _lastStaleHandleObserved = true;
         }
 
         private static int Register(
@@ -674,7 +664,7 @@ namespace Hecton8.World
                 return 0;
 
             EnsureInitialized();
-            if (_entries.Count >= MaxEntryCapacity)
+            if (_entryHandleCount >= MaxEntryCapacity)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError("[FaunaSpatialHashRegistry] Entry capacity exceeded. Runtime registry growth is forbidden.");
@@ -690,7 +680,7 @@ namespace Hecton8.World
             if (handle <= 0)
                 return 0;
 
-            _entries[handle] = new Entry
+            Entry entry = new Entry
             {
                 Transform = targetTransform,
                 Body = body,
@@ -703,25 +693,89 @@ namespace Hecton8.World
                 RuntimePosition = runtimePosition,
                 IsPreyTag = kind == SpatialTargetKind.Bioform && targetTransform.CompareTag("Prey") ? (byte)1 : (byte)0
             };
+
+            int existingIndex = FindEntryIndex(handle);
+            if (existingIndex >= 0)
+            {
+                _entries[existingIndex] = entry;
+                return handle;
+            }
+
+            if (_entryHandleCount >= MaxEntryCapacity)
+            {
+                _nativeHash.Unregister(handle);
+                return 0;
+            }
+
+            _entries[_entryHandleCount] = entry;
             _entryHandles[_entryHandleCount++] = handle;
             return handle;
         }
 
-        private static void RemoveDenseHandle(int handle)
+        private static void ClearEntries()
+        {
+            if (_entryHandleCount > 0)
+            {
+                System.Array.Clear(_entryHandles, 0, _entryHandleCount);
+                System.Array.Clear(_entries, 0, _entryHandleCount);
+            }
+
+            _entryHandleCount = 0;
+        }
+
+        private static bool TryGetEntry(int handle, out Entry entry)
+        {
+            int entryIndex = FindEntryIndex(handle);
+            if (entryIndex < 0)
+            {
+                entry = default;
+                return false;
+            }
+
+            entry = _entries[entryIndex];
+            return true;
+        }
+
+        private static bool TrySetEntry(int handle, in Entry entry)
+        {
+            int entryIndex = FindEntryIndex(handle);
+            if (entryIndex < 0)
+                return false;
+
+            _entries[entryIndex] = entry;
+            return true;
+        }
+
+        private static int FindEntryIndex(int handle)
         {
             for (int i = 0; i < _entryHandleCount; i++)
             {
-                if (_entryHandles[i] != handle)
-                    continue;
-
-                int lastIndex = _entryHandleCount - 1;
-                _entryHandles[i] = _entryHandles[lastIndex];
-                _entryHandles[lastIndex] = 0;
-                _entryHandleCount = lastIndex;
-                if (_deferredCleanupCursor > i)
-                    _deferredCleanupCursor--;
-                return;
+                if (_entryHandles[i] == handle)
+                    return i;
             }
+
+            return -1;
+        }
+
+        private static void RemoveEntryAt(int entryIndex)
+        {
+            if ((uint)entryIndex >= (uint)_entryHandleCount)
+                return;
+
+            int lastIndex = _entryHandleCount - 1;
+            if (entryIndex != lastIndex)
+            {
+                _entryHandles[entryIndex] = _entryHandles[lastIndex];
+                _entries[entryIndex] = _entries[lastIndex];
+            }
+
+            _entryHandles[lastIndex] = 0;
+            _entries[lastIndex] = default;
+            _entryHandleCount = lastIndex;
+            if (_entryHandleCount == 0 || _deferredCleanupCursor >= _entryHandleCount)
+                _deferredCleanupCursor = 0;
+            else if (_deferredCleanupCursor > entryIndex)
+                _deferredCleanupCursor--;
         }
 
         private static void UpdateNativeEntry(int handle, Entry entry)
@@ -749,7 +803,8 @@ namespace Hecton8.World
                 return;
             }
 
-            _entries[handle] = entry;
+            if (!TrySetEntry(handle, in entry))
+                _nativeHash.Unregister(handle);
         }
 
         private static bool TryResolveEntryLogicPose(
@@ -767,7 +822,14 @@ namespace Hecton8.World
                     return false;
                 }
 
-                float3 runtime = positionAup.ToRuntimeFloat3();
+                AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+                if (!IsFiniteAup(in originAup))
+                {
+                    runtimePosition = default;
+                    return false;
+                }
+
+                float3 runtime = AUPMath.ResolveCameraRelative(in positionAup, in originAup);
                 runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
                 return IsFiniteRuntimePosition(runtimePosition);
             }
@@ -794,11 +856,11 @@ namespace Hecton8.World
             if (!IsFiniteAup(in originAup) || !math.isfinite(radius) || radius <= 0f || kindMask == SpatialTargetKind.None)
                 return 0;
 
-            if (_nativeHash == null || _entries.Count == 0)
+            if (_nativeHash == null || _entryHandleCount == 0)
                 return 0;
 
             EnsureInitialized();
-            return _nativeHash.CollectSphere(originAup, radius, (int)kindMask, _queryHandles);
+            return CollectDenseCandidateHandles(kindMask);
         }
 
         private static int CollectAdjacentCandidateHandles(in AbsoluteUniversePosition originAup, SpatialTargetKind kindMask)
@@ -806,17 +868,45 @@ namespace Hecton8.World
             if (!IsFiniteAup(in originAup) || kindMask == SpatialTargetKind.None)
                 return 0;
 
-            if (_nativeHash == null || _entries.Count == 0)
+            if (_nativeHash == null || _entryHandleCount == 0)
                 return 0;
 
             EnsureInitialized();
-            return _nativeHash.CollectAdjacentCells(originAup, (int)kindMask, _queryHandles);
+            return CollectDenseCandidateHandles(kindMask);
+        }
+
+        private static int CollectDenseCandidateHandles(SpatialTargetKind kindMask)
+        {
+            int count = 0;
+            bool saturated = false;
+            for (int i = 0; i < _entryHandleCount; i++)
+            {
+                int handle = _entryHandles[i];
+                Entry entry = _entries[i];
+                if (handle <= 0)
+                    continue;
+
+                if ((entry.Kind & kindMask) == 0)
+                    continue;
+
+                if (count >= _queryHandles.Length)
+                {
+                    saturated = true;
+                    continue;
+                }
+
+                _queryHandles[count++] = handle;
+            }
+
+            _lastResultBufferSaturated |= saturated;
+            return count;
         }
 
         private static void ResetQueryTelemetry()
         {
             _lastResultBufferSaturated = false;
             _lastAdjacentRadiusClamped = false;
+            _lastStaleHandleObserved = false;
             if (_nativeHash != null)
                 _nativeHash.ClearLastQueryStats();
         }

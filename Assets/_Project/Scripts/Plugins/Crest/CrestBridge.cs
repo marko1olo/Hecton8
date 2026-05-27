@@ -45,6 +45,9 @@ namespace Hecton8.Physics
             if (camera == null)
                 return null;
 
+            if (IsCachedUnderwaterRendererForCamera(camera))
+                return _cachedUnderwaterRenderer;
+
             global::Crest.UnderwaterRenderer underwaterRenderer = camera.GetComponent<global::Crest.UnderwaterRenderer>();
             if (underwaterRenderer != null)
             {
@@ -80,7 +83,7 @@ namespace Hecton8.Physics
         public void SetCopyOceanMaterialParamsEachFrame(Component renderer, bool enabled)
         {
             global::Crest.UnderwaterRenderer underwaterRenderer = renderer as global::Crest.UnderwaterRenderer;
-            if (underwaterRenderer == null)
+            if (underwaterRenderer == null || underwaterRenderer._copyOceanMaterialParamsEachFrame == enabled)
                 return;
 
             underwaterRenderer._copyOceanMaterialParamsEachFrame = enabled;

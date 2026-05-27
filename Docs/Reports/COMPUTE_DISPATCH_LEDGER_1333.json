@@ -1,0 +1,1226 @@
+﻿[
+    {
+        "dispatch_count":  2,
+        "dispatches":  [
+                           {
+                               "expression":  "compute.Dispatch(cullingParams.ClearArgsKernel, 1, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3545
+                           },
+                           {
+                               "expression":  "compute.Dispatch(cullingParams.CullKernel, groups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3570
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+        "sha256":  "84b779e0a98a0bc9092fa06e5e1c98109763dfca1ad6b44aab2449139f1148a2"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "waveHeightSamplerCompute.Dispatch(_waveSamplerKernel, groupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1324
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+        "sha256":  "d5f0e5424a7921b63880efb40a866e6372b4769344a9cf0bf4aae5c0f04de9d4"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "s_PhantomDronesCompute.Dispatch( s_PhantomDroneKernel, CeilDividePositive(PhantomDroneCount, s_PhantomDroneThreadGroupSizeX), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  6458
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+        "sha256":  "04256e0012134c1bdc1446a84ed09b7cea7b6f9992b02bd7dfce0ae34203db97"
+    },
+    {
+        "dispatch_count":  2,
+        "dispatches":  [
+                           {
+                               "expression":  "cmd.DispatchCompute(compute, kernel, CeilDividePositive(tileWidth, threadGroupSizeX), CeilDividePositive(tileHeight, threadGroupSizeY), 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  513
+                           },
+                           {
+                               "expression":  "cmd.DispatchCompute(compute, kernel, CeilDividePositive(atlasSize, threadGroupSizeX), CeilDividePositive(atlasSize, threadGroupSizeY), 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  541
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs",
+        "sha256":  "8fd8a4e7898142b6bcc80bf67e1a395abc2159ddcc72ffcd0dd24f8c98c95b4b"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "_activeComputeShader.Dispatch(_kernel, dispatchGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  255
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Graphics/Culling/InstanceCullingService.cs",
+        "sha256":  "628c452a2b1f902fe8a40a3127b04c5f92e0fadb9e0704977852104f2b12fc71"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "shader.Dispatch(kernel, LastDispatchGroupsX, LastDispatchGroupsY, LastDispatchGroupsZ);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1034
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+        "sha256":  "79c80ec61c5fac50f2b26f6ab13faa57330460edc83a9f6c2dff038c62ac2310"
+    },
+    {
+        "dispatch_count":  5,
+        "dispatches":  [
+                           {
+                               "expression":  "boidShader.Dispatch(_kernelCSMain, _dispatchGroupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  623
+                           },
+                           {
+                               "expression":  "boidShader.Dispatch(_kernelClearSpatialGrid, _clearSpatialGridGroupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1335
+                           },
+                           {
+                               "expression":  "boidShader.Dispatch(_kernelBuildSpatialGrid, _dispatchGroupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1336
+                           },
+                           {
+                               "expression":  "boidShader.Dispatch(_kernelClearVisibleIndirectArgs, 1, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1370
+                           },
+                           {
+                               "expression":  "boidShader.Dispatch(_kernelCullVisibleBoids, _dispatchGroupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1371
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/HectonBoidController.cs",
+        "sha256":  "ba8d720a0fa6cffeadb337326ba410dfca2b180ddb206b84bb59bc7715f84e64"
+    },
+    {
+        "dispatch_count":  3,
+        "dispatches":  [
+                           {
+                               "expression":  "firmamentBakeCompute.Dispatch( _firmamentClearKernel, CeilDividePositive(starResolution, _firmamentClearThreadGroupSizeX), CeilDividePositive(starResolution, _firmamentClearThreadGroupSizeY), 6);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3417
+                           },
+                           {
+                               "expression":  "firmamentBakeCompute.Dispatch( _firmamentStarKernel, CeilDividePositive(FirmamentStartupStarCount, _firmamentStarThreadGroupSizeX), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3422
+                           },
+                           {
+                               "expression":  "firmamentBakeCompute.Dispatch( _firmamentAtmosphereKernel, CeilDividePositive(atmosphereWidth, _firmamentAtmosphereThreadGroupSizeX), CeilDividePositive(atmosphereHeight, _firmamentAtmosphereThreadGroupSizeY), 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3439
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+        "sha256":  "6c793731ef28024cd0369f5629eb99201c6e38d92c0f827a9312f59638ba7d74"
+    },
+    {
+        "dispatch_count":  5,
+        "dispatches":  [
+                           {
+                               "expression":  "abyssalFlowFieldCompute.Dispatch(_gpuAbyssalUpdateKernel, groupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  7234
+                           },
+                           {
+                               "expression":  "abyssalFlowFieldCompute.Dispatch(_gpuAbyssalTextureUpdateKernel, textureGroupCountX, textureGroupCountY, textureGroupCountZ);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  7241
+                           },
+                           {
+                               "expression":  "abyssalFlowFieldCompute.Dispatch(_gpuAbyssalWakeKernel, wakeGroupCountX, wakeGroupCountY, wakeGroupCountZ);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  7251
+                           },
+                           {
+                               "expression":  "abyssalFlowFieldCompute.Dispatch(_gpuAbyssalVortexKernel, textureGroupCountX, textureGroupCountY, textureGroupCountZ);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  7429
+                           },
+                           {
+                               "expression":  "gpuBuoyancyCompute.Dispatch(_gpuBuoyancyKernel, groupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  7872
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/HectonFluidEngine.cs",
+        "sha256":  "b66257158f354287f741a8a2143ca064387c54f54fc462af5bd48d51c3504274"
+    },
+    {
+        "dispatch_count":  2,
+        "dispatches":  [
+                           {
+                               "expression":  "hudFogLuminanceCompute.Dispatch(_hudFogLuminanceKernel, 1, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  5558
+                           },
+                           {
+                               "expression":  "photophobiaFieldCompute.Dispatch(_photophobiaFieldKernel, groups, groups, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  5772
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+        "sha256":  "8e13568e6a4f9a2799dc030c05c45687885c4c0c4293a9e94175b82480c5cfb9"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "waveHeightSamplerCompute.Dispatch(_kernelIndex, groups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  579
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+        "sha256":  "2f0f102d3d08f8920f4f51ea07341c415625d928a53543a59085c2d03192c207"
+    },
+    {
+        "dispatch_count":  4,
+        "dispatches":  [
+                           {
+                               "expression":  "cmd.DispatchCompute(data.ComputeShader, data.KernelIndex, data.DispatchX, data.DispatchY, data.DispatchZ);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  463
+                           },
+                           {
+                               "expression":  "cmd.DispatchCompute(data.ComputeShader, data.KernelIndex, data.DispatchX, data.DispatchY, data.DispatchZ);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  493
+                           },
+                           {
+                               "expression":  "cmd.DispatchCompute(data.ComputeShader, data.KernelIndex, data.DispatchX, data.DispatchY, data.DispatchZ);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  535
+                           },
+                           {
+                               "expression":  "cmd.DispatchCompute(data.ComputeShader, data.KernelIndex, data.DispatchX, data.DispatchY, data.DispatchZ);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  644
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerFeature.cs",
+        "sha256":  "b3adb9ed366df5bfd5c0c8df82f52a946d5017544a4ebffef3ed519823bbd4a6"
+    },
+    {
+        "dispatch_count":  2,
+        "dispatches":  [
+                           {
+                               "expression":  "cmd.DispatchCompute(data.Compute, data.ClearKernel, data.ClearDispatchX, data.ClearDispatchY, data.DispatchZ);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  272
+                           },
+                           {
+                               "expression":  "cmd.DispatchCompute(data.Compute, data.AccumulateKernel, data.AccumulateDispatchX, data.AccumulateDispatchY, data.DispatchZ);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  283
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Rendering/OceanSinglePass/HectonSinglePassOceanFeature.cs",
+        "sha256":  "aa4179eeefb4b3556bcc53772965c720dba9128d32386a0648b3e74770cd0437"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "scatterCullCompute.Dispatch(_scatterCullKernel, math.max(1, (activeCount + threadGroupSizeX - 1) / threadGroupSizeX), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1330
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs",
+        "sha256":  "948601df6b339d0149bdc0a2506b47674e6ab8b0db2f5a2a111d376e5b61c391"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "leakPlumeCompute.Dispatch(_leakPlumeKernelIndex, dispatchGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1736
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+        "sha256":  "2f3e24441e55f916e6dc12d00ec95ab1e1afd18ce13658cfe2d3faed899f23d9"
+    },
+    {
+        "dispatch_count":  2,
+        "dispatches":  [
+                           {
+                               "expression":  "sonarMapCompute.Dispatch(_sonarClearArgsKernel, 1, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1092
+                           },
+                           {
+                               "expression":  "sonarMapCompute.Dispatch(_sonarBuildMapPointsKernel, groupsX, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1099
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/UI/PDAMapTab.cs",
+        "sha256":  "52082abcab5a500b06a787bf792e4d5328f0ca8ce139b154547a0cb6dbff06ae"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "terminalBlitCompute.Dispatch(_blitKernel, _groupsX, _groupsY, dirtyCount);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2028
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+        "sha256":  "e64a724e3d86c251d9b11dda0ce9171f7a38530fc4da6e4612be72968b591a96"
+    },
+    {
+        "dispatch_count":  2,
+        "dispatches":  [
+                           {
+                               "expression":  "radarCompute.Dispatch(_radarKernel, radarDispatchGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2017
+                           },
+                           {
+                               "expression":  "damageHologramCompute.Dispatch(_damageHologramKernel, damageDispatchGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2385
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+        "sha256":  "b4999165323dd1e9afcaf98e098d1a5e253f777885195a5441e51f89b2a65a9a"
+    },
+    {
+        "dispatch_count":  3,
+        "dispatches":  [
+                           {
+                               "expression":  "fluidAdvectionCompute.Dispatch(_clearArgsKernel, 1, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1046
+                           },
+                           {
+                               "expression":  "fluidAdvectionCompute.Dispatch(_advectKernel, dispatchGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1052
+                           },
+                           {
+                               "expression":  "fluidAdvectionCompute.Dispatch(_cullKernel, dispatchGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1057
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
+        "sha256":  "b2aba481b4ff41e00153d1634faeca9b35f9b98424294a5812bd484736546e46"
+    },
+    {
+        "dispatch_count":  3,
+        "dispatches":  [
+                           {
+                               "expression":  "marineSnowCompute.Dispatch(_clearVisibleKernel, 1, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3520
+                           },
+                           {
+                               "expression":  "marineSnowCompute.Dispatch(kernelIndex, groupsThisDispatch, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3727
+                           },
+                           {
+                               "expression":  "marineSnowCompute.Dispatch(kernelIndex, groupsXThisDispatch, groupsYThisDispatch, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3755
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+        "sha256":  "0b1a4f165e118a090c5eb6ce96e4190c260197768507bcab35d6c117e68639d5"
+    },
+    {
+        "dispatch_count":  3,
+        "dispatches":  [
+                           {
+                               "expression":  "context.cmd.DispatchCompute(payloadData.Compute, payloadData.ClearKernel, payloadData.DispatchGroupsX, payloadData.DispatchGroupsY, 1);",
+                               "external_payload_sizing":  true,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  119
+                           },
+                           {
+                               "expression":  "context.cmd.DispatchCompute(payloadData.Compute, payloadData.CalculateKernel, payloadData.DispatchGroupsX, payloadData.DispatchGroupsY, 1);",
+                               "external_payload_sizing":  true,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  123
+                           },
+                           {
+                               "expression":  "context.cmd.DispatchCompute(payloadData.Compute, payloadData.AdvectKernel, payloadData.DispatchGroupsX, payloadData.DispatchGroupsY, 1);",
+                               "external_payload_sizing":  true,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  147
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  true,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/VFX/JacobianFoam/HectonJacobianFoamRenderFeature.cs",
+        "sha256":  "4796dd46f7a1c2867e9c9a2188e6fbd0fdf4c6dd5c3217e4c3e14b125959db29"
+    },
+    {
+        "dispatch_count":  6,
+        "dispatches":  [
+                           {
+                               "expression":  "_commandBuffer.DispatchCompute(parasiteCompute, _initKernel, groups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  439
+                           },
+                           {
+                               "expression":  "_commandBuffer.DispatchCompute(parasiteCompute, _initKernel, groups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  441
+                           },
+                           {
+                               "expression":  "_commandBuffer.DispatchCompute(parasiteCompute, _clearArgsKernel, 1, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  770
+                           },
+                           {
+                               "expression":  "_commandBuffer.DispatchCompute(parasiteCompute, _rebaseKernel, rebaseGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  796
+                           },
+                           {
+                               "expression":  "_commandBuffer.DispatchCompute(parasiteCompute, _advectKernel, advectGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  809
+                           },
+                           {
+                               "expression":  "_commandBuffer.DispatchCompute(parasiteCompute, _cullKernel, cullGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  815
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmGpuRuntime.cs",
+        "sha256":  "1906e753b4d5fad077b17a93c480b3e35d3a81d153e937cb0889ae2bd903fd9d"
+    },
+    {
+        "dispatch_count":  2,
+        "dispatches":  [
+                           {
+                               "expression":  "cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  185
+                           },
+                           {
+                               "expression":  "cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  229
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Visor/HectonBiolumSSGIFeature.cs",
+        "sha256":  "ec7baca3d553991035c1e8f72e089b12976fcbd50ccac0059151acc337fda696"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "context.cmd.DispatchCompute( data.Payload.Compute, data.Payload.Kernel, data.Payload.DispatchGroups, 1, 1);",
+                               "external_payload_sizing":  true,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  91
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  true,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs",
+        "sha256":  "27c849582bd0e6388b33eaf661d07e217844600b86728b49432d17de141ada56"
+    },
+    {
+        "dispatch_count":  3,
+        "dispatches":  [
+                           {
+                               "expression":  "context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, 1, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  395
+                           },
+                           {
+                               "expression":  "context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, data.dispatchX, data.dispatchY, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  420
+                           },
+                           {
+                               "expression":  "context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, 1, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  447
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Visor/HectonScooterVolumetricShaftsFeature.cs",
+        "sha256":  "aca10fcb0512615ce9612d17fbd9c0d3b3102366deac0e5c8340d22a1748c70d"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "cmd.DispatchCompute(data.ComputeShader, data.KernelIndex, data.DispatchX, data.DispatchY, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  629
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+        "sha256":  "74d9c00821cb17ad6378d8028777d005fc3a2efa594c1c75d27879d2d71eb0a6"
+    },
+    {
+        "dispatch_count":  2,
+        "dispatches":  [
+                           {
+                               "expression":  "context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, Mathf.Max(1, dispatchZ));",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  850
+                           },
+                           {
+                               "expression":  "context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, Mathf.Max(1, data.activeViewCount));",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  892
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs",
+        "sha256":  "383cdabffde93403b8cb601f468485a146bbed0ec594d3c656c67cb31cdbf0bb"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "cmd.DispatchCompute(data.computeShader, data.kernelIndex, data.dispatchX, data.dispatchY, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  149
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs",
+        "sha256":  "c4e0a7a7d74668094472e5313de27c3b3270eedb808f4951828ee5737a6e7be9"
+    },
+    {
+        "dispatch_count":  2,
+        "dispatches":  [
+                           {
+                               "expression":  "context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  365
+                           },
+                           {
+                               "expression":  "context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  411
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs",
+        "sha256":  "98addbdbf3155173351dd13fefc8d7bbd2827b94336947d7e6e12e1c838daf52"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "blackSmokeCompute.Dispatch(_kernelIndex, _dispatchGroupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3963
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "sha256":  "7d919c129a500f05afd9d0e27a935e998018991fa529ed045d64f3b226361c49"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "biolumDiffusionCompute.Dispatch(kernelIndex, dispatchX, dispatchY, dispatchZ);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  607
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/World/Biolum/HectonBiolumDiffusionVolume.cs",
+        "sha256":  "5cbeb33b94a427a39f351397fd1f9fe7de60ec36d0b3aa0f5933ced403a7451e"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "_wakeTrailSimulationCompute.Dispatch(_wakeTrailSimulationKernel, groupCountX, groupCountY, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  8113
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+        "sha256":  "c27669575942855e4383a469c22ea91923d7d0052d43a8c32f9a2f681713931e"
+    },
+    {
+        "dispatch_count":  5,
+        "dispatches":  [
+                           {
+                               "expression":  "scatterCompute.Dispatch(_clearDensityKernel, clearDensityGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  562
+                           },
+                           {
+                               "expression":  "scatterCompute.Dispatch(_generateKernel, generateGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  621
+                           },
+                           {
+                               "expression":  "scatterCompute.Dispatch(_compactKernel, compactGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  630
+                           },
+                           {
+                               "expression":  "depthPyramidCompute.Dispatch( _depthPyramidCopyKernel, CeilDividePositive(_depthPyramidWidth, _depthPyramidCopyThreadGroupSizeX), CeilDividePositive(_depthPyramidHeight, _depthPyramidCopyThreadGroupSizeY), 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1486
+                           },
+                           {
+                               "expression":  "depthPyramidCompute.Dispatch( _depthPyramidDownsampleKernel, CeilDividePositive(mipWidth, _depthPyramidDownsampleThreadGroupSizeX), CeilDividePositive(mipHeight, _depthPyramidDownsampleThreadGroupSizeY), 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1498
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+        "sha256":  "d9314f3a14da1eb3490a73b2c9d2072dfb46c2126034dd8fb0c971e7d87a63cb"
+    },
+    {
+        "dispatch_count":  7,
+        "dispatches":  [
+                           {
+                               "expression":  "_cullingCompute.Dispatch(_cullFloraKernel, dispatchGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2572
+                           },
+                           {
+                               "expression":  "_cullingCompute.Dispatch(_cullFloraShadowKernel, shadowDispatchGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2599
+                           },
+                           {
+                               "expression":  "_abyssalFlowFieldCompute.Dispatch(_clearFloraSnapFlagsKernel, clearGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2638
+                           },
+                           {
+                               "expression":  "_abyssalFlowFieldCompute.Dispatch(_flagSnappedFloraKernel, flagGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2660
+                           },
+                           {
+                               "expression":  "_depthPyramidCompute.Dispatch( _depthPyramidCopyKernel, CeilDividePositive(_depthPyramidWidth, _depthPyramidCopyThreadGroupSizeX), CeilDividePositive(_depthPyramidHeight, _depthPyramidCopyThreadGroupSizeY), 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2714
+                           },
+                           {
+                               "expression":  "_depthPyramidCompute.Dispatch( _depthPyramidDownsampleKernel, CeilDividePositive(mipWidth, _depthPyramidDownsampleThreadGroupSizeX), CeilDividePositive(mipHeight, _depthPyramidDownsampleThreadGroupSizeY), 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2726
+                           },
+                           {
+                               "expression":  "_cullingCompute.Dispatch(_clearIndirectArgsKernel, clearGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3542
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+        "sha256":  "0a5f7cb492e2d9c37d13e007f863f1c21a26b9e5a8bf06ee1ef039e0391e3e33"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "_facadeBakeCompute.Dispatch(_facadeBakeKernel, groupCountX, groupCountY, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  390
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/World/SargassumCrestDampingController.cs",
+        "sha256":  "a85e7ab383865b89ddc4026e0ab39d48624c7f676d5e9a1e9f61d63615b7301f"
+    },
+    {
+        "dispatch_count":  2,
+        "dispatches":  [
+                           {
+                               "expression":  "_stampCompute.Dispatch(_stampKernel, groupCountX, groupCountY, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1624
+                           },
+                           {
+                               "expression":  "_damageVolumeCompute.Dispatch(_damageVolumeKernel, groupCountX, groupCountY, groupCountZ);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  1819
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/World/SargassumCutManager.cs",
+        "sha256":  "8bace2fc7b8f1d75a2a5bf7fb9bf120e4f70693c185968f1ea2ea744b203ec97"
+    },
+    {
+        "dispatch_count":  8,
+        "dispatches":  [
+                           {
+                               "expression":  "boidCompute.Dispatch(_buildSpatialGridKernelIndex, _dispatchGroupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2182
+                           },
+                           {
+                               "expression":  "boidCompute.Dispatch(_pbdSolveKernelIndex, _dispatchGroupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2183
+                           },
+                           {
+                               "expression":  "boidCompute.Dispatch(_kernelIndex, _dispatchGroupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2186
+                           },
+                           {
+                               "expression":  "boidCompute.Dispatch(_clearStatsKernelIndex, 1, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  6884
+                           },
+                           {
+                               "expression":  "boidCompute.Dispatch(_clearSpatialGridKernelIndex, _clearSpatialGridDispatchGroupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  6928
+                           },
+                           {
+                               "expression":  "boidCompute.Dispatch(_clearPbdCorrectionsKernelIndex, _dispatchGroupCount, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  6936
+                           },
+                           {
+                               "expression":  "boidCompute.Dispatch(_applyOriginShiftKernelIndex, dispatchGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  8278
+                           },
+                           {
+                               "expression":  "boidCompute.Dispatch(_applyOriginShiftKernelIndex, dispatchGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  8281
+                           }
+                       ],
+        "file_has_thread_group_query":  true,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "first_party",
+        "path":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+        "sha256":  "b1ac33366847edb87559f0e9a109a19d5f98efa52c216197a688fbcb5434f87d"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "_shaderProcessQueries.Dispatch(_kernelHandle, numGroups, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  495
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "vendor",
+        "path":  "Assets/Crest/Crest/Scripts/Collision/QueryBase.cs",
+        "sha256":  "1315481773b53af81345b49b0a918f6e90cf08a6bee4e3fe4c005913eae7eae7"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "s_clearToBlackShader.Dispatch( krnl_ClearToBlack, OceanRenderer.Instance.LodDataResolution / LodDataMgr.THREAD_GROUP_SIZE_X, OceanRenderer.Instance.LodDataResolution / LodDataMgr.THREAD_GROUP_SIZE_Y, dst.volumeDepth );",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  57
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "vendor",
+        "path":  "Assets/Crest/Crest/Scripts/Helpers/TextureArrayHelpers.cs",
+        "sha256":  "532593106384fc7e1d6dd91d5ed55d0460c4642cd7ddae0211080031f5a16300"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "buf.DispatchCompute(_combineShader, selectedShaderKernel, OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_X, OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_Y, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  411
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "vendor",
+        "path":  "Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs",
+        "sha256":  "5fb637b6f0fc196a07bee9956892c9de2ba692038241698f5927ddb0509eb47d"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "buf.DispatchCompute(_shader, krnl_ShaderSim, OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_X, OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_Y, OceanRenderer.Instance.CurrentLodCount);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  175
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "vendor",
+        "path":  "Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs",
+        "sha256":  "e2ea0e403ee4e562922ddc6e1343aa008634a28e37c0e6eeda4e0a4ffe3f125d"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "buf.DispatchCompute(waveCombineShader, kernel, bakedWaves.width / 8, bakedWaves.height / 8, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  109
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "vendor",
+        "path":  "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTBaker.cs",
+        "sha256":  "d82a2d8c307c80a703a0502e0a1edd34e391d4667fea067d32ea81eba3d4112c"
+    },
+    {
+        "dispatch_count":  4,
+        "dispatches":  [
+                           {
+                               "expression":  "buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, _resolution / 8, _resolution / 8, CASCADE_COUNT);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  408
+                           },
+                           {
+                               "expression":  "buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, _resolution / 8, _resolution / 8, CASCADE_COUNT);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  426
+                           },
+                           {
+                               "expression":  "buf.DispatchCompute(_shaderFFT, kernelOffset, 1, _resolution, CASCADE_COUNT);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  443
+                           },
+                           {
+                               "expression":  "buf.DispatchCompute(_shaderFFT, kernelOffset + 1, _resolution, 1, CASCADE_COUNT);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  450
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "vendor",
+        "path":  "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
+        "sha256":  "7178ea5f34a9ed9edea54f66d53556cd542f6ec5ec7804760c7a40964557603d"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "buf.DispatchCompute(_shaderGerstner, _krnlGerstner, _waveBuffers.width / LodDataMgr.THREAD_GROUP_SIZE_X, _waveBuffers.height / LodDataMgr.THREAD_GROUP_SIZE_Y, _lastCascade - _firstCascade + 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  364
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "vendor",
+        "path":  "Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs",
+        "sha256":  "63a7c1dce7686fd4257cc1a4842242cb4b3a0a48165d87d3e76192dc43ca91f6"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "_argsBufferComputeShader.Dispatch(_argsBufferDoubleInstanceCountComputeKernelID, Mathf.CeilToInt(count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  637
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "vendor",
+        "path":  "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs",
+        "sha256":  "81708f30bf57fe8f8dafb59215d9f7042cbe58ac025c649f7e9431752c5c35c4"
+    },
+    {
+        "dispatch_count":  20,
+        "dispatches":  [
+                           {
+                               "expression":  "cameraComputeShader.Dispatch(instanceVisibilityComputeKernelId, Mathf.CeilToInt(runtimeData.instanceCount / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  573
+                           },
+                           {
+                               "expression":  "visibilityComputeShader.Dispatch(instanceVisibilityComputeKernelId, Mathf.CeilToInt(runtimeData.instanceCount / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  611
+                           },
+                           {
+                               "expression":  "bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, Mathf.CeilToInt(runtimeData.bufferSize / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  706
+                           },
+                           {
+                               "expression":  "bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, Mathf.CeilToInt(runtimeData.bufferSize / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  717
+                           },
+                           {
+                               "expression":  "bufferToTextureComputeShader.Dispatch(bufferToTextureCrossFadeKernelID, Mathf.CeilToInt(runtimeData.bufferSize / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  727
+                           },
+                           {
+                               "expression":  "dilationCompute.Dispatch(dilationKernel, Mathf.CeilToInt(billboardTexture.width / (GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D * frameCount)), Mathf.CeilToInt(billboardTexture.height / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D), frameCount);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  2086
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataSingleKernelId, 1, 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3319
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, Mathf.CeilToInt(count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3350
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, Mathf.CeilToInt(count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3362
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, Mathf.CeilToInt(computeBuffer.count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3375
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, Mathf.CeilToInt(bufferToMerge.count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3382
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferTransformOffsetId, Mathf.CeilToInt(runtimeData.bufferSize / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3424
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferMatrixOffsetId, Mathf.CeilToInt(runtimeData.bufferSize / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3460
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideBoundsId, Mathf.CeilToInt(instanceDataBuffer.count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3481
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideBoxId, Mathf.CeilToInt(instanceDataBuffer.count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3507
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideSphereId, Mathf.CeilToInt(instanceDataBuffer.count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3527
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideCapsuleId, Mathf.CeilToInt(instanceDataBuffer.count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3568
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsCopyTextureId, Mathf.CeilToInt(source.width / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D), Mathf.CeilToInt(source.height / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D), 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3703
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeTextureUtils.Dispatch(2, Mathf.CeilToInt(source.width / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D), Mathf.CeilToInt(source.height / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D), 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3719
+                           },
+                           {
+                               "expression":  "GPUInstancerConstants.computeTextureUtils.Dispatch(1, Mathf.CeilToInt(destinationW / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D), Mathf.CeilToInt(destinationH / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D), 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  3750
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "vendor",
+        "path":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+        "sha256":  "66a3c5d40febf37f3c79d47a7d730e6dc46d2fc5853ea2f92a40b304d3ced99d"
+    },
+    {
+        "dispatch_count":  2,
+        "dispatches":  [
+                           {
+                               "expression":  "GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferTransformOffsetId, Mathf.CeilToInt(detailBuffer.count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  378
+                           },
+                           {
+                               "expression":  "grassComputeShader.Dispatch(grassInstantiationComputeKernelId, Mathf.CeilToInt(detailAndHeightMapSize.x / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D), 1, Mathf.CeilToInt(detailAndHeightMapSize.y / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D));",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  584
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "vendor",
+        "path":  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs",
+        "sha256":  "d691bb87324f9559bd146326f7d19b8aa33a55daaa5d0729b68bd10a35ca83db"
+    },
+    {
+        "dispatch_count":  1,
+        "dispatches":  [
+                           {
+                               "expression":  "_treeInstantiationComputeShader.Dispatch(0, Mathf.CeilToInt(instanceTotal / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);",
+                               "external_payload_sizing":  false,
+                               "hardcoded_sizing_evidence":  false,
+                               "line":  264
+                           }
+                       ],
+        "file_has_thread_group_query":  false,
+        "file_uses_external_payload_sizing":  false,
+        "owner":  "vendor",
+        "path":  "Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs",
+        "sha256":  "7a488b4b410a70bb434d71866c37988ee76734eccc3299e0e989b75ee3b6f2ad"
+    }
+]

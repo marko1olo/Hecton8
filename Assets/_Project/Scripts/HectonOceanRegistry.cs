@@ -19,7 +19,8 @@ namespace Hecton8.Physics
                 if (service != null)
                     return service.ActiveProvider;
 
-                return OceanKinematicsRuntimeService.EnsureRuntimeInstance().ActiveProvider;
+                OceanKinematicsRuntimeService runtime = GlobalRegistry.OceanKinematicsRuntime;
+                return runtime != null ? runtime.ActiveProvider : null;
             }
         }
 

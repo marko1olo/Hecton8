@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -21,7 +22,7 @@ namespace Hecton8.SaveSystem
 {
     internal static unsafe class AsyncWriteManager
     {
-        internal struct ReadOnlyMapping
+        internal ref struct ReadOnlyMapping
         {
             public NativeArray<byte> Bytes;
             public IntPtr View;
@@ -91,14 +92,13 @@ namespace Hecton8.SaveSystem
         private struct CachedReadWindow
         {
             public string AbsolutePath;
-            public NativeArray<byte> Bytes;
-            public byte* ViewPointer;
+            public byte[] Bytes;
             public long WindowOffset;
             public long WindowLength;
             public long FileLength;
             public int LastUse;
 
-            public bool IsCreated => Bytes.IsCreated;
+            public bool IsCreated => Bytes != null;
         }
 
         internal static bool TryEnableSparseFile(FileStream fileStream)
@@ -219,11 +219,23 @@ namespace Hecton8.SaveSystem
                         return false;
                     }
 
-                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationBytes + destinationCursor, byteCount - destinationCursor, window.ViewPointer + (int)sourceOffset, chunkBytes))
+                    byte[] windowBytes = window.Bytes;
+                    if (windowBytes == null ||
+                        sourceOffset > windowBytes.Length ||
+                        chunkBytes > windowBytes.Length - (int)sourceOffset)
                     {
-                        error = "Cached file read copy exceeded destination bounds.";
-                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
+                        error = "Cached file read window byte span is invalid.";
                         return false;
+                    }
+
+                    fixed (byte* windowPtr = windowBytes)
+                    {
+                        if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationBytes + destinationCursor, byteCount - destinationCursor, windowPtr + (int)sourceOffset, chunkBytes))
+                        {
+                            error = "Cached file read copy exceeded destination bounds.";
+                            UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
+                            return false;
+                        }
                     }
 
                     sourceCursor += chunkBytes;
@@ -303,11 +315,23 @@ namespace Hecton8.SaveSystem
                             return false;
                         }
 
-                        if (!UnsafeMemoryCopyGuard.TryMemCpy((byte*)destinationPtr + destinationCursor, destinationBytes - destinationCursor, window.ViewPointer + (int)sourceOffset, chunkBytesLong))
+                        byte[] windowBytes = window.Bytes;
+                        if (windowBytes == null ||
+                            sourceOffset > windowBytes.Length ||
+                            chunkBytesLong > windowBytes.Length - sourceOffset)
                         {
-                            error = "Cached file GPU upload copy exceeded destination bounds.";
-                            UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
+                            error = "Cached file GPU upload byte span is invalid.";
                             return false;
+                        }
+
+                        fixed (byte* windowPtr = windowBytes)
+                        {
+                            if (!UnsafeMemoryCopyGuard.TryMemCpy((byte*)destinationPtr + destinationCursor, destinationBytes - destinationCursor, windowPtr + (int)sourceOffset, chunkBytesLong))
+                            {
+                                error = "Cached file GPU upload copy exceeded destination bounds.";
+                                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
+                                return false;
+                            }
                         }
 
                         sourceCursor += chunkBytesLong;
@@ -581,28 +605,30 @@ namespace Hecton8.SaveSystem
             }
 
             FileStream fileStream = null;
-            NativeArray<byte> windowBytes = default;
+            byte[] windowBytes = null;
+            bool transferredWindowBytes = false;
             try
             {
                 fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 4096, FileOptions.RandomAccess);
-                // COLD ALLOC: NativeArray<byte>[windowLength] - portable cached save read window - owner: AsyncWriteManager
-                windowBytes = new NativeArray<byte>((int)windowLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                byte* windowPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(windowBytes);
-                if (!TryReadFileRangeToNativeBuffer(fileStream, windowOffset, windowPtr, (int)windowLength, out error))
-                    return false;
+                // COLD POOL: byte[windowLength] - portable cached save read window - owner: AsyncWriteManager
+                windowBytes = ArrayPool<byte>.Shared.Rent((int)windowLength);
+                fixed (byte* windowPtr = windowBytes)
+                {
+                    if (!TryReadFileRangeToNativeBuffer(fileStream, windowOffset, windowPtr, (int)windowLength, out error))
+                        return false;
+                }
 
                 window = new CachedReadWindow
                 {
                     AbsolutePath = absolutePath,
                     Bytes = windowBytes,
-                    ViewPointer = windowPtr,
                     WindowOffset = windowOffset,
                     WindowLength = windowLength,
                     FileLength = fileLength,
                     LastUse = 0
                 };
 
-                windowBytes = default;
+                transferredWindowBytes = true;
                 return true;
             }
             catch (Exception ex)
@@ -612,8 +638,8 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (windowBytes.IsCreated)
-                    windowBytes.Dispose();
+                if (!transferredWindowBytes && windowBytes != null)
+                    ArrayPool<byte>.Shared.Return(windowBytes, clearArray: false);
 
                 fileStream?.Dispose();
             }
@@ -712,8 +738,8 @@ namespace Hecton8.SaveSystem
 
         private static void DisposeCachedReadWindow(ref CachedReadWindow window)
         {
-            if (window.Bytes.IsCreated)
-                window.Bytes.Dispose();
+            if (window.Bytes != null)
+                ArrayPool<byte>.Shared.Return(window.Bytes, clearArray: false);
 
             window = default;
         }
@@ -1238,10 +1264,11 @@ namespace Hecton8.SaveSystem
             [FieldOffset(28)] public int Reserved1;
         }
 
-        private struct IndexedSectorGroupBuffer : IDisposable
+        private ref struct IndexedSectorGroupBuffer
         {
             public NativeList<IndexedSectorGroup> Groups;
             public NativeList<PersistentWorldDeltaRecord> Records;
+            public int InvalidRecordCount;
 
             public int Count => Groups.IsCreated ? Groups.Length : 0;
 
@@ -1273,7 +1300,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        internal struct IndexedSectorEntityStateWriteHandle
+        internal ref struct IndexedSectorEntityStateWriteHandle
         {
             internal bool IsCreated;
             internal string AbsolutePath;
@@ -1424,16 +1451,7 @@ namespace Hecton8.SaveSystem
             public void Execute(int index)
             {
                 EntityDataRecord record = SourceStates[index];
-                AbsoluteUniversePositionBlit128 alignedPosition = record.Position;
-                AbsoluteUniversePosition position = new AbsoluteUniversePosition
-                {
-                    GridX = alignedPosition.GridX,
-                    GridY = alignedPosition.GridY,
-                    GridZ = alignedPosition.GridZ,
-                    LocalX = alignedPosition.Local.x,
-                    LocalY = alignedPosition.Local.y,
-                    LocalZ = alignedPosition.Local.z
-                };
+                AbsoluteUniversePosition position = AbsoluteUniversePosition.FromAlignedBlit(in record.Position);
 
                 Entries[index] = new SectorEntityStateSortEntry
                 {
@@ -1591,7 +1609,14 @@ namespace Hecton8.SaveSystem
             int3 chunkId,
             int chunkSizeMeters)
         {
-            double safeChunkSize = math.max(1, chunkSizeMeters);
+            if (chunkSizeMeters <= 0 ||
+                !position.IsFinite() ||
+                !AbsoluteUniversePosition.IsValidChunkId(chunkId))
+            {
+                return default;
+            }
+
+            double safeChunkSize = chunkSizeMeters;
             double halfChunkSize = safeChunkSize * 0.5d;
             double3 absolute = position.ToAbsoluteDouble3();
             double3 chunkCenter = new double3(
@@ -1613,7 +1638,10 @@ namespace Hecton8.SaveSystem
             int chunkSizeMeters,
             in QuantizedAupLocalOffsetShort3 packedOffset)
         {
-            double safeChunkSize = math.max(1, chunkSizeMeters);
+            if (chunkSizeMeters <= 0 || !AbsoluteUniversePosition.IsValidChunkId(chunkId))
+                return AbsoluteUniversePosition.Invalid();
+
+            double safeChunkSize = chunkSizeMeters;
             double halfChunkSize = safeChunkSize * 0.5d;
             double3 chunkCenter = new double3(
                 (chunkId.x * safeChunkSize) + halfChunkSize,
@@ -1659,13 +1687,19 @@ namespace Hecton8.SaveSystem
         private static uint PackCompactSectorPosition(in AbsoluteUniversePositionBlit128 alignedPosition, long sectorHash)
         {
             AbsoluteUniversePosition position = AbsoluteUniversePosition.FromAlignedBlit(in alignedPosition);
+            if (!position.IsFinite())
+                return 0u;
+
             double3 absolute = position.ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(absolute)))
+                return 0u;
+
             int2 sector = UnpackSectorHash(sectorHash);
             double sectorOriginX = (double)sector.x * PersistentWorldSectorEdgeLengthMeters;
             double sectorOriginZ = (double)sector.y * PersistentWorldSectorEdgeLengthMeters;
             float x01 = math.saturate((float)((absolute.x - sectorOriginX) / PersistentWorldSectorEdgeLengthMeters));
             float z01 = math.saturate((float)((absolute.z - sectorOriginZ) / PersistentWorldSectorEdgeLengthMeters));
-            float y01 = math.saturate(((float)absolute.y - SectorCompactDepthMinMeters) / (SectorCompactDepthMaxMeters - SectorCompactDepthMinMeters));
+            float y01 = math.saturate((float)((absolute.y - SectorCompactDepthMinMeters) / (SectorCompactDepthMaxMeters - SectorCompactDepthMinMeters)));
 
             uint x = (uint)math.round(x01 * SectorCompactAxisScale) & SectorCompactAxisMask;
             uint y = (uint)math.round(y01 * SectorCompactAxisScale) & SectorCompactAxisMask;
@@ -2107,6 +2141,30 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        internal static bool TryStageThermalGridRleDelta(
+            ThermalGridRleRun[] runs,
+            int runCount,
+            out int byteCount,
+            out uint checksum)
+        {
+            byteCount = 0;
+            checksum = 2166136261u;
+            if (runs == null || runCount < 0 || runCount > runs.Length)
+                return false;
+
+            int safeCount = math.min(runCount, runs.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                ThermalGridRleRun run = runs[i];
+                checksum = MixChecksum32(checksum, run.StartIndex);
+                checksum = MixChecksum32(checksum, run.Count);
+                checksum = MixChecksum32(checksum, math.asuint(run.TemperatureCelsius));
+            }
+
+            byteCount = checked(safeCount * UnsafeUtility.SizeOf<ThermalGridRleRun>());
+            return true;
+        }
+
         [StructLayout(LayoutKind.Explicit, Size = PayloadPrefixSizeBytes)]
         private struct PayloadPrefix
         {
@@ -2299,6 +2357,38 @@ namespace Hecton8.SaveSystem
             [FieldOffset(14)] public ushort ItemHashIndex;
         }
 
+        // Legacy v3/v4 file-format record only. Do not use in NativeArray/Burst/runtime DTO paths.
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        private struct PersistentWorldDeltaRecordLegacy64
+        {
+            [FieldOffset(0)] public int3 ChunkId;
+            [FieldOffset(12)] private uint _pad0;
+            [FieldOffset(16)] public ulong ItemPersistentIdHash;
+            [FieldOffset(24)] public uint InstanceUid;
+            [FieldOffset(28)] public uint PackedLocalPosition;
+            [FieldOffset(32)] public ushort Quantity;
+            [FieldOffset(34)] public byte ItemFlags;
+            [FieldOffset(35)] public byte Reserved;
+            [FieldOffset(36)] private uint _pad1;
+            [FieldOffset(40)] private ulong _pad2;
+            [FieldOffset(48)] private ulong _pad3;
+            [FieldOffset(56)] private ulong _pad4;
+
+            public PersistentWorldDeltaRecord ToRuntimeRecord()
+            {
+                return new PersistentWorldDeltaRecord
+                {
+                    ItemPersistentIdHash = ItemPersistentIdHash,
+                    ChunkId = ChunkId,
+                    InstanceUid = InstanceUid,
+                    PackedLocalPosition = PackedLocalPosition,
+                    Quantity = Quantity,
+                    ItemFlags = ItemFlags,
+                    Reserved = Reserved
+                };
+            }
+        }
+
         internal static void WarmRuntime()
         {
             byte value = 0;
@@ -2432,6 +2522,12 @@ namespace Hecton8.SaveSystem
             if (!TryReadUtf16String(rawPtr, rawPayloadLength, ref cursor, prefix.GameVersionByteLength, out string gameVersion, out error))
                 return false;
 
+            if (!TryToRuntimePosition(prefix.PlayerPosition, out Vector3 playerPosition))
+            {
+                error = "Save metadata contains an invalid player AUP position.";
+                return false;
+            }
+
             detectedVersion = prefix.SaveDataVersion;
             metadata = new SaveMetadata
             {
@@ -2440,7 +2536,7 @@ namespace Hecton8.SaveSystem
                 Timestamp = ToUtcTicks(header.TimestampUnixMs),
                 PlayTimeSeconds = prefix.PlayTimeSeconds,
                 SceneName = sceneName,
-                PlayerPosition = ToRuntimePosition(prefix.PlayerPosition),
+                PlayerPosition = playerPosition,
                 Checksum = FormatPayloadChecksum(in header)
             };
 
@@ -2486,6 +2582,12 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (chunkSizeMeters <= 0)
+            {
+                error = "Indexed persistent-world chunk size is invalid.";
+                return false;
+            }
+
             string sceneName = string.IsNullOrEmpty(metadata.SceneName) ? "Unknown" : metadata.SceneName;
             string gameVersion = string.IsNullOrEmpty(metadata.GameVersion) ? "Unknown" : metadata.GameVersion;
             int sceneBytesLength = checked(sceneName.Length * sizeof(char));
@@ -2513,12 +2615,18 @@ namespace Hecton8.SaveSystem
             if (!SaveBinaryPayloadCodec.TryWrite(data, AddByteOffset(rawPtr, metadataCursor), rawBuffer.Length - metadataCursor, out int saveDataByteLength, out error))
                 return false;
 
+            if (!TryResolveAupFromRuntimeOrigin(metadata.PlayerPosition, out AbsoluteUniversePosition playerAup))
+            {
+                error = "Save metadata contains an invalid runtime player position.";
+                return false;
+            }
+
             ulong timestampUnixMs = ToUnixMilliseconds(metadata.Timestamp);
             PayloadPrefix prefix = new PayloadPrefix
             {
                 TimestampUnixMs = timestampUnixMs,
                 PlayTimeSeconds = metadata.PlayTimeSeconds,
-                PlayerPosition = ToAup(metadata.PlayerPosition),
+                PlayerPosition = playerAup,
                 SaveDataVersion = math.max(data.version, 0),
                 SaveDataByteLength = (uint)saveDataByteLength,
                 SceneNameByteLength = (ushort)sceneBytesLength,
@@ -2575,6 +2683,13 @@ namespace Hecton8.SaveSystem
             uint metadataChecksum = unchecked((uint)metadataHash64);
 
             IndexedSectorGroupBuffer sectorGroups = BuildIndexedSectorGroups(persistentWorldDeltas, chunkSizeMeters);
+            if (sectorGroups.InvalidRecordCount > 0)
+            {
+                error = "Indexed persistent world save contains invalid AUP sector records.";
+                sectorGroups.Dispose();
+                return false;
+            }
+
             int sectorCount = sectorGroups.Count;
             if (sectorCount > IndexedSectorDirectorySlotCount)
             {
@@ -2711,7 +2826,7 @@ namespace Hecton8.SaveSystem
             IndexedSectorDirectoryHeader directoryHeader = new IndexedSectorDirectoryHeader
             {
                 SectorCount = (uint)sectorCount,
-                ChunkSizeMeters = math.max(1, chunkSizeMeters),
+                ChunkSizeMeters = chunkSizeMeters,
                 MetadataCompressedSize = metadataCompressedSize,
                 MetadataDecompressedSize = metadataRawLength
             };
@@ -2951,8 +3066,11 @@ namespace Hecton8.SaveSystem
             byte* filePtr = (byte*)mapping.View;
             directoryHeader = UnsafeUtility.ReadArrayElement<IndexedSectorDirectoryHeader>(filePtr + directoryOffset, 0);
             int sectorCount = checked((int)directoryHeader.SectorCount);
-            int safeChunkSizeMeters = math.max(1, directoryHeader.ChunkSizeMeters);
-            directoryHeader.ChunkSizeMeters = safeChunkSizeMeters;
+            if (directoryHeader.ChunkSizeMeters <= 0)
+            {
+                error = "Indexed sector directory chunk size is invalid.";
+                return false;
+            }
 
             if (sectorCount < 0 || sectorCount > IndexedSectorDirectorySlotCount)
             {
@@ -3509,6 +3627,12 @@ namespace Hecton8.SaveSystem
             if (!TryReadUtf16String(rawPtr, metadataRawLength, ref cursor, prefix.GameVersionByteLength, out string gameVersion, out error))
                 return false;
 
+            if (!TryToRuntimePosition(prefix.PlayerPosition, out Vector3 playerPosition))
+            {
+                error = "Indexed metadata contains an invalid player AUP position.";
+                return false;
+            }
+
             detectedVersion = prefix.SaveDataVersion;
             metadata = new SaveMetadata
             {
@@ -3517,7 +3641,7 @@ namespace Hecton8.SaveSystem
                 Timestamp = ToUtcTicks(header.TimestampUnixMs),
                 PlayTimeSeconds = prefix.PlayTimeSeconds,
                 SceneName = sceneName,
-                PlayerPosition = ToRuntimePosition(prefix.PlayerPosition),
+                PlayerPosition = playerPosition,
                 Checksum = FormatPayloadChecksum(in header)
             };
             return true;
@@ -3809,6 +3933,12 @@ namespace Hecton8.SaveSystem
             }
 
             rawPayloadLength = metadataRawLength;
+            if (!TryToRuntimePosition(prefix.PlayerPosition, out Vector3 playerPosition))
+            {
+                error = "Indexed save payload contains an invalid player AUP position.";
+                return false;
+            }
+
             metadata = new SaveMetadata
             {
                 SlotName = slotName,
@@ -3816,7 +3946,7 @@ namespace Hecton8.SaveSystem
                 Timestamp = ToUtcTicks(header.TimestampUnixMs),
                 PlayTimeSeconds = prefix.PlayTimeSeconds,
                 SceneName = sceneName,
-                PlayerPosition = ToRuntimePosition(prefix.PlayerPosition),
+                PlayerPosition = playerPosition,
                 Checksum = FormatPayloadChecksum(in header)
             };
             return true;
@@ -4067,7 +4197,12 @@ namespace Hecton8.SaveSystem
                         continue;
 
                     SectorEntry entry = sectorEntries[sectorEntryIndex];
-                    if (!TryLoadIndexedPersistentWorldSectorRecordsCore(ref mapping, in entry, destination, out string sectorError))
+                    if (!TryLoadIndexedPersistentWorldSectorRecordsCore(
+                            ref mapping,
+                            in entry,
+                            directoryHeader.ChunkSizeMeters,
+                            destination,
+                            out string sectorError))
                     {
                         string backupPath = ResolveIndexedSaveBackupPath(absolutePath);
                         string backupError = "backup not attempted";
@@ -4095,6 +4230,7 @@ namespace Hecton8.SaveSystem
         private static bool TryLoadIndexedPersistentWorldSectorRecordsCore(
             ref AsyncWriteManager.ReadOnlyMapping mapping,
             in SectorEntry entry,
+            int chunkSizeMeters,
             NativeList<PersistentWorldDeltaRecord> destination,
             out string error)
         {
@@ -4117,6 +4253,15 @@ namespace Hecton8.SaveSystem
             if (!TryReadPersistentWorldSectionFromBuffer(sectorRawPtr, entry.DecompressedSize, out PersistentWorldDeltaRecord[] sectorRecords, out error))
                 return false;
 
+            if (!TryValidatePersistentWorldSectorRecords(
+                    sectorRecords,
+                    entry.SectorHash,
+                    chunkSizeMeters,
+                    out error))
+            {
+                return false;
+            }
+
             for (int recordIndex = 0; recordIndex < sectorRecords.Length; recordIndex++)
                 destination.Add(sectorRecords[recordIndex]);
 
@@ -4135,7 +4280,7 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                if (!TryReadIndexedDirectory(in backupHeader, ref backupMapping, out _, out SectorEntry[] backupEntries, out error))
+                if (!TryReadIndexedDirectory(in backupHeader, ref backupMapping, out IndexedSectorDirectoryHeader directoryHeader, out SectorEntry[] backupEntries, out error))
                     return false;
 
                 if (!TryFindIndexedSectorEntryIndex(backupEntries, desiredSectorHash, out int backupSectorEntryIndex))
@@ -4145,7 +4290,12 @@ namespace Hecton8.SaveSystem
                 }
 
                 SectorEntry backupEntry = backupEntries[backupSectorEntryIndex];
-                return TryLoadIndexedPersistentWorldSectorRecordsCore(ref backupMapping, in backupEntry, destination, out error);
+                return TryLoadIndexedPersistentWorldSectorRecordsCore(
+                    ref backupMapping,
+                    in backupEntry,
+                    directoryHeader.ChunkSizeMeters,
+                    destination,
+                    out error);
             }
             finally
             {
@@ -4237,14 +4387,7 @@ namespace Hecton8.SaveSystem
                 }
             }
 
-            try
-            {
-                if (File.Exists(tempOverridePath))
-                    File.Delete(tempOverridePath);
-            }
-            catch
-            {
-            }
+            _ = TryDeleteFileIfExists(tempOverridePath, out _);
 
             return false;
         }
@@ -4270,6 +4413,15 @@ namespace Hecton8.SaveSystem
             }
 
             NativeArray<PersistentWorldDeltaRecord>.ReadOnly sectorRecordsReadOnly = sectorRecords.AsReadOnly();
+            if (!TryValidatePersistentWorldSectorRecords(
+                    sectorRecordsReadOnly,
+                    sectorHash,
+                    chunkSizeMeters,
+                    out error))
+            {
+                return false;
+            }
+
             if (!TryBuildPersistentWorldSectionTables(
                     sectorRecordsReadOnly,
                     out NativeParallelHashMap<int3, ushort> chunkLookup,
@@ -4425,10 +4577,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            SaveBinaryStorage.DisposeIndexedSectorEntityStateOverrideWriteDeferred(ref writeHandle, default);
-            JobHandle.ScheduleBatchedJobs();
-            error = "Synchronous sector entity-state override writes are disabled. Use the scheduled dehydration pipeline.";
-            return false;
+            return TryCompleteIndexedSectorEntityStateOverrideWrite(ref writeHandle, out error);
         }
 
         internal static bool TryScheduleIndexedSectorEntityStateOverrideWrite(
@@ -4453,11 +4602,35 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (chunkSizeMeters <= 0)
+            {
+                error = "Sector entity-state chunk size is invalid.";
+                return false;
+            }
+
             int recordCount = entityStates.Length;
             if (recordCount <= 0)
             {
                 error = "Sector entity-state override contains no records.";
                 return false;
+            }
+
+            if (sectorHash == long.MinValue)
+            {
+                error = "Sector entity-state override has an invalid sector hash.";
+                return false;
+            }
+
+            for (int i = 0; i < recordCount; i++)
+            {
+                EntityDataRecord state = entityStates[i];
+                AbsoluteUniversePosition statePosition = AbsoluteUniversePosition.FromAlignedBlit(in state.Position);
+                long stateSectorHash = ComputePersistentWorldPagedSectorHash(in statePosition);
+                if (stateSectorHash == long.MinValue || stateSectorHash != sectorHash)
+                {
+                    error = "Sector entity-state override contains an invalid or cross-sector AUP position.";
+                    return false;
+                }
             }
 
             int rawByteLength = checked(recordCount * UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>());
@@ -4495,7 +4668,7 @@ namespace Hecton8.SaveSystem
             {
                 SourceStates = writeHandle.SourceStates,
                 Entries = writeHandle.SortEntries,
-                ChunkSizeMeters = math.max(1, chunkSizeMeters)
+                ChunkSizeMeters = chunkSizeMeters
             };
             RadixSortSectorEntityStateEntriesJob sortJob = new RadixSortSectorEntityStateEntriesJob
             {
@@ -4549,12 +4722,6 @@ namespace Hecton8.SaveSystem
             if (!writeHandle.IsCreated)
             {
                 error = "Sector entity-state write handle is not initialized.";
-                return false;
-            }
-
-            if (!writeHandle.Handle.IsCompleted)
-            {
-                error = "Sector entity-state write job is still running.";
                 return false;
             }
 
@@ -4742,26 +4909,36 @@ namespace Hecton8.SaveSystem
 
         internal static long ComputeModPayloadPagedSectorHash(long gridX, float localX, long gridZ, float localZ)
         {
-            double cellSize = AbsoluteUniversePosition.CellSizeMeters;
-            double absoluteX = (gridX * cellSize) + localX;
-            double absoluteZ = (gridZ * cellSize) + localZ;
-            int2 sectorCoord = new int2(
-                (int)math.floor(absoluteX / PersistentWorldSectorEdgeLengthMeters),
-                (int)math.floor(absoluteZ / PersistentWorldSectorEdgeLengthMeters));
+            if (!math.all(math.isfinite(new float2(localX, localZ))))
+                return long.MinValue;
+
+            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromGridLocal(
+                gridX,
+                0L,
+                gridZ,
+                new float3(localX, 0f, localZ));
+            if (!AbsoluteUniversePosition.TryResolveSectorCoord(
+                    in position,
+                    PersistentWorldSectorEdgeLengthMeters,
+                    out int2 sectorCoord))
+                return long.MinValue;
+
             return PackSectorHash(sectorCoord);
         }
 
         internal static long ComputePersistentWorldPagedSectorHash(in AbsoluteUniversePosition position)
         {
-            return PackSectorHash(QuantizePersistentWorldPagedSector(in position));
+            return TryQuantizePersistentWorldPagedSector(in position, out int2 sectorCoord)
+                ? PackSectorHash(sectorCoord)
+                : long.MinValue;
         }
 
-        private static int2 QuantizePersistentWorldPagedSector(in AbsoluteUniversePosition position)
+        private static bool TryQuantizePersistentWorldPagedSector(in AbsoluteUniversePosition position, out int2 sectorCoord)
         {
-            double3 absolute = position.ToAbsoluteDouble3();
-            return new int2(
-                (int)math.floor(absolute.x / PersistentWorldSectorEdgeLengthMeters),
-                (int)math.floor(absolute.z / PersistentWorldSectorEdgeLengthMeters));
+            return AbsoluteUniversePosition.TryResolveSectorCoord(
+                in position,
+                PersistentWorldSectorEdgeLengthMeters,
+                out sectorCoord);
         }
 
         private static int2 UnpackSectorHash(long sectorHash)
@@ -5171,7 +5348,7 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                if (!TryReadIndexedDirectory(in header, ref mapping, out _, out SectorEntry[] sectorEntries, out error))
+                if (!TryReadIndexedDirectory(in header, ref mapping, out IndexedSectorDirectoryHeader directoryHeader, out SectorEntry[] sectorEntries, out error))
                     return false;
 
                 if (!TryFindIndexedSectorEntryIndex(sectorEntries, sectorHash, out int sectorEntryIndex))
@@ -5359,7 +5536,11 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            directoryHeader.ChunkSizeMeters = math.max(1, directoryHeader.ChunkSizeMeters);
+            if (directoryHeader.ChunkSizeMeters <= 0)
+            {
+                error = "Indexed sector directory chunk size is invalid.";
+                return false;
+            }
 
             int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
             int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * sectorEntrySize);
@@ -5758,7 +5939,9 @@ namespace Hecton8.SaveSystem
                     overrideBlockBytes.Dispose();
             }
 
-            File.Delete(sectorOverridePath);
+            if (!TryDeleteFileIfExists(sectorOverridePath, out error))
+                return false;
+
             QueueIndexedPersistentWorldDefragmentation(absoluteSavePath);
             return true;
         }
@@ -6076,6 +6259,12 @@ namespace Hecton8.SaveSystem
             }
 
             detectedVersion = prefix.SaveDataVersion;
+            if (!TryToRuntimePosition(prefix.PlayerPosition, out Vector3 playerPosition))
+            {
+                error = "Save payload contains an invalid player AUP position.";
+                return false;
+            }
+
             metadata = new SaveMetadata
             {
                 SlotName = slotName,
@@ -6083,7 +6272,7 @@ namespace Hecton8.SaveSystem
                 Timestamp = ToUtcTicks(header.TimestampUnixMs),
                 PlayTimeSeconds = prefix.PlayTimeSeconds,
                 SceneName = sceneName,
-                PlayerPosition = ToRuntimePosition(prefix.PlayerPosition),
+                PlayerPosition = playerPosition,
                 Checksum = FormatPayloadChecksum(in header)
             };
 
@@ -6462,6 +6651,41 @@ namespace Hecton8.SaveSystem
             return $"{absolutePath}.bak";
         }
 
+        private static bool TryDeleteFileIfExists(string absolutePath, out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(absolutePath))
+                return true;
+
+            try
+            {
+                if (File.Exists(absolutePath))
+                    File.Delete(absolutePath);
+
+                return true;
+            }
+            catch (IOException ex)
+            {
+                error = $"File delete failed for '{absolutePath}': {ex.Message}";
+                return false;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                error = $"File delete unauthorized for '{absolutePath}': {ex.Message}";
+                return false;
+            }
+            catch (ArgumentException ex)
+            {
+                error = $"File delete path invalid for '{absolutePath}': {ex.Message}";
+                return false;
+            }
+            catch (NotSupportedException ex)
+            {
+                error = $"File delete path unsupported for '{absolutePath}': {ex.Message}";
+                return false;
+            }
+        }
+
         private static bool TryPrepareIndexedSectorCommitBackup(string absolutePath, out string error)
         {
             error = string.Empty;
@@ -6485,8 +6709,8 @@ namespace Hecton8.SaveSystem
                 if (!string.IsNullOrEmpty(backupDirectory))
                     Directory.CreateDirectory(backupDirectory);
 
-                if (File.Exists(backupTempPath))
-                    File.Delete(backupTempPath);
+                if (!TryDeleteFileIfExists(backupTempPath, out error))
+                    return false;
 
                 File.Copy(absolutePath, backupTempPath, true);
                 if (File.Exists(backupPath))
@@ -6500,18 +6724,28 @@ namespace Hecton8.SaveSystem
 
                 return true;
             }
-            catch (Exception ex)
+            catch (IOException ex)
             {
                 error = $"Indexed sector commit backup failed for '{absolutePath}': {ex.Message}";
-                try
-                {
-                    if (File.Exists(backupTempPath))
-                        File.Delete(backupTempPath);
-                }
-                catch
-                {
-                }
-
+                _ = TryDeleteFileIfExists(backupTempPath, out _);
+                return false;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                error = $"Indexed sector commit backup unauthorized for '{absolutePath}': {ex.Message}";
+                _ = TryDeleteFileIfExists(backupTempPath, out _);
+                return false;
+            }
+            catch (ArgumentException ex)
+            {
+                error = $"Indexed sector commit backup path invalid for '{absolutePath}': {ex.Message}";
+                _ = TryDeleteFileIfExists(backupTempPath, out _);
+                return false;
+            }
+            catch (NotSupportedException ex)
+            {
+                error = $"Indexed sector commit backup path unsupported for '{absolutePath}': {ex.Message}";
+                _ = TryDeleteFileIfExists(backupTempPath, out _);
                 return false;
             }
         }
@@ -6562,11 +6796,87 @@ namespace Hecton8.SaveSystem
         private static long ComputePersistentWorldSectorHash(in PersistentWorldDeltaRecord record, int chunkSizeMeters)
         {
             AbsoluteUniversePosition position = record.UnpackPosition(chunkSizeMeters);
-            double3 absolute = position.ToAbsoluteDouble3();
-            int2 sectorCoord = new int2(
-                (int)math.floor(absolute.x / PersistentWorldSectorEdgeLengthMeters),
-                (int)math.floor(absolute.z / PersistentWorldSectorEdgeLengthMeters));
-            return PackSectorHash(sectorCoord);
+            return ComputePersistentWorldPagedSectorHash(in position);
+        }
+
+        private static bool TryValidatePersistentWorldSectorRecords(
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly sectorRecords,
+            long sectorHash,
+            int chunkSizeMeters,
+            out string error)
+        {
+            error = string.Empty;
+            if (sectorHash == long.MinValue)
+            {
+                error = "Sector override has an invalid sector hash.";
+                return false;
+            }
+
+            int recordCount = sectorRecords.IsCreated ? sectorRecords.Length : 0;
+            if (chunkSizeMeters <= 0)
+            {
+                error = "Sector override chunk size is invalid.";
+                return false;
+            }
+
+            for (int i = 0; i < recordCount; i++)
+            {
+                PersistentWorldDeltaRecord record = sectorRecords[i];
+                if (!PersistentWorldDeltaRecord.IsValid(in record))
+                {
+                    error = "Sector override contains an invalid persistent-world delta record.";
+                    return false;
+                }
+
+                long recordSectorHash = ComputePersistentWorldSectorHash(in record, chunkSizeMeters);
+                if (recordSectorHash == long.MinValue || recordSectorHash != sectorHash)
+                {
+                    error = "Sector override contains a cross-sector persistent-world delta record.";
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool TryValidatePersistentWorldSectorRecords(
+            PersistentWorldDeltaRecord[] sectorRecords,
+            long sectorHash,
+            int chunkSizeMeters,
+            out string error)
+        {
+            error = string.Empty;
+            if (sectorHash == long.MinValue)
+            {
+                error = "Indexed persistent-world sector has an invalid sector hash.";
+                return false;
+            }
+
+            int recordCount = sectorRecords != null ? sectorRecords.Length : 0;
+            if (chunkSizeMeters <= 0)
+            {
+                error = "Indexed persistent-world sector chunk size is invalid.";
+                return false;
+            }
+
+            for (int i = 0; i < recordCount; i++)
+            {
+                PersistentWorldDeltaRecord record = sectorRecords[i];
+                if (!PersistentWorldDeltaRecord.IsValid(in record))
+                {
+                    error = "Indexed persistent-world sector contains an invalid delta record.";
+                    return false;
+                }
+
+                long recordSectorHash = ComputePersistentWorldSectorHash(in record, chunkSizeMeters);
+                if (recordSectorHash == long.MinValue || recordSectorHash != sectorHash)
+                {
+                    error = "Indexed persistent-world sector contains a cross-sector delta record.";
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static long PackSectorHash(int2 sectorCoord)
@@ -6587,7 +6897,12 @@ namespace Hecton8.SaveSystem
             if (sourceLength <= 0)
                 return buffer;
 
-            int safeChunkSizeMeters = math.max(1, chunkSizeMeters);
+            if (chunkSizeMeters <= 0)
+            {
+                buffer.InvalidRecordCount = sourceLength;
+                return buffer;
+            }
+
             NativeArray<short> slotToGroupIndex = new NativeArray<short>(
                 IndexedSectorDirectorySlotCount,
                 Allocator.Temp,
@@ -6611,7 +6926,14 @@ namespace Hecton8.SaveSystem
                         continue;
                     }
 
-                    long sectorHash = ComputePersistentWorldSectorHash(in record, safeChunkSizeMeters);
+                    long sectorHash = ComputePersistentWorldSectorHash(in record, chunkSizeMeters);
+                    if (sectorHash == long.MinValue)
+                    {
+                        recordGroupIndex[i] = -1;
+                        buffer.InvalidRecordCount++;
+                        continue;
+                    }
+
                     int groupIndex = FindOrCreateIndexedSectorGroup(sectorHash, slotToGroupIndex, buffer.Groups);
                     if (groupIndex < 0)
                     {
@@ -7244,7 +7566,7 @@ namespace Hecton8.SaveSystem
             if (header.Version >= CompactPersistentWorldSectionVersion)
                 return TryReadPersistentWorldDeltasV5(rawPtr, rawPayloadLength, header, out persistentWorldDeltas, out error);
 
-            int entityRecordSize = UnsafeUtility.SizeOf<PersistentWorldDeltaRecord>();
+            int entityRecordSize = UnsafeUtility.SizeOf<PersistentWorldDeltaRecordLegacy64>();
             int entitySectionOffset = checked((int)header.EntityOffset) - ResolvePayloadBaseOffset(in header);
 
             long entityBytesLong = (long)entityCount * entityRecordSize;
@@ -7265,14 +7587,12 @@ namespace Hecton8.SaveSystem
             if (entityBytes == 0)
                 return true;
 
-            fixed (PersistentWorldDeltaRecord* destinationPtr = persistentWorldDeltas)
+            byte* entitySourcePtr = AddByteOffset(rawPtr, entitySectionOffset);
+            for (int i = 0; i < entityCount; i++)
             {
-                byte* entitySourcePtr = AddByteOffset(rawPtr, entitySectionOffset);
-                if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, persistentWorldDeltas.Length * UnsafeUtility.SizeOf<PersistentWorldDeltaRecord>(), entitySourcePtr, entityBytes))
-                {
-                    error = "Persistent-world delta copy exceeded destination bounds.";
-                    return false;
-                }
+                PersistentWorldDeltaRecordLegacy64 legacyRecord =
+                    UnsafeUtility.ReadArrayElement<PersistentWorldDeltaRecordLegacy64>(entitySourcePtr, i);
+                persistentWorldDeltas[i] = legacyRecord.ToRuntimeRecord();
             }
 
             return true;
@@ -7389,13 +7709,18 @@ namespace Hecton8.SaveSystem
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
                 if (!PersistentWorldDeltaRecord.IsValid(in deltaRecord))
-                    continue;
+                {
+                    error = "Persistent-world delta table contains an invalid record.";
+                    DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable);
+                    return false;
+                }
 
                 if (!chunkLookup.ContainsKey(deltaRecord.ChunkId))
                 {
                     if (chunkTable.Length >= ushort.MaxValue)
                     {
                         error = "Persistent-world delta chunk table exceeded 65535 unique chunks.";
+                        DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable);
                         return false;
                     }
 
@@ -7412,6 +7737,7 @@ namespace Hecton8.SaveSystem
                     if (itemHashTable.Length >= ushort.MaxValue)
                     {
                         error = "Persistent-world delta item table exceeded 65535 unique item hashes.";
+                        DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable);
                         return false;
                     }
 
@@ -7460,13 +7786,18 @@ namespace Hecton8.SaveSystem
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
                 if (!PersistentWorldDeltaRecord.IsValid(in deltaRecord))
-                    continue;
+                {
+                    error = "Persistent-world delta table contains an invalid record.";
+                    DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable);
+                    return false;
+                }
 
                 if (!chunkLookup.ContainsKey(deltaRecord.ChunkId))
                 {
                     if (chunkTable.Length >= ushort.MaxValue)
                     {
                         error = "Persistent-world delta chunk table exceeded 65535 unique chunks.";
+                        DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable);
                         return false;
                     }
 
@@ -7483,6 +7814,7 @@ namespace Hecton8.SaveSystem
                     if (itemHashTable.Length >= ushort.MaxValue)
                     {
                         error = "Persistent-world delta item table exceeded 65535 unique item hashes.";
+                        DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable);
                         return false;
                     }
 
@@ -7493,6 +7825,27 @@ namespace Hecton8.SaveSystem
             }
 
             return true;
+        }
+
+        private static void DisposePersistentWorldSectionTables(
+            ref NativeParallelHashMap<int3, ushort> chunkLookup,
+            ref NativeList<int3> chunkTable,
+            ref NativeParallelHashMap<ulong, ushort> itemHashLookup,
+            ref NativeList<ulong> itemHashTable)
+        {
+            if (itemHashTable.IsCreated)
+                itemHashTable.Dispose();
+            if (itemHashLookup.IsCreated)
+                itemHashLookup.Dispose();
+            if (chunkTable.IsCreated)
+                chunkTable.Dispose();
+            if (chunkLookup.IsCreated)
+                chunkLookup.Dispose();
+
+            itemHashTable = default;
+            itemHashLookup = default;
+            chunkTable = default;
+            chunkLookup = default;
         }
 
         private static int ComputePersistentWorldSectionLength(int entityCount, int chunkCount, int itemHashCount)
@@ -7804,7 +8157,7 @@ namespace Hecton8.SaveSystem
                     itemHash = UnsafeUtility.ReadArrayElement<ulong>(itemHashTablePtr, saveRecord.ItemHashIndex);
                 }
 
-                persistentWorldDeltas[i] = new PersistentWorldDeltaRecord
+                PersistentWorldDeltaRecord deltaRecord = new PersistentWorldDeltaRecord
                 {
                     ChunkId = UnsafeUtility.ReadArrayElement<int3>(chunkTablePtr, saveRecord.ChunkIndex),
                     ItemPersistentIdHash = itemHash,
@@ -7814,6 +8167,15 @@ namespace Hecton8.SaveSystem
                     ItemFlags = saveRecord.ItemFlags,
                     Reserved = saveRecord.Reserved
                 };
+
+                if (!PersistentWorldDeltaRecord.IsValid(in deltaRecord))
+                {
+                    error = "Persistent-world delta section contains an invalid record.";
+                    persistentWorldDeltas = null;
+                    return false;
+                }
+
+                persistentWorldDeltas[i] = deltaRecord;
             }
 
             error = string.Empty;
@@ -7842,7 +8204,7 @@ namespace Hecton8.SaveSystem
             {
                 int entityCount = checked((int)header.EntityCount);
                 entitySectionLength = entityCount > 0
-                    ? checked(entityCount * UnsafeUtility.SizeOf<PersistentWorldDeltaRecord>())
+                    ? checked(entityCount * UnsafeUtility.SizeOf<PersistentWorldDeltaRecordLegacy64>())
                     : 0;
                 if (!IsByteRangeWithin(entitySectionOffset, entitySectionLength, rawPayloadLength))
                 {
@@ -8284,7 +8646,7 @@ namespace Hecton8.SaveSystem
 
             int maxEntityRecordSize = header.Version >= CompactPersistentWorldSectionVersion
                 ? UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>()
-                : UnsafeUtility.SizeOf<PersistentWorldDeltaRecord>();
+                : UnsafeUtility.SizeOf<PersistentWorldDeltaRecordLegacy64>();
             if (header.EntityCount > (uint)(RawPayloadCapacityBytes / maxEntityRecordSize))
             {
                 error = "Save entity count exceeds the decoder budget.";
@@ -8471,13 +8833,6 @@ namespace Hecton8.SaveSystem
             return UnixEpochTicks + ((long)unixMilliseconds * TimeSpan.TicksPerMillisecond);
         }
 
-        private static AbsoluteUniversePosition ToAup(Vector3 runtimePosition)
-        {
-            return TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition absoluteAup)
-                ? absoluteAup
-                : default;
-        }
-
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
         {
             absoluteAup = default;
@@ -8494,10 +8849,17 @@ namespace Hecton8.SaveSystem
             return absoluteAup.IsFinite();
         }
 
-        private static Vector3 ToRuntimePosition(AbsoluteUniversePosition position)
+        private static bool TryToRuntimePosition(AbsoluteUniversePosition position, out Vector3 runtime)
         {
-            float3 runtimePosition = position.ToRuntimeFloat3();
-            return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            runtime = default;
+            if (!position.IsFinite())
+                return false;
+
+            if (!position.TryToRuntimeFloat3(out float3 runtimePosition))
+                return false;
+
+            runtime = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            return true;
         }
 
         private static bool TryReadUtf16String(

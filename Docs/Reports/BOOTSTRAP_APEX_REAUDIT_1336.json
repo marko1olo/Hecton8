@@ -1,0 +1,87 @@
+﻿{
+    "agentId":  "1336",
+    "task":  "1336_PURGE",
+    "status":  "STATIC_GREEN_LOOP30_BUILD_BLOCKED_BY_MISSING_UNITY_CSPROJ_HOST_CPU_AND_GRAPHICSSTATE_TRACE_GAP_UNITY_PROFILER_PENDING",
+    "scannedFiles":  45,
+    "failedGates":  [
+                        "POST_LOOP30_SCOPED_BUILD_BLOCKED_BY_MISSING_UNITY_CSPROJ_AND_CPU_GATE",
+                        "UNITY_IMPORT_PROFILER_PENDING",
+                        "GRAPHICSSTATE_TRACE_ASSETS_MISSING"
+                    ],
+    "totalNativeFieldDeclarations":  0,
+    "persistentNativeFieldsRemaining":  0,
+    "transientVaultViews":  6,
+    "transientJobViews":  1,
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "BootstrapTelemetryEntry",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "TimestampTicks":  "0:long",
+                                               "DurationMicroseconds":  "8:long",
+                                               "ContextHash":  "16:ulong",
+                                               "FrameIndex":  "24:uint",
+                                               "EventHash":  "28:uint",
+                                               "CollectionIndex":  "32:uint",
+                                               "ShaderIndex":  "36:uint",
+                                               "VariantCount":  "40:uint",
+                                               "WarmedVariantCount":  "44:uint",
+                                               "QualityWeight01":  "48:float",
+                                               "Phase":  "52:ushort",
+                                               "Flags":  "54:ushort",
+                                               "ErrorCode":  "56:ushort",
+                                               "Reserved":  "58:ushort",
+                                               "_pad0":  "60:byte",
+                                               "_pad1":  "61:byte",
+                                               "_pad2":  "62:byte",
+                                               "_pad3":  "63:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "BootstrapEventPayload",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "Frame":  "0:int",
+                                               "EventType":  "4:ushort",
+                                               "StatusBits":  "6:ushort",
+                                               "_pad0":  "8:ulong"
+                                           }
+                           },
+                           {
+                               "structName":  "GameBootstrapperEventPayload",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "ErrorHash":  "0:uint",
+                                               "EventType":  "4:ushort",
+                                               "Reserved":  "6:ushort",
+                                               "_pad0":  "8:ulong"
+                                           }
+                           }
+                       ],
+    "zeroGcHotPathHits":  0,
+    "absoluteAupCastsFound":  0,
+    "compactionAwareLocksProven":  true,
+    "telemetryRingIntegrated":  true,
+    "verificationHashSha256":  "BB6A72FC977C597E1D0A58FD0EAF064854DECF4D950D0ECD9D31627F2A08F156",
+    "notes":  {
+                  "honesty":  "This report intentionally does not claim VERIFIED_GREEN because the post-loop-27 scoped build route is blocked by a missing Unity-generated runtime csproj and CPU gate, Unity import/editor tests/profiler were not executed, and graphicsstate trace assets remain absent.",
+                  "latestPatch":  "Loop 30 fixes scene shader manifest proof leakage: compiler/test extraction now requires fileID: 4800000 so runtimeShaderReferenceCatalog is not counted as a shader.",
+                  "buildGate":  "CPU sampled 85.5% with 0 dotnet/csc; Hecton8.Core.csproj is absent in C:\\hades\\Hecton8. No unrelated project was compiled as substitute proof.",
+                  "nativeRoslynAudit":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1336_BOOTSTRAP_LOOP30.json: 9 bootstrap files, 0 parse failures, 0 native field declarations, 0 forbidden persistent candidates; Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1336_TESTS_LOOP30.json: 36 editor test files, 0 parse failures; Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1336_EDITOR_LOOP30.json: 383 editor files, 0 parse failures, 1 unrelated persistent NativeArray in AssemblyGuard/CompileWallXRayWindow.cs.",
+                  "graphicsStateAssetsFound":  0,
+                  "graphicsSettingsAuthority":  "m_PreloadedShaders is empty; custom SVC warmup is GameBootstrapper-owned.",
+                  "sceneSVCManifestCoverage":  "1 configured master SVC, 18 variants, 15 shader fileID 4800000 refs, 16 total GUIDs in block, 1 non-shader neighbor GUID, 15 master shader GUIDs, 0 missing manifest shaders, combined DOTS_INSTANCING_ON INSTANCING_ON present.",
+                  "sceneManifestGuidResolution":  "CLI mirror found 0 unresolved manifest shader GUIDs; editor test now resolves Shader and ShaderVariantCollection assets through AssetDatabase.",
+                  "vertexLayoutCoverage":  "ShaderWarmup.WarmupShaderFromCollection now runs seven setups: P/N/T/UV0, P/UV0, P/N, P/N/UV0, UI ColorUNorm8, float Color trail, and voxel P/N/Color/TexCoord1..4.",
+                  "modernApiPsoGate":  "Direct3D12/Vulkan/Metal require configured .graphicsstate paths before simulation starts.",
+                  "graphicsStatePathContract":  ".graphicsstate only; configured URLs are rejected; filesystem-backed StreamingAssets-relative or Assets/StreamingAssets paths for player shipping; generic Assets/ProjectSettings paths are editor-only and rooted Editor absolute paths must remain inside the project root; URL/JAR StreamingAssets roots fail closed and require a future extraction route before Android/WebGL PSO trace loading can be claimed.",
+                  "shaderManifestNullGuard":  "Any null shaderWarmupShaders slot or null shaderVariantCollections slot fails closed before simulation; null slots are no longer warning-only.",
+                  "runtimePassBudgetOnly":  "HectonShaderVariantCollectionCompiler1336 no longer emits PassType.Meta candidates.",
+                  "atomicDumpPromotion":  "Dump_1336_Bootstrapper.bin is written through .tmp then File.Replace/File.Move promoted.",
+                  "timeoutContract":  "Timeout includes low-tier frame slices and clamps at 60s.",
+                  "backgroundDomainHandshakeNoThrow":  "RunBackgroundDomainHandshakeAsync, TryPrepareBackgroundDomainHandshake, and JoinBackgroundDomainHandshakeAsync scan 0 for Task.Run, async Task, broad catch(Exception), managed error string, ThrowIfCancellationRequested, tokenized NextFrameAsync, and dynamic string concat.",
+                  "emptyConfiguredCollectionFailClosed":  "FindEmptyShaderVariantCollectionIndex blocks any configured SVC with variantCount \u003c= 0 before PSO/SVC traversal.",
+                  "presentationGateNoThrow":  "InitializePresentationBootstrapAsync exact method scan reports 0 catch(OperationCanceledException), 0 ThrowIfCancellationRequested, and 0 tokenized NextFrameAsync in the shader warmup gate.",
+                  "editorCompilerSceneManifestMirror":  "CollectBootstrapSceneShaderManifest + TryExtractShaderReferenceGuid + AssetDatabase.GUIDToAssetPath promote only fileID 4800000 scene shader refs into priorityShaderPaths."
+              }
+}

@@ -47,8 +47,14 @@ float2 ResolveOctantRotation(float noiseValue)
     return kOctantRotations[rotationIndex];
 }
 
+float2 ResolveFiniteFloat2(float2 value, float2 fallback)
+{
+    return all(isfinite(value)) ? value : fallback;
+}
+
 int2 FastRoundToInt2(float2 value)
 {
+    value = ResolveFiniteFloat2(value, float2(0.0, 0.0));
     return int2(
         value.x >= 0.0 ? (int)(value.x + 0.5) : (int)(value.x - 0.5),
         value.y >= 0.0 ? (int)(value.y + 0.5) : (int)(value.y - 0.5));
@@ -102,12 +108,14 @@ void ResolveVoxelSSAO(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float centerLinearDepth = ResolveFiniteOrDefault(LinearEyeDepth(centerDepthRaw, _ZBufferParams), 0.0);
 
-    float radiusPixels = clamp(_HectonVoxelSSAOParamsA.x / max(centerLinearDepth, 0.5), 1.0, 24.0);
+    float projectionScale = ResolveFiniteOrDefault(_HectonVoxelSSAOParamsA.x, 8.0);
+    float radiusPixels = clamp(projectionScale / max(centerLinearDepth, 0.5), 1.0, 24.0);
     float2 rotation = ResolveOctantRotation(ResolveFiniteOrDefault(ResolveInterleavedNoise(dispatchThreadId.xy), 0.0));
-    float radiusMeters = max(_HectonVoxelSSAOParamsA.y, 0.001);
+    float radiusMeters = max(ResolveFiniteOrDefault(_HectonVoxelSSAOParamsA.y, 1.0), 0.001);
     float radiusMetersSq = radiusMeters * radiusMeters;
     float invRadiusMetersSq = rcp(radiusMetersSq);
-    float depthSigma = max(0.01, _HectonVoxelSSAOParamsA.w);
+    float intensity = max(0.0, ResolveFiniteOrDefault(_HectonVoxelSSAOParamsA.z, 1.0));
+    float depthSigma = max(0.01, ResolveFiniteOrDefault(_HectonVoxelSSAOParamsA.w, 1.0));
 
     float occlusion = 0.0;
     float weightSum = 0.0;
@@ -138,7 +146,7 @@ void ResolveVoxelSSAO(uint3 dispatchThreadId : SV_DispatchThreadID)
         float rangeWeight = 1.0 - saturate(depthDeltaSq * invRadiusMetersSq);
         float depthWeight = rcp(1.0 + depthDelta * depthSigma);
         float sampleWeight = rangeWeight * depthWeight;
-        occlusion += saturate(depthDelta * _HectonVoxelSSAOParamsA.z) * sampleWeight;
+        occlusion += saturate(depthDelta * intensity) * sampleWeight;
         weightSum += sampleWeight;
     }
 

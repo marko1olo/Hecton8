@@ -1,0 +1,31 @@
+﻿{
+    "schema":  "hecton8.input_disabled_override_reaudit.v1",
+    "agentId":  "1332",
+    "generatedAt":  "2026-05-26T20:04:12.2610188+04:00",
+    "domain":  "Hecton8.Input + UI/PauseControlsPanel.cs + UI/PDAControlsRebindUI.cs",
+    "promptHashSha256":  "be5f6d4689f0937718e0be477d0e0119e1b8e341a25399fa2a0b9230effe5502",
+    "officialUnityDocs":  [
+                              "https://docs.unity3d.com/Packages/com.unity.inputsystem@1.4/api/UnityEngine.InputSystem.InputBinding.html",
+                              "https://docs.unity3d.com/Packages/com.unity.inputsystem@1.4/api/UnityEngine.InputSystem.InputActionRebindingExtensions.html",
+                              "https://docs.unity3d.com/Packages/com.unity.inputsystem@1.4/manual/ActionBindings.html"
+                          ],
+    "defectsFound":  [
+                         "ControlRemapper skipped empty overridePath, losing disabled bindings across restart.",
+                         "InputManager display fallback treated disabled override as missing override and showed default path.",
+                         "InputBindingTelemetryEntry and ControlRemapIoResult used wide private padding fields instead of byte pads."
+                     ],
+    "filesChanged":  [
+                         "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+                         "Assets/_Project/Scripts/Input/InputManager.cs",
+                         "Assets/_Project/Scripts/Input/InputBindingContracts.cs",
+                         "Assets/_Project/Scripts/Input/INPUT_MIGRATION_GUIDE.md",
+                         "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs"
+                     ],
+    "gates":  {
+                  "productionSourceScan":  "Scanned 8 production files: broad catch 0, throw new 0, PlayerPrefs 0, legacy override fallback 0, empty-override skip 0, AUP casts 0, wide padding 0.",
+                  "nativeRoslynAudit":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1332.json: files=9, parseFailures=0, totalFields=0, forbiddenPersistentCandidates=0.",
+                  "build":  "dotnet build .\\Hecton8.Core.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly: 0 warnings, 0 errors, 83.18 s.",
+                  "whitespace":  "git diff --check on tracked changed files: no whitespace errors; CRLF warnings only."
+              },
+    "verificationHashSha256":  "6b90b39741919f440f58d14856a256360824e5cf266b2c371283923e0be9ae82"
+}

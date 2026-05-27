@@ -61,7 +61,7 @@ namespace Hecton8.World.ProceduralCoral
         }
     }
 
-    public struct ProceduralCoralVaultBuffers
+    public ref struct ProceduralCoralVaultBuffers
     {
         public NativeArray<CoralLSystemRuleDTO> Rules;
         public NativeArray<uint> InstructionScratchA;

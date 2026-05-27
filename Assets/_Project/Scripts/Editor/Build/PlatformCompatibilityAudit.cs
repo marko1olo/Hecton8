@@ -122,7 +122,9 @@ namespace Hecton8.Editor.Build
             bool hasOpenXr = ManifestHas(projectRoot, "com.unity.xr.openxr");
             bool hasXrManagement = ManifestHas(projectRoot, "com.unity.xr.management");
             bool hasMetaOpenXr = ManifestHas(projectRoot, "com.unity.xr.meta-openxr");
-            bool qualityExcludesAndroid = FileContains(projectRoot, "ProjectSettings/QualitySettings.asset", "- Android");
+            bool xrProviderSerializedProof = HasSerializedXrProviderProof(projectRoot);
+            string androidQualityBlocker = ResolveAndroidQualityBlocker(projectRoot);
+            bool androidQualityReady = string.IsNullOrEmpty(androidQualityBlocker);
 
             AppendRow(report, "Windows 10/11 x64", windowsModule && windowsSupported ? "PASS" : "BLOCKED",
                 windowsModule ? "Windows Build Support installed" : "Install Windows Build Support in Unity Hub",
@@ -133,9 +135,9 @@ namespace Hecton8.Editor.Build
             AppendRow(report, "macOS", macModule && macSupported ? "WARN" : "BLOCKED",
                 macModule ? "Mac Build Support installed" : "Install Mac Build Support in Unity Hub",
                 "Native dylib parity, Metal render validation, notarization/signing path required.");
-            AppendRow(report, "Quest/standalone Android XR", androidModule && androidSupported && hasOpenXr && hasXrManagement && hasMetaOpenXr && !qualityExcludesAndroid ? "WARN" : "BLOCKED",
+            AppendRow(report, "Quest/standalone Android XR", androidModule && androidSupported && hasOpenXr && hasXrManagement && hasMetaOpenXr && xrProviderSerializedProof && androidQualityReady ? "WARN" : "BLOCKED",
                 androidModule ? "Android Build Support installed" : "Install Android Build Support plus SDK/NDK/OpenJDK in Unity Hub",
-                ResolveQuestBlocker(hasOpenXr, hasXrManagement, hasMetaOpenXr, qualityExcludesAndroid));
+                ResolveQuestBlocker(hasOpenXr, hasXrManagement, hasMetaOpenXr, xrProviderSerializedProof, androidQualityBlocker));
             AppendRow(report, "PC VR streaming", windowsModule && windowsSupported && hasOpenXr && hasXrManagement ? "WARN" : "BLOCKED",
                 windowsModule ? "Windows module present" : "Install Windows Build Support",
                 hasOpenXr && hasXrManagement ? "Needs OpenXR provider config and headset runtime smoke test." : "Install XR Management and OpenXR packages, then configure providers.");
@@ -179,18 +181,20 @@ namespace Hecton8.Editor.Build
 
         private static void AppendPackageAndSettingsMatrix(StringBuilder report, string projectRoot)
         {
-            bool addressablesSettings = Directory.Exists(Path.Combine(projectRoot, "Assets", "AddressableAssetsData"));
+            int addressablesSettingsFiles = CountFiles(projectRoot, "Assets/AddressableAssetsData", ignoreMetaFiles: true);
+            bool addressablesSettings = addressablesSettingsFiles > 0;
             bool hasAddressables = ManifestHas(projectRoot, "com.unity.addressables");
             bool hasInputSystem = ManifestHas(projectRoot, "com.unity.inputsystem");
             bool hasOpenXr = ManifestHas(projectRoot, "com.unity.xr.openxr");
             bool hasXrManagement = ManifestHas(projectRoot, "com.unity.xr.management");
             bool hasMetaOpenXr = ManifestHas(projectRoot, "com.unity.xr.meta-openxr");
             bool xrProviderListEmpty = FileContains(projectRoot, "ProjectSettings/XRSettings.asset", "\"m_SettingKeys\"");
-            bool androidExcluded = FileContains(projectRoot, "ProjectSettings/QualitySettings.asset", "- Android");
+            bool xrProviderSerializedProof = HasSerializedXrProviderProof(projectRoot);
+            string androidQualityBlocker = ResolveAndroidQualityBlocker(projectRoot);
+            bool androidQualityReady = string.IsNullOrEmpty(androidQualityBlocker);
             bool iosExcluded = FileContains(projectRoot, "ProjectSettings/QualitySettings.asset", "- iPhone");
             bool androidTemplateId = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "com.UnityTechnologies.com.unity.template.urpblank");
             bool androidTargetSdkAutomatic = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "AndroidTargetSdkVersion: 0");
-            bool noBuildTargetVrSettings = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "m_BuildTargetVRSettings: []");
             bool customMainManifest = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "useCustomMainManifest: 1");
             bool customMainGradleTemplate = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "useCustomMainGradleTemplate: 1");
             bool arm64Only = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "AndroidTargetArchitectures: 2");
@@ -203,14 +207,14 @@ namespace Hecton8.Editor.Build
             report.AppendLine("| Check | Status | Evidence |");
             report.AppendLine("|---|---:|---|");
             AppendRow(report, "Addressables package", hasAddressables ? "PASS" : "BLOCKED", hasAddressables ? "manifest contains com.unity.addressables" : "manifest missing com.unity.addressables");
-            AppendRow(report, "Addressables project data", addressablesSettings ? "PASS" : "BLOCKED", addressablesSettings ? "Assets/AddressableAssetsData exists" : "Assets/AddressableAssetsData missing");
+            AppendRow(report, "Addressables project data", addressablesSettings ? "PASS" : "BLOCKED", addressablesSettings ? "Assets/AddressableAssetsData contains " + addressablesSettingsFiles + " non-meta files" : "Assets/AddressableAssetsData has no non-meta settings/content files");
             AppendRow(report, "Input System package", hasInputSystem ? "PASS" : "BLOCKED", hasInputSystem ? "manifest contains com.unity.inputsystem" : "manifest missing com.unity.inputsystem");
             AppendRow(report, "XR Management package", hasXrManagement ? "PASS" : "BLOCKED", hasXrManagement ? "manifest contains com.unity.xr.management" : "manifest missing com.unity.xr.management");
             AppendRow(report, "OpenXR package", hasOpenXr ? "PASS" : "BLOCKED", hasOpenXr ? "manifest contains com.unity.xr.openxr" : "manifest missing com.unity.xr.openxr");
             AppendRow(report, "Unity Meta OpenXR package", hasMetaOpenXr ? "PASS" : "WARN", hasMetaOpenXr ? "manifest contains com.unity.xr.meta-openxr" : "Quest-specific provider package is absent");
             AppendRow(report, "Legacy XR settings", xrProviderListEmpty ? "WARN" : "PASS", xrProviderListEmpty ? "XRSettings.asset is legacy/no provider evidence" : "XRSettings.asset has provider evidence");
-            AppendRow(report, "Modern XR loader list", noBuildTargetVrSettings ? "BLOCKED" : "PASS", noBuildTargetVrSettings ? "m_BuildTargetVRSettings is empty" : "build-target XR settings are present");
-            AppendRow(report, "Android quality inclusion", androidExcluded ? "BLOCKED" : "PASS", androidExcluded ? "QualitySettings excludes Android" : "QualitySettings does not exclude Android");
+            AppendRow(report, "XR provider serialized proof", xrProviderSerializedProof ? "PASS" : "BLOCKED", xrProviderSerializedProof ? "Legacy provider or XR Management OpenXR loader reference is serialized" : "No serialized OpenXR loader route found; package/settings assets alone are not provider proof");
+            AppendRow(report, "Android quality route", androidQualityReady ? "PASS" : "BLOCKED", androidQualityReady ? "Android default quality row is included for Android" : androidQualityBlocker);
             AppendRow(report, "Android package identity", androidTemplateId ? "BLOCKED" : "PASS", androidTemplateId ? "ProjectSettings still uses Unity template Android identifier" : "Android identifier is not the Unity template id");
             AppendRow(report, "Android target SDK policy", androidTargetSdkAutomatic ? "BLOCKED" : "PASS", androidTargetSdkAutomatic ? "AndroidTargetSdkVersion is automatic (0)" : "AndroidTargetSdkVersion is explicit");
             AppendRow(report, "Android custom manifest enabled", customMainManifest ? "PASS" : "BLOCKED", customMainManifest ? "useCustomMainManifest is enabled" : "AndroidManifest.xml exists but ProjectSettings will not use it");
@@ -312,7 +316,7 @@ namespace Hecton8.Editor.Build
             report.AppendLine();
         }
 
-        private static string ResolveQuestBlocker(bool hasOpenXr, bool hasXrManagement, bool hasMetaOpenXr, bool qualityExcludesAndroid)
+        private static string ResolveQuestBlocker(bool hasOpenXr, bool hasXrManagement, bool hasMetaOpenXr, bool xrProviderSerializedProof, string androidQualityBlocker)
         {
             if (!hasXrManagement)
                 return "XR Management package missing.";
@@ -320,9 +324,215 @@ namespace Hecton8.Editor.Build
                 return "OpenXR package missing.";
             if (!hasMetaOpenXr)
                 return "Meta OpenXR package missing for Quest-specific provider proof.";
-            if (qualityExcludesAndroid)
-                return "QualitySettings excludes Android.";
+            if (!xrProviderSerializedProof)
+                return "No serialized OpenXR provider route found.";
+            if (!string.IsNullOrEmpty(androidQualityBlocker))
+                return androidQualityBlocker;
             return "Needs Android player build, Quest runtime smoke test, input/haptics profile, thermals, and VRAM proof.";
+        }
+
+        private static string ResolveAndroidQualityBlocker(string projectRoot)
+        {
+            string qualitySettingsPath = Path.Combine(projectRoot, "ProjectSettings", "QualitySettings.asset");
+            if (!File.Exists(qualitySettingsPath))
+                return "ProjectSettings/QualitySettings.asset is missing.";
+
+            string qualityText = File.ReadAllText(qualitySettingsPath);
+            int androidDefaultIndex = ParseAndroidDefaultQualityIndex(qualityText);
+            if (androidDefaultIndex < 0)
+                return "QualitySettings `m_PerPlatformDefaultQuality.Android` is missing or invalid.";
+
+            string qualityName;
+            bool rowFound;
+            bool rowExcludesAndroid = QualityRowExcludesPlatform(
+                qualityText,
+                androidDefaultIndex,
+                "Android",
+                out qualityName,
+                out rowFound);
+            if (!rowFound)
+                return "QualitySettings Android default quality index " + androidDefaultIndex + " does not resolve to a quality row.";
+
+            return rowExcludesAndroid
+                ? "Android default quality row `" + FormatMissing(qualityName) + "` excludes Android."
+                : string.Empty;
+        }
+
+        private static int ParseAndroidDefaultQualityIndex(string qualityText)
+        {
+            if (string.IsNullOrEmpty(qualityText))
+                return -1;
+
+            int mapIndex = qualityText.IndexOf("m_PerPlatformDefaultQuality:", StringComparison.Ordinal);
+            if (mapIndex < 0)
+                return -1;
+
+            string[] lines = qualityText.Substring(mapIndex).Split('\n');
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string trimmed = lines[i].Trim();
+                if (!trimmed.StartsWith("Android:", StringComparison.Ordinal))
+                    continue;
+
+                string value = trimmed.Substring("Android:".Length).Trim();
+                int parsed;
+                return int.TryParse(value, out parsed) ? parsed : -1;
+            }
+
+            return -1;
+        }
+
+        private static bool QualityRowExcludesPlatform(
+            string qualityText,
+            int targetIndex,
+            string platformName,
+            out string qualityName,
+            out bool rowFound)
+        {
+            qualityName = string.Empty;
+            rowFound = false;
+            if (string.IsNullOrEmpty(qualityText) || targetIndex < 0)
+                return false;
+
+            string[] lines = qualityText.Split('\n');
+            int rowIndex = -1;
+            bool inTargetRow = false;
+            bool inExcludedPlatforms = false;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string trimmed = lines[i].Trim();
+                if (trimmed.StartsWith("m_TextureMipmapLimitGroupNames:", StringComparison.Ordinal))
+                    break;
+
+                if (trimmed.StartsWith("- serializedVersion:", StringComparison.Ordinal))
+                {
+                    rowIndex++;
+                    inTargetRow = rowIndex == targetIndex;
+                    inExcludedPlatforms = false;
+                    if (inTargetRow)
+                        rowFound = true;
+                    continue;
+                }
+
+                if (!inTargetRow)
+                    continue;
+
+                if (trimmed.StartsWith("name:", StringComparison.Ordinal))
+                {
+                    qualityName = trimmed.Substring("name:".Length).Trim();
+                    continue;
+                }
+
+                if (trimmed.StartsWith("excludedTargetPlatforms:", StringComparison.Ordinal))
+                {
+                    inExcludedPlatforms = true;
+                    continue;
+                }
+
+                if (inExcludedPlatforms && trimmed.StartsWith("- ", StringComparison.Ordinal))
+                {
+                    string excluded = trimmed.Substring(2).Trim();
+                    if (string.Equals(excluded, platformName, StringComparison.Ordinal))
+                        return true;
+                    continue;
+                }
+
+                if (inExcludedPlatforms && trimmed.Length > 0)
+                    inExcludedPlatforms = false;
+            }
+
+            return false;
+        }
+
+        private static string FormatMissing(string value)
+        {
+            return string.IsNullOrEmpty(value) ? "<missing>" : value;
+        }
+
+        private static bool HasSerializedXrProviderProof(string projectRoot)
+        {
+            string projectSettingsText = ReadRelativeText(projectRoot, "ProjectSettings/ProjectSettings.asset");
+            bool legacyProviderProof = projectSettingsText.IndexOf("m_BuildTargetVRSettings:", StringComparison.Ordinal) >= 0 &&
+                                       projectSettingsText.IndexOf("m_BuildTargetVRSettings: []", StringComparison.Ordinal) < 0;
+            if (legacyProviderProof)
+                return true;
+
+            string openXrSettingsPath = Path.Combine(projectRoot, "Assets", "XR", "Settings", "OpenXR Package Settings.asset");
+            string openXrSettingsText = ReadFullText(openXrSettingsPath);
+            string openXrSettingsGuid = ReadUnityMetaGuid(openXrSettingsPath + ".meta");
+            bool openXrSettingsRegistered = openXrSettingsText.IndexOf("UnityEngine.XR.OpenXR.OpenXRSettings", StringComparison.Ordinal) >= 0 &&
+                                            GuidReferencedInText(ReadRelativeText(projectRoot, "ProjectSettings/EditorBuildSettings.asset"), openXrSettingsGuid);
+
+            string openXrLoaderPath = Path.Combine(projectRoot, "Assets", "XR", "Loaders", "OpenXRLoader.asset");
+            string openXrLoaderText = ReadFullText(openXrLoaderPath);
+            string openXrLoaderGuid = ReadUnityMetaGuid(openXrLoaderPath + ".meta");
+            bool openXrLoaderAssetPresent = openXrLoaderText.IndexOf("UnityEngine.XR.OpenXR.OpenXRLoader", StringComparison.Ordinal) >= 0;
+            bool openXrLoaderSerializedReference = GuidReferencedInSerializedAssets(projectRoot, openXrLoaderGuid, openXrLoaderPath);
+
+            return openXrSettingsRegistered && openXrLoaderAssetPresent && openXrLoaderSerializedReference;
+        }
+
+        private static bool GuidReferencedInSerializedAssets(string projectRoot, string guid, string skipPath)
+        {
+            if (string.IsNullOrEmpty(guid))
+                return false;
+
+            string[] roots =
+            {
+                Path.Combine(projectRoot, "ProjectSettings"),
+                Path.Combine(projectRoot, "Assets", "XR")
+            };
+            string normalizedSkipPath = Path.GetFullPath(skipPath);
+            for (int i = 0; i < roots.Length; i++)
+            {
+                if (!Directory.Exists(roots[i]))
+                    continue;
+
+                string[] files = Directory.GetFiles(roots[i], "*.asset", SearchOption.AllDirectories);
+                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+                {
+                    if (string.Equals(Path.GetFullPath(files[fileIndex]), normalizedSkipPath, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    if (GuidReferencedInText(ReadFullText(files[fileIndex]), guid))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool GuidReferencedInText(string text, string guid)
+        {
+            return !string.IsNullOrEmpty(guid) &&
+                   !string.IsNullOrEmpty(text) &&
+                   text.IndexOf(guid, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static string ReadUnityMetaGuid(string metaPath)
+        {
+            string text = ReadFullText(metaPath);
+            string[] lines = text.Split('\n');
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string trimmed = lines[i].Trim();
+                if (!trimmed.StartsWith("guid:", StringComparison.Ordinal))
+                    continue;
+
+                return trimmed.Substring("guid:".Length).Trim();
+            }
+
+            return string.Empty;
+        }
+
+        private static string ReadRelativeText(string projectRoot, string relativePath)
+        {
+            return ReadFullText(Path.Combine(projectRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+        }
+
+        private static string ReadFullText(string path)
+        {
+            return File.Exists(path) ? File.ReadAllText(path) : string.Empty;
         }
 
         private static bool IsTargetSupported(BuildTargetGroup group, BuildTarget target)
@@ -373,6 +583,26 @@ namespace Hecton8.Editor.Build
         {
             string path = Path.Combine(projectRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
             return File.Exists(path);
+        }
+
+        private static int CountFiles(string projectRoot, string relativePath, bool ignoreMetaFiles)
+        {
+            string path = Path.Combine(projectRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            if (!Directory.Exists(path))
+                return 0;
+
+            string[] files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
+            if (!ignoreMetaFiles)
+                return files.Length;
+
+            int count = 0;
+            for (int i = 0; i < files.Length; i++)
+            {
+                if (!files[i].EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                    count++;
+            }
+
+            return count;
         }
 
         private static int CountTextHits(string projectRoot, string relativeRoot, string needle)

@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Competitor And Sentiment Monitoring Queries
 
 Status: living monitoring playbook
-Owner lane: SHINOBU_81 / competitive intelligence
+Owner lane: Marketing / competitive intelligence
 Runtime impact: none
 
 ## Purpose
@@ -178,6 +178,31 @@ V6 operational read:
 - Performance/stutter wording is low in this sample; HECTON performance claims remain blocked until build, hardware, settings, and frame-time proof exist.
 - The next HECTON action is still asset proof: same-day pain freshness plus metadata `pain_freshness_source`, `pain_freshness_checked_at`, `viewer_named_decision`, and `capture_verdict` before any first-pack priority, public post, creator send, or Steam movement.
 
+### 2026-05-26 Steam API / Store Screenshot Refresh V7
+
+Evidence boundary: public Steam review API, appdetails API, Steam store page, SteamDB, and six official Steam CDN screenshots checked on 2026-05-26. Counts are volatile. This refresh updates internal competitive ceiling and capture-priority logic only; it does not authorize public comparison copy, competitor attack language, outreach, account/browser action, or public posting.
+
+| Query | Result | Evidence class | Use |
+|---|---:|---|---|
+| All-language API summary | 89,716 positive / 8,629 negative / 98,345 total; `Very Positive`. | Official platform API: `https://store.steampowered.com/appreviews/1962700?json=1&filter=summary&language=all&purchase_type=all&num_per_page=0` | Competitor strength increased after V6. A backlash/collapse thesis is false. |
+| English API summary | 55,738 positive / 3,938 negative / 59,676 total; `Very Positive`. | Official platform API: `https://store.steampowered.com/appreviews/1962700?json=1&filter=summary&language=english&purchase_type=all&num_per_page=0` | English creator/audience work still starts from SN2 as the dominant underwater-survival reference point. |
+| Appdetails feature read | Steam appdetails reports release on 14 May 2026, 90,944 recommendations, six official screenshots, and broad feature lane: single-player, multiplayer, co-op, online co-op, cross-platform multiplayer, full controller support, accessibility categories, Steam Cloud, Family Sharing, and Early Access genres. | Official platform API: `https://store.steampowered.com/api/appdetails?appids=1962700&filters=basic,categories,genres,screenshots,recommendations,release_date` | HECTON must not answer feature breadth with copy. First assets must prove narrower identity and decision clarity. |
+| Steam store read | Steam page still presents SN2 as released on 14 May 2026, Early Access, `Very Positive`, and "play alone or with friends" online co-op with up to three friends. | Official platform page: `https://store.steampowered.com/app/1962700/Subnautica_2/` | Do not imply HECTON can compete on co-op. Keep public lane single-player-first and proof-first. |
+| Official screenshot read | Six official screenshots show bright/cozy alien ocean, clean modular bases/interiors, visible co-op/player presence, soft rounded vehicles, one stronger orange biome, and high readability. They show little pressure-vessel grime, corrosion, industrial failure, or black-water dread. | Official Steam screenshot assets via appdetails API | The ceiling to beat is not "more colorful ocean." It is harsher industrial pressure, machinery, route risk, and readable agency. |
+| SteamDB trend read | SteamDB public page showed a strong public trend around 98k reviews, `Very Positive` sentiment, large active player counts, and a listed all-time Steam peak of 467,845. | Third-party index: `https://steamdb.info/app/1962700/` | Market gravity remains high. Use only as directional context; official platform sources remain primary. |
+| Recent English negative sample | 100 recent negatives sampled; rough term hits: `eula` 14, `kill` 12, `base` 11, `building` 8, `content` 8, `crash` 7, `weapon` 6, `fps` 6, `bug` 5, `multiplayer` 4, `short` 3, `co-op` 3, `performance` 2. | Official platform API sample: `https://store.steampowered.com/appreviews/1962700?json=1&language=english&purchase_type=all&filter=recent&review_type=negative&num_per_page=100` | Directional only. Agency, base/machinery readability, content-loop proof, and trust disclosure remain private proof buckets. |
+| Recent English positive sample | 100 recent positives sampled; rough term hits: `subnautica` 20, `story` 14, `base` 11, `content` 8, `friend` 7, `creature` 7, `better` 6, `visual` 6, `beautiful` 4, `pretty` 4, `ocean` 4, `exploration` 4, `multiplayer` 3. | Official platform API sample: `https://store.steampowered.com/appreviews/1962700?json=1&language=english&purchase_type=all&filter=recent&review_type=positive&num_per_page=100` | Positive pull is brand continuity, story, base, creatures, and co-op/friend context. HECTON must counter with identity, not audience-denial. |
+
+V7 operational read:
+
+- SN2 is market-strong, not weak. HECTON cannot win by hoping players reject it.
+- SN2 visual strength is readability, color, cozy alien wonder, co-op presence, and clean base fantasy.
+- SN2 visual gap, based on official screenshots, is industrial severity: pressure-vessel logic, dirty machinery, corrosion, damage response, black water, and instrument-led dread.
+- Recent positive and negative samples both make base, story/content loop, agency, and trust visible; this reinforces `PLAN-SHOT-002`, `PLAN-SHOT-005`, `PLAN-SHOT-006`, `PLAN-CLIP-001`, and `PLAN-CLIP-003`.
+- First HECTON capture must beat SN2's screenshot language with `PLAN-SHOT-001`, `PLAN-SHOT-002`, `PLAN-SHOT-005`, `PLAN-SHOT-006`, `PLAN-CLIP-001`, `PLAN-CLIP-003`, and `PLAN-CLIP-004` if the build can prove them honestly.
+- Performance and low-end claims remain blocked. Use fake-first visual methods internally, but do not publish any "runs better" claim without profiler/build/hardware/settings receipts.
+- Public copy boundary is unchanged: no "Subnautica killer," no SN2 pain callouts, no EULA moralizing, no co-op bait, no unsupported performance superiority.
+
 ### Pain Bucket Freshness Rule
 
 Before a HECTON capture packet uses any SN2-derived pain bucket, run a same-day freshness check:
@@ -191,7 +216,7 @@ If any answer is weak, downgrade the bucket to `MONITOR_ONLY` and do not priorit
 
 When an asset receives a nonzero pain-proof score, record the monitoring/source row in `pain_freshness_source` and the check date in `pain_freshness_checked_at` inside `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv`. Notes-only freshness proof is invalid.
 
-Current same-day owner row: V6 is the only valid SN2 freshness row after 2026-05-21 for new capture-priority changes. V4/V5 can remain historical context, but they cannot be copied into a new capture packet without a same-day refresh.
+Current same-day owner row: V7 is the only valid SN2 freshness row after 2026-05-26 for new capture-priority changes. V4/V5/V6 can remain historical context, but they cannot be copied into a new capture packet without a same-day refresh.
 
 Pain buckets from the sample and prior sprint:
 
@@ -224,7 +249,7 @@ Use this only as capture priority logic. It cannot override asset QA or creator 
 
 ### Current Decision
 
-The next SN2-aware task is not another competitor memo. It is to make the first HECTON capture packet answer at least one private pain bucket per public asset while never naming SN2's weakness in public copy. V6 keeps the priority on agency, base/machinery readability, route depth, trust/disclosure, and HECTON-native identity. Older V4/V5 samples remain historical context only; they cannot drive a new capture packet without another same-day refresh. V6 does not justify public comparison language.
+The next SN2-aware task is not another competitor memo. It is to make the first HECTON capture packet answer at least one private pain bucket per public asset while never naming SN2's weakness in public copy. V7 keeps the priority on agency, base/machinery readability, route depth, trust/disclosure, and HECTON-native identity, with stronger emphasis on industrial pressure and black-water severity after the official screenshot read. Older V4/V5/V6 samples remain historical context only; they cannot drive a new capture packet without another same-day refresh. V7 does not justify public comparison language.
 
 ## Evidence Classes
 

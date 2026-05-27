@@ -1,5 +1,6 @@
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Environment;
 using System.Collections.Generic;
 using System;
@@ -299,21 +300,47 @@ namespace Hecton8.World
             return target != null;
         }
 
+        public static bool TryResolveWorldResourceSpawnerReadModel(
+            ref IWorldResourceSpawnerReadModel target,
+            ref IWorldResourceSpawnerReadDependencySink dependencySink)
+        {
+            if (target != null)
+            {
+                if (dependencySink == null)
+                    dependencySink = target as IWorldResourceSpawnerReadDependencySink;
+                return true;
+            }
+
+            ProceduralOreSpawner active = ProceduralOreSpawner.ActiveRuntimeInstance;
+            if (active == null || !active.isActiveAndEnabled)
+                return false;
+
+            target = active;
+            dependencySink = active;
+            return true;
+        }
+
         public static bool TryResolveMapMagicBridge(ref MapMagicBridge target)
         {
             if (target != null)
                 return true;
 
-            if (_CachedMapMagicBridge != null)
+            MapMagicBridge active = MapMagicBridge.ActiveRuntimeInstance;
+            if (active != null && active.isActiveAndEnabled)
+            {
+                _CachedMapMagicBridge = active;
+                target = active;
+                return true;
+            }
+
+            if (_CachedMapMagicBridge != null && _CachedMapMagicBridge.isActiveAndEnabled)
             {
                 target = _CachedMapMagicBridge;
                 return true;
             }
 
-            target = GlobalRegistry.MapMagic;
-            if (target != null)
-                _CachedMapMagicBridge = target;
-            return target != null;
+            _CachedMapMagicBridge = null;
+            return false;
         }
 
         public static bool TryResolveHectonMapMagicVegetationBridge(ref HectonMapMagicVegetationBridge target)
@@ -321,11 +348,11 @@ namespace Hecton8.World
             if (target != null)
                 return true;
 
-            HectonMapMagicVegetationBridge registered = GlobalRegistry.MapMagicVegetation;
-            if (registered != null)
+            HectonMapMagicVegetationBridge active = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (active != null && active.isActiveAndEnabled)
             {
-                _CachedVegetationBridge = registered;
-                target = registered;
+                _CachedVegetationBridge = active;
+                target = active;
                 return true;
             }
 

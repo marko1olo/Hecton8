@@ -84,6 +84,22 @@ Shader "Hecton8/UI/WristHudSDF"
                 return frac((p3.x + p3.y) * p3.z);
             }
 
+            float ResolveLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) / max(edge1 - edge0, 0.000001));
+            }
+
+            float ResolveLinearRampInv01(float edge0, float edge1, float value)
+            {
+                return 1.0 - ResolveLinearRamp01(edge0, edge1, value);
+            }
+
+            float DistanceSq2(float2 a, float2 b)
+            {
+                float2 delta = a - b;
+                return dot(delta, delta);
+            }
+
             Varyings Vert(Attributes input, uint instanceId : SV_InstanceID)
             {
                 WristHudQuadData data = _WristHudQuads[instanceId];
@@ -112,7 +128,7 @@ Shader "Hecton8/UI/WristHudSDF"
                 float2 shiftedUv = uv;
                 shiftedUv.x += (lineNoise - 0.5) * glitch * 0.018;
                 float sdf = SAMPLE_TEXTURE2D(_FontAtlas, sampler_FontAtlas, shiftedUv).a;
-                return smoothstep(0.42, 0.58, sdf);
+                return ResolveLinearRamp01(0.42, 0.58, sdf);
             }
 
             float SpecialAlpha(uint code, float2 localUv, float4 uvRect)
@@ -120,36 +136,36 @@ Shader "Hecton8/UI/WristHudSDF"
                 if (code == SPECIAL_DEPTH_BAR)
                 {
                     float edge = min(min(localUv.x, 1.0 - localUv.x), min(localUv.y, 1.0 - localUv.y));
-                    return smoothstep(0.0, 0.12, edge) * saturate(uvRect.x);
+                    return ResolveLinearRamp01(0.0, 0.12, edge) * saturate(uvRect.x);
                 }
 
                 if (code == SPECIAL_PDA_GRID)
                 {
                     float2 edgeDistance = abs(localUv - 0.5);
-                    float border = smoothstep(0.46, 0.49, max(edgeDistance.x, edgeDistance.y));
-                    float scan = smoothstep(0.02, 0.0, abs(frac(localUv.y * 5.0 + _Time.y * 0.9) - 0.5));
+                    float border = ResolveLinearRamp01(0.46, 0.49, max(edgeDistance.x, edgeDistance.y));
+                    float scan = ResolveLinearRampInv01(0.0, 0.02, abs(frac(localUv.y * 5.0 + _Time.y * 0.9) - 0.5));
                     return saturate(border + scan * 0.12);
                 }
 
                 if (code == SPECIAL_VIGNETTE)
                 {
-                    float radial = distance(localUv, 0.5);
-                    return smoothstep(0.22, 0.74, radial) * saturate(uvRect.x);
+                    float radialSq = DistanceSq2(localUv, 0.5);
+                    return ResolveLinearRamp01(0.0484, 0.5476, radialSq) * saturate(uvRect.x);
                 }
 
                 if (code == SPECIAL_RADAR_BLIP)
                 {
-                    float radial = distance(localUv, 0.5);
-                    float core = smoothstep(0.5, 0.18, radial);
-                    float ring = smoothstep(0.45, 0.36, radial) * smoothstep(0.22, 0.31, radial);
+                    float radialSq = DistanceSq2(localUv, 0.5);
+                    float core = ResolveLinearRampInv01(0.0324, 0.25, radialSq);
+                    float ring = ResolveLinearRampInv01(0.1296, 0.2025, radialSq) * ResolveLinearRamp01(0.0484, 0.0961, radialSq);
                     return saturate(core + ring * 0.65);
                 }
 
                 if (code == SPECIAL_COMPASS)
                 {
-                    float ticks = smoothstep(0.08, 0.0, abs(frac((localUv.x + uvRect.x) * 24.0) - 0.5));
-                    float center = smoothstep(0.025, 0.0, abs(localUv.x - 0.5));
-                    float band = smoothstep(0.5, 0.34, abs(localUv.y - 0.5));
+                    float ticks = ResolveLinearRampInv01(0.0, 0.08, abs(frac((localUv.x + uvRect.x) * 24.0) - 0.5));
+                    float center = ResolveLinearRampInv01(0.0, 0.025, abs(localUv.x - 0.5));
+                    float band = ResolveLinearRampInv01(0.34, 0.5, abs(localUv.y - 0.5));
                     return saturate((ticks * 0.7 + center) * band);
                 }
 

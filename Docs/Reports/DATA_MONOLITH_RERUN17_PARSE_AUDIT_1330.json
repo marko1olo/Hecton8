@@ -1,0 +1,19 @@
+﻿{
+    "agentId":  "1330",
+    "task":  "1330_PARSE_RERUN17",
+    "status":  "VERIFIED_GREEN",
+    "generatedUtc":  "2026-05-26T18:24:16.5264197Z",
+    "scannedFiles":  17,
+    "roslynHotpathParseFailures":  0,
+    "nativeAliasParseFailures":  0,
+    "h8binValidatorStatus":  "PASS",
+    "h8binFilesChecked":  2,
+    "h8binStructsParsed":  32,
+    "compilerPromoteThrowControlFlowFindings":  0,
+    "compilerCatchAllFindings":  0,
+    "compilerFileInfoFindings":  1,
+    "compilerFileInfoGuarded":  true,
+    "cleanupHelpersGuarded":  true,
+    "validateBlobUsesTryFileExists":  true,
+    "verificationHashSha256":  "1282372ce0f6e3eb10fc737f80cbdbf9b3c2d04b16bbb00e834fdc1870dcc692"
+}

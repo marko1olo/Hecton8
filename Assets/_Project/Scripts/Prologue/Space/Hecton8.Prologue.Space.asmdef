@@ -5,6 +5,8 @@
         "Hecton8.Core",
         "Hecton8.Core.Contracts",
         "Hecton8.Core.Memory",
+        "Hecton8.Narrative.Prologue",
+        "Hecton8.Prologue.VFX",
         "Unity.Mathematics",
         "Unity.Collections",
         "Unity.Burst"

@@ -1,0 +1,130 @@
+{
+  "generatedUtc": "2026-05-25T22:42:00Z",
+  "agentId": "1316",
+  "scope": {
+    "declaredDomain": "Assets/_Project/Scripts/World/Vegetation",
+    "actualDomainOnDisk": "Assets/_Project/Scripts/World",
+    "primaryTarget": "Assets/_Project/Scripts/World/VegetationMemoryPool.cs",
+    "ownerClass": "Hecton8.World.HectonMapMagicVegetationBridge"
+  },
+  "task01": {
+    "ledger": "Docs/Reports/VEGETATION_NATIVE_ALIAS_LEDGER_1316.json",
+    "forbiddenFieldLikeAliases": 75,
+    "groups": [
+      { "ownerType": "NativeChunkPool", "count": 8, "role": "chunk-resident instance payload pools" },
+      { "ownerType": "ActiveAggregateNativeBufferSet", "count": 7, "role": "front/back active renderer export aggregates" },
+      { "ownerType": "VegetationNativeMemory", "count": 60, "role": "cross-domain density, threat, flow, nav, HLOD, defrag and wreck snapshots" }
+    ],
+    "roslynStatus": "Microsoft.CodeAnalysis.CSharp.dll was not available from the local shell search path; field scanner was restricted to C# field declarations in the target file and found the required 75 aliases."
+  },
+  "task02Ownership": {
+    "rightfulSystemId": "SystemID.WorldSargassum",
+    "bufferRangePlan": {
+      "base": 74398,
+      "endExclusive": 74520,
+      "reason": "Existing H8Memory allocations occupy 74396, 74397 and 74403-74405 for indirect vegetation/sargassum. 74398-74399 are now reserved for the vegetation memory telemetry ring and cursor; later payload lanes must be centrally named before use."
+    },
+    "lifecycle": [
+      {
+        "lane": "chunkPool.surface/underwater",
+        "allocationSites": ["HectonMapMagicVegetationBridge.InitializeChunkPool", "VegetationMemoryPool.EnsureDefragScratchPoolCapacity"],
+        "producerPhase": "chunk residency and defrag preparation",
+        "consumerPhase": "VISUAL_SYNC renderer aggregate rebuild and nav obstacle export",
+        "vaultAction": "cold EnsureGenerationHandle<T>; phase-local TryAcquireWriteLock for writes; TryReadOnlyHandle for exports"
+      },
+      {
+        "lane": "activeAggregate.front/back",
+        "allocationSites": ["HectonMapMagicVegetationBridge.EnsureActiveAggregateBufferCapacity"],
+        "producerPhase": "LateFrame/VISUAL_SYNC aggregate swap",
+        "consumerPhase": "HectonIndirectVegetationRenderer and VoxelDynamicNavGridRuntime read payloads",
+        "vaultAction": "front/back descriptor pairs; no persistent NativeArray aliases in accessors"
+      },
+      {
+        "lane": "density/threat/flow/thermal/canopy snapshots",
+        "allocationSites": ["VegetationCapacityUtilities helpers", "EnsureEcosystemThreatGridCapacity", "flow field integrator"],
+        "producerPhase": "slow tick ecology and flow integration",
+        "consumerPhase": "query services, BRG upload helpers, nav support sampling",
+        "vaultAction": "contiguous NativeArray<T> descriptors, one BufferID per lane"
+      },
+      {
+        "lane": "spatial hash lanes",
+        "allocationSites": ["EnsureThreatSamplingHashCapacity", "EnsureArtificialStructureHashCapacity", "EnsureAbyssalNavCapacity"],
+        "producerPhase": "density/threat/nav rebuild",
+        "consumerPhase": "Burst flow jobs and abyssal nav lookup",
+        "vaultAction": "requires DTO conversion to contiguous hash buckets/next/value arrays; IDataVault cannot directly own NativeParallelMultiHashMap<TK,TV>"
+      },
+      {
+        "lane": "NativeList path/node lanes",
+        "allocationSites": ["EnsureAbyssalNavCapacity", "EnsureAbyssalPathCapacity"],
+        "producerPhase": "abyssal portal route solve and nav snapshot build",
+        "consumerPhase": "path smoothing job, debug snapshot and route copy",
+        "vaultAction": "replace with NativeArray<T> payload plus int counter handle; no NativeList handle type exists"
+      }
+    ]
+  },
+  "task03DependencyGraph": {
+    "externalConsumers": [
+      "HectonIndirectVegetationRenderer: reads HectonIndirectVegetationNativeReadBuffer payloads for BRG/GPU upload.",
+      "VoxelDynamicNavGridRuntime: reads active surface/underwater vegetation payloads for dynamic obstacle generation.",
+      "VegetationFlowFieldIntegrator: schedules Burst jobs over threat chunk hash and artificial structure hash lanes.",
+      "VegetationDensityQueryService: rebuilds abyssal nav graph and density snapshots.",
+      "VegetationNavGridSynchronizer: owns abyssal path list jobs, HLOD snapshots, nav graph hash and support grid.",
+      "VegetationPredatorFearField: uploads predator fear snapshots to GraphicsBuffer.",
+      "VegetationThreatAndStructureService: public read query service for threat, canopy, flow and conduit state."
+    ],
+    "publicAccessorTransition": "Get/TryGet/Read accessors must return false/default unless IDataVault.TryReadOnlyHandle succeeds against the cached generation handle. Accessors must not allocate, poll GlobalRegistry, grow buffers, publish events or Complete jobs.",
+    "raceControl": "Writers use TryAcquireWriteLock + try/finally ReleaseWriteLock inside the owning phase. Readers resolve read-only views only inside the consumer phase and never persist the NativeArray view beyond the call."
+  },
+  "task04DtoLayoutPlan": {
+    "alreadyExplicit": [
+      "HectonVegetationInstanceData",
+      "PredatorFearNodeSnapshot",
+      "TerrainHoleRecord",
+      "HLODData",
+      "TerrainHoleStreamingRecord",
+      "SwarmWakeImpulse",
+      "AbsoluteUniversePosition",
+      "MegaWreckStreamSection"
+    ],
+    "requiresExplicitOrValidatorCoverage": [
+      "PoolBlock",
+      "ChunkSliceMoveRecord",
+      "ActiveAggregateCopyRecord",
+      "ArtificialStructureRecord",
+      "VegetationDensityChunkRecord"
+    ],
+    "hashDtoPlan": "NativeParallelMultiHashMap<int,int> lanes become explicit 8-byte pair DTOs plus bucket heads/next-index arrays. Pair DTO: int Key at 0, int Value at 4, Size 8.",
+    "telemetryDtoPlan": "VegetationTelemetryEntry must be LayoutKind.Explicit Size 64 and validator-checked with UnsafeUtility.SizeOf/OffsetOf."
+  },
+  "task05TelemetryPlan": {
+    "entryName": "VegetationTelemetryEntry",
+    "entryBytes": 64,
+    "capacity": 300,
+    "bufferIds": {
+      "ring": 74398,
+      "cursor": 74399,
+      "surfaceDefragMoves": 74406,
+      "underwaterDefragMoves": 74407,
+      "surfaceAggregateCopyRecords": 74408,
+      "underwaterAggregateCopyRecords": 74409,
+      "megaWreckStreamSnapshot": 74410
+    },
+    "fields": [
+      { "name": "StateHash", "offset": 0, "type": "ulong" },
+      { "name": "BufferId", "offset": 8, "type": "uint" },
+      { "name": "Generation", "offset": 12, "type": "uint" },
+      { "name": "Frame", "offset": 16, "type": "uint" },
+      { "name": "ExpectedLength", "offset": 20, "type": "int" },
+      { "name": "ActualLength", "offset": 24, "type": "int" },
+      { "name": "CulledInstances", "offset": 28, "type": "int" },
+      { "name": "JobMicroseconds", "offset": 32, "type": "float" },
+      { "name": "QualityWeight", "offset": 36, "type": "float" },
+      { "name": "FailureCode", "offset": 40, "type": "ushort" },
+      { "name": "Phase", "offset": 42, "type": "ushort" },
+      { "name": "Flags", "offset": 44, "type": "uint" },
+      { "name": "Position", "offset": 48, "type": "float3" },
+      { "name": "Pad", "offset": 60, "type": "uint" }
+    ],
+    "dumpPath": "Docs/AgentLogs/Dump_1316_Vegetation.bin"
+  }
+}

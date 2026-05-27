@@ -119,6 +119,12 @@ namespace Hecton8.Interaction
             _holdProgressSeconds = 0f;
         }
 
+        private void OnDestroy()
+        {
+            InteractableRegistry.InvalidateTree(this);
+            UnregisterReceiver();
+        }
+
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
@@ -128,7 +134,8 @@ namespace Hecton8.Interaction
                 return;
 
             bool shouldRestoreTick = (_registeredTick && !_tickDormant) || ShouldRunLatchTick();
-            TryUnregisterTick();
+            _registeredTick = false;
+            _tickDormant = false;
             if (shouldRestoreTick && currentService != null && isActiveAndEnabled)
                 TryRegisterTick();
         }
@@ -201,11 +208,14 @@ namespace Hecton8.Interaction
         public void Tick(float deltaTime)
         {
             if (_tickDormant)
+            {
+                TryUnregisterTick();
                 return;
+            }
 
             if (_latched)
             {
-                _tickDormant = true;
+                TryUnregisterTick();
                 return;
             }
 
@@ -219,7 +229,7 @@ namespace Hecton8.Interaction
 
                 if (_holdProgressSeconds >= _resolvedRequiredHoldSeconds)
                 {
-                    CompleteLatch(_lastHandPosition, _lastHandSide, false);
+                    CompleteLatch(_lastHandPosition, _lastHandSide);
                     return;
                 }
             }
@@ -230,7 +240,7 @@ namespace Hecton8.Interaction
                     _holdProgressSeconds - _resolvedHoldDecaySecondsPerSecond * safeDeltaTime);
 
                 if (_holdProgressSeconds <= 0f)
-                    _tickDormant = true;
+                    TryUnregisterTick();
             }
         }
 
@@ -261,7 +271,7 @@ namespace Hecton8.Interaction
             TryRegisterTick();
         }
 
-        private void CompleteLatch(Vector3 handPosition, PhysicalHandSide handSide, bool unregisterTick = true)
+        private void CompleteLatch(Vector3 handPosition, PhysicalHandSide handSide)
         {
             if (_latched)
                 return;
@@ -272,10 +282,7 @@ namespace Hecton8.Interaction
             _latched = true;
             _holdProgressSeconds = _resolvedRequiredHoldSeconds;
             ApplyLatchedVisual();
-            if (unregisterTick)
-                TryUnregisterTick();
-            else
-                _tickDormant = true;
+            TryUnregisterTick();
         }
 
         private void ApplyLatchedVisual()
@@ -354,7 +361,7 @@ namespace Hecton8.Interaction
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying)
+            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);

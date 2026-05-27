@@ -1,0 +1,692 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\CARTOGRAPHY_HOTPATH_AUDIT_1321_RAW.json",
+  "auditHashSha256": "0d2670dbbd605d6de81a2ec9d0869fdc9142c4eac949548e4dd35c09ee934316",
+  "summary": {
+    "scannedFiles": 6,
+    "parseFailures": 0,
+    "totalFindings": 82,
+    "objectCreations": 82,
+    "valueTypeCreations": 55,
+    "managedRiskCreations": 27,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\PDA\\CartographyGridJobs.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\PDA\\PlayerExplorationTracker.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\PDA\\PDAUtility.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\PDA\\PDALogbookManager.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\PDA\\PDAMarkerHUDElement.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\PDA\\PDAMarkerRegistry.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 921,
+      "owner": "BuildDefaultTuning",
+      "kind": "value_type_creation",
+      "detail": "CartographyTuningDTO",
+      "snippet": "new CartographyTuningDTO             {                 SonarPingRadiusMeters = CartographyGridConstants.MaxRevealRadiusMeters,                 SurfaceThicknessMeters = CartographyGridConstants.DefaultSurfaceThicknessMeters,                 "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1127,
+      "owner": "WriteTelemetryDump",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(telemetryDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1128,
+      "owner": "WriteTelemetryDump",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1399,
+      "owner": "TryResolveMacroCell",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3((int)macro.x, (int)macro.y, (int)macro.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1408,
+      "owner": "ToGridIndex",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3((int)grid.x, (int)grid.y, (int)grid.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1422,
+      "owner": "TryEncodeMacroCell",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(localX, localY, localZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1454,
+      "owner": "DecodeBitIndex",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                 localX - CartographyGridConstants.OriginOffset,                 localY - CartographyGridConstants.OriginOffset,                 localZ - CartographyGridConstants.OriginOffset)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1463,
+      "owner": "ToAbsoluteDouble3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(                 ((double)aup.GridX * CartographyGridConstants.AupCellSizeMeters) + aup.LocalX,                 ((double)aup.GridY * CartographyGridConstants.AupCellSizeMeters) + aup.LocalY,                 ((double)aup.GridZ * "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1667,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(x, 0, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1668,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "CartographySectorDTO",
+      "snippet": "new CartographySectorDTO                 {                     SectorHash = hash,                     BaseDataOffset = i * CartographyGridConstants.WordCount,                     DiscoveredVoxelCount = 0u,                     Flags = Cartog"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1678,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "CartographyCounterDTO",
+      "snippet": "new CartographyCounterDTO                     {                         LastSectorHash = hash                     }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1696,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "CartographyTuningDTO",
+      "snippet": "new CartographyTuningDTO                 {                     SonarPingRadiusMeters = CartographyGridConstants.MaxRevealRadiusMeters,                     SurfaceThicknessMeters = CartographyGridConstants.DefaultSurfaceThicknessMeters,     "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1868,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 1869,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(0.5)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2048,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "CartographyRevealAupCellJob",
+      "snippet": "new CartographyRevealAupCellJob                     {                         DiscoveredSectors = DiscoveredSectors,                         Counters = Counters,                         Center = PlayerAup,                         WordOffset"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2059,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "ApplySonarDiscoveryJob",
+      "snippet": "new ApplySonarDiscoveryJob                     {                         DiscoveredSectors = DiscoveredSectors,                         SurfaceMaskWords = SurfaceMaskWords,                         Counters = Counters,                       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2093,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "ApplySonarDiscoveryJob",
+      "snippet": "new ApplySonarDiscoveryJob                 {                     DiscoveredSectors = DiscoveredSectors,                     SurfaceMaskWords = SurfaceMaskWords,                     Counters = Counters,                     Center = signal.Ce"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2111,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "CartographyStateDTO",
+      "snippet": "new CartographyStateDTO                 {                     LastUpdatedAUP = CartographyGridMath.ToAbsoluteDouble3(in PlayerAup),                     UpdatedVoxelCount = (uint)math.max(0, finalCounter.TotalDiscoveredVoxels),              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2135,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "ApplySonarDiscoveryJob",
+      "snippet": "new ApplySonarDiscoveryJob             {                 DiscoveredSectors = DiscoveredSectors,                 Counters = Counters,                 Center = Center,                 RadiusMeters = RadiusMeters,                 SurfaceThickn"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2230,
+      "owner": "InsideAnyMockCluster",
+      "kind": "object_creation",
+      "detail": "Unity.Mathematics.Random",
+      "snippet": "new Unity.Mathematics.Random(math.max(1u, seed))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2231,
+      "owner": "InsideAnyMockCluster",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                     rng.NextFloat(-2200f, 2200f),                     rng.NextFloat(-420f, 420f),                     rng.NextFloat(-2200f, 2200f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2393,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "CartographyTelemetryEntry",
+      "snippet": "new CartographyTelemetryEntry             {                 PlayerGridX = PlayerAup.GridX,                 PlayerGridY = PlayerAup.GridY,                 PlayerGridZ = PlayerAup.GridZ,                 PlayerLocalX = math.isfinite(PlayerAup."
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2413,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "CartographyStateDTO",
+      "snippet": "new CartographyStateDTO                 {                     LastUpdatedAUP = CartographyGridMath.ToAbsoluteDouble3(in PlayerAup),                     UpdatedVoxelCount = (uint)discoveredVoxels,                     MapFlags = mapFlags     "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2473,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "CartographyRleRunDTO",
+      "snippet": "new CartographyRleRunDTO                     {                         WordValue = previous,                         StartWordIndex = start,                         WordCount = (ushort)math.max(1, runLength),                         Flags ="
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2489,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "CartographyRleRunDTO",
+      "snippet": "new CartographyRleRunDTO                 {                     WordValue = previous,                     StartWordIndex = start,                     WordCount = (ushort)math.max(1, safeWordCount - start),                     Flags = previou"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2546,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+      "line": 2559,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "CartographyDebugVoxelDTO",
+      "snippet": "new CartographyDebugVoxelDTO                             {                                 X = cell.x,                                 Y = cell.y,                                 Z = cell.z,                                 Flags = (uint)bit"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 508,
+      "owner": "ScheduleCartographySimulation",
+      "kind": "value_type_creation",
+      "detail": "ApplyCartographyFrameDiscoveryJob",
+      "snippet": "new ApplyCartographyFrameDiscoveryJob                 {                     DiscoveredSectors = buffers.DiscoveryWords,                     SurfaceMaskWords = buffers.SurfaceMaskWords,                     PendingSignals = buffers.PendingPin"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 741,
+      "owner": "CopyExploredChunks",
+      "kind": "object_creation",
+      "detail": "Vector2Int",
+      "snippet": "new Vector2Int(chunkX, chunkZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 925,
+      "owner": "TryAupToChunk",
+      "kind": "object_creation",
+      "detail": "Vector2Int",
+      "snippet": "new Vector2Int(                 (int)chunkX,                 (int)chunkZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 976,
+      "owner": "MarkChunkExplored",
+      "kind": "object_creation",
+      "detail": "Vector2Int",
+      "snippet": "new Vector2Int(chunkX, chunkZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 1394,
+      "owner": "ExecuteClearCartographyUlongBuffer",
+      "kind": "value_type_creation",
+      "detail": "ClearCartographyUlongBufferJob",
+      "snippet": "new ClearCartographyUlongBufferJob { Buffer = buffer }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 1404,
+      "owner": "ExecuteClearCartographyUintBuffer",
+      "kind": "value_type_creation",
+      "detail": "ClearCartographyUintBufferJob",
+      "snippet": "new ClearCartographyUintBufferJob { Buffer = buffer }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 1423,
+      "owner": "ExecuteClearCartographyRevealSignals",
+      "kind": "value_type_creation",
+      "detail": "ClearCartographyRevealSignalBufferJob",
+      "snippet": "new ClearCartographyRevealSignalBufferJob { Buffer = buffer }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2019,
+      "owner": "TryResolveAupFromRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2029,
+      "owner": "TryResolveAupFromRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2270,
+      "owner": "InitializeCartographyVaultBuffers",
+      "kind": "value_type_creation",
+      "detail": "InitializeCartographyVaultJob",
+      "snippet": "new InitializeCartographyVaultJob             {                 Sectors = buffers.SectorTable,                 Counters = buffers.Counters,                 TelemetryRing = buffers.TelemetryRing,                 TelemetryCursor = buffers.Tel"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2287,
+      "owner": "InitializeCartographyVaultBuffers",
+      "kind": "value_type_creation",
+      "detail": "BuildMockSurfaceMaskJob",
+      "snippet": "new BuildMockSurfaceMaskJob             {                 SurfaceMaskWords = buffers.SurfaceMaskWords,                 SurfaceThicknessMeters = tuning.SurfaceThicknessMeters,                 GlobalQualityWeight = tuning.GlobalQualityWeight "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2392,
+      "owner": "RevealCartographyCell",
+      "kind": "value_type_creation",
+      "detail": "CartographyRevealAupCellJob",
+      "snippet": "new CartographyRevealAupCellJob                 {                     DiscoveredSectors = buffers.DiscoveryWords,                     Counters = buffers.Counters,                     Center = cartographyAup,                     WordOffset ="
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2458,
+      "owner": "DrainMapRevealSignals",
+      "kind": "value_type_creation",
+      "detail": "ApplySonarDiscoveryJob",
+      "snippet": "new ApplySonarDiscoveryJob                     {                         DiscoveredSectors = buffers.DiscoveryWords,                         SurfaceMaskWords = buffers.SurfaceMaskWords,                         Counters = buffers.Counters,  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2521,
+      "owner": "InjectPoiReveals",
+      "kind": "value_type_creation",
+      "detail": "ApplySonarDiscoveryJob",
+      "snippet": "new ApplySonarDiscoveryJob                         {                             DiscoveredSectors = buffers.DiscoveryWords,                             SurfaceMaskWords = buffers.SurfaceMaskWords,                             Counters = buf"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2560,
+      "owner": "InjectPoiReveals",
+      "kind": "value_type_creation",
+      "detail": "ApplySonarDiscoveryJob",
+      "snippet": "new ApplySonarDiscoveryJob                             {                                 DiscoveredSectors = buffers.DiscoveryWords,                                 SurfaceMaskWords = buffers.SurfaceMaskWords,                               "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2637,
+      "owner": "RecordCartographyBlackBox",
+      "kind": "value_type_creation",
+      "detail": "RecordCartographyTelemetryJob",
+      "snippet": "new RecordCartographyTelemetryJob                 {                     TelemetryRing = buffers.TelemetryRing,                     TelemetryCursor = buffers.TelemetryCursor,                     Counters = buffers.Counters,                  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2698,
+      "owner": "GenerateMockExplorationData",
+      "kind": "value_type_creation",
+      "detail": "GenerateMockExplorationDataJob",
+      "snippet": "new GenerateMockExplorationDataJob                 {                     DiscoveredSectors = buffers.DiscoveryWords,                     SectorTable = buffers.SectorTable,                     SimulationFrameCounter = _cartographyFrameIndex,"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2805,
+      "owner": "TryScheduleCartographyUpload",
+      "kind": "value_type_creation",
+      "detail": "FormatCartographyUploadR8Job",
+      "snippet": "new FormatCartographyUploadR8Job                 {                     DiscoveredSectors = buffers.DiscoveryWords,                     UploadPackedR8 = buffers.UploadPackedR8,                     GlobalQualityWeight = quality,              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2812,
+      "owner": "TryScheduleCartographyUpload",
+      "kind": "value_type_creation",
+      "detail": "CopyCartographyRollbackSnapshotJob",
+      "snippet": "new CopyCartographyRollbackSnapshotJob                 {                     DiscoveryWords = buffers.DiscoveryWords,                     RollbackSnapshotWords = buffers.RollbackSnapshotWords,                     WordOffset = 0             "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2851,
+      "owner": "TryBuildCartographyRleRuns",
+      "kind": "value_type_creation",
+      "detail": "BuildCartographyRleRunsJob",
+      "snippet": "new BuildCartographyRleRunsJob                 {                     DiscoveryWords = buffers.DiscoveryWords,                     RleRuns = buffers.RleRuns,                     Counters = buffers.Counters,                     WordOffset = 0"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 2963,
+      "owner": "TrySetCartographyTuning",
+      "kind": "value_type_creation",
+      "detail": "BuildMockSurfaceMaskJob",
+      "snippet": "new BuildMockSurfaceMaskJob                 {                     SurfaceMaskWords = buffers.SurfaceMaskWords,                     SurfaceThicknessMeters = sanitized.SurfaceThicknessMeters,                     GlobalQualityWeight = ResolveE"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 3081,
+      "owner": "ToCartographyAup",
+      "kind": "object_creation",
+      "detail": "CartographyAup",
+      "snippet": "new CartographyAup             {                 GridX = aup.GridX,                 GridY = aup.GridY,                 GridZ = aup.GridZ,                 LocalX = aup.LocalX,                 LocalY = aup.LocalY,                 LocalZ = aup"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 3116,
+      "owner": "HandleAcousticPingPayload",
+      "kind": "value_type_creation",
+      "detail": "MapRevealSignal",
+      "snippet": "new MapRevealSignal             {                 Center = ToCartographyAup(in pingAup),                 RadiusMeters = ClampRevealRadius(pingEvent.RadiusMeters),                 SourceId = unchecked((uint)math.max(0, pingEvent.PrimaryId)),"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 3132,
+      "owner": "OnSonarPingSent",
+      "kind": "value_type_creation",
+      "detail": "MapRevealSignal",
+      "snippet": "new MapRevealSignal             {                 Center = ToCartographyAup(in playerAup),                 RadiusMeters = radius,                 SourceId = (uint)math.round(math.saturate(intensity) * 1000f),                 Flags = MapReve"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 3216,
+      "owner": "EnsureCartographyDispatcherSystems",
+      "kind": "object_creation",
+      "detail": "CartographyDispatcherPhaseSystem",
+      "snippet": "new CartographyDispatcherPhaseSystem(                 this,                 DispatcherPhase.PreSimulation,                 CartographyPreSimulationSystemHash)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 3220,
+      "owner": "EnsureCartographyDispatcherSystems",
+      "kind": "object_creation",
+      "detail": "CartographyDispatcherPhaseSystem",
+      "snippet": "new CartographyDispatcherPhaseSystem(                 this,                 DispatcherPhase.Simulation,                 CartographySimulationSystemHash)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "line": 3224,
+      "owner": "EnsureCartographyDispatcherSystems",
+      "kind": "object_creation",
+      "detail": "CartographyDispatcherPhaseSystem",
+      "snippet": "new CartographyDispatcherPhaseSystem(                 this,                 DispatcherPhase.PostSimulation,                 CartographyPostSimulationSystemHash)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAUtility.cs",
+      "line": 72,
+      "owner": "UnpackChunkKey",
+      "kind": "object_creation",
+      "detail": "Vector2Int",
+      "snippet": "new Vector2Int(ZigZagDecode(packedX), ZigZagDecode(packedY))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDALogbookManager.cs",
+      "line": 291,
+      "owner": "TryAppendEntry",
+      "kind": "value_type_creation",
+      "detail": "PDALogbookEntry",
+      "snippet": "new PDALogbookEntry(                  _nextSequence++,                  math.max(1, dayIndex),                  math.clamp(dayTimeHours, 0f, 24f),                  math.max(0f, playTimeSeconds),                  titleHash,                  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDALogbookManager.cs",
+      "line": 331,
+      "owner": "PopulateSaveData",
+      "kind": "value_type_creation",
+      "detail": "PDALogbookEntryDTO",
+      "snippet": "new PDALogbookEntryDTO                  {                      sequence = entry.Sequence,                      dayIndex = entry.DayIndex,                      dayTimeHours = entry.DayTimeHours,                      playTimeSeconds = entry.P"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDALogbookManager.cs",
+      "line": 383,
+      "owner": "LoadFromSaveData",
+      "kind": "value_type_creation",
+      "detail": "PDALogbookEntry",
+      "snippet": "new PDALogbookEntry(                      entry.sequence,                      math.max(1, entry.dayIndex),                      math.clamp(entry.dayTimeHours, 0f, 24f),                      math.max(0f, entry.playTimeSeconds),             "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 65,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.20f, 0.85f, 0.55f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 66,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(1.00f, 0.34f, 0.22f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 67,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.42f, 0.72f, 1.00f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 68,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(1.00f, 0.84f, 0.30f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 69,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.74f, 0.64f, 1.00f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 70,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.30f, 1.00f, 1.00f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 71,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.90f, 0.95f, 1.00f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 73,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<Graphic>",
+      "snippet": "new List<Graphic>(8)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 246,
+      "owner": "BuildIconPool",
+      "kind": "object_creation",
+      "detail": "MarkerIconDisplay",
+      "snippet": "new MarkerIconDisplay                 {                     rectTransform = rectTransform,                     canvasGroup = canvasGroup,                     iconImage = ResolveIconImage(iconObject),                     titleText = ResolveC"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 529,
+      "owner": "TryResolveRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-maxLocalCastMeters, -maxLocalCastMeters, -maxLocalCastMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 530,
+      "owner": "TryResolveRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(maxLocalCastMeters, maxLocalCastMeters, maxLocalCastMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 531,
+      "owner": "TryResolveRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)clampedDelta.x, (float)clampedDelta.y, (float)clampedDelta.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 535,
+      "owner": "TryResolveRuntimePosition",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(local.x, local.y, local.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerHUDElement.cs",
+      "line": 545,
+      "owner": "WriteDistanceLabel",
+      "kind": "object_creation",
+      "detail": "System.Span<char>",
+      "snippet": "new System.Span<char>(buffer, 0, buffer.Length)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+      "line": 168,
+      "owner": "TryCreateMarker",
+      "kind": "object_creation",
+      "detail": "MarkerRecord",
+      "snippet": "new MarkerRecord             {                 markerHashId = ComputeMarkerHash(markerId),                 markerId = markerId,                 titleHashId = ComputeMarkerHash(stableTitle),                 title = stableTitle,              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+      "line": 290,
+      "owner": "TryCreateOrUpdateMarker",
+      "kind": "object_creation",
+      "detail": "MarkerRecord",
+      "snippet": "new MarkerRecord             {                 markerHashId = markerHashId,                 markerId = markerId ?? string.Empty,                 titleHashId = stableTitleHash,                 title = stableTitle,                 positionAup"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+      "line": 494,
+      "owner": "PopulateSaveData",
+      "kind": "value_type_creation",
+      "detail": "PDAMarkerEntryDTO",
+      "snippet": "new PDAMarkerEntryDTO                 {                     markerHashId = record.markerHashId,                     markerId = record.markerId,                     titleHashId = record.titleHashId,                     title = record.title, "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+      "line": 542,
+      "owner": "LoadFromSaveData",
+      "kind": "object_creation",
+      "detail": "MarkerRecord",
+      "snippet": "new MarkerRecord                     {                         markerHashId = markerHashId,                         markerId = entry.markerId ?? string.Empty,                         titleHashId = entry.titleHashId != 0u                    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+      "line": 759,
+      "owner": "ToSnapshot",
+      "kind": "object_creation",
+      "detail": "PDAMarkerSnapshot",
+      "snippet": "new PDAMarkerSnapshot(record.markerHashId, record.markerId, record.titleHashId, record.title, record.runtimePosition, in record.positionAup, record.iconType, IsVisibleOnHud(in record))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+      "line": 801,
+      "owner": "TryResolveRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-maxLocalCastMeters, -maxLocalCastMeters, -maxLocalCastMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+      "line": 802,
+      "owner": "TryResolveRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(maxLocalCastMeters, maxLocalCastMeters, maxLocalCastMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+      "line": 803,
+      "owner": "TryResolveRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)clampedDelta.x, (float)clampedDelta.y, (float)clampedDelta.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+      "line": 807,
+      "owner": "TryResolveRuntimePosition",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(local.x, local.y, local.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+      "line": 842,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

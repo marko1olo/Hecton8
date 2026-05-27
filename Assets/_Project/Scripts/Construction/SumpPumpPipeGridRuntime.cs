@@ -23,7 +23,7 @@ namespace Hecton8.Construction
         private const SystemID OwnerSystem = SystemID.Construction;
         private const float SlowTickStepSeconds = 0.1f;
         private const int FixedDrainageDeltaPassCount = 2;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_340_Logistics.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1306_Construction_SumpPump.bin";
         private const uint RuntimeHash = 0x53333430u;
         private const ulong DumpMagic = 0x00384E4F54434548UL;
         private const uint DumpVersion = 1u;
@@ -253,14 +253,14 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.DataVault && currentService != null)
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 CompleteMockSeedForTeardown();
                 CompleteScheduledSolverForTeardown();
                 UnlockJobBuffers();
                 ReleaseOwnedBuffers();
                 _vault = currentService as IDataVault;
-                _buffersReady = TryInitializeBuffers();
+                _buffersReady = _vault != null && TryInitializeBuffers();
                 if (_buffersReady && generateMockOnEnable)
                     GenerateMockDrainageNetwork();
             }
@@ -291,7 +291,7 @@ namespace Hecton8.Construction
             OnDisable();
         }
 
-        /// <summary>Quality-scaled slow simulation cadence. No object pump or water-particle state is read here.</summary>
+        /// <summary>Authority drainage cadence. No object pump or water-particle state is read here.</summary>
         public void SlowTick()
         {
             if (_solverScheduled || _mockSeedScheduled)
@@ -302,7 +302,7 @@ namespace Hecton8.Construction
 
             float quality = ResolveGlobalQualityWeight();
             _solveAccumulator = math.min(1f, _solveAccumulator + SlowTickStepSeconds);
-            float cadence = ResolveSolveCadenceSeconds(quality);
+            float cadence = ResolveAuthoritySolveCadenceSeconds();
             if (_solveAccumulator + 0.00001f < cadence)
                 return;
 
@@ -323,9 +323,15 @@ namespace Hecton8.Construction
 
             if (solverWasScheduled)
             {
-                UnlockJobBuffers();
-                StampSolverWallTime(ResolveElapsedMicroseconds(_solverScheduleTimestamp));
-                _solverScheduleTimestamp = 0L;
+                try
+                {
+                    StampSolverWallTime(ResolveElapsedMicroseconds(_solverScheduleTimestamp));
+                    _solverScheduleTimestamp = 0L;
+                }
+                finally
+                {
+                    UnlockJobBuffers();
+                }
             }
             else
             {
@@ -360,7 +366,8 @@ namespace Hecton8.Construction
 
             try
             {
-                NativeArray<PipeProfileDTO> profiles = BorrowMutable(in _profilesHandle);
+                if (!TryBorrowMutable(in _profilesHandle, out NativeArray<PipeProfileDTO> profiles))
+                    return false;
                 return SumpPumpPipeGridValidation.TryParsePipeProfilesCsv(csvBytes, profiles, out profileCount);
             }
             finally
@@ -386,17 +393,19 @@ namespace Hecton8.Construction
             bool scheduled = false;
             try
             {
-                NativeArray<DrainageNodeDTO> pumps = BorrowMutable(in _pumpNodesHandle);
-                NativeArray<PipeEdgeDTO> edges = BorrowMutable(in _pipeEdgesHandle);
-                NativeArray<double3> nodeAup = BorrowMutable(in _nodeAupHandle);
-                NativeArray<int> roomIndices = BorrowMutable(in _pumpRoomIndicesHandle);
-                NativeArray<float> power = BorrowMutable(in _powerPotentialHandle);
-                NativeArray<float> baseRates = BorrowMutable(in _pumpBaseMaxRateHandle);
-                NativeArray<uint> powerNodeHashes = BorrowMutable(in _pumpPowerNodeHashesHandle);
-                NativeArray<int> counters = BorrowMutable(in _countersHandle);
-                NativeArray<DrainageTuningDTO> tuning = BorrowMutable(in _tuningHandle);
-                if (!pumps.IsCreated || !edges.IsCreated || !nodeAup.IsCreated || !roomIndices.IsCreated || !power.IsCreated || !baseRates.IsCreated || !powerNodeHashes.IsCreated || !counters.IsCreated || !tuning.IsCreated)
+                if (!TryBorrowMutable(in _pumpNodesHandle, out NativeArray<DrainageNodeDTO> pumps) ||
+                    !TryBorrowMutable(in _pipeEdgesHandle, out NativeArray<PipeEdgeDTO> edges) ||
+                    !TryBorrowMutable(in _nodeAupHandle, out NativeArray<double3> nodeAup) ||
+                    !TryBorrowMutable(in _pumpRoomIndicesHandle, out NativeArray<int> roomIndices) ||
+                    !TryBorrowMutable(in _powerPotentialHandle, out NativeArray<float> power) ||
+                    !TryBorrowMutable(in _pumpBaseMaxRateHandle, out NativeArray<float> baseRates) ||
+                    !TryBorrowMutable(in _pumpPowerNodeHashesHandle, out NativeArray<uint> powerNodeHashes) ||
+                    !TryBorrowMutable(in _countersHandle, out NativeArray<int> counters) ||
+                    !TryBorrowMutable(in _tuningHandle, out NativeArray<DrainageTuningDTO> tuning) ||
+                    !pumps.IsCreated || !edges.IsCreated || !nodeAup.IsCreated || !roomIndices.IsCreated || !power.IsCreated || !baseRates.IsCreated || !powerNodeHashes.IsCreated || !counters.IsCreated || !tuning.IsCreated)
+                {
                     return;
+                }
 
                 DrainageTuningDTO current = tuning.Length > 0 ? SanitizeTuning(tuning[0]) : DefaultTuning();
                 GenerateMockPipeNetworkJob job = new GenerateMockPipeNetworkJob
@@ -484,14 +493,16 @@ namespace Hecton8.Construction
             return true;
         }
 
-        private NativeArray<T> BorrowMutable<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private bool TryBorrowMutable<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
         {
-            return _vault != null && _vault.TryResolveHandle(in handle, out NativeArray<T> buffer) ? buffer : default;
+            buffer = default;
+            return _vault != null && _vault.TryResolveHandle(in handle, out buffer);
         }
 
-        private NativeArray<T> Read<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private bool TryRead<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
         {
-            return _vault != null && _vault.TryReadHandle(in handle, out NativeArray<T> buffer) ? buffer : default;
+            buffer = default;
+            return _vault != null && _vault.TryReadHandle(in handle, out buffer);
         }
 
         private bool ValidateOwnedBuffers()
@@ -532,7 +543,7 @@ namespace Hecton8.Construction
             if (_vault == null || handle.BufferID == 0u || minLength <= 0)
                 return false;
 
-            return _vault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
+            return _vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= minLength;
         }
@@ -542,31 +553,31 @@ namespace Hecton8.Construction
             if (!TryLockJobBuffers())
                 return;
 
-            NativeArray<DrainageNodeDTO> pumps = BorrowMutable(in _pumpNodesHandle);
-            NativeArray<PipeEdgeDTO> edges = BorrowMutable(in _pipeEdgesHandle);
-            NativeArray<double3> nodeAup = BorrowMutable(in _nodeAupHandle);
-            NativeArray<int> roomIndices = BorrowMutable(in _pumpRoomIndicesHandle);
-            NativeArray<int> csrOffsets = BorrowMutable(in _csrOffsetsHandle);
-            NativeArray<int> csrDestinations = BorrowMutable(in _csrDestinationsHandle);
-            NativeArray<float> csrConductance = BorrowMutable(in _csrConductanceHandle);
-            NativeArray<float> csrFlow = BorrowMutable(in _csrFlowHandle);
-            NativeArray<int> csrFlatEdgeIndex = BorrowMutable(in _csrFlatEdgeIndexHandle);
-            NativeArray<int> csrWriteCursor = BorrowMutable(in _csrWriteCursorHandle);
-            NativeArray<float> pressureFront = BorrowMutable(in _pressureFrontHandle);
-            NativeArray<float> pressureBack = BorrowMutable(in _pressureBackHandle);
-            NativeArray<float> powerPotential = BorrowMutable(in _powerPotentialHandle);
-            NativeArray<float> pumpBaseMaxRate = BorrowMutable(in _pumpBaseMaxRateHandle);
-            NativeArray<uint> pumpPowerNodeHashes = BorrowMutable(in _pumpPowerNodeHashesHandle);
-            NativeArray<float> pumpRemainder = BorrowMutable(in _pumpRemainderHandle);
-            NativeArray<float> pumpMassError = BorrowMutable(in _pumpMassErrorHandle);
-            NativeArray<DrainageRoomDrainLock64> roomDrainLocks = BorrowMutable(in _roomDrainLocksHandle);
-            NativeArray<DrainageTuningDTO> tuning = BorrowMutable(in _tuningHandle);
-            NativeArray<DrainageTelemetryEntry> telemetry = BorrowMutable(in _telemetryHandle);
-            NativeArray<int> telemetryCursor = BorrowMutable(in _telemetryCursorHandle);
-            NativeArray<int> counters = BorrowMutable(in _countersHandle);
-            NativeArray<DrainageTelemetryEntry> frameSummary = BorrowMutable(in _frameSummaryHandle);
-            NativeArray<DrainagePipeFlowGpuDTO> flowGpu = BorrowMutable(in _flowGpuHandle);
-            if (!pumps.IsCreated || !edges.IsCreated || !nodeAup.IsCreated || !roomIndices.IsCreated ||
+            if (!TryBorrowMutable(in _pumpNodesHandle, out NativeArray<DrainageNodeDTO> pumps) ||
+                !TryBorrowMutable(in _pipeEdgesHandle, out NativeArray<PipeEdgeDTO> edges) ||
+                !TryBorrowMutable(in _nodeAupHandle, out NativeArray<double3> nodeAup) ||
+                !TryBorrowMutable(in _pumpRoomIndicesHandle, out NativeArray<int> roomIndices) ||
+                !TryBorrowMutable(in _csrOffsetsHandle, out NativeArray<int> csrOffsets) ||
+                !TryBorrowMutable(in _csrDestinationsHandle, out NativeArray<int> csrDestinations) ||
+                !TryBorrowMutable(in _csrConductanceHandle, out NativeArray<float> csrConductance) ||
+                !TryBorrowMutable(in _csrFlowHandle, out NativeArray<float> csrFlow) ||
+                !TryBorrowMutable(in _csrFlatEdgeIndexHandle, out NativeArray<int> csrFlatEdgeIndex) ||
+                !TryBorrowMutable(in _csrWriteCursorHandle, out NativeArray<int> csrWriteCursor) ||
+                !TryBorrowMutable(in _pressureFrontHandle, out NativeArray<float> pressureFront) ||
+                !TryBorrowMutable(in _pressureBackHandle, out NativeArray<float> pressureBack) ||
+                !TryBorrowMutable(in _powerPotentialHandle, out NativeArray<float> powerPotential) ||
+                !TryBorrowMutable(in _pumpBaseMaxRateHandle, out NativeArray<float> pumpBaseMaxRate) ||
+                !TryBorrowMutable(in _pumpPowerNodeHashesHandle, out NativeArray<uint> pumpPowerNodeHashes) ||
+                !TryBorrowMutable(in _pumpRemainderHandle, out NativeArray<float> pumpRemainder) ||
+                !TryBorrowMutable(in _pumpMassErrorHandle, out NativeArray<float> pumpMassError) ||
+                !TryBorrowMutable(in _roomDrainLocksHandle, out NativeArray<DrainageRoomDrainLock64> roomDrainLocks) ||
+                !TryBorrowMutable(in _tuningHandle, out NativeArray<DrainageTuningDTO> tuning) ||
+                !TryBorrowMutable(in _telemetryHandle, out NativeArray<DrainageTelemetryEntry> telemetry) ||
+                !TryBorrowMutable(in _telemetryCursorHandle, out NativeArray<int> telemetryCursor) ||
+                !TryBorrowMutable(in _countersHandle, out NativeArray<int> counters) ||
+                !TryBorrowMutable(in _frameSummaryHandle, out NativeArray<DrainageTelemetryEntry> frameSummary) ||
+                !TryBorrowMutable(in _flowGpuHandle, out NativeArray<DrainagePipeFlowGpuDTO> flowGpu) ||
+                !pumps.IsCreated || !edges.IsCreated || !nodeAup.IsCreated || !roomIndices.IsCreated ||
                 !csrOffsets.IsCreated || !csrDestinations.IsCreated || !csrConductance.IsCreated ||
                 !csrFlow.IsCreated || !csrFlatEdgeIndex.IsCreated || !csrWriteCursor.IsCreated ||
                 !pressureFront.IsCreated || !pressureBack.IsCreated || !powerPotential.IsCreated || !pumpBaseMaxRate.IsCreated || !pumpPowerNodeHashes.IsCreated ||
@@ -819,6 +830,14 @@ namespace Hecton8.Construction
                    TryLock(SumpPumpDrainageBufferIds.RoomDrainLocks, 23);
         }
 
+        private bool TryLockTelemetryWriteBuffers()
+        {
+            _lockedBufferMask = 0UL;
+            return TryLock(SumpPumpDrainageBufferIds.FrameSummary, 18) &&
+                   TryLock(SumpPumpDrainageBufferIds.TelemetryCursor, 16) &&
+                   TryLock(SumpPumpDrainageBufferIds.TelemetryRing, 15);
+        }
+
         private bool TryLock(BufferID bufferId, int bit)
         {
             if (_vault != null && _vault.TryLockBuffer(bufferId, OwnerSystem))
@@ -937,14 +956,25 @@ namespace Hecton8.Construction
 
         private void InitializeTuningIfNeeded()
         {
-            NativeArray<DrainageTuningDTO> tuning = BorrowMutable(in _tuningHandle);
-            if (!tuning.IsCreated || tuning.Length <= 0)
+            if (_vault == null || !_vault.TryLockBuffer(SumpPumpDrainageBufferIds.Tuning, OwnerSystem))
                 return;
 
-            DrainageTuningDTO active = tuning[0];
-            if (active.BasePipeConductance <= 0f || !math.isfinite(active.BasePipeConductance))
-                active = s_offlineTuning;
-            tuning[0] = SanitizeTuning(active);
+            try
+            {
+                if (!TryBorrowMutable(in _tuningHandle, out NativeArray<DrainageTuningDTO> tuning) ||
+                    !tuning.IsCreated ||
+                    tuning.Length <= 0)
+                    return;
+
+                DrainageTuningDTO active = tuning[0];
+                if (active.BasePipeConductance <= 0f || !math.isfinite(active.BasePipeConductance))
+                    active = s_offlineTuning;
+                tuning[0] = SanitizeTuning(active);
+            }
+            finally
+            {
+                _vault.TryUnlockBuffer(SumpPumpDrainageBufferIds.Tuning, OwnerSystem);
+            }
         }
 
         private static DrainageTuningDTO SanitizeTuning(in DrainageTuningDTO tuning)
@@ -1006,10 +1036,15 @@ namespace Hecton8.Construction
             return math.lerp(0.5f, 0.1f, thermalCurve) + lowPowerHold;
         }
 
+        private static float ResolveAuthoritySolveCadenceSeconds()
+        {
+            return ResolveSolveCadenceSeconds(SumpPumpPipeGridConstants.AuthoritativeQualityWeight);
+        }
+
         private static float ResolveGlobalQualityWeight()
         {
             float weight = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.isfinite(weight) ? weight : 1f);
+            return math.saturate(math.isfinite(weight) ? weight : SumpPumpPipeGridConstants.AuthoritativeQualityWeight);
         }
 
         private static uint ResolveElapsedMicroseconds(long startTimestamp)
@@ -1028,8 +1063,9 @@ namespace Hecton8.Construction
 
         private void StampSolverWallTime(uint solverWallMicroseconds)
         {
-            NativeArray<DrainageTelemetryEntry> summary = BorrowMutable(in _frameSummaryHandle);
-            if (summary.IsCreated && summary.Length > 0)
+            if (TryBorrowMutable(in _frameSummaryHandle, out NativeArray<DrainageTelemetryEntry> summary) &&
+                summary.IsCreated &&
+                summary.Length > 0)
             {
                 DrainageTelemetryEntry entry = summary[0];
                 entry.SolverWallMicroseconds = solverWallMicroseconds;
@@ -1039,9 +1075,12 @@ namespace Hecton8.Construction
                 summary[0] = entry;
             }
 
-            NativeArray<int> cursor = BorrowMutable(in _telemetryCursorHandle);
-            NativeArray<DrainageTelemetryEntry> telemetry = BorrowMutable(in _telemetryHandle);
-            if (!cursor.IsCreated || !telemetry.IsCreated || cursor.Length <= 0 || telemetry.Length <= 0)
+            if (!TryBorrowMutable(in _telemetryCursorHandle, out NativeArray<int> cursor) ||
+                !TryBorrowMutable(in _telemetryHandle, out NativeArray<DrainageTelemetryEntry> telemetry) ||
+                !cursor.IsCreated ||
+                !telemetry.IsCreated ||
+                cursor.Length <= 0 ||
+                telemetry.Length <= 0)
                 return;
 
             int capacity = math.min(telemetry.Length, SumpPumpPipeGridConstants.TelemetryFrameCount);
@@ -1061,47 +1100,65 @@ namespace Hecton8.Construction
             if (!_buffersReady || _solverScheduled || _mockSeedScheduled)
                 return;
 
-            NativeArray<DrainageTelemetryEntry> summary = BorrowMutable(in _frameSummaryHandle);
-            NativeArray<int> cursor = BorrowMutable(in _telemetryCursorHandle);
-            NativeArray<DrainageTelemetryEntry> telemetry = BorrowMutable(in _telemetryHandle);
-            if (!summary.IsCreated || summary.Length <= 0 || !cursor.IsCreated || cursor.Length <= 0 || !telemetry.IsCreated || telemetry.Length <= 0)
+            if (!TryLockTelemetryWriteBuffers())
                 return;
 
-            DrainageTelemetryEntry entry = summary[0];
-            uint baseHash = entry.StateHash != 0u ? entry.StateHash : SumpPumpPipeGridConstants.FnvOffset;
-            float averagePressure = math.isfinite(entry.AveragePressure) ? entry.AveragePressure : 0f;
-            float maxPressure = math.isfinite(entry.MaxPressure) ? entry.MaxPressure : 0f;
-            float totalEvacuated = math.isfinite(entry.TotalEvacuatedM3) ? math.max(0f, entry.TotalEvacuatedM3) : 0f;
-            float quality = ResolveGlobalQualityWeight();
+            try
+            {
+                if (!TryBorrowMutable(in _frameSummaryHandle, out NativeArray<DrainageTelemetryEntry> summary) ||
+                    !TryBorrowMutable(in _telemetryCursorHandle, out NativeArray<int> cursor) ||
+                    !TryBorrowMutable(in _telemetryHandle, out NativeArray<DrainageTelemetryEntry> telemetry) ||
+                    !summary.IsCreated ||
+                    summary.Length <= 0 ||
+                    !cursor.IsCreated ||
+                    cursor.Length <= 0 ||
+                    !telemetry.IsCreated ||
+                    telemetry.Length <= 0)
+                    return;
 
-            entry.FrameIndex = _frameIndex++;
-            entry.StateHash = SumpPumpPipeGridValidation.MixHash(baseHash, entry.FrameIndex);
-            entry.StateHash = SumpPumpPipeGridValidation.MixHash(entry.StateHash, math.asuint(averagePressure));
-            entry.StateHash = SumpPumpPipeGridValidation.MixHash(entry.StateHash, math.asuint(totalEvacuated));
-            entry.FrameEvacuatedM3 = 0f;
-            entry.TotalEvacuatedM3 = totalEvacuated;
-            entry.AveragePressure = averagePressure;
-            entry.MaxPressure = math.max(0f, maxPressure);
-            entry.GlobalQualityWeight = quality;
-            entry.TotalPowerDrawWatts = math.isfinite(entry.TotalPowerDrawWatts) ? math.max(0f, entry.TotalPowerDrawWatts) : 0f;
-            entry.SolverWallMicroseconds = 0u;
-            entry.Flags &= ~(SumpDrainageTelemetryFlags.ScheduleWindowTiming | SumpDrainageTelemetryFlags.SolverOverBudget);
-            entry.Flags |= SumpDrainageTelemetryFlags.HeartbeatFrame;
-            summary[0] = entry;
+                DrainageTelemetryEntry entry = summary[0];
+                uint baseHash = entry.StateHash != 0u ? entry.StateHash : SumpPumpPipeGridConstants.FnvOffset;
+                float averagePressure = math.isfinite(entry.AveragePressure) ? entry.AveragePressure : 0f;
+                float maxPressure = math.isfinite(entry.MaxPressure) ? entry.MaxPressure : 0f;
+                float totalEvacuated = math.isfinite(entry.TotalEvacuatedM3) ? math.max(0f, entry.TotalEvacuatedM3) : 0f;
+                float quality = ResolveGlobalQualityWeight();
 
-            int capacity = math.min(telemetry.Length, SumpPumpPipeGridConstants.TelemetryFrameCount);
-            int writeCursor = cursor[0];
-            int index = writeCursor % capacity;
-            if (index < 0)
-                index += capacity;
-            telemetry[index] = entry;
-            cursor[0] = writeCursor + 1;
+                entry.FrameIndex = _frameIndex++;
+                entry.StateHash = SumpPumpPipeGridValidation.MixHash(baseHash, entry.FrameIndex);
+                entry.StateHash = SumpPumpPipeGridValidation.MixHash(entry.StateHash, math.asuint(averagePressure));
+                entry.StateHash = SumpPumpPipeGridValidation.MixHash(entry.StateHash, math.asuint(totalEvacuated));
+                entry.FrameEvacuatedM3 = 0f;
+                entry.TotalEvacuatedM3 = totalEvacuated;
+                entry.AveragePressure = averagePressure;
+                entry.MaxPressure = math.max(0f, maxPressure);
+                entry.GlobalQualityWeight = quality;
+                entry.TotalPowerDrawWatts = math.isfinite(entry.TotalPowerDrawWatts) ? math.max(0f, entry.TotalPowerDrawWatts) : 0f;
+                entry.SolverWallMicroseconds = 0u;
+                entry.Flags &= ~(SumpDrainageTelemetryFlags.ScheduleWindowTiming | SumpDrainageTelemetryFlags.SolverOverBudget);
+                entry.Flags |= SumpDrainageTelemetryFlags.HeartbeatFrame;
+                summary[0] = entry;
+
+                int capacity = math.min(telemetry.Length, SumpPumpPipeGridConstants.TelemetryFrameCount);
+                int writeCursor = cursor[0];
+                int index = writeCursor % capacity;
+                if (index < 0)
+                    index += capacity;
+                telemetry[index] = entry;
+                cursor[0] = writeCursor + 1;
+            }
+            finally
+            {
+                UnlockJobBuffers();
+            }
         }
 
         private DrainageTelemetryEntry ReadFrameSummary()
         {
-            NativeArray<DrainageTelemetryEntry> summary = Read(in _frameSummaryHandle);
-            return summary.IsCreated && summary.Length > 0 ? summary[0] : default;
+            return TryRead(in _frameSummaryHandle, out NativeArray<DrainageTelemetryEntry> summary) &&
+                   summary.IsCreated &&
+                   summary.Length > 0
+                ? summary[0]
+                : default;
         }
 
         private bool TryReadLatestTelemetry(out DrainageTelemetryEntry entry)
@@ -1123,8 +1180,9 @@ namespace Hecton8.Construction
             if (target == null || target.Length <= 0 || !_buffersReady || _solverScheduled)
                 return false;
 
-            NativeArray<DrainageTelemetryEntry> telemetry = Read(in _telemetryHandle);
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
+            if (!TryRead(in _telemetryHandle, out NativeArray<DrainageTelemetryEntry> telemetry) ||
+                !telemetry.IsCreated ||
+                telemetry.Length <= 0)
                 return false;
 
             count = math.min(target.Length, telemetry.Length);
@@ -1142,8 +1200,9 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            NativeArray<DrainageTuningDTO> tuningArray = Read(in _tuningHandle);
-            if (!tuningArray.IsCreated || tuningArray.Length <= 0)
+            if (!TryRead(in _tuningHandle, out NativeArray<DrainageTuningDTO> tuningArray) ||
+                !tuningArray.IsCreated ||
+                tuningArray.Length <= 0)
             {
                 tuning = s_offlineTuning;
                 return false;
@@ -1165,8 +1224,9 @@ namespace Hecton8.Construction
 
             try
             {
-                NativeArray<DrainageTuningDTO> tuningArray = BorrowMutable(in _tuningHandle);
-                if (!tuningArray.IsCreated || tuningArray.Length <= 0)
+                if (!TryBorrowMutable(in _tuningHandle, out NativeArray<DrainageTuningDTO> tuningArray) ||
+                    !tuningArray.IsCreated ||
+                    tuningArray.Length <= 0)
                     return false;
 
                 DrainageTuningDTO* tuningPtr = (DrainageTuningDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(tuningArray);
@@ -1181,12 +1241,12 @@ namespace Hecton8.Construction
 
         private void ClearRuntimeScalarBuffers()
         {
-            NativeArray<DrainageNodeDTO> pumps = BorrowMutable(in _pumpNodesHandle);
-            NativeArray<float> pressureFront = BorrowMutable(in _pressureFrontHandle);
-            NativeArray<float> pressureBack = BorrowMutable(in _pressureBackHandle);
-            NativeArray<float> remainder = BorrowMutable(in _pumpRemainderHandle);
-            NativeArray<float> massError = BorrowMutable(in _pumpMassErrorHandle);
-            NativeArray<DrainageRoomDrainLock64> roomLocks = BorrowMutable(in _roomDrainLocksHandle);
+            TryBorrowMutable(in _pumpNodesHandle, out NativeArray<DrainageNodeDTO> pumps);
+            TryBorrowMutable(in _pressureFrontHandle, out NativeArray<float> pressureFront);
+            TryBorrowMutable(in _pressureBackHandle, out NativeArray<float> pressureBack);
+            TryBorrowMutable(in _pumpRemainderHandle, out NativeArray<float> remainder);
+            TryBorrowMutable(in _pumpMassErrorHandle, out NativeArray<float> massError);
+            TryBorrowMutable(in _roomDrainLocksHandle, out NativeArray<DrainageRoomDrainLock64> roomLocks);
             for (int i = 0; i < nodeCapacity; i++)
             {
                 float seededPressure = pumps.IsCreated && i < pumps.Length
@@ -1211,7 +1271,7 @@ namespace Hecton8.Construction
 
         private void UploadFlowVisuals()
         {
-            NativeArray<int> counters = BorrowMutable(in _countersHandle);
+            TryRead(in _countersHandle, out NativeArray<int> counters);
             int validEdges = counters.IsCreated && counters.Length > SumpPumpPipeGridConstants.CounterValidCsrEdges
                 ? counters[SumpPumpPipeGridConstants.CounterValidCsrEdges]
                 : edgeCapacity;
@@ -1223,8 +1283,11 @@ namespace Hecton8.Construction
 
         private void UploadStructuredFlowBuffer(int validEdges)
         {
-            NativeArray<DrainagePipeFlowGpuDTO> flowGpu = BorrowMutable(in _flowGpuHandle);
-            int safeCount = math.min(math.max(0, validEdges), flowGpu.IsCreated ? flowGpu.Length : 0);
+            if (!TryRead(in _flowGpuHandle, out NativeArray<DrainagePipeFlowGpuDTO> flowGpu) ||
+                !flowGpu.IsCreated)
+                return;
+
+            int safeCount = math.min(math.max(0, validEdges), flowGpu.Length);
             if (safeCount <= 0 || !HasFlowGraphicsBuffers(safeCount))
                 return;
 
@@ -1249,10 +1312,12 @@ namespace Hecton8.Construction
 
         private void PublishConnectionSplineNodeFlow()
         {
-            NativeArray<int> offsets = BorrowMutable(in _csrOffsetsHandle);
-            NativeArray<float> flows = BorrowMutable(in _csrFlowHandle);
-            NativeArray<int> counters = BorrowMutable(in _countersHandle);
-            if (!offsets.IsCreated || !flows.IsCreated || !counters.IsCreated)
+            if (!TryRead(in _csrOffsetsHandle, out NativeArray<int> offsets) ||
+                !TryRead(in _csrFlowHandle, out NativeArray<float> flows) ||
+                !TryRead(in _countersHandle, out NativeArray<int> counters) ||
+                !offsets.IsCreated ||
+                !flows.IsCreated ||
+                !counters.IsCreated)
                 return;
 
             int nodeCount = ResolveNodeCount(counters);
@@ -1276,8 +1341,11 @@ namespace Hecton8.Construction
 
         private DrainageTuningDTO ReadTuningOrDefault()
         {
-            NativeArray<DrainageTuningDTO> tuning = Read(in _tuningHandle);
-            return tuning.IsCreated && tuning.Length > 0 ? SanitizeTuning(tuning[0]) : s_offlineTuning;
+            return TryRead(in _tuningHandle, out NativeArray<DrainageTuningDTO> tuning) &&
+                   tuning.IsCreated &&
+                   tuning.Length > 0
+                ? SanitizeTuning(tuning[0])
+                : s_offlineTuning;
         }
 
         private bool EnsureFlowGraphicsBuffers(int safeCount)
@@ -1408,13 +1476,16 @@ namespace Hecton8.Construction
             if (_blackBoxDumped)
                 return;
 
-            NativeArray<DrainageTelemetryEntry> telemetry = Read(in _telemetryHandle);
-            if (!telemetry.IsCreated || telemetry.Length <= 0 || _dumpBytes == null || _dumpSignal == null)
+            if (!TryRead(in _telemetryHandle, out NativeArray<DrainageTelemetryEntry> telemetry) ||
+                !telemetry.IsCreated ||
+                telemetry.Length <= 0 ||
+                _dumpBytes == null ||
+                _dumpSignal == null)
                 return;
 
             try
             {
-                NativeArray<int> telemetryCursor = Read(in _telemetryCursorHandle);
+                TryRead(in _telemetryCursorHandle, out NativeArray<int> telemetryCursor);
                 int capacity = math.min(telemetry.Length, SumpPumpPipeGridConstants.TelemetryFrameCount);
                 int writeCount = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? math.max(0, telemetryCursor[0]) : capacity;
                 int validCount = math.min(capacity, writeCount);
@@ -1607,12 +1678,20 @@ namespace Hecton8.Construction
             if (!_buffersReady || _solverScheduled || _mockSeedScheduled || nodeSink == null || edgeSink == null)
                 return false;
 
-            NativeArray<DrainageNodeDTO> nodes = Read(in _pumpNodesHandle);
-            NativeArray<PipeEdgeDTO> edges = Read(in _pipeEdgesHandle);
-            NativeArray<double3> aup = Read(in _nodeAupHandle);
-            NativeArray<float> pressure = _pressureFrontIsA ? Read(in _pressureFrontHandle) : Read(in _pressureBackHandle);
-            NativeArray<int> counters = Read(in _countersHandle);
-            if (!nodes.IsCreated || !edges.IsCreated || !aup.IsCreated || !pressure.IsCreated || !counters.IsCreated)
+            NativeArray<float> pressure;
+            bool hasPressure = _pressureFrontIsA
+                ? TryRead(in _pressureFrontHandle, out pressure)
+                : TryRead(in _pressureBackHandle, out pressure);
+            if (!TryRead(in _pumpNodesHandle, out NativeArray<DrainageNodeDTO> nodes) ||
+                !TryRead(in _pipeEdgesHandle, out NativeArray<PipeEdgeDTO> edges) ||
+                !TryRead(in _nodeAupHandle, out NativeArray<double3> aup) ||
+                !TryRead(in _countersHandle, out NativeArray<int> counters) ||
+                !hasPressure ||
+                !nodes.IsCreated ||
+                !edges.IsCreated ||
+                !aup.IsCreated ||
+                !pressure.IsCreated ||
+                !counters.IsCreated)
                 return false;
 
             int resolvedNodeCount = math.min(ResolveNodeCount(counters), math.min(nodes.Length, math.min(aup.Length, pressure.Length)));
@@ -1656,11 +1735,19 @@ namespace Hecton8.Construction
             if (!_buffersReady || _solverScheduled)
                 return;
 
-            NativeArray<PipeEdgeDTO> edges = Read(in _pipeEdgesHandle);
-            NativeArray<double3> aup = Read(in _nodeAupHandle);
-            NativeArray<float> pressure = _pressureFrontIsA ? Read(in _pressureFrontHandle) : Read(in _pressureBackHandle);
-            NativeArray<int> counters = Read(in _countersHandle);
-            if (!edges.IsCreated || !aup.IsCreated || !pressure.IsCreated || !counters.IsCreated || aup.Length <= 0)
+            NativeArray<float> pressure;
+            bool hasPressure = _pressureFrontIsA
+                ? TryRead(in _pressureFrontHandle, out pressure)
+                : TryRead(in _pressureBackHandle, out pressure);
+            if (!TryRead(in _pipeEdgesHandle, out NativeArray<PipeEdgeDTO> edges) ||
+                !TryRead(in _nodeAupHandle, out NativeArray<double3> aup) ||
+                !TryRead(in _countersHandle, out NativeArray<int> counters) ||
+                !hasPressure ||
+                !edges.IsCreated ||
+                !aup.IsCreated ||
+                !pressure.IsCreated ||
+                !counters.IsCreated ||
+                aup.Length <= 0)
                 return;
 
             int edgeCount = ResolveEdgeCount(counters);

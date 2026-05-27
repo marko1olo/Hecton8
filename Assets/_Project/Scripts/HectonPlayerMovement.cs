@@ -2663,13 +2663,13 @@ namespace Hecton8.Gameplay
             if (safeVelocityChange.sqrMagnitude < SpeculativeCcdImpulseThresholdMetersPerSecondSq)
                 return;
 
-            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents ?? GlobalRegistry.PhysicsStateEvents;
+            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents;
             physicsStateEvents?.ArmSpeculativeCcdForImpulse(_rb);
         }
 
         private float ResolveSpeculativeHoverHeightMeters(float baseHeightMeters, float timeSeconds)
         {
-            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents ?? GlobalRegistry.PhysicsStateEvents;
+            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents;
             return physicsStateEvents != null
                 ? physicsStateEvents.ResolveSpeculativeHoverHeightMeters(baseHeightMeters, timeSeconds)
                 : math.max(0f, baseHeightMeters);
@@ -3225,43 +3225,55 @@ namespace Hecton8.Gameplay
         private static bool IsInsidePublishedVoxelSdfBounds(Hecton8.Caves.HectonVoxelVolume volume, Vector3 runtimePosition)
         {
             if (volume == null ||
-                !volume.TryGetPublishedSonarSdfPayload(
+                !volume.TryAcquirePublishedSonarSdfPayloadReadLease(
                     out Unity.Collections.NativeArray<byte>.ReadOnly _,
                     out Vector3Int gridDimensions,
                     out Vector3 volumeOrigin,
                     out Vector3 voxelCellSize,
                     out float _,
-                    out int _) ||
-                gridDimensions.x <= 1 ||
-                gridDimensions.y <= 1 ||
-                gridDimensions.z <= 1)
+                    out int _,
+                    out Hecton8.Caves.HectonVoxelVolume.PublishedSonarSdfReadLease lease))
             {
                 return false;
             }
 
-            float3 sample = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
-            float3 origin = new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z);
-            float3 cellSize = new float3(
-                math.max(0.0001f, math.abs(voxelCellSize.x)),
-                math.max(0.0001f, math.abs(voxelCellSize.y)),
-                math.max(0.0001f, math.abs(voxelCellSize.z)));
-
-            if (!math.all(math.isfinite(sample)) ||
-                !math.all(math.isfinite(origin)) ||
-                !math.all(math.isfinite(cellSize)))
+            try
             {
-                return false;
+                if (gridDimensions.x <= 1 ||
+                    gridDimensions.y <= 1 ||
+                    gridDimensions.z <= 1)
+                {
+                    return false;
+                }
+
+                float3 sample = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                float3 origin = new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z);
+                float3 cellSize = new float3(
+                    math.max(0.0001f, math.abs(voxelCellSize.x)),
+                    math.max(0.0001f, math.abs(voxelCellSize.y)),
+                    math.max(0.0001f, math.abs(voxelCellSize.z)));
+
+                if (!math.all(math.isfinite(sample)) ||
+                    !math.all(math.isfinite(origin)) ||
+                    !math.all(math.isfinite(cellSize)))
+                {
+                    return false;
+                }
+
+                float3 min = origin - cellSize * 0.5f;
+                float3 max = origin + cellSize * new float3(
+                    gridDimensions.x - 0.5f,
+                    gridDimensions.y - 0.5f,
+                    gridDimensions.z - 0.5f);
+
+                return sample.x >= min.x && sample.x <= max.x &&
+                       sample.y >= min.y && sample.y <= max.y &&
+                       sample.z >= min.z && sample.z <= max.z;
             }
-
-            float3 min = origin - cellSize * 0.5f;
-            float3 max = origin + cellSize * new float3(
-                gridDimensions.x - 0.5f,
-                gridDimensions.y - 0.5f,
-                gridDimensions.z - 0.5f);
-
-            return sample.x >= min.x && sample.x <= max.x &&
-                   sample.y >= min.y && sample.y <= max.y &&
-                   sample.z >= min.z && sample.z <= max.z;
+            finally
+            {
+                volume.ReleasePublishedSonarSdfPayloadReadLease(in lease);
+            }
         }
 
         private void RecordLastValidAup(AbsoluteUniversePosition aup)
@@ -4827,7 +4839,7 @@ namespace Hecton8.Gameplay
             _ladderSplineSnapActive = false;
             _ladderSplineSnapAxisWorld = Vector3.zero;
             _aupSpeculativeHoverTicks = SpeculativeHoverFixedTicksAfterAupShift;
-            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents ?? GlobalRegistry.PhysicsStateEvents;
+            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents;
             _aupSpeculativeHoverHeightMeters = physicsStateEvents != null
                 ? physicsStateEvents.ResolveSpeculativeHoverHeightMeters(
                     SpeculativeHoverBaseHeightMeters,
@@ -11719,7 +11731,7 @@ namespace Hecton8.Gameplay
             }
 
             float busSpeed = blockedSpeed * math.max(0f, suitScrapeImpactBusSpeedScale) * math.max(0.15f, scrapeT);
-            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents ?? GlobalRegistry.PhysicsStateEvents;
+            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents;
             physicsStateEvents?.QueueKinematicImpact(
                 _rb,
                 hitPoint,

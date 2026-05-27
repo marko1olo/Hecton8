@@ -8,7 +8,6 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.RendererUtils;
 using UnityEngine.Rendering.Universal;
 
@@ -55,6 +54,39 @@ namespace Hecton8.Visor
 
             [Tooltip("Depth rejection scale used by the half-resolution bilateral upsample.")]
             [Range(0f, 128f)] public float bilateralDepthScale = 24f;
+
+            internal float ResolveRenderScale(float survivalVisualWeight01)
+            {
+                float authored = Mathf.Clamp(renderScale, 0.25f, 1f);
+                float visualWeight = Smooth01(survivalVisualWeight01);
+                float qualityCurve = Smooth01(ResolveGlobalQualityWeight01()) * visualWeight;
+                float survivalScale = Mathf.Max(0.25f, Mathf.Min(authored, authored * 0.62f));
+                return Mathf.Clamp(Mathf.Lerp(survivalScale, authored, qualityCurve), 0.25f, 1f);
+            }
+
+            internal float ResolveCompositeStrength(float survivalVisualWeight01)
+            {
+                float qualityCurve = Mathf.Lerp(0.35f, 1f, Smooth01(ResolveGlobalQualityWeight01()));
+                return Mathf.Clamp01(compositeStrength) * Mathf.Clamp01(survivalVisualWeight01) * qualityCurve;
+            }
+
+            internal float ResolveBilateralDepthScale(float survivalVisualWeight01)
+            {
+                float visualWeight = Smooth01(survivalVisualWeight01);
+                return Mathf.Max(0f, bilateralDepthScale) * Mathf.Lerp(0.72f, 1f, visualWeight);
+            }
+
+            private static float ResolveGlobalQualityWeight01()
+            {
+                float quality = HomeostasisBrain.GlobalQualityWeight;
+                return float.IsNaN(quality) || float.IsInfinity(quality) ? 1f : Mathf.Clamp01(quality);
+            }
+
+            private static float Smooth01(float value)
+            {
+                float t = Mathf.Clamp01(value);
+                return t * t * (3f - 2f * t);
+            }
         }
 
         private sealed class HalfResParticlesPass : ScriptableRenderPass
@@ -62,6 +94,15 @@ namespace Hecton8.Visor
             private sealed class DrawPassData
             {
                 internal RendererListHandle RendererList;
+            }
+
+            private sealed class CompositePassData
+            {
+                public TextureHandle Source;
+                public TextureHandle Depth;
+                public TextureHandle Particles;
+                public BufferHandle ConstantsBuffer;
+                public Material Material;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Half-Res Particles");
@@ -87,7 +128,11 @@ namespace Hecton8.Visor
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
-                EnsureHalfResParticlesGlobalsBuffer();
+            }
+
+            public bool PrepareResources()
+            {
+                return EnsureHalfResParticlesGlobalsBuffer();
             }
 
             public void Dispose()
@@ -132,6 +177,13 @@ namespace Hecton8.Visor
                     return;
                 }
 
+                float survivalVisualWeight01 = HectonDrsRenderFeatureGate.ResolveSurvivalVisualWeight01();
+                if (survivalVisualWeight01 <= 0.0001f)
+                {
+                    SetGlobalActive(0f);
+                    return;
+                }
+
                 UniversalLightData lightData = frameData.Get<UniversalLightData>();
                 UniversalRenderingData renderingData = frameData.Get<UniversalRenderingData>();
                 DrawingSettings drawingSettings = CreateDrawingSettings(
@@ -152,7 +204,7 @@ namespace Hecton8.Visor
                 RendererListHandle rendererList = renderGraph.CreateRendererList(rendererListParams);
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                float renderScale = math.clamp(_settings.renderScale, 0.25f, 1f);
+                float renderScale = _settings.ResolveRenderScale(survivalVisualWeight01);
                 int particlesWidth = math.max(1, (int)(sourceDesc.width * renderScale + 0.5f));
                 int particlesHeight = math.max(1, (int)(sourceDesc.height * renderScale + 0.5f));
 
@@ -174,18 +226,24 @@ namespace Hecton8.Visor
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;
                 compositeDesc.msaaSamples = MSAASamples.None;
-                compositeDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                compositeDesc.colorFormat = sourceDesc.colorFormat;
 
-                TextureHandle particlesTexture = renderGraph.CreateTexture(particlesDesc);
-                TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
                 if (!UpdateCompositeGlobals(
-                        math.saturate(_settings.compositeStrength),
-                        math.max(0f, _settings.bilateralDepthScale)))
+                        _settings.ResolveCompositeStrength(survivalVisualWeight01),
+                        _settings.ResolveBilateralDepthScale(survivalVisualWeight01)))
+                {
+                    SetGlobalActive(0f);
+                    return;
+                }
+                if (_halfResParticlesGlobalsBuffer == null || !_halfResParticlesGlobalsBuffer.IsValid())
                 {
                     SetGlobalActive(0f);
                     return;
                 }
 
+                TextureHandle particlesTexture = renderGraph.CreateTexture(particlesDesc);
+                TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
+                BufferHandle globalsBuffer = renderGraph.ImportBuffer(_halfResParticlesGlobalsBuffer);
                 SetGlobalActive(1f);
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<DrawPassData>(
@@ -198,7 +256,6 @@ namespace Hecton8.Visor
                     builder.UseRendererList(rendererList);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.SetRenderAttachment(particlesTexture, 0, AccessFlags.Write);
-                    builder.SetGlobalTextureAfterPass(particlesTexture, ShaderConstants.ParticlesTextureId);
                     builder.AllowPassCulling(false);
 
                     builder.SetRenderFunc((DrawPassData data, RasterGraphContext context) =>
@@ -207,13 +264,43 @@ namespace Hecton8.Visor
                     });
                 }
 
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, compositeTexture, _compositeMaterial, 0),
-                           passName: "Hecton Half-Res Particles Composite",
-                           returnBuilder: true))
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<CompositePassData>(
+                           "Hecton Half-Res Particles Composite",
+                           out CompositePassData passData,
+                           _profilingSampler))
                 {
+                    passData.Source = sourceTexture;
+                    passData.Depth = depthTexture;
+                    passData.Particles = particlesTexture;
+                    passData.ConstantsBuffer = globalsBuffer;
+                    passData.Material = _compositeMaterial;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(particlesTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.UseBuffer(globalsBuffer, AccessFlags.Read);
+                    builder.SetRenderAttachment(compositeTexture, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (CompositePassData data, RasterGraphContext context) =>
+                    {
+                        if (data.Material == null)
+                            return;
+
+                        GraphicsBuffer constants = data.ConstantsBuffer;
+                        if (constants == null || !constants.IsValid())
+                            return;
+
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
+                        context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
+                        context.cmd.SetGlobalTexture(ShaderConstants.ParticlesTextureId, data.Particles);
+                        context.cmd.SetGlobalConstantBuffer(
+                            constants,
+                            ShaderConstants.HalfResParticlesGlobalsBufferId,
+                            0,
+                            HalfResParticlesGlobalsStrideBytes);
+                        CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
+                    });
                 }
 
                 resourceData.cameraColor = compositeTexture;
@@ -250,36 +337,79 @@ namespace Hecton8.Visor
 
             private bool UpdateCompositeGlobals(float compositeStrength, float bilateralDepthScale)
             {
-                if (!EnsureHalfResParticlesGlobalsBuffer())
+                if (!HasHalfResParticlesGlobalsBuffer())
                     return false;
 
                 HalfResParticlesGlobalsDTO globals = HalfResParticlesGlobalsDTO.FromValues(compositeStrength, bilateralDepthScale);
                 if (_hasHalfResParticlesGlobals && _lastHalfResParticlesGlobals.Params == globals.Params)
                 {
-                    Shader.SetGlobalConstantBuffer(ShaderConstants.HalfResParticlesGlobalsBufferId, _halfResParticlesGlobalsBuffer, 0, HalfResParticlesGlobalsStrideBytes);
-                    return true;
+                    return _halfResParticlesGlobalsBuffer != null && _halfResParticlesGlobalsBuffer.IsValid();
                 }
 
                 GraphicsBuffer writeBuffer = _halfResParticlesGlobalsWriteIndex == 0 ? _halfResParticlesGlobalsBufferA : _halfResParticlesGlobalsBufferB;
                 if (writeBuffer == null || !writeBuffer.IsValid())
                     return false;
 
-                NativeArray<HalfResParticlesGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<HalfResParticlesGlobalsDTO>(0, 1);
                 try
                 {
-                    mapped[0] = globals;
+                    NativeArray<HalfResParticlesGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<HalfResParticlesGlobalsDTO>(0, 1);
+                    try
+                    {
+                        mapped[0] = globals;
+                    }
+                    finally
+                    {
+                        writeBuffer.UnlockBufferAfterWrite<HalfResParticlesGlobalsDTO>(1);
+                    }
                 }
-                finally
+                catch (ObjectDisposedException)
                 {
-                    writeBuffer.UnlockBufferAfterWrite<HalfResParticlesGlobalsDTO>(1);
+                    MarkHalfResParticlesGlobalsUnavailable();
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    MarkHalfResParticlesGlobalsUnavailable();
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    MarkHalfResParticlesGlobalsUnavailable();
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    MarkHalfResParticlesGlobalsUnavailable();
+                    return false;
                 }
 
                 _halfResParticlesGlobalsBuffer = writeBuffer;
                 _halfResParticlesGlobalsWriteIndex ^= 1;
-                Shader.SetGlobalConstantBuffer(ShaderConstants.HalfResParticlesGlobalsBufferId, _halfResParticlesGlobalsBuffer, 0, HalfResParticlesGlobalsStrideBytes);
                 _lastHalfResParticlesGlobals = globals;
                 _hasHalfResParticlesGlobals = true;
+                return _halfResParticlesGlobalsBuffer != null && _halfResParticlesGlobalsBuffer.IsValid();
+            }
+
+            private bool HasHalfResParticlesGlobalsBuffer()
+            {
+                if (!SystemInfo.supportsSetConstantBuffer)
+                    return false;
+
+                if (_halfResParticlesGlobalsBufferA == null || !_halfResParticlesGlobalsBufferA.IsValid() ||
+                    _halfResParticlesGlobalsBufferB == null || !_halfResParticlesGlobalsBufferB.IsValid())
+                {
+                    return false;
+                }
+
+                if (_halfResParticlesGlobalsBuffer == null || !_halfResParticlesGlobalsBuffer.IsValid())
+                    _halfResParticlesGlobalsBuffer = _halfResParticlesGlobalsBufferA;
                 return true;
+            }
+
+            private void MarkHalfResParticlesGlobalsUnavailable()
+            {
+                _halfResParticlesGlobalsBuffer = null;
+                _hasHalfResParticlesGlobals = false;
             }
 
             [StructLayout(LayoutKind.Explicit, Size = HalfResParticlesGlobalsStrideBytes)]
@@ -300,6 +430,8 @@ namespace Hecton8.Visor
         private static class ShaderConstants
         {
             internal static readonly int HalfResParticlesGlobalsBufferId = Shader.PropertyToID("HectonHalfResParticlesGlobals");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
+            internal static readonly int CameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
             internal static readonly int ParticlesTextureId = Shader.PropertyToID("_HectonHalfResParticlesTex");
             internal static readonly int ActiveId = Shader.PropertyToID("_HectonHalfResParticlesActive");
         }
@@ -318,11 +450,16 @@ namespace Hecton8.Visor
                 settings.compositeShader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
 #endif
 
-            Shader shader = settings != null && settings.compositeShader != null
-                ? settings.compositeShader
-                : Shader.Find("Hidden/Hecton8/HalfResParticleComposite");
+            Shader shader = settings != null ? settings.compositeShader : null;
+            if (shader == null)
+                RuntimeShaderReferenceCatalog.TryGetHalfResParticleCompositeShader(out shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find("Hidden/Hecton8/HalfResParticleComposite");
+#endif
             RecreateMaterial(ref _compositeMaterial, shader);
             _pass ??= new HalfResParticlesPass();
+            _pass.PrepareResources();
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -340,12 +477,6 @@ namespace Hecton8.Visor
             }
 
             if (IsUnsupportedCameraType(renderingData.cameraData.cameraType))
-            {
-                SetGlobalActive(0f);
-                return;
-            }
-
-            if (HectonDrsRenderFeatureGate.ShouldCullForSurvivalScale())
             {
                 SetGlobalActive(0f);
                 return;

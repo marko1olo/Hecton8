@@ -3,22 +3,12 @@
 Date: 2026-05-19
 Status: ENVELOPE-ONLY STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
-
-Owner prompt: MODDING_API_SCHEMA_BUILDER  
-Source file: `Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs`  
+Owner domain: Modding API static contract
+Source file: `Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs`
 Companion schema: `Docs/Modding/Signal_Schema.json`
 
 ## 2026-05-19 Envelope-Only Override
@@ -26,11 +16,29 @@ Companion schema: `Docs/Modding/Signal_Schema.json`
 The legacy `ModCommand` opcode matrix below is retained for source-audit continuity. Current UGC command execution is narrower:
 
 - public runtime mod writes use `HectonAPI.Commands.RequestFuture(in FutureCommandEnvelope envelope)`;
-- `Request`, `RequestAup`, and `RequestRenderInstance` return `false` while envelope-only mode is enforced;
+- the public packet size fact is `FutureCommandEnvelope.SizeBytes`; sandbox capacity, tuning, thermal, and fault-hash constants are internal control-plane data;
+- `Request`, `RequestAup`, and `RequestRenderInstance` require active `ModExecutionScope`, then return `false` while envelope-only mode is enforced;
 - legacy command queues and hash-map lanes are not allocated by `ModCommandDispatcher.Initialize()` while the legacy surface is disabled;
+- `ModCommandDispatcher` direct static methods are internal-only; public UGC uses the `HectonAPI.Commands` facade, not dispatcher helpers or legacy queue ingress;
 - accepted runtime packets are validated by `FutureCommandSandboxValidator` against opcode hash, integrity hash, finite AUP, payload sanity, CRC asset manifest, quotas, thermal pressure, and rollback freeze.
+- `allowed_opcodes.csv` must match the runtime default `GenerateEmergencyMockOpcodes()` allowlist. It is not allowed to contain reserved future kernels or aliases such as `TriggerSubtitleCue`, `SurvivalOverride`, `HapticPulse`, or `SubtitleCue`.
 
 The active sandbox boundary is documented in [Mod_API_Sandbox_Quarantine.md](Mod_API_Sandbox_Quarantine.md). SDK authoring is documented in [SDK_Authoring_Interface_Plan.md](SDK_Authoring_Interface_Plan.md).
+
+Current static future-envelope allowlist:
+
+| Opcode hash | Name | Runtime result | Public status |
+|---:|---|---|---|
+| `0x3A3DA9C4` | `SpawnItem` | `ModSpawnRequestSignal` | static source only, runtime proof pending |
+| `0xE75AADC0` | `AlterHealth` | DevNull validation lane | unsupported simulation only |
+| `0x3B73D070` | `AlterGravity` | DevNull validation lane | unsupported simulation only |
+| `0xF7023ACD` | `AssetReference` | `ModAssetReferenceSignal` after CRC/size gate | static source only, runtime proof pending |
+| `0xBBFBD0A6` | `ModMemoryRead` | lease/range validation then DevNull | unsupported simulation only |
+| `0xE9C540EF` | `ModMemoryWrite` | sandbox-owned byte scratch write after lease/range gate | static source only, no gameplay authority |
+| `0xCC5BAC8D` | `FaunaAcousticStimulus` | `MockAcousticSignal` | static source only, runtime proof pending |
+| `0x1B7770D3` | `FaunaDamageStimulus` | `MockDamageSignal` | static source only, runtime proof pending |
+
+reserved subtitle alias note: `TriggerSubtitleCue` is a subtitle/localization alias for `SubtitleCue`. It must stay out of `allowed_opcodes.csv`, `GenerateEmergencyMockOpcodes()`, and the editor runtime opcode tuner until the localization owner provides token proof, zero-GC subtitle path proof, quota telemetry, rejection behavior, unload behavior, and runtime playbook evidence.
 
 ## Extraction Evidence
 
@@ -112,6 +120,7 @@ Source-backed command facts:
 - Voxel writes are rejected in protected core sectors.
 - Raycast results expose collider instance id as diagnostic only, not a Unity object reference.
 - Render instances use resource hashes only; Unity materials, meshes, and GameObjects are not exposed.
+- `MockModQueue` queue handles and instance controls are internal first-party ingress plumbing, not SDK objects.
 - A new opcode is not valid until source enum, target validation, schema, command audit, runtime playbook, and static validator all agree.
 
 ## Consistency Gate

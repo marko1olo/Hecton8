@@ -80,8 +80,8 @@ namespace Hecton8.Debugging
         // COLD ALLOC: StringBuilder[768] - editor smoke JSON report builder - owner: HabitatStressSmokeTester
         private static readonly StringBuilder s_reportBuilder = new StringBuilder(768);
 #endif
-        private static ComputeBuffer s_shaderAmbiencePayloadBuffer;
-        private static ComputeBuffer s_shaderPayloadBuffer;
+        private static GraphicsBuffer s_shaderAmbiencePayloadBuffer;
+        private static GraphicsBuffer s_shaderPayloadBuffer;
 
 #if UNITY_EDITOR
         [MenuItem("Hecton8/Habitat/Run Habitat Stress Smoke Test")]
@@ -414,10 +414,10 @@ namespace Hecton8.Debugging
                 return;
 
             ReleaseSmokeShaderBuffers();
-            // COLD ALLOC: ComputeBuffer[64 float4] - smoke StructuredBuffer ambience binding - owner: HabitatStressSmokeTester
-            s_shaderAmbiencePayloadBuffer = new ComputeBuffer(ShaderPayloadCapacity, sizeof(float) * 4, ComputeBufferType.Structured);
-            // COLD ALLOC: ComputeBuffer[64 float4] - smoke StructuredBuffer water binding - owner: HabitatStressSmokeTester
-            s_shaderPayloadBuffer = new ComputeBuffer(ShaderPayloadCapacity, sizeof(float) * 4, ComputeBufferType.Structured);
+            // COLD ALLOC: GraphicsBuffer[64 float4] - smoke StructuredBuffer ambience binding - owner: HabitatStressSmokeTester
+            s_shaderAmbiencePayloadBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, ShaderPayloadCapacity, sizeof(float) * 4);
+            // COLD ALLOC: GraphicsBuffer[64 float4] - smoke StructuredBuffer water binding - owner: HabitatStressSmokeTester
+            s_shaderPayloadBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, ShaderPayloadCapacity, sizeof(float) * 4);
         }
 
         private static void ReleaseSmokeShaderBuffers()

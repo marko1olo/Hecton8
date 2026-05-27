@@ -3,21 +3,11 @@
 Date: 2026-05-19
 Status: ENVELOPE-ONLY STATIC_SOURCE_AUDIT / RUNTIME_PENDING
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only where it agrees with:
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
-
-Owner prompt: MODDING_API_SCHEMA_BUILDER
+Owner domain: Modding API static contract
 
 ## 2026-05-19 Envelope-Only Override
 
@@ -34,6 +24,7 @@ SDK/package authoring details are in [SDK_Authoring_Interface_Plan.md](SDK_Autho
 ## Source Files
 
 - `Assets/_Project/Scripts/ModdingAPI/ModLoader.cs`
+- `Assets/_Project/Scripts/Editor/ModdingSDK/ModBuilderWindow.cs`
 - `Assets/_Project/Scripts/ModdingAPI/IHectonMod.cs`
 - `Assets/_Project/Scripts/ModdingAPI/ModMetadata.cs`
 - `Assets/_Project/Scripts/ModdingAPI/ModRuntimeInfo.cs`
@@ -49,26 +40,34 @@ SDK/package authoring details are in [SDK_Authoring_Interface_Plan.md](SDK_Autho
 | Manifest file name | `mod.json` | Loader discovers packages by manifest only. |
 | Current API version | `2` | Mods requiring an API newer than `2` are disabled. |
 | Manifest field count | `9` | Manifest schema drift must update this audit and `Signal_Schema.json`. |
+| Canonical mod IDs | lowercase token segments | `Id` and dependency IDs must be lowercase letters/digits separated by single `.`, `_`, or `-`; no whitespace, leading/trailing/repeated separators, or reserved filesystem device segments. |
 | `ModMetadata` field count | `8` | Runtime diagnostics use this stable descriptor. |
-| `ModRuntimeInfo` field count | `7` | UI/diagnostics copy this shape; no loader internals are exposed. |
+| `ModRuntimeInfo` field count | `7` | Internal engine UI/diagnostics shape; not a public mod facade payload or public SDK type. ModRuntimeInfo members internal-only because the descriptor contains package paths and loader status. |
 | `IHectonMod` lifecycle methods | `3` | `OnLoad`, `OnInitialize`, `OnUnload` are mandatory callbacks. |
 | `IHectonVersionedMod` required properties | `1` | `RequiredAPIVersion` is the source-backed version gate. |
+| Reserved managed assembly identities | blocked | Mod packages cannot use `Hecton8.*`, `Unity*`, `Assembly-CSharp`, `System`, `mscorlib`, or `netstandard` by file name or assembly metadata identity. |
+| Package DLL identity scan | top-level `.dll` files | Loader scans every top-level DLL in the manifest directory for reserved file/metadata identities, even when envelope-only mode prevents runtime DLL ingress. |
+| EntryAssembly file name only | package-local `.dll` name | `EntryAssembly` must not be absolute, rooted, path-like, whitespace-padded, or non-DLL. |
+| Scope owner proof | active mod id + non-zero hash | `ModExecutionScope` cannot open an anonymous/blank active owner; public facade guards depend on this owner proof. |
+| SaveState store owner proof | scoped mod owner or explicit engine owner | `ModSaveStateStore` rejects scope-less public mod payload access; internal engine payloads must use `SetEngineString` / `GetEngineString` with `hecton.internal.` keys. |
 
 ## Manifest Fields
 
 | Field | Type | Rule |
 |---|---|---|
-| `Id` | `string` | Required stable mod id; hashed for runtime lookup and command ownership. |
+| `Id` | `string` | Required canonical stable mod id; hashed for runtime lookup and command ownership. |
 | `Name` | `string` | Optional display label; defaults to `Id`. |
 | `Version` | `string` | Optional package version; defaults to `0.0.0`. |
 | `Author` | `string` | Optional diagnostics string. |
-| `Dependencies` | `string[]` | Stable ids that must load before this mod. |
-| `EntryAssembly` | `string` | Optional explicit managed assembly file. |
+| `Dependencies` | `string[]` | Canonical stable ids that must load before this mod. Invalid dependency ids disable the package before load-order resolution. |
+| `EntryAssembly` | `string` | Optional explicit managed assembly file name only; never a path. |
 | `EntryType` | `string` | Optional managed entry type. |
 | `RequiredAPIVersion` | `int` | Must be positive and no higher than `CurrentAPIVersion`. |
 | `ModPriority` | `int` | Arbitration priority for conflicting mod world requests. |
 
-Current SDK builder gap: `ModBuilderWindow.ModManifestData` emits `7` manifest fields and omits `RequiredAPIVersion` / `ModPriority`, while `ModLoader` disables manifests with `RequiredAPIVersion <= 0`. Treat SDK-built packages as `PENDING VERIFICATION` until the builder emits these fields or runtime smoke evidence proves the package loads without manual edits.
+SDK builder parity: `ModBuilderWindow.ModManifestData` emits the same `9` manifest fields as `ModLoader.ModManifest`, including positive `RequiredAPIVersion` and `ModPriority`. `ModBuilderWindow` validates the required API against current loader API version `2`, validates canonical mod/dependency ids, and uses the canonical trimmed mod id for output path and manifest identity. Treat this as static source proof only; SDK-built packages remain `PENDING VERIFICATION` until Unity runtime smoke evidence proves load behavior without manual edits.
+
+Reserved managed assembly identities are blocked in both cold package paths. `ModLoader` disables packages whose `EntryAssembly`, resolved DLL file name, or any top-level package DLL metadata identity claims an engine-owned name. `ModBuilderWindow` rejects selected DLLs with the same reserved identities before copying them into `Mods/[ModId]` and deletes stale top-level DLLs that are not part of the current build. This keeps `InternalsVisibleTo` friend assemblies such as `Hecton8.Plugins` first-party only and prevents a future managed-mode reopening from turning assembly-name spoofing or stale support DLLs into an internal API route.
 
 ## Metadata Fields
 
@@ -87,13 +86,15 @@ Current SDK builder gap: `ModBuilderWindow.ModManifestData` emits `7` manifest f
 
 | Field | Type | Rule |
 |---|---|---|
-| `Metadata` | `ModMetadata` | Public descriptor copy. |
-| `Status` | `ModLoadStatus` | Active or disabled state. |
-| `DirectoryPath` | `string` | Package root path for diagnostics. |
+| `Metadata` | `ModMetadata` | Descriptor copy for engine UI. |
+| `Status` | `ModLoadStatus` | Internal active or disabled state. |
+| `DirectoryPath` | `string` | Package root path for internal engine diagnostics only. |
 | `StatusMessage` | `string` | Loader status or disable reason. |
-| `AssetBundlePath` | `string` | Primary mod bundle path if discovered. |
+| `AssetBundlePath` | `string` | Primary mod bundle path for internal engine diagnostics only. |
 | `HasManagedEntry` | `bool` | True when a managed entry was discovered. |
 | `HasLocalizationFiles` | `bool` | True when localization overlays were discovered. |
+
+Runtime info visibility: `ModRuntimeInfo` and all of its members are internal-only engine UI diagnostics. Package paths, bundle paths, load status, and failure text must not become public SDK fields.
 
 ## Lifecycle Boundaries
 
@@ -116,6 +117,7 @@ Source-backed callback safety:
 |---|---:|---|
 | Public methods | `SetModString`, `GetModString` | SaveState is text-only and mod-owned. |
 | Active scope required | `ModExecutionScope.HasActiveMod` | Calls outside mod callbacks throw `IllegalContractException`. |
+| Internal engine route | `SetEngineString`, `GetEngineString` | Engine-owned mod-world payloads use explicit `hecton.internal.` keys and do not synthesize owner hashes from arbitrary payload keys. |
 | Storage prefix | `m8v1:` | Persisted keys are hashed/namespaced; raw mod keys are not first-party save owners. |
 | Protected payload block | `16384` bytes | Source: `SaveBinaryPayloadCodec.ProtectedLz4BlockSizeBytes`. |
 | Mod payload header | `32` bytes | Source: `SaveBinaryStorage.ModPayloadHeaderSizeBytes`. |
@@ -129,7 +131,11 @@ JSON is allowed here only as cold mod-owned text. It is still forbidden as signa
 
 - `ModLoader.CurrentAPIVersion` drifts from the schema.
 - `mod.json` manifest field count changes.
+- `ModBuilderWindow.ModManifestData` drifts from `ModLoader.ModManifest`.
+- Canonical mod id, dependency id, or EntryAssembly filename-only validation is removed from loader or SDK builder.
+- Reserved managed assembly identity validation or top-level package DLL scanning is removed from `ModLoader` or `ModBuilderWindow`.
 - `ModMetadata`, `ModRuntimeInfo`, `IHectonMod`, or `IHectonVersionedMod` shapes change.
 - SaveState public method count changes.
+- SaveState store owner proof is removed or engine-owned payloads stop using the explicit internal route.
 - `m8v1:` storage prefix or mod payload byte caps change.
 - This audit is not linked by `Mod_API_Specification.md`, `Runtime_Verification_Playbook.md`, and `Signal_Schema.json`.

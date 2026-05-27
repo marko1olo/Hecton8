@@ -1,9 +1,9 @@
 ﻿# Data Monolith H8BIN Spec
 
-Date: 2026-05-23
-Status: PENDING VERIFICATION
+Date: 2026-05-26
+Status: STATIC FILE PRESENT / HEADER PARSE RECORDED / UNITY RUNTIME PROOF PENDING
 Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
-Evidence class: STATIC_DOC / STATIC_SOURCE
+Evidence class: STATIC_DOC / STATIC_SOURCE / H8BIN_HEADER_PARSE
 
 ## Current Source Boundary
 
@@ -13,13 +13,24 @@ Evidence class: STATIC_DOC / STATIC_SOURCE
 | current workspace payload status | present; `1,064,384` bytes |
 | H8DM header size | `64` bytes |
 | H8DM directory size | `64` bytes |
-| H8DM format version | `1` |
-| H8DM schema hash | `0x58303032` |
+| H8DM format version | `2` |
+| H8DM schema hash | `0x33313331` |
+| current checksum64 | `0x19D880780D6E1B46` |
+| section count | `26` |
 | source data root | `Assets/_SourceData/DataMonolith` |
 | bake output | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
 | editor menu | `Hecton8/Data Monolith/Bake Static Data` |
 
 The Data Monolith stores immutable static data. It is not the save container.
+
+DTO structs are byte-exact binary records. The current hard contract is `StructLayout(LayoutKind.Explicit, Pack = 1, Size = ...)`; editor layout validation rejects missing Pack=1 before bake/import proof.
+
+Cold boot loading contract:
+
+- URL-backed `StreamingAssets` paths use the bootstrap `Awaitable` phase.
+- Direct filesystem paths can hydrate synchronously into the Vault arena.
+- Android/JAR-style URLs must be staged asynchronously before validation.
+- WebGL remains fail-closed until a zero-copy browser staging path exists.
 
 ## Save Container Boundary
 
@@ -43,4 +54,4 @@ Before claiming Data Monolith runtime readiness, provide artifacts for:
 5. checksum/hash validation
 6. player-build package inclusion
 
-Current static file presence is not Unity/player proof.
+Current static file presence and header parsing are not Unity/player profiler proof.

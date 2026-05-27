@@ -32,6 +32,7 @@ namespace Hecton8.World
     public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IMicroFaunaPresentationPulseSink, IGlobalRegistryHotSwapListener
     {
         private static int s_x001SargassumMicroFaunaBoidsSignalPushDropCount;
+        private static SargassumMicroFaunaBoids s_activeRuntimeInstance;
         private const int MaxLeviathanNodePathIterations = 4096;
         private const int WhileLoopWatchdogLimit = 10000;
         private const float FullSimulationDistanceMeters = 50f;
@@ -48,6 +49,7 @@ namespace Hecton8.World
         private const int InactiveStatisticalSwarmRingCapacity = 16;
         private const int TargetBoidsPerGrazingAnchor = 48;
         private const float MinimumPopulationBudgetScale = 0.35f;
+        private const float MaximumEcosystemSpeedMultiplier = 4f;
         private const string NativeMemoryOwner = nameof(SargassumMicroFaunaBoids);
         private const int ComputeDisableReasonDispatchFailure = 1;
         private const int ComputeDisableReasonBindingFailure = 2;
@@ -58,6 +60,11 @@ namespace Hecton8.World
         private const int ComputeDisableReasonZeroThreadGroup = 7;
         private const int ComputeDisableReasonKernelValidationFailure = 8;
         private const int ComputeDisableReasonOriginShiftFailure = 9;
+        private const int ComputeDisableReasonOversizedThreadGroup = 10;
+        private const int ComputeDisableReasonUnsupportedCompute = 11;
+        private const int ComputeDisableReasonDispatchGroupLimit = 12;
+        private const uint PortableThreadGroupMaxSize = 256u;
+        private const int PortableMaxDispatchGroupsPerDimension = 65535;
         private const int FaunaSimulationBucketMask = SimulationBucketConstants.StandardSlowBucketMask;
         private const float FaunaSimulationBucketInvCount = 1f / SimulationBucketConstants.StandardSlowBucketCount;
         private const uint FaunaAmbientDriftKillSwitchMask = GlobalRegistry.SystemKillSwitchLane4VfxMask;
@@ -69,7 +76,7 @@ namespace Hecton8.World
         private static int _editorValidateDepth;
 #endif
 
-        internal static SargassumMicroFaunaBoids ActiveRuntimeInstance => GlobalRegistry.SargassumMicroFauna;
+        internal static SargassumMicroFaunaBoids ActiveRuntimeInstance => s_activeRuntimeInstance;
 
         // GPU StructuredBuffer interop: explicit offsets preserve HLSL scalar packing; ValidateGpuStructLayouts gates stride.
         [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -295,7 +302,7 @@ namespace Hecton8.World
             [FieldOffset(16)] public float MaxStepSeconds;
             [FieldOffset(20)] public float MinTimeScale;
             [FieldOffset(24)] public float PreviousAccumulator;
-            [FieldOffset(28)] public float Padding;
+            [FieldOffset(28)] public int PreviousTier;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -311,61 +318,58 @@ namespace Hecton8.World
             [FieldOffset(28)] public float Padding1;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct EvaluateSimulationLodJob : IJob
+        private static FoveatedSimulationDecision EvaluateFoveatedSimulationDecision(in FoveatedSimulationInput input)
         {
-            [ReadOnly, NoAlias] public NativeArray<FoveatedSimulationInput> Input;
-            [NoAlias] public NativeArray<FoveatedSimulationDecision> Output;
+            FoveatedSimulationDecision decision = default;
+            float safeFrameDeltaTime = math.isfinite(input.FrameDeltaTime) ? math.max(0f, input.FrameDeltaTime) : 0f;
+            float fullDistanceMeters = math.isfinite(input.FullDistanceMeters) ? math.max(0f, input.FullDistanceMeters) : FullSimulationDistanceMeters;
+            float sleepDistanceMeters = math.isfinite(input.SleepDistanceMeters) ? math.max(fullDistanceMeters + 0.01f, input.SleepDistanceMeters) : SleepSimulationDistanceMeters;
+            float cameraDistanceSq = math.isfinite(input.CameraDistanceSq) ? math.max(0f, input.CameraDistanceSq) : 0f;
+            int previousTier = math.clamp(input.PreviousTier, (int)SimulationLodTier.Full, (int)SimulationLodTier.Sleep);
+            float fullEnterMeters = math.max(0f, fullDistanceMeters - SimulationLodHysteresisMeters);
+            float fullExitMeters = fullDistanceMeters + SimulationLodHysteresisMeters;
+            float sleepEnterMeters = sleepDistanceMeters + SimulationLodHysteresisMeters;
+            float sleepExitMeters = math.max(fullDistanceMeters + 0.01f, sleepDistanceMeters - SimulationLodHysteresisMeters);
+            float fullDistanceSq = fullDistanceMeters * fullDistanceMeters;
+            float sleepDistanceSq = sleepDistanceMeters * sleepDistanceMeters;
+            float fullEnterSq = fullEnterMeters * fullEnterMeters;
+            float fullExitSq = fullExitMeters * fullExitMeters;
+            float sleepEnterSq = sleepEnterMeters * sleepEnterMeters;
+            float sleepExitSq = sleepExitMeters * sleepExitMeters;
+            float safeMaxStepSeconds = math.isfinite(input.MaxStepSeconds) ? math.max(1f / 60f, input.MaxStepSeconds) : 1f / 30f;
+            float safeMinTimeScale = math.isfinite(input.MinTimeScale) ? math.clamp(input.MinTimeScale, 0.1f, 1f) : 1f;
+            float previousAccumulator = math.isfinite(input.PreviousAccumulator) ? math.max(0f, input.PreviousAccumulator) : 0f;
+            decision.CameraDistanceSq = cameraDistanceSq;
+            bool stayFull = previousTier == (int)SimulationLodTier.Full && cameraDistanceSq <= fullExitSq;
+            bool enterFull = previousTier != (int)SimulationLodTier.Full && cameraDistanceSq <= fullEnterSq;
+            bool staySleep = previousTier == (int)SimulationLodTier.Sleep && cameraDistanceSq > sleepExitSq;
+            bool enterSleep = previousTier != (int)SimulationLodTier.Sleep && cameraDistanceSq > sleepEnterSq;
 
-            public void Execute()
+            if (staySleep || enterSleep)
             {
-                if (!Input.IsCreated || Input.Length <= 0 || !Output.IsCreated || Output.Length <= 0)
-                    return;
-
-                FoveatedSimulationInput input = Input[0];
-                FoveatedSimulationDecision decision = default;
-                float safeFrameDeltaTime = math.max(0f, input.FrameDeltaTime);
-                float fullDistanceMeters = math.max(0f, input.FullDistanceMeters);
-                float sleepDistanceMeters = math.max(fullDistanceMeters + 0.01f, input.SleepDistanceMeters);
-                float cameraDistanceSq = math.max(0f, input.CameraDistanceSq);
-                float fullDistanceSq = fullDistanceMeters * fullDistanceMeters;
-                float sleepDistanceSq = sleepDistanceMeters * sleepDistanceMeters;
-                float safeMaxStepSeconds = math.max(1f / 60f, input.MaxStepSeconds);
-                float safeMinTimeScale = math.clamp(input.MinTimeScale, 0.1f, 1f);
-                float previousAccumulator = math.max(0f, input.PreviousAccumulator);
-                decision.CameraDistanceSq = cameraDistanceSq;
-
-                if (cameraDistanceSq > sleepDistanceSq)
-                {
-                    decision.Hibernation01 = 1f;
-                    decision.Tier = (int)SimulationLodTier.Sleep;
-                    Output[0] = decision;
-                    return;
-                }
-
-                if (cameraDistanceSq <= fullDistanceSq)
-                {
-                    decision.Tier = (int)SimulationLodTier.Full;
-                    decision.SimulationDeltaTime = safeFrameDeltaTime;
-                    decision.DispatchSimulation = safeFrameDeltaTime > 0f ? 1 : 0;
-                    Output[0] = decision;
-                    return;
-                }
-
-                decision.Tier = (int)SimulationLodTier.Simplified;
-                decision.Hibernation01 = math.saturate((cameraDistanceSq - fullDistanceSq) / math.max(0.01f, sleepDistanceSq - fullDistanceSq));
-                decision.Accumulator = previousAccumulator + safeFrameDeltaTime;
-                if (decision.Accumulator + 0.0001f < safeMaxStepSeconds)
-                {
-                    Output[0] = decision;
-                    return;
-                }
-
-                decision.SimulationDeltaTime = decision.Accumulator * math.lerp(1f, safeMinTimeScale, decision.Hibernation01);
-                decision.Accumulator = 0f;
-                decision.DispatchSimulation = decision.SimulationDeltaTime > 0f ? 1 : 0;
-                Output[0] = decision;
+                decision.Hibernation01 = 1f;
+                decision.Tier = (int)SimulationLodTier.Sleep;
+                return decision;
             }
+
+            if (stayFull || enterFull)
+            {
+                decision.Tier = (int)SimulationLodTier.Full;
+                decision.SimulationDeltaTime = safeFrameDeltaTime;
+                decision.DispatchSimulation = safeFrameDeltaTime > 0f ? 1 : 0;
+                return decision;
+            }
+
+            decision.Tier = (int)SimulationLodTier.Simplified;
+            decision.Hibernation01 = math.saturate((cameraDistanceSq - fullDistanceSq) / math.max(0.01f, sleepDistanceSq - fullDistanceSq));
+            decision.Accumulator = previousAccumulator + safeFrameDeltaTime;
+            if (decision.Accumulator + 0.0001f < safeMaxStepSeconds)
+                return decision;
+
+            decision.SimulationDeltaTime = decision.Accumulator * math.lerp(1f, safeMinTimeScale, decision.Hibernation01);
+            decision.Accumulator = 0f;
+            decision.DispatchSimulation = decision.SimulationDeltaTime > 0f ? 1 : 0;
+            return decision;
         }
 
         // GPU StructuredBuffer interop: explicit offsets preserve HLSL float/uint field packing.
@@ -696,9 +700,10 @@ namespace Hecton8.World
         private const int SpatialGridMaxAxisResolution = 32;
         private const int SpatialGridMaxCellCount =
             SpatialGridMaxAxisResolution * SpatialGridMaxAxisResolution * SpatialGridMaxAxisResolution;
-        private const int SpatialGridClearThreadGroupSize = 64;
         private const int SpatialGridMaxBoidsPerCell = 32;
         private const float ThreatVoxelCellEpsilon = 0.001f;
+        private const int ThreatGridMaxResolution = 257;
+        private const int ThreatGridMaxCellCount = ThreatGridMaxResolution * ThreatGridMaxResolution;
         private const uint DefaultBoidStateFlags = (uint)(BoidStateFlags.Active | BoidStateFlags.Hunting);
         private const uint ConsumedBoidStateFlag = (uint)BoidStateFlags.Consumed;
         private const uint BoidVisualMutationMask = (uint)(BoidStateFlags.AggressiveMutation | BoidStateFlags.VisualMutationResolved);
@@ -706,6 +711,7 @@ namespace Hecton8.World
         private const int BoidKillSignalSizeBytes = 64;
         private const int FoveatedSimulationInputSizeBytes = 32;
         private const int FoveatedSimulationDecisionSizeBytes = 32;
+        private const float SimulationLodHysteresisMeters = 6f;
         private const int StaticObstacleDataSizeBytes = 32;
         private const float PredatorKillDefaultFearRadiusMeters = 10f;
         private const float PredatorKillFearDurationSeconds = 0.55f;
@@ -720,11 +726,16 @@ namespace Hecton8.World
         private const byte FeedingFrenzyAcousticFlags = 1;
         private const float FeedingFrenzyAcousticRadiusMeters = 36f;
         private const int WhaleFallScavengerVisualCount = 96;
+        private const float WhaleFallScavengerMinimumWake01 = 0.125f;
         private const float WhaleFallScavengerRadiusMeters = 14f;
         private const float WhaleFallScavengerGroundOffsetMeters = 0.08f;
         private const float WhaleFallScavengerTangentSpeedMetersPerSecond = 0.65f;
         private const float WhaleFallScavengerRadiusHashInv = 1f / 1023f;
         private const float WhaleFallScavengerAngleHashInv = 1f / 255f;
+        private const float WhaleFallDormantFearDurationSeconds = 4f;
+        private const float WhaleFallActiveFearDurationSeconds = 2f;
+        private const float WhaleFallDormantFearAmount = 0.35f;
+        private const float WhaleFallActiveFearAmount = 0.2f;
         private const int FoodChainTelemetryCapacity = 300;
         private const int FoodChainTelemetryEntrySizeBytes = 64;
         private const uint FoodChainTelemetryMagicLow = 0x48454354u;
@@ -775,6 +786,8 @@ namespace Hecton8.World
         private const float SwarmDispersedMinimumIntensity = 0.25f;
         private const float MaelstromThreatRefreshSeconds = 0.22f;
         private const float MaelstromThreatDurationSeconds = 0.45f;
+        private const float MassiveThreatMaxRadiusMeters = 256f;
+        private const float MassiveThreatMaxDurationSeconds = 8f;
         private const int LatchStatsLatchedCountIndex = 0;
         private const int LatchStatsLatchedSumXIndex = 1;
         private const int LatchStatsLatchedSumYIndex = 2;
@@ -813,7 +826,6 @@ namespace Hecton8.World
         private const int BoidDataStrideBytes = 32;
         private const int BoidDataStateFlagsOffsetBytes = 28;
         private const int BoidDataAlignmentBytes = 4;
-        private const uint ComputeThreadGroupSizeX = 64;
         private const float BoundsCubeSphereRadiusScale = 1.7320508f;
         private const float RenderConeCullNearDistanceSq = FullSimulationDistanceMeters * FullSimulationDistanceMeters;
         private const float RenderConeCullDotThreshold = -0.2f;
@@ -824,14 +836,6 @@ namespace Hecton8.World
         private const string ClearPbdCorrectionsKernelName = "ClearPBDCorrections";
         private const string PbdSolveKernelName = "KernelPBDSolve";
         private const string ApplyOriginShiftKernelName = "ApplyOriginShift";
-        private const int MainKernelIndex = 0;
-        private const int ClearLatchStatsKernelIndex = 1;
-        private const int ClearSpatialGridKernelIndex = 2;
-        private const int BuildSpatialGridKernelIndex = 3;
-        private const int ClearPbdCorrectionsKernelIndex = 4;
-        private const int PbdSolveKernelIndex = 5;
-        private const int ApplyOriginShiftKernelIndex = 6;
-
         private static readonly int _BoidsBufferId = Shader.PropertyToID("_BoidsBuffer");
         private static readonly int _BoidsBufferReadId = Shader.PropertyToID("_BoidsBufferRead");
         private static readonly int _BoidsBufferWriteId = Shader.PropertyToID("_BoidsBufferWrite");
@@ -1621,7 +1625,8 @@ namespace Hecton8.World
         [Tooltip("CPU-side consumed GPU boid count emitted by predator bite jobs this session.")]
         private int _debugConsumedBoidCount;
 
-        private MaterialPropertyBlock _materialPropertyBlock;
+        private Material _boidRuntimeMaterial;
+        private Material _boidRuntimeMaterialSource;
 
         private HectonBiolumZone[] _deepBiolumZones;
         private float[] _deepBiolumZoneScores;
@@ -1665,6 +1670,7 @@ namespace Hecton8.World
         private GraphicsBuffer _predatorAupFallbackBuffer;
         private GraphicsBuffer _boidSensoryThreatBufferA;
         private GraphicsBuffer _boidSensoryThreatBufferB;
+        private readonly BoidData[] _singleBoidUpload = new BoidData[1]; // COLD ALLOC: BoidData[1] - SetData staging for GPU-write-capable boid buffers - owner: SargassumMicroFaunaBoids
         private uint _boidSensoryThreatUploadHashA;
         private uint _boidSensoryThreatUploadHashB;
         private bool _boidSensoryThreatUploadValidA;
@@ -1681,9 +1687,19 @@ namespace Hecton8.World
         private int _clearSpatialGridKernelIndex = -1;
         private int _buildSpatialGridKernelIndex = -1;
         private int _applyOriginShiftKernelIndex = -1;
-        private uint _threadGroupSizeX = ComputeThreadGroupSizeX;
+        private uint _threadGroupSizeX;
+        private uint _clearStatsThreadGroupSizeX;
+        private uint _clearSpatialGridThreadGroupSizeX;
+        private uint _buildSpatialGridThreadGroupSizeX;
+        private uint _clearPbdCorrectionsThreadGroupSizeX;
+        private uint _pbdSolveThreadGroupSizeX;
+        private uint _applyOriginShiftThreadGroupSizeX;
         private int _dispatchGroupCount = 1;
+        private int _clearStatsDispatchGroupCount = 1;
         private int _clearSpatialGridDispatchGroupCount = 1;
+        private int _buildSpatialGridDispatchGroupCount = 1;
+        private int _clearPbdCorrectionsDispatchGroupCount = 1;
+        private int _pbdSolveDispatchGroupCount = 1;
         private ComputeShader _boundBoidCompute;
         private Mesh _boidIndirectArgsMesh;
         private int _boidIndirectArgsInstanceCount = -1;
@@ -1708,7 +1724,6 @@ namespace Hecton8.World
         private bool _formationObstacleUploadRequested;
         private bool _activeLeviathanUploadRequested;
         private int _queuedSpawnBufferUploadCount;
-        private bool _microFaunaGpuStateRefreshRequested;
         private bool _threatVoxelPayloadRefreshRequested;
         private bool _originShiftGpuDispatchRequested;
         private Vector3 _queuedOriginShiftGpuDelta;
@@ -1742,23 +1757,6 @@ namespace Hecton8.World
         private float _hitFlashStartTime = -1000f;
         private float _hitFlashRuntimeRadius;
         private float _hitFlashRuntimeIntensity;
-        private bool _hitFlashPropertiesDirty = true;
-        private bool _renderPropertiesDirty = true;
-        private GraphicsBuffer _renderPropertiesBoidBuffer;
-        private Texture _renderPropertiesVatPositionTexture;
-        private Texture _renderPropertiesVatNormalTexture;
-        private float _renderPropertiesParasiteMode;
-        private float _renderPropertiesParasiteAggression;
-        private float _renderPropertiesVelocitySleepScale;
-        private float _renderPropertiesLodDitherKeep01;
-        private float _renderPropertiesVatEnabled;
-        private float _renderPropertiesVatFrameCount;
-        private float _renderPropertiesVatVertexCount;
-        private float _renderPropertiesVatPlaybackSpeed;
-        private float _renderPropertiesVatInstancePhaseScale;
-        private float _renderPropertiesVatPositionScale;
-        private float _renderPropertiesVatNormalBlend;
-        private float _renderPropertiesSimulationInterpolationAlpha = -1f;
         private float _spatialGridCellSizeWS = 1f;
         private Vector3 _spatialGridOriginWS = Vector3.zero;
         private Vector3Int _spatialGridResolution = Vector3Int.one;
@@ -1781,6 +1779,7 @@ namespace Hecton8.World
         private WorldZoneDirector _worldZoneDirector;
         private BiomeMatrixDirector _biomeMatrixDirector;
         private HectonMapMagicVegetationBridge _mapMagicVegetationBridge;
+        private WorldProceduralScatterDirector _proceduralScatterDirector;
         private IDataVault _dataVault;
         private IAbyssalFlowGpuReadModel _fluidEngine;
         private ISubmarineRuntimeContext _submarineRuntime;
@@ -1860,6 +1859,7 @@ namespace Hecton8.World
         private JobHandle _leviathanNodeBuildHandle;
         private bool _leviathanNodeBuildScheduled;
         private SimulationLodTier _lastSimulationLodTier = SimulationLodTier.Full;
+        private float _lastSimulationHibernation01;
         private int _viewPoseCacheFrame = -1;
         private bool _viewPoseCacheValid;
         private Vector3 _viewPoseCachePosition;
@@ -1899,19 +1899,18 @@ namespace Hecton8.World
         private void Awake()
         {
             _computeDispatchDisabled = false;
-            _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect boid render properties - owner: SargassumMicroFaunaBoids
-            _hitFlashPropertiesDirty = true;
+            EnsureBoidRuntimeMaterialReady();
             SanitizeSettings();
             RefreshRenderLayerCache();
             RefreshRenderScaleCache();
             ResetDependencyProbeCache();
             _simulationBucketerProbeAttempted = false;
             RefreshColdRegistryDependencies();
-            ResolveDependencies();
+            RefreshDependencies();
             EnsureBuffers();
             RefreshThreatVoxelPayloadVisualSync();
             RefreshSpawnData(force: true);
-            PrimeFoveatedSimulationDecision(0f, ResolveCameraDistanceSq());
+            PrimeFoveatedSimulationDecision(0f, RefreshCameraDistanceSq());
         }
 
         private void OnEnable()
@@ -1919,18 +1918,17 @@ namespace Hecton8.World
             _computeDispatchDisabled = false;
             InvalidateViewPoseCache();
             ResetDependencyProbeCache();
-            _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect boid render properties - owner: SargassumMicroFaunaBoids
-            _hitFlashPropertiesDirty = true;
+            EnsureBoidRuntimeMaterialReady();
             RefreshRenderLayerCache();
             RefreshRenderScaleCache();
             _simulationBucketerProbeAttempted = false;
             TryRegisterHotSwapListener();
             RefreshColdRegistryDependencies();
-            ResolveDependencies();
+            RefreshDependencies();
             EnsureBuffers();
             RefreshThreatVoxelPayloadVisualSync();
             RefreshSpawnData(force: true);
-            PrimeFoveatedSimulationDecision(0f, ResolveCameraDistanceSq());
+            PrimeFoveatedSimulationDecision(0f, RefreshCameraDistanceSq());
             SargassumGlobalDragManager.Register(this);
             FlashlightEvents.Register(this);
             SpectrumEvents.RegisterSonarPingListener(this);
@@ -1960,6 +1958,7 @@ namespace Hecton8.World
             _debugParasiteCenterOfMassLS = Vector3.zero;
             _debugParasiteHarvesterPullWS = Vector3.zero;
             _debugHibernation01 = 0f;
+            _lastSimulationHibernation01 = 0f;
             _debugFormationModeActive = false;
             _debugFormationBeaconCount = 0;
             _debugFormationObstacleCount = 0;
@@ -2028,6 +2027,7 @@ namespace Hecton8.World
             TryUnregister();
             ClearStatisticalPopulationPoint();
             CompletePendingReadbackAndReleaseBuffers();
+            ReleaseBoidRuntimeMaterial();
         }
 
         private void OnDestroy()
@@ -2049,6 +2049,36 @@ namespace Hecton8.World
             TryUnregister();
             ClearStatisticalPopulationPoint();
             CompletePendingReadbackAndReleaseBuffers();
+            ReleaseBoidRuntimeMaterial();
+        }
+
+        private bool EnsureBoidRuntimeMaterialReady()
+        {
+            Material source = boidMaterial;
+            if (source == null)
+            {
+                ReleaseBoidRuntimeMaterial();
+                return false;
+            }
+
+            if (_boidRuntimeMaterial != null && ReferenceEquals(_boidRuntimeMaterialSource, source))
+                return true;
+
+            ReleaseBoidRuntimeMaterial();
+            _boidRuntimeMaterial = new Material(source); // COLD ALLOC: Material[1] - owner-local indirect boid draw state copy - owner: SargassumMicroFaunaBoids
+            _boidRuntimeMaterialSource = source;
+            return true;
+        }
+
+        private void ReleaseBoidRuntimeMaterial()
+        {
+            if (_boidRuntimeMaterial != null)
+            {
+                Destroy(_boidRuntimeMaterial);
+                _boidRuntimeMaterial = null;
+            }
+
+            _boidRuntimeMaterialSource = null;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -2056,11 +2086,15 @@ namespace Hecton8.World
             if (!isActiveAndEnabled)
                 return;
 
-            if (shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (!IsFiniteVector3(shiftOffset) ||
+                shiftOffset.sqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
             InvalidateViewPoseCache();
-            ApplyRuntimeOffsetToSwarmData(-shiftData.ShiftOffset);
+            ApplyRuntimeOffsetToSwarmData(-shiftOffset);
         }
 
         /// <summary>
@@ -2079,18 +2113,23 @@ namespace Hecton8.World
             {
                 _debugVisible = false;
                 _debugHibernation01 = 1f;
+                _lastSimulationHibernation01 = 1f;
                 return;
             }
 
-            ResolveDependencies();
+            RefreshCachedRuntimeInputState();
 
             if (!_hasSpawnData || boidMaterial == null || boidMesh == null)
+            {
+                _lastSimulationHibernation01 = 1f;
                 return;
+            }
 
             if (_activeBoidCount <= 0)
             {
                 _debugVisible = false;
                 _debugHibernation01 = 1f;
+                _lastSimulationHibernation01 = 1f;
                 return;
             }
 
@@ -2098,7 +2137,7 @@ namespace Hecton8.World
 
             if (!_threatVoxelDataValid && _mapMagicVegetationBridge != null)
                 RefreshThreatVoxelPayloadVisualSync();
-            float cameraDistanceSq = ResolveCameraDistanceSq();
+            float cameraDistanceSq = RefreshCameraDistanceSq();
             if (boidCompute == null || _computeDispatchDisabled)
             {
                 RenderStaticFallback(cameraDistanceSq, hibernation01: 1f);
@@ -2145,7 +2184,7 @@ namespace Hecton8.World
             UpdateParasiteLatchReadback(deltaTime);
             float hibernation01 = 0f;
             bool shouldRender = ShouldRenderSwarm(cameraDistanceSq);
-            bool dispatchedSimulation = TryConsumeSimulationStep(
+            bool dispatchedSimulation = ConsumeSimulationStep(
                 deltaTime,
                 cameraDistanceSq,
                 out float simulationDeltaTime,
@@ -2154,7 +2193,7 @@ namespace Hecton8.World
             bool shouldDispatchSleepVelocityWrite = simulationLodTier == SimulationLodTier.Sleep && _sleepVelocityWritePending;
             bool shouldDispatchSimulation = dispatchedSimulation && (shouldRender || ShouldMaintainOffscreenBoidSimulation(simulationLodTier));
             bool leaderFollowerSchooling = _formationModeActive && !_parasiteModeActive && _leviathanModeBlend < 0.001f;
-            bool shouldCollectLatchStats = ShouldCollectLatchStats(simulationLodTier, leaderFollowerSchooling);
+            bool shouldCollectLatchStats = ShouldCollectLatchStats(simulationLodTier, leaderFollowerSchooling, shouldRender);
             if (IsFaunaAmbientDriftKillSwitchActive())
             {
                 shouldDispatchSimulation = false;
@@ -2164,10 +2203,23 @@ namespace Hecton8.World
 
             if (shouldDispatchSimulation || shouldDispatchSleepVelocityWrite)
             {
-                if (simulationLodTier == SimulationLodTier.Full && !leaderFollowerSchooling)
+                bool runFullGridSolve = simulationLodTier == SimulationLodTier.Full && !leaderFollowerSchooling;
+                if (runFullGridSolve)
                     UpdateSpatialGridLayout();
 
-                if (BindSimulationUniforms(simulationDeltaTime, currentDriftOffset, driftDelta, hibernation01, simulationLodTier, shouldRender))
+                if (_dispatchGroupCount <= 0 ||
+                    (runFullGridSolve &&
+                        (_clearSpatialGridDispatchGroupCount <= 0 ||
+                         _buildSpatialGridDispatchGroupCount <= 0 ||
+                         _clearPbdCorrectionsDispatchGroupCount <= 0 ||
+                         _pbdSolveDispatchGroupCount <= 0)))
+                {
+                    DisableComputeDispatch(ComputeDisableReasonDispatchGroupLimit);
+                    RenderStaticFallback(cameraDistanceSq, hibernation01: 1f);
+                    return;
+                }
+
+                if (BindSimulationUniforms(simulationDeltaTime, currentDriftOffset, driftDelta, hibernation01, simulationLodTier, shouldRender, shouldCollectLatchStats))
                 {
                     long watchdogStart = System.Diagnostics.Stopwatch.GetTimestamp();
                     try
@@ -2175,23 +2227,39 @@ namespace Hecton8.World
                         if (shouldCollectLatchStats)
                             DispatchClearLatchStats();
 
-                        if (simulationLodTier == SimulationLodTier.Full && !leaderFollowerSchooling)
+                        if (runFullGridSolve)
                         {
                             DispatchClearSpatialGrid();
                             DispatchClearPbdCorrections();
-                            boidCompute.Dispatch(_buildSpatialGridKernelIndex, _dispatchGroupCount, 1, 1);
-                            boidCompute.Dispatch(_pbdSolveKernelIndex, _dispatchGroupCount, 1, 1);
+                            boidCompute.Dispatch(_buildSpatialGridKernelIndex, _buildSpatialGridDispatchGroupCount, 1, 1);
+                            boidCompute.Dispatch(_pbdSolveKernelIndex, _pbdSolveDispatchGroupCount, 1, 1);
                         }
 
                         boidCompute.Dispatch(_kernelIndex, _dispatchGroupCount, 1, 1);
                         if (simulationLodTier == SimulationLodTier.Sleep)
                             _sleepVelocityWritePending = false;
                         if (shouldCollectLatchStats)
-                            TryRequestParasiteLatchReadback();
+                            TryRequestParasiteLatchReadback(hibernation01);
 
                         _frameParity ^= 1;
                     }
-                    catch (Exception)
+                    catch (ObjectDisposedException)
+                    {
+                        DisableComputeDispatch(ComputeDisableReasonDispatchFailure);
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        DisableComputeDispatch(ComputeDisableReasonDispatchFailure);
+                    }
+                    catch (ArgumentException)
+                    {
+                        DisableComputeDispatch(ComputeDisableReasonDispatchFailure);
+                    }
+                    catch (MissingReferenceException)
+                    {
+                        DisableComputeDispatch(ComputeDisableReasonDispatchFailure);
+                    }
+                    catch (UnityException)
                     {
                         DisableComputeDispatch(ComputeDisableReasonDispatchFailure);
                     }
@@ -2202,6 +2270,7 @@ namespace Hecton8.World
 
             _debugVisible = shouldRender;
             _debugHibernation01 = hibernation01;
+            _lastSimulationHibernation01 = hibernation01;
             if (shouldRender)
                 QueueRenderCurrentBuffer();
 
@@ -2222,16 +2291,15 @@ namespace Hecton8.World
             RefreshRenderScaleCache();
             if (_statisticalPopulationActive)
             {
-                float statisticalCameraDistanceSq = ResolveCameraDistanceSq();
+                float statisticalCameraDistanceSq = RefreshCameraDistanceSq();
                 RefreshStatisticalMigrationPopulation(force: false);
                 TryRematerializeStatisticalPopulation(statisticalCameraDistanceSq);
                 return;
             }
 
-            ResetDependencyProbeCache();
-            ResolveDependencies();
+            RefreshCachedRuntimeInputState();
 
-            float cameraDistanceSq = ResolveCameraDistanceSq();
+            float cameraDistanceSq = RefreshCameraDistanceSq();
             if (TryDematerializeStatisticalPopulation(cameraDistanceSq))
                 return;
 
@@ -2248,7 +2316,6 @@ namespace Hecton8.World
             _insideMicroFaunaVisualSync = true;
             try
             {
-                FlushMicroFaunaGpuStateRefreshVisualSync();
                 FlushThreatVoxelPayloadRefreshVisualSync();
                 RunMicroFaunaVisualSync(SystemDispatcher.CurrentFrameDeltaTime);
                 CompletePendingLeviathanNodeBuild(forceComplete: false);
@@ -2308,6 +2375,16 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.DataVault:
                     RebindDataVault(currentService as IDataVault);
                     break;
+                case GlobalRegistryServiceSlot.WorldGen:
+                    _proceduralScatterDirector = currentService as WorldProceduralScatterDirector;
+                    break;
+                case GlobalRegistryServiceSlot.BiomeMatrixRuntime:
+                    _biomeMatrixDirector = currentService as BiomeMatrixDirector;
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    _mapMagicVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    _threatVoxelPayloadRefreshRequested = _mapMagicVegetationBridge != null;
+                    break;
                 case GlobalRegistryServiceSlot.BiolumManagerRuntime:
                     biolumManager = currentService as HectonBiolumManager;
                     break;
@@ -2341,7 +2418,8 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
-                    _playerRuntimeContextProbeAttempted = false;
+                    _playerRuntimeContextProbeAttempted = true;
+                    RefreshPlayerReferencesFromCachedContext(_playerRuntimeContext);
                     InvalidateViewPoseCache();
                     break;
             }
@@ -2354,10 +2432,10 @@ namespace Hecton8.World
                 biolumManager = GlobalRegistry.BiolumManager;
 
             if (dragManager == null)
-                dragManager = GlobalRegistry.SargassumDrag;
+                dragManager = SargassumGlobalDragManager.Instance;
 
             if (cutManager == null)
-                cutManager = GlobalRegistry.SargassumCut;
+                cutManager = SargassumCutManager.Instance;
 
             if (_fluidEngine == null)
                 _fluidEngine = GlobalRegistry.AbyssalFlowGpu;
@@ -2369,7 +2447,7 @@ namespace Hecton8.World
                 _encounterDirector = GlobalRegistry.EncounterDirector;
 
             if (_ecosystemDirector == null)
-                _ecosystemDirector = GlobalRegistry.EcosystemDirector;
+                _ecosystemDirector = EcosystemDirector.ActiveRuntimeInstance;
 
             if (_beaconNetworkRuntime == null)
                 _beaconNetworkRuntime = GlobalRegistry.BeaconNetworkService;
@@ -2377,7 +2455,18 @@ namespace Hecton8.World
             if (_abyssalFluidDecals == null)
                 _abyssalFluidDecals = GlobalRegistry.FluidDecalPresentation;
 
+            if (_proceduralScatterDirector == null)
+                _proceduralScatterDirector = WorldProceduralScatterDirector.ActiveRuntimeInstance;
+
+            if (_biomeMatrixDirector == null)
+                _biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+
+            if (_mapMagicVegetationBridge == null)
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _mapMagicVegetationBridge);
+
             _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContextProbeAttempted = true;
+            RefreshPlayerReferencesFromCachedContext(_playerRuntimeContext);
 
             if (_simulationBucketer == null)
                 _simulationBucketer = GlobalRegistry.SimulationBucketer;
@@ -2394,100 +2483,62 @@ namespace Hecton8.World
             CompletePendingPredatorConsumption(forceComplete: true);
             CompletePendingFoveatedSimulationDecision(forceComplete: true);
             JobHandle disposeDependency = CancelPendingLeviathanNodeBuildForDispose();
+            ClearStatisticalPopulationPoint();
+            _hasSpawnData = false;
+            _debugVisible = false;
+            _debugActiveBoidCount = 0;
+            _queuedSpawnBufferUploadCount = 0;
+            _computeStaticBuffersBound = false;
+            _threatVoxelPayloadRefreshRequested = false;
+            ResetThreatGridSnapshot();
+            ResetThreatVoxelSnapshot();
             ClearVaultHandles(disposeDependency);
             _dataVault = currentVault;
-            if (_dataVault != null && isActiveAndEnabled)
+            if (_dataVault == null || !isActiveAndEnabled)
             {
-                QueueMicroFaunaGpuStateRefresh();
-                QueueThreatVoxelPayloadRefresh();
-                PrimeFoveatedSimulationDecision(0f, ResolveCameraDistanceSq());
+                _computeDispatchDisabled = true;
+                return;
             }
+
+            _computeDispatchDisabled = false;
+            EnsureBuffers();
+            RefreshThreatVoxelPayloadVisualSync();
+            RefreshSpawnData(force: true);
+            PrimeFoveatedSimulationDecision(0f, RefreshCameraDistanceSq());
         }
 
-        private void ResolveDependencies()
+        private void RefreshDependencies()
         {
-            bool missingRuntimeServices = biolumManager == null ||
-                                          dragManager == null ||
-                                          cutManager == null ||
-                                          _worldZoneDirector == null ||
-                                          _biomeMatrixDirector == null ||
-                                          _mapMagicVegetationBridge == null ||
-                                          _fluidEngine == null ||
-                                          _submarineRuntime == null ||
-                                          _encounterDirector == null ||
-                                          _ecosystemDirector == null ||
-                                          _beaconNetworkRuntime == null ||
-                                          _abyssalFluidDecals == null;
-            if (!_runtimeServiceProbeAttempted && missingRuntimeServices)
+            RefreshColdRegistryDependencies();
+            if (!_runtimeServiceProbeAttempted && _worldZoneDirector == null)
+                _worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
+
+            _runtimeServiceProbeAttempted = true;
+        }
+
+        private void RefreshCachedRuntimeInputState()
+        {
+            RefreshPlayerReferencesFromCachedContext(_playerRuntimeContext);
+        }
+
+        private void RefreshPlayerReferencesFromCachedContext(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext != null && playerContext.IsInitialized)
             {
-                if (_worldZoneDirector == null)
-                    _worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
+                playerTransform ??= playerContext.PlayerTransform;
+                _playerMovement ??= playerContext.PlayerMovement;
+                _playerTransportCoordinator ??= playerContext.PlayerTransportCoordinator;
+                _playerHealth ??= playerContext.PlayerHealth;
+                _playerFlashlight ??= playerContext.Flashlight;
+                if (viewCamera == null)
+                    viewCamera = playerContext.PlayerCamera;
 
-                if (_biomeMatrixDirector == null)
-                    _biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
-
-                if (_mapMagicVegetationBridge == null)
-                    _mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-
-                _runtimeServiceProbeAttempted = true;
-            }
-            else if (!missingRuntimeServices)
-            {
-                _runtimeServiceProbeAttempted = true;
-            }
-
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                runtimeContext.IsBound)
-            {
-                playerTransform ??= runtimeContext.PlayerTransform;
-                _playerMovement ??= runtimeContext.PlayerMovement;
-                _playerTransportCoordinator ??= runtimeContext.PlayerTransportCoordinator;
-                _playerHealth ??= runtimeContext.PlayerHealth;
-                _playerFlashlight ??= runtimeContext.Flashlight;
-            }
-            else if (!_playerRuntimeContextProbeAttempted)
-            {
-                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-                if (playerContext != null && playerContext.IsInitialized)
-                {
-                    playerTransform ??= playerContext.PlayerTransform;
-                    _playerMovement ??= playerContext.PlayerMovement;
-                    _playerTransportCoordinator ??= playerContext.PlayerTransportCoordinator;
-                    _playerHealth ??= playerContext.PlayerHealth;
-                    _playerFlashlight ??= playerContext.Flashlight;
-                }
-
-                _playerRuntimeContextProbeAttempted = true;
-            }
-
-            if (playerTransform == null && !_playerTransformProbeAttempted)
-            {
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
                 _playerTransformProbeAttempted = true;
-            }
-            else if (playerTransform != null)
-            {
-                _playerTransformProbeAttempted = true;
-            }
-
-            if (viewCamera == null && playerTransform != null && !_viewCameraProbeAttempted)
-            {
-                viewCamera = ComponentReferenceUtility.ResolveOwnedComponent<Camera>(playerTransform);
-                _viewCameraProbeAttempted = true;
-            }
-            else if (viewCamera != null)
-            {
-                _viewCameraProbeAttempted = true;
+                _viewCameraProbeAttempted = viewCamera != null;
             }
 
             if (_playerFlashlight != null)
                 _flashlightOn = _playerFlashlight.IsOn;
-
-            if (!_simulationBucketerProbeAttempted)
-            {
-                _simulationBucketerProbeAttempted = true;
-            }
         }
 
         private void ResetDependencyProbeCache()
@@ -2503,100 +2554,108 @@ namespace Hecton8.World
             boidCount = math.clamp(boidCount, 128, 2048);
             boidCount = VRAMEnforcer.ApplyBoidPopulationBudget(boidCount, 128, 2048);
             maxSpawnAttempts = math.clamp(maxSpawnAttempts, 4, 32);
-            densityThreshold = math.saturate(densityThreshold);
-            windowThreshold = math.clamp(windowThreshold, 0f, 0.75f);
-            cruiseSpeed = math.max(0.1f, cruiseSpeed);
-            maxSpeed = math.max(cruiseSpeed, maxSpeed);
-            panicSpeedBoost = math.max(0f, panicSpeedBoost);
-            perceptionRadius = math.max(0.25f, perceptionRadius);
-            separationRadius = math.clamp(separationRadius, 0.1f, perceptionRadius);
-            boidBodyRadius = math.clamp(boidBodyRadius, 0.02f, separationRadius * 0.5f);
-            consumedCollapseSpeed = math.clamp(consumedCollapseSpeed, 2f, 24f);
-            gradientWorldStep = math.max(0.05f, gradientWorldStep);
-            waterLevel = math.max(0f, waterLevel);
-            minDepthBelowSurface = math.max(0.1f, minDepthBelowSurface);
-            maxDepthBelowSurface = math.max(minDepthBelowSurface + 0.1f, maxDepthBelowSurface);
-            panicThreshold = math.saturate(panicThreshold);
-            panicDecay = math.max(0.1f, panicDecay);
+            densityThreshold = SaturateFinite01(densityThreshold);
+            windowThreshold = ClampFinite(windowThreshold, 0f, 0.75f);
+            cruiseSpeed = ClampMinFinite(cruiseSpeed, 0.1f);
+            maxSpeed = ClampMinFinite(maxSpeed, cruiseSpeed);
+            panicSpeedBoost = ClampMinFinite(panicSpeedBoost, 0f);
+            perceptionRadius = ClampMinFinite(perceptionRadius, 0.25f);
+            separationRadius = ClampFinite(separationRadius, 0.1f, perceptionRadius);
+            boidBodyRadius = ClampFinite(boidBodyRadius, 0.02f, separationRadius * 0.5f);
+            consumedCollapseSpeed = ClampFinite(consumedCollapseSpeed, 2f, 24f);
+            gradientWorldStep = ClampMinFinite(gradientWorldStep, 0.05f);
+            waterLevel = ClampMinFinite(waterLevel, 0f);
+            minDepthBelowSurface = ClampMinFinite(minDepthBelowSurface, 0.1f);
+            maxDepthBelowSurface = ClampMinFinite(maxDepthBelowSurface, minDepthBelowSurface + 0.1f);
+            panicThreshold = SaturateFinite01(panicThreshold);
+            panicDecay = ClampMinFinite(panicDecay, 0.1f);
             grazingAnchorCount = math.clamp(grazingAnchorCount, 4, 96);
-            grazingRadius = math.clamp(grazingRadius, 0.25f, 6f);
-            grazingWeight = math.clamp(grazingWeight, 0f, 4f);
-            canopyAffinityWeight = math.clamp(canopyAffinityWeight, 0f, 4f);
-            grazingDensityThreshold = math.saturate(grazingDensityThreshold);
-            grazingRestSpeedScale = math.clamp(grazingRestSpeedScale, 0.05f, 0.6f);
-            grazingRestHoldThreshold = math.saturate(grazingRestHoldThreshold);
-            panicPlayerSpeedThreshold = math.clamp(panicPlayerSpeedThreshold, 0.5f, 8f);
-            panicPlayerRadius = math.clamp(panicPlayerRadius, 0.5f, 12f);
-            cameraAvoidRadius = math.clamp(cameraAvoidRadius, 0.25f, 3f);
-            cameraAvoidWeight = math.clamp(cameraAvoidWeight, 0f, 8f);
-            voxelAvoidanceLookAheadDistance = math.clamp(voxelAvoidanceLookAheadDistance, 0.25f, 12f);
+            grazingRadius = ClampFinite(grazingRadius, 0.25f, 6f);
+            grazingWeight = ClampFinite(grazingWeight, 0f, 4f);
+            canopyAffinityWeight = ClampFinite(canopyAffinityWeight, 0f, 4f);
+            grazingDensityThreshold = SaturateFinite01(grazingDensityThreshold);
+            grazingRestSpeedScale = ClampFinite(grazingRestSpeedScale, 0.05f, 0.6f);
+            grazingRestHoldThreshold = SaturateFinite01(grazingRestHoldThreshold);
+            panicPlayerSpeedThreshold = ClampFinite(panicPlayerSpeedThreshold, 0.5f, 8f);
+            panicPlayerRadius = ClampFinite(panicPlayerRadius, 0.5f, 12f);
+            cameraAvoidRadius = ClampFinite(cameraAvoidRadius, 0.25f, 3f);
+            cameraAvoidWeight = ClampFinite(cameraAvoidWeight, 0f, 8f);
+            voxelAvoidanceLookAheadDistance = ClampFinite(voxelAvoidanceLookAheadDistance, 0.25f, 12f);
             voxelAvoidanceWeight = 0f;
+            fragmentationWeight = ClampFinite(fragmentationWeight, 0f, 12f);
+            fragmentationOffsetScale = ClampFinite(fragmentationOffsetScale, 0.5f, 3f);
+            fragmentationMinDurationSeconds = ClampFinite(fragmentationMinDurationSeconds, 1f, MassiveThreatMaxDurationSeconds);
+            fragmentationMaxDurationSeconds = ClampFinite(fragmentationMaxDurationSeconds, fragmentationMinDurationSeconds, MassiveThreatMaxDurationSeconds);
+            activeSonarWaveSpeed = ClampFinite(activeSonarWaveSpeed, 0.1f, 200f);
+            activeSonarWaveBandWidth = ClampFinite(activeSonarWaveBandWidth, 0.25f, 16f);
+            activeSonarScatterImpulse = ClampFinite(activeSonarScatterImpulse, 0f, 64f);
+            activeSonarScatterWeight = ClampFinite(activeSonarScatterWeight, 0f, 16f);
             maxMassiveThreatCount = math.clamp(maxMassiveThreatCount, 1, 8);
-            massiveThreatPanicRadius = math.clamp(massiveThreatPanicRadius, 50f, 96f);
-            massiveThreatWeight = math.clamp(massiveThreatWeight, 0f, 12f);
+            massiveThreatPanicRadius = ClampFinite(massiveThreatPanicRadius, 50f, 96f);
+            massiveThreatWeight = ClampFinite(massiveThreatWeight, 0f, 12f);
             deepBiolumAnchorCapacity = math.clamp(deepBiolumAnchorCapacity, 1, 16);
-            deepBiolumSearchRadius = math.clamp(deepBiolumSearchRadius, 10f, 250f);
-            deepBaitBallRadius = math.clamp(deepBaitBallRadius, 0.5f, 12f);
-            deepBaitBallHeight = math.clamp(deepBaitBallHeight, 0.25f, 8f);
-            deepClusterWeight = math.clamp(deepClusterWeight, 0f, 8f);
-            deepHeadlightPanicDuration = math.clamp(deepHeadlightPanicDuration, 0.1f, 10f);
-            deepHeadlightPanicRadiusScale = math.clamp(deepHeadlightPanicRadiusScale, 1f, 6f);
+            deepBiolumSearchRadius = ClampFinite(deepBiolumSearchRadius, 10f, 250f);
+            deepBaitBallRadius = ClampFinite(deepBaitBallRadius, 0.5f, 12f);
+            deepBaitBallHeight = ClampFinite(deepBaitBallHeight, 0.25f, 8f);
+            deepClusterWeight = ClampFinite(deepClusterWeight, 0f, 8f);
+            deepHeadlightPanicDuration = ClampFinite(deepHeadlightPanicDuration, 0.1f, 10f);
+            deepHeadlightPanicRadiusScale = ClampFinite(deepHeadlightPanicRadiusScale, 1f, 6f);
             boidVatFrameCount = math.max(1, boidVatFrameCount);
-            boidVatPlaybackSpeed = math.max(0f, boidVatPlaybackSpeed);
-            boidVatInstancePhaseScale = math.max(0f, boidVatInstancePhaseScale);
-            boidVatPositionScale = math.max(0.0001f, boidVatPositionScale);
-            boidVatNormalBlend = math.saturate(boidVatNormalBlend);
-            hitFlashDurationSeconds = math.max(0.01f, hitFlashDurationSeconds);
-            hitFlashRadiusMeters = math.max(0f, hitFlashRadiusMeters);
-            hitFlashIntensity = math.saturate(hitFlashIntensity);
-            hitFlashBloatMeters = math.clamp(hitFlashBloatMeters, 0f, 0.12f);
-            parasiteDroneWorldYThreshold = math.clamp(parasiteDroneWorldYThreshold, -4000f, -1000f);
-            parasiteAffinityWeight = math.clamp(parasiteAffinityWeight, 0f, 12f);
-            parasiteHullStressIntensity = math.saturate(parasiteHullStressIntensity);
-            parasiteHullStressLightBoost = math.saturate(parasiteHullStressLightBoost);
-            parasiteLatchRadius = math.clamp(parasiteLatchRadius, 0.5f, 8f);
+            boidVatPlaybackSpeed = ClampMinFinite(boidVatPlaybackSpeed, 0f);
+            boidVatInstancePhaseScale = ClampMinFinite(boidVatInstancePhaseScale, 0f);
+            boidVatPositionScale = ClampMinFinite(boidVatPositionScale, 0.0001f);
+            boidVatNormalBlend = SaturateFinite01(boidVatNormalBlend);
+            hitFlashDurationSeconds = ClampMinFinite(hitFlashDurationSeconds, 0.01f);
+            hitFlashRadiusMeters = ClampMinFinite(hitFlashRadiusMeters, 0f);
+            hitFlashIntensity = SaturateFinite01(hitFlashIntensity);
+            hitFlashBloatMeters = ClampFinite(hitFlashBloatMeters, 0f, 0.12f);
+            parasiteDroneWorldYThreshold = ClampFinite(parasiteDroneWorldYThreshold, -4000f, -1000f);
+            parasiteAffinityWeight = ClampFinite(parasiteAffinityWeight, 0f, 12f);
+            parasiteHullStressIntensity = SaturateFinite01(parasiteHullStressIntensity);
+            parasiteHullStressLightBoost = SaturateFinite01(parasiteHullStressLightBoost);
+            parasiteLatchRadius = ClampFinite(parasiteLatchRadius, 0.5f, 8f);
             parasiteMaxLatchedDronesForFullDrag = math.clamp(parasiteMaxLatchedDronesForFullDrag, 1, 96);
-            parasiteMaxEnvironmentalDragMultiplier = math.clamp(parasiteMaxEnvironmentalDragMultiplier, 1f, 4f);
-            parasiteLatchReadbackInterval = math.clamp(parasiteLatchReadbackInterval, 0.05f, 0.5f);
+            parasiteMaxEnvironmentalDragMultiplier = ClampFinite(parasiteMaxEnvironmentalDragMultiplier, 1f, 4f);
+            parasiteLatchReadbackInterval = ClampFinite(parasiteLatchReadbackInterval, 0.05f, 0.5f);
             parasiteHarvesterLatchThreshold = math.clamp(parasiteHarvesterLatchThreshold, 1, 32);
             parasiteHarvesterFullLatchCount = math.clamp(parasiteHarvesterFullLatchCount, parasiteHarvesterLatchThreshold, 96);
             formationBeaconCapacity = math.clamp(formationBeaconCapacity, 1, 8);
-            formationBeaconSearchRadius = math.clamp(formationBeaconSearchRadius, 8f, 250f);
-            formationWeight = math.clamp(formationWeight, 0f, 8f);
-            formationRingThickness = math.clamp(formationRingThickness, 0.1f, 12f);
-            formationPulseAmplitude = math.clamp(formationPulseAmplitude, 0f, 2f);
-            formationPulseSpeed = math.clamp(formationPulseSpeed, 0.1f, 4f);
-            formationBreakPanicThreshold = math.saturate(formationBreakPanicThreshold);
+            formationBeaconSearchRadius = ClampFinite(formationBeaconSearchRadius, 8f, 250f);
+            formationWeight = ClampFinite(formationWeight, 0f, 8f);
+            formationRingThickness = ClampFinite(formationRingThickness, 0.1f, 12f);
+            formationPulseAmplitude = ClampFinite(formationPulseAmplitude, 0f, 2f);
+            formationPulseSpeed = ClampFinite(formationPulseSpeed, 0.1f, 4f);
+            formationBreakPanicThreshold = SaturateFinite01(formationBreakPanicThreshold);
             formationObstacleCapacity = math.clamp(formationObstacleCapacity, 1, 16);
-            formationObstacleSearchRadius = math.clamp(formationObstacleSearchRadius, 4f, 80f);
-            formationObstacleWeight = math.clamp(formationObstacleWeight, 0f, 8f);
+            formationObstacleSearchRadius = ClampFinite(formationObstacleSearchRadius, 4f, 80f);
+            formationObstacleWeight = ClampFinite(formationObstacleWeight, 0f, 8f);
             leviathanNodeCapacity = math.clamp(leviathanNodeCapacity, 8, 64);
-            leviathanThreatThreshold = math.saturate(leviathanThreatThreshold);
-            leviathanHotspotMinDistance = math.clamp(leviathanHotspotMinDistance, 10f, 200f);
-            leviathanHotspotMaxDistance = math.clamp(leviathanHotspotMaxDistance, leviathanHotspotMinDistance, 400f);
-            leviathanBodyWeight = math.clamp(leviathanBodyWeight, 0f, 8f);
-            leviathanForwardWeight = math.clamp(leviathanForwardWeight, 0f, 8f);
-            leviathanBodyRadius = math.clamp(leviathanBodyRadius, 0.5f, 12f);
-            leviathanWaveAmplitude = math.clamp(leviathanWaveAmplitude, 0f, 2f);
-            leviathanWaveFrequency = math.clamp(leviathanWaveFrequency, 0.1f, 6f);
-            leviathanSurroundThreatThreshold = math.clamp(leviathanSurroundThreatThreshold, 0.6f, 1f);
-            leviathanSurroundRadius = math.clamp(leviathanSurroundRadius, 4f, 48f);
-            leviathanSurroundWeight = math.clamp(leviathanSurroundWeight, 0f, 8f);
-            leviathanSurroundSpinSpeed = math.clamp(leviathanSurroundSpinSpeed, 0.1f, 4f);
-            leviathanModeBlendSharpness = math.clamp(leviathanModeBlendSharpness, 0.1f, 12f);
+            leviathanThreatThreshold = SaturateFinite01(leviathanThreatThreshold);
+            leviathanHotspotMinDistance = ClampFinite(leviathanHotspotMinDistance, 10f, 200f);
+            leviathanHotspotMaxDistance = ClampFinite(leviathanHotspotMaxDistance, leviathanHotspotMinDistance, 400f);
+            leviathanBodyWeight = ClampFinite(leviathanBodyWeight, 0f, 8f);
+            leviathanForwardWeight = ClampFinite(leviathanForwardWeight, 0f, 8f);
+            leviathanBodyRadius = ClampFinite(leviathanBodyRadius, 0.5f, 12f);
+            leviathanWaveAmplitude = ClampFinite(leviathanWaveAmplitude, 0f, 2f);
+            leviathanWaveFrequency = ClampFinite(leviathanWaveFrequency, 0.1f, 6f);
+            leviathanSurroundThreatThreshold = ClampFinite(leviathanSurroundThreatThreshold, 0.6f, 1f);
+            leviathanSurroundRadius = ClampFinite(leviathanSurroundRadius, 4f, 48f);
+            leviathanSurroundWeight = ClampFinite(leviathanSurroundWeight, 0f, 8f);
+            leviathanSurroundSpinSpeed = ClampFinite(leviathanSurroundSpinSpeed, 0.1f, 4f);
+            leviathanModeBlendSharpness = ClampFinite(leviathanModeBlendSharpness, 0.1f, 12f);
             simulationCullDistance = SleepSimulationDistanceMeters;
             hibernationStartDistance = FullSimulationDistanceMeters;
-            hibernationMaxStepSeconds = math.clamp(hibernationMaxStepSeconds, 1f / 60f, 0.5f);
-            hibernationMinTimeScale = math.clamp(hibernationMinTimeScale, 0.1f, 1f);
-            leviathanStrikeRadius = math.clamp(leviathanStrikeRadius, 1f, 24f);
-            leviathanStrikeTraumaWeight = math.saturate(leviathanStrikeTraumaWeight);
-            leviathanStrikeImpulse = math.clamp(leviathanStrikeImpulse, 1f, 120f);
-            leviathanStrikeDamage = math.clamp(leviathanStrikeDamage, 0.1f, 100f);
-            leviathanStrikeCooldown = math.clamp(leviathanStrikeCooldown, 0.05f, 2f);
-            leviathanShockwaveSpeedThreshold = math.clamp(leviathanShockwaveSpeedThreshold, 2f, 40f);
-            leviathanShockwaveRadius = math.clamp(leviathanShockwaveRadius, 2f, 32f);
-            leviathanShockwaveImpulse = math.clamp(leviathanShockwaveImpulse, 2f, 96f);
-            leviathanShockwaveCadence = math.clamp(leviathanShockwaveCadence, 0.05f, 1.5f);
+            hibernationMaxStepSeconds = ClampFinite(hibernationMaxStepSeconds, 1f / 60f, 0.5f);
+            hibernationMinTimeScale = ClampFinite(hibernationMinTimeScale, 0.1f, 1f);
+            leviathanStrikeRadius = ClampFinite(leviathanStrikeRadius, 1f, 24f);
+            leviathanStrikeTraumaWeight = SaturateFinite01(leviathanStrikeTraumaWeight);
+            leviathanStrikeImpulse = ClampFinite(leviathanStrikeImpulse, 1f, 120f);
+            leviathanStrikeDamage = ClampFinite(leviathanStrikeDamage, 0.1f, 100f);
+            leviathanStrikeCooldown = ClampFinite(leviathanStrikeCooldown, 0.05f, 2f);
+            leviathanShockwaveSpeedThreshold = ClampFinite(leviathanShockwaveSpeedThreshold, 2f, 40f);
+            leviathanShockwaveRadius = ClampFinite(leviathanShockwaveRadius, 2f, 32f);
+            leviathanShockwaveImpulse = ClampFinite(leviathanShockwaveImpulse, 2f, 96f);
+            leviathanShockwaveCadence = ClampFinite(leviathanShockwaveCadence, 0.05f, 1.5f);
             _activeBoidCount = math.clamp(_activeBoidCount <= 0 ? boidCount : _activeBoidCount, 128, boidCount);
         }
 
@@ -2629,21 +2688,22 @@ namespace Hecton8.World
             }
 
             bool buffersChanged = false;
-            buffersChanged |= EnsureBuffer(ref _boidsBufferA, boidCount, BoidStride);
-            buffersChanged |= EnsureBuffer(ref _boidsBufferB, boidCount, BoidStride);
+            buffersChanged |= EnsureGpuWriteBuffer(ref _boidsBufferA, boidCount, BoidStride);
+            buffersChanged |= EnsureGpuWriteBuffer(ref _boidsBufferB, boidCount, BoidStride);
             buffersChanged |= EnsureBuffer(ref _grazingAnchorBuffer, grazingAnchorCount, GrazingAnchorStride);
             buffersChanged |= EnsureBuffer(ref _massiveThreatBuffer, maxMassiveThreatCount, MassiveThreatStride);
             buffersChanged |= EnsureBuffer(ref _formationBeaconBuffer, formationBeaconCapacity, FormationBeaconStride);
             buffersChanged |= EnsureBuffer(ref _formationObstacleBuffer, formationObstacleCapacity, FormationObstacleStride);
             buffersChanged |= EnsureBuffer(ref _leviathanNodeBuffer, leviathanNodeCapacity, LeviathanNodeStride);
-            buffersChanged |= EnsureRawBuffer(ref _latchStatsBuffer, ref _latchStatsBufferRawTarget, LatchStatsElementCount, LatchStatsStride);
-            buffersChanged |= EnsureRawBuffer(ref _pbdCorrectionBuffer, ref _pbdCorrectionBufferRawTarget, boidCount * PbdCorrectionScalarCount, PbdCorrectionRawStride);
-            buffersChanged |= EnsureBufferCapacity(ref _threatGridBuffer, math.max(1, _threatGridCellCount), ThreatGridStride);
-            buffersChanged |= EnsureBuffer(ref _threatVoxelBuffer, math.max(1, _threatVoxelCellCount), ThreatVoxelStride);
-            buffersChanged |= EnsureRawBuffer(ref _spatialGridCountBuffer, ref _spatialGridCountBufferRawTarget, SpatialGridMaxCellCount, SpatialGridCountStride);
-            buffersChanged |= EnsureBuffer(ref _spatialGridCellBuffer, SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell, SpatialGridCellEntryStride);
+            buffersChanged |= EnsureGpuWriteRawBuffer(ref _latchStatsBuffer, ref _latchStatsBufferRawTarget, LatchStatsElementCount, LatchStatsStride);
+            buffersChanged |= EnsureGpuWriteRawBuffer(ref _pbdCorrectionBuffer, ref _pbdCorrectionBufferRawTarget, boidCount * PbdCorrectionScalarCount, PbdCorrectionRawStride);
+            buffersChanged |= EnsureBuffer(ref _threatGridBuffer, ThreatGridMaxCellCount, ThreatGridStride);
+            buffersChanged |= EnsureBuffer(ref _threatVoxelBuffer, 1, ThreatVoxelStride);
+            buffersChanged |= EnsureGpuWriteRawBuffer(ref _spatialGridCountBuffer, ref _spatialGridCountBufferRawTarget, SpatialGridMaxCellCount, SpatialGridCountStride);
+            buffersChanged |= EnsureGpuWriteBuffer(ref _spatialGridCellBuffer, SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell, SpatialGridCellEntryStride);
             buffersChanged |= EnsureBuffer(ref _simulationFrameBuffer, 1, SimulationFrameConstantsStride);
             buffersChanged |= EnsurePredatorAupFallbackBuffer();
+            buffersChanged |= TryEnsureBoidIndirectArgsBufferCold();
             bool sensoryBuffersChanged = false;
             sensoryBuffersChanged |= EnsureBuffer(ref _boidSensoryThreatBufferA, PredatorAupBufferCapacity, PredatorAupStride);
             sensoryBuffersChanged |= EnsureBuffer(ref _boidSensoryThreatBufferB, PredatorAupBufferCapacity, PredatorAupStride);
@@ -2663,12 +2723,14 @@ namespace Hecton8.World
             EnsureSargassumVaultGenerationHandle(vault, ref _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity);
             EnsureSargassumVaultGenerationHandle(vault, ref _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);
             EnsureSargassumVaultGenerationHandle(vault, ref _leviathanNodeCountHandle, BufferID.SargassumLeviathanNodeCount, 1);
+            EnsureSargassumVaultGenerationHandle(vault, ref _leviathanPathScratchHandle, BufferID.SargassumLeviathanPathScratch, leviathanNodeCapacity);
             EnsureSargassumVaultGenerationHandle(vault, ref _foveatedSimulationInputHandle, BufferID.SargassumFoveatedSimulationInput, 1);
             EnsureSargassumVaultGenerationHandle(vault, ref _foveatedSimulationFrontHandle, BufferID.SargassumFoveatedSimulationFront, 1);
             EnsureSargassumVaultGenerationHandle(vault, ref _foveatedSimulationBackHandle, BufferID.SargassumFoveatedSimulationBack, 1);
             EnsureSargassumVaultGenerationHandle(vault, ref _simulationFrameHandle, BufferID.SargassumSimulationFrame, 1);
             EnsureSargassumVaultGenerationHandle(vault, ref _boidSensoryThreatsHandle, BufferID.SargassumBoidSensoryThreats, PredatorAupBufferCapacity);
             EnsureSargassumVaultGenerationHandle(vault, ref _boidSensoryBlackBoxHandle, BufferID.SargassumBoidSensoryBlackBox, BoidSensoryBlackBoxCapacity);
+            EnsureSargassumVaultGenerationHandle(vault, ref _threatGridUploadHandle, BufferID.SargassumThreatGridUpload, ThreatGridMaxCellCount);
             EnsureSargassumVaultGenerationHandle(vault, ref _foodChainTelemetryRingHandle, BufferID.SargassumFoodChainTelemetryRing, FoodChainTelemetryCapacity);
             EnsureSargassumVaultGenerationHandle(vault, ref _killSignalHandle, BufferID.SargassumKillSignals, PredatorKillSignalDrainLimit);
             EnsureSargassumVaultGenerationHandle(vault, ref _killSignalCountHandle, BufferID.SargassumKillSignalCount, 1);
@@ -2687,20 +2749,6 @@ namespace Hecton8.World
             EnsureComputeKernelBindings();
         }
 
-        private void QueueMicroFaunaGpuStateRefresh()
-        {
-            _microFaunaGpuStateRefreshRequested = true;
-        }
-
-        private void FlushMicroFaunaGpuStateRefreshVisualSync()
-        {
-            if (!_microFaunaGpuStateRefreshRequested)
-                return;
-
-            _microFaunaGpuStateRefreshRequested = false;
-            EnsureBuffers();
-        }
-
         private bool HasRequiredMicroFaunaStorage()
         {
             return ResolveBoidState().IsCreated &&
@@ -2712,6 +2760,10 @@ namespace Hecton8.World
                    ResolveSargassumVaultArray(in _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity).IsCreated &&
                    ResolveSargassumVaultArray(in _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity).IsCreated &&
                    ResolveSargassumVaultArray(in _leviathanNodeCountHandle, BufferID.SargassumLeviathanNodeCount, 1).IsCreated &&
+                   ResolveSargassumVaultArray(in _leviathanPathScratchHandle, BufferID.SargassumLeviathanPathScratch, leviathanNodeCapacity).IsCreated &&
+                   ResolveSargassumVaultArray(in _foveatedSimulationInputHandle, BufferID.SargassumFoveatedSimulationInput, 1).IsCreated &&
+                   ResolveSargassumVaultArray(in _foveatedSimulationFrontHandle, BufferID.SargassumFoveatedSimulationFront, 1).IsCreated &&
+                   ResolveSargassumVaultArray(in _foveatedSimulationBackHandle, BufferID.SargassumFoveatedSimulationBack, 1).IsCreated &&
                    ResolveSargassumVaultArray(in _simulationFrameHandle, BufferID.SargassumSimulationFrame, 1).IsCreated;
         }
 
@@ -2791,8 +2843,8 @@ namespace Hecton8.World
             if (safeUploadCount <= 0)
                 return;
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_boidsBufferA, boidState, safeUploadCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(_boidsBufferB, boidState, safeUploadCount);
+            GraphicsBufferUploadUtility.UploadNativeArraySetData(_boidsBufferA, boidState, safeUploadCount);
+            GraphicsBufferUploadUtility.UploadNativeArraySetData(_boidsBufferB, boidState, safeUploadCount);
             _debugConsumedBoidCount = 0;
             _feedingFrenzyWindowStartTime = -1f;
             _feedingFrenzyKillCount = 0;
@@ -2895,6 +2947,10 @@ namespace Hecton8.World
             if (_activeMassiveThreatCount <= 0 || _massiveThreatBuffer == null || !massiveThreats.IsCreated)
                 return;
 
+            RecalculateMassiveThreatCount();
+            if (_activeMassiveThreatCount <= 0)
+                return;
+
             GraphicsBufferUploadUtility.UploadNativeArray(_massiveThreatBuffer, massiveThreats, _activeMassiveThreatCount);
         }
 
@@ -2902,54 +2958,60 @@ namespace Hecton8.World
         {
             ecosystemPopulationCount = 0;
             IEcosystemDirectorService ecosystemDirector = _ecosystemDirector;
-            if (ecosystemDirector == null || !ecosystemDirector.IsInitialized)
+            if (ecosystemDirector == null || !ecosystemDirector.IsInitialized || !IsFiniteVector3(_fieldCenter))
             {
-                _ecosystemFitness = 0f;
-                _ecosystemSpeedMultiplier = 1f;
-                _ecosystemCamouflageIndex = 0f;
-                _ecosystemApexInSector = false;
-                _debugApexInSector = false;
+                ClearEcosystemBudgetState();
                 return false;
             }
 
             if (!ecosystemDirector.TryGetSectorPopulation(_fieldCenter, out EcosystemSectorPopulationSample sample))
             {
-                _ecosystemFitness = 0f;
-                _ecosystemSpeedMultiplier = 1f;
-                _ecosystemCamouflageIndex = 0f;
-                _ecosystemApexInSector = false;
-                _debugApexInSector = false;
+                ClearEcosystemBudgetState();
                 return false;
             }
 
             bool apexInSector = sample.ApexInSector != 0;
             _ecosystemApexInSector = apexInSector;
-            ecosystemPopulationCount = math.max(0, apexInSector ? sample.PreyPopulation >> 2 : sample.PreyPopulation);
-            _ecosystemFitness = math.saturate(sample.Fitness);
-            _ecosystemSpeedMultiplier = math.max(0.25f, sample.SpeedMultiplier) * (apexInSector ? 1.25f : 1f);
-            _ecosystemCamouflageIndex = math.saturate(sample.CamouflageIndex + (apexInSector ? 0.35f : 0f));
+            int safePreyPopulation = math.max(0, sample.PreyPopulation);
+            ecosystemPopulationCount = apexInSector ? safePreyPopulation >> 2 : safePreyPopulation;
+            _ecosystemFitness = SaturateFinite01(sample.Fitness);
+            float speedMultiplier = ClampFinite(sample.SpeedMultiplier, 0.25f, MaximumEcosystemSpeedMultiplier);
+            _ecosystemSpeedMultiplier = ClampFinite(speedMultiplier * (apexInSector ? 1.25f : 1f), 0.25f, MaximumEcosystemSpeedMultiplier);
+            _ecosystemCamouflageIndex = SaturateFinite01(sample.CamouflageIndex + (apexInSector ? 0.35f : 0f));
             _debugEcosystemFitness = _ecosystemFitness;
             _debugEcosystemCamouflageIndex = _ecosystemCamouflageIndex;
             _debugApexInSector = _ecosystemApexInSector;
             return true;
         }
 
+        private void ClearEcosystemBudgetState()
+        {
+            _ecosystemFitness = 0f;
+            _ecosystemSpeedMultiplier = 1f;
+            _ecosystemCamouflageIndex = 0f;
+            _ecosystemApexInSector = false;
+            _debugApexInSector = false;
+        }
+
         private float ResolvePopulationBudgetScale()
         {
-            WorldProceduralScatterDirector scatterDirector = WorldProceduralScatterDirector.ActiveRuntimeInstance;
+            WorldProceduralScatterDirector scatterDirector = _proceduralScatterDirector;
             if (scatterDirector == null)
                 return 1f;
 
-            float spawnBudgetScale = scatterDirector.CurrentSpawnBudgetScale;
-            float faunaActivationScale = scatterDirector.CurrentFaunaActivationScale;
-            return math.clamp(spawnBudgetScale * faunaActivationScale, MinimumPopulationBudgetScale, 1f);
+            float spawnBudgetScale = ClampFinite(scatterDirector.CurrentSpawnBudgetScale, MinimumPopulationBudgetScale, 1f);
+            float faunaActivationScale = ClampFinite(scatterDirector.CurrentFaunaActivationScale, 0f, 1.45f);
+            return ClampFinite(spawnBudgetScale * faunaActivationScale, MinimumPopulationBudgetScale, 1f);
         }
 
         private void RefreshDispatchGroupCount()
         {
-            int safeThreadGroupSize = math.max(1, (int)_threadGroupSizeX);
-            _dispatchGroupCount = math.max(1, CeilDivPositive(_activeBoidCount, safeThreadGroupSize));
-            _clearSpatialGridDispatchGroupCount = math.max(1, CeilDivPositive(SpatialGridMaxCellCount, SpatialGridClearThreadGroupSize));
+            _dispatchGroupCount = CeilDivPositive(_activeBoidCount, (int)_threadGroupSizeX);
+            _clearStatsDispatchGroupCount = CeilDivPositive(1, (int)_clearStatsThreadGroupSizeX);
+            _clearSpatialGridDispatchGroupCount = CeilDivPositive(SpatialGridMaxCellCount, (int)_clearSpatialGridThreadGroupSizeX);
+            _buildSpatialGridDispatchGroupCount = CeilDivPositive(_activeBoidCount, (int)_buildSpatialGridThreadGroupSizeX);
+            _clearPbdCorrectionsDispatchGroupCount = CeilDivPositive(_activeBoidCount, (int)_clearPbdCorrectionsThreadGroupSizeX);
+            _pbdSolveDispatchGroupCount = CeilDivPositive(_activeBoidCount, (int)_pbdSolveThreadGroupSizeX);
             _debugDispatchGroups = _dispatchGroupCount;
         }
 
@@ -3010,18 +3072,26 @@ namespace Hecton8.World
             if (threatGrid.Length <= 0 ||
                 gridResolution <= 0 ||
                 cellCountLong <= 0L ||
-                cellCountLong > int.MaxValue ||
-                threatGrid.Length < cellCountLong)
+                cellCountLong > ThreatGridMaxCellCount ||
+                threatGrid.Length < cellCountLong ||
+                !IsFiniteVector3(gridCenter) ||
+                !float.IsFinite(cellSize) ||
+                cellSize <= 0f)
             {
                 ResetThreatGridSnapshot();
                 return;
             }
 
             int cellCount = (int)cellCountLong;
-            if (EnsureBufferCapacity(ref _threatGridBuffer, cellCount, ThreatGridStride))
-                _computeStaticBuffersBound = false;
-            EnsureSargassumVaultGenerationHandle(_dataVault, ref _threatGridUploadHandle, BufferID.SargassumThreatGridUpload, cellCount);
-            var threatGridUpload = ResolveSargassumVaultArray(in _threatGridUploadHandle, BufferID.SargassumThreatGridUpload, cellCount);
+            if (_threatGridBuffer == null ||
+                _threatGridBuffer.count < ThreatGridMaxCellCount ||
+                _threatGridBuffer.stride != ThreatGridStride)
+            {
+                ResetThreatGridSnapshot();
+                return;
+            }
+
+            var threatGridUpload = ResolveSargassumVaultArray(in _threatGridUploadHandle, BufferID.SargassumThreatGridUpload, ThreatGridMaxCellCount);
             if (!threatGridUpload.IsCreated || threatGridUpload.Length < cellCount)
             {
                 ResetThreatGridSnapshot();
@@ -3059,6 +3129,25 @@ namespace Hecton8.World
             return true;
         }
 
+        private static bool EnsureGpuWriteBuffer(ref GraphicsBuffer buffer, int count, int stride)
+        {
+            if (buffer != null && buffer.count == count && buffer.stride == stride)
+                return false;
+
+            if (buffer != null)
+            {
+                buffer.Release();
+                buffer = null;
+            }
+
+            // COLD ALLOC: GraphicsBuffer[count] - GPU-written structured UAV buffer - owner: SargassumMicroFaunaBoids
+            buffer = new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                count,
+                stride);
+            return true;
+        }
+
         private static bool EnsureRawBuffer(ref GraphicsBuffer buffer, ref bool rawTargetValid, int count, int stride)
         {
             if (buffer != null && rawTargetValid && buffer.count == count && buffer.stride == stride)
@@ -3074,6 +3163,26 @@ namespace Hecton8.World
             buffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.Raw,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                count,
+                stride);
+            rawTargetValid = true;
+            return true;
+        }
+
+        private static bool EnsureGpuWriteRawBuffer(ref GraphicsBuffer buffer, ref bool rawTargetValid, int count, int stride)
+        {
+            if (buffer != null && rawTargetValid && buffer.count == count && buffer.stride == stride)
+                return false;
+
+            if (buffer != null)
+            {
+                buffer.Release();
+                buffer = null;
+            }
+
+            // COLD ALLOC: Raw GraphicsBuffer[count] - GPU-written byte-addressed UAV buffer - owner: SargassumMicroFaunaBoids
+            buffer = new GraphicsBuffer(
+                GraphicsBuffer.Target.Raw,
                 count,
                 stride);
             rawTargetValid = true;
@@ -3105,7 +3214,6 @@ namespace Hecton8.World
 
             if (!HasRequiredMicroFaunaStorage())
             {
-                QueueMicroFaunaGpuStateRefresh();
                 _hasSpawnData = false;
                 return;
             }
@@ -3232,9 +3340,10 @@ namespace Hecton8.World
                 return false;
 
             _computeDispatchDisabled = false;
-            if (!HasRequiredMicroFaunaStorage() || !HasRequiredMicroFaunaGpuState())
+            if (!HasRequiredMicroFaunaStorage() ||
+                !EnsureComputeKernelBindings() ||
+                !HasRequiredMicroFaunaGpuState())
             {
-                QueueMicroFaunaGpuStateRefresh();
                 return false;
             }
 
@@ -3258,6 +3367,7 @@ namespace Hecton8.World
             _previousDriftOffset = dragManager != null ? dragManager.GlobalDriftOffset : Vector3.zero;
             _sleepVelocityWritePending = true;
             _lastSimulationLodTier = SimulationLodTier.Sleep;
+            _lastSimulationHibernation01 = 1f;
             _statisticalPopulationActive = false;
             _statisticalMigrationKeepAliveTickCountdown = 0;
             _hasSpawnData = true;
@@ -3275,8 +3385,8 @@ namespace Hecton8.World
 
             _activeBoidCount = 0;
             _debugActiveBoidCount = 0;
-            _dispatchGroupCount = 1;
-            _debugDispatchGroups = 1;
+            _dispatchGroupCount = 0;
+            _debugDispatchGroups = 0;
             _activeGrazingAnchorCount = 0;
             _debugGrazingAnchorCount = 0;
             _activeMassiveThreatCount = 0;
@@ -3310,7 +3420,12 @@ namespace Hecton8.World
             int baseCount = _statisticalPopulationBaseCount > 0
                 ? _statisticalPopulationBaseCount
                 : _statisticalPopulationPoint.Count;
-            Vector3 center = ToVector3(_statisticalPopulationCenterAup.ToRuntimeFloat3());
+            if (!TryResolveRuntimePosition(in _statisticalPopulationCenterAup, out Vector3 center))
+            {
+                ClearStatisticalPopulationPoint();
+                return 0;
+            }
+
             _fieldCenter = center;
             if (TryResolveEcosystemPopulationCount(out int ecosystemPopulationCount))
                 baseCount = ecosystemPopulationCount;
@@ -3344,7 +3459,12 @@ namespace Hecton8.World
             }
 
             _statisticalMigrationKeepAliveTickCountdown = StatisticalMigrationKeepAliveSlowTickStride;
-            Vector3 center = ToVector3(_statisticalPopulationCenterAup.ToRuntimeFloat3());
+            if (!TryResolveRuntimePosition(in _statisticalPopulationCenterAup, out Vector3 center))
+            {
+                ClearStatisticalPopulationPoint();
+                return;
+            }
+
             _fieldCenter = center;
             _renderBounds.center = center;
             _debugRenderBounds = _renderBounds;
@@ -3426,11 +3546,13 @@ namespace Hecton8.World
         {
             if (_registeredMigrationPopulationValid)
             {
-                Vector3 center = ToVector3(_registeredMigrationPopulationCenterAup.ToRuntimeFloat3());
-                MigrationDirector.RegisterStatisticalSwarmPopulation(
-                    _registeredMigrationPopulationSpecies,
-                    center,
-                    0);
+                if (TryResolveRuntimePosition(in _registeredMigrationPopulationCenterAup, out Vector3 center))
+                {
+                    MigrationDirector.RegisterStatisticalSwarmPopulation(
+                        _registeredMigrationPopulationSpecies,
+                        center,
+                        0);
+                }
             }
 
             _registeredMigrationPopulationCenterAup = default;
@@ -3446,7 +3568,13 @@ namespace Hecton8.World
             if (!boidState.IsCreated || boidState.Length <= 0)
                 return;
 
-            Vector3 center = ToVector3(_statisticalPopulationCenterAup.ToRuntimeFloat3());
+            if (!TryResolveRuntimePosition(in _statisticalPopulationCenterAup, out Vector3 center))
+            {
+                ClearStatisticalPopulationPoint();
+                _hasSpawnData = false;
+                return;
+            }
+
             float radius = math.max(PopulationDensityMinRadiusMeters, _statisticalPopulationPoint.RadiusMeters);
             _fieldCenter = center;
             _fieldExtents = new Vector3(radius, radius * 0.45f, radius);
@@ -3572,7 +3700,7 @@ namespace Hecton8.World
 
         private bool BuildDeepSpawnData(int spawnCount)
         {
-            if (biolumManager == null || !TryResolvePlayerRuntimePosition(out Vector3 playerPosition) || _deepBiolumZones == null || _deepBiolumZoneScores == null)
+            if (biolumManager == null || !RefreshPlayerRuntimePosition(out Vector3 playerPosition) || _deepBiolumZones == null || _deepBiolumZoneScores == null)
                 return false;
 
             int zoneCount = biolumManager.CopyNearbyZonesNonAlloc(
@@ -3604,12 +3732,12 @@ namespace Hecton8.World
 
         private bool IsDeepModeActive()
         {
-            return TryResolvePlayerRuntimePosition(out Vector3 playerPosition) && playerPosition.y <= deepSeaWorldYThreshold;
+            return RefreshPlayerRuntimePosition(out Vector3 playerPosition) && playerPosition.y <= deepSeaWorldYThreshold;
         }
 
         private bool IsParasiteModeActive()
         {
-            if (!TryResolvePlayerRuntimePosition(out Vector3 playerPosition) || playerPosition.y > parasiteDroneWorldYThreshold)
+            if (!RefreshPlayerRuntimePosition(out Vector3 playerPosition) || playerPosition.y > parasiteDroneWorldYThreshold)
                 return false;
 
             if (_worldZoneDirector == null || _biomeMatrixDirector == null || _biomeMatrixDirector.CurrentDepthMeters < 2000f)
@@ -3673,7 +3801,7 @@ namespace Hecton8.World
             if (snapshotCount <= 0)
                 return;
 
-            if (!TryResolvePlayerRuntimePosition(out Vector3 origin))
+            if (!RefreshPlayerRuntimePosition(out Vector3 origin))
                 return;
 
             if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
@@ -3806,7 +3934,7 @@ namespace Hecton8.World
         private void BuildLeviathanData()
         {
             _leviathanThreatLevel = 0f;
-            bool hasPlayerPosition = TryResolvePlayerRuntimePosition(out Vector3 playerPosition);
+            bool hasPlayerPosition = RefreshPlayerRuntimePosition(out Vector3 playerPosition);
             _leviathanHotspotWS = hasPlayerPosition ? playerPosition : Vector3.zero;
             _debugLeviathanNodeCount = _leviathanPathNodeCount;
             _debugLeviathanThreatLevel = 0f;
@@ -3847,7 +3975,7 @@ namespace Hecton8.World
 
         private void ScheduleLeviathanNodeBuild(NativeArray<Vector3>.ReadOnly path, int pathCount)
         {
-            int safePathCount = math.min(pathCount, path.Length);
+            int safePathCount = math.min(math.min(pathCount, path.Length), leviathanNodeCapacity);
             var leviathanNodeBack = ResolveSargassumVaultArray(in _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);
             var leviathanNodeCount = ResolveSargassumVaultArray(in _leviathanNodeCountHandle, BufferID.SargassumLeviathanNodeCount, 1);
             if (safePathCount < 2 || !leviathanNodeBack.IsCreated || leviathanNodeBack.Length <= 0 || !leviathanNodeCount.IsCreated)
@@ -3856,8 +3984,7 @@ namespace Hecton8.World
             if (_leviathanNodeBuildScheduled)
                 return;
 
-            EnsureSargassumVaultGenerationHandle(_dataVault, ref _leviathanPathScratchHandle, BufferID.SargassumLeviathanPathScratch, safePathCount);
-            var leviathanPathScratch = ResolveSargassumVaultArray(in _leviathanPathScratchHandle, BufferID.SargassumLeviathanPathScratch, safePathCount);
+            var leviathanPathScratch = ResolveSargassumVaultArray(in _leviathanPathScratchHandle, BufferID.SargassumLeviathanPathScratch, leviathanNodeCapacity);
             if (!leviathanPathScratch.IsCreated || leviathanPathScratch.Length < safePathCount)
                 return;
 
@@ -3952,7 +4079,7 @@ namespace Hecton8.World
             Vector3 leviathanTarget = splinePosition + lateral * lateralWave + vertical * verticalWaveOffset;
 
             Vector3 ringTarget = leviathanTarget;
-            if (surroundAttack > 0f && TryResolvePlayerRuntimePosition(out Vector3 playerPosition))
+            if (surroundAttack > 0f && RefreshPlayerRuntimePosition(out Vector3 playerPosition))
             {
                 float ringRadius = math.max(leviathanSurroundRadius, bodyRadius * 2.4f);
                 float ringPulse = CheapSinSigned(simulationPhaseTime * (leviathanWaveFrequency * 0.7f));
@@ -4399,7 +4526,27 @@ namespace Hecton8.World
                         boidCompute.SetBuffer(_clearStatsKernelIndex, _LatchStatsId, _latchStatsBuffer);
                 }
             }
-            catch (Exception)
+            catch (ObjectDisposedException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonBindingFailure);
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonBindingFailure);
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonBindingFailure);
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonBindingFailure);
+                return false;
+            }
+            catch (UnityException)
             {
                 DisableComputeDispatch(ComputeDisableReasonBindingFailure);
                 return false;
@@ -4433,20 +4580,20 @@ namespace Hecton8.World
             }; // COLD ALLOC: Texture3D[1] - zero fallback abyssal-flow volume for swarm compute binding - owner: SargassumMicroFaunaBoids
         }
 
-        private static int ResolvePredatorAupThreatLoopCap(int predatorAupCount, SimulationLodTier simulationLodTier)
+        private static int ResolvePredatorAupThreatLoopCap(int predatorAupCount, float hibernation01)
         {
             int safeCount = math.clamp(predatorAupCount, 0, PredatorAupBufferCapacity);
             if (safeCount <= 0)
                 return 0;
 
-            return simulationLodTier == SimulationLodTier.Full
-                ? safeCount
-                : math.min(safeCount, PredatorAupLowTierThreatLoopCap);
+            float quality01 = 1f - math.saturate(hibernation01);
+            int scaledCount = (int)math.ceil(math.lerp(PredatorAupLowTierThreatLoopCap, safeCount, quality01));
+            return math.clamp(scaledCount, 0, safeCount);
         }
 
-        private static int ResolveBoidSensoryThreatFlags(SimulationLodTier simulationLodTier)
+        private static int ResolveBoidSensoryThreatFlags(float hibernation01)
         {
-            return simulationLodTier == SimulationLodTier.Full
+            return math.saturate(hibernation01) < 0.85f
                 ? unchecked((int)SensoryThreatFlagFlashlightCapsule)
                 : 0;
         }
@@ -4457,7 +4604,8 @@ namespace Hecton8.World
             Vector3 playerForward,
             Vector3 submarineThreatPosition,
             float submarineThreatRadius,
-            SimulationLodTier simulationLodTier)
+            SimulationLodTier simulationLodTier,
+            float hibernation01)
         {
             var boidSensoryThreats = ResolveBoidSensoryThreats();
             GraphicsBuffer sensoryThreatWriteBuffer = ResolveBoidSensoryThreatWriteBuffer();
@@ -4469,14 +4617,14 @@ namespace Hecton8.World
 
             ClearBoidSensoryStaticThreatSlots(boidSensoryThreats);
             DecayBoidSensoryAcousticPingThreats(boidSensoryThreats, simulationDt);
-            Vector3 playerAupPosition = ResolvePlayerAupRuntimePosition(playerPosition);
+            Vector3 playerAupPosition = RefreshPlayerAupRuntimePosition(playerPosition);
             WriteBoidSensoryThreatSlot(
                 boidSensoryThreats,
                 SensoryThreatSlotSubmarine,
                 submarineThreatPosition,
                 math.max(submarineThreatRadius, SensorySubmarineThreatRadiusMeters));
             ConsumeSubmarineLightSignals(playerAupPosition, playerForward);
-            UpdateFlashlightSensoryThreat(boidSensoryThreats, simulationDt, playerAupPosition, playerForward, simulationLodTier);
+            UpdateFlashlightSensoryThreat(boidSensoryThreats, simulationDt, playerAupPosition, playerForward, hibernation01);
             ConsumeBoidSensoryAcousticPingSignals(boidSensoryThreats);
             uint sensoryAnomalyHash = SanitizeBoidSensoryThreatSlots(boidSensoryThreats);
 
@@ -4495,7 +4643,7 @@ namespace Hecton8.World
                 boidSensoryThreats,
                 activeThreatCount,
                 simulationLodTier,
-                ResolveBoidSensoryThreatFlags(simulationLodTier),
+                ResolveBoidSensoryThreatFlags(hibernation01),
                 sensoryAnomalyHash);
             return activeThreatCount;
         }
@@ -4508,9 +4656,9 @@ namespace Hecton8.World
                 boidSensoryThreats[i] = float4.zero;
         }
 
-        private Vector3 ResolvePlayerAupRuntimePosition(Vector3 fallbackPosition)
+        private Vector3 RefreshPlayerAupRuntimePosition(Vector3 fallbackPosition)
         {
-            if (!TryResolvePlayerRuntimeSnapshot(
+            if (!RefreshPlayerRuntimeSnapshotCache(
                     out PlayerMovementRuntimeState movementState,
                     out PlayerLookState _))
             {
@@ -4520,9 +4668,8 @@ namespace Hecton8.World
             if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
                 return fallbackPosition;
 
-            float3 runtimePosition = movementState.PredictedAup.ToRuntimeFloat3();
-            return math.all(math.isfinite(runtimePosition))
-                ? ToVector3(runtimePosition)
+            return TryResolveRuntimePosition(in movementState.PredictedAup, out Vector3 runtimePosition)
+                ? runtimePosition
                 : fallbackPosition;
         }
 
@@ -4558,8 +4705,7 @@ namespace Hecton8.World
                     math.isfinite(signal.RangeMeters) ? signal.RangeMeters : SensoryFlashlightDefaultRangeMeters,
                     SensoryThreatMinRadiusMeters,
                     SensoryAcousticPingMaxRadiusMeters);
-                float3 runtimePosition = signal.PositionAup.ToRuntimeFloat3();
-                if (!math.all(math.isfinite(runtimePosition)))
+                if (!TryResolveRuntimePosition(in signal.PositionAup, out Vector3 runtimePosition))
                     continue;
 
                 float3 signalForward = signal.Forward;
@@ -4571,7 +4717,7 @@ namespace Hecton8.World
                     continue;
 
                 bestSignalScore = signalScore;
-                bestOriginWS = ToVector3(runtimePosition);
+                bestOriginWS = runtimePosition;
                 bestForwardWS = forwardWS;
                 bestRangeMeters = rangeMeters;
                 bestIntensity01 = intensity01;
@@ -4595,18 +4741,21 @@ namespace Hecton8.World
             float simulationDt,
             Vector3 playerPosition,
             Vector3 playerForward,
-            SimulationLodTier simulationLodTier)
+            float hibernation01)
         {
-            bool hasSignalLight = _boidFlashlightThreatIntensity01 > 0.001f;
+            float signalLightIntensity01 = SaturateFinite01(_boidFlashlightThreatIntensity01);
+            bool hasSignalLight = signalLightIntensity01 > 0.001f;
             float playerLightIntensity01 = _flashlightOn ? math.max(0.35f, ResolveHeadlightPanic01()) : 0f;
-            float effectiveIntensity01 = math.max(_boidFlashlightThreatIntensity01, playerLightIntensity01);
+            float effectiveIntensity01 = math.max(signalLightIntensity01, playerLightIntensity01);
             if (effectiveIntensity01 <= 0.001f)
             {
                 _boidFlashlightThreatTargetRadiusWS = 0f;
             }
             else
             {
-                float rangeMeters = hasSignalLight ? _boidFlashlightThreatRangeWS : SensoryFlashlightDefaultRangeMeters;
+                float rangeMeters = hasSignalLight
+                    ? ClampFinite(_boidFlashlightThreatRangeWS, SensoryThreatMinRadiusMeters, SensoryAcousticPingMaxRadiusMeters)
+                    : SensoryFlashlightDefaultRangeMeters;
                 float targetRadius = math.max(
                     SensoryThreatMinRadiusMeters,
                     rangeMeters * SensoryFlashlightRadiusScale * effectiveIntensity01);
@@ -4634,8 +4783,10 @@ namespace Hecton8.World
             if (!IsFiniteVector3(originWS))
                 originWS = playerPosition;
             forwardWS = FastNormalizeVector3(forwardWS, playerForward);
-            float range = hasSignalLight ? _boidFlashlightThreatRangeWS : SensoryFlashlightDefaultRangeMeters;
-            float endpointScale = simulationLodTier == SimulationLodTier.Full ? 1f : SensoryFlashlightEndpointScale;
+            float range = hasSignalLight
+                ? ClampFinite(_boidFlashlightThreatRangeWS, SensoryThreatMinRadiusMeters, SensoryAcousticPingMaxRadiusMeters)
+                : SensoryFlashlightDefaultRangeMeters;
+            float endpointScale = math.lerp(1f, SensoryFlashlightEndpointScale, math.saturate(hibernation01));
             Vector3 endpointWS = originWS + forwardWS * math.max(2f, range * endpointScale);
             WriteBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatSlotFlashlight, endpointWS, _boidFlashlightThreatRadiusWS);
         }
@@ -4665,8 +4816,7 @@ namespace Hecton8.World
                 if (intensity01 <= 0.001f)
                     continue;
 
-                float3 runtimePosition = signal.PositionAup.ToRuntimeFloat3();
-                if (!math.all(math.isfinite(runtimePosition)))
+                if (!TryResolveRuntimePosition(in signal.PositionAup, out Vector3 runtimePosition))
                     continue;
 
                 float radius = math.clamp(
@@ -4677,7 +4827,7 @@ namespace Hecton8.World
                 uint pingSlotCount = (uint)(SensoryThreatLastPingSlot - SensoryThreatFirstPingSlot + 1);
                 int slot = SensoryThreatFirstPingSlot + (int)(_boidSensoryPingWriteCursor % pingSlotCount);
                 _boidSensoryPingWriteCursor++;
-                WriteBoidSensoryThreatSlot(boidSensoryThreats, slot, ToVector3(runtimePosition), radius);
+                WriteBoidSensoryThreatSlot(boidSensoryThreats, slot, runtimePosition, radius);
             }
         }
 
@@ -4746,14 +4896,13 @@ namespace Hecton8.World
                 return false;
             }
 
-            float3 shiftedRuntime = threatAup.ToRuntimeFloat3();
-            if (!math.all(math.isfinite(shiftedRuntime)))
+            if (!TryResolveRuntimePosition(in threatAup, out Vector3 shiftedRuntime))
             {
                 boidSensoryThreats[slot] = float4.zero;
                 return false;
             }
 
-            float safeRadius = math.max(radius, SensoryThreatMinRadiusMeters);
+            float safeRadius = ClampFinite(radius, SensoryThreatMinRadiusMeters, SensoryAcousticPingMaxRadiusMeters);
             boidSensoryThreats[slot] = new float4(
                 shiftedRuntime.x,
                 shiftedRuntime.y,
@@ -4806,7 +4955,8 @@ namespace Hecton8.World
             Vector3 driftDelta,
             float hibernation01,
             SimulationLodTier simulationLodTier,
-            bool shouldRender)
+            bool shouldRender,
+            bool shouldCollectLatchStats)
         {
             var simulationFrame = ResolveSargassumVaultArray(in _simulationFrameHandle, BufferID.SargassumSimulationFrame, 1);
             if (!simulationFrame.IsCreated || _simulationFrameBuffer == null)
@@ -4816,7 +4966,7 @@ namespace Hecton8.World
             GraphicsBuffer readBuffer = _frameParity == 0 ? _boidsBufferA : _boidsBufferB;
             GraphicsBuffer writeBuffer = _frameParity == 0 ? _boidsBufferB : _boidsBufferA;
 
-            ResolvePlayerGpuFrame(
+            RefreshPlayerGpuFrame(
                 out Vector3 playerPosition,
                 out Vector3 playerVelocity,
                 out Vector3 playerRight,
@@ -4919,33 +5069,55 @@ namespace Hecton8.World
                 predatorAupBuffer = publishedPredatorAupBuffer;
                 predatorAupCount = math.clamp(publishedPredatorAupCount, 0, PredatorAupBufferCapacity);
             }
-            int predatorAupThreatLoopCap = ResolvePredatorAupThreatLoopCap(predatorAupCount, simulationLodTier);
+            int predatorAupThreatLoopCap = ResolvePredatorAupThreatLoopCap(predatorAupCount, hibernation01);
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
             UpdateFragmentationState(playerPosition, playerVelocity, playerForward, playerSpeed, absoluteSimulationTime);
             UpdateSonarScatterState(simulationDt, absoluteSimulationTime);
             float fragmentation01 = ResolveFragmentationStrength01(absoluteSimulationTime);
-            float fragmentationHalfDistance = _fragmentationHalfDistanceWS;
-            float sonarScatterStrength01 = absoluteSimulationTime < _sonarScatterExpireTime
-                ? math.saturate(_sonarScatterStrength01)
+            float fragmentationHalfDistance = ClampFinite(_fragmentationHalfDistanceWS, 1f, MassiveThreatMaxRadiusMeters * 3f);
+            bool absoluteSimulationTimeFinite = float.IsFinite(absoluteSimulationTime);
+            float sonarScatterStrength01 = absoluteSimulationTimeFinite && absoluteSimulationTime < _sonarScatterExpireTime
+                ? SaturateFinite01(_sonarScatterStrength01)
                 : 0f;
-            float acousticPanicStrength01 = absoluteSimulationTime < _acousticPanicExpireTime
-                ? math.saturate(_acousticPanicStrength01)
+            float acousticPanicStrength01 = absoluteSimulationTimeFinite && absoluteSimulationTime < _acousticPanicExpireTime
+                ? SaturateFinite01(_acousticPanicStrength01)
                 : 0f;
             if (acousticPanicStrength01 <= 0f)
             {
                 _acousticPanicRadiusWS = 0f;
                 _acousticPanicStrength01 = 0f;
             }
-            float acousticPanicTimeRemaining = math.max(0f, _acousticPanicExpireTime - absoluteSimulationTime);
+            float acousticPanicTimeRemaining = absoluteSimulationTimeFinite && float.IsFinite(_acousticPanicExpireTime)
+                ? ClampMinFinite(_acousticPanicExpireTime - absoluteSimulationTime, 0f)
+                : 0f;
+            Vector3 fragmentationCenterA = IsFiniteVector3(_fragmentationCenterAWS) && fragmentation01 > 0f
+                ? _fragmentationCenterAWS
+                : Vector3.zero;
+            Vector3 fragmentationCenterB = IsFiniteVector3(_fragmentationCenterBWS) && fragmentation01 > 0f
+                ? _fragmentationCenterBWS
+                : Vector3.zero;
+            if (fragmentation01 <= 0f)
+                fragmentationHalfDistance = 1f;
+
+            Vector3 sonarScatterOrigin = IsFiniteVector3(_sonarScatterOriginWS) && sonarScatterStrength01 > 0f
+                ? _sonarScatterOriginWS
+                : Vector3.zero;
+            if (sonarScatterStrength01 <= 0f)
+                _sonarScatterWaveFrontWS = 0f;
+
+            Vector3 acousticPanicOrigin = IsFiniteVector3(_acousticPanicOriginWS) && acousticPanicStrength01 > 0f
+                ? _acousticPanicOriginWS
+                : Vector3.zero;
             int boidSensoryThreatCount = UpdateBoidSensoryThreats(
                 simulationDt,
                 playerPosition,
                 playerForward,
                 submarineThreatPosition,
                 submarineThreatRadius,
-                simulationLodTier);
-            int boidSensoryThreatFlags = ResolveBoidSensoryThreatFlags(simulationLodTier);
+                simulationLodTier,
+                hibernation01);
+            int boidSensoryThreatFlags = ResolveBoidSensoryThreatFlags(hibernation01);
 
             SimulationFrameConstants frameConstants = default;
             frameConstants.Simulation0 = new float4(simulationDt, waterLevel, minDepthBelowSurface, maxDepthBelowSurface);
@@ -5026,24 +5198,28 @@ namespace Hecton8.World
                 _threatGridDataValid ? 1 : 0,
                 boidSensoryThreatCount,
                 boidSensoryThreatFlags);
+            Vector3 threatGridCenterWS = IsFiniteVector3(_threatGridCenterWS) ? _threatGridCenterWS : Vector3.zero;
+            float threatGridCellSizeWS = ClampFinite(_threatGridCellSizeWS, ThreatVoxelCellEpsilon, MassiveThreatMaxRadiusMeters);
+            Vector3 threatVoxelOriginWS = IsFiniteVector3(_threatVoxelOriginWS) ? _threatVoxelOriginWS : Vector3.zero;
             frameConstants.ThreatGridCenter = new float4(
-                _threatGridCenterWS.x,
-                _threatGridCenterWS.y,
-                _threatGridCenterWS.z,
-                _threatGridCellSizeWS);
+                threatGridCenterWS.x,
+                threatGridCenterWS.y,
+                threatGridCenterWS.z,
+                threatGridCellSizeWS);
             frameConstants.ThreatVoxelMeta = new int4(
                 _threatVoxelDimensions.x,
                 _threatVoxelDimensions.y,
                 _threatVoxelDimensions.z,
                 _threatVoxelSolidThreshold);
-            float ecosystemSpeedScale = math.max(0.25f, _ecosystemSpeedMultiplier);
-            float ecosystemCamouflageScale = math.lerp(1f, ecosystemCamouflageWeight, _ecosystemCamouflageIndex);
-            float ecosystemFitnessScale = math.lerp(1f, 1.15f, _ecosystemFitness);
+            float ecosystemSpeedScale = ClampFinite(_ecosystemSpeedMultiplier, 0.25f, MaximumEcosystemSpeedMultiplier);
+            float ecosystemCamouflageScale = math.lerp(1f, ecosystemCamouflageWeight, SaturateFinite01(_ecosystemCamouflageIndex));
+            float ecosystemFitnessScale = math.lerp(1f, 1.15f, SaturateFinite01(_ecosystemFitness));
+            float safeVoxelLookAheadDistance = ClampFinite(voxelAvoidanceLookAheadDistance, 0f, 12f);
             frameConstants.ThreatVoxelOrigin = new float4(
-                _threatVoxelOriginWS.x,
-                _threatVoxelOriginWS.y,
-                _threatVoxelOriginWS.z,
-                voxelAvoidanceLookAheadDistance * math.lerp(1f, ecosystemSpeedScale, 0.5f));
+                threatVoxelOriginWS.x,
+                threatVoxelOriginWS.y,
+                threatVoxelOriginWS.z,
+                safeVoxelLookAheadDistance * math.lerp(1f, ecosystemSpeedScale, 0.5f));
             frameConstants.ThreatVoxelCellSize = new float4(
                 _threatVoxelCellSizeWS.x,
                 _threatVoxelCellSizeWS.y,
@@ -5070,35 +5246,35 @@ namespace Hecton8.World
                 submarineWakeVelocity.z,
                 submarineWakeHalfLength);
             frameConstants.Ecosystem0 = new float4(
-                fragmentationWeight * ecosystemFitnessScale,
+                ClampFinite(fragmentationWeight, 0f, 12f) * ecosystemFitnessScale,
                 sonarScatterStrength01,
-                activeSonarWaveBandWidth,
-                activeSonarScatterImpulse + activeSonarScatterWeight);
+                ClampFinite(activeSonarWaveBandWidth, 0.25f, 16f),
+                ClampFinite(activeSonarScatterImpulse, 0f, 64f) + ClampFinite(activeSonarScatterWeight, 0f, 16f));
             frameConstants.Fragmentation0 = new float4(
-                _fragmentationCenterAWS.x,
-                _fragmentationCenterAWS.y,
-                _fragmentationCenterAWS.z,
+                fragmentationCenterA.x,
+                fragmentationCenterA.y,
+                fragmentationCenterA.z,
                 fragmentation01);
             frameConstants.Fragmentation1 = new float4(
-                _fragmentationCenterBWS.x,
-                _fragmentationCenterBWS.y,
-                _fragmentationCenterBWS.z,
+                fragmentationCenterB.x,
+                fragmentationCenterB.y,
+                fragmentationCenterB.z,
                 math.max(1f, fragmentationHalfDistance));
             frameConstants.SonarScatter0 = new float4(
-                _sonarScatterOriginWS.x,
-                _sonarScatterOriginWS.y,
-                _sonarScatterOriginWS.z,
+                sonarScatterOrigin.x,
+                sonarScatterOrigin.y,
+                sonarScatterOrigin.z,
                 _sonarScatterWaveFrontWS);
             frameConstants.AcousticPanic0 = new float4(
-                _acousticPanicOriginWS.x,
-                _acousticPanicOriginWS.y,
-                _acousticPanicOriginWS.z,
-                acousticPanicStrength01 > 0f ? _acousticPanicRadiusWS : 0f);
+                acousticPanicOrigin.x,
+                acousticPanicOrigin.y,
+                acousticPanicOrigin.z,
+                acousticPanicStrength01 > 0f ? ClampFinite(_acousticPanicRadiusWS, 1f, SensoryAcousticPingMaxRadiusMeters) : 0f);
             frameConstants.AcousticPanic1 = new float4(
                 _acousticPanicSeed,
                 acousticPanicStrength01,
                 acousticPanicTimeRemaining,
-                0f);
+                shouldCollectLatchStats ? 1f : 0f);
             frameConstants.AbyssalFlowWeatherCurrent = new float4(
                 abyssalFlowWeatherCurrent.x,
                 abyssalFlowWeatherCurrent.y,
@@ -5139,7 +5315,27 @@ namespace Hecton8.World
 
                 boidCompute.SetBuffer(_pbdSolveKernelIndex, _BoidsBufferReadId, readBuffer);
             }
-            catch (Exception)
+            catch (ObjectDisposedException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonBindingFailure);
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonBindingFailure);
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonBindingFailure);
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonBindingFailure);
+                return false;
+            }
+            catch (UnityException)
             {
                 DisableComputeDispatch(ComputeDisableReasonBindingFailure);
                 return false;
@@ -5206,7 +5402,7 @@ namespace Hecton8.World
         {
         }
 
-        private void ResolvePlayerGpuFrame(
+        private void RefreshPlayerGpuFrame(
             out Vector3 playerPosition,
             out Vector3 playerVelocity,
             out Vector3 playerRight,
@@ -5221,7 +5417,7 @@ namespace Hecton8.World
             playerRight = Vector3.right;
             cameraPosition = _fieldCenter;
 
-            if (!TryResolvePlayerRuntimeSnapshot(
+            if (!RefreshPlayerRuntimeSnapshotCache(
                     out PlayerMovementRuntimeState movementState,
                     out PlayerLookState lookState))
             {
@@ -5254,18 +5450,18 @@ namespace Hecton8.World
                 cameraPosition = playerPosition;
         }
 
-        private bool TryResolvePlayerRuntimePosition(out Vector3 playerPosition)
+        private bool RefreshPlayerRuntimePosition(out Vector3 playerPosition)
         {
-            return TryResolvePlayerRuntimeMotion(out playerPosition, out _);
+            return RefreshPlayerRuntimeMotion(out playerPosition, out _);
         }
 
-        private bool TryResolvePlayerRuntimeMotion(out Vector3 playerPosition, out Vector3 playerVelocity)
+        private bool RefreshPlayerRuntimeMotion(out Vector3 playerPosition, out Vector3 playerVelocity)
         {
             int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_playerMotionCacheFrame != currentFrame)
             {
                 _playerMotionCacheFrame = currentFrame;
-                _playerMotionCacheValid = TryResolvePlayerRuntimeMotionUncached(
+                _playerMotionCacheValid = BuildPlayerRuntimeMotionUncached(
                     out _playerMotionCachePosition,
                     out _playerMotionCacheVelocity);
             }
@@ -5275,11 +5471,11 @@ namespace Hecton8.World
             return _playerMotionCacheValid;
         }
 
-        private bool TryResolvePlayerRuntimeMotionUncached(out Vector3 playerPosition, out Vector3 playerVelocity)
+        private bool BuildPlayerRuntimeMotionUncached(out Vector3 playerPosition, out Vector3 playerVelocity)
         {
             playerPosition = Vector3.zero;
             playerVelocity = Vector3.zero;
-            if (!TryResolvePlayerRuntimeSnapshot(
+            if (!RefreshPlayerRuntimeSnapshotCache(
                     out PlayerMovementRuntimeState movementState,
                     out PlayerLookState lookState))
             {
@@ -5322,7 +5518,13 @@ namespace Hecton8.World
             }
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
-            float panicRadius = math.max(massiveThreatPanicRadius, math.max(signal.ExtremePanicRadiusWS, signal.RadiusWS * 3f));
+            float safeSignalRadius = ClampFinite(signal.RadiusWS, 0.5f, MassiveThreatMaxRadiusMeters);
+            float safeExtremePanicRadius = ClampFinite(signal.ExtremePanicRadiusWS, safeSignalRadius, MassiveThreatMaxRadiusMeters);
+            float safeDuration = ClampFinite(signal.Duration, 0.25f, MassiveThreatMaxDurationSeconds);
+            float panicRadius = ClampFinite(
+                math.max(massiveThreatPanicRadius, math.max(safeExtremePanicRadius, safeSignalRadius * 3f)),
+                massiveThreatPanicRadius,
+                MassiveThreatMaxRadiusMeters);
             int targetIndex = -1;
             float weakestEndTime = float.MaxValue;
             Vector3 inferredDirectionWS = Vector3.zero;
@@ -5330,12 +5532,13 @@ namespace Hecton8.World
             for (int i = 0; i < threatCapacity; i++)
             {
                 MassiveThreatData threat = massiveThreats[i];
-                if (threat.EndTime <= absoluteSimulationTime)
+                if (!TrySanitizeActiveMassiveThreat(in threat, absoluteSimulationTime, out threat))
                 {
                     targetIndex = i;
                     break;
                 }
 
+                massiveThreats[i] = threat;
                 float planarDeltaX = threat.Position.x - signal.PositionWS.x;
                 float planarDeltaZ = threat.Position.z - signal.PositionWS.z;
                 float planarDistanceSq = (planarDeltaX * planarDeltaX) + (planarDeltaZ * planarDeltaZ);
@@ -5362,7 +5565,7 @@ namespace Hecton8.World
                 targetIndex = 0;
 
             if (inferredDirectionWS.sqrMagnitude <= 0.0001f &&
-                TryResolvePlayerRuntimeMotion(out Vector3 playerPosition, out Vector3 playerVelocity))
+                RefreshPlayerRuntimeMotion(out Vector3 playerPosition, out Vector3 playerVelocity))
             {
                 if (TryResolveAupFromRuntimeOrigin(signal.PositionWS, out AbsoluteUniversePosition signalAup) &&
                     TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup) &&
@@ -5376,10 +5579,10 @@ namespace Hecton8.World
             massiveThreats[targetIndex] = new MassiveThreatData
             {
                 Position = signal.PositionWS,
-                InnerRadius = math.max(0.5f, signal.RadiusWS),
+                InnerRadius = safeSignalRadius,
                 PanicRadius = panicRadius,
                 Strength = 1f,
-                EndTime = absoluteSimulationTime + math.max(0.25f, signal.Duration),
+                EndTime = absoluteSimulationTime + safeDuration,
                 DirectionWS = inferredDirectionWS,
                 ThreatFlags = (uint)MassiveThreatFlags.None
             };
@@ -5390,7 +5593,7 @@ namespace Hecton8.World
             IFluidDecalPresentationSink fluidDecals = _abyssalFluidDecals;
             if ((_deepModeActive || _parasiteModeActive || _formationModeActive || _leviathanModeActive) && fluidDecals != null)
             {
-                float ruptureScale = SaturateFinite01(signal.RadiusWS * math.rcp(math.max(1f, deepBaitBallRadius * 2f)));
+                float ruptureScale = SaturateFinite01(safeSignalRadius * math.rcp(math.max(1f, deepBaitBallRadius * 2f)));
                 fluidDecals.RegisterRuptureFluid(signal.PositionWS, ruptureScale);
             }
 
@@ -5398,7 +5601,7 @@ namespace Hecton8.World
             Vector3 displacementDirection = headVelocitySq > 0.0001f
                 ? _leviathanHeadVelocityWS
                 : (signal.PositionWS - _fieldCenter);
-            TriggerFragmentation(signal.PositionWS, displacementDirection, signal.ExtremePanicRadiusWS, absoluteSimulationTime);
+            TriggerFragmentation(signal.PositionWS, displacementDirection, safeExtremePanicRadius, absoluteSimulationTime);
         }
 
         public void RegisterLeviathanThreatPulse(
@@ -5412,18 +5615,30 @@ namespace Hecton8.World
             if (!massiveThreats.IsCreated || threatCapacity == 0)
                 return;
 
+            if (!IsFiniteVector3(positionWS) ||
+                !float.IsFinite(panicRadiusWS) ||
+                !float.IsFinite(durationSeconds) ||
+                panicRadiusWS <= 0.001f ||
+                durationSeconds <= 0.001f)
+            {
+                return;
+            }
+
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
+            float safePanicRadius = ClampFinite(panicRadiusWS, 4f, MassiveThreatMaxRadiusMeters);
+            float safeDuration = ClampFinite(durationSeconds, 0.15f, MassiveThreatMaxDurationSeconds);
             int targetIndex = -1;
             float weakestEndTime = float.MaxValue;
             for (int i = 0; i < threatCapacity; i++)
             {
                 MassiveThreatData threat = massiveThreats[i];
-                if (threat.EndTime <= absoluteSimulationTime)
+                if (!TrySanitizeActiveMassiveThreat(in threat, absoluteSimulationTime, out threat))
                 {
                     targetIndex = i;
                     break;
                 }
 
+                massiveThreats[i] = threat;
                 if ((threat.ThreatFlags & (uint)MassiveThreatFlags.LeviathanHuntPulse) == 0u)
                 {
                     if (threat.EndTime < weakestEndTime)
@@ -5435,7 +5650,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                float mergeDistance = math.max(threat.PanicRadius, panicRadiusWS) * 0.35f;
+                float mergeDistance = math.max(threat.PanicRadius, safePanicRadius) * 0.35f;
                 if ((threat.Position - positionWS).sqrMagnitude <= mergeDistance * mergeDistance)
                 {
                     targetIndex = i;
@@ -5457,9 +5672,9 @@ namespace Hecton8.World
             {
                 Position = positionWS,
                 InnerRadius = math.max(0.5f, boidBodyRadius * 2f),
-                PanicRadius = math.max(4f, panicRadiusWS),
+                PanicRadius = safePanicRadius,
                 Strength = 1f,
-                EndTime = absoluteSimulationTime + math.max(0.15f, durationSeconds),
+                EndTime = absoluteSimulationTime + safeDuration,
                 DirectionWS = resolvedDirection,
                 ThreatFlags = (uint)MassiveThreatFlags.LeviathanHuntPulse
             };
@@ -5492,21 +5707,24 @@ namespace Hecton8.World
                 return;
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
+            float safePanicRadius = ClampFinite(panicRadiusWS, 3f, MassiveThreatMaxRadiusMeters);
+            float safeDuration = ClampFinite(durationSeconds, SwarmAcousticShockDurationSeconds, MassiveThreatMaxDurationSeconds);
             int targetIndex = -1;
             float weakestEndTime = float.MaxValue;
             for (int i = 0; i < threatCapacity; i++)
             {
                 MassiveThreatData threat = massiveThreats[i];
-                if (threat.EndTime <= absoluteSimulationTime)
+                if (!TrySanitizeActiveMassiveThreat(in threat, absoluteSimulationTime, out threat))
                 {
                     targetIndex = i;
                     break;
                 }
 
+                massiveThreats[i] = threat;
                 if ((threat.ThreatFlags & (uint)MassiveThreatFlags.LeviathanHuntPulse) != 0u)
                     continue;
 
-                float mergeDistance = math.max(threat.PanicRadius, panicRadiusWS) * 0.45f;
+                float mergeDistance = math.max(threat.PanicRadius, safePanicRadius) * 0.45f;
                 if ((threat.Position - positionWS).sqrMagnitude <= mergeDistance * mergeDistance)
                 {
                     targetIndex = i;
@@ -5528,9 +5746,9 @@ namespace Hecton8.World
             {
                 Position = positionWS,
                 InnerRadius = math.max(0.5f, boidBodyRadius * 1.5f),
-                PanicRadius = math.max(3f, panicRadiusWS),
+                PanicRadius = safePanicRadius,
                 Strength = clampedStrength01,
-                EndTime = absoluteSimulationTime + math.max(SwarmAcousticShockDurationSeconds, durationSeconds),
+                EndTime = absoluteSimulationTime + safeDuration,
                 DirectionWS = resolvedDirection,
                 ThreatFlags = 0u
             };
@@ -5557,6 +5775,11 @@ namespace Hecton8.World
                 return 0;
             }
 
+            Vector3 safeTelemetryCenterWS = IsFiniteVector3(biteCenterWS)
+                ? biteCenterWS
+                : IsFiniteVector3(_fieldCenter)
+                    ? _fieldCenter
+                    : Vector3.zero;
             if (_predatorConsumptionJobPending)
             {
                 if (DispatcherJobSwap.TryFinalizeCompleted(ref _predatorConsumptionHandle))
@@ -5565,7 +5788,7 @@ namespace Hecton8.World
                     int finalizedDrainCount = DrainPredatorKillSignals(_pendingPredatorConsumptionTimeSeconds);
                     RecordFoodChainTelemetry(
                         FoodChainTelemetryFlagKillJobCompleted | (finalizedDrainCount > 0 ? FoodChainTelemetryFlagKillDrained : 0u),
-                        biteCenterWS,
+                        safeTelemetryCenterWS,
                         predatorId,
                         0u);
                 }
@@ -5575,7 +5798,16 @@ namespace Hecton8.World
                 }
             }
 
-            float safeBiteRange = math.max(0.05f, biteRangeMeters);
+            if (!IsFiniteVector3(predatorPositionWS) ||
+                !IsFiniteVector3(biteCenterWS) ||
+                !float.IsFinite(biteRangeMeters) ||
+                !float.IsFinite(currentTimeSeconds) ||
+                biteRangeMeters <= 0.001f)
+            {
+                return 0;
+            }
+
+            float safeBiteRange = ClampFinite(biteRangeMeters, 0.05f, MassiveThreatMaxRadiusMeters);
             killSignalCount[0] = 0;
 
             var killJob = new PredatorBoidConsumptionJob
@@ -5714,6 +5946,12 @@ namespace Hecton8.World
 
         private void TryPublishFeedingFrenzyAcousticPing(Vector3 centroidWS, float currentTimeSeconds, int killCount)
         {
+            if (!IsFiniteVector3(centroidWS) ||
+                !float.IsFinite(currentTimeSeconds))
+            {
+                return;
+            }
+
             float safeTime = math.max(0f, currentTimeSeconds);
             if (_feedingFrenzyWindowStartTime < 0f ||
                 safeTime - _feedingFrenzyWindowStartTime > FeedingFrenzyWindowSeconds)
@@ -5745,18 +5983,28 @@ namespace Hecton8.World
 
         internal int RegisterWhaleFallScavengerBurst(Vector3 centerWS, uint sourceId, float currentTimeSeconds)
         {
-            var boidState = ResolveBoidState();
-            if (!boidState.IsCreated ||
-                _activeBoidCount <= 0 ||
-                _lastSimulationLodTier != SimulationLodTier.Full)
+            if (!IsFiniteVector3(centerWS) ||
+                !float.IsFinite(currentTimeSeconds))
             {
-                RegisterPredatorFearBurst(centerWS, Vector3.forward, WhaleFallScavengerRadiusMeters, 4f, 0.35f);
+                return 0;
+            }
+
+            var boidState = ResolveBoidState();
+            float hibernation01 = math.saturate(_lastSimulationHibernation01);
+            if (!boidState.IsCreated || _activeBoidCount <= 0)
+            {
+                RegisterPredatorFearBurst(
+                    centerWS,
+                    Vector3.forward,
+                    WhaleFallScavengerRadiusMeters,
+                    ResolveWhaleFallScavengerFearDuration(hibernation01),
+                    ResolveWhaleFallScavengerFearAmount(hibernation01));
                 RecordFoodChainTelemetry(FoodChainTelemetryFlagWhaleFall, centerWS, sourceId, 0u);
                 return 0;
             }
 
             int safeActiveCount = math.min(_activeBoidCount, boidState.Length);
-            int visualCount = math.clamp(WhaleFallScavengerVisualCount, 0, safeActiveCount);
+            int visualCount = ResolveWhaleFallScavengerVisualCount(safeActiveCount, hibernation01);
             if (visualCount <= 0)
                 return 0;
 
@@ -5787,21 +6035,54 @@ namespace Hecton8.World
             _fieldExtents = new Vector3(WhaleFallScavengerRadiusMeters * 1.35f, 2f, WhaleFallScavengerRadiusMeters * 1.35f);
             _renderBounds = new Bounds(_fieldCenter, _fieldExtents * 2f);
             _debugRenderBounds = _renderBounds;
-            RegisterPredatorFearBurst(centerWS, Vector3.forward, WhaleFallScavengerRadiusMeters, 2f, 0.2f);
+            RegisterPredatorFearBurst(
+                centerWS,
+                Vector3.forward,
+                WhaleFallScavengerRadiusMeters,
+                ResolveWhaleFallScavengerFearDuration(hibernation01),
+                ResolveWhaleFallScavengerFearAmount(hibernation01));
             RecordFoodChainTelemetry(FoodChainTelemetryFlagWhaleFall, centerWS, safeSourceId, 0u);
             return visualCount;
         }
 
+        private static int ResolveWhaleFallScavengerVisualCount(int safeActiveCount, float hibernation01)
+        {
+            if (safeActiveCount <= 0)
+                return 0;
+
+            float wake01 = math.lerp(
+                WhaleFallScavengerMinimumWake01,
+                1f,
+                ResolveWhaleFallScavengerActivity01(hibernation01));
+            int requestedCount = (int)math.round(WhaleFallScavengerVisualCount * wake01);
+            return math.clamp(requestedCount, 1, safeActiveCount);
+        }
+
+        private static float ResolveWhaleFallScavengerFearDuration(float hibernation01)
+        {
+            float activity01 = ResolveWhaleFallScavengerActivity01(hibernation01);
+            return math.lerp(WhaleFallDormantFearDurationSeconds, WhaleFallActiveFearDurationSeconds, activity01);
+        }
+
+        private static float ResolveWhaleFallScavengerFearAmount(float hibernation01)
+        {
+            float activity01 = ResolveWhaleFallScavengerActivity01(hibernation01);
+            return math.lerp(WhaleFallDormantFearAmount, WhaleFallActiveFearAmount, activity01);
+        }
+
+        private static float ResolveWhaleFallScavengerActivity01(float hibernation01)
+        {
+            float active01 = 1f - math.saturate(hibernation01);
+            return active01 * active01;
+        }
+
         private Vector3 ResolveWhaleFallGroundHuggingPosition(Vector3 positionWS)
         {
-            HectonMapMagicVegetationBridge vegetationBridge = _mapMagicVegetationBridge != null
-                ? _mapMagicVegetationBridge
-                : HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = _mapMagicVegetationBridge;
             if (vegetationBridge != null &&
                 vegetationBridge.TryGetCachedTerrainHeight(positionWS.x, positionWS.z, out float terrainHeight))
             {
                 positionWS.y = terrainHeight + WhaleFallScavengerGroundOffsetMeters;
-                _mapMagicVegetationBridge = vegetationBridge;
                 return positionWS;
             }
 
@@ -5818,7 +6099,7 @@ namespace Hecton8.World
             UploadSingleBoidToBuffer(_boidsBufferB, in boid, boidId);
         }
 
-        private static void UploadSingleBoidToBuffer(GraphicsBuffer buffer, in BoidData source, int boidId)
+        private void UploadSingleBoidToBuffer(GraphicsBuffer buffer, in BoidData source, int boidId)
         {
             if (buffer == null ||
                 boidId < 0 ||
@@ -5827,15 +6108,8 @@ namespace Hecton8.World
                 return;
             }
 
-            var mapped = buffer.LockBufferForWrite<BoidData>(boidId, 1);
-            try
-            {
-                mapped[0] = source;
-            }
-            finally
-            {
-                buffer.UnlockBufferAfterWrite<BoidData>(1);
-            }
+            _singleBoidUpload[0] = source;
+            buffer.SetData(_singleBoidUpload, 0, boidId, 1);
         }
 
         private void RecordFoodChainTelemetry(uint flags, Vector3 eventPositionWS, uint sourceHash, uint anomalyHash)
@@ -5917,6 +6191,21 @@ namespace Hecton8.World
                 math.isfinite(positionAup.LocalZ);
         }
 
+        private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition positionAup, out Vector3 runtimePosition)
+        {
+            runtimePosition = default;
+            if (!AbsoluteUniversePosition.IsFinite(in positionAup))
+                return false;
+
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            float3 runtimeFloat = AUPMath.ResolveCameraRelative(in positionAup, in runtimeOriginAup);
+            if (!math.all(math.isfinite(runtimeFloat)))
+                return false;
+
+            runtimePosition = ToVector3(runtimeFloat);
+            return IsFiniteVector3(runtimePosition);
+        }
+
         private void TryDumpFoodChainTelemetry(uint anomalyHash)
         {
             var foodChainTelemetryRing = ResolveSargassumVaultArray(in _foodChainTelemetryRingHandle, BufferID.SargassumFoodChainTelemetryRing, FoodChainTelemetryCapacity);
@@ -5924,28 +6213,46 @@ namespace Hecton8.World
                 return;
 
             _foodChainTelemetryDumped = true;
-            string dumpPath = Path.Combine(
-                Application.dataPath,
-                "..",
-                "Docs",
-                "AgentLogs",
-                "Dump_ECOSYSTEM_FOOD_CHAIN.bin");
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            try
             {
-                writer.Write(FoodChainTelemetryMagicLow);
-                writer.Write(FoodChainTelemetryMagicHigh);
-                writer.Write((uint)FoodChainTelemetryCapacity);
-                writer.Write((uint)FoodChainTelemetryEntrySizeBytes);
-                writer.Write((uint)_foodChainTelemetryCursor);
-                writer.Write(anomalyHash);
+                string dumpPath = Path.Combine(
+                    Application.dataPath,
+                    "..",
+                    "Docs",
+                    "AgentLogs",
+                    "Dump_ECOSYSTEM_FOOD_CHAIN.bin");
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
 
-                for (int i = 0; i < FoodChainTelemetryCapacity; i++)
-                    WriteFoodChainTelemetryEntry(writer, foodChainTelemetryRing[i]);
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(FoodChainTelemetryMagicLow);
+                    writer.Write(FoodChainTelemetryMagicHigh);
+                    writer.Write((uint)FoodChainTelemetryCapacity);
+                    writer.Write((uint)FoodChainTelemetryEntrySizeBytes);
+                    writer.Write((uint)_foodChainTelemetryCursor);
+                    writer.Write(anomalyHash);
+
+                    for (int i = 0; i < FoodChainTelemetryCapacity; i++)
+                        WriteFoodChainTelemetryEntry(writer, foodChainTelemetryRing[i]);
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (System.Security.SecurityException)
+            {
             }
         }
 
@@ -6100,7 +6407,7 @@ namespace Hecton8.World
                     Directory.CreateDirectory(directory);
 
                 int ringLength = math.min(boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(BoidSensoryBlackBoxMagicLow);
@@ -6121,6 +6428,15 @@ namespace Hecton8.World
             {
             }
             catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (System.Security.SecurityException)
             {
             }
         }
@@ -6158,10 +6474,11 @@ namespace Hecton8.World
             }
 
             _hitFlashOriginWS = originWS;
-            _hitFlashRuntimeRadius = math.max(0f, radiusMeters > 0.0001f ? radiusMeters : hitFlashRadiusMeters);
+            _hitFlashRuntimeRadius = radiusMeters > 0.0001f
+                ? ClampFinite(radiusMeters, 0f, MassiveThreatMaxRadiusMeters)
+                : ClampFinite(hitFlashRadiusMeters, 0f, MassiveThreatMaxRadiusMeters);
             _hitFlashRuntimeIntensity = clampedIntensity;
             _hitFlashStartTime = ResolveHitFlashShaderClockSeconds();
-            _hitFlashPropertiesDirty = true;
         }
 
         private static float ResolveHitFlashShaderClockSeconds()
@@ -6176,6 +6493,15 @@ namespace Hecton8.World
             float playerSpeed,
             float absoluteSimulationTime)
         {
+            if (!float.IsFinite(absoluteSimulationTime))
+            {
+                _fragmentationStartTime = float.NegativeInfinity;
+                _fragmentationExpireTime = float.NegativeInfinity;
+                _fragmentationHalfDistanceWS = 0f;
+                _debugFragmentation01 = 0f;
+                return;
+            }
+
             if (_playerTransportCoordinator != null &&
                 _playerTransportCoordinator.IsTransportActive() &&
                 playerSpeed >= panicPlayerSpeedThreshold)
@@ -6208,7 +6534,9 @@ namespace Hecton8.World
 
         private void UpdateSonarScatterState(float simulationDt, float absoluteSimulationTime)
         {
-            if (_sonarScatterStrength01 <= 0f || absoluteSimulationTime >= _sonarScatterExpireTime)
+            if (_sonarScatterStrength01 <= 0f ||
+                !float.IsFinite(absoluteSimulationTime) ||
+                absoluteSimulationTime >= _sonarScatterExpireTime)
             {
                 _sonarScatterStrength01 = 0f;
                 _sonarScatterWaveFrontWS = 0f;
@@ -6216,12 +6544,15 @@ namespace Hecton8.World
                 return;
             }
 
-            _sonarScatterWaveFrontWS += math.max(0f, simulationDt) * math.max(0.1f, activeSonarWaveSpeed);
+            _sonarScatterWaveFrontWS += ClampMinFinite(simulationDt, 0f) * ClampFinite(activeSonarWaveSpeed, 0.1f, 200f);
+            if (!float.IsFinite(_sonarScatterWaveFrontWS))
+                _sonarScatterWaveFrontWS = 0f;
         }
 
         private float ResolveFragmentationStrength01(float absoluteSimulationTime)
         {
-            if (absoluteSimulationTime >= _fragmentationExpireTime ||
+            if (!float.IsFinite(absoluteSimulationTime) ||
+                absoluteSimulationTime >= _fragmentationExpireTime ||
                 !float.IsFinite(_fragmentationExpireTime) ||
                 !float.IsFinite(_fragmentationStartTime))
                 return 0f;
@@ -6233,11 +6564,21 @@ namespace Hecton8.World
 
         private void TriggerFragmentation(Vector3 originWS, Vector3 dashVectorWS, float baseRadiusWS, float absoluteSimulationTime)
         {
-            float dashVectorSq = dashVectorWS.sqrMagnitude;
-            Vector3 dashDirection = dashVectorSq > 0.0001f ? FastNormalizeVector3(dashVectorWS, Vector3.forward) : Vector3.forward;
+            if (!IsFiniteVector3(originWS) ||
+                !float.IsFinite(baseRadiusWS) ||
+                !float.IsFinite(absoluteSimulationTime) ||
+                baseRadiusWS <= 0.001f)
+            {
+                return;
+            }
+
+            Vector3 safeDashVectorWS = IsFiniteVector3(dashVectorWS) ? dashVectorWS : Vector3.forward;
+            float dashVectorSq = safeDashVectorWS.sqrMagnitude;
+            Vector3 dashDirection = dashVectorSq > 0.0001f ? FastNormalizeVector3(safeDashVectorWS, Vector3.forward) : Vector3.forward;
             Vector3 splitAxis = ResolveApproxRight(dashDirection);
 
-            float offsetDistance = math.max(1f, baseRadiusWS * math.max(0.5f, fragmentationOffsetScale));
+            float safeBaseRadius = ClampFinite(baseRadiusWS, 1f, MassiveThreatMaxRadiusMeters);
+            float offsetDistance = math.max(1f, safeBaseRadius * math.max(0.5f, fragmentationOffsetScale));
             _fragmentationCenterAWS = originWS + splitAxis * offsetDistance;
             _fragmentationCenterBWS = originWS - splitAxis * offsetDistance;
             _fragmentationHalfDistanceWS = offsetDistance;
@@ -6286,10 +6627,14 @@ namespace Hecton8.World
                 return;
             }
 
-            Vector3 originWS = TryResolvePlayerRuntimePosition(out Vector3 playerPosition) ? playerPosition : _fieldCenter;
-            float maxFieldExtent = math.max(_fieldExtents.x, math.max(_fieldExtents.y, _fieldExtents.z));
-            float safeWaveSpeed = math.max(0.1f, activeSonarWaveSpeed);
-            float travelDistance = (maxFieldExtent * 2f) + math.max(0.25f, activeSonarWaveBandWidth);
+            Vector3 originWS = RefreshPlayerRuntimePosition(out Vector3 playerPosition) ? playerPosition : _fieldCenter;
+            if (!IsFiniteVector3(originWS))
+                return;
+
+            float maxFieldExtent = ClampFinite(math.max(_fieldExtents.x, math.max(_fieldExtents.y, _fieldExtents.z)), 1f, MassiveThreatMaxRadiusMeters);
+            float safeWaveSpeed = ClampFinite(activeSonarWaveSpeed, 0.1f, 200f);
+            float safeBandWidth = ClampFinite(activeSonarWaveBandWidth, 0.25f, 16f);
+            float travelDistance = (maxFieldExtent * 2f) + safeBandWidth;
 
             _sonarScatterOriginWS = originWS;
             _sonarScatterWaveFrontWS = 0f;
@@ -6323,12 +6668,16 @@ namespace Hecton8.World
                 return;
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
+            float safeRadius = ClampFinite(radiusWS, 1f, SensoryAcousticPingMaxRadiusMeters);
+            float safeDuration = ClampFinite(durationSeconds, 0.1f, MassiveThreatMaxDurationSeconds);
+            float previousStrength = SaturateFinite01(_acousticPanicStrength01);
+            float previousExpireTime = float.IsFinite(_acousticPanicExpireTime) ? _acousticPanicExpireTime : 0f;
             _acousticPanicOriginWS = originWS;
-            _acousticPanicRadiusWS = math.max(1f, radiusWS);
-            _acousticPanicStrength01 = math.max(_acousticPanicStrength01, clampedStrength);
+            _acousticPanicRadiusWS = safeRadius;
+            _acousticPanicStrength01 = math.max(previousStrength, clampedStrength);
             _acousticPanicExpireTime = math.max(
-                _acousticPanicExpireTime,
-                absoluteSimulationTime + math.max(0.1f, durationSeconds));
+                previousExpireTime,
+                absoluteSimulationTime + safeDuration);
             _acousticPanicSeed = seed != 0u ? seed : 0x9E3779B9u;
         }
 
@@ -6376,7 +6725,7 @@ namespace Hecton8.World
 
             _lastMaelstromThreatHash = hash;
             _nextMaelstromThreatRefreshTime = absoluteSimulationTime + MaelstromThreatRefreshSeconds;
-            float radius = math.clamp(maelstromMeta.y, 8f, 160f);
+            float radius = ClampFinite(maelstromMeta.y, 8f, 160f);
             for (int i = 0; i < count; i++)
             {
                 float4 maelstrom = maelstroms[i];
@@ -6384,7 +6733,7 @@ namespace Hecton8.World
                 if (!IsFiniteVector3(originWS))
                     continue;
 
-                float intensity01 = math.saturate(maelstrom.w * radius * 0.04f);
+                float intensity01 = SaturateFinite01(maelstrom.w * radius * 0.04f);
                 RegisterPredatorFearBurst(
                     originWS,
                     Vector3.forward,
@@ -6422,15 +6771,14 @@ namespace Hecton8.World
                 if (volume01 <= 0.01f)
                     continue;
 
-                float3 runtimePosition = signal.PositionAup.ToRuntimeFloat3();
-                if (!math.all(math.isfinite(runtimePosition)))
+                if (!TryResolveRuntimePosition(in signal.PositionAup, out Vector3 runtimePosition))
                     continue;
 
                 float velocitySq = math.isfinite(signal.VelocitySq) ? signal.VelocitySq : 0f;
                 float velocityGate = SaturateFinite01(velocitySq * (1f / 144f));
                 float radius = math.lerp(10f, 42f, velocityGate);
                 RegisterAcousticPanicBurst(
-                    ToVector3(runtimePosition),
+                    runtimePosition,
                     radius,
                     SwarmMovementPanicDurationSeconds,
                     volume01,
@@ -6442,7 +6790,7 @@ namespace Hecton8.World
         {
             ReadOnlySpan<AcousticPingSignal> pingSignals = SignalBus<AcousticPingSignal>.GetFrameSnapshot();
             int signalStart = math.max(0, pingSignals.Length - SwarmAcousticSignalConsumeLimit);
-            float shockDuration = math.max(SwarmAcousticShockDurationSeconds, simulationDt);
+            float shockDuration = ClampFinite(simulationDt, SwarmAcousticShockDurationSeconds, 0.5f);
             for (int i = signalStart; i < pingSignals.Length; i++)
             {
                 AcousticPingSignal signal = pingSignals[i];
@@ -6450,11 +6798,9 @@ namespace Hecton8.World
                 if (intensity01 <= 0.001f)
                     continue;
 
-                float3 runtimePosition = signal.PositionAup.ToRuntimeFloat3();
-                if (!math.all(math.isfinite(runtimePosition)))
+                if (!TryResolveRuntimePosition(in signal.PositionAup, out Vector3 originWS))
                     continue;
 
-                Vector3 originWS = ToVector3(runtimePosition);
                 float radius = math.clamp(math.isfinite(signal.RadiusMeters) ? signal.RadiusMeters : 0f, 12f, 120f);
                 RegisterPredatorFearBurst(originWS, Vector3.forward, radius, shockDuration, intensity01);
                 RegisterAcousticPanicBurst(originWS, radius, shockDuration, intensity01, signal.SourceId);
@@ -6487,7 +6833,7 @@ namespace Hecton8.World
             SwarmDispersedSignal signal = new SwarmDispersedSignal
             {
                 PositionAup = originAup,
-                RadiusMeters = math.max(1f, radiusWS),
+                RadiusMeters = ClampFinite(radiusWS, 1f, SensoryAcousticPingMaxRadiusMeters),
                 Intensity01 = SaturateFinite01(intensity01),
                 SourceId = resolvedSourceId,
                 EstimatedBoidCount = (ushort)math.clamp(_activeBoidCount, 0, (int)ushort.MaxValue),
@@ -6541,10 +6887,11 @@ namespace Hecton8.World
                 if (!_parasiteLatchReadbackRequest.hasError)
                 {
                     var latchData = _parasiteLatchReadbackRequest.GetData<int>();
+                    bool hasCompleteLatchStats = latchData.Length >= LatchStatsElementCount;
                     _reportedLatchedDroneCount = latchData.Length > LatchStatsLatchedCountIndex
                         ? math.clamp(latchData[LatchStatsLatchedCountIndex], 0, _activeBoidCount)
                         : 0;
-                    if (_reportedLatchedDroneCount > 0 && latchData.Length >= LatchStatsElementCount)
+                    if (_reportedLatchedDroneCount > 0 && hasCompleteLatchStats)
                     {
                         float divisor = LatchStatsQuantize * math.max(1, _reportedLatchedDroneCount);
                         _reportedParasiteCenterOfMassLS = new Vector3(
@@ -6557,7 +6904,7 @@ namespace Hecton8.World
                         _reportedParasiteCenterOfMassLS = Vector3.zero;
                     }
 
-                    Vector3 playerPosition = TryResolvePlayerRuntimePosition(out Vector3 resolvedPlayerPosition) ? resolvedPlayerPosition : _fieldCenter;
+                    Vector3 playerPosition = RefreshPlayerRuntimePosition(out Vector3 resolvedPlayerPosition) ? resolvedPlayerPosition : _fieldCenter;
                     if (_reportedLatchedDroneCount >= parasiteHarvesterLatchThreshold &&
                         TryResolveNearestHarvesterAnchor(playerPosition, out Vector3 harvesterAnchorWS))
                     {
@@ -6569,10 +6916,10 @@ namespace Hecton8.World
                     }
 
                     _debugLatchedDroneCount = _reportedLatchedDroneCount;
-                    _debugParasiteCenterOfMassLS = _reportedParasiteCenterOfMassLS;
-                    _debugParasiteHarvesterPullWS = _reportedParasiteHarvesterPullWS;
+                        _debugParasiteCenterOfMassLS = _reportedParasiteCenterOfMassLS;
+                        _debugParasiteHarvesterPullWS = _reportedParasiteHarvesterPullWS;
 
-                    _reportedWakeFleeCount = latchData.Length > LatchStatsWakeCountIndex
+                    _reportedWakeFleeCount = hasCompleteLatchStats
                         ? math.clamp(latchData[LatchStatsWakeCountIndex], 0, _activeBoidCount)
                         : 0;
                     if (_reportedWakeFleeCount >= WakeMinimumFleeBoids)
@@ -6647,7 +6994,7 @@ namespace Hecton8.World
             _parasiteLatchReadbackTimer -= math.max(0f, dt);
         }
 
-        private void TryRequestParasiteLatchReadback()
+        private void TryRequestParasiteLatchReadback(float hibernation01)
         {
             if (_parasiteLatchReadbackPending ||
                 _latchStatsBuffer == null ||
@@ -6658,7 +7005,7 @@ namespace Hecton8.World
 
             _parasiteLatchReadbackRequest = AsyncGPUReadback.Request(_latchStatsBuffer);
             _parasiteLatchReadbackPending = true;
-            _parasiteLatchReadbackTimer = parasiteLatchReadbackInterval;
+            _parasiteLatchReadbackTimer = ResolveLatchStatsReadbackInterval(hibernation01);
         }
 
         private void ApplyParasiteEnvironmentalDrag()
@@ -6685,7 +7032,7 @@ namespace Hecton8.World
 
         private void ApplyLeviathanPhysicalStrike()
         {
-            if ((_playerMovement == null && _playerHealth == null) || _leviathanStrikeCooldownTimer > 0f || !TryResolvePlayerRuntimePosition(out Vector3 playerPosition))
+            if ((_playerMovement == null && _playerHealth == null) || _leviathanStrikeCooldownTimer > 0f || !RefreshPlayerRuntimePosition(out Vector3 playerPosition))
                 return;
 
             Vector3 toPlayer = playerPosition - _leviathanHeadPositionWS;
@@ -6880,15 +7227,30 @@ namespace Hecton8.World
         {
             if (_latchStatsBuffer == null || boidCompute == null || _clearStatsKernelIndex < 0)
                 return;
+            if (_clearStatsDispatchGroupCount <= 0)
+            {
+                DisableComputeDispatch(ComputeDisableReasonDispatchGroupLimit);
+                return;
+            }
 
-            boidCompute.Dispatch(_clearStatsKernelIndex, 1, 1, 1);
+            boidCompute.Dispatch(_clearStatsKernelIndex, _clearStatsDispatchGroupCount, 1, 1);
         }
 
-        private bool ShouldCollectLatchStats(SimulationLodTier simulationLodTier, bool leaderFollowerSchooling)
+        private bool ShouldCollectLatchStats(SimulationLodTier simulationLodTier, bool leaderFollowerSchooling, bool shouldRender)
         {
-            return simulationLodTier == SimulationLodTier.Full &&
+            return simulationLodTier != SimulationLodTier.Sleep &&
                    !leaderFollowerSchooling &&
-                   _latchStatsBuffer != null;
+                   _latchStatsBuffer != null &&
+                   !_parasiteLatchReadbackPending &&
+                   _parasiteLatchReadbackTimer <= 0f &&
+                   (shouldRender || _parasiteModeActive);
+        }
+
+        private float ResolveLatchStatsReadbackInterval(float hibernation01)
+        {
+            float baseInterval = math.max(0.05f, parasiteLatchReadbackInterval);
+            float hibernation = math.saturate(hibernation01);
+            return baseInterval * math.lerp(1f, 4f, hibernation * hibernation);
         }
 
         private void UpdateSpatialGridLayout()
@@ -6917,12 +7279,12 @@ namespace Hecton8.World
             int resolutionZ = math.clamp(CeilToIntPositive((fieldMax.z - _spatialGridOriginWS.z) / _spatialGridCellSizeWS), 1, SpatialGridMaxAxisResolution);
             _spatialGridResolution = new Vector3Int(resolutionX, resolutionY, resolutionZ);
             int cellCount = resolutionX * resolutionY * resolutionZ;
-            _clearSpatialGridDispatchGroupCount = math.max(1, CeilDivPositive(cellCount, SpatialGridClearThreadGroupSize));
+            _clearSpatialGridDispatchGroupCount = CeilDivPositive(cellCount, (int)_clearSpatialGridThreadGroupSizeX);
         }
 
         private void DispatchClearSpatialGrid()
         {
-            if (boidCompute == null || _clearSpatialGridKernelIndex < 0 || _spatialGridCountBuffer == null)
+            if (boidCompute == null || _clearSpatialGridKernelIndex < 0 || _spatialGridCountBuffer == null || _clearSpatialGridDispatchGroupCount <= 0)
                 return;
 
             boidCompute.Dispatch(_clearSpatialGridKernelIndex, _clearSpatialGridDispatchGroupCount, 1, 1);
@@ -6930,15 +7292,15 @@ namespace Hecton8.World
 
         private void DispatchClearPbdCorrections()
         {
-            if (boidCompute == null || _clearPbdCorrectionsKernelIndex < 0 || _pbdCorrectionBuffer == null)
+            if (boidCompute == null || _clearPbdCorrectionsKernelIndex < 0 || _pbdCorrectionBuffer == null || _clearPbdCorrectionsDispatchGroupCount <= 0)
                 return;
 
-            boidCompute.Dispatch(_clearPbdCorrectionsKernelIndex, _dispatchGroupCount, 1, 1);
+            boidCompute.Dispatch(_clearPbdCorrectionsKernelIndex, _clearPbdCorrectionsDispatchGroupCount, 1, 1);
         }
 
-        private float ResolveCameraDistanceSq()
+        private float RefreshCameraDistanceSq()
         {
-            if (!TryResolveApproxViewPose(out Vector3 cameraPosition, out _))
+            if (!RefreshApproxViewPoseCache(out Vector3 cameraPosition, out _))
                 return 0f;
 
             if (!TryResolveAupFromRuntimeOrigin(_renderBounds.center, out AbsoluteUniversePosition boundsAup) ||
@@ -6948,10 +7310,13 @@ namespace Hecton8.World
             }
 
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in boundsAup, in cameraAup);
-            return distanceSq >= float.MaxValue ? float.MaxValue : (float)math.max(0d, distanceSq);
+            if (!double.IsFinite(distanceSq) || distanceSq <= 0d)
+                return 0f;
+
+            return distanceSq >= float.MaxValue ? float.MaxValue : (float)distanceSq;
         }
 
-        private bool TryConsumeSimulationStep(
+        private bool ConsumeSimulationStep(
             float frameDeltaTime,
             float cameraDistanceSq,
             out float simulationDeltaTime,
@@ -6963,12 +7328,15 @@ namespace Hecton8.World
             if (foveatedSimulationFront.IsCreated && foveatedSimulationFront.Length > 0)
                 decision = foveatedSimulationFront[0];
 
-            simulationDeltaTime = math.max(0f, decision.SimulationDeltaTime);
-            hibernation01 = math.saturate(decision.Hibernation01);
+            float safeMaxStepSeconds = ClampFinite(hibernationMaxStepSeconds, 1f / 60f, 0.5f);
+            simulationDeltaTime = ClampFinite(decision.SimulationDeltaTime, 0f, safeMaxStepSeconds);
+            hibernation01 = SaturateFinite01(decision.Hibernation01);
             simulationLodTier = (SimulationLodTier)math.clamp(decision.Tier, (int)SimulationLodTier.Full, (int)SimulationLodTier.Sleep);
             _sleepVelocityWritePending = simulationLodTier == SimulationLodTier.Sleep && _lastSimulationLodTier != SimulationLodTier.Sleep;
             _lastSimulationLodTier = simulationLodTier;
-            ScheduleFoveatedSimulationDecision(frameDeltaTime, cameraDistanceSq, decision.Accumulator);
+            _lastSimulationHibernation01 = hibernation01;
+            float safePreviousAccumulator = ClampFinite(decision.Accumulator, 0f, safeMaxStepSeconds);
+            ScheduleFoveatedSimulationDecision(frameDeltaTime, cameraDistanceSq, safePreviousAccumulator);
             return decision.DispatchSimulation != 0 && simulationDeltaTime > 0f;
         }
 
@@ -6977,7 +7345,7 @@ namespace Hecton8.World
             if (_activeBoidCount <= 0)
                 return false;
 
-            if (!TryResolveApproxViewPose(out _, out _))
+            if (!RefreshApproxViewPoseCache(out _, out _))
                 return true;
 
             float maxDistanceSq = simulationCullDistance * simulationCullDistance;
@@ -7003,7 +7371,7 @@ namespace Hecton8.World
 
         private bool IsRenderBoundsInsideApproxViewCone()
         {
-            if (!TryResolveApproxViewPose(out Vector3 cameraPosition, out Vector3 cameraForward))
+            if (!RefreshApproxViewPoseCache(out Vector3 cameraPosition, out Vector3 cameraForward))
                 return true;
 
             Vector3 toCenter = _renderBounds.center - cameraPosition;
@@ -7021,7 +7389,7 @@ namespace Hecton8.World
             return dot + radiusPadding >= RenderConeCullDotThreshold;
         }
 
-        private bool TryResolveApproxViewPose(out Vector3 cameraPosition, out Vector3 cameraForward)
+        private bool RefreshApproxViewPoseCache(out Vector3 cameraPosition, out Vector3 cameraForward)
         {
             int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_viewPoseCacheFrame == currentFrame)
@@ -7032,15 +7400,15 @@ namespace Hecton8.World
             }
 
             _viewPoseCacheFrame = currentFrame;
-            _viewPoseCacheValid = TryResolveApproxViewPoseUncached(out _viewPoseCachePosition, out _viewPoseCacheForward);
+            _viewPoseCacheValid = BuildApproxViewPoseUncached(out _viewPoseCachePosition, out _viewPoseCacheForward);
             cameraPosition = _viewPoseCachePosition;
             cameraForward = _viewPoseCacheForward;
             return _viewPoseCacheValid;
         }
 
-        private bool TryResolveApproxViewPoseUncached(out Vector3 cameraPosition, out Vector3 cameraForward)
+        private bool BuildApproxViewPoseUncached(out Vector3 cameraPosition, out Vector3 cameraForward)
         {
-            if (TryResolvePlayerRuntimeSnapshot(
+            if (RefreshPlayerRuntimeSnapshotCache(
                     out PlayerMovementRuntimeState movementState,
                     out PlayerLookState lookState) &&
                 (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
@@ -7070,7 +7438,7 @@ namespace Hecton8.World
             return false;
         }
 
-        private bool TryResolvePlayerRuntimeSnapshot(
+        private bool RefreshPlayerRuntimeSnapshotCache(
             out PlayerMovementRuntimeState movementState,
             out PlayerLookState lookState)
         {
@@ -7078,11 +7446,13 @@ namespace Hecton8.World
             if (_playerRuntimeSnapshotCacheFrame != currentFrame)
             {
                 _playerRuntimeSnapshotCacheFrame = currentFrame;
-                if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                    runtimeContext != null)
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+                bool hasMovement = playerContext != null &&
+                                   playerContext.TryGetMovementRuntimeState(out _playerRuntimeSnapshotMovement);
+                bool hasLook = playerContext != null &&
+                               playerContext.TryGetLookRuntimeState(out _playerRuntimeSnapshotLook);
+                if (hasMovement || hasLook)
                 {
-                    _playerRuntimeSnapshotMovement = runtimeContext.MovementState;
-                    _playerRuntimeSnapshotLook = runtimeContext.LookState;
                     _playerRuntimeSnapshotCacheValid = true;
                 }
                 else
@@ -7130,11 +7500,14 @@ namespace Hecton8.World
             for (int i = 0; i < threatCapacity; i++)
             {
                 MassiveThreatData threat = massiveThreats[i];
-                if (threat.EndTime <= absoluteSimulationTime)
+                if (!TrySanitizeActiveMassiveThreat(in threat, absoluteSimulationTime, out MassiveThreatData safeThreat))
                     continue;
 
                 if (writeIndex != i)
-                    massiveThreats[writeIndex] = threat;
+                    massiveThreats[writeIndex] = safeThreat;
+                else
+                    massiveThreats[i] = safeThreat;
+
                 writeIndex++;
             }
 
@@ -7143,6 +7516,41 @@ namespace Hecton8.World
 
             _activeMassiveThreatCount = writeIndex;
             _debugMassiveThreatCount = _activeMassiveThreatCount;
+        }
+
+        private static bool TrySanitizeActiveMassiveThreat(
+            in MassiveThreatData source,
+            float absoluteSimulationTime,
+            out MassiveThreatData safeThreat)
+        {
+            safeThreat = default;
+            if (!float.IsFinite(absoluteSimulationTime) ||
+                !IsFiniteVector3(source.Position) ||
+                !float.IsFinite(source.InnerRadius) ||
+                !float.IsFinite(source.PanicRadius) ||
+                !float.IsFinite(source.Strength) ||
+                !float.IsFinite(source.EndTime))
+            {
+                return false;
+            }
+
+            float remainingSeconds = source.EndTime - absoluteSimulationTime;
+            if (!float.IsFinite(remainingSeconds) || remainingSeconds <= 0.001f)
+                return false;
+
+            float strength01 = SaturateFinite01(source.Strength);
+            if (strength01 <= 0.0001f)
+                return false;
+
+            float innerRadius = ClampFinite(source.InnerRadius, 0.5f, MassiveThreatMaxRadiusMeters);
+            float panicRadius = ClampFinite(source.PanicRadius, innerRadius, MassiveThreatMaxRadiusMeters);
+            safeThreat = source;
+            safeThreat.InnerRadius = innerRadius;
+            safeThreat.PanicRadius = panicRadius;
+            safeThreat.Strength = strength01;
+            safeThreat.EndTime = absoluteSimulationTime + ClampFinite(remainingSeconds, 0.001f, MassiveThreatMaxDurationSeconds);
+            safeThreat.DirectionWS = FastNormalizeVector3(source.DirectionWS, Vector3.forward);
+            return true;
         }
 
         private void RefreshRenderScaleCache()
@@ -7155,10 +7563,10 @@ namespace Hecton8.World
             _cachedRenderLayer = gameObject.layer;
         }
 
-        private bool EnsureBoidIndirectArgsBuffer()
+        private bool TryEnsureBoidIndirectArgsBufferCold()
         {
             if (_boidIndirectArgsBuffer != null)
-                return true;
+                return false;
 
             _boidIndirectArgsBuffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
@@ -7170,9 +7578,14 @@ namespace Hecton8.World
             return _boidIndirectArgsBuffer != null;
         }
 
+        private bool HasBoidIndirectArgsBufferReady()
+        {
+            return _boidIndirectArgsBuffer != null;
+        }
+
         private bool UploadBoidIndirectArgs(Mesh mesh, int instanceCount)
         {
-            if (mesh == null || instanceCount <= 0 || !EnsureBoidIndirectArgsBuffer())
+            if (mesh == null || instanceCount <= 0 || !HasBoidIndirectArgsBufferReady())
                 return false;
 
             if (_boidIndirectArgsMesh == mesh && _boidIndirectArgsInstanceCount == instanceCount)
@@ -7200,39 +7613,8 @@ namespace Hecton8.World
             return true;
         }
 
-        private void UploadHitFlashPropertiesIfNeeded()
+        private void BindBoidRenderProperties(Material renderMaterial, GraphicsBuffer currentBuffer, bool vatEnabled)
         {
-            if (!_hitFlashPropertiesDirty || _materialPropertyBlock == null)
-                return;
-
-            _materialPropertyBlock.SetFloat(_HitFlashStartTimeId, _hitFlashStartTime);
-            _materialPropertyBlock.SetFloat(_HitFlashDurationId, hitFlashDurationSeconds);
-            _materialPropertyBlock.SetFloat(_HitFlashIntensityId, _hitFlashRuntimeIntensity);
-            _materialPropertyBlock.SetFloat(_HitFlashRadiusId, _hitFlashRuntimeRadius);
-            _materialPropertyBlock.SetFloat(_HitFlashBloatId, hitFlashBloatMeters);
-            float hitFlashInvRadiusSq = _hitFlashRuntimeRadius > 0.0001f ? 1f / (_hitFlashRuntimeRadius * _hitFlashRuntimeRadius) : 0f;
-            _materialPropertyBlock.SetVector(_HitFlashOriginWSId, new Vector4(_hitFlashOriginWS.x, _hitFlashOriginWS.y, _hitFlashOriginWS.z, hitFlashInvRadiusSq));
-            _materialPropertyBlock.SetColor(_HitFlashColorId, hitFlashColor);
-            _hitFlashPropertiesDirty = false;
-        }
-
-        private bool ShouldUploadRenderFloat(float value, ref float cachedValue)
-        {
-            if (!_renderPropertiesDirty && cachedValue == value)
-                return false;
-
-            cachedValue = value;
-            return true;
-        }
-
-        private void UploadBoidRenderPropertiesIfNeeded(GraphicsBuffer currentBuffer, bool vatEnabled)
-        {
-            if (_renderPropertiesDirty || !ReferenceEquals(_renderPropertiesBoidBuffer, currentBuffer))
-            {
-                _materialPropertyBlock.SetBuffer(_BoidsBufferId, currentBuffer);
-                _renderPropertiesBoidBuffer = currentBuffer;
-            }
-
             float parasiteMode = _parasiteModeActive ? 1f : 0f;
             float parasiteAggression = _debugParasiteAggression01;
             float velocitySleepScale = _debugHibernation01 >= 0.999f ? 0f : 1f;
@@ -7241,58 +7623,46 @@ namespace Hecton8.World
             float vatFrameCount = vatEnabled ? boidVatFrameCount : 1f;
             float vatVertexCount = _boidMeshVertexCount;
             float vatPositionScale = boidVatPositionScale * _cachedVatSwayAmplitudeScale;
+            float hitFlashInvRadiusSq = _hitFlashRuntimeRadius > 0.0001f ? 1f / (_hitFlashRuntimeRadius * _hitFlashRuntimeRadius) : 0f;
 
-            if (ShouldUploadRenderFloat(parasiteMode, ref _renderPropertiesParasiteMode))
-                _materialPropertyBlock.SetFloat(_ParasiteModeId, parasiteMode);
-            if (ShouldUploadRenderFloat(parasiteAggression, ref _renderPropertiesParasiteAggression))
-                _materialPropertyBlock.SetFloat(_ParasiteAggressionId, parasiteAggression);
-            if (ShouldUploadRenderFloat(velocitySleepScale, ref _renderPropertiesVelocitySleepScale))
-                _materialPropertyBlock.SetFloat(_VelocitySleepScaleId, velocitySleepScale);
-            if (ShouldUploadRenderFloat(lodDitherKeep01, ref _renderPropertiesLodDitherKeep01))
-                _materialPropertyBlock.SetFloat(_LodDitherKeep01Id, lodDitherKeep01);
-            if (ShouldUploadRenderFloat(vatEnabledFloat, ref _renderPropertiesVatEnabled))
-                _materialPropertyBlock.SetFloat(_VatEnabledId, vatEnabledFloat);
-            if (ShouldUploadRenderFloat(vatFrameCount, ref _renderPropertiesVatFrameCount))
-                _materialPropertyBlock.SetFloat(_VatFrameCountId, vatFrameCount);
-            if (ShouldUploadRenderFloat(vatVertexCount, ref _renderPropertiesVatVertexCount))
-                _materialPropertyBlock.SetFloat(_VatVertexCountId, vatVertexCount);
-            if (ShouldUploadRenderFloat(boidVatPlaybackSpeed, ref _renderPropertiesVatPlaybackSpeed))
-                _materialPropertyBlock.SetFloat(_VatPlaybackSpeedId, boidVatPlaybackSpeed);
-            if (ShouldUploadRenderFloat(boidVatInstancePhaseScale, ref _renderPropertiesVatInstancePhaseScale))
-                _materialPropertyBlock.SetFloat(_VatInstancePhaseScaleId, boidVatInstancePhaseScale);
-            if (ShouldUploadRenderFloat(vatPositionScale, ref _renderPropertiesVatPositionScale))
-                _materialPropertyBlock.SetFloat(_VatPositionScaleId, vatPositionScale);
-            if (ShouldUploadRenderFloat(boidVatNormalBlend, ref _renderPropertiesVatNormalBlend))
-                _materialPropertyBlock.SetFloat(_VatNormalBlendId, boidVatNormalBlend);
-            if (ShouldUploadRenderFloat(_simulationInterpolationAlpha, ref _renderPropertiesSimulationInterpolationAlpha))
-                _materialPropertyBlock.SetFloat(_SimulationInterpolationAlphaId, _simulationInterpolationAlpha);
+            renderMaterial.SetBuffer(_BoidsBufferId, currentBuffer);
+            renderMaterial.SetFloat(_ParasiteModeId, parasiteMode);
+            renderMaterial.SetFloat(_ParasiteAggressionId, parasiteAggression);
+            renderMaterial.SetFloat(_VelocitySleepScaleId, velocitySleepScale);
+            renderMaterial.SetFloat(_LodDitherKeep01Id, lodDitherKeep01);
+            renderMaterial.SetFloat(_VatEnabledId, vatEnabledFloat);
+            renderMaterial.SetFloat(_VatFrameCountId, vatFrameCount);
+            renderMaterial.SetFloat(_VatVertexCountId, vatVertexCount);
+            renderMaterial.SetFloat(_VatPlaybackSpeedId, boidVatPlaybackSpeed);
+            renderMaterial.SetFloat(_VatInstancePhaseScaleId, boidVatInstancePhaseScale);
+            renderMaterial.SetFloat(_VatPositionScaleId, vatPositionScale);
+            renderMaterial.SetFloat(_VatNormalBlendId, boidVatNormalBlend);
+            renderMaterial.SetFloat(_SimulationInterpolationAlphaId, _simulationInterpolationAlpha);
+            renderMaterial.SetFloat(_HitFlashStartTimeId, _hitFlashStartTime);
+            renderMaterial.SetFloat(_HitFlashDurationId, hitFlashDurationSeconds);
+            renderMaterial.SetFloat(_HitFlashIntensityId, _hitFlashRuntimeIntensity);
+            renderMaterial.SetFloat(_HitFlashRadiusId, _hitFlashRuntimeRadius);
+            renderMaterial.SetFloat(_HitFlashBloatId, hitFlashBloatMeters);
+            renderMaterial.SetVector(_HitFlashOriginWSId, new Vector4(_hitFlashOriginWS.x, _hitFlashOriginWS.y, _hitFlashOriginWS.z, hitFlashInvRadiusSq));
+            renderMaterial.SetColor(_HitFlashColorId, hitFlashColor);
 
             if (vatEnabled)
             {
-                if (_renderPropertiesDirty || _renderPropertiesVatPositionTexture != boidVatPositionTexture)
-                {
-                    _materialPropertyBlock.SetTexture(_VatPositionTexId, boidVatPositionTexture);
-                    _renderPropertiesVatPositionTexture = boidVatPositionTexture;
-                }
-
-                if (_renderPropertiesDirty || _renderPropertiesVatNormalTexture != boidVatNormalTexture)
-                {
-                    _materialPropertyBlock.SetTexture(_VatNormalTexId, boidVatNormalTexture);
-                    _renderPropertiesVatNormalTexture = boidVatNormalTexture;
-                }
+                renderMaterial.SetTexture(_VatPositionTexId, boidVatPositionTexture);
+                renderMaterial.SetTexture(_VatNormalTexId, boidVatNormalTexture);
             }
 
-            _renderPropertiesDirty = false;
         }
 
         private void RenderCurrentBuffer()
         {
             GraphicsBuffer currentBuffer = _frameParity == 0 ? _boidsBufferA : _boidsBufferB;
+            Material renderMaterial = _boidRuntimeMaterial;
             if (_activeBoidCount <= 0 ||
                 currentBuffer == null ||
                 boidMesh == null ||
-                boidMaterial == null ||
-                _materialPropertyBlock == null)
+                renderMaterial == null ||
+                !ReferenceEquals(_boidRuntimeMaterialSource, boidMaterial))
             {
                 return;
             }
@@ -7300,17 +7670,15 @@ namespace Hecton8.World
             bool vatEnabled = boidVatPositionTexture != null &&
                               boidVatNormalTexture != null &&
                               boidVatFrameCount > 1;
-            UploadBoidRenderPropertiesIfNeeded(currentBuffer, vatEnabled);
-            UploadHitFlashPropertiesIfNeeded();
+            BindBoidRenderProperties(renderMaterial, currentBuffer, vatEnabled);
 
             if (!UploadBoidIndirectArgs(boidMesh, _activeBoidCount))
                 return;
 
             int targetLayer = useGameObjectLayer ? _cachedRenderLayer : 0;
-            RenderParams renderParams = new RenderParams(boidMaterial)
+            RenderParams renderParams = new RenderParams(renderMaterial)
             {
                 worldBounds = _renderBounds,
-                matProps = _materialPropertyBlock,
                 shadowCastingMode = shadowCastingMode,
                 receiveShadows = false,
                 layer = targetLayer,
@@ -7357,6 +7725,8 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterSargassumMicroFaunaRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.SargassumMicroFauna, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -7365,6 +7735,9 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.UnregisterSargassumMicroFaunaRuntime(this);
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
+
             _serviceRegistered = false;
         }
 
@@ -7437,17 +7810,12 @@ namespace Hecton8.World
             _computeStaticBuffersBound = false;
             _boidIndirectArgsMesh = null;
             _boidIndirectArgsInstanceCount = -1;
-            _renderPropertiesBoidBuffer = null;
-            _renderPropertiesVatPositionTexture = null;
-            _renderPropertiesVatNormalTexture = null;
             if (_fallbackAbyssalFlowTexture != null)
             {
                 Destroy(_fallbackAbyssalFlowTexture);
                 _fallbackAbyssalFlowTexture = null;
                 _boundAbyssalFlowTexture = null;
             }
-            _renderPropertiesDirty = true;
-            _hitFlashPropertiesDirty = true;
         }
 
         private void CompletePendingReadbackAndReleaseBuffers()
@@ -7456,6 +7824,9 @@ namespace Hecton8.World
             JobHandle disposeDependency = CancelPendingLeviathanNodeBuildForDispose();
             if (_parasiteLatchReadbackPending)
             {
+                if (!_parasiteLatchReadbackRequest.done)
+                    _parasiteLatchReadbackRequest.WaitForCompletion();
+
                 _parasiteLatchReadbackPending = false;
                 _parasiteLatchReadbackRequest = default;
             }
@@ -7517,25 +7888,23 @@ namespace Hecton8.World
 
         private void PrimeFoveatedSimulationDecision(float frameDeltaTime, float cameraDistanceSq)
         {
-            IDataVault vault = _dataVault;
-            EnsureSargassumVaultGenerationHandle(vault, ref _foveatedSimulationInputHandle, BufferID.SargassumFoveatedSimulationInput, 1);
-            EnsureSargassumVaultGenerationHandle(vault, ref _foveatedSimulationFrontHandle, BufferID.SargassumFoveatedSimulationFront, 1);
-            EnsureSargassumVaultGenerationHandle(vault, ref _foveatedSimulationBackHandle, BufferID.SargassumFoveatedSimulationBack, 1);
             PopulateFoveatedSimulationInput(frameDeltaTime, cameraDistanceSq, previousAccumulator: 0f);
             var foveatedSimulationInput = ResolveSargassumVaultArray(in _foveatedSimulationInputHandle, BufferID.SargassumFoveatedSimulationInput, 1);
             var foveatedSimulationBack = ResolveSargassumVaultArray(in _foveatedSimulationBackHandle, BufferID.SargassumFoveatedSimulationBack, 1);
-            if (!foveatedSimulationInput.IsCreated || !foveatedSimulationBack.IsCreated)
-                return;
-
-            var primeJob = new EvaluateSimulationLodJob
+            if (!foveatedSimulationInput.IsCreated ||
+                !foveatedSimulationBack.IsCreated ||
+                foveatedSimulationInput.Length <= 0 ||
+                foveatedSimulationBack.Length <= 0)
             {
-                Input = foveatedSimulationInput,
-                Output = foveatedSimulationBack
-            };
+                return;
+            }
 
-            // COLD DIRECT KERNEL: prime the foveated LOD front buffer before the first runtime Tick without a synchronous job-dispatch barrier.
-            primeJob.Execute();
+            FoveatedSimulationInput input = foveatedSimulationInput[0];
+            FoveatedSimulationDecision decision = EvaluateFoveatedSimulationDecision(in input);
+            foveatedSimulationBack[0] = decision;
+            _lastSimulationHibernation01 = SaturateFinite01(decision.Hibernation01);
             (_foveatedSimulationFrontHandle, _foveatedSimulationBackHandle) = (_foveatedSimulationBackHandle, _foveatedSimulationFrontHandle);
+            _foveatedSimulationHandle = default;
             _foveatedSimulationScheduled = false;
         }
 
@@ -7547,14 +7916,14 @@ namespace Hecton8.World
 
             foveatedSimulationInput[0] = new FoveatedSimulationInput
             {
-                FrameDeltaTime = math.max(0f, frameDeltaTime),
-                CameraDistanceSq = math.max(0f, cameraDistanceSq),
-                FullDistanceMeters = hibernationStartDistance,
-                SleepDistanceMeters = simulationCullDistance,
-                MaxStepSeconds = hibernationMaxStepSeconds,
-                MinTimeScale = hibernationMinTimeScale,
-                PreviousAccumulator = math.max(0f, previousAccumulator),
-                Padding = 0f
+                FrameDeltaTime = ClampMinFinite(frameDeltaTime, 0f),
+                CameraDistanceSq = ClampMinFinite(cameraDistanceSq, 0f),
+                FullDistanceMeters = ClampFinite(hibernationStartDistance, FullSimulationDistanceMeters, SleepSimulationDistanceMeters),
+                SleepDistanceMeters = ClampFinite(simulationCullDistance, FullSimulationDistanceMeters + 0.01f, SleepSimulationDistanceMeters * 4f),
+                MaxStepSeconds = ClampFinite(hibernationMaxStepSeconds, 1f / 60f, 0.5f),
+                MinTimeScale = ClampFinite(hibernationMinTimeScale, 0.1f, 1f),
+                PreviousAccumulator = ClampFinite(previousAccumulator, 0f, 0.5f),
+                PreviousTier = (int)_lastSimulationLodTier
             };
         }
 
@@ -7574,13 +7943,11 @@ namespace Hecton8.World
             }
 
             PopulateFoveatedSimulationInput(frameDeltaTime, cameraDistanceSq, previousAccumulator);
-            var job = new EvaluateSimulationLodJob
-            {
-                Input = foveatedSimulationInput,
-                Output = foveatedSimulationBack
-            };
-            _foveatedSimulationHandle = job.Schedule();
-            _foveatedSimulationScheduled = true;
+            FoveatedSimulationInput input = foveatedSimulationInput[0];
+            foveatedSimulationBack[0] = EvaluateFoveatedSimulationDecision(in input);
+            (_foveatedSimulationFrontHandle, _foveatedSimulationBackHandle) = (_foveatedSimulationBackHandle, _foveatedSimulationFrontHandle);
+            _foveatedSimulationHandle = default;
+            _foveatedSimulationScheduled = false;
         }
 
         private void CompletePendingFoveatedSimulationDecision(bool forceComplete)
@@ -7663,6 +8030,22 @@ namespace Hecton8.World
             return math.isfinite(value) ? math.saturate(value) : 0f;
         }
 
+        private static float ClampFinite(float value, float min, float max)
+        {
+            float safeMin = math.isfinite(min) ? min : 0f;
+            float safeMax = math.isfinite(max) ? max : safeMin;
+            if (safeMax < safeMin)
+                safeMax = safeMin;
+
+            return math.isfinite(value) ? math.clamp(value, safeMin, safeMax) : safeMin;
+        }
+
+        private static float ClampMinFinite(float value, float min)
+        {
+            float safeMin = math.isfinite(min) ? min : 0f;
+            return math.isfinite(value) && value > safeMin ? value : safeMin;
+        }
+
         private static float ResolveLodDitherKeep01(float hibernation01)
         {
             float fade01 = math.saturate((math.saturate(hibernation01) - LodDitherHibernationStart01) * LodDitherHibernationInvRange);
@@ -7715,11 +8098,11 @@ namespace Hecton8.World
 
         private static int CeilDivPositive(int numerator, int denominator)
         {
-            if (numerator <= 0)
+            if (numerator <= 0 || denominator <= 0)
                 return 0;
 
-            int safeDenominator = math.max(1, denominator);
-            return 1 + ((numerator - 1) / safeDenominator);
+            long groups = ((long)numerator + denominator - 1L) / denominator;
+            return groups <= PortableMaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private static int CeilToIntPositive(float value)
@@ -8061,6 +8444,7 @@ namespace Hecton8.World
             if (UnsafeUtility.SizeOf<BoidKillSignal>() != BoidKillSignalSizeBytes ||
                 UnsafeUtility.SizeOf<FoodChainTelemetryEntry>() != FoodChainTelemetryEntrySizeBytes ||
                 UnsafeUtility.SizeOf<FoveatedSimulationInput>() != FoveatedSimulationInputSizeBytes ||
+                Marshal.OffsetOf<FoveatedSimulationInput>(nameof(FoveatedSimulationInput.PreviousTier)).ToInt32() != 28 ||
                 UnsafeUtility.SizeOf<FoveatedSimulationDecision>() != FoveatedSimulationDecisionSizeBytes ||
                 UnsafeUtility.SizeOf<StaticObstacleData>() != StaticObstacleDataSizeBytes)
             {
@@ -8094,8 +8478,11 @@ namespace Hecton8.World
             if (_computeDispatchDisabled)
                 return false;
 
-            if (boidCompute == null)
+            if (boidCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
             {
+                if (boidCompute != null)
+                    DisableComputeDispatch(ComputeDisableReasonUnsupportedCompute);
+
                 ResetComputeKernelBindings();
                 return false;
             }
@@ -8110,61 +8497,103 @@ namespace Hecton8.World
             if (_computeKernelBindingsValid)
                 return true;
 
-            AssignManualKernelIndices();
-
-            if (!TryValidateKernel(MainKernelName, _kernelIndex) ||
-                !TryValidateKernel(ClearLatchStatsKernelName, _clearStatsKernelIndex) ||
-                !TryValidateKernel(ClearSpatialGridKernelName, _clearSpatialGridKernelIndex) ||
-                !TryValidateKernel(BuildSpatialGridKernelName, _buildSpatialGridKernelIndex) ||
-                !TryValidateKernel(ClearPbdCorrectionsKernelName, _clearPbdCorrectionsKernelIndex) ||
-                !TryValidateKernel(PbdSolveKernelName, _pbdSolveKernelIndex) ||
-                !TryValidateKernel(ApplyOriginShiftKernelName, _applyOriginShiftKernelIndex))
+            if (!TryValidateKernel(MainKernelName, out int mainKernelIndex, out uint mainThreadGroupSizeX) ||
+                !TryValidateKernel(ClearLatchStatsKernelName, out int clearStatsKernelIndex, out uint clearStatsThreadGroupSizeX) ||
+                !TryValidateKernel(ClearSpatialGridKernelName, out int clearSpatialGridKernelIndex, out uint clearSpatialGridThreadGroupSizeX) ||
+                !TryValidateKernel(BuildSpatialGridKernelName, out int buildSpatialGridKernelIndex, out uint buildSpatialGridThreadGroupSizeX) ||
+                !TryValidateKernel(ClearPbdCorrectionsKernelName, out int clearPbdCorrectionsKernelIndex, out uint clearPbdCorrectionsThreadGroupSizeX) ||
+                !TryValidateKernel(PbdSolveKernelName, out int pbdSolveKernelIndex, out uint pbdSolveThreadGroupSizeX) ||
+                !TryValidateKernel(ApplyOriginShiftKernelName, out int applyOriginShiftKernelIndex, out uint applyOriginShiftThreadGroupSizeX))
             {
                 _hasSpawnData = false;
                 return false;
             }
 
-            _threadGroupSizeX = ComputeThreadGroupSizeX;
+            _kernelIndex = mainKernelIndex;
+            _clearStatsKernelIndex = clearStatsKernelIndex;
+            _clearSpatialGridKernelIndex = clearSpatialGridKernelIndex;
+            _buildSpatialGridKernelIndex = buildSpatialGridKernelIndex;
+            _clearPbdCorrectionsKernelIndex = clearPbdCorrectionsKernelIndex;
+            _pbdSolveKernelIndex = pbdSolveKernelIndex;
+            _applyOriginShiftKernelIndex = applyOriginShiftKernelIndex;
+            _threadGroupSizeX = mainThreadGroupSizeX;
+            _clearStatsThreadGroupSizeX = clearStatsThreadGroupSizeX;
+            _clearSpatialGridThreadGroupSizeX = clearSpatialGridThreadGroupSizeX;
+            _buildSpatialGridThreadGroupSizeX = buildSpatialGridThreadGroupSizeX;
+            _clearPbdCorrectionsThreadGroupSizeX = clearPbdCorrectionsThreadGroupSizeX;
+            _pbdSolveThreadGroupSizeX = pbdSolveThreadGroupSizeX;
+            _applyOriginShiftThreadGroupSizeX = applyOriginShiftThreadGroupSizeX;
             RefreshDispatchGroupCount();
             _computeKernelBindingsValid = true;
             return true;
         }
 
-        private bool TryValidateKernel(string kernelName, int kernelIndex)
+        private bool TryValidateKernel(string kernelName, out int kernelIndex, out uint groupSizeX)
         {
+            kernelIndex = -1;
+            groupSizeX = 0u;
             if (!boidCompute.HasKernel(kernelName))
             {
                 DisableComputeDispatch(ComputeDisableReasonMissingKernel);
                 return false;
             }
 
+            kernelIndex = boidCompute.FindKernel(kernelName);
+            if (kernelIndex < 0 || !boidCompute.IsSupported(kernelIndex))
+            {
+                DisableComputeDispatch(ComputeDisableReasonKernelValidationFailure);
+                return false;
+            }
+
             try
             {
-                boidCompute.GetKernelThreadGroupSizes(kernelIndex, out uint groupSizeX, out _, out _);
-                if (groupSizeX == 0u)
+                boidCompute.GetKernelThreadGroupSizes(kernelIndex, out groupSizeX, out uint groupSizeY, out uint groupSizeZ);
+                ulong totalThreads = (ulong)groupSizeX * groupSizeY * groupSizeZ;
+                if (groupSizeX == 0u || groupSizeY == 0u || groupSizeZ == 0u)
                 {
                     DisableComputeDispatch(ComputeDisableReasonZeroThreadGroup);
                     return false;
                 }
 
+                if (groupSizeY != 1u || groupSizeZ != 1u)
+                {
+                    DisableComputeDispatch(ComputeDisableReasonKernelValidationFailure);
+                    return false;
+                }
+
+                if (totalThreads > PortableThreadGroupMaxSize)
+                {
+                    DisableComputeDispatch(ComputeDisableReasonOversizedThreadGroup);
+                    return false;
+                }
+
                 return true;
             }
-            catch (Exception)
+            catch (ObjectDisposedException)
             {
                 DisableComputeDispatch(ComputeDisableReasonKernelValidationFailure);
                 return false;
             }
-        }
-
-        private void AssignManualKernelIndices()
-        {
-            _kernelIndex = MainKernelIndex;
-            _clearStatsKernelIndex = ClearLatchStatsKernelIndex;
-            _clearSpatialGridKernelIndex = ClearSpatialGridKernelIndex;
-            _buildSpatialGridKernelIndex = BuildSpatialGridKernelIndex;
-            _clearPbdCorrectionsKernelIndex = ClearPbdCorrectionsKernelIndex;
-            _pbdSolveKernelIndex = PbdSolveKernelIndex;
-            _applyOriginShiftKernelIndex = ApplyOriginShiftKernelIndex;
+            catch (InvalidOperationException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonKernelValidationFailure);
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonKernelValidationFailure);
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonKernelValidationFailure);
+                return false;
+            }
+            catch (UnityException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonKernelValidationFailure);
+                return false;
+            }
         }
 
         private void ResetComputeKernelBindings()
@@ -8176,7 +8605,13 @@ namespace Hecton8.World
             _clearSpatialGridKernelIndex = -1;
             _buildSpatialGridKernelIndex = -1;
             _applyOriginShiftKernelIndex = -1;
-            _threadGroupSizeX = ComputeThreadGroupSizeX;
+            _threadGroupSizeX = 0u;
+            _clearStatsThreadGroupSizeX = 0u;
+            _clearSpatialGridThreadGroupSizeX = 0u;
+            _buildSpatialGridThreadGroupSizeX = 0u;
+            _clearPbdCorrectionsThreadGroupSizeX = 0u;
+            _pbdSolveThreadGroupSizeX = 0u;
+            _applyOriginShiftThreadGroupSizeX = 0u;
             RefreshDispatchGroupCount();
             _computeKernelBindingsValid = false;
             _computeStaticBuffersBound = false;
@@ -8220,6 +8655,12 @@ namespace Hecton8.World
                     return "Compute kernel validation failure.";
                 case ComputeDisableReasonOriginShiftFailure:
                     return "Origin-shift dispatch failure.";
+                case ComputeDisableReasonOversizedThreadGroup:
+                    return "Compute kernel exceeds portable 256-thread group ceiling.";
+                case ComputeDisableReasonUnsupportedCompute:
+                    return "Compute shaders unsupported by active platform.";
+                case ComputeDisableReasonDispatchGroupLimit:
+                    return "Compute dispatch group count exceeds portable per-dimension ceiling.";
                 default:
                     return "Unknown compute dispatch failure.";
             }
@@ -8236,6 +8677,7 @@ namespace Hecton8.World
             bool shouldRender = ShouldRenderSwarm(cameraDistanceSq);
             _debugVisible = shouldRender;
             _debugHibernation01 = hibernation01;
+            _lastSimulationHibernation01 = hibernation01;
             if (shouldRender)
                 QueueRenderCurrentBuffer();
         }
@@ -8247,12 +8689,28 @@ namespace Hecton8.World
 
         private void QueueOriginShiftGpuDispatch(Vector3 runtimeOffset)
         {
+            if (!IsFiniteVector3(runtimeOffset))
+                return;
+
             _queuedOriginShiftGpuDelta += runtimeOffset;
+            if (!IsFiniteVector3(_queuedOriginShiftGpuDelta))
+            {
+                _queuedOriginShiftGpuDelta = Vector3.zero;
+                _originShiftGpuDispatchRequested = false;
+                return;
+            }
+
             _originShiftGpuDispatchRequested = true;
         }
 
         private void DispatchOriginShiftToLiveBoidBuffersVisualSync(Vector3 runtimeOffset)
         {
+            if (!IsFiniteVector3(runtimeOffset))
+            {
+                DisableComputeDispatch(ComputeDisableReasonOriginShiftFailure);
+                return;
+            }
+
             int boidShiftCount = ResolveActiveBoidUploadCount();
             if (boidShiftCount <= 0 ||
                 boidCompute == null ||
@@ -8266,8 +8724,12 @@ namespace Hecton8.World
             }
 
             Vector4 shiftVector = new Vector4(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z, 0f);
-            int safeThreadGroupSize = math.max(1, (int)_threadGroupSizeX);
-            int dispatchGroups = math.max(1, (boidShiftCount + safeThreadGroupSize - 1) / safeThreadGroupSize);
+            int dispatchGroups = CeilDivPositive(boidShiftCount, (int)_applyOriginShiftThreadGroupSizeX);
+            if (dispatchGroups <= 0)
+            {
+                DisableComputeDispatch(ComputeDisableReasonDispatchGroupLimit);
+                return;
+            }
 
             try
             {
@@ -8280,7 +8742,23 @@ namespace Hecton8.World
                 boidCompute.SetBuffer(_applyOriginShiftKernelIndex, _BoidsBufferWriteId, _boidsBufferB);
                 boidCompute.Dispatch(_applyOriginShiftKernelIndex, dispatchGroups, 1, 1);
             }
-            catch (Exception)
+            catch (ObjectDisposedException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonOriginShiftFailure);
+            }
+            catch (InvalidOperationException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonOriginShiftFailure);
+            }
+            catch (ArgumentException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonOriginShiftFailure);
+            }
+            catch (MissingReferenceException)
+            {
+                DisableComputeDispatch(ComputeDisableReasonOriginShiftFailure);
+            }
+            catch (UnityException)
             {
                 DisableComputeDispatch(ComputeDisableReasonOriginShiftFailure);
             }
@@ -8288,9 +8766,22 @@ namespace Hecton8.World
 
         private void ApplyRuntimeOffsetToSwarmData(Vector3 runtimeOffset)
         {
+            if (!IsFiniteVector3(runtimeOffset))
+                return;
+
             if (_statisticalPopulationActive)
             {
-                _fieldCenter = ToVector3(_statisticalPopulationCenterAup.ToRuntimeFloat3());
+                if (!TryResolveRuntimePosition(in _statisticalPopulationCenterAup, out _fieldCenter))
+                {
+                    ClearStatisticalPopulationPoint();
+                    _hasSpawnData = false;
+                    _activeBoidCount = 0;
+                    _debugActiveBoidCount = 0;
+                    ResetThreatGridSnapshot();
+                    ResetThreatVoxelSnapshot();
+                    return;
+                }
+
                 _renderBounds.center = _fieldCenter;
                 _debugRenderBounds = _renderBounds;
                 ResetThreatGridSnapshot();
@@ -8422,8 +8913,6 @@ namespace Hecton8.World
             {
                 SanitizeSettings();
                 RefreshRenderLayerCache();
-                _renderPropertiesDirty = true;
-                _hitFlashPropertiesDirty = true;
                 ResetComputeKernelBindings();
                 RefreshActiveBoidCount();
             }

@@ -172,7 +172,7 @@ namespace Hecton8.SaveSystem
         [FieldOffset(60)] public uint _pad0;
     }
 
-    internal struct VoxelDeltaCompressionVaultBufferSet
+    internal ref struct VoxelDeltaCompressionVaultBufferSet
     {
         public NativeArray<byte> SchemaBytes;
         public NativeArray<sbyte> RuntimeDensity;

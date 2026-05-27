@@ -535,10 +535,19 @@ namespace Hecton8.EditorTools
         {
             handle = default;
             buffer = default;
-            return vault != null &&
-                   vault.TryGetGenerationHandle(bufferId, out handle) &&
-                   vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer) &&
-                   buffer.IsCreated;
+            if (vault == null ||
+                !vault.TryGetGenerationHandle(bufferId, out handle) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            buffer = default;
+            return false;
         }
 
         private static bool TryWriteRecipeAndMask(

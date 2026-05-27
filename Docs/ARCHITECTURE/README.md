@@ -1,11 +1,11 @@
 ﻿# Architecture Index
 
 Date: 2026-05-26
-Status: PENDING VERIFICATION
-Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
-Evidence class: STATIC_DOC / STATIC_SOURCE / CLI_COMPILE where artifact cited
+Status: STATIC INDEX
+Owner: DOCS_ACTUALIZATION
+Evidence class: STATIC_DOC / STATIC_SOURCE
 
-This folder stores stable architecture contracts. Dated reports are evidence only.
+This folder stores active architecture contracts. Dated reports are evidence only.
 
 ## Read Order
 
@@ -29,31 +29,14 @@ This folder stores stable architecture contracts. Dated reports are evidence onl
 18. `ZERO_GC_UI_PIPELINE.md`
 19. `COOP_MERKLE_STATE_DELTA_PROTOCOL.md`
 20. `MESH_STATE_SWAP_DESTRUCTION_PIPELINE.md`
+21. `TECH_ART_PBR_SURFACE_DOCTRINE.md`
+22. `PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
 
-## Current Source Constants
+## Current Facts Live In One Place
 
-| Surface | Current source fact |
-|---|---|
-| Save container | version `0x000B`; header `56` bytes; legacy header `44` bytes |
-| H8DM static data | target path `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`; file exists (`1,064,384` bytes); header `64` bytes; Unity/player proof pending |
-| Scalability | `ScalabilityStateDTO` is `16` bytes; `GlobalQualityWeight` is continuous `0.0..1.0` |
-| Shader quality sinks | `_GlobalQualityWeight`, `_H8GlobalQualityWeight`; `_GlobalQualityParameters` is not current source authority |
-| Signal registry | `SignalBusRegistry.LaneCapacity = 512`; direct queue surface remains legacy bridge |
-| AUP | 48-byte sector/local struct; subtract in double before float local handoff |
-| Netcode | static protocol only; `HectonNetworkManager.cs` is not a transport implementation |
+`HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` owns concise current proof snapshots and source constants for architecture docs.
 
-## Current Evidence Boundary
-
-- 2026-05-26 UNKNOWN:
-  - Full solution CLI PASS: `Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_020504.log`.
-  - Command: `dotnet build .\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false`.
-  - Result: exit `0`, `0 Warning(s)`, `0 Error(s)`.
-  - Evidence class: CLI_COMPILE only.
-- Older EXTERNAL_CODEX build-wall entries are historical source-gate context, not the current compile boundary.
-- 2026-05-23 X_012: `Docs/Reports/DOCUMENTATION_CORPUS_INVENTORY_X_012.json`, `Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json`, and `Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json` are offline documentation scan artifacts.
-- This is CLI_COMPILE evidence only.
-- Runtime architecture remains `PENDING VERIFICATION` until Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, player build, save/load, scene wiring, and visual proof exist.
-- The generated-project proof is provisional until Unity/project regeneration preserves the local asmdef references without hand-patching ignored `.csproj` files.
+Do not duplicate current build status, scanner counters, report chains, or task-loop history in this index.
 
 ## Active Contract Groups
 
@@ -89,10 +72,12 @@ World and presentation:
 - `CINEMATIC_CHEATS_LEDGER.md`
 - `MESH_STATE_SWAP_DESTRUCTION_PIPELINE.md`
 - `EQUIPMENT_SOA_LAYOUT.md`
+- `TECH_ART_PBR_SURFACE_DOCTRINE.md`
+- `PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
 - `OFFLINE_MODULE_DAMAGE_BAKER_SHINOBU_210.md`
 
 ## Non-Claims
 
-This index links the current CLI compile artifact. It is not Unity import proof, Play Mode proof, profiler proof, GC proof, player-build proof, or visual proof.
+This index is not Unity import proof, Play Mode proof, profiler proof, GC proof, player-build proof, or visual proof.
 
 Use `PENDING VERIFICATION` unless the document links a current artifact path.

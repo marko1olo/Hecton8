@@ -7,7 +7,7 @@ using Hecton8.Core;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Live preview for settings changes (Subnautica-style).
+    /// Live preview for HECTON-8 settings changes.
     /// Updates graphics/audio in real-time as user drags sliders.
     /// Zero-GC: late-frame state machine, cached references, no coroutines.
     /// </summary>

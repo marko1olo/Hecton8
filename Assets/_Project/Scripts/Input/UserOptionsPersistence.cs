@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Input
@@ -21,22 +23,28 @@ namespace Hecton8.Input
         public const string FileName = "options.h8cfg";
         private const string TempFileName = "options.h8cfg.tmp";
 
-        private const int FileVersion = 2;
+        private const int FileVersion = 3;
+        private const int FileVersionWithScalabilityTier = 2;
         private const int TypeInt = 1;
         private const int TypeFloat = 2;
         private const int TypeString = 3;
         private const int TypeBool = 4;
         private const int FileMagic = 0x46433848; // H8CF, little endian.
+        private const int BinaryPayloadMagic = 0x504F3848; // H8OP, little endian.
         private const int LegacyFileHeaderBytes = 12;
         private const int FileHeaderBytes = 16;
+        private const int BinaryPayloadHeaderBytes = 8;
+        private const int BinaryRecordHeaderBytes = 24;
         private const int MaxOptionsPayloadBytes = 64 * 1024;
+        private const int MaxOptionRecords = 512;
+        private const int MaxOptionKeyBytes = 256;
+        private const int MaxOptionStringBytes = 4096;
         private const long FixedOptionsFileBytes = FileHeaderBytes + MaxOptionsPayloadBytes;
         private const byte DefaultScalabilityTier = ScalabilityTierProfiles.LowMx350;
-        private static readonly Encoding OptionsEncoding = new UTF8Encoding(false);
+        private static readonly Encoding OptionsEncoding = new UTF8Encoding(false, true);
 
         private readonly Dictionary<string, OptionRecord> _records =
             new Dictionary<string, OptionRecord>(64, StringComparer.Ordinal); // COLD ALLOC: Dictionary<string, OptionRecord>[64] - user options key/value cache - owner: UserOptionsPersistence
-        private readonly OptionsFile _optionsFile = new OptionsFile(); // COLD ALLOC: OptionsFile[1] - reusable payload wrapper for options.h8cfg - owner: UserOptionsPersistence
 
         private OptionRecord[] _writeRecords = Array.Empty<OptionRecord>();
         private readonly byte[] _payloadBuffer = new byte[MaxOptionsPayloadBytes]; // COLD ALLOC: byte[64K] - fixed options.h8cfg payload buffer - owner: UserOptionsPersistence
@@ -59,29 +67,26 @@ namespace Hecton8.Input
 
         public bool IsServiceReady => _serviceRegistered && !_serviceShuttingDown;
 
-        public string OptionsPath => ResolveOptionsPath();
+        public string OptionsPath => _optionsPath ?? string.Empty;
+        public bool LastSaveSucceeded { get; private set; }
 
         public byte ScalabilityTier
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                EnsureLoaded();
-                return _scalabilityTier;
-            }
+            get => _scalabilityTier;
         }
 
         private void Awake()
         {
-            LoadFromDisk();
-
             BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime, out UserOptionsPersistence registered);
             if (registered != null && registered != this)
             {
-                Destroy(gameObject);
+                DestroyDuplicateInstance();
                 return;
             }
 
+            EnsureOptionsStoragePaths();
+            LoadFromDisk();
             RegisterService();
         }
 
@@ -120,7 +125,7 @@ namespace Hecton8.Input
             BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime, out UserOptionsPersistence registered);
             if (registered != null && registered != this)
             {
-                Destroy(gameObject);
+                DestroyDuplicateInstance();
                 return;
             }
 
@@ -130,6 +135,13 @@ namespace Hecton8.Input
             _serviceRegistered =
                 BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime, out registered) &&
                 ReferenceEquals(registered, this);
+        }
+
+        private void DestroyDuplicateInstance()
+        {
+            _serviceShuttingDown = true;
+            _serviceShutdownComplete = true;
+            Destroy(gameObject);
         }
 
         private void UnregisterService()
@@ -143,8 +155,7 @@ namespace Hecton8.Input
 
         public bool HasKey(string key)
         {
-            EnsureLoaded();
-            return !string.IsNullOrWhiteSpace(key) && _records.ContainsKey(key);
+            return _loaded && !string.IsNullOrWhiteSpace(key) && _records.ContainsKey(key);
         }
 
         public int GetInt(string key, int defaultValue = 0)
@@ -343,34 +354,85 @@ namespace Hecton8.Input
 
             _scalabilityTier = normalizedTier;
             SyncScalabilityTierRecord();
-            PlatformIntegrationBridge.ApplyScalabilityTier(normalizedTier);
-            Save();
+            if (!TrySaveToDisk())
+            {
+                LastSaveSucceeded = false;
+                _scalabilityTier = previousTier;
+                SyncScalabilityTierRecord();
+                return;
+            }
 
+            LastSaveSucceeded = true;
+            PlatformIntegrationBridge.ApplyScalabilityTier(normalizedTier);
             PlatformIntegrationBridge.PublishScalabilityChanged(previousTier, normalizedTier);
         }
 
         public void Save()
         {
+            TrySave();
+        }
+
+        public bool TrySave()
+        {
             EnsureLoaded();
 
-            string path = ResolveOptionsPath();
-            if (!string.IsNullOrEmpty(_optionsDirectory))
-                Directory.CreateDirectory(_optionsDirectory);
+            LastSaveSucceeded = TrySaveToDisk();
+            return LastSaveSucceeded;
+        }
 
-            SyncScalabilityTierRecord();
-            int recordCount = _records.Count;
-            if (_writeRecords.Length != recordCount)
-                _writeRecords = new OptionRecord[recordCount]; // COLD ALLOC: OptionRecord[count] - resized only when option key count changes - owner: UserOptionsPersistence
+        private bool TrySaveToDisk()
+        {
+            EnsureOptionsStoragePaths();
+            string path = _optionsPath;
+            string tempPath = _optionsTempPath;
 
-            _records.Values.CopyTo(_writeRecords, 0);
-            _optionsFile.Version = FileVersion;
-            _optionsFile.Records = _writeRecords;
+            try
+            {
+                if (!string.IsNullOrEmpty(_optionsDirectory))
+                    Directory.CreateDirectory(_optionsDirectory);
 
-            string tempPath = ResolveOptionsTempPath();
-            WritePortableOptionsFile(tempPath, JsonUtility.ToJson(_optionsFile, false));
+                SyncScalabilityTierRecord();
+                int recordCount = _records.Count;
+                if (_writeRecords.Length != recordCount)
+                    _writeRecords = new OptionRecord[recordCount]; // COLD ALLOC: OptionRecord[count] - resized only when option key count changes - owner: UserOptionsPersistence
 
+                _records.Values.CopyTo(_writeRecords, 0);
+
+                if (!WritePortableOptionsFile(tempPath, _writeRecords, recordCount))
+                    return false;
+
+                ReplaceOptionsFile(tempPath, path);
+                return true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (EncoderFallbackException)
+            {
+                return false;
+            }
+        }
+
+        private static void ReplaceOptionsFile(string tempPath, string path)
+        {
             if (File.Exists(path))
-                File.Delete(path);
+            {
+                File.Replace(tempPath, path, null, ignoreMetadataErrors: true);
+                return;
+            }
 
             File.Move(tempPath, path);
         }
@@ -389,7 +451,8 @@ namespace Hecton8.Input
                 return;
 
             _records.Clear();
-            string path = ResolveOptionsPath();
+            EnsureOptionsStoragePaths();
+            string path = _optionsPath;
             if (!File.Exists(path))
             {
                 ApplyLoadedScalabilityTier(ResolveDefaultScalabilityTier(), true);
@@ -401,16 +464,46 @@ namespace Hecton8.Input
             bool hasLoadedScalabilityTier = false;
             try
             {
-                if (!TryReadPortableOptionsFile(path, out string json, out loadedScalabilityTier, out hasLoadedScalabilityTier))
-                    json = ReadLegacyTextOptionsFile(path);
+                if (!TryReadPortableOptionsFile(path, out loadedScalabilityTier, out hasLoadedScalabilityTier, out bool wasPortableContainer) &&
+                    !wasPortableContainer)
+                {
+                    TryApplyLegacyOptionsJson(ReadLegacyTextOptionsFile(path));
+                }
 
-                ApplyOptionsJson(json);
                 ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
             }
-            catch (Exception)
+            catch (UnauthorizedAccessException)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
+#endif
+                ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
+            }
+            catch (IOException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
+#endif
+                ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
+            }
+            catch (ArgumentException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
+#endif
+                ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
+            }
+            catch (NotSupportedException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
+#endif
+                ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
+            }
+            catch (DecoderFallbackException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to decode options.h8cfg.");
 #endif
                 ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
             }
@@ -418,12 +511,11 @@ namespace Hecton8.Input
             _loaded = true;
         }
 
-        private void WritePortableOptionsFile(string path, string json)
+        private bool WritePortableOptionsFile(string path, OptionRecord[] records, int recordCount)
         {
-            int payloadLength = OptionsEncoding.GetByteCount(json);
-            ValidatePayloadCapacity(payloadLength);
-            if (payloadLength > 0)
-                OptionsEncoding.GetBytes(json, 0, json.Length, _payloadBuffer, 0);
+            int payloadLength = TryWriteBinaryOptionsPayload(records, recordCount, _payloadBuffer, MaxOptionsPayloadBytes);
+            if (!IsPayloadWithinCapacity(payloadLength))
+                return false;
 
             WriteInt32LittleEndian(_headerBuffer, 0, FileMagic);
             WriteInt32LittleEndian(_headerBuffer, 4, FileVersion);
@@ -440,25 +532,32 @@ namespace Hecton8.Input
                     stream.Write(_payloadBuffer, 0, payloadLength);
 
                 stream.SetLength(FixedOptionsFileBytes);
+                stream.Flush(true);
             }
+
+            return true;
         }
 
         private bool TryReadPortableOptionsFile(
             string path,
-            out string json,
             out byte scalabilityTier,
-            out bool hasScalabilityTier)
+            out bool hasScalabilityTier,
+            out bool wasPortableContainer)
         {
-            json = string.Empty;
             scalabilityTier = ResolveDefaultScalabilityTier();
             hasScalabilityTier = false;
-            FileInfo fileInfo = new FileInfo(path);
-            if (!fileInfo.Exists || fileInfo.Length < LegacyFileHeaderBytes)
-                return false;
+            wasPortableContainer = false;
 
-            long viewLength = fileInfo.Length > FixedOptionsFileBytes ? FixedOptionsFileBytes : fileInfo.Length;
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
+                long fileLength = stream.Length;
+                if (fileLength < LegacyFileHeaderBytes)
+                    return false;
+
+                if (fileLength > FixedOptionsFileBytes)
+                    return false;
+
+                long viewLength = fileLength;
                 if (!TryReadExact(stream, _headerBuffer, 0, LegacyFileHeaderBytes))
                     return false;
 
@@ -466,17 +565,23 @@ namespace Hecton8.Input
                 if (magic != FileMagic)
                     return false;
 
+                wasPortableContainer = true;
                 int version = ReadInt32LittleEndian(_headerBuffer, 4);
-                int headerBytes = version >= FileVersion && viewLength >= FileHeaderBytes
+                if (version <= 0 || version > FileVersion)
+                    return false;
+
+                int headerBytes = version >= FileVersionWithScalabilityTier && viewLength >= FileHeaderBytes
                     ? FileHeaderBytes
                     : LegacyFileHeaderBytes;
+                byte headerTier = ResolveDefaultScalabilityTier();
+                bool headerHasTier = false;
                 if (headerBytes == FileHeaderBytes)
                 {
                     if (!TryReadExact(stream, _headerBuffer, LegacyFileHeaderBytes, FileHeaderBytes - LegacyFileHeaderBytes))
                         return false;
 
-                    scalabilityTier = ScalabilityTierProfiles.Normalize(_headerBuffer[12]);
-                    hasScalabilityTier = true;
+                    headerTier = ScalabilityTierProfiles.Normalize(_headerBuffer[12]);
+                    headerHasTier = true;
                 }
 
                 int payloadLength = ReadInt32LittleEndian(_headerBuffer, 8);
@@ -487,7 +592,9 @@ namespace Hecton8.Input
                     return false;
                 }
 
-                ValidatePayloadCapacity(payloadLength);
+                if (!IsPayloadWithinCapacity(payloadLength))
+                    return false;
+
                 if (payloadLength > 0)
                 {
                     stream.Position = headerBytes;
@@ -495,17 +602,216 @@ namespace Hecton8.Input
                         return false;
                 }
 
-                json = OptionsEncoding.GetString(_payloadBuffer, 0, payloadLength);
+                bool payloadApplied = version >= FileVersion
+                    ? TryApplyBinaryOptionsPayload(_payloadBuffer, payloadLength)
+                    : TryApplyLegacyOptionsJson(OptionsEncoding.GetString(_payloadBuffer, 0, payloadLength));
+
+                if (!payloadApplied)
+                    return false;
+
+                scalabilityTier = headerTier;
+                hasScalabilityTier = headerHasTier;
                 return true;
             }
         }
 
-        private static void ValidatePayloadCapacity(int payloadLength)
+        private static int TryWriteBinaryOptionsPayload(
+            OptionRecord[] records,
+            int recordCount,
+            byte[] buffer,
+            int capacity)
         {
-            if (payloadLength <= MaxOptionsPayloadBytes)
-                return;
+            if (records == null || recordCount < 0 || recordCount > records.Length || recordCount > MaxOptionRecords)
+                return -1;
 
-            throw new InvalidDataException("options.h8cfg payload exceeds fixed runtime buffer.");
+            int index = 0;
+            if (!TryWriteInt32(buffer, capacity, ref index, BinaryPayloadMagic))
+                return -1;
+
+            if (!TryWriteInt32(buffer, capacity, ref index, 0))
+                return -1;
+
+            int writtenRecords = 0;
+            for (int i = 0; i < recordCount; i++)
+            {
+                OptionRecord record = records[i];
+                if (string.IsNullOrWhiteSpace(record.Key) || !IsSupportedOptionType(record.Type))
+                    continue;
+
+                string stringValue = record.Type == TypeString ? record.StringValue ?? string.Empty : string.Empty;
+                int keyBytes = OptionsEncoding.GetByteCount(record.Key);
+                int stringBytes = record.Type == TypeString ? OptionsEncoding.GetByteCount(stringValue) : 0;
+                if (keyBytes <= 0 ||
+                    keyBytes > MaxOptionKeyBytes ||
+                    stringBytes > MaxOptionStringBytes ||
+                    index + BinaryRecordHeaderBytes + keyBytes + stringBytes > capacity)
+                {
+                    return -1;
+                }
+
+                if (!TryWriteInt32(buffer, capacity, ref index, record.Type))
+                    return -1;
+
+                if (!TryWriteInt32(buffer, capacity, ref index, record.IntValue))
+                    return -1;
+
+                if (!TryWriteInt32(buffer, capacity, ref index, unchecked((int)math.asuint(record.FloatValue))))
+                    return -1;
+
+                if (index + 4 > capacity)
+                    return -1;
+
+                buffer[index++] = record.BoolValue ? (byte)1 : (byte)0;
+                buffer[index++] = 0;
+                buffer[index++] = 0;
+                buffer[index++] = 0;
+
+                if (!TryWriteInt32(buffer, capacity, ref index, keyBytes))
+                    return -1;
+
+                if (!TryWriteInt32(buffer, capacity, ref index, stringBytes))
+                    return -1;
+
+                OptionsEncoding.GetBytes(record.Key, 0, record.Key.Length, buffer, index);
+                index += keyBytes;
+
+                if (stringBytes > 0)
+                {
+                    OptionsEncoding.GetBytes(stringValue, 0, stringValue.Length, buffer, index);
+                    index += stringBytes;
+                }
+
+                writtenRecords++;
+            }
+
+            WriteInt32LittleEndian(buffer, 4, writtenRecords);
+            return index;
+        }
+
+        private bool TryApplyBinaryOptionsPayload(byte[] buffer, int payloadLength)
+        {
+            if (buffer == null || payloadLength < BinaryPayloadHeaderBytes)
+                return false;
+
+            int magic = ReadInt32LittleEndian(buffer, 0);
+            if (magic != BinaryPayloadMagic)
+                return false;
+
+            int recordCount = ReadInt32LittleEndian(buffer, 4);
+            if (recordCount < 0 || recordCount > MaxOptionRecords)
+                return false;
+
+            if (!EnsureWriteRecordCapacity(recordCount))
+                return false;
+
+            int index = BinaryPayloadHeaderBytes;
+            int stagedRecords = 0;
+            for (int i = 0; i < recordCount; i++)
+            {
+                if (index + BinaryRecordHeaderBytes > payloadLength)
+                    return false;
+
+                int type = ReadInt32LittleEndian(buffer, index);
+                int intValue = ReadInt32LittleEndian(buffer, index + 4);
+                uint floatBits = unchecked((uint)ReadInt32LittleEndian(buffer, index + 8));
+                bool boolValue = buffer[index + 12] != 0;
+                int keyBytes = ReadInt32LittleEndian(buffer, index + 16);
+                int stringBytes = ReadInt32LittleEndian(buffer, index + 20);
+                index += BinaryRecordHeaderBytes;
+
+                if (!IsSupportedOptionType(type) ||
+                    keyBytes <= 0 ||
+                    keyBytes > MaxOptionKeyBytes ||
+                    stringBytes < 0 ||
+                    stringBytes > MaxOptionStringBytes ||
+                    index + keyBytes + stringBytes > payloadLength)
+                {
+                    return false;
+                }
+
+                string key = OptionsEncoding.GetString(buffer, index, keyBytes);
+                index += keyBytes;
+                string stringValue = string.Empty;
+                if (stringBytes > 0)
+                {
+                    stringValue = OptionsEncoding.GetString(buffer, index, stringBytes);
+                    index += stringBytes;
+                }
+
+                if (string.IsNullOrWhiteSpace(key))
+                    return false;
+
+                _writeRecords[stagedRecords++] = new OptionRecord
+                {
+                    Key = key,
+                    Type = type,
+                    IntValue = intValue,
+                    FloatValue = math.asfloat(floatBits),
+                    StringValue = stringValue,
+                    BoolValue = boolValue
+                };
+            }
+
+            if (index != payloadLength)
+                return false;
+
+            ApplyStagedOptionRecords(stagedRecords);
+            return true;
+        }
+
+        private bool EnsureWriteRecordCapacity(int recordCount)
+        {
+            if (recordCount < 0 || recordCount > MaxOptionRecords)
+                return false;
+
+            if (_writeRecords.Length < recordCount)
+            {
+                int newCapacity = _writeRecords.Length <= 0 ? 4 : _writeRecords.Length;
+                while (newCapacity < recordCount && newCapacity < MaxOptionRecords)
+                    newCapacity <<= 1;
+
+                if (newCapacity > MaxOptionRecords)
+                    newCapacity = MaxOptionRecords;
+
+                _writeRecords = new OptionRecord[newCapacity]; // COLD ALLOC: OptionRecord[capacity] - staged options load/apply buffer - owner: UserOptionsPersistence
+            }
+
+            return true;
+        }
+
+        private void ApplyStagedOptionRecords(int recordCount)
+        {
+            for (int i = 0; i < recordCount; i++)
+            {
+                OptionRecord record = _writeRecords[i];
+                if (string.IsNullOrWhiteSpace(record.Key))
+                    continue;
+
+                _records[record.Key] = record;
+            }
+        }
+
+        private static bool IsPayloadWithinCapacity(int payloadLength)
+        {
+            return payloadLength >= 0 && payloadLength <= MaxOptionsPayloadBytes;
+        }
+
+        private static bool IsSupportedOptionType(int type)
+        {
+            return type == TypeInt ||
+                   type == TypeFloat ||
+                   type == TypeString ||
+                   type == TypeBool;
+        }
+
+        private static bool TryWriteInt32(byte[] buffer, int capacity, ref int index, int value)
+        {
+            if (buffer == null || index < 0 || index + 4 > capacity || index + 4 > buffer.Length)
+                return false;
+
+            WriteInt32LittleEndian(buffer, index, value);
+            index += 4;
+            return true;
         }
 
         private static string ReadLegacyTextOptionsFile(string path)
@@ -564,53 +870,762 @@ namespace Hecton8.Input
             };
         }
 
-        private void ApplyOptionsJson(string json)
+        private bool TryApplyLegacyOptionsJson(string json)
         {
-            OptionsFile file = JsonUtility.FromJson<OptionsFile>(json);
-            if (file?.Records == null)
-                return;
+            if (string.IsNullOrEmpty(json))
+                return false;
 
-            for (int i = 0; i < file.Records.Length; i++)
+            int rootObjectStart = 0;
+            SkipJsonWhitespace(json, ref rootObjectStart, json.Length);
+            if (rootObjectStart >= json.Length || json[rootObjectStart] != '{')
+                return false;
+
+            if (!TryFindJsonObjectEnd(json, rootObjectStart, out int rootObjectEnd))
+                return false;
+
+            int tail = rootObjectEnd + 1;
+            SkipJsonWhitespace(json, ref tail, json.Length);
+            if (tail != json.Length)
+                return false;
+
+            if (!TryFindTopLevelJsonPropertyRange(
+                    json,
+                    rootObjectStart,
+                    rootObjectEnd,
+                    "Records",
+                    out int valueStart,
+                    out int recordsValueEnd))
+                return false;
+
+            if (valueStart >= recordsValueEnd || json[valueStart] != '[')
+                return false;
+
+            int index = valueStart + 1;
+            int stagedRecords = 0;
+            while (index < recordsValueEnd)
             {
-                OptionRecord record = file.Records[i];
-                if (string.IsNullOrWhiteSpace(record.Key))
-                    continue;
+                SkipJsonWhitespace(json, ref index, recordsValueEnd);
+                if (index >= recordsValueEnd)
+                    return false;
 
-                _records[record.Key] = record;
+                char token = json[index];
+                if (token == ']')
+                {
+                    int afterArray = index + 1;
+                    SkipJsonWhitespace(json, ref afterArray, recordsValueEnd);
+                    if (afterArray != recordsValueEnd)
+                        return false;
+
+                    ApplyStagedOptionRecords(stagedRecords);
+                    return true;
+                }
+
+                if (token == ',')
+                {
+                    index++;
+                    continue;
+                }
+
+                if (token != '{')
+                    return false;
+
+                int recordObjectStart = index;
+                if (!TryFindJsonObjectEnd(json, recordObjectStart, recordsValueEnd, out int recordObjectEnd))
+                    return false;
+
+                if (!TryReadLegacyOptionRecord(json, recordObjectStart, recordObjectEnd, out OptionRecord record))
+                    return false;
+
+                if (!EnsureWriteRecordCapacity(stagedRecords + 1))
+                    return false;
+
+                _writeRecords[stagedRecords++] = record;
+
+                index = recordObjectEnd + 1;
             }
+
+            return false;
+        }
+
+        private static bool TryReadLegacyOptionRecord(
+            string json,
+            int objectStart,
+            int objectEnd,
+            out OptionRecord record)
+        {
+            record = default;
+            if (!TryReadTopLevelJsonStringProperty(json, objectStart, objectEnd, "Key", out string key) ||
+                string.IsNullOrWhiteSpace(key))
+            {
+                return false;
+            }
+
+            if (!TryReadTopLevelJsonIntProperty(json, objectStart, objectEnd, "Type", out int type) ||
+                !IsSupportedOptionType(type))
+            {
+                return false;
+            }
+
+            if (!TryReadOptionalTopLevelJsonIntProperty(json, objectStart, objectEnd, "IntValue", out int intValue))
+                return false;
+
+            if (!TryReadOptionalTopLevelJsonFloatProperty(json, objectStart, objectEnd, "FloatValue", out float floatValue))
+                return false;
+
+            if (!TryReadOptionalTopLevelJsonStringProperty(json, objectStart, objectEnd, "StringValue", out string stringValue))
+                return false;
+
+            if (!TryReadOptionalTopLevelJsonBoolProperty(json, objectStart, objectEnd, "BoolValue", out bool boolValue))
+                return false;
+
+            record = new OptionRecord
+            {
+                Key = key,
+                Type = type,
+                IntValue = intValue,
+                FloatValue = floatValue,
+                StringValue = stringValue ?? string.Empty,
+                BoolValue = boolValue
+            };
+            return true;
+        }
+
+        private static bool TryReadTopLevelJsonStringProperty(
+            string json,
+            int objectStart,
+            int objectEnd,
+            string propertyName,
+            out string value)
+        {
+            value = string.Empty;
+            return TryFindTopLevelJsonPropertyRange(json, objectStart, objectEnd, propertyName, out int valueStart, out int valueEnd) &&
+                   TryReadJsonStringValue(json, valueStart, valueEnd, out value);
+        }
+
+        private static bool TryReadOptionalTopLevelJsonStringProperty(
+            string json,
+            int objectStart,
+            int objectEnd,
+            string propertyName,
+            out string value)
+        {
+            value = string.Empty;
+            if (!TryFindTopLevelJsonPropertyRange(json, objectStart, objectEnd, propertyName, out int valueStart, out int valueEnd, out bool found))
+                return false;
+
+            if (!found)
+                return true;
+
+            return TryReadJsonStringValue(json, valueStart, valueEnd, out value);
+        }
+
+        private static bool TryReadTopLevelJsonIntProperty(
+            string json,
+            int objectStart,
+            int objectEnd,
+            string propertyName,
+            out int value)
+        {
+            value = 0;
+            return TryFindTopLevelJsonPropertyRange(json, objectStart, objectEnd, propertyName, out int valueStart, out int valueEnd) &&
+                   TryReadJsonIntValue(json, valueStart, valueEnd, out value);
+        }
+
+        private static bool TryReadOptionalTopLevelJsonIntProperty(
+            string json,
+            int objectStart,
+            int objectEnd,
+            string propertyName,
+            out int value)
+        {
+            value = 0;
+            if (!TryFindTopLevelJsonPropertyRange(json, objectStart, objectEnd, propertyName, out int valueStart, out int valueEnd, out bool found))
+                return false;
+
+            if (!found)
+                return true;
+
+            return TryReadJsonIntValue(json, valueStart, valueEnd, out value);
+        }
+
+        private static bool TryReadOptionalTopLevelJsonFloatProperty(
+            string json,
+            int objectStart,
+            int objectEnd,
+            string propertyName,
+            out float value)
+        {
+            value = 0f;
+            if (!TryFindTopLevelJsonPropertyRange(json, objectStart, objectEnd, propertyName, out int valueStart, out int valueEnd, out bool found))
+                return false;
+
+            if (!found)
+                return true;
+
+            return TryReadJsonFloatValue(json, valueStart, valueEnd, out value);
+        }
+
+        private static bool TryReadOptionalTopLevelJsonBoolProperty(
+            string json,
+            int objectStart,
+            int objectEnd,
+            string propertyName,
+            out bool value)
+        {
+            value = false;
+            if (!TryFindTopLevelJsonPropertyRange(json, objectStart, objectEnd, propertyName, out int valueStart, out int valueEnd, out bool found))
+                return false;
+
+            if (!found)
+                return true;
+
+            return TryReadJsonBoolValue(json, valueStart, valueEnd, out value);
+        }
+
+        private static bool TryReadJsonStringValue(string json, int valueStart, int end, out string value)
+        {
+            value = string.Empty;
+            SkipJsonWhitespace(json, ref valueStart, end);
+            if (valueStart >= end || json[valueStart] != '"')
+                return false;
+
+            if (!TrySkipJsonString(json, valueStart, end, out int stringEnd))
+                return false;
+
+            int tail = stringEnd + 1;
+            SkipJsonWhitespace(json, ref tail, end);
+            return tail == end && TryReadJsonString(json, valueStart, end, out value);
+        }
+
+        private static bool TryReadJsonIntValue(string json, int valueStart, int end, out int value)
+        {
+            value = 0;
+            SkipJsonWhitespace(json, ref valueStart, end);
+            bool negative = false;
+            if (valueStart < end && json[valueStart] == '-')
+            {
+                negative = true;
+                valueStart++;
+            }
+
+            long parsed = 0L;
+            int digits = 0;
+            while (valueStart < end)
+            {
+                char c = json[valueStart];
+                if (c < '0' || c > '9')
+                    break;
+
+                int digit = c - '0';
+                if (parsed > (long.MaxValue - digit) / 10L)
+                    return false;
+
+                parsed = parsed * 10L + digit;
+                if ((!negative && parsed > int.MaxValue) ||
+                    (negative && -parsed < int.MinValue))
+                {
+                    return false;
+                }
+
+                digits++;
+                valueStart++;
+            }
+
+            if (digits == 0)
+                return false;
+
+            SkipJsonWhitespace(json, ref valueStart, end);
+            if (valueStart != end)
+                return false;
+
+            value = negative ? (int)-parsed : (int)parsed;
+            return true;
+        }
+
+        private static bool TryReadJsonFloatValue(string json, int valueStart, int end, out float value)
+        {
+            value = 0f;
+            SkipJsonWhitespace(json, ref valueStart, end);
+            int tokenStart = valueStart;
+            while (valueStart < end)
+            {
+                char c = json[valueStart];
+                if (char.IsWhiteSpace(c))
+                    break;
+
+                valueStart++;
+            }
+
+            if (valueStart <= tokenStart)
+                return false;
+
+            int tail = valueStart;
+            SkipJsonWhitespace(json, ref tail, end);
+            if (tail != end)
+                return false;
+
+            ReadOnlySpan<char> token = json.AsSpan(tokenStart, valueStart - tokenStart);
+            return float.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+        }
+
+        private static bool TryReadJsonBoolValue(string json, int valueStart, int end, out bool value)
+        {
+            value = false;
+            SkipJsonWhitespace(json, ref valueStart, end);
+            if (MatchesJsonLiteral(json, valueStart, end, "true"))
+            {
+                int tail = valueStart + 4;
+                SkipJsonWhitespace(json, ref tail, end);
+                if (tail != end)
+                    return false;
+
+                value = true;
+                return true;
+            }
+
+            if (MatchesJsonLiteral(json, valueStart, end, "false"))
+            {
+                int tail = valueStart + 5;
+                SkipJsonWhitespace(json, ref tail, end);
+                return tail == end;
+            }
+
+            return false;
+        }
+
+        private static bool TryFindTopLevelJsonPropertyRange(
+            string json,
+            int objectStart,
+            int objectEnd,
+            string propertyName,
+            out int valueStart,
+            out int valueEnd)
+        {
+            return TryFindTopLevelJsonPropertyRange(
+                json,
+                objectStart,
+                objectEnd,
+                propertyName,
+                out valueStart,
+                out valueEnd,
+                out bool found) && found;
+        }
+
+        private static bool TryFindTopLevelJsonPropertyRange(
+            string json,
+            int objectStart,
+            int objectEnd,
+            string propertyName,
+            out int valueStart,
+            out int valueEnd,
+            out bool found)
+        {
+            valueStart = 0;
+            valueEnd = 0;
+            found = false;
+            if (string.IsNullOrEmpty(json) ||
+                string.IsNullOrEmpty(propertyName) ||
+                objectStart < 0 ||
+                objectEnd <= objectStart ||
+                objectEnd >= json.Length ||
+                json[objectStart] != '{' ||
+                json[objectEnd] != '}')
+            {
+                return false;
+            }
+
+            int cursor = objectStart + 1;
+            while (cursor < objectEnd)
+            {
+                SkipJsonWhitespace(json, ref cursor, objectEnd);
+                if (cursor == objectEnd)
+                    return true;
+
+                if (json[cursor] != '"')
+                    return false;
+
+                bool propertyMatches = TryMatchJsonStringLiteral(json, cursor, objectEnd, propertyName, out _);
+                if (!TrySkipJsonString(json, cursor, objectEnd, out int nameEnd))
+                    return false;
+
+                cursor = nameEnd + 1;
+                SkipJsonWhitespace(json, ref cursor, objectEnd);
+                if (cursor >= objectEnd || json[cursor] != ':')
+                    return false;
+
+                cursor++;
+                SkipJsonWhitespace(json, ref cursor, objectEnd);
+                int candidateValueStart = cursor;
+                if (!TrySkipJsonValue(json, ref cursor, objectEnd))
+                    return false;
+
+                if (propertyMatches)
+                {
+                    if (found)
+                        return false;
+
+                    found = true;
+                    valueStart = candidateValueStart;
+                    valueEnd = cursor;
+                }
+
+                SkipJsonWhitespace(json, ref cursor, objectEnd);
+                if (cursor == objectEnd)
+                    return true;
+
+                if (json[cursor] != ',')
+                    return false;
+
+                cursor++;
+            }
+
+            return true;
+        }
+
+        private static bool TryMatchJsonStringLiteral(
+            string json,
+            int quoteIndex,
+            int end,
+            string expected,
+            out int afterQuote)
+        {
+            afterQuote = 0;
+            int cursor = quoteIndex + 1;
+            for (int i = 0; i < expected.Length; i++)
+            {
+                if (cursor >= end || json[cursor] != expected[i])
+                    return false;
+
+                cursor++;
+            }
+
+            if (cursor >= end || json[cursor] != '"')
+                return false;
+
+            afterQuote = cursor + 1;
+            return true;
+        }
+
+        private static bool TrySkipJsonValue(string json, ref int index, int end)
+        {
+            if (string.IsNullOrEmpty(json) || index < 0 || index >= end || end > json.Length)
+                return false;
+
+            char first = json[index];
+            if (first == '"')
+            {
+                if (!TrySkipJsonString(json, index, end, out int stringEnd))
+                    return false;
+
+                index = stringEnd + 1;
+                return true;
+            }
+
+            if (first == '{' || first == '[')
+            {
+                int depth = 0;
+                bool inString = false;
+                bool escaped = false;
+                for (int i = index; i < end; i++)
+                {
+                    char c = json[i];
+                    if (inString)
+                    {
+                        if (escaped)
+                        {
+                            escaped = false;
+                            continue;
+                        }
+
+                        if (c == '\\')
+                        {
+                            escaped = true;
+                            continue;
+                        }
+
+                        if (c == '"')
+                            inString = false;
+
+                        continue;
+                    }
+
+                    if (c == '"')
+                    {
+                        inString = true;
+                        continue;
+                    }
+
+                    if (c == '{' || c == '[')
+                    {
+                        depth++;
+                        continue;
+                    }
+
+                    if (c == '}' || c == ']')
+                    {
+                        depth--;
+                        if (depth == 0)
+                        {
+                            index = i + 1;
+                            return true;
+                        }
+
+                        if (depth < 0)
+                            return false;
+                    }
+                }
+
+                return false;
+            }
+
+            int tokenStart = index;
+            while (index < end)
+            {
+                char c = json[index];
+                if (c == ',' || c == '}' || c == ']' || char.IsWhiteSpace(c))
+                    break;
+
+                index++;
+            }
+
+            return index > tokenStart;
+        }
+
+        private static bool TryFindJsonObjectEnd(string json, int objectStart, out int objectEnd)
+        {
+            return TryFindJsonObjectEnd(json, objectStart, json.Length, out objectEnd);
+        }
+
+        private static bool TryFindJsonObjectEnd(string json, int objectStart, int end, out int objectEnd)
+        {
+            objectEnd = objectStart;
+            if (string.IsNullOrEmpty(json) || objectStart < 0 || objectStart >= end || end > json.Length)
+                return false;
+
+            int depth = 0;
+            bool inString = false;
+            bool escaped = false;
+            for (int i = objectStart; i < end; i++)
+            {
+                char c = json[i];
+                if (inString)
+                {
+                    if (escaped)
+                    {
+                        escaped = false;
+                        continue;
+                    }
+
+                    if (c == '\\')
+                    {
+                        escaped = true;
+                        continue;
+                    }
+
+                    if (c == '"')
+                        inString = false;
+
+                    continue;
+                }
+
+                if (c == '"')
+                {
+                    inString = true;
+                    continue;
+                }
+
+                if (c == '{')
+                {
+                    depth++;
+                    continue;
+                }
+
+                if (c == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                    {
+                        objectEnd = i;
+                        return true;
+                    }
+
+                    if (depth < 0)
+                        return false;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryReadJsonString(string json, int quoteIndex, int end, out string value)
+        {
+            value = string.Empty;
+            if (quoteIndex >= end || json[quoteIndex] != '"')
+                return false;
+
+            for (int i = quoteIndex + 1; i < end; i++)
+            {
+                char c = json[i];
+                if (c == '"')
+                {
+                    value = json.Substring(quoteIndex + 1, i - quoteIndex - 1);
+                    return true;
+                }
+
+                if (c == '\\')
+                    return TryDecodeEscapedJsonString(json, quoteIndex, end, out value);
+            }
+
+            return false;
+        }
+
+        private static bool TryDecodeEscapedJsonString(string json, int quoteIndex, int end, out string value)
+        {
+            value = string.Empty;
+            char[] chars = new char[end - quoteIndex]; // COLD ALLOC: legacy options string decode only.
+            int written = 0;
+            for (int i = quoteIndex + 1; i < end; i++)
+            {
+                char c = json[i];
+                if (c == '"')
+                {
+                    value = new string(chars, 0, written); // COLD ALLOC: legacy options.h8cfg migration only.
+                    return true;
+                }
+
+                if (c != '\\')
+                {
+                    chars[written++] = c;
+                    continue;
+                }
+
+                i++;
+                if (i >= end)
+                    return false;
+
+                char escape = json[i];
+                if (escape == '"' || escape == '\\' || escape == '/')
+                    chars[written++] = escape;
+                else if (escape == 'b')
+                    chars[written++] = '\b';
+                else if (escape == 'f')
+                    chars[written++] = '\f';
+                else if (escape == 'n')
+                    chars[written++] = '\n';
+                else if (escape == 'r')
+                    chars[written++] = '\r';
+                else if (escape == 't')
+                    chars[written++] = '\t';
+                else if (escape == 'u')
+                {
+                    if (i + 4 >= end || !TryReadJsonHex4(json, i + 1, out int codepoint))
+                        return false;
+
+                    chars[written++] = (char)codepoint;
+                    i += 4;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TrySkipJsonString(string json, int quoteIndex, int end, out int stringEnd)
+        {
+            stringEnd = quoteIndex;
+            bool escaped = false;
+            for (int i = quoteIndex + 1; i < end; i++)
+            {
+                char c = json[i];
+                if (escaped)
+                {
+                    escaped = false;
+                    continue;
+                }
+
+                if (c == '\\')
+                {
+                    escaped = true;
+                    continue;
+                }
+
+                if (c == '"')
+                {
+                    stringEnd = i;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryReadJsonHex4(string json, int start, out int value)
+        {
+            value = 0;
+            if (start < 0 || start + 4 > json.Length)
+                return false;
+
+            for (int i = 0; i < 4; i++)
+            {
+                char c = json[start + i];
+                int digit;
+                if (c >= '0' && c <= '9')
+                    digit = c - '0';
+                else if (c >= 'a' && c <= 'f')
+                    digit = c - 'a' + 10;
+                else if (c >= 'A' && c <= 'F')
+                    digit = c - 'A' + 10;
+                else
+                    return false;
+
+                value = (value << 4) | digit;
+            }
+
+            return true;
+        }
+
+        private static bool MatchesJsonLiteral(string json, int start, int end, string literal)
+        {
+            if (start < 0 || start + literal.Length > end)
+                return false;
+
+            for (int i = 0; i < literal.Length; i++)
+            {
+                if (json[start + i] != literal[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static void SkipJsonWhitespace(string json, ref int index, int end)
+        {
+            while (index < end && char.IsWhiteSpace(json[index]))
+                index++;
         }
 
         private bool TryGetRecord(string key, out OptionRecord record)
         {
-            EnsureLoaded();
-
-            if (!string.IsNullOrWhiteSpace(key) && _records.TryGetValue(key, out record))
+            if (_loaded && !string.IsNullOrWhiteSpace(key) && _records.TryGetValue(key, out record))
                 return true;
 
             record = default;
             return false;
         }
 
-        private string ResolveOptionsPath()
+        private void EnsureOptionsStoragePaths()
         {
-            if (!string.IsNullOrEmpty(_optionsPath))
-                return _optionsPath;
-
-            _optionsDirectory = ResolvePersistentRootPath();
-            _optionsPath = Path.Combine(_optionsDirectory, NormalizePersistentRelativeSegment(FileName));
-            return _optionsPath;
-        }
-
-        private string ResolveOptionsTempPath()
-        {
-            if (!string.IsNullOrEmpty(_optionsTempPath))
-                return _optionsTempPath;
-
             if (string.IsNullOrEmpty(_optionsDirectory))
                 _optionsDirectory = ResolvePersistentRootPath();
 
-            _optionsTempPath = Path.Combine(_optionsDirectory, NormalizePersistentRelativeSegment(TempFileName));
-            return _optionsTempPath;
+            if (string.IsNullOrEmpty(_optionsPath))
+                _optionsPath = Path.Combine(_optionsDirectory, NormalizePersistentRelativeSegment(FileName));
+
+            if (string.IsNullOrEmpty(_optionsTempPath))
+                _optionsTempPath = Path.Combine(_optionsDirectory, NormalizePersistentRelativeSegment(TempFileName));
         }
 
         private static string ResolvePersistentRootPath()
@@ -680,13 +1695,6 @@ namespace Hecton8.Input
                 ((uint)buffer[offset + 1] << 8) |
                 ((uint)buffer[offset + 2] << 16) |
                 ((uint)buffer[offset + 3] << 24)));
-        }
-
-        [Serializable]
-        private sealed class OptionsFile
-        {
-            public int Version;
-            public OptionRecord[] Records = Array.Empty<OptionRecord>();
         }
 
         [Serializable]

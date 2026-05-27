@@ -112,7 +112,7 @@ namespace Hecton8.Gameplay.AirlockPressurization.Editor
             _curveExponent.SetValueWithoutNotify(dto.EqualizationCurveExponent);
             _powerDraw.SetValueWithoutNotify(dto.PowerDrawWatts);
             _qualityWeight.SetValueWithoutNotify(dto.GlobalQualityWeight);
-            _readout.text = $"water={dto.MaxWaterVolumeLiters:0}L pressure={dto.ExternalPressureAtm:0.00}atm tick={AirlockPressurizationMath.ResolveTickInterval(dto.GlobalQualityWeight):0.000}s";
+            _readout.text = $"water={dto.MaxWaterVolumeLiters:0}L pressure={dto.ExternalPressureAtm:0.00}atm tick={AirlockPressurizationMath.ResolveAuthorityTickInterval():0.000}s";
         }
 
         private static void Mutate(TuningField field, float value)

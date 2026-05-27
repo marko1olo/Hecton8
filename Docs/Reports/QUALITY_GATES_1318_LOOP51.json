@@ -1,0 +1,47 @@
+{
+  "agentId": "1318",
+  "loop": 51,
+  "task": "1318_PURGE",
+  "domain": "Echelon 3 Core Infrastructure and Ecology / Assets/_Project/Scripts/World / DestructibleOrganicManager.cs",
+  "status": "STATIC_GREEN_BUILD_BLOCKED_CPU_GATE",
+  "promptPath": "Docs/Reports/AGENT_PROMPT_1318_REEXTRACTED_LOOP51.xml",
+  "promptSha256": "78d4c0b2ba35813e61636068f869ee3ea208a76bb91d7d8067e5b030b03d90f5",
+  "lineTaskCount": 20,
+  "strictTaskNN": 23,
+  "looseTaskMentions": 23,
+  "source": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+  "sourceSha256": "018768af59c49c2881f3e3b541055c46ad962ac290d7632a4bb2eb1dc80a98d7",
+  "checks": {
+    "braceOpen": 924,
+    "braceClose": 924,
+    "braceBalanced": true,
+    "oldDirectConsumeLifecyclePredicateRefs": 0,
+    "directLoopPassiveDecompositionCalls": 0,
+    "passiveCandidateStackallocSites": 3,
+    "passiveCandidateDispatchSites": 4,
+    "strictPersistentNativeFields": 0,
+    "persistentAllocatorTokens": 0,
+    "vectorFloatDoubleConstructorHits": 0,
+    "gitDiffCheck": "LF_TO_CRLF_WARNING_ONLY"
+  },
+  "buildGate": {
+    "preBuildCpuAverage": 99.3,
+    "preBuildCompilerProcessCount": 1,
+    "preBuildCompilerProcesses": [
+      "dotnet:2448"
+    ],
+    "preBuildRootCsprojCount": 62,
+    "buildRun": false,
+    "blockedBy": "CPU_GT_50_AND_COMPILER_PROCESS",
+    "lastKnownExternalGraphFailure": "Loop50 legal build failed before target source proof in Unity.RenderPipelines.Universal.Runtime project graph."
+  },
+  "failedGates": [
+    "BUILD_GATE_BLOCKED_BY_CPU_GT_50",
+    "BUILD_GATE_BLOCKED_BY_EXTERNAL_DOTNET"
+  ],
+  "fixed": [
+    "Removed lock-taking and telemetry-writing IsDirectConsumeBlockedByLifecycleState read-like predicate.",
+    "Construction and defoliant passive-decomposition lane sweeps now stage candidates under lifecycle read locks and mutate only after unlock.",
+    "Allelopathic release scan now stages coral death candidates under lifecycle read locks, skips destroyed/regrowth kelp and coral UIDs, and dispatches passive decomposition after unlock."
+  ]
+}

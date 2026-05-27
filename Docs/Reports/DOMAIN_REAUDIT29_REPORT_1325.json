@@ -1,0 +1,113 @@
+﻿{
+    "schema":  "hecton8.domain_reaudit.1325.v29",
+    "agentId":  "1325",
+    "status":  "DOMAIN_REAUDIT_GREEN_PRIMARY_WORLD_SAVE_BINARY_CLEAN_EXTERNAL_SAVE_MANAGER_DECLARED",
+    "prompt":  {
+                   "path":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "tag":  "AGENT_PROMPT id=\"1325\"",
+                   "taskCount":  20,
+                   "sha256":  "EE975B109958AEF4F71A0B55FED9B9E339A88F3EED23829E64D2BA249AA61F94"
+               },
+    "changes":  [
+                    "AbsoluteUniversePosition.ToRuntimeFloat3 now fails closed through TryToRuntimeFloat3 and returns NaN rails when runtime origin or input is invalid.",
+                    "SaveBinaryStorage.TryToRuntimePosition now calls TryToRuntimeFloat3, so invalid runtime-origin metadata no longer becomes Vector3.zero.",
+                    "Indexed sector paging no longer stores NativeArray or NativeList in async state. Long-lived desired-sector state is an explicit 72-byte value-type PagedSectorHashWindow; native arrays/lists exist only inside synchronous TempJob helper methods and are disposed before return.",
+                    "Resident sector override snapshot writing was extracted from async Awaitable into synchronous helpers. A scanner over async Awaitable bodies reports zero native collection declarations.",
+                    "Entity-state-only sector override buckets still write an empty sector override plus entity-state override; the refactor preserves that previous behavior."
+                ],
+    "sourceReports":  {
+                          "worldNativeAliasLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT29_WORLD.json",
+                          "allScriptsNativeAliasLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT29_ALLSCRIPTS.json",
+                          "hotPathAudit":  "Docs/Reports/ZERO_GC_HOTPATH_AUDIT_1325_DEEP_REAUDIT29_RAW.json"
+                      },
+    "domainNativeAliasProof":  {
+                                   "scannedWorldFiles":  276,
+                                   "parseFailures":  0,
+                                   "totalWorldNativeFieldDeclarations":  1094,
+                                   "persistentWorldRegistryNativeFields":  0,
+                                   "broaderWorldForbiddenCandidates":  0,
+                                   "roslynAuditHash":  "996fb05324bf169a82efe1f38bd87af214eb837df4cb4cee03af5a2b5f543b94"
+                               },
+    "touchedBoundaryNativeAliasScan":  {
+                                           "scannedAllScriptFiles":  2441,
+                                           "parseFailures":  0,
+                                           "totalAllScriptNativeFields":  6662,
+                                           "touchedNativeFieldDeclarations":  38,
+                                           "broadScannerForbiddenTouchedCandidates":  13,
+                                           "saveBinaryStoragePersistentNativeFields":  0,
+                                           "saveManagerPersistentNativeFields":  13,
+                                           "stackOnlyRefStructViewFieldsInTouchedFiles":  12,
+                                           "transientJobFieldsInTouchedFiles":  13,
+                                           "status":  "primary world clean; SaveBinaryStorage clean; SaveManager residual declared external Data Archivist scope"
+                                       },
+    "asyncNativeProof":  {
+                             "asyncAwaitableNativeCollectionDeclarations":  0,
+                             "scanner":  "PowerShell brace-scope async Awaitable native declaration scanner",
+                             "status":  "no NativeArray/NativeList/NativeQueue/NativeParallelHashMap/NativeParallelMultiHashMap/UnsafeList declarations inside PersistentWorldRegistry async Awaitable bodies"
+                         },
+    "hotPathProof":  {
+                         "scannedFiles":  6,
+                         "parseFailures":  0,
+                         "selectedSimulationHotPathManagedGcHits":  0,
+                         "asyncNativeDeclarations":  0,
+                         "rawHitCount":  256,
+                         "rawAuditHash":  "5BD2B240370B058D3FB8089B9B4F327933F4CA4C494C873D8F3C479F09944FC1"
+                     },
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "PagedSectorHashWindow",
+                               "sizeBytes":  72,
+                               "offsets":  {
+                                               "Hash0":  "0:long",
+                                               "Hash1":  "8:long",
+                                               "Hash2":  "16:long",
+                                               "Hash3":  "24:long",
+                                               "Hash4":  "32:long",
+                                               "Hash5":  "40:long",
+                                               "Hash6":  "48:long",
+                                               "Hash7":  "56:long",
+                                               "Hash8":  "64:long"
+                                           }
+                           },
+                           {
+                               "structName":  "AbsoluteUniversePosition",
+                               "sizeBytes":  48,
+                               "offsets":  {
+                                               "GridX":  "0:long",
+                                               "GridY":  "8:long",
+                                               "GridZ":  "16:long",
+                                               "LocalX":  "24:float",
+                                               "LocalY":  "28:float",
+                                               "LocalZ":  "32:float",
+                                               "_pad0":  "36:float",
+                                               "_pad1":  "40:ulong"
+                                           }
+                           }
+                       ],
+    "hashes":  {
+                   "PersistentWorldRegistry":  "9E618F6FB8E6A13A089150D8270E633828216ECE0C3A9F1E9599FAB568B5EC76",
+                   "AUPMath":  "3868E1955CC5EAD8B4C070AB92EDFEE845D267C592905C0510DAD7B655B9EC11",
+                   "SaveBinaryStorage":  "5DCC2DB739AE5D1E5C0566FECE0C8F2BB1A2788D68F08348A5B0E3E914797F5B",
+                   "SaveManager":  "13FD0472DCBEE8053E012E778E7DC8B44CABF3F94F3E1857305170C4C197E1FD",
+                   "PlayerExplorationTracker":  "DA468001524EAB00B8310188D9A5C55236CE983B3DD40769734E11EDF7E8EFDB",
+                   "BinaryLayoutManifest":  "89C2591778B649605E553A8C9AE4F8F4AE2701AA5231D4B0A8D2221A174915AB",
+                   "primaryWorldCombined":  "6C9EE8C1C8F1D53501F98115CDD8F5D263520FCFFD8660E7CDF8831A64C7B61C",
+                   "primaryWorldPlusSaveBinary":  "F865B2694CDE0896CCC6DCE3D3EF67A18C5064BED6D01C7B55411FFEDEB7A092",
+                   "fullTouchedIncludingBoundaries":  "06DFED0F220CB0991D386FE01220E788B2476B2F187928B5A2121861852D9724"
+               },
+    "buildGuard":  {
+                       "buildLaunched":  true,
+                       "cpuPercent":  2,
+                       "activeDotnetProcessCount":  0,
+                       "reason":  "Build launched after guard cleared and failed before source compile because Unity generated project references have circular ResolveProjectReferences dependencies in Unity.RenderPipelines.Core.Editor.csproj and Unity.ShaderGraph.Editor.csproj.",
+                       "command":  "dotnet build .\\Assembly-CSharp.csproj --no-restore -v:minimal",
+                       "success":  false,
+                       "touchedFilesWithVisibleErrors":  false,
+                       "errors":  2
+                   },
+    "residualRisks":  [
+                          "SaveManager.cs still owns 13 persistent NativeArray fields and needs a dedicated Data Archivist DataVault descriptor migration.",
+                          "Runtime Unity profiler allocation proof was not captured; static hot-path scanner reports selected simulation hot-path managed GC hits as zero.",
+                          "Full all-scripts scan still reports 776 forbidden persistent native alias candidates outside this domain."
+                      ]
+}

@@ -28,7 +28,7 @@ namespace Hecton8.Physics
         private static VaultGenerationHandle<OceanCachedFluidSampleDTO> _cachedResultsHandle;
         private static VaultGenerationHandle<byte> _csvScratchHandle;
 
-        public struct Views
+        public ref struct Views
         {
             public NativeArray<OceanKinematicsSampleRequestDTO> Requests;
             public NativeArray<FluidSampleResultDTO> Results;
@@ -122,7 +122,7 @@ namespace Hecton8.Physics
             macroState = BuildMacroState(in tuning, waves, waveCount);
             views.Tuning[0] = tuning;
             views.MacroState[0] = macroState;
-            int activeOctaves = ResolveActiveOctaves(tuning.GlobalQualityWeight, tuning.MaxOctaveLimit, waves.IsCreated ? math.min(waveCount, waves.Length) : 0);
+            int activeOctaves = ResolveActiveOctaves(tuning.MaxOctaveLimit, waves.IsCreated ? math.min(waveCount, waves.Length) : 0);
             views.RollbackFence[0] = BuildRollbackFence(in macroState, resultStateHash: 0u, queryCount: 0, activeOctaves);
             return true;
         }
@@ -145,7 +145,7 @@ namespace Hecton8.Physics
 
             int queryCount = ResolveCounter(queueCounters, OceanKinematicsConstants.QueueCounterPacked, resultCount);
             int depthCulled = ResolveCounter(queueCounters, OceanKinematicsConstants.QueueCounterDepthCulled, 0);
-            int fallbackActiveOctaves = ResolveActiveOctaves(tuning.GlobalQualityWeight, tuning.MaxOctaveLimit, OceanKinematicsConstants.WaveCapacity);
+            int fallbackActiveOctaves = ResolveActiveOctaves(tuning.MaxOctaveLimit, OceanKinematicsConstants.WaveCapacity);
             int activeOctaves = ResolveCounter(queueCounters, OceanKinematicsConstants.QueueCounterActiveOctaves, fallbackActiveOctaves);
             int nonFinite = ResolveCounter(queueCounters, OceanKinematicsConstants.QueueCounterNonFinite, 0);
             uint resultHash = unchecked((uint)ResolveCounter(queueCounters, OceanKinematicsConstants.QueueCounterResultHash, unchecked((int)2166136261u)));
@@ -225,7 +225,7 @@ namespace Hecton8.Physics
         {
             OceanMacroStateDTO state = default;
             float quality = math.saturate(math.select(1f, tuning.GlobalQualityWeight, math.isfinite(tuning.GlobalQualityWeight)));
-            int activeOctaves = ResolveActiveOctaves(quality, tuning.MaxOctaveLimit, waves.IsCreated ? math.min(waveCount, waves.Length) : 0);
+            int activeOctaves = ResolveActiveOctaves(tuning.MaxOctaveLimit, waves.IsCreated ? math.min(waveCount, waves.Length) : 0);
             float peak = math.max(0f, math.select(0f, tuning.MaxPeakHeight, math.isfinite(tuning.MaxPeakHeight)));
             if (waves.IsCreated && activeOctaves > 0)
             {
@@ -298,7 +298,7 @@ namespace Hecton8.Physics
                 return true;
             }
 
-            if (vault.IsAllocationLocked)
+            if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                 return false;
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
@@ -343,14 +343,13 @@ namespace Hecton8.Physics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int ResolveActiveOctaves(float qualityWeight, int maxOctaveLimit, int availableWaves)
+        private static int ResolveActiveOctaves(int maxOctaveLimit, int availableWaves)
         {
             if (availableWaves <= 0)
                 return 0;
 
             int maxOctaves = math.clamp(maxOctaveLimit, 1, math.max(1, availableWaves));
-            float q = math.saturate(math.select(1f, qualityWeight, math.isfinite(qualityWeight)));
-            return math.clamp((int)math.lerp(1f, maxOctaves, q), 1, maxOctaves);
+            return maxOctaves;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -368,7 +367,6 @@ namespace Hecton8.Physics
             hash = Mix(hash, AsUInt32(state.RestingWaterHeight));
             hash = Mix(hash, AsUInt32(state.MaxWavePeakHeight));
             hash = Mix(hash, AsUInt32(state.OceanSurfaceY));
-            hash = Mix(hash, AsUInt32(state.GlobalQualityWeight));
             hash = Mix(hash, state.FrameIndex);
             hash = Mix(hash, state.Flags);
             return hash;

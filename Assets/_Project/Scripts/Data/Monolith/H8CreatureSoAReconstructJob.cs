@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -31,18 +32,15 @@ namespace Hecton8.Data
         /// <param name="index">Record index.</param>
         public void Execute(int index)
         {
-            if ((uint)index >= (uint)CreatureCount)
-                return;
-
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Blob);
             byte* recordPtr = basePtr + CreatureSectionOffsetBytes + (index * H8DataLayoutConstants.CreatureTraitRecordSize);
             H8CreatureTraitRecord record = UnsafeUtility.ReadArrayElement<H8CreatureTraitRecord>(recordPtr, 0);
 
-            Aggressions[index] = math.isfinite(record.Genome.Aggression) ? record.Genome.Aggression : 0f;
-            Metabolisms[index] = math.isfinite(record.Genome.Metabolism) ? record.Genome.Metabolism : 1f;
-            HealthCaps[index] = math.isfinite(record.Genome.MaxHealth) ? record.Genome.MaxHealth : 1f;
-            CruiseSpeeds[index] = math.isfinite(record.Genome.CruiseSpeed) ? record.Genome.CruiseSpeed : 0f;
-            BurstSpeeds[index] = math.isfinite(record.Genome.BurstSpeed) ? record.Genome.BurstSpeed : 0f;
+            Aggressions[index] = H8SoAReconstructMath.FiniteOr(record.Genome.Aggression, 0f);
+            Metabolisms[index] = H8SoAReconstructMath.FiniteOr(record.Genome.Metabolism, 1f);
+            HealthCaps[index] = H8SoAReconstructMath.FiniteOr(record.Genome.MaxHealth, 1f);
+            CruiseSpeeds[index] = H8SoAReconstructMath.FiniteOr(record.Genome.CruiseSpeed, 0f);
+            BurstSpeeds[index] = H8SoAReconstructMath.FiniteOr(record.Genome.BurstSpeed, 0f);
             MateMasks[index] = record.MateMask;
         }
     }
@@ -74,9 +72,6 @@ namespace Hecton8.Data
         /// <param name="index">Record index.</param>
         public void Execute(int index)
         {
-            if ((uint)index >= (uint)ItemCount)
-                return;
-
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Blob);
             byte* recordPtr = basePtr + ItemSectionOffsetBytes + (index * H8DataLayoutConstants.ItemRecordSize);
             H8ItemRecord record = UnsafeUtility.ReadArrayElement<H8ItemRecord>(recordPtr, 0);
@@ -86,10 +81,19 @@ namespace Hecton8.Data
             MaxStacks[index] = record.MaxStack;
             RecipeMask0[index] = record.RecipeMask0;
             RecipeMask1[index] = record.RecipeMask1;
-            MassKg[index] = math.isfinite(record.MassKg) ? record.MassKg : 0f;
-            VolumeM3[index] = math.isfinite(record.VolumeM3) ? record.VolumeM3 : 0f;
-            BaseQualities[index] = math.isfinite(record.BaseQuality) ? record.BaseQuality : 1f;
-            HeatCapacities[index] = math.isfinite(record.HeatCapacity) ? record.HeatCapacity : 0f;
+            MassKg[index] = H8SoAReconstructMath.FiniteOr(record.MassKg, 0f);
+            VolumeM3[index] = H8SoAReconstructMath.FiniteOr(record.VolumeM3, 0f);
+            BaseQualities[index] = H8SoAReconstructMath.FiniteOr(record.BaseQuality, 1f);
+            HeatCapacities[index] = H8SoAReconstructMath.FiniteOr(record.HeatCapacity, 0f);
+        }
+    }
+
+    internal static class H8SoAReconstructMath
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float FiniteOr(float value, float fallback)
+        {
+            return math.select(fallback, value, math.isfinite(value));
         }
     }
 }

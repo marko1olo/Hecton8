@@ -181,7 +181,48 @@ namespace Hecton8.World
         [FieldOffset(28)] public uint _pad1;
     }
 
-    public struct GlobalWorldSamplerData
+    [StructLayout(LayoutKind.Explicit, Size = 224)]
+    public struct GlobalWorldSamplerScalarData
+    {
+        [FieldOffset(0)] public double3 ActiveChunkOriginAup;
+        [FieldOffset(24)] public double3 HeightOriginAup;
+        [FieldOffset(48)] public double3 SdfOriginAup;
+        [FieldOffset(72)] public float3 HeightSize;
+        [FieldOffset(84)] public int HeightResolution;
+        [FieldOffset(88)] public float3 SdfCellSize;
+        [FieldOffset(100)] public int3 SdfDimensions;
+        [FieldOffset(112)] public float SdfRange;
+        [FieldOffset(116)] public float SeaLevel;
+        [FieldOffset(120)] public float SeamSmoothMeters;
+        [FieldOffset(124)] public float MicroNoiseAmplitude;
+        [FieldOffset(128)] public float MicroNoiseFrequency;
+        [FieldOffset(132)] public float GlobalQualityWeight;
+        [FieldOffset(136)] public float BiomeBlendMeters;
+        [FieldOffset(140)] public float ErosionFlattenStrength;
+        [FieldOffset(144)] public float NormalEpsilon;
+        [FieldOffset(148)] public float MaxLocalMeters;
+        [FieldOffset(152)] public float3 ErosionNormalBias;
+        [FieldOffset(164)] public float SectorSizeMeters;
+        [FieldOffset(168)] public int SectorOriginX;
+        [FieldOffset(172)] public int SectorOriginZ;
+        [FieldOffset(176)] public int SectorCountX;
+        [FieldOffset(180)] public int SectorCountZ;
+        [FieldOffset(184)] public uint HeightAliasHash;
+        [FieldOffset(188)] public uint SdfAliasHash;
+        [FieldOffset(192)] public uint MaterialAliasHash;
+        [FieldOffset(196)] public uint DefaultBiomeHash;
+        [FieldOffset(200)] public int Revision;
+        [FieldOffset(204)] public int Reserved0;
+        [FieldOffset(208)] public byte ConfigFlags;
+        [FieldOffset(209)] public byte DefaultMaterialId;
+        [FieldOffset(210)] public byte HardFloorMaterialId;
+        [FieldOffset(211)] public byte CaveMaterialFallback;
+        [FieldOffset(212)] private uint _pad0;
+        [FieldOffset(216)] private uint _pad1;
+        [FieldOffset(220)] private uint _pad2;
+    }
+
+    public ref struct GlobalWorldSamplerData
     {
         // Unity NativeArray<T> handles are pointer-bearing 8-byte-aligned job handles.
         // Scalar payload after the handles is 184 bytes:
@@ -374,7 +415,7 @@ namespace Hecton8.World
             terrainResultBytes = UnsafeUtility.SizeOf<TerrainSampleResult>();
             telemetryEntryBytes = UnsafeUtility.SizeOf<GlobalWorldSamplerTelemetryEntry>();
             queryBytes = UnsafeUtility.SizeOf<GlobalWorldSamplerQuery>();
-            dataBytes = UnsafeUtility.SizeOf<GlobalWorldSamplerData>();
+            dataBytes = UnsafeUtility.SizeOf<GlobalWorldSamplerScalarData>();
         }
 
         public static void GetRuntimeDtoLayoutBytes(out int terrainDtoBytes, out int mapMagicCellBytes, out int terrainResultBytes, out int counterBlockBytes)
@@ -394,6 +435,7 @@ namespace Hecton8.World
                    UnsafeUtility.SizeOf<GlobalWorldSamplerCounterBlock>() == CounterBlockSizeBytes &&
                    UnsafeUtility.SizeOf<GlobalWorldSamplerTelemetryEntry>() == TelemetryEntrySizeBytes &&
                    UnsafeUtility.SizeOf<GlobalWorldSamplerQualityState>() == QualityStateSizeBytes &&
+                   UnsafeUtility.SizeOf<GlobalWorldSamplerScalarData>() == DataScalarPayloadBytes &&
                    UnsafeUtility.SizeOf<GlobalWorldSamplerQuery>() == QuerySizeBytes;
         }
 
@@ -497,6 +539,149 @@ namespace Hecton8.World
             return data;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static GlobalWorldSamplerScalarData ExtractScalarData(in GlobalWorldSamplerData data)
+        {
+            GlobalWorldSamplerScalarData scalar = default;
+            scalar.ActiveChunkOriginAup = data.ActiveChunkOriginAup;
+            scalar.HeightOriginAup = data.HeightOriginAup;
+            scalar.SdfOriginAup = data.SdfOriginAup;
+            scalar.HeightSize = data.HeightSize;
+            scalar.HeightResolution = data.HeightResolution;
+            scalar.SdfCellSize = data.SdfCellSize;
+            scalar.SdfDimensions = data.SdfDimensions;
+            scalar.SdfRange = data.SdfRange;
+            scalar.SeaLevel = data.SeaLevel;
+            scalar.SeamSmoothMeters = data.SeamSmoothMeters;
+            scalar.MicroNoiseAmplitude = data.MicroNoiseAmplitude;
+            scalar.MicroNoiseFrequency = data.MicroNoiseFrequency;
+            scalar.GlobalQualityWeight = data.GlobalQualityWeight;
+            scalar.BiomeBlendMeters = data.BiomeBlendMeters;
+            scalar.ErosionFlattenStrength = data.ErosionFlattenStrength;
+            scalar.NormalEpsilon = data.NormalEpsilon;
+            scalar.MaxLocalMeters = data.MaxLocalMeters;
+            scalar.ErosionNormalBias = data.ErosionNormalBias;
+            scalar.SectorSizeMeters = data.SectorSizeMeters;
+            scalar.SectorOriginX = data.SectorOriginX;
+            scalar.SectorOriginZ = data.SectorOriginZ;
+            scalar.SectorCountX = data.SectorCountX;
+            scalar.SectorCountZ = data.SectorCountZ;
+            scalar.HeightAliasHash = data.HeightAliasHash;
+            scalar.SdfAliasHash = data.SdfAliasHash;
+            scalar.MaterialAliasHash = data.MaterialAliasHash;
+            scalar.DefaultBiomeHash = data.DefaultBiomeHash;
+            scalar.Revision = data.Revision;
+            scalar.Reserved0 = data.Reserved0;
+            scalar.ConfigFlags = data.ConfigFlags;
+            scalar.DefaultMaterialId = data.DefaultMaterialId;
+            scalar.HardFloorMaterialId = data.HardFloorMaterialId;
+            scalar.CaveMaterialFallback = data.CaveMaterialFallback;
+            return scalar;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ApplyScalarData(ref GlobalWorldSamplerData data, in GlobalWorldSamplerScalarData scalar)
+        {
+            data.ActiveChunkOriginAup = scalar.ActiveChunkOriginAup;
+            data.HeightOriginAup = scalar.HeightOriginAup;
+            data.SdfOriginAup = scalar.SdfOriginAup;
+            data.HeightSize = scalar.HeightSize;
+            data.HeightResolution = scalar.HeightResolution;
+            data.SdfCellSize = scalar.SdfCellSize;
+            data.SdfDimensions = scalar.SdfDimensions;
+            data.SdfRange = scalar.SdfRange;
+            data.SeaLevel = scalar.SeaLevel;
+            data.SeamSmoothMeters = scalar.SeamSmoothMeters;
+            data.MicroNoiseAmplitude = scalar.MicroNoiseAmplitude;
+            data.MicroNoiseFrequency = scalar.MicroNoiseFrequency;
+            data.GlobalQualityWeight = scalar.GlobalQualityWeight;
+            data.BiomeBlendMeters = scalar.BiomeBlendMeters;
+            data.ErosionFlattenStrength = scalar.ErosionFlattenStrength;
+            data.NormalEpsilon = scalar.NormalEpsilon;
+            data.MaxLocalMeters = scalar.MaxLocalMeters;
+            data.ErosionNormalBias = scalar.ErosionNormalBias;
+            data.SectorSizeMeters = scalar.SectorSizeMeters;
+            data.SectorOriginX = scalar.SectorOriginX;
+            data.SectorOriginZ = scalar.SectorOriginZ;
+            data.SectorCountX = scalar.SectorCountX;
+            data.SectorCountZ = scalar.SectorCountZ;
+            data.HeightAliasHash = scalar.HeightAliasHash;
+            data.SdfAliasHash = scalar.SdfAliasHash;
+            data.MaterialAliasHash = scalar.MaterialAliasHash;
+            data.DefaultBiomeHash = scalar.DefaultBiomeHash;
+            data.Revision = scalar.Revision;
+            data.Reserved0 = scalar.Reserved0;
+            data.ConfigFlags = scalar.ConfigFlags;
+            data.DefaultMaterialId = scalar.DefaultMaterialId;
+            data.HardFloorMaterialId = scalar.HardFloorMaterialId;
+            data.CaveMaterialFallback = scalar.CaveMaterialFallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static GlobalWorldSamplerData FromJobAliases(
+            NativeArray<ushort> heightSamples,
+            NativeArray<byte> heightMaterialIds,
+            NativeArray<byte> encodedSdf,
+            NativeArray<byte> sdfMaterialIds,
+            NativeArray<uint> caveSectorMask,
+            NativeArray<uint> biomeAtlas,
+            NativeArray<byte> erosionMask,
+            NativeArray<uint> sdfOverrideMask,
+            NativeArray<long> activeSectorPointers,
+            NativeArray<int> sampleCounter,
+            NativeArray<GlobalWorldSamplerCounterBlock> counterBlocks,
+            NativeArray<GlobalWorldSamplerTelemetryEntry> telemetryRing,
+            in GlobalWorldSamplerScalarData scalar)
+        {
+            GlobalWorldSamplerData data = default;
+            data.HeightSamples = heightSamples;
+            data.HeightMaterialIds = heightMaterialIds;
+            data.EncodedSdf = encodedSdf;
+            data.SdfMaterialIds = sdfMaterialIds;
+            data.CaveSectorMask = caveSectorMask;
+            data.BiomeAtlas = biomeAtlas;
+            data.ErosionMask = erosionMask;
+            data.SdfOverrideMask = sdfOverrideMask;
+            data.ActiveSectorPointers = activeSectorPointers;
+            data.SampleCounter = sampleCounter;
+            data.CounterBlocks = counterBlocks;
+            data.TelemetryRing = telemetryRing;
+            ApplyScalarData(ref data, in scalar);
+            return data;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ExtractJobAliases(
+            in GlobalWorldSamplerData data,
+            out NativeArray<ushort> heightSamples,
+            out NativeArray<byte> heightMaterialIds,
+            out NativeArray<byte> encodedSdf,
+            out NativeArray<byte> sdfMaterialIds,
+            out NativeArray<uint> caveSectorMask,
+            out NativeArray<uint> biomeAtlas,
+            out NativeArray<byte> erosionMask,
+            out NativeArray<uint> sdfOverrideMask,
+            out NativeArray<long> activeSectorPointers,
+            out NativeArray<int> sampleCounter,
+            out NativeArray<GlobalWorldSamplerCounterBlock> counterBlocks,
+            out NativeArray<GlobalWorldSamplerTelemetryEntry> telemetryRing,
+            out GlobalWorldSamplerScalarData scalar)
+        {
+            heightSamples = data.HeightSamples;
+            heightMaterialIds = data.HeightMaterialIds;
+            encodedSdf = data.EncodedSdf;
+            sdfMaterialIds = data.SdfMaterialIds;
+            caveSectorMask = data.CaveSectorMask;
+            biomeAtlas = data.BiomeAtlas;
+            erosionMask = data.ErosionMask;
+            sdfOverrideMask = data.SdfOverrideMask;
+            activeSectorPointers = data.ActiveSectorPointers;
+            sampleCounter = data.SampleCounter;
+            counterBlocks = data.CounterBlocks;
+            telemetryRing = data.TelemetryRing;
+            scalar = ExtractScalarData(in data);
+        }
+
         public static JobHandle ScheduleBatchSampler(
             in GlobalWorldSamplerData data,
             NativeArray<double3> positionsAup,
@@ -513,7 +698,7 @@ namespace Hecton8.World
             }
 
             BatchSamplerJob job;
-            job.Data = data;
+            job.SetData(in data);
             job.PositionsAup = positionsAup;
             job.Results = results;
             job.Frame = frame;
@@ -539,7 +724,7 @@ namespace Hecton8.World
             }
 
             BatchLocalSamplerJob job;
-            job.Data = data;
+            job.SetData(in data);
             job.PositionsLocal = positionsLocal;
             job.Results = results;
             job.Frame = frame;
@@ -564,7 +749,7 @@ namespace Hecton8.World
             }
 
             GradientNormalEstimationBatchJob job;
-            job.Data = data;
+            job.SetData(in data);
             job.PositionsAup = positionsAup;
             job.Results = results;
             job.Frame = frame;
@@ -589,7 +774,7 @@ namespace Hecton8.World
             }
 
             MockTerrainQueryStressJob job;
-            job.Data = data;
+            job.SetData(in data);
             job.Signals = signals;
             job.Results = results;
             job.OriginAup = originAup;
@@ -618,7 +803,7 @@ namespace Hecton8.World
             }
 
             MockBoidRaymarchJob job;
-            job.Data = data;
+            job.SetData(in data);
             job.RayDirectionsLocal = rayDirectionsLocal;
             job.Hits = hits;
             job.OriginAup = originAup;
@@ -647,13 +832,17 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveSamplingCadenceDivisor(float qualityWeight)
         {
-            return 1;
+            float quality = IsFinite(qualityWeight) ? math.saturate(qualityWeight) : DefaultQualityWeight;
+            float qualityCurve = quality * quality * (3f - (2f * quality));
+            float cadence = math.lerp((float)LowQualityCadenceDivisor, 1f, qualityCurve);
+            return math.clamp((int)math.floor(cadence + 0.5f), 1, LowQualityCadenceDivisor);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ShouldSampleOnFrame(uint frame, float qualityWeight)
         {
-            return true;
+            int cadenceDivisor = ResolveSamplingCadenceDivisor(qualityWeight);
+            return cadenceDivisor <= 1 || frame % (uint)cadenceDivisor == 0u;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1936,19 +2125,25 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float ResolveQualityWeight(in GlobalWorldSamplerData data)
         {
-            return 1f;
+            return IsFinite(data.GlobalQualityWeight)
+                ? math.saturate(data.GlobalQualityWeight)
+                : DefaultQualityWeight;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveExpensiveSamplingWeight(float qualityWeight)
         {
-            return 1f;
+            float quality = IsFinite(qualityWeight) ? math.saturate(qualityWeight) : DefaultQualityWeight;
+            float ramp = math.saturate((quality - ExpensiveSamplingStartWeight) / (1f - ExpensiveSamplingStartWeight));
+            return ramp * ramp * (3f - (2f * ramp));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveOverkillSamplingWeight(float qualityWeight)
         {
-            return 1f;
+            float quality = IsFinite(qualityWeight) ? math.saturate(qualityWeight) : DefaultQualityWeight;
+            float ramp = math.saturate((quality - 0.75f) * 4f);
+            return ramp * ramp * (3f - (2f * ramp));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2128,7 +2323,19 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct BatchSamplerJob : IJobParallelFor
     {
-        [NoAlias] public GlobalWorldSamplerData Data;
+        [NoAlias, ReadOnly] public NativeArray<ushort> HeightSamples;
+        [NoAlias, ReadOnly] public NativeArray<byte> HeightMaterialIds;
+        [NoAlias, ReadOnly] public NativeArray<byte> EncodedSdf;
+        [NoAlias, ReadOnly] public NativeArray<byte> SdfMaterialIds;
+        [NoAlias, ReadOnly] public NativeArray<uint> CaveSectorMask;
+        [NoAlias, ReadOnly] public NativeArray<uint> BiomeAtlas;
+        [NoAlias, ReadOnly] public NativeArray<byte> ErosionMask;
+        [NoAlias, ReadOnly] public NativeArray<uint> SdfOverrideMask;
+        [NoAlias, ReadOnly] public NativeArray<long> ActiveSectorPointers;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> SampleCounter;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<GlobalWorldSamplerCounterBlock> CounterBlocks;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<GlobalWorldSamplerTelemetryEntry> TelemetryRing;
+        public GlobalWorldSamplerScalarData ScalarData;
         [NoAlias, ReadOnly] public NativeArray<double3> PositionsAup;
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<TerrainSampleResult> Results;
         public uint Frame;
@@ -2136,27 +2343,65 @@ namespace Hecton8.World
         public byte Padding0;
         public ushort Padding1;
 
+        public void SetData(in GlobalWorldSamplerData data)
+        {
+            GlobalWorldSampler.ExtractJobAliases(
+                in data,
+                out HeightSamples,
+                out HeightMaterialIds,
+                out EncodedSdf,
+                out SdfMaterialIds,
+                out CaveSectorMask,
+                out BiomeAtlas,
+                out ErosionMask,
+                out SdfOverrideMask,
+                out ActiveSectorPointers,
+                out SampleCounter,
+                out CounterBlocks,
+                out TelemetryRing,
+                out ScalarData);
+        }
+
+        private GlobalWorldSamplerData BuildData()
+        {
+            return GlobalWorldSampler.FromJobAliases(
+                HeightSamples,
+                HeightMaterialIds,
+                EncodedSdf,
+                SdfMaterialIds,
+                CaveSectorMask,
+                BiomeAtlas,
+                ErosionMask,
+                SdfOverrideMask,
+                ActiveSectorPointers,
+                SampleCounter,
+                CounterBlocks,
+                TelemetryRing,
+                in ScalarData);
+        }
+
         public void Execute(int index)
         {
+            GlobalWorldSamplerData data = BuildData();
             GlobalWorldSampler.BuildQuery(
                 PositionsAup[index],
                 Frame,
                 EstimateNormals != 0 ? GlobalWorldSamplerQueryFlags.EstimateNormal : GlobalWorldSamplerQueryFlags.None,
                 out GlobalWorldSamplerQuery query);
 
-            GlobalWorldSampler.Sample(Data, query, out TerrainSampleResult result);
+            GlobalWorldSampler.Sample(data, query, out TerrainSampleResult result);
             Results[index] = result;
 
             if (index == 0)
             {
-                GlobalWorldSampler.WriteTelemetryFrame(Data, Frame, result);
+                GlobalWorldSampler.WriteTelemetryFrame(data, Frame, result);
             }
 
-            int sampleCost = GlobalWorldSampler.ResolveTerrainSampleCost(Data, EstimateNormals, result);
-            int total = GlobalWorldSampler.AddSampleCount(Data, sampleCost);
+            int sampleCost = GlobalWorldSampler.ResolveTerrainSampleCost(data, EstimateNormals, result);
+            int total = GlobalWorldSampler.AddSampleCount(data, sampleCost);
             if (GlobalWorldSampler.ShouldTripThroughputWarning(total - sampleCost, total))
             {
-                GlobalWorldSampler.RecordThroughputWarning(Data, Frame, result);
+                GlobalWorldSampler.RecordThroughputWarning(data, Frame, result);
             }
         }
     }
@@ -2164,7 +2409,19 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct BatchLocalSamplerJob : IJobParallelFor
     {
-        [NoAlias] public GlobalWorldSamplerData Data;
+        [NoAlias, ReadOnly] public NativeArray<ushort> HeightSamples;
+        [NoAlias, ReadOnly] public NativeArray<byte> HeightMaterialIds;
+        [NoAlias, ReadOnly] public NativeArray<byte> EncodedSdf;
+        [NoAlias, ReadOnly] public NativeArray<byte> SdfMaterialIds;
+        [NoAlias, ReadOnly] public NativeArray<uint> CaveSectorMask;
+        [NoAlias, ReadOnly] public NativeArray<uint> BiomeAtlas;
+        [NoAlias, ReadOnly] public NativeArray<byte> ErosionMask;
+        [NoAlias, ReadOnly] public NativeArray<uint> SdfOverrideMask;
+        [NoAlias, ReadOnly] public NativeArray<long> ActiveSectorPointers;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> SampleCounter;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<GlobalWorldSamplerCounterBlock> CounterBlocks;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<GlobalWorldSamplerTelemetryEntry> TelemetryRing;
+        public GlobalWorldSamplerScalarData ScalarData;
         [NoAlias, ReadOnly] public NativeArray<float3> PositionsLocal;
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<TerrainSampleResult> Results;
         public uint Frame;
@@ -2172,29 +2429,67 @@ namespace Hecton8.World
         public byte Padding0;
         public ushort Padding1;
 
+        public void SetData(in GlobalWorldSamplerData data)
+        {
+            GlobalWorldSampler.ExtractJobAliases(
+                in data,
+                out HeightSamples,
+                out HeightMaterialIds,
+                out EncodedSdf,
+                out SdfMaterialIds,
+                out CaveSectorMask,
+                out BiomeAtlas,
+                out ErosionMask,
+                out SdfOverrideMask,
+                out ActiveSectorPointers,
+                out SampleCounter,
+                out CounterBlocks,
+                out TelemetryRing,
+                out ScalarData);
+        }
+
+        private GlobalWorldSamplerData BuildData()
+        {
+            return GlobalWorldSampler.FromJobAliases(
+                HeightSamples,
+                HeightMaterialIds,
+                EncodedSdf,
+                SdfMaterialIds,
+                CaveSectorMask,
+                BiomeAtlas,
+                ErosionMask,
+                SdfOverrideMask,
+                ActiveSectorPointers,
+                SampleCounter,
+                CounterBlocks,
+                TelemetryRing,
+                in ScalarData);
+        }
+
         public void Execute(int index)
         {
+            GlobalWorldSamplerData data = BuildData();
             float3 local = PositionsLocal[index];
-            double3 aup = Data.ActiveChunkOriginAup + GlobalWorldSampler.Double3(local.x, local.y, local.z);
+            double3 aup = data.ActiveChunkOriginAup + GlobalWorldSampler.Double3(local.x, local.y, local.z);
             GlobalWorldSampler.BuildQuery(
                 aup,
                 Frame,
                 EstimateNormals != 0 ? GlobalWorldSamplerQueryFlags.EstimateNormal : GlobalWorldSamplerQueryFlags.None,
                 out GlobalWorldSamplerQuery query);
 
-            GlobalWorldSampler.Sample(Data, query, out TerrainSampleResult result);
+            GlobalWorldSampler.Sample(data, query, out TerrainSampleResult result);
             Results[index] = result;
 
             if (index == 0)
             {
-                GlobalWorldSampler.WriteTelemetryFrame(Data, Frame, result);
+                GlobalWorldSampler.WriteTelemetryFrame(data, Frame, result);
             }
 
-            int sampleCost = GlobalWorldSampler.ResolveTerrainSampleCost(Data, EstimateNormals, result);
-            int total = GlobalWorldSampler.AddSampleCount(Data, sampleCost);
+            int sampleCost = GlobalWorldSampler.ResolveTerrainSampleCost(data, EstimateNormals, result);
+            int total = GlobalWorldSampler.AddSampleCount(data, sampleCost);
             if (GlobalWorldSampler.ShouldTripThroughputWarning(total - sampleCost, total))
             {
-                GlobalWorldSampler.RecordThroughputWarning(Data, Frame, result);
+                GlobalWorldSampler.RecordThroughputWarning(data, Frame, result);
             }
         }
     }
@@ -2237,7 +2532,19 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct MockTerrainQueryStressJob : IJobParallelFor
     {
-        [NoAlias] public GlobalWorldSamplerData Data;
+        [NoAlias, ReadOnly] public NativeArray<ushort> HeightSamples;
+        [NoAlias, ReadOnly] public NativeArray<byte> HeightMaterialIds;
+        [NoAlias, ReadOnly] public NativeArray<byte> EncodedSdf;
+        [NoAlias, ReadOnly] public NativeArray<byte> SdfMaterialIds;
+        [NoAlias, ReadOnly] public NativeArray<uint> CaveSectorMask;
+        [NoAlias, ReadOnly] public NativeArray<uint> BiomeAtlas;
+        [NoAlias, ReadOnly] public NativeArray<byte> ErosionMask;
+        [NoAlias, ReadOnly] public NativeArray<uint> SdfOverrideMask;
+        [NoAlias, ReadOnly] public NativeArray<long> ActiveSectorPointers;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> SampleCounter;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<GlobalWorldSamplerCounterBlock> CounterBlocks;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<GlobalWorldSamplerTelemetryEntry> TelemetryRing;
+        public GlobalWorldSamplerScalarData ScalarData;
         [NoAlias, ReadOnly] public NativeArray<MockTerrainQuerySignal> Signals;
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<TerrainSampleDTO> Results;
         public double3 OriginAup;
@@ -2245,12 +2552,49 @@ namespace Hecton8.World
         public uint Frame;
         public uint Seed;
 
+        public void SetData(in GlobalWorldSamplerData data)
+        {
+            GlobalWorldSampler.ExtractJobAliases(
+                in data,
+                out HeightSamples,
+                out HeightMaterialIds,
+                out EncodedSdf,
+                out SdfMaterialIds,
+                out CaveSectorMask,
+                out BiomeAtlas,
+                out ErosionMask,
+                out SdfOverrideMask,
+                out ActiveSectorPointers,
+                out SampleCounter,
+                out CounterBlocks,
+                out TelemetryRing,
+                out ScalarData);
+        }
+
+        private GlobalWorldSamplerData BuildData()
+        {
+            return GlobalWorldSampler.FromJobAliases(
+                HeightSamples,
+                HeightMaterialIds,
+                EncodedSdf,
+                SdfMaterialIds,
+                CaveSectorMask,
+                BiomeAtlas,
+                ErosionMask,
+                SdfOverrideMask,
+                ActiveSectorPointers,
+                SampleCounter,
+                CounterBlocks,
+                TelemetryRing,
+                in ScalarData);
+        }
+
         public void Execute(int index)
         {
             MockTerrainQuerySignal signal = Signals.IsCreated && index < Signals.Length
                 ? Signals[index]
                 : BuildProceduralSignal(index);
-            GlobalWorldSamplerData data = Data;
+            GlobalWorldSamplerData data = BuildData();
             data.GlobalQualityWeight = math.saturate(signal.QualityWeight);
 
             GlobalWorldSampler.BuildQuery(signal.Aup, signal.Frame, GlobalWorldSamplerQueryFlags.EstimateNormal, out GlobalWorldSamplerQuery query);
@@ -2260,10 +2604,10 @@ namespace Hecton8.World
             target = dto;
 
             int sampleCost = GlobalWorldSampler.ResolveTerrainSampleCost(data, 1, result);
-            int total = GlobalWorldSampler.AddSampleCount(Data, sampleCost);
+            int total = GlobalWorldSampler.AddSampleCount(data, sampleCost);
             if (GlobalWorldSampler.ShouldTripThroughputWarning(total - sampleCost, total))
             {
-                GlobalWorldSampler.RecordThroughputWarning(Data, signal.Frame, result);
+                GlobalWorldSampler.RecordThroughputWarning(data, signal.Frame, result);
             }
         }
 
@@ -2290,34 +2634,84 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct GradientNormalEstimationBatchJob : IJobParallelForBatch
     {
-        [NoAlias] public GlobalWorldSamplerData Data;
+        [NoAlias, ReadOnly] public NativeArray<ushort> HeightSamples;
+        [NoAlias, ReadOnly] public NativeArray<byte> HeightMaterialIds;
+        [NoAlias, ReadOnly] public NativeArray<byte> EncodedSdf;
+        [NoAlias, ReadOnly] public NativeArray<byte> SdfMaterialIds;
+        [NoAlias, ReadOnly] public NativeArray<uint> CaveSectorMask;
+        [NoAlias, ReadOnly] public NativeArray<uint> BiomeAtlas;
+        [NoAlias, ReadOnly] public NativeArray<byte> ErosionMask;
+        [NoAlias, ReadOnly] public NativeArray<uint> SdfOverrideMask;
+        [NoAlias, ReadOnly] public NativeArray<long> ActiveSectorPointers;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> SampleCounter;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<GlobalWorldSamplerCounterBlock> CounterBlocks;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<GlobalWorldSamplerTelemetryEntry> TelemetryRing;
+        public GlobalWorldSamplerScalarData ScalarData;
         [NoAlias, ReadOnly] public NativeArray<double3> PositionsAup;
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<TerrainSampleResult> Results;
         public uint Frame;
 
+        public void SetData(in GlobalWorldSamplerData data)
+        {
+            GlobalWorldSampler.ExtractJobAliases(
+                in data,
+                out HeightSamples,
+                out HeightMaterialIds,
+                out EncodedSdf,
+                out SdfMaterialIds,
+                out CaveSectorMask,
+                out BiomeAtlas,
+                out ErosionMask,
+                out SdfOverrideMask,
+                out ActiveSectorPointers,
+                out SampleCounter,
+                out CounterBlocks,
+                out TelemetryRing,
+                out ScalarData);
+        }
+
+        private GlobalWorldSamplerData BuildData()
+        {
+            return GlobalWorldSampler.FromJobAliases(
+                HeightSamples,
+                HeightMaterialIds,
+                EncodedSdf,
+                SdfMaterialIds,
+                CaveSectorMask,
+                BiomeAtlas,
+                ErosionMask,
+                SdfOverrideMask,
+                ActiveSectorPointers,
+                SampleCounter,
+                CounterBlocks,
+                TelemetryRing,
+                in ScalarData);
+        }
+
         public void Execute(int startIndex, int count)
         {
+            GlobalWorldSamplerData data = BuildData();
             int end = startIndex + count;
             int sampleCost = 0;
             TerrainSampleResult firstResult = default;
             for (int index = startIndex; index < end; index++)
             {
                 GlobalWorldSampler.BuildQuery(PositionsAup[index], Frame, GlobalWorldSamplerQueryFlags.EstimateNormal, out GlobalWorldSamplerQuery query);
-                GlobalWorldSampler.Sample(Data, query, out TerrainSampleResult result);
+                GlobalWorldSampler.Sample(data, query, out TerrainSampleResult result);
                 Results[index] = result;
                 sampleCost = GlobalWorldSampler.AccumulateSampleCost(
                     sampleCost,
-                    GlobalWorldSampler.ResolveTerrainSampleCost(Data, 1, result));
+                    GlobalWorldSampler.ResolveTerrainSampleCost(data, 1, result));
                 if (index == startIndex)
                 {
                     firstResult = result;
                 }
             }
 
-            int total = GlobalWorldSampler.AddSampleCount(Data, sampleCost);
+            int total = GlobalWorldSampler.AddSampleCount(data, sampleCost);
             if (sampleCost > 0 && GlobalWorldSampler.ShouldTripThroughputWarning(total - sampleCost, total))
             {
-                GlobalWorldSampler.RecordThroughputWarning(Data, Frame, firstResult);
+                GlobalWorldSampler.RecordThroughputWarning(data, Frame, firstResult);
             }
         }
     }
@@ -2325,7 +2719,19 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct MockBoidRaymarchJob : IJobParallelFor
     {
-        [NoAlias] public GlobalWorldSamplerData Data;
+        [NoAlias, ReadOnly] public NativeArray<ushort> HeightSamples;
+        [NoAlias, ReadOnly] public NativeArray<byte> HeightMaterialIds;
+        [NoAlias, ReadOnly] public NativeArray<byte> EncodedSdf;
+        [NoAlias, ReadOnly] public NativeArray<byte> SdfMaterialIds;
+        [NoAlias, ReadOnly] public NativeArray<uint> CaveSectorMask;
+        [NoAlias, ReadOnly] public NativeArray<uint> BiomeAtlas;
+        [NoAlias, ReadOnly] public NativeArray<byte> ErosionMask;
+        [NoAlias, ReadOnly] public NativeArray<uint> SdfOverrideMask;
+        [NoAlias, ReadOnly] public NativeArray<long> ActiveSectorPointers;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> SampleCounter;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<GlobalWorldSamplerCounterBlock> CounterBlocks;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<GlobalWorldSamplerTelemetryEntry> TelemetryRing;
+        public GlobalWorldSamplerScalarData ScalarData;
         [NoAlias, ReadOnly] public NativeArray<float3> RayDirectionsLocal;
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<TerrainSampleResult> Hits;
         public double3 OriginAup;
@@ -2334,8 +2740,46 @@ namespace Hecton8.World
         public float MaxStepMeters;
         public int MaxSteps;
 
+        public void SetData(in GlobalWorldSamplerData data)
+        {
+            GlobalWorldSampler.ExtractJobAliases(
+                in data,
+                out HeightSamples,
+                out HeightMaterialIds,
+                out EncodedSdf,
+                out SdfMaterialIds,
+                out CaveSectorMask,
+                out BiomeAtlas,
+                out ErosionMask,
+                out SdfOverrideMask,
+                out ActiveSectorPointers,
+                out SampleCounter,
+                out CounterBlocks,
+                out TelemetryRing,
+                out ScalarData);
+        }
+
+        private GlobalWorldSamplerData BuildData()
+        {
+            return GlobalWorldSampler.FromJobAliases(
+                HeightSamples,
+                HeightMaterialIds,
+                EncodedSdf,
+                SdfMaterialIds,
+                CaveSectorMask,
+                BiomeAtlas,
+                ErosionMask,
+                SdfOverrideMask,
+                ActiveSectorPointers,
+                SampleCounter,
+                CounterBlocks,
+                TelemetryRing,
+                in ScalarData);
+        }
+
         public void Execute(int index)
         {
+            GlobalWorldSamplerData data = BuildData();
             float3 direction = RayDirectionsLocal.IsCreated && index < RayDirectionsLocal.Length
                 ? RayDirectionsLocal[index]
                 : FallbackRayDirection(index);
@@ -2347,7 +2791,9 @@ namespace Hecton8.World
 
             float maxDistance = math.max(MaxDistance, 0.1f);
             float maxStep = math.max(MaxStepMeters, GlobalWorldSampler.MinimumRaymarchStep);
-            float qualityWeight = 1f;
+            float qualityWeight = GlobalWorldSampler.IsFinite(data.GlobalQualityWeight)
+                ? math.saturate(data.GlobalQualityWeight)
+                : 1f;
             float expensiveWeight = GlobalWorldSampler.ResolveExpensiveSamplingWeight(qualityWeight);
             int maxSteps = math.max((int)math.round(math.lerp(1f, math.max(MaxSteps, 1), expensiveWeight)), 1);
             float traveled = 0f;
@@ -2357,14 +2803,14 @@ namespace Hecton8.World
             {
                 double3 aup = OriginAup + GlobalWorldSampler.Double3(direction.x, direction.y, direction.z) * traveled;
                 GlobalWorldSampler.BuildQuery(aup, Frame, GlobalWorldSamplerQueryFlags.None, out GlobalWorldSamplerQuery query);
-                GlobalWorldSampler.SampleDistanceOnly(Data, query, out last);
-                GlobalWorldSampler.SanitizeResult(ref last, Data);
+                GlobalWorldSampler.SampleDistanceOnly(data, query, out last);
+                GlobalWorldSampler.SanitizeResult(ref last, data);
 
                 int sampleCost = 1;
-                int total = GlobalWorldSampler.AddSampleCount(Data, sampleCost);
+                int total = GlobalWorldSampler.AddSampleCount(data, sampleCost);
                 if (GlobalWorldSampler.ShouldTripThroughputWarning(total - sampleCost, total))
                 {
-                    GlobalWorldSampler.RecordThroughputWarning(Data, Frame, last);
+                    GlobalWorldSampler.RecordThroughputWarning(data, Frame, last);
                 }
 
                 if (last.Distance <= 0.025f)
@@ -2382,7 +2828,7 @@ namespace Hecton8.World
 
             if (index == 0)
             {
-                GlobalWorldSampler.WriteTelemetryFrame(Data, Frame, last);
+                GlobalWorldSampler.WriteTelemetryFrame(data, Frame, last);
             }
         }
 
@@ -2445,7 +2891,6 @@ namespace Hecton8.World
         private ProbeVaultLane<GlobalWorldSamplerTelemetryEntry> _telemetryHandle;
         private ProbeVaultLane<byte> _csvBufferHandle;
 
-        private GlobalWorldSamplerData _data;
         private TerrainSampleResult _lastHit;
         private Toggle _csvHotReloadToggle;
         private Slider _qualityWeightSlider;
@@ -2594,7 +3039,11 @@ namespace Hecton8.World
 
         private void OnDumpBlackBoxButtonClicked()
         {
-            GlobalWorldSampler.TryFlushRequestedTelemetryDump(_data);
+            if (TryBuildProbeData(out GlobalWorldSamplerData data))
+            {
+                GlobalWorldSampler.TryFlushRequestedTelemetryDump(data);
+            }
+
             if (TryResolveProbeBuffers(
                     out _,
                     out _,
@@ -2636,7 +3085,6 @@ namespace Hecton8.World
 
         private void RebuildAndRepaint()
         {
-            ApplyFlags();
             RebuildMockData();
             SceneView.RepaintAll();
         }
@@ -2699,7 +3147,6 @@ namespace Hecton8.World
                 return;
             }
 
-            ApplyFlags();
             Vector3 probeOrigin = sceneView.camera.transform.position;
             Vector3 probeDirection = sceneView.camera.transform.forward;
             _hasHit = TraceEditorProbe(probeOrigin, probeDirection, out _lastHit);
@@ -2718,6 +3165,11 @@ namespace Hecton8.World
         private bool TraceEditorProbe(Vector3 probeOrigin, Vector3 probeDirection, out TerrainSampleResult result)
         {
             result = default;
+            if (!TryBuildProbeData(out GlobalWorldSamplerData data))
+            {
+                return false;
+            }
+
             double3 origin = GlobalWorldSampler.Double3(probeOrigin.x, probeOrigin.y, probeOrigin.z);
             float3 direction = GlobalWorldSampler.Float3(probeDirection.x, probeDirection.y, probeDirection.z);
             float directionLengthSq = math.lengthsq(direction);
@@ -2732,7 +3184,7 @@ namespace Hecton8.World
             {
                 double3 aup = origin + GlobalWorldSampler.Double3(direction.x, direction.y, direction.z) * traveled;
                 GlobalWorldSampler.BuildQuery(aup, 0, GlobalWorldSamplerQueryFlags.EstimateNormal, out GlobalWorldSamplerQuery query);
-                GlobalWorldSampler.Sample(_data, query, out result);
+                GlobalWorldSampler.Sample(data, query, out result);
                 if (!GlobalWorldSampler.IsFinite(result.Distance))
                 {
                     return false;
@@ -3176,11 +3628,21 @@ namespace Hecton8.World
             _counterBlocksHandle = default;
             _telemetryHandle = default;
             _csvBufferHandle = default;
-            _data = default;
         }
 
         private void RebuildMockData()
         {
+            if (!TryBuildProbeData(out GlobalWorldSamplerData data))
+            {
+                return;
+            }
+
+            GlobalWorldSampler.MockGeologyGenerator(ref data, _sineFrequency, _caveRadius, _caveDepth);
+        }
+
+        private bool TryBuildProbeData(out GlobalWorldSamplerData data)
+        {
+            data = default;
             if (!TryResolveProbeBuffersExtended(
                     out NativeArray<ushort> heightSamples,
                     out NativeArray<byte> heightMaterials,
@@ -3195,10 +3657,10 @@ namespace Hecton8.World
                     out NativeArray<GlobalWorldSamplerCounterBlock> counterBlocks,
                     out NativeArray<GlobalWorldSamplerTelemetryEntry> telemetry))
             {
-                return;
+                return false;
             }
 
-            _data = GlobalWorldSampler.FromDataVaultAliases(
+            data = GlobalWorldSampler.FromDataVaultAliases(
                 heightSamples,
                 heightMaterials,
                 encodedSdf,
@@ -3219,26 +3681,25 @@ namespace Hecton8.World
                 0x4D415431u,
                 1);
 
-            _data.BiomeAtlas = biomeAtlas;
-            _data.ErosionMask = erosionMask;
-            _data.SdfOverrideMask = sdfOverrideMask;
-            _data.ActiveSectorPointers = activeSectors;
-            _data.CounterBlocks = counterBlocks;
-            _data.SeaLevel = 0f;
-            _data.NormalEpsilon = 0.5f;
-            _data.SeamSmoothMeters = 1.5f;
-            _data.MicroNoiseAmplitude = 0.75f;
-            _data.MicroNoiseFrequency = 0.055f;
-            _data.GlobalQualityWeight = Mathf.Clamp01(_qualityWeight);
-            _data.BiomeBlendMeters = 3.5f;
-            _data.ErosionFlattenStrength = 0.4f;
-            _data.ErosionNormalBias = GlobalWorldSampler.Float3(0.15f, 0.35f, 0.05f);
-            _data.MaxLocalMeters = 512f;
-            _data.SectorSizeMeters = 64f;
-            _data.SectorCountX = 2;
-            _data.SectorCountZ = 2;
-            ApplyFlags();
-            GlobalWorldSampler.MockGeologyGenerator(ref _data, _sineFrequency, _caveRadius, _caveDepth);
+            data.BiomeAtlas = biomeAtlas;
+            data.ErosionMask = erosionMask;
+            data.SdfOverrideMask = sdfOverrideMask;
+            data.ActiveSectorPointers = activeSectors;
+            data.CounterBlocks = counterBlocks;
+            data.SeaLevel = 0f;
+            data.NormalEpsilon = 0.5f;
+            data.SeamSmoothMeters = 1.5f;
+            data.MicroNoiseAmplitude = 0.75f;
+            data.MicroNoiseFrequency = 0.055f;
+            data.BiomeBlendMeters = 3.5f;
+            data.ErosionFlattenStrength = 0.4f;
+            data.ErosionNormalBias = GlobalWorldSampler.Float3(0.15f, 0.35f, 0.05f);
+            data.MaxLocalMeters = 512f;
+            data.SectorSizeMeters = 64f;
+            data.SectorCountX = 2;
+            data.SectorCountZ = 2;
+            ApplyFlags(ref data);
+            return true;
         }
 
         private bool TryResolveProbeBuffers(
@@ -3336,7 +3797,7 @@ namespace Hecton8.World
             return csvBuffer.IsCreated && csvBuffer.Length >= ProbeCsvBufferLength;
         }
 
-        private void ApplyFlags()
+        private void ApplyFlags(ref GlobalWorldSamplerData data)
         {
             var flags = GlobalWorldSamplerConfigFlags.EnableSdf |
                         GlobalWorldSamplerConfigFlags.EnableSmoothMin |
@@ -3344,8 +3805,8 @@ namespace Hecton8.World
                         GlobalWorldSamplerConfigFlags.EnableCeiling |
                         GlobalWorldSamplerConfigFlags.EnableMicroNoise;
 
-            _data.ConfigFlags = (byte)flags;
-            _data.GlobalQualityWeight = Mathf.Clamp01(_qualityWeight);
+            data.ConfigFlags = (byte)flags;
+            data.GlobalQualityWeight = Mathf.Clamp01(_qualityWeight);
         }
     }
 #endif

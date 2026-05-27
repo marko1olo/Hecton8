@@ -77,8 +77,7 @@ namespace Hecton8.AI.Ecosystem
         private const uint LegacyLinksMagicLittleEndian = 0x4C323653u; // S62L
         private const uint LegacyLinksMagicBigEndian = 0x42323653u; // S62B
         private const int LegacyLinksHeaderBytes = 16;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_62.bin";
-        private const string DumpSymbiosisRelativePath = "Docs/AgentLogs/Dump_SYMBIOSIS.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
         private const ulong DumpMagic = 0x5348594D42493632UL; // SHYMBI62
         private const int DumpVersion = 1;
         private const uint SourceHash = 0x53363253u; // S62S
@@ -137,6 +136,7 @@ namespace Hecton8.AI.Ecosystem
         private bool _jobLocksHeld;
         private bool _dumpedFault;
         private bool _hasSubmarineAup;
+        private bool _vaultStateReady;
         private uint _runtimeFlags;
 
         private ShinobuFloraFaunaSymbiosisSolver()
@@ -210,7 +210,7 @@ namespace Hecton8.AI.Ecosystem
             if (_jobScheduled)
                 return;
 
-            if (!EnsureVaultState())
+            if (!_vaultStateReady || !AreVaultHandlesReady())
                 return;
 
             IDataVault vault = _dataVault;
@@ -266,7 +266,8 @@ namespace Hecton8.AI.Ecosystem
                 activeTuning.GlobalQualityWeight = quality;
                 if (tuning.IsCreated && tuning.Length > 0)
                     tuning[0] = activeTuning;
-                bool runMicroExchangeFrame = true;
+                float microExchangeWeight = ResolveMicroExchangeWeight(quality, activeTuning.MacroThreshold);
+                bool runMicroExchangeFrame = ResolveDitheredFrameGate(seed ^ 0x4D455843u, microExchangeWeight);
 
                 JobHandle handle = default;
                 if (counters.Length > 0 && counters[0].Initialized == 0)
@@ -429,8 +430,10 @@ namespace Hecton8.AI.Ecosystem
         private bool EnsureVaultState()
         {
             SymbiosisLayoutManifest.VerifyColdBoot();
+            if (_vaultStateReady && _dataVault != null && AreVaultHandlesReady())
+                return true;
 
-            IDataVault vault = EnsureDataVault();
+            IDataVault vault = AcquireDataVaultCold();
             if (vault == null)
                 return false;
 
@@ -549,39 +552,45 @@ namespace Hecton8.AI.Ecosystem
 
             _anomalyFieldHandle = BorrowGenerationHandle<SymbiosisAnomalyFieldMirror>(vault, BufferID.ShinobuSeedShipAnomalyField);
 
-            bool ready = IsHandleCreated(in _floraHandle) &&
-                         IsHandleCreated(in _floraAupHandle) &&
-                         IsHandleCreated(in _linkHandle) &&
-                         IsHandleCreated(in _exchangeHandle) &&
-                         IsHandleCreated(in _telemetryHandle) &&
-                         IsHandleCreated(in _counterHandle) &&
-                         IsHandleCreated(in _scannerVfxHandle) &&
-                         IsHandleCreated(in _oxygenEmitterHandle) &&
-                         IsHandleCreated(in _adherenceHandle) &&
-                         IsHandleCreated(in _seedHandle) &&
-                         IsHandleCreated(in _acousticTapHandle) &&
-                         IsHandleCreated(in _tuningHandle) &&
-                         IsHandleCreated(in _floraBucketHeadHandle) &&
-                         IsHandleCreated(in _floraBucketNextHandle) &&
-                         IsHandleCreated(in _mockBoidHandle) &&
-                         IsHandleCreated(in _legacyScratchHandle) &&
-                         IsHandleCreated(in _mockFishHandle) &&
-                         IsHandleCreated(in _ambientEntityHandle) &&
-                         IsHandleCreated(in _ambientAupHandle);
+            bool ready = AreVaultHandlesReady();
             if (!ready)
                 return false;
 
             TryLoadLegacyLinksIntoVault(vault);
+            _vaultStateReady = true;
             return true;
         }
 
-        private IDataVault EnsureDataVault()
+        private IDataVault AcquireDataVaultCold()
         {
             if (_dataVault != null)
                 return _dataVault;
 
             _dataVault = GlobalRegistry.DataVault;
             return _dataVault;
+        }
+
+        private bool AreVaultHandlesReady()
+        {
+            return IsHandleCreated(in _floraHandle) &&
+                   IsHandleCreated(in _floraAupHandle) &&
+                   IsHandleCreated(in _linkHandle) &&
+                   IsHandleCreated(in _exchangeHandle) &&
+                   IsHandleCreated(in _telemetryHandle) &&
+                   IsHandleCreated(in _counterHandle) &&
+                   IsHandleCreated(in _scannerVfxHandle) &&
+                   IsHandleCreated(in _oxygenEmitterHandle) &&
+                   IsHandleCreated(in _adherenceHandle) &&
+                   IsHandleCreated(in _seedHandle) &&
+                   IsHandleCreated(in _acousticTapHandle) &&
+                   IsHandleCreated(in _tuningHandle) &&
+                   IsHandleCreated(in _floraBucketHeadHandle) &&
+                   IsHandleCreated(in _floraBucketNextHandle) &&
+                   IsHandleCreated(in _mockBoidHandle) &&
+                   IsHandleCreated(in _legacyScratchHandle) &&
+                   IsHandleCreated(in _mockFishHandle) &&
+                   IsHandleCreated(in _ambientEntityHandle) &&
+                   IsHandleCreated(in _ambientAupHandle);
         }
 
         private bool TryBindJobBuffers(
@@ -738,8 +747,8 @@ namespace Hecton8.AI.Ecosystem
         {
             try
             {
-                string path = ResolveCsvPath();
-                if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                string path = BuildCsvPath();
+                if (path == null || path.Length == 0 || !File.Exists(path))
                     return;
 
                 DateTime lastWriteUtc = File.GetLastWriteTimeUtc(path);
@@ -752,7 +761,7 @@ namespace Hecton8.AI.Ecosystem
                 if (!scratch.IsCreated)
                     return;
 
-                int bytesRead = ReadFileIntoNativeScratch(path, scratch, CsvMaxBytes, FileShare.ReadWrite);
+                int bytesRead = LoadFileIntoNativeScratch(path, scratch, CsvMaxBytes, FileShare.ReadWrite);
                 if (bytesRead <= 0)
                     return;
 
@@ -808,8 +817,8 @@ namespace Hecton8.AI.Ecosystem
 
             try
             {
-                string path = ResolveLegacyPath();
-                if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                string path = BuildLegacyPath();
+                if (path == null || path.Length == 0 || !File.Exists(path))
                     return false;
 
                 TryResolveVaultBuffer(vault, in _legacyScratchHandle, out NativeArray<byte> scratch);
@@ -818,7 +827,7 @@ namespace Hecton8.AI.Ecosystem
                 if (!scratch.IsCreated || !links.IsCreated || !tuning.IsCreated || tuning.Length <= 0)
                     return false;
 
-                int bytesRead = ReadFileIntoNativeScratch(path, scratch, LegacyScratchBytes, FileShare.Read);
+                int bytesRead = LoadFileIntoNativeScratch(path, scratch, LegacyScratchBytes, FileShare.Read);
                 if (bytesRead < UnsafeUtility.SizeOf<SymbiosisChemicalLinkDTO>())
                     return false;
 
@@ -1125,6 +1134,7 @@ namespace Hecton8.AI.Ecosystem
 
         private void ResetVaultHandles()
         {
+            _vaultStateReady = false;
             _floraHandle = default;
             _floraAupHandle = default;
             _linkHandle = default;
@@ -1167,9 +1177,9 @@ namespace Hecton8.AI.Ecosystem
             _runtimeFlags = 0u;
         }
 
-        private static unsafe int ReadFileIntoNativeScratch(string path, NativeArray<byte> scratch, int maxBytes, FileShare share)
+        private static unsafe int LoadFileIntoNativeScratch(string path, NativeArray<byte> scratch, int maxBytes, FileShare share)
         {
-            if (!scratch.IsCreated || string.IsNullOrEmpty(path))
+            if (!scratch.IsCreated || path == null || path.Length == 0)
                 return 0;
 
             int limit = math.min(math.max(0, maxBytes), scratch.Length);
@@ -1183,9 +1193,9 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
-        private static string ResolveCsvPath()
+        private static string BuildCsvPath()
         {
-            string root = ResolveProjectRoot();
+            string root = BuildProjectRootForIo();
             string precomputed = Path.Combine(root, CsvPrecomputedRelativePath);
             if (File.Exists(precomputed))
                 return precomputed;
@@ -1193,13 +1203,13 @@ namespace Hecton8.AI.Ecosystem
             return Path.Combine(root, CsvRelativePath);
         }
 
-        private static string ResolveLegacyPath()
+        private static string BuildLegacyPath()
         {
-            string root = ResolveProjectRoot();
+            string root = BuildProjectRootForIo();
             return Path.Combine(root, "Docs", "Archive", LegacyLinksFile);
         }
 
-        private static string ResolveProjectRoot()
+        private static string BuildProjectRootForIo()
         {
             string assetsPath = Application.dataPath;
             DirectoryInfo parent = Directory.GetParent(assetsPath);
@@ -1210,9 +1220,8 @@ namespace Hecton8.AI.Ecosystem
         {
             try
             {
-                string root = ResolveProjectRoot();
+                string root = BuildProjectRootForIo();
                 WriteBlackBoxFile(Path.Combine(root, DumpRelativePath), telemetry, cursor);
-                WriteBlackBoxFile(Path.Combine(root, DumpSymbiosisRelativePath), telemetry, cursor);
             }
             catch (IOException)
             {
@@ -1239,10 +1248,10 @@ namespace Hecton8.AI.Ecosystem
         private static void WriteBlackBoxFile(string path, NativeArray<SymbiosisTelemetryEntry> telemetry, int cursor)
         {
             string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            if (directory != null && directory.Length != 0 && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
                 int capacity = telemetry.Length;
@@ -1521,7 +1530,7 @@ namespace Hecton8.AI.Ecosystem
                 (((double)position.GridX - center.GridX) * AupCellSizeMetersDouble) + (position.LocalX - center.LocalX),
                 (((double)position.GridY - center.GridY) * AupCellSizeMetersDouble) + (position.LocalY - center.LocalY),
                 (((double)position.GridZ - center.GridZ) * AupCellSizeMetersDouble) + (position.LocalZ - center.LocalZ));
-            return math.all(math.isfinite(delta)) ? (float3)delta : new float3(0f);
+            return ToFiniteLocalFloat3(delta);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1531,7 +1540,7 @@ namespace Hecton8.AI.Ecosystem
                 (((double)position.GridX - center.GridX) * AupCellSizeMetersDouble) + (position.LocalX - center.LocalX),
                 (((double)position.GridY - center.GridY) * AupCellSizeMetersDouble) + (position.LocalY - center.LocalY),
                 (((double)position.GridZ - center.GridZ) * AupCellSizeMetersDouble) + (position.LocalZ - center.LocalZ));
-            return math.all(math.isfinite(delta)) ? (float3)delta : new float3(0f);
+            return ToFiniteLocalFloat3(delta);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1541,7 +1550,7 @@ namespace Hecton8.AI.Ecosystem
                 (((double)position.GridX - center.GridX) * AupCellSizeMetersDouble) + (position.LocalX - center.LocalX),
                 (((double)position.GridY - center.GridY) * AupCellSizeMetersDouble) + (position.LocalY - center.LocalY),
                 (((double)position.GridZ - center.GridZ) * AupCellSizeMetersDouble) + (position.LocalZ - center.LocalZ));
-            return math.all(math.isfinite(delta)) ? (float3)delta : new float3(0f);
+            return ToFiniteLocalFloat3(delta);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1551,7 +1560,17 @@ namespace Hecton8.AI.Ecosystem
                 (((double)position.GridX - center.GridX) * AupCellSizeMetersDouble) + (position.LocalX - center.LocalX),
                 (((double)position.GridY - center.GridY) * AupCellSizeMetersDouble) + (position.LocalY - center.LocalY),
                 (((double)position.GridZ - center.GridZ) * AupCellSizeMetersDouble) + (position.LocalZ - center.LocalZ));
-            return math.all(math.isfinite(delta)) ? (float3)delta : new float3(0f);
+            return ToFiniteLocalFloat3(delta);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ToFiniteLocalFloat3(double3 delta)
+        {
+            if (!math.all(math.isfinite(delta)))
+                return float3.zero;
+
+            float3 local = (float3)delta;
+            return math.all(math.isfinite(local)) ? local : float3.zero;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1745,18 +1764,135 @@ namespace Hecton8.AI.Ecosystem
             AssertSize<AdherenceDTO>(32);
             AssertSize<FloraSeedDTO>(32);
             AssertSize<SymbiosisAcousticTapDTO>(64);
+            AssertSize<SymbiosisAnomalyFieldMirror>(48);
+            AssertOffsets();
+            _verified = true;
+        }
+
+        private static void AssertOffsets()
+        {
             AssertOffset<SymbiosisExchangeDTO>(nameof(SymbiosisExchangeDTO.FloraHash), 0);
             AssertOffset<SymbiosisExchangeDTO>(nameof(SymbiosisExchangeDTO.FaunaHash), 4);
             AssertOffset<SymbiosisExchangeDTO>(nameof(SymbiosisExchangeDTO.ChemicalTransferRate), 8);
             AssertOffset<SymbiosisExchangeDTO>(nameof(SymbiosisExchangeDTO._pad0), 12);
+            AssertOffset<SymbiosisChemicalLinkDTO>(nameof(SymbiosisChemicalLinkDTO.FloraHash), 0);
+            AssertOffset<SymbiosisChemicalLinkDTO>(nameof(SymbiosisChemicalLinkDTO.FaunaHash), 4);
+            AssertOffset<SymbiosisChemicalLinkDTO>(nameof(SymbiosisChemicalLinkDTO.ChemicalTransferRate), 8);
+            AssertOffset<SymbiosisChemicalLinkDTO>(nameof(SymbiosisChemicalLinkDTO.Flags), 12);
             AssertOffset<SymbiosisAup48>(nameof(SymbiosisAup48.GridX), 0);
             AssertOffset<SymbiosisAup48>(nameof(SymbiosisAup48.GridY), 8);
             AssertOffset<SymbiosisAup48>(nameof(SymbiosisAup48.GridZ), 16);
             AssertOffset<SymbiosisAup48>(nameof(SymbiosisAup48.LocalX), 24);
             AssertOffset<SymbiosisAup48>(nameof(SymbiosisAup48.LocalY), 28);
             AssertOffset<SymbiosisAup48>(nameof(SymbiosisAup48.LocalZ), 32);
+            AssertOffset<SymbiosisAup48>(nameof(SymbiosisAup48._pad0), 36);
+            AssertOffset<SymbiosisAup48>(nameof(SymbiosisAup48._pad1), 40);
+            AssertOffset<SymbiosisFloraDTO>(nameof(SymbiosisFloraDTO.LocalPosition), 0);
+            AssertOffset<SymbiosisFloraDTO>(nameof(SymbiosisFloraDTO.Biomass), 12);
+            AssertOffset<SymbiosisFloraDTO>(nameof(SymbiosisFloraDTO.FloraHash), 16);
+            AssertOffset<SymbiosisFloraDTO>(nameof(SymbiosisFloraDTO.ChemicalMask), 20);
+            AssertOffset<SymbiosisFloraDTO>(nameof(SymbiosisFloraDTO.OxygenRate), 24);
+            AssertOffset<SymbiosisFloraDTO>(nameof(SymbiosisFloraDTO.ToxicPotency), 28);
+            AssertOffset<SymbiosisFloraDTO>(nameof(SymbiosisFloraDTO.CamouflageRadius), 32);
+            AssertOffset<SymbiosisFloraDTO>(nameof(SymbiosisFloraDTO.FeedingRadius), 36);
+            AssertOffset<SymbiosisFloraDTO>(nameof(SymbiosisFloraDTO.Flags), 40);
+            AssertOffset<SymbiosisFloraDTO>(nameof(SymbiosisFloraDTO._pad0), 44);
+            AssertOffset<SymbiosisFloraAupDTO>(nameof(SymbiosisFloraAupDTO.PositionAup), 0);
+            AssertOffset<SymbiosisFloraAupDTO>(nameof(SymbiosisFloraAupDTO.FloraHash), 48);
+            AssertOffset<SymbiosisFloraAupDTO>(nameof(SymbiosisFloraAupDTO.SectorHash), 52);
+            AssertOffset<SymbiosisFloraAupDTO>(nameof(SymbiosisFloraAupDTO.SpatialCellHash), 56);
+            AssertOffset<SymbiosisFloraAupDTO>(nameof(SymbiosisFloraAupDTO.StableSeed), 60);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.FeedingRate), 0);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.ToxinPotency), 4);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.CamouflageRadius), 8);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.ParasiteGrowthSpeed), 12);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.GlobalQualityWeight), 16);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.MacroThreshold), 20);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.OxygenRateScale), 24);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.SeedShipToxicBoost), 28);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.AcousticThreshold), 32);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.FeedingRadius), 36);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.SimulationTickDelta), 40);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.CorruptionLevel), 44);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.Flags), 48);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.ActiveFloraCount), 52);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO.ActiveLinkCount), 56);
+            AssertOffset<SymbiosisTuningDTO>(nameof(SymbiosisTuningDTO._pad0), 60);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.ActiveExchanges), 0);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.BiomassTransferredMilli), 4);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.ToxemiaCount), 8);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.CamouflageCount), 12);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.OxygenEmitterCount), 16);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.SeedCount), 20);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.AdherenceCount), 24);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.AcousticTapCount), 28);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.InvalidMath), 32);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.OverflowCount), 36);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.CsvLoaded), 40);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.Initialized), 44);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.Frame), 48);
+            AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO.Flags), 52);
             AssertOffset<SymbiosisCounterDTO>(nameof(SymbiosisCounterDTO._pad0), 56);
-            _verified = true;
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.Frame), 0);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.StateHash), 4);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.ActiveExchanges), 8);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.BiomassTransferred), 12);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.SolverComputeTimeMs), 16);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.OxygenEmitterCount), 20);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.ToxemiaCount), 24);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.CamouflageCount), 28);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.SeedCount), 32);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.AdherenceCount), 36);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.AcousticTapCount), 40);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.Flags), 44);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.InvalidMathCount), 48);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.OverflowCount), 52);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.Pad0), 56);
+            AssertOffset<SymbiosisTelemetryEntry>(nameof(SymbiosisTelemetryEntry.Pad1), 60);
+            AssertOffset<MockBoidArray>(nameof(MockBoidArray.StartIndex), 0);
+            AssertOffset<MockBoidArray>(nameof(MockBoidArray.Count), 4);
+            AssertOffset<MockBoidArray>(nameof(MockBoidArray.StableSeed), 8);
+            AssertOffset<MockBoidArray>(nameof(MockBoidArray.Flags), 12);
+            AssertOffset<MockFishSymbiosisDTO>(nameof(MockFishSymbiosisDTO.PositionAup), 0);
+            AssertOffset<MockFishSymbiosisDTO>(nameof(MockFishSymbiosisDTO.Biomass), 48);
+            AssertOffset<MockFishSymbiosisDTO>(nameof(MockFishSymbiosisDTO.SpeciesHash), 52);
+            AssertOffset<MockFishSymbiosisDTO>(nameof(MockFishSymbiosisDTO.Flags), 56);
+            AssertOffset<MockFishSymbiosisDTO>(nameof(MockFishSymbiosisDTO.StableSeed), 60);
+            AssertOffset<ScannerVfxDTO>(nameof(ScannerVfxDTO.HitLocal), 0);
+            AssertOffset<ScannerVfxDTO>(nameof(ScannerVfxDTO.HitDistance), 12);
+            AssertOffset<ScannerVfxDTO>(nameof(ScannerVfxDTO.ScanProgress), 16);
+            AssertOffset<ScannerVfxDTO>(nameof(ScannerVfxDTO.TargetHash), 20);
+            AssertOffset<ScannerVfxDTO>(nameof(ScannerVfxDTO.Flags), 24);
+            AssertOffset<ScannerVfxDTO>(nameof(ScannerVfxDTO.BeamScore), 28);
+            AssertOffset<SymbiosisOxygenEmitterDTO>(nameof(SymbiosisOxygenEmitterDTO.LocalPosition), 0);
+            AssertOffset<SymbiosisOxygenEmitterDTO>(nameof(SymbiosisOxygenEmitterDTO.Oxygen01), 12);
+            AssertOffset<SymbiosisOxygenEmitterDTO>(nameof(SymbiosisOxygenEmitterDTO.SectorHash), 16);
+            AssertOffset<SymbiosisOxygenEmitterDTO>(nameof(SymbiosisOxygenEmitterDTO.RadiusMeters), 20);
+            AssertOffset<SymbiosisOxygenEmitterDTO>(nameof(SymbiosisOxygenEmitterDTO.FloraHash), 24);
+            AssertOffset<SymbiosisOxygenEmitterDTO>(nameof(SymbiosisOxygenEmitterDTO.Flags), 28);
+            AssertOffset<AdherenceDTO>(nameof(AdherenceDTO.LocalPosition), 0);
+            AssertOffset<AdherenceDTO>(nameof(AdherenceDTO.Growth01), 12);
+            AssertOffset<AdherenceDTO>(nameof(AdherenceDTO.HostHash), 16);
+            AssertOffset<AdherenceDTO>(nameof(AdherenceDTO.FloraHash), 20);
+            AssertOffset<AdherenceDTO>(nameof(AdherenceDTO.Flags), 24);
+            AssertOffset<AdherenceDTO>(nameof(AdherenceDTO.Frame), 28);
+            AssertOffset<FloraSeedDTO>(nameof(FloraSeedDTO.LocalPosition), 0);
+            AssertOffset<FloraSeedDTO>(nameof(FloraSeedDTO.Viability01), 12);
+            AssertOffset<FloraSeedDTO>(nameof(FloraSeedDTO.FloraHash), 16);
+            AssertOffset<FloraSeedDTO>(nameof(FloraSeedDTO.CarrierHash), 20);
+            AssertOffset<FloraSeedDTO>(nameof(FloraSeedDTO.Frame), 24);
+            AssertOffset<FloraSeedDTO>(nameof(FloraSeedDTO.Flags), 28);
+            AssertOffset<SymbiosisAcousticTapDTO>(nameof(SymbiosisAcousticTapDTO.PositionAup), 0);
+            AssertOffset<SymbiosisAcousticTapDTO>(nameof(SymbiosisAcousticTapDTO.Magnitude01), 48);
+            AssertOffset<SymbiosisAcousticTapDTO>(nameof(SymbiosisAcousticTapDTO.RadiusMeters), 52);
+            AssertOffset<SymbiosisAcousticTapDTO>(nameof(SymbiosisAcousticTapDTO.SourceHash), 56);
+            AssertOffset<SymbiosisAcousticTapDTO>(nameof(SymbiosisAcousticTapDTO.Flags), 60);
+            AssertOffset<SymbiosisAnomalyFieldMirror>(nameof(SymbiosisAnomalyFieldMirror.EpicenterAUP), 0);
+            AssertOffset<SymbiosisAnomalyFieldMirror>(nameof(SymbiosisAnomalyFieldMirror.Radius), 24);
+            AssertOffset<SymbiosisAnomalyFieldMirror>(nameof(SymbiosisAnomalyFieldMirror.CorruptionLevel), 28);
+            AssertOffset<SymbiosisAnomalyFieldMirror>(nameof(SymbiosisAnomalyFieldMirror.GlitchHash), 32);
+            AssertOffset<SymbiosisAnomalyFieldMirror>(nameof(SymbiosisAnomalyFieldMirror._pad0), 36);
+            AssertOffset<SymbiosisAnomalyFieldMirror>(nameof(SymbiosisAnomalyFieldMirror._pad1), 40);
         }
 
         private static void AssertSize<T>(int expected) where T : unmanaged

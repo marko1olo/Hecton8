@@ -485,15 +485,15 @@ namespace Hecton8.Physiology
                    Marshal.OffsetOf<MockPressureSignal>(nameof(MockPressureSignal.AmbientTemperatureCelsius)).ToInt32() == 20 &&
                    Marshal.OffsetOf<MockPressureSignal>(nameof(MockPressureSignal.InventoryMask)).ToInt32() == 24 &&
                    Marshal.OffsetOf<MockPressureSignal>(nameof(MockPressureSignal._pad0)).ToInt32() == 28 &&
-                   UnsafeUtility.SizeOf<MockCombatDamageSignal>() == 32 &&
-                   Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal.TraumaType)).ToInt32() == 0 &&
-                   Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal.Severity01)).ToInt32() == 4 &&
-                   Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal.Frame)).ToInt32() == 8 &&
-                   Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal.Flags)).ToInt32() == 12 &&
-                   Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal.SourceHash)).ToInt32() == 16 &&
-                   Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal.CombatStatusMask)).ToInt32() == 20 &&
-                   Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal._pad1)).ToInt32() == 24 &&
-                   Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal._pad2)).ToInt32() == 28 &&
+                   UnsafeUtility.SizeOf<PhysiologyMockCombatDamageSignal>() == 32 &&
+                   Marshal.OffsetOf<PhysiologyMockCombatDamageSignal>(nameof(PhysiologyMockCombatDamageSignal.TraumaType)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<PhysiologyMockCombatDamageSignal>(nameof(PhysiologyMockCombatDamageSignal.Severity01)).ToInt32() == 4 &&
+                   Marshal.OffsetOf<PhysiologyMockCombatDamageSignal>(nameof(PhysiologyMockCombatDamageSignal.Frame)).ToInt32() == 8 &&
+                   Marshal.OffsetOf<PhysiologyMockCombatDamageSignal>(nameof(PhysiologyMockCombatDamageSignal.Flags)).ToInt32() == 12 &&
+                   Marshal.OffsetOf<PhysiologyMockCombatDamageSignal>(nameof(PhysiologyMockCombatDamageSignal.SourceHash)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<PhysiologyMockCombatDamageSignal>(nameof(PhysiologyMockCombatDamageSignal.CombatStatusMask)).ToInt32() == 20 &&
+                   Marshal.OffsetOf<PhysiologyMockCombatDamageSignal>(nameof(PhysiologyMockCombatDamageSignal._pad1)).ToInt32() == 24 &&
+                   Marshal.OffsetOf<PhysiologyMockCombatDamageSignal>(nameof(PhysiologyMockCombatDamageSignal._pad2)).ToInt32() == 28 &&
                    UnsafeUtility.SizeOf<CardiacPulseSignal>() == 32 &&
                    Marshal.OffsetOf<CardiacPulseSignal>(nameof(CardiacPulseSignal.HeartRate)).ToInt32() == 0 &&
                    Marshal.OffsetOf<CardiacPulseSignal>(nameof(CardiacPulseSignal.Adrenaline01)).ToInt32() == 4 &&
@@ -605,7 +605,7 @@ namespace Hecton8.Physiology
     /// Mock combat damage packet mapped into the trauma bitmask. Size: 32 bytes.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct MockCombatDamageSignal
+    public struct PhysiologyMockCombatDamageSignal
     {
         [FieldOffset(0)] public int TraumaType;
         [FieldOffset(4)] public float Severity01;

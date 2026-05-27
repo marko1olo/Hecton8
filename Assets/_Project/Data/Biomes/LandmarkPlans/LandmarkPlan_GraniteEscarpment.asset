@@ -19,5 +19,5 @@ MonoBehaviour:
   midReferenceShape: tall wall ribs and shadowed benches
   farReferenceShape: giant escarpment edge slicing the horizon
   routeUse: Player should navigate by the wall itself, not by scattered props.
-  safePocketUse: Safe pockets exist in crack mouths, ledges, and overhang feet.
+  safePocketUse: Reorientation pockets exist in crack mouths, ledges, and overhang feet.
   emotionalRead: Imposing, technical, and route-defining.

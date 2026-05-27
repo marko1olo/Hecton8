@@ -2,7 +2,7 @@
 
 Date: 2026-05-19
 Status: PRODUCT BLUEPRINT / ENVELOPE-ONLY / PENDING IMPLEMENTATION
-Owner prompt: SHINOBU_66
+Owner domain: Modding SDK product contract
 Parent authority:
 
 - `Docs/Modding/README.md`
@@ -557,12 +557,13 @@ The SDK should generate a moderation summary:
 - asset bytes;
 - co-op safe flag;
 - contains reserved future seams yes/no;
-- contains managed entry yes/no;
+- contains managed entry or top-level DLL yes/no;
 - validation status.
 
 Workshop ingestion can reject before human review when:
 
-- managed entry is present;
+- package id or dependency id is non-canonical;
+- managed entry or top-level DLL is present;
 - package validation fails;
 - asset budget exceeds hard cap;
 - graph is nondeterministic;
@@ -674,7 +675,7 @@ The SDK is not acceptable until:
 - a technical modder can inspect exact envelopes;
 - the CLI can fail a bad package with a useful reason;
 - the simulator catches thermal flood behavior;
-- package validation rejects managed entry;
+- package validation rejects managed entry or stale/top-level DLL ingress;
 - package validation rejects loose runtime assets;
 - runtime docs still say envelope-only;
 - static modding validator passes after doc/schema changes.

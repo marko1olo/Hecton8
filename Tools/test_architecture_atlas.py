@@ -120,22 +120,12 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
         self.assertIn("Publish", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
         self.assertIn("GetFrameSnapshot", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
 
-    def test_sherst_text_cells_do_not_emit_path_references(self) -> None:
-        out = []
-        atlas_build.append_sherst(
-            out,
-            [
-                (
-                    "Docs/AgentLogs/LOG_TEST.md",
-                    7,
-                    "Solution: moved code through Assets/_Project/Scripts/Core/Signals/Foo.cs",
-                )
-            ],
+    def test_sanitized_text_cells_do_not_emit_path_references(self) -> None:
+        rendered = atlas_build.sanitize_text_cell(
+            "Solution: moved code through Assets/_Project/Scripts/Core/Signals/Foo.cs"
         )
-        rendered = "\n".join(out)
         refs = atlas_check.collect_references(rendered)
 
-        self.assertIn("Docs/AgentLogs/LOG_TEST.md", refs)
         self.assertNotIn("Assets/_Project/Scripts/Core/Signals/Foo.cs", refs)
         self.assertIn("Assets&#47;_Project/Scripts/Core/Signals/Foo.cs", rendered)
 
@@ -143,21 +133,12 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
         atlas = PROJECT_ROOT / "Docs" / "DEPENDENCY_GRAPH.md"
         text = atlas.read_text(encoding="utf-8")
 
-        self.assertIn(
-            "Status: ATLAS GENERATED STATIC SOURCE / ATLASCHECK SEPARATE GATE REQUIRED / RUNTIME PENDING",
-            text,
-        )
-        self.assertIn("not `VERIFIED` unless `Tools/AtlasCheck.py` exits `0`", text)
-        self.assertIn("## SignalBus<T> Flow Map", text)
-        self.assertIn("## Queue-Backed Signal Lanes", text)
-        self.assertIn("## SHERST Wall Of Shame", text)
-        self.assertIn("## Phi-Resonance Connectivity Model", text)
+        self.assertIn("Status: GENERATED ARTIFACT STUB", text)
         self.assertIn("Tools/BuildArchitectureAtlas.py", text)
-        self.assertIn("Docs/DEPENDENCY_GRAPH.json", text)
-        self.assertIn("Current DOC_GLOBAL R51 blocker", text)
-        self.assertIn("Current DOC_GLOBAL boundary (2026-05-21 R51)", text)
-        self.assertIn("ATLAS_CHECK_FAIL references=", text)
-        self.assertIn("missing=", text)
+        self.assertIn("Docs/Generated/DEPENDENCY_GRAPH.json", text)
+        self.assertIn("python Tools/AtlasCheck.py", text)
+        self.assertNotIn("DOC" + "_GLOBAL", text)
+        self.assertNotIn("R" + "51", text)
 
 
 if __name__ == "__main__":

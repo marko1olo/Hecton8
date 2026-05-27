@@ -1,0 +1,69 @@
+﻿{
+  "agent": "UNKNOWN",
+  "date": "2026-05-26",
+  "topic": "Unity player shader reference fix",
+  "verdict": "first_20_minutes_shader_reference_risk_fixed_not_project_wide_clean",
+  "official_sources": [
+    "https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Shader.Find.html",
+    "https://docs.unity.cn/Manual/shader-loading.html",
+    "https://docs.unity.cn/Manual/shader-prewarm.html"
+  ],
+  "build": {
+    "log": "Docs/Reports/BUILD_UNKNOWN_SHADER_REFERENCE_FIX_20260526.log",
+    "exitCode": 0,
+    "warnings": 0,
+    "errors": 0,
+    "command": "dotnet build .\\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false"
+  },
+  "changedSourceFiles": [
+    "Assets/_Project/Scripts/PlayerPDA.cs",
+    "Assets/_Project/Scripts/UI/PDASpectrumTab.cs",
+    "Assets/_Project/Scripts/UI/PDAMapTab.cs",
+    "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+    "Assets/_Project/Scripts/HarpoonLauncherTool.cs"
+  ],
+  "changedPrefabs": [
+    {
+      "path": "Assets/_Project/Prefabs/Player.prefab",
+      "field": "pdaHologramMapShader",
+      "shaderGuid": "008170efd67158d4c99647a8518cdba7"
+    },
+    {
+      "path": "Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab",
+      "field": "ditheredUiBackgroundShader",
+      "shaderGuid": "021ae9f459be4094b8800c25a19d5d9e"
+    },
+    {
+      "path": "Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab",
+      "field": "dataRecPulseShader",
+      "shaderGuid": "129f45d4c7583aa40a6e7c83c60d446a"
+    },
+    {
+      "path": "Assets/_Project/Prefabs/Tools/Held/Tool_HarpoonLauncher_Held.prefab",
+      "field": "tracerShader",
+      "shaderGuid": "1d324d2bc5d23144bbf8d997d03ddc1a"
+    }
+  ],
+  "validation": {
+    "touchedShaderFindCallsEditorOrDevelopmentOnly": true,
+    "prefabYamlContainsGameObjectMonoBehaviourPrefabInstance": true,
+    "diffCheck": "passed_with_lf_crlf_warnings_only",
+    "verifyDocStructurePass": true,
+    "oopDocScannerFinalPass": true,
+    "activeDocCount": 694,
+    "runtimeRawShaderFindMatchesAfterPatch": 46,
+    "runtimeRawShaderFindFilesAfterPatch": 33
+  },
+  "remainingDebtClasses": [
+    "srp_render_feature_shader_references",
+    "world_indirect_draw_shader_references",
+    "construction_resource_proxy_material_fallbacks",
+    "vfx_runtime_material_shader_references"
+  ],
+  "runtimeProof": {
+    "unityImport": "not_run",
+    "playerBuild": "not_run",
+    "visualCheck": "not_run",
+    "profiler": "not_run"
+  }
+}

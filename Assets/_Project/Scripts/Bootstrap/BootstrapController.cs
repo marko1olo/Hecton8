@@ -14,6 +14,10 @@ namespace Hecton8.Bootstrap
 
         [Tooltip("Shader variant collections handed to GameBootstrapper for MemoryPreWarm before scene activation.")]
         [SerializeField] private ShaderVariantCollection[] shaderVariantCollections;
+        [Tooltip("Explicit shader manifest for ShaderWarmup.WarmupShaderFromCollection. Must match the configured collections.")]
+        [SerializeField] private Shader[] shaderWarmupShaders;
+        [Tooltip("Optional Unity 6 PSO trace file paths. Use StreamingAssets-relative paths for players; Assets/ProjectSettings paths are editor-only.")]
+        [SerializeField] private string[] shaderGraphicsStateCollectionPaths;
 
         private bool _delegatedBoot;
 
@@ -87,6 +91,8 @@ namespace Hecton8.Bootstrap
                 return;
 
             bootstrapper.SetBootstrapShaderVariantCollections(shaderVariantCollections);
+            bootstrapper.SetBootstrapShaderWarmupShaders(shaderWarmupShaders);
+            bootstrapper.SetBootstrapShaderGraphicsStateCollectionPaths(shaderGraphicsStateCollectionPaths);
         }
     }
 }

@@ -19,5 +19,5 @@ MonoBehaviour:
   midReferenceShape: chimney forest or furnace ridge
   farReferenceShape: red-black catastrophic skyline
   routeUse: Player should feel that one huge landmark is the whole mission target.
-  safePocketUse: Safe pockets are temporary breaks in heat, not true safe homes.
+  safePocketUse: Reorientation pockets are temporary breaks in heat, not true safe homes.
   emotionalRead: Late-game terror mixed with extreme value.

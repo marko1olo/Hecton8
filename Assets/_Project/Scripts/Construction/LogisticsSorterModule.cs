@@ -168,13 +168,12 @@ namespace Hecton8.Construction
 
         internal void PopulateSaveData(ref ModuleDTO dto)
         {
-            if (_bufferedItemCount <= 0)
+            dto.sorterBufferedSlotCount = 0;
+            if (_bufferedItemCount <= 0 || !dto.HasSorterSaveCapacity())
                 return;
 
-            int slotCount = bufferSlotCount;
+            int slotCount = Mathf.Min(bufferSlotCount, ModuleDTO.MaxSorterBufferedSlots);
             dto.sorterBufferedSlotCount = slotCount;
-            dto.sorterBufferedItemIds = new string[slotCount];
-            dto.sorterBufferedQuantities = new int[slotCount];
 
             for (int i = 0; i < slotCount; i++)
             {

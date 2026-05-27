@@ -1,7 +1,7 @@
 ﻿# HECTON-8 A/B Testing And Creative Experiments
 
 Status: pre-asset experiment plan
-Owner lane: SHINOBU_81 / marketing measurement
+Owner lane: Marketing / marketing measurement
 Runtime impact: none
 
 ## Purpose

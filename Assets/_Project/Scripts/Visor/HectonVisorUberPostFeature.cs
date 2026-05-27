@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -38,6 +39,9 @@ namespace Hecton8.Visor
         private const int ReconstructionTelemetryCapacity = 300;
         private const int AestheticProfileCapacity = 32;
         private const int CsvScratchBytes = 16 * 1024;
+        private const float InternalWaterlineFullScreenSplit = 1.08f;
+        private const float InternalWaterlineSubmergeOffsetMeters = 0.03f;
+        private const float InternalWaterlineSubmergeFadeMeters = 0.12f;
         private const uint ReconstructionModeNativeHash = 0x4E415456u; // NATV
         private const uint ReconstructionModeBilateralHash = 0x42494C55u; // BILU
         private const uint ReconstructionModeTemporalHash = 0x54454D50u; // TEMP
@@ -52,7 +56,7 @@ namespace Hecton8.Visor
         private const BufferID ReconstructionProfileVaultId = (BufferID)UberNoirReconstructionVaultIds.AestheticProfiles;
         private const BufferID ReconstructionCsvScratchVaultId = (BufferID)UberNoirReconstructionVaultIds.CsvScratch;
         private const BufferID ReconstructionMockSignalVaultId = (BufferID)UberNoirReconstructionVaultIds.MockSignal;
-        private const string ReconstructionDumpFileName = "Dump_UBER_NOIR.bin";
+        private const string ReconstructionDumpFileName = "Dump_1335_UberNoirReconstruction.bin";
         private const string AestheticCsvFileName = "noir_aesthetic_profiles.csv";
         private static readonly ICameraHistoryReadAccess.HistoryRequestDelegate s_requestRawColorHistory =
             RequestRawColorHistory;
@@ -138,10 +142,10 @@ namespace Hecton8.Visor
             [Tooltip("Lens dirt and blood edge strength.")]
             [Range(0f, 1f)] public float lensDirtAndBloodStrength = 0.26f;
 
-            [Tooltip("Heat haze sine frequency.")]
+            [Tooltip("Heat haze triangle-wave frequency. Legacy values are radians-scaled in shader to preserve density.")]
             [Min(1f)] public float heatHazeFrequency = 38f;
 
-            [Tooltip("Heat haze sine speed.")]
+            [Tooltip("Heat haze triangle-wave speed. Legacy values are radians-scaled in shader to preserve motion.")]
             [Min(0f)] public float heatHazeSpeed = 0.62f;
 
             [Tooltip("Heat haze UV displacement amplitude. Collapses continuously under quality pressure.")]
@@ -240,9 +244,21 @@ namespace Hecton8.Visor
             [FieldOffset(40)]
             public float4 OverkillParams;
             [FieldOffset(56)]
-            private uint _pad0;
+            private byte _pad0;
+            [FieldOffset(57)]
+            private byte _pad1;
+            [FieldOffset(58)]
+            private byte _pad2;
+            [FieldOffset(59)]
+            private byte _pad3;
             [FieldOffset(60)]
-            private uint _pad1;
+            private byte _pad4;
+            [FieldOffset(61)]
+            private byte _pad5;
+            [FieldOffset(62)]
+            private byte _pad6;
+            [FieldOffset(63)]
+            private byte _pad7;
         }
 
         private sealed class VisorUberPostPass : ScriptableRenderPass
@@ -267,10 +283,6 @@ namespace Hecton8.Visor
                 internal TextureHandle Source;
                 internal TextureHandle Depth;
                 internal Material Material;
-                internal Texture CrackTexture;
-                internal Texture LensDirtTexture;
-                internal Texture BlueNoiseTexture;
-                internal Texture VrComfortMaskTexture;
                 internal Vector4 Strengths0;
                 internal Vector4 Strengths1;
                 internal Vector4 WaveParams;
@@ -299,6 +311,11 @@ namespace Hecton8.Visor
             private FeatureSettings _settings;
             private Material _material;
             private Material _reconstructionMaterial;
+            private Material _boundStaticTextureMaterial;
+            private Texture _boundCrackTexture;
+            private Texture _boundLensDirtTexture;
+            private Texture _boundBlueNoiseTexture;
+            private Texture _boundVrComfortMaskTexture;
             private GraphicsBuffer _reconstructionConstantsBuffer;
             private RuntimeState _runtimeState;
             private bool _requestRawColorHistory;
@@ -467,6 +484,7 @@ namespace Hecton8.Visor
                 destinationDesc.useMipMap = false;
                 destinationDesc.autoGenerateMips = false;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
+                BindStaticPostTextures();
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PostPassData>(
                            "Hecton Visor Uber Post",
@@ -575,19 +593,54 @@ namespace Hecton8.Visor
                     settings.lensDirtTexture != null ? 1f : 0f,
                     settings.blueNoiseTexture != null ? 1f : 0f,
                     settings.vrComfortMaskTexture != null ? 1f : 0f);
-                passData.CrackTexture = settings.crackTexture != null ? settings.crackTexture : Texture2D.blackTexture;
-                passData.LensDirtTexture = settings.lensDirtTexture != null ? settings.lensDirtTexture : Texture2D.whiteTexture;
-                passData.BlueNoiseTexture = settings.blueNoiseTexture != null ? settings.blueNoiseTexture : Texture2D.grayTexture;
-                passData.VrComfortMaskTexture = settings.vrComfortMaskTexture != null ? settings.vrComfortMaskTexture : Texture2D.grayTexture;
+            }
+
+            private void BindStaticPostTextures()
+            {
+                if (_material == null || _settings == null)
+                    return;
+
+                if (!ReferenceEquals(_boundStaticTextureMaterial, _material))
+                {
+                    _boundStaticTextureMaterial = _material;
+                    _boundCrackTexture = null;
+                    _boundLensDirtTexture = null;
+                    _boundBlueNoiseTexture = null;
+                    _boundVrComfortMaskTexture = null;
+                }
+
+                Texture crackTexture = _settings.crackTexture != null ? _settings.crackTexture : Texture2D.blackTexture;
+                Texture lensDirtTexture = _settings.lensDirtTexture != null ? _settings.lensDirtTexture : Texture2D.whiteTexture;
+                Texture blueNoiseTexture = _settings.blueNoiseTexture != null ? _settings.blueNoiseTexture : Texture2D.grayTexture;
+                Texture vrComfortMaskTexture = _settings.vrComfortMaskTexture != null ? _settings.vrComfortMaskTexture : Texture2D.grayTexture;
+
+                if (!ReferenceEquals(_boundCrackTexture, crackTexture))
+                {
+                    _material.SetTexture(ShaderConstants.CrackTextureId, crackTexture);
+                    _boundCrackTexture = crackTexture;
+                }
+
+                if (!ReferenceEquals(_boundLensDirtTexture, lensDirtTexture))
+                {
+                    _material.SetTexture(ShaderConstants.LensDirtTextureId, lensDirtTexture);
+                    _boundLensDirtTexture = lensDirtTexture;
+                }
+
+                if (!ReferenceEquals(_boundBlueNoiseTexture, blueNoiseTexture))
+                {
+                    _material.SetTexture(ShaderConstants.BlueNoiseTextureId, blueNoiseTexture);
+                    _boundBlueNoiseTexture = blueNoiseTexture;
+                }
+
+                if (!ReferenceEquals(_boundVrComfortMaskTexture, vrComfortMaskTexture))
+                {
+                    _material.SetTexture(ShaderConstants.VrComfortMaskTextureId, vrComfortMaskTexture);
+                    _boundVrComfortMaskTexture = vrComfortMaskTexture;
+                }
             }
 
             private static void BindPostShaderParameters(RasterCommandBuffer cmd, PostPassData data)
             {
-                cmd.SetGlobalTexture(ShaderConstants.CrackTextureId, data.CrackTexture);
-                cmd.SetGlobalTexture(ShaderConstants.LensDirtTextureId, data.LensDirtTexture);
-                cmd.SetGlobalTexture(ShaderConstants.BlueNoiseTextureId, data.BlueNoiseTexture);
-                cmd.SetGlobalTexture(ShaderConstants.VrComfortMaskTextureId, data.VrComfortMaskTexture);
-
                 cmd.SetGlobalFloat(ShaderConstants.HealthFractionId, data.HealthFraction);
                 cmd.SetGlobalFloat(ShaderConstants.LocalTemperatureId, data.LocalTemperature);
                 cmd.SetGlobalFloat(ShaderConstants.AmbientPressureId, data.AmbientPressure);
@@ -700,25 +753,19 @@ namespace Hecton8.Visor
                 vault.TryGetGenerationHandle<UberNoirReconstructionConstantsDTO>(
                     ReconstructionConstantsVaultId,
                     out VaultGenerationHandle<UberNoirReconstructionConstantsDTO> handle) &&
-                IsReconstructionVaultHandle(in handle, ReconstructionConstantsVaultId) &&
-                vault.TryLockBuffer(ReconstructionConstantsVaultId, SystemID.GraphicsScalability))
+                !vault.IsCompactionFenceActive &&
+                IsReconstructionVaultHandle(in handle, ReconstructionConstantsVaultId))
             {
-                try
+                if (TryReadReconstructionVaultBuffer(
+                        vault,
+                        in handle,
+                        ReconstructionConstantsVaultId,
+                        1,
+                        out NativeArray<UberNoirReconstructionConstantsDTO>.ReadOnly buffer) &&
+                    !vault.IsCompactionFenceActive)
                 {
-                    if (TryReadReconstructionVaultBuffer(
-                            vault,
-                            in handle,
-                            ReconstructionConstantsVaultId,
-                            1,
-                            out NativeArray<UberNoirReconstructionConstantsDTO> buffer))
-                    {
-                        constants = buffer[0];
-                        return true;
-                    }
-                }
-                finally
-                {
-                    vault.TryUnlockBuffer(ReconstructionConstantsVaultId, SystemID.GraphicsScalability);
+                    constants = buffer[0];
+                    return !vault.IsCompactionFenceActive;
                 }
             }
 
@@ -736,7 +783,7 @@ namespace Hecton8.Visor
             if (!vault.TryGetGenerationHandle<MockReconstructionInputSignal>(ReconstructionMockSignalVaultId, out handle) ||
                 !IsReconstructionVaultHandle(in handle, ReconstructionMockSignalVaultId))
             {
-                if (vault.IsAllocationLocked)
+                if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                     return false;
 
                 handle = vault.EnsureGenerationHandle<MockReconstructionInputSignal>(
@@ -746,7 +793,8 @@ namespace Hecton8.Visor
                     NativeArrayOptions.ClearMemory);
             }
 
-            if (!IsReconstructionVaultHandle(in handle, ReconstructionMockSignalVaultId) ||
+            if (vault.IsCompactionFenceActive ||
+                !IsReconstructionVaultHandle(in handle, ReconstructionMockSignalVaultId) ||
                 !vault.TryAcquireWriteLock(in handle, SystemID.GraphicsScalability, out NativeArray<MockReconstructionInputSignal> mockBuffer))
             {
                 return false;
@@ -754,7 +802,7 @@ namespace Hecton8.Visor
 
             try
             {
-                if (!mockBuffer.IsCreated || mockBuffer.Length <= 0)
+                if (vault.IsCompactionFenceActive || !mockBuffer.IsCreated || mockBuffer.Length <= 0)
                     return false;
 
                 mockBuffer[0] = signal;
@@ -797,7 +845,10 @@ namespace Hecton8.Visor
         private bool _cachedDepthlessTBDR;
         private ICameraHistoryReadAccess _rawColorHistoryReadAccess;
         private Camera _rawColorHistoryCamera;
+        private ICameraHistoryReadAccess _cachedRawColorHistoryReadAccess;
+        private Camera _rawColorHistoryAccessCamera;
         private bool _rawColorHistoryRequestRegistered;
+        private bool _rawColorHistoryAccessResolved;
         private Camera _pendingReconstructionCamera;
         private RuntimeState _pendingReconstructionRuntimeState;
         private bool _pendingReconstructionStateValid;
@@ -1026,6 +1077,7 @@ namespace Hecton8.Visor
             TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
             ClearRawColorHistoryRequest();
+            ClearRawColorHistoryAccessCache();
             ClearPendingReconstructionInput();
             ReleaseNoirVaultHandles(_dataVault);
             ReleaseReconstructionVaultHandles(_dataVault);
@@ -1094,17 +1146,38 @@ namespace Hecton8.Visor
             _rawColorHistoryRequestRegistered = false;
         }
 
-        private static bool TryResolveHistoryReadAccess(Camera renderCamera, out ICameraHistoryReadAccess historyReadAccess)
+        private bool TryResolveHistoryReadAccess(Camera renderCamera, out ICameraHistoryReadAccess historyReadAccess)
         {
-            if (renderCamera != null &&
-                renderCamera.TryGetComponent(out UniversalAdditionalCameraData additionalCameraData))
+            if (renderCamera == null)
             {
-                historyReadAccess = additionalCameraData.history;
+                historyReadAccess = null;
+                ClearRawColorHistoryAccessCache();
+                return false;
+            }
+
+            if (_rawColorHistoryAccessResolved &&
+                ReferenceEquals(_rawColorHistoryAccessCamera, renderCamera))
+            {
+                historyReadAccess = _cachedRawColorHistoryReadAccess;
                 return historyReadAccess != null;
             }
 
-            historyReadAccess = null;
-            return false;
+            _rawColorHistoryAccessCamera = renderCamera;
+            _cachedRawColorHistoryReadAccess = null;
+            _rawColorHistoryAccessResolved = true;
+
+            if (renderCamera.TryGetComponent(out UniversalAdditionalCameraData additionalCameraData))
+                _cachedRawColorHistoryReadAccess = additionalCameraData.history;
+
+            historyReadAccess = _cachedRawColorHistoryReadAccess;
+            return historyReadAccess != null;
+        }
+
+        private void ClearRawColorHistoryAccessCache()
+        {
+            _cachedRawColorHistoryReadAccess = null;
+            _rawColorHistoryAccessCamera = null;
+            _rawColorHistoryAccessResolved = false;
         }
 
         private static void RequestRawColorHistory(IPerFrameHistoryAccessTracker historyAccess)
@@ -1246,8 +1319,14 @@ namespace Hecton8.Visor
                 return false;
             }
 
-            if (TryReadReconstructionVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _))
+            if (TryReadReconstructionVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T>.ReadOnly _))
                 return true;
+
+            if (_dataVault.IsCompactionFenceActive || _dataVault.IsAllocationLocked)
+            {
+                handle = default;
+                return false;
+            }
 
             handle = _dataVault.EnsureGenerationHandle<T>(
                 bufferId,
@@ -1255,7 +1334,7 @@ namespace Hecton8.Visor
                 SystemID.GraphicsScalability,
                 options);
 
-            if (TryReadReconstructionVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _))
+            if (TryReadReconstructionVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T>.ReadOnly _))
                 return true;
 
             ReleaseReconstructionVaultHandle(_dataVault, ref handle, bufferId);
@@ -1274,50 +1353,19 @@ namespace Hecton8.Visor
             handle = default;
         }
 
-        private static bool TryResolveReconstructionVaultBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> buffer)
-            where T : unmanaged
-        {
-            return TryOpenReconstructionVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: false, out buffer);
-        }
-
         private static bool TryReadReconstructionVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer)
-            where T : unmanaged
-        {
-            return TryOpenReconstructionVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: true, out buffer);
-        }
-
-        private static bool TryOpenReconstructionVaultBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            bool readOnly,
-            out NativeArray<T> buffer)
+            out NativeArray<T>.ReadOnly buffer)
             where T : unmanaged
         {
             buffer = default;
-            if (vault == null ||
-                requiredLength < 0 ||
-                !IsReconstructionVaultHandle(in handle, bufferId))
-            {
-                return false;
-            }
-
-            bool opened = readOnly
-                ? vault.TryReadHandle(in handle, out buffer)
-                : vault.TryResolveHandle(in handle, out buffer);
-
-            return opened &&
+            return vault != null &&
+                   requiredLength >= 0 &&
+                   IsReconstructionVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    (requiredLength == 0 || buffer.Length >= requiredLength);
         }
@@ -1355,7 +1403,7 @@ namespace Hecton8.Visor
             float mockJitterPixels = -1f;
             float mockTemporalStress01 = 0f;
 
-            if (TryLockAndCopyMockReconstructionSignal(out MockReconstructionInputSignal mockSignal))
+            if (TryCopyMockReconstructionSignalSnapshot(out MockReconstructionInputSignal mockSignal))
             {
                 currentScale = math.clamp(mockSignal.RenderScale01, 0.3f, 1f);
                 targetScale = currentScale;
@@ -1471,18 +1519,41 @@ namespace Hecton8.Visor
             _reconstructionConstantsBufferIndex++;
 
             UberNoirReconstructionConstantsDTO local = constants;
-            NativeArray<UberNoirReconstructionConstantsDTO> mapped =
-                target.LockBufferForWrite<UberNoirReconstructionConstantsDTO>(0, 1);
             try
             {
-                UnsafeUtility.MemCpy(
-                    mapped.GetUnsafePtr(),
-                    UnsafeUtility.AddressOf(ref local),
-                    UberNoirReconstructionConstantsDTO.SizeBytes);
+                NativeArray<UberNoirReconstructionConstantsDTO> mapped =
+                    target.LockBufferForWrite<UberNoirReconstructionConstantsDTO>(0, 1);
+                try
+                {
+                    UnsafeUtility.MemCpy(
+                        mapped.GetUnsafePtr(),
+                        UnsafeUtility.AddressOf(ref local),
+                        UberNoirReconstructionConstantsDTO.SizeBytes);
+                }
+                finally
+                {
+                    target.UnlockBufferAfterWrite<UberNoirReconstructionConstantsDTO>(1);
+                }
             }
-            finally
+            catch (ObjectDisposedException)
             {
-                target.UnlockBufferAfterWrite<UberNoirReconstructionConstantsDTO>(1);
+                ClearReconstructionConstantsGpuPayload();
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                ClearReconstructionConstantsGpuPayload();
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                ClearReconstructionConstantsGpuPayload();
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                ClearReconstructionConstantsGpuPayload();
+                return false;
             }
 
             _lastReconstructionConstants = constants;
@@ -1492,56 +1563,55 @@ namespace Hecton8.Visor
             return true;
         }
 
-        private unsafe void WriteReconstructionConstantsToVault(in UberNoirReconstructionConstantsDTO constants)
+        private void ClearReconstructionConstantsGpuPayload()
         {
-            if (_dataVault == null ||
+            _activeReconstructionConstantsBuffer = null;
+            _hasReconstructionConstants = false;
+        }
+
+        private void WriteReconstructionConstantsToVault(in UberNoirReconstructionConstantsDTO constants)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !IsReconstructionVaultHandle(in _reconstructionConstantsHandle, ReconstructionConstantsVaultId) ||
-                !_dataVault.TryLockBuffer(ReconstructionConstantsVaultId, SystemID.GraphicsScalability))
+                !vault.TryAcquireWriteLock(in _reconstructionConstantsHandle, SystemID.GraphicsScalability, out NativeArray<UberNoirReconstructionConstantsDTO> buffer))
             {
                 return;
             }
 
             try
             {
-                if (TryResolveReconstructionVaultBuffer(
-                        _dataVault,
-                        in _reconstructionConstantsHandle,
-                        ReconstructionConstantsVaultId,
-                        1,
-                        out NativeArray<UberNoirReconstructionConstantsDTO> buffer))
-                {
-                    buffer[0] = constants;
-                }
+                if (vault.IsCompactionFenceActive || !buffer.IsCreated || buffer.Length <= 0)
+                    return;
+
+                buffer[0] = constants;
             }
             finally
             {
-                _dataVault.TryUnlockBuffer(ReconstructionConstantsVaultId, SystemID.GraphicsScalability);
+                vault.ReleaseWriteLock(in _reconstructionConstantsHandle, SystemID.GraphicsScalability);
             }
         }
 
-        private unsafe void RecordReconstructionTelemetry(
+        private void RecordReconstructionTelemetry(
             in UberNoirReconstructionConstantsDTO constants,
             RuntimeState runtimeState,
             bool reconstructionBufferReady)
         {
+            IDataVault vault = _dataVault;
             if (!ReconstructionVaultHandlesReady() ||
-                _dataVault == null ||
-                !_dataVault.TryLockBuffer(ReconstructionTelemetryVaultId, SystemID.GraphicsScalability))
+                vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireWriteLock(in _reconstructionTelemetryHandle, SystemID.GraphicsScalability, out NativeArray<ReconstructionTelemetryEntry> telemetry))
             {
                 return;
             }
 
+            bool shouldDump = false;
             try
             {
-                if (!TryResolveReconstructionVaultBuffer(
-                        _dataVault,
-                        in _reconstructionTelemetryHandle,
-                        ReconstructionTelemetryVaultId,
-                        ReconstructionTelemetryCapacity,
-                        out NativeArray<ReconstructionTelemetryEntry> telemetry))
-                {
+                if (vault.IsCompactionFenceActive || !telemetry.IsCreated || telemetry.Length <= 0)
                     return;
-                }
 
                 int index = _reconstructionTelemetryCursor;
                 if ((uint)index >= (uint)telemetry.Length)
@@ -1594,56 +1664,155 @@ namespace Hecton8.Visor
 
                 index++;
                 _reconstructionTelemetryCursor = index >= telemetry.Length ? 0 : index;
-                if (scale < 0.4f && !_reconstructionDumpWritten)
-                    _reconstructionDumpWritten = TryDumpReconstructionTelemetry();
+                shouldDump = scale < 0.4f && !_reconstructionDumpWritten;
             }
             finally
             {
-                _dataVault.TryUnlockBuffer(ReconstructionTelemetryVaultId, SystemID.GraphicsScalability);
+                vault.ReleaseWriteLock(in _reconstructionTelemetryHandle, SystemID.GraphicsScalability);
+            }
+
+            if (shouldDump)
+                _reconstructionDumpWritten = TryDumpReconstructionTelemetry();
+        }
+
+        private bool TryDumpReconstructionTelemetry()
+        {
+            if (_dataVault == null ||
+                !TryGetReconstructionTelemetryEntryCount(out int entryCount) ||
+                entryCount <= 0)
+                return false;
+
+            try
+            {
+                string directory = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "AgentLogs");
+                Directory.CreateDirectory(directory);
+                string path = Path.Combine(directory, ReconstructionDumpFileName);
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                {
+                    Span<byte> rowBytes = stackalloc byte[DrsContractLayout.ReconstructionTelemetryEntryStrideBytes];
+                    for (int i = 0; i < entryCount; i++)
+                    {
+                        if (!TryReadReconstructionTelemetryEntry(i, out ReconstructionTelemetryEntry entry))
+                            return false;
+
+                        WriteReconstructionTelemetryEntry(rowBytes, in entry);
+                        stream.Write(rowBytes);
+                    }
+                }
+
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
             }
         }
 
-        private unsafe bool TryDumpReconstructionTelemetry()
+        private bool TryGetReconstructionTelemetryEntryCount(out int entryCount)
         {
-            if (_dataVault == null ||
-                !TryReadReconstructionVaultBuffer(
-                    _dataVault,
+            entryCount = 0;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive)
+                return false;
+
+            if (!TryReadReconstructionVaultBuffer(
+                    vault,
                     in _reconstructionTelemetryHandle,
                     ReconstructionTelemetryVaultId,
                     ReconstructionTelemetryCapacity,
-                    out NativeArray<ReconstructionTelemetryEntry> telemetry))
+                    out NativeArray<ReconstructionTelemetryEntry>.ReadOnly telemetry))
             {
                 return false;
             }
 
-            string directory = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "AgentLogs");
-            Directory.CreateDirectory(directory);
-            string path = Path.Combine(directory, ReconstructionDumpFileName);
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            if (vault.IsCompactionFenceActive || !telemetry.IsCreated)
+                return false;
+
+            entryCount = math.min(telemetry.Length, ReconstructionTelemetryCapacity);
+            return entryCount > 0;
+        }
+
+        private bool TryReadReconstructionTelemetryEntry(int index, out ReconstructionTelemetryEntry entry)
+        {
+            entry = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                index < 0)
+                return false;
+
+            if (!TryReadReconstructionVaultBuffer(
+                    vault,
+                    in _reconstructionTelemetryHandle,
+                    ReconstructionTelemetryVaultId,
+                    ReconstructionTelemetryCapacity,
+                    out NativeArray<ReconstructionTelemetryEntry>.ReadOnly telemetry))
             {
-                byte* source = (byte*)telemetry.GetUnsafeReadOnlyPtr();
-                int totalBytes = telemetry.Length * UnsafeUtility.SizeOf<ReconstructionTelemetryEntry>();
-                byte* chunk = stackalloc byte[1024];
-                int offset = 0;
-                while (offset < totalBytes)
-                {
-                    int count = math.min(1024, totalBytes - offset);
-                    UnsafeUtility.MemCpy(chunk, source + offset, count);
-                    stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(chunk), count));
-                    offset += count;
-                }
+                return false;
             }
 
-            return true;
+            if (vault.IsCompactionFenceActive ||
+                !telemetry.IsCreated ||
+                (uint)index >= (uint)math.min(telemetry.Length, ReconstructionTelemetryCapacity))
+                return false;
+
+            entry = telemetry[index];
+            return !vault.IsCompactionFenceActive;
+        }
+
+        private static void WriteReconstructionTelemetryEntry(Span<byte> destination, in ReconstructionTelemetryEntry entry)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.Flags);
+            WriteFloatLittleEndian(destination.Slice(8, 4), entry.CurrentRenderScale01);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.TargetRenderScale01);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.SharpenIntensity01);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.BilateralRadiusPixels);
+            WriteFloatLittleEndian(destination.Slice(24, 4), entry.HistoryWeight01);
+            WriteFloatLittleEndian(destination.Slice(28, 4), entry.GlobalQualityWeight01);
+            WriteFloatLittleEndian(destination.Slice(32, 4), entry.Grain01);
+            WriteFloatLittleEndian(destination.Slice(36, 4), entry.ChromaticAberration01);
+            WriteFloatLittleEndian(destination.Slice(40, 4), entry.Vignette01);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(44, 4), entry.UpscalerModeHash);
+            WriteFloatLittleEndian(destination.Slice(48, 4), entry.GpuComputeTimeMs);
+            WriteFloatLittleEndian(destination.Slice(52, 4), entry.JitterPixels);
+            destination.Slice(56, 8).Clear();
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
 #if UNITY_EDITOR
-        private unsafe bool TryLoadAestheticCsvCold()
+        private bool TryLoadAestheticCsvCold()
         {
             if (_aestheticCsvLoaded || _aestheticCsvLoadAttempted)
                 return _aestheticCsvLoaded;
 
-            if (!EnsureReconstructionVaultHandles() || _dataVault == null)
+            IDataVault vault = _dataVault;
+            if (!EnsureReconstructionVaultHandles() || vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             string path = ResolveAestheticCsvPath();
@@ -1651,68 +1820,127 @@ namespace Hecton8.Visor
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            if (!_dataVault.TryLockBuffer(ReconstructionCsvScratchVaultId, SystemID.GraphicsScalability))
-            {
-                _aestheticCsvLoadAttempted = false;
-                return false;
-            }
-
-            bool profileLocked = false;
             try
             {
-                if (!_dataVault.TryLockBuffer(ReconstructionProfileVaultId, SystemID.GraphicsScalability))
+                Span<byte> csvBytes = stackalloc byte[CsvScratchBytes];
+                int read = ReadCsvFileIntoSpan(path, csvBytes);
+                if (read <= 0)
+                    return false;
+
+                Span<NoirAestheticProfileDTO> parsedProfiles = stackalloc NoirAestheticProfileDTO[AestheticProfileCapacity];
+                int parsed = ParseAestheticCsv(csvBytes.Slice(0, read), parsedProfiles);
+
+                NativeArray<byte> scratch = default;
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _csvScratchHandle, SystemID.GraphicsScalability, out scratch))
                 {
                     _aestheticCsvLoadAttempted = false;
                     return false;
                 }
-                profileLocked = true;
 
-                if (!TryResolveReconstructionVaultBuffer(
-                        _dataVault,
-                        in _csvScratchHandle,
-                        ReconstructionCsvScratchVaultId,
-                        CsvScratchBytes,
-                        out NativeArray<byte> scratch) ||
-                    !TryResolveReconstructionVaultBuffer(
-                        _dataVault,
-                        in _aestheticProfileHandle,
-                        ReconstructionProfileVaultId,
-                        AestheticProfileCapacity,
-                        out NativeArray<NoirAestheticProfileDTO> profiles))
+                try
                 {
+                    if (!scratch.IsCreated || scratch.Length <= 0)
+                        return false;
+
+                    CopyBytesToNativeArray(csvBytes.Slice(0, read), scratch);
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _csvScratchHandle, SystemID.GraphicsScalability);
+                }
+
+                NativeArray<NoirAestheticProfileDTO> profiles = default;
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _aestheticProfileHandle, SystemID.GraphicsScalability, out profiles))
+                {
+                    _aestheticCsvLoadAttempted = false;
                     return false;
                 }
 
-                int read;
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan))
+                try
                 {
-                    int max = math.min(scratch.Length, CsvScratchBytes);
-                    void* scratchPtr = scratch.GetUnsafePtr();
-                    read = stream.Read(MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(scratchPtr), max));
+                    if (!profiles.IsCreated || profiles.Length <= 0)
+                        return false;
+
+                    CopyAestheticProfilesToNativeArray(parsedProfiles, parsed, profiles);
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _aestheticProfileHandle, SystemID.GraphicsScalability);
                 }
 
-                if (read <= 0)
-                    return false;
-
-                int parsed = ParseAestheticCsv(scratch, read, profiles);
-                CacheAestheticProfileSnapshot(profiles, parsed);
+                CacheAestheticProfileSnapshot(parsedProfiles, parsed);
                 _aestheticCsvLoaded = parsed > 0;
                 return _aestheticCsvLoaded;
             }
-            finally
+            catch (IOException)
             {
-                if (profileLocked)
-                    _dataVault.TryUnlockBuffer(ReconstructionProfileVaultId, SystemID.GraphicsScalability);
-                _dataVault.TryUnlockBuffer(ReconstructionCsvScratchVaultId, SystemID.GraphicsScalability);
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
             }
         }
 
-        private static int ParseAestheticCsv(
-            NativeArray<byte> bytes,
-            int length,
-            NativeArray<NoirAestheticProfileDTO> profiles)
+        private static int ReadCsvFileIntoSpan(string path, Span<byte> destination)
         {
-            int limit = math.min(length, bytes.Length);
+            using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan);
+            int max = (int)math.min(stream.Length, destination.Length);
+            return max > 0 ? stream.Read(destination.Slice(0, max)) : 0;
+        }
+
+        private static void CopyBytesToNativeArray(ReadOnlySpan<byte> source, NativeArray<byte> destination)
+        {
+            int count = math.min(source.Length, destination.IsCreated ? destination.Length : 0);
+            for (int i = 0; i < count; i++)
+                destination[i] = source[i];
+            for (int i = count; i < destination.Length; i++)
+                destination[i] = 0;
+        }
+
+        private static void CopyAestheticProfilesToNativeArray(
+            ReadOnlySpan<NoirAestheticProfileDTO> source,
+            int count,
+            NativeArray<NoirAestheticProfileDTO> destination)
+        {
+            int safeCount = math.min(math.max(0, count), math.min(source.Length, destination.IsCreated ? destination.Length : 0));
+            for (int i = 0; i < safeCount; i++)
+                destination[i] = source[i];
+            for (int i = safeCount; i < destination.Length; i++)
+                destination[i] = default;
+        }
+
+        private static void CopyNoirColorProfilesToNativeArray(
+            ReadOnlySpan<NoirColorProfileDTO> source,
+            int count,
+            NativeArray<NoirColorProfileDTO> destination)
+        {
+            int safeCount = math.min(math.max(0, count), math.min(source.Length, destination.IsCreated ? destination.Length : 0));
+            for (int i = 0; i < safeCount; i++)
+                destination[i] = source[i];
+            for (int i = safeCount; i < destination.Length; i++)
+                destination[i] = default;
+        }
+
+        private static int ParseAestheticCsv(
+            ReadOnlySpan<byte> bytes,
+            Span<NoirAestheticProfileDTO> profiles)
+        {
+            int limit = bytes.Length;
             int cursor = 0;
             int write = 0;
             while (cursor < limit && write < profiles.Length)
@@ -1775,11 +2003,11 @@ namespace Hecton8.Visor
             return write;
         }
 
-        private void CacheAestheticProfileSnapshot(NativeArray<NoirAestheticProfileDTO> profiles, int count)
+        private void CacheAestheticProfileSnapshot(ReadOnlySpan<NoirAestheticProfileDTO> profiles, int count)
         {
             int safeCount = math.min(
                 math.max(0, count),
-                math.min(profiles.IsCreated ? profiles.Length : 0, _aestheticProfileCache.Length));
+                math.min(profiles.Length, _aestheticProfileCache.Length));
             for (int i = 0; i < safeCount; i++)
                 _aestheticProfileCache[i] = profiles[i];
             for (int i = safeCount; i < _aestheticProfileCacheCount; i++)
@@ -1833,38 +2061,31 @@ namespace Hecton8.Visor
             return File.Exists(path) ? path : null;
         }
 
-        private bool TryLockAndCopyMockReconstructionSignal(out MockReconstructionInputSignal signal)
+        private bool TryCopyMockReconstructionSignalSnapshot(out MockReconstructionInputSignal signal)
         {
             signal = default;
-            if (_dataVault == null ||
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !IsReconstructionVaultHandle(in _mockSignalHandle, ReconstructionMockSignalVaultId))
                 return false;
 
-            if (!_dataVault.TryLockBuffer(ReconstructionMockSignalVaultId, SystemID.GraphicsScalability))
+            if (!TryReadReconstructionVaultBuffer(
+                    vault,
+                    in _mockSignalHandle,
+                    ReconstructionMockSignalVaultId,
+                    1,
+                    out NativeArray<MockReconstructionInputSignal>.ReadOnly mock))
+            {
                 return false;
-
-            try
-            {
-                if (!TryReadReconstructionVaultBuffer(
-                        _dataVault,
-                        in _mockSignalHandle,
-                        ReconstructionMockSignalVaultId,
-                        1,
-                        out NativeArray<MockReconstructionInputSignal> mock))
-                {
-                    return false;
-                }
-
-                signal = mock[0];
-                return signal.Flags != 0u &&
-                       math.isfinite(signal.RenderScale01) &&
-                       math.isfinite(signal.GlobalQualityWeight01) &&
-                       signal.RenderScale01 > 0f;
             }
-            finally
-            {
-                _dataVault.TryUnlockBuffer(ReconstructionMockSignalVaultId, SystemID.GraphicsScalability);
-            }
+
+            signal = mock[0];
+            return !vault.IsCompactionFenceActive &&
+                   signal.Flags != 0u &&
+                   math.isfinite(signal.RenderScale01) &&
+                   math.isfinite(signal.GlobalQualityWeight01) &&
+                   signal.RenderScale01 > 0f;
         }
 
         private bool TryUseCachedResolutionState(out ResolutionScaleState state)
@@ -1930,7 +2151,7 @@ namespace Hecton8.Visor
             return math.isfinite(value) && value > 0f ? value : fallback;
         }
 
-        private static void SkipCsvWhitespace(NativeArray<byte> bytes, int limit, ref int cursor)
+        private static void SkipCsvWhitespace(ReadOnlySpan<byte> bytes, int limit, ref int cursor)
         {
             while (cursor < limit)
             {
@@ -1941,7 +2162,7 @@ namespace Hecton8.Visor
             }
         }
 
-        private static void SkipCsvLine(NativeArray<byte> bytes, int limit, ref int cursor)
+        private static void SkipCsvLine(ReadOnlySpan<byte> bytes, int limit, ref int cursor)
         {
             while (cursor < limit && bytes[cursor] != (byte)'\n')
                 cursor++;
@@ -1949,7 +2170,7 @@ namespace Hecton8.Visor
                 cursor++;
         }
 
-        private static uint ReadCsvTokenHash(NativeArray<byte> bytes, int limit, ref int cursor)
+        private static uint ReadCsvTokenHash(ReadOnlySpan<byte> bytes, int limit, ref int cursor)
         {
             if (cursor < limit && bytes[cursor] == (byte)',')
                 cursor++;
@@ -1984,7 +2205,7 @@ namespace Hecton8.Visor
             return any ? hash : 0u;
         }
 
-        private static bool TryReadCsvFloatField(NativeArray<byte> bytes, int limit, ref int cursor, out float value)
+        private static bool TryReadCsvFloatField(ReadOnlySpan<byte> bytes, int limit, ref int cursor, out float value)
         {
             value = 0f;
             if (cursor < limit && bytes[cursor] == (byte)',')
@@ -2148,11 +2369,24 @@ namespace Hecton8.Visor
 
             Transform cameraTransform = renderCamera.transform;
             float cameraY = cameraTransform.position.y;
-            float splitLine = cameraY < waterlineY - 0.03f
-                ? 1.08f
-                : ResolveInternalWaterlineViewportSplit(renderCamera, waterlineY, settings);
-            float submerged01 = cameraY < waterlineY - 0.03f ? 1f : 0f;
+            float submerged01 = ResolveInternalWaterlineSubmergedWeight01(cameraY, waterlineY);
+            float splitLine = InternalWaterlineFullScreenSplit;
+            if (submerged01 < 0.999f)
+            {
+                float viewportSplit = ResolveInternalWaterlineViewportSplit(renderCamera, waterlineY, settings);
+                splitLine = math.lerp(viewportSplit, InternalWaterlineFullScreenSplit, submerged01);
+            }
+
             return new Vector4(splitLine, active01, submerged01, droplets01);
+        }
+
+        private static float ResolveInternalWaterlineSubmergedWeight01(float cameraY, float waterlineY)
+        {
+            float depthBelowWaterline = waterlineY - cameraY;
+            float fadeStart = InternalWaterlineSubmergeOffsetMeters - InternalWaterlineSubmergeFadeMeters;
+            float fadeEnd = InternalWaterlineSubmergeOffsetMeters + InternalWaterlineSubmergeFadeMeters;
+            float fadeRange = math.max(0.001f, fadeEnd - fadeStart);
+            return Smooth01(math.saturate((depthBelowWaterline - fadeStart) * math.rcp(fadeRange)));
         }
 
         private static float ResolveInternalWaterlineViewportSplit(Camera renderCamera, float waterlineY, FeatureSettings settings)
@@ -2210,7 +2444,7 @@ namespace Hecton8.Visor
             float pressureDrive01 = math.saturate((math.max(1f, SanitizeFinite(ambientPressure, 1f)) - 1f) * math.rcp(safeRange));
             float stressDrive01 = Sanitize01(hullStress01) * 0.35f;
             float visualBudget01 = 1f - Sanitize01(qualityPressure01);
-            return math.smoothstep(0f, 1f, math.max(pressureDrive01, stressDrive01)) * visualBudget01;
+            return Smooth01(math.max(pressureDrive01, stressDrive01)) * visualBudget01;
         }
 
         private static bool TryUsePlayerContextSnapshot(

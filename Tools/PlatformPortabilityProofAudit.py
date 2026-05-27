@@ -18,7 +18,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_REPORT_PATH = REPO_ROOT / "Docs" / "AgentLogs" / "PlatformPortabilityProofAudit_HFI_AUDIT.md"
 DEFAULT_JSON_PATH = REPO_ROOT / "Docs" / "AgentLogs" / "PlatformPortabilityProofAudit_HFI_AUDIT.json"
-SCHEMA = "hecton8.platform_portability_proof_audit.v11"
+SCHEMA = "hecton8.platform_portability_proof_audit.v14"
 
 XR_PACKAGES = (
     "com.unity.xr.management",
@@ -61,6 +61,16 @@ QUEST_URP_ASSET = "Assets/_Project/Data/URP_Quest_VR.asset"
 COMPUTE_DISPATCH_COMMANDBUFFER_PATTERN = re.compile(r"\.\s*DispatchCompute\s*\(")
 COMPUTE_DISPATCH_SHADER_PATTERN = re.compile(r"\.\s*Dispatch\s*\(")
 COMPUTE_THREAD_GROUP_QUERY_PATTERN = re.compile(r"\.\s*GetKernelThreadGroupSizes\s*\(")
+VENDOR_ASSET_PREFIXES = (
+    "Assets/Bakery/",
+    "Assets/Crest/",
+    "Assets/Editor/x64/Bakery/",
+    "Assets/GPUInstancer/",
+)
+FIRST_PARTY_ASSET_PREFIX = "Assets/_Project/"
+DISPATCH_PAYLOAD_GROUP_PATTERN = re.compile(
+    r"\b[A-Za-z_][A-Za-z0-9_\.]*\.[A-Za-z0-9_]*DispatchGroups[A-Za-z0-9_]*\b"
+)
 
 
 def normalize_path(path: Path, repo_root: Path = REPO_ROOT) -> str:
@@ -74,6 +84,46 @@ def read_text(path: Path) -> str:
     if not path.exists():
         return ""
     return path.read_text(encoding="utf-8", errors="ignore")
+
+
+def path_owner(path: Path, root: Path) -> str:
+    relative = normalize_path(path, root)
+    if relative.startswith(FIRST_PARTY_ASSET_PREFIX):
+        return "FirstParty"
+    if relative.startswith(VENDOR_ASSET_PREFIXES):
+        return "Vendor"
+    if relative.startswith("Assets/"):
+        return "ExternalAsset"
+    return "ProjectSettings"
+
+
+def is_first_party_path(path: Path, root: Path) -> bool:
+    return path_owner(path, root) == "FirstParty"
+
+
+def dispatch_expression_for_match(text: str, match: re.Match[str]) -> str:
+    line_start = text.rfind("\n", 0, match.start()) + 1
+    line_end = text.find("\n", match.start())
+    if line_end < 0:
+        line_end = len(text)
+    expression = text[line_start:line_end].strip()
+    balance = expression.count("(") - expression.count(")")
+    cursor = line_end + 1
+    line_count = 1
+    while balance > 0 and cursor < len(text) and line_count < 12:
+        next_end = text.find("\n", cursor)
+        if next_end < 0:
+            next_end = len(text)
+        part = text[cursor:next_end].strip()
+        expression += " " + part
+        balance += part.count("(") - part.count(")")
+        cursor = next_end + 1
+        line_count += 1
+    return expression
+
+
+def is_payload_sized_dispatch_call(text: str, match: re.Match[str]) -> bool:
+    return bool(DISPATCH_PAYLOAD_GROUP_PATTERN.search(dispatch_expression_for_match(text, match)))
 
 
 def load_json(path: Path) -> dict[str, object]:
@@ -158,6 +208,64 @@ def asset_guid(path: Path) -> str:
     return regex_string(read_text(meta), r"\bguid:\s*([0-9a-fA-F]+)")
 
 
+def guid_is_referenced(text: str, guid: str) -> bool:
+    return bool(guid) and guid.lower() in text.lower()
+
+
+def serialized_guid_reference_samples(root: Path, guid: str, skip_paths: set[Path]) -> list[str]:
+    if not guid:
+        return []
+    samples: list[str] = []
+    search_roots = (root / "ProjectSettings", root / "Assets" / "XR")
+    for search_root in search_roots:
+        if not search_root.exists():
+            continue
+        for path in sorted(item for item in search_root.rglob("*") if item.is_file() and item.suffix.lower() == ".asset"):
+            resolved = path.resolve()
+            if resolved in skip_paths:
+                continue
+            if guid_is_referenced(read_text(path), guid):
+                samples.append(normalize_path(path, root))
+    return samples
+
+
+def yaml_object_block(text: str, name: str) -> str:
+    marker = f"m_Name: {name}"
+    index = text.find(marker)
+    if index < 0:
+        return ""
+    next_object = text.find("\n--- !u!", index + len(marker))
+    return text[index:] if next_object < 0 else text[index:next_object]
+
+
+def xr_management_surface(root: Path) -> dict[str, object]:
+    editor_build_text = read_text(root / "ProjectSettings" / "EditorBuildSettings.asset")
+    openxr_loader = root / "Assets" / "XR" / "Loaders" / "OpenXRLoader.asset"
+    openxr_loader_text = read_text(openxr_loader)
+    openxr_loader_guid = asset_guid(openxr_loader)
+    openxr_settings = root / "Assets" / "XR" / "Settings" / "OpenXR Package Settings.asset"
+    openxr_settings_text = read_text(openxr_settings)
+    openxr_settings_guid = asset_guid(openxr_settings)
+    loader_reference_samples = serialized_guid_reference_samples(root, openxr_loader_guid, {openxr_loader.resolve()})
+    meta_quest_block = yaml_object_block(openxr_settings_text, "MetaQuestFeature Android")
+    oculus_quest_block = yaml_object_block(openxr_settings_text, "OculusQuestFeature Android")
+    quest_feature_blocks = [block for block in (meta_quest_block, oculus_quest_block) if block]
+    return {
+        "xrManagementOpenXrSettingsPath": normalize_path(openxr_settings, root),
+        "xrManagementOpenXrSettingsGuid": openxr_settings_guid,
+        "xrManagementOpenXrSettingsAssetPresent": "UnityEngine.XR.OpenXR.OpenXRSettings" in openxr_settings_text,
+        "xrManagementOpenXrSettingsRegistered": guid_is_referenced(editor_build_text, openxr_settings_guid),
+        "xrManagementOpenXrLoaderPath": normalize_path(openxr_loader, root),
+        "xrManagementOpenXrLoaderGuid": openxr_loader_guid,
+        "xrManagementOpenXrLoaderAssetPresent": "UnityEngine.XR.OpenXR.OpenXRLoader" in openxr_loader_text,
+        "xrManagementOpenXrLoaderGuidReferenceCount": len(loader_reference_samples),
+        "xrManagementOpenXrLoaderGuidReferenceSamples": loader_reference_samples[:20],
+        "xrManagementSinglePassInstancedSerialized": "m_renderMode: 1" in openxr_settings_text,
+        "xrManagementQuestFeaturePresent": bool(quest_feature_blocks),
+        "xrManagementQuestFeatureEnabled": any("m_enabled: 1" in block for block in quest_feature_blocks),
+    }
+
+
 def android_graphics_api_surface(text: str) -> dict[str, object]:
     match = re.search(
         r"-\s*m_BuildTarget:\s*AndroidPlayer\s*\r?\n\s*m_APIs:\s*([0-9a-fA-F]+)\s*\r?\n\s*m_Automatic:\s*(-?\d+)",
@@ -175,6 +283,7 @@ def android_graphics_api_surface(text: str) -> dict[str, object]:
 def project_settings_surface(root: Path) -> dict[str, object]:
     text = read_text(root / "ProjectSettings" / "ProjectSettings.asset")
     xr_text = read_text(root / "ProjectSettings" / "XRSettings.asset")
+    xr_management = xr_management_surface(root)
     xr_validator_text = read_text(
         root / "Assets" / "_Project" / "Scripts" / "Editor" / "Build" / "XrPlatformReadinessValidator.cs"
     )
@@ -190,6 +299,13 @@ def project_settings_surface(root: Path) -> dict[str, object]:
     android_sustained = regex_int(text, r"\bAndroidEnableSustainedPerformanceMode:\s*(-?\d+)")
     android_identifier = regex_string(text, r"\bapplicationIdentifier:\s*(?:\r?\n\s+[A-Za-z]+:\s+[^\r\n]*)*\r?\n\s+Android:\s*([^\r\n]+)")
     build_target_vr_empty = bool(re.search(r"\bm_BuildTargetVRSettings:\s*\[\]", text))
+    xr_legacy_provider_proof = bool(text and "m_BuildTargetVRSettings:" in text and not build_target_vr_empty)
+    xr_management_provider_proof = bool(
+        xr_management["xrManagementOpenXrSettingsAssetPresent"]
+        and xr_management["xrManagementOpenXrSettingsRegistered"]
+        and xr_management["xrManagementOpenXrLoaderAssetPresent"]
+        and int(xr_management["xrManagementOpenXrLoaderGuidReferenceCount"]) > 0
+    )
     xr_legacy_disabled_false = '"VR Device Disabled"' in xr_text and '"False"' in xr_text
     xr_provider_route_fixer = (
         "WireAndroidOpenXrProviderRouteForCi" in xr_validator_text
@@ -231,10 +347,13 @@ def project_settings_surface(root: Path) -> dict[str, object]:
         "androidApplicationIdentifier": android_identifier,
         "buildTargetVrSettingsEmpty": build_target_vr_empty,
         "xrLegacyDisabledFalse": xr_legacy_disabled_false,
-        "xrProviderSerializedProof": not build_target_vr_empty,
+        "xrLegacyProviderSerializedProof": xr_legacy_provider_proof,
+        "xrManagementProviderSerializedProof": xr_management_provider_proof,
+        "xrProviderSerializedProof": xr_legacy_provider_proof or xr_management_provider_proof,
         "xrProviderRouteFixerPresent": xr_provider_route_fixer,
         "xrProviderRouteValidatorPresent": xr_provider_route_validator,
     }
+    surface.update(xr_management)
     surface.update(android_graphics_api_surface(text))
     return surface
 
@@ -334,6 +453,8 @@ def shader_warmup_surface(root: Path) -> dict[str, object]:
         "shaderVariantCollectionSamples": [normalize_path(item, root) for item in shader_variant_collections[:20]],
         "bootstrapShaderCollectionFieldPresent": "ShaderVariantCollection[]" in bootstrap_text,
         "bootstrapExplicitWarmUpCallCount": len(re.findall(r"\.WarmUp\s*\(", bootstrap_text)),
+        "bootstrapShaderWarmupFromCollectionCallCount": len(re.findall(r"\bShaderWarmup\.WarmupShaderFromCollection\s*\(", bootstrap_text)),
+        "bootstrapGraphicsStateWarmUpProgressivelyCallCount": len(re.findall(r"\.WarmUpProgressively\s*\(", bootstrap_text)),
         "bootstrapIsWarmedUpReadCount": len(re.findall(r"\.isWarmedUp\b", bootstrap_text)),
         "warmupAllShadersCallSites": len(re.findall(r"\bShader\.WarmupAllShaders\s*\(", bootstrap_text)),
         "shaderSourceFiles": len(shader_sources),
@@ -475,9 +596,11 @@ def compute_thread_surface(root: Path) -> dict[str, object]:
     compute_files = sorted((root / "Assets").rglob("*.compute")) if (root / "Assets").exists() else []
     risky_groups: list[dict[str, object]] = []
     runtime_asset_risky_groups: list[dict[str, object]] = []
+    editor_test_only_runtime_asset_risky_groups: list[dict[str, object]] = []
     runtime_risky_groups: list[dict[str, object]] = []
     risky_by_surface: dict[str, int] = {}
     risky_by_reachability: dict[str, int] = {}
+    risky_by_owner: dict[str, int] = {}
     unknown_groups = 0
     target_50_files: list[str] = []
     total_numthreads = 0
@@ -519,6 +642,7 @@ def compute_thread_surface(root: Path) -> dict[str, object]:
                     "args": args,
                     "threadGroupSize": product,
                     "executionSurface": surface,
+                    "owner": path_owner(path, root),
                     "runtimeReachability": reference["runtimeReachability"],
                     "runtimeReferenceCount": reference["runtimeReferenceCount"],
                     "runtimeSourceReferenceCount": reference["runtimeSourceReferenceCount"],
@@ -529,8 +653,13 @@ def compute_thread_surface(root: Path) -> dict[str, object]:
                 risky_by_surface[surface] = risky_by_surface.get(surface, 0) + 1
                 reachability = str(reference["runtimeReachability"])
                 risky_by_reachability[reachability] = risky_by_reachability.get(reachability, 0) + 1
+                owner = str(item["owner"])
+                risky_by_owner[owner] = risky_by_owner.get(owner, 0) + 1
                 if surface == "Runtime":
-                    runtime_asset_risky_groups.append(item)
+                    if reachability == "EditorOrTestOnly":
+                        editor_test_only_runtime_asset_risky_groups.append(item)
+                    else:
+                        runtime_asset_risky_groups.append(item)
                 if surface == "Runtime" and int(reference["runtimeReferenceCount"]) > 0:
                     runtime_risky_groups.append(item)
     return {
@@ -547,8 +676,11 @@ def compute_thread_surface(root: Path) -> dict[str, object]:
         "riskyThreadGroupCount": len(risky_groups),
         "riskyThreadGroupCountByExecutionSurface": dict(sorted(risky_by_surface.items())),
         "riskyThreadGroupCountByRuntimeReachability": dict(sorted(risky_by_reachability.items())),
+        "riskyThreadGroupCountByOwner": dict(sorted(risky_by_owner.items())),
         "runtimeAssetRiskyThreadGroups": runtime_asset_risky_groups[:40],
         "runtimeAssetRiskyThreadGroupCount": len(runtime_asset_risky_groups),
+        "editorOrTestOnlyRuntimeAssetRiskyThreadGroups": editor_test_only_runtime_asset_risky_groups[:40],
+        "editorOrTestOnlyRuntimeAssetRiskyThreadGroupCount": len(editor_test_only_runtime_asset_risky_groups),
         "runtimeRiskyThreadGroups": runtime_risky_groups[:40],
         "runtimeRiskyThreadGroupCount": len(runtime_risky_groups),
         "target50ComputeFiles": target_50_files[:40],
@@ -565,10 +697,20 @@ def compute_dispatch_caller_surface(root: Path) -> dict[str, object]:
     runtime_files_with_dispatch = 0
     unchecked_call_count = 0
     runtime_unchecked_call_count = 0
+    first_party_runtime_unchecked_call_count = 0
+    payload_sized_first_party_runtime_unchecked_call_count = 0
+    vendor_runtime_unchecked_call_count = 0
     unchecked_file_count = 0
     runtime_unchecked_file_count = 0
+    first_party_runtime_unchecked_file_count = 0
+    payload_sized_first_party_runtime_unchecked_file_count = 0
+    vendor_runtime_unchecked_file_count = 0
     unchecked_by_surface: dict[str, int] = {}
+    unchecked_by_owner: dict[str, int] = {}
     samples: list[dict[str, object]] = []
+    first_party_runtime_samples: list[dict[str, object]] = []
+    payload_sized_first_party_runtime_samples: list[dict[str, object]] = []
+    vendor_runtime_samples: list[dict[str, object]] = []
 
     for path in cs_files:
         if any(part.lower() in COMPUTE_REFERENCE_SKIP_DIRECTORIES for part in path.parts):
@@ -591,7 +733,9 @@ def compute_dispatch_caller_surface(root: Path) -> dict[str, object]:
             continue
         matches.sort(key=lambda item: item.start())
         surface = execution_surface_for_path(path, root)
+        owner = path_owner(path, root)
         has_thread_group_query = bool(COMPUTE_THREAD_GROUP_QUERY_PATTERN.search(text))
+        all_dispatches_payload_sized = all(is_payload_sized_dispatch_call(text, match) for match in matches)
         file_call_count = len(matches)
         call_count += file_call_count
         files_with_dispatch += 1
@@ -603,25 +747,42 @@ def compute_dispatch_caller_surface(root: Path) -> dict[str, object]:
         unchecked_call_count += file_call_count
         unchecked_file_count += 1
         unchecked_by_surface[surface] = unchecked_by_surface.get(surface, 0) + file_call_count
+        unchecked_by_owner[owner] = unchecked_by_owner.get(owner, 0) + file_call_count
         if surface == "Runtime":
             runtime_unchecked_call_count += file_call_count
             runtime_unchecked_file_count += 1
+            if owner == "FirstParty":
+                if all_dispatches_payload_sized:
+                    payload_sized_first_party_runtime_unchecked_call_count += file_call_count
+                    payload_sized_first_party_runtime_unchecked_file_count += 1
+                else:
+                    first_party_runtime_unchecked_call_count += file_call_count
+                    first_party_runtime_unchecked_file_count += 1
+            else:
+                vendor_runtime_unchecked_call_count += file_call_count
+                vendor_runtime_unchecked_file_count += 1
         for match in matches:
-            if len(samples) >= 40:
-                break
-            line_start = text.rfind("\n", 0, match.start()) + 1
-            line_end = text.find("\n", match.start())
-            if line_end < 0:
-                line_end = len(text)
-            samples.append(
-                {
-                    "path": normalize_path(path, root),
-                    "line": line_number_for_index(text, match.start()),
-                    "executionSurface": surface,
-                    "call": text[line_start:line_end].strip()[:160],
-                    "fileHasThreadGroupQuery": has_thread_group_query,
-                }
-            )
+            expression = dispatch_expression_for_match(text, match)
+            sample = {
+                "path": normalize_path(path, root),
+                "line": line_number_for_index(text, match.start()),
+                "executionSurface": surface,
+                "owner": owner,
+                "call": expression[:160],
+                "fileHasThreadGroupQuery": has_thread_group_query,
+                "payloadSizedDispatch": is_payload_sized_dispatch_call(text, match),
+            }
+            if len(samples) < 40:
+                samples.append(sample)
+            if surface == "Runtime" and owner == "FirstParty" and not all_dispatches_payload_sized:
+                if len(first_party_runtime_samples) < 40:
+                    first_party_runtime_samples.append(sample)
+            elif surface == "Runtime" and owner == "FirstParty" and all_dispatches_payload_sized:
+                if len(payload_sized_first_party_runtime_samples) < 40:
+                    payload_sized_first_party_runtime_samples.append(sample)
+            elif surface == "Runtime" and owner != "FirstParty":
+                if len(vendor_runtime_samples) < 40:
+                    vendor_runtime_samples.append(sample)
 
     return {
         "dispatchCallCount": call_count,
@@ -630,10 +791,20 @@ def compute_dispatch_caller_surface(root: Path) -> dict[str, object]:
         "runtimeDispatchCallerFileCount": runtime_files_with_dispatch,
         "dispatchCallsWithoutThreadGroupQueryCount": unchecked_call_count,
         "runtimeDispatchCallsWithoutThreadGroupQueryCount": runtime_unchecked_call_count,
+        "firstPartyRuntimeDispatchCallsWithoutThreadGroupQueryCount": first_party_runtime_unchecked_call_count,
+        "firstPartyRuntimePayloadSizedDispatchCallsWithoutThreadGroupQueryCount": payload_sized_first_party_runtime_unchecked_call_count,
+        "vendorRuntimeDispatchCallsWithoutThreadGroupQueryCount": vendor_runtime_unchecked_call_count,
         "dispatchCallerFilesWithoutThreadGroupQueryCount": unchecked_file_count,
         "runtimeDispatchCallerFilesWithoutThreadGroupQueryCount": runtime_unchecked_file_count,
+        "firstPartyRuntimeDispatchCallerFilesWithoutThreadGroupQueryCount": first_party_runtime_unchecked_file_count,
+        "firstPartyRuntimePayloadSizedDispatchCallerFilesWithoutThreadGroupQueryCount": payload_sized_first_party_runtime_unchecked_file_count,
+        "vendorRuntimeDispatchCallerFilesWithoutThreadGroupQueryCount": vendor_runtime_unchecked_file_count,
         "dispatchCallsWithoutThreadGroupQueryByExecutionSurface": dict(sorted(unchecked_by_surface.items())),
+        "dispatchCallsWithoutThreadGroupQueryByOwner": dict(sorted(unchecked_by_owner.items())),
         "dispatchCallersWithoutThreadGroupQuerySamples": samples,
+        "firstPartyRuntimeDispatchCallersWithoutThreadGroupQuerySamples": first_party_runtime_samples,
+        "firstPartyRuntimePayloadSizedDispatchCallersWithoutThreadGroupQuerySamples": payload_sized_first_party_runtime_samples,
+        "vendorRuntimeDispatchCallersWithoutThreadGroupQuerySamples": vendor_runtime_samples,
     }
 
 
@@ -937,14 +1108,25 @@ def readiness_surface(
         "androidVulkanOnlySerialized": bool(settings["androidVulkanOnlySerialized"]),
         "questUrpAssetPresent": bool(quality["questUrpAssetPresent"]),
         "questUrpWiredToAndroidQuality": bool(quality["androidDefaultQualityUsesQuestUrp"]),
-        "shaderWarmupPreloaded": int(shaders["preloadedShaderEntries"]) > 0,
+        "graphicsSettingsShaderPreloadBypassDisabled": int(shaders["preloadedShaderEntries"]) == 0,
         "shaderVariantCollectionsPresent": int(shaders["shaderVariantCollectionFiles"]) > 0,
-        "bootstrapExplicitShaderWarmup": int(shaders["bootstrapExplicitWarmUpCallCount"]) > 0,
+        "bootstrapExplicitShaderWarmup": (
+            int(shaders["bootstrapExplicitWarmUpCallCount"]) > 0
+            or int(shaders["bootstrapShaderWarmupFromCollectionCallCount"]) > 0
+        ),
+        "shaderWarmupRoutePresent": (
+            int(shaders["shaderVariantCollectionFiles"]) > 0
+            and (
+                int(shaders["bootstrapExplicitWarmUpCallCount"]) > 0
+                or int(shaders["bootstrapShaderWarmupFromCollectionCallCount"]) > 0
+            )
+        ),
         "noRuntimeAssetHighRiskComputeThreadGroups": int(compute["runtimeAssetRiskyThreadGroupCount"]) == 0,
         "noRuntimeReferencedHighRiskComputeThreadGroups": int(compute["runtimeRiskyThreadGroupCount"]) == 0,
         "noRuntimeHighRiskComputeThreadGroups": int(compute["runtimeRiskyThreadGroupCount"]) == 0,
         "noHighRiskComputeThreadGroups": int(compute["runtimeRiskyThreadGroupCount"]) == 0,
-        "noRuntimeComputeDispatchWithoutThreadGroupQuery": int(compute["runtimeDispatchCallsWithoutThreadGroupQueryCount"]) == 0,
+        "noFirstPartyRuntimeComputeDispatchWithoutThreadGroupQuery": int(compute["firstPartyRuntimeDispatchCallsWithoutThreadGroupQueryCount"]) == 0,
+        "noRuntimeComputeDispatchWithoutThreadGroupQuery": int(compute["firstPartyRuntimeDispatchCallsWithoutThreadGroupQueryCount"]) == 0,
         "addressablesPackagePresent": addressables_package_present,
         "addressablesContentPresent": int(addressables["fileCount"]) > 0,
         "addressablesContentRoutePresent": addressables_content_route_present,
@@ -953,7 +1135,6 @@ def readiness_surface(
         "dataMonolithBakeRoutePresent": data_monolith_bake_route_present,
         "dataMonolithValidationRoutePresent": data_monolith_validation_route_present,
         "buildArtifactPresent": int(builds["fileCount"]) > 0 or int(artifacts["buildResultLogCount"]) > 0,
-        "picoPackagePresent": bool(packages["picoPackageCandidates"]),
     }
 
 
@@ -1048,6 +1229,12 @@ def write_markdown(path: Path, payload: dict[str, object]) -> None:
             f"- Android graphics API raw: `{settings['androidGraphicsApisRaw']}`, automatic: `{settings['androidGraphicsAutomatic']}`, Vulkan-only: `{yes_no(settings['androidVulkanOnlySerialized'])}`",
             f"- `m_BuildTargetVRSettings` empty: `{yes_no(settings['buildTargetVrSettingsEmpty'])}`",
             f"- XR provider serialized proof: `{yes_no(settings['xrProviderSerializedProof'])}`",
+            f"- XR legacy provider proof: `{yes_no(settings['xrLegacyProviderSerializedProof'])}`",
+            f"- XR Management provider proof: `{yes_no(settings['xrManagementProviderSerializedProof'])}`",
+            f"- XR Management OpenXR settings: `{settings['xrManagementOpenXrSettingsPath']}`, present: `{yes_no(settings['xrManagementOpenXrSettingsAssetPresent'])}`, registered: `{yes_no(settings['xrManagementOpenXrSettingsRegistered'])}`",
+            f"- XR Management OpenXR loader: `{settings['xrManagementOpenXrLoaderPath']}`, present: `{yes_no(settings['xrManagementOpenXrLoaderAssetPresent'])}`, serialized references: `{settings['xrManagementOpenXrLoaderGuidReferenceCount']}`",
+            f"- XR Management Single Pass Instanced serialized: `{yes_no(settings['xrManagementSinglePassInstancedSerialized'])}`",
+            f"- XR Management Quest feature present/enabled: `{yes_no(settings['xrManagementQuestFeaturePresent'])}` / `{yes_no(settings['xrManagementQuestFeatureEnabled'])}`",
             f"- XR readiness validator present: `{yes_no(settings['xrReadinessValidatorPresent'])}`",
             f"- XR provider route validator present: `{yes_no(settings['xrProviderRouteValidatorPresent'])}`",
             f"- XR provider route fixer present: `{yes_no(settings['xrProviderRouteFixerPresent'])}`",
@@ -1071,7 +1258,9 @@ def write_markdown(path: Path, payload: dict[str, object]) -> None:
             f"- Preloaded shader entries: `{shaders['preloadedShaderEntries']}`",
             f"- ShaderVariantCollection files: `{shaders['shaderVariantCollectionFiles']}`",
             f"- Bootstrap shader collection field present: `{yes_no(shaders['bootstrapShaderCollectionFieldPresent'])}`",
-            f"- Bootstrap explicit `ShaderVariantCollection.WarmUp()` calls: `{shaders['bootstrapExplicitWarmUpCallCount']}`",
+            f"- Bootstrap legacy `ShaderVariantCollection.WarmUp()` calls: `{shaders['bootstrapExplicitWarmUpCallCount']}`",
+            f"- Bootstrap `ShaderWarmup.WarmupShaderFromCollection()` calls: `{shaders['bootstrapShaderWarmupFromCollectionCallCount']}`",
+            f"- Bootstrap `WarmUpProgressively()` calls: `{shaders['bootstrapGraphicsStateWarmUpProgressivelyCallCount']}`",
             f"- Bootstrap `isWarmedUp` reads: `{shaders['bootstrapIsWarmedUpReadCount']}`",
             f"- `Shader.WarmupAllShaders()` call sites in bootstrap: `{shaders['warmupAllShadersCallSites']}`",
             f"- Shader source files: `{shaders['shaderSourceFiles']}`",
@@ -1085,14 +1274,23 @@ def write_markdown(path: Path, payload: dict[str, object]) -> None:
             f"- Risky numeric thread groups > `{compute['riskyThreadGroupThreshold']}`: `{compute['riskyThreadGroupCount']}`",
             f"- Risky numeric thread groups by execution surface: `{compute['riskyThreadGroupCountByExecutionSurface']}`",
             f"- Risky numeric thread groups by runtime reachability: `{compute['riskyThreadGroupCountByRuntimeReachability']}`",
+            f"- Risky numeric thread groups by owner: `{compute['riskyThreadGroupCountByOwner']}`",
             f"- Runtime asset risky numeric thread groups > `{compute['riskyThreadGroupThreshold']}`: `{compute['runtimeAssetRiskyThreadGroupCount']}`",
+            f"- Editor/test-only runtime asset risky numeric thread groups > `{compute['riskyThreadGroupThreshold']}`: `{compute['editorOrTestOnlyRuntimeAssetRiskyThreadGroupCount']}`",
             f"- Runtime-referenced risky numeric thread groups > `{compute['riskyThreadGroupThreshold']}`: `{compute['runtimeRiskyThreadGroupCount']}`",
             f"- Compute target 5.0 files: `{compute['target50ComputeFileCount']}`",
             f"- C# compute dispatch calls: `{compute['dispatchCallCount']}`; runtime: `{compute['runtimeDispatchCallCount']}`",
             f"- C# compute dispatch caller files: `{compute['dispatchCallerFileCount']}`; runtime: `{compute['runtimeDispatchCallerFileCount']}`",
             f"- Dispatch calls without file-level `GetKernelThreadGroupSizes`: `{compute['dispatchCallsWithoutThreadGroupQueryCount']}`; runtime: `{compute['runtimeDispatchCallsWithoutThreadGroupQueryCount']}`",
+            f"- First-party runtime dispatch calls without local query and without payload-sized dispatch proof: `{compute['firstPartyRuntimeDispatchCallsWithoutThreadGroupQueryCount']}`",
+            f"- First-party runtime payload-sized dispatch bridge calls without local query: `{compute['firstPartyRuntimePayloadSizedDispatchCallsWithoutThreadGroupQueryCount']}`",
+            f"- Vendor/external runtime dispatch calls without local query: `{compute['vendorRuntimeDispatchCallsWithoutThreadGroupQueryCount']}`",
             f"- Dispatch caller files without file-level `GetKernelThreadGroupSizes`: `{compute['dispatchCallerFilesWithoutThreadGroupQueryCount']}`; runtime: `{compute['runtimeDispatchCallerFilesWithoutThreadGroupQueryCount']}`",
+            f"- First-party runtime dispatch caller files without local query and without payload-sized dispatch proof: `{compute['firstPartyRuntimeDispatchCallerFilesWithoutThreadGroupQueryCount']}`",
+            f"- First-party runtime payload-sized dispatch bridge files without local query: `{compute['firstPartyRuntimePayloadSizedDispatchCallerFilesWithoutThreadGroupQueryCount']}`",
+            f"- Vendor/external runtime dispatch caller files without local query: `{compute['vendorRuntimeDispatchCallerFilesWithoutThreadGroupQueryCount']}`",
             f"- Dispatch calls without thread-group query by execution surface: `{compute['dispatchCallsWithoutThreadGroupQueryByExecutionSurface']}`",
+            f"- Dispatch calls without thread-group query by owner: `{compute['dispatchCallsWithoutThreadGroupQueryByOwner']}`",
             "",
             "## Payload / Build Artifacts",
             "",
@@ -1153,6 +1351,28 @@ def write_markdown(path: Path, payload: dict[str, object]) -> None:
     if unchecked_dispatch:
         lines.append("C# compute dispatch callers without file-level thread-group query:")
         lines.append("")
+
+    first_party_unchecked = compute["firstPartyRuntimeDispatchCallersWithoutThreadGroupQuerySamples"]
+    if first_party_unchecked:
+        lines.append("First-party runtime dispatch callers without local query and without payload-sized dispatch proof:")
+        lines.append("")
+        for item in first_party_unchecked[:20]:
+            if isinstance(item, dict):
+                lines.append(
+                    f"- `{item['path']}:{item['line']}` (`{item['executionSurface']}`) `{item['call']}`"
+                )
+        lines.append("")
+
+    payload_sized_dispatch = compute["firstPartyRuntimePayloadSizedDispatchCallersWithoutThreadGroupQuerySamples"]
+    if payload_sized_dispatch:
+        lines.append("First-party runtime payload-sized dispatch bridges without local query:")
+        lines.append("")
+        for item in payload_sized_dispatch[:20]:
+            if isinstance(item, dict):
+                lines.append(
+                    f"- `{item['path']}:{item['line']}` (`{item['executionSurface']}`) `{item['call']}`"
+                )
+        lines.append("")
         for item in unchecked_dispatch[:20]:
             if isinstance(item, dict):
                 lines.append(
@@ -1176,8 +1396,9 @@ def write_markdown(path: Path, payload: dict[str, object]) -> None:
             "## Interpretation",
             "",
             "- Quest/Android scaffold exists only if XR packages, ARM64, IL2CPP, and target SDK settings are present. That is not headset readiness.",
-            "- Android sustained-performance mode, Vulkan serialization, Quest URP wiring, shader warmup, and compute thread-group risk are static readiness gates, not runtime proof.",
-            "- Empty `m_BuildTargetVRSettings`, missing Addressables data, missing Data Monolith, and missing build artifacts block any GREEN platform claim.",
+            "- Android sustained-performance mode, Vulkan serialization, Quest URP wiring, bootstrap-owned shader warmup, and compute thread-group risk are static readiness gates, not runtime proof.",
+            "- Empty `GraphicsSettings.m_PreloadedShaders` is expected when bootstrap owns shader/PSO warmup; global preloads bypass fail-closed telemetry.",
+            "- Missing serialized XR provider proof, missing Addressables data, missing Data Monolith, and missing build artifacts block any GREEN platform claim.",
             "- Native plugin parity is unresolved until Windows, Linux/Deck, macOS, Android/Quest, and PCVR player builds prove load behavior on target hardware.",
             "- This audit is a no-claim gate. It prevents package/settings text from being inflated into runtime proof.",
             "",
@@ -1196,10 +1417,10 @@ def hard_failures(payload: dict[str, object], args: argparse.Namespace) -> list[
         ("fail_on_missing_sustained_performance", "androidSustainedPerformanceEnabled", "Android sustained-performance mode disabled"),
         ("fail_on_unwired_quest_urp", "questUrpWiredToAndroidQuality", "Quest URP asset is not wired to Android default quality"),
         ("fail_on_missing_shader_warmup", "shaderVariantCollectionsPresent", "missing ShaderVariantCollection files"),
-        ("fail_on_missing_bootstrap_shader_warmup", "bootstrapExplicitShaderWarmup", "missing explicit bootstrap ShaderVariantCollection.WarmUp call"),
+        ("fail_on_missing_bootstrap_shader_warmup", "bootstrapExplicitShaderWarmup", "missing explicit bootstrap shader warmup route"),
         ("fail_on_runtime_asset_high_risk_compute", "noRuntimeAssetHighRiskComputeThreadGroups", "high-risk runtime asset numeric compute thread group detected"),
         ("fail_on_high_risk_compute", "noRuntimeHighRiskComputeThreadGroups", "high-risk runtime-referenced numeric compute thread group detected"),
-        ("fail_on_runtime_compute_dispatch_without_threadgroup_query", "noRuntimeComputeDispatchWithoutThreadGroupQuery", "runtime compute dispatch without file-level GetKernelThreadGroupSizes detected"),
+        ("fail_on_runtime_compute_dispatch_without_threadgroup_query", "noRuntimeComputeDispatchWithoutThreadGroupQuery", "first-party runtime compute dispatch without thread-group proof detected"),
         ("fail_on_missing_addressables", "addressablesContentPresent", "missing Addressables content"),
         ("fail_on_missing_data_monolith", "dataMonolithPresent", "missing Data Monolith payload"),
         ("fail_on_missing_build_artifact", "buildArtifactPresent", "missing build artifact/log proof"),
@@ -1237,6 +1458,11 @@ def print_text(payload: dict[str, object], failures: list[str]) -> None:
         print(f"androidVulkanOnlySerialized={settings['androidVulkanOnlySerialized']}")
         print(f"buildTargetVrSettingsEmpty={settings['buildTargetVrSettingsEmpty']}")
         print(f"xrProviderSerializedProof={settings['xrProviderSerializedProof']}")
+        print(f"xrLegacyProviderSerializedProof={settings['xrLegacyProviderSerializedProof']}")
+        print(f"xrManagementProviderSerializedProof={settings['xrManagementProviderSerializedProof']}")
+        print(f"xrManagementOpenXrSettingsRegistered={settings['xrManagementOpenXrSettingsRegistered']}")
+        print(f"xrManagementOpenXrLoaderGuidReferenceCount={settings['xrManagementOpenXrLoaderGuidReferenceCount']}")
+        print(f"xrManagementQuestFeatureEnabled={settings['xrManagementQuestFeatureEnabled']}")
         print(f"xrReadinessValidatorPresent={settings['xrReadinessValidatorPresent']}")
         print(f"xrProviderRouteValidatorPresent={settings['xrProviderRouteValidatorPresent']}")
         print(f"xrProviderRouteFixerPresent={settings['xrProviderRouteFixerPresent']}")
@@ -1250,6 +1476,8 @@ def print_text(payload: dict[str, object], failures: list[str]) -> None:
         print(f"preloadedShaderEntries={shaders['preloadedShaderEntries']}")
         print(f"shaderVariantCollectionFiles={shaders['shaderVariantCollectionFiles']}")
         print(f"bootstrapExplicitWarmUpCallCount={shaders['bootstrapExplicitWarmUpCallCount']}")
+        print(f"bootstrapShaderWarmupFromCollectionCallCount={shaders['bootstrapShaderWarmupFromCollectionCallCount']}")
+        print(f"bootstrapGraphicsStateWarmUpProgressivelyCallCount={shaders['bootstrapGraphicsStateWarmUpProgressivelyCallCount']}")
         print(f"shaderFeaturePragmaCount={shaders['shaderFeaturePragmaCount']}")
         print(f"shaderTarget50OrHigherPragmas={shaders['shaderTarget50OrHigherPragmas']}")
     if isinstance(compute, dict):
@@ -1258,15 +1486,23 @@ def print_text(payload: dict[str, object], failures: list[str]) -> None:
         print(f"computeReferenceFilesSkipped={compute['skippedReferenceFileCount']}")
         print(f"riskyComputeThreadGroupsByExecutionSurface={compute['riskyThreadGroupCountByExecutionSurface']}")
         print(f"riskyComputeThreadGroupsByRuntimeReachability={compute['riskyThreadGroupCountByRuntimeReachability']}")
+        print(f"riskyComputeThreadGroupsByOwner={compute['riskyThreadGroupCountByOwner']}")
         print(f"runtimeAssetRiskyComputeThreadGroups={compute['runtimeAssetRiskyThreadGroupCount']}")
+        print(f"editorOrTestOnlyRuntimeAssetRiskyComputeThreadGroups={compute['editorOrTestOnlyRuntimeAssetRiskyThreadGroupCount']}")
         print(f"runtimeReferencedRiskyComputeThreadGroups={compute['runtimeRiskyThreadGroupCount']}")
         print(f"target50ComputeFiles={compute['target50ComputeFileCount']}")
         print(f"computeDispatchCalls={compute['dispatchCallCount']}")
         print(f"runtimeComputeDispatchCalls={compute['runtimeDispatchCallCount']}")
         print(f"dispatchCallsWithoutThreadGroupQuery={compute['dispatchCallsWithoutThreadGroupQueryCount']}")
         print(f"runtimeDispatchCallsWithoutThreadGroupQuery={compute['runtimeDispatchCallsWithoutThreadGroupQueryCount']}")
+        print(f"firstPartyRuntimeDispatchCallsWithoutThreadGroupQuery={compute['firstPartyRuntimeDispatchCallsWithoutThreadGroupQueryCount']}")
+        print(f"firstPartyRuntimePayloadSizedDispatchCallsWithoutThreadGroupQuery={compute['firstPartyRuntimePayloadSizedDispatchCallsWithoutThreadGroupQueryCount']}")
+        print(f"vendorRuntimeDispatchCallsWithoutThreadGroupQuery={compute['vendorRuntimeDispatchCallsWithoutThreadGroupQueryCount']}")
         print(f"dispatchCallerFilesWithoutThreadGroupQuery={compute['dispatchCallerFilesWithoutThreadGroupQueryCount']}")
         print(f"runtimeDispatchCallerFilesWithoutThreadGroupQuery={compute['runtimeDispatchCallerFilesWithoutThreadGroupQueryCount']}")
+        print(f"firstPartyRuntimeDispatchCallerFilesWithoutThreadGroupQuery={compute['firstPartyRuntimeDispatchCallerFilesWithoutThreadGroupQueryCount']}")
+        print(f"firstPartyRuntimePayloadSizedDispatchCallerFilesWithoutThreadGroupQuery={compute['firstPartyRuntimePayloadSizedDispatchCallerFilesWithoutThreadGroupQueryCount']}")
+        print(f"vendorRuntimeDispatchCallerFilesWithoutThreadGroupQuery={compute['vendorRuntimeDispatchCallerFilesWithoutThreadGroupQueryCount']}")
     if isinstance(artifacts, dict):
         addressables = artifacts["addressables"]
         monolith = artifacts["dataMonolith"]

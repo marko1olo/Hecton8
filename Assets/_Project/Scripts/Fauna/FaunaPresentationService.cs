@@ -1,4 +1,3 @@
-using Hecton8.Core;
 using Hecton8.Ecosystem;
 using Hecton8.World;
 using UnityEngine;
@@ -10,6 +9,17 @@ namespace Hecton8.AI
     /// </summary>
     internal sealed class FaunaPresentationService
     {
+        private FaunaGeneticsManager _faunaGenetics;
+        private EcosystemHealthDirector _ecosystemHealth;
+
+        internal void Bind(
+            FaunaGeneticsManager faunaGenetics,
+            EcosystemHealthDirector ecosystemHealth)
+        {
+            _faunaGenetics = faunaGenetics;
+            _ecosystemHealth = ecosystemHealth;
+        }
+
         internal void ConfigureSpawnedCreature(
             FaunaBrain ai,
             CreatureArchetypeData archetype,
@@ -20,8 +30,8 @@ namespace Hecton8.AI
             if (ai == null)
                 return;
 
-            GlobalRegistry.FaunaGenetics?.ApplyTraits(ai, archetype, biomeIndex, runtimePosition);
-            GlobalRegistry.EcosystemHealth?.ConfigureSpawnedFauna(ai, archetype, chunkCoord);
+            _faunaGenetics?.ApplyTraits(ai, archetype, biomeIndex, runtimePosition);
+            _ecosystemHealth?.ConfigureSpawnedFauna(ai, archetype, chunkCoord);
         }
     }
 }

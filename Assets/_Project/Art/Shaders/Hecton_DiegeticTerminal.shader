@@ -118,28 +118,45 @@ Shader "HECTON/UI/Diegetic Terminal"
                     output.positionCS = positionInputs.positionCS;
                     output.slice = _TerminalSlice;
                     output.quality = saturate(_HectonDiegeticGlitchQualityWeight);
-                    output.terminalIndex = (uint)round(saturate(_TerminalSlice * (1.0 / 63.0)) * 63.0);
+                    output.terminalIndex = (uint)(saturate(_TerminalSlice * (1.0 / 63.0)) * 63.0 + 0.5);
                 }
                 output.uv = input.uv;
                 return output;
             }
 
+            float H8LinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) / max(edge1 - edge0, 0.000001));
+            }
+
+            float H8LinearRampInv01(float edge0, float edge1, float value)
+            {
+                return 1.0 - H8LinearRamp01(edge0, edge1, value);
+            }
+
+            float H8TerminalTriangleSigned(float phase)
+            {
+                return abs(frac(phase + 0.25) * 2.0 - 1.0) * 2.0 - 1.0;
+            }
+
             float H8TerminalHash21(float2 value)
             {
-                return frac(sin(dot(value, float2(12.9898, 78.233))) * 43758.5453);
+                float3 p3 = frac(float3(value.xyx) * 0.1031);
+                p3 += dot(p3, p3.yzx + 33.33);
+                return frac((p3.x + p3.y) * p3.z);
             }
 
             float H8TerminalWaveLine(float2 uv, float frequency, float phase, float thickness)
             {
-                float waveY = 0.5 + sin((uv.x * frequency + phase) * 6.2831853) * 0.215;
+                float waveY = 0.5 + H8TerminalTriangleSigned(uv.x * frequency + phase) * 0.215;
                 float distanceToLine = abs(uv.y - waveY);
-                return 1.0 - smoothstep(thickness, thickness * 2.5, distanceToLine);
+                return H8LinearRampInv01(thickness, thickness * 2.5, distanceToLine);
             }
 
             half3 H8ApplyDecryptionOverlay(half3 baseColor, float2 uv, float slice, float quality)
             {
                 uint puzzleCount = (uint)max(0.0, _GlobalDecryptionPuzzleCount);
-                uint puzzleIndex = (uint)round(slice);
+                uint puzzleIndex = (uint)(saturate(slice * (1.0 / 63.0)) * 63.0 + 0.5);
                 if (puzzleCount == 0u || puzzleIndex >= puzzleCount)
                     return baseColor;
 
@@ -148,7 +165,7 @@ Shader "HECTON/UI/Diegetic Terminal"
                 if ((puzzle.Flags & activeMask) != activeMask)
                     return baseColor;
 
-                float oscMask = smoothstep(0.16, 0.22, uv.y) * (1.0 - smoothstep(0.68, 0.76, uv.y));
+                float oscMask = H8LinearRamp01(0.16, 0.22, uv.y) * H8LinearRampInv01(0.68, 0.76, uv.y);
                 if (oscMask <= 0.0001)
                     return baseColor;
 
@@ -157,7 +174,7 @@ Shader "HECTON/UI/Diegetic Terminal"
                 float thickness = lerp(0.0024, 0.0075, quality);
                 float targetLine = H8TerminalWaveLine(uv, max(0.1, puzzle.TargetFrequency), puzzle.TargetPhase, thickness * 1.15);
                 float playerLine = H8TerminalWaveLine(uv, max(0.1, puzzle.PlayerFrequency), puzzle.PlayerPhase, thickness);
-                float grid = (1.0 - smoothstep(0.004, 0.012, abs(frac(uv.x * lerp(12.0, 32.0, quality)) - 0.5))) * 0.065;
+                float grid = H8LinearRampInv01(0.004, 0.012, abs(frac(uv.x * lerp(12.0, 32.0, quality)) - 0.5)) * 0.065;
                 float noiseCells = lerp(32.0, 224.0, quality) * lerp(0.5, 2.0, noiseDensity);
                 float noise = H8TerminalHash21(floor(uv * noiseCells) + _Time.yy * 37.0);
                 float interference = (1.0 - alignment) * lerp(0.0, 0.22, noiseDensity) * lerp(0.35, 1.0, quality) * noise;
@@ -186,10 +203,10 @@ Shader "HECTON/UI/Diegetic Terminal"
                 float distanceSq = dot(delta, delta);
                 float radius = lerp(0.0065, 0.0035, quality);
                 float ringRadius = radius * lerp(2.2, 3.4, quality);
-                float core = 1.0 - smoothstep(radius * radius, radius * radius * 2.25, distanceSq);
+                float core = H8LinearRampInv01(radius * radius, radius * radius * 2.25, distanceSq);
                 float ringDeltaSq = abs(distanceSq - ringRadius * ringRadius);
                 float ringWidthSq = max(radius * ringRadius, 0.000001);
-                float ring = (1.0 - smoothstep(ringWidthSq * 0.55, ringWidthSq * 1.35, ringDeltaSq)) * smoothstep(0.22, 0.75, quality);
+                float ring = H8LinearRampInv01(ringWidthSq * 0.55, ringWidthSq * 1.35, ringDeltaSq) * H8LinearRamp01(0.22, 0.75, quality);
                 float pressed = (state.InputFlags & 2u) != 0u ? 1.0 : 0.0;
                 half3 cursorColor = lerp(half3(0.24h, 1.0h, 0.78h), half3(1.0h, 0.94h, 0.32h), (half)pressed);
                 half mask = (half)saturate(core + ring * lerp(0.45, 0.8, quality));

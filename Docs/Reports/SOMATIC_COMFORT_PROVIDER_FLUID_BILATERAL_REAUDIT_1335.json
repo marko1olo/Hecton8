@@ -1,0 +1,33 @@
+{
+  "agentId": "1335",
+  "task": "SOMATIC_PROVIDER_FLUID_BILATERAL_REAUDIT",
+  "status": "STATIC_VERIFIED_BUILD_BLOCKED",
+  "promptLength": 18576,
+  "promptTaskMentions": 20,
+  "promptSha256": "CED5DA5188E0838802BA00938AFD9F382174FAA78453C32C78A6AE34BCB1C2E2",
+  "scannedFiles": 5,
+  "modifiedFiles": [
+    "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+    "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+    "Assets/_Project/Art/Shaders/Hecton_BilateralUpscale.compute",
+    "Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl",
+    "Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader"
+  ],
+  "failedGates": [
+    "BUILD_PROOF_BLOCKED_BY_EXISTING_CANDICE_SQLITE_DEPENDENCY_AND_ACTIVE_CPU_COMPILER_POLICY"
+  ],
+  "totalNativeFieldDeclarations": 0,
+  "persistentNativeFieldsRemaining": 0,
+  "transientVaultViews": 36,
+  "transientJobViews": 0,
+  "zeroGcHotPathHits": 0,
+  "broadCatchHits": 0,
+  "binaryWriterHits": 0,
+  "legacyVaultResolveHits": 0,
+  "absoluteAupCastsFound": 0,
+  "shaderExpensiveTermHits": 0,
+  "foveatedOpaqueSourceSamplesVerified": true,
+  "compactionAwareLocksProven": true,
+  "telemetryRingIntegrated": true,
+  "verificationHashSha256": "A16BB2FE4CDB84EC59D7F30B16AB4890B1DF755E7C780BA70922CA919E095BE7"
+}

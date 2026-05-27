@@ -39,7 +39,7 @@ namespace Hecton8.Physics.Vehicles
         public const float SeaWaterAtmPerMeter = 0.1005f;
         public const float Epsilon = 0.0001f;
         public const float FaultMicros = 500f;
-        public const float SampleBudgetHysteresisSeconds = 2.5f;
+        public const float AuthoritativeQualityWeight = 1f;
         public const uint SourceHash = 0x53333333u;
         public const uint CommandFlagFlood = 1u << 0;
         public const uint CommandFlagBlow = 1u << 1;
@@ -415,7 +415,6 @@ namespace Hecton8.Physics.Vehicles
     {
         [NoAlias] public NativeArray<SubmarineBallastFluidSampleDTO> FluidSamples;
         public uint Frame;
-        public float GlobalQualityWeight;
 
         public void Execute(int index)
         {
@@ -423,7 +422,6 @@ namespace Hecton8.Physics.Vehicles
                 return;
 
             SubmarineBallastFluidSampleDTO sample = FluidSamples[index];
-            float q = SaturateFinite(GlobalQualityWeight, 1f);
             uint phaseSeed = Frame + ((uint)index * 73u);
             float phase = (phaseSeed & 1023u) * (1f / 1024f);
             float triangle = 1f - math.abs((phase * 4f) - 2f);
@@ -432,18 +430,12 @@ namespace Hecton8.Physics.Vehicles
             double depth = math.max(0d, baseDepth + swell);
             sample.SurfaceSwellMeters = swell;
             sample.OceanSurfaceAup.y = sample.HullAup.y + depth;
-            sample.FluidDensityKgPerM3 = math.lerp(1015f, 1065f, q) + (triangle * 6f);
+            sample.FluidDensityKgPerM3 = 1065f + (triangle * 6f);
             sample.AmbientPressureATM = SubmarineBallastConstants.AtmosphericPressureAtm +
                                         ((float)depth * SubmarineBallastConstants.SeaWaterAtmPerMeter);
-            sample.GlobalQualityWeight = q;
+            sample.GlobalQualityWeight = SubmarineBallastConstants.AuthoritativeQualityWeight;
             sample.Flags |= SubmarineBallastConstants.SampleFlagMockFluid;
             FluidSamples[index] = sample;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float SaturateFinite(float value, float fallback)
-        {
-            return math.saturate(math.isfinite(value) ? value : fallback);
         }
     }
 
@@ -592,9 +584,8 @@ namespace Hecton8.Physics.Vehicles
             float density = math.max(SubmarineBallastConstants.Epsilon, SafeFinite(sample.FluidDensityKgPerM3, SubmarineBallastConstants.DefaultWaterDensityKgPerM3));
             float ambientPressure = math.max(SubmarineBallastConstants.AtmosphericPressureAtm, SafeFinite(sample.AmbientPressureATM, SubmarineBallastConstants.AtmosphericPressureAtm));
             float quality = math.saturate(SafeFinite(sample.GlobalQualityWeight, 1f));
-            int qualitySamples = math.clamp((int)math.round(math.lerp(1f, 4f, math.smoothstep(0f, 1f, quality))), 1, 4);
             int requestedSamples = math.clamp(sample.ActiveSampleBudget, 0, 4);
-            int activeSamples = math.select(qualitySamples, requestedSamples, requestedSamples > 0);
+            int activeSamples = math.select(4, requestedSamples, requestedSamples > 0);
             float halfHeight = hullHeight * 0.5f;
             float center = math.saturate((depthMeters + halfHeight) * math.rcp(hullHeight));
             float bow = math.saturate((depthMeters + sample.SurfaceSwellMeters * 0.35f + halfHeight) * math.rcp(hullHeight));

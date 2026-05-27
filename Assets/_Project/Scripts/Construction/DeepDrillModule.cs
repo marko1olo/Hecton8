@@ -295,7 +295,7 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (!interactionService.TryResolvePrimarySurfaceHit(
+            if (!interactionService.RequestPrimarySurfaceHit(
                     _placementRayRequesterId,
                     origin,
                     Vector3.down,

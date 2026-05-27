@@ -39,12 +39,17 @@ namespace Hecton8.Construction
 
         public static bool RuntimeLayoutValid()
         {
-            return UnsafeUtility.SizeOf<DeconstructionTransactionDTO>() == 32 &&
-                   UnsafeUtility.SizeOf<RefundCommandDTO>() == 32 &&
-                   UnsafeUtility.SizeOf<LootCacheDTO>() == 64 &&
-                   UnsafeUtility.SizeOf<TeardownTelemetryEntry>() == 64 &&
-                   UnsafeUtility.SizeOf<RefundProfileDTO>() == 32 &&
-                   Marshal.OffsetOf<DeconstructionTransactionDTO>(nameof(DeconstructionTransactionDTO.OriginalAUP)).ToInt32() == 0 &&
+            if (UnsafeUtility.SizeOf<DeconstructionTransactionDTO>() != 32 ||
+                UnsafeUtility.SizeOf<RefundCommandDTO>() != 32 ||
+                UnsafeUtility.SizeOf<LootCacheDTO>() != 64 ||
+                UnsafeUtility.SizeOf<TeardownTelemetryEntry>() != 64 ||
+                UnsafeUtility.SizeOf<RefundProfileDTO>() != 32)
+            {
+                return false;
+            }
+
+#if UNITY_EDITOR
+            return Marshal.OffsetOf<DeconstructionTransactionDTO>(nameof(DeconstructionTransactionDTO.OriginalAUP)).ToInt32() == 0 &&
                    Marshal.OffsetOf<DeconstructionTransactionDTO>(nameof(DeconstructionTransactionDTO.TargetModuleHash)).ToInt32() == 24 &&
                    Marshal.OffsetOf<DeconstructionTransactionDTO>(nameof(DeconstructionTransactionDTO.InitiatorEntityHash)).ToInt32() == 28 &&
                    Marshal.OffsetOf<RefundCommandDTO>(nameof(RefundCommandDTO.ItemHash)).ToInt32() == 0 &&
@@ -113,6 +118,9 @@ namespace Hecton8.Construction
                    Marshal.OffsetOf<RefundProfileDTO>("_pad5").ToInt32() == 29 &&
                    Marshal.OffsetOf<RefundProfileDTO>("_pad6").ToInt32() == 30 &&
                    Marshal.OffsetOf<RefundProfileDTO>("_pad7").ToInt32() == 31;
+#else
+            return true;
+#endif
         }
 
         public static uint HashTransaction(in DeconstructionTransactionDTO transaction, int nodeIndex, uint frame)
@@ -281,6 +289,8 @@ namespace Hecton8.Construction
         public int TargetNodeIndex;
         public int NodeCount;
         public int EdgeCount;
+        public int RefundCommandCountIndex;
+        public int LootCacheCountIndex;
         public int MaxTeardownsPerFrame;
         public uint Frame;
         public uint SequenceBase;
@@ -293,7 +303,9 @@ namespace Hecton8.Construction
                 math.min(TransactionCount, MaxTeardownsPerFrame),
                 Transactions.IsCreated ? Transactions.Length : 0);
             int refundWrite = 0;
-            int lootWrite = LootCacheCount.IsCreated && LootCacheCount.Length > 0 ? math.max(0, LootCacheCount[0]) : 0;
+            int safeLootCountIndex = math.max(0, LootCacheCountIndex);
+            int safeRefundCountIndex = math.max(0, RefundCommandCountIndex);
+            int lootWrite = LootCacheCount.IsCreated && LootCacheCount.Length > safeLootCountIndex ? math.max(0, LootCacheCount[safeLootCountIndex]) : 0;
             uint faultFlags = 0u;
             int totalRefunded = 0;
             int totalEdgesSevered = 0;
@@ -371,10 +383,10 @@ namespace Hecton8.Construction
                 }
             }
 
-            if (RefundCommandCount.IsCreated && RefundCommandCount.Length > 0)
-                RefundCommandCount[0] = refundWrite;
-            if (LootCacheCount.IsCreated && LootCacheCount.Length > 0)
-                LootCacheCount[0] = lootWrite;
+            if (RefundCommandCount.IsCreated && RefundCommandCount.Length > safeRefundCountIndex)
+                RefundCommandCount[safeRefundCountIndex] = refundWrite;
+            if (LootCacheCount.IsCreated && LootCacheCount.Length > safeLootCountIndex)
+                LootCacheCount[safeLootCountIndex] = lootWrite;
 
             WriteTelemetry(
                 targetHash,

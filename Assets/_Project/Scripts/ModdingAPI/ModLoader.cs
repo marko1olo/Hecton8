@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Bridge;
@@ -33,6 +34,12 @@ namespace Hecton8.Modding
         private const string ManifestFileName = "mod.json";
         private const string DefaultAssemblyExtension = ".dll";
         private const string DefaultBundleExtension = ".bundle";
+        private const string ReservedAssemblyNamePrefix = "Hecton8.";
+        private const string ReservedUnityAssemblyNamePrefix = "Unity";
+        private const string ReservedAssemblyNameAssemblyCSharp = "Assembly-CSharp";
+        private const string ReservedAssemblyNameSystem = "System";
+        private const string ReservedAssemblyNameMscorlib = "mscorlib";
+        private const string ReservedAssemblyNameNetstandard = "netstandard";
         internal const int CurrentAPIVersion = 2;
 
         // COLD ALLOC: List<LoadedMod>[16] — successfully instantiated managed mods — owner: ModLoader
@@ -121,6 +128,9 @@ namespace Hecton8.Modding
                 return false;
 
             if (string.IsNullOrWhiteSpace(modId) || factory == null)
+                return false;
+
+            if (IsReservedFactoryLoadedFromModsRoot(factory))
                 return false;
 
             uint modHash = ModCommandDispatcher.ComputeModHash(modId);
@@ -241,20 +251,39 @@ namespace Hecton8.Modding
                 string json = File.ReadAllText(manifestPath);
                 ModManifest manifest = JsonUtility.FromJson<ModManifest>(json);
 
-                if (string.IsNullOrWhiteSpace(manifest.Id))
+                if (!TryValidateModIdentifier(manifest.Id, out string modIdError))
                 {
-                    Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Skipped manifest '", manifestPath, "': missing Id."));
+                    Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Skipped manifest '", manifestPath, "': invalid Id. ", modIdError));
                     return false;
+                }
+
+                bool hasDeclaredEntryAssembly = !string.IsNullOrWhiteSpace(manifest.EntryAssembly);
+                string manifestContractError = null;
+                bool entryAssemblyFileNameValid = TryValidateEntryAssemblyFileName(
+                    manifest.EntryAssembly,
+                    out string entryAssemblyError);
+                if (!entryAssemblyFileNameValid)
+                    manifest.EntryAssembly = string.Empty;
+
+                if (!TryValidateManifestDependencies(manifest.Dependencies, out string dependencyError))
+                {
+                    manifestContractError = dependencyError;
+                }
+                else if (!entryAssemblyFileNameValid)
+                {
+                    manifestContractError = entryAssemblyError;
                 }
 
                 string modDirectory = Path.GetDirectoryName(manifestPath);
                 bool envelopeOnly = ShouldForceFutureCommandEnvelopeOnly();
+                string[] managedAssemblyIdentityScanPaths = ResolveManagedAssemblyIdentityScanPaths(modDirectory, manifest);
                 string assemblyPath = envelopeOnly
                     ? string.Empty
                     : ResolveAssemblyPath(modDirectory, manifest);
                 bool hasManagedEntry =
-                    !string.IsNullOrWhiteSpace(manifest.EntryAssembly) ||
+                    hasDeclaredEntryAssembly ||
                     !string.IsNullOrWhiteSpace(manifest.EntryType) ||
+                    managedAssemblyIdentityScanPaths.Length > 0 ||
                     (!envelopeOnly && !string.IsNullOrWhiteSpace(assemblyPath));
 
                 string bundlePath = envelopeOnly
@@ -269,6 +298,8 @@ namespace Hecton8.Modding
                     manifestPath,
                     modDirectory,
                     assemblyPath,
+                    managedAssemblyIdentityScanPaths,
+                    manifestContractError,
                     hasManagedEntry,
                     bundlePath,
                     localizationFiles);
@@ -286,6 +317,8 @@ namespace Hecton8.Modding
             string manifestPath,
             string modDirectory,
             string assemblyPath,
+            string[] managedAssemblyIdentityScanPaths,
+            string manifestContractError,
             bool hasManagedEntry,
             string bundlePath,
             string[] localizationFiles)
@@ -312,7 +345,12 @@ namespace Hecton8.Modding
                 HasManagedEntry = hasManagedEntry
             };
 
-            if (manifest.RequiredAPIVersion <= 0)
+            if (!string.IsNullOrWhiteSpace(manifestContractError))
+            {
+                candidate.IsDisabled = true;
+                candidate.DisabledReason = manifestContractError;
+            }
+            else if (manifest.RequiredAPIVersion <= 0)
             {
                 candidate.IsDisabled = true;
                 candidate.DisabledReason = "Missing RequiredAPIVersion.";
@@ -322,8 +360,318 @@ namespace Hecton8.Modding
                 candidate.IsDisabled = true;
                 candidate.DisabledReason = "RequiredAPIVersion exceeds engine API version.";
             }
+            else if (!TryValidateManagedAssemblyIdentity(
+                         manifest.EntryAssembly,
+                         assemblyPath,
+                         managedAssemblyIdentityScanPaths,
+                         out string assemblyIdentityError))
+            {
+                candidate.IsDisabled = true;
+                candidate.DisabledReason = assemblyIdentityError;
+            }
 
             return candidate;
+        }
+
+        private static bool TryValidateModIdentifier(string modId, out string disabledReason)
+        {
+            disabledReason = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(modId))
+            {
+                disabledReason = "Mod ID is required.";
+                return false;
+            }
+
+            string trimmed = modId.Trim();
+            if (!string.Equals(modId, trimmed, StringComparison.Ordinal))
+            {
+                disabledReason = "Mod ID must not contain leading or trailing whitespace.";
+                return false;
+            }
+
+            bool previousWasSeparator = false;
+            for (int i = 0; i < trimmed.Length; i++)
+            {
+                char c = trimmed[i];
+                bool isLowerLetter = c >= 'a' && c <= 'z';
+                bool isDigit = c >= '0' && c <= '9';
+                bool isSeparator = c == '.' || c == '_' || c == '-';
+                if (!isLowerLetter && !isDigit && !isSeparator)
+                {
+                    disabledReason = "Mod ID may contain only lowercase latin letters, digits, '.', '_' and '-'.";
+                    return false;
+                }
+
+                if (isSeparator)
+                {
+                    if (i == 0 || i == trimmed.Length - 1 || previousWasSeparator)
+                    {
+                        disabledReason = "Mod ID separators must be between lowercase letters or digits and cannot repeat.";
+                        return false;
+                    }
+                }
+
+                previousWasSeparator = isSeparator;
+            }
+
+            if (ContainsReservedModIdentifierSegment(trimmed))
+            {
+                disabledReason = "Mod ID contains a reserved filesystem device segment.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryValidateManifestDependencies(string[] dependencies, out string disabledReason)
+        {
+            disabledReason = string.Empty;
+            if (dependencies == null || dependencies.Length == 0)
+                return true;
+
+            for (int i = 0; i < dependencies.Length; i++)
+            {
+                string dependencyId = dependencies[i];
+                if (string.IsNullOrWhiteSpace(dependencyId))
+                    continue;
+
+                if (!TryValidateModIdentifier(dependencyId, out string dependencyError))
+                {
+                    disabledReason = string.Concat("Invalid dependency ID '", dependencyId, "': ", dependencyError);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool TryValidateEntryAssemblyFileName(string entryAssembly, out string disabledReason)
+        {
+            disabledReason = string.Empty;
+            if (string.IsNullOrWhiteSpace(entryAssembly))
+                return true;
+
+            string trimmed = entryAssembly.Trim();
+            if (!string.Equals(entryAssembly, trimmed, StringComparison.Ordinal))
+            {
+                disabledReason = "EntryAssembly must not contain leading or trailing whitespace.";
+                return false;
+            }
+
+            if (Path.IsPathRooted(trimmed) ||
+                trimmed.IndexOf(Path.DirectorySeparatorChar) >= 0 ||
+                trimmed.IndexOf(Path.AltDirectorySeparatorChar) >= 0 ||
+                !string.Equals(Path.GetFileName(trimmed), trimmed, StringComparison.Ordinal))
+            {
+                disabledReason = "EntryAssembly must be a package-local DLL file name, not a path.";
+                return false;
+            }
+
+            if (!string.Equals(Path.GetExtension(trimmed), DefaultAssemblyExtension, StringComparison.OrdinalIgnoreCase))
+            {
+                disabledReason = "EntryAssembly must reference a .dll file.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool ContainsReservedModIdentifierSegment(string modId)
+        {
+            int segmentStart = 0;
+            for (int i = 0; i <= modId.Length; i++)
+            {
+                if (i < modId.Length && modId[i] != '.' && modId[i] != '_' && modId[i] != '-')
+                    continue;
+
+                string segment = modId.Substring(segmentStart, i - segmentStart);
+                if (IsReservedFilesystemDeviceName(segment))
+                    return true;
+
+                segmentStart = i + 1;
+            }
+
+            return false;
+        }
+
+        private static bool IsReservedFilesystemDeviceName(string segment)
+        {
+            if (string.IsNullOrEmpty(segment))
+                return false;
+
+            return string.Equals(segment, "con", StringComparison.Ordinal) ||
+                   string.Equals(segment, "prn", StringComparison.Ordinal) ||
+                   string.Equals(segment, "aux", StringComparison.Ordinal) ||
+                   string.Equals(segment, "nul", StringComparison.Ordinal) ||
+                   IsReservedDeviceRange(segment, "com") ||
+                   IsReservedDeviceRange(segment, "lpt");
+        }
+
+        private static bool IsReservedDeviceRange(string segment, string prefix)
+        {
+            return segment.Length == 4 &&
+                   segment.StartsWith(prefix, StringComparison.Ordinal) &&
+                   segment[3] >= '1' &&
+                   segment[3] <= '9';
+        }
+
+        private static string[] ResolveManagedAssemblyIdentityScanPaths(string modDirectory, ModManifest manifest)
+        {
+            if (string.IsNullOrWhiteSpace(modDirectory) || !Directory.Exists(modDirectory))
+                return Array.Empty<string>();
+
+            string[] dllFiles = Directory.GetFiles(modDirectory, "*" + DefaultAssemblyExtension, SearchOption.TopDirectoryOnly);
+            if (dllFiles == null)
+                dllFiles = Array.Empty<string>();
+            else if (dllFiles.Length > 1)
+                Array.Sort(dllFiles, StringComparer.OrdinalIgnoreCase);
+
+            if (string.IsNullOrWhiteSpace(manifest.EntryAssembly))
+                return dllFiles;
+
+            string explicitPath = Path.Combine(modDirectory, manifest.EntryAssembly);
+            if (!File.Exists(explicitPath))
+                return dllFiles;
+
+            for (int i = 0; i < dllFiles.Length; i++)
+            {
+                if (string.Equals(dllFiles[i], explicitPath, StringComparison.OrdinalIgnoreCase))
+                    return dllFiles;
+            }
+
+            // COLD ALLOC: List<string>[dll count + explicit entry] - package identity scan - owner: ModLoader
+            List<string> scanPaths = new List<string>(dllFiles.Length + 1) { explicitPath };
+            for (int i = 0; i < dllFiles.Length; i++)
+                scanPaths.Add(dllFiles[i]);
+            return scanPaths.ToArray();
+        }
+
+        private static bool TryValidateManagedAssemblyIdentity(
+            string entryAssembly,
+            string assemblyPath,
+            string[] identityScanPaths,
+            out string disabledReason)
+        {
+            disabledReason = string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(entryAssembly) &&
+                IsReservedManagedAssemblyName(Path.GetFileNameWithoutExtension(entryAssembly)))
+            {
+                disabledReason = "Managed assembly name is reserved for engine-owned assemblies.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(assemblyPath))
+            {
+                if (identityScanPaths == null || identityScanPaths.Length == 0)
+                    return true;
+            }
+            else if (!TryValidateManagedAssemblyIdentityPath(assemblyPath, out disabledReason))
+            {
+                return false;
+            }
+
+            if (identityScanPaths == null)
+                return true;
+
+            for (int i = 0; i < identityScanPaths.Length; i++)
+            {
+                string scanPath = identityScanPaths[i];
+                if (string.IsNullOrWhiteSpace(scanPath) ||
+                    string.Equals(scanPath, assemblyPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (!TryValidateManagedAssemblyIdentityPath(scanPath, out disabledReason))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryValidateManagedAssemblyIdentityPath(string assemblyPath, out string disabledReason)
+        {
+            disabledReason = string.Empty;
+
+            string fileAssemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
+            if (IsReservedManagedAssemblyName(fileAssemblyName))
+            {
+                disabledReason = "Managed assembly file name is reserved for engine-owned assemblies.";
+                return false;
+            }
+
+            try
+            {
+                AssemblyName assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
+                if (assemblyName != null && IsReservedManagedAssemblyName(assemblyName.Name))
+                {
+                    disabledReason = "Managed assembly identity is reserved for engine-owned assemblies.";
+                    return false;
+                }
+            }
+            catch (Exception ex) when (
+                ex is BadImageFormatException ||
+                ex is FileLoadException ||
+                ex is FileNotFoundException ||
+                ex is IOException ||
+                ex is UnauthorizedAccessException)
+            {
+                disabledReason = "Managed assembly identity could not be read.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsReservedManagedAssemblyName(string assemblyName)
+        {
+            if (string.IsNullOrWhiteSpace(assemblyName))
+                return false;
+
+            return assemblyName.StartsWith(ReservedAssemblyNamePrefix, StringComparison.Ordinal) ||
+                   assemblyName.StartsWith(ReservedUnityAssemblyNamePrefix, StringComparison.Ordinal) ||
+                   string.Equals(assemblyName, ReservedAssemblyNameAssemblyCSharp, StringComparison.Ordinal) ||
+                   string.Equals(assemblyName, ReservedAssemblyNameSystem, StringComparison.Ordinal) ||
+                   string.Equals(assemblyName, ReservedAssemblyNameMscorlib, StringComparison.Ordinal) ||
+                   string.Equals(assemblyName, ReservedAssemblyNameNetstandard, StringComparison.Ordinal);
+        }
+
+        private static bool IsReservedFactoryLoadedFromModsRoot(Func<IHectonMod> factory)
+        {
+            MethodInfo method = factory.Method;
+            Assembly assembly = method != null ? method.DeclaringType?.Assembly : null;
+            AssemblyName assemblyName = assembly != null ? assembly.GetName() : null;
+            if (assemblyName == null || !IsReservedManagedAssemblyName(assemblyName.Name))
+                return false;
+
+            try
+            {
+                string location = assembly.Location;
+                if (string.IsNullOrWhiteSpace(location))
+                    return false;
+
+                string modsRoot = ResolveModsRoot();
+                if (string.IsNullOrWhiteSpace(modsRoot))
+                    return false;
+
+                string normalizedLocation = Path.GetFullPath(location)
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                string normalizedModsRoot = Path.GetFullPath(modsRoot)
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                return normalizedLocation.StartsWith(
+                    normalizedModsRoot + Path.DirectorySeparatorChar,
+                    StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception ex) when (
+                ex is ArgumentException ||
+                ex is IOException ||
+                ex is NotSupportedException ||
+                ex is UnauthorizedAccessException)
+            {
+                return true;
+            }
         }
 
         private static string ResolveAssemblyPath(string modDirectory, ModManifest manifest)

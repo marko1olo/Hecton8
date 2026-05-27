@@ -1,8 +1,12 @@
 using System.Collections.Generic;
+using Hecton8.Construction;
+using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Scavenging;
 using Hecton8.Tools;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Interaction
@@ -46,6 +50,7 @@ namespace Hecton8.Interaction
             public TargetInfo(
                 IInteractable interactable,
                 IInventoryPickupSource pickupSource,
+                IInventoryPickupPreviewSource pickupPreviewSource,
                 IBatteryTool batteryTool,
                 BatteryCharger charger,
                 BioReactor reactor,
@@ -53,10 +58,25 @@ namespace Hecton8.Interaction
                 PickupItem pickup,
                 ScannableTarget scannable,
                 ResourceNode resourceNode,
-                BaseModule baseModule)
+                BaseModule baseModule,
+                ModuleMarker moduleMarker,
+                ITransportPlatform transportPlatform,
+                IBaseModuleInteractionHost moduleHost,
+                IRepairableModuleTarget repairableModuleTarget,
+                IVoxelRepairWeldTarget voxelRepairWeldTarget,
+                IVoxelPlasmaCutTarget voxelPlasmaCutTarget,
+                ICuttable cuttable,
+                IDamageReceiver damageReceiver,
+                ISubmarineDamageControlTarget submarineDamageControlTarget,
+                ISubmarineRepairRoomResolver submarineRepairRoomResolver,
+                IInteractionSignalConsumer interactionSignalConsumer,
+                IInteractionVulnerabilitySource interactionVulnerabilitySource,
+                Collider physicsCollider,
+                Rigidbody physicsBody)
             {
                 Interactable = interactable;
                 PickupSource = pickupSource;
+                PickupPreviewSource = pickupPreviewSource;
                 BatteryTool = batteryTool;
                 Charger = charger;
                 Reactor = reactor;
@@ -65,10 +85,25 @@ namespace Hecton8.Interaction
                 Scannable = scannable;
                 ResourceNode = resourceNode;
                 BaseModule = baseModule;
+                ModuleMarker = moduleMarker;
+                TransportPlatform = transportPlatform;
+                ModuleHost = moduleHost;
+                RepairableModuleTarget = repairableModuleTarget;
+                VoxelRepairWeldTarget = voxelRepairWeldTarget;
+                VoxelPlasmaCutTarget = voxelPlasmaCutTarget;
+                Cuttable = cuttable;
+                DamageReceiver = damageReceiver;
+                SubmarineDamageControlTarget = submarineDamageControlTarget;
+                SubmarineRepairRoomResolver = submarineRepairRoomResolver;
+                InteractionSignalConsumer = interactionSignalConsumer;
+                InteractionVulnerabilitySource = interactionVulnerabilitySource;
+                PhysicsCollider = physicsCollider;
+                PhysicsBody = physicsBody;
             }
 
             public readonly IInteractable Interactable;
             public readonly IInventoryPickupSource PickupSource;
+            public readonly IInventoryPickupPreviewSource PickupPreviewSource;
             public readonly IBatteryTool BatteryTool;
             public readonly BatteryCharger Charger;
             public readonly BioReactor Reactor;
@@ -77,9 +112,24 @@ namespace Hecton8.Interaction
             public readonly ScannableTarget Scannable;
             public readonly ResourceNode ResourceNode;
             public readonly BaseModule BaseModule;
+            public readonly ModuleMarker ModuleMarker;
+            public readonly ITransportPlatform TransportPlatform;
+            public readonly IBaseModuleInteractionHost ModuleHost;
+            public readonly IRepairableModuleTarget RepairableModuleTarget;
+            public readonly IVoxelRepairWeldTarget VoxelRepairWeldTarget;
+            public readonly IVoxelPlasmaCutTarget VoxelPlasmaCutTarget;
+            public readonly ICuttable Cuttable;
+            public readonly IDamageReceiver DamageReceiver;
+            public readonly ISubmarineDamageControlTarget SubmarineDamageControlTarget;
+            public readonly ISubmarineRepairRoomResolver SubmarineRepairRoomResolver;
+            public readonly IInteractionSignalConsumer InteractionSignalConsumer;
+            public readonly IInteractionVulnerabilitySource InteractionVulnerabilitySource;
+            public readonly Collider PhysicsCollider;
+            public readonly Rigidbody PhysicsBody;
             public bool HasAny =>
                 Interactable != null ||
                 PickupSource != null ||
+                PickupPreviewSource != null ||
                 BatteryTool != null ||
                 Charger != null ||
                 Reactor != null ||
@@ -87,7 +137,19 @@ namespace Hecton8.Interaction
                 Pickup != null ||
                 Scannable != null ||
                 ResourceNode != null ||
-                BaseModule != null;
+                BaseModule != null ||
+                ModuleMarker != null ||
+                TransportPlatform != null ||
+                ModuleHost != null ||
+                RepairableModuleTarget != null ||
+                VoxelRepairWeldTarget != null ||
+                VoxelPlasmaCutTarget != null ||
+                Cuttable != null ||
+                DamageReceiver != null ||
+                SubmarineDamageControlTarget != null ||
+                SubmarineRepairRoomResolver != null ||
+                InteractionSignalConsumer != null ||
+                InteractionVulnerabilitySource != null;
         }
 
         internal readonly struct SpatialHit
@@ -145,13 +207,7 @@ namespace Hecton8.Interaction
             }
 
             ulong instanceId = EntityId.ToULong(collider.GetEntityId());
-            if (TryGetCachedTarget(instanceId, out info))
-                return info.HasAny;
-
-            info = ResolveTargetInfo(collider);
-            CacheTarget(instanceId, info);
-
-            return info.HasAny;
+            return TryGetCachedTarget(instanceId, out info) && info.HasAny;
         }
 
         internal static void Invalidate(Collider collider)
@@ -206,7 +262,7 @@ namespace Hecton8.Interaction
             if (!float.IsFinite(directionLengthSq) || directionLengthSq <= 0.000001f)
                 return false;
 
-            direction *= 1f / Mathf.Sqrt(directionLengthSq);
+            direction *= math.rsqrt(directionLengthSq);
             Ray normalizedRay = new Ray(ray.origin, direction);
             float bestDistance = maxDistance;
             Collider bestCollider = null;
@@ -260,6 +316,7 @@ namespace Hecton8.Interaction
 
             IInteractable interactable = null;
             IInventoryPickupSource pickupSource = null;
+            IInventoryPickupPreviewSource pickupPreviewSource = null;
             IBatteryTool batteryTool = null;
             BatteryCharger charger = null;
             BioReactor reactor = null;
@@ -268,6 +325,18 @@ namespace Hecton8.Interaction
             ScannableTarget scannable = null;
             ResourceNode resourceNode = null;
             BaseModule baseModule = null;
+            ModuleMarker moduleMarker = null;
+            ITransportPlatform transportPlatform = null;
+            IBaseModuleInteractionHost moduleHost = null;
+            IRepairableModuleTarget repairableModuleTarget = null;
+            IVoxelRepairWeldTarget voxelRepairWeldTarget = null;
+            IVoxelPlasmaCutTarget voxelPlasmaCutTarget = null;
+            ICuttable cuttable = null;
+            IDamageReceiver damageReceiver = null;
+            ISubmarineDamageControlTarget submarineDamageControlTarget = null;
+            ISubmarineRepairRoomResolver submarineRepairRoomResolver = null;
+            IInteractionSignalConsumer interactionSignalConsumer = null;
+            IInteractionVulnerabilitySource interactionVulnerabilitySource = null;
 
             Transform current = collider.transform;
             int depth = 0;
@@ -278,6 +347,9 @@ namespace Hecton8.Interaction
 
                 if (pickupSource == null)
                     current.TryGetComponent(out pickupSource);
+
+                if (pickupPreviewSource == null)
+                    current.TryGetComponent(out pickupPreviewSource);
 
                 if (batteryTool == null)
                     current.TryGetComponent(out batteryTool);
@@ -303,8 +375,45 @@ namespace Hecton8.Interaction
                 if (baseModule == null)
                     current.TryGetComponent(out baseModule);
 
+                if (moduleMarker == null)
+                    current.TryGetComponent(out moduleMarker);
+
+                if (transportPlatform == null)
+                    current.TryGetComponent(out transportPlatform);
+
+                if (moduleHost == null)
+                    current.TryGetComponent(out moduleHost);
+
+                if (repairableModuleTarget == null)
+                    current.TryGetComponent(out repairableModuleTarget);
+
+                if (voxelRepairWeldTarget == null)
+                    current.TryGetComponent(out voxelRepairWeldTarget);
+
+                if (voxelPlasmaCutTarget == null)
+                    current.TryGetComponent(out voxelPlasmaCutTarget);
+
+                if (cuttable == null)
+                    current.TryGetComponent(out cuttable);
+
+                if (damageReceiver == null)
+                    current.TryGetComponent(out damageReceiver);
+
+                if (submarineDamageControlTarget == null)
+                    current.TryGetComponent(out submarineDamageControlTarget);
+
+                if (submarineRepairRoomResolver == null)
+                    current.TryGetComponent(out submarineRepairRoomResolver);
+
+                if (interactionSignalConsumer == null)
+                    current.TryGetComponent(out interactionSignalConsumer);
+
+                if (interactionVulnerabilitySource == null)
+                    current.TryGetComponent(out interactionVulnerabilitySource);
+
                 if (interactable != null &&
                     pickupSource != null &&
+                    pickupPreviewSource != null &&
                     batteryTool != null &&
                     charger != null &&
                     reactor != null &&
@@ -312,7 +421,19 @@ namespace Hecton8.Interaction
                     pickup != null &&
                     scannable != null &&
                     resourceNode != null &&
-                    baseModule != null)
+                    baseModule != null &&
+                    moduleMarker != null &&
+                    transportPlatform != null &&
+                    moduleHost != null &&
+                    repairableModuleTarget != null &&
+                    voxelRepairWeldTarget != null &&
+                    voxelPlasmaCutTarget != null &&
+                    cuttable != null &&
+                    damageReceiver != null &&
+                    submarineDamageControlTarget != null &&
+                    submarineRepairRoomResolver != null &&
+                    interactionSignalConsumer != null &&
+                    interactionVulnerabilitySource != null)
                 {
                     break;
                 }
@@ -321,7 +442,32 @@ namespace Hecton8.Interaction
                 depth++;
             }
 
-            return new TargetInfo(interactable, pickupSource, batteryTool, charger, reactor, crate, pickup, scannable, resourceNode, baseModule);
+            return new TargetInfo(
+                interactable,
+                pickupSource,
+                pickupPreviewSource,
+                batteryTool,
+                charger,
+                reactor,
+                crate,
+                pickup,
+                scannable,
+                resourceNode,
+                baseModule,
+                moduleMarker,
+                transportPlatform,
+                moduleHost,
+                repairableModuleTarget,
+                voxelRepairWeldTarget,
+                voxelPlasmaCutTarget,
+                cuttable,
+                damageReceiver,
+                submarineDamageControlTarget,
+                submarineRepairRoomResolver,
+                interactionSignalConsumer,
+                interactionVulnerabilitySource,
+                collider,
+                collider.attachedRigidbody);
         }
 
         private static void RegisterCollider(Collider collider)
@@ -329,12 +475,23 @@ namespace Hecton8.Interaction
             if (collider == null)
                 return;
 
+            ulong key = EntityId.ToULong(collider.GetEntityId());
             TargetInfo info = ResolveTargetInfo(collider);
             if (!info.HasAny)
+            {
+                RemoveCachedTarget(key);
+                UnregisterCollider(collider);
                 return;
+            }
 
-            ulong key = EntityId.ToULong(collider.GetEntityId());
             CacheTarget(key, info);
+
+            if (info.Interactable == null)
+            {
+                UnregisterCollider(collider);
+                return;
+            }
+
             for (int i = 0; i < s_registeredCount; i++)
             {
                 if (s_registeredKeys[i] != key)
@@ -443,7 +600,11 @@ namespace Hecton8.Interaction
             if (IsFiniteVector(normal) && normal.sqrMagnitude > 0.000001f)
                 return normal;
 
-            return IsFiniteVector(fallback) && fallback.sqrMagnitude > 0.000001f ? fallback.normalized : Vector3.up;
+            float fallbackLengthSq = fallback.sqrMagnitude;
+            if (IsFiniteVector(fallback) && float.IsFinite(fallbackLengthSq) && fallbackLengthSq > 0.000001f)
+                return fallback * math.rsqrt(fallbackLengthSq);
+
+            return Vector3.up;
         }
 
         private static bool TryGetCachedTarget(ulong key, out TargetInfo info)

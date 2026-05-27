@@ -1,0 +1,32 @@
+﻿{
+    "schema":  "hecton8.agent1318.hotpath_filtered.v4",
+    "files":  [
+                  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+                  "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+                  "Assets/_Project/Scripts/World/DropBuffer.cs",
+                  "Assets/_Project/Scripts/Editor/FloraDearLieDestructionLayoutGuard.cs",
+                  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                  "Assets/_Project/Scripts/HectonFluidEngine.cs",
+                  "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs"
+              ],
+    "hotOwners":  [
+                      "Tick",
+                      "SlowTick",
+                      "LateFrameTick",
+                      "FixedTick",
+                      "Execute",
+                      "StageDearLieDamageEvents",
+                      "ScheduleDearLieLane",
+                      "RecordDearLieTelemetry",
+                      "ScheduleYieldJobIfNeeded",
+                      "ProcessDearLieDestructionSignals",
+                      "CompleteDearLieJobIfNeeded",
+                      "ApplyDearLieDestructionResults"
+                  ],
+    "hotFindings":  32,
+    "forbiddenHotPathFindings":  0,
+    "acceptedStructCreations":  32,
+    "forbidden":  [
+
+                  ]
+}

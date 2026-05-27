@@ -1,5 +1,0 @@
-﻿profile,absorption_r,absorption_g,absorption_b,extinction_multiplier,scattering_r,scattering_g,scattering_b,anisotropy,light_r,light_g,light_b,light_intensity,max_distance_m,quality_bias
-abyssal_noir,0.420,0.105,0.028,1.000,0.035,0.090,0.160,0.420,0.090,0.420,0.700,0.850,5000.000,0.000
-red_silt,0.680,0.160,0.045,1.200,0.060,0.105,0.150,0.360,0.180,0.300,0.420,0.700,3600.000,-0.120
-glacial_blue,0.180,0.060,0.025,0.820,0.020,0.075,0.190,0.480,0.100,0.500,0.920,0.950,7200.000,0.100
-sulfur_vent,0.500,0.180,0.055,1.550,0.085,0.150,0.115,0.220,0.620,0.460,0.160,1.150,2800.000,-0.050

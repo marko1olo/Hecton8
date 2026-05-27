@@ -693,7 +693,7 @@ namespace Hecton8.AI
                 out float packCommitDistance,
                 out float aggressionMultiplier);
 
-            Hecton8.World.HectonMapMagicVegetationBridge vegetationBridge = Hecton8.World.HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = _vegetationBridge;
             if (vegetationBridge != null && vegetationBridge.HasPermanentThreatEcho(context.SelfPosition))
                 chemicalSignal01 = math.max(chemicalSignal01, 0.35f);
 

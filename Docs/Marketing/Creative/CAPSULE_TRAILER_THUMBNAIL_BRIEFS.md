@@ -17,6 +17,27 @@ Make HECTON-8 readable in one glance:
 - not bright reef wonder;
 - single-player-first scope.
 
+## 2026-05-26 V7 Creative Cut
+
+Public use boundary: this is competitor-response strategy, not public comparison copy.
+
+The first capsule/thumbnail direction must not compete on colorful reef beauty or co-op warmth. Those lanes are already occupied by the current market leader. HECTON's small-size read must be one of:
+
+- pressure hatch / base failure;
+- floodlight route into black water;
+- heavy machine under depth stress;
+- instrument-corrupted Seed Ship signal only if real gameplay proof exists.
+
+Required V7 checks before a capsule or thumbnail rough advances:
+
+| Check | Pass | Revise / kill |
+|---|---|---|
+| First read | Viewer says base pressure, salvage route, heavy machine, black water, or anomaly signal. | Viewer says pretty ocean, generic diver, blue reef, spaceship corridor, or "Subnautica but darker." |
+| Player scope | One isolated operator/tool relation. | Multiple player silhouettes, friend-group warmth, or co-op implication. |
+| Material truth | Salt, scratches, wet metal, labels, clamps, gauges, condensation. | Clean white plastic, smooth concept surfaces, glossy sci-fi UI. |
+| Action | Viewer can infer repair, seal, reroute, salvage, scan, evade, or abort. | The frame is mood-only and needs caption rescue. |
+| Performance honesty | No "runs better" or low-end implication. | Any zero-stutter, realistic simulation, or benchmark-adjacent claim. |
+
 ## Steam Capsule Brief
 
 ### Must Communicate

@@ -70,8 +70,8 @@ namespace Hecton8.EditorTools
             ItemData membrane = CreateOrUpdateItem($"{RawFolder}/Data_MembraneTissue.asset", "Membrane Tissue",
                 "Pressure-flexible organic tissue used in filters, seals, and bladder systems.",
                 ItemCategory.Material, ResourceFamily.Organic, ProgressionTier.Tier1, true, 0.5f, 24, 1, 1, "Harvest");
-            ItemData enzyme = CreateOrUpdateItem($"{RawFolder}/Data_EnzymeCoral.asset", "Enzyme Coral",
-                "Catalytic coral growth used in bonding compounds and advanced bio mixes.",
+            ItemData enzyme = CreateOrUpdateItem($"{RawFolder}/Data_EnzymeCoral.asset", "Enzyme Carbonate",
+                "Catalytic mineral-organic carbonate used in bonding compounds and advanced bio mixes.",
                 ItemCategory.Material, ResourceFamily.Organic, ProgressionTier.Tier1, true, 0.6f, 20, 1, 1, "Harvest");
             ItemData biolum = CreateOrUpdateItem($"{RawFolder}/Data_BiolumPaste.asset", "Biolum Paste",
                 "Compressed glowing biomass for route marks, dark optics, and relay IDs.",

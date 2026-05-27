@@ -1,0 +1,122 @@
+{
+  "agentId": "1332",
+  "domain": "Hecton8.Input + UI/PauseControlsPanel.cs + UI/PDAControlsRebindUI.cs",
+  "timestampLocal": "2026-05-26T20:31:32.7540246+04:00",
+  "status": "STATIC_GREEN_BUILD_BLOCKED_CPU_GATE",
+  "scannedFiles": 9,
+  "modifiedFilesThisPass": [
+    "Assets/_Project/Scripts/Core/RebindingManager.cs",
+    "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs"
+  ],
+  "fixes": [
+    {
+      "file": "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+      "problem": "Duplicate options owners loaded options.h8cfg before proving ownership.",
+      "solution": "Moved duplicate-owner registry check before LoadFromDisk in Awake."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/RebindingManager.cs",
+      "problem": "Duplicate rebind services could bootstrap telemetry and become ActiveRuntimeInstance before registration proof.",
+      "solution": "Added play-mode/duplicate gates before telemetry bootstrap and assigned ActiveRuntimeInstance only after _registeredService is true."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/RebindingManager.cs",
+      "problem": "Override reset delete path did not catch invalid-format path exceptions and duplicated main/temp cleanup.",
+      "solution": "Added TryDeleteOverridesFile with UnauthorizedAccessException, IOException, ArgumentException, and NotSupportedException handling."
+    },
+    {
+      "file": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "problem": "No source guard for owner-order or reset-delete regression.",
+      "solution": "Extended existing input-domain guard to require duplicate gates, registered-service checks, and hardened delete helper."
+    }
+  ],
+  "staticScan": {
+    "broadCatchHits": 0,
+    "bareCatchHits": 0,
+    "throwNewHits": 0,
+    "playerPrefsHits": 0,
+    "jsonUtilityHits": 0,
+    "removeAllListenersHits": 0,
+    "stringFormatInterpolationLinqForeachHits": 0,
+    "absoluteAupCastsFound": 0
+  },
+  "nativeCollections": {
+    "totalNativeFieldDeclarations": 0,
+    "persistentNativeFieldsRemaining": 0,
+    "transientVaultViews": 3,
+    "transientJobViews": 0,
+    "notes": "Remaining NativeArray<T> occurrences are method-local temp buffers, LockBufferForWrite mapped view, or Vault views resolved inside ControlRemapper execution phases. RebindingManager stores VaultGenerationHandle<T> descriptors only."
+  },
+  "byteOffsetMaps": [
+    {
+      "structName": "InputActionStateDTO",
+      "sizeBytes": 64,
+      "offsets": {
+        "ActionIdentityHash64": "0:ulong",
+        "OverridePathHash64": "8:ulong",
+        "EffectivePathHash64": "16:ulong",
+        "BindingGuidHash64": "24:ulong",
+        "ActionMapHash": "32:uint",
+        "ActionNameHash": "36:uint",
+        "BindingGroupHash": "40:uint",
+        "ControlPathHash": "44:uint",
+        "BindingIndex": "48:int",
+        "DisplayStyle": "52:byte",
+        "Flags": "53:byte"
+      }
+    },
+    {
+      "structName": "AccessibilityConfigDTO",
+      "sizeBytes": 16,
+      "offsets": {
+        "Mode": "0:uint",
+        "Strength": "4:float",
+        "GlobalQualityWeight": "8:float",
+        "Flags": "12:uint"
+      }
+    },
+    {
+      "structName": "InputBindingTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "TimestampTicks": "0:long",
+        "DurationTicks": "8:long",
+        "Operation": "16:uint",
+        "ResultCode": "20:uint",
+        "FaultFlags": "24:uint",
+        "ByteCount": "28:uint",
+        "RecordCount": "32:uint",
+        "PathBytes": "36:uint",
+        "FileHash64": "40:ulong"
+      }
+    },
+    {
+      "structName": "ControlRemapIoResult",
+      "sizeBytes": 88,
+      "offsets": {
+        "Telemetry": "0:InputBindingTelemetryEntry",
+        "ResultCode": "64:uint",
+        "FaultFlags": "68:uint",
+        "ByteCount": "72:int",
+        "RecordCount": "76:int",
+        "PathBytes": "80:int"
+      }
+    }
+  ],
+  "build": {
+    "command": "dotnet build .\\Hecton8.Core.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly",
+    "launched": false,
+    "status": "BLOCKED_BY_CPU_GATE",
+    "compilerProcesses": 0,
+    "cpuSamplesPercent": [100.0, 100.0, 96.2, 65.8, 96.6, 100.0, 98.4, 100.0, 98.0, 100.0, 91.1, 97.1],
+    "note": "Previous build before the final owner-order edit failed in external Fauna/Gameplay/Visor files; latest patch was not compiled because the CPU gate never opened."
+  },
+  "onlinePrimaryReferences": [
+    "https://learn.microsoft.com/en-us/dotnet/api/system.io.file.exists",
+    "https://learn.microsoft.com/en-us/dotnet/api/system.io.file.delete"
+  ],
+  "unityEditorTestsRun": false,
+  "unityProfilerGcMonitorRun": false,
+  "verificationHashSha256": "caac02ca0a17afdd8965b317c053e304fff371b8d3dfb365c379c9e50c79f4e0"
+}

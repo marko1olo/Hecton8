@@ -1,0 +1,121 @@
+{
+  "agentId": "1332",
+  "domain": "Hecton8.Input + UI/PauseControlsPanel.cs + UI/PDAControlsRebindUI.cs",
+  "timestampLocal": "2026-05-26T20:21:22.8982755+04:00",
+  "status": "STATIC_GREEN_BUILD_BLOCKED_EXTERNAL",
+  "scannedFiles": 9,
+  "modifiedFilesThisPass": [
+    "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+    "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs"
+  ],
+  "fixes": [
+    {
+      "file": "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+      "problem": "Invalid filesystem path forms could escape controls.json cold I/O as ArgumentException or NotSupportedException.",
+      "solution": "Added narrow fail-closed catches to save/load/atomic write/temp cleanup/telemetry dump and centralized numeric IoFailure telemetry."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+      "problem": "Duplicate service instances could run OnDestroy shutdown and save from a non-owner.",
+      "solution": "Added DestroyDuplicateInstance to mark shutdown complete before Destroy(gameObject)."
+    },
+    {
+      "file": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "problem": "No regression guard for invalid controls path fail-closed behavior or duplicate owner suppression.",
+      "solution": "Extended source guards and added ControlsJsonInvalidFilePathFailsClosedWithoutThrowing."
+    }
+  ],
+  "staticScan": {
+    "broadCatchHits": 0,
+    "bareCatchHits": 0,
+    "throwNewHits": 0,
+    "playerPrefsHits": 0,
+    "jsonUtilityHits": 0,
+    "removeAllListenersHits": 0,
+    "stringFormatInterpolationLinqForeachHits": 0,
+    "absoluteAupCastsFound": 0
+  },
+  "nativeCollections": {
+    "totalNativeFieldDeclarations": 0,
+    "persistentNativeFieldsRemaining": 0,
+    "transientVaultViews": 3,
+    "transientJobViews": 0,
+    "notes": "Remaining NativeArray<T> occurrences are method-local temp buffers, LockBufferForWrite mapped view, or Vault views resolved inside ControlRemapper execution phases. RebindingManager stores VaultGenerationHandle<T> descriptors only."
+  },
+  "byteOffsetMaps": [
+    {
+      "structName": "InputActionStateDTO",
+      "sizeBytes": 64,
+      "offsets": {
+        "ActionIdentityHash64": "0:ulong",
+        "OverridePathHash64": "8:ulong",
+        "EffectivePathHash64": "16:ulong",
+        "BindingGuidHash64": "24:ulong",
+        "ActionMapHash": "32:uint",
+        "ActionNameHash": "36:uint",
+        "BindingGroupHash": "40:uint",
+        "ControlPathHash": "44:uint",
+        "BindingIndex": "48:int",
+        "DisplayStyle": "52:byte",
+        "Flags": "53:byte"
+      }
+    },
+    {
+      "structName": "AccessibilityConfigDTO",
+      "sizeBytes": 16,
+      "offsets": {
+        "Mode": "0:uint",
+        "Strength": "4:float",
+        "GlobalQualityWeight": "8:float",
+        "Flags": "12:uint"
+      }
+    },
+    {
+      "structName": "InputBindingTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "TimestampTicks": "0:long",
+        "DurationTicks": "8:long",
+        "Operation": "16:uint",
+        "ResultCode": "20:uint",
+        "FaultFlags": "24:uint",
+        "ByteCount": "28:uint",
+        "RecordCount": "32:uint",
+        "PathBytes": "36:uint",
+        "FileHash64": "40:ulong"
+      }
+    },
+    {
+      "structName": "ControlRemapIoResult",
+      "sizeBytes": 88,
+      "offsets": {
+        "Telemetry": "0:InputBindingTelemetryEntry",
+        "ResultCode": "64:uint",
+        "FaultFlags": "68:uint",
+        "ByteCount": "72:int",
+        "RecordCount": "76:int",
+        "PathBytes": "80:int"
+      }
+    }
+  ],
+  "build": {
+    "command": "dotnet build .\\Hecton8.Core.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly",
+    "launchedAfterCpuAveragePercent": 42.8,
+    "launchedWithCompilerProcesses": 0,
+    "status": "FAILED_EXTERNAL_DOMAIN",
+    "agent1332Errors": 0,
+    "externalErrors": [
+      "Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs: PoolSlotData.AupCell missing",
+      "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs: PoolSlotData.AupCell missing",
+      "Assets/_Project/Scripts/FaunaDirector.cs: PoolSlotData.AupCell missing",
+      "Assets/_Project/Scripts/Visor/HectonDryVolumeFeature.cs: RenderGraph argument type mismatch",
+      "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs: duplicate catch ordering",
+      "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs: duplicate catch ordering"
+    ],
+    "retryBlockedByCpuSamplesPercent": [91.9, 98.5, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0]
+  },
+  "unityEditorTestsRun": false,
+  "unityProfilerGcMonitorRun": false,
+  "verificationHashSha256": "eb891607e75920df60350004d3cb8088ed30a3b55376f20b89bb34fef6d3e050"
+}

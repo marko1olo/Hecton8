@@ -14,8 +14,10 @@ namespace Hecton8.EditorValidation
     {
         private const string AgentId = "X_002";
         private const string AgentId1313 = "1313";
+        private const string AgentId1330 = "1330";
         private const string ReportPath = "Docs/Reports/DATA_PIPELINE_OPTIMIZATION_REPORT_X_002.json";
         private const string ReportPath1313 = "Docs/Reports/DATA_PIPELINE_OPTIMIZATION_REPORT_1313.json";
+        private const string ReportPath1330 = "Docs/Reports/DATA_PIPELINE_OPTIMIZATION_REPORT_1330.json";
         private const int MaxFindingsWritten = 512;
 
         private static readonly string[] ScanRoots =
@@ -27,7 +29,7 @@ namespace Hecton8.EditorValidation
         public static void RunFromMenu()
         {
             int findings = Run();
-            Debug.Log("[OOP_StaticData_Scanner] findings=" + findings + " report=" + ReportPath);
+            Debug.Log("[OOP_StaticData_Scanner] findings=" + findings + " report=" + ReportPath + " report1330=" + ReportPath1330);
         }
 
         public static int Run()
@@ -41,6 +43,7 @@ namespace Hecton8.EditorValidation
 
             WriteText(Path.Combine(projectRoot, ReportPath), BuildReport(stats, findings, AgentId));
             WriteText(Path.Combine(projectRoot, ReportPath1313), BuildReport(stats, findings, AgentId1313));
+            WriteText(Path.Combine(projectRoot, ReportPath1330), BuildReport(stats, findings, AgentId1330));
             AssetDatabase.Refresh();
             return stats.ProductionFindingCount;
         }
@@ -83,13 +86,42 @@ namespace Hecton8.EditorValidation
             ref ScanStats stats,
             StringBuilder findings)
         {
-            string source = File.ReadAllText(path, Encoding.UTF8);
+            string source;
+            try
+            {
+                source = File.ReadAllText(path, Encoding.UTF8);
+            }
+            catch (IOException exception)
+            {
+                stats.ParseFailures++;
+                AppendFinding(findings, ref stats, editorOnly, "sourceReadFailure", relativePath, 0, exception.GetType().Name, "FileRead");
+                return;
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                stats.ParseFailures++;
+                AppendFinding(findings, ref stats, editorOnly, "sourceReadFailure", relativePath, 0, exception.GetType().Name, "FileRead");
+                return;
+            }
+            catch (ArgumentException exception)
+            {
+                stats.ParseFailures++;
+                AppendFinding(findings, ref stats, editorOnly, "sourceReadFailure", relativePath, 0, exception.GetType().Name, "FileRead");
+                return;
+            }
+            catch (NotSupportedException exception)
+            {
+                stats.ParseFailures++;
+                AppendFinding(findings, ref stats, editorOnly, "sourceReadFailure", relativePath, 0, exception.GetType().Name, "FileRead");
+                return;
+            }
+
             SyntaxTree tree;
             try
             {
                 tree = CSharpSyntaxTree.ParseText(source);
             }
-            catch (Exception exception)
+            catch (ArgumentException exception)
             {
                 stats.ParseFailures++;
                 AppendFinding(findings, ref stats, editorOnly, "roslynParseFailure", relativePath, 0, exception.GetType().Name, "Parser");

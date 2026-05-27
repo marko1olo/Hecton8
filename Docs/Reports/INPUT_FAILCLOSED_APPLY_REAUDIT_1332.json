@@ -1,0 +1,51 @@
+{
+  "agentId": "1332",
+  "domain": "Hecton8.Input + UI/PauseControlsPanel.cs + UI/PDAControlsRebindUI.cs",
+  "timestampLocal": "2026-05-26T20:41:15+04:00",
+  "task": "INPUT_FAILCLOSED_APPLY_REAUDIT",
+  "status": "STATIC_GREEN_BUILD_BLOCKED_CPU_GATE",
+  "scannedFiles": 9,
+  "changedFiles": [
+    "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+    "Docs/Tasks/Status_1332.md",
+    "Docs/AgentLogs/Rationale_1332.md",
+    "Docs/AgentLogs/LOG_1332.md",
+    "Docs/Reports/INPUT_FAILCLOSED_APPLY_REAUDIT_1332.json"
+  ],
+  "fixes": [
+    "ControlRemapper.TryLoadOverrides clears all overrides and returns false when applied record count differs from parsed record count.",
+    "ControlRemapper.TryApplyOverridePath wraps Unity ApplyBindingOverride with narrow fail-closed exception handling.",
+    "InputBindingContractsEditTests source guard requires the fail-closed apply helper and partial-apply cleanup."
+  ],
+  "failedGates": [
+    "build_blocked_by_cpu_gate",
+    "unity_editor_tests_not_run",
+    "unity_profiler_gcmonitor_not_run"
+  ],
+  "totalNativeFieldDeclarations": 0,
+  "persistentNativeFieldsRemaining": 0,
+  "transientVaultViews": 2,
+  "transientJobViews": 0,
+  "nativeCollectionOccurrences": [
+    "ControlRemapper: method-local Vault telemetry ring/cursor views",
+    "ControlRemapper: Allocator.Temp byte and DTO arrays for cold controls.json save/load",
+    "AccessibilitySettings: method-local LockBufferForWrite constant-buffer view"
+  ],
+  "zeroGcHotPathHits": 0,
+  "absoluteAupCastsFound": 0,
+  "compactionAwareLocksProven": true,
+  "telemetryRingIntegrated": true,
+  "cpuGateSamples": [
+    100.0,
+    97.6901577906802,
+    90.6931743591841,
+    63.4589835825046,
+    55.6879675323122,
+    25.8606143932384,
+    97.5005539700729,
+    72.7217684570501
+  ],
+  "buildCommand": "not launched; CPU gate above 50%",
+  "verificationHashSha256": "2169ef4aa3582c3bedcf70facf963337d43a35070a44a46eaaf058a455323dbf"
+}

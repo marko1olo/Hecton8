@@ -40,7 +40,7 @@ MonoBehaviour:
     relation: 1
     preferredSlice: 2
     targetCount: 3
-    usage: Small readable loose-resource pocket close to a safe route line.
+    usage: Small readable loose-resource pocket close to a stable route line.
   nodeClusterPlan:
     family: {fileID: 11400000, guid: 1c25b670563e35c498edc9b5add23bd5, type: 2}
     relation: 3
@@ -52,7 +52,7 @@ MonoBehaviour:
     relation: 2
     preferredSlice: 2
     targetCount: 2
-    usage: Short recovery nook behind stone cover or reef folds.
+    usage: Short recovery nook behind stone cover or fossil folds.
   buildSocketPlan:
     family: {fileID: 11400000, guid: a35f07331e8dde745b644fea9c10aa0d, type: 2}
     relation: 3

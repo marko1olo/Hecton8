@@ -19,5 +19,5 @@ MonoBehaviour:
   midReferenceShape: crystal ridge or luminous fan
   farReferenceShape: glowing shard skyline that pulls the eye
   routeUse: Player should see valuable paths from afar but feel exposed on approach.
-  safePocketUse: Safe pockets live behind opaque crystal fans and heavy shard roots.
+  safePocketUse: Reorientation pockets live behind opaque crystal fans and heavy shard roots.
   emotionalRead: Precious, cold, and slightly hypnotic.

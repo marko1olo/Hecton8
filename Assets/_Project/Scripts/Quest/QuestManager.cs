@@ -761,7 +761,10 @@ namespace Hecton8.Quest
             if (loadedQuests.Count <= 0 || loadedQuests.Count == previousCount)
                 return;
 
-            allQuests = loadedQuests.ToArray();
+            if (allQuests == null || allQuests.Length != loadedQuests.Count)
+                allQuests = new QuestData[loadedQuests.Count];
+
+            loadedQuests.CopyTo(allQuests);
             EditorUtility.SetDirty(this);
         }
 #endif

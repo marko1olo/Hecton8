@@ -1,0 +1,59 @@
+{
+  "agentId": "1337",
+  "task": "PHYSICS_TARGET_WAKE_LOCK_AUDIT_RERUN44",
+  "status": "STATIC_GREEN_BUILD_BLOCKED_BY_FOREIGN_DEPENDENCY",
+  "scannedFiles": 3,
+  "failedGates": [
+    "full_slnx_build_timeout_stopped",
+    "assembly_csharp_build_blocked_by_candice_mono_data_sqlite_reference"
+  ],
+  "touchedFiles": [
+    "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+    "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+    "Assets/_Project/Scripts/PhysicsApplySystem.cs"
+  ],
+  "fixes": [
+    {
+      "file": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "summary": "Targeted wake queue flush now copies request DTOs into fixed scratch and releases queue locks before Rigidbody/Collider restore side effects."
+    },
+    {
+      "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "summary": "PhysicsStateReporter.OnEnable now calls RegisterTrackedBodyIfMissing instead of full RegisterTrackedBody."
+    }
+  ],
+  "totalNativeFieldDeclarations": 18,
+  "nativeDeclarationShapedHits": 19,
+  "nativeDeclarationFalsePositives": [
+    "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs:291 public NativeArray<T> AsNativeArray()"
+  ],
+  "persistentNativeFieldsRemaining": 0,
+  "transientVaultViews": 56,
+  "transientJobViews": 18,
+  "byteOffsetMaps": [
+    {
+      "structName": "PhysicsCullingTargetWakeRequestSignal",
+      "sizeBytes": 64,
+      "offsets": {
+        "TargetInstanceId": "0:uint",
+        "Flags": "4:uint",
+        "ImpulseVector": "8:float3",
+        "RadiusMeters": "20:float",
+        "OriginAup": "24:double3",
+        "_pad0": "48:byte",
+        "_pad15": "63:byte"
+      }
+    }
+  ],
+  "zeroGcHotPathHits": 0,
+  "absoluteAupCastsFound": 0,
+  "compactionAwareLocksProven": true,
+  "telemetryRingIntegrated": true,
+  "build": {
+    "h8Slnx": "timed_out_and_stopped_after_long_running_dotnet_process",
+    "assemblyCSharp": "failed_on_foreign_CandiceSQLiteProvider_Mono_Data_SqliteDataReader",
+    "physicsErrorsBeforeForeignBlocker": 0,
+    "buildServersShutdown": true
+  },
+  "verificationHashSha256": "3251449c353c328d490856e4632cc7b8a694a42271ab9f01678f6da32aa58d1d"
+}

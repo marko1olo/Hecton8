@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Construction;
 using Hecton8.Core;
@@ -7,10 +6,6 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Scavenging;
-using Unity.Burst;
-using Unity.Burst.CompilerServices;
-using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
@@ -164,45 +159,6 @@ namespace Hecton8.World
             public int SourceSpeciesId;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct ValidateAupIntegrityJob : IJobParallelFor
-        {
-            [ReadOnly, NoAlias] public NativeArray<double3> AbsolutePositions;
-            [ReadOnly, NoAlias] public NativeArray<float3> RuntimePositions;
-            public double3 CommittedTotalOffset;
-            [WriteOnly, NoAlias] public NativeArray<byte> InvalidMask;
-
-            public void Execute(int index)
-            {
-                float3 runtime = RuntimePositions[index];
-                double3 reconstructedAbsolute = new double3(runtime.x, runtime.y, runtime.z) + CommittedTotalOffset;
-                double3 delta = reconstructedAbsolute - AbsolutePositions[index];
-                InvalidMask[index] = math.lengthsq(delta) <= 0.01d ? (byte)0 : (byte)1;
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct FarUnloadCandidatesJob : IJobParallelFor
-        {
-            [ReadOnly, NoAlias] public NativeArray<double3> AbsolutePositions;
-            [ReadOnly, NoAlias] public NativeArray<byte> EligibilityMask;
-            public double3 PlayerAbsolutePosition;
-            public double MaxDistanceSq;
-            [WriteOnly, NoAlias] public NativeArray<byte> UnloadMask;
-
-            public void Execute(int index)
-            {
-                if (EligibilityMask[index] == 0)
-                {
-                    UnloadMask[index] = 0;
-                    return;
-                }
-
-                double3 delta = AbsolutePositions[index] - PlayerAbsolutePosition;
-                UnloadMask[index] = math.lengthsq(delta) > MaxDistanceSq ? (byte)1 : (byte)0;
-            }
-        }
-
         private const double CellSizeMeters = 20d;
         private const int DefaultEntryCapacity = 256;
         private const int MaxSpatialMaintenanceEntryCapacity = 8192;
@@ -221,10 +177,11 @@ namespace Hecton8.World
         private const int SpatialHashCompactionCapacityThreshold = 50000;
         private const int SpatialHashCompactionTargetFloor = DefaultEntryCapacity * 4;
         private const int MaxTransientSignalCount = 16;
+        private const int SpatialMetadataBucketCapacity = MaxSpatialMaintenanceEntryCapacity * 2;
+        private const int SpatialMetadataBucketMask = SpatialMetadataBucketCapacity - 1;
+        private const int EmptyBucket = 0;
+        private const int TombstoneBucket = -1;
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
-        private const Allocator DataVaultExemptWorldSpatialQueryAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptWorldSpatialMaintenanceAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptWorldSpatialAcousticAllocator = Allocator.Persistent;
 
         private static readonly ProfilerMarker _queryProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Query");
         private static readonly ProfilerMarker _maintenanceProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Maintenance");
@@ -232,10 +189,20 @@ namespace Hecton8.World
         private static readonly ProfilerMarker _farUnloadProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.FarUnload");
         private static readonly ProfilerMarker _acousticDensityProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.AcousticDensity");
 
-        // COLD ALLOC: Dictionary<int,Entry>(256) — runtime metadata registry layered over the native AUP spatial hash — owner: WorldSpatialHashGrid
-        private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(MaxSpatialMaintenanceEntryCapacity);
-        // COLD ALLOC: Dictionary<ulong,int>(256) - full EntityId to latest spatial handle reverse lookup - owner: WorldSpatialHashGrid
-        private static readonly Dictionary<ulong, int> _handleByTransformId = new Dictionary<ulong, int>(MaxSpatialMaintenanceEntryCapacity);
+        // COLD ALLOC: int[16384] - open-address handle-to-slot buckets for runtime metadata - owner: WorldSpatialHashGrid
+        private static readonly int[] _entryBuckets = new int[SpatialMetadataBucketCapacity];
+        // COLD ALLOC: int[8192] - dense spatial metadata handle keys - owner: WorldSpatialHashGrid
+        private static readonly int[] _entryHandles = new int[MaxSpatialMaintenanceEntryCapacity];
+        // COLD ALLOC: Entry[8192] - dense runtime metadata registry layered over the native AUP spatial hash - owner: WorldSpatialHashGrid
+        private static readonly Entry[] _entryValues = new Entry[MaxSpatialMaintenanceEntryCapacity];
+        private static int _entryCount;
+        // COLD ALLOC: int[16384] - open-address EntityId-to-handle buckets - owner: WorldSpatialHashGrid
+        private static readonly int[] _transformHandleBuckets = new int[SpatialMetadataBucketCapacity];
+        // COLD ALLOC: ulong[8192] - dense EntityId reverse-lookup keys - owner: WorldSpatialHashGrid
+        private static readonly ulong[] _transformHandleKeys = new ulong[MaxSpatialMaintenanceEntryCapacity];
+        // COLD ALLOC: int[8192] - dense EntityId reverse-lookup handles - owner: WorldSpatialHashGrid
+        private static readonly int[] _transformHandleValues = new int[MaxSpatialMaintenanceEntryCapacity];
+        private static int _transformHandleCount;
         // COLD ALLOC: int[8192] - deferred far-unload handle scratch for dynamic native-hash eviction - owner: WorldSpatialHashGrid
         private static readonly int[] _farUnloadHandleScratch = new int[MaxSpatialMaintenanceEntryCapacity];
         // COLD ALLOC: int[8192] - main-thread origin-shift key scratch, not a job payload - owner: WorldSpatialHashGrid
@@ -244,22 +211,28 @@ namespace Hecton8.World
         private static readonly TransientSignalEntry[] _transientSignals = new TransientSignalEntry[MaxTransientSignalCount]; // COLD ALLOC: TransientSignalEntry[16] - transient PDA sonar signal ring - owner: WorldSpatialHashGrid
 
         private static HectonSpatialHash _nativeHash;
-        private static NativeList<int> _queryHandles;
-        private static NativeArray<double3> _validationAbsolutePositions;
-        private static NativeArray<float3> _validationRuntimePositions;
-        private static NativeArray<byte> _validationInvalidMask;
-        private static JobHandle _validationHandle;
-        private static bool _validationScheduled;
+        // COLD ALLOC: int[2048] - facade query result scratch copied from HectonSpatialHash internal native scratch.
+        private static readonly int[] _queryHandles = new int[MaxQueryHandleCapacity];
+        // COLD ALLOC: double3[8192] - synchronous AUP validation scratch - owner: WorldSpatialHashGrid
+        private static readonly double3[] _validationAbsolutePositions = new double3[MaxSpatialMaintenanceEntryCapacity];
+        // COLD ALLOC: float3[8192] - synchronous runtime-position validation scratch - owner: WorldSpatialHashGrid
+        private static readonly float3[] _validationRuntimePositions = new float3[MaxSpatialMaintenanceEntryCapacity];
+        // COLD ALLOC: byte[8192] - synchronous validation failure mask - owner: WorldSpatialHashGrid
+        private static readonly byte[] _validationInvalidMask = new byte[MaxSpatialMaintenanceEntryCapacity];
         private static int _validationCount;
-        private static NativeArray<int> _farUnloadHandles;
-        private static NativeArray<double3> _farUnloadAbsolutePositions;
-        private static NativeArray<byte> _farUnloadEligibilityMask;
-        private static NativeArray<byte> _farUnloadResultMask;
-        private static JobHandle _farUnloadHandle;
-        private static bool _farUnloadScheduled;
+        // COLD ALLOC: int[8192] - synchronous far-unload candidate handles - owner: WorldSpatialHashGrid
+        private static readonly int[] _farUnloadHandles = new int[MaxSpatialMaintenanceEntryCapacity];
+        // COLD ALLOC: double3[8192] - synchronous far-unload absolute positions - owner: WorldSpatialHashGrid
+        private static readonly double3[] _farUnloadAbsolutePositions = new double3[MaxSpatialMaintenanceEntryCapacity];
+        // COLD ALLOC: byte[8192] - synchronous far-unload eligibility mask - owner: WorldSpatialHashGrid
+        private static readonly byte[] _farUnloadEligibilityMask = new byte[MaxSpatialMaintenanceEntryCapacity];
+        // COLD ALLOC: byte[8192] - synchronous far-unload result mask - owner: WorldSpatialHashGrid
+        private static readonly byte[] _farUnloadResultMask = new byte[MaxSpatialMaintenanceEntryCapacity];
         private static int _farUnloadCount;
         private static int _farUnloadHandleScratchCount;
-        private static NativeArray<float> _acousticDensityMap;
+        // COLD ALLOC: float[512] - managed 8x8x8 transient acoustic density payload - owner: WorldSpatialHashGrid
+        private static readonly float[] _acousticDensityMap = new float[AcousticDensityMapCellCount];
+        private static bool _hasAcousticDensityMap;
         private static int _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
         private static int _transientSignalWriteIndex;
         private static AbsoluteUniversePosition _lastFarUnloadPlayerAup;
@@ -267,7 +240,7 @@ namespace Hecton8.World
         private static int _lastValidationFrame = -ValidationCadenceFrames;
         private static bool _lastResultBufferSaturated;
 
-        internal static int ActiveEntityCount => _nativeHash != null ? _nativeHash.EntryCount : _entries.Count;
+        internal static int ActiveEntityCount => _nativeHash != null ? _nativeHash.EntryCount : _entryCount;
         internal static HectonSpatialHash.QueryStats LastNativeQueryStats => _nativeHash != null ? _nativeHash.LastQueryStats : default;
         internal static bool LastNativeQuerySaturated => _nativeHash != null && _nativeHash.LastQueryStats.IsSaturated;
         internal static bool LastResultBufferSaturated => _lastResultBufferSaturated;
@@ -280,31 +253,15 @@ namespace Hecton8.World
 
         internal static void ClearRuntimeState()
         {
-            _entries.Clear();
-            _handleByTransformId.Clear();
-            JobHandle teardownDependency = JobHandle.CombineDependencies(
-                CancelValidationForTeardown(),
-                CancelFarUnloadForTeardown());
-            teardownDependency = DisposeValidationBuffers(teardownDependency);
-            teardownDependency = DisposeFarUnloadBuffers(teardownDependency);
-            JobHandle.ScheduleBatchedJobs();
-            DispatcherJobSwap.TryComplete(ref teardownDependency, forceComplete: true);
+            ClearEntryMap();
+            ClearTransformHandleMap();
+            CancelValidationForTeardown();
+            CancelFarUnloadForTeardown();
             DisposeAcousticDensityMap();
             _farUnloadHandleScratchCount = 0;
-            if (_queryHandles.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(nameof(WorldSpatialHashGrid), nameof(_queryHandles));
-                _queryHandles.Dispose();
-                _queryHandles = default;
-            }
-
             _nativeHash?.Dispose();
             _nativeHash = null;
-            _validationHandle = default;
-            _validationScheduled = false;
             _validationCount = 0;
-            _farUnloadHandle = default;
-            _farUnloadScheduled = false;
             _farUnloadCount = 0;
             _farUnloadHandleScratchCount = 0;
             _hasLastFarUnloadPlayerAup = false;
@@ -314,6 +271,348 @@ namespace Hecton8.World
             _lastResultBufferSaturated = false;
             for (int i = 0; i < _transientSignals.Length; i++)
                 _transientSignals[i] = default;
+        }
+
+        private static void ClearEntryMap()
+        {
+            for (int i = 0; i < _entryBuckets.Length; i++)
+                _entryBuckets[i] = EmptyBucket;
+
+            for (int i = 0; i < _entryCount; i++)
+            {
+                _entryHandles[i] = 0;
+                _entryValues[i] = default;
+            }
+
+            _entryCount = 0;
+        }
+
+        private static bool TryGetEntry(int handle, out Entry entry)
+        {
+            int bucket = FindEntryBucket(handle);
+            if (bucket < 0)
+            {
+                entry = default;
+                return false;
+            }
+
+            entry = _entryValues[_entryBuckets[bucket] - 1];
+            return true;
+        }
+
+        private static bool SetEntry(int handle, in Entry entry)
+        {
+            if (handle <= 0)
+                return false;
+
+            int bucket = FindEntryBucket(handle);
+            if (bucket >= 0)
+            {
+                _entryValues[_entryBuckets[bucket] - 1] = entry;
+                return true;
+            }
+
+            if (_entryCount >= MaxSpatialMaintenanceEntryCapacity)
+                return false;
+
+            bucket = FindEntryInsertBucket(handle);
+            if (bucket < 0)
+            {
+                RebuildEntryBuckets();
+                bucket = FindEntryInsertBucket(handle);
+                if (bucket < 0)
+                    return false;
+            }
+
+            int slot = _entryCount;
+            _entryCount++;
+            _entryHandles[slot] = handle;
+            _entryValues[slot] = entry;
+            _entryBuckets[bucket] = slot + 1;
+            return true;
+        }
+
+        private static bool RemoveEntry(int handle)
+        {
+            int bucket = FindEntryBucket(handle);
+            if (bucket < 0)
+                return false;
+
+            int slot = _entryBuckets[bucket] - 1;
+            int lastSlot = _entryCount - 1;
+            _entryBuckets[bucket] = TombstoneBucket;
+
+            if (slot != lastSlot)
+            {
+                int movedHandle = _entryHandles[lastSlot];
+                _entryHandles[slot] = movedHandle;
+                _entryValues[slot] = _entryValues[lastSlot];
+
+                int movedBucket = FindEntryBucket(movedHandle);
+                if (movedBucket >= 0)
+                    _entryBuckets[movedBucket] = slot + 1;
+                else
+                    RebuildEntryBuckets();
+            }
+
+            _entryHandles[lastSlot] = 0;
+            _entryValues[lastSlot] = default;
+            _entryCount--;
+
+            if (_entryCount == 0)
+                ClearEntryBucketsOnly();
+
+            return true;
+        }
+
+        private static int FindEntryBucket(int handle)
+        {
+            if (handle <= 0)
+                return -1;
+
+            int bucket = HashInt(handle);
+            for (int probe = 0; probe < SpatialMetadataBucketCapacity; probe++)
+            {
+                int slotPlusOne = _entryBuckets[bucket];
+                if (slotPlusOne == EmptyBucket)
+                    return -1;
+
+                if (slotPlusOne > 0)
+                {
+                    int slot = slotPlusOne - 1;
+                    if (_entryHandles[slot] == handle)
+                        return bucket;
+                }
+
+                bucket = (bucket + 1) & SpatialMetadataBucketMask;
+            }
+
+            return -1;
+        }
+
+        private static int FindEntryInsertBucket(int handle)
+        {
+            int bucket = HashInt(handle);
+            int firstTombstone = -1;
+            for (int probe = 0; probe < SpatialMetadataBucketCapacity; probe++)
+            {
+                int slotPlusOne = _entryBuckets[bucket];
+                if (slotPlusOne == EmptyBucket)
+                    return firstTombstone >= 0 ? firstTombstone : bucket;
+
+                if (slotPlusOne == TombstoneBucket)
+                {
+                    if (firstTombstone < 0)
+                        firstTombstone = bucket;
+                }
+                else if (_entryHandles[slotPlusOne - 1] == handle)
+                {
+                    return bucket;
+                }
+
+                bucket = (bucket + 1) & SpatialMetadataBucketMask;
+            }
+
+            return firstTombstone;
+        }
+
+        private static void RebuildEntryBuckets()
+        {
+            ClearEntryBucketsOnly();
+            for (int slot = 0; slot < _entryCount; slot++)
+            {
+                int bucket = FindEntryInsertBucket(_entryHandles[slot]);
+                if (bucket >= 0)
+                    _entryBuckets[bucket] = slot + 1;
+            }
+        }
+
+        private static void ClearEntryBucketsOnly()
+        {
+            for (int i = 0; i < _entryBuckets.Length; i++)
+                _entryBuckets[i] = EmptyBucket;
+        }
+
+        private static void ClearTransformHandleMap()
+        {
+            for (int i = 0; i < _transformHandleBuckets.Length; i++)
+                _transformHandleBuckets[i] = EmptyBucket;
+
+            for (int i = 0; i < _transformHandleCount; i++)
+            {
+                _transformHandleKeys[i] = 0UL;
+                _transformHandleValues[i] = 0;
+            }
+
+            _transformHandleCount = 0;
+        }
+
+        private static bool TryGetTransformHandle(ulong transformId, out int handle)
+        {
+            int bucket = FindTransformHandleBucket(transformId);
+            if (bucket < 0)
+            {
+                handle = 0;
+                return false;
+            }
+
+            handle = _transformHandleValues[_transformHandleBuckets[bucket] - 1];
+            return true;
+        }
+
+        private static bool SetTransformHandle(ulong transformId, int handle)
+        {
+            int bucket = FindTransformHandleBucket(transformId);
+            if (bucket >= 0)
+            {
+                _transformHandleValues[_transformHandleBuckets[bucket] - 1] = handle;
+                return true;
+            }
+
+            if (_transformHandleCount >= MaxSpatialMaintenanceEntryCapacity)
+                return false;
+
+            bucket = FindTransformHandleInsertBucket(transformId);
+            if (bucket < 0)
+            {
+                RebuildTransformHandleBuckets();
+                bucket = FindTransformHandleInsertBucket(transformId);
+                if (bucket < 0)
+                    return false;
+            }
+
+            int slot = _transformHandleCount;
+            _transformHandleCount++;
+            _transformHandleKeys[slot] = transformId;
+            _transformHandleValues[slot] = handle;
+            _transformHandleBuckets[bucket] = slot + 1;
+            return true;
+        }
+
+        private static bool RemoveTransformHandleKey(ulong transformId)
+        {
+            int bucket = FindTransformHandleBucket(transformId);
+            if (bucket < 0)
+                return false;
+
+            int slot = _transformHandleBuckets[bucket] - 1;
+            int lastSlot = _transformHandleCount - 1;
+            _transformHandleBuckets[bucket] = TombstoneBucket;
+
+            if (slot != lastSlot)
+            {
+                ulong movedKey = _transformHandleKeys[lastSlot];
+                _transformHandleKeys[slot] = movedKey;
+                _transformHandleValues[slot] = _transformHandleValues[lastSlot];
+
+                int movedBucket = FindTransformHandleBucket(movedKey);
+                if (movedBucket >= 0)
+                    _transformHandleBuckets[movedBucket] = slot + 1;
+                else
+                    RebuildTransformHandleBuckets();
+            }
+
+            _transformHandleKeys[lastSlot] = 0UL;
+            _transformHandleValues[lastSlot] = 0;
+            _transformHandleCount--;
+
+            if (_transformHandleCount == 0)
+                ClearTransformHandleBucketsOnly();
+
+            return true;
+        }
+
+        private static int FindTransformHandleBucket(ulong transformId)
+        {
+            int bucket = HashUlong(transformId);
+            for (int probe = 0; probe < SpatialMetadataBucketCapacity; probe++)
+            {
+                int slotPlusOne = _transformHandleBuckets[bucket];
+                if (slotPlusOne == EmptyBucket)
+                    return -1;
+
+                if (slotPlusOne > 0)
+                {
+                    int slot = slotPlusOne - 1;
+                    if (_transformHandleKeys[slot] == transformId)
+                        return bucket;
+                }
+
+                bucket = (bucket + 1) & SpatialMetadataBucketMask;
+            }
+
+            return -1;
+        }
+
+        private static int FindTransformHandleInsertBucket(ulong transformId)
+        {
+            int bucket = HashUlong(transformId);
+            int firstTombstone = -1;
+            for (int probe = 0; probe < SpatialMetadataBucketCapacity; probe++)
+            {
+                int slotPlusOne = _transformHandleBuckets[bucket];
+                if (slotPlusOne == EmptyBucket)
+                    return firstTombstone >= 0 ? firstTombstone : bucket;
+
+                if (slotPlusOne == TombstoneBucket)
+                {
+                    if (firstTombstone < 0)
+                        firstTombstone = bucket;
+                }
+                else if (_transformHandleKeys[slotPlusOne - 1] == transformId)
+                {
+                    return bucket;
+                }
+
+                bucket = (bucket + 1) & SpatialMetadataBucketMask;
+            }
+
+            return firstTombstone;
+        }
+
+        private static void RebuildTransformHandleBuckets()
+        {
+            ClearTransformHandleBucketsOnly();
+            for (int slot = 0; slot < _transformHandleCount; slot++)
+            {
+                int bucket = FindTransformHandleInsertBucket(_transformHandleKeys[slot]);
+                if (bucket >= 0)
+                    _transformHandleBuckets[bucket] = slot + 1;
+            }
+        }
+
+        private static void ClearTransformHandleBucketsOnly()
+        {
+            for (int i = 0; i < _transformHandleBuckets.Length; i++)
+                _transformHandleBuckets[i] = EmptyBucket;
+        }
+
+        private static int HashInt(int value)
+        {
+            unchecked
+            {
+                uint hash = (uint)value;
+                hash ^= hash >> 16;
+                hash *= 0x7feb352dU;
+                hash ^= hash >> 15;
+                hash *= 0x846ca68bU;
+                hash ^= hash >> 16;
+                return (int)(hash & SpatialMetadataBucketMask);
+            }
+        }
+
+        private static int HashUlong(ulong value)
+        {
+            unchecked
+            {
+                ulong hash = value;
+                hash ^= hash >> 33;
+                hash *= 0xff51afd7ed558ccdUL;
+                hash ^= hash >> 33;
+                hash *= 0xc4ceb9fe1a85ec53UL;
+                hash ^= hash >> 33;
+                return (int)((uint)hash & SpatialMetadataBucketMask);
+            }
         }
 
         public static int RegisterResource(ResourceNode node)
@@ -381,11 +680,11 @@ namespace Hecton8.World
 
         public static void UpdateSignalRole(int handle, FieldTargetRole signalRole)
         {
-            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry))
+            if (handle <= 0 || !TryGetEntry(handle, out Entry entry))
                 return;
 
             entry.SignalRole = signalRole;
-            _entries[handle] = entry;
+            SetEntry(handle, in entry);
         }
 
         public static void UpdateGridPosition(GameObject obj, Vector3 oldPosition, Vector3 newPosition)
@@ -400,7 +699,7 @@ namespace Hecton8.World
 
         public static void UpdateGridPosition(int handle, Vector3 oldPosition, Vector3 newPosition)
         {
-            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry))
+            if (handle <= 0 || !TryGetEntry(handle, out Entry entry))
                 return;
 
             if (entry.Transform == null)
@@ -414,7 +713,7 @@ namespace Hecton8.World
 
         public static void Refresh(int handle)
         {
-            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry))
+            if (handle <= 0 || !TryGetEntry(handle, out Entry entry))
                 return;
 
             if (entry.Transform == null)
@@ -429,7 +728,7 @@ namespace Hecton8.World
         public static bool TryGetAbsolutePosition(int handle, out AbsoluteUniversePosition position)
         {
             position = default;
-            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry) || !IsFiniteAup(in entry.AbsolutePosition))
+            if (handle <= 0 || !TryGetEntry(handle, out Entry entry) || !IsFiniteAup(in entry.AbsolutePosition))
                 return false;
 
             position = entry.AbsolutePosition;
@@ -443,11 +742,11 @@ namespace Hecton8.World
 
         public static void SetResourceHalfExtents(int handle, float3 halfExtents)
         {
-            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry))
+            if (handle <= 0 || !TryGetEntry(handle, out Entry entry))
                 return;
 
             entry.HalfExtents = math.max(halfExtents, 0f);
-            _entries[handle] = entry;
+            SetEntry(handle, in entry);
             UpdateNativeEntry(handle, entry);
         }
 
@@ -456,7 +755,7 @@ namespace Hecton8.World
             if (handle <= 0)
                 return;
 
-            if (!_entries.TryGetValue(handle, out Entry entry))
+            if (!TryGetEntry(handle, out Entry entry))
                 return;
 
             RemoveTransformHandle(handle, entry.Transform);
@@ -465,7 +764,7 @@ namespace Hecton8.World
             else if (_nativeHash != null)
                 _nativeHash.ReleaseHandle(handle);
 
-            _entries.Remove(handle);
+            RemoveEntry(handle);
         }
 
         public static bool TryGetNearestBioform(
@@ -496,7 +795,7 @@ namespace Hecton8.World
             for (int i = 0; i < handleCount; i++)
             {
                 int handle = _queryHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
+                if (!TryGetEntry(handle, out Entry entry))
                 {
                     DropNativeOnlyHandle(handle);
                     continue;
@@ -597,7 +896,7 @@ namespace Hecton8.World
             for (int i = 0; i < handleCount; i++)
             {
                 int handle = _queryHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
+                if (!TryGetEntry(handle, out Entry entry))
                 {
                     DropNativeOnlyHandle(handle);
                     continue;
@@ -696,7 +995,7 @@ namespace Hecton8.World
             for (int i = 0; i < handleCount; i++)
             {
                 int handle = _queryHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
+                if (!TryGetEntry(handle, out Entry entry))
                 {
                     DropNativeOnlyHandle(handle);
                     continue;
@@ -868,7 +1167,7 @@ namespace Hecton8.World
             for (int i = 0; i < handleCount; i++)
             {
                 int handle = _queryHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
+                if (!TryGetEntry(handle, out Entry entry))
                 {
                     DropNativeOnlyHandle(handle);
                     continue;
@@ -1039,15 +1338,15 @@ namespace Hecton8.World
         }
 
         public static bool TryGetAcousticDensityMap(
-            out NativeArray<float>.ReadOnly densityMap,
+            out float[] densityMap,
             out Vector3Int dimensions)
         {
-            densityMap = default;
+            densityMap = null;
             dimensions = new Vector3Int(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis);
-            if (!_acousticDensityMap.IsCreated)
+            if (!_hasAcousticDensityMap)
                 return false;
 
-            densityMap = _acousticDensityMap.AsReadOnly();
+            densityMap = _acousticDensityMap;
             return true;
         }
 
@@ -1061,17 +1360,17 @@ namespace Hecton8.World
             peakIntensity = 0f;
 
             if (destination == null ||
-                !_acousticDensityMap.IsCreated ||
+                !_hasAcousticDensityMap ||
                 requestedSampleCount <= 0)
             {
                 return false;
             }
 
             int sampleCount = math.min(_acousticDensityMap.Length, requestedSampleCount);
-            if (sampleCount <= 0)
+            if (sampleCount <= 0 || sampleCount != _acousticDensityMap.Length)
                 return false;
 
-            destination.SetPixelData(_acousticDensityMap.GetSubArray(0, sampleCount), 0);
+            destination.SetPixelData(_acousticDensityMap, 0);
 
             float peak = 0f;
             for (int i = 0; i < sampleCount; i++)
@@ -1139,17 +1438,10 @@ namespace Hecton8.World
 
             using (_maintenanceProfilerMarker.Auto())
             {
-                if (_validationScheduled && _validationHandle.IsCompleted)
-                    ConsumeCompletedValidation();
-
-                if (_farUnloadScheduled && _farUnloadHandle.IsCompleted)
-                    ConsumeCompletedFarUnload();
-
-                if (!_validationScheduled && frameCount - _lastValidationFrame >= ValidationCadenceFrames)
+                if (frameCount - _lastValidationFrame >= ValidationCadenceFrames)
                     ScheduleValidation(frameCount);
 
-                if (!_farUnloadScheduled)
-                    TryScheduleFarUnload();
+                TryScheduleFarUnload();
 
                 if (frameCount - _lastAcousticDensityFrame >= AcousticDensityMapCadenceFrames)
                 {
@@ -1184,23 +1476,21 @@ namespace Hecton8.World
             EnsureInitialized();
             ClearAcousticDensityMapForOriginShift();
 
-            int count = _entries.Count;
+            int count = _entryCount;
             RebaseTransientSignalRuntimePositions(runtimeOffset);
             if (count <= 0)
                 return;
 
             int writeIndex = 0;
-            Dictionary<int, Entry>.Enumerator enumerator = _entries.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int i = 0; i < _entryCount; i++)
             {
-                KeyValuePair<int, Entry> pair = enumerator.Current;
-                Entry entry = pair.Value;
+                Entry entry = _entryValues[i];
                 if (writeIndex >= _originShiftHandles.Length)
                     break;
                 if (entry.Transform == null || !IsFiniteRuntimePosition(entry.RuntimePosition))
                     continue;
 
-                _originShiftHandles[writeIndex] = pair.Key;
+                _originShiftHandles[writeIndex] = _entryHandles[i];
                 writeIndex++;
             }
 
@@ -1210,7 +1500,7 @@ namespace Hecton8.World
             for (int i = 0; i < writeIndex; i++)
             {
                 int handle = _originShiftHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
+                if (!TryGetEntry(handle, out Entry entry))
                     continue;
 
                 Vector3 shiftedRuntimePosition = entry.RuntimePosition + runtimeOffset;
@@ -1218,7 +1508,7 @@ namespace Hecton8.World
                     continue;
 
                 entry.RuntimePosition = shiftedRuntimePosition;
-                _entries[handle] = entry;
+                SetEntry(handle, in entry);
             }
 
         }
@@ -1232,15 +1522,6 @@ namespace Hecton8.World
                     CellSizeMeters,
                     NativeMemoryLifetime);
 
-            if (!_queryHandles.IsCreated)
-            {
-                _queryHandles = new NativeList<int>(MaxQueryHandleCapacity, DataVaultExemptWorldSpatialQueryAllocator);
-                NativeMemorySentinel.RegisterNativeList(
-                    _queryHandles,
-                    nameof(WorldSpatialHashGrid),
-                    nameof(_queryHandles),
-                    NativeMemoryLifetime);
-            }
         }
 
         private static int Register(
@@ -1255,7 +1536,7 @@ namespace Hecton8.World
                 return 0;
 
             EnsureInitialized();
-            if (_entries.Count >= MaxSpatialMaintenanceEntryCapacity)
+            if (_entryCount >= MaxSpatialMaintenanceEntryCapacity)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError("[WorldSpatialHashGrid] Entry capacity exceeded. Runtime buffer growth is forbidden.");
@@ -1279,7 +1560,7 @@ namespace Hecton8.World
             if (handle <= 0)
                 return 0;
 
-            _entries[handle] = new Entry
+            Entry entry = new Entry
             {
                 Transform = targetTransform,
                 Owner = owner,
@@ -1296,7 +1577,14 @@ namespace Hecton8.World
                 EntityFlags = entityFlags,
                 IsResidentInNativeHash = 1
             };
-            _handleByTransformId[ResolveTransformEntityKey(targetTransform)] = handle;
+            if (!SetEntry(handle, in entry) ||
+                !SetTransformHandle(ResolveTransformEntityKey(targetTransform), handle))
+            {
+                RemoveEntry(handle);
+                _nativeHash.Unregister(handle);
+                return 0;
+            }
+
             return handle;
         }
 
@@ -1347,7 +1635,7 @@ namespace Hecton8.World
             }
 
             entry.IsResidentInNativeHash = 1;
-            _entries[handle] = entry;
+            SetEntry(handle, in entry);
         }
 
         private static int FindHandle(Transform targetTransform)
@@ -1356,12 +1644,12 @@ namespace Hecton8.World
                 return 0;
 
             ulong transformId = ResolveTransformEntityKey(targetTransform);
-            if (!_handleByTransformId.TryGetValue(transformId, out int handle))
+            if (!TryGetTransformHandle(transformId, out int handle))
                 return 0;
 
-            if (!_entries.TryGetValue(handle, out Entry entry) || !ReferenceEquals(entry.Transform, targetTransform))
+            if (!TryGetEntry(handle, out Entry entry) || !ReferenceEquals(entry.Transform, targetTransform))
             {
-                _handleByTransformId.Remove(transformId);
+                RemoveTransformHandleKey(transformId);
                 return 0;
             }
 
@@ -1374,8 +1662,8 @@ namespace Hecton8.World
                 return;
 
             ulong transformId = ResolveTransformEntityKey(targetTransform);
-            if (_handleByTransformId.TryGetValue(transformId, out int mappedHandle) && mappedHandle == handle)
-                _handleByTransformId.Remove(transformId);
+            if (TryGetTransformHandle(transformId, out int mappedHandle) && mappedHandle == handle)
+                RemoveTransformHandleKey(transformId);
         }
 
         private static ulong ResolveTransformEntityKey(Transform targetTransform)
@@ -1399,7 +1687,7 @@ namespace Hecton8.World
             if (!IsFiniteRuntimePosition(origin) || !math.isfinite(radius) || radius <= 0f || kindMask == SpatialTargetKind.None)
                 return 0;
 
-            if (_nativeHash == null || _entries.Count == 0)
+            if (_nativeHash == null || _entryCount == 0)
                 return 0;
 
             EnsureInitialized();
@@ -1478,7 +1766,7 @@ namespace Hecton8.World
 
         private static void ClearAcousticDensityMapForOriginShift()
         {
-            if (_acousticDensityMap.IsCreated)
+            if (_hasAcousticDensityMap)
             {
                 for (int i = 0; i < _acousticDensityMap.Length; i++)
                     _acousticDensityMap[i] = 0f;
@@ -1515,19 +1803,17 @@ namespace Hecton8.World
         private static void ScheduleValidation(int currentFrame)
         {
             EnsureInitialized();
-            int count = _entries.Count;
+            int count = _entryCount;
             if (count <= 0)
             {
                 _lastValidationFrame = currentFrame;
                 return;
             }
 
-            EnsureValidationCapacity(count);
             int writeIndex = 0;
-            Dictionary<int, Entry>.Enumerator enumerator = _entries.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int i = 0; i < _entryCount; i++)
             {
-                Entry entry = enumerator.Current.Value;
+                Entry entry = _entryValues[i];
                 if (entry.Transform == null)
                     continue;
                 if (writeIndex >= _validationAbsolutePositions.Length)
@@ -1554,37 +1840,29 @@ namespace Hecton8.World
             using (_validationProfilerMarker.Auto())
             {
                 _validationCount = writeIndex;
-                _validationHandle = new ValidateAupIntegrityJob
+                double3 committedTotalOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+                for (int i = 0; i < writeIndex; i++)
                 {
-                    AbsolutePositions = _validationAbsolutePositions,
-                    RuntimePositions = _validationRuntimePositions,
-                    CommittedTotalOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble,
-                    InvalidMask = _validationInvalidMask
-                }.Schedule(writeIndex, 64);
-                _validationScheduled = true;
-                _lastValidationFrame = currentFrame;
-            }
-        }
-
-        private static void ConsumeCompletedValidation()
-        {
-            if (!DispatcherJobSwap.TryComplete(ref _validationHandle, forceComplete: false))
-                return;
-
-            _validationScheduled = false;
+                    float3 runtime = _validationRuntimePositions[i];
+                    double3 reconstructedAbsolute = new double3(runtime.x, runtime.y, runtime.z) + committedTotalOffset;
+                    double3 delta = reconstructedAbsolute - _validationAbsolutePositions[i];
+                    _validationInvalidMask[i] = math.lengthsq(delta) <= 0.01d ? (byte)0 : (byte)1;
+                }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            for (int i = 0; i < _validationCount; i++)
-            {
-                if (_validationInvalidMask[i] == 0)
-                    continue;
+                for (int i = 0; i < _validationCount; i++)
+                {
+                    if (_validationInvalidMask[i] == 0)
+                        continue;
 
-                Hecton8.Core.H8Debug.LogError("[WorldSpatialHashGrid] AUP integrity validation failed. Runtime/AUP spatial coherence diverged.");
-                break;
-            }
+                    Hecton8.Core.H8Debug.LogError("[WorldSpatialHashGrid] AUP integrity validation failed. Runtime/AUP spatial coherence diverged.");
+                    break;
+                }
 #endif
 
-            _validationCount = 0;
+                _validationCount = 0;
+                _lastValidationFrame = currentFrame;
+            }
         }
 
         private static void TryScheduleFarUnload()
@@ -1602,7 +1880,7 @@ namespace Hecton8.World
             }
 
             EnsureInitialized();
-            int count = _entries.Count;
+            int count = _entryCount;
             if (count <= 0)
             {
                 _lastFarUnloadPlayerAup = playerAup;
@@ -1610,13 +1888,10 @@ namespace Hecton8.World
                 return;
             }
 
-            EnsureFarUnloadCapacity(count);
             int writeIndex = 0;
-            Dictionary<int, Entry>.Enumerator enumerator = _entries.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int i = 0; i < _entryCount; i++)
             {
-                KeyValuePair<int, Entry> pair = enumerator.Current;
-                Entry entry = pair.Value;
+                Entry entry = _entryValues[i];
                 if (entry.Transform == null)
                     continue;
                 if (writeIndex >= _farUnloadHandles.Length)
@@ -1631,7 +1906,7 @@ namespace Hecton8.World
                     continue;
 
                 entry.AbsolutePosition = entryAup;
-                _farUnloadHandles[writeIndex] = pair.Key;
+                _farUnloadHandles[writeIndex] = _entryHandles[i];
                 _farUnloadAbsolutePositions[writeIndex] = entryAup.ToAbsoluteDouble3();
                 _farUnloadEligibilityMask[writeIndex] = IsFarUnloadEligible(entry) ? (byte)1 : (byte)0;
                 writeIndex++;
@@ -1641,15 +1916,14 @@ namespace Hecton8.World
             for (int i = 0; i < writeIndex; i++)
             {
                 int handle = _farUnloadHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
+                if (!TryGetEntry(handle, out Entry entry))
                     continue;
 
-                entry.RuntimePosition = new Vector3(
-                    (float)(_farUnloadAbsolutePositions[i].x - currentTotalOffset.x),
-                    (float)(_farUnloadAbsolutePositions[i].y - currentTotalOffset.y),
-                    (float)(_farUnloadAbsolutePositions[i].z - currentTotalOffset.z));
-                entry.AbsolutePosition = AbsoluteUniversePosition.FromAbsolutePosition(_farUnloadAbsolutePositions[i]);
-                _entries[handle] = entry;
+                AbsoluteUniversePosition refreshedAup = AbsoluteUniversePosition.FromAbsolutePosition(_farUnloadAbsolutePositions[i]);
+                float3 refreshedRuntime = AUPMath.ToRuntimeFloat3(in refreshedAup, currentTotalOffset);
+                entry.RuntimePosition = new Vector3(refreshedRuntime.x, refreshedRuntime.y, refreshedRuntime.z);
+                entry.AbsolutePosition = refreshedAup;
+                SetEntry(handle, in entry);
             }
 
             _lastFarUnloadPlayerAup = playerAup;
@@ -1660,24 +1934,25 @@ namespace Hecton8.World
             using (_farUnloadProfilerMarker.Auto())
             {
                 _farUnloadCount = writeIndex;
-                _farUnloadHandle = new FarUnloadCandidatesJob
+                double3 playerAbsolutePosition = playerAup.ToAbsoluteDouble3();
+                for (int i = 0; i < writeIndex; i++)
                 {
-                    AbsolutePositions = _farUnloadAbsolutePositions,
-                    EligibilityMask = _farUnloadEligibilityMask,
-                    PlayerAbsolutePosition = playerAup.ToAbsoluteDouble3(),
-                    MaxDistanceSq = FarUnloadDistanceSq,
-                    UnloadMask = _farUnloadResultMask
-                }.Schedule(writeIndex, 64);
-                _farUnloadScheduled = true;
+                    if (_farUnloadEligibilityMask[i] == 0)
+                    {
+                        _farUnloadResultMask[i] = 0;
+                        continue;
+                    }
+
+                    double3 delta = _farUnloadAbsolutePositions[i] - playerAbsolutePosition;
+                    _farUnloadResultMask[i] = math.lengthsq(delta) > FarUnloadDistanceSq ? (byte)1 : (byte)0;
+                }
+
+                ConsumeCompletedFarUnload();
             }
         }
 
         private static void ConsumeCompletedFarUnload()
         {
-            if (!DispatcherJobSwap.TryComplete(ref _farUnloadHandle, forceComplete: false))
-                return;
-
-            _farUnloadScheduled = false;
             _farUnloadHandleScratchCount = 0;
 
             for (int i = 0; i < _farUnloadCount; i++)
@@ -1695,7 +1970,7 @@ namespace Hecton8.World
             for (int i = 0; i < _farUnloadHandleScratchCount; i++)
             {
                 int handle = _farUnloadHandleScratch[i];
-                if (!_entries.TryGetValue(handle, out Entry entry) || entry.IsResidentInNativeHash == 0)
+                if (!TryGetEntry(handle, out Entry entry) || entry.IsResidentInNativeHash == 0)
                     continue;
 
                 if (entry.Transform != null)
@@ -1711,258 +1986,41 @@ namespace Hecton8.World
 
                 _nativeHash.Evict(handle);
                 entry.IsResidentInNativeHash = 0;
-                _entries[handle] = entry;
+                SetEntry(handle, in entry);
             }
 
             _farUnloadCount = 0;
             _farUnloadHandleScratchCount = 0;
         }
 
-        private static void EnsureValidationCapacity(int requiredCapacity)
+        private static void CancelValidationForTeardown()
         {
-            if (_validationAbsolutePositions.IsCreated &&
-                _validationRuntimePositions.IsCreated &&
-                _validationInvalidMask.IsCreated)
-                return;
-
-            DisposeValidationBuffers();
-            _validationAbsolutePositions = new NativeArray<double3>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
-            _validationRuntimePositions = new NativeArray<float3>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
-            _validationInvalidMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _validationAbsolutePositions,
-                nameof(WorldSpatialHashGrid),
-                nameof(_validationAbsolutePositions),
-                NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(
-                _validationRuntimePositions,
-                nameof(WorldSpatialHashGrid),
-                nameof(_validationRuntimePositions),
-                NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(
-                _validationInvalidMask,
-                nameof(WorldSpatialHashGrid),
-                nameof(_validationInvalidMask),
-                NativeMemoryLifetime);
-        }
-
-        private static void DisposeValidationBuffers()
-        {
-            if (_validationScheduled)
-            {
-                DispatcherJobSwap.TryComplete(ref _validationHandle, forceComplete: true);
-                _validationScheduled = false;
-            }
-
-            if (_validationAbsolutePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_validationAbsolutePositions);
-                _validationAbsolutePositions.Dispose();
-                _validationAbsolutePositions = default;
-            }
-
-            if (_validationRuntimePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_validationRuntimePositions);
-                _validationRuntimePositions.Dispose();
-                _validationRuntimePositions = default;
-            }
-
-            if (_validationInvalidMask.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_validationInvalidMask);
-                _validationInvalidMask.Dispose();
-                _validationInvalidMask = default;
-            }
-
             _validationCount = 0;
         }
 
-        private static JobHandle CancelValidationForTeardown()
+        private static void CancelFarUnloadForTeardown()
         {
-            if (!_validationScheduled)
-                return _validationHandle;
-
-            JobHandle dependency = _validationHandle;
-            _validationHandle = default;
-            _validationScheduled = false;
-            _validationCount = 0;
-            return dependency;
-        }
-
-        private static JobHandle DisposeValidationBuffers(JobHandle dependency)
-        {
-            JobHandle disposeHandle = dependency;
-
-            if (_validationAbsolutePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_validationAbsolutePositions);
-                disposeHandle = _validationAbsolutePositions.Dispose(disposeHandle);
-                _validationAbsolutePositions = default;
-            }
-
-            if (_validationRuntimePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_validationRuntimePositions);
-                disposeHandle = _validationRuntimePositions.Dispose(disposeHandle);
-                _validationRuntimePositions = default;
-            }
-
-            if (_validationInvalidMask.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_validationInvalidMask);
-                disposeHandle = _validationInvalidMask.Dispose(disposeHandle);
-                _validationInvalidMask = default;
-            }
-
-            _validationCount = 0;
-            return disposeHandle;
-        }
-
-        private static void EnsureFarUnloadCapacity(int requiredCapacity)
-        {
-            if (_farUnloadHandles.IsCreated &&
-                _farUnloadAbsolutePositions.IsCreated &&
-                _farUnloadEligibilityMask.IsCreated &&
-                _farUnloadResultMask.IsCreated)
-                return;
-
-            DisposeFarUnloadBuffers();
-            _farUnloadHandles = new NativeArray<int>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
-            _farUnloadAbsolutePositions = new NativeArray<double3>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
-            _farUnloadEligibilityMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
-            _farUnloadResultMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _farUnloadHandles,
-                nameof(WorldSpatialHashGrid),
-                nameof(_farUnloadHandles),
-                NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(
-                _farUnloadAbsolutePositions,
-                nameof(WorldSpatialHashGrid),
-                nameof(_farUnloadAbsolutePositions),
-                NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(
-                _farUnloadEligibilityMask,
-                nameof(WorldSpatialHashGrid),
-                nameof(_farUnloadEligibilityMask),
-                NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(
-                _farUnloadResultMask,
-                nameof(WorldSpatialHashGrid),
-                nameof(_farUnloadResultMask),
-                NativeMemoryLifetime);
-        }
-
-        private static void DisposeFarUnloadBuffers()
-        {
-            if (_farUnloadScheduled)
-            {
-                DispatcherJobSwap.TryComplete(ref _farUnloadHandle, forceComplete: true);
-                _farUnloadScheduled = false;
-            }
-
-            if (_farUnloadHandles.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_farUnloadHandles);
-                _farUnloadHandles.Dispose();
-                _farUnloadHandles = default;
-            }
-
-            if (_farUnloadAbsolutePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_farUnloadAbsolutePositions);
-                _farUnloadAbsolutePositions.Dispose();
-                _farUnloadAbsolutePositions = default;
-            }
-
-            if (_farUnloadEligibilityMask.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_farUnloadEligibilityMask);
-                _farUnloadEligibilityMask.Dispose();
-                _farUnloadEligibilityMask = default;
-            }
-
-            if (_farUnloadResultMask.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_farUnloadResultMask);
-                _farUnloadResultMask.Dispose();
-                _farUnloadResultMask = default;
-            }
-
             _farUnloadCount = 0;
-        }
-
-        private static JobHandle CancelFarUnloadForTeardown()
-        {
-            if (!_farUnloadScheduled)
-                return _farUnloadHandle;
-
-            JobHandle dependency = _farUnloadHandle;
-            _farUnloadHandle = default;
-            _farUnloadScheduled = false;
-            _farUnloadCount = 0;
-            return dependency;
-        }
-
-        private static JobHandle DisposeFarUnloadBuffers(JobHandle dependency)
-        {
-            JobHandle disposeHandle = dependency;
-
-            if (_farUnloadHandles.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_farUnloadHandles);
-                disposeHandle = _farUnloadHandles.Dispose(disposeHandle);
-                _farUnloadHandles = default;
-            }
-
-            if (_farUnloadAbsolutePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_farUnloadAbsolutePositions);
-                disposeHandle = _farUnloadAbsolutePositions.Dispose(disposeHandle);
-                _farUnloadAbsolutePositions = default;
-            }
-
-            if (_farUnloadEligibilityMask.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_farUnloadEligibilityMask);
-                disposeHandle = _farUnloadEligibilityMask.Dispose(disposeHandle);
-                _farUnloadEligibilityMask = default;
-            }
-
-            if (_farUnloadResultMask.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_farUnloadResultMask);
-                disposeHandle = _farUnloadResultMask.Dispose(disposeHandle);
-                _farUnloadResultMask = default;
-            }
-
-            _farUnloadCount = 0;
-            return disposeHandle;
+            _farUnloadHandleScratchCount = 0;
         }
 
         private static void EnsureAcousticDensityMap()
         {
-            if (_acousticDensityMap.IsCreated && _acousticDensityMap.Length == AcousticDensityMapCellCount)
+            if (_hasAcousticDensityMap)
                 return;
 
-            DisposeAcousticDensityMap();
-            // COLD ALLOC: NativeArray<float>[512] - 8x8x8 transient acoustic density payload - owner: WorldSpatialHashGrid
-            _acousticDensityMap = new NativeArray<float>(AcousticDensityMapCellCount, DataVaultExemptWorldSpatialAcousticAllocator, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _acousticDensityMap,
-                nameof(WorldSpatialHashGrid),
-                nameof(_acousticDensityMap),
-                NativeMemoryLifetime);
+            for (int i = 0; i < _acousticDensityMap.Length; i++)
+                _acousticDensityMap[i] = 0f;
+            _hasAcousticDensityMap = true;
         }
 
         private static void DisposeAcousticDensityMap()
         {
-            if (_acousticDensityMap.IsCreated)
+            if (_hasAcousticDensityMap)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_acousticDensityMap);
-                _acousticDensityMap.Dispose();
-                _acousticDensityMap = default;
+                for (int i = 0; i < _acousticDensityMap.Length; i++)
+                    _acousticDensityMap[i] = 0f;
+                _hasAcousticDensityMap = false;
             }
         }
 
@@ -1974,7 +2032,8 @@ namespace Hecton8.World
             if (!IsFiniteAup(in listenerAup))
                 return;
 
-            float3 listenerRuntime = listenerAup.ToRuntimeFloat3();
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            float3 listenerRuntime = AUPMath.ResolveCameraRelative(in listenerAup, in runtimeOriginAup);
             Vector3 listenerPosition = new Vector3(listenerRuntime.x, listenerRuntime.y, listenerRuntime.z);
             if (!IsFiniteRuntimePosition(listenerPosition))
                 return;

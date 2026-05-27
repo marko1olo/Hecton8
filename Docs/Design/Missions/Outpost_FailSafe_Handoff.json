@@ -1,16 +1,16 @@
 ﻿{
   "schema": "H8.OUTPOST.FAILSAFE.HANDOFF.V1",
-  "agent": "MISSION_FAIL_SAFE_ARCHITECT",
+  "agent": "OUTPOST_FAILSAFE_STATIC_CONTRACT",
   "evidenceClass": "STATIC_DOC",
-  "sourceBatch": "Docs/Tasks/CURRENT_BATCH.md",
-  "requestedBatch": "CURRENT_BATCH_OSHINO.md",
+  "sourceBatch": "Docs/Design/Missions/Outpost_Failure_Modes.md",
+  "requestedBatch": "NONE_STATIC_CONTRACT",
   "requestedBatchPresent": false,
   "sourceAuthority": {
-    "status": "ACTIVE_BATCH_DRIFT_DETECTED",
-    "expectedPromptId": "MISSION_FAIL_SAFE_ARCHITECT",
-    "expectedPromptRole": "SCENARIO_DESIGNER",
+    "status": "STATIC_MISSION_CONTRACT",
+    "expectedPromptId": "OUTPOST_FAILSAFE_STATIC_CONTRACT",
+    "expectedPromptRole": "DESIGN_MISSIONS",
     "activeBatchContainsPrompt": false,
-    "policy": "Treat this handoff as a historical static design artifact until the Mission Fail-Safe prompt is restored to CURRENT_BATCH.md or an archived prompt is explicitly accepted as source authority."
+    "policy": "Stable mission/design contract. Validate against the prose document, JSON schema, gas constants, and static/editor gates; never against active task or batch files."
   },
   "runtimeAssetDecision": {
     "mutatedRuntimeLocalizationAssets": false,

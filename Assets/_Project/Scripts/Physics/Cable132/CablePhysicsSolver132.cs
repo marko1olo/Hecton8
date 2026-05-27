@@ -458,7 +458,7 @@ namespace Hecton8.Physics
                 }.Schedule(totalSplineVertices, 32, solveHandle);
             }
 
-            return new RecordTetherTelemetryJob
+            return new RecordCableTetherTelemetryJob
             {
                 Nodes = nodePtr,
                 NodeCount = nodes.Length,
@@ -1590,7 +1590,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal unsafe struct RecordTetherTelemetryJob : IJob
+    internal unsafe struct RecordCableTetherTelemetryJob : IJob
     {
         [NoAlias, NativeDisableUnsafePtrRestriction] public CableNodeDTO* Nodes;
         public int NodeCount;

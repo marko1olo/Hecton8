@@ -17,3 +17,5 @@ ShaderVariantCollection:
         passType: 0
       - keywords: DOTS_INSTANCING_ON
         passType: 0
+      - keywords: DOTS_INSTANCING_ON INSTANCING_ON
+        passType: 0

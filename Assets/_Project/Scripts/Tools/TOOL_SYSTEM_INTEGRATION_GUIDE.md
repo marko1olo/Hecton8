@@ -186,11 +186,14 @@ GlobalRegistry.ToolDurability.OnToolRepaired += (toolID, newDurability) =>
 ### Remont instrumenta
 
 ```csharp
+// Runtime repair path: resolve itemHashId during equip/slot command, not inside Tick.
+uint itemHashId = cachedToolItemHashId;
+
 // Polnyy remont
-GlobalRegistry.ToolDurability.RepairToolFull(toolID, maxDurability);
+GlobalRegistry.ToolDurabilityService.TryRepairToolFull(itemHashId, maxDurability);
 
 // Chastichnyy remont
-GlobalRegistry.ToolDurability.RepairTool(toolID, repairAmount, maxDurability);
+GlobalRegistry.ToolDurabilityService.TryRepairTool(itemHashId, repairAmount, maxDurability);
 
 // Proverka stoimosti remonta
 ToolMetadata metadata = tool.Metadata;
@@ -201,8 +204,10 @@ string resourceID = metadata.repairResourceID;
 if (inventory.HasResource(resourceID, cost))
 {
     inventory.RemoveResource(resourceID, cost);
-    GlobalRegistry.ToolDurability.RepairToolFull(metadata.toolID, metadata.maxDurability);
+    GlobalRegistry.ToolDurabilityService.TryRepairToolFull(itemHashId, metadata.maxDurability);
 }
+
+// Legacy string repair APIs exist only for cold compatibility/save bridge code.
 ```
 
 ### Ustanovka uluchsheniy

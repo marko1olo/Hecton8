@@ -2,7 +2,7 @@
 
 Status: `YELLOW / STATIC SOURCE UPDATED / UNITY PROOF PENDING`
 
-## R48 Exact Route Field Normalization
+## Route Field Contract
 
 Route ID: BASE_ATMOSPHERE_LOGISTICS_ROUTE_CARD_SHINOBU_221
 

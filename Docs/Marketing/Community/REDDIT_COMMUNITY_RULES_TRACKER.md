@@ -1,7 +1,7 @@
 ﻿# HECTON-8 Reddit And Community Rules Tracker
 
 Status: pre-posting tracker
-Owner lane: SHINOBU_81 / community operations
+Owner lane: Marketing / community operations
 Runtime impact: none
 
 ## Source Boundary

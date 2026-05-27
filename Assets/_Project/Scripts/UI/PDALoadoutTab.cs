@@ -36,6 +36,7 @@ namespace Hecton8.UI
         private static readonly Color Ready = new Color(0.46f, 0.98f, 0.94f, 0.92f);
         private static readonly Color Missing = new Color(1f, 0.74f, 0.22f, 0.92f);
         private static readonly Color Broken = new Color(1f, 0.48f, 0.38f, 0.92f);
+        private const int CachedLoadoutSlots = 4;
         private const float InvTwoPi = 0.15915494309f;
 
         [Header("References")]
@@ -61,6 +62,11 @@ namespace Hecton8.UI
         // COLD ALLOC: char[1024] — PDA loadout summary composition buffer — owner: PDALoadoutTab
         private readonly char[] _summaryCharBuffer = new char[1024];
         private readonly System.Collections.Generic.Dictionary<ulong, IPlayerToolDataReadModel> _prefabToolCache = new System.Collections.Generic.Dictionary<ulong, IPlayerToolDataReadModel>(32); // COLD ALLOC: Dictionary<ulong, IPlayerToolDataReadModel>(32) — caches prefab tool metadata routes for repeated loadout refreshes — owner: PDALoadoutTab
+
+        private readonly uint[] _slotItemHashCache = new uint[CachedLoadoutSlots]; // COLD ALLOC: uint[4] - PDA slot item hash cache - owner: PDALoadoutTab
+        private readonly uint[] _slotMetadataHashCache = new uint[CachedLoadoutSlots]; // COLD ALLOC: uint[4] - PDA slot metadata hash cache - owner: PDALoadoutTab
+        private readonly ulong[] _slotHashPrefabCache = new ulong[CachedLoadoutSlots]; // COLD ALLOC: ulong[4] - PDA slot hash prefab identity cache - owner: PDALoadoutTab
+        private readonly bool[] _slotHashResolved = new bool[CachedLoadoutSlots]; // COLD ALLOC: bool[4] - PDA slot hash cache validity flags - owner: PDALoadoutTab
 
         private bool _built;
         private bool _refreshDirty;
@@ -97,6 +103,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _recommendedActionLabel;
         private IPlayerInventoryService _inventoryService;
         private IPlayerExpressionReadModel _playerExpressionReadModel;
+        private IToolDurabilityService _toolDurabilityService;
         private bool _registeredToLateFrameDispatcher;
         private bool _registeredHotSwap;
         private IPlayerRuntimeContext _playerRuntimeContext;
@@ -127,6 +134,7 @@ namespace Hecton8.UI
             CachePlayerRuntimeContext(GlobalRegistry.Player);
             CachePlayerInventoryService(GlobalRegistry.PlayerInventory);
             CachePlayerExpressionReadModel(GlobalRegistry.PlayerExpressionReadModel);
+            CacheToolDurabilityService(GlobalRegistry.ToolDurabilityService);
             AutoResolve();
         }
 
@@ -150,6 +158,7 @@ namespace Hecton8.UI
             CachePlayerRuntimeContext(GlobalRegistry.Player);
             CachePlayerInventoryService(GlobalRegistry.PlayerInventory);
             CachePlayerExpressionReadModel(GlobalRegistry.PlayerExpressionReadModel);
+            CacheToolDurabilityService(GlobalRegistry.ToolDurabilityService);
             AutoResolve();
             EnsureBuilt();
             Subscribe();
@@ -165,6 +174,7 @@ namespace Hecton8.UI
             Unsubscribe();
             UnregisterFromLateFrameManager();
             _playerRuntimeContext = null;
+            _toolDurabilityService = null;
         }
 
         /// <inheritdoc />
@@ -259,6 +269,11 @@ namespace Hecton8.UI
             _playerExpressionReadModel = expressionReadModel ?? playerExpressionManager;
         }
 
+        private void CacheToolDurabilityService(IToolDurabilityService durabilityService)
+        {
+            _toolDurabilityService = durabilityService;
+        }
+
         private bool TryGetPlayerExpressionReadModel(out IPlayerExpressionReadModel expressionReadModel)
         {
             expressionReadModel = _playerExpressionReadModel ?? playerExpressionManager;
@@ -319,6 +334,12 @@ namespace Hecton8.UI
                     break;
                 case GlobalRegistryServiceSlot.PlayerExpressionRuntime:
                     CachePlayerExpressionReadModel(currentService as IPlayerExpressionReadModel);
+                    _refreshDirty = true;
+                    if (IsTabActive)
+                        RefreshAll();
+                    break;
+                case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
+                    CacheToolDurabilityService(currentService as IToolDurabilityService);
                     _refreshDirty = true;
                     if (IsTabActive)
                         RefreshAll();
@@ -778,7 +799,7 @@ namespace Hecton8.UI
         {
             if (_slotRoots == null || toolManager == null) return;
 
-            IToolDurabilityService durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurabilityService;
+            IToolDurabilityService durabilitySystem = _toolDurabilityService;
 
             for (int i = 0; i < 4; i++)
             {
@@ -786,11 +807,12 @@ namespace Hecton8.UI
                 IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
                 ItemData item = tool != null ? tool.ToolData : null;
                 ToolMetadata meta = tool != null ? tool.Metadata : null;
+                ResolveSlotDurabilityHashes(i, prefab, tool, meta, out uint itemHash, out uint metadataHash);
 
                 bool active = toolManager.CurrentSlotIndex == i;
                 bool assigned = prefab != null && tool != null;
                 bool available = toolManager.IsToolAvailableInSlot(i);
-                bool broken = meta != null && durabilitySystem != null && durabilitySystem.IsBroken(meta.toolID);
+                bool broken = TryReadBrokenByHashes(durabilitySystem, itemHash, metadataHash, out bool resolvedBroken) && resolvedBroken;
 
                 _slotBgs[i].color = active ? BoxActive : BoxBg;
                 _slotIcons[i].sprite = item != null ? item.icon : null;
@@ -850,8 +872,9 @@ namespace Hecton8.UI
                 }
 
                 float weight = item != null ? item.weight : 0f;
-                float currentDurability = meta != null && durabilitySystem != null
-                    ? durabilitySystem.GetDurability(meta.toolID, meta.maxDurability)
+                float currentDurability = meta != null &&
+                                          TryReadDurabilityByHashes(durabilitySystem, itemHash, metadataHash, meta.maxDurability, out float resolvedDurability)
+                    ? resolvedDurability
                     : (meta != null ? meta.maxDurability : 0f);
                 float normalized = meta != null
                     ? Mathf.Clamp01(currentDurability / Mathf.Max(1f, meta.maxDurability))
@@ -860,8 +883,8 @@ namespace Hecton8.UI
                 SetSlotBodyText(
                     _slotBodies[i],
                     ResolveCategoryLabel(item),
-                    item != null && playerInventory != null
-                        ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(item.PersistentId))
+                    itemHash != 0u && playerInventory != null
+                        ? playerInventory.CountTotal(unchecked((int)itemHash))
                         : 0,
                     weight,
                     normalized,
@@ -896,7 +919,7 @@ namespace Hecton8.UI
             string recommendedPresetName = "GENERAL";
             string recommendedPresetDirective = "No authored target in front of the diver. General-purpose expedition loadout remains valid.";
 
-            IToolDurabilityService durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurabilityService;
+            IToolDurabilityService durabilitySystem = _toolDurabilityService;
 
             for (int i = 0; i < toolManager.SlotCount; i++)
             {
@@ -909,7 +932,8 @@ namespace Hecton8.UI
                 if (tool.ToolData != null)
                     totalWeight += tool.ToolData.weight;
 
-                if (tool.Metadata != null && durabilitySystem != null && durabilitySystem.IsBroken(tool.Metadata.toolID))
+                ResolveSlotDurabilityHashes(i, prefab, tool, tool.Metadata, out uint itemHash, out uint metadataHash);
+                if (TryReadBrokenByHashes(durabilitySystem, itemHash, metadataHash, out bool resolvedBroken) && resolvedBroken)
                     broken++;
                 else if (toolManager.IsToolAvailableInSlot(i))
                     ready++;
@@ -1104,8 +1128,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            IToolDurabilityService durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurabilityService;
-            if (tool.Metadata != null && durabilitySystem != null && durabilitySystem.IsBroken(tool.Metadata.toolID))
+            IToolDurabilityService durabilitySystem = _toolDurabilityService;
+            ResolveSlotDurabilityHashes(slotIndex, prefab, tool, tool.Metadata, out uint itemHash, out uint metadataHash);
+            if (TryReadBrokenByHashes(durabilitySystem, itemHash, metadataHash, out bool resolvedBroken) && resolvedBroken)
             {
                 NotifyUpperSuffix(true, item != null ? item.itemName : "TOOL", " IS BROKEN".AsSpan());
                 return;
@@ -1433,11 +1458,101 @@ namespace Hecton8.UI
             {
                 GameObject prefab = preset.slotPrefabs[i];
                 IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
-                if (tool?.ToolData != null && playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(tool.ToolData.PersistentId)))
+                uint itemHash = ResolveToolItemHash(tool);
+                if (itemHash != 0u && playerInventory.ContainsItem(unchecked((int)itemHash)))
                     count++;
             }
 
             return count;
+        }
+
+        private void ResolveSlotDurabilityHashes(
+            int slotIndex,
+            GameObject prefab,
+            IPlayerToolDataReadModel tool,
+            ToolMetadata metadata,
+            out uint itemHash,
+            out uint metadataHash)
+        {
+            itemHash = 0u;
+            metadataHash = 0u;
+
+            if ((uint)slotIndex >= CachedLoadoutSlots)
+            {
+                itemHash = ResolveToolItemHash(tool);
+                metadataHash = ResolveToolMetadataHash(metadata);
+                return;
+            }
+
+            ulong prefabId = prefab != null ? EntityId.ToULong(prefab.GetEntityId()) : 0ul;
+            if (_slotHashResolved[slotIndex] && _slotHashPrefabCache[slotIndex] == prefabId)
+            {
+                itemHash = _slotItemHashCache[slotIndex];
+                metadataHash = _slotMetadataHashCache[slotIndex];
+                return;
+            }
+
+            itemHash = ResolveToolItemHash(tool);
+            metadataHash = ResolveToolMetadataHash(metadata);
+            _slotItemHashCache[slotIndex] = itemHash;
+            _slotMetadataHashCache[slotIndex] = metadataHash;
+            _slotHashPrefabCache[slotIndex] = prefabId;
+            _slotHashResolved[slotIndex] = true;
+        }
+
+        private static uint ResolveToolItemHash(IPlayerToolDataReadModel tool)
+        {
+            if (tool?.ToolData == null)
+                return 0u;
+
+            string persistentId = tool.ToolData.PersistentId;
+            return !string.IsNullOrEmpty(persistentId)
+                ? unchecked((uint)Hecton.Localization.LocHash.Compute(persistentId))
+                : 0u;
+        }
+
+        private static uint ResolveToolMetadataHash(ToolMetadata metadata)
+        {
+            return metadata != null && !string.IsNullOrEmpty(metadata.toolID)
+                ? unchecked((uint)Animator.StringToHash(metadata.toolID))
+                : 0u;
+        }
+
+        private static bool TryReadBrokenByHashes(
+            IToolDurabilityService durabilitySystem,
+            uint itemHash,
+            uint metadataHash,
+            out bool broken)
+        {
+            broken = false;
+            if (durabilitySystem == null)
+                return false;
+
+            if (itemHash != 0u && durabilitySystem.TryReadBroken(itemHash, out broken))
+                return true;
+
+            return metadataHash != 0u &&
+                   metadataHash != itemHash &&
+                   durabilitySystem.TryReadBroken(metadataHash, out broken);
+        }
+
+        private static bool TryReadDurabilityByHashes(
+            IToolDurabilityService durabilitySystem,
+            uint itemHash,
+            uint metadataHash,
+            float maxDurability,
+            out float durability)
+        {
+            durability = maxDurability;
+            if (durabilitySystem == null)
+                return false;
+
+            if (itemHash != 0u && durabilitySystem.TryReadDurability(itemHash, maxDurability, out durability))
+                return true;
+
+            return metadataHash != 0u &&
+                   metadataHash != itemHash &&
+                   durabilitySystem.TryReadDurability(metadataHash, maxDurability, out durability);
         }
 
         private IPlayerToolDataReadModel ResolvePrefabTool(GameObject prefab)

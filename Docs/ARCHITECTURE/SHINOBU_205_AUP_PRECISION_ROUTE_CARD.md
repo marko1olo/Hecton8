@@ -8,7 +8,7 @@ Domain: Core determinism, AUP localization, floating-origin precision
 
 Status: STATIC SOURCE UPDATED / RUNTIME PROOF PENDING
 
-## R48 Exact Route Field Normalization
+## Route Field Contract
 
 Route ID: SHINOBU_205_AUP_PRECISION_ROUTE_CARD
 

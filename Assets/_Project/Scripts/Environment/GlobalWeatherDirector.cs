@@ -1,4 +1,5 @@
 ﻿using Hecton8.Core;
+using Hecton8.Celestial;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -256,6 +257,8 @@ namespace Hecton8.Environment
         private bool _initialized;
         private bool _weatherShaderDirty;
         private IFluidCurrentWriteSink _fluidCurrentSink;
+        private BiomeMatrixDirector _cachedBiomeMatrix;
+        private HectonCelestialEngine _cachedCelestialEngine;
         private bool _atmosphericShaderDirty;
         private bool _noirFogLutDirty;
         private bool _transitioning;
@@ -316,6 +319,9 @@ namespace Hecton8.Environment
 
         private void Awake()
         {
+            if (!Application.isPlaying)
+                return;
+
             SeedRandom();
             ResolveDependencies();
             InitializeRuntimeStateIfNeeded();
@@ -329,6 +335,9 @@ namespace Hecton8.Environment
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
             TryRegisterTickManager();
             TryRegisterHotSwapListener();
             ResolveDependencies();
@@ -349,6 +358,12 @@ namespace Hecton8.Environment
 
         private void OnDisable()
         {
+            if (!Application.isPlaying)
+            {
+                ClearEditorRuntimeResidue();
+                return;
+            }
+
             TryUnregisterHotSwapListener();
             TryUnregisterTickManager();
             if (ReferenceEquals(GlobalRegistry.Weather, this))
@@ -374,10 +389,33 @@ namespace Hecton8.Environment
 
         private void OnDestroy()
         {
+            if (!Application.isPlaying)
+            {
+                ClearEditorRuntimeResidue();
+                return;
+            }
+
             TryUnregisterHotSwapListener();
             TryUnregisterTickManager();
             if (ReferenceEquals(GlobalRegistry.Weather, this))
                 GlobalRegistry.UnregisterWeatherService(this);
+            ReleaseNoirFogLutResources();
+        }
+
+        private void ClearEditorRuntimeResidue()
+        {
+            if (ReferenceEquals(GlobalRegistry.Weather, this))
+                GlobalRegistry.UnregisterWeatherService(this);
+
+            _registeredToTickManager = false;
+            _registeredToFrostTickManager = false;
+            _registeredToLateFrameTickManager = false;
+            _hotSwapRegistered = false;
+            _initialized = false;
+            _weatherShaderDirty = false;
+            _atmosphericShaderDirty = false;
+            _noirFogLutDirty = false;
+            _hasPublishedWeatherEvent = false;
             ReleaseNoirFogLutResources();
         }
 
@@ -386,11 +424,21 @@ namespace Hecton8.Environment
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.FluidRuntime)
+            if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
+            {
+                if (_fluidCurrentSink == null || ReferenceEquals(previousService, _fluidCurrentSink))
+                    _fluidCurrentSink = currentService as IFluidCurrentWriteSink;
                 return;
+            }
 
-            if (_fluidCurrentSink == null || ReferenceEquals(previousService, _fluidCurrentSink))
-                _fluidCurrentSink = currentService as IFluidCurrentWriteSink;
+            if (serviceSlot == GlobalRegistryServiceSlot.BiomeMatrixRuntime)
+            {
+                _cachedBiomeMatrix = currentService as BiomeMatrixDirector;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
+                _cachedCelestialEngine = currentService as HectonCelestialEngine;
         }
 
         /// <summary>
@@ -560,6 +608,9 @@ namespace Hecton8.Environment
                 if (_fluidCurrentSink == null)
                     _fluidCurrentSink = GlobalRegistry.FluidCurrentWriteSink;
             }
+
+            _cachedBiomeMatrix = GlobalRegistry.BiomeMatrix;
+            _cachedCelestialEngine = GlobalRegistry.CelestialEngine;
         }
 
         private void InitializeRuntimeStateIfNeeded()
@@ -567,6 +618,7 @@ namespace Hecton8.Environment
             if (_initialized)
                 return;
 
+            WeatherEvents.PrepareCold();
             _activePhase = WeatherPhase.Calm;
             _sourcePhase = WeatherPhase.Calm;
             _targetPhase = WeatherPhase.Calm;
@@ -863,7 +915,7 @@ namespace Hecton8.Environment
 
         private float ResolveCurrentBiomeDepthMeters()
         {
-            BiomeMatrixDirector biomeMatrix = BiomeMatrixDirector.ActiveRuntimeInstance;
+            BiomeMatrixDirector biomeMatrix = _cachedBiomeMatrix;
             return biomeMatrix != null ? math.max(0f, biomeMatrix.CurrentDepthMeters) : 0f;
         }
 
@@ -960,7 +1012,7 @@ namespace Hecton8.Environment
 
         private void PublishAtmosphericBridgeShaderState()
         {
-            CelestialRuntimeSnapshot celestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshot;
+            CelestialRuntimeSnapshot celestialSnapshot = ReadCachedCelestialRuntimeSnapshot();
             float weatherIntensity01 = math.saturate(_runtimeSnapshot.WeatherIntensity);
             float extinctionTurbidityShift = weatherIntensity01 * 0.35f;
             float abyssalFogDensity = math.lerp(
@@ -1006,6 +1058,12 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(
                 _GlobalWindDirectionId,
                 new Vector4(windDirection.x, windDirection.y, windDirection.z, windMagnitude));
+        }
+
+        private CelestialRuntimeSnapshot ReadCachedCelestialRuntimeSnapshot()
+        {
+            HectonCelestialEngine celestialEngine = _cachedCelestialEngine;
+            return celestialEngine != null ? celestialEngine.RuntimeSnapshot : default;
         }
 
         private static void ClearAtmosphericBridgeShaderState()

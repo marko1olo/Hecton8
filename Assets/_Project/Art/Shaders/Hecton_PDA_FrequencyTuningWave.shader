@@ -24,7 +24,7 @@ Shader "Hecton8/PDA/FrequencyTuningWave"
             Name "FrequencyTuningWave"
 
             HLSLPROGRAM
-            #pragma target 4.5
+            #pragma target 3.5
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
@@ -36,6 +36,12 @@ Shader "Hecton8/PDA/FrequencyTuningWave"
             float4 _HectonFrequencyTuningTimeErrorStage;
             float4 _HectonFrequencyTuningWaveScalars;
             float4 _HectonFrequencyTuningWaveLayout;
+
+            float TriangleWaveSigned(float phase)
+            {
+                float lane = frac(phase + 0.25);
+                return 1.0 - abs(lane * 2.0 - 1.0) * 2.0;
+            }
 
             struct Attributes
             {
@@ -54,8 +60,7 @@ Shader "Hecton8/PDA/FrequencyTuningWave"
             Varyings Vert(Attributes input)
             {
                 Varyings output;
-                const float TwoPi = 6.28318530718;
-                uint segmentCount = max(1u, (uint)round(_HectonFrequencyTuningWaveLayout.x));
+                uint segmentCount = max(1u, (uint)(_HectonFrequencyTuningWaveLayout.x + 0.5));
                 bool playerWave = input.instanceID >= segmentCount;
                 uint segmentIndex = playerWave ? input.instanceID - segmentCount : input.instanceID;
                 float invSegmentCount = rcp(max(1.0, (float)segmentCount));
@@ -66,8 +71,8 @@ Shader "Hecton8/PDA/FrequencyTuningWave"
                 float frequency = playerWave ? _HectonFrequencyTuningWaveScalars.z : _HectonFrequencyTuningWaveScalars.x;
                 float amplitude = playerWave ? _HectonFrequencyTuningWaveScalars.w : _HectonFrequencyTuningWaveScalars.y;
                 float baseY = playerWave ? -0.18 : 0.18;
-                float wave0 = sin(normalized0 * TwoPi * frequency) * amplitude;
-                float wave1 = sin(normalized1 * TwoPi * frequency) * amplitude;
+                float wave0 = TriangleWaveSigned(normalized0 * frequency) * amplitude;
+                float wave1 = TriangleWaveSigned(normalized1 * frequency) * amplitude;
                 float2 start = float2((normalized0 - 0.5) * localWidth, baseY * localHeight + wave0 * localHeight * 0.32);
                 float2 finish = float2((normalized1 - 0.5) * localWidth, baseY * localHeight + wave1 * localHeight * 0.32);
                 float2 delta = finish - start;
@@ -96,7 +101,7 @@ Shader "Hecton8/PDA/FrequencyTuningWave"
             half4 Frag(Varyings input) : SV_Target
             {
                 float2 centered = input.uv * 2.0 - 1.0;
-                half sideMask = (half)(1.0 - smoothstep(0.72, 1.0, abs(centered.y)));
+                half sideMask = (half)saturate((1.0 - abs(centered.y)) * 3.5714286);
                 half mask = sideMask;
                 half alpha = input.color.a * mask;
                 return half4(input.color.rgb * (0.72h + mask * 0.55h), alpha);

@@ -1,0 +1,47 @@
+﻿{
+  "agent": "UNKNOWN",
+  "date": "2026-05-27",
+  "status": "SOURCE_PATCHED_STATIC_PROOF_PASSED_BUILD_GUARD_BLOCKED",
+  "evidenceClass": [
+    "STATIC_SOURCE",
+    "CLI_BUILD_GUARD",
+    "DOC_VALIDATION"
+  ],
+  "changedFiles": [
+    "Assets/_Project/Scripts/UI/PhysicalPanelButton.cs"
+  ],
+  "sourceChange": {
+    "removedGlobalRegistryLateFrameWrapperFromPhysicalPanelButton": true,
+    "directDispatcherLaneRegister": true,
+    "directDispatcherLaneUnregister": true,
+    "newGlobalRouteAdded": false
+  },
+  "staticProof": {
+    "globalRegistryTryRegisterLateFrameTickableHitsInTouchedFile": 0,
+    "globalRegistryUnregisterLateFrameTickableHitsInTouchedFile": 0,
+    "globalRegistryDispatcherHitsInTouchedFile": 0,
+    "cleanProductionHotMethodForbiddenRowsAfterPatch": 0,
+    "braceBalance": 0,
+    "diffCheck": "PASS_WITH_LINE_ENDING_WARNINGS_ONLY"
+  },
+  "build": {
+    "log": "Docs/Reports/BUILD_UNKNOWN_LATEFRAME_REGISTRY_HOTPATH_RECHECK_20260527.log",
+    "attempts": 30,
+    "launched": false,
+    "blockedBy": "compilerProcessCount=1 on every attempt",
+    "activeCompilerProcessObserved": "Unity Editor dotnet 6000.4.1f1 NetCoreRuntime",
+    "reachedCSharpCompilation": false
+  },
+  "first20MinutesRoute": "Diegetic physical panel/button interaction path",
+  "runtimeProfilerMicrosecondsClaimed": 0,
+  "dirtyFilesTouched": false,
+  "documentationValidation": {
+    "verifyDocStructurePass": true,
+    "activeDocCount": 668,
+    "encodingWithoutUtf8Sig": 0,
+    "oopDocScannerFinalPass": true,
+    "oopDocScannerActiveFileCount": 668,
+    "sourceSyncPass": true,
+    "wordReductionPercent": 50.851091154407946
+  }
+}

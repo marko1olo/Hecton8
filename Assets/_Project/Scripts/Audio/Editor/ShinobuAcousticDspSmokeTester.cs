@@ -99,7 +99,7 @@ namespace Hecton8.Audio.Editor
             AssertContains(spatial, "out NativeArray<AcousticOcclusionTelemetryEntry> blackBox", "SDF recorder ring writes through a scoped DataVault view", builder, ref failures);
             AssertContains(spatial, "BufferID.VoxelSdfTexture3D", "Spatial audio aliases the owner-published voxel SDF buffer", builder, ref failures);
             AssertContains(spatial, "TrySnapshotAcousticSdfPayload", "Spatial audio snapshots owner-published SDF metadata before scheduling", builder, ref failures);
-            AssertContains(spatial, "HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload", "Spatial audio uses the SDF owner's published origin/dimensions/cell/range", builder, ref failures);
+            AssertContains(spatial, "HectonVoxelVolume.TryAcquireClosestPublishedSonarSdfPayloadReadLease", "Spatial audio uses the SDF owner's leased origin/dimensions/cell/range", builder, ref failures);
             AssertContains(spatial, "SdfVoxels = hasVoxelSdf ? sdfVoxels : default", "SDF kernel receives validated owner voxels before mock fallback", builder, ref failures);
             AssertContains(spatial, "SdfOriginMeters = hasVoxelSdf ? sdfOrigin - _virtualListenerSdfProbePosition : float3.zero", "SDF origin is converted into listener-relative space after AUP subtraction", builder, ref failures);
             AssertContains(spatial, "PopulateSelectedAcousticSources", "SDF kernel runs on sorted selected voices, not unsorted ingress rows", builder, ref failures);

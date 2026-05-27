@@ -1,0 +1,437 @@
+﻿{
+    "agent":  1337,
+    "role":  "PHYSICS_CULLING_OVERSEER_AND_SLEEP_COORDINATOR",
+    "taskCount":  19,
+    "phase":  "implementation_static_validation_apex_rerun33_clear_lock_acquisition_masks_static_green_build_deferred_cpu_gate",
+    "batchPromptPath":  "Docs/Tasks/CURRENT_BATCH.md",
+    "domain":  {
+                   "declared":  "Assets/_Project/Scripts/Physics",
+                   "actualCullingOwner":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                   "criticalJustificationForAdjacentRootEdit":  "The project already placed the culling scheduler, AUP cache refresh, and deferred Rigidbody Sleep/Wake sync in the root GlobalPhysicsStateManager partial. Hardening those methods is required to fix physics culling without duplicating authority.",
+                   "criticalJustificationForCoreSignalContractEdit":  "WakeRequestSignal and PhysicsImpactSignal are direct cross-domain DTOs consumed by Physics culling wake routing. Padding-only contract edits keep ABI sizes/semantic offsets stable while satisfying byte-padding ARM64 proof.",
+                   "criticalJustificationForPhysicsApplyEdit":  "PhysicsApplySystem.cs is explicitly named in the 1337 prompt and owns deferred Rigidbody force/event payloads plus kinematic weld snap routing. DTO layout and direct force cleanup are inside the culling/sleep coordination surface.",
+                   "criticalJustificationForGlobalPhysicsScratchCapacityEdit":  "GlobalPhysicsStateManager owns physics culling collider/sleep registration caches. Raising cold scratch capacity prevents List\u003cT\u003e growth during culling registration without changing semantic cached collider limits."
+               },
+    "evidence":  {
+                     "existingBurstJob":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:2162",
+                     "doubleAupSubtractionBeforeFloatCast":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:2229",
+                     "deferredNonBlockingFinalize":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs:3084",
+                     "changedIndexSyncDrain":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs:3110",
+                     "failClosedLocks":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs:2959",
+                     "sleepWakeApply":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs:3187"
+                 },
+    "defectsFound":  [
+                         {
+                             "id":  "AUP_STALE_CACHE",
+                             "severity":  "critical",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  3645,
+                             "fact":  "TryUpdateTrackedBodyAupCache returns LastValidAup before sampling the current Rigidbody position, so moving bodies can be culled from stale coordinates."
+                         },
+                         {
+                             "id":  "QUALITY_CONSTANT",
+                             "severity":  "high",
+                             "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                             "line":  977,
+                             "fact":  "ResolvePhysicsCullingHardwareRadiusSqScale returns a fixed 2.25 instead of consuming continuous HomeostasisBrain.GlobalQualityWeight."
+                         },
+                         {
+                             "id":  "TELEMETRY_32B",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                             "line":  72,
+                             "fact":  "Frame telemetry is explicit but only 32 bytes and lacks job/sync microsecond and quality proof fields."
+                         },
+                         {
+                             "id":  "BLACKBOX_NO_FILE",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  3300,
+                             "fact":  "DumpPhysicsCullingBlackBox only pushes GlobalTelemetryBus event; it does not dump the 300-frame native ring to Docs/AgentLogs."
+                         },
+                         {
+                             "id":  "WAKE_OVERFLOW_SYNC_SCAN",
+                             "severity":  "high",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  3631,
+                             "fact":  "WakeCulledBodiesNear fell back to forced job completion and an O(N) tracked-body scan when deferred wake-region enqueue failed."
+                         },
+                         {
+                             "id":  "DTO_BYTE_FLAGS_AFTER_PADDING",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                             "line":  32,
+                             "fact":  "FrozenVelocityDTO and PhysicsCullingDebugBody placed semantic byte flags after byte-padding holes instead of at the start of the 1-byte section."
+                         },
+                         {
+                             "id":  "TARGET_WAKE_FLUSH_INDEXER_LOCK_CHURN",
+                             "severity":  "high",
+                             "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                             "line":  1497,
+                             "fact":  "Targeted wake flush mutated multiple Vault lanes through per-indexer fallback locks instead of one scoped compaction-aware write-lock phase."
+                         },
+                         {
+                             "id":  "WAKE_ENQUEUE_FALSE_CONTENDED_DOUBLE_COUNT",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  3631,
+                             "fact":  "WakeCulledBodiesNear incremented contention for every false enqueue return, double-counting real failures and misclassifying invalid input or floating-origin shift."
+                         },
+                         {
+                             "id":  "TARGET_WAKE_NULL_BODY_STRUCTURAL_BARRIER",
+                             "severity":  "high",
+                             "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                             "line":  1616,
+                             "fact":  "ProcessTargetedPhysicsWakeRequest called RemoveTrackedBodyAt for stale/null Rigidbody while targeted wake flush locks were held; RemoveTrackedBodyAt begins with CompletePhysicsCullingJobForStateMutationBarrier(discardResults: true)."
+                         },
+                         {
+                             "id":  "NULL_BODY_STRUCTURAL_CLEANUP_UNDER_CULLING_LOCKS",
+                             "severity":  "high",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  2978,
+                             "fact":  "RunPhysicsCullingSlowTick and DispatchPhysicsCullingResults could call RemoveTrackedBodyAt for null Rigidbody while scoped scheduling/dispatch Vault write locks were held."
+                         },
+                         {
+                             "id":  "STALE_TARGET_WAKE_INSTANCE_MAPPING_AFTER_NULL_REMOVAL",
+                             "severity":  "high",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  3832,
+                             "fact":  "When removedBody was null, RemoveTrackedBodyAt could not remove the old _trackedBodyIndexByInstanceId key, allowing targeted wake lookup to hit the body swapped into that lane."
+                         },
+                         {
+                             "id":  "FIXEDTICK_COLLIDER_LOD_BROAD_SCAN",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  1416,
+                             "fact":  "FixedTick ran ApplyColliderLodHysteresisInternal every physics step, scanning all tracked bodies despite a 5-second simplification hysteresis."
+                         },
+                         {
+                             "id":  "FIXEDTICK_ADDED_MASS_BROAD_SCAN",
+                             "severity":  "high",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  1417,
+                             "fact":  "FixedTick ran ApplyAddedMassTensorState over all tracked bodies every physics step even though tensor changes only depend on rare hydrodynamic submersion updates."
+                         },
+                         {
+                             "id":  "FIXEDTICK_CONNECTION_LOCK_FULL_BODY_CLEAR",
+                             "severity":  "high",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  2337,
+                             "fact":  "EvaluateConnections cleared compensation/culling ref counts by scanning every tracked body each FixedTick, even when connection ownership is bounded by MaxTrackedConnections."
+                         },
+                         {
+                             "id":  "PRIVATE_TELEMETRY_DTO_FIELD_ORDER",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  491,
+                             "fact":  "PhysicsCullingTelemetryEntry placed 4-byte fields after ushort/byte fields; the 64B size was correct but the pointer-first/field-width ordering proof was not."
+                         },
+                         {
+                             "id":  "NULL_BODY_CLEANUP_ACTIVE_JOB_BARRIER",
+                             "severity":  "high",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  3937,
+                             "fact":  "Null tracked-body cleanup could still route through RemoveTrackedBodyAt while a culling job was active; that method force-completes/discards active culling work as a structural mutation barrier."
+                         },
+                         {
+                             "id":  "RIGIDBODY_AUPS_CONTRACT_PUBLISHED_RELATIVE_VALUES",
+                             "severity":  "critical",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  3080,
+                             "fact":  "BufferID.RigidbodyAUPs is consumed by rollback/hash reports as AupExactDouble3, but the physics owner published camera-relative delta values during culling refresh."
+                         },
+                         {
+                             "id":  "IMPACT_SIGNAL_TAIL_PADDING_WIDTH",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/Core/Contracts/PhysicsImpactContracts.cs",
+                             "line":  39,
+                             "fact":  "PhysicsImpactSignal used uint/ulong tail padding after byte fields even though GlobalPhysicsStateManager emits and consumes this payload for impact wake routing."
+                         },
+                         {
+                             "id":  "SHINOBU_CLEAR_PER_INDEXER_LOCK_CHURN",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                             "line":  797,
+                             "fact":  "ClearShinobu37PhysicsCullingState cleared multiple Vault-backed culling lanes through repeated indexer-level write locks instead of a scoped reset transaction."
+                         },
+                         {
+                             "id":  "ROOT_RUNTIME_CLEAR_PER_INDEXER_LOCK_CHURN",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  4316,
+                             "fact":  "ClearRuntimeState cleared root impact, last-position, AUP, result, distance, awake, command, and body telemetry lanes through repeated indexer-level Vault write locks instead of a scoped reset transaction."
+                         },
+                         {
+                             "id":  "FIXEDTICK_LAST_VALID_POSITION_INDEXER_LOCK_CHURN",
+                             "severity":  "high",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                             "line":  2512,
+                             "fact":  "RefreshTrackedBodies wrote _lastValidPositions through VaultBufferBinding indexer for every finite tracked body every FixedTick, causing per-body write-lock churn in the owner-thread physics path."
+                         },
+                         {
+                             "id":  "PHYSICS_APPLY_EVENT_DTO_WIDE_PADDING",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                             "line":  92,
+                             "fact":  "Force/acoustic/event DTOs used ushort/uint/ulong tail padding after semantic byte fields, violating the byte-padding ARM64 proof even though sizes and semantic offsets were stable."
+                         },
+                         {
+                             "id":  "PHYSICS_APPLY_DTO_LAYOUT_NOT_VALIDATED",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                             "line":  257,
+                             "fact":  "PhysicsCullingLayout1337 did not validate ForcePacket, acoustic event DTOs, or RemovedPhysicsEventPayload, leaving PhysicsApplySystem payload layout proof as a manual report only."
+                         },
+                         {
+                             "id":  "KINEMATIC_WELD_SNAP_DISCARDED_IMPULSE",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                             "line":  4089,
+                             "fact":  "ApplyKinematicWeldSnap applied a VelocityChange impulse and then immediately made the body kinematic, zeroed velocities, snapped pose, and slept it, wasting a direct PhysX force call."
+                         },
+                         {
+                             "id":  "PHYSICS_APPLY_POSTFIXED_BUFFER_GROWTH",
+                             "severity":  "high",
+                             "file":  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                             "line":  2531,
+                             "fact":  "PostFixedTick could call EnsureForcePacketBuffers/EnsureValidationBuffers through the swap/validation path, allowing IDataVault.EnsureGenerationHandle from a hot fixed-step swap path."
+                         },
+                         {
+                             "id":  "PHYSICS_APPLY_FORCE_PACKET_RAW_VAULT_WRITES",
+                             "severity":  "critical",
+                             "file":  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                             "line":  2118,
+                             "fact":  "Force packet enqueue, validation-copy, flush clear, and clear-queued paths wrote Vault-owned NativeArray views without TryAcquireWriteLock/ReleaseWriteLock proof."
+                         },
+                         {
+                             "id":  "PHYSICS_COLLIDER_DISCOVERY_SCRATCH_GROWTH_RISK",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs; Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                             "line":  615,
+                             "fact":  "Collider discovery used small List\u003cT\u003e scratch capacities, so normal compound bodies or submarine hulls could grow managed lists during registration or first hull arm."
+                         },
+                         {
+                             "id":  "PHYSICS_APPLY_VALIDATION_JOB_UNREGISTERED_HANDLE",
+                             "severity":  "medium",
+                             "file":  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                             "line":  3719,
+                             "fact":  "ValidateForcePacketsJob was scheduled against Vault-backed validation packet/mask views without registering the active JobHandle through H8Memory."
+                         }
+                     ],
+    "phase0Decision":  "Patch existing owner path. Do not add parallel culling authority.",
+    "implementation":  {
+                           "filesChanged":  [
+                                                "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                                "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                                                "Assets/_Project/Scripts/Physics/Editor/PhysicsCullingMemorySovereigntyValidator1337.cs",
+                                                "Docs/Tasks/Status_1337.md",
+                                                "Docs/AgentLogs/Rationale_1337.md",
+                                                "Docs/AgentLogs/LOG_1337.md",
+                                                "Docs/Reports/PHYSICS_CULLING_OPTIMIZATION_REPORT_1337.json",
+                                                "Docs/Reports/PHYSICS_CULLING_NATIVE_FIELD_AUDIT_1337.json",
+                                                "Docs/Reports/PHYSICS_CULLING_HOTPATH_AUDIT_1337.json",
+                                                "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337.json",
+                                                "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337.json",
+                                                "Assets/_Project/Scripts/Core/Signals/PhysicsWakeSignalContracts.cs",
+                                                "Assets/_Project/Scripts/Core/Contracts/PhysicsImpactContracts.cs",
+                                                "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                                                "Docs/Reports/PHYSICS_APPLY_LAYOUT_AUDIT_1337_RERUN28.json",
+                                                "Docs/Reports/PHYSICS_APPLY_FORCE_PACKET_LOCK_AUDIT_1337_RERUN29.json",
+                                                "Docs/Reports/PHYSICS_CULLING_TOKEN_AUDIT_1337_RERUN29.json",
+                                                "Docs/Reports/PHYSICS_APPLY_LAYOUT_AUDIT_1337_RERUN29.json",
+                                                "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN29.json",
+                                                "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN29.json",
+                                                "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN29.json"
+                                            ],
+                           "codeChanges":  [
+                                               "Fixed body AUP refresh so current rigidbody position is sampled each culling slow tick, with last-valid AUP only as invalid-position fallback.",
+                                               "Replaced constant culling radius hardware scale with continuous HomeostasisBrain.GlobalQualityWeight smoothstep mapping.",
+                                               "Widened frame and body telemetry rings to 64-byte explicit layouts with job/sync microseconds, quality, radius scale, lock contentions, and hashes.",
+                                               "Added raw black-box dump to Docs/AgentLogs/Dump_1337_PhysicsCulling.bin.",
+                                               "Added cold ARM64 layout validator and editor mock-spam fuzzer menu.",
+                                               "Added scoped GlobalDataVault write-lock acquisition/release wrappers for Physics culling scheduling and result dispatch phases.",
+                                               "Moved invalid-input black-box dumping out of the dispatch write-lock phase by recording scalar dump intent and emitting after finally-release.",
+                                               "Removed unused legacy PhysicsDistanceCullingJob from GlobalPhysicsStateManager.cs.",
+                                               "Rewrote active Shinobu37 solver decisions to mask/math.select style; remaining job Execute if-statements are fail-closed bounds guards only.",
+                                               "Removed remaining short-circuit boolean OR from the scheduled solver body by converting sleepActive and IsOutsideFrustum OR reductions to non-short-circuit boolean OR.",
+                                               "Moved normal acoustic/impact/WakeRequest wake pulses into the Burst wake lane with value-copied AUP wake-region payloads and kept the O(N) immediate wake scan only as fallback.",
+                                               "Added wake-job schedule timestamp and H8Memory active-job registration so wake batches use the same accounting route as distance culling jobs.",
+                                               "Moved targeted wake requests out of pre-schedule job-result scratch lanes and into direct owner-phase restore; removed the dead manual changed-index helper.",
+                                               "Removed hot-path EnsureNativeState calls from targeted and region wake enqueue routes; wake lanes now fail closed and publish through scoped method-local Vault write locks.",
+                                               "Replaced WakeRequestSignal tail padding ulong fields with explicit private byte padding and added WakeRequestSignal size/offset checks to PhysicsCullingLayout1337.",
+                                               "Removed immediate WakeCulledBodiesNear fallback on deferred wake-region enqueue failure; overflow now fails closed through contention telemetry instead of force-completing jobs and scanning all tracked bodies.",
+                                               "Moved FrozenVelocityDTO and PhysicsCullingDebugBody byte flags to the start of their 1-byte sections and expanded PhysicsCullingLayout1337 offset validation.",
+                                               "Wrapped targeted wake flush in scoped Vault write locks for wake mirror, wake count, frozen velocity, state age, and DTO lanes.",
+                                               "Removed caller-side contention increment from WakeCulledBodiesNear so invalid/shift false returns do not pollute lock telemetry and real failures are counted once by TryQueuePhysicsCullingWakeRegion.",
+                                               "Changed null-body targeted wake handling to fail closed with return; stale body cleanup remains owned by normal structural unregister/removal paths outside the targeted wake flush lock phase.",
+                                               "Added RemoveNullTrackedBodiesOutsidePhysicsCullingLocks and moved null tracked-body structural cleanup outside scheduling and dispatch Vault write-lock phases.",
+                                               "Cached RigidbodyState.EntityInstanceHash and remove cached entity/instance dictionary keys before lane swap, even for destroyed/null Unity objects.",
+                                               "Moved collider LOD hysteresis from fixed-step cadence to the slow-cadence physics culling budget while preserving elapsed-time hysteresis accounting.",
+                                               "Replaced per-FixedTick added-mass O(N) scanning with a bounded preallocated dirty-index queue marked by SetHydrodynamicSubmersionInternal and drained once per owner FixedTick.",
+                                               "Requeued moved dirty added-mass state during tracked-body lane swaps and cleared the dirty queue during ClearRuntimeState.",
+                                               "Replaced EvaluateConnections all-body ref clearing with a bounded previous-touched connection body index list and one-shot full-clear fallback after structural body removal.",
+                                               "Reordered private PhysicsCullingTelemetryEntry fields and validator offsets so 4-byte fields precede 2-byte and 1-byte fields with explicit tail byte padding.",
+                                               "Added TryRemoveNullTrackedBodyAt and _deferredNullTrackedBodyCleanup so null-body cleanup cannot force-complete active culling jobs or run structural lane mutation inside Vault lock phases.",
+                                               "Changed BufferID.RigidbodyAUPs publication to AbsoluteUniversePosition.ToAbsoluteDouble3() so rollback/hash consumers receive authoritative exact AUP double3 values.",
+                                               "Replaced PhysicsImpactSignal tail uint/ulong padding with explicit byte padding at offsets 104..127 and added PhysicsImpactSignal plus PhysicsImpactEventData layout checks to PhysicsCullingLayout1337.",
+                                               "Added scoped Shinobu37 reset clear write-lock acquisition/release for created DTO, spatial hash, wake mirror/count, changed-count, frame telemetry, and mock wake lanes; reset releases in finally and retains guarded fallback if a scoped lock is unavailable.",
+                                               "Added scoped root runtime clear write-lock acquisition/release for impact, last-position, AUP, culling result, distance, awake, command, and body telemetry lanes; root reset releases in finally and keeps guarded fallback semantics.",
+                                               "Changed RefreshTrackedBodies to acquire the last-valid-position Vault lane once per FixedTick, write through the resolved NativeArray\u003cfloat3\u003e, release in finally, and defer null-body structural cleanup outside that lock window.",
+                                               "Replaced PhysicsApplySystem ForcePacket, AcousticPingEvent, AcousticImpulseEvent, LargeAcousticImpulseEvent, and RemovedPhysicsEventPayload wide tail padding with explicit private byte padding while preserving sizes and semantic offsets.",
+                                               "Expanded PhysicsCullingLayout1337 to validate PhysicsApplySystem force/acoustic/event DTO sizes and key offsets, including first and last byte-padding offsets.",
+                                               "Removed the discarded ApplyKinematicWeldSnap correction AddForce because the same method immediately sets kinematic state, zeroes velocities, snaps pose, and sleeps the body.",
+                                               "Removed hot EnsureGenerationHandle route from PhysicsApplySystem PostFixedTick: force packet buffer swap now fails closed when existing Vault handles are missing.",
+                                               "Wrapped PhysicsApplySystem force-packet back/front/validation/mask writes in IDataVault.TryAcquireWriteLock helpers with finally ReleaseWriteLock.",
+                                               "Raised GlobalPhysicsStateManager mesh/sleep collider and PhysicsApplySystem submarine collider scratch List capacities to 64 cold slots to avoid normal compound-body discovery growth.",
+                                               "Registered ValidateForcePacketsJob with H8Memory immediately after Schedule and cleared the active job on normal/forced completion."
+                                           ],
+                           "staticValidation":  {
+                                                    "promptReextractedBytes":  18613,
+                                                    "aupJobEvidence":  "double3 deltaDouble = dto.AUP - CameraAbsoluteAup before float3 cast",
+                                                    "forbiddenHotPathScan":  "No new Camera.main, Vector3.Distance, new NativeArray, ToArray, or hidden .Complete() in touched culling hot path.",
+                                                    "compileStatus":  "static_green_after_rerun28_physics_apply_layout_and_weld_snap_patch_build_deferred_cpu_gate",
+                                                    "compileGate":  "rerun 28 build gate blocked: CPU=100% then CPU=97.04%, dotnet=0, csc=0",
+                                                    "compileCommand":  "dotnet build .\\Assembly-CSharp.csproj --no-restore -v:minimal /nr:false",
+                                                    "compileWallTimeSeconds":  125.8,
+                                                    "compileErrors":  [
+
+                                                                      ],
+                                                    "compileWarnings":  0,
+                                                    "physicsCullingCompileErrors":  0,
+                                                    "dependencyBlocker":  "",
+                                                    "apexPurgeAudit":  {
+                                                                           "nativeFieldAudit":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN28.json",
+                                                                           "nativeAuditHashSha256":  "3cdb51fc092792e7086e46811bd42ee14d607f5cc85e2d943a3e262e2847d44f",
+                                                                           "totalNativeFieldDeclarations":  18,
+                                                                           "persistentNativeFieldsRemaining":  0,
+                                                                           "transientJobViews":  18,
+                                                                           "hotpathAudit":  "Docs/Reports/PHYSICS_CULLING_HOTPATH_AUDIT_1337.json",
+                                                                           "hotpathAuditHashSha256":  "362e25ffe5cad7d8eb9499a42b49d0b991a35cef32f2b2024c07a9d1d054369b",
+                                                                           "targetedZeroGcHotpathAudit":  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN28.json",
+                                                                           "targetedZeroGcHotpathAuditHashSha256":  "37d3eaae558afd5435b07b03d91bff82007b29bc958c42ca3b2ca2c062e54011",
+                                                                           "targetedZeroGcScannedHotMethods":  21,
+                                                                           "branchAudit":  "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN28.json",
+                                                                           "branchAuditHashSha256":  "2c1b52662768e84b87e10950e1e0435866c2babb6c5baaa0c8b12d1afe027e96",
+                                                                           "jobExecuteNonGuardBranches":  0,
+                                                                           "distanceSolverDecisionBranches":  0,
+                                                                           "zeroGcHotPathHits":  0,
+                                                                           "absoluteAupCastsFound":  0,
+                                                                           "throwNewInTouchedCSharp":  0,
+                                                                           "catchExceptionInTouchedCSharp":  0,
+                                                                           "compactionLockPatch":  "VaultBufferBinding setters fail-closed through TryAcquireWriteLock/ReleaseWriteLock outside phase locks; scheduling and dispatch phases acquire GlobalDataVault write locks and release in finally blocks. Invalid-input black-box dump is deferred until after dispatch write-lock release.",
+                                                                           "latestBuildGate":  "rerun 28 build not launched because CPU gate was red: CPU=100% then 97.04%, dotnet=0, csc=0. Last full project build remains rerun 13 green: 0 warnings, 0 errors, 125.80s.",
+                                                                           "rerun14BranchlessCleanup":  "sleepActive and IsOutsideFrustum now use non-short-circuit boolean OR; job Execute || scan reports only fail-closed guard lines",
+                                                                           "rerun15WakeRouteCleanup":  "normal wake pulses queue into the Burst wake lane as value-copied AUP wake regions; immediate force-complete O(N) scan remains only as overflow/unavailable fallback; wake job now records schedule ticks and registers H8Memory active job",
+                                                                           "rerun16TargetedWakeCleanup":  "targeted wake requests now restore active culled rigidbodies directly in owner slow-tick sync phase instead of writing AwakeResults/CommandResults/ChangedIndices before the next clear job; AddPhysicsStateChangedIndex removed",
+                                                                           "rerun17HotWakeEnqueueCleanup":  "targeted and region wake enqueue routes no longer call EnsureNativeState; both fail closed on missing buffers and write through scoped TryAcquireWriteLock/ReleaseWriteLock native views",
+                                                                           "rerun18WakeContractPaddingCleanup":  "WakeRequestSignal keeps 64B ABI with OriginAup at 0, RadiusMeters at 24, SourceHash at 28, Frame at 32, Flags at 36, and byte padding at offsets 37..63; no semantic route changed.",
+                                                                           "rerun19WakeOverflowCleanup":  "WakeCulledBodiesNear no longer force-completes the culling job or performs an O(N) immediate scan when the deferred wake-region queue is unavailable/full; overflow fails closed by incrementing culling contention telemetry.",
+                                                                           "rerun19DtoByteOrderCleanup":  "FrozenVelocityDTO.HasVelocity moved to offset 24 and PhysicsCullingDebugBody flags moved to offsets 32..33 so byte flags begin the 1-byte section before padding; sizes remain 32B and 40B.",
+                                                                           "rerun20TargetWakeFlushLockCleanup":  "FlushPhysicsTargetWakeRequests now acquires wake mirror/count, frozen velocity, state age, and DTO Vault write locks once for the whole owner-phase targeted wake transaction and releases in finally.",
+                                                                           "rerun20WakeTelemetryCleanup":  "WakeCulledBodiesNear no longer increments contention on every false enqueue return; TryQueuePhysicsCullingWakeRegion remains the single owner of real lock/capacity failure telemetry.",
+                                                                           "rerun21TargetWakeNullBodyCleanup":  "ProcessTargetedPhysicsWakeRequest no longer calls RemoveTrackedBodyAt for stale/null Rigidbody while targeted wake flush locks are held; the request fails closed and structural cleanup remains outside the wake-lock phase.",
+                                                                           "rerun22NullBodyCleanupOutsideLocks":  "Null tracked bodies are compacted outside culling scheduling/dispatch Vault write-lock windows; in-lock null branches fail closed or defer cleanup through a scalar flag.",
+                                                                           "rerun22TargetWakeIdentityMapCleanup":  "RigidbodyState caches EntityInstanceHash so destroyed/null body removal can remove targeted wake instance dictionary keys before lane swap.",
+                                                                           "rerun23FixedTickScanCleanup":  "Collider LOD hysteresis now ticks on slow cadence instead of every FixedTick; added-mass tensor application now uses a bounded preallocated dirty-index queue marked by sanitized hydrodynamic submersion changes and drained O(k); connection lock ref clearing now replays a bounded previous-touched index list instead of clearing all tracked bodies every FixedTick.",
+                                                                           "rerun24TelemetryLayoutCleanup":  "PhysicsCullingTelemetryEntry now orders 4-byte fields at offsets 40/44/48, ushort at 52, semantic byte fields at 54..57, and explicit private byte padding at 58..63; validator checks all offsets.",
+                                                                           "rerun24NullCleanupBarrierCleanup":  "Null tracked bodies now use TryRemoveNullTrackedBodyAt and _deferredNullTrackedBodyCleanup so structural removal cannot force-complete active culling jobs or run inside culling Vault lock phases.",
+                                                                           "rerun24RigidbodyAupContractCleanup":  "BufferID.RigidbodyAUPs now publishes AbsoluteUniversePosition.ToAbsoluteDouble3() instead of camera-relative/runtime-space values; local deltas remain inside the culling job.",
+                                                                           "rerun25ImpactSignalLayoutCleanup":  "PhysicsImpactSignal now keeps 128B ABI with semantic offsets unchanged and explicit byte padding at 104..127; PhysicsCullingLayout1337 validates PhysicsImpactSignal and private PhysicsImpactEventData offsets.",
+                                                                           "rerun26ClearLockCleanup":  "ClearShinobu37PhysicsCullingState now attempts a scoped compaction-aware write-lock set for created reset lanes and releases in finally; guarded per-index fallback remains only if scoped acquisition is unavailable.",
+                                                                           "rerun26VerificationHashSha256":  "e79b1858261fbff5c024816047a6348b0372147064664e26ee93c115e18761da",
+                                                                           "rerun27RootRuntimeClearLockCleanup":  "ClearRuntimeState now clears root impact/AUP/result/telemetry lanes under scoped compaction-aware write locks and releases in finally; guarded fallback remains if scoped acquisition is unavailable.",
+                                                                           "rerun27FixedTickLastValidLockCleanup":  "RefreshTrackedBodies now acquires _lastValidPositions once per FixedTick, writes through a resolved NativeArray\u003cfloat3\u003e, fails closed on lock contention, and defers null-body structural cleanup outside the lock window.",
+                                                                           "rerun27VerificationHashSha256":  "d2b7afc8a552a78ac94f8c4da5bcbfaf23c2d0c804929b892a457c4adb611f0c",
+                                                                           "rerun28PhysicsApplyLayoutCleanup":  "PhysicsApplySystem force/acoustic/event DTOs now use explicit byte padding; PhysicsCullingLayout1337 validates their size and key offsets; layout map written to Docs/Reports/PHYSICS_APPLY_LAYOUT_AUDIT_1337_RERUN28.json.",
+                                                                           "rerun28KinematicWeldSnapCleanup":  "ApplyKinematicWeldSnap no longer applies a discarded direct VelocityChange impulse before kinematic snap and Sleep.",
+                                                                           "rerun28VerificationHashSha256":  "a245a9fa14507933676da642778aaf3e155a343056427a975e291b757ac3776f",
+                                                                           "rerun33ClearLockMaskCleanup":  "Root runtime clear and Shinobu37 culling clear helpers now return acquisition bit masks and release only locks that were actually acquired, including partial failure cleanup.",
+                                                                           "rerun33VerificationHashSha256":  "5e6520e9987199ea00eca1e0a0733a66a8546b6bb00eadded13b5ac54fbdaf82"
+                                                                       }
+                                                },
+                           "microsecondEstimate":  {
+                                                       "staleAupFix":  "adds existing AUP conversion once per tracked body per 0.1s culling tick; expected to save false sleep/wake churn rather than raw job time",
+                                                       "qualityRadiusScale":  "single scalar calculation per scheduled culling batch",
+                                                       "telemetryWrite":  "one 64-byte write per telemetry slot",
+                                                       "blackBoxDump":  "cold path only"
+                                                   }
+                       },
+    "staticValidation":  {
+                             "rerun":  33,
+                             "nativeAudit":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN33.json",
+                             "nativeAuditSummary":  "files=7 parseFailures=0 totalNativeFieldDeclarations=18 persistent=0 jobTransient=18 hash=439f8107909258021dc8ac9b82594763f361338c82c478263cd40a4b3e2617c9",
+                             "zeroGcHotPathAudit":  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN33.json",
+                             "zeroGcHotPathSummary":  "files=3 scannedHotMethods=21 zeroGcHotPathHits=0 hash=37d3eaae558afd5435b07b03d91bff82007b29bc958c42ca3b2ca2c062e54011",
+                             "branchAudit":  "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN33.json",
+                             "branchAuditSummary":  "files=3 jobExecuteIfStatements=4 failClosedGuardIfStatements=4 jobExecuteNonGuardIfStatements=0 distanceSolverDecisionIfStatements=0 hash=c640b4f503d10054253cd16cc66b290615b8a0e0e50a82c184c764adfa6b6ab5",
+                             "forcePacketLockAudit":  "Docs/Reports/PHYSICS_APPLY_FORCE_PACKET_LOCK_AUDIT_1337_RERUN29.json",
+                             "tokenAudit":  "Docs/Reports/PHYSICS_CULLING_TOKEN_AUDIT_1337_RERUN29.json",
+                             "layoutAudit":  "Docs/Reports/PHYSICS_APPLY_LAYOUT_AUDIT_1337_RERUN29.json",
+                             "gitDiffCheck":  "green except CRLF normalization warnings",
+                             "verificationHashSha256":  "5e6520e9987199ea00eca1e0a0733a66a8546b6bb00eadded13b5ac54fbdaf82"
+                         },
+    "buildGateRerun33":  {
+                             "status":  "DEFERRED_CPU_GATE_RED",
+                             "cpuPercent":  100,
+                             "dotnetProcesses":  0,
+                             "cscProcesses":  0,
+                             "policy":  "Do not run dotnet build while CPU \u003e 50% or csc/dotnet is active."
+                         },
+    "rerun44":  {
+                    "status":  "STATIC_GREEN_BUILD_BLOCKED_BY_FOREIGN_DEPENDENCY",
+                    "report":  "Docs/Reports/PHYSICS_TARGET_WAKE_LOCK_AUDIT_1337_RERUN44.json",
+                    "targetedWakeLockSplit":  "Wake mirror/count are copied and cleared under short queue locks; Rigidbody/Collider restore side effects run only after ReleasePhysicsTargetWakeFlushLocks1337.",
+                    "reporterRegistrationFix":  "PhysicsStateReporter.OnEnable uses RegisterTrackedBodyIfMissing to avoid duplicate full registration after EnsureReporter.",
+                    "nativeAuditSummary":  "3 touched files; 19 declaration-shaped native hits; 18 true job-transient NativeArray fields plus one AsNativeArray method false positive; persistent=0.",
+                    "zeroGcHotPathSummary":  "hot string/LINQ/foreach/interpolation scan=0; direct AUP float cast scan=0; throw new/catch(Exception)=0.",
+                    "gitDiffCheck":  "green except CRLF normalization warnings",
+                    "build":  "Hecton8.slnx build stopped after long timeout; Assembly-CSharp.csproj build failed on foreign Candice Mono.Data/SqliteDataReader dependency before Physics errors.",
+                    "verificationHashSha256":  "3251449c353c328d490856e4632cc7b8a694a42271ab9f01678f6da32aa58d1d"
+                },
+    "rerun45":  {
+                    "status":  "STATIC_GREEN_BUILD_DEFERRED_CPU_COMPILER_GATE_RED",
+                    "report":  "Docs/Reports/PHYSICS_TARGET_WAKE_QUEUE_COUNTER_AUDIT_1337_RERUN45.json",
+                    "targetedWakeCounterFix":  "QueueTargetedPhysicsWakeRequest now treats capacity<=0 or writeIndex<0 as fail-closed corruption: Flags is set, counter.Value resets to 0, contention telemetry increments, and no wake mirror slot is written.",
+                    "targetedWakeFlushClamp":  "FlushPhysicsTargetWakeRequests now clamps counter.Value to [0, queueCapacity] before copying request DTOs into the fixed apply scratch.",
+                    "nativeAuditSummary":  "3 primary C# files; 74 NativeArray token hits; 18 true native field declarations; persistent=0; jobTransient=18; methodLocal/signature views=46.",
+                    "zeroGcHotPathAudit":  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN45.json",
+                    "zeroGcHotPathSummary":  "files=3 scannedHotMethods=25 zeroGcHotPathHits=0 hash=c23e4767e945500598097a9683223fbb042a5e0a522ca0d8f61f964ba100376b",
+                    "branchAudit":  "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN45.json",
+                    "branchAuditSummary":  "files=3 jobExecuteIfStatements=5 failClosedGuardIfStatements=5 jobExecuteNonGuardIfStatements=0 distanceSolverDecisionIfStatements=0 hash=01bcacaece8f14f322fbdcf62760617a608506b3a491bb7fab19106723c8bbcf",
+                    "tokenAudit":  "case-sensitive hotpath token scan=0; throw/catch scan=0; direct absolute AUP float cast scan=0",
+                    "gitDiffCheck":  "green except CRLF normalization warnings",
+                    "build":  "not launched: first gate CPU=70%; latest gate CPU=46% but VBCSCompiler PID 50784 was still active; AGENTS build throttle forbids dotnet build under this gate.",
+                    "verificationHashSha256":  "2f21fcd5f2331c30843147e11fe9684e3415e6356a8fdfaf310aa723b381a74d"
+                },
+    "rerun46":  {
+                    "status":  "STATIC_GREEN_BUILD_DEFERRED_CPU_COMPILER_GATE_RED",
+                    "report":  "Docs/Reports/PHYSICS_CULLING_DISPATCH_LOCK_AUDIT_1337_RERUN46.json",
+                    "dispatchLockSplit":  "DispatchPhysicsCullingResults now snapshots changed index, awake, command, and distance result lanes under short Vault locks, clears the changed-count queue, releases in finally, and only then calls ApplyPhysicsCullingCommand.",
+                    "dispatchLockReduction":  "TryAcquirePhysicsCullingDispatchLocks1337 no longer requires culling DTO, state-age, frozen velocity, body telemetry, or frame telemetry locks for result snapshotting.",
+                    "lockRegionAudit":  "0 Unity/API hits before ReleasePhysicsCullingDispatchLocks1337 in DispatchPhysicsCullingResults.",
+                    "nativeAuditSummary":  "5 scoped C# files; 74 NativeArray token hits; 18 true native field declarations; persistent=0; jobTransient=18; methodLocal/signature views=56.",
+                    "zeroGcHotPathAudit":  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN46.json",
+                    "zeroGcHotPathSummary":  "files=5 scannedHotMethods=25 zeroGcHotPathHits=0 hash=356820390a9dbb09b48a2f4d5c033279102f325965d34ed1bad5567a78961b8b",
+                    "branchAudit":  "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN46.json",
+                    "branchAuditSummary":  "files=5 jobExecuteIfStatements=5 failClosedGuardIfStatements=5 jobExecuteNonGuardIfStatements=0 distanceSolverDecisionIfStatements=0 hash=5cab85b15f056039897ff06fec6dea27c3327c1ffd50de57f53e9f3474e6b1f5",
+                    "tokenAudit":  "direct absolute AUP float cast scan=0; throw/catch scan=0; lock-region Unity/API scan=0; math.select/math.any LINQ false positives classified.",
+                    "gitDiffCheck":  "green except CRLF normalization warning",
+                    "build":  "not launched: CPU=63%, dotnet.exe active, csc.exe active; AGENTS build throttle forbids dotnet build under this gate.",
+                    "verificationHashSha256":  "ac5258c0f6222cd2c480464b49cfea5e2bc7b6763d1a1110e1e3222e83bb8a27"
+                },
+    "rerun47":  {
+                    "status":  "STATIC_GREEN_BUILD_DEFERRED_CPU_GATE_RED",
+                    "report":  "Docs/Reports/PHYSICS_CULLING_TELEMETRY_LOCK_AUDIT_1337_RERUN47.json",
+                    "telemetryLockBatching":  "Dispatch body telemetry is no longer written through the VaultBufferBinding indexer once per changed body; FlushPhysicsCullingDispatchTelemetry acquires the body telemetry ring once after Unity apply and writes all valid changed entries in one scoped try/finally lock.",
+                    "telemetryLockRegionAudit":  "0 Unity/API hits before _physicsCullingTelemetry.ReleaseWriteLock in FlushPhysicsCullingDispatchTelemetry.",
+                    "nativeAuditSummary":  "5 scoped C# files; 75 NativeArray token hits; 18 true native field declarations; persistent=0; jobTransient=18; methodLocal/signature views=57.",
+                    "zeroGcHotPathAudit":  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN47.json",
+                    "zeroGcHotPathSummary":  "files=5 scannedHotMethods=24 zeroGcHotPathHits=0 hash=94d193e6e22516b41c545a6dbcd321b7150b12a5cadd8a383d27833eebf1af00",
+                    "branchAudit":  "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN47.json",
+                    "branchAuditSummary":  "files=5 jobExecuteIfStatements=5 failClosedGuardIfStatements=5 jobExecuteNonGuardIfStatements=0 distanceSolverDecisionIfStatements=0 hash=482218313e23825fd1c37f1333a5a150b6be2c35d37bfc9f36e156ed9eca6cba",
+                    "tokenAudit":  "direct absolute AUP float cast scan=0; throw/catch scan=0; telemetry lock-region Unity/API scan=0.",
+                    "gitDiffCheck":  "green except CRLF normalization warning",
+                    "build":  "not launched: CPU=100%; no dotnet/csc process in sample, but AGENTS build throttle forbids dotnet build under CPU > 50%.",
+                    "verificationHashSha256":  "14773c1ca5965315e11e683438093d22b74d54f3e8154f0a71e18194d46b8177"
+                }
+}

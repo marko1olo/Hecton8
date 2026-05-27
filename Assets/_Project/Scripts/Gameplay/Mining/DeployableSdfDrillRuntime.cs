@@ -7,6 +7,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Gameplay.Mining.Contracts;
+using Hecton8.Interaction;
 using Hecton8.World;
 using TMPro;
 using Unity.Collections;
@@ -233,10 +234,12 @@ namespace Hecton8.Gameplay.Mining
             CaptureAnchorFromTransform();
             ScheduleTerrainSnap();
             RegisterActiveInstance();
+            InteractableRegistry.RegisterTree(this);
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             CancelTerrainSnap();
             CompleteExtractionJobForBarrier();
             UnregisterRuntimeHooks();
@@ -245,6 +248,7 @@ namespace Hecton8.Gameplay.Mining
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             CancelTerrainSnap();
             CompleteExtractionJobForBarrier();
             UnregisterRuntimeHooks();
@@ -275,6 +279,7 @@ namespace Hecton8.Gameplay.Mining
             CancelTerrainSnap();
             CaptureAnchorFromTransform();
             ScheduleTerrainSnap();
+            InteractableRegistry.RegisterTree(this);
             UpdateFillLabel(true);
         }
 
@@ -283,6 +288,7 @@ namespace Hecton8.Gameplay.Mining
         /// </summary>
         public void OnDespawn()
         {
+            InteractableRegistry.InvalidateTree(this);
             CancelTerrainSnap();
             CompleteExtractionJobForBarrier();
             UnregisterRuntimeHooks();

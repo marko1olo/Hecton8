@@ -3,30 +3,14 @@
 Date: 2026-05-23
 Status: PENDING VERIFICATION
 
-Evidence class: `STATIC_DOC / CLI_COMPILE where artifact cited`. This is a production operating model, not Unity import,
-runtime, profiler, GC, or player-build proof.
+Evidence class: STATIC_DOC / STATIC_SOURCE. This is a production operating model, not Unity import,
+runtime, profiler, GC, compile, or player-build proof.
 
-Compile evidence:
+Evidence boundary:
 
-- Last local zero-warning CLI PASS: 2026-05-24 EXTERNAL_CODEX.
-- Log: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log`.
-- Command: `Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false`.
-- Text matches: 0 `: warning `, 0 `: error `.
-- Latest attempt: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log` failed before C# with `NETSDK1004` missing project.assets, 0 warnings, no `CS*`; latest retry blocked by `BUILD_GUARD cpu=100 compiler_count=2`.
-- Historical loop132 state: editor DLL output reached; 1 `MSB3101` Temp/obj cache warning; 0 errors; no `CS*`; no final summary/exit line.
-- Loop148 source-gated result: non-editor raw `Debug.Log` is zero outside `H8Debug.cs`.
-- Touched scopes zeroed targeted frost/render membership and dispatcher lane `Contains`.
-- Also zeroed HectonVoxelVolume sonar DataVault runtime-poll and context getter mutation.
-- Loop151 handled cadence/context rebind residues.
-- Loop153 handled persistent-world Save/Player/Inventory owner-cache ownership.
-- Loops154-156 handled UI/audio/construction Dispatcher tails.
-- Loop157 handled UI/Construction singleton runtime tails.
-- Loop158 handled world/environment/AI Dispatcher tails.
-- Loop159 zeroed project-wide singleton owner-route and `?? GlobalRegistry|GlobalRegistry.TryGet` greps; GI relay/weather fallbacks are now explicit cold owner-cache routes.
-- Loop160 fixed 50 additional Dispatcher replacement callbacks by clearing local lane flags before current Dispatcher re-register.
-- Targeted hot-swap, Save-cache, singleton, and fallback-route greps pass; broad file-local scan still includes split-line/static-driver/legacy-stub false positives.
-- Build wall remains `NETSDK1004`/`MSB3491` before C# diagnostics.
-- Runtime proof: pending.
+- Dated local compile attempts, loop notes, and status logs are process evidence and stay outside this authority file.
+- Static greps are triage only. They can find suspect routes, but they cannot prove runtime health.
+- Runtime proof remains pending until Unity import, Play Mode, profiler, GC, player-build, and platform artifacts exist.
 
 Parents:
 

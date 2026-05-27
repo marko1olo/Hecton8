@@ -13,8 +13,8 @@ namespace Hecton8.World
         [TextArea(2, 4)] public string entryRead = "A strong readable landmark hints that this water is worth checking.";
         [TextArea(2, 4)] public string ambientValue = "Routine value sits in the area and rewards natural wandering.";
         [TextArea(2, 4)] public string detourValue = "Side value rewards curiosity without becoming mandatory.";
-        [TextArea(2, 4)] public string shelterRead = "A small shelter or calm pocket lets the player breathe and re-read the space.";
-        [TextArea(2, 4)] public string pressureRead = "Pressure rises in a readable way as the player pushes farther from comfort.";
+        [TextArea(2, 4)] public string shelterRead = "A small shelter or reorientation pocket lets the player breathe and re-read the space.";
+        [TextArea(2, 4)] public string pressureRead = "Pressure rises in a readable way as the player pushes farther from route control.";
         [TextArea(2, 4)] public string deepLure = "A strong deeper attraction promises rarer value without forcing commitment.";
         [TextArea(2, 4)] public string storyLure = "The place hints at narrative importance, history, or unresolved mystery.";
         [TextArea(2, 4)] public string returnValue = "Returning later should feel worthwhile because the zone still has meaning.";

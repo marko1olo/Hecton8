@@ -1,8 +1,10 @@
 #ifndef HECTON_CORE_LIT_INCLUDED
 #define HECTON_CORE_LIT_INCLUDED
 
+#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
 #define HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID UNITY_VERTEX_INPUT_INSTANCE_ID
 #define HECTON_CORE_LIT_DECLARE_VERTEX_OUTPUT_STEREO UNITY_VERTEX_OUTPUT_STEREO
@@ -393,7 +395,21 @@ float2 HectonCoreLitResolveFragmentScreenUV(float4 positionCS)
 #if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
     screenUV = UnityStereoTransformScreenSpaceTex(screenUV);
 #endif
+    return screenUV;
+}
+
+float2 HectonCoreLitResolveClipScreenUV(float4 positionCS)
+{
+    float2 screenUV = positionCS.xy * rcp(positionCS.w) * 0.5 + 0.5;
+#if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+    screenUV = UnityStereoTransformScreenSpaceTex(screenUV);
+#endif
     return saturate(screenUV);
+}
+
+float2 HectonCoreLitResolveFoveatedSourceUV(float2 linearScreenUV)
+{
+    return FoveatedRemapLinearToNonUniform(saturate(linearScreenUV));
 }
 
 float2 HectonCoreLitBuildStereoFoveationVector(float3 positionWS)
@@ -730,14 +746,11 @@ half HectonCoreLitResolveMx350ShadowDither(half shadowAttenuation, float4 positi
 
 half HectonCoreLitResolveSceneDepthCutoutFade(float4 positionCS, float fadeDistanceMeters)
 {
-    if (positionCS.w <= 0.0001 || !all(isfinite(positionCS)))
+    if (!all(isfinite(positionCS)))
         return 1.0h;
 
-    float2 screenUV = positionCS.xy * rcp(positionCS.w) * 0.5 + 0.5;
-    if (any(screenUV < 0.0) || any(screenUV > 1.0))
-        return 1.0h;
-
-    float sceneRawDepth = SampleSceneDepth(screenUV);
+    float2 screenUV = HectonCoreLitResolveFragmentScreenUV(positionCS);
+    float sceneRawDepth = SampleSceneDepth(HectonCoreLitResolveFoveatedSourceUV(screenUV));
 #if UNITY_REVERSED_Z
     float sceneDepthValid = step(0.0001, sceneRawDepth);
 #else
@@ -746,7 +759,7 @@ half HectonCoreLitResolveSceneDepthCutoutFade(float4 positionCS, float fadeDista
     if (sceneDepthValid <= 0.5)
         return 1.0h;
 
-    float rawFragmentDepth = saturate(positionCS.z * rcp(positionCS.w));
+    float rawFragmentDepth = saturate(positionCS.z);
     float sceneDepthMeters = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
     float fragmentDepthMeters = LinearEyeDepth(rawFragmentDepth, _ZBufferParams);
     float distanceMeters = max(fadeDistanceMeters, 0.001);
@@ -1321,11 +1334,11 @@ float HectonCoreLitEvaluateCausticsSceneDepthFade(float3 positionWS)
     if (positionCS.w <= 0.0001 || !all(isfinite(positionCS)))
         return 0.0;
 
-    float2 screenUV = positionCS.xy * rcp(positionCS.w) * 0.5 + 0.5;
+    float2 screenUV = HectonCoreLitResolveClipScreenUV(positionCS);
     if (any(screenUV < 0.0) || any(screenUV > 1.0))
         return 0.0;
 
-    float rawDepth = SampleSceneDepth(screenUV);
+    float rawDepth = SampleSceneDepth(HectonCoreLitResolveFoveatedSourceUV(screenUV));
 #if UNITY_REVERSED_Z
     float depthValid = step(0.0001, rawDepth);
 #else

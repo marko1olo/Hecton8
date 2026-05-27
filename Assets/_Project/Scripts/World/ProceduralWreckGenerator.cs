@@ -2,11 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.SaveSystem;
@@ -84,7 +85,9 @@ namespace Hecton8.World
         PropagationWatchdogTriggered = 2,
         ContradictionBudgetExceeded = 3,
         SelectionFailed = 4,
-        PropagationQueueOverflow = 5
+        PropagationQueueOverflow = 5,
+        DataVaultWriteFailed = 6,
+        DataVaultReadFailed = 7
     }
 
     /// <summary>
@@ -247,12 +250,18 @@ namespace Hecton8.World
     [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct WreckGridCell
     {
-        [FieldOffset(0)] public ushort PossibleModuleMask;
-        [FieldOffset(2)] public byte CollapsedModuleId;
-        [FieldOffset(3)] public byte SocketConstraints;
-        [FieldOffset(4)] public float Entropy;
-        [FieldOffset(8)] private uint _reserved0;
-        [FieldOffset(12)] private uint _reserved1;
+        [FieldOffset(0)] public float Entropy;
+        [FieldOffset(4)] public ushort PossibleModuleMask;
+        [FieldOffset(6)] public byte CollapsedModuleId;
+        [FieldOffset(7)] public byte SocketConstraints;
+        [FieldOffset(8)] private byte _pad0;
+        [FieldOffset(9)] private byte _pad1;
+        [FieldOffset(10)] private byte _pad2;
+        [FieldOffset(11)] private byte _pad3;
+        [FieldOffset(12)] private byte _pad4;
+        [FieldOffset(13)] private byte _pad5;
+        [FieldOffset(14)] private byte _pad6;
+        [FieldOffset(15)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -267,7 +276,8 @@ namespace Hecton8.World
         [FieldOffset(32)] public ushort TopSocket;
         [FieldOffset(34)] public ushort BottomSocket;
         [FieldOffset(36)] public ushort LoreFragmentChancePermille;
-        [FieldOffset(38)] private ushort _runtimeReserved1;
+        [FieldOffset(38)] private byte _pad0;
+        [FieldOffset(39)] private byte _pad1;
         [FieldOffset(40)] public byte DrawCallPriority;
         [FieldOffset(41)] public byte EmitsGeometry;
         [FieldOffset(42)] public byte EmitsNavProxy;
@@ -275,9 +285,23 @@ namespace Hecton8.World
         [FieldOffset(44)] public byte IntegrityState;
         [FieldOffset(45)] public byte RequiresLaserCutter;
         [FieldOffset(46)] public byte LootTableIndex;
-        [FieldOffset(47)] private byte _runtimeReserved0;
-        [FieldOffset(48)] private ulong _pad0;
-        [FieldOffset(56)] private ulong _pad1;
+        [FieldOffset(47)] private byte _pad2;
+        [FieldOffset(48)] private byte _pad3;
+        [FieldOffset(49)] private byte _pad4;
+        [FieldOffset(50)] private byte _pad5;
+        [FieldOffset(51)] private byte _pad6;
+        [FieldOffset(52)] private byte _pad7;
+        [FieldOffset(53)] private byte _pad8;
+        [FieldOffset(54)] private byte _pad9;
+        [FieldOffset(55)] private byte _pad10;
+        [FieldOffset(56)] private byte _pad11;
+        [FieldOffset(57)] private byte _pad12;
+        [FieldOffset(58)] private byte _pad13;
+        [FieldOffset(59)] private byte _pad14;
+        [FieldOffset(60)] private byte _pad15;
+        [FieldOffset(61)] private byte _pad16;
+        [FieldOffset(62)] private byte _pad17;
+        [FieldOffset(63)] private byte _pad18;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -292,7 +316,10 @@ namespace Hecton8.World
         [FieldOffset(57)] public byte DrawPriority;
         [FieldOffset(58)] public byte IntegrityState;
         [FieldOffset(59)] public byte ModuleFlags;
-        [FieldOffset(60)] private uint _pad0;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -302,26 +329,92 @@ namespace Hecton8.World
         [FieldOffset(12)] public float3 Normal;
         [FieldOffset(24)] public float2 UV;
         [FieldOffset(32)] public uint Color;
-        [FieldOffset(36)] private uint _pad0;
-        [FieldOffset(40)] private ulong _pad1;
-        [FieldOffset(48)] private ulong _pad2;
-        [FieldOffset(56)] private ulong _pad3;
+        [FieldOffset(36)] private byte _pad0;
+        [FieldOffset(37)] private byte _pad1;
+        [FieldOffset(38)] private byte _pad2;
+        [FieldOffset(39)] private byte _pad3;
+        [FieldOffset(40)] private byte _pad4;
+        [FieldOffset(41)] private byte _pad5;
+        [FieldOffset(42)] private byte _pad6;
+        [FieldOffset(43)] private byte _pad7;
+        [FieldOffset(44)] private byte _pad8;
+        [FieldOffset(45)] private byte _pad9;
+        [FieldOffset(46)] private byte _pad10;
+        [FieldOffset(47)] private byte _pad11;
+        [FieldOffset(48)] private byte _pad12;
+        [FieldOffset(49)] private byte _pad13;
+        [FieldOffset(50)] private byte _pad14;
+        [FieldOffset(51)] private byte _pad15;
+        [FieldOffset(52)] private byte _pad16;
+        [FieldOffset(53)] private byte _pad17;
+        [FieldOffset(54)] private byte _pad18;
+        [FieldOffset(55)] private byte _pad19;
+        [FieldOffset(56)] private byte _pad20;
+        [FieldOffset(57)] private byte _pad21;
+        [FieldOffset(58)] private byte _pad22;
+        [FieldOffset(59)] private byte _pad23;
+        [FieldOffset(60)] private byte _pad24;
+        [FieldOffset(61)] private byte _pad25;
+        [FieldOffset(62)] private byte _pad26;
+        [FieldOffset(63)] private byte _pad27;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct WreckLootRecord
     {
         [FieldOffset(0)] public int ItemHashId;
-        [FieldOffset(4)] public ushort MinQuantity;
-        [FieldOffset(6)] public ushort MaxQuantity;
-        [FieldOffset(8)] public uint StableDropHash;
-        [FieldOffset(12)] public uint Flags;
-        [FieldOffset(16)] private ulong _reserved0;
-        [FieldOffset(24)] private ulong _reserved1;
-        [FieldOffset(32)] private ulong _reserved2;
-        [FieldOffset(40)] private ulong _reserved3;
-        [FieldOffset(48)] private ulong _reserved4;
-        [FieldOffset(56)] private ulong _reserved5;
+        [FieldOffset(4)] public uint StableDropHash;
+        [FieldOffset(8)] public uint Flags;
+        [FieldOffset(12)] public ushort MinQuantity;
+        [FieldOffset(14)] public ushort MaxQuantity;
+        [FieldOffset(16)] private byte _pad0;
+        [FieldOffset(17)] private byte _pad1;
+        [FieldOffset(18)] private byte _pad2;
+        [FieldOffset(19)] private byte _pad3;
+        [FieldOffset(20)] private byte _pad4;
+        [FieldOffset(21)] private byte _pad5;
+        [FieldOffset(22)] private byte _pad6;
+        [FieldOffset(23)] private byte _pad7;
+        [FieldOffset(24)] private byte _pad8;
+        [FieldOffset(25)] private byte _pad9;
+        [FieldOffset(26)] private byte _pad10;
+        [FieldOffset(27)] private byte _pad11;
+        [FieldOffset(28)] private byte _pad12;
+        [FieldOffset(29)] private byte _pad13;
+        [FieldOffset(30)] private byte _pad14;
+        [FieldOffset(31)] private byte _pad15;
+        [FieldOffset(32)] private byte _pad16;
+        [FieldOffset(33)] private byte _pad17;
+        [FieldOffset(34)] private byte _pad18;
+        [FieldOffset(35)] private byte _pad19;
+        [FieldOffset(36)] private byte _pad20;
+        [FieldOffset(37)] private byte _pad21;
+        [FieldOffset(38)] private byte _pad22;
+        [FieldOffset(39)] private byte _pad23;
+        [FieldOffset(40)] private byte _pad24;
+        [FieldOffset(41)] private byte _pad25;
+        [FieldOffset(42)] private byte _pad26;
+        [FieldOffset(43)] private byte _pad27;
+        [FieldOffset(44)] private byte _pad28;
+        [FieldOffset(45)] private byte _pad29;
+        [FieldOffset(46)] private byte _pad30;
+        [FieldOffset(47)] private byte _pad31;
+        [FieldOffset(48)] private byte _pad32;
+        [FieldOffset(49)] private byte _pad33;
+        [FieldOffset(50)] private byte _pad34;
+        [FieldOffset(51)] private byte _pad35;
+        [FieldOffset(52)] private byte _pad36;
+        [FieldOffset(53)] private byte _pad37;
+        [FieldOffset(54)] private byte _pad38;
+        [FieldOffset(55)] private byte _pad39;
+        [FieldOffset(56)] private byte _pad40;
+        [FieldOffset(57)] private byte _pad41;
+        [FieldOffset(58)] private byte _pad42;
+        [FieldOffset(59)] private byte _pad43;
+        [FieldOffset(60)] private byte _pad44;
+        [FieldOffset(61)] private byte _pad45;
+        [FieldOffset(62)] private byte _pad46;
+        [FieldOffset(63)] private byte _pad47;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -333,15 +426,28 @@ namespace Hecton8.World
         [FieldOffset(20)] public int SpatialHashKey;
         [FieldOffset(24)] public int ClusterIndex;
         [FieldOffset(28)] public int ItemHashId;
-        [FieldOffset(32)] public ushort Quantity;
-        [FieldOffset(34)] public byte Flags;
-        [FieldOffset(35)] public byte LootTableIndex;
-        [FieldOffset(36)] public uint StableId;
-        [FieldOffset(40)] public float SinkMetersPerSlowTick;
-        [FieldOffset(44)] public float PickupRadiusSq;
-        [FieldOffset(48)] public uint Reserved0;
-        [FieldOffset(52)] private uint _pad0;
-        [FieldOffset(56)] public ulong Reserved1;
+        [FieldOffset(32)] public uint StableId;
+        [FieldOffset(36)] public float SinkMetersPerSlowTick;
+        [FieldOffset(40)] public float PickupRadiusSq;
+        [FieldOffset(44)] public ushort Quantity;
+        [FieldOffset(46)] public byte Flags;
+        [FieldOffset(47)] public byte LootTableIndex;
+        [FieldOffset(48)] private byte _pad0;
+        [FieldOffset(49)] private byte _pad1;
+        [FieldOffset(50)] private byte _pad2;
+        [FieldOffset(51)] private byte _pad3;
+        [FieldOffset(52)] private byte _pad4;
+        [FieldOffset(53)] private byte _pad5;
+        [FieldOffset(54)] private byte _pad6;
+        [FieldOffset(55)] private byte _pad7;
+        [FieldOffset(56)] private byte _pad8;
+        [FieldOffset(57)] private byte _pad9;
+        [FieldOffset(58)] private byte _pad10;
+        [FieldOffset(59)] private byte _pad11;
+        [FieldOffset(60)] private byte _pad12;
+        [FieldOffset(61)] private byte _pad13;
+        [FieldOffset(62)] private byte _pad14;
+        [FieldOffset(63)] private byte _pad15;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -352,12 +458,37 @@ namespace Hecton8.World
         [FieldOffset(24)] public int ClusterKey;
         [FieldOffset(28)] public int DebrisCount;
         [FieldOffset(32)] public byte Visible;
-        [FieldOffset(33)] private byte _reserved0;
-        [FieldOffset(34)] private ushort _reserved1;
-        [FieldOffset(36)] private uint _reserved2;
-        [FieldOffset(40)] private ulong _reserved3;
-        [FieldOffset(48)] private ulong _reserved4;
-        [FieldOffset(56)] private ulong _reserved5;
+        [FieldOffset(33)] private byte _pad0;
+        [FieldOffset(34)] private byte _pad1;
+        [FieldOffset(35)] private byte _pad2;
+        [FieldOffset(36)] private byte _pad3;
+        [FieldOffset(37)] private byte _pad4;
+        [FieldOffset(38)] private byte _pad5;
+        [FieldOffset(39)] private byte _pad6;
+        [FieldOffset(40)] private byte _pad7;
+        [FieldOffset(41)] private byte _pad8;
+        [FieldOffset(42)] private byte _pad9;
+        [FieldOffset(43)] private byte _pad10;
+        [FieldOffset(44)] private byte _pad11;
+        [FieldOffset(45)] private byte _pad12;
+        [FieldOffset(46)] private byte _pad13;
+        [FieldOffset(47)] private byte _pad14;
+        [FieldOffset(48)] private byte _pad15;
+        [FieldOffset(49)] private byte _pad16;
+        [FieldOffset(50)] private byte _pad17;
+        [FieldOffset(51)] private byte _pad18;
+        [FieldOffset(52)] private byte _pad19;
+        [FieldOffset(53)] private byte _pad20;
+        [FieldOffset(54)] private byte _pad21;
+        [FieldOffset(55)] private byte _pad22;
+        [FieldOffset(56)] private byte _pad23;
+        [FieldOffset(57)] private byte _pad24;
+        [FieldOffset(58)] private byte _pad25;
+        [FieldOffset(59)] private byte _pad26;
+        [FieldOffset(60)] private byte _pad27;
+        [FieldOffset(61)] private byte _pad28;
+        [FieldOffset(62)] private byte _pad29;
+        [FieldOffset(63)] private byte _pad30;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -366,15 +497,43 @@ namespace Hecton8.World
         [FieldOffset(0)] public uint EntryHash;
         [FieldOffset(4)] public float3 Position;
         [FieldOffset(16)] public int ModuleIndex;
-        [FieldOffset(20)] public byte State;
-        [FieldOffset(21)] public byte ModuleId;
-        [FieldOffset(22)] public ushort ChancePermille;
-        [FieldOffset(24)] public uint StableId;
-        [FieldOffset(28)] public float DiscoveryRadiusSq;
-        [FieldOffset(32)] private ulong _reserved0;
-        [FieldOffset(40)] private ulong _reserved1;
-        [FieldOffset(48)] private ulong _reserved2;
-        [FieldOffset(56)] private ulong _reserved3;
+        [FieldOffset(20)] public uint StableId;
+        [FieldOffset(24)] public float DiscoveryRadiusSq;
+        [FieldOffset(28)] public ushort ChancePermille;
+        [FieldOffset(30)] public byte State;
+        [FieldOffset(31)] public byte ModuleId;
+        [FieldOffset(32)] private byte _pad0;
+        [FieldOffset(33)] private byte _pad1;
+        [FieldOffset(34)] private byte _pad2;
+        [FieldOffset(35)] private byte _pad3;
+        [FieldOffset(36)] private byte _pad4;
+        [FieldOffset(37)] private byte _pad5;
+        [FieldOffset(38)] private byte _pad6;
+        [FieldOffset(39)] private byte _pad7;
+        [FieldOffset(40)] private byte _pad8;
+        [FieldOffset(41)] private byte _pad9;
+        [FieldOffset(42)] private byte _pad10;
+        [FieldOffset(43)] private byte _pad11;
+        [FieldOffset(44)] private byte _pad12;
+        [FieldOffset(45)] private byte _pad13;
+        [FieldOffset(46)] private byte _pad14;
+        [FieldOffset(47)] private byte _pad15;
+        [FieldOffset(48)] private byte _pad16;
+        [FieldOffset(49)] private byte _pad17;
+        [FieldOffset(50)] private byte _pad18;
+        [FieldOffset(51)] private byte _pad19;
+        [FieldOffset(52)] private byte _pad20;
+        [FieldOffset(53)] private byte _pad21;
+        [FieldOffset(54)] private byte _pad22;
+        [FieldOffset(55)] private byte _pad23;
+        [FieldOffset(56)] private byte _pad24;
+        [FieldOffset(57)] private byte _pad25;
+        [FieldOffset(58)] private byte _pad26;
+        [FieldOffset(59)] private byte _pad27;
+        [FieldOffset(60)] private byte _pad28;
+        [FieldOffset(61)] private byte _pad29;
+        [FieldOffset(62)] private byte _pad30;
+        [FieldOffset(63)] private byte _pad31;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -386,11 +545,33 @@ namespace Hecton8.World
         [FieldOffset(28)] public float Intensity;
         [FieldOffset(32)] public uint StableId;
         [FieldOffset(36)] public byte ModuleId;
-        [FieldOffset(37)] private byte _reserved0;
-        [FieldOffset(38)] private ushort _reserved1;
-        [FieldOffset(40)] private ulong _reserved2;
-        [FieldOffset(48)] private ulong _reserved3;
-        [FieldOffset(56)] private ulong _reserved4;
+        [FieldOffset(37)] private byte _pad0;
+        [FieldOffset(38)] private byte _pad1;
+        [FieldOffset(39)] private byte _pad2;
+        [FieldOffset(40)] private byte _pad3;
+        [FieldOffset(41)] private byte _pad4;
+        [FieldOffset(42)] private byte _pad5;
+        [FieldOffset(43)] private byte _pad6;
+        [FieldOffset(44)] private byte _pad7;
+        [FieldOffset(45)] private byte _pad8;
+        [FieldOffset(46)] private byte _pad9;
+        [FieldOffset(47)] private byte _pad10;
+        [FieldOffset(48)] private byte _pad11;
+        [FieldOffset(49)] private byte _pad12;
+        [FieldOffset(50)] private byte _pad13;
+        [FieldOffset(51)] private byte _pad14;
+        [FieldOffset(52)] private byte _pad15;
+        [FieldOffset(53)] private byte _pad16;
+        [FieldOffset(54)] private byte _pad17;
+        [FieldOffset(55)] private byte _pad18;
+        [FieldOffset(56)] private byte _pad19;
+        [FieldOffset(57)] private byte _pad20;
+        [FieldOffset(58)] private byte _pad21;
+        [FieldOffset(59)] private byte _pad22;
+        [FieldOffset(60)] private byte _pad23;
+        [FieldOffset(61)] private byte _pad24;
+        [FieldOffset(62)] private byte _pad25;
+        [FieldOffset(63)] private byte _pad26;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -399,12 +580,27 @@ namespace Hecton8.World
         [FieldOffset(0)] public double3 AbsoluteCenter;
         [FieldOffset(24)] public float3 HalfExtents;
         [FieldOffset(36)] public float BlendStrength;
-        [FieldOffset(40)] public byte MaterialId;
-        [FieldOffset(41)] public byte Applied;
-        [FieldOffset(42)] private ushort _reserved0;
-        [FieldOffset(44)] public uint StableId;
-        [FieldOffset(48)] private ulong _reserved1;
-        [FieldOffset(56)] private ulong _reserved2;
+        [FieldOffset(40)] public uint StableId;
+        [FieldOffset(44)] public byte MaterialId;
+        [FieldOffset(45)] public byte Applied;
+        [FieldOffset(46)] private byte _pad0;
+        [FieldOffset(47)] private byte _pad1;
+        [FieldOffset(48)] private byte _pad2;
+        [FieldOffset(49)] private byte _pad3;
+        [FieldOffset(50)] private byte _pad4;
+        [FieldOffset(51)] private byte _pad5;
+        [FieldOffset(52)] private byte _pad6;
+        [FieldOffset(53)] private byte _pad7;
+        [FieldOffset(54)] private byte _pad8;
+        [FieldOffset(55)] private byte _pad9;
+        [FieldOffset(56)] private byte _pad10;
+        [FieldOffset(57)] private byte _pad11;
+        [FieldOffset(58)] private byte _pad12;
+        [FieldOffset(59)] private byte _pad13;
+        [FieldOffset(60)] private byte _pad14;
+        [FieldOffset(61)] private byte _pad15;
+        [FieldOffset(62)] private byte _pad16;
+        [FieldOffset(63)] private byte _pad17;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -421,8 +617,18 @@ namespace Hecton8.World
         [FieldOffset(40)] public int RupturedCount;
         [FieldOffset(44)] public float Value0;
         [FieldOffset(48)] public float Value1;
-        [FieldOffset(52)] private uint _reserved0;
-        [FieldOffset(56)] private ulong _reserved1;
+        [FieldOffset(52)] private byte _pad0;
+        [FieldOffset(53)] private byte _pad1;
+        [FieldOffset(54)] private byte _pad2;
+        [FieldOffset(55)] private byte _pad3;
+        [FieldOffset(56)] private byte _pad4;
+        [FieldOffset(57)] private byte _pad5;
+        [FieldOffset(58)] private byte _pad6;
+        [FieldOffset(59)] private byte _pad7;
+        [FieldOffset(60)] private byte _pad8;
+        [FieldOffset(61)] private byte _pad9;
+        [FieldOffset(62)] private byte _pad10;
+        [FieldOffset(63)] private byte _pad11;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -452,7 +658,7 @@ namespace Hecton8.World
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct CombineMeshDataJob : IJob
+    internal unsafe struct CombineMeshDataJob : IJob
     {
         public const uint AttributeFlagNormals = 1u << 0;
         public const uint AttributeFlagUvs = 1u << 1;
@@ -467,6 +673,14 @@ namespace Hecton8.World
         public int NormalStream;
         public int UvStream;
         public int ColorStream;
+        public int PositionOffset;
+        public int PositionStride;
+        public int NormalOffset;
+        public int NormalStride;
+        public int UvOffset;
+        public int UvStride;
+        public int ColorOffset;
+        public int ColorStride;
         public int SubMeshCount;
         public uint AttributeFlags;
         public float4x4 LocalToWreck;
@@ -474,24 +688,24 @@ namespace Hecton8.World
 
         public void Execute()
         {
-            NativeArray<Vector3> sourcePositions = SourceMeshData.GetVertexData<Vector3>(PositionStream);
             bool hasNormals = (AttributeFlags & AttributeFlagNormals) != 0u;
             bool hasUvs = (AttributeFlags & AttributeFlagUvs) != 0u;
             bool hasColors = (AttributeFlags & AttributeFlagColors) != 0u;
-            NativeArray<Vector3> sourceNormals = hasNormals
-                ? SourceMeshData.GetVertexData<Vector3>(NormalStream)
-                : default;
-            NativeArray<Vector2> sourceUvs = hasUvs
-                ? SourceMeshData.GetVertexData<Vector2>(UvStream)
-                : default;
-            NativeArray<Color32> sourceColors = hasColors
-                ? SourceMeshData.GetVertexData<Color32>(ColorStream)
-                : default;
+            byte* positionBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(SourceMeshData.GetVertexData<byte>(PositionStream)) + PositionOffset;
+            byte* normalBase = hasNormals
+                ? (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(SourceMeshData.GetVertexData<byte>(NormalStream)) + NormalOffset
+                : null;
+            byte* uvBase = hasUvs
+                ? (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(SourceMeshData.GetVertexData<byte>(UvStream)) + UvOffset
+                : null;
+            byte* colorBase = hasColors
+                ? (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(SourceMeshData.GetVertexData<byte>(ColorStream)) + ColorOffset
+                : null;
 
             int vertexCount = SourceMeshData.vertexCount;
             for (int vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++)
             {
-                Vector3 sourcePosition = sourcePositions[vertexIndex];
+                Vector3 sourcePosition = UnsafeUtility.ReadArrayElementWithStride<Vector3>(positionBase, vertexIndex, PositionStride);
                 float3 transformedPosition = math.transform(LocalToWreck, new float3(sourcePosition.x, sourcePosition.y, sourcePosition.z));
                 if (!math.all(math.isfinite(transformedPosition)))
                     transformedPosition = float3.zero;
@@ -499,7 +713,7 @@ namespace Hecton8.World
                 float3 transformedNormal = new float3(0f, 1f, 0f);
                 if (hasNormals)
                 {
-                    Vector3 sourceNormal = sourceNormals[vertexIndex];
+                    Vector3 sourceNormal = UnsafeUtility.ReadArrayElementWithStride<Vector3>(normalBase, vertexIndex, NormalStride);
                     float3 rotatedNormal = math.rotate(Rotation, new float3(sourceNormal.x, sourceNormal.y, sourceNormal.z));
                     float normalLengthSq = math.lengthsq(rotatedNormal);
                     transformedNormal = math.select(
@@ -511,12 +725,12 @@ namespace Hecton8.World
                 float2 uv = float2.zero;
                 if (hasUvs)
                 {
-                    Vector2 sourceUv = sourceUvs[vertexIndex];
+                    Vector2 sourceUv = UnsafeUtility.ReadArrayElementWithStride<Vector2>(uvBase, vertexIndex, UvStride);
                     uv = new float2(sourceUv.x, sourceUv.y);
                 }
 
                 uint packedColor = hasColors
-                    ? PackColor(sourceColors[vertexIndex])
+                    ? PackColor(UnsafeUtility.ReadArrayElementWithStride<Color32>(colorBase, vertexIndex, ColorStride))
                     : ResolveProceduralRustAlgaeColor(transformedPosition, transformedNormal, vertexIndex);
 
                 DestinationVertices[VertexOffset + vertexIndex] = new WreckMergedVertex
@@ -956,15 +1170,18 @@ namespace Hecton8.World
         private const int ProxyIndicesPerPlacement = 36;
         private const int AsyncGenerationStageYieldThresholdFrames = 1;
         private const int AsyncMeshBuildSliceCheckInterval = 4;
-        private const int AsyncJobWaitWatchdogFrames = 600;
         private const int AsyncMeshBuildYieldWatchdogFrames = 600;
         private const double AsyncGenerationStageMainThreadBudgetSeconds = 0.0015d;
         private const double AsyncMeshBuildMainThreadBudgetSeconds = 0.0045d;
         private const int MaxEditorPreviewCellBudget = 256;
+        private const int MaxScalabilityPlacementCap = 250;
         private const int MaxDebrisRecords = 10000;
+        private const int MinQualityDebrisRecords = 512;
         private const int MaxDebrisClusters = 512;
         private const int MaxLootRecords = 16;
         private const int MaxWreckBlackBoxFrames = 300;
+        private const int MinArtifactDiscoveryScanSlice = 24;
+        private const int MaxArtifactDiscoveryScanSlice = 192;
         private const float DebrisActivationDistanceMeters = 5f;
         private const float DebrisActivationDistanceSq = DebrisActivationDistanceMeters * DebrisActivationDistanceMeters;
         private const float DebrisSpatialCellSizeMeters = 5f;
@@ -978,23 +1195,36 @@ namespace Hecton8.World
         private const uint WreckTelemetryGenerationHash = 0x5747454Eu; // WGEN
         private const uint WreckTelemetryInteractionHash = 0x57494E54u; // WINT
         private const uint WreckTelemetryNanHash = 0x574E414Eu; // WNAN
+        private const uint WreckTelemetryFailureHash = 0x57464149u; // WFAI
         private const uint FallbackSectionSalt = 0xA511E9B3u;
         private const float WreckSolveTelemetryThresholdMs = 0.2f;
         private const int MaxPendingLootSpawns = 8;
         private const uint WreckSolveBudgetWarningHash = 0x57534C56u; // WSLV
         private const uint WreckBrgContextHash = 0x57425247u; // WBRG
+        private const uint WreckBlackBoxDumpMagic = 0x57313332u; // W132
+        private const int WreckBlackBoxEntrySizeBytes = 64;
         private const float WreckMinimumGenerationQuality01 = 0.0f;
         private const float WreckMaximumGenerationQuality01 = 1.0f;
         private const string GeneratedMergedMeshName = "ProceduralWreckGenerator_Merged";
         private const string GeneratedProxyMeshName = "ProceduralWreckGenerator_Proxy";
-        private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_WORLD_WRECKAGE.bin";
-        private const Allocator DataVaultExemptWreckGridAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptWreckPropagationAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptWreckPlacementAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptWreckRuntimeDefinitionAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptWreckRecordAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptWreckDebrisIndexAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptWreckTelemetryAllocator = Allocator.Persistent;
+        private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_1328_WreckGenerator.bin";
+        private const SystemID WreckVaultOwner = SystemID.WorldStreaming;
+        private const BufferID WreckGeneratorGridBufferId = BufferID.WreckGeneratorGrid;
+        private const BufferID WreckGeneratorPropagationQueueBufferId = BufferID.WreckGeneratorPropagationQueue;
+        private const BufferID WreckGeneratorAllPlacementsBufferId = BufferID.WreckGeneratorAllPlacements;
+        private const BufferID WreckGeneratorFilteredPlacementsBufferId = BufferID.WreckGeneratorFilteredPlacements;
+        private const BufferID WreckGeneratorRuntimeDefinitionsBufferId = BufferID.WreckGeneratorRuntimeDefinitions;
+        private const BufferID WreckGeneratorLootRecordsBufferId = BufferID.WreckGeneratorLootRecords;
+        private const BufferID WreckGeneratorDebrisRecordsBufferId = BufferID.WreckGeneratorDebrisRecords;
+        private const BufferID WreckGeneratorDebrisSpatialKeysBufferId = BufferID.WreckGeneratorDebrisSpatialKeys;
+        private const BufferID WreckGeneratorDebrisClustersBufferId = BufferID.WreckGeneratorDebrisClusters;
+        private const BufferID WreckGeneratorArtifactRecordsBufferId = BufferID.WreckGeneratorArtifactRecords;
+        private const BufferID WreckGeneratorScorchDecalRecordsBufferId = BufferID.WreckGeneratorScorchDecalRecords;
+        private const BufferID WreckGeneratorBurialCutRecordsBufferId = BufferID.WreckGeneratorBurialCutRecords;
+        private const BufferID WreckGeneratorTelemetryEntriesBufferId = BufferID.WreckGeneratorTelemetryEntries;
+        private const BufferID WreckGeneratorRenderWorldMatricesBufferId = BufferID.WreckGeneratorRenderWorldMatrices;
+        private const BufferID WreckGeneratorRenderModuleIdsBufferId = BufferID.WreckGeneratorRenderModuleIds;
+        private const BufferID WreckGeneratorRenderAgesBufferId = BufferID.WreckGeneratorRenderAges;
         private static readonly int _wreckEmergencyFlickerId = Shader.PropertyToID("_HectonWreckEmergencyFlicker");
         private static readonly int _wreckEmergencyPhaseId = Shader.PropertyToID("_HectonWreckEmergencyPhase");
         private static readonly WreckSiteVoronoiGateParameters DefaultWreckSiteGateParameters =
@@ -1022,6 +1252,255 @@ namespace Hecton8.World
             public int Quantity;
         }
 
+        private struct VaultArrayBuffer<T> where T : struct
+        {
+            private IDataVault _vault;
+            private VaultGenerationHandle<T> _handle;
+            private int _length;
+
+            public bool IsCreated => _vault != null && _handle.BufferID != 0u && _length > 0;
+            public int Length => _length;
+
+            public void Bind(IDataVault vault, VaultGenerationHandle<T> handle, int length)
+            {
+                _vault = vault;
+                _handle = handle;
+                _length = math.max(0, length);
+            }
+
+            public bool TryResolve(out NativeArray<T> buffer)
+            {
+                buffer = default;
+                return _vault != null &&
+                       _handle.BufferID != 0u &&
+                       !_vault.IsCompactionFenceActive &&
+                       _vault.TryResolveHandle(in _handle, out buffer) &&
+                       buffer.IsCreated &&
+                       !_vault.IsCompactionFenceActive &&
+                       buffer.Length >= _length;
+            }
+
+            public bool TryResolveReadOnly(out NativeArray<T>.ReadOnly buffer)
+            {
+                buffer = default;
+                return _vault != null &&
+                       _handle.BufferID != 0u &&
+                       !_vault.IsCompactionFenceActive &&
+                       _vault.TryReadOnlyHandle(in _handle, out buffer) &&
+                       buffer.IsCreated &&
+                       !_vault.IsCompactionFenceActive &&
+                       buffer.Length >= _length;
+            }
+
+            public bool TrySet(int index, in T value)
+            {
+                if ((uint)index >= (uint)_length ||
+                    _vault == null ||
+                    _handle.BufferID == 0u ||
+                    _vault.IsCompactionFenceActive ||
+                    !_vault.TryAcquireWriteLock(in _handle, WreckVaultOwner, out NativeArray<T> buffer))
+                {
+                    return false;
+                }
+
+                try
+                {
+                    if (!buffer.IsCreated ||
+                        buffer.Length < _length ||
+                        _vault.IsCompactionFenceActive)
+                    {
+                        return false;
+                    }
+
+                    buffer[index] = value;
+                    return true;
+                }
+                finally
+                {
+                    _vault.ReleaseWriteLock(in _handle, WreckVaultOwner);
+                }
+            }
+
+            public bool TryLockForWrite(out NativeArray<T> buffer)
+            {
+                buffer = default;
+                if (_vault == null ||
+                    _handle.BufferID == 0u ||
+                    _vault.IsCompactionFenceActive ||
+                    !_vault.TryAcquireWriteLock(in _handle, WreckVaultOwner, out buffer))
+                {
+                    return false;
+                }
+
+                if (!buffer.IsCreated ||
+                    buffer.Length < _length ||
+                    _vault.IsCompactionFenceActive)
+                {
+                    _vault.ReleaseWriteLock(in _handle, WreckVaultOwner);
+                    buffer = default;
+                    return false;
+                }
+
+                return true;
+            }
+
+            public void ReleaseWriteLock()
+            {
+                if (_vault != null && _handle.BufferID != 0u)
+                    _vault.ReleaseWriteLock(in _handle, WreckVaultOwner);
+            }
+
+            public bool TryGet(int index, out T value)
+            {
+                value = default;
+                if ((uint)index >= (uint)_length || !TryResolveReadOnly(out NativeArray<T>.ReadOnly buffer))
+                    return false;
+
+                value = buffer[index];
+                return true;
+            }
+
+            public void Dispose()
+            {
+                if (_vault != null && _handle.BufferID != 0u)
+                    _vault.ReleaseBuffer(in _handle);
+
+                this = default;
+            }
+        }
+
+        private struct VaultListBuffer<T> where T : struct
+        {
+            private VaultArrayBuffer<T> _storage;
+            private int _length;
+
+            public bool IsCreated => _storage.IsCreated;
+            public int Length => _length;
+            public int Capacity => _storage.Length;
+
+            public void Bind(IDataVault vault, VaultGenerationHandle<T> handle, int capacity)
+            {
+                _storage.Bind(vault, handle, capacity);
+                _length = 0;
+            }
+
+            public void Clear()
+            {
+                _length = 0;
+            }
+
+            public bool TryAddNoResize(in T item)
+            {
+                if ((uint)_length >= (uint)_storage.Length)
+                    return false;
+
+                if (_storage.TrySet(_length, in item))
+                {
+                    _length++;
+                    return true;
+                }
+
+                return false;
+            }
+
+            public bool TrySet(int index, in T value)
+            {
+                if ((uint)index >= (uint)_length)
+                    return false;
+
+                return _storage.TrySet(index, in value);
+            }
+
+            public bool TryResolve(out NativeArray<T> buffer)
+            {
+                return _storage.TryResolve(out buffer) &&
+                       buffer.IsCreated &&
+                       buffer.Length >= _length;
+            }
+
+            public bool TryResolveReadOnly(out NativeArray<T>.ReadOnly buffer)
+            {
+                return _storage.TryResolveReadOnly(out buffer) &&
+                       buffer.IsCreated &&
+                       buffer.Length >= _length;
+            }
+
+            public bool TryGet(int index, out T value)
+            {
+                value = default;
+                if ((uint)index >= (uint)_length)
+                    return false;
+
+                return _storage.TryGet(index, out value);
+            }
+
+            public void Dispose()
+            {
+                _storage.Dispose();
+                _length = 0;
+            }
+        }
+
+        private struct VaultInt3QueueBuffer
+        {
+            private VaultArrayBuffer<int3> _storage;
+            private int _head;
+            private int _tail;
+            private int _count;
+
+            public bool IsCreated => _storage.IsCreated;
+            public int Count => _count;
+            public int Capacity => _storage.Length;
+
+            public void Bind(IDataVault vault, VaultGenerationHandle<int3> handle, int capacity)
+            {
+                _storage.Bind(vault, handle, capacity);
+                Clear();
+            }
+
+            public void Clear()
+            {
+                _head = 0;
+                _tail = 0;
+                _count = 0;
+            }
+
+            public bool TryEnqueue(in int3 value)
+            {
+                int capacity = _storage.Length;
+                if (capacity <= 0 || _count >= capacity)
+                    return false;
+
+                if (!_storage.TrySet(_tail, in value))
+                    return false;
+
+                _tail = (_tail + 1) % capacity;
+                _count++;
+                return true;
+            }
+
+            public bool TryDequeue(out int3 value)
+            {
+                value = default;
+                int capacity = _storage.Length;
+                if (capacity <= 0 || _count <= 0)
+                    return false;
+
+                if (!_storage.TryGet(_head, out value))
+                    return false;
+
+                _head = (_head + 1) % capacity;
+                _count--;
+                return true;
+            }
+
+            public void Dispose()
+            {
+                _storage.Dispose();
+                Clear();
+            }
+        }
+
         [Header("WFC")]
         [SerializeField, Range(4, 32)]
         [Tooltip("Power-of-two grid resolution used by the wreck WFC kernel. Stored in Morton order for coherent neighbor traversal.")]
@@ -1032,8 +1511,8 @@ namespace Hecton8.World
         private float cellSizeMeters = 6f;
 
         [SerializeField, Min(1)]
-        [Tooltip("Hard ceiling for generated structural placements. Capacity is pre-allocated once and generation truncates safely if exceeded.")]
-        private int maxPlacements = 256;
+        [Tooltip("Hard ceiling for generated structural placements. Clamped to the wreck mandate cap so Vault storage cannot exceed the active quality envelope.")]
+        private int maxPlacements = MaxScalabilityPlacementCap;
 
         [SerializeField]
         [Tooltip("Additional deterministic salt mixed into the AUP hash to separate generation revisions.")]
@@ -1206,37 +1685,44 @@ namespace Hecton8.World
         [SerializeField] private int _debugLastContradictionCount;
         [SerializeField] private int _debugLastForcedFallbackCellCount;
         [SerializeField] private WreckSolveTermination _debugLastSolveTermination;
-        private NativeArray<WreckGridCell> _grid;
-        private NativeQueue<int3> _propagationQueue;
+        private VaultArrayBuffer<WreckGridCell> _grid;
+        private VaultInt3QueueBuffer _propagationQueue;
         private int _propagationQueueCount;
         private int _propagationQueueCapacity;
         private int _propagationQueueDroppedCount;
-        private NativeList<WreckModulePlacement> _allPlacements;
-        private NativeList<WreckModulePlacement> _filteredPlacements;
-        private NativeArray<WreckModuleRuntimeDefinition> _runtimeDefinitions;
-        private NativeArray<WreckLootRecord> _lootRecords;
-        private NativeArray<WreckDebrisRecord> _debrisRecords;
-        private NativeParallelMultiHashMap<int, int> _debrisSpatialHash;
-        private NativeArray<WreckDebrisCluster> _debrisClusters;
-        private NativeArray<WreckArtifactRecord> _artifactRecords;
-        private NativeArray<WreckScorchDecalRecord> _scorchDecalRecords;
-        private NativeArray<WreckBurialCutRecord> _burialCutRecords;
-        private NativeArray<WreckTelemetryEntry> _telemetryEntries;
-        private string _propagationQueueSentinelLabel;
-        private string _allPlacementsSentinelLabel;
-        private string _filteredPlacementsSentinelLabel;
+        private VaultListBuffer<WreckModulePlacement> _allPlacements;
+        private VaultListBuffer<WreckModulePlacement> _filteredPlacements;
+        private VaultArrayBuffer<WreckModuleRuntimeDefinition> _runtimeDefinitions;
+        private VaultArrayBuffer<WreckLootRecord> _lootRecords;
+        private VaultArrayBuffer<WreckDebrisRecord> _debrisRecords;
+        private VaultArrayBuffer<int> _debrisSpatialKeys;
+        private VaultArrayBuffer<WreckDebrisCluster> _debrisClusters;
+        private VaultArrayBuffer<WreckArtifactRecord> _artifactRecords;
+        private VaultArrayBuffer<WreckScorchDecalRecord> _scorchDecalRecords;
+        private VaultArrayBuffer<WreckBurialCutRecord> _burialCutRecords;
+        private VaultArrayBuffer<WreckTelemetryEntry> _telemetryEntries;
+        private VaultArrayBuffer<Matrix4x4> _renderWorldMatrices;
+        private VaultArrayBuffer<byte> _renderModuleIds;
+        private VaultArrayBuffer<float> _renderAges;
+        private Matrix4x4[] _renderWorldMatrixSnapshot;
+        private byte[] _renderModuleIdSnapshot;
+        private float[] _renderAgeSnapshot;
         private List<WreckNavigationHandle> _activeNavigationHandles;
         private Mesh.MeshDataArray[] _readOnlyMeshSnapshots;
-        private JobHandle[] _copyHandles;
-        private readonly PendingWreckLootSpawn[] _pendingLootSpawns = new PendingWreckLootSpawn[MaxPendingLootSpawns]; // COLD ALLOC: PendingWreckLootSpawn[8] - one-per-frame wreck loot spawn queue - owner: ProceduralWreckGenerator
+        private readonly PendingWreckLootSpawn[] _pendingLootSpawns = new PendingWreckLootSpawn[MaxPendingLootSpawns]; // COLD ALLOC: PendingWreckLootSpawn[MaxPendingLootSpawns] - one-per-frame wreck loot spawn queue - owner: ProceduralWreckGenerator
         private readonly BoxCollider[] _navGridBoxColliderScratch = new BoxCollider[1]; // COLD ALLOC: BoxCollider[1] - navgrid obstacle registration scratch - owner: ProceduralWreckGenerator
-        private static readonly CapsuleCollider[] s_EmptyCapsuleColliders = Array.Empty<CapsuleCollider>();
+        private readonly WreckModuleRuntimeDefinition[] _runtimeDefinitionBuildCache = new WreckModuleRuntimeDefinition[MaxModuleDefinitions]; // COLD ALLOC: WreckModuleRuntimeDefinition[MaxModuleDefinitions] - unmanaged DTO staging cache copied into Vault under one lock - owner: ProceduralWreckGenerator
+        private readonly WreckLootRecord[] _lootRecordBuildCache = new WreckLootRecord[MaxLootRecords]; // COLD ALLOC: WreckLootRecord[MaxLootRecords] - unmanaged DTO staging cache copied into Vault under one lock - owner: ProceduralWreckGenerator
+        private readonly Hecton8.Items.ItemData[] _lootItemDataCache = new Hecton8.Items.ItemData[MaxLootRecords]; // COLD ALLOC: Hecton8.Items.ItemData[MaxLootRecords] - managed item ref cache resolved outside SlowTick - owner: ProceduralWreckGenerator
+        private readonly GameObject[] _lootPrefabCache = new GameObject[MaxLootRecords]; // COLD ALLOC: GameObject[MaxLootRecords] - managed prefab ref cache resolved outside SlowTick - owner: ProceduralWreckGenerator
+        private static readonly CapsuleCollider[] s_EmptyCapsuleColliders = Array.Empty<CapsuleCollider>(); // COLD ALLOC: CapsuleCollider[0] - shared empty collider result - owner: ProceduralWreckGenerator
         private GameObject _activeCollisionProxy;
         private Collider _activeCollisionCollider;
         private IObjectPoolService _objectPool;
         private ITickDispatcher _dispatcher;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonVoxelEngine _voxelEngine;
+        private IDataVault _dataVault;
         private int _activeNavGridObstacleId;
         private int _pendingLootReadIndex;
         private int _pendingLootCount;
@@ -1256,7 +1742,16 @@ namespace Hecton8.World
         private int _openedSealedModuleCount;
         private int _rupturedModuleCount;
         private int _telemetryCursor;
+        private int _telemetryWrittenCount;
+        private int _debrisNearFieldCursor;
         private int _debrisGravityCursor;
+        private int _artifactDiscoveryCursor;
+        private int _generationInFlight;
+        private int _wreckVaultEpoch;
+        private int _activeGenerationVaultEpoch = -1;
+        private bool _blackBoxDumpRequested;
+        private bool _blackBoxDumpWritten;
+        private bool _blackBoxDumpFailed;
         private bool _registeredHotSwapListener;
         private uint _activeGenerationSeed;
         private Bounds _activeWorldBounds;
@@ -1276,6 +1771,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            FlushBlackBoxDumpIfRequested();
             ClearPendingLootQueue();
             TryUnregisterLootTick();
             TryUnregisterWreckSlowTick();
@@ -1293,14 +1789,19 @@ namespace Hecton8.World
         {
             if (_pendingLootCount <= 0)
             {
+                TryUnregisterLootTick();
                 return;
             }
+
             TryRegisterLootTick();
         }
 
         public void LateFrameTick()
         {
             FlushOneQueuedLootSpawn();
+            FlushBlackBoxDumpIfRequested();
+            if (_pendingLootCount <= 0 && !_blackBoxDumpRequested)
+                TryUnregisterLootTick();
         }
 
         public void SlowTick()
@@ -1341,6 +1842,13 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
                     _voxelEngine = currentService as HectonVoxelEngine;
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    ReleaseWreckVaultBuffers();
+                    _dataVault = currentService as IDataVault;
+                    _initialized = false;
+                    if (_dataVault != null && isActiveAndEnabled)
+                        Initialize();
+                    break;
             }
         }
 
@@ -1348,7 +1856,7 @@ namespace Hecton8.World
         {
             gridResolution = ClampPowerOfTwo(gridResolution, 4, 32);
             cellSizeMeters = Mathf.Max(1f, cellSizeMeters);
-            maxPlacements = Mathf.Max(1, maxPlacements);
+            maxPlacements = Mathf.Clamp(maxPlacements, 1, MaxScalabilityPlacementCap);
             terrainSnapVerticalOffsetMeters = Mathf.Max(0f, terrainSnapVerticalOffsetMeters);
             collapseWatchdogPerCell = Mathf.Max(1, collapseWatchdogPerCell);
             propagationWatchdogPerCell = Mathf.Max(1, propagationWatchdogPerCell);
@@ -1449,34 +1957,47 @@ namespace Hecton8.World
         public WreckageData Generate(int3 chunkAup, uint seed)
         {
             Initialize();
-            ApplyGenerationScalability();
-
-            double spanMeters = ResolveActiveGridResolution() * cellSizeMeters;
-            double3 absoluteOrigin = new double3(
-                chunkAup.x * spanMeters,
-                chunkAup.y * spanMeters,
-                chunkAup.z * spanMeters);
-
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteOrigin);
-            float3 runtimeOriginFloat = aup.ToRuntimeFloat3();
-            Vector3 runtimeOrigin = new Vector3(runtimeOriginFloat.x, runtimeOriginFloat.y, runtimeOriginFloat.z);
-            uint resolvedSeed = seed != 0u
-                ? seed
-                : ComputeGenerationSeed(in aup, worldGenerationVersionSalt ^ FallbackSectionSalt);
-            if (!CanGenerateAtVoronoiWreckSite(in aup))
-            {
-                MarkVoronoiGateRejected(resolvedSeed);
+            if (!_initialized)
                 return default;
-            }
 
-            SnapOriginToTerrainHeight(ref aup, ref runtimeOrigin);
-            return GenerateInternal(in aup, runtimeOrigin, resolvedSeed);
+            if (!TryBeginGeneration())
+                return default;
+
+            try
+            {
+                ApplyGenerationScalability();
+
+                double spanMeters = ResolveActiveGridResolution() * cellSizeMeters;
+                double3 absoluteOrigin = new double3(
+                    chunkAup.x * spanMeters,
+                    chunkAup.y * spanMeters,
+                    chunkAup.z * spanMeters);
+
+                AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteOrigin);
+                float3 runtimeOriginFloat = aup.ToRuntimeFloat3();
+                Vector3 runtimeOrigin = new Vector3(runtimeOriginFloat.x, runtimeOriginFloat.y, runtimeOriginFloat.z);
+                uint resolvedSeed = seed != 0u
+                    ? seed
+                    : ComputeGenerationSeed(in aup, worldGenerationVersionSalt ^ FallbackSectionSalt);
+                if (!CanGenerateAtVoronoiWreckSite(in aup))
+                {
+                    MarkVoronoiGateRejected(resolvedSeed);
+                    return default;
+                }
+
+                SnapOriginToTerrainHeight(ref aup, ref runtimeOrigin);
+                return GenerateInternal(in aup, runtimeOrigin, resolvedSeed);
+            }
+            finally
+            {
+                EndGeneration();
+            }
         }
 
         /// <summary>
         /// Generates a wreck through the non-blocking startup-safe pipeline.
-        /// WFC collapse and placement resolution run off the main thread, while
-        /// mesh/nav finalize stages are spread across subsequent frames.
+        /// WFC collapse and placement resolution stay on the owner phase; mesh/nav
+        /// finalize stages are spread across subsequent frames.
         /// </summary>
         /// <param name="chunkAup">Absolute-universe chunk anchor.</param>
         /// <param name="seed">Stable caller-provided seed.</param>
@@ -1484,28 +2005,41 @@ namespace Hecton8.World
         public async Awaitable<WreckageData> GenerateAsync(int3 chunkAup, uint seed)
         {
             Initialize();
-            ApplyGenerationScalability();
-
-            double spanMeters = ResolveActiveGridResolution() * cellSizeMeters;
-            double3 absoluteOrigin = new double3(
-                chunkAup.x * spanMeters,
-                chunkAup.y * spanMeters,
-                chunkAup.z * spanMeters);
-
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteOrigin);
-            float3 runtimeOriginFloat = aup.ToRuntimeFloat3();
-            Vector3 runtimeOrigin = new Vector3(runtimeOriginFloat.x, runtimeOriginFloat.y, runtimeOriginFloat.z);
-            uint resolvedSeed = seed != 0u
-                ? seed
-                : ComputeGenerationSeed(in aup, worldGenerationVersionSalt ^ FallbackSectionSalt);
-            if (!CanGenerateAtVoronoiWreckSite(in aup))
-            {
-                MarkVoronoiGateRejected(resolvedSeed);
+            if (!_initialized)
                 return default;
-            }
 
-            SnapOriginToTerrainHeight(ref aup, ref runtimeOrigin);
-            return await GenerateInternalAsync(aup, runtimeOrigin, resolvedSeed);
+            if (!TryBeginGeneration())
+                return default;
+
+            try
+            {
+                ApplyGenerationScalability();
+
+                double spanMeters = ResolveActiveGridResolution() * cellSizeMeters;
+                double3 absoluteOrigin = new double3(
+                    chunkAup.x * spanMeters,
+                    chunkAup.y * spanMeters,
+                    chunkAup.z * spanMeters);
+
+                AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteOrigin);
+                float3 runtimeOriginFloat = aup.ToRuntimeFloat3();
+                Vector3 runtimeOrigin = new Vector3(runtimeOriginFloat.x, runtimeOriginFloat.y, runtimeOriginFloat.z);
+                uint resolvedSeed = seed != 0u
+                    ? seed
+                    : ComputeGenerationSeed(in aup, worldGenerationVersionSalt ^ FallbackSectionSalt);
+                if (!CanGenerateAtVoronoiWreckSite(in aup))
+                {
+                    MarkVoronoiGateRejected(resolvedSeed);
+                    return default;
+                }
+
+                SnapOriginToTerrainHeight(ref aup, ref runtimeOrigin);
+                return await GenerateInternalAsync(aup, runtimeOrigin, resolvedSeed);
+            }
+            finally
+            {
+                EndGeneration();
+            }
         }
 
         /// <summary>
@@ -1516,20 +2050,33 @@ namespace Hecton8.World
         public WreckageData Generate(in HectonMapMagicVegetationBridge.MegaWreckStreamSection section)
         {
             Initialize();
-            ApplyGenerationScalability();
-            if (!TryResolveAupFromRuntimeOrigin(section.WorldCenter, out AbsoluteUniversePosition aup))
+            if (!_initialized)
                 return default;
 
-            uint resolvedSeed = ComputeGenerationSeed(in aup, (uint)section.SectionSeed ^ worldGenerationVersionSalt);
-            if (!CanGenerateAtVoronoiWreckSite(in aup))
+            if (!TryBeginGeneration())
+                return default;
+
+            try
             {
-                MarkVoronoiGateRejected(resolvedSeed);
-                return default;
-            }
+                ApplyGenerationScalability();
+                if (!TryResolveAupFromRuntimeOrigin(section.WorldCenter, out AbsoluteUniversePosition aup))
+                    return default;
 
-            Vector3 runtimeOrigin = section.WorldCenter;
-            SnapOriginToTerrainHeight(ref aup, ref runtimeOrigin);
-            return GenerateInternal(in aup, runtimeOrigin, resolvedSeed);
+                uint resolvedSeed = ComputeGenerationSeed(in aup, (uint)section.SectionSeed ^ worldGenerationVersionSalt);
+                if (!CanGenerateAtVoronoiWreckSite(in aup))
+                {
+                    MarkVoronoiGateRejected(resolvedSeed);
+                    return default;
+                }
+
+                Vector3 runtimeOrigin = section.WorldCenter;
+                SnapOriginToTerrainHeight(ref aup, ref runtimeOrigin);
+                return GenerateInternal(in aup, runtimeOrigin, resolvedSeed);
+            }
+            finally
+            {
+                EndGeneration();
+            }
         }
 
         /// <summary>
@@ -1541,20 +2088,33 @@ namespace Hecton8.World
         public async Awaitable<WreckageData> GenerateAsync(HectonMapMagicVegetationBridge.MegaWreckStreamSection section)
         {
             Initialize();
-            ApplyGenerationScalability();
-            if (!TryResolveAupFromRuntimeOrigin(section.WorldCenter, out AbsoluteUniversePosition aup))
+            if (!_initialized)
                 return default;
 
-            uint resolvedSeed = ComputeGenerationSeed(in aup, (uint)section.SectionSeed ^ worldGenerationVersionSalt);
-            if (!CanGenerateAtVoronoiWreckSite(in aup))
+            if (!TryBeginGeneration())
+                return default;
+
+            try
             {
-                MarkVoronoiGateRejected(resolvedSeed);
-                return default;
-            }
+                ApplyGenerationScalability();
+                if (!TryResolveAupFromRuntimeOrigin(section.WorldCenter, out AbsoluteUniversePosition aup))
+                    return default;
 
-            Vector3 runtimeOrigin = section.WorldCenter;
-            SnapOriginToTerrainHeight(ref aup, ref runtimeOrigin);
-            return await GenerateInternalAsync(aup, runtimeOrigin, resolvedSeed);
+                uint resolvedSeed = ComputeGenerationSeed(in aup, (uint)section.SectionSeed ^ worldGenerationVersionSalt);
+                if (!CanGenerateAtVoronoiWreckSite(in aup))
+                {
+                    MarkVoronoiGateRejected(resolvedSeed);
+                    return default;
+                }
+
+                Vector3 runtimeOrigin = section.WorldCenter;
+                SnapOriginToTerrainHeight(ref aup, ref runtimeOrigin);
+                return await GenerateInternalAsync(aup, runtimeOrigin, resolvedSeed);
+            }
+            finally
+            {
+                EndGeneration();
+            }
         }
 
         /// <summary>
@@ -1577,89 +2137,45 @@ namespace Hecton8.World
                 _activeNavigationHandles.Clear();
             }
 
-            if (_grid.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_grid);
-                _grid.Dispose();
-            }
-
-            if (_propagationQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ProceduralWreckGenerator), _propagationQueueSentinelLabel);
-                _propagationQueue.Dispose();
-            }
-            _propagationQueueCount = 0;
-            _propagationQueueCapacity = 0;
-            _propagationQueueDroppedCount = 0;
-
-            if (_allPlacements.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(nameof(ProceduralWreckGenerator), _allPlacementsSentinelLabel);
-                _allPlacements.Dispose();
-            }
-
-            if (_filteredPlacements.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(nameof(ProceduralWreckGenerator), _filteredPlacementsSentinelLabel);
-                _filteredPlacements.Dispose();
-            }
-
-            if (_runtimeDefinitions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_runtimeDefinitions);
-                _runtimeDefinitions.Dispose();
-            }
-
-            if (_lootRecords.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_lootRecords);
-                _lootRecords.Dispose();
-            }
-
-            if (_debrisRecords.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_debrisRecords);
-                _debrisRecords.Dispose();
-            }
-
-            if (_debrisSpatialHash.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(nameof(ProceduralWreckGenerator), nameof(_debrisSpatialHash));
-                _debrisSpatialHash.Dispose();
-            }
-
-            if (_debrisClusters.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_debrisClusters);
-                _debrisClusters.Dispose();
-            }
-
-            if (_artifactRecords.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_artifactRecords);
-                _artifactRecords.Dispose();
-            }
-
-            if (_scorchDecalRecords.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_scorchDecalRecords);
-                _scorchDecalRecords.Dispose();
-            }
-
-            if (_burialCutRecords.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_burialCutRecords);
-                _burialCutRecords.Dispose();
-            }
-
-            if (_telemetryEntries.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_telemetryEntries);
-                _telemetryEntries.Dispose();
-            }
+            ReleaseWreckVaultBuffers();
 
             _initialized = false;
             ClearCachedRegistryServices();
+        }
+
+        private bool TryBeginGeneration()
+        {
+            if (Interlocked.CompareExchange(ref _generationInFlight, 1, 0) == 0)
+            {
+                Volatile.Write(ref _activeGenerationVaultEpoch, Volatile.Read(ref _wreckVaultEpoch));
+                return true;
+            }
+
+            WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 48u, 0f, 0f);
+            return false;
+        }
+
+        private void EndGeneration()
+        {
+            Volatile.Write(ref _activeGenerationVaultEpoch, -1);
+            Volatile.Write(ref _generationInFlight, 0);
+        }
+
+        private bool CanContinueGeneration()
+        {
+            int generationEpoch = Volatile.Read(ref _activeGenerationVaultEpoch);
+            int currentEpoch = Volatile.Read(ref _wreckVaultEpoch);
+            if ((!Application.isPlaying || isActiveAndEnabled) &&
+                generationEpoch >= 0 &&
+                generationEpoch == currentEpoch &&
+                _initialized &&
+                AreWreckVaultBuffersCreated())
+            {
+                return true;
+            }
+
+            WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 49u, 0f, 0f);
+            return false;
         }
 
         private static uint ComputeGenerationSeed(in AbsoluteUniversePosition aup, uint salt)
@@ -1719,7 +2235,7 @@ namespace Hecton8.World
         {
             float quality = SanitizeQualityWeight01(qualityWeight01);
             float curved = quality * quality;
-            return math.clamp((int)math.round(math.lerp(50f, 250f, curved)), 50, 250);
+            return math.clamp((int)math.round(math.lerp(50f, MaxScalabilityPlacementCap, curved)), 50, MaxScalabilityPlacementCap);
         }
 
         private void SnapOriginToTerrainHeight(ref AbsoluteUniversePosition aup, ref Vector3 runtimeOrigin)
@@ -1732,14 +2248,42 @@ namespace Hecton8.World
                 return;
 
             double3 absolute = aup.ToAbsoluteDouble3();
-            Vector3 absolutePosition = new Vector3((float)absolute.x, (float)absolute.y, (float)absolute.z);
-            if (!bridge.TryGetHeightAUP(absolutePosition, out float terrainHeight) || !math.isfinite(terrainHeight))
+            if (!TryResolveCurrentRuntimeOriginAbsolute(out double3 originAbsolute))
                 return;
 
-            float snappedY = terrainHeight + terrainSnapVerticalOffsetMeters;
-            aup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(absolute.x, snappedY, absolute.z));
-            float3 snappedRuntime = aup.ToRuntimeFloat3();
+            double3 localDelta = absolute - originAbsolute;
+            if (!math.all(math.isfinite(localDelta)))
+                return;
+
+            float localX = ClampDoubleToFloat(localDelta.x);
+            float localZ = ClampDoubleToFloat(localDelta.z);
+            if (!bridge.TryGetHeight(localX, localZ, out float terrainHeight) || !math.isfinite(terrainHeight))
+                return;
+
+            double snappedAbsoluteY = originAbsolute.y + terrainHeight + terrainSnapVerticalOffsetMeters;
+            if (!math.isfinite(snappedAbsoluteY))
+                return;
+
+            AbsoluteUniversePosition snappedAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(absolute.x, snappedAbsoluteY, absolute.z));
+            if (!IsFiniteAup(in snappedAup) ||
+                !snappedAup.TryToRuntimeFloat3(out float3 snappedRuntime) ||
+                !math.all(math.isfinite(snappedRuntime)))
+            {
+                return;
+            }
+
+            aup = snappedAup;
             runtimeOrigin = new Vector3(snappedRuntime.x, snappedRuntime.y, snappedRuntime.z);
+        }
+
+        private static float ClampDoubleToFloat(double value)
+        {
+            if (!math.isfinite(value))
+                return 0f;
+
+            const double MaxFloat = 3.4028234663852886E+38d;
+            double clamped = math.clamp(value, -MaxFloat, MaxFloat);
+            return (float)clamped;
         }
 
         private bool CanGenerateAtVoronoiWreckSite(in AbsoluteUniversePosition aup)
@@ -1846,69 +2390,99 @@ namespace Hecton8.World
             if (_initialized)
                 return;
 
-            gridResolution = ClampPowerOfTwo(gridResolution, 4, 32);
-            int maxCellCount = gridResolution * gridResolution * gridResolution;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
 
-            // COLD ALLOC: NativeArray<WreckGridCell>[maxCellCount] - Morton-ordered WFC state grid - owner: ProceduralWreckGenerator
-            _grid = new NativeArray<WreckGridCell>(maxCellCount, DataVaultExemptWreckGridAllocator, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(_grid, nameof(ProceduralWreckGenerator), nameof(_grid), NativeAllocationLifetime.Scene);
-            // COLD ALLOC: NativeQueue<int3>(Persistent) - deterministic WFC propagation frontier - owner: ProceduralWreckGenerator
-            _propagationQueue = new NativeQueue<int3>(DataVaultExemptWreckPropagationAllocator);
-            string sentinelSuffix = string.Concat("_", EntityId.ToULong(GetEntityId()));
-            _propagationQueueSentinelLabel = string.Concat(nameof(_propagationQueue), sentinelSuffix);
-            _allPlacementsSentinelLabel = string.Concat(nameof(_allPlacements), sentinelSuffix);
-            _filteredPlacementsSentinelLabel = string.Concat(nameof(_filteredPlacements), sentinelSuffix);
-            NativeMemorySentinel.RegisterNativeQueue(
-                _propagationQueue,
-                maxCellCount,
-                nameof(ProceduralWreckGenerator),
-                _propagationQueueSentinelLabel,
-            NativeAllocationLifetime.Scene);
-            PrewarmQueue(ref _propagationQueue, maxCellCount);
+            gridResolution = ClampPowerOfTwo(gridResolution, 4, 32);
+            maxPlacements = math.clamp(maxPlacements, 1, MaxScalabilityPlacementCap);
+            int maxCellCount = gridResolution * gridResolution * gridResolution;
+            int placementStorageCapacity = maxPlacements;
+
+            _grid.Bind(
+                vault,
+                vault.EnsureGenerationHandle<WreckGridCell>(WreckGeneratorGridBufferId, maxCellCount, WreckVaultOwner, NativeArrayOptions.UninitializedMemory),
+                maxCellCount);
+            _propagationQueue.Bind(
+                vault,
+                vault.EnsureGenerationHandle<int3>(WreckGeneratorPropagationQueueBufferId, maxCellCount, WreckVaultOwner, NativeArrayOptions.UninitializedMemory),
+                maxCellCount);
             _propagationQueueCount = 0;
             _propagationQueueCapacity = maxCellCount;
             _propagationQueueDroppedCount = 0;
-            // COLD ALLOC: NativeList<WreckModulePlacement>[maxPlacements] - merged structural placement list - owner: ProceduralWreckGenerator
-            _allPlacements = new NativeList<WreckModulePlacement>(maxPlacements, DataVaultExemptWreckPlacementAllocator);
-            NativeMemorySentinel.RegisterNativeList(_allPlacements, nameof(ProceduralWreckGenerator), _allPlacementsSentinelLabel, NativeAllocationLifetime.Scene);
-            // COLD ALLOC: NativeList<WreckModulePlacement>[maxPlacements] - per-tier mesh merge filter scratch - owner: ProceduralWreckGenerator
-            _filteredPlacements = new NativeList<WreckModulePlacement>(maxPlacements, DataVaultExemptWreckPlacementAllocator);
-            NativeMemorySentinel.RegisterNativeList(_filteredPlacements, nameof(ProceduralWreckGenerator), _filteredPlacementsSentinelLabel, NativeAllocationLifetime.Scene);
-            // COLD ALLOC: NativeArray<WreckModuleRuntimeDefinition>[16] - native WFC module table - owner: ProceduralWreckGenerator
-            _runtimeDefinitions = new NativeArray<WreckModuleRuntimeDefinition>(MaxModuleDefinitions, DataVaultExemptWreckRuntimeDefinitionAllocator, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_runtimeDefinitions, nameof(ProceduralWreckGenerator), nameof(_runtimeDefinitions), NativeAllocationLifetime.Scene);
-            // COLD ALLOC: NativeArray<WreckLootRecord>[16] - SOA loot table for wreck salvage drops - owner: ProceduralWreckGenerator
-            _lootRecords = new NativeArray<WreckLootRecord>(MaxLootRecords, DataVaultExemptWreckRecordAllocator, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_lootRecords, nameof(ProceduralWreckGenerator), nameof(_lootRecords), NativeAllocationLifetime.Scene);
-            // COLD ALLOC: NativeArray<WreckDebrisRecord>[10000] - deterministic pickable scrap records, dots until near field - owner: ProceduralWreckGenerator
-            _debrisRecords = new NativeArray<WreckDebrisRecord>(MaxDebrisRecords, DataVaultExemptWreckRecordAllocator, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_debrisRecords, nameof(ProceduralWreckGenerator), nameof(_debrisRecords), NativeAllocationLifetime.Scene);
-            // COLD ALLOC: NativeParallelMultiHashMap<int,int>[10000] - O(1) debris cell occupancy - owner: ProceduralWreckGenerator
-            _debrisSpatialHash = new NativeParallelMultiHashMap<int, int>(MaxDebrisRecords, DataVaultExemptWreckDebrisIndexAllocator);
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_debrisSpatialHash, nameof(ProceduralWreckGenerator), nameof(_debrisSpatialHash), NativeAllocationLifetime.Scene);
-            // COLD ALLOC: NativeArray<WreckDebrisCluster>[512] - 50m cluster metadata for culling sidecars - owner: ProceduralWreckGenerator
-            _debrisClusters = new NativeArray<WreckDebrisCluster>(MaxDebrisClusters, DataVaultExemptWreckDebrisIndexAllocator, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_debrisClusters, nameof(ProceduralWreckGenerator), nameof(_debrisClusters), NativeAllocationLifetime.Scene);
-            // COLD ALLOC: NativeArray<WreckArtifactRecord>[maxPlacements] - seeded lore fragment discovery records - owner: ProceduralWreckGenerator
-            _artifactRecords = new NativeArray<WreckArtifactRecord>(maxPlacements, DataVaultExemptWreckRecordAllocator, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_artifactRecords, nameof(ProceduralWreckGenerator), nameof(_artifactRecords), NativeAllocationLifetime.Scene);
-            // COLD ALLOC: NativeArray<WreckScorchDecalRecord>[maxPlacements] - procedural breach scorch decals - owner: ProceduralWreckGenerator
-            _scorchDecalRecords = new NativeArray<WreckScorchDecalRecord>(maxPlacements, DataVaultExemptWreckRecordAllocator, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_scorchDecalRecords, nameof(ProceduralWreckGenerator), nameof(_scorchDecalRecords), NativeAllocationLifetime.Scene);
-            // COLD ALLOC: NativeArray<WreckBurialCutRecord>[maxPlacements] - voxel surgeon SDF box cut records - owner: ProceduralWreckGenerator
-            _burialCutRecords = new NativeArray<WreckBurialCutRecord>(maxPlacements, DataVaultExemptWreckRecordAllocator, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_burialCutRecords, nameof(ProceduralWreckGenerator), nameof(_burialCutRecords), NativeAllocationLifetime.Scene);
-            // COLD ALLOC: NativeArray<WreckTelemetryEntry>[300] - fixed black-box circular buffer - owner: ProceduralWreckGenerator
-            _telemetryEntries = new NativeArray<WreckTelemetryEntry>(MaxWreckBlackBoxFrames, DataVaultExemptWreckTelemetryAllocator, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_telemetryEntries, nameof(ProceduralWreckGenerator), nameof(_telemetryEntries), NativeAllocationLifetime.Scene);
+            _allPlacements.Bind(
+                vault,
+                vault.EnsureGenerationHandle<WreckModulePlacement>(WreckGeneratorAllPlacementsBufferId, placementStorageCapacity, WreckVaultOwner, NativeArrayOptions.UninitializedMemory),
+                placementStorageCapacity);
+            _filteredPlacements.Bind(
+                vault,
+                vault.EnsureGenerationHandle<WreckModulePlacement>(WreckGeneratorFilteredPlacementsBufferId, placementStorageCapacity, WreckVaultOwner, NativeArrayOptions.UninitializedMemory),
+                placementStorageCapacity);
+            _runtimeDefinitions.Bind(
+                vault,
+                vault.EnsureGenerationHandle<WreckModuleRuntimeDefinition>(WreckGeneratorRuntimeDefinitionsBufferId, MaxModuleDefinitions, WreckVaultOwner, NativeArrayOptions.ClearMemory),
+                MaxModuleDefinitions);
+            _lootRecords.Bind(
+                vault,
+                vault.EnsureGenerationHandle<WreckLootRecord>(WreckGeneratorLootRecordsBufferId, MaxLootRecords, WreckVaultOwner, NativeArrayOptions.ClearMemory),
+                MaxLootRecords);
+            _debrisRecords.Bind(
+                vault,
+                vault.EnsureGenerationHandle<WreckDebrisRecord>(WreckGeneratorDebrisRecordsBufferId, MaxDebrisRecords, WreckVaultOwner, NativeArrayOptions.ClearMemory),
+                MaxDebrisRecords);
+            _debrisSpatialKeys.Bind(
+                vault,
+                vault.EnsureGenerationHandle<int>(WreckGeneratorDebrisSpatialKeysBufferId, MaxDebrisRecords, WreckVaultOwner, NativeArrayOptions.ClearMemory),
+                MaxDebrisRecords);
+            _debrisClusters.Bind(
+                vault,
+                vault.EnsureGenerationHandle<WreckDebrisCluster>(WreckGeneratorDebrisClustersBufferId, MaxDebrisClusters, WreckVaultOwner, NativeArrayOptions.ClearMemory),
+                MaxDebrisClusters);
+            _artifactRecords.Bind(
+                vault,
+                vault.EnsureGenerationHandle<WreckArtifactRecord>(WreckGeneratorArtifactRecordsBufferId, placementStorageCapacity, WreckVaultOwner, NativeArrayOptions.ClearMemory),
+                placementStorageCapacity);
+            _scorchDecalRecords.Bind(
+                vault,
+                vault.EnsureGenerationHandle<WreckScorchDecalRecord>(WreckGeneratorScorchDecalRecordsBufferId, placementStorageCapacity, WreckVaultOwner, NativeArrayOptions.ClearMemory),
+                placementStorageCapacity);
+            _burialCutRecords.Bind(
+                vault,
+                vault.EnsureGenerationHandle<WreckBurialCutRecord>(WreckGeneratorBurialCutRecordsBufferId, placementStorageCapacity, WreckVaultOwner, NativeArrayOptions.ClearMemory),
+                placementStorageCapacity);
+            _telemetryEntries.Bind(
+                vault,
+                vault.EnsureGenerationHandle<WreckTelemetryEntry>(WreckGeneratorTelemetryEntriesBufferId, MaxWreckBlackBoxFrames, WreckVaultOwner, NativeArrayOptions.ClearMemory),
+                MaxWreckBlackBoxFrames);
+            int renderPayloadCapacity = ResolveRenderPayloadCapacity();
+            _renderWorldMatrices.Bind(
+                vault,
+                vault.EnsureGenerationHandle<Matrix4x4>(WreckGeneratorRenderWorldMatricesBufferId, renderPayloadCapacity, WreckVaultOwner, NativeArrayOptions.UninitializedMemory),
+                renderPayloadCapacity);
+            _renderModuleIds.Bind(
+                vault,
+                vault.EnsureGenerationHandle<byte>(WreckGeneratorRenderModuleIdsBufferId, renderPayloadCapacity, WreckVaultOwner, NativeArrayOptions.UninitializedMemory),
+                renderPayloadCapacity);
+            _renderAges.Bind(
+                vault,
+                vault.EnsureGenerationHandle<float>(WreckGeneratorRenderAgesBufferId, renderPayloadCapacity, WreckVaultOwner, NativeArrayOptions.UninitializedMemory),
+                renderPayloadCapacity);
+
+            if (!AreWreckVaultBuffersCreated())
+            {
+                ReleaseWreckVaultBuffers();
+                return;
+            }
+
+            _renderWorldMatrixSnapshot = new Matrix4x4[renderPayloadCapacity]; // COLD ALLOC: Matrix4x4[renderPayloadCapacity] - BRG payload snapshot copied out of Vault before renderer publish - owner: ProceduralWreckGenerator
+            _renderModuleIdSnapshot = new byte[renderPayloadCapacity]; // COLD ALLOC: byte[renderPayloadCapacity] - BRG module id snapshot copied out of Vault before renderer publish - owner: ProceduralWreckGenerator
+            _renderAgeSnapshot = new float[renderPayloadCapacity]; // COLD ALLOC: float[renderPayloadCapacity] - BRG age snapshot copied out of Vault before renderer publish - owner: ProceduralWreckGenerator
             buildAsyncNavigationBake = false;
             _activeNavigationHandles = null;
-            // COLD ALLOC: Mesh.MeshDataArray[maxPlacements] - scheduled read-only source snapshots - owner: ProceduralWreckGenerator
-            _readOnlyMeshSnapshots = new Mesh.MeshDataArray[maxPlacements];
-            // COLD ALLOC: JobHandle[maxPlacements] - scheduled mesh copy handles - owner: ProceduralWreckGenerator
-            _copyHandles = new JobHandle[maxPlacements];
+            // COLD ALLOC: Mesh.MeshDataArray[placementStorageCapacity] - merged mesh read-only source snapshots - owner: ProceduralWreckGenerator
+            _readOnlyMeshSnapshots = new Mesh.MeshDataArray[placementStorageCapacity];
             _activeGridResolution = gridResolution;
-            _activePlacementLimit = maxPlacements;
+            _activePlacementLimit = placementStorageCapacity;
 
             RefreshRuntimeDefinitions();
             RefreshLootRecords();
@@ -1927,8 +2501,10 @@ namespace Hecton8.World
                 _playerRuntimeContext = GlobalRegistry.Player;
 
             if (_voxelEngine == null)
-                _voxelEngine = GlobalRegistry.VoxelEngine;
+                WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref _voxelEngine);
 
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
         }
 
         private void ClearCachedRegistryServices()
@@ -1937,6 +2513,93 @@ namespace Hecton8.World
             _dispatcher = null;
             _playerRuntimeContext = null;
             _voxelEngine = null;
+            _dataVault = null;
+        }
+
+        private bool AreWreckVaultBuffersCreated()
+        {
+            return _grid.IsCreated &&
+                   _propagationQueue.IsCreated &&
+                   _allPlacements.IsCreated &&
+                   _filteredPlacements.IsCreated &&
+                   _runtimeDefinitions.IsCreated &&
+                   _lootRecords.IsCreated &&
+                   _debrisRecords.IsCreated &&
+                   _debrisSpatialKeys.IsCreated &&
+                   _debrisClusters.IsCreated &&
+                   _artifactRecords.IsCreated &&
+                   _scorchDecalRecords.IsCreated &&
+                   _burialCutRecords.IsCreated &&
+                   _telemetryEntries.IsCreated &&
+                   _renderWorldMatrices.IsCreated &&
+                   _renderModuleIds.IsCreated &&
+                   _renderAges.IsCreated;
+        }
+
+        private void ReleaseWreckVaultBuffers()
+        {
+            Interlocked.Increment(ref _wreckVaultEpoch);
+
+            _grid.Dispose();
+            _propagationQueue.Dispose();
+            _propagationQueueCount = 0;
+            _propagationQueueCapacity = 0;
+            _propagationQueueDroppedCount = 0;
+            _allPlacements.Dispose();
+            _filteredPlacements.Dispose();
+            _runtimeDefinitions.Dispose();
+            _lootRecords.Dispose();
+            _debrisRecords.Dispose();
+            _debrisSpatialKeys.Dispose();
+            _debrisClusters.Dispose();
+            _artifactRecords.Dispose();
+            _scorchDecalRecords.Dispose();
+            _burialCutRecords.Dispose();
+            _telemetryEntries.Dispose();
+            _renderWorldMatrices.Dispose();
+            _renderModuleIds.Dispose();
+            _renderAges.Dispose();
+            _renderWorldMatrixSnapshot = null;
+            _renderModuleIdSnapshot = null;
+            _renderAgeSnapshot = null;
+            _readOnlyMeshSnapshots = null;
+            _activePlacementLimit = 0;
+            _lootRecordCount = 0;
+            _debrisRecordCount = 0;
+            _debrisClusterCount = 0;
+            _artifactRecordCount = 0;
+            _scorchDecalCount = 0;
+            _burialCutRecordCount = 0;
+            _telemetryCursor = 0;
+            _debrisNearFieldCursor = 0;
+            _debrisGravityCursor = 0;
+            _artifactDiscoveryCursor = 0;
+            ClearRuntimeDefinitionCache();
+            ClearLootRecordCaches();
+        }
+
+        private bool TryLockWreckVaultBuffer(BufferID bufferId)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryLockBuffer(bufferId, WreckVaultOwner))
+            {
+                return false;
+            }
+
+            if (!vault.IsCompactionFenceActive)
+                return true;
+
+            vault.TryUnlockBuffer(bufferId, WreckVaultOwner);
+            return false;
+        }
+
+        private void UnlockWreckVaultBuffer(BufferID bufferId)
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.TryUnlockBuffer(bufferId, WreckVaultOwner);
         }
 
         private void TryRegisterHotSwapListener()
@@ -1971,55 +2634,83 @@ namespace Hecton8.World
             int activeGridResolution = ResolveActiveGridResolution();
             int cellCount = activeGridResolution * activeGridResolution * activeGridResolution;
             ushort initialMask = ResolveInitialMask(moduleCount);
-            InitializeGrid(cellCount, initialMask);
+            if (!InitializeGrid(cellCount, initialMask, true))
+                return default;
 
-            XorShift32State rng = new XorShift32State(seed);
-            CollapseGrid(cellCount, moduleCount, ref rng);
-            BuildPlacements(cellCount, seed);
-            Mesh combinedMesh = wreckMaterialRegistry != null ? null : BuildMergedMesh(_allPlacements);
-            Mesh essentialMesh = wreckMaterialRegistry != null ? null : BuildMergedMeshForTier((byte)WreckLodTier.Essential);
-            Mesh detailMesh = wreckMaterialRegistry != null ? null : BuildMergedMeshForTier((byte)WreckLodTier.Detail);
-            Mesh clutterMesh = wreckMaterialRegistry != null ? null : BuildMergedMeshForTier((byte)WreckLodTier.Clutter);
-            Mesh proxyMesh = ResolveNavigationProxyMesh();
+            Mesh combinedMesh = null;
+            Mesh essentialMesh = null;
+            Mesh detailMesh = null;
+            Mesh clutterMesh = null;
+            Mesh proxyMesh = null;
+            bool generatedProxyMesh = false;
+            bool meshOwnershipTransferred = false;
 
-            Bounds localBounds = CalculateLocalBounds(_allPlacements);
-            Bounds worldBounds = TranslateBounds(localBounds, runtimeOrigin);
-            Bounds renderWorldBounds = ExpandBoundsForBrgScatter(worldBounds);
-            PrepareWreckWorldState(in centerAup, runtimeOrigin, renderWorldBounds, seed, moduleCount, 0);
-            PublishWreckRenderPayload(in centerAup, runtimeOrigin, renderWorldBounds, seed);
-            PublishCollisionProxy(worldBounds);
-            SpawnWreckLoot(renderWorldBounds, seed);
-
-            WreckNavigationHandle navigationHandle = null;
-            UnityEngine.Object navigationData = null;
-            AsyncOperation navigationOperation = null;
-            if (buildAsyncNavigationBake && proxyMesh != null)
-                BuildDisabledNavigationBake(runtimeOrigin, worldBounds, proxyMesh, out navigationHandle, out navigationData, out navigationOperation);
-
-            _debugLastSeed = seed;
-            _debugLastPlacementCount = _allPlacements.Length;
-            _debugLastCellCount = cellCount;
-            _debugLastCombinedBoundsValid = _allPlacements.IsCreated && _allPlacements.Length > 0;
-            _debugLastWorldBoundsValid = IsFiniteBounds(renderWorldBounds);
-            _debugLastProxyBoundsValid = proxyMesh != null && IsFiniteBounds(proxyMesh.bounds);
-            _debugLastNavigationState = navigationHandle != null ? navigationHandle.State : WreckNavigationState.None;
-            PublishWreckSolveBudgetWarningIfNeeded((Time.realtimeSinceStartupAsDouble - generationStartTime) * 1000.0);
-
-            return new WreckageData
+            try
             {
-                CombinedMesh = combinedMesh,
-                EssentialMesh = essentialMesh,
-                DetailMesh = detailMesh,
-                ClutterMesh = clutterMesh,
-                ProxyMesh = proxyMesh,
-                Navigation = navigationData,
-                NavigationBuild = navigationOperation,
-                NavigationHandle = navigationHandle,
-                NavigationState = navigationHandle != null ? navigationHandle.State : WreckNavigationState.None,
-                WorldBounds = renderWorldBounds,
-                RuntimeOrigin = runtimeOrigin,
-                GenerationSeed = seed
-            };
+                XorShift32State rng = new XorShift32State(seed);
+                CollapseGrid(cellCount, moduleCount, ref rng);
+                BuildPlacements(cellCount, seed);
+                combinedMesh = wreckMaterialRegistry != null ? null : BuildMergedMesh(_allPlacements);
+                essentialMesh = wreckMaterialRegistry != null ? null : BuildMergedMeshForTier((byte)WreckLodTier.Essential);
+                detailMesh = wreckMaterialRegistry != null ? null : BuildMergedMeshForTier((byte)WreckLodTier.Detail);
+                clutterMesh = wreckMaterialRegistry != null ? null : BuildMergedMeshForTier((byte)WreckLodTier.Clutter);
+                proxyMesh = ResolveNavigationProxyMesh();
+                generatedProxyMesh = proxyMesh != null && wreckCollisionProxyMesh == null;
+
+                Bounds localBounds = CalculateLocalBounds(_allPlacements);
+                Bounds worldBounds = TranslateBounds(localBounds, runtimeOrigin);
+                Bounds renderWorldBounds = ExpandBoundsForBrgScatter(worldBounds);
+                PrepareWreckWorldState(in centerAup, runtimeOrigin, renderWorldBounds, seed, moduleCount, 0);
+                PublishWreckRenderPayload(in centerAup, runtimeOrigin, renderWorldBounds, seed);
+                PublishCollisionProxy(worldBounds);
+                SpawnWreckLoot(renderWorldBounds, seed);
+
+                WreckNavigationHandle navigationHandle = null;
+                UnityEngine.Object navigationData = null;
+                AsyncOperation navigationOperation = null;
+                if (buildAsyncNavigationBake && proxyMesh != null)
+                    BuildDisabledNavigationBake(runtimeOrigin, worldBounds, proxyMesh, out navigationHandle, out navigationData, out navigationOperation);
+
+                _debugLastSeed = seed;
+                _debugLastPlacementCount = _allPlacements.Length;
+                _debugLastCellCount = cellCount;
+                _debugLastCombinedBoundsValid = _allPlacements.IsCreated && _allPlacements.Length > 0;
+                _debugLastWorldBoundsValid = IsFiniteBounds(renderWorldBounds);
+                _debugLastProxyBoundsValid = proxyMesh != null && IsFiniteBounds(proxyMesh.bounds);
+                _debugLastNavigationState = navigationHandle != null ? navigationHandle.State : WreckNavigationState.None;
+                PublishWreckSolveBudgetWarningIfNeeded((Time.realtimeSinceStartupAsDouble - generationStartTime) * 1000.0);
+
+                WreckageData data = new WreckageData
+                {
+                    CombinedMesh = combinedMesh,
+                    EssentialMesh = essentialMesh,
+                    DetailMesh = detailMesh,
+                    ClutterMesh = clutterMesh,
+                    ProxyMesh = proxyMesh,
+                    Navigation = navigationData,
+                    NavigationBuild = navigationOperation,
+                    NavigationHandle = navigationHandle,
+                    NavigationState = navigationHandle != null ? navigationHandle.State : WreckNavigationState.None,
+                    WorldBounds = renderWorldBounds,
+                    RuntimeOrigin = runtimeOrigin,
+                    GenerationSeed = seed
+                };
+
+                meshOwnershipTransferred = true;
+                return data;
+            }
+            finally
+            {
+                if (!meshOwnershipTransferred)
+                {
+                    ReleaseGeneratedMesh(combinedMesh);
+                    ReleaseGeneratedMesh(essentialMesh);
+                    ReleaseGeneratedMesh(detailMesh);
+                    ReleaseGeneratedMesh(clutterMesh);
+                    if (generatedProxyMesh)
+                        ReleaseGeneratedMesh(proxyMesh);
+                }
+            }
         }
 
         private async Awaitable<WreckageData> GenerateInternalAsync(AbsoluteUniversePosition centerAup, Vector3 runtimeOrigin, uint seed)
@@ -2037,57 +2728,104 @@ namespace Hecton8.World
             int cellCount = activeGridResolution * activeGridResolution * activeGridResolution;
             ushort initialMask = ResolveInitialMask(moduleCount);
 
-            double stageStartTime = Time.realtimeSinceStartupAsDouble;
-            await SolveGridAsync(cellCount, initialMask, moduleCount, seed);
-            await YieldAfterGenerationStageAsync(stageStartTime);
+            Mesh combinedMesh = null;
+            Mesh essentialMesh = null;
+            Mesh detailMesh = null;
+            Mesh clutterMesh = null;
+            Mesh proxyMesh = null;
+            bool generatedProxyMesh = false;
+            bool meshOwnershipTransferred = false;
 
-            stageStartTime = Time.realtimeSinceStartupAsDouble;
-            Mesh combinedMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshAsync(_allPlacements);
-            Mesh essentialMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshForTierAsync((byte)WreckLodTier.Essential);
-            Mesh detailMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshForTierAsync((byte)WreckLodTier.Detail);
-            Mesh clutterMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshForTierAsync((byte)WreckLodTier.Clutter);
-            await YieldAfterGenerationStageAsync(stageStartTime);
-
-            stageStartTime = Time.realtimeSinceStartupAsDouble;
-            Mesh proxyMesh = await ResolveNavigationProxyMeshAsync();
-            Bounds localBounds = CalculateLocalBounds(_allPlacements);
-            Bounds worldBounds = TranslateBounds(localBounds, runtimeOrigin);
-            Bounds renderWorldBounds = ExpandBoundsForBrgScatter(worldBounds);
-            PrepareWreckWorldState(in centerAup, runtimeOrigin, renderWorldBounds, seed, moduleCount, 0);
-            PublishWreckRenderPayload(in centerAup, runtimeOrigin, renderWorldBounds, seed);
-            PublishCollisionProxy(worldBounds);
-            SpawnWreckLoot(renderWorldBounds, seed);
-            await YieldAfterGenerationStageAsync(stageStartTime);
-
-            WreckNavigationHandle navigationHandle = null;
-            UnityEngine.Object navigationData = null;
-            AsyncOperation navigationOperation = null;
-            if (buildAsyncNavigationBake && proxyMesh != null)
-                BuildDisabledNavigationBake(runtimeOrigin, worldBounds, proxyMesh, out navigationHandle, out navigationData, out navigationOperation);
-
-            _debugLastSeed = seed;
-            _debugLastPlacementCount = _allPlacements.Length;
-            _debugLastCellCount = cellCount;
-            _debugLastCombinedBoundsValid = _allPlacements.IsCreated && _allPlacements.Length > 0;
-            _debugLastWorldBoundsValid = IsFiniteBounds(renderWorldBounds);
-            _debugLastProxyBoundsValid = proxyMesh != null && IsFiniteBounds(proxyMesh.bounds);
-            _debugLastNavigationState = navigationHandle != null ? navigationHandle.State : WreckNavigationState.None;
-
-            return new WreckageData
+            try
             {
-                CombinedMesh = combinedMesh,
-                EssentialMesh = essentialMesh,
-                DetailMesh = detailMesh,
-                ClutterMesh = clutterMesh,
-                ProxyMesh = proxyMesh,
-                Navigation = navigationData,
-                NavigationBuild = navigationOperation,
-                NavigationHandle = navigationHandle,
-                NavigationState = navigationHandle != null ? navigationHandle.State : WreckNavigationState.None,
-                WorldBounds = renderWorldBounds,
-                RuntimeOrigin = runtimeOrigin,
-                GenerationSeed = seed
-            };
+                double stageStartTime = Time.realtimeSinceStartupAsDouble;
+                if (!await SolveGridAsync(cellCount, initialMask, moduleCount, seed))
+                    return default;
+                if (!CanContinueGeneration())
+                    return default;
+                await YieldAfterGenerationStageAsync(stageStartTime);
+                if (!CanContinueGeneration())
+                    return default;
+
+                stageStartTime = Time.realtimeSinceStartupAsDouble;
+                combinedMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshAsync(_allPlacements);
+                if (!CanContinueGeneration())
+                    return default;
+                essentialMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshForTierAsync((byte)WreckLodTier.Essential);
+                if (!CanContinueGeneration())
+                    return default;
+                detailMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshForTierAsync((byte)WreckLodTier.Detail);
+                if (!CanContinueGeneration())
+                    return default;
+                clutterMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshForTierAsync((byte)WreckLodTier.Clutter);
+                if (!CanContinueGeneration())
+                    return default;
+                await YieldAfterGenerationStageAsync(stageStartTime);
+                if (!CanContinueGeneration())
+                    return default;
+
+                stageStartTime = Time.realtimeSinceStartupAsDouble;
+                proxyMesh = ResolveNavigationProxyMesh();
+                generatedProxyMesh = proxyMesh != null && wreckCollisionProxyMesh == null;
+                if (!CanContinueGeneration())
+                    return default;
+                Bounds localBounds = CalculateLocalBounds(_allPlacements);
+                Bounds worldBounds = TranslateBounds(localBounds, runtimeOrigin);
+                Bounds renderWorldBounds = ExpandBoundsForBrgScatter(worldBounds);
+                await YieldAfterGenerationStageAsync(stageStartTime);
+                if (!CanContinueGeneration())
+                    return default;
+
+                PrepareWreckWorldState(in centerAup, runtimeOrigin, renderWorldBounds, seed, moduleCount, 0);
+                PublishWreckRenderPayload(in centerAup, runtimeOrigin, renderWorldBounds, seed);
+                PublishCollisionProxy(worldBounds);
+                SpawnWreckLoot(renderWorldBounds, seed);
+
+                WreckNavigationHandle navigationHandle = null;
+                UnityEngine.Object navigationData = null;
+                AsyncOperation navigationOperation = null;
+                if (buildAsyncNavigationBake && proxyMesh != null)
+                    BuildDisabledNavigationBake(runtimeOrigin, worldBounds, proxyMesh, out navigationHandle, out navigationData, out navigationOperation);
+
+                _debugLastSeed = seed;
+                _debugLastPlacementCount = _allPlacements.Length;
+                _debugLastCellCount = cellCount;
+                _debugLastCombinedBoundsValid = _allPlacements.IsCreated && _allPlacements.Length > 0;
+                _debugLastWorldBoundsValid = IsFiniteBounds(renderWorldBounds);
+                _debugLastProxyBoundsValid = proxyMesh != null && IsFiniteBounds(proxyMesh.bounds);
+                _debugLastNavigationState = navigationHandle != null ? navigationHandle.State : WreckNavigationState.None;
+
+                WreckageData data = new WreckageData
+                {
+                    CombinedMesh = combinedMesh,
+                    EssentialMesh = essentialMesh,
+                    DetailMesh = detailMesh,
+                    ClutterMesh = clutterMesh,
+                    ProxyMesh = proxyMesh,
+                    Navigation = navigationData,
+                    NavigationBuild = navigationOperation,
+                    NavigationHandle = navigationHandle,
+                    NavigationState = navigationHandle != null ? navigationHandle.State : WreckNavigationState.None,
+                    WorldBounds = renderWorldBounds,
+                    RuntimeOrigin = runtimeOrigin,
+                    GenerationSeed = seed
+                };
+
+                meshOwnershipTransferred = true;
+                return data;
+            }
+            finally
+            {
+                if (!meshOwnershipTransferred)
+                {
+                    ReleaseGeneratedMesh(combinedMesh);
+                    ReleaseGeneratedMesh(essentialMesh);
+                    ReleaseGeneratedMesh(detailMesh);
+                    ReleaseGeneratedMesh(clutterMesh);
+                    if (generatedProxyMesh)
+                        ReleaseGeneratedMesh(proxyMesh);
+                }
+            }
         }
 
         private bool ShouldUseBrgOnlyWreckPath(int moduleCount)
@@ -2100,7 +2838,12 @@ namespace Hecton8.World
             int safeCount = math.min(moduleCount, _runtimeDefinitions.IsCreated ? _runtimeDefinitions.Length : 0);
             for (int i = 0; i < safeCount; i++)
             {
-                WreckModuleRuntimeDefinition definition = _runtimeDefinitions[i];
+                if (!_runtimeDefinitions.TryGet(i, out WreckModuleRuntimeDefinition definition))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 24u, i, safeCount);
+                    return false;
+                }
+
                 if ((definition.EmitsGeometry | definition.EmitsNavProxy) != 0)
                     return true;
             }
@@ -2164,11 +2907,14 @@ namespace Hecton8.World
             int fragmentCount = ResolveBrgFragmentCount(seed);
             Bounds worldBounds = CalculateBrgWreckWorldBounds(runtimeOrigin);
 
+            await YieldAfterGenerationStageAsync(stageStartTime);
+            if (!CanContinueGeneration())
+                return default;
+
             PrepareWreckWorldState(in centerAup, runtimeOrigin, worldBounds, seed, moduleCount, fragmentCount);
             PublishBrgScatterPayload(centerAup, runtimeOrigin, worldBounds, seed, fragmentCount, moduleCount);
             PublishCollisionProxy(worldBounds);
             SpawnWreckLoot(worldBounds, seed);
-            await YieldAfterGenerationStageAsync(stageStartTime);
 
             _debugLastSeed = seed;
             _debugLastPlacementCount = fragmentCount;
@@ -2200,6 +2946,39 @@ namespace Hecton8.World
             };
         }
 
+        private bool TryCopyRenderPayloadSnapshot(
+            NativeArray<Matrix4x4> worldMatrices,
+            NativeArray<byte> moduleIds,
+            NativeArray<float> ages,
+            int count)
+        {
+            if (!worldMatrices.IsCreated ||
+                !moduleIds.IsCreated ||
+                !ages.IsCreated ||
+                count < 0 ||
+                count > worldMatrices.Length ||
+                count > moduleIds.Length ||
+                count > ages.Length ||
+                _renderWorldMatrixSnapshot == null ||
+                _renderModuleIdSnapshot == null ||
+                _renderAgeSnapshot == null ||
+                count > _renderWorldMatrixSnapshot.Length ||
+                count > _renderModuleIdSnapshot.Length ||
+                count > _renderAgeSnapshot.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                _renderWorldMatrixSnapshot[i] = worldMatrices[i];
+                _renderModuleIdSnapshot[i] = moduleIds[i];
+                _renderAgeSnapshot[i] = ages[i];
+            }
+
+            return true;
+        }
+
         private void PublishBrgScatterPayload(
             AbsoluteUniversePosition centerAup,
             Vector3 runtimeOrigin,
@@ -2211,61 +2990,96 @@ namespace Hecton8.World
             if (wreckMaterialRegistry == null || fragmentCount <= 0)
                 return;
 
-            NativeArray<Matrix4x4> worldMatrices = new NativeArray<Matrix4x4>(fragmentCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> moduleIds = new NativeArray<byte>(fragmentCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<float> ages = new NativeArray<float>(fragmentCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(worldMatrices, nameof(ProceduralWreckGenerator), nameof(worldMatrices), NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(moduleIds, nameof(ProceduralWreckGenerator), nameof(moduleIds), NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(ages, nameof(ProceduralWreckGenerator), nameof(ages), NativeAllocationLifetime.TempJob);
+            if (!_renderWorldMatrices.IsCreated ||
+                !_renderModuleIds.IsCreated ||
+                !_renderAges.IsCreated ||
+                fragmentCount > _renderWorldMatrices.Length ||
+                fragmentCount > _renderModuleIds.Length ||
+                fragmentCount > _renderAges.Length)
+            {
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, runtimeOrigin, 56u, fragmentCount, ResolveRenderPayloadCapacity());
+                return;
+            }
 
+            uint failureCode = 0u;
+            bool matricesLockHeld = false;
+            bool moduleIdsLockHeld = false;
+            bool agesLockHeld = false;
+            bool shouldPublishSnapshot = false;
             try
             {
-                var job = new BuildWreckScatterMatricesJob
+                NativeArray<Matrix4x4> worldMatrices = default;
+                NativeArray<byte> moduleIds = default;
+                NativeArray<float> ages = default;
+                if (!_renderWorldMatrices.TryLockForWrite(out worldMatrices))
                 {
-                    WorldMatrices = worldMatrices,
-                    ModuleIds = moduleIds,
-                    Ages = ages,
-                    CenterAup = centerAup,
-                    RuntimeOrigin = new float3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z),
-                    ModuleCount = moduleCount,
-                    ScatterRadiusMeters = math.max(0f, brgScatterRadiusMeters),
-                    ScatterVerticalMeters = math.max(0f, brgScatterVerticalMeters),
-                    ScatterYawEnabled = brgScatterYawDegrees > 0.001f ? 1 : 0,
-                    MinScale = math.max(0.05f, brgFragmentMinScale),
-                    MaxScale = math.max(math.max(0.05f, brgFragmentMinScale), brgFragmentMaxScale),
-                    Seed = seed
-                };
+                    failureCode = 56u;
+                }
+                else if (!_renderModuleIds.TryLockForWrite(out moduleIds))
+                {
+                    matricesLockHeld = true;
+                    failureCode = 57u;
+                }
+                else if (!_renderAges.TryLockForWrite(out ages))
+                {
+                    matricesLockHeld = true;
+                    moduleIdsLockHeld = true;
+                    failureCode = 58u;
+                }
+                else
+                {
+                    matricesLockHeld = true;
+                    moduleIdsLockHeld = true;
+                    agesLockHeld = true;
+                    var job = new BuildWreckScatterMatricesJob
+                    {
+                        WorldMatrices = worldMatrices,
+                        ModuleIds = moduleIds,
+                        Ages = ages,
+                        CenterAup = centerAup,
+                        RuntimeOrigin = new float3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z),
+                        ModuleCount = moduleCount,
+                        ScatterRadiusMeters = math.max(0f, brgScatterRadiusMeters),
+                        ScatterVerticalMeters = math.max(0f, brgScatterVerticalMeters),
+                        ScatterYawEnabled = brgScatterYawDegrees > 0.001f ? 1 : 0,
+                        MinScale = math.max(0.05f, brgFragmentMinScale),
+                        MaxScale = math.max(math.max(0.05f, brgFragmentMinScale), brgFragmentMaxScale),
+                        Seed = seed
+                    };
 
-                JobHandle handle = job.Schedule(fragmentCount, 64);
-                // BLOCKING_SYNC_POINT: cold synchronous generator publish, outside Tick cadence.
-                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                    for (int index = 0; index < fragmentCount; index++)
+                        job.Execute(index);
 
+                    if (!TryCopyRenderPayloadSnapshot(worldMatrices, moduleIds, ages, fragmentCount))
+                        failureCode = 61u;
+                    else
+                        shouldPublishSnapshot = true;
+                }
+            }
+            finally
+            {
+                if (agesLockHeld)
+                    _renderAges.ReleaseWriteLock();
+                if (moduleIdsLockHeld)
+                    _renderModuleIds.ReleaseWriteLock();
+                if (matricesLockHeld)
+                    _renderWorldMatrices.ReleaseWriteLock();
+            }
+
+            if (failureCode == 0u && shouldPublishSnapshot)
+            {
                 wreckMaterialRegistry.Publish(
                     moduleDefinitions,
-                    worldMatrices,
-                    moduleIds,
-                    ages,
+                    _renderWorldMatrixSnapshot,
+                    _renderModuleIdSnapshot,
+                    _renderAgeSnapshot,
                     fragmentCount,
                     worldBounds,
                     centerAup);
             }
-            finally
+            else if (failureCode != 0u)
             {
-                if (ages.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(ages);
-                    ages.Dispose();
-                }
-                if (moduleIds.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(moduleIds);
-                    moduleIds.Dispose();
-                }
-                if (worldMatrices.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(worldMatrices);
-                    worldMatrices.Dispose();
-                }
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, runtimeOrigin, failureCode, fragmentCount, ResolveRenderPayloadCapacity());
             }
         }
 
@@ -2317,58 +3131,113 @@ namespace Hecton8.World
                 return;
 
             int placementCount = _allPlacements.Length;
-            NativeArray<Matrix4x4> worldMatrices = new NativeArray<Matrix4x4>(placementCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> moduleIds = new NativeArray<byte>(placementCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<float> ages = new NativeArray<float>(placementCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(worldMatrices, nameof(ProceduralWreckGenerator), nameof(worldMatrices), NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(moduleIds, nameof(ProceduralWreckGenerator), nameof(moduleIds), NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(ages, nameof(ProceduralWreckGenerator), nameof(ages), NativeAllocationLifetime.TempJob);
-
-            try
+            if (!_renderWorldMatrices.IsCreated ||
+                !_renderModuleIds.IsCreated ||
+                !_renderAges.IsCreated ||
+                placementCount > _renderWorldMatrices.Length ||
+                placementCount > _renderModuleIds.Length ||
+                placementCount > _renderAges.Length)
             {
-                var job = new BuildWreckRenderPayloadJob
-                {
-                    Placements = _allPlacements.AsArray(),
-                    WorldMatrices = worldMatrices,
-                    ModuleIds = moduleIds,
-                    Ages = ages,
-                    CenterAup = centerAup,
-                    RuntimeOrigin = new float3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z),
-                    ScatterRadiusMeters = wreckMaterialRegistry != null ? math.max(0f, brgScatterRadiusMeters) : 0f,
-                    ScatterVerticalMeters = wreckMaterialRegistry != null ? math.max(0f, brgScatterVerticalMeters) : 0f,
-                    ScatterYawEnabled = wreckMaterialRegistry != null && brgScatterYawDegrees > 0.001f ? 1 : 0,
-                    Seed = seed
-                };
-                JobHandle handle = job.Schedule(placementCount, 64);
-                // BLOCKING_SYNC_POINT: cold generation publish, outside Tick. BRG consumes the payload immediately.
-                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, runtimeOrigin, 59u, placementCount, ResolveRenderPayloadCapacity());
+                return;
+            }
 
+            uint failureCode = 0u;
+            bool placementLockHeld = false;
+            bool matricesLockHeld = false;
+            bool moduleIdsLockHeld = false;
+            bool agesLockHeld = false;
+            bool shouldPublishSnapshot = false;
+
+            if (!TryLockWreckVaultBuffer(WreckGeneratorAllPlacementsBufferId))
+            {
+                failureCode = 60u;
+            }
+            else
+            {
+                placementLockHeld = true;
+                try
+                {
+                    if (!_allPlacements.TryResolve(out NativeArray<WreckModulePlacement> placementView))
+                    {
+                        failureCode = 22u;
+                    }
+                    else if (!_renderWorldMatrices.TryLockForWrite(out NativeArray<Matrix4x4> worldMatrices))
+                    {
+                        failureCode = 56u;
+                    }
+                    else
+                    {
+                        matricesLockHeld = true;
+                        if (!_renderModuleIds.TryLockForWrite(out NativeArray<byte> moduleIds))
+                        {
+                            failureCode = 57u;
+                        }
+                        else
+                        {
+                            moduleIdsLockHeld = true;
+                            if (!_renderAges.TryLockForWrite(out NativeArray<float> ages))
+                            {
+                                failureCode = 58u;
+                            }
+                            else
+                            {
+                                agesLockHeld = true;
+                                var job = new BuildWreckRenderPayloadJob
+                                {
+                                    Placements = placementView,
+                                    WorldMatrices = worldMatrices,
+                                    ModuleIds = moduleIds,
+                                    Ages = ages,
+                                    CenterAup = centerAup,
+                                    RuntimeOrigin = new float3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z),
+                                    ScatterRadiusMeters = wreckMaterialRegistry != null ? math.max(0f, brgScatterRadiusMeters) : 0f,
+                                    ScatterVerticalMeters = wreckMaterialRegistry != null ? math.max(0f, brgScatterVerticalMeters) : 0f,
+                                    ScatterYawEnabled = wreckMaterialRegistry != null && brgScatterYawDegrees > 0.001f ? 1 : 0,
+                                    Seed = seed
+                                };
+                                for (int index = 0; index < placementCount; index++)
+                                    job.Execute(index);
+
+                                UnlockWreckVaultBuffer(WreckGeneratorAllPlacementsBufferId);
+                                placementLockHeld = false;
+
+                                if (!TryCopyRenderPayloadSnapshot(worldMatrices, moduleIds, ages, placementCount))
+                                    failureCode = 62u;
+                                else
+                                    shouldPublishSnapshot = true;
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    if (placementLockHeld)
+                        UnlockWreckVaultBuffer(WreckGeneratorAllPlacementsBufferId);
+
+                    if (agesLockHeld)
+                        _renderAges.ReleaseWriteLock();
+                    if (moduleIdsLockHeld)
+                        _renderModuleIds.ReleaseWriteLock();
+                    if (matricesLockHeld)
+                        _renderWorldMatrices.ReleaseWriteLock();
+                }
+            }
+
+            if (failureCode == 0u && shouldPublishSnapshot)
+            {
                 wreckMaterialRegistry.Publish(
                     moduleDefinitions,
-                    worldMatrices,
-                    moduleIds,
-                    ages,
+                    _renderWorldMatrixSnapshot,
+                    _renderModuleIdSnapshot,
+                    _renderAgeSnapshot,
                     placementCount,
                     worldBounds,
                     centerAup);
             }
-            finally
+            else if (failureCode != 0u)
             {
-                if (ages.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(ages);
-                    ages.Dispose();
-                }
-                if (moduleIds.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(moduleIds);
-                    moduleIds.Dispose();
-                }
-                if (worldMatrices.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(worldMatrices);
-                    worldMatrices.Dispose();
-                }
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, runtimeOrigin, failureCode, placementCount, ResolveRenderPayloadCapacity());
             }
         }
 
@@ -2383,7 +3252,7 @@ namespace Hecton8.World
 
             DespawnActiveCollisionProxy();
 
-            GameObject instance = pool.Spawn(wreckCollisionProxyPrefab, worldBounds.center, Quaternion.identity);
+            GameObject instance = pool.Spawn(wreckCollisionProxyPrefab, worldBounds.center, Quaternion.identity, allowExpand: false);
             if (instance == null)
                 return;
 
@@ -2515,21 +3384,20 @@ namespace Hecton8.World
             for (int attempt = 0; attempt < maxAttempts && spawnedCount < desiredCount; attempt++)
             {
                 int hashIndex = (int)(rng.NextUInt() % (uint)hashCount);
-                WreckLootRecord lootRecord = _lootRecords[hashIndex];
+                if (!_lootRecords.TryGet(hashIndex, out WreckLootRecord lootRecord))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, center, 25u, hashIndex, hashCount);
+                    return;
+                }
+
                 uint hashId = unchecked((uint)lootRecord.ItemHashId);
                 if (hashId == 0u || !ItemTemplateRegistry.TryGetTemplate(hashId, out ItemTemplate template))
                     continue;
 
-                int signedHashId = unchecked((int)hashId);
-                Hecton8.Items.ItemData itemData = itemCatalog.FindByHash(signedHashId);
-                if (itemData == null)
+                Hecton8.Items.ItemData itemData = _lootItemDataCache[hashIndex];
+                GameObject prefab = _lootPrefabCache[hashIndex];
+                if (itemData == null || prefab == null)
                     continue;
-
-                if (!itemCatalog.TryGetLoadedWorldPrefab(signedHashId, out GameObject prefab) || prefab == null)
-                {
-                    itemCatalog.QueueWorldPrefabPrewarm(signedHashId);
-                    continue;
-                }
 
                 float lootExtent = radiusLimit * 0.7f;
                 float horizontalX = (rng.NextFloat01() * 2f - 1f) * lootExtent;
@@ -2602,7 +3470,7 @@ namespace Hecton8.World
 
         private void TryUnregisterLootTick()
         {
-            if (_registeredLootLateFrame)
+            if (_registeredLootLateFrame && _pendingLootCount <= 0 && !_blackBoxDumpRequested)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLootLateFrame = false;
@@ -2642,7 +3510,7 @@ namespace Hecton8.World
             if (spawn.Prefab == null || spawn.ItemData == null)
                 return;
 
-            GameObject instance = pool.Spawn(spawn.Prefab, spawn.Position, spawn.Rotation);
+            GameObject instance = pool.Spawn(spawn.Prefab, spawn.Position, spawn.Rotation, allowExpand: false);
             if (instance == null)
                 return;
 
@@ -2661,8 +3529,7 @@ namespace Hecton8.World
             if (!_lootRecords.IsCreated)
                 return;
 
-            for (int i = 0; i < _lootRecords.Length; i++)
-                _lootRecords[i] = default;
+            ClearLootRecordCaches();
 
             int sourceCount = math.min(wreckLootItemHashes != null ? wreckLootItemHashes.Length : 0, _lootRecords.Length);
             for (int sourceIndex = 0; sourceIndex < sourceCount; sourceIndex++)
@@ -2671,11 +3538,16 @@ namespace Hecton8.World
                 if (hashId == 0u)
                     continue;
 
+                int signedHashId = unchecked((int)hashId);
+                Hecton8.Items.ItemData itemData = itemCatalog != null ? itemCatalog.FindByHash(signedHashId) : null;
+                if (itemData == null)
+                    continue;
+
                 ushort maxQuantity = 1;
                 if (ItemTemplateRegistry.TryGetTemplate(hashId, out ItemTemplate template))
                     maxQuantity = (ushort)math.clamp((int)template.MaxStackSize, 1, ushort.MaxValue);
 
-                _lootRecords[_lootRecordCount++] = new WreckLootRecord
+                WreckLootRecord lootRecord = new WreckLootRecord
                 {
                     ItemHashId = unchecked((int)hashId),
                     MinQuantity = 1,
@@ -2683,6 +3555,62 @@ namespace Hecton8.World
                     StableDropHash = MixFragmentSeed(hashId ^ worldGenerationVersionSalt),
                     Flags = 0u
                 };
+
+                int targetIndex = _lootRecordCount;
+                _lootRecordBuildCache[targetIndex] = lootRecord;
+                _lootItemDataCache[targetIndex] = itemData;
+                _lootRecordCount = targetIndex + 1;
+            }
+
+            if (!_lootRecords.TryLockForWrite(out NativeArray<WreckLootRecord> lootRecords))
+            {
+                _lootRecordCount = 0;
+                ClearLootRecordCaches();
+
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 8u, sourceCount, _lootRecords.Length);
+                return;
+            }
+
+            try
+            {
+                int writeCount = math.min(_lootRecords.Length, lootRecords.Length);
+                for (int i = 0; i < writeCount; i++)
+                    lootRecords[i] = i < _lootRecordCount ? _lootRecordBuildCache[i] : default;
+            }
+            finally
+            {
+                _lootRecords.ReleaseWriteLock();
+            }
+
+            RefreshCommittedLootPrefabCache();
+        }
+
+        private void RefreshCommittedLootPrefabCache()
+        {
+            ItemCatalog catalog = itemCatalog;
+            if (catalog == null || _lootRecordCount <= 0)
+                return;
+
+            int committedCount = math.min(_lootRecordCount, MaxLootRecords);
+            for (int i = 0; i < committedCount; i++)
+            {
+                int signedHashId = _lootRecordBuildCache[i].ItemHashId;
+                if (signedHashId == 0)
+                    continue;
+
+                catalog.QueueWorldPrefabPrewarm(signedHashId);
+                if (catalog.TryGetLoadedWorldPrefab(signedHashId, out GameObject loadedPrefab))
+                    _lootPrefabCache[i] = loadedPrefab;
+            }
+        }
+
+        private void ClearLootRecordCaches()
+        {
+            for (int i = 0; i < MaxLootRecords; i++)
+            {
+                _lootRecordBuildCache[i] = default;
+                _lootItemDataCache[i] = null;
+                _lootPrefabCache[i] = null;
             }
         }
 
@@ -2733,9 +3661,36 @@ namespace Hecton8.World
             _sealedModuleCount = 0;
             _openedSealedModuleCount = 0;
             _rupturedModuleCount = 0;
+            _debrisNearFieldCursor = 0;
             _debrisGravityCursor = 0;
-            if (_debrisSpatialHash.IsCreated)
-                _debrisSpatialHash.Clear();
+            _artifactDiscoveryCursor = 0;
+            _blackBoxDumpRequested = false;
+            _blackBoxDumpWritten = false;
+            _blackBoxDumpFailed = false;
+            ClearDebrisClusters();
+        }
+
+        private void ClearDebrisClusters()
+        {
+            if (!_debrisClusters.IsCreated)
+                return;
+
+            if (!_debrisClusters.TryLockForWrite(out NativeArray<WreckDebrisCluster> clusters))
+            {
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 53u, MaxDebrisClusters, 0f);
+                return;
+            }
+
+            try
+            {
+                int count = math.min(MaxDebrisClusters, _debrisClusters.Length);
+                for (int i = 0; i < count; i++)
+                    clusters[i] = default;
+            }
+            finally
+            {
+                _debrisClusters.ReleaseWriteLock();
+            }
         }
 
         private void ResolveIntegrityCounters(int moduleCount)
@@ -2744,13 +3699,29 @@ namespace Hecton8.World
             {
                 int placementCount = _allPlacements.Length;
                 for (int i = 0; i < placementCount; i++)
-                    AccumulateIntegrityState(_allPlacements[i].IntegrityState);
+                {
+                    if (!_allPlacements.TryGet(i, out WreckModulePlacement placement))
+                    {
+                        WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 26u, i, placementCount);
+                        return;
+                    }
+
+                    AccumulateIntegrityState(placement.IntegrityState);
+                }
                 return;
             }
 
             int safeModuleCount = math.min(moduleCount, _runtimeDefinitions.IsCreated ? _runtimeDefinitions.Length : 0);
             for (int i = 0; i < safeModuleCount; i++)
-                AccumulateIntegrityState(_runtimeDefinitions[i].IntegrityState);
+            {
+                if (!_runtimeDefinitions.TryGet(i, out WreckModuleRuntimeDefinition definition))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 27u, i, safeModuleCount);
+                    return;
+                }
+
+                AccumulateIntegrityState(definition.IntegrityState);
+            }
         }
 
         private void AccumulateIntegrityState(byte state)
@@ -2763,10 +3734,11 @@ namespace Hecton8.World
 
         private void BuildDebrisSpatialHash(Bounds worldBounds, uint seed)
         {
-            if (!_debrisRecords.IsCreated || !_debrisSpatialHash.IsCreated || !IsFiniteBounds(worldBounds))
+            if (!_debrisRecords.IsCreated || !_debrisSpatialKeys.IsCreated || !IsFiniteBounds(worldBounds))
                 return;
 
-            int budget = math.min(math.min(maxDebrisRecords, MaxDebrisRecords), ResolveDebrisBudget(ResolveWreckQualityWeight01()));
+            float qualityWeight01 = ResolveWreckQualityWeight01();
+            int budget = math.min(math.min(maxDebrisRecords, MaxDebrisRecords), ResolveDebrisBudget(qualityWeight01));
             if (budget <= 0 || _lootRecordCount <= 0)
                 return;
 
@@ -2776,60 +3748,160 @@ namespace Hecton8.World
             float horizontalX = math.max(1f, extents.x);
             float horizontalZ = math.max(1f, extents.z);
             float vertical = math.max(0.25f, extents.y);
-
-            for (int i = 0; i < budget; i++)
+            if (!_debrisRecords.TryLockForWrite(out NativeArray<WreckDebrisRecord> debrisRecords))
             {
-                uint stableId = MixFragmentSeed(seed ^ DebrisFieldSalt ^ (uint)(i + 1));
-                float x = ((stableId & 0xFFu) * (1f / 255f) * 2f - 1f) * horizontalX;
-                stableId = MixFragmentSeed(stableId ^ 0x9E3779B9u);
-                float z = ((stableId & 0xFFu) * (1f / 255f) * 2f - 1f) * horizontalZ;
-                stableId = MixFragmentSeed(stableId ^ 0xBB67AE85u);
-                float y = center.y + (((stableId & 0xFFu) * (1f / 255f) * 2f - 1f) * vertical * 0.25f);
-                Vector3 position = new Vector3(center.x + x, y, center.z + z);
-                float terrainY = ResolveTerrainHeightForRuntimePosition(position, position.y - 0.35f);
-                int lootIndex = _lootRecordCount > 0 ? (int)(rng.NextUInt() % (uint)_lootRecordCount) : 0;
-                WreckLootRecord lootRecord = _lootRecords[lootIndex];
-                int quantity = ResolveLootQuantity(in lootRecord, rng.NextUInt(), 3);
-                int spatialKey = ResolveDebrisSpatialHashKey(position);
-                int clusterKey = ResolveDebrisClusterKey(position);
-                int clusterIndex = ResolveDebrisClusterIndex(clusterKey, position);
-
-                _debrisRecords[i] = new WreckDebrisRecord
-                {
-                    Position = new float3(position.x, position.y, position.z),
-                    InitialY = position.y,
-                    TerrainY = terrainY,
-                    SpatialHashKey = spatialKey,
-                    ClusterIndex = clusterIndex,
-                    ItemHashId = lootRecord.ItemHashId,
-                    Quantity = (ushort)math.max(1, math.min(quantity, ushort.MaxValue)),
-                    Flags = (byte)(WreckDebrisFlags.Pickable | WreckDebrisFlags.DotOnly),
-                    LootTableIndex = (byte)lootIndex,
-                    StableId = stableId,
-                    SinkMetersPerSlowTick = 0.04f + ((stableId & 7u) * 0.01f),
-                    PickupRadiusSq = DebrisActivationDistanceSq
-                };
-                _debrisSpatialHash.Add(spatialKey, i);
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, center, 53u, budget, 0f);
+                return;
             }
 
-            _debrisRecordCount = budget;
+            bool spatialKeysLocked = false;
+            bool clustersLocked = false;
+            bool hasDeferredFailureTelemetry = false;
+            uint deferredFailureFlags = 0u;
+            float deferredFailureValue0 = 0f;
+            float deferredFailureValue1 = 0f;
+            Vector3 deferredFailurePosition = center;
+            NativeArray<int> spatialKeys = default;
+            NativeArray<WreckDebrisCluster> clusters = default;
+            try
+            {
+                bool canBuild = true;
+                if (!_debrisSpatialKeys.TryLockForWrite(out spatialKeys))
+                {
+                    hasDeferredFailureTelemetry = true;
+                    deferredFailureFlags = 54u;
+                    deferredFailureValue0 = budget;
+                    canBuild = false;
+                }
+
+                if (canBuild)
+                {
+                    spatialKeysLocked = true;
+                    if (!_debrisClusters.TryLockForWrite(out clusters))
+                    {
+                        hasDeferredFailureTelemetry = true;
+                        deferredFailureFlags = 56u;
+                        deferredFailureValue0 = budget;
+                        canBuild = false;
+                    }
+                }
+
+                if (canBuild)
+                {
+                    clustersLocked = true;
+                    if (debrisRecords.Length < budget || spatialKeys.Length < budget || clusters.Length < MaxDebrisClusters)
+                    {
+                        int minimumLength = math.min(math.min(debrisRecords.Length, spatialKeys.Length), clusters.Length);
+                        hasDeferredFailureTelemetry = true;
+                        deferredFailureFlags = 55u;
+                        deferredFailureValue0 = budget;
+                        deferredFailureValue1 = minimumLength;
+                        canBuild = false;
+                    }
+                }
+
+                if (canBuild)
+                {
+                    for (int i = 0; i < budget; i++)
+                    {
+                        uint stableId = MixFragmentSeed(seed ^ DebrisFieldSalt ^ (uint)(i + 1));
+                        float x = ((stableId & 0xFFu) * (1f / 255f) * 2f - 1f) * horizontalX;
+                        stableId = MixFragmentSeed(stableId ^ 0x9E3779B9u);
+                        float z = ((stableId & 0xFFu) * (1f / 255f) * 2f - 1f) * horizontalZ;
+                        stableId = MixFragmentSeed(stableId ^ 0xBB67AE85u);
+                        float y = center.y + (((stableId & 0xFFu) * (1f / 255f) * 2f - 1f) * vertical * 0.25f);
+                        Vector3 position = new Vector3(center.x + x, y, center.z + z);
+                        float terrainY = ResolveDebrisVisualSinkHeight(position, worldBounds, stableId, qualityWeight01);
+                        int lootIndex = _lootRecordCount > 0 ? (int)(rng.NextUInt() % (uint)_lootRecordCount) : 0;
+                        if (!_lootRecords.TryGet(lootIndex, out WreckLootRecord lootRecord))
+                        {
+                            hasDeferredFailureTelemetry = true;
+                            deferredFailurePosition = position;
+                            deferredFailureFlags = 28u;
+                            deferredFailureValue0 = lootIndex;
+                            deferredFailureValue1 = _lootRecordCount;
+                            _debrisRecordCount = i;
+                            break;
+                        }
+
+                        int quantity = ResolveLootQuantity(in lootRecord, rng.NextUInt(), 3);
+                        int spatialKey = ResolveDebrisSpatialHashKey(position);
+                        int clusterKey = ResolveDebrisClusterKey(position);
+                        int clusterIndex = ResolveDebrisClusterIndex(clusterKey, position, clusters);
+                        if (clusterIndex < 0)
+                        {
+                            hasDeferredFailureTelemetry = true;
+                            deferredFailurePosition = position;
+                            deferredFailureFlags = 29u;
+                            deferredFailureValue0 = clusterKey;
+                            deferredFailureValue1 = MaxDebrisClusters;
+                            _debrisRecordCount = i;
+                            break;
+                        }
+
+                        debrisRecords[i] = new WreckDebrisRecord
+                        {
+                            Position = new float3(position.x, position.y, position.z),
+                            InitialY = position.y,
+                            TerrainY = terrainY,
+                            SpatialHashKey = spatialKey,
+                            ClusterIndex = clusterIndex,
+                            ItemHashId = lootRecord.ItemHashId,
+                            Quantity = (ushort)math.max(1, math.min(quantity, ushort.MaxValue)),
+                            Flags = (byte)(WreckDebrisFlags.Pickable | WreckDebrisFlags.DotOnly),
+                            LootTableIndex = (byte)lootIndex,
+                            StableId = stableId,
+                            SinkMetersPerSlowTick = 0.04f + ((stableId & 7u) * 0.01f),
+                            PickupRadiusSq = DebrisActivationDistanceSq
+                        };
+                        spatialKeys[i] = spatialKey;
+                    }
+
+                    if (!hasDeferredFailureTelemetry)
+                        _debrisRecordCount = budget;
+                }
+            }
+            finally
+            {
+                if (clustersLocked)
+                    _debrisClusters.ReleaseWriteLock();
+
+                if (spatialKeysLocked)
+                    _debrisSpatialKeys.ReleaseWriteLock();
+
+                _debrisRecords.ReleaseWriteLock();
+            }
+
+            if (hasDeferredFailureTelemetry)
+            {
+                WriteBlackBoxTelemetry(
+                    WreckTelemetryFailureHash,
+                    deferredFailurePosition,
+                    deferredFailureFlags,
+                    deferredFailureValue0,
+                    deferredFailureValue1);
+            }
         }
 
-        private int ResolveDebrisClusterIndex(int clusterKey, Vector3 position)
+        private int ResolveDebrisClusterIndex(int clusterKey, Vector3 position, NativeArray<WreckDebrisCluster> clusters)
         {
-            int clusterIndex = math.abs(clusterKey) % MaxDebrisClusters;
-            WreckDebrisCluster cluster = _debrisClusters[clusterIndex];
-            if (cluster.DebrisCount <= 0)
+            int clusterIndex = (int)((uint)clusterKey % (uint)MaxDebrisClusters);
+            if (!clusters.IsCreated || clusters.Length < MaxDebrisClusters)
+                return -1;
+
+            WreckDebrisCluster cluster = clusters[clusterIndex];
+            if (cluster.DebrisCount <= 0 || cluster.ClusterKey != clusterKey)
             {
                 cluster.Center = new float3(position.x, position.y, position.z);
                 cluster.Extents = new float3(DebrisClusterSizeMeters * 0.5f, math.max(1f, brgScatterVerticalMeters + 1f), DebrisClusterSizeMeters * 0.5f);
                 cluster.ClusterKey = clusterKey;
+                cluster.DebrisCount = 0;
                 cluster.Visible = 1;
                 _debrisClusterCount = math.min(MaxDebrisClusters, _debrisClusterCount + 1);
             }
 
             cluster.DebrisCount = math.min(cluster.DebrisCount + 1, int.MaxValue);
-            _debrisClusters[clusterIndex] = cluster;
+            clusters[clusterIndex] = cluster;
             return clusterIndex;
         }
 
@@ -2847,34 +3919,90 @@ namespace Hecton8.World
             if (capacity <= 0)
                 return;
 
-            if (_allPlacements.IsCreated && _allPlacements.Length > 0)
+            if (!_artifactRecords.TryLockForWrite(out NativeArray<WreckArtifactRecord> artifactRecords))
             {
-                int placementCount = math.min(_allPlacements.Length, capacity);
-                for (int i = 0; i < placementCount; i++)
-                {
-                    WreckModulePlacement placement = _allPlacements[i];
-                    if (!TryBuildArtifactRecord(runtimeOrigin + ToVector3(placement.Position), seed, i, placement.ModuleId, placement.MortonIndex, out WreckArtifactRecord record))
-                        continue;
-
-                    _artifactRecords[_artifactRecordCount++] = record;
-                    if (_artifactRecordCount >= capacity)
-                        break;
-                }
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, runtimeOrigin, 4u, 0f, capacity);
                 return;
             }
 
-            int fallbackCount = math.min(math.max(moduleCount, brgFragmentCount > 0 ? moduleCount : 0), capacity);
-            for (int i = 0; i < fallbackCount; i++)
-            {
-                byte moduleId = (byte)math.min(i, math.max(0, moduleCount - 1));
-                Vector3 position = ResolveDeterministicPointInBounds(worldBounds, seed ^ LoreFragmentSalt ^ (uint)(i + 1));
-                if (!TryBuildArtifactRecord(position, seed, i, moduleId, i, out WreckArtifactRecord record))
-                    continue;
+            uint deferredFailureCode = 0u;
+            Vector3 deferredFailurePosition = runtimeOrigin;
+            float deferredFailureValue0 = 0f;
+            float deferredFailureValue1 = 0f;
 
-                _artifactRecords[_artifactRecordCount++] = record;
-                if (_artifactRecordCount >= capacity)
-                    break;
+            try
+            {
+                if (_allPlacements.IsCreated && _allPlacements.Length > 0)
+                {
+                    int placementCount = math.min(_allPlacements.Length, capacity);
+                    for (int i = 0; i < placementCount; i++)
+                    {
+                        if (!_allPlacements.TryGet(i, out WreckModulePlacement placement))
+                        {
+                            deferredFailureCode = 30u;
+                            deferredFailureValue0 = i;
+                            deferredFailureValue1 = placementCount;
+                            break;
+                        }
+
+                        Vector3 recordPosition = runtimeOrigin + ToVector3(placement.Position);
+                        if (!TryBuildArtifactRecord(recordPosition, seed, i, placement.ModuleId, placement.MortonIndex, out WreckArtifactRecord record, out uint buildFailureCode))
+                        {
+                            if (buildFailureCode != 0u)
+                            {
+                                deferredFailureCode = buildFailureCode;
+                                deferredFailurePosition = recordPosition;
+                                deferredFailureValue0 = placement.ModuleId;
+                                deferredFailureValue1 = _runtimeDefinitions.Length;
+                                break;
+                            }
+
+                            continue;
+                        }
+
+                        int targetIndex = _artifactRecordCount;
+                        artifactRecords[targetIndex] = record;
+                        _artifactRecordCount = targetIndex + 1;
+                        if (_artifactRecordCount >= capacity)
+                            break;
+                    }
+                }
+                else
+                {
+                    int fallbackCount = math.min(math.max(moduleCount, brgFragmentCount > 0 ? moduleCount : 0), capacity);
+                    for (int i = 0; i < fallbackCount; i++)
+                    {
+                        byte moduleId = (byte)math.min(i, math.max(0, moduleCount - 1));
+                        Vector3 position = ResolveDeterministicPointInBounds(worldBounds, seed ^ LoreFragmentSalt ^ (uint)(i + 1));
+                        if (!TryBuildArtifactRecord(position, seed, i, moduleId, i, out WreckArtifactRecord record, out uint buildFailureCode))
+                        {
+                            if (buildFailureCode != 0u)
+                            {
+                                deferredFailureCode = buildFailureCode;
+                                deferredFailurePosition = position;
+                                deferredFailureValue0 = moduleId;
+                                deferredFailureValue1 = _runtimeDefinitions.Length;
+                                break;
+                            }
+
+                            continue;
+                        }
+
+                        int targetIndex = _artifactRecordCount;
+                        artifactRecords[targetIndex] = record;
+                        _artifactRecordCount = targetIndex + 1;
+                        if (_artifactRecordCount >= capacity)
+                            break;
+                    }
+                }
             }
+            finally
+            {
+                _artifactRecords.ReleaseWriteLock();
+            }
+
+            if (deferredFailureCode != 0u)
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, deferredFailurePosition, deferredFailureCode, deferredFailureValue0, deferredFailureValue1);
         }
 
         private bool TryBuildArtifactRecord(
@@ -2883,13 +4011,20 @@ namespace Hecton8.World
             int moduleIndex,
             byte moduleId,
             int salt,
-            out WreckArtifactRecord record)
+            out WreckArtifactRecord record,
+            out uint failureCode)
         {
             record = default;
+            failureCode = 0u;
             if (!_runtimeDefinitions.IsCreated || moduleId >= _runtimeDefinitions.Length)
                 return false;
 
-            WreckModuleRuntimeDefinition definition = _runtimeDefinitions[moduleId];
+            if (!_runtimeDefinitions.TryGet(moduleId, out WreckModuleRuntimeDefinition definition))
+            {
+                failureCode = 31u;
+                return false;
+            }
+
             ushort chance = definition.LoreFragmentChancePermille;
             if (chance == 0)
                 return false;
@@ -2921,30 +4056,74 @@ namespace Hecton8.World
             if (capacity <= 0)
                 return;
 
-            if (_allPlacements.IsCreated && _allPlacements.Length > 0)
+            if (!_scorchDecalRecords.TryLockForWrite(out NativeArray<WreckScorchDecalRecord> scorchDecalRecords))
             {
-                int placementCount = _allPlacements.Length;
-                for (int i = 0; i < placementCount && _scorchDecalCount < capacity; i++)
-                {
-                    WreckModulePlacement placement = _allPlacements[i];
-                    if (placement.IntegrityState != (byte)WreckIntegrityState.Ruptured)
-                        continue;
-
-                    Vector3 position = runtimeOrigin + ToVector3(placement.Position + placement.BoundsCenter);
-                    _scorchDecalRecords[_scorchDecalCount++] = CreateScorchDecalRecord(position, placement.ModuleId, seed, i);
-                }
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, worldBounds.center, 11u, 0f, capacity);
                 return;
             }
 
-            int safeModuleCount = math.min(moduleCount, _runtimeDefinitions.IsCreated ? _runtimeDefinitions.Length : 0);
-            for (int i = 0; i < safeModuleCount && _scorchDecalCount < capacity; i++)
-            {
-                if (_runtimeDefinitions[i].IntegrityState != (byte)WreckIntegrityState.Ruptured)
-                    continue;
+            uint deferredFailureCode = 0u;
+            Vector3 deferredFailurePosition = worldBounds.center;
+            float deferredFailureValue0 = 0f;
+            float deferredFailureValue1 = 0f;
 
-                Vector3 position = ResolveDeterministicPointInBounds(worldBounds, seed ^ ScorchDecalSalt ^ (uint)(i + 1));
-                _scorchDecalRecords[_scorchDecalCount++] = CreateScorchDecalRecord(position, (byte)i, seed, i);
+            try
+            {
+                if (_allPlacements.IsCreated && _allPlacements.Length > 0)
+                {
+                    int placementCount = _allPlacements.Length;
+                    for (int i = 0; i < placementCount && _scorchDecalCount < capacity; i++)
+                    {
+                        if (!_allPlacements.TryGet(i, out WreckModulePlacement placement))
+                        {
+                            deferredFailureCode = 32u;
+                            deferredFailurePosition = runtimeOrigin;
+                            deferredFailureValue0 = i;
+                            deferredFailureValue1 = placementCount;
+                            break;
+                        }
+
+                        if (placement.IntegrityState != (byte)WreckIntegrityState.Ruptured)
+                            continue;
+
+                        Vector3 position = runtimeOrigin + ToVector3(placement.Position + placement.BoundsCenter);
+                        WreckScorchDecalRecord record = CreateScorchDecalRecord(position, placement.ModuleId, seed, i);
+                        int targetIndex = _scorchDecalCount;
+                        scorchDecalRecords[targetIndex] = record;
+                        _scorchDecalCount = targetIndex + 1;
+                    }
+                }
+                else
+                {
+                    int safeModuleCount = math.min(moduleCount, _runtimeDefinitions.IsCreated ? _runtimeDefinitions.Length : 0);
+                    for (int i = 0; i < safeModuleCount && _scorchDecalCount < capacity; i++)
+                    {
+                        if (!_runtimeDefinitions.TryGet(i, out WreckModuleRuntimeDefinition definition))
+                        {
+                            deferredFailureCode = 33u;
+                            deferredFailureValue0 = i;
+                            deferredFailureValue1 = safeModuleCount;
+                            break;
+                        }
+
+                        if (definition.IntegrityState != (byte)WreckIntegrityState.Ruptured)
+                            continue;
+
+                        Vector3 position = ResolveDeterministicPointInBounds(worldBounds, seed ^ ScorchDecalSalt ^ (uint)(i + 1));
+                        WreckScorchDecalRecord record = CreateScorchDecalRecord(position, (byte)i, seed, i);
+                        int targetIndex = _scorchDecalCount;
+                        scorchDecalRecords[targetIndex] = record;
+                        _scorchDecalCount = targetIndex + 1;
+                    }
+                }
             }
+            finally
+            {
+                _scorchDecalRecords.ReleaseWriteLock();
+            }
+
+            if (deferredFailureCode != 0u)
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, deferredFailurePosition, deferredFailureCode, deferredFailureValue0, deferredFailureValue1);
         }
 
         private static WreckScorchDecalRecord CreateScorchDecalRecord(Vector3 position, byte moduleId, uint seed, int index)
@@ -2972,51 +4151,84 @@ namespace Hecton8.World
 
             int capacity = _burialCutRecords.Length;
             int placementCount = _allPlacements.IsCreated ? math.min(_allPlacements.Length, capacity) : 0;
-            for (int i = 0; i < placementCount; i++)
+
+            if (!_burialCutRecords.TryLockForWrite(out NativeArray<WreckBurialCutRecord> burialCutRecords))
             {
-                WreckModulePlacement placement = _allPlacements[i];
-                float burialHash = (MixFragmentSeed(seed ^ unchecked((uint)(placement.MortonIndex + 1))) & 0xFFu) * (1f / 255f);
-                if (burialHash > buriedWreckCutFraction)
-                    continue;
-
-                float3 localCenter = placement.Position + placement.BoundsCenter;
-                Vector3 runtimeCenter = runtimeOrigin + ToVector3(localCenter);
-                if (!TryResolveRuntimeAbsoluteDouble(runtimeCenter, originAbsolute, out double3 absoluteCenter))
-                    continue;
-
-                float3 halfExtents = SanitizeBoundsSize(placement.BoundsSize) * 0.5f;
-                halfExtents.y = math.max(0.05f, math.min(halfExtents.y, wreckInteriorCutHalfHeight));
-                _burialCutRecords[_burialCutRecordCount++] = new WreckBurialCutRecord
-                {
-                    AbsoluteCenter = absoluteCenter,
-                    HalfExtents = halfExtents,
-                    BlendStrength = math.max(0.25f, math.cmin(halfExtents) * 0.35f),
-                    MaterialId = 0,
-                    Applied = 0,
-                    StableId = MixFragmentSeed(seed ^ unchecked((uint)(i + 1)) ^ 0x43565442u)
-                };
-
-                if (_burialCutRecordCount >= capacity)
-                    break;
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, worldBounds.center, 12u, 0f, capacity);
+                return;
             }
 
-            if (_burialCutRecordCount == 0 && IsFiniteBounds(worldBounds) && capacity > 0)
-            {
-                if (!TryResolveRuntimeAbsoluteDouble(worldBounds.center, originAbsolute, out double3 absoluteCenter))
-                    return;
+            uint deferredFailureCode = 0u;
+            Vector3 deferredFailurePosition = runtimeOrigin;
+            float deferredFailureValue0 = 0f;
+            float deferredFailureValue1 = 0f;
 
-                Vector3 halfExtents = worldBounds.extents;
-                _burialCutRecords[0] = new WreckBurialCutRecord
+            try
+            {
+                for (int i = 0; i < placementCount; i++)
                 {
-                    AbsoluteCenter = absoluteCenter,
-                    HalfExtents = new float3(math.max(1f, halfExtents.x * 0.25f), wreckInteriorCutHalfHeight, math.max(1f, halfExtents.z * 0.25f)),
-                    BlendStrength = math.max(0.25f, wreckInteriorCutHalfHeight * 0.35f),
-                    MaterialId = 0,
-                    Applied = 0,
-                    StableId = MixFragmentSeed(seed ^ 0x43565442u)
-                };
-                _burialCutRecordCount = 1;
+                    if (!_allPlacements.TryGet(i, out WreckModulePlacement placement))
+                    {
+                        deferredFailureCode = 34u;
+                        deferredFailureValue0 = i;
+                        deferredFailureValue1 = placementCount;
+                        break;
+                    }
+
+                    float burialHash = (MixFragmentSeed(seed ^ unchecked((uint)(placement.MortonIndex + 1))) & 0xFFu) * (1f / 255f);
+                    if (burialHash > buriedWreckCutFraction)
+                        continue;
+
+                    float3 localCenter = placement.Position + placement.BoundsCenter;
+                    Vector3 runtimeCenter = runtimeOrigin + ToVector3(localCenter);
+                    if (!TryResolveRuntimeAbsoluteDouble(runtimeCenter, originAbsolute, out double3 absoluteCenter))
+                        continue;
+
+                    float3 halfExtents = SanitizeBoundsSize(placement.BoundsSize) * 0.5f;
+                    halfExtents.y = math.max(0.05f, math.min(halfExtents.y, wreckInteriorCutHalfHeight));
+                    WreckBurialCutRecord record = new WreckBurialCutRecord
+                    {
+                        AbsoluteCenter = absoluteCenter,
+                        HalfExtents = halfExtents,
+                        BlendStrength = math.max(0.25f, math.cmin(halfExtents) * 0.35f),
+                        MaterialId = 0,
+                        Applied = 0,
+                        StableId = MixFragmentSeed(seed ^ unchecked((uint)(i + 1)) ^ 0x43565442u)
+                    };
+                    int targetIndex = _burialCutRecordCount;
+                    burialCutRecords[targetIndex] = record;
+                    _burialCutRecordCount = targetIndex + 1;
+
+                    if (_burialCutRecordCount >= capacity)
+                        break;
+                }
+
+                if (_burialCutRecordCount == 0 && IsFiniteBounds(worldBounds) && capacity > 0)
+                {
+                    if (!TryResolveRuntimeAbsoluteDouble(worldBounds.center, originAbsolute, out double3 absoluteCenter))
+                        return;
+
+                    Vector3 halfExtents = worldBounds.extents;
+                    WreckBurialCutRecord record = new WreckBurialCutRecord
+                    {
+                        AbsoluteCenter = absoluteCenter,
+                        HalfExtents = new float3(math.max(1f, halfExtents.x * 0.25f), wreckInteriorCutHalfHeight, math.max(1f, halfExtents.z * 0.25f)),
+                        BlendStrength = math.max(0.25f, wreckInteriorCutHalfHeight * 0.35f),
+                        MaterialId = 0,
+                        Applied = 0,
+                        StableId = MixFragmentSeed(seed ^ 0x43565442u)
+                    };
+                    burialCutRecords[0] = record;
+                    _burialCutRecordCount = 1;
+                }
             }
+            finally
+            {
+                _burialCutRecords.ReleaseWriteLock();
+            }
+
+            if (deferredFailureCode != 0u)
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, deferredFailurePosition, deferredFailureCode, deferredFailureValue0, deferredFailureValue1);
         }
 
         private void ApplyBurialCutsToVoxelSurgeon()
@@ -3031,14 +4243,24 @@ namespace Hecton8.World
             int count = math.min(_burialCutRecordCount, _burialCutRecords.Length);
             for (int i = 0; i < count; i++)
             {
-                WreckBurialCutRecord record = _burialCutRecords[i];
+                if (!_burialCutRecords.TryGet(i, out WreckBurialCutRecord record))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 35u, i, count);
+                    return;
+                }
+
                 if (record.Applied != 0)
                     continue;
 
+                record.Applied = 1;
+                if (!_burialCutRecords.TrySet(i, in record))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, ToVector3(record.HalfExtents), 13u, i, count);
+                    return;
+                }
+
                 Vector3 halfExtents = new Vector3(record.HalfExtents.x, record.HalfExtents.y, record.HalfExtents.z);
                 engine.DeltaProcessor.ApplyImmediateAbsoluteBoxCrater(wreckVoxelCutVolume, record.AbsoluteCenter, halfExtents, record.MaterialId);
-                record.Applied = 1;
-                _burialCutRecords[i] = record;
             }
         }
 
@@ -3055,7 +4277,7 @@ namespace Hecton8.World
 
         private void ProcessNearFieldDebris()
         {
-            if (_debrisRecordCount <= 0 || !_debrisSpatialHash.IsCreated || !_debrisRecords.IsCreated)
+            if (_debrisRecordCount <= 0 || !_debrisSpatialKeys.IsCreated || !_debrisRecords.IsCreated)
                 return;
 
             IPlayerRuntimeContext player = _playerRuntimeContext;
@@ -3065,57 +4287,115 @@ namespace Hecton8.World
 
             Vector3 playerPosition = playerTransform.position;
             int2 playerCell = ResolveDebrisSpatialCell(playerPosition);
-            for (int dz = -1; dz <= 1; dz++)
+            int count = math.min(_debrisRecordCount, _debrisRecords.Length);
+            if (count <= 0)
+                return;
+
+            int pickupDebrisIndex = -1;
+            WreckDebrisRecord pickupRecord = default;
+            GameObject pickupPrefab = null;
+            Hecton8.Items.ItemData pickupItemData = null;
+            int pickupQuantity = 0;
+            Vector3 pickupPosition = default;
+            Quaternion pickupRotation = default;
+            int scanCount = math.min(count, ResolveDebrisNearFieldScanSlice(ResolveWreckQualityWeight01()));
+
             {
-                for (int dx = -1; dx <= 1; dx++)
+                if (!_debrisSpatialKeys.TryResolveReadOnly(out NativeArray<int>.ReadOnly spatialKeys) ||
+                    !_debrisRecords.TryResolveReadOnly(out NativeArray<WreckDebrisRecord>.ReadOnly debrisRecords))
                 {
-                    int key = ResolveDebrisSpatialHashKey(playerCell + new int2(dx, dz));
-                    NativeParallelMultiHashMapIterator<int> iterator;
-                    if (!_debrisSpatialHash.TryGetFirstValue(key, out int debrisIndex, out iterator))
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, playerPosition, 54u, count, 0f);
+                    return;
+                }
+
+                float3 playerPosition3 = new float3(playerPosition.x, playerPosition.y, playerPosition.z);
+                for (int processed = 0; processed < scanCount; processed++)
+                {
+                    int debrisIndex = (_debrisNearFieldCursor + processed) % count;
+                    int spatialKey = spatialKeys[debrisIndex];
+
+                    if (!IsNearDebrisSpatialCell(spatialKey, playerCell))
                         continue;
 
-                    do
+                    WreckDebrisRecord record = debrisRecords[debrisIndex];
+
+                    if ((record.Flags & (byte)(WreckDebrisFlags.Harvested | WreckDebrisFlags.ActivePickup)) != 0)
+                        continue;
+
+                    float3 delta = record.Position - playerPosition3;
+                    if (math.lengthsq(delta) > record.PickupRadiusSq)
+                        continue;
+
+                    if (!TryResolveDebrisPickupSpawn(
+                            in record,
+                            out pickupPrefab,
+                            out pickupItemData,
+                            out pickupQuantity,
+                            out pickupPosition,
+                            out pickupRotation))
                     {
-                        if ((uint)debrisIndex >= (uint)_debrisRecordCount)
-                            continue;
-
-                        WreckDebrisRecord record = _debrisRecords[debrisIndex];
-                        if ((record.Flags & (byte)(WreckDebrisFlags.Harvested | WreckDebrisFlags.ActivePickup)) != 0)
-                            continue;
-
-                        float3 delta = record.Position - new float3(playerPosition.x, playerPosition.y, playerPosition.z);
-                        if (math.lengthsq(delta) > record.PickupRadiusSq)
-                            continue;
-
-                        if (TryQueueDebrisPickup(ref record))
-                        {
-                            record.Flags = (byte)((record.Flags | (byte)WreckDebrisFlags.ActivePickup) & ~(byte)WreckDebrisFlags.DotOnly);
-                            _debrisRecords[debrisIndex] = record;
-                            return;
-                        }
+                        continue;
                     }
-                    while (_debrisSpatialHash.TryGetNextValue(out debrisIndex, ref iterator));
+
+                    record.Flags = (byte)((record.Flags | (byte)WreckDebrisFlags.ActivePickup) & ~(byte)WreckDebrisFlags.DotOnly);
+                    pickupRecord = record;
+                    pickupDebrisIndex = debrisIndex;
+                    _debrisNearFieldCursor = (debrisIndex + 1) % count;
+                    break;
                 }
             }
-        }
 
-        private bool TryQueueDebrisPickup(ref WreckDebrisRecord record)
-        {
-            if (itemCatalog == null || record.ItemHashId == 0)
-                return false;
-
-            Hecton8.Items.ItemData itemData = itemCatalog.FindByHash(record.ItemHashId);
-            if (itemData == null)
-                return false;
-
-            if (!itemCatalog.TryGetLoadedWorldPrefab(record.ItemHashId, out GameObject prefab) || prefab == null)
+            if (pickupDebrisIndex < 0)
             {
-                itemCatalog.QueueWorldPrefabPrewarm(record.ItemHashId);
-                return false;
+                _debrisNearFieldCursor = (_debrisNearFieldCursor + scanCount) % count;
+                return;
             }
 
-            Vector3 position = new Vector3(record.Position.x, record.Position.y, record.Position.z);
-            return QueueWreckLootSpawn(prefab, itemData, math.max(1, record.Quantity), position, ResolveCardinalLootRotation(record.StableId));
+            if (!_debrisRecords.TrySet(pickupDebrisIndex, in pickupRecord))
+            {
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, ToVector3(pickupRecord.Position), 5u, pickupDebrisIndex, 0f);
+                return;
+            }
+
+            if (QueueWreckLootSpawn(pickupPrefab, pickupItemData, pickupQuantity, pickupPosition, pickupRotation))
+                return;
+
+            pickupRecord.Flags = (byte)(pickupRecord.Flags & ~(byte)WreckDebrisFlags.ActivePickup);
+            if (!_debrisRecords.TrySet(pickupDebrisIndex, in pickupRecord))
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, ToVector3(pickupRecord.Position), 55u, pickupDebrisIndex, 0f);
+        }
+
+        private bool TryResolveDebrisPickupSpawn(
+            in WreckDebrisRecord record,
+            out GameObject prefab,
+            out Hecton8.Items.ItemData itemData,
+            out int quantity,
+            out Vector3 position,
+            out Quaternion rotation)
+        {
+            prefab = null;
+            itemData = null;
+            quantity = 0;
+            position = default;
+            rotation = default;
+
+            if (record.ItemHashId == 0 || _pendingLootCount >= MaxPendingLootSpawns)
+                return false;
+
+            int lootIndex = record.LootTableIndex;
+            if ((uint)lootIndex >= (uint)_lootRecordCount ||
+                (uint)lootIndex >= (uint)_lootItemDataCache.Length)
+                return false;
+
+            itemData = _lootItemDataCache[lootIndex];
+            prefab = _lootPrefabCache[lootIndex];
+            if (itemData == null || prefab == null)
+                return false;
+
+            quantity = math.max(1, record.Quantity);
+            position = new Vector3(record.Position.x, record.Position.y, record.Position.z);
+            rotation = ResolveCardinalLootRotation(record.StableId);
+            return true;
         }
 
         private void ProcessArtifactDiscovery()
@@ -3130,23 +4410,43 @@ namespace Hecton8.World
 
             float3 playerPosition = new float3(playerTransform.position.x, playerTransform.position.y, playerTransform.position.z);
             int count = math.min(_artifactRecordCount, _artifactRecords.Length);
-            for (int i = 0; i < count; i++)
+            int scanCount = math.min(count, ResolveArtifactDiscoveryScanSlice(ResolveWreckQualityWeight01()));
+            for (int processed = 0; processed < scanCount; processed++)
             {
-                WreckArtifactRecord record = _artifactRecords[i];
+                int i = (_artifactDiscoveryCursor + processed) % count;
+                if (!_artifactRecords.TryGet(i, out WreckArtifactRecord record))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, playerTransform.position, 38u, i, count);
+                    return;
+                }
+
                 if (record.State != 0 || record.EntryHash == 0u)
                     continue;
 
                 if (math.lengthsq(record.Position - playerPosition) > record.DiscoveryRadiusSq)
                     continue;
 
-                if (!ScanEvents.TryRaiseEntryDiscovered(record.EntryHash, 0u, 0u, 0u, ScanEntryKind.Scannable))
-                    continue;
-
                 record.State = 1;
-                _artifactRecords[i] = record;
+                if (!_artifactRecords.TrySet(i, in record))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, ToVector3(record.Position), 6u, i, 0f);
+                    return;
+                }
+
+                if (!ScanEvents.TryRaiseEntryDiscovered(record.EntryHash, 0u, 0u, 0u, ScanEntryKind.Scannable))
+                {
+                    record.State = 0;
+                    if (!_artifactRecords.TrySet(i, in record))
+                        WriteBlackBoxTelemetry(WreckTelemetryFailureHash, ToVector3(record.Position), 57u, i, 0f);
+                    continue;
+                }
+
                 WriteBlackBoxTelemetry(WreckTelemetryGenerationHash, ToVector3(record.Position), record.EntryHash, 1f, 0f);
+                _artifactDiscoveryCursor = (i + 1) % count;
                 return;
             }
+
+            _artifactDiscoveryCursor = (_artifactDiscoveryCursor + scanCount) % count;
         }
 
         private void UpdateDebrisGravityStateless()
@@ -3157,19 +4457,34 @@ namespace Hecton8.World
             int count = math.min(_debrisRecordCount, _debrisRecords.Length);
             int sliceCount = math.min(count, ResolveDebrisGravitySlice(ResolveWreckQualityWeight01()));
             int frameBucket = Hecton8.Core.SystemDispatcher.CurrentFrameIndex & 4095;
-            for (int processed = 0; processed < sliceCount; processed++)
+
+            if (!_debrisRecords.TryLockForWrite(out NativeArray<WreckDebrisRecord> debrisRecords))
             {
-                int i = (_debrisGravityCursor + processed) % count;
-                WreckDebrisRecord record = _debrisRecords[i];
-                if ((record.Flags & (byte)WreckDebrisFlags.Harvested) != 0)
-                    continue;
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 39u, _debrisGravityCursor, count);
+                return;
+            }
 
-                float nextY = ResolveStatelessDebrisGravityY(record.InitialY, record.TerrainY, record.StableId, frameBucket, record.SinkMetersPerSlowTick);
-                if (math.abs(nextY - record.Position.y) <= 0.001f)
-                    continue;
+            try
+            {
+                for (int processed = 0; processed < sliceCount; processed++)
+                {
+                    int i = (_debrisGravityCursor + processed) % count;
+                    WreckDebrisRecord record = debrisRecords[i];
 
-                record.Position.y = nextY;
-                _debrisRecords[i] = record;
+                    if ((record.Flags & (byte)WreckDebrisFlags.Harvested) != 0)
+                        continue;
+
+                    float nextY = ResolveStatelessDebrisGravityY(record.InitialY, record.TerrainY, record.StableId, frameBucket, record.SinkMetersPerSlowTick);
+                    if (math.abs(nextY - record.Position.y) <= 0.001f)
+                        continue;
+
+                    record.Position.y = nextY;
+                    debrisRecords[i] = record;
+                }
+            }
+            finally
+            {
+                _debrisRecords.ReleaseWriteLock();
             }
 
             _debrisGravityCursor = (_debrisGravityCursor + sliceCount) % count;
@@ -3232,7 +4547,7 @@ namespace Hecton8.World
             if (!IsFiniteBounds(_activeWorldBounds))
             {
                 WriteBlackBoxTelemetry(WreckTelemetryNanHash, _activeRuntimeOrigin, 1u, 0f, 0f);
-                DumpBlackBox();
+                RequestBlackBoxDump();
                 return;
             }
 
@@ -3240,7 +4555,7 @@ namespace Hecton8.World
             if (!math.all(math.isfinite(runtime)))
             {
                 WriteBlackBoxTelemetry(WreckTelemetryNanHash, Vector3.zero, 2u, 0f, 0f);
-                DumpBlackBox();
+                RequestBlackBoxDump();
             }
         }
 
@@ -3250,7 +4565,7 @@ namespace Hecton8.World
                 return;
 
             int index = _telemetryCursor % _telemetryEntries.Length;
-            _telemetryEntries[index] = new WreckTelemetryEntry
+            WreckTelemetryEntry entry = new WreckTelemetryEntry
             {
                 FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 EventHash = eventHash,
@@ -3264,13 +4579,46 @@ namespace Hecton8.World
                 Value0 = value0,
                 Value1 = value1
             };
+            if (!_telemetryEntries.TrySet(index, in entry))
+                return;
+
             _telemetryCursor = (_telemetryCursor + 1) % _telemetryEntries.Length;
+            _telemetryWrittenCount = math.min(_telemetryWrittenCount + 1, _telemetryEntries.Length);
         }
 
-        private void DumpBlackBox()
+        private void RequestBlackBoxDump()
         {
-            if (!_telemetryEntries.IsCreated || _telemetryEntries.Length <= 0)
+            if (_blackBoxDumpWritten || _blackBoxDumpFailed)
                 return;
+
+            _blackBoxDumpRequested = true;
+            if (Application.isPlaying && _dispatcher != null)
+            {
+                if (!_registeredLootLateFrame)
+                    _registeredLootLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+                return;
+            }
+
+            FlushBlackBoxDumpIfRequested();
+        }
+
+        private void FlushBlackBoxDumpIfRequested()
+        {
+            if (!_blackBoxDumpRequested || _blackBoxDumpWritten || _blackBoxDumpFailed)
+                return;
+
+            _blackBoxDumpRequested = false;
+            if (DumpBlackBox())
+                _blackBoxDumpWritten = true;
+            else
+                _blackBoxDumpFailed = true;
+        }
+
+        private bool DumpBlackBox()
+        {
+            if (!_telemetryEntries.TryResolveReadOnly(out NativeArray<WreckTelemetryEntry>.ReadOnly telemetryEntries) ||
+                telemetryEntries.Length <= 0)
+                return false;
 
             try
             {
@@ -3279,40 +4627,106 @@ namespace Hecton8.World
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using FileStream stream = File.Open(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                int count = _telemetryEntries.Length;
+                using FileStream stream = new FileStream(
+                    fullPath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.Read,
+                    4096,
+                    FileOptions.WriteThrough);
+
+                int capacity = telemetryEntries.Length;
+                int count = math.min(_telemetryWrittenCount, capacity);
+                int start = count >= capacity
+                    ? _telemetryCursor % capacity
+                    : (_telemetryCursor - count + capacity) % capacity;
+
+                WriteUInt32LittleEndian(stream, WreckBlackBoxDumpMagic);
+                WriteInt32LittleEndian(stream, WreckBlackBoxEntrySizeBytes);
+                WriteInt32LittleEndian(stream, count);
+                WriteInt32LittleEndian(stream, _telemetryCursor);
+
                 for (int i = 0; i < count; i++)
                 {
-                    WreckTelemetryEntry entry = _telemetryEntries[i];
-                    writer.Write(entry.FrameIndex);
-                    writer.Write(entry.EventHash);
-                    writer.Write(entry.Seed);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.Position.x);
-                    writer.Write(entry.Position.y);
-                    writer.Write(entry.Position.z);
-                    writer.Write(entry.DebrisCount);
-                    writer.Write(entry.ArtifactCount);
-                    writer.Write(entry.SealedCount);
-                    writer.Write(entry.RupturedCount);
-                    writer.Write(entry.Value0);
-                    writer.Write(entry.Value1);
+                    int index = (start + i) % capacity;
+                    WreckTelemetryEntry entry = telemetryEntries[index];
+                    WriteInt32LittleEndian(stream, entry.FrameIndex);
+                    WriteUInt32LittleEndian(stream, entry.EventHash);
+                    WriteUInt32LittleEndian(stream, entry.Seed);
+                    WriteUInt32LittleEndian(stream, entry.Flags);
+                    WriteFloatLittleEndian(stream, entry.Position.x);
+                    WriteFloatLittleEndian(stream, entry.Position.y);
+                    WriteFloatLittleEndian(stream, entry.Position.z);
+                    WriteInt32LittleEndian(stream, entry.DebrisCount);
+                    WriteInt32LittleEndian(stream, entry.ArtifactCount);
+                    WriteInt32LittleEndian(stream, entry.SealedCount);
+                    WriteInt32LittleEndian(stream, entry.RupturedCount);
+                    WriteFloatLittleEndian(stream, entry.Value0);
+                    WriteFloatLittleEndian(stream, entry.Value1);
                 }
+
+                return true;
             }
-            catch (Exception exception)
+            catch (IOException)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError($"[ProceduralWreckGenerator] Black-box dump failed: {exception.Message}", this);
-#endif
+                return false;
             }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                return false;
+            }
+        }
+
+        private static void WriteInt32LittleEndian(FileStream stream, int value)
+        {
+            WriteUInt32LittleEndian(stream, unchecked((uint)value));
+        }
+
+        private static void WriteFloatLittleEndian(FileStream stream, float value)
+        {
+            WriteUInt32LittleEndian(stream, math.asuint(value));
+        }
+
+        private static void WriteUInt32LittleEndian(FileStream stream, uint value)
+        {
+            Span<byte> bytes = stackalloc byte[4];
+            bytes[0] = (byte)value;
+            bytes[1] = (byte)(value >> 8);
+            bytes[2] = (byte)(value >> 16);
+            bytes[3] = (byte)(value >> 24);
+            stream.Write(bytes);
         }
 
         private static int ResolveDebrisBudget(float qualityWeight01)
         {
             float quality = SanitizeQualityWeight01(qualityWeight01);
             float curved = quality * quality;
-            return math.clamp((int)math.round(math.lerp(2500f, MaxDebrisRecords, curved)), 2500, MaxDebrisRecords);
+            return math.clamp((int)math.round(math.lerp(MinQualityDebrisRecords, MaxDebrisRecords, curved)), MinQualityDebrisRecords, MaxDebrisRecords);
+        }
+
+        private static float ResolveDebrisVisualSinkHeight(Vector3 position, Bounds worldBounds, uint stableId, float qualityWeight01)
+        {
+            float quality = SanitizeQualityWeight01(qualityWeight01);
+            float hash01 = ((stableId >> 8) & 0xFFu) * (1f / 255f);
+            float roughness = (hash01 * 2f - 1f) * math.lerp(0.04f, 0.22f, quality);
+            float sinkDepth = math.lerp(0.18f, 0.55f, quality);
+            float localVisualFloor = math.min(position.y - 0.18f, worldBounds.min.y + roughness);
+            return localVisualFloor - sinkDepth;
+        }
+
+        private static int ResolveDebrisNearFieldScanSlice(float qualityWeight01)
+        {
+            float quality = SanitizeQualityWeight01(qualityWeight01);
+            float curved = quality * quality;
+            return math.clamp((int)math.round(math.lerp(192f, 2048f, curved)), 192, 2048);
         }
 
         private static int ResolveDebrisGravitySlice(float qualityWeight01)
@@ -3320,6 +4734,18 @@ namespace Hecton8.World
             float quality = SanitizeQualityWeight01(qualityWeight01);
             float curved = quality * quality;
             return math.clamp((int)math.round(math.lerp(256f, 2048f, curved)), 256, 2048);
+        }
+
+        private static int ResolveArtifactDiscoveryScanSlice(float qualityWeight01)
+        {
+            float quality = SanitizeQualityWeight01(qualityWeight01);
+            float curved = quality * quality;
+            return math.clamp((int)math.round(math.lerp(MinArtifactDiscoveryScanSlice, MaxArtifactDiscoveryScanSlice, curved)), MinArtifactDiscoveryScanSlice, MaxArtifactDiscoveryScanSlice);
+        }
+
+        private int ResolveRenderPayloadCapacity()
+        {
+            return math.max(1, math.max(maxPlacements, math.max(brgMinFragmentCount, brgMaxFragmentCount)));
         }
 
         private static int2 ResolveDebrisSpatialCell(Vector3 position)
@@ -3340,6 +4766,20 @@ namespace Hecton8.World
             {
                 return (cell.x * 73856093) ^ (cell.y * 19349663);
             }
+        }
+
+        private static bool IsNearDebrisSpatialCell(int spatialKey, int2 centerCell)
+        {
+            for (int dz = -1; dz <= 1; dz++)
+            {
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    if (spatialKey == ResolveDebrisSpatialHashKey(centerCell + new int2(dx, dz)))
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         private static int ResolveDebrisClusterKey(Vector3 position)
@@ -3363,49 +4803,41 @@ namespace Hecton8.World
             return bounds.center + new Vector3(x, y, z);
         }
 
-        private static float ResolveTerrainHeightForRuntimePosition(Vector3 runtimePosition, float fallbackY)
-        {
-            MapMagicBridge bridge = MapMagicBridge.Instance;
-            if (bridge == null || !bridge.IsAvailable)
-                return fallbackY;
-
-            if (!TryResolveRuntimeAbsoluteDouble(runtimePosition, out double3 absolutePosition))
-                return fallbackY;
-
-            Vector3 absolutePositionVector = new Vector3(
-                (float)absolutePosition.x,
-                (float)absolutePosition.y,
-                (float)absolutePosition.z);
-            return bridge.TryGetHeightAUP(absolutePositionVector, out float terrainHeight) && math.isfinite(terrainHeight)
-                ? terrainHeight
-                : fallbackY;
-        }
-
         private static Vector3 ToVector3(float3 value)
         {
             return new Vector3(value.x, value.y, value.z);
         }
 
-        private async Awaitable SolveGridAsync(int cellCount, ushort initialMask, int moduleCount, uint seed)
+        private async Awaitable<bool> SolveGridAsync(int cellCount, ushort initialMask, int moduleCount, uint seed)
         {
-            ExceptionDispatchInfo capturedException = null;
+            if (cellCount <= 0 || moduleCount <= 0 || !_grid.IsCreated || !_allPlacements.IsCreated)
+                return false;
 
-            await Awaitable.BackgroundThreadAsync();
-            try
+            double stageStartTime = Time.realtimeSinceStartupAsDouble;
+            if (!InitializeGrid(cellCount, initialMask, false))
             {
-                InitializeGrid(cellCount, initialMask);
-
-                XorShift32State rng = new XorShift32State(seed);
-                CollapseGrid(cellCount, moduleCount, ref rng);
-                BuildPlacements(cellCount, seed);
-            }
-            catch (Exception ex)
-            {
-                capturedException = ExceptionDispatchInfo.Capture(ex);
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 14u, cellCount, moduleCount);
+                return false;
             }
 
-            await Awaitable.MainThreadAsync();
-            capturedException?.Throw();
+            await YieldAfterGenerationStageAsync(stageStartTime);
+            if (!CanContinueGeneration())
+                return false;
+            stageStartTime = Time.realtimeSinceStartupAsDouble;
+
+            XorShift32State rng = new XorShift32State(seed);
+            CollapseGrid(cellCount, moduleCount, ref rng);
+            await YieldAfterGenerationStageAsync(stageStartTime);
+            if (!CanContinueGeneration())
+                return false;
+            stageStartTime = Time.realtimeSinceStartupAsDouble;
+
+            BuildPlacements(cellCount, seed);
+            await YieldAfterGenerationStageAsync(stageStartTime);
+            if (!CanContinueGeneration())
+                return false;
+
+            return _allPlacements.IsCreated && _allPlacements.Length > 0;
         }
 
         private static async Awaitable YieldAfterGenerationStageAsync(double stageStartTime)
@@ -3422,16 +4854,14 @@ namespace Hecton8.World
             await AwaitableDebtMonitor.NextFrameAsync();
         }
 
-        private static async Awaitable<bool> YieldMeshBuildFrameAsync(string context, int waitedFrames)
+        private static async Awaitable<bool> YieldMeshBuildFrameAsync(int waitedFrames)
         {
             if (!Application.isPlaying)
                 return true;
 
             if (waitedFrames >= AsyncMeshBuildYieldWatchdogFrames)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError($"[ProceduralWreckGenerator] Async mesh-build yield watchdog tripped in {context} after {waitedFrames} frames. Aborting generated mesh stage.");
-#endif
+                GlobalTelemetryBus.PublishPerformanceWarning(WreckSolveBudgetWarningHash, WreckBrgContextHash, waitedFrames);
                 return false;
             }
 
@@ -3450,44 +4880,9 @@ namespace Hecton8.World
             return (Time.realtimeSinceStartupAsDouble - sliceStartTime) >= AsyncMeshBuildMainThreadBudgetSeconds;
         }
 
-        private static async Awaitable<bool> WaitForJobHandleAsync(JobHandle handle, string context)
-        {
-            int waitFrames = 0;
-            while (!handle.IsCompleted)
-            {
-                if (waitFrames >= AsyncJobWaitWatchdogFrames)
-                {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Hecton8.Core.H8Debug.LogError($"[ProceduralWreckGenerator] Async job wait timeout in {context} after {waitFrames} frames. Forcing cleanup completion and aborting stage.");
-#endif
-                    DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
-                    return false;
-                }
-
-                waitFrames++;
-                await AwaitableDebtMonitor.NextFrameAsync();
-            }
-
-            DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);
-            return true;
-        }
-
-        private JobHandle CombineScheduledCopyHandles(int handleCount)
-        {
-            if (handleCount <= 0)
-                return default;
-
-            JobHandle combinedHandle = _copyHandles[0];
-            for (int handleIndex = 1; handleIndex < handleCount; handleIndex++)
-                combinedHandle = JobHandle.CombineDependencies(combinedHandle, _copyHandles[handleIndex]);
-
-            return combinedHandle;
-        }
-
         private void RefreshRuntimeDefinitions()
         {
-            for (int i = 0; i < MaxModuleDefinitions; i++)
-                _runtimeDefinitions[i] = default;
+            ClearRuntimeDefinitionCache();
 
             int count = math.min(moduleDefinitions != null ? moduleDefinitions.Length : 0, MaxModuleDefinitions);
             for (int i = 0; i < count; i++)
@@ -3496,7 +4891,7 @@ namespace Hecton8.World
                 bool isFallbackConnector = i == 0 || source.UniversalConnector;
                 ushort universalMask = 0xFFFF;
 
-                _runtimeDefinitions[i] = new WreckModuleRuntimeDefinition
+                WreckModuleRuntimeDefinition runtimeDefinition = new WreckModuleRuntimeDefinition
                 {
                     NorthSocket = isFallbackConnector ? universalMask : source.NorthSocket,
                     EastSocket = isFallbackConnector ? universalMask : source.EastSocket,
@@ -3515,7 +4910,32 @@ namespace Hecton8.World
                     LootTableIndex = (byte)math.clamp(source.LootTableIndex, 0, MaxLootRecords - 1),
                     LoreFragmentChancePermille = (ushort)math.clamp(source.LoreFragmentChancePermille, 0, 1000)
                 };
+                _runtimeDefinitionBuildCache[i] = runtimeDefinition;
             }
+
+            if (!_runtimeDefinitions.TryLockForWrite(out NativeArray<WreckModuleRuntimeDefinition> runtimeDefinitions))
+            {
+                ClearRuntimeDefinitionCache();
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 15u, count, MaxModuleDefinitions);
+                return;
+            }
+
+            try
+            {
+                int writeCount = math.min(_runtimeDefinitions.Length, runtimeDefinitions.Length);
+                for (int i = 0; i < writeCount; i++)
+                    runtimeDefinitions[i] = i < count ? _runtimeDefinitionBuildCache[i] : default;
+            }
+            finally
+            {
+                _runtimeDefinitions.ReleaseWriteLock();
+            }
+        }
+
+        private void ClearRuntimeDefinitionCache()
+        {
+            for (int i = 0; i < MaxModuleDefinitions; i++)
+                _runtimeDefinitionBuildCache[i] = default;
         }
 
         private int ResolveRuntimeModuleCount()
@@ -3535,7 +4955,7 @@ namespace Hecton8.World
             return (ushort)(initialMask & ((1 << moduleCount) - 1));
         }
 
-        private void InitializeGrid(int cellCount, ushort initialMask)
+        private bool InitializeGrid(int cellCount, ushort initialMask, bool emitTelemetry)
         {
             for (int mortonIndex = 0; mortonIndex < cellCount; mortonIndex++)
             {
@@ -3544,14 +4964,23 @@ namespace Hecton8.World
                 if (constrainedMask == 0)
                     constrainedMask = 1;
 
-                _grid[mortonIndex] = new WreckGridCell
+                WreckGridCell cell = new WreckGridCell
                 {
                     PossibleModuleMask = constrainedMask,
                     CollapsedModuleId = UncollapsedModuleId,
                     SocketConstraints = constraints,
                     Entropy = ComputeEntropy(constrainedMask)
                 };
+                if (!_grid.TrySet(mortonIndex, in cell))
+                {
+                    if (emitTelemetry)
+                        WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 17u, mortonIndex, cellCount);
+
+                    return false;
+                }
             }
+
+            return true;
         }
 
         private void CollapseGrid(int cellCount, int moduleCount, ref XorShift32State rng)
@@ -3575,7 +5004,14 @@ namespace Hecton8.World
                     break;
                 }
 
-                int selectedIndex = SelectNextCell(cellCount, ref rng);
+                int selectedIndex = SelectNextCell(cellCount, ref rng, out bool selectionReadFailed);
+                if (selectionReadFailed)
+                {
+                    termination = WreckSolveTermination.DataVaultReadFailed;
+                    LogSolveFallback(termination, cellCount, collapseIterations, maxObservedPropagationIterations, contradictionCount, forcedFallbackCellCount);
+                    break;
+                }
+
                 if (selectedIndex < 0)
                 {
                     forcedFallbackCellCount = ForceResolveRemainingCellsToFallback(cellCount);
@@ -3584,12 +5020,24 @@ namespace Hecton8.World
                     break;
                 }
 
-                WreckGridCell selectedCell = _grid[selectedIndex];
+                if (!_grid.TryGet(selectedIndex, out WreckGridCell selectedCell))
+                {
+                    termination = WreckSolveTermination.DataVaultReadFailed;
+                    LogSolveFallback(termination, cellCount, collapseIterations, maxObservedPropagationIterations, contradictionCount, forcedFallbackCellCount);
+                    break;
+                }
+
                 byte chosenModule = SelectModuleFromMask(selectedCell.PossibleModuleMask, moduleCount, ref rng);
                 selectedCell.CollapsedModuleId = chosenModule;
                 selectedCell.PossibleModuleMask = (ushort)(1 << chosenModule);
                 selectedCell.Entropy = 0f;
-                _grid[selectedIndex] = selectedCell;
+                if (!_grid.TrySet(selectedIndex, in selectedCell))
+                {
+                    termination = WreckSolveTermination.DataVaultWriteFailed;
+                    LogSolveFallback(termination, cellCount, collapseIterations, maxObservedPropagationIterations, contradictionCount, forcedFallbackCellCount);
+                    break;
+                }
+
                 collapsedCount++;
 
                 ClearPropagationQueue();
@@ -3652,33 +5100,27 @@ namespace Hecton8.World
                 return false;
             }
 
-            _propagationQueue.Enqueue(coordinate);
+            if (!_propagationQueue.TryEnqueue(in coordinate))
+                return false;
+
             _propagationQueueCount++;
             return true;
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
+        private int SelectNextCell(int cellCount, ref XorShift32State rng, out bool readFailed)
         {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
-        }
-
-        private int SelectNextCell(int cellCount, ref XorShift32State rng)
-        {
+            readFailed = false;
             float bestEntropy = float.MaxValue;
             int bestIndex = -1;
 
             for (int mortonIndex = 0; mortonIndex < cellCount; mortonIndex++)
             {
-                WreckGridCell cell = _grid[mortonIndex];
+                if (!_grid.TryGet(mortonIndex, out WreckGridCell cell))
+                {
+                    readFailed = true;
+                    return -1;
+                }
+
                 if (cell.CollapsedModuleId != UncollapsedModuleId)
                     continue;
 
@@ -3721,14 +5163,17 @@ namespace Hecton8.World
                     return WreckSolveTermination.PropagationWatchdogTriggered;
 
                 int currentIndex = EncodeMorton3(currentCoord.x, currentCoord.y, currentCoord.z);
-                WreckGridCell currentCell = _grid[currentIndex];
+                if (!_grid.TryGet(currentIndex, out WreckGridCell currentCell))
+                    return WreckSolveTermination.DataVaultReadFailed;
 
                 for (byte direction = 0; direction < 6; direction++)
                 {
                     if (!TryGetNeighbor(currentCoord, direction, out int neighborIndex))
                         continue;
 
-                    WreckGridCell neighborCell = _grid[neighborIndex];
+                    if (!_grid.TryGet(neighborIndex, out WreckGridCell neighborCell))
+                        return WreckSolveTermination.DataVaultReadFailed;
+
                     if (neighborCell.CollapsedModuleId != UncollapsedModuleId)
                         continue;
 
@@ -3753,7 +5198,9 @@ namespace Hecton8.World
 
                     neighborCell.PossibleModuleMask = compatibleMask;
                     neighborCell.Entropy = ComputeEntropy(compatibleMask);
-                    _grid[neighborIndex] = neighborCell;
+                    if (!_grid.TrySet(neighborIndex, in neighborCell))
+                        return WreckSolveTermination.DataVaultWriteFailed;
+
                     if (!TryEnqueuePropagationCell(DecodeMorton3(neighborIndex)))
                         return WreckSolveTermination.PropagationQueueOverflow;
                 }
@@ -3767,14 +5214,24 @@ namespace Hecton8.World
             int forcedCount = 0;
             for (int mortonIndex = 0; mortonIndex < cellCount; mortonIndex++)
             {
-                WreckGridCell cell = _grid[mortonIndex];
+                if (!_grid.TryGet(mortonIndex, out WreckGridCell cell))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 40u, mortonIndex, cellCount);
+                    break;
+                }
+
                 if (cell.CollapsedModuleId != UncollapsedModuleId)
                     continue;
 
                 cell.CollapsedModuleId = 0;
                 cell.PossibleModuleMask = 1;
                 cell.Entropy = 0f;
-                _grid[mortonIndex] = cell;
+                if (!_grid.TrySet(mortonIndex, in cell))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 18u, mortonIndex, cellCount);
+                    break;
+                }
+
                 forcedCount++;
             }
 
@@ -3790,11 +5247,13 @@ namespace Hecton8.World
             int contradictionCount,
             int forcedFallbackCellCount)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.LogError(
-                $"[ProceduralWreckGenerator] WFC fallback engaged. reason={termination} cells={cellCount} collapseIterations={collapseIterations} propagationIterations={propagationIterations} contradictions={contradictionCount} forcedFallbackCells={forcedFallbackCellCount}",
-                this);
-#endif
+            WriteBlackBoxTelemetry(
+                WreckSolveBudgetWarningHash,
+                _activeRuntimeOrigin,
+                unchecked((uint)termination),
+                contradictionCount,
+                forcedFallbackCellCount);
+            GlobalTelemetryBus.PublishPerformanceWarning(WreckSolveBudgetWarningHash, unchecked((uint)termination), cellCount);
         }
 
         private void BuildPlacements(int cellCount, uint seed)
@@ -3808,12 +5267,22 @@ namespace Hecton8.World
 
             for (int mortonIndex = 0; mortonIndex < cellCount; mortonIndex++)
             {
-                WreckGridCell cell = _grid[mortonIndex];
+                if (!_grid.TryGet(mortonIndex, out WreckGridCell cell))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 41u, mortonIndex, cellCount);
+                    break;
+                }
+
                 int moduleId = cell.CollapsedModuleId;
                 if (moduleId < 0 || moduleId >= moduleDefinitions.Length)
                     continue;
 
-                WreckModuleRuntimeDefinition runtimeDefinition = _runtimeDefinitions[moduleId];
+                if (!_runtimeDefinitions.TryGet(moduleId, out WreckModuleRuntimeDefinition runtimeDefinition))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 42u, moduleId, moduleDefinitions.Length);
+                    break;
+                }
+
                 if (runtimeDefinition.EmitsGeometry == 0 && runtimeDefinition.EmitsNavProxy == 0)
                     continue;
 
@@ -3834,7 +5303,7 @@ namespace Hecton8.World
                 if (!IsFiniteFloat3(boundsSize))
                     continue;
 
-                _allPlacements.AddNoResize(new WreckModulePlacement
+                WreckModulePlacement placementRecord = new WreckModulePlacement
                 {
                     Position = localPosition,
                     Rotation = placementRotation,
@@ -3845,7 +5314,12 @@ namespace Hecton8.World
                     DrawPriority = runtimeDefinition.DrawCallPriority,
                     IntegrityState = runtimeDefinition.IntegrityState,
                     ModuleFlags = runtimeDefinition.RequiresLaserCutter
-                });
+                };
+                if (!_allPlacements.TryAddNoResize(in placementRecord))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 19u, mortonIndex, activePlacementLimit);
+                    break;
+                }
             }
         }
 
@@ -3855,14 +5329,23 @@ namespace Hecton8.World
             int placementCount = _allPlacements.Length;
             for (int i = 0; i < placementCount; i++)
             {
-                WreckModulePlacement placement = _allPlacements[i];
+                if (!_allPlacements.TryGet(i, out WreckModulePlacement placement))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 43u, i, placementCount);
+                    break;
+                }
+
                 if (placement.DrawPriority != tier)
                     continue;
 
                 if (_filteredPlacements.Length >= _filteredPlacements.Capacity)
                     break;
 
-                _filteredPlacements.AddNoResize(placement);
+                if (!_filteredPlacements.TryAddNoResize(in placement))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 20u, i, tier);
+                    break;
+                }
             }
 
             return BuildMergedMesh(_filteredPlacements);
@@ -3874,20 +5357,29 @@ namespace Hecton8.World
             int placementCount = _allPlacements.Length;
             for (int i = 0; i < placementCount; i++)
             {
-                WreckModulePlacement placement = _allPlacements[i];
+                if (!_allPlacements.TryGet(i, out WreckModulePlacement placement))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 43u, i, placementCount);
+                    break;
+                }
+
                 if (placement.DrawPriority != tier)
                     continue;
 
                 if (_filteredPlacements.Length >= _filteredPlacements.Capacity)
                     break;
 
-                _filteredPlacements.AddNoResize(placement);
+                if (!_filteredPlacements.TryAddNoResize(in placement))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 20u, i, tier);
+                    break;
+                }
             }
 
             return await BuildMergedMeshAsync(_filteredPlacements);
         }
 
-        private Mesh BuildMergedMesh(NativeList<WreckModulePlacement> placements)
+        private Mesh BuildMergedMesh(VaultListBuffer<WreckModulePlacement> placements)
         {
             if (!placements.IsCreated || placements.Length <= 0)
                 return null;
@@ -3895,154 +5387,47 @@ namespace Hecton8.World
             int placementCount = placements.Length;
             int totalVertexCount = 0;
             int totalIndexCount = 0;
-            int scheduledJobCount = 0;
+            int mergeableMeshCount = 0;
 
             for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
             {
-                WreckModulePlacement placement = placements[placementIndex];
-                Mesh sourceMesh = ResolveStructuralMesh(placement.ModuleId);
-                if (sourceMesh == null || !ValidateMeshLayout(sourceMesh))
-                    continue;
-
-                totalVertexCount += sourceMesh.vertexCount;
-                totalIndexCount += ResolveIndexCount(sourceMesh);
-                scheduledJobCount++;
-            }
-
-            if (totalVertexCount <= 0 || totalIndexCount <= 0 || scheduledJobCount <= 0)
-                return null;
-
-            Mesh.MeshDataArray writableMeshData = Mesh.AllocateWritableMeshData(1);
-            Mesh.MeshData meshData = writableMeshData[0];
-            meshData.SetVertexBufferParams(
-                totalVertexCount,
-                new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
-                new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
-                new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
-                new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4));
-            meshData.SetIndexBufferParams(totalIndexCount, IndexFormat.UInt32);
-
-            NativeArray<WreckMergedVertex> destinationVertices = meshData.GetVertexData<WreckMergedVertex>();
-            NativeArray<uint> destinationIndices = meshData.GetIndexData<uint>();
-
-            int vertexOffset = 0;
-            int indexOffset = 0;
-            scheduledJobCount = 0;
-
-            for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
-            {
-                WreckModulePlacement placement = placements[placementIndex];
-                Mesh sourceMesh = ResolveStructuralMesh(placement.ModuleId);
-                if (sourceMesh == null || !ValidateMeshLayout(sourceMesh))
-                    continue;
-
-                _readOnlyMeshSnapshots[scheduledJobCount] = Mesh.AcquireReadOnlyMeshData(sourceMesh);
-                Mesh.MeshData sourceData = _readOnlyMeshSnapshots[scheduledJobCount][0];
-
-                int subMeshCount = sourceData.subMeshCount;
-                CombineMeshDataJob job = new CombineMeshDataJob
+                if (!placements.TryGet(placementIndex, out WreckModulePlacement placement))
                 {
-                    SourceMeshData = sourceData,
-                    DestinationVertices = destinationVertices,
-                    DestinationIndices = destinationIndices,
-                    VertexOffset = vertexOffset,
-                    IndexOffset = indexOffset,
-                    PositionStream = sourceData.GetVertexAttributeStream(VertexAttribute.Position),
-                    NormalStream = sourceData.HasVertexAttribute(VertexAttribute.Normal)
-                        ? sourceData.GetVertexAttributeStream(VertexAttribute.Normal)
-                        : -1,
-                    UvStream = sourceData.HasVertexAttribute(VertexAttribute.TexCoord0)
-                        ? sourceData.GetVertexAttributeStream(VertexAttribute.TexCoord0)
-                        : -1,
-                    ColorStream = HasCompatibleVertexColorLayout(sourceData)
-                        ? sourceData.GetVertexAttributeStream(VertexAttribute.Color)
-                        : -1,
-                    SubMeshCount = subMeshCount,
-                    AttributeFlags =
-                        (sourceData.HasVertexAttribute(VertexAttribute.Normal) ? CombineMeshDataJob.AttributeFlagNormals : 0u) |
-                        (sourceData.HasVertexAttribute(VertexAttribute.TexCoord0) ? CombineMeshDataJob.AttributeFlagUvs : 0u) |
-                        (HasCompatibleVertexColorLayout(sourceData) ? CombineMeshDataJob.AttributeFlagColors : 0u),
-                    LocalToWreck = float4x4.TRS(placement.Position, placement.Rotation, new float3(1f)),
-                    Rotation = placement.Rotation
-                };
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 44u, placementIndex, placementCount);
+                    return null;
+                }
 
-                job.Execute();
-                scheduledJobCount++;
-
-                vertexOffset += sourceMesh.vertexCount;
-                indexOffset += ResolveIndexCount(sourceMesh);
-            }
-
-            for (int i = 0; i < scheduledJobCount; i++)
-                _readOnlyMeshSnapshots[i].Dispose();
-
-            Bounds localBounds = CalculateLocalBounds(placements);
-            meshData.subMeshCount = 1;
-            meshData.SetSubMesh(0, new SubMeshDescriptor(0, totalIndexCount, MeshTopology.Triangles)
-            {
-                bounds = localBounds,
-                vertexCount = totalVertexCount
-            }, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
-
-            Mesh result = new Mesh();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            result.name = GeneratedMergedMeshName;
-#endif
-            Mesh.ApplyAndDisposeWritableMeshData(
-                writableMeshData,
-                result,
-                MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
-            result.bounds = localBounds;
-            return result;
-        }
-
-        private async Awaitable<Mesh> BuildMergedMeshAsync(NativeList<WreckModulePlacement> placements)
-        {
-            if (!placements.IsCreated || placements.Length <= 0)
-                return null;
-
-            int placementCount = placements.Length;
-            int totalVertexCount = 0;
-            int totalIndexCount = 0;
-            int mergedPlacementCount = 0;
-            int sliceWorkCount = 0;
-            int meshYieldFrames = 0;
-            double sliceStartTime = Time.realtimeSinceStartupAsDouble;
-
-            for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
-            {
-                WreckModulePlacement placement = placements[placementIndex];
                 Mesh sourceMesh = ResolveStructuralMesh(placement.ModuleId);
                 if (sourceMesh == null || !ValidateMeshLayout(sourceMesh))
                     continue;
 
-                totalVertexCount += sourceMesh.vertexCount;
-                totalIndexCount += ResolveIndexCount(sourceMesh);
-                mergedPlacementCount++;
-
-                sliceWorkCount++;
-                if (!ShouldYieldMeshBuildSlice(sliceWorkCount, sliceStartTime))
-                    continue;
-
-                if (!await YieldMeshBuildFrameAsync("merged mesh source scan", meshYieldFrames++))
+                int sourceVertexCount = sourceMesh.vertexCount;
+                int sourceIndexCount = ResolveIndexCount(sourceMesh);
+                if (sourceVertexCount <= 0 ||
+                    sourceIndexCount <= 0 ||
+                    totalVertexCount > int.MaxValue - sourceVertexCount ||
+                    totalIndexCount > int.MaxValue - sourceIndexCount)
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 53u, placementIndex, placementCount);
                     return null;
+                }
 
-                sliceStartTime = Time.realtimeSinceStartupAsDouble;
-                sliceWorkCount = 0;
+                totalVertexCount += sourceVertexCount;
+                totalIndexCount += sourceIndexCount;
+                mergeableMeshCount++;
             }
 
-            if (totalVertexCount <= 0 || totalIndexCount <= 0 || mergedPlacementCount <= 0)
+            if (totalVertexCount <= 0 || totalIndexCount <= 0 || mergeableMeshCount <= 0)
                 return null;
 
             Mesh.MeshDataArray writableMeshData = Mesh.AllocateWritableMeshData(1);
             bool meshApplied = false;
+            bool meshOwnershipTransferred = false;
+            Mesh result = null;
             int acquiredSnapshotCount = 0;
 
             try
             {
-                sliceStartTime = Time.realtimeSinceStartupAsDouble;
-                sliceWorkCount = 0;
-
                 Mesh.MeshData meshData = writableMeshData[0];
                 meshData.SetVertexBufferParams(
                     totalVertexCount,
@@ -4057,17 +5442,223 @@ namespace Hecton8.World
 
                 int vertexOffset = 0;
                 int indexOffset = 0;
-                int scheduledJobCount = 0;
+                int copiedMeshCount = 0;
 
                 for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
                 {
-                    WreckModulePlacement placement = placements[placementIndex];
+                    if (!placements.TryGet(placementIndex, out WreckModulePlacement placement))
+                    {
+                        WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 44u, placementIndex, placementCount);
+                        return null;
+                    }
+
                     Mesh sourceMesh = ResolveStructuralMesh(placement.ModuleId);
-                    if (sourceMesh == null || !ValidateMeshLayout(sourceMesh))
+                    if (!TryAcquireValidatedMeshData(sourceMesh, out Mesh.MeshDataArray sourceMeshDataArray, out Mesh.MeshData sourceData))
                         continue;
 
-                    _readOnlyMeshSnapshots[acquiredSnapshotCount] = Mesh.AcquireReadOnlyMeshData(sourceMesh);
-                    Mesh.MeshData sourceData = _readOnlyMeshSnapshots[acquiredSnapshotCount][0];
+                    _readOnlyMeshSnapshots[acquiredSnapshotCount] = sourceMeshDataArray;
+                    acquiredSnapshotCount++;
+
+                    int subMeshCount = sourceData.subMeshCount;
+                    CombineMeshDataJob job = new CombineMeshDataJob
+                    {
+                        SourceMeshData = sourceData,
+                        DestinationVertices = destinationVertices,
+                        DestinationIndices = destinationIndices,
+                        VertexOffset = vertexOffset,
+                        IndexOffset = indexOffset,
+                        PositionStream = sourceData.GetVertexAttributeStream(VertexAttribute.Position),
+                        NormalStream = sourceData.HasVertexAttribute(VertexAttribute.Normal)
+                            ? sourceData.GetVertexAttributeStream(VertexAttribute.Normal)
+                            : -1,
+                        UvStream = sourceData.HasVertexAttribute(VertexAttribute.TexCoord0)
+                            ? sourceData.GetVertexAttributeStream(VertexAttribute.TexCoord0)
+                            : -1,
+                        ColorStream = HasCompatibleVertexColorLayout(sourceData)
+                            ? sourceData.GetVertexAttributeStream(VertexAttribute.Color)
+                            : -1,
+                        PositionOffset = sourceData.GetVertexAttributeOffset(VertexAttribute.Position),
+                        PositionStride = ResolveVertexAttributeStride(sourceData, VertexAttribute.Position),
+                        NormalOffset = sourceData.HasVertexAttribute(VertexAttribute.Normal)
+                            ? sourceData.GetVertexAttributeOffset(VertexAttribute.Normal)
+                            : 0,
+                        NormalStride = sourceData.HasVertexAttribute(VertexAttribute.Normal)
+                            ? ResolveVertexAttributeStride(sourceData, VertexAttribute.Normal)
+                            : 0,
+                        UvOffset = sourceData.HasVertexAttribute(VertexAttribute.TexCoord0)
+                            ? sourceData.GetVertexAttributeOffset(VertexAttribute.TexCoord0)
+                            : 0,
+                        UvStride = sourceData.HasVertexAttribute(VertexAttribute.TexCoord0)
+                            ? ResolveVertexAttributeStride(sourceData, VertexAttribute.TexCoord0)
+                            : 0,
+                        ColorOffset = HasCompatibleVertexColorLayout(sourceData)
+                            ? sourceData.GetVertexAttributeOffset(VertexAttribute.Color)
+                            : 0,
+                        ColorStride = HasCompatibleVertexColorLayout(sourceData)
+                            ? ResolveVertexAttributeStride(sourceData, VertexAttribute.Color)
+                            : 0,
+                        SubMeshCount = subMeshCount,
+                        AttributeFlags =
+                            (sourceData.HasVertexAttribute(VertexAttribute.Normal) ? CombineMeshDataJob.AttributeFlagNormals : 0u) |
+                            (sourceData.HasVertexAttribute(VertexAttribute.TexCoord0) ? CombineMeshDataJob.AttributeFlagUvs : 0u) |
+                            (HasCompatibleVertexColorLayout(sourceData) ? CombineMeshDataJob.AttributeFlagColors : 0u),
+                        LocalToWreck = float4x4.TRS(placement.Position, placement.Rotation, new float3(1f)),
+                        Rotation = placement.Rotation
+                    };
+
+                    job.Execute();
+                    copiedMeshCount++;
+
+                    vertexOffset += sourceMesh.vertexCount;
+                    indexOffset += ResolveIndexCount(sourceMesh);
+                }
+
+                for (int i = 0; i < acquiredSnapshotCount; i++)
+                {
+                    _readOnlyMeshSnapshots[i].Dispose();
+                    _readOnlyMeshSnapshots[i] = default;
+                }
+
+                if (copiedMeshCount != mergeableMeshCount ||
+                    vertexOffset != totalVertexCount ||
+                    indexOffset != totalIndexCount)
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 54u, copiedMeshCount, mergeableMeshCount);
+                    return null;
+                }
+
+                Bounds localBounds = CalculateLocalBounds(placements);
+                meshData.subMeshCount = 1;
+                meshData.SetSubMesh(0, new SubMeshDescriptor(0, totalIndexCount, MeshTopology.Triangles)
+                {
+                    bounds = localBounds,
+                    vertexCount = totalVertexCount
+                }, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
+
+                result = new Mesh();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                result.name = GeneratedMergedMeshName;
+#endif
+                Mesh.ApplyAndDisposeWritableMeshData(
+                    writableMeshData,
+                    result,
+                    MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
+                meshApplied = true;
+                result.bounds = localBounds;
+                meshOwnershipTransferred = true;
+                return result;
+            }
+            finally
+            {
+                for (int snapshotIndex = 0; snapshotIndex < acquiredSnapshotCount; snapshotIndex++)
+                {
+                    if (_readOnlyMeshSnapshots[snapshotIndex].Length > 0)
+                    {
+                        _readOnlyMeshSnapshots[snapshotIndex].Dispose();
+                        _readOnlyMeshSnapshots[snapshotIndex] = default;
+                    }
+                }
+
+                if (!meshApplied)
+                    writableMeshData.Dispose();
+                if (!meshOwnershipTransferred)
+                    ReleaseGeneratedMesh(result);
+            }
+        }
+
+        private async Awaitable<Mesh> BuildMergedMeshAsync(VaultListBuffer<WreckModulePlacement> placements)
+        {
+            if (!placements.IsCreated || placements.Length <= 0)
+                return null;
+
+            int placementCount = placements.Length;
+            int totalVertexCount = 0;
+            int totalIndexCount = 0;
+            int mergedPlacementCount = 0;
+            int sliceWorkCount = 0;
+            int meshYieldFrames = 0;
+            double sliceStartTime = Time.realtimeSinceStartupAsDouble;
+
+            for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
+            {
+                if (!placements.TryGet(placementIndex, out WreckModulePlacement placement))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 45u, placementIndex, placementCount);
+                    return null;
+                }
+
+                Mesh sourceMesh = ResolveStructuralMesh(placement.ModuleId);
+                if (sourceMesh == null || !ValidateMeshLayout(sourceMesh))
+                    continue;
+
+                int sourceVertexCount = sourceMesh.vertexCount;
+                int sourceIndexCount = ResolveIndexCount(sourceMesh);
+                if (sourceVertexCount <= 0 ||
+                    sourceIndexCount <= 0 ||
+                    totalVertexCount > int.MaxValue - sourceVertexCount ||
+                    totalIndexCount > int.MaxValue - sourceIndexCount)
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 55u, placementIndex, placementCount);
+                    return null;
+                }
+
+                totalVertexCount += sourceVertexCount;
+                totalIndexCount += sourceIndexCount;
+                mergedPlacementCount++;
+
+                sliceWorkCount++;
+                if (!ShouldYieldMeshBuildSlice(sliceWorkCount, sliceStartTime))
+                    continue;
+
+                if (!await YieldMeshBuildFrameAsync(meshYieldFrames++))
+                    return null;
+                if (!CanContinueGeneration())
+                    return null;
+
+                sliceStartTime = Time.realtimeSinceStartupAsDouble;
+                sliceWorkCount = 0;
+            }
+
+            if (totalVertexCount <= 0 || totalIndexCount <= 0 || mergedPlacementCount <= 0)
+                return null;
+
+            Mesh.MeshDataArray writableMeshData = Mesh.AllocateWritableMeshData(1);
+            bool meshApplied = false;
+            bool meshOwnershipTransferred = false;
+            Mesh result = null;
+            int acquiredSnapshotCount = 0;
+
+            try
+            {
+                Mesh.MeshData meshData = writableMeshData[0];
+                meshData.SetVertexBufferParams(
+                    totalVertexCount,
+                    new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+                    new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
+                    new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
+                    new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4));
+                meshData.SetIndexBufferParams(totalIndexCount, IndexFormat.UInt32);
+
+                NativeArray<WreckMergedVertex> destinationVertices = meshData.GetVertexData<WreckMergedVertex>();
+                NativeArray<uint> destinationIndices = meshData.GetIndexData<uint>();
+
+                int vertexOffset = 0;
+                int indexOffset = 0;
+                int copiedMeshCount = 0;
+
+                for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
+                {
+                    if (!placements.TryGet(placementIndex, out WreckModulePlacement placement))
+                    {
+                        WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 45u, placementIndex, placementCount);
+                        return null;
+                    }
+
+                    Mesh sourceMesh = ResolveStructuralMesh(placement.ModuleId);
+                    if (!TryAcquireValidatedMeshData(sourceMesh, out Mesh.MeshDataArray sourceMeshDataArray, out Mesh.MeshData sourceData))
+                        continue;
+
+                    _readOnlyMeshSnapshots[acquiredSnapshotCount] = sourceMeshDataArray;
                     acquiredSnapshotCount++;
 
                     CombineMeshDataJob job = new CombineMeshDataJob
@@ -4087,6 +5678,26 @@ namespace Hecton8.World
                         ColorStream = HasCompatibleVertexColorLayout(sourceData)
                             ? sourceData.GetVertexAttributeStream(VertexAttribute.Color)
                             : -1,
+                        PositionOffset = sourceData.GetVertexAttributeOffset(VertexAttribute.Position),
+                        PositionStride = ResolveVertexAttributeStride(sourceData, VertexAttribute.Position),
+                        NormalOffset = sourceData.HasVertexAttribute(VertexAttribute.Normal)
+                            ? sourceData.GetVertexAttributeOffset(VertexAttribute.Normal)
+                            : 0,
+                        NormalStride = sourceData.HasVertexAttribute(VertexAttribute.Normal)
+                            ? ResolveVertexAttributeStride(sourceData, VertexAttribute.Normal)
+                            : 0,
+                        UvOffset = sourceData.HasVertexAttribute(VertexAttribute.TexCoord0)
+                            ? sourceData.GetVertexAttributeOffset(VertexAttribute.TexCoord0)
+                            : 0,
+                        UvStride = sourceData.HasVertexAttribute(VertexAttribute.TexCoord0)
+                            ? ResolveVertexAttributeStride(sourceData, VertexAttribute.TexCoord0)
+                            : 0,
+                        ColorOffset = HasCompatibleVertexColorLayout(sourceData)
+                            ? sourceData.GetVertexAttributeOffset(VertexAttribute.Color)
+                            : 0,
+                        ColorStride = HasCompatibleVertexColorLayout(sourceData)
+                            ? ResolveVertexAttributeStride(sourceData, VertexAttribute.Color)
+                            : 0,
                         SubMeshCount = sourceData.subMeshCount,
                         AttributeFlags =
                             (sourceData.HasVertexAttribute(VertexAttribute.Normal) ? CombineMeshDataJob.AttributeFlagNormals : 0u) |
@@ -4096,41 +5707,28 @@ namespace Hecton8.World
                         Rotation = placement.Rotation
                     };
 
-                    _copyHandles[scheduledJobCount] = job.Schedule();
-                    scheduledJobCount++;
+                    job.Execute();
+                    copiedMeshCount++;
 
                     vertexOffset += sourceMesh.vertexCount;
                     indexOffset += ResolveIndexCount(sourceMesh);
-
-                    sliceWorkCount++;
-                    if (ShouldYieldMeshBuildSlice(sliceWorkCount, sliceStartTime))
-                    {
-                        if (!await YieldMeshBuildFrameAsync("merged mesh copy scheduling", meshYieldFrames++))
-                            return null;
-
-                        sliceStartTime = Time.realtimeSinceStartupAsDouble;
-                        sliceWorkCount = 0;
-                    }
                 }
 
-                if (scheduledJobCount > 0)
+                if (copiedMeshCount > 0)
                 {
-                    JobHandle dependency = CombineScheduledCopyHandles(scheduledJobCount);
-                    JobHandle.ScheduleBatchedJobs();
-                    if (!await WaitForJobHandleAsync(dependency, "merged mesh copy"))
-                        return null;
-
                     for (int snapshotIndex = 0; snapshotIndex < acquiredSnapshotCount; snapshotIndex++)
                     {
                         _readOnlyMeshSnapshots[snapshotIndex].Dispose();
                         _readOnlyMeshSnapshots[snapshotIndex] = default;
                     }
+                }
 
-                    if (!await YieldMeshBuildFrameAsync("merged mesh post-copy", meshYieldFrames++))
-                        return null;
-
-                    sliceStartTime = Time.realtimeSinceStartupAsDouble;
-                    sliceWorkCount = 0;
+                if (copiedMeshCount != mergedPlacementCount ||
+                    vertexOffset != totalVertexCount ||
+                    indexOffset != totalIndexCount)
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 56u, copiedMeshCount, mergedPlacementCount);
+                    return null;
                 }
 
                 Bounds localBounds = CalculateLocalBounds(placements);
@@ -4140,11 +5738,7 @@ namespace Hecton8.World
                     bounds = localBounds,
                     vertexCount = totalVertexCount
                 }, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
-
-                if (!await YieldMeshBuildFrameAsync("merged mesh apply", meshYieldFrames++))
-                    return null;
-
-                Mesh result = new Mesh();
+                result = new Mesh();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 result.name = GeneratedMergedMeshName;
 #endif
@@ -4154,6 +5748,7 @@ namespace Hecton8.World
                     MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
                 meshApplied = true;
                 result.bounds = localBounds;
+                meshOwnershipTransferred = true;
                 return result;
             }
             finally
@@ -4169,6 +5764,8 @@ namespace Hecton8.World
 
                 if (!meshApplied)
                     writableMeshData.Dispose();
+                if (!meshOwnershipTransferred)
+                    ReleaseGeneratedMesh(result);
             }
         }
 
@@ -4178,88 +5775,29 @@ namespace Hecton8.World
             int placementCount = _allPlacements.Length;
             for (int i = 0; i < placementCount; i++)
             {
-                WreckModulePlacement placement = _allPlacements[i];
-                if (_runtimeDefinitions[placement.ModuleId].EmitsNavProxy == 0)
+                if (!_allPlacements.TryGet(i, out WreckModulePlacement placement))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 46u, i, placementCount);
+                    break;
+                }
+
+                if (!_runtimeDefinitions.TryGet(placement.ModuleId, out WreckModuleRuntimeDefinition runtimeDefinition))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 47u, placement.ModuleId, _runtimeDefinitions.Length);
+                    break;
+                }
+
+                if (runtimeDefinition.EmitsNavProxy == 0)
                     continue;
 
                 if (_filteredPlacements.Length >= _filteredPlacements.Capacity)
                     break;
 
-                _filteredPlacements.AddNoResize(placement);
-            }
-
-            if (_filteredPlacements.Length <= 0)
-                return null;
-
-            int proxyPlacementCount = _filteredPlacements.Length;
-            int totalVertexCount = proxyPlacementCount * ProxyVerticesPerPlacement;
-            int totalIndexCount = proxyPlacementCount * ProxyIndicesPerPlacement;
-
-            Mesh.MeshDataArray writableMeshData = Mesh.AllocateWritableMeshData(1);
-            Mesh.MeshData meshData = writableMeshData[0];
-            meshData.SetVertexBufferParams(
-                totalVertexCount,
-                new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3));
-            meshData.SetIndexBufferParams(totalIndexCount, IndexFormat.UInt32);
-
-            NativeArray<float3> positions = meshData.GetVertexData<float3>();
-            NativeArray<uint> indices = meshData.GetIndexData<uint>();
-
-            BuildProxyMeshJob job = new BuildProxyMeshJob
-            {
-                Placements = _filteredPlacements.AsArray(),
-                Positions = positions,
-                Indices = indices
-            };
-
-            for (int index = 0; index < proxyPlacementCount; index++)
-                job.Execute(index);
-
-            Bounds localBounds = CalculateLocalBounds(_filteredPlacements);
-            meshData.subMeshCount = 1;
-            meshData.SetSubMesh(0, new SubMeshDescriptor(0, totalIndexCount, MeshTopology.Triangles)
-            {
-                bounds = localBounds,
-                vertexCount = totalVertexCount
-            }, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
-
-            Mesh result = new Mesh();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            result.name = GeneratedProxyMeshName;
-#endif
-            Mesh.ApplyAndDisposeWritableMeshData(
-                writableMeshData,
-                result,
-                MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
-            result.bounds = localBounds;
-            return result;
-        }
-
-        private static void PublishWreckSolveBudgetWarningIfNeeded(double elapsedMilliseconds)
-        {
-            if (!Application.isPlaying || elapsedMilliseconds < WreckSolveTelemetryThresholdMs)
-                return;
-
-            GlobalTelemetryBus.PublishPerformanceWarning(
-                WreckSolveBudgetWarningHash,
-                WreckBrgContextHash,
-                (float)elapsedMilliseconds);
-        }
-
-        private async Awaitable<Mesh> BuildProxyMeshAsync()
-        {
-            _filteredPlacements.Clear();
-            int placementCount = _allPlacements.Length;
-            for (int i = 0; i < placementCount; i++)
-            {
-                WreckModulePlacement placement = _allPlacements[i];
-                if (_runtimeDefinitions[placement.ModuleId].EmitsNavProxy == 0)
-                    continue;
-
-                if (_filteredPlacements.Length >= _filteredPlacements.Capacity)
+                if (!_filteredPlacements.TryAddNoResize(in placement))
+                {
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 21u, i, placementCount);
                     break;
-
-                _filteredPlacements.AddNoResize(placement);
+                }
             }
 
             if (_filteredPlacements.Length <= 0)
@@ -4271,6 +5809,9 @@ namespace Hecton8.World
 
             Mesh.MeshDataArray writableMeshData = Mesh.AllocateWritableMeshData(1);
             bool meshApplied = false;
+            bool meshOwnershipTransferred = false;
+            bool placementLockHeld = false;
+            Mesh result = null;
 
             try
             {
@@ -4283,17 +5824,30 @@ namespace Hecton8.World
                 NativeArray<float3> positions = meshData.GetVertexData<float3>();
                 NativeArray<uint> indices = meshData.GetIndexData<uint>();
 
+                if (!TryLockWreckVaultBuffer(WreckGeneratorFilteredPlacementsBufferId))
+                    return null;
+
+                placementLockHeld = true;
+                if (!_filteredPlacements.TryResolve(out NativeArray<WreckModulePlacement> proxyPlacements))
+                {
+                    UnlockWreckVaultBuffer(WreckGeneratorFilteredPlacementsBufferId);
+                    placementLockHeld = false;
+                    WriteBlackBoxTelemetry(WreckTelemetryFailureHash, _activeRuntimeOrigin, 23u, proxyPlacementCount, 0f);
+                    return null;
+                }
+
                 BuildProxyMeshJob job = new BuildProxyMeshJob
                 {
-                    Placements = _filteredPlacements.AsArray(),
+                    Placements = proxyPlacements,
                     Positions = positions,
                     Indices = indices
                 };
 
-                JobHandle handle = job.Schedule(proxyPlacementCount, 32);
-                JobHandle.ScheduleBatchedJobs();
-                if (!await WaitForJobHandleAsync(handle, "proxy mesh build"))
-                    return null;
+                for (int index = 0; index < proxyPlacementCount; index++)
+                    job.Execute(index);
+
+                UnlockWreckVaultBuffer(WreckGeneratorFilteredPlacementsBufferId);
+                placementLockHeld = false;
 
                 Bounds localBounds = CalculateLocalBounds(_filteredPlacements);
                 meshData.subMeshCount = 1;
@@ -4303,7 +5857,7 @@ namespace Hecton8.World
                     vertexCount = totalVertexCount
                 }, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
 
-                Mesh result = new Mesh();
+                result = new Mesh();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 result.name = GeneratedProxyMeshName;
 #endif
@@ -4313,13 +5867,30 @@ namespace Hecton8.World
                     MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
                 meshApplied = true;
                 result.bounds = localBounds;
+                meshOwnershipTransferred = true;
                 return result;
             }
             finally
             {
+                if (placementLockHeld)
+                    UnlockWreckVaultBuffer(WreckGeneratorFilteredPlacementsBufferId);
+
                 if (!meshApplied)
                     writableMeshData.Dispose();
+                if (!meshOwnershipTransferred)
+                    ReleaseGeneratedMesh(result);
             }
+        }
+
+        private static void PublishWreckSolveBudgetWarningIfNeeded(double elapsedMilliseconds)
+        {
+            if (!Application.isPlaying || elapsedMilliseconds < WreckSolveTelemetryThresholdMs)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                WreckSolveBudgetWarningHash,
+                WreckBrgContextHash,
+                (float)elapsedMilliseconds);
         }
 
         private void BuildDisabledNavigationBake(
@@ -4336,6 +5907,21 @@ namespace Hecton8.World
             _debugLastNavigationState = WreckNavigationState.None;
         }
 
+        private static void ReleaseGeneratedMesh(Mesh mesh)
+        {
+            if (mesh == null)
+                return;
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                UnityEngine.Object.DestroyImmediate(mesh);
+                return;
+            }
+#endif
+            UnityEngine.Object.Destroy(mesh);
+        }
+
         private Mesh ResolveNavigationProxyMesh()
         {
             if (!buildAsyncNavigationBake)
@@ -4344,16 +5930,6 @@ namespace Hecton8.World
             return wreckCollisionProxyMesh != null
                 ? wreckCollisionProxyMesh
                 : BuildProxyMesh();
-        }
-
-        private async Awaitable<Mesh> ResolveNavigationProxyMeshAsync()
-        {
-            if (!buildAsyncNavigationBake)
-                return null;
-
-            return wreckCollisionProxyMesh != null
-                ? wreckCollisionProxyMesh
-                : await BuildProxyMeshAsync();
         }
 
         private Mesh ResolveStructuralMesh(int moduleId)
@@ -4366,20 +5942,70 @@ namespace Hecton8.World
 
         private bool ValidateMeshLayout(Mesh sourceMesh)
         {
-            using Mesh.MeshDataArray meshDataArray = Mesh.AcquireReadOnlyMeshData(sourceMesh);
-            Mesh.MeshData sourceData = meshDataArray[0];
+            if (!CanReadMeshData(sourceMesh))
+                return false;
 
-            if (!ValidateAttributeLayout(sourceData, VertexAttribute.Position, UnsafeUtility.SizeOf<Vector3>()))
+            if (!ValidateMeshAttributeLayout(sourceMesh, VertexAttribute.Position, VertexAttributeFormat.Float32, 3, UnsafeUtility.SizeOf<Vector3>()))
+                return false;
+
+            if (sourceMesh.HasVertexAttribute(VertexAttribute.Normal) &&
+                !ValidateMeshAttributeLayout(sourceMesh, VertexAttribute.Normal, VertexAttributeFormat.Float32, 3, UnsafeUtility.SizeOf<Vector3>()))
+            {
+                return false;
+            }
+
+            if (sourceMesh.HasVertexAttribute(VertexAttribute.TexCoord0) &&
+                !ValidateMeshAttributeLayout(sourceMesh, VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2, UnsafeUtility.SizeOf<Vector2>()))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryAcquireValidatedMeshData(Mesh sourceMesh, out Mesh.MeshDataArray meshDataArray, out Mesh.MeshData sourceData)
+        {
+            meshDataArray = default;
+            sourceData = default;
+            if (!CanReadMeshData(sourceMesh))
+                return false;
+
+            meshDataArray = Mesh.AcquireReadOnlyMeshData(sourceMesh);
+            if (meshDataArray.Length <= 0)
+            {
+                meshDataArray.Dispose();
+                meshDataArray = default;
+                return false;
+            }
+
+            sourceData = meshDataArray[0];
+            if (ValidateMeshDataLayout(sourceData))
+                return true;
+
+            meshDataArray.Dispose();
+            meshDataArray = default;
+            sourceData = default;
+            return false;
+        }
+
+        private static bool CanReadMeshData(Mesh sourceMesh)
+        {
+            return sourceMesh != null && sourceMesh.isReadable && sourceMesh.vertexCount > 0;
+        }
+
+        private static bool ValidateMeshDataLayout(Mesh.MeshData sourceData)
+        {
+            if (!ValidateMeshDataAttributeLayout(sourceData, VertexAttribute.Position, VertexAttributeFormat.Float32, 3, UnsafeUtility.SizeOf<Vector3>()))
                 return false;
 
             if (sourceData.HasVertexAttribute(VertexAttribute.Normal) &&
-                !ValidateAttributeLayout(sourceData, VertexAttribute.Normal, UnsafeUtility.SizeOf<Vector3>()))
+                !ValidateMeshDataAttributeLayout(sourceData, VertexAttribute.Normal, VertexAttributeFormat.Float32, 3, UnsafeUtility.SizeOf<Vector3>()))
             {
                 return false;
             }
 
             if (sourceData.HasVertexAttribute(VertexAttribute.TexCoord0) &&
-                !ValidateAttributeLayout(sourceData, VertexAttribute.TexCoord0, UnsafeUtility.SizeOf<Vector2>()))
+                !ValidateMeshDataAttributeLayout(sourceData, VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2, UnsafeUtility.SizeOf<Vector2>()))
             {
                 return false;
             }
@@ -4390,20 +6016,55 @@ namespace Hecton8.World
         private static bool HasCompatibleVertexColorLayout(Mesh.MeshData sourceData)
         {
             return sourceData.HasVertexAttribute(VertexAttribute.Color) &&
-                   ValidateAttributeLayout(sourceData, VertexAttribute.Color, UnsafeUtility.SizeOf<Color32>());
+                   ValidateMeshDataAttributeLayout(sourceData, VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4, UnsafeUtility.SizeOf<Color32>());
         }
 
-        private static bool ValidateAttributeLayout(Mesh.MeshData sourceData, VertexAttribute attribute, int expectedStride)
+        private static bool ValidateMeshAttributeLayout(Mesh sourceMesh, VertexAttribute attribute, VertexAttributeFormat expectedFormat, int expectedDimension, int expectedStride)
+        {
+            if (!sourceMesh.HasVertexAttribute(attribute) ||
+                sourceMesh.GetVertexAttributeFormat(attribute) != expectedFormat ||
+                sourceMesh.GetVertexAttributeDimension(attribute) != expectedDimension)
+            {
+                return false;
+            }
+
+            int stream = sourceMesh.GetVertexAttributeStream(attribute);
+            if (stream < 0)
+                return false;
+
+            int offset = sourceMesh.GetVertexAttributeOffset(attribute);
+            int stride = sourceMesh.GetVertexBufferStride(stream);
+            return offset >= 0 &&
+                   stride >= expectedStride &&
+                   offset + expectedStride <= stride;
+        }
+
+        private static bool ValidateMeshDataAttributeLayout(Mesh.MeshData sourceData, VertexAttribute attribute, VertexAttributeFormat expectedFormat, int expectedDimension, int expectedStride)
         {
             if (!sourceData.HasVertexAttribute(attribute))
                 return false;
+
+            if (sourceData.GetVertexAttributeFormat(attribute) != expectedFormat ||
+                sourceData.GetVertexAttributeDimension(attribute) != expectedDimension)
+            {
+                return false;
+            }
 
             int stream = sourceData.GetVertexAttributeStream(attribute);
             if (stream < 0)
                 return false;
 
-            return sourceData.GetVertexAttributeOffset(attribute) == 0 &&
-                   sourceData.GetVertexBufferStride(stream) == expectedStride;
+            int offset = sourceData.GetVertexAttributeOffset(attribute);
+            int stride = sourceData.GetVertexBufferStride(stream);
+            return offset >= 0 &&
+                   stride >= expectedStride &&
+                   offset + expectedStride <= stride;
+        }
+
+        private static int ResolveVertexAttributeStride(Mesh.MeshData sourceData, VertexAttribute attribute)
+        {
+            int stream = sourceData.GetVertexAttributeStream(attribute);
+            return stream >= 0 ? sourceData.GetVertexBufferStride(stream) : 0;
         }
 
         private static int ResolveIndexCount(Mesh sourceMesh)
@@ -4416,7 +6077,7 @@ namespace Hecton8.World
             return total;
         }
 
-        private Bounds CalculateLocalBounds(NativeList<WreckModulePlacement> placements)
+        private Bounds CalculateLocalBounds(VaultListBuffer<WreckModulePlacement> placements)
         {
             if (!placements.IsCreated || placements.Length <= 0)
                 return CreateFallbackLocalBounds();
@@ -4426,7 +6087,8 @@ namespace Hecton8.World
             int count = placements.Length;
             for (int i = 0; i < count; i++)
             {
-                if (!TryResolvePlacementBounds(placements[i], out Bounds placementBounds))
+                if (!placements.TryGet(i, out WreckModulePlacement placement) ||
+                    !TryResolvePlacementBounds(in placement, out Bounds placementBounds))
                     continue;
 
                 if (!initialized)
@@ -4480,9 +6142,7 @@ namespace Hecton8.World
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogPropagationQueueClearWatchdog(int maxIterations)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.LogError($"[ProceduralWreckGenerator] Propagation queue clear watchdog triggered at {maxIterations} iterations.");
-#endif
+            GlobalTelemetryBus.PublishPerformanceWarning(WreckSolveBudgetWarningHash, WreckBrgContextHash, maxIterations);
         }
 
         private byte SelectModuleFromMask(ushort mask, int moduleCount, ref XorShift32State rng)
@@ -4537,7 +6197,9 @@ namespace Hecton8.World
 
         private ushort ResolveSocket(int moduleIndex, byte direction)
         {
-            WreckModuleRuntimeDefinition definition = _runtimeDefinitions[moduleIndex];
+            if (!_runtimeDefinitions.TryGet(moduleIndex, out WreckModuleRuntimeDefinition definition))
+                return 0;
+
             return direction switch
             {
                 DirectionNorth => definition.NorthSocket,
@@ -4944,13 +6606,18 @@ namespace Hecton8.World
     {
         private ProceduralWreckGenerator _owner;
         private int _wreckId;
+        private bool _interactableRegistered;
 
         public uint VulnerabilityMask => ToolCapabilityMasks.PlasmaCut;
 
         internal void Configure(ProceduralWreckGenerator owner, int wreckId)
         {
+            if (_interactableRegistered && (_owner != owner || _wreckId != wreckId))
+                UnregisterInteractableTree();
+
             _owner = owner;
             _wreckId = wreckId;
+            TryRegisterInteractableTree();
         }
 
         public void ApplyInteractionSignal(in InteractionSignal signal, Vector3 runtimeHitPoint)
@@ -4963,12 +6630,47 @@ namespace Hecton8.World
 
         public void OnSpawn()
         {
+            TryRegisterInteractableTree();
         }
 
         public void OnDespawn()
         {
+            UnregisterInteractableTree();
             _owner = null;
             _wreckId = 0;
+        }
+
+        private void OnEnable()
+        {
+            TryRegisterInteractableTree();
+        }
+
+        private void OnDisable()
+        {
+            UnregisterInteractableTree();
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterInteractableTree();
+        }
+
+        private void TryRegisterInteractableTree()
+        {
+            if (_interactableRegistered || _owner == null || _wreckId == 0 || !isActiveAndEnabled)
+                return;
+
+            InteractableRegistry.RegisterTree(this);
+            _interactableRegistered = true;
+        }
+
+        private void UnregisterInteractableTree()
+        {
+            if (!_interactableRegistered)
+                return;
+
+            InteractableRegistry.InvalidateTree(this);
+            _interactableRegistered = false;
         }
     }
 

@@ -126,7 +126,7 @@ namespace Hecton8.World
 
                         if (_registerWithCullingManager)
                         {
-                            _cullingManager ??= GlobalRegistry.Culling;
+                            _cullingManager ??= CullingManager.Instance;
                             if (_cullingManager != null)
                             {
                                 _cullingManager.RegisterCullableObject(lodGroup.gameObject);
@@ -157,7 +157,7 @@ namespace Hecton8.World
 
                         if (_registerWithCullingManager)
                         {
-                            _cullingManager ??= GlobalRegistry.Culling;
+                            _cullingManager ??= CullingManager.Instance;
                             if (_cullingManager != null)
                             {
                                 _cullingManager.UnregisterCullableObject(lodGroup.gameObject);

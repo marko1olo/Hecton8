@@ -639,7 +639,10 @@ namespace Hecton8.Physics
                 ReleaseVaultHandles(previousVault);
             _dataVault = currentVault;
             _coreBlackboxWarmed = false;
-            if (!HandlesReady() && currentVault != null && !currentVault.IsAllocationLocked)
+            if (!HandlesReady() &&
+                currentVault != null &&
+                !currentVault.IsCompactionFenceActive &&
+                !currentVault.IsAllocationLocked)
             {
                 EnsureColdBooted();
             }
@@ -655,7 +658,7 @@ namespace Hecton8.Physics
         public bool GenerateMockBuoyantObjects()
         {
             IDataVault vault = _dataVault;
-            if (vault == null || vault.IsAllocationLocked || !EnsureVaultBuffers())
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked || !EnsureVaultBuffers())
                 return false;
 
             NativeArray<BuoyancyStateDTO> states = ResolveVaultBuffer(vault, in _statesHandle);
@@ -698,7 +701,7 @@ namespace Hecton8.Physics
         public bool GenerateMockSimdBenchmark()
         {
             IDataVault vault = _dataVault;
-            if (vault == null || vault.IsAllocationLocked || !EnsureVaultBuffers())
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked || !EnsureVaultBuffers())
                 return false;
 
             NativeArray<SimdFloat3Padded> positions = ResolveVaultBuffer(vault, in _simdLocalPositionsHandle);
@@ -823,7 +826,7 @@ namespace Hecton8.Physics
         {
             // COLD TUNING PATH: explicit designer-triggered hydration into Vault scratch; never called by FixedTick.
             IDataVault vault = _dataVault;
-            if (vault == null || vault.IsAllocationLocked || !EnsureVaultBuffers())
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked || !EnsureVaultBuffers())
                 return false;
 
             NativeArray<byte> scratch = ResolveVaultBuffer(vault, in _csvScratchHandle);
@@ -849,7 +852,7 @@ namespace Hecton8.Physics
         {
             // COLD TUNING PATH: explicit designer-triggered sleep profile hydration; hot jobs read unmanaged rows only.
             IDataVault vault = _dataVault;
-            if (vault == null || vault.IsAllocationLocked || !EnsureVaultBuffers())
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked || !EnsureVaultBuffers())
                 return false;
 
             NativeArray<byte> scratch = ResolveVaultBuffer(vault, in _csvScratchHandle);
@@ -875,7 +878,7 @@ namespace Hecton8.Physics
         {
             // COLD TUNING PATH: editor/manual SIMD tolerance hydration; gameplay jobs consume the parsed Vault rows.
             IDataVault vault = _dataVault;
-            if (vault == null || vault.IsAllocationLocked || !EnsureVaultBuffers())
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked || !EnsureVaultBuffers())
                 return false;
 
             NativeArray<byte> scratch = ResolveVaultBuffer(vault, in _csvScratchHandle);
@@ -918,7 +921,7 @@ namespace Hecton8.Physics
 
             RefreshColdDependencies();
             IDataVault vault = _dataVault;
-            if (vault == null || vault.IsAllocationLocked)
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                 return false;
 
             if (!EnsureVaultBuffers())
@@ -1069,7 +1072,7 @@ namespace Hecton8.Physics
             if (TryAdoptExistingVaultDescriptor(vault, bufferId, requiredLength, ref handle))
                 return true;
 
-            if (vault.IsAllocationLocked)
+            if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                 return false;
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, options);

@@ -1,0 +1,59 @@
+﻿{
+    "schema":  "hecton8.vault_exorcism_report.1325.v1",
+    "agentId":  "1325",
+    "primaryTarget":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+    "runtimeOriginRouteSha256":  "53900ED1E2406F35213AE54EAF8AFA98D4BEEA26A1EF0001A5BBB01F0E5054CC",
+    "primaryTargetSha256":  "1F6E5103BABB23A86CD300A92508056951200D3CE4F68C5EE51E2C946CB3FB01",
+    "aupMathSha256":  "3868E1955CC5EAD8B4C070AB92EDFEE845D267C592905C0510DAD7B655B9EC11",
+    "crossDomainSaveBinaryStorageSha256":  "5DCC2DB739AE5D1E5C0566FECE0C8F2BB1A2788D68F08348A5B0E3E914797F5B",
+    "crossDomainSaveManagerSha256":  "2F58D9EA83A50A391B5FC9F23FA4FAC66F7C6DD23194A6C9646D3A5A77C1C73E",
+    "fullTouchedIncludingBoundariesSha256":  "06F9DF4E98FC2063E8E53A176F1B55C64586C0E9BBB0C4CF598620E9C4A7AE5D",
+    "roslynScanner":  "Tools/VaultNativeAliasRoslynAudit/bin/Debug/net10.0/VaultNativeAliasRoslynAudit.exe",
+    "sourceReports":  {
+                          "worldNativeAliasLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT30_WORLD.json",
+                          "allScriptsNativeAliasLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT30_ALLSCRIPTS.json",
+                          "hotPathAudit":  "Docs/Reports/ZERO_GC_HOTPATH_AUDIT_1325_DEEP_REAUDIT30_RAW.json",
+                          "domainReport":  "Docs/Reports/DOMAIN_REAUDIT30_REPORT_1325.json"
+                      },
+    "primaryTargetCounts":  {
+                                "beforeForbiddenPersistentNativeFieldAliases":  19,
+                                "afterForbiddenPersistentNativeFieldAliases":  0,
+                                "afterParseFailures":  0
+                            },
+    "broaderWorldScopeCounts":  {
+                                    "afterForbiddenPersistentCandidates":  0,
+                                    "status":  "world_scope_green_by_roslyn_reaudit30"
+                                },
+    "touchedBoundaryCounts":  {
+                                  "scannedAllScriptFiles":  2441,
+                                  "parseFailures":  0,
+                                  "totalAllScriptNativeFields":  6662,
+                                  "touchedNativeFieldDeclarations":  38,
+                                  "broadScannerForbiddenTouchedCandidates":  13,
+                                  "saveBinaryStoragePersistentNativeFields":  0,
+                                  "saveManagerPersistentNativeFields":  13,
+                                  "stackOnlyRefStructViewFieldsInTouchedFiles":  12,
+                                  "transientJobFieldsInTouchedFiles":  13,
+                                  "status":  "primary world clean; SaveBinaryStorage clean; SaveManager residual declared external Data Archivist scope"
+                              },
+    "dtoLayoutProof":  {
+                           "AbsoluteUniversePosition":  48,
+                           "AbsoluteUniversePositionBlit128":  48,
+                           "PagedSectorHashWindow":  72,
+                           "PoolSlotData":  72,
+                           "EntityDataRecord":  64,
+                           "PersistentThermalVentRecord":  80,
+                           "ResourceNodeTombstoneRecord":  80,
+                           "PersistentWorldItemRecord":  256,
+                           "PersistentWorldDeltaRecord":  64,
+                           "PersistentWorldCompactDeltaRecord":  16,
+                           "WorldTelemetryEntry":  64
+                       },
+    "compileStatus":  {
+                          "gitDiffCheck":  "pass_with_lf_crlf_warnings_only",
+                          "buildLaunched":  false,
+                          "buildBlockedReason":  "AGENTS guard: active dotnet MSBuild node PID 18480 exists; no concurrent dotnet build allowed",
+                          "cpuPercent":  0,
+                          "activeDotnetProcessCount":  1
+                      }
+}

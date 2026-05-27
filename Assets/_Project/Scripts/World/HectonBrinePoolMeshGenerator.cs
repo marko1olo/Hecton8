@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Collections;
@@ -47,8 +46,9 @@ namespace Hecton8.World
         [Tooltip("Stable id base added to generated basin ids for hazard registration.")]
         [SerializeField] private int hazardIdBase = 870000;
 
-        // COLD ALLOC: List<ActiveBrinePool>[32] - spawned brine pool bookkeeping - owner: HectonBrinePoolMeshGenerator
-        private readonly List<ActiveBrinePool> _activePools = new List<ActiveBrinePool>(MaxGeneratedBrinePools);
+        // COLD ALLOC: ActiveBrinePool[32] - spawned brine pool bookkeeping - owner: HectonBrinePoolMeshGenerator
+        private readonly ActiveBrinePool[] _activePools = new ActiveBrinePool[MaxGeneratedBrinePools];
+        private int _activePoolCount;
 
         private Transform _poolRoot;
         private Mesh _sharedPoolMesh;
@@ -124,7 +124,15 @@ namespace Hecton8.World
                     continue;
                 }
 
-                Vector3 runtimeCenter = poolCenterAup.ToRuntimeFloat3();
+                AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+                if (!originAup.IsFinite())
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(InvalidInputWarningHash, BrineGeneratorContextHash, poolBounds.BasinId);
+                    continue;
+                }
+
+                float3 localCenter = AUPMath.ResolveCameraRelative(in poolCenterAup, in originAup);
+                Vector3 runtimeCenter = new Vector3(localCenter.x, localCenter.y, localCenter.z);
                 GameObject poolObject = CreatePoolObject(poolBounds, safeCellSize, runtimeCenter);
                 if (!TryRegisterBrineHazard(in poolCenterAup, poolBounds, safeCellSize, hazardId))
                 {
@@ -133,11 +141,12 @@ namespace Hecton8.World
                     continue;
                 }
 
-                _activePools.Add(new ActiveBrinePool
+                _activePools[_activePoolCount] = new ActiveBrinePool
                 {
                     GameObject = poolObject,
                     HazardId = hazardId
-                });
+                };
+                _activePoolCount++;
                 created++;
             }
 
@@ -180,7 +189,7 @@ namespace Hecton8.World
             BindExistingRootIfPresent();
             DestroyUntrackedPoolChildren();
 
-            for (int i = 0; i < _activePools.Count; i++)
+            for (int i = 0; i < _activePoolCount; i++)
             {
                 ActiveBrinePool pool = _activePools[i];
                 HectonBrineToxicMudGrid.UnregisterCell(pool.HazardId);
@@ -191,7 +200,7 @@ namespace Hecton8.World
                 DestroyPoolObject(pool.GameObject);
             }
 
-            _activePools.Clear();
+            ClearActivePoolState();
         }
 
         private static void DestroyPoolObject(GameObject poolObject)
@@ -258,7 +267,7 @@ namespace Hecton8.World
 
         private bool IsTrackedPoolObject(GameObject poolObject)
         {
-            for (int i = 0; i < _activePools.Count; i++)
+            for (int i = 0; i < _activePoolCount; i++)
             {
                 if (_activePools[i].GameObject == poolObject)
                     return true;
@@ -269,13 +278,21 @@ namespace Hecton8.World
 
         private bool IsTrackedHazardId(int hazardId)
         {
-            for (int i = 0; i < _activePools.Count; i++)
+            for (int i = 0; i < _activePoolCount; i++)
             {
                 if (_activePools[i].HazardId == hazardId)
                     return true;
             }
 
             return false;
+        }
+
+        private void ClearActivePoolState()
+        {
+            for (int i = 0; i < _activePoolCount; i++)
+                _activePools[i] = default;
+
+            _activePoolCount = 0;
         }
 
         private GameObject CreatePoolObject(

@@ -23,6 +23,7 @@ namespace Hecton8.World
     public sealed class GPUScatterDirector : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int ThreadGroupSize = 64;
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
         private const int FrustumPlaneCount = 6;
         private const int VisibleCountReadbackFrameStride = 60;
         private const int IndirectArgsInstanceCountIndex = 1;
@@ -287,6 +288,9 @@ namespace Hecton8.World
         private int _clearDensityKernel = -1;
         private int _generateKernel = -1;
         private int _compactKernel = -1;
+        private int _clearDensityThreadGroupSizeX;
+        private int _generateThreadGroupSizeX;
+        private int _compactThreadGroupSizeX;
         private int _gridResolution;
         private GraphicsBuffer _instanceBuffer;
         private GraphicsBuffer _visibleIndicesBuffer;
@@ -299,6 +303,9 @@ namespace Hecton8.World
         private float4x4[] _modInstanceMatrices;
         private readonly Plane[] _frustumPlaneCache = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - reusable frustum plane cache for GPU scatter dispatch - owner: GPUScatterDirector
         private readonly Vector4[] _frustumPlaneUpload = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] - reusable GPU frustum plane upload payload for GPU scatter dispatch - owner: GPUScatterDirector
+        private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _argsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] - cached GPU scatter indirect args upload - owner: GPUScatterDirector
+        private readonly MaterialPropertyBlock _scatterDrawProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - legacy indirect scatter draw-local payload - owner: GPUScatterDirector
+        private uint[] _visibilityCacheClearUpload;
         private int _modInstanceCount;
         private int _lastUploadedModInstanceCount = -1;
         private int _modInstanceUploadBufferIndex;
@@ -312,6 +319,10 @@ namespace Hecton8.World
         private int _depthPyramidMipCount;
         private int _depthPyramidCopyKernel = -1;
         private int _depthPyramidDownsampleKernel = -1;
+        private int _depthPyramidCopyThreadGroupSizeX;
+        private int _depthPyramidCopyThreadGroupSizeY;
+        private int _depthPyramidDownsampleThreadGroupSizeX;
+        private int _depthPyramidDownsampleThreadGroupSizeY;
         private int _depthPyramidInvalidatedFrame = -1;
         private int _scatterFrameIndex;
         private Vector3 _lastFoveatedCenter;
@@ -516,7 +527,7 @@ namespace Hecton8.World
             float terrainSizeX = math.isfinite(terrainSize.x) ? math.max(terrainSize.x, 0.001f) : 0.001f;
             float terrainSizeZ = math.isfinite(terrainSize.z) ? math.max(terrainSize.z, 0.001f) : 0.001f;
             TryEnsureBiomeHeatmapTexture();
-            PublishBiomeGlobals(in heightPayload, center);
+            Color currentBiomeColor = PublishBiomeGlobals(in heightPayload, center);
             float configuredMinimumNormalY = math.isfinite(minimumNormalY) ? minimumNormalY : ScatterMinimumNormalY;
             float configuredMaxVisibleDistance = math.min(math.isfinite(maxVisibleDistance) ? maxVisibleDistance : 1f, microScatterCullDistance);
             float configuredPeripheralCullDistance = math.isfinite(peripheralCullDistance) ? peripheralCullDistance : 0f;
@@ -536,6 +547,12 @@ namespace Hecton8.World
             int frameIndex = _scatterFrameIndex & 0x3fffffff;
             bool forceFullFoveatedUpdate = ResolveForceFullFoveatedUpdate(center, cameraTransform.forward);
             bool depthPyramidReady = BuildDepthPyramid(viewCamera);
+            int clearDensityGroups = CeilDividePositive(SargassumDensityBinCount, _clearDensityThreadGroupSizeX);
+            int generateGroups = CeilDividePositive(candidateCount, _generateThreadGroupSizeX);
+            int compactGroups = CeilDividePositive(candidateCount, _compactThreadGroupSizeX);
+            if (clearDensityGroups <= 0 || generateGroups <= 0 || compactGroups <= 0)
+                return;
+
             float screenWidth = math.max(1f, viewCamera.pixelWidth);
             float screenHeight = math.max(1f, viewCamera.pixelHeight);
             float projectionScalePixels = math.abs(viewCamera.projectionMatrix.m11) * screenHeight * 0.5f;
@@ -548,7 +565,7 @@ namespace Hecton8.World
             _visibleIndicesBuffer.SetCounterValue(0u);
             scatterCompute.SetBuffer(_clearDensityKernel, _ScatterDensityBinsId, _scatterDensityBuffer);
             scatterCompute.SetInt(_ScatterDensityBinCountId, SargassumDensityBinCount);
-            scatterCompute.Dispatch(_clearDensityKernel, math.max(1, (SargassumDensityBinCount + ThreadGroupSize - 1) / ThreadGroupSize), 1, 1);
+            scatterCompute.Dispatch(_clearDensityKernel, clearDensityGroups, 1, 1);
 
             scatterCompute.SetTexture(_generateKernel, _HeightTextureId, heightPayload.HeightTexture);
             scatterCompute.SetBuffer(_generateKernel, _ScatterInstancesId, _instanceBuffer);
@@ -602,8 +619,7 @@ namespace Hecton8.World
                 _depthPyramidHeight));
             scatterCompute.SetVectorArray(_FrustumPlanesId, _frustumPlaneUpload);
 
-            int dispatchGroups = math.max(1, (candidateCount + ThreadGroupSize - 1) / ThreadGroupSize);
-            scatterCompute.Dispatch(_generateKernel, dispatchGroups, 1, 1);
+            scatterCompute.Dispatch(_generateKernel, generateGroups, 1, 1);
             scatterCompute.SetBuffer(_compactKernel, _ScatterInstancesId, _instanceBuffer);
             scatterCompute.SetBuffer(_compactKernel, _VisibleIndicesId, _visibleIndicesBuffer);
             scatterCompute.SetBuffer(_compactKernel, _VisibilityCacheId, _visibilityCacheBuffer);
@@ -612,16 +628,13 @@ namespace Hecton8.World
             scatterCompute.SetInt(_ScatterDensityBinCountId, SargassumDensityBinCount);
             scatterCompute.SetVector(_CameraPositionId, cameraTransform.position);
             scatterCompute.SetVector(_ScatterDensityParamsId, densityParams);
-            scatterCompute.Dispatch(_compactKernel, dispatchGroups, 1, 1);
+            scatterCompute.Dispatch(_compactKernel, compactGroups, 1, 1);
             CommitFoveatedSnapshot(center, cameraTransform.forward);
             _scatterFrameIndex = (_scatterFrameIndex + 1) & 0x3fffffff;
 
             GraphicsBuffer.CopyCount(_visibleIndicesBuffer, _argsBuffer, sizeof(uint));
             UpdateVisibleCountReadback(frameIndex);
-            Shader.SetGlobalBuffer(_ScatterInstancesId, _instanceBuffer);
-            Shader.SetGlobalBuffer(_VisibleIndicesId, _visibleIndicesBuffer);
-            Shader.SetGlobalBuffer(_ScatterDensityBinsId, _scatterDensityBuffer);
-            Shader.SetGlobalVector(_ScatterDensityParamsId, densityParams);
+            ApplyScatterDrawBindings(in heightPayload, densityParams, currentBiomeColor);
 
             float terrainTop = heightPayload.TerrainPosition.y + heightPayload.TerrainSize.y;
             Bounds drawBounds = new Bounds(
@@ -630,6 +643,7 @@ namespace Hecton8.World
 
             RenderParams renderParams = new RenderParams(scatterMaterial)
             {
+                matProps = _scatterDrawProperties,
                 worldBounds = drawBounds,
                 layer = gameObject.layer,
                 shadowCastingMode = shadowCastingMode,
@@ -676,17 +690,29 @@ namespace Hecton8.World
 
         private void EnsureResources()
         {
-            if (scatterCompute == null || scatterMesh == null || scatterMaterial == null)
+            if (scatterCompute == null ||
+                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                scatterMesh == null ||
+                scatterMaterial == null)
                 return;
 
             if (_generateKernel < 0)
-                _generateKernel = scatterCompute.FindKernel("GenerateScatterInstances");
+            {
+                _generateKernel = ResolveKernel(scatterCompute, "GenerateScatterInstances");
+                _generateThreadGroupSizeX = ResolveKernelThreadGroupSizeX(scatterCompute, _generateKernel);
+            }
 
             if (_clearDensityKernel < 0)
-                _clearDensityKernel = scatterCompute.FindKernel("ClearScatterDensityBuffer");
+            {
+                _clearDensityKernel = ResolveKernel(scatterCompute, "ClearScatterDensityBuffer");
+                _clearDensityThreadGroupSizeX = ResolveKernelThreadGroupSizeX(scatterCompute, _clearDensityKernel);
+            }
 
             if (_compactKernel < 0)
-                _compactKernel = scatterCompute.FindKernel("CompactVisibleScatterInstances");
+            {
+                _compactKernel = ResolveKernel(scatterCompute, "CompactVisibleScatterInstances");
+                _compactThreadGroupSizeX = ResolveKernelThreadGroupSizeX(scatterCompute, _compactKernel);
+            }
 
             ResolveDepthPyramidKernels();
 
@@ -787,18 +813,22 @@ namespace Hecton8.World
                 return;
 
             ReleaseBuffer(ref _visibilityCacheBuffer);
-            _visibilityCacheBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, requiredCapacity, UnsafeUtility.SizeOf<uint>()); // COLD ALLOC: GraphicsBuffer[gridResolution^2] - persistent foveated scatter visibility cache - owner: GPUScatterDirector
-            NativeArray<uint> cacheWrite = _visibilityCacheBuffer.LockBufferForWrite<uint>(0, requiredCapacity);
-            try
-            {
-                for (int i = 0; i < requiredCapacity; i++)
-                    cacheWrite[i] = 0u;
-            }
-            finally
-            {
-                _visibilityCacheBuffer.UnlockBufferAfterWrite<uint>(requiredCapacity);
-            }
+            _visibilityCacheBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, requiredCapacity, UnsafeUtility.SizeOf<uint>()); // COLD ALLOC: GraphicsBuffer[gridResolution^2] - GPU-written foveated scatter visibility cache - owner: GPUScatterDirector
+            EnsureVisibilityCacheClearUploadCapacity(requiredCapacity);
+            GraphicsBufferUploadUtility.UploadArraySetData(_visibilityCacheBuffer, _visibilityCacheClearUpload, requiredCapacity);
             _hasFoveatedVisibilitySnapshot = false;
+        }
+
+        private void EnsureVisibilityCacheClearUploadCapacity(int requiredCapacity)
+        {
+            if (_visibilityCacheClearUpload == null || _visibilityCacheClearUpload.Length < requiredCapacity)
+            {
+                // COLD ALLOC: uint[gridResolution^2] - zero staging payload for GPU-written scatter visibility cache - owner: GPUScatterDirector
+                _visibilityCacheClearUpload = new uint[requiredCapacity];
+                return;
+            }
+
+            Array.Clear(_visibilityCacheClearUpload, 0, requiredCapacity);
         }
 
         private void EnsureScatterDensityBuffer()
@@ -837,29 +867,24 @@ namespace Hecton8.World
         private void EnsureIndirectArgsBuffer()
         {
             if (_argsBuffer == null)
-                _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - indirect indexed draw args for GPU scatter - owner: GPUScatterDirector
+                _argsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments,
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - GPU CopyCount indirect indexed draw args - owner: GPUScatterDirector
 
             if (ReferenceEquals(_argsBufferMesh, scatterMesh))
                 return;
 
             _argsBufferMesh = scatterMesh;
-            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
-                _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            try
+            _argsUpload[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
-                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
-                {
-                    indexCountPerInstance = scatterMesh != null ? scatterMesh.GetIndexCount(0) : 0u,
-                    instanceCount = 0u,
-                    startIndex = scatterMesh != null ? scatterMesh.GetIndexStart(0) : 0u,
-                    baseVertexIndex = scatterMesh != null ? (uint)math.max(0, scatterMesh.GetBaseVertex(0)) : 0u,
-                    startInstance = 0u
-                };
-            }
-            finally
-            {
-                _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
-            }
+                indexCountPerInstance = scatterMesh != null ? scatterMesh.GetIndexCount(0) : 0u,
+                instanceCount = 0u,
+                startIndex = scatterMesh != null ? scatterMesh.GetIndexStart(0) : 0u,
+                baseVertexIndex = scatterMesh != null ? (uint)math.max(0, scatterMesh.GetBaseVertex(0)) : 0u,
+                startInstance = 0u
+            };
+            GraphicsBufferUploadUtility.UploadArraySetData(_argsBuffer, _argsUpload, 1);
         }
 
         private void PopulateFrustumPlaneUpload(Camera cullCamera)
@@ -959,7 +984,6 @@ namespace Hecton8.World
             _scatterAupGenerationOffsetXZDouble = new double2(currentOffset.x, currentOffset.z);
             _scatterStableCellBaseXZ = Vector2.zero;
             _lastOriginShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
-            Shader.SetGlobalVector(_ScatterAupGridOffsetId, new Vector4(_scatterStableCellBaseXZ.x, _scatterStableCellBaseXZ.y, _lastOriginShiftSequence, 0f));
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -978,7 +1002,6 @@ namespace Hecton8.World
                 _hasFoveatedVisibilitySnapshot = false;
             }
 
-            Shader.SetGlobalVector(_ScatterAupGridOffsetId, new Vector4(_scatterStableCellBaseXZ.x, _scatterStableCellBaseXZ.y, _lastOriginShiftSequence, 0f));
             Vector3 telemetryCenter = playerTransform != null ? playerTransform.position : Vector3.zero;
             RecordScatterTelemetry(telemetryCenter, 0f, 0f, _gridResolution, 0, _lastCurrentBiomeHash, (uint)math.max(0, _debugVisibleCount), ScatterTelemetryOriginShiftFlag);
         }
@@ -1049,7 +1072,7 @@ namespace Hecton8.World
             _biomeHeatmapBlobChecksum = 0UL;
         }
 
-        private void PublishBiomeGlobals(in HectonMapMagicVegetationBridge.TerrainHeightTexturePayload heightPayload, Vector3 center)
+        private Color PublishBiomeGlobals(in HectonMapMagicVegetationBridge.TerrainHeightTexturePayload heightPayload, Vector3 center)
         {
             if (_biomeHeatmapTexture != null)
                 Shader.SetGlobalTexture(_BiomeHeatmapTexId, _biomeHeatmapTexture);
@@ -1069,6 +1092,38 @@ namespace Hecton8.World
                 _lastCurrentBiomeColor = biomeColor;
                 _hasCurrentBiomeColor = true;
             }
+
+            return biomeColor;
+        }
+
+        private void ApplyScatterDrawBindings(
+            in HectonMapMagicVegetationBridge.TerrainHeightTexturePayload heightPayload,
+            Vector4 densityParams,
+            Color currentBiomeColor)
+        {
+            _scatterDrawProperties.Clear();
+            _scatterDrawProperties.SetBuffer(_ScatterInstancesId, _instanceBuffer);
+            _scatterDrawProperties.SetBuffer(_VisibleIndicesId, _visibleIndicesBuffer);
+            _scatterDrawProperties.SetBuffer(_ScatterDensityBinsId, _scatterDensityBuffer);
+            _scatterDrawProperties.SetVector(_ScatterDensityParamsId, densityParams);
+            _scatterDrawProperties.SetVector(_ScatterAupGridOffsetId, ResolveScatterAupGridOffsetVector());
+
+            if (_biomeHeatmapTexture != null)
+                _scatterDrawProperties.SetTexture(_BiomeHeatmapTexId, _biomeHeatmapTexture);
+
+            if (biomeGroundTextureArray != null)
+                _scatterDrawProperties.SetTexture(_BiomeGroundArrayId, biomeGroundTextureArray);
+
+            _scatterDrawProperties.SetVector(_BiomeHeatmapRectId, ResolveBiomeHeatmapRect(in heightPayload));
+            _scatterDrawProperties.SetVector(_BiomeTextureParamsId, ResolveBiomeTextureParams());
+            _scatterDrawProperties.SetVector(_ScatterBiomeParamsId, ResolveScatterBiomeParams());
+            _scatterDrawProperties.SetColor(_CurrentBiomeColorId, currentBiomeColor);
+            _scatterDrawProperties.SetColor(_CurrentBiomeColorPlainId, currentBiomeColor);
+        }
+
+        private Vector4 ResolveScatterAupGridOffsetVector()
+        {
+            return new Vector4(_scatterStableCellBaseXZ.x, _scatterStableCellBaseXZ.y, _lastOriginShiftSequence, 0f);
         }
 
         private static unsafe byte ResolveBiomeHeatmapByte(uint biomeHash, int fallbackSliceCapacity = 255)
@@ -1414,10 +1469,24 @@ namespace Hecton8.World
             }
 
             if (_depthPyramidCopyKernel < 0)
-                _depthPyramidCopyKernel = depthPyramidCompute.FindKernel("CopyDepthPyramidMip0");
+            {
+                _depthPyramidCopyKernel = ResolveKernel(depthPyramidCompute, "CopyDepthPyramidMip0");
+                ResolveKernelThreadGroupSizes(
+                    depthPyramidCompute,
+                    _depthPyramidCopyKernel,
+                    out _depthPyramidCopyThreadGroupSizeX,
+                    out _depthPyramidCopyThreadGroupSizeY);
+            }
 
             if (_depthPyramidDownsampleKernel < 0)
-                _depthPyramidDownsampleKernel = depthPyramidCompute.FindKernel("DownsampleDepthPyramidMip");
+            {
+                _depthPyramidDownsampleKernel = ResolveKernel(depthPyramidCompute, "DownsampleDepthPyramidMip");
+                ResolveKernelThreadGroupSizes(
+                    depthPyramidCompute,
+                    _depthPyramidDownsampleKernel,
+                    out _depthPyramidDownsampleThreadGroupSizeX,
+                    out _depthPyramidDownsampleThreadGroupSizeY);
+            }
         }
 
         private bool BuildDepthPyramid(Camera cullCamera)
@@ -1439,24 +1508,34 @@ namespace Hecton8.World
             if (_depthPyramidTexture == null || _depthPyramidCopyKernel < 0 || _depthPyramidDownsampleKernel < 0)
                 return false;
 
+            int copyGroupsX = CeilDividePositive(_depthPyramidWidth, _depthPyramidCopyThreadGroupSizeX);
+            int copyGroupsY = CeilDividePositive(_depthPyramidHeight, _depthPyramidCopyThreadGroupSizeY);
+            if (copyGroupsX <= 0 || copyGroupsY <= 0)
+                return false;
+
             depthPyramidCompute.SetTexture(_depthPyramidCopyKernel, _DepthPyramidSourceDepthId, depthTexture);
             depthPyramidCompute.SetTexture(_depthPyramidCopyKernel, _DepthPyramidTargetId, _depthPyramidTexture, 0);
             depthPyramidCompute.Dispatch(
                 _depthPyramidCopyKernel,
-                math.max(1, (_depthPyramidWidth + 7) / 8),
-                math.max(1, (_depthPyramidHeight + 7) / 8),
+                copyGroupsX,
+                copyGroupsY,
                 1);
 
             for (int mipIndex = 1; mipIndex < _depthPyramidMipCount; mipIndex++)
             {
                 int mipWidth = math.max(1, _depthPyramidWidth >> mipIndex);
                 int mipHeight = math.max(1, _depthPyramidHeight >> mipIndex);
+                int downsampleGroupsX = CeilDividePositive(mipWidth, _depthPyramidDownsampleThreadGroupSizeX);
+                int downsampleGroupsY = CeilDividePositive(mipHeight, _depthPyramidDownsampleThreadGroupSizeY);
+                if (downsampleGroupsX <= 0 || downsampleGroupsY <= 0)
+                    return false;
+
                 depthPyramidCompute.SetTexture(_depthPyramidDownsampleKernel, _DepthPyramidSourceId, _depthPyramidTexture, mipIndex - 1);
                 depthPyramidCompute.SetTexture(_depthPyramidDownsampleKernel, _DepthPyramidTargetId, _depthPyramidTexture, mipIndex);
                 depthPyramidCompute.Dispatch(
                     _depthPyramidDownsampleKernel,
-                    math.max(1, (mipWidth + 7) / 8),
-                    math.max(1, (mipHeight + 7) / 8),
+                    downsampleGroupsX,
+                    downsampleGroupsY,
                     1);
             }
 
@@ -1508,6 +1587,67 @@ namespace Hecton8.World
             count += size >= 16384 ? 1 : 0;
             count += size >= 32768 ? 1 : 0;
             return count;
+        }
+
+        private static int ResolveKernel(ComputeShader computeShader, string kernelName)
+        {
+            if (computeShader == null || !HardwareTierDetector.AllowHighResourceComputeShaders || !computeShader.HasKernel(kernelName))
+                return -1;
+
+            int kernel = computeShader.FindKernel(kernelName);
+            return kernel >= 0 && computeShader.IsSupported(kernel) ? kernel : -1;
+        }
+
+        private static int ResolveKernelThreadGroupSizeX(ComputeShader computeShader, int kernel)
+        {
+            if (computeShader == null ||
+                kernel < 0 ||
+                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !computeShader.IsSupported(kernel))
+                return 0;
+
+            computeShader.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            if (queryX == 0u || queryY != 1u || queryZ != 1u || queryX > int.MaxValue)
+                return 0;
+
+            ulong totalThreads = queryX * (ulong)queryY * queryZ;
+            return totalThreads <= PortableMaxComputeThreadsPerGroup ? (int)queryX : 0;
+        }
+
+        private static void ResolveKernelThreadGroupSizes(
+            ComputeShader computeShader,
+            int kernel,
+            out int threadGroupSizeX,
+            out int threadGroupSizeY)
+        {
+            threadGroupSizeX = 0;
+            threadGroupSizeY = 0;
+            if (computeShader == null ||
+                kernel < 0 ||
+                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !computeShader.IsSupported(kernel))
+                return;
+
+            computeShader.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            if (queryX == 0u || queryY == 0u || queryZ != 1u || queryX > int.MaxValue || queryY > int.MaxValue)
+                return;
+
+            ulong totalThreads = queryX * (ulong)queryY * queryZ;
+            if (totalThreads > PortableMaxComputeThreadsPerGroup)
+                return;
+
+            threadGroupSizeX = (int)queryX;
+            threadGroupSizeY = (int)queryY;
+        }
+
+        private static int CeilDividePositive(int value, int divisor)
+        {
+            const int MaxDispatchGroupsPerDimension = 65535;
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private void TryRegister()
@@ -1785,11 +1925,25 @@ namespace Hecton8.World
             if (depthPyramidCompute == null)
                 depthPyramidCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(DepthPyramidComputeAssetPath);
 
-            _generateKernel = scatterCompute != null ? scatterCompute.FindKernel("GenerateScatterInstances") : -1;
-            _clearDensityKernel = scatterCompute != null ? scatterCompute.FindKernel("ClearScatterDensityBuffer") : -1;
-            _compactKernel = scatterCompute != null ? scatterCompute.FindKernel("CompactVisibleScatterInstances") : -1;
-            _depthPyramidCopyKernel = depthPyramidCompute != null ? depthPyramidCompute.FindKernel("CopyDepthPyramidMip0") : -1;
-            _depthPyramidDownsampleKernel = depthPyramidCompute != null ? depthPyramidCompute.FindKernel("DownsampleDepthPyramidMip") : -1;
+            _generateKernel = ResolveKernel(scatterCompute, "GenerateScatterInstances");
+            _clearDensityKernel = ResolveKernel(scatterCompute, "ClearScatterDensityBuffer");
+            _compactKernel = ResolveKernel(scatterCompute, "CompactVisibleScatterInstances");
+            _depthPyramidCopyKernel = ResolveKernel(depthPyramidCompute, "CopyDepthPyramidMip0");
+            _depthPyramidDownsampleKernel = ResolveKernel(depthPyramidCompute, "DownsampleDepthPyramidMip");
+
+            _generateThreadGroupSizeX = ResolveKernelThreadGroupSizeX(scatterCompute, _generateKernel);
+            _clearDensityThreadGroupSizeX = ResolveKernelThreadGroupSizeX(scatterCompute, _clearDensityKernel);
+            _compactThreadGroupSizeX = ResolveKernelThreadGroupSizeX(scatterCompute, _compactKernel);
+            ResolveKernelThreadGroupSizes(
+                depthPyramidCompute,
+                _depthPyramidCopyKernel,
+                out _depthPyramidCopyThreadGroupSizeX,
+                out _depthPyramidCopyThreadGroupSizeY);
+            ResolveKernelThreadGroupSizes(
+                depthPyramidCompute,
+                _depthPyramidDownsampleKernel,
+                out _depthPyramidDownsampleThreadGroupSizeX,
+                out _depthPyramidDownsampleThreadGroupSizeY);
         }
 #endif
     }

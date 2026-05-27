@@ -1522,8 +1522,10 @@ namespace Hecton8.UI
         {
             buffer = default;
             if (_vault == null ||
+                _vault.IsCompactionFenceActive ||
                 !IsPdaHandleCreated(in handle) ||
                 !_vault.TryResolveHandle(in handle, out buffer) ||
+                _vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
                 buffer.Length <= 0)
             {
@@ -2205,17 +2207,13 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers())
                 return;
 
-            NativeArray<PdaEncyclopediaTelemetryEntry> telemetry = ResolveVaultBuffer(in _telemetryHandle);
-            if (!telemetry.IsCreated)
-                return;
-
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             string directory = Path.Combine(root, "Docs", "AgentLogs");
             try
             {
                 Directory.CreateDirectory(directory);
-                WriteBlackBoxDump(Path.Combine(directory, "Dump_1309_PDAEncyclopedia.bin"), telemetry);
-                WriteBlackBoxDump(Path.Combine(directory, "Dump_PDA_STREAMER.bin"), telemetry);
+                WriteBlackBoxDump(Path.Combine(directory, "Dump_1309_PDAEncyclopedia.bin"));
+                WriteBlackBoxDump(Path.Combine(directory, "Dump_PDA_STREAMER.bin"));
             }
             catch (IOException)
             {
@@ -2223,9 +2221,21 @@ namespace Hecton8.UI
             catch (UnauthorizedAccessException)
             {
             }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
         }
 
-        private void WriteBlackBoxDump(string path, NativeArray<PdaEncyclopediaTelemetryEntry> telemetry)
+        private void WriteBlackBoxDump(string path)
         {
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
             {
@@ -2238,12 +2248,53 @@ namespace Hecton8.UI
                 WriteUIntLittleEndian(header.Slice(20, 4), _activeEntryHash);
                 stream.Write(header);
 
-                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                ReadOnlySpan<byte> bytes = MemoryMarshal.CreateReadOnlySpan(
-                    ref UnsafeUtility.AsRef<byte>(ptr),
-                    telemetry.Length * UnsafeUtility.SizeOf<PdaEncyclopediaTelemetryEntry>());
-                stream.Write(bytes);
+                Span<byte> row = stackalloc byte[64];
+                for (int i = 0; i < TelemetryFrameCount; i++)
+                {
+                    if (!TryReadTelemetryDumpEntry(i, out PdaEncyclopediaTelemetryEntry entry))
+                        entry = default;
+
+                    WriteTelemetryDumpEntry(row, in entry);
+                    stream.Write(row);
+                }
             }
+        }
+
+        private bool TryReadTelemetryDumpEntry(int index, out PdaEncyclopediaTelemetryEntry entry)
+        {
+            entry = default;
+            if (_vault == null ||
+                _vault.IsCompactionFenceActive ||
+                index < 0 ||
+                index >= TelemetryFrameCount ||
+                !TryResolveVaultBuffer(in _telemetryHandle, out NativeArray<PdaEncyclopediaTelemetryEntry> telemetry) ||
+                _vault.IsCompactionFenceActive ||
+                !telemetry.IsCreated ||
+                index >= telemetry.Length)
+            {
+                return false;
+            }
+
+            entry = telemetry[index];
+            return !_vault.IsCompactionFenceActive;
+        }
+
+        private static void WriteTelemetryDumpEntry(Span<byte> destination, in PdaEncyclopediaTelemetryEntry entry)
+        {
+            WriteUIntLittleEndian(destination.Slice(0, 4), entry.Frame);
+            WriteUIntLittleEndian(destination.Slice(4, 4), entry.StateHash);
+            WriteUIntLittleEndian(destination.Slice(8, 4), entry.EntryHash);
+            WriteUIntLittleEndian(destination.Slice(12, 4), entry.UnlockedCount);
+            WriteUIntLittleEndian(destination.Slice(16, 4), entry.CharsRenderedThisFrame);
+            WriteUIntLittleEndian(destination.Slice(20, 4), entry.VisibleChars);
+            WriteUIntLittleEndian(destination.Slice(24, 4), entry.DecodedChars);
+            WriteUIntLittleEndian(destination.Slice(28, 4), entry.SourceBytes);
+            WriteInt64LittleEndian(destination.Slice(32, 8), entry.DecodeTicks);
+            WriteInt64LittleEndian(destination.Slice(40, 8), entry.CanvasTicks);
+            WriteUIntLittleEndian(destination.Slice(48, 4), entry.Flags);
+            WriteUIntLittleEndian(destination.Slice(52, 4), entry.FaultHash);
+            WriteUIntLittleEndian(destination.Slice(56, 4), entry.CursorByte);
+            WriteUIntLittleEndian(destination.Slice(60, 4), entry.Capacity);
         }
 
         private void OnDrawGizmosSelected()
@@ -2488,6 +2539,19 @@ namespace Hecton8.UI
             destination[1] = (byte)(value >> 8);
             destination[2] = (byte)(value >> 16);
             destination[3] = (byte)(value >> 24);
+        }
+
+        private static void WriteInt64LittleEndian(Span<byte> destination, long value)
+        {
+            ulong raw = unchecked((ulong)value);
+            destination[0] = (byte)raw;
+            destination[1] = (byte)(raw >> 8);
+            destination[2] = (byte)(raw >> 16);
+            destination[3] = (byte)(raw >> 24);
+            destination[4] = (byte)(raw >> 32);
+            destination[5] = (byte)(raw >> 40);
+            destination[6] = (byte)(raw >> 48);
+            destination[7] = (byte)(raw >> 56);
         }
     }
 }

@@ -27,7 +27,10 @@ namespace Hecton8.World
         private const int MaxRegisteredScatterDirectors = 4;
         private const string TectonicSpineBiomeFamilyId = "biome.family.tectonic_spine";
 
-        internal static WorldProceduralScatterDirector ActiveRuntimeInstance => GlobalRegistry.ProceduralScatter;
+        private static WorldProceduralScatterDirector s_activeRuntimeInstance;
+
+        internal static WorldProceduralScatterDirector ActiveRuntimeInstance => s_activeRuntimeInstance;
+
         // COLD ALLOC: RegistryBucket<WorldProceduralScatterDirector>[4] - active scatter directors for bootstrap lookup without scene scans - owner: WorldProceduralScatterDirector
         private static readonly RegistryBucket<WorldProceduralScatterDirector> _registeredScatterDirectors = new RegistryBucket<WorldProceduralScatterDirector>(MaxRegisteredScatterDirectors);
 
@@ -516,6 +519,7 @@ namespace Hecton8.World
             _emergencyCaveGeologyProfile = null;
             _placementPoolExhaustedWarningLogged = false;
             _registeredScatterDirectors.Clear();
+            s_activeRuntimeInstance = null;
         }
         private Transform _scatterRootTransform;
         private readonly List<GameObject> _sceneRootScratch = new List<GameObject>(32); // COLD ALLOC: scene root scan for scatter root resolve.
@@ -719,7 +723,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            GlobalRegistry.RegisterWorldGenService(this);
+            PublishActiveRuntimeInstance();
             CachePlayerContextCold();
             TryRegisterHotSwapListener();
             TryRegisterRuntimeDirector();
@@ -759,7 +763,7 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
-            GlobalRegistry.UnregisterWorldGenService(this);
+            ClearActiveRuntimeInstance();
             TryUnregisterRuntimeDirector();
             UnsubscribeFromBootstrap();
             UnregisterOriginShiftListener();
@@ -786,8 +790,7 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                GlobalRegistry.UnregisterWorldGenService(this);
+            ClearActiveRuntimeInstance();
             TryUnregisterRuntimeDirector();
             UnregisterOriginShiftListener();
             CompleteSamplingJobForTeardown();
@@ -833,6 +836,22 @@ namespace Hecton8.World
             _registeredRuntimeDirector = false;
         }
 
+        private void PublishActiveRuntimeInstance()
+        {
+            GlobalRegistry.RegisterWorldGenService(this);
+            if (ReferenceEquals(GlobalRegistry.ProceduralScatter, this))
+                s_activeRuntimeInstance = this;
+        }
+
+        private void ClearActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
+
+            if (ReferenceEquals(GlobalRegistry.ProceduralScatter, this))
+                GlobalRegistry.UnregisterWorldGenService(this);
+        }
+
 #if UNITY_EDITOR
         private static void EnsureAssemblyReloadHook()
         {
@@ -871,7 +890,7 @@ namespace Hecton8.World
                 return;
 
             activeInstance.PrepareForEditorReload();
-            GlobalRegistry.UnregisterWorldGenService(activeInstance);
+            activeInstance.ClearActiveRuntimeInstance();
         }
 #endif
 
@@ -11364,16 +11383,25 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyService(ref generativeGeologyService);
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref environmentalVegetationBridge);
             WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
-            HectonRockManager rockManager = GlobalRegistry.RockManager;
+            HectonRockManager rockManager = HectonRockManager.Instance;
             if (floraGpuiManager == null &&
                 rockManager != null &&
                 rockManager.GpuInstancerManager != null)
             {
                 floraGpuiManager = rockManager.GpuInstancerManager;
             }
+            ApplyVendorGpuiManagerAdmission();
 
             if (faunaSpawnRegistry != null)
                 faunaSpawnRegistry.SetProceduralStateRegistry(proceduralStateRegistry);
+        }
+
+        private void ApplyVendorGpuiManagerAdmission()
+        {
+            if (floraGpuiManager == null || HardwareTierDetector.AllowHighResourceComputeShaders)
+                return;
+
+            floraGpuiManager.enabled = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(

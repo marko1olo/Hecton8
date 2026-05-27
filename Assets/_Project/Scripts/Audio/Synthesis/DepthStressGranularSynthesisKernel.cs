@@ -96,7 +96,7 @@ namespace Hecton8.Audio.Synthesis
     /// Sixteen-byte blind pressure mock for proving the synth without submarine depth systems.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public partial struct MockPressureSignal
+    public partial struct DepthStressMockPressureSignal
     {
         /// <summary>Normalized pressure/stress scalar in 0..1 range.</summary>
         [FieldOffset(0)]
@@ -116,7 +116,7 @@ namespace Hecton8.Audio.Synthesis
     /// Sixteen-byte blind tension mock for proving pressure/tension coupling in isolation.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public partial struct MockTensionSignal
+    public partial struct DepthStressMockTensionSignal
     {
         /// <summary>Normalized cable or hull tension scalar in 0..1 range.</summary>
         [FieldOffset(0)]
@@ -141,9 +141,9 @@ namespace Hecton8.Audio.Synthesis
         /// <summary>Single-element output signal buffer.</summary>
         [NoAlias] public NativeArray<MockHullStressSignal> Output;
         /// <summary>Optional single-element pressure output buffer for literal task validation.</summary>
-        [NoAlias] public NativeArray<MockPressureSignal> PressureOutput;
+        [NoAlias] public NativeArray<DepthStressMockPressureSignal> PressureOutput;
         /// <summary>Optional single-element tension output buffer for literal task validation.</summary>
-        [NoAlias] public NativeArray<MockTensionSignal> TensionOutput;
+        [NoAlias] public NativeArray<DepthStressMockTensionSignal> TensionOutput;
         /// <summary>Elapsed time in seconds.</summary>
         public float ElapsedSeconds;
         /// <summary>Stress oscillator frequency in hertz.</summary>
@@ -189,7 +189,7 @@ namespace Hecton8.Audio.Synthesis
 
             if (hasPressureOutput)
             {
-                MockPressureSignal signal = default;
+                DepthStressMockPressureSignal signal = default;
                 signal.PressureScalar = safeStress;
                 signal.DepthScalar = safeDepth;
                 signal.VelocityScalar = safeVelocity;
@@ -199,7 +199,7 @@ namespace Hecton8.Audio.Synthesis
 
             if (hasTensionOutput)
             {
-                MockTensionSignal signal = default;
+                DepthStressMockTensionSignal signal = default;
                 signal.TensionScalar = safeTension;
                 signal.StrainRateScalar = math.saturate(math.abs(safeStress - safeTension));
                 signal.PressureCouplingScalar = safeStress;

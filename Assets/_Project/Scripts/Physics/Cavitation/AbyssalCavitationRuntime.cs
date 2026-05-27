@@ -536,8 +536,7 @@ namespace Hecton8.Physics
                 Counters = counters,
                 OriginAUP = originAup,
                 FrameIndex = ++_frameIndex,
-                SectorHash = sectorHash != 0u ? sectorHash : 0x5348494Eu,
-                GlobalQualityWeight = ResolveGlobalQualityWeight()
+                SectorHash = sectorHash != 0u ? sectorHash : 0x5348494Eu
             };
             JobHandle handle = job.Schedule(32, 8);
             H8Memory.RegisterActiveJob(OwnerSystem, handle);
@@ -1546,11 +1545,10 @@ namespace Hecton8.Physics
         public double3 OriginAUP;
         public uint FrameIndex;
         public uint SectorHash;
-        public float GlobalQualityWeight;
 
         public void Execute(int index)
         {
-            float q = Smooth01(GlobalQualityWeight);
+            float q = Smooth01(AbyssalCavitationConstants.AuthoritativeQualityWeight);
             if (index == 0 && Counters.IsCreated && Counters.Length >= AbyssalCavitationConstants.CounterBlockCount)
             {
                 SetCounter(AbyssalCavitationCounterIndex.ActiveShockwaves, math.min(10, Shockwaves.Length));
@@ -1811,7 +1809,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            float q = Smooth01(Tuning.GlobalQualityWeight);
+            float q = Smooth01(AbyssalCavitationConstants.AuthoritativeQualityWeight);
             bool critical = (entity.Flags & AbyssalCavitationEntityFlags.Critical) != 0u;
             float acceptance = math.lerp(0.08f, 1.0f, q);
             if (!critical && Hash01(entity.EntityHash ^ FrameIndex * 747796405u) > acceptance)
@@ -1980,7 +1978,7 @@ namespace Hecton8.Physics
             int3 nearestCoord = (int3)math.floor(grid + 0.5f);
             nearestCoord = math.clamp(nearestCoord, int3.zero, dimensions - 1);
             float nearest = DecodeSdfByte(SdfVoxels[FlatIndex(nearestCoord, dimensions)]);
-            float interpolationWeight = Smooth01(math.saturate((Smooth01(Tuning.GlobalQualityWeight) - 0.18f) * math.rcp(0.52f)));
+            float interpolationWeight = Smooth01(math.saturate((Smooth01(AbyssalCavitationConstants.AuthoritativeQualityWeight) - 0.18f) * math.rcp(0.52f)));
             if (interpolationWeight <= 0f)
                 return nearest;
 

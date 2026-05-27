@@ -26,7 +26,7 @@ MonoBehaviour:
   rareRewardHook: 'The rare pull is real: Gold Ore and Abyss Pressure Shell.'
   landmarkIdentity: Silt-Void reads through dunes, plains, void cuts, and shape changes
     in the floor. Landmarks should feel scarce but memorable.
-  safePocketIdentity: Safe pockets are scarce. Relief should come from one clear
+  safePocketIdentity: Reorientation pockets are scarce. Relief should come from one clear
     nook, not constant cover.
   riskSummary: 'Main failure mode: orientation loss and long empty recovery swims,
     then overstaying for loot. Creature pressure stays extreme.'

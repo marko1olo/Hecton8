@@ -25,8 +25,39 @@ float4 _BloodParams1;
 #define THREAD_GROUP_SIZE 64
 #define EPSILON 0.0001
 
+bool IsFiniteFloat(float value)
+{
+    return !isnan(value) && !isinf(value);
+}
+
+bool IsFiniteFloat2(float2 value)
+{
+    return all(!isnan(value)) && all(!isinf(value));
+}
+
+bool IsFiniteFloat3(float3 value)
+{
+    return all(!isnan(value)) && all(!isinf(value));
+}
+
+float ResolveFiniteFloat(float value, float fallbackValue)
+{
+    return IsFiniteFloat(value) ? value : fallbackValue;
+}
+
+float2 ResolveFiniteFloat2(float2 value, float2 fallbackValue)
+{
+    return IsFiniteFloat2(value) ? value : fallbackValue;
+}
+
+float3 ResolveFiniteFloat3(float3 value, float3 fallbackValue)
+{
+    return IsFiniteFloat3(value) ? value : fallbackValue;
+}
+
 float3 SafeNormalize(float3 value)
 {
+    value = ResolveFiniteFloat3(value, 0.0.xxx);
     float lenSq = dot(value, value);
     return lenSq > EPSILON ? value * rsqrt(lenSq) : 0.0.xxx;
 }
@@ -42,22 +73,28 @@ float FastTriangleSigned(float phase)
     return triangle01 * 2.0 - 1.0;
 }
 
-float3 SampleFlowField(float3 positionWS)
+float3 SampleFlowField(float3 positionWS, uint flowSampleCount)
 {
-    int resolution = max((int)round(_FieldParams.x), 1);
-    float cellSize = max(_FieldOriginCellSize.w, 0.001);
-    if (resolution <= 1)
+    int resolution = clamp((int)round(ResolveFiniteFloat(_FieldParams.x, 1.0)), 1, 512);
+    uint stride = (uint)resolution;
+    uint layerStride = stride * stride;
+    uint requiredSamples = layerStride * stride;
+    if (resolution <= 1 || requiredSamples == 0u || requiredSamples > flowSampleCount)
         return 0.0.xxx;
 
-    float3 gridPosition = (positionWS - _FieldOriginCellSize.xyz) / cellSize;
+    float3 safePositionWS = ResolveFiniteFloat3(positionWS, 0.0.xxx);
+    float3 fieldOrigin = ResolveFiniteFloat3(_FieldOriginCellSize.xyz, 0.0.xxx);
+    float cellSize = max(abs(ResolveFiniteFloat(_FieldOriginCellSize.w, 1.0)), 0.001);
+    float3 gridPosition = (safePositionWS - fieldOrigin) / cellSize;
+    if (!IsFiniteFloat3(gridPosition))
+        return 0.0.xxx;
+
     gridPosition = clamp(gridPosition, 0.0.xxx, (resolution - 1).xxx);
 
     int3 baseCell = (int3)floor(gridPosition);
     int3 nextCell = min(baseCell + 1, int3(resolution - 1, resolution - 1, resolution - 1));
     float3 fracValue = frac(gridPosition);
 
-    uint stride = (uint)resolution;
-    uint layerStride = stride * stride;
     uint index000 = (uint)baseCell.x + (uint)baseCell.z * stride + (uint)baseCell.y * layerStride;
     uint index100 = (uint)nextCell.x + (uint)baseCell.z * stride + (uint)baseCell.y * layerStride;
     uint index010 = (uint)baseCell.x + (uint)nextCell.z * stride + (uint)baseCell.y * layerStride;
@@ -76,6 +113,15 @@ float3 SampleFlowField(float3 positionWS)
     float3 sample011 = _AbyssalFlowField[index011];
     float3 sample111 = _AbyssalFlowField[index111];
 
+    sample000 = ResolveFiniteFloat3(sample000, 0.0.xxx);
+    sample100 = ResolveFiniteFloat3(sample100, sample000);
+    sample010 = ResolveFiniteFloat3(sample010, sample000);
+    sample110 = ResolveFiniteFloat3(sample110, sample000);
+    sample001 = ResolveFiniteFloat3(sample001, sample000);
+    sample101 = ResolveFiniteFloat3(sample101, sample000);
+    sample011 = ResolveFiniteFloat3(sample011, sample000);
+    sample111 = ResolveFiniteFloat3(sample111, sample000);
+
     float3 sampleX00 = lerp(sample000, sample100, fracValue.x);
     float3 sampleX10 = lerp(sample010, sample110, fracValue.x);
     float3 sampleX01 = lerp(sample001, sample101, fracValue.x);
@@ -89,28 +135,46 @@ float3 SampleFlowField(float3 positionWS)
 void SimulateBloodDispersion(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     uint index = dispatchThreadID.x;
-    uint particleCount = (uint)round(_FieldParams.y);
+    uint readParticleCount;
+    uint readParticleStride;
+    uint writeParticleCount;
+    uint writeParticleStride;
+    uint flowSampleCount;
+    uint flowSampleStride;
+    _ParticlesRead.GetDimensions(readParticleCount, readParticleStride);
+    _ParticlesWrite.GetDimensions(writeParticleCount, writeParticleStride);
+    _AbyssalFlowField.GetDimensions(flowSampleCount, flowSampleStride);
+
+    uint bufferParticleCount = min(readParticleCount, writeParticleCount);
+    uint particleCount = min((uint)max(round(ResolveFiniteFloat(_FieldParams.y, 0.0)), 0.0), bufferParticleCount);
     if (index >= particleCount)
         return;
 
     Particle particle = _ParticlesRead[index];
+    particle.Pos = ResolveFiniteFloat3(particle.Pos, 0.0.xxx);
+    particle.PrevPos = ResolveFiniteFloat3(particle.PrevPos, particle.Pos);
+    particle.Vel = ResolveFiniteFloat3(particle.Vel, 0.0.xxx);
+    particle.Life = max(0.0, ResolveFiniteFloat(particle.Life, 0.0));
+    particle.Size = max(0.0, ResolveFiniteFloat(particle.Size, 0.0));
+    particle.UV = ResolveFiniteFloat2(particle.UV, 0.0.xx);
+    particle.Pad = ResolveFiniteFloat2(particle.Pad, 0.0.xx);
     if (particle.Life <= 0.0)
     {
         _ParticlesWrite[index] = particle;
         return;
     }
 
-    float dt = max(_BloodParams0.x, 0.0);
-    float flowBlend = saturate(_BloodParams0.y);
-    float baseDragCoeff = max(_BloodParams0.z, 0.0);
-    float turbulenceScale = max(_BloodParams0.w, 0.0);
-    float sizeGrowRate = max(_BloodParams1.x, 0.0);
-    float fadeRate = max(_BloodParams1.y, 0.0);
-    float maxSize = max(_BloodParams1.z, particle.Size);
-    float buoyancy = _BloodParams1.w;
+    float dt = min(max(ResolveFiniteFloat(_BloodParams0.x, 0.0), 0.0), 0.1);
+    float flowBlend = saturate(ResolveFiniteFloat(_BloodParams0.y, 0.0));
+    float baseDragCoeff = max(ResolveFiniteFloat(_BloodParams0.z, 0.0), 0.0);
+    float turbulenceScale = max(ResolveFiniteFloat(_BloodParams0.w, 0.0), 0.0);
+    float sizeGrowRate = max(ResolveFiniteFloat(_BloodParams1.x, 0.0), 0.0);
+    float fadeRate = max(ResolveFiniteFloat(_BloodParams1.y, 0.0), 0.0);
+    float maxSize = max(ResolveFiniteFloat(_BloodParams1.z, particle.Size), particle.Size);
+    float buoyancy = ResolveFiniteFloat(_BloodParams1.w, 0.0);
 
     particle.PrevPos = particle.Pos;
-    float3 flowSample = SampleFlowField(particle.Pos);
+    float3 flowSample = SampleFlowField(particle.Pos, flowSampleCount);
     particle.Vel += (flowSample - particle.Vel) * flowBlend * dt;
 
     float3 flowDirN = SafeNormalize(flowSample);
@@ -130,8 +194,10 @@ void SimulateBloodDispersion(uint3 dispatchThreadID : SV_DispatchThreadID)
     particle.Vel += turbulence * (turbulenceScale * dt);
     particle.Vel.y += buoyancy * dt;
 
+    particle.Vel = ResolveFiniteFloat3(particle.Vel, 0.0.xxx);
     particle.Pos += particle.Vel * dt;
-    particle.Size = min(maxSize, particle.Size + sizeGrowRate * dt);
-    particle.Life = max(0.0, particle.Life - fadeRate * dt);
+    particle.Pos = ResolveFiniteFloat3(particle.Pos, particle.PrevPos);
+    particle.Size = ResolveFiniteFloat(min(maxSize, particle.Size + sizeGrowRate * dt), particle.Size);
+    particle.Life = max(0.0, ResolveFiniteFloat(particle.Life - fadeRate * dt, 0.0));
     _ParticlesWrite[index] = particle;
 }

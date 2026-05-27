@@ -59,6 +59,22 @@ namespace Hecton8.Optimization
         private static readonly uint _HardReaperSweepWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.HardReaperSweep"));
         private static readonly uint _ShaderFallbackWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.ShaderFallback"));
         private static readonly float[] _retryBackoffSeconds = { 5f, 15f, 60f };
+        private static readonly Vector3[] FallbackImpostorCubeVertices =
+        {
+            new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0.5f, -0.5f, -0.5f),
+            new Vector3(0.5f, 0.5f, -0.5f), new Vector3(-0.5f, 0.5f, -0.5f),
+            new Vector3(-0.5f, -0.5f, 0.5f), new Vector3(0.5f, -0.5f, 0.5f),
+            new Vector3(0.5f, 0.5f, 0.5f), new Vector3(-0.5f, 0.5f, 0.5f)
+        }; // COLD ALLOC: Vector3[8] - immutable fallback impostor cube vertices - owner: AssetLifecycleGovernor
+        private static readonly int[] FallbackImpostorCubeIndices =
+        {
+            0, 2, 1, 0, 3, 2,
+            4, 5, 6, 4, 6, 7,
+            0, 1, 5, 0, 5, 4,
+            2, 3, 7, 2, 7, 6,
+            0, 4, 7, 0, 7, 3,
+            1, 2, 6, 1, 6, 5
+        }; // COLD ALLOC: int[36] - immutable fallback impostor cube indices - owner: AssetLifecycleGovernor
 
         private static float RuntimeNowSeconds()
         {
@@ -3190,24 +3206,8 @@ namespace Hecton8.Optimization
                 hideFlags = HideFlags.HideAndDontSave
             }; // COLD ALLOC: Mesh[1] - fallback impostor mesh for unresolved Addressables - owner: AssetLifecycleGovernor
 
-            Vector3[] vertices =
-            {
-                new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0.5f, -0.5f, -0.5f),
-                new Vector3(0.5f, 0.5f, -0.5f), new Vector3(-0.5f, 0.5f, -0.5f),
-                new Vector3(-0.5f, -0.5f, 0.5f), new Vector3(0.5f, -0.5f, 0.5f),
-                new Vector3(0.5f, 0.5f, 0.5f), new Vector3(-0.5f, 0.5f, 0.5f)
-            };
-            int[] indices =
-            {
-                0, 2, 1, 0, 3, 2,
-                4, 5, 6, 4, 6, 7,
-                0, 1, 5, 0, 5, 4,
-                2, 3, 7, 2, 7, 6,
-                0, 4, 7, 0, 7, 3,
-                1, 2, 6, 1, 6, 5
-            };
-            mesh.vertices = vertices;
-            mesh.triangles = indices;
+            mesh.SetVertices(FallbackImpostorCubeVertices);
+            mesh.SetTriangles(FallbackImpostorCubeIndices, 0, false);
             mesh.RecalculateBounds();
             return mesh;
         }
@@ -5247,13 +5247,17 @@ namespace Hecton8.Optimization
             if (_checkerboardMaterial != null)
                 return;
 
-            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+            RuntimeShaderReferenceCatalog.TryGetRuntimeCheckerboardUnlitShader(out Shader shader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find("Universal Render Pipeline/Unlit");
             if (shader == null)
                 shader = Shader.Find("Unlit/Texture");
             if (shader == null)
                 shader = Shader.Find("Sprites/Default");
             if (shader == null)
                 shader = Shader.Find("Unlit/Color");
+#endif
 
             if (shader == null)
                 return;

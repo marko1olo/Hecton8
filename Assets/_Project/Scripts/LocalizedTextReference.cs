@@ -173,6 +173,14 @@ namespace Hecton.Localization
         /// </summary>
         public ReadOnlySpan<char> ResolveSpanOrFallback(ILocalizationTextReadModel manager, string legacyFallback)
         {
+            return ResolveSpanOrFallback(manager, legacyFallback, 0);
+        }
+
+        /// <summary>
+        /// Resolves text as a span through a cached localization hash.
+        /// </summary>
+        public ReadOnlySpan<char> ResolveSpanOrFallback(ILocalizationTextReadModel manager, string legacyFallback, int tableKeyHash)
+        {
             GameLanguage language = manager != null
                 ? (GameLanguage)manager.ActiveLanguageId
                 : GameLanguage.English;
@@ -181,7 +189,7 @@ namespace Hecton.Localization
 
             if (HasTableKey)
             {
-                int tableHash = LocHash.Compute(tableKey.AsSpan());
+                int tableHash = tableKeyHash != 0 ? tableKeyHash : LocHash.Compute(tableKey.AsSpan());
                 if (manager != null)
                 {
                     ReadOnlySpan<char> tableValue = manager.GetRawSpanOrFallback(tableHash, ReadOnlySpan<char>.Empty);

@@ -95,7 +95,7 @@ namespace Hecton8.VFX.Bioluminescence
     /// Local predator proximity mock. This protects the glow domain from fauna compile churn.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public partial struct MockPredatorProximitySignal
+    public partial struct BiolumMockPredatorProximitySignal
     {
         [FieldOffset(0)] public double3 OriginAUP;
         [FieldOffset(24)] public float RadiusMeters;
@@ -111,7 +111,7 @@ namespace Hecton8.VFX.Bioluminescence
     /// Local combat damage mock for visual flicker without combat-domain coupling.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public partial struct MockCombatDamageSignal
+    public partial struct BiolumMockCombatDamageSignal
     {
         [FieldOffset(0)] public double3 OriginAUP;
         [FieldOffset(24)] public float RadiusMeters;
@@ -256,8 +256,8 @@ namespace Hecton8.VFX.Bioluminescence
         private VaultGenerationHandle<SyncPulseDTO> _syncPulsesHandle;
         private VaultGenerationHandle<float> _syncPulseAgesHandle;
         private VaultGenerationHandle<MockWeatherSignal> _mockWeatherSignalHandle;
-        private VaultGenerationHandle<MockPredatorProximitySignal> _mockPredatorSignalHandle;
-        private VaultGenerationHandle<MockCombatDamageSignal> _mockDamageSignalHandle;
+        private VaultGenerationHandle<BiolumMockPredatorProximitySignal> _mockPredatorSignalHandle;
+        private VaultGenerationHandle<BiolumMockCombatDamageSignal> _mockDamageSignalHandle;
         private VaultGenerationHandle<BiolumSpeciesTuningDTO> _speciesTuningHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<byte> _blackBoxDumpScratchHandle;
@@ -1268,11 +1268,11 @@ namespace Hecton8.VFX.Bioluminescence
             if (UnsafeUtility.SizeOf<BiolumSpeciesTuningDTO>() != 24)
                 return ReportInvalidSyncLayout("BiolumSpeciesTuningDTO must remain 24 bytes.");
 
-            if (UnsafeUtility.SizeOf<MockPredatorProximitySignal>() != 64)
-                return ReportInvalidSyncLayout("MockPredatorProximitySignal must remain 64 bytes.");
+            if (UnsafeUtility.SizeOf<BiolumMockPredatorProximitySignal>() != 64)
+                return ReportInvalidSyncLayout("BiolumMockPredatorProximitySignal must remain 64 bytes.");
 
-            if (UnsafeUtility.SizeOf<MockCombatDamageSignal>() != 64)
-                return ReportInvalidSyncLayout("MockCombatDamageSignal must remain 64 bytes.");
+            if (UnsafeUtility.SizeOf<BiolumMockCombatDamageSignal>() != 64)
+                return ReportInvalidSyncLayout("BiolumMockCombatDamageSignal must remain 64 bytes.");
 
             if (UnsafeUtility.SizeOf<BiolumPulseTelemetryEntry>() != 32)
                 return ReportInvalidSyncLayout("BiolumPulseTelemetryEntry must remain 32 bytes.");
@@ -1348,8 +1348,8 @@ namespace Hecton8.VFX.Bioluminescence
                     !TryResolveBiolumVaultBuffer(vault, in _glowAupOriginsHandle, BufferID.BiolumGlowAupOrigins, MaxGlowInstances, out NativeArray<double3> aupOrigins) ||
                     !TryResolveBiolumVaultBuffer(vault, in _speciesTuningHandle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount, out NativeArray<BiolumSpeciesTuningDTO> speciesTuning) ||
                     !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weatherSignal) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<MockPredatorProximitySignal> predatorSignal) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<MockCombatDamageSignal> damageSignal) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predatorSignal) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<BiolumMockCombatDamageSignal> damageSignal) ||
                     !TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
                     !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> pulseAges))
                 {
@@ -1452,7 +1452,7 @@ namespace Hecton8.VFX.Bioluminescence
                 if (!TryResolveBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState) ||
                     !TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
                     !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weather) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<MockPredatorProximitySignal> predator))
+                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predator))
                 {
                     return;
                 }
@@ -1851,12 +1851,12 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                if (!TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<MockCombatDamageSignal> damageSignal))
+                if (!TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<BiolumMockCombatDamageSignal> damageSignal))
                     return;
 
                 float magnitude = math.max(signal.Magnitude, 0f);
                 float radius = math.clamp(4f + math.sqrt(math.max(magnitude, 0.0001f)) * 2.75f, 4f, 48f);
-                damageSignal[0] = new MockCombatDamageSignal
+                damageSignal[0] = new BiolumMockCombatDamageSignal
                 {
                     OriginAUP = signal.ImpactAup,
                     RadiusMeters = radius,
@@ -2013,13 +2013,13 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || !HasVaultBuffers())
                 return;
 
-            MockPredatorProximitySignal predator = default;
+            BiolumMockPredatorProximitySignal predator = default;
             if (!vault.TryLockBuffer(BufferID.BiolumMockPredatorSignal, SystemID.Vfx))
                 return;
 
             try
             {
-                if (!TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<MockPredatorProximitySignal> predatorSignal))
+                if (!TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predatorSignal))
                     return;
 
                 predator = predatorSignal[0];
@@ -2093,10 +2093,10 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                if (!TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<MockPredatorProximitySignal> predatorSignal))
+                if (!TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predatorSignal))
                     return;
 
-                MockPredatorProximitySignal signal = predatorSignal[0];
+                BiolumMockPredatorProximitySignal signal = predatorSignal[0];
                 signal.Strength01 = math.max(0f, signal.Strength01 - dt * 0.45f);
 
                 uint sectorHash = _lastBiomeHash != 0u ? _lastBiomeHash : _profileSourceHash;
@@ -2126,7 +2126,7 @@ namespace Hecton8.VFX.Bioluminescence
             }
         }
 
-        private float ResolveMockPredatorWaveSpeed(in MockPredatorProximitySignal predator)
+        private float ResolveMockPredatorWaveSpeed(in BiolumMockPredatorProximitySignal predator)
         {
             float fallback = math.max(8f, predator.RadiusMeters * 0.65f);
             IDataVault vault = _dataVault;
@@ -2226,10 +2226,10 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                if (!TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<MockCombatDamageSignal> damage))
+                if (!TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<BiolumMockCombatDamageSignal> damage))
                     return;
 
-                MockCombatDamageSignal signal = damage[0];
+                BiolumMockCombatDamageSignal signal = damage[0];
                 if (signal.AgeSeconds < 9f)
                 {
                     signal.AgeSeconds += dt;
@@ -2786,7 +2786,7 @@ namespace Hecton8.VFX.Bioluminescence
                 if (!TryResolveBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState) ||
                     !TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
                     !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weather) ||
-                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<MockPredatorProximitySignal> predator) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predator) ||
                     !TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> syncPulses) ||
                     !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> syncPulseAges))
                 {
@@ -3480,7 +3480,7 @@ namespace Hecton8.VFX.Bioluminescence
             [NoAlias]
             public NativeArray<MockWeatherSignal> WeatherSignal;
             [NoAlias]
-            public NativeArray<MockPredatorProximitySignal> PredatorSignal;
+            public NativeArray<BiolumMockPredatorProximitySignal> PredatorSignal;
             public double3 AupReference;
             public float GlobalQualityWeight;
 
@@ -3529,7 +3529,7 @@ namespace Hecton8.VFX.Bioluminescence
             [ReadOnly, NoAlias]
             public NativeArray<MockWeatherSignal> WeatherSignal;
             [ReadOnly, NoAlias]
-            public NativeArray<MockPredatorProximitySignal> PredatorSignal;
+            public NativeArray<BiolumMockPredatorProximitySignal> PredatorSignal;
             [ReadOnly, NoAlias]
             public NativeArray<SyncPulseDTO> SyncPulses;
             [ReadOnly, NoAlias]
@@ -3547,7 +3547,7 @@ namespace Hecton8.VFX.Bioluminescence
 
                 ref BiolumPulseStateDTO pulse = ref GetPulseStateRef(PulseState);
                 MockWeatherSignal weather = WeatherSignal.IsCreated && WeatherSignal.Length > 0 ? WeatherSignal[0] : default;
-                MockPredatorProximitySignal predator = PredatorSignal.IsCreated && PredatorSignal.Length > 0 ? PredatorSignal[0] : default;
+                BiolumMockPredatorProximitySignal predator = PredatorSignal.IsCreated && PredatorSignal.Length > 0 ? PredatorSignal[0] : default;
                 float dt = math.clamp(math.isfinite(DeltaTime) ? DeltaTime : 0f, 0f, 0.25f);
                 float darkness = ResolveDarknessScalar(weather, DarknessActivationThreshold, AupReference);
                 float threat01 = math.saturate(math.isfinite(predator.Strength01) ? predator.Strength01 : 0f);

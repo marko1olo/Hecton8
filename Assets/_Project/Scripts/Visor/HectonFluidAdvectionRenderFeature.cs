@@ -17,14 +17,14 @@ namespace Hecton8.Visor
             private sealed class PassData
             {
                 internal FluidAdvectionRenderGraphPayload Payload;
-                internal IFluidAdvectionRenderGraphReadModel ReadModel;
+                internal IFluidAdvectionRenderGraphDispatchSource DispatchSource;
                 internal TextureHandle FlowTexture;
                 internal TextureHandle SdfTexture;
                 internal TextureHandle EmptyTexture;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Fluid Advection");
-            private IFluidAdvectionRenderGraphReadModel _engine;
+            private IFluidAdvectionRenderGraphDispatchSource _engine;
 
             public FluidAdvectionPass()
             {
@@ -32,7 +32,7 @@ namespace Hecton8.Visor
                 renderPassEvent = VisualSyncRenderPassEvent;
             }
 
-            public void Setup(IFluidAdvectionRenderGraphReadModel engine)
+            public void Setup(IFluidAdvectionRenderGraphDispatchSource engine)
             {
                 _engine = engine;
             }
@@ -44,9 +44,9 @@ namespace Hecton8.Visor
                 if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
                     return;
 
-                IFluidAdvectionRenderGraphReadModel engine = _engine;
+                IFluidAdvectionRenderGraphDispatchSource engine = _engine;
                 if (engine == null ||
-                    !engine.TryBuildFluidAdvectionRenderGraphPayload(out FluidAdvectionRenderGraphPayload payload) ||
+                    !engine.TryClaimFluidAdvectionRenderGraphPayload(out FluidAdvectionRenderGraphPayload payload) ||
                     payload.Compute == null ||
                     payload.Kernel < 0 ||
                     payload.DispatchGroups <= 0)
@@ -61,6 +61,8 @@ namespace Hecton8.Visor
                 BufferHandle debrisRead = renderGraph.ImportBuffer(payload.DebrisRead);
                 BufferHandle debrisWrite = renderGraph.ImportBuffer(payload.DebrisWrite);
                 BufferHandle flow = renderGraph.ImportBuffer(payload.AbyssalFlowBuffer);
+                BufferHandle dynamicWake = renderGraph.ImportBuffer(payload.DynamicWakeBuffer);
+                BufferHandle dynamicWakeVectors = renderGraph.ImportBuffer(payload.DynamicWakeVectorBuffer);
                 TextureHandle flowTexture = renderGraph.ImportTexture(payload.AbyssalFlowTextureHandle);
                 TextureHandle sdfTexture = renderGraph.ImportTexture(payload.VoxelSdfTextureHandle);
                 TextureHandle emptyTexture = renderGraph.ImportTexture(payload.EmptyVoxelSdfTextureHandle);
@@ -68,7 +70,7 @@ namespace Hecton8.Visor
                 using (var builder = renderGraph.AddComputePass("Hecton Fluid Advection", out PassData passData, _profilingSampler))
                 {
                     passData.Payload = payload;
-                    passData.ReadModel = engine;
+                    passData.DispatchSource = engine;
                     passData.FlowTexture = flowTexture;
                     passData.SdfTexture = sdfTexture;
                     passData.EmptyTexture = emptyTexture;
@@ -80,28 +82,30 @@ namespace Hecton8.Visor
                     builder.UseBuffer(debrisRead, AccessFlags.Read);
                     builder.UseBuffer(debrisWrite, AccessFlags.Write);
                     builder.UseBuffer(flow, AccessFlags.Read);
+                    builder.UseBuffer(dynamicWake, AccessFlags.Read);
+                    builder.UseBuffer(dynamicWakeVectors, AccessFlags.Read);
                     builder.UseTexture(flowTexture, AccessFlags.Read);
                     builder.UseTexture(sdfTexture, AccessFlags.Read);
                     builder.UseTexture(emptyTexture, AccessFlags.Read);
                     builder.AllowPassCulling(false);
 
-                    builder.SetRenderFunc((PassData data, ComputeGraphContext context) =>
+                    builder.SetRenderFunc(static (PassData data, ComputeGraphContext context) =>
                     {
-                        data.ReadModel.BindFluidAdvectionCompute(context.cmd, in data.Payload, data.FlowTexture, data.SdfTexture);
+                        data.DispatchSource.BindFluidAdvectionCompute(context.cmd, in data.Payload, data.FlowTexture, data.SdfTexture);
                         context.cmd.DispatchCompute(
                             data.Payload.Compute,
                             data.Payload.Kernel,
                             data.Payload.DispatchGroups,
                             1,
                             1);
-                        data.ReadModel.UnbindFluidAdvectionCompute(context.cmd, in data.Payload, data.EmptyTexture);
+                        data.DispatchSource.UnbindFluidAdvectionCompute(context.cmd, in data.Payload, data.EmptyTexture);
                     });
                 }
             }
         }
 
         private FluidAdvectionPass _pass;
-        private IFluidAdvectionRenderGraphReadModel _cachedFluidEngine;
+        private IFluidAdvectionRenderGraphDispatchSource _cachedFluidEngine;
         private bool _hotSwapRegistered;
 
         public override void Create()
@@ -138,7 +142,7 @@ namespace Hecton8.Visor
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
-                _cachedFluidEngine = currentService as IFluidAdvectionRenderGraphReadModel;
+                _cachedFluidEngine = currentService as IFluidAdvectionRenderGraphDispatchSource;
         }
 
         private void OnDisable()

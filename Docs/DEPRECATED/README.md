@@ -24,7 +24,11 @@ Current deprecated bundles:
 - `Documentation_Bundles_2026-05-21_SANITIZED/` - old active-surface audit, research, legacy world, and compute-audit directories.
 - `SAVE_V8_BINARY_SPEC_LEGACY_2026-05-21.md` - old v8 save container reference; active source version is `0x000B`.
 - `Root_Bloat_X_012_2026-05-23/` - full pre-compression copies of root `MASTER_RELEASE_WORK_PLAN.md` and `BUILD_PLAYTEST_ISSUES.md`; active root files now carry concise current-state anchors.
+- `Root_Docs_Noise_2026-05-26/` - token telemetry, FAQ/glossary prose, and marketing archive removed from active `Docs` root.
+- `Legacy_Domain_Bundles_2026-05-26/` - old AI fauna, flora pipeline, and scatter runtime planning bundles removed from active `Docs`.
+- `Root_Generated_Snapshots_2026-05-26/` - full pre-distillation copies of root-heavy generated/reference docs; active root paths now keep concise contracts only.
 - `X_012_Stale_DataMonolith_Reports_2026-05-23/` - reports whose active location claimed `static_data.h8bin` absence after the current X_012 scan found the blob present.
+- `DOCS_ACTUALIZATION_TRANSIENT_INDEXES_2026-05-26.md` - rejected transient folder-index layer; active replacement is `Docs/PROJECT_BASELINE.md`.
 - `2026-04-29_Audit_Bundles/` - dated audit snapshots.
 - `External_And_Log_Bundles/` - prompt dumps, copied references, and raw log bundles.
 - `Root_Redirect_Stubs_2026-05-01/` - old flat `Docs` redirect stubs.

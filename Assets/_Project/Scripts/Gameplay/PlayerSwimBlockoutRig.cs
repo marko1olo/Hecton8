@@ -10,7 +10,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player Swim Blockout Rig")]
-    public sealed partial class PlayerSwimBlockoutRig : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed partial class PlayerSwimBlockoutRig : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const string LeftShoulderName = "Swim_LeftShoulder";
         private const string RightShoulderName = "Swim_RightShoulder";
@@ -241,7 +241,6 @@ namespace Hecton8.Gameplay
         /// <summary>Stable right hand attachment for future authored art.</summary>
         public Transform RightHandAttachment => rightHandAttachment != null ? rightHandAttachment : rightGlove;
 
-        private bool _registered;
         private bool _registeredLateFrame;
         private int _firstPersonToolsLayer = -1;
         private float _visualWeight;
@@ -331,12 +330,6 @@ namespace Hecton8.Gameplay
             RefreshAttachmentDebugState();
         }
 #endif
-
-        /// <inheritdoc />
-        public void Tick(float dt)
-        {
-            SyncFromPresentation(dt);
-        }
 
         public void LateFrameTick()
         {
@@ -507,9 +500,6 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registered)
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
-
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
@@ -522,11 +512,6 @@ namespace Hecton8.Gameplay
                 _registeredLateFrame = false;
             }
 
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-                _registered = false;
-            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -537,7 +522,6 @@ namespace Hecton8.Gameplay
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _registered = false;
             _registeredLateFrame = false;
             if (currentService != null && isActiveAndEnabled)
                 TryRegister();

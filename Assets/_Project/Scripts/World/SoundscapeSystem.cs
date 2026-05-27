@@ -25,7 +25,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using CoreAudioEvent = Hecton8.Core.AudioEvent;
@@ -61,7 +60,6 @@ namespace Hecton8.World
         private const uint ListenerRejectedWarningHash = 0x5353524Au;
         private const uint ListenerExceptionWarningHash = 0x53534558u;
         private const uint ListenerContextHash = 0x53534C53u;
-        private const Allocator DataVaultExemptSoundscapeEventLaneAllocator = Allocator.Persistent;
 
         private struct SoundscapeEventPayload
         {
@@ -145,9 +143,15 @@ namespace Hecton8.World
         private static SoundscapeListenerRegistry _listeners = new SoundscapeListenerRegistry(ListenerCapacity);
         private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
-        private static NativeQueue<SoundscapeEventPayload> _pendingEvents;
-        private static NativeQueue<SoundscapeEventPayload> _nextFrameEvents;
+        // COLD ALLOC: SoundscapeEventPayload[16] - bounded soundscape tier ring flushed by SystemDispatcher - owner: SoundscapeEvents
+        private static SoundscapeEventPayload[] _pendingEvents = new SoundscapeEventPayload[PendingEventCapacity];
+        // COLD ALLOC: SoundscapeEventPayload[16] - bounded next-frame soundscape ring for reentrant dispatch - owner: SoundscapeEvents
+        private static SoundscapeEventPayload[] _nextFrameEvents = new SoundscapeEventPayload[PendingEventCapacity];
+        private static int _pendingEventHead;
+        private static int _pendingEventTail;
         private static int _pendingEventCount;
+        private static int _nextFrameEventHead;
+        private static int _nextFrameEventTail;
         private static int _nextFrameEventCount;
         private static int _deferredRegisterCount;
         private static int _deferredUnregisterCount;
@@ -164,21 +168,11 @@ namespace Hecton8.World
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(SoundscapeEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(SoundscapeEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
-
+            _pendingEventHead = 0;
+            _pendingEventTail = 0;
             _pendingEventCount = 0;
+            _nextFrameEventHead = 0;
+            _nextFrameEventTail = 0;
             _nextFrameEventCount = 0;
             _deferredRegisterCount = 0;
             _deferredUnregisterCount = 0;
@@ -230,25 +224,16 @@ namespace Hecton8.World
             if (_listeners.Count <= 0 || _pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return false;
 
-            EnsureInitialized();
-            if (_isDispatching)
-            {
-                _nextFrameEvents.Enqueue(new SoundscapeEventPayload
-                {
-                    OldTier = oldTier,
-                    NewTier = newTier
-                });
-                _nextFrameEventCount++;
-                return true;
-            }
-
-            _pendingEvents.Enqueue(new SoundscapeEventPayload
+            SoundscapeEventPayload payload = new SoundscapeEventPayload
             {
                 OldTier = oldTier,
                 NewTier = newTier
-            });
-            _pendingEventCount++;
-            return true;
+            };
+
+            if (_isDispatching)
+                return TryEnqueueNextFrame(payload);
+
+            return TryEnqueuePending(payload);
         }
 
         [Obsolete("Soundscape producers must use TryRaiseTierChanged and handle bounded enqueue failure.", true)]
@@ -259,32 +244,30 @@ namespace Hecton8.World
 
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated)
-                return;
-
             if (_listeners.Count <= 0)
             {
                 DropPendingAmbient();
                 return;
             }
 
+            PromoteNextFrameEvents();
+            if (_pendingEventCount <= 0)
+                return;
+
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             _isDispatching = true;
             try
             {
-                while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+                while (scanBudget-- > 0 && _pendingEventCount > 0)
                 {
                     if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                         return;
 
-                    if (!_pendingEvents.TryDequeue(out SoundscapeEventPayload payload))
+                    if (!TryDequeuePending(out SoundscapeEventPayload payload))
                     {
                         _pendingEventCount = 0;
                         break;
                     }
-
-                    if (_pendingEventCount > 0)
-                        _pendingEventCount--;
 
                     int count = _listeners.Count;
                     for (int i = count - 1; i >= 0; i--)
@@ -301,7 +284,7 @@ namespace Hecton8.World
                 ApplyDeferredListenerMutations();
             }
 
-            if (!_pendingEvents.IsEmpty())
+            if (_pendingEventCount > 0)
                 return;
 
             _pendingEventCount = 0;
@@ -310,44 +293,30 @@ namespace Hecton8.World
 
         public static void DropPendingAmbient()
         {
-            if (_pendingEvents.IsCreated)
+            for (int i = 0; i < _pendingEventCount; i++)
             {
-                while (_pendingEvents.TryDequeue(out _))
-                {
-                }
+                int index = (_pendingEventHead + i) % PendingEventCapacity;
+                _pendingEvents[index] = default;
             }
 
-            if (_nextFrameEvents.IsCreated)
+            for (int i = 0; i < _nextFrameEventCount; i++)
             {
-                while (_nextFrameEvents.TryDequeue(out _))
-                {
-                }
+                int index = (_nextFrameEventHead + i) % PendingEventCapacity;
+                _nextFrameEvents[index] = default;
             }
 
+            _pendingEventHead = 0;
+            _pendingEventTail = 0;
             _pendingEventCount = 0;
+            _nextFrameEventHead = 0;
+            _nextFrameEventTail = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
         }
 
         private static void DispatchToListener(ISoundscapeEventListener listener, SoundscapeTier oldTier, SoundscapeTier newTier)
         {
-            try
-            {
-                listener.OnSoundscapeTierChanged(oldTier, newTier);
-            }
-            catch (Exception exception)
-            {
-                ReportListenerDispatchException(exception);
-            }
-        }
-
-        [Conditional("UNITY_EDITOR")]
-        [Conditional("DEVELOPMENT_BUILD")]
-        private static void LogListenerDispatchException(Exception exception)
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.LogException(exception);
-#endif
+            listener.OnSoundscapeTierChanged(oldTier, newTier);
         }
 
         private static void QueueDeferredRegister(ISoundscapeEventListener listener)
@@ -494,74 +463,57 @@ namespace Hecton8.World
                 UnityEngine.Mathf.Max(1, _droppedListenerRegistrationCount));
         }
 
-        private static void ReportListenerDispatchException(Exception exception)
+        private static bool TryEnqueuePending(SoundscapeEventPayload payload)
         {
-            _listenerExceptionCount = UnityEngine.Mathf.Min(_listenerExceptionCount + 1, int.MaxValue);
-            LogListenerDispatchException(exception);
+            if (_pendingEventCount >= PendingEventCapacity)
+                return false;
 
-            int frame = SystemDispatcher.CurrentFrameIndex;
-            if (_lastListenerExceptionTelemetryFrame == frame)
-                return;
-
-            _lastListenerExceptionTelemetryFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(
-                ListenerExceptionWarningHash,
-                ListenerContextHash,
-                UnityEngine.Mathf.Max(1, _listenerExceptionCount));
+            _pendingEvents[_pendingEventTail] = payload;
+            _pendingEventTail = (_pendingEventTail + 1) % PendingEventCapacity;
+            _pendingEventCount++;
+            return true;
         }
 
-        private static void EnsureInitialized()
+        private static bool TryEnqueueNextFrame(SoundscapeEventPayload payload)
         {
-            if (!_pendingEvents.IsCreated)
-            {
-                _pendingEvents = new NativeQueue<SoundscapeEventPayload>(DataVaultExemptSoundscapeEventLaneAllocator); // COLD ALLOC: NativeQueue<SoundscapeEventPayload>[16] - soundscape tier event lane flushed by SystemDispatcher - owner: SoundscapeEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(SoundscapeEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+            if (_nextFrameEventCount >= PendingEventCapacity)
+                return false;
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<SoundscapeEventPayload>(DataVaultExemptSoundscapeEventLaneAllocator); // COLD ALLOC: NativeQueue<SoundscapeEventPayload>[16] - next-frame soundscape events raised by listeners - owner: SoundscapeEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(SoundscapeEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
-            }
+            _nextFrameEvents[_nextFrameEventTail] = payload;
+            _nextFrameEventTail = (_nextFrameEventTail + 1) % PendingEventCapacity;
+            _nextFrameEventCount++;
+            return true;
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
+        private static bool TryDequeuePending(out SoundscapeEventPayload payload)
         {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
+            if (_pendingEventCount <= 0)
             {
+                payload = default;
+                return false;
             }
+
+            payload = _pendingEvents[_pendingEventHead];
+            _pendingEvents[_pendingEventHead] = default;
+            _pendingEventHead = (_pendingEventHead + 1) % PendingEventCapacity;
+            _pendingEventCount--;
+            return true;
         }
 
         private static void PromoteNextFrameEvents()
         {
-            if (!_nextFrameEvents.IsCreated || _nextFrameEventCount <= 0)
+            if (_pendingEventCount > 0 || _nextFrameEventCount <= 0)
                 return;
 
-            while (_nextFrameEventCount > 0 && _nextFrameEvents.TryDequeue(out SoundscapeEventPayload payload))
-            {
-                _nextFrameEventCount--;
-                _pendingEvents.Enqueue(payload);
-                _pendingEventCount++;
-            }
+            SoundscapeEventPayload[] swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventHead = _nextFrameEventHead;
+            _pendingEventTail = _nextFrameEventTail;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventHead = 0;
+            _nextFrameEventTail = 0;
+            _nextFrameEventCount = 0;
         }
     }
 
@@ -610,7 +562,7 @@ namespace Hecton8.World
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        public static SoundscapeSystem Instance => GlobalRegistry.Soundscape;
+        public static SoundscapeSystem Instance => s_activeRuntimeInstance;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -628,6 +580,7 @@ namespace Hecton8.World
         private HectonMusicDirector _musicDirector;
         private int _lastMatrixBiomeId;
         private HectonMusicBiomeProfile _lastMatrixMusicProfile;
+        private static SoundscapeSystem s_activeRuntimeInstance;
 
         private static readonly int _ShaderSoundscapeTier =
             Shader.PropertyToID("_SoundscapeDepthTier");
@@ -725,7 +678,13 @@ namespace Hecton8.World
 
         private void TryRegisterService()
         {
-            if (_serviceRegistered || !Application.isPlaying)
+            if (_serviceRegistered)
+            {
+                s_activeRuntimeInstance = this;
+                return;
+            }
+
+            if (!Application.isPlaying)
                 return;
 
             SoundscapeSystem registered = GlobalRegistry.Soundscape;
@@ -737,6 +696,8 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterSoundscapeRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Soundscape, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -745,6 +706,8 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.UnregisterSoundscapeRuntime(this);
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
             _serviceRegistered = false;
         }
 
@@ -1037,9 +1000,8 @@ namespace Hecton8.World
                 return true;
             }
 
-            director = GlobalRegistry.MusicDirector;
-            if (director == null)
-                HectonMusicDirector.TryGetInstance(out director);
+            if (!HectonMusicDirector.TryGetInstance(out director))
+                director = null;
 
             _musicDirector = director;
             return _musicDirector != null;

@@ -1,0 +1,41 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_PURGE_AUDIT_RERUN20_V1",
+    "agentId":  "1330",
+    "task":  "1330_PURGE_RERUN20",
+    "status":  "VERIFIED_GREEN_STATIC_PENDING_UNITY_IMPORT_AND_BUILD",
+    "scannedFiles":  12,
+    "failedGates":  [
+
+                    ],
+    "totalNativeFieldDeclarations":  17,
+    "persistentNativeFieldsRemaining":  0,
+    "transientVaultViews":  32,
+    "transientJobViews":  17,
+    "zeroGcHotPathHits":  0,
+    "absoluteAupCastsFound":  0,
+    "compactionAwareLocksProven":  true,
+    "telemetryRingIntegrated":  true,
+    "compilerValidatorUsesStreamingHash":  true,
+    "compilerValidatorFullBlobManagedReads":  0,
+    "corruptionFuzzerUsesInPlaceFileMutation":  true,
+    "corruptionFuzzerFullBlobManagedReads":  0,
+    "stressProbeDirectFullBlobApiCalls":  0,
+    "stressProbeManagedFixtureAllocations":  1,
+    "cliFailClosedProbeFullBlobManagedReads":  0,
+    "cliFailClosedProbeUsesNativeResidentRead":  true,
+    "cliLoadStressProbeFullBlobManagedReads":  0,
+    "cliLoadStressDirectNativeSpanRead":  true,
+    "cliLoadStressResidentManagedCopyMicroseconds":  0,
+    "coldToolingKnownManagedByteAllocations":  2,
+    "coldToolingKnownManagedByteAllocationNotes":  [
+                                                       "H8DataMonolithCompilerWindow reads only a bounded header/section prefix, not full blob payload.",
+                                                       "H8DataMonolithGlobalDataVaultStressProbe keeps one intentional byte[blobBytes] fixture for TryInitializeFromMemory stress proof."
+                                                   ],
+    "rawHotpathColdFindings":  61,
+    "h8binValidatorStatus":  "PASS",
+    "h8binFilesChecked":  2,
+    "h8binDataMonolithBytes":  1064384,
+    "parseFailures":  0,
+    "buildStatus":  "BLOCKED_BY_HOST_CPU_GATE",
+    "verificationHashSha256":  "bea346a6f3688a0d885626703e63ae00cb4addf30912a0fe2470f0c717352c3a"
+}

@@ -33,8 +33,6 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
     [SerializeField] private float horizonVerticalOffset = 0f;
     [Tooltip("Optional position offset applied after resolving the follow target.")]
     [SerializeField] private Vector3 positionOffset = Vector3.zero;
-    private const int RuntimeCameraBufferSize = 8;
-    private static readonly Camera[] _runtimeCameraBuffer = new Camera[RuntimeCameraBufferSize];
     private Camera _cachedResolvedCamera;
     private float _fixedYPosition;
     private bool _fixedYCaptured;
@@ -47,11 +45,12 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
     private Vector3 _pendingFollowPosition;
     private bool _hasPendingFollowPosition;
     private IAtmosphereReadModel _cachedAtmosphereReadModel;
+    private IPlayerRuntimeContext _cachedPlayerContext;
 
     private void OnEnable()
     {
 #if UNITY_EDITOR
-        if (EditorApplication.isCompiling || !Application.isPlaying)
+        if (EditorApplication.isCompiling)
             return;
 #endif
 
@@ -89,7 +88,13 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
         object currentService)
     {
         if (serviceSlot == GlobalRegistryServiceSlot.AtmosphereRuntime)
+        {
             _cachedAtmosphereReadModel = currentService as IAtmosphereReadModel;
+            return;
+        }
+
+        if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
     }
 
     /// <inheritdoc />
@@ -210,7 +215,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
 #if UNITY_EDITOR
     private void EditorTick()
     {
-        if (EditorApplication.isCompiling || !Application.isPlaying)
+        if (EditorApplication.isCompiling)
         {
             EditorApplication.update -= EditorTick;
             return;
@@ -251,36 +256,18 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
     {
         if (runtimeCamera != null)
         {
-            CachePlayerMovementFromCamera(runtimeCamera);
             return runtimeCamera;
         }
 
         if (Application.isPlaying)
         {
             if (IsRuntimeGameplayCamera(_cachedResolvedCamera))
-            {
-                CachePlayerMovementFromCamera(_cachedResolvedCamera);
                 return _cachedResolvedCamera;
-            }
 
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
+            Camera cachedPlayerCamera = TryResolveCachedPlayerCamera();
+            if (cachedPlayerCamera != null)
             {
-                CachePlayerMovement(playerTransform);
-
-                Camera playerCamera = ResolveTaggedRuntimeMainCamera(playerTransform);
-                if (playerCamera != null)
-                {
-                    _cachedResolvedCamera = playerCamera;
-                    return _cachedResolvedCamera;
-                }
-            }
-
-            Camera runtimeMainCamera = ResolveTaggedRuntimeMainCamera();
-            if (runtimeMainCamera != null)
-            {
-                _cachedResolvedCamera = runtimeMainCamera;
-                CachePlayerMovementFromCamera(runtimeMainCamera);
+                _cachedResolvedCamera = cachedPlayerCamera;
                 return _cachedResolvedCamera;
             }
         }
@@ -302,18 +289,6 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
             return _cachedResolvedCamera;
         }
 
-        int cameraCount = Camera.GetAllCameras(_runtimeCameraBuffer);
-        for (int i = 0; i < cameraCount; i++)
-        {
-            Camera candidate = _runtimeCameraBuffer[i];
-            if (candidate != null && candidate.enabled && candidate.gameObject.activeInHierarchy)
-            {
-                _cachedResolvedCamera = candidate;
-                CachePlayerMovementFromCamera(candidate);
-                return _cachedResolvedCamera;
-            }
-        }
-
         return null;
     }
 
@@ -326,48 +301,26 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
                camera.CompareTag("MainCamera");
     }
 
-    private static Camera ResolveTaggedRuntimeMainCamera()
-    {
-        int cameraCount = Camera.GetAllCameras(_runtimeCameraBuffer);
-        for (int i = 0; i < cameraCount; i++)
-        {
-            Camera candidate = _runtimeCameraBuffer[i];
-            if (IsRuntimeGameplayCamera(candidate))
-                return candidate;
-        }
-
-        return null;
-    }
-
-    private static Camera ResolveTaggedRuntimeMainCamera(Transform playerTransform)
-    {
-        if (playerTransform == null)
-            return null;
-
-        int cameraCount = Camera.GetAllCameras(_runtimeCameraBuffer);
-        for (int i = 0; i < cameraCount; i++)
-        {
-            Camera candidate = _runtimeCameraBuffer[i];
-            if (!IsRuntimeGameplayCamera(candidate))
-                continue;
-
-            Transform candidateTransform = candidate.transform;
-            if (ReferenceEquals(candidateTransform, playerTransform) ||
-                candidateTransform.IsChildOf(playerTransform))
-            {
-                return candidate;
-            }
-        }
-
-        return null;
-    }
-
     private void ResolveSeaLevelOwners()
     {
         ResolveAtmosphereReadModel();
 
         if (playerMovement != null)
             return;
+
+        IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+        if (playerContext != null && playerContext.PlayerMovement != null)
+        {
+            playerMovement = playerContext.PlayerMovement;
+            return;
+        }
+
+        if (runtimeCamera != null)
+        {
+            CachePlayerMovementFromCamera(runtimeCamera);
+            if (playerMovement != null)
+                return;
+        }
 
         if (_cachedResolvedCamera != null)
         {
@@ -391,6 +344,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
     private void CacheRegistryServicesCold()
     {
         _cachedAtmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
+        _cachedPlayerContext = GlobalRegistry.Player;
     }
 
     private void TryRegisterHotSwapListener()
@@ -438,6 +392,22 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
             return;
 
         playerTransform.TryGetComponent(out playerMovement);
+    }
+
+    private Camera TryResolveCachedPlayerCamera()
+    {
+        IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+        if (playerContext == null)
+            return null;
+
+        Camera playerCamera = playerContext.PlayerCamera;
+        if (!IsRuntimeGameplayCamera(playerCamera))
+            return null;
+
+        HectonPlayerMovement movement = playerContext.PlayerMovement;
+        if (movement != null)
+            playerMovement = movement;
+        return playerCamera;
     }
 
     private static T ResolveComponentInParents<T>(Transform start) where T : Component

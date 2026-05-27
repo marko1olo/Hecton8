@@ -49,16 +49,46 @@ namespace Hecton8.Visor
         [FieldOffset(76)] public float QualityDynamicBlendEnd;
         [FieldOffset(80)] public uint Flags;
         [FieldOffset(84)] public uint Version;
-        [FieldOffset(88)] private float _pad0;
-        [FieldOffset(92)] private float _pad1;
-        [FieldOffset(96)] private uint _pad2;
-        [FieldOffset(100)] private uint _pad3;
-        [FieldOffset(104)] private uint _pad4;
-        [FieldOffset(108)] private uint _pad5;
-        [FieldOffset(112)] private uint _pad6;
-        [FieldOffset(116)] private uint _pad7;
-        [FieldOffset(120)] private uint _pad8;
-        [FieldOffset(124)] private uint _pad9;
+        [FieldOffset(88)] private byte _pad0;
+        [FieldOffset(89)] private byte _pad1;
+        [FieldOffset(90)] private byte _pad2;
+        [FieldOffset(91)] private byte _pad3;
+        [FieldOffset(92)] private byte _pad4;
+        [FieldOffset(93)] private byte _pad5;
+        [FieldOffset(94)] private byte _pad6;
+        [FieldOffset(95)] private byte _pad7;
+        [FieldOffset(96)] private byte _pad8;
+        [FieldOffset(97)] private byte _pad9;
+        [FieldOffset(98)] private byte _pad10;
+        [FieldOffset(99)] private byte _pad11;
+        [FieldOffset(100)] private byte _pad12;
+        [FieldOffset(101)] private byte _pad13;
+        [FieldOffset(102)] private byte _pad14;
+        [FieldOffset(103)] private byte _pad15;
+        [FieldOffset(104)] private byte _pad16;
+        [FieldOffset(105)] private byte _pad17;
+        [FieldOffset(106)] private byte _pad18;
+        [FieldOffset(107)] private byte _pad19;
+        [FieldOffset(108)] private byte _pad20;
+        [FieldOffset(109)] private byte _pad21;
+        [FieldOffset(110)] private byte _pad22;
+        [FieldOffset(111)] private byte _pad23;
+        [FieldOffset(112)] private byte _pad24;
+        [FieldOffset(113)] private byte _pad25;
+        [FieldOffset(114)] private byte _pad26;
+        [FieldOffset(115)] private byte _pad27;
+        [FieldOffset(116)] private byte _pad28;
+        [FieldOffset(117)] private byte _pad29;
+        [FieldOffset(118)] private byte _pad30;
+        [FieldOffset(119)] private byte _pad31;
+        [FieldOffset(120)] private byte _pad32;
+        [FieldOffset(121)] private byte _pad33;
+        [FieldOffset(122)] private byte _pad34;
+        [FieldOffset(123)] private byte _pad35;
+        [FieldOffset(124)] private byte _pad36;
+        [FieldOffset(125)] private byte _pad37;
+        [FieldOffset(126)] private byte _pad38;
+        [FieldOffset(127)] private byte _pad39;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.MockPhysiologySignalStrideBytes)]
@@ -70,8 +100,14 @@ namespace Hecton8.Visor
         [FieldOffset(12)] public float BreathSpike01;
         [FieldOffset(16)] public uint Frame;
         [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] private float _pad0;
-        [FieldOffset(28)] private float _pad1;
+        [FieldOffset(24)] private byte _pad0;
+        [FieldOffset(25)] private byte _pad1;
+        [FieldOffset(26)] private byte _pad2;
+        [FieldOffset(27)] private byte _pad3;
+        [FieldOffset(28)] private byte _pad4;
+        [FieldOffset(29)] private byte _pad5;
+        [FieldOffset(30)] private byte _pad6;
+        [FieldOffset(31)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.MockVisorEnvironmentSignalStrideBytes)]
@@ -87,8 +123,14 @@ namespace Hecton8.Visor
         [FieldOffset(28)] public float WaterlineBreach01;
         [FieldOffset(32)] public uint Frame;
         [FieldOffset(36)] public uint Flags;
-        [FieldOffset(40)] private float _pad0;
-        [FieldOffset(44)] private float _pad1;
+        [FieldOffset(40)] private byte _pad0;
+        [FieldOffset(41)] private byte _pad1;
+        [FieldOffset(42)] private byte _pad2;
+        [FieldOffset(43)] private byte _pad3;
+        [FieldOffset(44)] private byte _pad4;
+        [FieldOffset(45)] private byte _pad5;
+        [FieldOffset(46)] private byte _pad6;
+        [FieldOffset(47)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.DiegeticVisorLensGpuGlobalsDTOStrideBytes)]

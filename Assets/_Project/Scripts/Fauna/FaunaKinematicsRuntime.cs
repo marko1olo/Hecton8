@@ -24,8 +24,8 @@ namespace Hecton8.AI
     internal sealed class FaunaKinematicsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable, ILeviathanProceduralTunerSource, IGlobalRegistryHotSwapListener
     {
         private int _signalPushDropCount;
-        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_305.bin";
-        private const string BiteTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_FAUNA_BITE_IK_SOLVER.bin";
+        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
+        private const string BiteTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
         private const ulong TelemetryDumpMagic = 0x4C455649494B3031UL;
         private const ulong BiteTelemetryDumpMagic = 0x4642494B30303031UL;
         private const int TelemetryEntryPayloadBytes = 96;
@@ -138,9 +138,12 @@ namespace Hecton8.AI
 
         private JobHandle _pendingHandle;
         private JobHandle _disposeHandle;
+        private HectonVoxelVolume _terrainSdfLeaseVolume;
+        private HectonVoxelVolume.PublishedSonarSdfReadLease _terrainSdfReadLease;
         private long _solverScheduleTimestamp;
         private float _lastBurstSolveMicros;
         private bool _solverScheduled;
+        private bool _terrainSdfReadLeaseLocked;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
@@ -405,7 +408,9 @@ namespace Hecton8.AI
                 out NativeArray<ushort> heightSamples,
                 out float3 terrainOrigin,
                 out float3 terrainSize,
-                out int terrainResolution);
+                out int terrainResolution,
+                out HectonVoxelVolume terrainSdfLeaseVolume,
+                out HectonVoxelVolume.PublishedSonarSdfReadLease terrainSdfReadLease);
 
             float safeTailWhipSecondsRemaining = ResolveSafeTailWhipSecondsRemaining();
             if (safeTailWhipSecondsRemaining > 0f)
@@ -479,7 +484,28 @@ namespace Hecton8.AI
                 RuntimeFlags = runtimeFlags
             };
 
-            JobHandle scheduledHandle = job.Schedule();
+            bool terrainSdfLeaseClaimed = false;
+            JobHandle scheduledHandle = default;
+            try
+            {
+                scheduledHandle = job.Schedule();
+                if (terrainSdfLeaseVolume != null)
+                {
+                    _terrainSdfLeaseVolume = terrainSdfLeaseVolume;
+                    _terrainSdfReadLease = terrainSdfReadLease;
+                    _terrainSdfReadLeaseLocked = true;
+                    terrainSdfLeaseClaimed = true;
+                }
+
+                _pendingHandle = scheduledHandle;
+                _solverScheduled = true;
+            }
+            finally
+            {
+                if (!terrainSdfLeaseClaimed && terrainSdfLeaseVolume != null)
+                    terrainSdfLeaseVolume.ReleasePublishedSonarSdfPayloadReadLease(in terrainSdfReadLease);
+            }
+
             if (biteTargetReady)
             {
                 ProceduralBiteJob biteJob = new ProceduralBiteJob
@@ -510,11 +536,10 @@ namespace Hecton8.AI
                     RuntimeFlags = ResolveBiteRuntimeFlags()
                 };
                 scheduledHandle = biteJob.Schedule(scheduledHandle);
+                _pendingHandle = scheduledHandle;
             }
 
             _solverScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            _pendingHandle = scheduledHandle;
-            _solverScheduled = true;
         }
 
         public void LateFrameTick()
@@ -534,6 +559,7 @@ namespace Hecton8.AI
                 return;
 
             _solverScheduled = false;
+            ReleaseTerrainSdfReadLease();
             CaptureCompletedSolverTelemetry();
             AdvanceFrameIndex();
             ApplyPendingOriginShiftRebase();
@@ -566,6 +592,7 @@ namespace Hecton8.AI
                 }
 
                 _solverScheduled = false;
+                ReleaseTerrainSdfReadLease();
                 CaptureCompletedSolverTelemetry();
                 AdvanceFrameIndex();
                 if (TelemetryHasInvalidFrame())
@@ -903,10 +930,25 @@ namespace Hecton8.AI
 
             DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);
             _solverScheduled = false;
+            ReleaseTerrainSdfReadLease();
             CaptureCompletedSolverTelemetry();
             AdvanceFrameIndex();
             if (TelemetryHasInvalidFrame())
                 DumpTelemetryBlackBoxOnce();
+        }
+
+        private void ReleaseTerrainSdfReadLease()
+        {
+            if (!_terrainSdfReadLeaseLocked)
+                return;
+
+            HectonVoxelVolume volume = _terrainSdfLeaseVolume;
+            if (volume != null)
+                volume.ReleasePublishedSonarSdfPayloadReadLease(in _terrainSdfReadLease);
+
+            _terrainSdfLeaseVolume = null;
+            _terrainSdfReadLease = default;
+            _terrainSdfReadLeaseLocked = false;
         }
 
         private void HydrateRigDefinitionsOrMockCold()
@@ -1730,7 +1772,9 @@ namespace Hecton8.AI
             out NativeArray<ushort> heightSamples,
             out float3 terrainOrigin,
             out float3 terrainSize,
-            out int terrainResolution)
+            out int terrainResolution,
+            out HectonVoxelVolume terrainSdfLeaseVolume,
+            out HectonVoxelVolume.PublishedSonarSdfReadLease terrainSdfReadLease)
         {
             sdfTexture3D = default;
             sdfDimensions = default;
@@ -1741,9 +1785,20 @@ namespace Hecton8.AI
             terrainOrigin = float3.zero;
             terrainSize = float3.zero;
             terrainResolution = 0;
+            terrainSdfLeaseVolume = null;
+            terrainSdfReadLease = default;
 
             float3 ownerPosition = ResolveOwnerRuntimePosition();
-            ResolveSdfPayload(qualityWeight, ownerPosition, out sdfTexture3D, out sdfDimensions, out sdfOrigin, out sdfCellSize, out sdfRange);
+            ResolveSdfPayload(
+                qualityWeight,
+                ownerPosition,
+                out sdfTexture3D,
+                out sdfDimensions,
+                out sdfOrigin,
+                out sdfCellSize,
+                out sdfRange,
+                out terrainSdfLeaseVolume,
+                out terrainSdfReadLease);
             ResolveMapMagicPayload(ownerPosition, out heightSamples, out terrainOrigin, out terrainSize, out terrainResolution);
         }
 
@@ -1754,51 +1809,63 @@ namespace Hecton8.AI
             out int3 sdfDimensions,
             out float3 sdfOrigin,
             out float3 sdfCellSize,
-            out float sdfRange)
+            out float sdfRange,
+            out HectonVoxelVolume leaseVolume,
+            out HectonVoxelVolume.PublishedSonarSdfReadLease lease)
         {
             sdfTexture3D = default;
             sdfDimensions = default;
             sdfOrigin = float3.zero;
             sdfCellSize = float3.zero;
             sdfRange = 0f;
+            leaseVolume = null;
+            lease = default;
 
             if (!_enableSdfHugging || SmoothQualityCurve(qualityWeight) <= 0.0001f)
                 return;
 
-            if (!HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload(
+            if (!HectonVoxelVolume.TryAcquireClosestPublishedSonarSdfPayloadReadLease(
                     ToVector3(targetPosition),
+                    out HectonVoxelVolume publishedVolume,
                     out NativeArray<byte>.ReadOnly publishedSdf,
                     out _,
                     out Vector3Int dimensions,
                     out Vector3 origin,
                     out Vector3 cellSize,
                     out float range,
-                    out _))
+                    out _,
+                    out HectonVoxelVolume.PublishedSonarSdfReadLease publishedLease))
             {
                 return;
             }
 
-            int3 resolvedDimensions = new int3(dimensions.x, dimensions.y, dimensions.z);
-            if (!LeviathanTerrainIkJob.TryResolveSdfVoxelCount(resolvedDimensions, out int expectedLength) ||
-                !publishedSdf.IsCreated ||
-                publishedSdf.Length != expectedLength)
+            bool accepted = false;
+            try
             {
-                return;
-            }
+                int3 resolvedDimensions = new int3(dimensions.x, dimensions.y, dimensions.z);
+                if (!LeviathanTerrainIkJob.TryResolveSdfVoxelCount(resolvedDimensions, out int expectedLength) ||
+                    !publishedSdf.IsCreated ||
+                    publishedSdf.Length != expectedLength)
+                {
+                    return;
+                }
 
-            NativeArray<byte>.ReadOnly resolvedSdf = publishedSdf;
-            IDataVault vault = _dataVault;
-            if (TryOpenExistingVaultBuffer(vault, BufferID.VoxelSdfTexture3D, expectedLength, out NativeArray<byte> vaultSdf) &&
-                vaultSdf.Length == expectedLength)
+                NativeArray<byte>.ReadOnly resolvedSdf = publishedSdf;
+
+                sdfTexture3D = resolvedSdf;
+                sdfDimensions = resolvedDimensions;
+                sdfOrigin = (float3)origin;
+                sdfCellSize = (float3)cellSize;
+                sdfRange = math.max(0f, range);
+                leaseVolume = publishedVolume;
+                lease = publishedLease;
+                accepted = true;
+            }
+            finally
             {
-                resolvedSdf = vaultSdf.AsReadOnly();
+                if (!accepted && publishedVolume != null)
+                    publishedVolume.ReleasePublishedSonarSdfPayloadReadLease(in publishedLease);
             }
-
-            sdfTexture3D = resolvedSdf;
-            sdfDimensions = resolvedDimensions;
-            sdfOrigin = (float3)origin;
-            sdfCellSize = (float3)cellSize;
-            sdfRange = math.max(0f, range);
         }
 
         private void ResolveMapMagicPayload(

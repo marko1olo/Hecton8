@@ -153,10 +153,18 @@ namespace Hecton8.World
             public bool TryAcquireWriteLock(SystemID owner, out NativeArray<T> buffer)
             {
                 buffer = default;
-                return _vault != null &&
-                       IsHandleCreated(in _handle) &&
-                       _vault.TryAcquireWriteLock(in _handle, owner, out buffer) &&
-                       buffer.IsCreated;
+                if (_vault == null || !IsHandleCreated(in _handle))
+                    return false;
+
+                if (!_vault.TryAcquireWriteLock(in _handle, owner, out buffer))
+                    return false;
+
+                if (buffer.IsCreated)
+                    return true;
+
+                _vault.ReleaseWriteLock(in _handle, owner);
+                buffer = default;
+                return false;
             }
 
             public void ReleaseWriteLock(SystemID owner)

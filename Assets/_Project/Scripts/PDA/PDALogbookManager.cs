@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
+using Hecton8.Atmosphere;
 using Hecton.Localization;
 using Unity.Mathematics;
 using UnityEngine;
@@ -166,6 +167,8 @@ namespace Hecton8.PDA
 
         private HectonSurvivalSystem _survivalSystem;
         private IScanLogService _scanLogSystem;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private HectonAtmosphereManager _atmosphereManager;
         private bool _registeredToSave;
         private bool _registered;
         private bool _registeredHotSwapListener;
@@ -202,7 +205,9 @@ namespace Hecton8.PDA
             if (!enabled)
                 return;
 
-            _saveService = GlobalRegistry.Save;
+            CacheRegistryServicesCold();
+            if (Application.isPlaying)
+                UIStateStore.EnsureInitialized();
             TryRegisterHotSwapListener();
             TryRegisterWithSaveManager();
             RebindOwnerSubscriptions();
@@ -211,6 +216,9 @@ namespace Hecton8.PDA
 
         private void Start()
         {
+            CacheRegistryServicesCold();
+            if (Application.isPlaying)
+                UIStateStore.EnsureInitialized();
             TryRegisterHotSwapListener();
             TryRegisterWithSaveManager();
             RebindOwnerSubscriptions();
@@ -276,7 +284,12 @@ namespace Hecton8.PDA
             if (!TryAppendSeenOriginHash(originHash))
                 return false;
 
-            PDAClockUtility.CaptureStamp(out int dayIndex, out float dayTimeHours, out float playTimeSeconds);
+            PDAClockUtility.CaptureStamp(
+                _saveService,
+                _atmosphereManager,
+                out int dayIndex,
+                out float dayTimeHours,
+                out float playTimeSeconds);
             PDALogbookEntry entry = new PDALogbookEntry(
                 _nextSequence++,
                 math.max(1, dayIndex),
@@ -528,13 +541,7 @@ namespace Hecton8.PDA
                 RefreshSurvivalSignalBinding();
             }
 
-            IScanLogService resolvedScanLog = Hecton8.Core.GlobalRegistry.ScanLogService;
-            if (!ReferenceEquals(_scanLogSystem, resolvedScanLog))
-            {
-                _scanLogSystem = resolvedScanLog;
-                _scanLogSourceId = resolvedScanLog != null ? resolvedScanLog.SourceId : 0u;
-            }
-
+            RefreshCachedScanLogSourceId();
         }
 
         private void UnsubscribeFromOwners()
@@ -626,12 +633,7 @@ namespace Hecton8.PDA
 
         private void RefreshScanLogSignalBinding()
         {
-            IScanLogService resolvedScanLog = Hecton8.Core.GlobalRegistry.ScanLogService;
-            if (ReferenceEquals(_scanLogSystem, resolvedScanLog))
-                return;
-
-            _scanLogSystem = resolvedScanLog;
-            _scanLogSourceId = resolvedScanLog != null ? resolvedScanLog.SourceId : 0u;
+            RefreshCachedScanLogSourceId();
         }
 
         private void RefreshSurvivalSignalBinding()
@@ -765,7 +767,7 @@ namespace Hecton8.PDA
 
         private HectonSurvivalSystem ResolveSurvivalSystem()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null &&
                 playerContext.PlayerObject != null &&
                 playerContext.PlayerObject.TryGetComponent(out HectonSurvivalSystem survivalSystem))
@@ -774,6 +776,25 @@ namespace Hecton8.PDA
             }
 
             return null;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _saveService = GlobalRegistry.Save;
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _atmosphereManager = GlobalRegistry.Atmosphere;
+            CacheScanLogService(GlobalRegistry.ScanLogService);
+        }
+
+        private void CacheScanLogService(IScanLogService scanLogService)
+        {
+            _scanLogSystem = scanLogService;
+            RefreshCachedScanLogSourceId();
+        }
+
+        private void RefreshCachedScanLogSourceId()
+        {
+            _scanLogSourceId = _scanLogSystem != null ? _scanLogSystem.SourceId : 0u;
         }
 
         private void TryRegisterWithSaveManager()
@@ -808,12 +829,24 @@ namespace Hecton8.PDA
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Save)
-                return;
-
-            UnregisterFromSaveManager();
-            _saveService = currentService as ISaveService;
-            TryRegisterWithSaveManager();
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Save:
+                    UnregisterFromSaveManager();
+                    _saveService = currentService as ISaveService;
+                    TryRegisterWithSaveManager();
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    RebindOwnerSubscriptions();
+                    break;
+                case GlobalRegistryServiceSlot.ScanLogRuntime:
+                    CacheScanLogService(currentService as IScanLogService);
+                    break;
+                case GlobalRegistryServiceSlot.AtmosphereRuntime:
+                    _atmosphereManager = currentService as HectonAtmosphereManager;
+                    break;
+            }
         }
 
         private void TryRegisterHotSwapListener()

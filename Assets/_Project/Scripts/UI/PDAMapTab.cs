@@ -35,7 +35,8 @@ namespace Hecton8.UI
         private const int MaxThreatPings = 8;
         private const int MaxStatusChars = 64;
         private const float AcousticOverlayRadiusMeters = 160f;
-        private const int PointCloudThreadAxis = 8;
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const int MaxPredatorAupPoints = 16;
         private const int MaxHlodImpostorAupPoints = 16;
         private const int PointCloudCapacity = CartographyGridConstants.MaxVisibleMapPoints + MaxPredatorAupPoints + MaxHlodImpostorAupPoints;
@@ -174,9 +175,10 @@ namespace Hecton8.UI
         private Mesh _pointCloudQuadMesh;
         private int _sonarClearArgsKernel = -1;
         private int _sonarBuildMapPointsKernel = -1;
-        private int _sonarBuildMapPointsThreadGroupSizeX = PointCloudThreadAxis;
-        private int _sonarBuildMapPointsThreadGroupSizeY = PointCloudThreadAxis;
-        private int _sonarBuildMapPointsThreadGroupSizeZ = PointCloudThreadAxis;
+        private int _sonarClearArgsThreadGroupSizeX;
+        private int _sonarBuildMapPointsThreadGroupSizeX;
+        private int _sonarBuildMapPointsThreadGroupSizeY;
+        private int _sonarBuildMapPointsThreadGroupSizeZ;
         private bool _sonarComputeKernelsResolved;
         private uint _uploadedCartographyRevision = uint.MaxValue;
         private uint _uploadedPackedCartographyRevision = uint.MaxValue;
@@ -296,7 +298,7 @@ namespace Hecton8.UI
             }
         }
 
-        internal void ConfigurePointCloudAssets(Shader pointCloudShader, ComputeShader mapCompute)
+        internal void ConfigurePointCloudAssets(Shader pointCloudShader, ComputeShader mapCompute, Shader hologramShader = null)
         {
             if (pointCloudShader != null && !ReferenceEquals(sonarPointCloudShader, pointCloudShader))
             {
@@ -309,17 +311,23 @@ namespace Hecton8.UI
                 }
             }
 
-            if (mapCompute == null || ReferenceEquals(sonarMapCompute, mapCompute))
-                return;
+            if (hologramShader != null && !ReferenceEquals(hologramMapShader, hologramShader))
+            {
+                hologramMapShader = hologramShader;
+                _pointCloudAssetLookupAttempted = false;
+                if (_hologramMapMaterial != null)
+                {
+                    Destroy(_hologramMapMaterial);
+                    _hologramMapMaterial = null;
+                }
+            }
 
-            sonarMapCompute = mapCompute;
-            _sonarClearArgsKernel = -1;
-            _sonarBuildMapPointsKernel = -1;
-            _sonarBuildMapPointsThreadGroupSizeX = PointCloudThreadAxis;
-            _sonarBuildMapPointsThreadGroupSizeY = PointCloudThreadAxis;
-            _sonarBuildMapPointsThreadGroupSizeZ = PointCloudThreadAxis;
-            _sonarComputeKernelsResolved = false;
-            _pointCloudAssetLookupAttempted = false;
+            if (mapCompute != null && !ReferenceEquals(sonarMapCompute, mapCompute))
+            {
+                sonarMapCompute = mapCompute;
+                ResetSonarComputeKernelState();
+                _pointCloudAssetLookupAttempted = false;
+            }
         }
 
         private void RegisterToTickManager()
@@ -748,10 +756,12 @@ namespace Hecton8.UI
             if (hologramMapShader == null)
                 hologramMapShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(HologramMapShaderPath);
 #endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (sonarPointCloudShader == null)
                 sonarPointCloudShader = Shader.Find(SonarPointCloudShaderName);
             if (hologramMapShader == null)
                 hologramMapShader = Shader.Find(HologramMapShaderName);
+#endif
 
             return sonarPointCloudShader != null;
         }
@@ -766,7 +776,7 @@ namespace Hecton8.UI
                 name = "__PDASonarPointCloudIndirectQuad",
                 bounds = new Bounds(Vector3.zero, Vector3.one * 2f)
             }; // COLD ALLOC: Mesh[1] — single quad used by RenderMeshIndirect PDA cartography point cloud — owner: PDAMapTab
-            _pointCloudQuadMesh.vertices = SonarQuadVertices;
+            _pointCloudQuadMesh.SetVertices(SonarQuadVertices);
             _pointCloudQuadMesh.SetIndices(SonarQuadIndices, MeshTopology.Triangles, 0, false);
             _pointCloudQuadMesh.UploadMeshData(true);
         }
@@ -776,34 +786,64 @@ namespace Hecton8.UI
             if (_sonarComputeKernelsResolved)
                 return _sonarClearArgsKernel >= 0 && _sonarBuildMapPointsKernel >= 0;
 
-            if (sonarMapCompute == null)
-                return false;
-
-            if (!sonarMapCompute.HasKernel("CSClearArgs") ||
-                !sonarMapCompute.HasKernel("CSBuildMapPoints"))
+            if (sonarMapCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
             {
+                ResetSonarComputeKernelState();
                 return false;
             }
 
+            if (!sonarMapCompute.HasKernel("CSClearArgs")) { ResetSonarComputeKernelState(); return false; }
             _sonarClearArgsKernel = sonarMapCompute.FindKernel("CSClearArgs");
+
+            if (!sonarMapCompute.HasKernel("CSBuildMapPoints")) { ResetSonarComputeKernelState(); return false; }
             _sonarBuildMapPointsKernel = sonarMapCompute.FindKernel("CSBuildMapPoints");
-            _sonarComputeKernelsResolved = _sonarClearArgsKernel >= 0 &&
-                                           _sonarBuildMapPointsKernel >= 0 &&
-                                           sonarMapCompute.IsSupported(_sonarClearArgsKernel) &&
-                                           sonarMapCompute.IsSupported(_sonarBuildMapPointsKernel);
-            if (_sonarComputeKernelsResolved)
-            {
-                sonarMapCompute.GetKernelThreadGroupSizes(
+
+            if (_sonarClearArgsKernel < 0 ||
+                _sonarBuildMapPointsKernel < 0 ||
+                !sonarMapCompute.IsSupported(_sonarClearArgsKernel) ||
+                !sonarMapCompute.IsSupported(_sonarBuildMapPointsKernel) ||
+                !TryValidateSonarKernelThreadGroup(sonarMapCompute, _sonarClearArgsKernel, out uint clearArgsThreadGroupSizeX, out _, out _) ||
+                !TryValidateSonarKernelThreadGroup(
+                    sonarMapCompute,
                     _sonarBuildMapPointsKernel,
                     out uint threadGroupSizeX,
                     out uint threadGroupSizeY,
-                    out uint threadGroupSizeZ);
-                _sonarBuildMapPointsThreadGroupSizeX = threadGroupSizeX > 0u ? (int)threadGroupSizeX : PointCloudThreadAxis;
-                _sonarBuildMapPointsThreadGroupSizeY = threadGroupSizeY > 0u ? (int)threadGroupSizeY : PointCloudThreadAxis;
-                _sonarBuildMapPointsThreadGroupSizeZ = threadGroupSizeZ > 0u ? (int)threadGroupSizeZ : PointCloudThreadAxis;
+                    out uint threadGroupSizeZ))
+            {
+                ResetSonarComputeKernelState();
+                return false;
             }
 
+            _sonarClearArgsThreadGroupSizeX = (int)clearArgsThreadGroupSizeX;
+            _sonarBuildMapPointsThreadGroupSizeX = (int)threadGroupSizeX;
+            _sonarBuildMapPointsThreadGroupSizeY = (int)threadGroupSizeY;
+            _sonarBuildMapPointsThreadGroupSizeZ = (int)threadGroupSizeZ;
+            _sonarComputeKernelsResolved = true;
+
             return _sonarComputeKernelsResolved;
+        }
+
+        private static bool TryValidateSonarKernelThreadGroup(
+            ComputeShader compute,
+            int kernelIndex,
+            out uint sizeX,
+            out uint sizeY,
+            out uint sizeZ)
+        {
+            sizeX = 0u;
+            sizeY = 0u;
+            sizeZ = 0u;
+            if (compute == null || kernelIndex < 0)
+                return false;
+
+            compute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            if (sizeX == 0u || sizeY != 1u || sizeZ != 1u)
+                return false;
+
+            if (sizeX > PortableMaxComputeThreadsPerGroup)
+                return false;
+
+            return true;
         }
 
         private void RenderHologramMap()
@@ -1007,10 +1047,17 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static int CeilDividePositive(int value, int divisor)
+        private static int ResolveDispatchGroups(int value, int divisor)
         {
-            int safeDivisor = math.max(divisor, 1);
-            return (value + safeDivisor - 1) / safeDivisor;
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long numerator = (long)value + divisor - 1L;
+            long groups = numerator / divisor;
+            if (groups <= 0L || groups > MaxDispatchGroupsPerDimension)
+                return 0;
+
+            return (int)groups;
         }
 
         private bool DispatchSonarPointCloud(
@@ -1029,7 +1076,7 @@ namespace Hecton8.UI
                 !_activeHlodImpostorAupBuffer.IsValid() ||
                 _cartographySectorWordBuffer == null ||
                 !_cartographySectorWordBuffer.IsValid() ||
-                !SystemInfo.supportsComputeShaders ||
+                !HardwareTierDetector.AllowHighResourceComputeShaders ||
                 !TryResolveSonarComputeKernels())
             {
                 return false;
@@ -1071,7 +1118,13 @@ namespace Hecton8.UI
             float qualityCurve = Smooth01(globalQualityWeight);
             int maxBitsPerWord = math.clamp((int)math.round(math.lerp(1f, 4f, qualityCurve)), 1, 4);
             int wordStride = math.clamp((int)math.round(math.lerp(8f, 1f, qualityCurve)), 1, 8);
-            int dispatchWordCount = CeilDividePositive(wordCount, wordStride);
+            int dispatchWordCount = ResolveDispatchGroups(wordCount, wordStride);
+            if (dispatchWordCount <= 0)
+                return false;
+            int clearArgsGroups = ResolveDispatchGroups(1, _sonarClearArgsThreadGroupSizeX);
+            if (clearArgsGroups <= 0)
+                return false;
+
             TryResolvePredatorAupBuffer(out GraphicsBuffer predatorAupBuffer, out int predatorAupCount);
             TryResolveHlodImpostorAupBuffer(out GraphicsBuffer hlodAupBuffer, out int hlodAupCount);
             _pointCloudAppendBuffer.SetCounterValue(0u);
@@ -1089,13 +1142,16 @@ namespace Hecton8.UI
                 hlodAupCount);
 
             sonarMapCompute.SetBuffer(_sonarClearArgsKernel, IndirectArgsId, _pointCloudIndirectArgsBuffer);
-            sonarMapCompute.Dispatch(_sonarClearArgsKernel, 1, 1, 1);
+            sonarMapCompute.Dispatch(_sonarClearArgsKernel, clearArgsGroups, 1, 1);
 
             sonarMapCompute.SetBuffer(_sonarBuildMapPointsKernel, DiscoveredSectorsId, _cartographySectorWordBuffer);
             sonarMapCompute.SetBuffer(_sonarBuildMapPointsKernel, SonarPointAppendBufferId, _pointCloudAppendBuffer);
             sonarMapCompute.SetBuffer(_sonarBuildMapPointsKernel, PredatorAupBufferId, predatorAupBuffer);
             sonarMapCompute.SetBuffer(_sonarBuildMapPointsKernel, HlodAupBufferId, hlodAupBuffer);
-            int groupsX = CeilDividePositive(dispatchWordCount, _sonarBuildMapPointsThreadGroupSizeX);
+            int groupsX = ResolveDispatchGroups(dispatchWordCount, _sonarBuildMapPointsThreadGroupSizeX);
+            if (groupsX <= 0)
+                return false;
+
             sonarMapCompute.Dispatch(_sonarBuildMapPointsKernel, groupsX, 1, 1);
             GraphicsBuffer.CopyCount(_pointCloudAppendBuffer, _pointCloudIndirectArgsBuffer, sizeof(uint));
             return true;
@@ -1589,7 +1645,7 @@ namespace Hecton8.UI
             for (int pingIndex = 0; pingIndex < _threatPings.Length; pingIndex++)
                 _threatPings[pingIndex] = Vector4.zero;
 
-            if (WorldSpatialHashGrid.TryGetAcousticDensityMap(out NativeArray<float>.ReadOnly densityMap, out Vector3Int densityDimensions))
+            if (WorldSpatialHashGrid.TryGetAcousticDensityMap(out float[] densityMap, out Vector3Int densityDimensions))
             {
                 RefreshThreatPingsFromSpatialDensity(densityMap, densityDimensions);
                 TryAppendGhostSignalPing();
@@ -1688,8 +1744,11 @@ namespace Hecton8.UI
             return new Vector3(x * horizontalScale, y, z * horizontalScale) * 0.38f;
         }
 
-        private void RefreshThreatPingsFromSpatialDensity(NativeArray<float>.ReadOnly densityMap, Vector3Int dimensions)
+        private void RefreshThreatPingsFromSpatialDensity(float[] densityMap, Vector3Int dimensions)
         {
+            if (densityMap == null)
+                return;
+
             int safeWidth = math.max(1, dimensions.x);
             int safeHeight = math.max(1, dimensions.y);
             int safeDepth = math.max(1, dimensions.z);
@@ -2068,18 +2127,24 @@ namespace Hecton8.UI
                 _pointCloudMaterial = null;
             }
 
-            _sonarClearArgsKernel = -1;
-            _sonarBuildMapPointsKernel = -1;
-            _sonarBuildMapPointsThreadGroupSizeX = PointCloudThreadAxis;
-            _sonarBuildMapPointsThreadGroupSizeY = PointCloudThreadAxis;
-            _sonarBuildMapPointsThreadGroupSizeZ = PointCloudThreadAxis;
-            _sonarComputeKernelsResolved = false;
+            ResetSonarComputeKernelState();
             _uploadedCartographyRevision = uint.MaxValue;
             _uploadedPackedCartographyRevision = uint.MaxValue;
             _packedUploadCountdown = 0;
             _cartographySectorBufferUploaded = false;
             _pointCloudAssetLookupAttempted = false;
             _pointCloudMapReady = false;
+        }
+
+        private void ResetSonarComputeKernelState()
+        {
+            _sonarClearArgsKernel = -1;
+            _sonarBuildMapPointsKernel = -1;
+            _sonarClearArgsThreadGroupSizeX = 0;
+            _sonarBuildMapPointsThreadGroupSizeX = 0;
+            _sonarBuildMapPointsThreadGroupSizeY = 0;
+            _sonarBuildMapPointsThreadGroupSizeZ = 0;
+            _sonarComputeKernelsResolved = false;
         }
 
     }

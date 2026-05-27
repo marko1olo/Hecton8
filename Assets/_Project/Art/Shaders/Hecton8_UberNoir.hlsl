@@ -1,6 +1,7 @@
 #ifndef HECTON8_UBER_NOIR_INCLUDED
 #define HECTON8_UBER_NOIR_INCLUDED
 
+#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #if defined(H8_UBERNOIR_SHADOW_CASTER_PASS)
@@ -8,6 +9,7 @@
 #endif
 #include "Hecton_WaterExtinction.hlsl"
 #include "Hecton_CustomLightProbeGrid.hlsl"
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
 #include "Post/Hecton_SnellRefractionCore.hlsl"
 
@@ -291,9 +293,17 @@ float H8UberNoirSafeRsqrt(float value)
 
 float H8UberNoirSafePow(float value, float exponent)
 {
-    float safeValue = max(value, H8_UBER_NOIR_EPS);
+    float safeValue = saturate(max(value, H8_UBER_NOIR_EPS));
     float safeExponent = max(exponent, H8_UBER_NOIR_EPS);
-    return pow(safeValue, safeExponent);
+    float value2 = safeValue * safeValue;
+    float value4 = value2 * value2;
+    float value8 = value4 * value4;
+    float value16 = value8 * value8;
+    float subUnity = saturate(1.0 - safeExponent);
+    float lowExponent = lerp(safeValue, value2, saturate(safeExponent - 1.0));
+    float highExponent = lerp(value4, value16, saturate((safeExponent - 2.0) * 0.07142857));
+    float shaped = lerp(lowExponent, highExponent, saturate((safeExponent - 2.0) * 0.25));
+    return lerp(shaped, safeValue + (1.0 - safeValue) * subUnity * 0.62, subUnity);
 }
 
 float H8UberNoirSafePow01(float value, float exponent)
@@ -683,7 +693,9 @@ float H8UberNoirValueNoise2(float2 value)
 
 float H8UberNoirHash13(float3 value)
 {
-    return frac(sin(dot(value, float3(127.1, 311.7, 74.7))) * 43758.5453123);
+    float3 hash = frac(value * float3(0.1031, 0.11369, 0.13787));
+    hash += dot(hash, hash.yzx + 19.19);
+    return frac((hash.x + hash.y) * hash.z);
 }
 
 float H8UberNoirValueNoise3(float3 value)
@@ -846,7 +858,10 @@ void H8UberNoirApplyGlassMicroFracture(
         float2 p1 = stablePosition.zy * lerp(25.0, 83.0, saturate(detailWeight * detailWeight)) + seed * 1.73 + aupSeed;
         float n0 = H8UberNoirValueNoise2(p0);
         float n1 = H8UberNoirValueNoise2(p1);
-        float radial = 1.0 - saturate(length(frac(stablePosition.xz * 0.071 + seed) - 0.5) * 2.0);
+        float2 radialOffset = frac(stablePosition.xz * 0.071 + seed) - 0.5;
+        float2 radialAbs = abs(radialOffset);
+        float radialApprox = max(radialAbs.x, radialAbs.y) + min(radialAbs.x, radialAbs.y) * 0.375;
+        float radial = 1.0 - saturate(radialApprox * 2.0);
         float richMask = max(cheapLine, max(n0, n1) * 0.72 + radial * 0.28);
         branchMask = lerp(cheapLine, richMask, detailWeight);
     }
@@ -957,6 +972,11 @@ float2 H8UberNoirScreenUV(float4 positionCS)
     screenUV = UnityStereoTransformScreenSpaceTex(screenUV);
 #endif
     return saturate(screenUV);
+}
+
+float2 H8UberNoirFoveatedSourceUV(float2 linearScreenUV)
+{
+    return FoveatedRemapLinearToNonUniform(saturate(linearScreenUV));
 }
 
 half H8UberNoirCheapDither(float4 positionCS)
@@ -1936,7 +1956,7 @@ float2 H8UberNoirCavitationRefractionOffset(float3 positionWS, float2 screenUV)
         [branch]
         if (detailWeight > 0.35)
         {
-            float richCurl = sin((dot(delta.xz, wave.CurlPhase.xy) + wave.CurlPhase.z * 37.0 + _H8CavitationShockwaveParams.w * 0.071) * 0.19);
+            float richCurl = H8UberNoirTriangle01((dot(delta.xz, wave.CurlPhase.xy) + wave.CurlPhase.z * 37.0 + _H8CavitationShockwaveParams.w * 0.071) * 0.03023944) * 2.0 - 1.0;
             curl = lerp(cheapCurl, richCurl, detailWeight);
         }
 
@@ -1973,15 +1993,15 @@ half3 H8UberNoirApplyScreenRefraction(H8UberNoirVaryings input, H8UberNoirSurfac
         1.0);
     float2 cavitationOffset = H8UberNoirCavitationRefractionOffset(input.positionWS, screenUV) * active;
     float2 refractedUV = saturate(screenUV + snellOffset + cavitationOffset);
-    half3 refractedColor = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV).rgb;
+    half3 refractedColor = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, H8UberNoirFoveatedSourceUV(refractedUV)).rgb;
     float chromatic = saturate(_UberNoirRefractionParams.w) * active;
     [branch]
     if (chromatic > H8_UBER_NOIR_EPS)
     {
         float2 chromaOffset = (snellOffset + cavitationOffset) * chromatic * 0.45;
         half3 chromaColor = refractedColor;
-        chromaColor.r = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV + chromaOffset)).r;
-        chromaColor.b = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV - chromaOffset)).b;
+        chromaColor.r = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, H8UberNoirFoveatedSourceUV(screenUV + chromaOffset)).r;
+        chromaColor.b = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, H8UberNoirFoveatedSourceUV(screenUV - chromaOffset)).b;
         refractedColor = lerp(refractedColor, chromaColor, chromatic);
     }
     return lerp(color, max(refractedColor, (half3)_NoirAbyssFloorColor.rgb), saturate(_UberNoirRefractionParams.z) * active);

@@ -41,32 +41,14 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
         private const string DefaultOutputFile = "hadal_trench_sector_0000.h8bin";
         private const string ReportPath = "Docs/Reports/TRENCH_BAKE_REPORT.json";
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_241.bin";
-        private static AsyncTrenchBakeSession s_activeSession;
-
-        static HadalTrenchBakePipeline()
-        {
-            AssemblyReloadEvents.beforeAssemblyReload += CancelActiveBake;
-            EditorApplication.quitting += CancelActiveBake;
-        }
 
         public static bool BakeAsync(
             HadalTrenchBakeConfigDTO config,
             Action<HadalTrenchBakeResult> onCompleted,
             Action<Exception> onFailed)
         {
-            if (s_activeSession != null)
-                return false;
-
-            s_activeSession = new AsyncTrenchBakeSession(config, onCompleted, onFailed);
-            if (!s_activeSession.TryStart())
-            {
-                s_activeSession.Dispose();
-                s_activeSession = null;
-                return false;
-            }
-
-            EditorApplication.update += UpdateActiveBake;
-            return true;
+            AsyncTrenchBakeSession session = new AsyncTrenchBakeSession(config, onCompleted, onFailed);
+            return session.RunToCompletion();
         }
 
         public static HadalTrenchBakeConfigDTO DefaultConfig()
@@ -94,33 +76,6 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
                 _pad0 = 0ul,
                 _pad1 = 0ul
             };
-        }
-
-        private static void UpdateActiveBake()
-        {
-            if (s_activeSession == null)
-            {
-                EditorApplication.update -= UpdateActiveBake;
-                return;
-            }
-
-            if (!s_activeSession.Update())
-                return;
-
-            EditorApplication.update -= UpdateActiveBake;
-            s_activeSession.Dispose();
-            s_activeSession = null;
-        }
-
-        private static void CancelActiveBake()
-        {
-            if (s_activeSession == null)
-                return;
-
-            EditorApplication.update -= UpdateActiveBake;
-            s_activeSession.Cancel();
-            s_activeSession.Dispose();
-            s_activeSession = null;
         }
 
         private static HadalTrenchBakeConfigDTO SanitizeConfig(HadalTrenchBakeConfigDTO config)
@@ -278,14 +233,14 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             Serializing = 4
         }
 
-        private sealed class AsyncTrenchBakeSession : IDisposable
+        private ref struct AsyncTrenchBakeSession
         {
             private const SystemID BakeSessionMemoryOwner = SystemID.ContentAuthority;
 
             private readonly Action<HadalTrenchBakeResult> _onCompleted;
             private readonly Action<Exception> _onFailed;
-            private readonly Stopwatch _totalStopwatch = new Stopwatch();
-            private readonly Stopwatch _stageStopwatch = new Stopwatch();
+            private readonly Stopwatch _totalStopwatch;
+            private readonly Stopwatch _stageStopwatch;
 
             private HadalTrenchBakeConfigDTO _config;
             private NativeArray<float> _densities;
@@ -311,11 +266,39 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             public AsyncTrenchBakeSession(
                 HadalTrenchBakeConfigDTO config,
                 Action<HadalTrenchBakeResult> onCompleted,
-                Action<Exception> onFailed)
+                Action<Exception> onFailed) : this()
             {
                 _config = config;
                 _onCompleted = onCompleted;
                 _onFailed = onFailed;
+                _totalStopwatch = new Stopwatch();
+                _stageStopwatch = new Stopwatch();
+            }
+
+            public bool RunToCompletion()
+            {
+                bool started = false;
+                try
+                {
+                    started = TryStart();
+                    if (!started)
+                        return false;
+
+                    while (!Update())
+                    {
+                        if (_phase == AsyncPhase.Serializing)
+                            System.Threading.Thread.Sleep(1);
+                        else
+                            _activeHandle.Complete();
+                    }
+
+                    return _completed;
+                }
+                finally
+                {
+                    if (started)
+                        Dispose();
+                }
             }
 
             public bool TryStart()
@@ -360,6 +343,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
                 }
                 catch (Exception ex)
                 {
+                    Dispose();
                     Fail(ex);
                     return false;
                 }

@@ -2,10 +2,10 @@
 
 Date: 2026-05-26
 Status: PENDING VERIFICATION
-Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
+Owner: DOCS_ACTUALIZATION
 Evidence class: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM / CLI_COMPILE where artifact cited
 
-This ledger is the active documentation-change register. Full historical text is archived at `../_Archive/Architecture_X_012_APEX_2026-05-23/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.full.md`.
+This ledger is the concise documentation-change register and proof-snapshot holder. Full historical text is archived at `../_Archive/Architecture_X_012_APEX_2026-05-23/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.full.md`.
 
 ## Source Constants
 
@@ -23,85 +23,189 @@ This ledger is the active documentation-change register. Full historical text is
 
 Prompt/report values that disagree with source are stale. Current source wins.
 
-## X_012 2026-05-23 Pass
+## Current Proof Snapshots
+
+### Native Memory Ownership
+
+Latest reviewed native alias evidence: `../Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_PASS23.json`.
+
+| Metric | Value |
+|---|---:|
+| Scanned files | `2439` |
+| Parse failures | `0` |
+| Native field declarations | `6648` |
+| Forbidden persistent candidates | `834` |
+| Forbidden MonoBehaviour candidates | `72` |
+| Job-transient fields | `5481` |
+| Stack-only/ref-struct view fields | `288` |
+| Core-memory-allowed fields | `45` |
+| Raw pointer fields | `861` |
+
+Earlier cleanup evidence recorded `1770` forbidden persistent candidates and `358` MonoBehaviour candidates. The reduction is real. The project is still not clean.
+
+Highest remaining persistent-native groups:
+
+- `ModularEquipmentEngine.cs`: `28`
+- `Gameplay/Combat/CombatDamageRuntime.cs`: `24`
+- `Gameplay/ScannerDataMiningRouter.cs`: `20`
+- `QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs`: `20`
+- `Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs`: `19`
+- `Construction/ShinobuSocketConstructionData.cs`: `19`
+- `SaveSystem/EntityDeltaCompressionArchitecture.cs`: `18`
+- `WorldProceduralScatterWorkingMemory.cs`: `18`
+- `SaveSystem/VoxelDeltaCompressionArchitecture.cs`: `16`
+- `Physiology/ShinobuRespawnReconciliationRuntime.cs`: `16`
+- `Quest/QuestDagRuntimeTypes.cs`: `16`
+
+Remaining MonoBehaviour/native hotspots:
+
+- `Gameplay/ContextualPhysicalIkRig.cs`: `13`
+- `SaveManager.cs`: `13`
+- `Graphics/Culling/TBDRPipelineSurgeonRuntime.cs`: `11`
+- `Gameplay/ContextualPhysicalIkRuntime.cs`: `10`
+- `World/FloraRegrowthDirector.cs`: `9`
+- `ConstructionManager.cs`: `9`
+- `World/AbyssalThermalManager.cs`: `7`
+
+### Compile Slice
+
+- Latest known reviewed full-solution CLI pass: `../Reports/BUILD_UNKNOWN_MESH_COMPONENT_CACHE_TRAP_RECHECK3_20260526.log`; exit `0`; `0 Warning(s)`; `0 Error(s)`.
+- Later source changes make that pass insufficient as a global readiness claim.
+- Render-feature recheck is guard-blocked at `../Reports/BUILD_UNKNOWN_RENDER_FEATURE_SHADER_FIND_RECHECK_20260526.log`.
+- Runtime shader reference catalog recheck is guard-blocked at `../Reports/BUILD_UNKNOWN_RUNTIME_SHADER_REFERENCE_CATALOG_RECHECK2_20260526.log`.
+- Current shader-catalog cleanup evidence is `../Reports/UNITY_RUNTIME_SHADER_REFERENCE_CATALOG_UNKNOWN_20260526.md`.
+- Current shader/mesh/CTS recheck evidence is `../Reports/UNITY_SHADER_MESH_CTS_RECHECK_UNKNOWN_20260526.md`.
+- Current runtime trap deeper pass evidence is `../Reports/UNITY_RUNTIME_TRAP_DEEPER_PASS_UNKNOWN_20260526.md`.
+- Current allocation-route cleanup evidence is `../Reports/UNITY_RUNTIME_ALLOC_ROUTE_PASS_UNKNOWN_20260527.md`.
+- Current native ring copy cleanup evidence is `../Reports/UNITY_NATIVE_RING_COPY_PASS_UNKNOWN_20260527.md`.
+- Current late-frame registry hot-path cleanup evidence is `../Reports/UNITY_LATEFRAME_REGISTRY_HOTPATH_PASS_UNKNOWN_20260527.md`.
+- Current read-accessor purity cleanup evidence is `../Reports/UNITY_READ_ACCESSOR_PURITY_PASS_UNKNOWN_20260527.md`.
+- Runtime `Resources.Load` first-party source scan is currently `0`; shader catalog binding is now through `GameBootstrapper` and `00_BOOTSTRAP.unity`.
+- Release runtime `Shader.Find(...)` exact scan remains `0`; compute `FindKernel` calls are not shader lookup hits.
+- Current guarded `Hecton8.slnx` build fails before C# compile because ignored/generated Unity `.csproj` files are absent; latest proof is `../Reports/BUILD_UNKNOWN_RUNTIME_TRAP_DEEPER_PASS_POST_SCANNER_RECHECK_20260526.log`.
+- Latest native ring copy recheck has the same generated-project boundary: `../Reports/BUILD_UNKNOWN_NATIVE_RING_COPY_RECHECK_20260527.log`.
+- Later build retry for the deeper pass was guard-blocked by CPU above `50%`; see `../Reports/BUILD_UNKNOWN_RUNTIME_TRAP_DEEPER_PASS_RETRY_20260526.log`.
+- Runtime proof is absent until Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, player build, shader import, save/load, platform, and visual checks exist.
+
+## 2026-05-26 Documentation Distillation
+
+No C# source was edited by `DOCS_ACTUALIZATION`.
 
 | Area | Active action | Proof |
 |---|---|---|
-| Root docs | Kept only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md` as root text anchors | `Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json` |
-| Root bloat | Archived full old root anchors; rewrote active anchors as concise status files | `Docs/DEPRECATED/Root_Bloat_X_012_2026-05-23/` |
-| Historical reports | Moved `160` top-level report text files out of active corpus | `Docs/_Archive/Reports_X_012_2026-05-23/MANIFEST.md` |
-| Stale Data Monolith reports | Moved stale absence-era reports to deprecated archive | `Docs/DEPRECATED/X_012_Stale_DataMonolith_Reports_2026-05-23/` |
-| Active indexes | Updated root, reports, architecture, deprecated, and archive indexes | `Docs/README.md`, `Docs/Reports/README.md`, `Docs/_Archive/README.md` |
-| Structure gate | Added root policy, links, duplicate headers, fences, stale constants, and UTF-8-SIG checks | `Tools/VerifyDocStructure.py` |
-| Reduction gate | Added source-sync and word-reduction proof JSON | `Tools/OOP_Doc_Scanner.py` |
+| Project baseline | Rebuilt root baseline as stable authority/doctrine, not a current status page | `../PROJECT_BASELINE.md` |
+| Root index | Removed current-build and scanner-counter prose from root read map | `../README.md` |
+| Root policy | Removed current compile/report boundary from root reference | `../ROOT_DOCS_REFERENCE.md` |
+| Architecture index | Kept only contract read order and routed current facts here | `README.md` |
+| Reports index | Reframed reports as evidence storage, not knowledge base | `../Reports/README.md` |
+| Deprecated transient indexes | Removed folder-index approach from active docs and recorded rejection | `../DEPRECATED/DOCS_ACTUALIZATION_TRANSIENT_INDEXES_2026-05-26.md` |
+| Deprecated root docs noise | Moved token telemetry, FAQ, glossary, and marketing binary archive out of active `Docs/` root | `../DEPRECATED/Root_Docs_Noise_2026-05-26/MANIFEST.md` |
+| Deprecated legacy bundles | Moved stale `AI_Fauna`, `Flora_Pipeline`, and `Scatter_Runtime` planning bundles out of active docs | `../DEPRECATED/Legacy_Domain_Bundles_2026-05-26/MANIFEST.md` |
+| Deprecated superseded route card | Moved historical SHINOBU_156 cavitation route card out of active architecture; SHINOBU_248 remains the live shockwave NaN route card | `../DEPRECATED/Active_Doc_Deprecation_2026-05-26/MANIFEST.md` |
+| Deprecated parked marketing raw sheet | Moved parked Priority 250 raw public-index pitch sheet out of active CreatorOutreach; active Marketing file count is now `89` | `../DEPRECATED/Active_Doc_Deprecation_2026-05-26/MANIFEST.md` |
+| Deprecated raw lead seed queue | Moved parked raw public seed list out of active CreatorOutreach; active Marketing file count is now `88` | `../DEPRECATED/Active_Doc_Deprecation_2026-05-26/MANIFEST.md` |
+| Deprecated raw marketing prospecting lists | Moved adjacent survival and regional raw prospecting sheets out of active Marketing; active Marketing file count is now `86` | `../DEPRECATED/Active_Doc_Deprecation_2026-05-26/MANIFEST.md` |
+| Deprecated raw scrape summary | Moved dated human-readable raw lead scrape result out of active Marketing/Data; active Marketing file count is now `85` | `../DEPRECATED/Active_Doc_Deprecation_2026-05-26/MANIFEST.md` |
 
-## APEX Architecture Pass
+## Historical Distillate
 
-| Area | Active action | Proof |
+| Area | Distilled fact | Proof |
 |---|---|---|
-| Binary payload ledger | Replaced verbose run log with active source-constant index | `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` |
-| Binary payload archive | Preserved full pre-compression ledger | `../_Archive/Architecture_X_012_APEX_2026-05-23/BINARY_PAYLOAD_INTEGRATION_LEDGER.full.md` |
-| Payload records | Extracted `288` boundary records to machine-readable JSON | `../Reports/BINARY_PAYLOAD_LEDGER_CONCISION_X_012.json` |
-| Architecture boilerplate | Removed repeated global-boundary boilerplate from active architecture specs | `Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json` |
-| Long prose | Converted overlong narrative paragraphs to tables/lists | `architecture.longNarrativeParagraphCount = 0` in the optimization report |
-| This ledger | Archived full historical ledger and kept this active register concise | `../_Archive/Architecture_X_012_APEX_2026-05-23/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.full.md` |
-| Strict paragraph pass | Rewrote unstructured architecture paragraphs over `90` words into bullet/list structure | `../Reports/ARCHITECTURE_CONCISION_AUDIT_X_012.json` |
-| Strict line pass | Split architecture list/table lines over `70` words | `../Reports/ARCHITECTURE_LINE_CONCISION_AUDIT_X_012.json` |
-| File-cap pass | Compressed active architecture files over `2500` words and archived full snapshots | `../Reports/ARCHITECTURE_FILE_CAP_AUDIT_X_012.json` |
-| Residual prose pass | Archived active `.diff` provenance, converted residual prose to lists, and tightened paragraph/sentence gates to `55`/`35` words | `../Reports/ARCHITECTURE_RESIDUAL_PROSE_AUDIT_X_012.json` |
-| Manual prose pass | Manually removed residual document-voice markers and compressed README compile-history row | `../Reports/ARCHITECTURE_MANUAL_PROSE_AUDIT_X_012.json` |
-| Manual density pass | Split remaining near-threshold list/table lines and removed residual marker text by hand | `../Reports/ARCHITECTURE_MANUAL_DENSITY_AUDIT_X_012.json` |
-| Micro-density pass | Manually split residual architecture paragraphs `>=55` words and structured lines `>=60` words | `../Reports/ARCHITECTURE_MICRO_DENSITY_AUDIT_X_012.json` |
-| Ultra-density pass | Manually split residual architecture paragraphs and structured lines `>=50` words; removed final marker hit | `../Reports/ARCHITECTURE_ULTRA_DENSITY_AUDIT_X_012.json` |
-| 45-word density pass | Manually split residual architecture paragraphs and structured lines `>=45` words | `../Reports/ARCHITECTURE_45WORD_DENSITY_AUDIT_X_012.json` |
-| 40-word density pass | Manually split residual architecture paragraphs and structured lines `>=40` words | `../Reports/ARCHITECTURE_40WORD_DENSITY_AUDIT_X_012.json` |
-| 35-word density pass | Manually split residual architecture blocks and made scanner fail at `>34` words | `../Reports/ARCHITECTURE_35WORD_DENSITY_AUDIT_X_012.json` |
-| 34-word density pass | Manually split residual architecture blocks and made scanner fail at `>33` words | `../Reports/ARCHITECTURE_34WORD_DENSITY_AUDIT_X_012.json` |
-| 33-word density pass | Manually split residual architecture blocks and made scanner fail at `>32` words | `../Reports/ARCHITECTURE_33WORD_DENSITY_AUDIT_X_012.json` |
-| 32-word density pass | Manually split residual architecture blocks and made scanner fail at `>31` words | `../Reports/ARCHITECTURE_32WORD_DENSITY_AUDIT_X_012.json` |
-| 31-word density pass | Manually split residual architecture blocks and made scanner fail at `>30` words | `../Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json` |
-| 30-word density pass | Manually split residual architecture blocks and made scanner fail at `>29` words | `../Reports/ARCHITECTURE_30WORD_DENSITY_AUDIT_X_012.json` |
-| 29-word density pass | Manually split residual architecture blocks and made scanner fail at `>28` words | `../Reports/ARCHITECTURE_29WORD_DENSITY_AUDIT_X_012.json` |
-| 28-word density pass | Manually split residual architecture blocks and made scanner fail at `>27` words | `../Reports/ARCHITECTURE_28WORD_DENSITY_AUDIT_X_012.json` |
+| 1303 report bloat | `47` superseded SignalBus/tether report revisions were archived before V16 | `../_Archive/Reports_1334_2026-05-26/SignalBus1303Superseded/MANIFEST_1334.json` |
+| SignalBus evidence | V16 SignalBus hot-path audit remains the current evidence snapshot | `../Reports/SIGNALBUS_HOTPATH_AUDIT_1303_APEX_V16.md` |
+| X_012 root docs | Root text anchors were reduced to stable authority files | `../Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json` |
+| X_012 historical reports | `160` top-level report text files were moved out of active corpus | `../_Archive/Reports_X_012_2026-05-23/MANIFEST.md` |
+| APEX architecture pass | Verbose architecture ledgers were compressed and full snapshots archived | `../_Archive/Architecture_X_012_APEX_2026-05-23/` |
+| Concision chain | Historical concision scans remain report evidence only | `../Reports/README.md` |
 
-## Active Gaps
+## Active Verification Gaps
 
-| Gap | Required proof artifact |
+| Area | Required proof artifact |
 |---|---|
-| Current full-solution CLI compile | `Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_020504.log`; exit `0`; `0 Warning(s)`; `0 Error(s)`; CLI_COMPILE only |
-| EXTERNAL_CODEX loop165 source gate | Remaining 34 runtime files moved unsigned `Time.frameCount` casts to `SystemDispatcher.CurrentFrameId`; touched grep 0; build skipped by `BUILD_GUARD cpu=100 compiler_count=2` |
-| EXTERNAL_CODEX loop164 source gate | 34 runtime files moved unsigned `Time.frameCount` casts to `SystemDispatcher.CurrentFrameId`; touched cast grep 0; build skipped by `BUILD_GUARD cpu=100 compiler_count=0` |
-| EXTERNAL_CODEX loop163 source gate | 38 files moved frame-id payload casts to `SystemDispatcher.CurrentFrameId`; targeted cast grep 0; scoped `diff --check` passed; build skipped by guard |
-| EXTERNAL_CODEX loop162 source gate | 29 files moved selected frame stamps to `SystemDispatcher`; `HectonBiolumZone` reads cached/hot-swapped; selected frame grep 0; build skipped by `BUILD_GUARD cpu=100 compiler_count=0` |
-| EXTERNAL_CODEX loop161 source gate | 19 Dispatcher/TickManager stale-registration tails fixed; touched-file `diff --check` passed; broad stale scans 0; build skipped by `BUILD_GUARD cpu=73 compiler_count=9` |
-| EXTERNAL_CODEX loop160 source gate | 50 additional Dispatcher stale-registration tails fixed; targeted touched-file `diff --check` passed with LF warnings only; build skipped by `BUILD_GUARD cpu=63 compiler_count=1` |
-| EXTERNAL_CODEX loop159 source gate | Singleton owner-route grep returned 0; `?? GlobalRegistry|GlobalRegistry.TryGet` grep returned 0; scoped `diff --check` passed; build skipped by `BUILD_GUARD cpu=100 compiler_count=2` |
-| EXTERNAL_CODEX loop158 source gate | Historical wall: `Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log`; `NETSDK1004` before C#; no warnings/`CS*`; retry blocked by `BUILD_GUARD cpu=79 compiler_count=2`; targeted greps pass |
-| EXTERNAL_CODEX loop157 source gate | UI/Construction singleton-tail greps pass; scoped `diff --check` passed; build skipped by `BUILD_GUARD cpu=100 compiler_count=2` |
-| EXTERNAL_CODEX loop143 compile verification | Source-only; guarded build skipped by `BUILD_GUARD cpu=100 compiler_count=0` after targeted hot-swap/getter greps |
-| EXTERNAL_CODEX loop142 compile verification | Source-only after pre-build `BUILD_GUARD cpu=78.3 compiler_count=2` |
-| EXTERNAL_CODEX loop141 compile verification | Fresh guarded build after CPU <= 50% and no active compiler; current loop141 is source-only after latest `BUILD_GUARD cpu=93.2 compiler_count=1` |
-| EXTERNAL_CODEX loop140 build wall | `Build_EXTERNAL_CODEX_hotpath_cleanup139_context_purity.log`: `NETSDK1004` project.assets missing and `MSB3491` Temp/obj denied before C# diagnostics |
-| EXTERNAL_CODEX loop139 compile verification | Fresh guarded build after CPU <= 50% and no active compiler; current loop139 is source-only |
-| EXTERNAL_CODEX loop138 compile verification | Fresh guarded build after CPU <= 50% and no active compiler; current loop138 is source-only |
-| EXTERNAL_CODEX loop137 compile verification | Fresh guarded build after CPU <= 50% and no active compiler; current loop137 is source-only |
-| EXTERNAL_CODEX loop136 compile verification | Fresh guarded build after CPU <= 50% and no active compiler; current loop136 is source-only |
-| EXTERNAL_CODEX loop135 compile verification | Fresh guarded build after CPU <= 50% and no active `dotnet`/`csc`/`VBCSCompiler`/`MSBuild`; current loop135 is source-only |
-| EXTERNAL_CODEX loop132 compile verification | `Build_EXTERNAL_CODEX_hotpath_cleanup131_target_dedupe.log`: reaches editor DLL output with 1 `MSB3101` Temp/obj cache warning, 0 errors, no `CS*` diagnostics, no final summary/exit line |
-| Data Monolith runtime readiness | Bake/import/boot/checksum/player-build proof for `static_data.h8bin` |
-| Save readiness | Current write/read/migration/checksum-failure artifact |
-| Global authority runtime behavior | Lane overflow, route-card, and profiler proof |
-| Continuous scalability | Frame-time, shader, and dynamic-resolution capture across quality weight range |
-| AUP compliance | Static scan plus rebase replay |
-| Netcode | Transport loopback, fuzz, jitter, hash replay, profiler, GC proof |
+| Current full-solution compile | fresh guarded build log matching current source |
+| Data Monolith runtime readiness | bake/import/boot/checksum/player-build proof for `static_data.h8bin` |
+| Save readiness | current write/read/migration/checksum-failure artifact |
+| Global authority runtime behavior | lane overflow, route-card, and profiler proof |
+| Native memory ownership | fresh alias ledger plus owner-route fixes for remaining persistent and MonoBehaviour hotspots |
+| Continuous scalability | frame-time, shader, and dynamic-resolution capture across quality weight range |
+| AUP compliance | static scan plus rebase replay |
+| Netcode | transport loopback, fuzz, jitter, hash replay, profiler, GC proof |
 | UI zero-GC | GCMonitor or Memory Profiler capture |
-| Terrain geography | Generator/streaming proof against flooded terrestrial template |
+| Terrain geography | generator/streaming proof against flooded terrestrial template |
+
+## 2026-05-27 Runtime Allocation Route Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Clean runtime files patched | Eight allocation-route call sites were removed; `WorldSliceAnchor` and `H8DataBaker` remain dirty-file residuals | `../Reports/UNITY_RUNTIME_ALLOC_ROUTE_PASS_UNKNOWN_20260527.md` |
+| Release shader lookup | First-party `Shader.Find(...)` sites remain editor/development guarded in the local static scan | `../Reports/UNITY_RUNTIME_ALLOC_ROUTE_PASS_UNKNOWN_20260527.md` |
+| Remaining residuals | `2` first-party non-Editor-folder `.ToArray()` text hits remain in dirty files | `../Reports/UNITY_RUNTIME_ALLOC_ROUTE_PASS_UNKNOWN_20260527.md` |
+| Build boundary | Second guarded build launched legally; current failure is missing generated `.csproj`, not C# | `../Reports/BUILD_UNKNOWN_RUNTIME_ALLOC_ROUTE_PASS2_20260527.log` |
+
+## 2026-05-27 Read Accessor Purity Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Read-shaped allocation route | `PerformanceBudgetController.GetBudgetStatus()` now reuses an owner snapshot; `RTLProcessor` lazy buffer route is named `EnsureBuffer()` | `../Reports/UNITY_READ_ACCESSOR_PURITY_PASS_UNKNOWN_20260527.md` |
+| Read/create split | `WorldShippingContentFilter` now uses pure `TryGetSuppressedHierarchyIds()` and explicit `EnsureSuppressedHierarchyIds()` | `../Reports/UNITY_READ_ACCESSOR_PURITY_PASS_UNKNOWN_20260527.md` |
+| Build boundary | Guarded build launched legally after final source edit; current failure is missing generated `.csproj`, not C# | `../Reports/BUILD_UNKNOWN_READ_ACCESSOR_PURITY_RECHECK2_20260527.log` |
+
+## 2026-05-27 Signal Contract Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Runtime signal names | Confirmed duplicate `ToolDepletedSignal` contract errors are fixed; gameplay local event is now `PlayerToolDepletedSignal` | `../Reports/UNITY_SIGNAL_CONTRACT_PASS_UNKNOWN_20260527.md` |
+| Plugin asmdef route | `Hecton8.Plugins` now directly references `Hecton8.Core.Contracts` for signal-contract usage | `../Reports/UNITY_SIGNAL_CONTRACT_PASS_UNKNOWN_20260527.md` |
+| Contract scan | Final SignalBus contract audit reports `errors=0`, `confirmedErrors=0`, `asmdefContractBoundaryHits=0` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_FINALSCAN.json` |
+| Build boundary | Guarded build launched legally; current failure remains missing generated `.csproj`, not C# | `../Reports/BUILD_UNKNOWN_SIGNAL_CONTRACT_PASS_RECHECK_20260527.log` |
+
+## 2026-05-27 Signal Queue Diagnostics Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Queue ownership scanner | NativeQueue helper ownership is now detected; `POSSIBLE_ORPHANED_SIGNAL_QUEUE=0` in the recheck | `../Reports/UNITY_SIGNAL_QUEUE_DIAGNOSTICS_PASS_UNKNOWN_20260527.md` |
+| Toolchain target | `SignalBusContractAuditCli` now targets `net10.0`; tool restore/build succeeded with `0` warnings and `0` errors | `../Reports/UNITY_SIGNAL_QUEUE_DIAGNOSTICS_PASS_UNKNOWN_20260527.md` |
+| Diagnostics flush allocation | `RuntimeDiagnosticsTrace.FlushSuppressedDuplicates()` no longer allocates a list on flush | `../Reports/UNITY_SIGNAL_QUEUE_DIAGNOSTICS_PASS_UNKNOWN_20260527.md` |
+| Remaining native rings | `8` registered non-Vault telemetry rings remain as owner-by-owner architecture decisions | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_QUEUE_RECHECK.json` |
+| Build boundary | Full solution build was guard-blocked by CPU above `50%` for `30` attempts | `../Reports/BUILD_UNKNOWN_SIGNAL_QUEUE_DIAGNOSTICS_RECHECK_20260527.log` |
+
+## 2026-05-27 Signal Audit Classifier And Seam MPB Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Signal audit classifier | Constructor/editor-only/MPB/ComputeShader/owner-local telemetry/cold allocation/multiline method/layout cases are separated from hard warnings in the CLI source | `../Reports/UNITY_SIGNAL_AUDIT_CLASSIFIER_AND_SEAM_MPB_PASS_UNKNOWN_20260527.md` |
+| Seam dither draw parameters | `SeamGapDitherRenderer` now sends per-draw buffers/camera/distance through a cached `MaterialPropertyBlock` instead of mutating the material | `../Reports/UNITY_SIGNAL_AUDIT_CLASSIFIER_AND_SEAM_MPB_PASS_UNKNOWN_20260527.md` |
+| Contract-name cleanup | Clean local payload shadows were renamed; duplicate-name review warnings dropped from `48` to `14` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_EXEC_CARRIER_RECHECK.json` |
+| Latest verified audit | Final full scan reports `errors=0`, `confirmedErrors=0`, `warnings=171`, `infos=826`, `SIGNAL_LAYOUT_REVIEW=2`, `JOB_STRUCT_LAYOUT_REVIEW=69 info`, `EXECUTABLE_STRUCT_LAYOUT_REVIEW=2 info` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_EXEC_CARRIER_RECHECK.json` |
+| Build boundary | CLI build exits `0`; guarded full solution build exits `1` on Unity-generated editor project circular dependency and missing `Temp/CodexBuild/Unity.ShaderGraph.Editor.dll` | `../Reports/BUILD_UNKNOWN_EXEC_CARRIER_RECHECK_20260527.log` |
+
+## 2026-05-27 Signal Telemetry Ownership Recheck
+
+| Area | Current fact | Proof |
+|---|---|---|
+| TMP font swap route | `FontStreamingManager.ProcessSwapBatch()` no longer resolves `_targetFont.material`; the material is cached at queue start | `../Reports/UNITY_SIGNAL_TELEMETRY_OWNERSHIP_RECHECK_UNKNOWN_20260527.md` |
+| NativeArray ownership audit | `SignalBusContractAuditCli` recognizes `VaultGenerationHandle`, `ref _fieldHandle`, and helper-owned `AllocateArray<T>` telemetry routes | `../Reports/UNITY_SIGNAL_TELEMETRY_OWNERSHIP_RECHECK_UNKNOWN_20260527.md` |
+| Latest verified audit | Final recheck reports `errors=0`, `confirmedErrors=0`, `warnings=166`, `infos=832`; declared-only telemetry rings dropped to `1` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_TELEMETRY_OWNERSHIP_RECHECK2.json` |
+| Build boundary | Full solution build is not green: `350` error lines, `0` warning lines, no touched-source hits; failure buckets are generated/plugin project graph refs | `../Reports/BUILD_UNKNOWN_TELEMETRY_OWNERSHIP_FULL_SOLUTION_RECHECK_20260527.log` |
+| Documentation gates | `VerifyDocStructure pass=true activeDocCount=688`; `OOP_Doc_Scanner finalPass=true activeFileCount=688 sourceSyncPass=true` | `../Reports/UNITY_SIGNAL_TELEMETRY_OWNERSHIP_RECHECK_UNKNOWN_20260527.md` |
+
+## 2026-05-27 Signal Layout/Alias Classifier Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Cache-line classifier | `ProgressionEventSignal` and `VocalCueSignal` false stride debt is removed by global struct-layout indexing | `../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md` |
+| Native telemetry aliases | Expression-bodied Vault accessors, private-ref nested buffers, H8Memory release helpers, and DataVault allocator aliases are classified separately | `../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md` |
+| Signal-like DTO layouts | `FaunaDirector.AcousticPanicCommand` and `VocalWarningSystem.VocalWarningTelemetrySnapshot` now have explicit layout proof | `../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md` |
+| Latest verified audit | Interim recheck reports `errors=0`, `confirmedErrors=0`, `warnings=245`, `SIGNAL_LAYOUT_REVIEW=0`, `CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT=1` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LAYOUT_ALIAS_RECHECK2.json` |
+| Current gap | Final borrowed-view classifier patch is source-only until CPU drops below the build guard threshold | `../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md` |
 
 ## Validation
 
 | Validator | Required state |
 |---|---|
-| `Tools/OOP_Doc_Scanner.py` | `finalPass=true`; source sync; reduction `>=30%`; markers `0`; narrative paragraphs `0`; strict paragraph/sentence/line/file/non-contract offenders `0`; instructional markers `0` |
-| `Tools/VerifyDocStructure.py` | `pass=true`; root text docs `3`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; active non-BOM files `0` |
+| `Tools/OOP_Doc_Scanner.py` | `finalPass=true`; source sync; reduction `>=30%`; markers `0`; stale parameter files `0` |
+| `Tools/VerifyDocStructure.py` | `pass=true`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0` |
+| 1334 final scan | `DOCUMENTATION_OPTIMIZATION_REPORT_1334_FINAL_SCAN.json`: `finalPass=true`; active docs `693`; stale parameter files `0`; reduction `48.0975%` |
+| 1334 final structure | `DOC_STRUCTURE_VALIDATION_1334_FINAL.json`: `pass=true`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0` |
 
-This file links the current CLI compile artifact. It is not Unity import, Play Mode, profiler, GC, player-build, or visual proof.
+This ledger may cite CLI compile artifacts. It is not Unity import, Play Mode, profiler, GC, player-build, or visual proof.

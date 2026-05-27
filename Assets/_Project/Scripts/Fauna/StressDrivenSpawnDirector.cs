@@ -298,7 +298,7 @@ namespace Hecton8.AI
         public const int TelemetryCapacity = 300;
         public const int CsvScratchBytes = 8 * 1024;
         public const int MaxHiddenProbeCapacity = 31;
-        internal const float AuthoritativeQualityWeight = 1f;
+        private const float AuthoritativeBehaviorWeight = 1f;
 
         public const uint TuningFlagEmergencyMock = 1u << 0;
         public const uint TuningFlagEnableHiddenInjection = 1u << 1;
@@ -322,7 +322,7 @@ namespace Hecton8.AI
         private const uint DumpReasonNanHash = 0x534E414Eu; // SNAN
         private const uint DumpReasonLootMissingHash = 0x534C4F54u; // SLOT
         private const uint SourceHash = 0x53323533u; // S253
-        private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_253.bin";
+        private const string DumpPath = "Docs/AgentLogs/Dump_13AI.bin";
 #if UNITY_EDITOR
         private const string RulesCsvName = "director_spawn_rules.csv";
 #endif
@@ -1543,7 +1543,7 @@ namespace Hecton8.AI
             if (!math.all(math.isfinite(playerRuntime)))
                 playerRuntime = runtimeSpawn;
             float3 forwardToPlayer = ResolveDirection(playerRuntime - runtimeSpawn, new float3(0f, 0f, 1f));
-            float quality = AuthoritativeQualityWeight;
+            float behaviorWeight = AuthoritativeBehaviorWeight;
             float tension = math.saturate(selection.TensionIndex);
 
             CognitionInput input = default;
@@ -1567,18 +1567,18 @@ namespace Hecton8.AI
             input.AcousticPingStrength01 = math.saturate(tension + ResolveWeatherSeverityFromTurbidity(in selection));
             input.AcousticTransmission01 = math.saturate(1f / math.max(1f, selection.TurbidityScalar));
             input.ChemicalSignal01 = tension;
-            input.ChemicalSensitivity = math.lerp(0.65f, 1.4f, quality);
+            input.ChemicalSensitivity = math.lerp(0.65f, 1.4f, behaviorWeight);
             input.HungerWeight = math.lerp(0.25f, 0.82f, tension);
             input.ThreatWeight = tension;
             input.FearWeight = 0.08f + selection.TurbidityScalar * 0.035f;
-            input.CuriosityWeight = math.lerp(0.35f, 0.9f, quality);
+            input.CuriosityWeight = math.lerp(0.35f, 0.9f, behaviorWeight);
             input.AggressionWeight = math.saturate(selection.ThreatScore);
-            input.EscapeDistance = math.lerp(18f, 42f, quality);
-            input.EscapeSafeDistance = math.lerp(32f, 72f, quality);
-            input.WanderRadius = math.lerp(12f, 44f, quality);
-            input.PatrolRadius = math.lerp(24f, 96f, quality);
-            input.FogEndDistanceMeters = math.max(12f, math.lerp(34f, 118f, quality) / math.max(1f, selection.TurbidityScalar));
-            input.BaseMaxSpeedMetersPerSecond = math.lerp(3.2f, 9.0f, math.saturate(quality + tension * 0.35f));
+            input.EscapeDistance = math.lerp(18f, 42f, behaviorWeight);
+            input.EscapeSafeDistance = math.lerp(32f, 72f, behaviorWeight);
+            input.WanderRadius = math.lerp(12f, 44f, behaviorWeight);
+            input.PatrolRadius = math.lerp(24f, 96f, behaviorWeight);
+            input.FogEndDistanceMeters = math.max(12f, math.lerp(34f, 118f, behaviorWeight) / math.max(1f, selection.TurbidityScalar));
+            input.BaseMaxSpeedMetersPerSecond = math.lerp(3.2f, 9.0f, math.saturate(behaviorWeight + tension * 0.35f));
             input.ImportanceScore = selection.ThreatScore;
             input.SpeciesId = speciesId;
             input.ClaimedBoidIndex = -1;
@@ -2542,6 +2542,7 @@ namespace Hecton8.AI
 
             DirectorInputDTO input = UnsafeUtility.AsRef<DirectorInputDTO>(Inputs);
             DirectorTuningDTO tuning = StressDrivenSpawnDirectorSanitizer.Sanitize(UnsafeUtility.AsRef<DirectorTuningDTO>(Tuning), input.GlobalQualityWeight);
+            float quality = Smooth01(input.GlobalQualityWeight);
             int count = 0;
 
             if ((input.Flags & StressDrivenSpawnDirector.InputFlagOriginInvalid) != 0u)
@@ -2591,7 +2592,7 @@ namespace Hecton8.AI
                 float weatherBoost = math.lerp(0.85f, 1.25f, weather);
                 float cpuCost = math.max(0.01f, rule.CPUCostScalar);
                 float score = inRange * threatWeight * weatherBoost * ecosystemFit *
-                              math.lerp(0.8f, 1.2f, StressDrivenSpawnDirector.AuthoritativeQualityWeight);
+                              math.lerp(0.8f, 1.2f, quality);
 
                 DirectorCandidateDTO candidate = default;
                 candidate.SpeciesHash = rule.SpeciesHash;
@@ -2612,6 +2613,12 @@ namespace Hecton8.AI
             }
 
             Counters[1] = count;
+        }
+
+        private static float Smooth01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - (2f * x));
         }
 
         private static uint Hash(uint speciesHash, uint tick, uint salt)
@@ -2664,7 +2671,7 @@ namespace Hecton8.AI
                 return;
             }
 
-            float quality = Smooth01(StressDrivenSpawnDirector.AuthoritativeQualityWeight);
+            float quality = Smooth01(input.GlobalQualityWeight);
             float thermal = math.saturate(input.ThermalPressure01);
             float budget = math.lerp(tuning.BudgetLow, tuning.BudgetUltra, quality) * math.lerp(1f, 0.35f, thermal);
             selection.Budget = budget;
@@ -2700,7 +2707,7 @@ namespace Hecton8.AI
             selection.ThreatScore = math.saturate(best.Score);
             selection.StateHash = Hash(best.SpeciesHash, input.SimulationTick, best.CandidateHash);
             float spawnRatePerColdTick = math.saturate(tuning.BaseSpawnRatePerMinute * (1f / 60f));
-            float qualityBias = math.lerp(0.55f, 1.25f, Smooth01(StressDrivenSpawnDirector.AuthoritativeQualityWeight));
+            float qualityBias = math.lerp(0.55f, 1.25f, quality);
             float tensionBias = math.lerp(0.45f, 1.65f, math.saturate(input.TensionIndex));
             float probability = math.saturate(best.SpawnProbability01 * spawnRatePerColdTick * qualityBias * tensionBias * math.max(1f, tuning.MaxSpawnPerColdTick));
             if (Roll01(Hash(best.SpeciesHash, input.SimulationTick, input.WorldSeed ^ input.SectorHash)) > probability)
@@ -2770,7 +2777,7 @@ namespace Hecton8.AI
                 return;
             }
 
-            float quality = Smooth01(StressDrivenSpawnDirector.AuthoritativeQualityWeight);
+            float quality = Smooth01(input.GlobalQualityWeight);
             float turbidity = math.max(1f, input.TurbidityScalar);
             float minRadius = tuning.MinHiddenRadiusMeters;
             float maxRadius = math.lerp(tuning.MaxHiddenRadiusMeters * 0.72f, tuning.MaxHiddenRadiusMeters, quality);
@@ -2780,7 +2787,8 @@ namespace Hecton8.AI
             float3 forward = ResolveDirection(input.PlayerForward, new float3(0f, 0f, 1f));
             float3 right = ResolveDirection(new float3(forward.z, 0f, -forward.x), new float3(1f, 0f, 0f));
             float3 up = ResolveDirection(math.cross(right, forward), new float3(0f, 1f, 0f));
-            int probes = math.min(math.max(1, (int)tuning.MaxHiddenProbes), ProbeCapacity);
+            int maxProbes = math.min(math.max(1, (int)tuning.MaxHiddenProbes), ProbeCapacity);
+            int probes = math.clamp((int)math.round(math.lerp(3f, maxProbes, quality)), 1, maxProbes);
             bool found = false;
             AbsoluteUniversePositionBlit128 bestAup = input.PlayerAup;
             float bestRadius = minRadius;
@@ -2948,10 +2956,11 @@ namespace Hecton8.AI
                 return;
 
             int count = math.min(math.max(0, Counters[3]), OwnedSlotCapacity);
+            float quality = Smooth01(input.GlobalQualityWeight);
             float radius = math.lerp(
                 tuning.DespawnRadiusLowMeters,
                 tuning.DespawnRadiusUltraMeters,
-                Smooth01(StressDrivenSpawnDirector.AuthoritativeQualityWeight));
+                quality);
             double radiusSq = (double)radius * radius;
             int requested = 0;
             for (int i = 0; i < count; i++)
@@ -3092,7 +3101,7 @@ namespace Hecton8.AI
                 debug.DespawnRadiusMeters = math.lerp(
                     tuning.DespawnRadiusLowMeters,
                     tuning.DespawnRadiusUltraMeters,
-                    Smooth01(StressDrivenSpawnDirector.AuthoritativeQualityWeight));
+                    Smooth01(input.GlobalQualityWeight));
                 debug.OwnedSlotCount = (uint)math.max(0, Counters[3]);
                 debug.SectorHash = input.SectorHash;
                 debug.MacroEcosystemStateHash = input.MacroEcosystemStateHash;

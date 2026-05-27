@@ -20,6 +20,7 @@ namespace Hecton8.World
     public sealed class ProceduralOreSpawner : MonoBehaviour, ISlowTickable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IWorldResourceSpawnerReadModel, IWorldResourceSpawnerCommandModel, IWorldResourceSpawnerReadDependencySink
     {
         private static int s_x001ProceduralOreSpawnerSignalPushDropCount;
+        private static ProceduralOreSpawner s_activeRuntimeInstance;
         private const string OwnerName = nameof(ProceduralOreSpawner);
         private const int DefaultOreCapacity = 2048;
         private const int MinimumOreCapacity = 64;
@@ -163,7 +164,7 @@ namespace Hecton8.World
         private bool _depletionCacheInitialized;
         private IDataVault _pendingDataVault;
 
-        private struct ProceduralGeologyVaultViews
+        private ref struct ProceduralGeologyVaultViews
         {
             public NativeArray<ResourceNodeDTO> ResourceNodes;
             public NativeArray<float3> OrePositions;
@@ -213,7 +214,7 @@ namespace Hecton8.World
             }
         }
 
-        private struct GeologyHeightPayloadView
+        private ref struct GeologyHeightPayloadView
         {
             public NativeArray<ushort> HeightSamples;
             public float3 TerrainSize;
@@ -224,10 +225,17 @@ namespace Hecton8.World
         }
 
         /// <summary>Number of non-depleted ore slots currently alive in the active sector.</summary>
+        internal static ProceduralOreSpawner ActiveRuntimeInstance => s_activeRuntimeInstance;
         public int ActiveOreCount => _activeOreCount;
         public int LocalTitaniumCount => _localTitaniumCount;
         /// <summary>Stable hash for the currently loaded AUP sector.</summary>
         public long CurrentSectorHash => _currentSectorHash;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeInstance()
+        {
+            s_activeRuntimeInstance = null;
+        }
 
         public bool TryGetOrePositionsReadOnly(out NativeArray<float3>.ReadOnly orePositions, out int scanCount)
         {
@@ -373,6 +381,7 @@ namespace Hecton8.World
 
             EnsureRenderBuffers();
 
+            PublishActiveRuntimeInstance();
             GlobalRegistry.RegisterWorldResourceSpawner(this);
 
             if (!_slowTickRegistered)
@@ -384,6 +393,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            ClearActiveRuntimeInstance();
             if (ReferenceEquals(GlobalRegistry.WorldResourceSpawner, this))
                 GlobalRegistry.UnregisterWorldResourceSpawner(this);
 
@@ -447,6 +457,17 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             Dispose();
+        }
+
+        private void PublishActiveRuntimeInstance()
+        {
+            s_activeRuntimeInstance = this;
+        }
+
+        private void ClearActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
         }
 
         private void OnValidate()
@@ -586,6 +607,7 @@ namespace Hecton8.World
         /// <summary>Fences scheduled generation, releases graphics buffers, and drops Vault views.</summary>
         public void Dispose()
         {
+            ClearActiveRuntimeInstance();
             UnregisterDispatchers();
             UnregisterHotSwapDependency();
             if (_spawnJobScheduled)
@@ -646,11 +668,8 @@ namespace Hecton8.World
 
             RefreshCachedPlayerRuntimeReference();
 
-            if (_terrainProvider == null)
-                _terrainProvider = GlobalRegistry.Terrain;
-
             if (mapMagicBridge == null)
-                mapMagicBridge = GlobalRegistry.MapMagic;
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
 
             if (_terrainProvider == null && mapMagicBridge != null)
                 _terrainProvider = mapMagicBridge;
@@ -1591,27 +1610,30 @@ namespace Hecton8.World
             if (!IsVaultHandleCreated(in handle))
                 handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
 
-            if (vault.TryAcquireWriteLock(in handle, OwnerSystemId, out lockedView) &&
-                IsVaultHandleCreated(in handle) &&
-                lockedView.IsCreated &&
-                lockedView.Length >= requiredLength)
+            if (vault.TryAcquireWriteLock(in handle, OwnerSystemId, out lockedView))
             {
-                return true;
-            }
+                if (IsVaultHandleCreated(in handle) &&
+                    lockedView.IsCreated &&
+                    lockedView.Length >= requiredLength)
+                {
+                    return true;
+                }
 
-            if (lockedView.IsCreated)
                 vault.ReleaseWriteLock(in handle, OwnerSystemId);
+                lockedView = default;
+            }
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
-            if (vault.TryAcquireWriteLock(in handle, OwnerSystemId, out lockedView) &&
-                lockedView.IsCreated &&
-                lockedView.Length >= requiredLength)
+            if (vault.TryAcquireWriteLock(in handle, OwnerSystemId, out lockedView))
             {
-                return true;
-            }
+                if (lockedView.IsCreated &&
+                    lockedView.Length >= requiredLength)
+                {
+                    return true;
+                }
 
-            if (lockedView.IsCreated)
                 vault.ReleaseWriteLock(in handle, OwnerSystemId);
+            }
 
             lockedView = default;
             return false;
@@ -2938,7 +2960,11 @@ namespace Hecton8.World
                     writer.Write(entry.StateHash);
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                // Crash-path dump failure must not cascade into gameplay exception spam.
+            }
+            catch (UnauthorizedAccessException)
             {
                 // Crash-path dump failure must not cascade into gameplay exception spam.
             }

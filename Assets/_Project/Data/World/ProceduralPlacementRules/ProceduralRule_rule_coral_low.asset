@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: ProceduralRule_rule_coral_low
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
   ruleId: rule.coral.low
-  ruleLabel: Low Coral Beds
+  ruleLabel: Low Carbonate Beds
   familyProfile: {fileID: 11400000, guid: 955b39d9404026347907d5f43bc57220, type: 2}
-  gameplayIntent: Low colorful coral that makes the floor feel alive.
+  gameplayIntent: Low muted carbonate that breaks up the floor and marks route edges.
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
   - {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}

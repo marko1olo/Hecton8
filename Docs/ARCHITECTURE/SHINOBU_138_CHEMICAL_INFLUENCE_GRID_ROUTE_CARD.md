@@ -6,7 +6,7 @@ Domain: `CHEMICAL_INFLUENCE_GRID_TRACKER`
 
 Runtime authority: `Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs`
 
-## R48 Exact Route Field Normalization
+## Route Field Contract
 
 Route ID: SHINOBU_138_CHEMICAL_INFLUENCE_GRID_ROUTE_CARD
 

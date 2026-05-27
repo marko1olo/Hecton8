@@ -54,8 +54,10 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
             #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
             struct Attributes
             {
@@ -140,6 +142,16 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
                 return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
             }
 
+            float ResolveLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) / max(edge1 - edge0, 1e-5));
+            }
+
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(saturate(uv));
+            }
+
             Varyings vert(Attributes input)
             {
                 Varyings output;
@@ -160,7 +172,7 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
                 {
                     float bayer = Bayer4x4(floor(input.positionCS.xy));
                     float2 edgeDistanceBrownout = min(input.uv, 1.0 - input.uv);
-                    float edgeMaskBrownout = 1.0 - smoothstep(0.012, 0.075, min(edgeDistanceBrownout.x, edgeDistanceBrownout.y));
+                    float edgeMaskBrownout = 1.0 - ResolveLinearRamp01(0.012, 0.075, min(edgeDistanceBrownout.x, edgeDistanceBrownout.y));
                     float phosphorBit = step(bayer, 0.375);
                     float ditherAlpha = saturate((0.18 + phosphorBit * 0.44 + edgeMaskBrownout * 0.16) * _Color.a);
                     clip(ditherAlpha - bayer);
@@ -209,7 +221,7 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
                 emissive *= lerp(1.0, 0.5, saturate(_FlashlightGlare));
                 alpha *= lerp(1.0, 0.72, saturate(_FlashlightGlare));
                 float2 edgeDistance = min(panelSampleUv, 1.0 - panelSampleUv);
-                float edgePulseMask = (1.0 - smoothstep(0.012, 0.075, min(edgeDistance.x, edgeDistance.y))) * inventoryMask * powerLevel;
+                float edgePulseMask = (1.0 - ResolveLinearRamp01(0.012, 0.075, min(edgeDistance.x, edgeDistance.y))) * inventoryMask * powerLevel;
                 float edgePulse = 0.74 + 0.26 * (FastTrianglePulse01(_Time.y * 4.7 + panelSampleUv.x * 13.0 - panelSampleUv.y * 9.0) * 2.0 - 1.0);
                 emissive += _Color.rgb * edgePulseMask * edgePulse * 0.085;
                 alpha = saturate(alpha + edgePulseMask * edgePulse * 0.035);
@@ -218,7 +230,7 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
                 {
                     float2 screenUV = input.positionCS.xy * rcp(_ScaledScreenParams.xy);
                     float fragRawDepth = saturate(input.positionCS.z * rcp(input.positionCS.w));
-                    float sceneRawDepth = SampleSceneDepth(screenUV);
+                    float sceneRawDepth = SampleSceneDepth(ResolveFoveatedSourceUV(screenUV));
 #if UNITY_REVERSED_Z
                     float sceneDepthValid = step(0.0001, sceneRawDepth);
 #else

@@ -262,7 +262,7 @@ namespace Hecton8.Lighting
         [SerializeField] private bool drawProbeGizmos;
         [SerializeField, Range(32, 4096)] private int maxEditorGizmoProbes = 512;
         [SerializeField] private string csvOverrideRelativePath = "Docs/lighting_fixtures.csv";
-        [SerializeField] private string ambientProfileCsvRelativePath = "Docs/ambient_lighting_profiles.csv";
+        [SerializeField] private string ambientProfileCsvRelativePath = "Docs/Data/Profiles/ambient_lighting_profiles.csv";
 
         private IDataVault _vault;
         private Transform _cachedTransform;
@@ -354,7 +354,7 @@ namespace Hecton8.Lighting
 
         public void Tick(float deltaTime)
         {
-            EnsureNativeState();
+            EnsureNativeState(allowAllocation: false);
             if (!_nativeReady)
                 return;
 
@@ -670,7 +670,7 @@ namespace Hecton8.Lighting
             return math.max(32, maxEditorGizmoProbes);
         }
 
-        private void EnsureNativeState()
+        private void EnsureNativeState(bool allowAllocation = true)
         {
             if (_nativeReady)
                 return;
@@ -687,18 +687,24 @@ namespace Hecton8.Lighting
             _rootHash = HashAup(_rootAup);
             _activeResolution = ResolveResolutionFromQuality(ResolveQualityWeight());
 
-            _probeFront = AcquireBuffer<CustomLightProbeDTO>(ProbeFrontBuffer, MaxCellCount);
-            _probeBack = AcquireBuffer<CustomLightProbeDTO>(ProbeBackBuffer, MaxCellCount);
-            _sources = AcquireBuffer<InteriorGISourceDTO>(ProbeSourcesBuffer, MaxSourceCount);
-            _occlusion = AcquireBuffer<InteriorGIOcclusionCellDTO>(ProbeOcclusionBuffer, MaxCellCount);
-            _tuning = AcquireBuffer<InteriorGITuningDTO>(ProbeTuningBuffer, 1);
-            _telemetryRing = AcquireBuffer<InteriorGITelemetryEntry>(ProbeTelemetryRingBuffer, TelemetryCapacity);
-            _telemetryScratch = AcquireBuffer<InteriorGITelemetryEntry>(ProbeTelemetryScratchBuffer, 1);
-            _mockPower = AcquireBuffer<MockPowerState>(ProbeMockPowerBuffer, 1);
-            _faults = AcquireBuffer<int>(ProbeFaultBuffer, MaxCellCount);
-            _csvBytes = AcquireBuffer<byte>(ProbeCsvBytesBuffer, CsvBufferBytes);
-            _ambientProfiles = AcquireBuffer<AmbientLightingProfileDTO>(ProbeAmbientProfileBuffer, MaxAmbientProfileCount);
-            _ambientProfileCount = AcquireBuffer<int>(ProbeAmbientProfileCountBuffer, 1);
+            _probeFront = AcquireBuffer<CustomLightProbeDTO>(ProbeFrontBuffer, MaxCellCount, allowAllocation);
+            _probeBack = AcquireBuffer<CustomLightProbeDTO>(ProbeBackBuffer, MaxCellCount, allowAllocation);
+            _sources = AcquireBuffer<InteriorGISourceDTO>(ProbeSourcesBuffer, MaxSourceCount, allowAllocation);
+            _occlusion = AcquireBuffer<InteriorGIOcclusionCellDTO>(ProbeOcclusionBuffer, MaxCellCount, allowAllocation);
+            _tuning = AcquireBuffer<InteriorGITuningDTO>(ProbeTuningBuffer, 1, allowAllocation);
+            _telemetryRing = AcquireBuffer<InteriorGITelemetryEntry>(ProbeTelemetryRingBuffer, TelemetryCapacity, allowAllocation);
+            _telemetryScratch = AcquireBuffer<InteriorGITelemetryEntry>(ProbeTelemetryScratchBuffer, 1, allowAllocation);
+            _mockPower = AcquireBuffer<MockPowerState>(ProbeMockPowerBuffer, 1, allowAllocation);
+            _faults = AcquireBuffer<int>(ProbeFaultBuffer, MaxCellCount, allowAllocation);
+            _csvBytes = AcquireBuffer<byte>(ProbeCsvBytesBuffer, CsvBufferBytes, allowAllocation);
+            _ambientProfiles = AcquireBuffer<AmbientLightingProfileDTO>(ProbeAmbientProfileBuffer, MaxAmbientProfileCount, allowAllocation);
+            _ambientProfileCount = AcquireBuffer<int>(ProbeAmbientProfileCountBuffer, 1, allowAllocation);
+
+            if (!HasRequiredNativeBuffers())
+            {
+                _nativeReady = false;
+                return;
+            }
 
             float bootQuality = ResolveQualityWeight();
             float bootCadence = ResolveCadenceSeconds(bootQuality);
@@ -717,9 +723,40 @@ namespace Hecton8.Lighting
             ScheduleBootClearJob(tuning);
         }
 
-        private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID bufferId, int length) where T : struct
+        private bool HasRequiredNativeBuffers()
         {
-            IDataVault vault = EnsureVault();
+            return ResolveArray(ref _probeFront, ProbeFrontBuffer, MaxCellCount).IsCreated &&
+                   ResolveArray(ref _probeBack, ProbeBackBuffer, MaxCellCount).IsCreated &&
+                   ResolveArray(ref _sources, ProbeSourcesBuffer, MaxSourceCount).IsCreated &&
+                   ResolveArray(ref _occlusion, ProbeOcclusionBuffer, MaxCellCount).IsCreated &&
+                   ResolveArray(ref _tuning, ProbeTuningBuffer, 1).IsCreated &&
+                   ResolveArray(ref _telemetryRing, ProbeTelemetryRingBuffer, TelemetryCapacity).IsCreated &&
+                   ResolveArray(ref _telemetryScratch, ProbeTelemetryScratchBuffer, 1).IsCreated &&
+                   ResolveArray(ref _mockPower, ProbeMockPowerBuffer, 1).IsCreated &&
+                   ResolveArray(ref _faults, ProbeFaultBuffer, MaxCellCount).IsCreated &&
+                   ResolveArray(ref _csvBytes, ProbeCsvBytesBuffer, CsvBufferBytes).IsCreated &&
+                   ResolveArray(ref _ambientProfiles, ProbeAmbientProfileBuffer, MaxAmbientProfileCount).IsCreated &&
+                   ResolveArray(ref _ambientProfileCount, ProbeAmbientProfileCountBuffer, 1).IsCreated;
+        }
+
+        private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID bufferId, int length, bool allowAllocation) where T : struct
+        {
+            IDataVault vault = _vault;
+            if (vault == null)
+                return default;
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle) &&
+                IsInteriorGIHandle(in existingHandle, bufferId) &&
+                vault.TryResolveHandle(in existingHandle, out NativeArray<T> existingBuffer) &&
+                existingBuffer.IsCreated &&
+                existingBuffer.Length >= length)
+            {
+                return existingHandle;
+            }
+
+            if (!allowAllocation || vault.IsAllocationLocked)
+                return default;
+
             VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 length,
@@ -730,7 +767,7 @@ namespace Hecton8.Lighting
                 !buffer.IsCreated ||
                 buffer.Length < length)
             {
-                throw new InvalidOperationException("Interior GI DataVault buffer acquisition failed.");
+                return default;
             }
 
             return handle;
@@ -775,14 +812,6 @@ namespace Hecton8.Lighting
             _scheduledBootClear = true;
         }
 
-        private IDataVault EnsureVault()
-        {
-            if (_vault == null)
-                throw new InvalidOperationException("Interior GI GlobalDataVault unavailable.");
-
-            return _vault;
-        }
-
         private void CacheDependencies()
         {
             _vault = GlobalRegistry.DataVault;
@@ -793,7 +822,10 @@ namespace Hecton8.Lighting
             BufferID bufferId,
             int requiredLength) where T : struct
         {
-            IDataVault vault = EnsureVault();
+            IDataVault vault = _vault;
+            if (vault == null)
+                return default;
+
             if (IsInteriorGIHandle(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
                 buffer.IsCreated &&
@@ -1713,7 +1745,7 @@ namespace Hecton8.Lighting
                 return;
 
             NativeArray<InteriorGITelemetryEntry> ring = ResolveTelemetryRing();
-            WriteTelemetryDump(Path.Combine(Application.dataPath, "..", "Docs/AgentLogs/Dump_LIGHTING_SURGEON.bin"), ring);
+            WriteTelemetryDump(Path.Combine(Application.dataPath, "..", "Docs/AgentLogs/Dump_13KRA.bin"), ring);
         }
 
         private void WriteTelemetryDump(string path, NativeArray<InteriorGITelemetryEntry> ring)

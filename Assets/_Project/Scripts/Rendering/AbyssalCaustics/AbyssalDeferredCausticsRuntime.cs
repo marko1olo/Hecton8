@@ -17,7 +17,7 @@ namespace Hecton8.Rendering
     public sealed unsafe class AbyssalDeferredCausticsRuntime : MonoBehaviour, ICausticsService, ILateFrameTickable, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystemId = SystemID.GraphicsScalability;
-        private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_232.bin";
+        private const string DumpPath = "Docs/AgentLogs/Dump_13KRA.bin";
         private const float CausticsMinimumWavelength = 0.25f;
 
         private static AbyssalDeferredCausticsRuntime s_runtimeInstance;
@@ -267,7 +267,10 @@ namespace Hecton8.Rendering
         {
             AbyssalDeferredCausticsRuntime runtime = s_publishedRuntime;
             if (runtime != null &&
-                runtime.TryResolveVaultBuffer(in runtime._parametersHandle, AbyssalCausticsConstants.ParameterCapacity, out NativeArray<CausticsParametersDTO> parametersArray))
+                runtime.TryReadOnlyVaultBuffer(
+                    in runtime._parametersHandle,
+                    AbyssalCausticsConstants.ParameterCapacity,
+                    out NativeArray<CausticsParametersDTO>.ReadOnly parametersArray))
             {
                 parameters = parametersArray[AbyssalCausticsConstants.ActiveParameterIndex];
                 return true;
@@ -281,7 +284,10 @@ namespace Hecton8.Rendering
         {
             AbyssalDeferredCausticsRuntime runtime = s_publishedRuntime;
             if (runtime != null &&
-                runtime.TryResolveVaultBuffer(in runtime._tuningHandle, 1, out NativeArray<CausticsTuningDTO> tuningArray))
+                runtime.TryReadOnlyVaultBuffer(
+                    in runtime._tuningHandle,
+                    1,
+                    out NativeArray<CausticsTuningDTO>.ReadOnly tuningArray))
             {
                 tuning = tuningArray[0];
                 return true;
@@ -1294,6 +1300,21 @@ namespace Hecton8.Rendering
                    buffer.Length >= requiredLength;
         }
 
+        private bool TryReadOnlyVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsVaultHandleCreated(in handle) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
         private void RefreshExternalInputHandles()
         {
             RefreshExternalInputHandle(BufferID.ShinobuOceanSurfaceSwell, 1, ref _surfaceSwellInputHandle);
@@ -1312,7 +1333,7 @@ namespace Hecton8.Rendering
             }
 
             if (IsVaultHandleCreated(in handle) &&
-                vault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
             {
@@ -1327,7 +1348,7 @@ namespace Hecton8.Rendering
             }
 
             handle = existingHandle;
-            if (vault.TryResolveHandle(in handle, out NativeArray<T> refreshedBuffer) &&
+            if (vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly refreshedBuffer) &&
                 refreshedBuffer.IsCreated &&
                 refreshedBuffer.Length >= requiredLength)
             {
@@ -1363,6 +1384,9 @@ namespace Hecton8.Rendering
 
             if (IsVaultHandleCreated(in handle))
                 ReleaseVaultHandle(vault, ref handle);
+
+            if (vault.IsAllocationLocked)
+                return false;
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
             return IsVaultHandleCreated(in handle) &&

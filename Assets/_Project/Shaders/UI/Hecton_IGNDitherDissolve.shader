@@ -92,6 +92,11 @@ Shader "Hecton8/UI/IGNDitherDissolve"
                 return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
             }
 
+            float ResolveLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) / max(edge1 - edge0, 1e-5));
+            }
+
             float Hash21(float2 value)
             {
                 float3 hash = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
@@ -122,40 +127,40 @@ Shader "Hecton8/UI/IGNDitherDissolve"
                 fixed4 tex = tex2D(_MainTex, i.texcoord);
                 fixed4 color = tex * i.color * _Color;
                 float pulse = FastTrianglePulse01((_Time.y * _SignalPulseRate) + (screenUv.y * 38.0)) * _SignalPulseStrength;
-                float scanline = smoothstep(0.82, 1.0, frac((screenUv.y * 96.0) - (_Time.y * 0.65)));
+                float scanline = ResolveLinearRamp01(0.82, 1.0, frac((screenUv.y * 96.0) - (_Time.y * 0.65)));
                 float signalShift = pulse * scanline * progress;
                 color.rgb *= 1.0 + signalShift;
                 color.rgb = lerp(color.rgb, color.rgb * fixed3(0.65, 1.08, 1.18), signalShift);
-                float tearBand = smoothstep(0.94, 1.0, frac((screenUv.y * 17.0) + (_Time.y * _SignalTearRate)));
+                float tearBand = ResolveLinearRamp01(0.94, 1.0, frac((screenUv.y * 17.0) + (_Time.y * _SignalTearRate)));
                 float tearGate = step(0.74, frac((screenUv.x * 23.0) - (_Time.y * 1.37)));
                 float tearShift = tearBand * tearGate * _SignalTearStrength * progress;
                 color.rgb = lerp(color.rgb, color.rgb * fixed3(1.18, 0.94, 0.72), tearShift);
                 color.a = saturate(color.a + (tearShift * 0.05));
                 float2 centeredUv = (screenUv * 2.0) - 1.0;
-                float edgeMask = smoothstep(0.52, 1.08, dot(centeredUv, centeredUv));
+                float edgeMask = ResolveLinearRamp01(0.52, 1.08, dot(centeredUv, centeredUv));
                 float edgeFlicker = FastTrianglePulse01((_Time.y * _SignalEdgeFlickerRate) + (screenUv.x * 41.0) + (screenUv.y * 29.0));
                 float edgeShift = edgeMask * edgeFlicker * _SignalEdgeFlickerStrength * progress;
                 color.rgb = lerp(color.rgb, color.rgb * fixed3(0.78, 1.06, 1.22), edgeShift);
                 float aliasHash = Hash21((screenUv * _ScreenParams.xy) + floor(_Time.y * _SignalChromaAliasRate));
                 float aliasShift = step(0.88, aliasHash) * _SignalChromaAliasStrength * progress;
                 color.rgb = lerp(color.rgb, color.gbr, aliasShift);
-                float phosphorBand = smoothstep(0.91, 1.0, frac((screenUv.x * 7.0) + (screenUv.y * 3.0) + (_Time.y * _SignalPhosphorStutterRate)));
+                float phosphorBand = ResolveLinearRamp01(0.91, 1.0, frac((screenUv.x * 7.0) + (screenUv.y * 3.0) + (_Time.y * _SignalPhosphorStutterRate)));
                 float phosphorShift = phosphorBand * _SignalPhosphorStutterStrength * progress;
                 color.rgb = lerp(color.rgb, color.rgb * fixed3(0.92, 1.14, 0.96), phosphorShift);
-                float warningSweep = smoothstep(0.86, 1.0, frac((_Time.y * _SignalWarningPulseRate) + (screenUv.y * 5.0)));
+                float warningSweep = ResolveLinearRamp01(0.86, 1.0, frac((_Time.y * _SignalWarningPulseRate) + (screenUv.y * 5.0)));
                 float warningMask = warningSweep * edgeMask * _SignalWarningPulseStrength * progress;
                 color.rgb = lerp(color.rgb, color.rgb + (_SignalWarningColor.rgb * color.a), warningMask);
                 float pressureWave = FastTrianglePulse01(((screenUv.x * 31.0) + (screenUv.y * 19.0)) + (_Time.y * _SignalPressureRippleRate));
                 float pressureMask = pressureWave * edgeMask * _SignalPressureRippleStrength * progress;
                 color.rgb = lerp(color.rgb, color.rgb + (_SignalWarningColor.rgb * 0.12), pressureMask);
                 float notchPhase = frac((screenUv.x * 3.0) + (screenUv.y * 11.0) - (_Time.y * _SignalNotchRate));
-                float notchMask = smoothstep(0.965, 1.0, notchPhase) * _SignalNotchStrength * progress;
+                float notchMask = ResolveLinearRamp01(0.965, 1.0, notchPhase) * _SignalNotchStrength * progress;
                 color.rgb = lerp(color.rgb, color.rgb * (1.0 - (edgeMask * 0.42)), notchMask);
-                float dropoutBand = smoothstep(0.982, 1.0, frac((screenUv.y * 37.0) + (_Time.y * 2.7)));
+                float dropoutBand = ResolveLinearRamp01(0.982, 1.0, frac((screenUv.y * 37.0) + (_Time.y * 2.7)));
                 float dropoutGate = step(0.71, frac((screenUv.x * 5.0) - (_Time.y * 0.23)));
                 color.rgb = lerp(color.rgb, color.rgb * fixed3(0.72, 0.9, 1.08), dropoutBand * dropoutGate * 0.025 * progress);
                 float brownoutPulse = saturate(_HectonBrownoutPulse);
-                float brownoutScan = smoothstep(0.78, 1.0, frac((screenUv.y * 11.0) + (_Time.y * 0.31)));
+                float brownoutScan = ResolveLinearRamp01(0.78, 1.0, frac((screenUv.y * 11.0) + (_Time.y * 0.31)));
                 float brownoutMask = brownoutPulse * (0.35 + (0.65 * edgeMask)) * (0.65 + (0.35 * brownoutScan)) * progress;
                 color.rgb = lerp(color.rgb, (color.rgb * fixed3(1.12, 0.82, 0.55)) + (_SignalWarningColor.rgb * 0.18), brownoutMask);
                 color.a = saturate(color.a + (brownoutPulse * edgeMask * 0.035));

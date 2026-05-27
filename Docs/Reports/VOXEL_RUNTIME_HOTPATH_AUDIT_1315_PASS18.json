@@ -1,0 +1,2015 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\VOXEL_RUNTIME_HOTPATH_AUDIT_1315_PASS18.json",
+  "auditHashSha256": "20ac7190ab6951d2f7b46f927f53a33001222a2d0783687a4544bb0a494cfea3",
+  "summary": {
+    "scannedFiles": 1,
+    "parseFailures": 0,
+    "totalFindings": 248,
+    "objectCreations": 248,
+    "valueTypeCreations": 176,
+    "managedRiskCreations": 72,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\HectonVoxelEngine.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 607,
+      "owner": "TryAcquireJobTables",
+      "kind": "object_creation",
+      "detail": "JobTableLease",
+      "snippet": "new JobTableLease(vault, in _edgeTableHandle, in _triTableHandle, edgeLocked: true, triLocked: true)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 756,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(ix, iy, iz)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 904,
+      "owner": "ResolveAbsoluteCell",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(localPosition.x, localPosition.y, localPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 952,
+      "owner": "ApplyEdgeSeal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(ptsX - 1, ptsY - 1, ptsZ - 1)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1030,
+      "owner": "ResolveEntranceDirection",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, -1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1035,
+      "owner": "ResolveEntranceDirection",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1163,
+      "owner": "EvaluateFractalNoiseCarve",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(17.1f, 4.3f, 9.7f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1171,
+      "owner": "EvaluateFractalNoiseCarve",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(3.7f, 13.1f, 5.9f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1179,
+      "owner": "EvaluateFractalNoiseCarve",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(5.3f, 19.7f, 2.1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1275,
+      "owner": "EvaluateRoom",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      node.radii.x * 1.5f,                      node.radii.y * 0.35f,                      node.radii.z * 1.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1284,
+      "owner": "EvaluateRoom",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      node.radii.x * 0.25f,                      node.radii.y * 1.3f,                      node.radii.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1450,
+      "owner": "EvaluateStructuresSDF",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, s.size.y, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1457,
+      "owner": "EvaluateStructuresSDF",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, s.size.y, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1494,
+      "owner": "ComputeTunnelCurveOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1494,
+      "owner": "ComputeTunnelCurveOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1495,
+      "owner": "ComputeTunnelCurveOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1496,
+      "owner": "ComputeTunnelCurveOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1499,
+      "owner": "ComputeTunnelCurveOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(t * 3.1f, t * 5.7f, t * 7.9f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1500,
+      "owner": "ComputeTunnelCurveOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(13.1f, 1.7f, 0.3f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1501,
+      "owner": "ComputeTunnelCurveOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(2.9f, 11.3f, 4.1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1526,
+      "owner": "EvaluateArchSDF",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(math.max(s.size.x, 2f) * 2f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1529,
+      "owner": "EvaluateArchSDF",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, rise, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1583,
+      "owner": "EvaluateWallDetail",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(9.4f, 17.2f, 3.1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1663,
+      "owner": "SDEllipsoidAnalytic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.001f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1676,
+      "owner": "SDVerticalShaft",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(              LengthApprox(q.xz) - radius,              math.abs(q.y) - halfHeight)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1724,
+      "owner": "SDCapsuleElliptic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1725,
+      "owner": "SDCapsuleElliptic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0, 1, 0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1729,
+      "owner": "SDCapsuleElliptic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1, 0, 0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1731,
+      "owner": "SDCapsuleElliptic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1741,
+      "owner": "SDCapsuleElliptic",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(projRight / safeWidth, projUp / safeHeight)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1877,
+      "owner": "ApplyDomainWarp",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(seedOff, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1879,
+      "owner": "ApplyDomainWarp",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, seedOff, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1881,
+      "owner": "ApplyDomainWarp",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, seedOff)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1884,
+      "owner": "ApplyDomainWarp",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(dx, dy, dz)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 1954,
+      "owner": "ResolveChunkIndex",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.01f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2247,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "MCRawVertex",
+      "snippet": "new MCRawVertex {                  localPosition = GetEV(e0,ev0,ev1,ev2,ev3,ev4,ev5,ev6,ev7,ev8,ev9,ev10,ev11),                  edgeId = GetEID(e0,eid0,eid1,eid2,eid3,eid4,eid5,eid6,eid7,eid8,eid9,eid10,eid11) }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2250,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "MCRawVertex",
+      "snippet": "new MCRawVertex {                  localPosition = GetEV(e1,ev0,ev1,ev2,ev3,ev4,ev5,ev6,ev7,ev8,ev9,ev10,ev11),                  edgeId = GetEID(e1,eid0,eid1,eid2,eid3,eid4,eid5,eid6,eid7,eid8,eid9,eid10,eid11) }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2253,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "MCRawVertex",
+      "snippet": "new MCRawVertex {                  localPosition = GetEV(e2,ev0,ev1,ev2,ev3,ev4,ev5,ev6,ev7,ev8,ev9,ev10,ev11),                  edgeId = GetEID(e2,eid0,eid1,eid2,eid3,eid4,eid5,eid6,eid7,eid8,eid9,eid10,eid11) }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2262,
+      "owner": "P",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(ix,iy,iz)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2489,
+      "owner": "ApproxNormalizeOrUp",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2518,
+      "owner": "SampleNearestGridGradientAndAo",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(              math.select(center - xm, xp - center, x < ptsX - 1),              math.select(center - ym, yp - center, y < ptsY - 1),              math.select(center - zm, zp - center, z < ptsZ - 1),              neighborAo)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2557,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, math.lerp(position.y, targetHeight, blendToTerrain), position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2610,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2656,
+      "owner": "SampleTerrainNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2673,
+      "owner": "ResolveTerrainGridNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(stepX, heightRight - heightLeft, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2674,
+      "owner": "ResolveTerrainGridNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, heightForward - heightBack, stepZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2675,
+      "owner": "ResolveTerrainGridNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2812,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(caveCenterAo, caveCenterAo, caveCenterAo, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2815,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.299f, 0.587f, 0.114f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2817,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(mouthAo)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2827,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(colorPayload.x, colorPayload.y, colorPayload.z, colorPayload.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2836,
+      "owner": "IsModifiedSdfCell",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2937,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2940,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(1, 0, 0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2941,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(-1, 0, 0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2942,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(0, 1, 0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2943,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(0, -1, 0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2944,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(0, 0, 1)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 2945,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(0, 0, -1)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3017,
+      "owner": "TryAddSpawnPoint",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0, 1, 0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3042,
+      "owner": "TryAddSpawnPoint",
+      "kind": "object_creation",
+      "detail": "CaveSpawnData",
+      "snippet": "new CaveSpawnData         {             position = pos,             hashId = hashId         }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3194,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "CavePreset",
+      "snippet": "new CavePreset()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3368,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<DeferredVoxelPhysicsBakeTeardown>",
+      "snippet": "new List<DeferredVoxelPhysicsBakeTeardown>(DeferredVoxelPhysicsBakeTeardownCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3374,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<DeferredVoxelColliderUpload>",
+      "snippet": "new List<DeferredVoxelColliderUpload>(DeferredVoxelColliderUploadCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3386,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "DeferredVoxelPhysicsBakeTeardownDriver",
+      "snippet": "new DeferredVoxelPhysicsBakeTeardownDriver()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3388,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "DeferredVoxelColliderUploadDriver",
+      "snippet": "new DeferredVoxelColliderUploadDriver()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3390,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "DeferredVoxelDispatcherHotSwapBridge",
+      "snippet": "new DeferredVoxelDispatcherHotSwapBridge()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3453,
+      "owner": "FromBounds",
+      "kind": "value_type_creation",
+      "detail": "ActiveVolumeLocalBoundsEntry",
+      "snippet": "new ActiveVolumeLocalBoundsEntry             {                 Center = new float3(center.x, center.y, center.z),                 Size = new float3(size.x, size.y, size.z)             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3455,
+      "owner": "FromBounds",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(center.x, center.y, center.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3456,
+      "owner": "FromBounds",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(size.x, size.y, size.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3462,
+      "owner": "ToBounds",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(                 new Vector3(Center.x, Center.y, Center.z),                 new Vector3(Size.x, Size.y, Size.z))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3463,
+      "owner": "ToBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(Center.x, Center.y, Center.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3464,
+      "owner": "ToBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(Size.x, Size.y, Size.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3578,
+      "owner": "RegisterAirPocket",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(              math.max(0.01f, math.abs(halfExtentsWS.x)),              math.max(0.01f, math.abs(halfExtentsWS.y)),              math.max(0.01f, math.abs(halfExtentsWS.z)))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3583,
+      "owner": "RegisterAirPocket",
+      "kind": "value_type_creation",
+      "detail": "AirPocketEntry",
+      "snippet": "new AirPocketEntry         {             Center = new float3(centerWS.x, centerWS.y, centerWS.z),             HalfExtents = new float3(safeExtents.x, safeExtents.y, safeExtents.z),             OxygenRefillFraction = math.saturate(oxygenRefi"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3585,
+      "owner": "RegisterAirPocket",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(centerWS.x, centerWS.y, centerWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3586,
+      "owner": "RegisterAirPocket",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(safeExtents.x, safeExtents.y, safeExtents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3697,
+      "owner": "NormalizeFiniteOrUp",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3704,
+      "owner": "NormalizeFiniteOrUp",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3729,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<GameObject>",
+      "snippet": "new List<GameObject>(ActiveVolumeRegistryCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3731,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<HectonVoxelVolume>",
+      "snippet": "new List<HectonVoxelVolume>(ActiveVolumeRegistryCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3750,
+      "owner": "EnterStreamingScratchGate",
+      "kind": "object_creation",
+      "detail": "StreamingScratchGateScope",
+      "snippet": "new StreamingScratchGateScope(this)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 4228,
+      "owner": "GenerateVolumeAsync",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(gridDim, gridDim, gridDim)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 4303,
+      "owner": "GenerateVolumeAsync",
+      "kind": "object_creation",
+      "detail": "VoxelPipelineData",
+      "snippet": "new VoxelPipelineData              {                  WorldCenter = worldCenter,                  AbsoluteUniverseOffsetAtStartDouble = absoluteUniverseOffsetAtStartDouble,                 ShiftEpochAtStart = shiftEpochAtStart,             "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 4535,
+      "owner": "GenerateVolumeFromDataAsync",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(gridDim, gridDim, gridDim)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 4576,
+      "owner": "GenerateVolumeFromDataAsync",
+      "kind": "object_creation",
+      "detail": "VoxelPipelineData",
+      "snippet": "new VoxelPipelineData             {                 WorldCenter = worldCenter,                 AbsoluteUniverseOffsetAtStartDouble = absoluteUniverseOffsetAtStartDouble,                 ShiftEpochAtStart = shiftEpochAtStart,                "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 4741,
+      "owner": "RebuildVolumeAsync",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(gridDim, gridDim, gridDim)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 4840,
+      "owner": "RebuildVolumeAsync",
+      "kind": "object_creation",
+      "detail": "VoxelPipelineData",
+      "snippet": "new VoxelPipelineData              {                  SourceVolume = volume,                 SourceRuntimeStamp = expectedRuntimeStamp,                 WorldCenter = worldCenter,                 AbsoluteUniverseOffsetAtStartDouble = committ"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 4953,
+      "owner": "RegisterActiveVolume",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(Vector3.zero, new Vector3(coverage, coverage, coverage))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 4953,
+      "owner": "RegisterActiveVolume",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(coverage, coverage, coverage)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 4958,
+      "owner": "RegisterActiveVolume",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(Vector3.zero, Vector3.one)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5217,
+      "owner": "TryReadNearestSonarSdf",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5231,
+      "owner": "TryReadNearestSonarSdf",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(dimensions.x, dimensions.y, dimensions.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5232,
+      "owner": "TryReadNearestSonarSdf",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(payloadOrigin.x, payloadOrigin.y, payloadOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5233,
+      "owner": "TryReadNearestSonarSdf",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(payloadCellSize.x, payloadCellSize.y, payloadCellSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5345,
+      "owner": "TryResolveNearestSonarSdfSurfaceCore",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(candidateDimensions.x, candidateDimensions.y, candidateDimensions.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5346,
+      "owner": "TryResolveNearestSonarSdfSurfaceCore",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(candidateOrigin.x, candidateOrigin.y, candidateOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5347,
+      "owner": "TryResolveNearestSonarSdfSurfaceCore",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(candidateCellSize.x, candidateCellSize.y, candidateCellSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5395,
+      "owner": "TrySampleNearestSonarSdf",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5467,
+      "owner": "TryReadNearestActiveSonarSdfPayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  candidateCellSize.x * math.max(0, candidateDimensions.x - 1) * 0.5f,                  candidateCellSize.y * math.max(0, candidateDimensions.y - 1) * 0.5f,                  candidateCellSize.z * math.max(0, cand"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5494,
+      "owner": "ResolveSdfPayloadBoundsDistanceSq",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(              cellSize.x * math.max(0, dimensions.x - 1),              cellSize.y * math.max(0, dimensions.y - 1),              cellSize.z * math.max(0, dimensions.z - 1))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5549,
+      "owner": "EnsureVoxelBakeGhostMaterial",
+      "kind": "object_creation",
+      "detail": "Material",
+      "snippet": "new Material(ghostShader)          {              name = \"Runtime_VoxelBakeGhost\"          }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5553,
+      "owner": "EnsureVoxelBakeGhostMaterial",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.045f, 0.068f, 0.082f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5554,
+      "owner": "EnsureVoxelBakeGhostMaterial",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0.16f, 0.38f, 0.46f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5555,
+      "owner": "EnsureVoxelBakeGhostMaterial",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(0f, 0.16f, 0.22f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5720,
+      "owner": "ApplyPredictiveVoxelProxyCinematicGate",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(velocity.x, velocity.y, velocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5732,
+      "owner": "ApplyPredictiveVoxelProxyCinematicGate",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(lookaheadOffset.x, lookaheadOffset.y, lookaheadOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5755,
+      "owner": "PathIntersectsDeferredVoxelProxyAup",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(padding)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5756,
+      "owner": "PathIntersectsDeferredVoxelProxyAup",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(padding)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5882,
+      "owner": "TryCacheDeferredVoxelProxyAupBounds",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(padding)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5883,
+      "owner": "TryCacheDeferredVoxelProxyAupBounds",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(padding)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5990,
+      "owner": "EnqueueDeferredVoxelPhysicsBakeTeardown",
+      "kind": "object_creation",
+      "detail": "DeferredVoxelPhysicsBakeTeardown",
+      "snippet": "new DeferredVoxelPhysicsBakeTeardown          {              Mesh = mesh,              Owner = owner,              Renderer = renderer,              Collider = collider,              ProxyCollider = proxyCollider,              Handle = hand"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 6448,
+      "owner": "EnqueueDeferredVoxelColliderUpload",
+      "kind": "object_creation",
+      "detail": "DeferredVoxelColliderUpload",
+      "snippet": "new DeferredVoxelColliderUpload          {              Volume = volume,              ProxyCollider = proxyCollider,              ProxyMinAup = proxyMinAup,              ProxyMaxAup = proxyMaxAup,              ProxyShiftSequence = proxyShif"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 6502,
+      "owner": "EnqueueDeferredVoxelColliderUpload",
+      "kind": "object_creation",
+      "detail": "DeferredVoxelColliderUpload",
+      "snippet": "new DeferredVoxelColliderUpload          {              Collider = collider,              ProxyCollider = proxyCollider,              Mesh = mesh,              ProxyMinAup = proxyMinAup,              ProxyMaxAup = proxyMaxAup,              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 6979,
+      "owner": "WriteVoxelMeshPipelineBlackBoxSample",
+      "kind": "value_type_creation",
+      "detail": "VoxelMeshPipelineTelemetryEntry",
+      "snippet": "new VoxelMeshPipelineTelemetryEntry             {                 TimestampTicks = Stopwatch.GetTimestamp(),                 Frame = frame,                 Flags = resolvedFlags,                 BufferId = _voxelMeshPipelineBlackBoxHandle.B"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 7309,
+      "owner": "TryResolveRuntimeAup",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 7348,
+      "owner": "ToDouble3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 7353,
+      "owner": "ToDouble3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 7358,
+      "owner": "ToFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)value.x, (float)value.y, (float)value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 7363,
+      "owner": "ToVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 7375,
+      "owner": "TryResolveLocalDeltaFloat3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-RuntimeAupLocalClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 7376,
+      "owner": "TryResolveLocalDeltaFloat3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(RuntimeAupLocalClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 7422,
+      "owner": "TryResolveRuntimeVector3FromAup",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimeFloat.x, runtimeFloat.y, runtimeFloat.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 7559,
+      "owner": "CreateVoxelPoolMesh",
+      "kind": "object_creation",
+      "detail": "Mesh",
+      "snippet": "new Mesh // COLD ALLOC: Mesh[1] - staggered pooled voxel mesh slot creation outside the hot path.          {              name = meshName          }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 7806,
+      "owner": "TryBindSelectedChthonicPillarResources",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(record.AupX, record.AupY, record.AupZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 7965,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(data.VolumeOrigin.x, 0d, data.VolumeOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 7990,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(wx, 0d, wz)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8016,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelDensityJob",
+      "snippet": "new VoxelDensityJob          {              ptsX = data.PtsX,              ptsY = data.PtsY,              ptsZ = data.PtsZ,              volumeOrigin = data.VolumeOrigin,              voxelStep = data.VoxelStep,              terrainHeights "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8043,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  1f / math.max(data.PartitionCellSize.x, 0.01f),                  1f / math.max(data.PartitionCellSize.y, 0.01f),                  1f / math.max(data.PartitionCellSize.z, 0.01f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8062,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "object_creation",
+      "detail": "AnomalyRidgeDetectionSettings",
+      "snippet": "new AnomalyRidgeDetectionSettings              {                  Width = data.PtsX,                  Height = data.PtsZ,                  CellSizeMeters = data.VoxelStep,                  OriginAup = terrainOriginAup,                  Mini"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8082,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "SelectStrongestPillarFeatureJob",
+      "snippet": "new SelectStrongestPillarFeatureJob          {              FeatureRecords = anomalyFeatureRecords,              SelectedFeature = selectedPillarFeature          }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8105,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "SnapDualSDFTopCellsToTerrainJob",
+      "snippet": "new SnapDualSDFTopCellsToTerrainJob          {              TerrainHeights = terrainHeights,              TerrainWidth = data.PtsX,              TerrainDepth = data.PtsZ,              TerrainCellSizeMeters = data.VoxelStep,              Ter"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8143,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelChunkBoundsContentJob",
+      "snippet": "new VoxelChunkBoundsContentJob          {              ptsX = data.PtsX,              ptsY = data.PtsY,              ptsZ = data.PtsZ,              density = densityField,              hasContent = chunkContentFlags          }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8166,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelDensityQuantizeJob",
+      "snippet": "new VoxelDensityQuantizeJob          {              densityDecodeInvScale = densityDecodeInvScale,              density = densityField,              quantizedDensity = quantizedDensityField          }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8177,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(data.PtsX, data.PtsY, data.PtsZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8198,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelMCCountJob",
+      "snippet": "new VoxelMCCountJob             {                 cellsX = data.GridDimension,                 cellsY = data.GridDimension,                 cellsZ = data.GridDimension,                 ptsX = data.PtsX,                 ptsY = data.PtsY,    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8255,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelFillIntArrayJob",
+      "snippet": "new VoxelFillIntArrayJob         {             Value = -1,             Values = data.EdgeVertexX         }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8260,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelFillIntArrayJob",
+      "snippet": "new VoxelFillIntArrayJob          {              Value = -1,              Values = data.EdgeVertexY          }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8265,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelFillIntArrayJob",
+      "snippet": "new VoxelFillIntArrayJob          {              Value = -1,              Values = data.EdgeVertexZ          }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8282,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelMCExtractJob",
+      "snippet": "new VoxelMCExtractJob             {                 cellsX = data.GridDimension,                 cellsY = data.GridDimension,                 cellsZ = data.GridDimension,                 ptsX = data.PtsX,                 ptsY = data.PtsY,  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8316,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelWeldJob",
+      "snippet": "new VoxelWeldJob              {                  rawCount = data.RawCount,                  ptsX = data.PtsX,                  ptsY = data.PtsY,                  ptsZ = data.PtsZ,                  rawVertices = data.RawVertices,            "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8361,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelFillFloatArrayJob",
+      "snippet": "new VoxelFillFloatArrayJob          {              Value = 0f,              Values = data.SkirtAlphaValues          }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8366,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelFillFloatArrayJob",
+      "snippet": "new VoxelFillFloatArrayJob          {              Value = 0f,              Values = data.DirtyBlendValues          }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8372,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelTerrainSeamSnapJob",
+      "snippet": "new VoxelTerrainSeamSnapJob          {              ptsX = data.PtsX,             ptsZ = data.PtsZ,             volumeOrigin = data.VolumeOrigin,             voxelStep = data.VoxelStep,             seamTransitionBand = TerrainVoxelSeamTrans"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8385,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelChunkSkirtExtrusionJob",
+      "snippet": "new VoxelChunkSkirtExtrusionJob          {              ptsX = data.PtsX,              ptsZ = data.PtsZ,              volumeOrigin = data.VolumeOrigin,              voxelStep = data.VoxelStep,              skirtDepthMeters = VoxelChunkSkirt"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8398,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelNormalJob",
+      "snippet": "new VoxelNormalJob          {              ptsX = data.PtsX,              ptsY = data.PtsY,              ptsZ = data.PtsZ,              densityStrideY = data.PtsX,              densityStrideZ = data.PtsX * data.PtsY,              volumeOrig"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8414,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelSeamNormalBlendJob",
+      "snippet": "new VoxelSeamNormalBlendJob          {              ptsX = data.PtsX,             ptsZ = data.PtsZ,             volumeOrigin = data.VolumeOrigin,             voxelStep = data.VoxelStep,             seamTransitionBand = TerrainVoxelSeamTrans"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8426,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelBiomeSampleJob",
+      "snippet": "new VoxelBiomeSampleJob          {              ptsX = data.PtsX,              ptsZ = data.PtsZ,              volumeOrigin = data.VolumeOrigin,              voxelStep = data.VoxelStep,              gridBiome = gridBiome,              positi"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8438,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelColorJob",
+      "snippet": "new VoxelColorJob          {              maxDepth = ABYSSAL_MAX_DEPTH,              caveEdgeWidth = caveEdgeColorWidth,              seamTransitionBand = TerrainVoxelSeamTransitionBand,              volumeCenter = data.WorldCenter,        "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8469,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelDirtyBlendJob",
+      "snippet": "new VoxelDirtyBlendJob             {                 positions = data.WeldedPositions,                 modifiedCells = data.ModifiedCells,                 modifiedCellCount = data.ModifiedCellCount,                 voxelStep = data.VoxelSte"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8484,
+      "owner": "ExecuteVoxelPipelineAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelSpawnPointJob",
+      "snippet": "new VoxelSpawnPointJob              {                  positions = data.WeldedPositions,                  normals = data.Normals,                  volumeCenter = data.WorldCenter,                  volumeHalfExtent = data.VolumeHalfExtent,  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8712,
+      "owner": "TryAcquireStreamingScratchLease",
+      "kind": "object_creation",
+      "detail": "VoxelStreamingScratchLease",
+      "snippet": "new VoxelStreamingScratchLease(this, i)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 8754,
+      "owner": "EnsureStreamingScratchSlots",
+      "kind": "object_creation",
+      "detail": "VoxelStreamingScratchSlot",
+      "snippet": "new VoxelStreamingScratchSlot()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9572,
+      "owner": "BuildSpatialPartitions",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(data.GridDimension, data.GridDimension, data.GridDimension)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9578,
+      "owner": "BuildSpatialPartitions",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(partitionDim, partitionDim, partitionDim)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9637,
+      "owner": "BuildNodeSpatialBuckets",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(maxRadius + inflation)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9638,
+      "owner": "BuildNodeSpatialBuckets",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(maxRadius + inflation)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9685,
+      "owner": "BuildNodeSpatialBuckets",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(maxRadius + inflation)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9686,
+      "owner": "BuildNodeSpatialBuckets",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(maxRadius + inflation)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9724,
+      "owner": "BuildTunnelSpatialBuckets",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(inflation)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9725,
+      "owner": "BuildTunnelSpatialBuckets",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(inflation)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9772,
+      "owner": "BuildTunnelSpatialBuckets",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(inflation)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9773,
+      "owner": "BuildTunnelSpatialBuckets",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(inflation)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9790,
+      "owner": "ResolvePartitionRange",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(data.GridDimension, data.GridDimension, data.GridDimension)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9793,
+      "owner": "ResolvePartitionRange",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(              1f / math.max(data.PartitionCellSize.x, 0.01f),              1f / math.max(data.PartitionCellSize.y, 0.01f),              1f / math.max(data.PartitionCellSize.z, 0.01f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9798,
+      "owner": "ResolvePartitionRange",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(              math.clamp((int)math.floor((clampedMin.x - data.PartitionOrigin.x) * invCellSize.x), 0, data.PartitionDimX - 1),              math.clamp((int)math.floor((clampedMin.y - data.PartitionOrigin.y) * invCellSize.y), 0, dat"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9802,
+      "owner": "ResolvePartitionRange",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(              math.clamp((int)math.floor((clampedMax.x - data.PartitionOrigin.x) * invCellSize.x), 0, data.PartitionDimX - 1),              math.clamp((int)math.floor((clampedMax.y - data.PartitionOrigin.y) * invCellSize.y), 0, dat"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9985,
+      "owner": "ProjectRuntimePositionToLocal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                 capturedRuntimePosition.x,                 capturedRuntimePosition.y,                 capturedRuntimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 9998,
+      "owner": "ProjectRuntimePositionToLocal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                 RootRuntimePosition.x,                 RootRuntimePosition.y,                 RootRuntimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10010,
+      "owner": "CalculatePositionBounds",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(Vector3.zero, Vector3.zero)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10037,
+      "owner": "CalculatePositionBounds",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(Vector3.zero, Vector3.one * 0.01f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10040,
+      "owner": "CalculatePositionBounds",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.01f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10041,
+      "owner": "CalculatePositionBounds",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(center, size)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10048,
+      "owner": "ResolveChunkBorderStitchWeight",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.0001f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10049,
+      "owner": "ResolveChunkBorderStitchWeight",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10085,
+      "owner": "BuildShiftAwareLocalPositionBufferAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelShiftAwareProjectionJob",
+      "snippet": "new VoxelShiftAwareProjectionJob             {                 rebaseDelta = rebaseDelta,                 rootRuntimePosition = (float3)projectionState.RootRuntimePosition,                 sourcePositions = data.WeldedPositions,            "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10131,
+      "owner": "UploadSurfaceMesh",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10132,
+      "owner": "UploadSurfaceMesh",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10133,
+      "owner": "UploadSurfaceMesh",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10134,
+      "owner": "UploadSurfaceMesh",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.Float32, 4)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10135,
+      "owner": "UploadSurfaceMesh",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.TexCoord2, VertexAttributeFormat.Float32, 4)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10136,
+      "owner": "UploadSurfaceMesh",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.TexCoord3, VertexAttributeFormat.Float32, 4)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10137,
+      "owner": "UploadSurfaceMesh",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.TexCoord4, VertexAttributeFormat.UNorm8, 4)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10153,
+      "owner": "UploadSurfaceMesh",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10162,
+      "owner": "UploadSurfaceMesh",
+      "kind": "object_creation",
+      "detail": "VoxelSurfaceVertex",
+      "snippet": "new VoxelSurfaceVertex                 {                     Position = localPosition,                     Normal = normal,                     Color = (Color32)(colors.IsCreated && i < colors.Length ? SanitizeFiniteColor(colors[i], ref inv"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10167,
+      "owner": "UploadSurfaceMesh",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                         0f,                         0f,                         0f,                         ambientOcclusionValues.IsCreated && i < ambientOcclusionValues.Length                             ? SanitizeFinite01(am"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10175,
+      "owner": "UploadSurfaceMesh",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                         dirtyBlendValues.IsCreated && i < dirtyBlendValues.Length ? SanitizeFinite01(dirtyBlendValues[i], 0f, ref invalidMeshData) : 0f,                         skirtAlphaValues.IsCreated && i < skirtAlphaValues"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10180,
+      "owner": "UploadSurfaceMesh",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(absolutePosition.x, absolutePosition.y, absolutePosition.z, absolutePosition.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10198,
+      "owner": "UploadSurfaceMesh",
+      "kind": "object_creation",
+      "detail": "SubMeshDescriptor",
+      "snippet": "new SubMeshDescriptor(0, triangleIndexCount, MeshTopology.Triangles)             {                 bounds = bounds,                 vertexCount = vertexCount             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10238,
+      "owner": "UploadColliderMesh",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10239,
+      "owner": "UploadColliderMesh",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.UNorm8, 4)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10256,
+      "owner": "UploadColliderMesh",
+      "kind": "object_creation",
+      "detail": "VoxelColliderVertex",
+      "snippet": "new VoxelColliderVertex { Position = position }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10272,
+      "owner": "UploadColliderMesh",
+      "kind": "object_creation",
+      "detail": "SubMeshDescriptor",
+      "snippet": "new SubMeshDescriptor(0, triangleIndexCount, MeshTopology.Triangles)             {                 bounds = bounds,                 vertexCount = vertexCount             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10323,
+      "owner": "SpawnVolume",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(RuntimeCaveVolumeName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10428,
+      "owner": "ApplyVolumeMeshAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelFinalizeProjectionState",
+      "snippet": "new VoxelFinalizeProjectionState(                     stableShift,                     rootRuntimePosition,                     data.ShiftEpochAtStart != stableShift.Sequence)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10530,
+      "owner": "ApplyVolumeMeshAsync",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(data.GridDimension, data.GridDimension, data.GridDimension)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10535,
+      "owner": "ApplyVolumeMeshAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelMeshBakeJob",
+      "snippet": "new VoxelMeshBakeJob                          {                              MeshId = mesh.GetEntityId()                          }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10671,
+      "owner": "ApplySmoothChthonicPillarColliderMeshAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelMeshBakeJob",
+      "snippet": "new VoxelMeshBakeJob              {                  MeshId = chunkMesh.GetEntityId()              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10727,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10728,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.9659258f, 0.258819f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10729,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.8660254f, 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10730,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.7071068f, 0.7071068f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10731,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.5f, 0.8660254f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10732,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.258819f, 0.9659258f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10733,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10734,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.258819f, 0.9659258f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10735,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.5f, 0.8660254f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10736,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.7071068f, 0.7071068f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10737,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.8660254f, 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10738,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.9659258f, 0.258819f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10739,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10740,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.9659258f, -0.258819f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10741,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.8660254f, -0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10742,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.7071068f, -0.7071068f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10743,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.5f, -0.8660254f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10744,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.258819f, -0.9659258f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10745,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10746,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.258819f, -0.9659258f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10747,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.5f, -0.8660254f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10748,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.7071068f, -0.7071068f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10749,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.8660254f, -0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10750,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.9659258f, -0.258819f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10751,
+      "owner": "GetChthonicPillarColliderUnitCircle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10768,
+      "owner": "TryBuildSmoothChthonicPillarColliderMesh",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(record.AupX, record.AupY, record.AupZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10770,
+      "owner": "TryBuildSmoothChthonicPillarColliderMesh",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(              math.max(1, data.PtsX) - 1,              math.max(1, data.PtsY) - 1,              math.max(1, data.PtsZ) - 1)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10823,
+      "owner": "TryBuildSmoothChthonicPillarColliderMesh",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(x, localBottomY, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10824,
+      "owner": "TryBuildSmoothChthonicPillarColliderMesh",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(x, localTopY, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10829,
+      "owner": "TryBuildSmoothChthonicPillarColliderMesh",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(localCenterX, localBottomY, localCenterZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10830,
+      "owner": "TryBuildSmoothChthonicPillarColliderMesh",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(localCenterX, localTopY, localCenterZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10880,
+      "owner": "EnsureVoxelBakeProxyCollider",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(VoxelBakeProxyRuntimeName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10907,
+      "owner": "ConfigureVoxelBakeBaseProxy",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.01f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10908,
+      "owner": "ConfigureVoxelBakeBaseProxy",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(              boundsMin.x + safeSize.x * 0.5f,              boundsMin.y + proxyHeight * 0.5f,              boundsMin.z + safeSize.z * 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10912,
+      "owner": "ConfigureVoxelBakeBaseProxy",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(safeSize.x, proxyHeight, safeSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10931,
+      "owner": "ResolveVoxelColliderChunkBakeProxyBounds",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.01f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10936,
+      "owner": "ResolveVoxelColliderChunkBakeProxyBounds",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(              safeBoundsSize.x * 0.5f,              splitY ? safeBoundsSize.y * 0.5f : safeBoundsSize.y,              safeBoundsSize.z * 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10940,
+      "owner": "ResolveVoxelColliderChunkBakeProxyBounds",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(chunkSize.x * x, chunkSize.y * y, chunkSize.z * z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10942,
+      "owner": "ResolveVoxelColliderChunkBakeProxyBounds",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(chunkSize.x, proxyHeight, chunkSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10943,
+      "owner": "ResolveVoxelColliderChunkBakeProxyBounds",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(              chunkMin.x + proxySize.x * 0.5f,              chunkMin.y + proxySize.y * 0.5f,              chunkMin.z + proxySize.z * 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10948,
+      "owner": "ResolveVoxelColliderChunkBakeProxyBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(proxyCenter.x, proxyCenter.y, proxyCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10949,
+      "owner": "ResolveVoxelColliderChunkBakeProxyBounds",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(proxySize.x, proxySize.y, proxySize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 11003,
+      "owner": "ApplyChunkedColliderMeshesAsync",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(data.GridDimension, data.GridDimension, data.GridDimension)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 11012,
+      "owner": "ApplyChunkedColliderMeshesAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelFillIntArrayJob",
+      "snippet": "new VoxelFillIntArrayJob              {                  Value = -1,                  Values = localRemap              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 11018,
+      "owner": "ApplyChunkedColliderMeshesAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelColliderChunkClassifyJob",
+      "snippet": "new VoxelColliderChunkClassifyJob              {                  positions = meshLocalPositions,                  triangleIndices = data.TriangleIndices,                  boundsMin = boundsMin,                  boundsSize = boundsSize,    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 11150,
+      "owner": "ApplyChunkedColliderMeshesAsync",
+      "kind": "value_type_creation",
+      "detail": "VoxelMeshBakeJob",
+      "snippet": "new VoxelMeshBakeJob                  {                      MeshId = chunkMesh.GetEntityId()                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 11307,
+      "owner": "ConfigureVolumeRuntimeDataAsync",
+      "kind": "object_creation",
+      "detail": "Vector3Int",
+      "snippet": "new Vector3Int(ptsX, ptsY, ptsZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 11337,
+      "owner": "RegisterEntranceTerrainHoles",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimeSurfaceFloat.x, runtimeSurfaceFloat.y, runtimeSurfaceFloat.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 11362,
+      "owner": "RegisterPipelineSpawnPoints",
+      "kind": "object_creation",
+      "detail": "Vector2Int",
+      "snippet": "new Vector2Int(             (int)math.floor(absoluteUniverseCenter.x / tileSize),             (int)math.floor(absoluteUniverseCenter.z / tileSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 11374,
+      "owner": "RegisterPipelineSpawnPoints",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimeSpawnFloat.x, runtimeSpawnFloat.y, runtimeSpawnFloat.z)"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

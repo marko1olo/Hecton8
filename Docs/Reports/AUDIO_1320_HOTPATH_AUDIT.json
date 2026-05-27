@@ -1,0 +1,853 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\AUDIO_1320_HOTPATH_AUDIT.json",
+  "auditHashSha256": "913433404125d941e8b29b6150f259b022d60bfb9d6b160750eeb7fbde740282",
+  "summary": {
+    "scannedFiles": 7,
+    "parseFailures": 0,
+    "totalFindings": 102,
+    "objectCreations": 102,
+    "valueTypeCreations": 58,
+    "managedRiskCreations": 44,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Audio\\AdaptiveStem\\AdaptiveStemAudioMixer.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Audio\\DeepPsychosisController.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Audio\\HectonMusicDirector.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Audio\\NativeAudioFrameRingBuffer.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Audio\\PlayerCriticalProceduralAudioRenderer.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Audio\\ProceduralAudioEvents.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Audio\\VocalWarningSystem.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+      "line": 1211,
+      "owner": "RunAudioKernels",
+      "kind": "value_type_creation",
+      "detail": "MockAudioStimulusJob",
+      "snippet": "new MockAudioStimulusJob             {                 Rules = (AudioStemRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.Rules),                 Predator = (MockPredatorProximitySignal*)NativeArrayUnsafeUtility.G"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+      "line": 1223,
+      "owner": "RunAudioKernels",
+      "kind": "value_type_creation",
+      "detail": "AudioStemTensionKernelJob",
+      "snippet": "new AudioStemTensionKernelJob             {                 State = (AudioStemStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.StemState),                 Rules = (AudioStemRuleDTO*)NativeArrayUnsafeUtility.GetUn"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+      "line": 1234,
+      "owner": "RunAudioKernels",
+      "kind": "value_type_creation",
+      "detail": "StemCrossfadeSolverJob",
+      "snippet": "new StemCrossfadeSolverJob             {                 State = (AudioStemStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.StemState),                 Rules = (AudioStemRuleDTO*)NativeArrayUnsafeUtility.GetUnsaf"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+      "line": 1432,
+      "owner": "DumpTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+      "line": 1439,
+      "owner": "DumpTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "ReadOnlySpan<byte>",
+      "snippet": "new ReadOnlySpan<byte>(&entry, entryBytes)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs",
+      "line": 494,
+      "owner": "PlayPsychosisCue",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(offset.x, offset.y, offset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs",
+      "line": 539,
+      "owner": "TryResolvePlayerAupRuntimePosition",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtime.x, runtime.y, runtime.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs",
+      "line": 555,
+      "owner": "TryResolveRuntimeOriginRelativeFloat3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-AupRuntimeFloatClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs",
+      "line": 556,
+      "owner": "TryResolveRuntimeOriginRelativeFloat3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(AupRuntimeFloatClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs",
+      "line": 557,
+      "owner": "TryResolveRuntimeOriginRelativeFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                 (float)clampedDelta.x,                 (float)clampedDelta.y,                 (float)clampedDelta.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs",
+      "line": 569,
+      "owner": "ResolveCinematicCueOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, y, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs",
+      "line": 574,
+      "owner": "ResolveCinematicCueOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(sx, y, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs",
+      "line": 577,
+      "owner": "ResolveCinematicCueOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, y, sz)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs",
+      "line": 579,
+      "owner": "ResolveCinematicCueOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(sx * DiagonalCueAxis, y, sz * DiagonalCueAxis)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+      "line": 1429,
+      "owner": "RefreshLayerThreatSnapshot",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(playerRuntime3.x, playerRuntime3.y, playerRuntime3.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+      "line": 1465,
+      "owner": "TryResolveRuntimeOriginRelativeFloat3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-AupRuntimeFloatClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+      "line": 1466,
+      "owner": "TryResolveRuntimeOriginRelativeFloat3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(AupRuntimeFloatClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+      "line": 1467,
+      "owner": "TryResolveRuntimeOriginRelativeFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                 (float)clampedDelta.x,                 (float)clampedDelta.y,                 (float)clampedDelta.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 815,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "AcousticEcholocationRayHit",
+      "snippet": "new AcousticEcholocationRayHit                      {                          Point = hitPoint,                          Direction = direction,                          RayDistanceMeters = rayDistance,                          ReturnDistan"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 838,
+      "owner": "TrySampleDensity",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.0001f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 912,
+      "owner": "ResolveRayDirection",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 913,
+      "owner": "ResolveRayDirection",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 914,
+      "owner": "ResolveRayDirection",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 3223,
+      "owner": "StartAudioProducerThread",
+      "kind": "object_creation",
+      "detail": "Thread",
+      "snippet": "new Thread(AudioProducerLoop)              {                  IsBackground = true,                  Name = \"Hecton8ProceduralAudioProducer\",                  Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.AudioProducer)     "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 3430,
+      "owner": "TryGetGranularSynthTuning",
+      "kind": "object_creation",
+      "detail": "GranularSynthTuningSnapshot",
+      "snippet": "new GranularSynthTuningSnapshot              {                  BasePitchScale = _targetGranularBasePitchScale,                  GrainLengthScale = _targetGranularGrainLengthScale,                  OverlapDensityScale = _targetGranularOverl"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 4469,
+      "owner": "TryHandleHighSpeedImpactSignal",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtime.x, runtime.y, runtime.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 4576,
+      "owner": "RecordHighSpeedImpactSignal",
+      "kind": "value_type_creation",
+      "detail": "HighSpeedImpactDuplicateEntry",
+      "snippet": "new HighSpeedImpactDuplicateEntry              {                  Frame = frame,                  Signature = signature,                  Valid = 1              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 4888,
+      "owner": "TryPublishKineticImpactEchoTap",
+      "kind": "value_type_creation",
+      "detail": "SonarTriggerState",
+      "snippet": "new SonarTriggerState                     {                         Sequence = Interlocked.Increment(ref _pendingSonarSequence),                         EchoRevision = 3,                         StartFrame = Interlocked.Read(ref _producedSa"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 4967,
+      "owner": "TriggerSonarEchoFromOrigin",
+      "kind": "value_type_creation",
+      "detail": "SonarTriggerState",
+      "snippet": "new SonarTriggerState                      {                          Sequence = sequence,                          EchoRevision = 1,                          StartFrame = scheduledStartFrame,                          Intensity = clampedInt"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5005,
+      "owner": "TriggerSonarEchoFromOrigin",
+      "kind": "value_type_creation",
+      "detail": "SonarTriggerState",
+      "snippet": "new SonarTriggerState                     {                         Sequence = sequence,                         EchoRevision = echoRevision,                         StartFrame = scheduledStartFrame,                         Intensity = clam"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5069,
+      "owner": "TryResolveRuntimeAup",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5093,
+      "owner": "TryResolveRuntimeOriginRelativeFloat3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-AupRuntimeFloatClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5094,
+      "owner": "TryResolveRuntimeOriginRelativeFloat3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(AupRuntimeFloatClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5095,
+      "owner": "TryResolveRuntimeOriginRelativeFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                 (float)clampedDelta.x,                 (float)clampedDelta.y,                 (float)clampedDelta.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5110,
+      "owner": "TryResolveRuntimeOriginRelativeVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimeFloat.x, runtimeFloat.y, runtimeFloat.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5149,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "AcousticEcholocationRaymarchJob",
+      "snippet": "new AcousticEcholocationRaymarchJob                 {                     EncodedSdf = encodedSdf,                     AudioMaterialIds = audioMaterialIds,                     GridDimensions = new int3(gridDimensions.x, gridDimensions.y, gr"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5153,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5154,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5155,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(voxelCellSize.x, voxelCellSize.y, voxelCellSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5157,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(origin.x, origin.y, origin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5158,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(origin.x, origin.y, origin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5159,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(forward.x, forward.y, forward.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5160,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(right.x, right.y, right.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5161,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(up.x, up.y, up.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5277,
+      "owner": "PublishSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "SonarTriggerState",
+      "snippet": "new SonarTriggerState                     {                         Sequence = _sonarEcholocationScheduledSequence,                         EchoRevision = echoRevision,                         StartFrame = _sonarEcholocationScheduledStartFr"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5424,
+      "owner": "HandleAcousticEchoReturned",
+      "kind": "object_creation",
+      "detail": "SonarEchoCompositeGroup",
+      "snippet": "new SonarEchoCompositeGroup(                     echoAup,                     echoEvent.DistanceMeters,                     echoEvent.ReturnStrength,                     echoEvent.Resonance,                     1,                     echoEv"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5518,
+      "owner": "RunSonarEchoCompositeHashPass",
+      "kind": "value_type_creation",
+      "detail": "SonarEchoSpatialHashCoalesceJob",
+      "snippet": "new SonarEchoSpatialHashCoalesceJob             {                 Candidates = candidates,                 Groups = spatialViews.Groups,                 GroupCount = spatialViews.GroupCount,                 CandidateCount = math.clamp(candi"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5901,
+      "owner": "PublishPingReturnSignal",
+      "kind": "value_type_creation",
+      "detail": "PingReturnSignal",
+      "snippet": "new PingReturnSignal(                  position,                  in hitAup,                  distanceMeters,                  returnStrength,                  echoDelaySeconds,                  audioMaterialId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 6112,
+      "owner": "BuildSonarEchoTap",
+      "kind": "object_creation",
+      "detail": "SonarEchoTap",
+      "snippet": "new SonarEchoTap              {                  DelaySeconds = clampedDelaySeconds,                  PreviousDopplerRatio = 1f,                  DopplerRatio = math.clamp(dopplerRatio, SonarEchoMinimumDopplerRatio, SonarEchoMaximumDopplerR"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 6330,
+      "owner": "PublishAcousticImpulseSignal",
+      "kind": "object_creation",
+      "detail": "PhysicsEventPayload",
+      "snippet": "new PhysicsEventPayload             {                 RuntimePosition = runtimePosition,                 Direction = ResolveAcousticImpulseDirection(direction),                 ForceVector = default,                 ImpulseVector = default,"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 6583,
+      "owner": "HandleLeviathanRoarAudioPing",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(predatorDeltaAup.x, predatorDeltaAup.y, predatorDeltaAup.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 6731,
+      "owner": "ResolveBaseStructuralWarningAup",
+      "kind": "object_creation",
+      "detail": "AbsoluteUniversePosition",
+      "snippet": "new AbsoluteUniversePosition              {                  GridX = warning.EpicenterAup.GridX,                  GridY = warning.EpicenterAup.GridY,                  GridZ = warning.EpicenterAup.GridZ,                  LocalX = warning.Epi"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 6746,
+      "owner": "ResolveStructuralStressRuntimePosition",
+      "kind": "object_creation",
+      "detail": "AbsoluteUniversePosition",
+      "snippet": "new AbsoluteUniversePosition                  {                      GridX = stressInfo.SourceAup.GridX,                      GridY = stressInfo.SourceAup.GridY,                      GridZ = stressInfo.SourceAup.GridZ,                      "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8012,
+      "owner": "EnsureBuffers",
+      "kind": "object_creation",
+      "detail": "AudioFrameSpscRingBuffer",
+      "snippet": "new AudioFrameSpscRingBuffer()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8067,
+      "owner": "EnsureBuffers",
+      "kind": "value_type_creation",
+      "detail": "CriticalSidechainCompressorState",
+      "snippet": "new CriticalSidechainCompressorState { Gain = 1f }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8288,
+      "owner": "ClearLowPassState",
+      "kind": "value_type_creation",
+      "detail": "CriticalSidechainCompressorState",
+      "snippet": "new CriticalSidechainCompressorState { Gain = 1f }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8455,
+      "owner": "PrimeForwardImpactEchoProbe",
+      "kind": "object_creation",
+      "detail": "PendingImpactEchoProbe",
+      "snippet": "new PendingImpactEchoProbe              {                  Valid = 1,                  Excitation = echoExcitation,                  ExpireAt = ResolvePresentationClockSeconds() + ImpactEchoMaximumLifetimeSeconds             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 9656,
+      "owner": "ResetSonarPhaseState",
+      "kind": "value_type_creation",
+      "detail": "SonarSynthesisState",
+      "snippet": "new SonarSynthesisState              {                  ActiveSequence = activeSequence              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 10188,
+      "owner": "TryEnqueueImpactAudioEvent",
+      "kind": "value_type_creation",
+      "detail": "ImpactAudioEvent",
+      "snippet": "new ImpactAudioEvent              {                  Stress = math.saturate(stress),                  Metallic = math.saturate(metallic),                  ClangExcitation = math.saturate(clangExcitation),                  EchoExcitation = m"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11655,
+      "owner": "RecordAudioSynthesisTelemetry",
+      "kind": "value_type_creation",
+      "detail": "AudioSynthesisTelemetryEntry",
+      "snippet": "new AudioSynthesisTelemetryEntry                 {                     StopwatchTicks = System.Diagnostics.Stopwatch.GetTimestamp(),                     Frame = (uint)math.max(0, Hecton8.Core.SystemDispatcher.CurrentFrameIndex),            "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11748,
+      "owner": "RecordGranularTelemetry",
+      "kind": "value_type_creation",
+      "detail": "GranularAudioTelemetryEntry",
+      "snippet": "new GranularAudioTelemetryEntry                 {                     SampleIndex = sampleIndex,                     Stress01 = math.saturate(stress),                     StressDerivative01 = math.saturate(stressDerivative),                "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11836,
+      "owner": "RecordPrologueTransitionTelemetry",
+      "kind": "value_type_creation",
+      "detail": "PrologueAudioTransitionTelemetryEntry",
+      "snippet": "new PrologueAudioTransitionTelemetryEntry                 {                     Frame = state.Frame,                     Sequence = state.Sequence,                     UniverseVelocityMetersPerSecond = state.UniverseVelocityMetersPerSecond,"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11933,
+      "owner": "WriteGranularTelemetryDumpCold",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11934,
+      "owner": "WriteGranularTelemetryDumpCold",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11984,
+      "owner": "WritePrologueTransitionTelemetryDumpCold",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11985,
+      "owner": "WritePrologueTransitionTelemetryDumpCold",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12040,
+      "owner": "WriteAudioSynthesisTelemetryDumpCold",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12041,
+      "owner": "WriteAudioSynthesisTelemetryDumpCold",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12799,
+      "owner": "SampleSimplex01",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(position + seedX * 31.17f, seedY * 17.93f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12903,
+      "owner": "WarmPrologueSplashdownBurstProbeCold",
+      "kind": "value_type_creation",
+      "detail": "PrologueSplashdownSineSweepProbeJob",
+      "snippet": "new PrologueSplashdownSineSweepProbeJob                 {                     Output = frameViews.MixScratch,                     NormalizedTime = 0.5f                 }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12937,
+      "owner": "PublishAudioParameterSnapshot",
+      "kind": "object_creation",
+      "detail": "AudioParameterSnapshot",
+      "snippet": "new AudioParameterSnapshot              {                  HullStress = _targetHullStressValue,                  StructuralHullStress = _targetStructuralHullStressValue,                  StructuralHullStressVelocity = _targetStructuralHullS"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 1033,
+      "owner": "",
+      "kind": "implicit_object_creation",
+      "detail": "unknown",
+      "snippet": "new(false)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 248,
+      "owner": "SanitizeWorldPosition",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                 SanitizeFiniteValue(value.x),                 SanitizeFiniteValue(value.y),                 SanitizeFiniteValue(value.z))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 275,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 424,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProceduralAudioListenerRegistry",
+      "snippet": "new ProceduralAudioListenerRegistry(ListenerCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 667,
+      "owner": "TryRaiseAudioPingTriggered",
+      "kind": "object_creation",
+      "detail": "AudioPingTriggerInfo",
+      "snippet": "new AudioPingTriggerInfo(startSampleFrame, sampleRate, intensity, chirpDurationSeconds)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 704,
+      "owner": "TryRaiseAudioPingTriggered",
+      "kind": "object_creation",
+      "detail": "AudioPingTriggerInfo",
+      "snippet": "new AudioPingTriggerInfo(                 worldPosition,                 intensity,                 chirpDurationSeconds,                 acousticTransmission01,                 lowPassCutoffHz,                 kind)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 786,
+      "owner": "TryRaiseStructuralStressTriggered",
+      "kind": "object_creation",
+      "detail": "StructuralStressAudioInfo",
+      "snippet": "new StructuralStressAudioInfo(worldPosition, stress01, pitchScale)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 801,
+      "owner": "TryRaiseHullStressSignal",
+      "kind": "object_creation",
+      "detail": "StructuralStressAudioInfo",
+      "snippet": "new StructuralStressAudioInfo(in signal)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 882,
+      "owner": "CreateAudioPingEvent",
+      "kind": "object_creation",
+      "detail": "AudioPingTriggerPayload",
+      "snippet": "new AudioPingTriggerPayload(                 info.StartSampleFrame,                 info.SampleRate,                 info.Intensity,                 info.ChirpDurationSeconds,                 info.WorldPosition,                 info.Acousti"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 896,
+      "owner": "CreateStructuralStressEvent",
+      "kind": "object_creation",
+      "detail": "StructuralStressAudioPayload",
+      "snippet": "new StructuralStressAudioPayload(                 ToAcousticAup(in info.SourceAup),                 info.WorldPosition,                 info.Stress01,                 info.PitchScale,                 info.PressureDelta,                 info"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 1273,
+      "owner": "ToAudioInfo",
+      "kind": "object_creation",
+      "detail": "AudioPingTriggerInfo",
+      "snippet": "new AudioPingTriggerInfo(                 payload.StartSampleFrame,                 payload.SampleRate,                 payload.Intensity,                 payload.ChirpDurationSeconds,                 payload.WorldPosition,                 "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 1290,
+      "owner": "ToAudioInfo",
+      "kind": "object_creation",
+      "detail": "StructuralStressAudioInfo",
+      "snippet": "new StructuralStressAudioInfo(                 in sourceAup,                 payload.WorldPosition,                 payload.Stress01,                 payload.PitchScale,                 payload.PressureDelta,                 payload.DepthMe"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 1304,
+      "owner": "ToAcousticAup",
+      "kind": "object_creation",
+      "detail": "AcousticAup",
+      "snippet": "new AcousticAup(                 aup.GridX,                 aup.GridY,                 aup.GridZ,                 new Unity.Mathematics.float3(aup.LocalX, aup.LocalY, aup.LocalZ))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 1308,
+      "owner": "ToAcousticAup",
+      "kind": "object_creation",
+      "detail": "Unity.Mathematics.float3",
+      "snippet": "new Unity.Mathematics.float3(aup.LocalX, aup.LocalY, aup.LocalZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "line": 1313,
+      "owner": "ToAbsoluteUniversePosition",
+      "kind": "object_creation",
+      "detail": "AbsoluteUniversePosition",
+      "snippet": "new AbsoluteUniversePosition             {                 GridX = aup.GridX,                 GridY = aup.GridY,                 GridZ = aup.GridZ,                 LocalX = aup.Local.x,                 LocalY = aup.Local.y,                 "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 479,
+      "owner": "TryQueueWarning",
+      "kind": "value_type_creation",
+      "detail": "VocalWarningDTO",
+      "snippet": "new VocalWarningDTO                 {                     AudioBankHashID = hash,                     PriorityScore = priorityScore,                     ExpirationTime = _vwsClockSeconds + ResolveExpirationSeconds(hash, severity),          "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 645,
+      "owner": "TryRegisterPostSimulation",
+      "kind": "object_creation",
+      "detail": "PostSimulationPhaseSystem",
+      "snippet": "new PostSimulationPhaseSystem(this)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 1100,
+      "owner": "RunVocalWarningFrame",
+      "kind": "value_type_creation",
+      "detail": "EvaluateWarningPrioritiesJob",
+      "snippet": "new EvaluateWarningPrioritiesJob                 {                     Queue = views.Queue,                     PriorityState = views.PriorityState,                     Cooldowns = views.Cooldowns,                     WarningFlags = views.W"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 1131,
+      "owner": "RunVocalWarningFrame",
+      "kind": "value_type_creation",
+      "detail": "DispatchVoiceOverJob",
+      "snippet": "new DispatchVoiceOverJob                 {                     Queue = views.Queue,                     PriorityState = views.PriorityState,                     CurrentState = views.CurrentState,                     Dispatch = views.Dispatc"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 1360,
+      "owner": "WriteTelemetry",
+      "kind": "value_type_creation",
+      "detail": "VwsTelemetryEntry",
+      "snippet": "new VwsTelemetryEntry                 {                     Frame = frame,                     ActivePriorityCount = priorityState.ActivePriorityCount,                     ActivePriorityWord = priorityState.VwsPriorityWord,                 "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 1419,
+      "owner": "DumpTelemetryCold",
+      "kind": "value_type_creation",
+      "detail": "VwsTelemetryDumpHeader",
+      "snippet": "new VwsTelemetryDumpHeader                 {                     Magic = VocalWarningSystemHash,                     Version = 2u,                     EntryStrideBytes = (uint)entryStride,                     Capacity = (uint)telemetryRing."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 1457,
+      "owner": "WriteTelemetryDump",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 1459,
+      "owner": "WriteTelemetryDump",
+      "kind": "object_creation",
+      "detail": "ReadOnlySpan<byte>",
+      "snippet": "new ReadOnlySpan<byte>(&localHeader, UnsafeUtility.SizeOf<VwsTelemetryDumpHeader>())"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 1467,
+      "owner": "WriteTelemetryDump",
+      "kind": "object_creation",
+      "detail": "ReadOnlySpan<byte>",
+      "snippet": "new ReadOnlySpan<byte>(&entry, entryStride)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 1474,
+      "owner": "WriteTelemetryDump",
+      "kind": "object_creation",
+      "detail": "ReadOnlySpan<byte>",
+      "snippet": "new ReadOnlySpan<byte>(&entry, entryStride)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 1622,
+      "owner": "CreateDefaultTuning",
+      "kind": "value_type_creation",
+      "detail": "VocalWarningTuningDTO",
+      "snippet": "new VocalWarningTuningDTO             {                 BasePriorityHull = 1000f,                 BasePriorityCrush = 940f,                 BasePriorityOxygen = 820f,                 BasePriorityRadiation = 430f,                 BasePriorit"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 1768,
+      "owner": "ResolveCompassDirectionHash",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(                 (threatAup.GridX - listenerAup.GridX) * cell + ((double)threatAup.LocalX - listenerAup.LocalX),                 (threatAup.GridY - listenerAup.GridY) * cell + ((double)threatAup.LocalY - listenerAup.LocalY),    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 1772,
+      "owner": "ResolveCompassDirectionHash",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)delta.x, (float)delta.y, (float)delta.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 1962,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "VocalWarningDTO",
+      "snippet": "new VocalWarningDTO                     {                         AudioBankHashID = hash,                         PriorityScore = ResolvePriorityScore(hash, severity, 0, flags, in tuning),                         ExpirationTime = TimeSecond"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 2190,
+      "owner": "TryQueue",
+      "kind": "value_type_creation",
+      "detail": "VocalWarningDTO",
+      "snippet": "new VocalWarningDTO                 {                     AudioBankHashID = hash,                     PriorityScore = priorityScore,                     ExpirationTime = TimeSeconds + ResolveExpirationSeconds(hash, severity),               "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "line": 2334,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "VocalWarningDispatchDTO",
+      "snippet": "new VocalWarningDispatchDTO                 {                     AudioBankHashID = candidate.AudioBankHashID,                     CuePriority = ResolveCuePriority(candidateBitIndex, candidate.PriorityScore),                     VolumeScala"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

@@ -154,6 +154,7 @@ MonoBehaviour:
   feedbackInterval: 0.35
   tetherDuration: 5
   tetherPullBonus: 1.35
+  tracerShader: {fileID: 4800000, guid: 1d324d2bc5d23144bbf8d997d03ddc1a, type: 3}
   tracer: {fileID: 0}
   tracerLifetime: 0.08
 --- !u!114 &5696904576137478195

@@ -20,7 +20,7 @@ namespace Hecton8.Visor
             s_cachedScaler = null;
         }
 
-        internal static bool ShouldCullForSurvivalScale()
+        internal static float ResolveSurvivalPressure01()
         {
             IResolutionScalerService scaler = s_cachedScaler;
             if (scaler == null)
@@ -30,16 +30,25 @@ namespace Hecton8.Visor
             }
 
             if (scaler == null)
-                return false;
+                return 0f;
 
             if (!scaler.TryGetScaleState(out ResolutionScaleState state))
             {
                 s_cachedScaler = null;
-                return false;
+                return 0f;
             }
 
-            return state.StpActive != 0 &&
-                   state.CurrentRenderScale01 <= SurvivalScaleThreshold;
+            if (state.StpActive == 0)
+                return 0f;
+
+            float scale = Mathf.Clamp01(state.CurrentRenderScale01);
+            float pressure = Mathf.Clamp01((SurvivalScaleThreshold - scale) / SurvivalScaleThreshold);
+            return pressure * pressure * (3f - 2f * pressure);
+        }
+
+        internal static float ResolveSurvivalVisualWeight01()
+        {
+            return 1f - ResolveSurvivalPressure01();
         }
 
         internal static void Invalidate()

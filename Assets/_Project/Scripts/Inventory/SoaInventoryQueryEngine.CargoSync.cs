@@ -4,6 +4,7 @@ namespace Hecton8.Inventory
     using System.IO;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
+    using System.Reflection;
     using System.Threading;
     using Hecton8.Core;
     using Hecton8.Core.Contracts.Signals;
@@ -23,10 +24,22 @@ namespace Hecton8.Inventory
         [FieldOffset(4)] public uint DestContainerHashID;
         [FieldOffset(8)] public uint FilterHashMask;
         [FieldOffset(12)] public uint TransactionFlags;
-        [FieldOffset(16)] private uint _pad0;
-        [FieldOffset(20)] private uint _pad1;
-        [FieldOffset(24)] private uint _pad2;
-        [FieldOffset(28)] private uint _pad3;
+        [FieldOffset(16)] private byte _pad00;
+        [FieldOffset(17)] private byte _pad01;
+        [FieldOffset(18)] private byte _pad02;
+        [FieldOffset(19)] private byte _pad03;
+        [FieldOffset(20)] private byte _pad04;
+        [FieldOffset(21)] private byte _pad05;
+        [FieldOffset(22)] private byte _pad06;
+        [FieldOffset(23)] private byte _pad07;
+        [FieldOffset(24)] private byte _pad08;
+        [FieldOffset(25)] private byte _pad09;
+        [FieldOffset(26)] private byte _pad10;
+        [FieldOffset(27)] private byte _pad11;
+        [FieldOffset(28)] private byte _pad12;
+        [FieldOffset(29)] private byte _pad13;
+        [FieldOffset(30)] private byte _pad14;
+        [FieldOffset(31)] private byte _pad15;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -38,7 +51,14 @@ namespace Hecton8.Inventory
         [FieldOffset(12)] public int DesignerMaxItemsPerFrame;
         [FieldOffset(16)] public float ProgressVisualSeconds;
         [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] private ulong _pad0;
+        [FieldOffset(24)] private byte _pad0;
+        [FieldOffset(25)] private byte _pad1;
+        [FieldOffset(26)] private byte _pad2;
+        [FieldOffset(27)] private byte _pad3;
+        [FieldOffset(28)] private byte _pad4;
+        [FieldOffset(29)] private byte _pad5;
+        [FieldOffset(30)] private byte _pad6;
+        [FieldOffset(31)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -50,7 +70,14 @@ namespace Hecton8.Inventory
         [FieldOffset(12)] public uint Priority;
         [FieldOffset(16)] public uint AcceptedHashA;
         [FieldOffset(20)] public uint AcceptedHashB;
-        [FieldOffset(24)] private ulong _pad0;
+        [FieldOffset(24)] private byte _pad0;
+        [FieldOffset(25)] private byte _pad1;
+        [FieldOffset(26)] private byte _pad2;
+        [FieldOffset(27)] private byte _pad3;
+        [FieldOffset(28)] private byte _pad4;
+        [FieldOffset(29)] private byte _pad5;
+        [FieldOffset(30)] private byte _pad6;
+        [FieldOffset(31)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -71,7 +98,10 @@ namespace Hecton8.Inventory
         [FieldOffset(48)] public float TransferProgress01;
         [FieldOffset(52)] public float ExecutionMicroseconds;
         [FieldOffset(56)] public uint Frame;
-        [FieldOffset(60)] private uint _pad0;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 128)]
@@ -86,44 +116,146 @@ namespace Hecton8.Inventory
         [FieldOffset(68)] public uint Frame;
         [FieldOffset(72)] public uint Flags;
         [FieldOffset(76)] public uint QualityMilli;
-        [FieldOffset(80)] private ulong _pad0;
-        [FieldOffset(88)] private ulong _pad1;
-        [FieldOffset(96)] private ulong _pad2;
-        [FieldOffset(104)] private ulong _pad3;
-        [FieldOffset(112)] private ulong _pad4;
-        [FieldOffset(120)] private ulong _pad5;
+        [FieldOffset(80)] private byte _pad00;
+        [FieldOffset(81)] private byte _pad01;
+        [FieldOffset(82)] private byte _pad02;
+        [FieldOffset(83)] private byte _pad03;
+        [FieldOffset(84)] private byte _pad04;
+        [FieldOffset(85)] private byte _pad05;
+        [FieldOffset(86)] private byte _pad06;
+        [FieldOffset(87)] private byte _pad07;
+        [FieldOffset(88)] private byte _pad08;
+        [FieldOffset(89)] private byte _pad09;
+        [FieldOffset(90)] private byte _pad10;
+        [FieldOffset(91)] private byte _pad11;
+        [FieldOffset(92)] private byte _pad12;
+        [FieldOffset(93)] private byte _pad13;
+        [FieldOffset(94)] private byte _pad14;
+        [FieldOffset(95)] private byte _pad15;
+        [FieldOffset(96)] private byte _pad16;
+        [FieldOffset(97)] private byte _pad17;
+        [FieldOffset(98)] private byte _pad18;
+        [FieldOffset(99)] private byte _pad19;
+        [FieldOffset(100)] private byte _pad20;
+        [FieldOffset(101)] private byte _pad21;
+        [FieldOffset(102)] private byte _pad22;
+        [FieldOffset(103)] private byte _pad23;
+        [FieldOffset(104)] private byte _pad24;
+        [FieldOffset(105)] private byte _pad25;
+        [FieldOffset(106)] private byte _pad26;
+        [FieldOffset(107)] private byte _pad27;
+        [FieldOffset(108)] private byte _pad28;
+        [FieldOffset(109)] private byte _pad29;
+        [FieldOffset(110)] private byte _pad30;
+        [FieldOffset(111)] private byte _pad31;
+        [FieldOffset(112)] private byte _pad32;
+        [FieldOffset(113)] private byte _pad33;
+        [FieldOffset(114)] private byte _pad34;
+        [FieldOffset(115)] private byte _pad35;
+        [FieldOffset(116)] private byte _pad36;
+        [FieldOffset(117)] private byte _pad37;
+        [FieldOffset(118)] private byte _pad38;
+        [FieldOffset(119)] private byte _pad39;
+        [FieldOffset(120)] private byte _pad40;
+        [FieldOffset(121)] private byte _pad41;
+        [FieldOffset(122)] private byte _pad42;
+        [FieldOffset(123)] private byte _pad43;
+        [FieldOffset(124)] private byte _pad44;
+        [FieldOffset(125)] private byte _pad45;
+        [FieldOffset(126)] private byte _pad46;
+        [FieldOffset(127)] private byte _pad47;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CargoTelemetryEntry
     {
-        [FieldOffset(0)] public uint Frame;
-        [FieldOffset(4)] public uint SourceContainerHashID;
-        [FieldOffset(8)] public uint DestContainerHashID;
-        [FieldOffset(12)] public uint ItemsTransferred;
-        [FieldOffset(16)] public uint QuantityTransferred;
-        [FieldOffset(20)] public uint OverflowLootCaches;
-        [FieldOffset(24)] public uint TimeSlicedFrames;
-        [FieldOffset(28)] public uint AtomicConflicts;
-        [FieldOffset(32)] public float BurstExecutionMicroseconds;
-        [FieldOffset(36)] public float TransferProgress01;
-        [FieldOffset(40)] public uint Flags;
-        [FieldOffset(44)] public int NextSourceIndex;
-        [FieldOffset(48)] public ulong StateHash;
-        [FieldOffset(56)] private ulong _pad0;
+        [FieldOffset(0)] public ulong StateHash;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public uint SourceContainerHashID;
+        [FieldOffset(16)] public uint DestContainerHashID;
+        [FieldOffset(20)] public uint ItemsTransferred;
+        [FieldOffset(24)] public uint QuantityTransferred;
+        [FieldOffset(28)] public uint OverflowLootCaches;
+        [FieldOffset(32)] public uint TimeSlicedFrames;
+        [FieldOffset(36)] public uint AtomicConflicts;
+        [FieldOffset(40)] public float BurstExecutionMicroseconds;
+        [FieldOffset(44)] public float TransferProgress01;
+        [FieldOffset(48)] public uint Flags;
+        [FieldOffset(52)] public int NextSourceIndex;
+        [FieldOffset(56)] private byte _pad0;
+        [FieldOffset(57)] private byte _pad1;
+        [FieldOffset(58)] private byte _pad2;
+        [FieldOffset(59)] private byte _pad3;
+        [FieldOffset(60)] private byte _pad4;
+        [FieldOffset(61)] private byte _pad5;
+        [FieldOffset(62)] private byte _pad6;
+        [FieldOffset(63)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CargoAtomicCounterDTO
     {
         [FieldOffset(0)] public int Value;
-        [FieldOffset(8)] private ulong _pad0;
-        [FieldOffset(16)] private ulong _pad1;
-        [FieldOffset(24)] private ulong _pad2;
-        [FieldOffset(32)] private ulong _pad3;
-        [FieldOffset(40)] private ulong _pad4;
-        [FieldOffset(48)] private ulong _pad5;
-        [FieldOffset(56)] private ulong _pad6;
+        [FieldOffset(4)] private byte _pad00;
+        [FieldOffset(5)] private byte _pad01;
+        [FieldOffset(6)] private byte _pad02;
+        [FieldOffset(7)] private byte _pad03;
+        [FieldOffset(8)] private byte _pad04;
+        [FieldOffset(9)] private byte _pad05;
+        [FieldOffset(10)] private byte _pad06;
+        [FieldOffset(11)] private byte _pad07;
+        [FieldOffset(12)] private byte _pad08;
+        [FieldOffset(13)] private byte _pad09;
+        [FieldOffset(14)] private byte _pad10;
+        [FieldOffset(15)] private byte _pad11;
+        [FieldOffset(16)] private byte _pad12;
+        [FieldOffset(17)] private byte _pad13;
+        [FieldOffset(18)] private byte _pad14;
+        [FieldOffset(19)] private byte _pad15;
+        [FieldOffset(20)] private byte _pad16;
+        [FieldOffset(21)] private byte _pad17;
+        [FieldOffset(22)] private byte _pad18;
+        [FieldOffset(23)] private byte _pad19;
+        [FieldOffset(24)] private byte _pad20;
+        [FieldOffset(25)] private byte _pad21;
+        [FieldOffset(26)] private byte _pad22;
+        [FieldOffset(27)] private byte _pad23;
+        [FieldOffset(28)] private byte _pad24;
+        [FieldOffset(29)] private byte _pad25;
+        [FieldOffset(30)] private byte _pad26;
+        [FieldOffset(31)] private byte _pad27;
+        [FieldOffset(32)] private byte _pad28;
+        [FieldOffset(33)] private byte _pad29;
+        [FieldOffset(34)] private byte _pad30;
+        [FieldOffset(35)] private byte _pad31;
+        [FieldOffset(36)] private byte _pad32;
+        [FieldOffset(37)] private byte _pad33;
+        [FieldOffset(38)] private byte _pad34;
+        [FieldOffset(39)] private byte _pad35;
+        [FieldOffset(40)] private byte _pad36;
+        [FieldOffset(41)] private byte _pad37;
+        [FieldOffset(42)] private byte _pad38;
+        [FieldOffset(43)] private byte _pad39;
+        [FieldOffset(44)] private byte _pad40;
+        [FieldOffset(45)] private byte _pad41;
+        [FieldOffset(46)] private byte _pad42;
+        [FieldOffset(47)] private byte _pad43;
+        [FieldOffset(48)] private byte _pad44;
+        [FieldOffset(49)] private byte _pad45;
+        [FieldOffset(50)] private byte _pad46;
+        [FieldOffset(51)] private byte _pad47;
+        [FieldOffset(52)] private byte _pad48;
+        [FieldOffset(53)] private byte _pad49;
+        [FieldOffset(54)] private byte _pad50;
+        [FieldOffset(55)] private byte _pad51;
+        [FieldOffset(56)] private byte _pad52;
+        [FieldOffset(57)] private byte _pad53;
+        [FieldOffset(58)] private byte _pad54;
+        [FieldOffset(59)] private byte _pad55;
+        [FieldOffset(60)] private byte _pad56;
+        [FieldOffset(61)] private byte _pad57;
+        [FieldOffset(62)] private byte _pad58;
+        [FieldOffset(63)] private byte _pad59;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 128)]
@@ -155,24 +287,45 @@ namespace Hecton8.Inventory
         [FieldOffset(92)] public uint ContinuousQualityFence;
         [FieldOffset(96)] public uint AtomicCounterSizeBytes;
         [FieldOffset(100)] public uint OverflowCounterBufferID;
-        [FieldOffset(104)] private ulong _pad1;
-        [FieldOffset(112)] private ulong _pad2;
-        [FieldOffset(120)] private ulong _pad3;
+        [FieldOffset(104)] private byte _pad00;
+        [FieldOffset(105)] private byte _pad01;
+        [FieldOffset(106)] private byte _pad02;
+        [FieldOffset(107)] private byte _pad03;
+        [FieldOffset(108)] private byte _pad04;
+        [FieldOffset(109)] private byte _pad05;
+        [FieldOffset(110)] private byte _pad06;
+        [FieldOffset(111)] private byte _pad07;
+        [FieldOffset(112)] private byte _pad08;
+        [FieldOffset(113)] private byte _pad09;
+        [FieldOffset(114)] private byte _pad10;
+        [FieldOffset(115)] private byte _pad11;
+        [FieldOffset(116)] private byte _pad12;
+        [FieldOffset(117)] private byte _pad13;
+        [FieldOffset(118)] private byte _pad14;
+        [FieldOffset(119)] private byte _pad15;
+        [FieldOffset(120)] private byte _pad16;
+        [FieldOffset(121)] private byte _pad17;
+        [FieldOffset(122)] private byte _pad18;
+        [FieldOffset(123)] private byte _pad19;
+        [FieldOffset(124)] private byte _pad20;
+        [FieldOffset(125)] private byte _pad21;
+        [FieldOffset(126)] private byte _pad22;
+        [FieldOffset(127)] private byte _pad23;
     }
 
     public struct CargoSyncVaultHandles
     {
-        public InventorySoaVaultLane<CargoTransactionDTO> Transactions;
-        public InventorySoaVaultLane<LootCacheDTO> LootCaches;
-        public InventorySoaVaultLane<CargoTelemetryEntry> TelemetryRing;
-        public InventorySoaVaultLane<CargoAtomicCounterDTO> TelemetryCursor;
-        public InventorySoaVaultLane<CargoAtomicCounterDTO> OverflowLootCounter;
-        public InventorySoaVaultLane<CargoMergeResultDTO> Progress;
-        public InventorySoaVaultLane<CargoSyncTuningDTO> Tuning;
-        public InventorySoaVaultLane<CargoFilterProfileDTO> FilterProfiles;
+        public InventorySoaVaultLane Transactions;
+        public InventorySoaVaultLane LootCaches;
+        public InventorySoaVaultLane TelemetryRing;
+        public InventorySoaVaultLane TelemetryCursor;
+        public InventorySoaVaultLane OverflowLootCounter;
+        public InventorySoaVaultLane Progress;
+        public InventorySoaVaultLane Tuning;
+        public InventorySoaVaultLane FilterProfiles;
     }
 
-    public struct CargoSyncVaultBuffers
+    public ref struct CargoSyncVaultBuffers
     {
         public NativeArray<CargoTransactionDTO> Transactions;
         public NativeArray<LootCacheDTO> LootCaches;
@@ -204,6 +357,7 @@ namespace Hecton8.Inventory
         public const uint CargoDumpMagic = 0x43415247u; // CARG
         public const uint CargoDumpVersion = 1u;
         public const string CargoDumpPath = "Docs/AgentLogs/Dump_SHINOBU_344.bin";
+        private const double CargoFloatCastClampMeters = 3.4028234663852886e38d;
         public const uint CargoResultInvalidInput = 1u << 0;
         public const uint CargoResultComplete = 1u << 1;
         public const uint CargoResultTimeSliced = 1u << 2;
@@ -229,13 +383,76 @@ namespace Hecton8.Inventory
         public static bool CargoRuntimeLayoutValid()
         {
             return UnsafeUtility.SizeOf<CargoTransactionDTO>() == CargoTransactionDtoSizeBytes &&
+                   OffsetOf<CargoTransactionDTO>(nameof(CargoTransactionDTO.SourceContainerHashID)) == 0 &&
+                   OffsetOf<CargoTransactionDTO>(nameof(CargoTransactionDTO.DestContainerHashID)) == 4 &&
+                   OffsetOf<CargoTransactionDTO>(nameof(CargoTransactionDTO.FilterHashMask)) == 8 &&
+                   OffsetOf<CargoTransactionDTO>(nameof(CargoTransactionDTO.TransactionFlags)) == 12 &&
                    UnsafeUtility.SizeOf<CargoSyncTuningDTO>() == CargoTuningDtoSizeBytes &&
+                   OffsetOf<CargoSyncTuningDTO>(nameof(CargoSyncTuningDTO.GlobalQualityWeight)) == 0 &&
+                   OffsetOf<CargoSyncTuningDTO>(nameof(CargoSyncTuningDTO.OverflowScatterRadiusMeters)) == 4 &&
+                   OffsetOf<CargoSyncTuningDTO>(nameof(CargoSyncTuningDTO.FilterHashMask)) == 8 &&
+                   OffsetOf<CargoSyncTuningDTO>(nameof(CargoSyncTuningDTO.DesignerMaxItemsPerFrame)) == 12 &&
+                   OffsetOf<CargoSyncTuningDTO>(nameof(CargoSyncTuningDTO.ProgressVisualSeconds)) == 16 &&
+                   OffsetOf<CargoSyncTuningDTO>(nameof(CargoSyncTuningDTO.Flags)) == 20 &&
                    UnsafeUtility.SizeOf<CargoFilterProfileDTO>() == CargoFilterProfileDtoSizeBytes &&
+                   OffsetOf<CargoFilterProfileDTO>(nameof(CargoFilterProfileDTO.ContainerHash)) == 0 &&
+                   OffsetOf<CargoFilterProfileDTO>(nameof(CargoFilterProfileDTO.FilterHashMask)) == 4 &&
+                   OffsetOf<CargoFilterProfileDTO>(nameof(CargoFilterProfileDTO.RouteFlags)) == 8 &&
+                   OffsetOf<CargoFilterProfileDTO>(nameof(CargoFilterProfileDTO.Priority)) == 12 &&
+                   OffsetOf<CargoFilterProfileDTO>(nameof(CargoFilterProfileDTO.AcceptedHashA)) == 16 &&
+                   OffsetOf<CargoFilterProfileDTO>(nameof(CargoFilterProfileDTO.AcceptedHashB)) == 20 &&
                    UnsafeUtility.SizeOf<CargoMergeResultDTO>() == CargoMergeResultDtoSizeBytes &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.SourceContainerHashID)) == 0 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.DestContainerHashID)) == 4 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.TransferredItemCount)) == 8 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.TransferredQuantityTotal)) == 12 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.OverflowLootCacheCount)) == 16 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.AtomicConflictCount)) == 20 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.SourceActiveBefore)) == 24 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.SourceActiveAfter)) == 28 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.DestActiveBefore)) == 32 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.DestActiveAfter)) == 36 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.NextSourceIndex)) == 40 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.Flags)) == 44 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.TransferProgress01)) == 48 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.ExecutionMicroseconds)) == 52 &&
+                   OffsetOf<CargoMergeResultDTO>(nameof(CargoMergeResultDTO.Frame)) == 56 &&
                    UnsafeUtility.SizeOf<LootCacheDTO>() == LootCacheDtoSizeBytes &&
+                   OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.PositionAup)) == 0 &&
+                   OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.ItemHashID)) == 48 &&
+                   OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.Quantity)) == 52 &&
+                   OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.SourceContainerHashID)) == 56 &&
+                   OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.DestContainerHashID)) == 60 &&
+                   OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.Sequence)) == 64 &&
+                   OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.Frame)) == 68 &&
+                   OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.Flags)) == 72 &&
+                   OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.QualityMilli)) == 76 &&
                    UnsafeUtility.SizeOf<CargoTelemetryEntry>() == CargoTelemetryEntrySizeBytes &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.StateHash)) == 0 &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.Frame)) == 8 &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.SourceContainerHashID)) == 12 &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.DestContainerHashID)) == 16 &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.ItemsTransferred)) == 20 &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.QuantityTransferred)) == 24 &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.OverflowLootCaches)) == 28 &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.TimeSlicedFrames)) == 32 &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.AtomicConflicts)) == 36 &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.BurstExecutionMicroseconds)) == 40 &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.TransferProgress01)) == 44 &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.Flags)) == 48 &&
+                   OffsetOf<CargoTelemetryEntry>(nameof(CargoTelemetryEntry.NextSourceIndex)) == 52 &&
                    UnsafeUtility.SizeOf<CargoAtomicCounterDTO>() == CargoAtomicCounterDtoSizeBytes &&
-                   UnsafeUtility.SizeOf<CargoRuntimeSelfAuditDTO>() == CargoRuntimeSelfAuditDtoSizeBytes;
+                   OffsetOf<CargoAtomicCounterDTO>(nameof(CargoAtomicCounterDTO.Value)) == 0 &&
+                   UnsafeUtility.SizeOf<CargoRuntimeSelfAuditDTO>() == CargoRuntimeSelfAuditDtoSizeBytes &&
+                   OffsetOf<CargoRuntimeSelfAuditDTO>(nameof(CargoRuntimeSelfAuditDTO.Flags)) == 0 &&
+                   OffsetOf<CargoRuntimeSelfAuditDTO>(nameof(CargoRuntimeSelfAuditDTO.TransactionSizeBytes)) == 4 &&
+                   OffsetOf<CargoRuntimeSelfAuditDTO>(nameof(CargoRuntimeSelfAuditDTO.OverflowCounterBufferID)) == 100;
+        }
+
+        private static int OffsetOf<T>(string fieldName) where T : struct
+        {
+            FieldInfo field = typeof(T).GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            return field != null ? UnsafeUtility.GetFieldOffset(field) : -1;
         }
 
         public static bool TryAuditCargoRuntime(out CargoRuntimeSelfAuditDTO audit)
@@ -382,14 +599,14 @@ namespace Hecton8.Inventory
             if (vault == null)
                 return false;
 
-            buffers.Transactions = OpenLane(vault, in handles.Transactions);
-            buffers.LootCaches = OpenLane(vault, in handles.LootCaches);
-            buffers.TelemetryRing = OpenLane(vault, in handles.TelemetryRing);
-            buffers.TelemetryCursor = OpenLane(vault, in handles.TelemetryCursor);
-            buffers.OverflowLootCounter = OpenLane(vault, in handles.OverflowLootCounter);
-            buffers.Progress = OpenLane(vault, in handles.Progress);
-            buffers.Tuning = OpenLane(vault, in handles.Tuning);
-            buffers.FilterProfiles = OpenLane(vault, in handles.FilterProfiles);
+            buffers.Transactions = OpenLane<CargoTransactionDTO>(vault, in handles.Transactions);
+            buffers.LootCaches = OpenLane<LootCacheDTO>(vault, in handles.LootCaches);
+            buffers.TelemetryRing = OpenLane<CargoTelemetryEntry>(vault, in handles.TelemetryRing);
+            buffers.TelemetryCursor = OpenLane<CargoAtomicCounterDTO>(vault, in handles.TelemetryCursor);
+            buffers.OverflowLootCounter = OpenLane<CargoAtomicCounterDTO>(vault, in handles.OverflowLootCounter);
+            buffers.Progress = OpenLane<CargoMergeResultDTO>(vault, in handles.Progress);
+            buffers.Tuning = OpenLane<CargoSyncTuningDTO>(vault, in handles.Tuning);
+            buffers.FilterProfiles = OpenLane<CargoFilterProfileDTO>(vault, in handles.FilterProfiles);
             return buffers.Transactions.IsCreated &&
                    buffers.LootCaches.IsCreated &&
                    buffers.TelemetryRing.IsCreated &&
@@ -571,7 +788,19 @@ namespace Hecton8.Inventory
 
                 return true;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
             {
                 return false;
             }
@@ -756,13 +985,12 @@ namespace Hecton8.Inventory
                 WriteCount(DestinationActiveItemCount, destCount);
                 if (Transactions.IsCreated && Transactions.Length > 0)
                 {
-                    Transactions[0] = new CargoTransactionDTO
-                    {
-                        SourceContainerHashID = SourceContainerHashID != 0u ? SourceContainerHashID : 0x534F5552u,
-                        DestContainerHashID = DestContainerHashID != 0u ? DestContainerHashID : 0x44455354u,
-                        FilterHashMask = FilterHashMask,
-                        TransactionFlags = 1u
-                    };
+                    CargoTransactionDTO transaction = default;
+                    transaction.SourceContainerHashID = SourceContainerHashID != 0u ? SourceContainerHashID : 0x534F5552u;
+                    transaction.DestContainerHashID = DestContainerHashID != 0u ? DestContainerHashID : 0x44455354u;
+                    transaction.FilterHashMask = FilterHashMask;
+                    transaction.TransactionFlags = 1u;
+                    Transactions[0] = transaction;
                 }
             }
 
@@ -1185,18 +1413,17 @@ namespace Hecton8.Inventory
                     return;
                 }
 
-                OverflowLootCaches[writeIndex] = new LootCacheDTO
-                {
-                    PositionAup = BuildOverflowAup(in DockAup, EjectionOffsetMeters),
-                    ItemHashID = hash,
-                    Quantity = quantity,
-                    SourceContainerHashID = merge.SourceContainerHashID,
-                    DestContainerHashID = merge.DestContainerHashID,
-                    Sequence = (FrameIndex << 16) ^ (uint)writeIndex,
-                    Frame = FrameIndex,
-                    Flags = 1u,
-                    QualityMilli = 1000u
-                };
+                LootCacheDTO lootCache = default;
+                lootCache.PositionAup = BuildOverflowAup(in DockAup, EjectionOffsetMeters);
+                lootCache.ItemHashID = hash;
+                lootCache.Quantity = quantity;
+                lootCache.SourceContainerHashID = merge.SourceContainerHashID;
+                lootCache.DestContainerHashID = merge.DestContainerHashID;
+                lootCache.Sequence = (FrameIndex << 16) ^ (uint)writeIndex;
+                lootCache.Frame = FrameIndex;
+                lootCache.Flags = 1u;
+                lootCache.QualityMilli = 1000u;
+                OverflowLootCaches[writeIndex] = lootCache;
                 AddResultCounter(ref merge.OverflowLootCacheCount, 1);
             }
 
@@ -1223,22 +1450,21 @@ namespace Hecton8.Inventory
 
                 int cursor = ReserveTelemetryCursor();
                 int index = cursor % TelemetryRing.Length;
-                TelemetryRing[index] = new CargoTelemetryEntry
-                {
-                    Frame = FrameIndex,
-                    SourceContainerHashID = merge.SourceContainerHashID,
-                    DestContainerHashID = merge.DestContainerHashID,
-                    ItemsTransferred = merge.TransferredItemCount,
-                    QuantityTransferred = merge.TransferredQuantityTotal,
-                    OverflowLootCaches = merge.OverflowLootCacheCount,
-                    TimeSlicedFrames = (merge.Flags & CargoResultTimeSliced) != 0u ? 1u : 0u,
-                    AtomicConflicts = merge.AtomicConflictCount,
-                    BurstExecutionMicroseconds = merge.ExecutionMicroseconds,
-                    TransferProgress01 = merge.TransferProgress01,
-                    Flags = merge.Flags,
-                    NextSourceIndex = merge.NextSourceIndex,
-                    StateHash = HashMergeState(in merge)
-                };
+                CargoTelemetryEntry telemetry = default;
+                telemetry.Frame = FrameIndex;
+                telemetry.SourceContainerHashID = merge.SourceContainerHashID;
+                telemetry.DestContainerHashID = merge.DestContainerHashID;
+                telemetry.ItemsTransferred = merge.TransferredItemCount;
+                telemetry.QuantityTransferred = merge.TransferredQuantityTotal;
+                telemetry.OverflowLootCaches = merge.OverflowLootCacheCount;
+                telemetry.TimeSlicedFrames = (merge.Flags & CargoResultTimeSliced) != 0u ? 1u : 0u;
+                telemetry.AtomicConflicts = merge.AtomicConflictCount;
+                telemetry.BurstExecutionMicroseconds = merge.ExecutionMicroseconds;
+                telemetry.TransferProgress01 = merge.TransferProgress01;
+                telemetry.Flags = merge.Flags;
+                telemetry.NextSourceIndex = merge.NextSourceIndex;
+                telemetry.StateHash = HashMergeState(in merge);
+                TelemetryRing[index] = telemetry;
             }
 
             private int ReserveTelemetryCursor()
@@ -1268,11 +1494,13 @@ namespace Hecton8.Inventory
             private static AbsoluteUniversePositionBlit BuildOverflowAup(in AbsoluteUniversePositionBlit dockAup, float3 offsetMeters)
             {
                 double cell = AbsoluteUniversePosition.CellSizeMeters;
-                double3 absolute = new double3(
-                    ((double)dockAup.GridX * cell) + dockAup.Local.x,
-                    ((double)dockAup.GridY * cell) + dockAup.Local.y,
-                    ((double)dockAup.GridZ * cell) + dockAup.Local.z);
-                absolute += new double3(offsetMeters.x, offsetMeters.y, offsetMeters.z);
+                double3 absolute = default;
+                absolute.x = ((double)dockAup.GridX * cell) + dockAup.Local.x;
+                absolute.y = ((double)dockAup.GridY * cell) + dockAup.Local.y;
+                absolute.z = ((double)dockAup.GridZ * cell) + dockAup.Local.z;
+                absolute.x += offsetMeters.x;
+                absolute.y += offsetMeters.y;
+                absolute.z += offsetMeters.z;
                 return PackAup(absolute, cell);
             }
 
@@ -1284,18 +1512,18 @@ namespace Hecton8.Inventory
                 long gridX = (long)math.floor(absolute.x / cell);
                 long gridY = (long)math.floor(absolute.y / cell);
                 long gridZ = (long)math.floor(absolute.z / cell);
-                return new AbsoluteUniversePositionBlit
-                {
-                    GridX = gridX,
-                    GridY = gridY,
-                    GridZ = gridZ,
-                    Local = new float3(
-                        (float)(absolute.x - (gridX * cell)),
-                        (float)(absolute.y - (gridY * cell)),
-                        (float)(absolute.z - (gridZ * cell))),
-                    Reserved0 = 0u,
-                    Reserved1 = 0UL
-                };
+                float3 local = default;
+                local.x = (float)math.clamp(absolute.x - (gridX * cell), -CargoFloatCastClampMeters, CargoFloatCastClampMeters);
+                local.y = (float)math.clamp(absolute.y - (gridY * cell), -CargoFloatCastClampMeters, CargoFloatCastClampMeters);
+                local.z = (float)math.clamp(absolute.z - (gridZ * cell), -CargoFloatCastClampMeters, CargoFloatCastClampMeters);
+                AbsoluteUniversePositionBlit packed = default;
+                packed.GridX = gridX;
+                packed.GridY = gridY;
+                packed.GridZ = gridZ;
+                packed.Local = local;
+                packed.Reserved0 = 0u;
+                packed.Reserved1 = 0UL;
+                return packed;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

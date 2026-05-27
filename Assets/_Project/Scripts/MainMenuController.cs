@@ -68,6 +68,7 @@ namespace Hecton.UI.MainMenu
         [Header("=== CONFIG ===")]
         [SerializeField] private float fadeDuration = 0.2f;
         [SerializeField] private string targetSceneName = "02_HECTON_WORLD";
+        [SerializeField] private string newGameTargetSceneName = "01_ORBIT";
 
         private const int SlotCount = SaveEvents.ManualSlotCount;
         private const float CancelInputDebounceSeconds = 0.35f;
@@ -806,7 +807,9 @@ namespace Hecton.UI.MainMenu
 
             _isSceneLoadInFlight = true;
 
-            GameStartContext context = string.IsNullOrEmpty(slotName)
+            bool isNewGame = string.IsNullOrEmpty(slotName);
+            string sceneName = ResolveStartSceneName(isNewGame);
+            GameStartContext context = isNewGame
                 ? GameStartContext.CreateNewGame()
                 : GameStartContext.CreateLoadGame(slotName);
 
@@ -862,7 +865,7 @@ namespace Hecton.UI.MainMenu
                 int messageLength = BuildModalMessage(
                     LocalizationKeys.MODAL_SCENE_LOAD_ERROR_MESSAGE,
                     "Failed to load scene. Check Build Settings.",
-                    targetSceneName.AsSpan(),
+                    sceneName.AsSpan(),
                     ReadOnlySpan<char>.Empty);
 
                 ModalWindow.ShowWithCustomLabels(
@@ -880,7 +883,13 @@ namespace Hecton.UI.MainMenu
             if (runtimeSceneService != null)
                 runtimeSceneService.ConfigureMainMenuCinematic(mainMenuCamera, cinematicPanel);
 
-            sceneService.LoadScene(targetSceneName);
+            sceneService.LoadScene(sceneName);
+        }
+
+        private string ResolveStartSceneName(bool isNewGame)
+        {
+            string sceneName = isNewGame ? newGameTargetSceneName : targetSceneName;
+            return string.IsNullOrWhiteSpace(sceneName) ? targetSceneName : sceneName;
         }
 
         /// <summary>

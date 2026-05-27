@@ -165,7 +165,7 @@ namespace Hecton8.Modding
     /// Engine-side executor for a validated mod command.
     /// </summary>
     [System.Obsolete("Legacy managed mod command kernels are quarantined. Future command execution uses Burst jobs and SignalBus lanes.", false)]
-    public interface IModCommandKernel
+    internal interface IModCommandKernel
     {
         /// <summary>
         /// Executes a security-validated mod command.
@@ -645,7 +645,7 @@ namespace Hecton8.Modding
         /// <param name="command">Command payload. Mod identity is overwritten from the active execution scope.</param>
         /// <returns>True when the command entered the queue.</returns>
         [System.Obsolete("Legacy ModCommand request lane is quarantined and returns false. Use HectonAPI.Commands.RequestFuture.", false)]
-        public static bool Request(in ModCommand command)
+        internal static bool Request(in ModCommand command)
         {
             if (!LegacyCommandSurfaceEnabled)
                 return false;
@@ -695,7 +695,7 @@ namespace Hecton8.Modding
         /// <param name="command">AUP command wrapper.</param>
         /// <returns>True when queued.</returns>
         [System.Obsolete("Legacy AUP command request lane is quarantined and returns false. Use HectonAPI.Commands.RequestFuture.", false)]
-        public static bool RequestAup(in ModAupCommand command)
+        internal static bool RequestAup(in ModAupCommand command)
         {
             if (!LegacyCommandSurfaceEnabled)
                 return false;
@@ -739,7 +739,7 @@ namespace Hecton8.Modding
         /// <param name="command">Render instance packet. Mod identity is overwritten.</param>
         /// <returns>True when queued.</returns>
         [System.Obsolete("Legacy render-instance request lane is quarantined and returns false. Use HectonAPI.Commands.RequestFuture.", false)]
-        public static bool RequestRenderInstance(in ModRenderInstanceCommand command)
+        internal static bool RequestRenderInstance(in ModRenderInstanceCommand command)
         {
             if (!LegacyCommandSurfaceEnabled)
                 return false;
@@ -1568,7 +1568,7 @@ namespace Hecton8.Modding
         /// <summary>
         /// Packs two sequential floats into a uint2 without managed conversion.
         /// </summary>
-        public static uint2 PackSequentialFloat2(float a, float b)
+        internal static uint2 PackSequentialFloat2(float a, float b)
         {
             return new uint2(math.asuint(a), math.asuint(b));
         }
@@ -1576,7 +1576,7 @@ namespace Hecton8.Modding
         /// <summary>
         /// Packs three sequential floats into a uint3 without managed conversion.
         /// </summary>
-        public static uint3 PackSequentialFloat3(float a, float b, float c)
+        internal static uint3 PackSequentialFloat3(float a, float b, float c)
         {
             return new uint3(math.asuint(a), math.asuint(b), math.asuint(c));
         }

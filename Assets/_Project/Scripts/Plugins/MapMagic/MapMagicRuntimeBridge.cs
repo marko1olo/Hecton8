@@ -36,6 +36,7 @@
 // ============================================================================
 
 using System;
+using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
@@ -187,7 +188,7 @@ namespace Hecton8.Core
         /// Cached MapMagic terrain tiles. Uses tile-backed draft terrain when
         /// MapMagic keeps active terrain references null.
         /// </summary>
-        private TerrainTile[] _cachedTerrainTiles = Array.Empty<TerrainTile>(); // COLD ALLOC: tile cache for MapMagic terrain lookup
+        private readonly List<TerrainTile> _cachedTerrainTiles = new List<TerrainTile>(64); // COLD ALLOC: tile cache for MapMagic terrain lookup
 
         /// <summary>
         /// Tracks root child count to avoid reallocating tile cache when the
@@ -199,9 +200,14 @@ namespace Hecton8.Core
         /// spatially, so this avoids full tile scans on repeated queries.
         /// </summary>
         private TerrainTile _lastResolvedTerrainTile;
+        private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private TerrainData _cachedBiomeTerrainData;
         private Texture2D[] _cachedBiomeAlphaTextures = Array.Empty<Texture2D>();
+        private TerrainLayer[] _cachedBiomeTerrainLayers = Array.Empty<TerrainLayer>();
         private int _cachedBiomeAlphaTextureCount = -1;
+        private int _cachedBiomeAlphaExpectedTextureCount = -1;
+        private int _cachedBiomeTerrainLayerCount = -1;
+        private int _cachedBiomeTerrainLayerExpectedCount = -1;
 
         /// <summary>
         /// Retry gate for recovering lost scene bindings after reload.
@@ -298,6 +304,8 @@ namespace Hecton8.Core
             TryRegisterMapMagicRuntime();
             TryRegisterToTickManager();
             TryRegisterToLateFrameTickManager();
+            UpdateLastResolvedTerrainTileOwnerPhase();
+            PrewarmBiomeAlphaTextureCacheOwnerPhase();
 
             // ── Initial biome detection ──
             // v3.1: Guaranteed to publish at least biome 0.
@@ -328,7 +336,10 @@ namespace Hecton8.Core
             if (_registeredMapMagicRuntime || !Application.isPlaying)
                 return;
 
-            MapMagicBridge current = GlobalRegistry.MapMagic;
+            MapMagicBridge current = ActiveRuntimeInstance;
+            if (current == null)
+                current = GlobalRegistry.MapMagic;
+
             if (current != null && !ReferenceEquals(current, this))
             {
                 Destroy(gameObject);
@@ -337,11 +348,15 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterMapMagicRuntime(this);
             GlobalRegistry.RegisterTerrainProvider(this);
+            _cachedVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             _registeredMapMagicRuntime = ReferenceEquals(GlobalRegistry.MapMagic, this);
+            if (_registeredMapMagicRuntime)
+                PublishActiveRuntimeInstance();
         }
 
         private void TryUnregisterMapMagicRuntime()
         {
+            ClearActiveRuntimeInstance();
             if (!_registeredMapMagicRuntime)
                 return;
 
@@ -399,6 +414,12 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.MapMagicVegetationRuntime)
+            {
+                _cachedVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 
@@ -437,6 +458,8 @@ namespace Hecton8.Core
         {
             RefreshSceneBindingsIfNeeded(force: false);
             RefreshTerrainTileCache(force: false);
+            UpdateLastResolvedTerrainTileOwnerPhase();
+            PrewarmBiomeAlphaTextureCacheOwnerPhase();
             DetectAndPublishBiome();
             QueuePlanetaryTerrainShaderGlobals();
         }
@@ -798,7 +821,7 @@ namespace Hecton8.Core
         {
             height = 0f;
 
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = _cachedVegetationBridge;
             if (vegetationBridge != null && vegetationBridge.TryGetCachedTerrainHeight(x, z, out height))
                 return true;
 
@@ -934,7 +957,7 @@ namespace Hecton8.Core
         public override bool TryGetActiveQuantizedHeightmapPayload(out QuantizedHeightmapPayload payload)
         {
             payload = default;
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = _cachedVegetationBridge;
             if (vegetationBridge == null ||
                 !vegetationBridge.TryGetActiveHeightSamplePayload(out HectonMapMagicVegetationBridge.TerrainHeightSamplePayload sourcePayload))
             {
@@ -953,7 +976,7 @@ namespace Hecton8.Core
         public override bool TryGetQuantizedHeightmapPayload(float x, float z, out QuantizedHeightmapPayload payload)
         {
             payload = default;
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = _cachedVegetationBridge;
             if (vegetationBridge == null ||
                 !vegetationBridge.TryGetHeightSamplePayload(x, z, out HectonMapMagicVegetationBridge.TerrainHeightSamplePayload sourcePayload))
             {
@@ -1009,7 +1032,7 @@ namespace Hecton8.Core
 
             float u = math.saturate((x - terrainPosition.x) / terrainSize.x);
             float v = math.saturate((z - terrainPosition.z) / terrainSize.z);
-            TerrainLayer[] terrainLayers = terrainData.terrainLayers;
+            TryGetCachedBiomeTerrainLayers(terrainData, totalLayers, out TerrainLayer[] terrainLayers);
             float3 accumulated = float3.zero;
             float totalWeight = 0f;
             float maxWeight = 0f;
@@ -1075,8 +1098,8 @@ namespace Hecton8.Core
 
             RefreshTerrainTileCache(force: false);
 
-            TerrainTile[] terrainTiles = _cachedTerrainTiles;
-            int tileCount = terrainTiles != null ? terrainTiles.Length : 0;
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Count;
             int written = 0;
 
             for (int i = 0; i < tileCount && written < destination.Length; i++)
@@ -1113,8 +1136,8 @@ namespace Hecton8.Core
 
             RefreshTerrainTileCache(force: false);
 
-            TerrainTile[] terrainTiles = _cachedTerrainTiles;
-            int tileCount = terrainTiles != null ? terrainTiles.Length : 0;
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Count;
             int written = 0;
             for (int i = 0; i < tileCount && written < destination.Length; i++)
             {
@@ -1623,6 +1646,19 @@ namespace Hecton8.Core
             int expectedTextureCount,
             out Texture2D[] alphaTextures)
         {
+            return TryGetCachedBiomeAlphaTextures(
+                terrainData,
+                expectedTextureCount,
+                out alphaTextures,
+                allowCacheRefresh: false);
+        }
+
+        private bool TryGetCachedBiomeAlphaTextures(
+            TerrainData terrainData,
+            int expectedTextureCount,
+            out Texture2D[] alphaTextures,
+            bool allowCacheRefresh)
+        {
             if (terrainData == null || expectedTextureCount <= 0)
             {
                 alphaTextures = null;
@@ -1631,10 +1667,17 @@ namespace Hecton8.Core
 
             if (_cachedBiomeTerrainData != terrainData ||
                 _cachedBiomeAlphaTextures == null ||
-                _cachedBiomeAlphaTextureCount != expectedTextureCount)
+                _cachedBiomeAlphaExpectedTextureCount != expectedTextureCount)
             {
+                if (!allowCacheRefresh)
+                {
+                    alphaTextures = _cachedBiomeAlphaTextures;
+                    return false;
+                }
+
                 _cachedBiomeTerrainData = terrainData;
                 EnsureBiomeAlphaTextureCacheCapacity(expectedTextureCount);
+                _cachedBiomeAlphaExpectedTextureCount = expectedTextureCount;
                 _cachedBiomeAlphaTextureCount = 0;
 
                 for (int i = 0; i < expectedTextureCount; i++)
@@ -1661,6 +1704,69 @@ namespace Hecton8.Core
 
             // COLD ALLOC: Texture2D[safeCount] - cached terrain alpha texture handles for biome sampling - owner: MapMagicBridge
             _cachedBiomeAlphaTextures = new Texture2D[safeCount];
+        }
+
+        private bool TryGetCachedBiomeTerrainLayers(
+            TerrainData terrainData,
+            int expectedLayerCount,
+            out TerrainLayer[] terrainLayers)
+        {
+            return TryGetCachedBiomeTerrainLayers(
+                terrainData,
+                expectedLayerCount,
+                out terrainLayers,
+                allowCacheRefresh: false);
+        }
+
+        private bool TryGetCachedBiomeTerrainLayers(
+            TerrainData terrainData,
+            int expectedLayerCount,
+            out TerrainLayer[] terrainLayers,
+            bool allowCacheRefresh)
+        {
+            if (terrainData == null || expectedLayerCount <= 0)
+            {
+                terrainLayers = null;
+                return false;
+            }
+
+            if (_cachedBiomeTerrainData != terrainData ||
+                _cachedBiomeTerrainLayers == null ||
+                _cachedBiomeTerrainLayerExpectedCount != expectedLayerCount)
+            {
+                if (!allowCacheRefresh)
+                {
+                    terrainLayers = _cachedBiomeTerrainLayers;
+                    return false;
+                }
+
+                _cachedBiomeTerrainData = terrainData;
+                EnsureBiomeTerrainLayerCacheCapacity(expectedLayerCount);
+                _cachedBiomeTerrainLayerExpectedCount = expectedLayerCount;
+
+                TerrainLayer[] sourceLayers = terrainData.terrainLayers;
+                int sourceCount = sourceLayers != null ? math.min(expectedLayerCount, sourceLayers.Length) : 0;
+                _cachedBiomeTerrainLayerCount = sourceCount;
+
+                for (int i = 0; i < sourceCount; i++)
+                    _cachedBiomeTerrainLayers[i] = sourceLayers[i];
+
+                for (int i = sourceCount; i < _cachedBiomeTerrainLayers.Length; i++)
+                    _cachedBiomeTerrainLayers[i] = null;
+            }
+
+            terrainLayers = _cachedBiomeTerrainLayers;
+            return terrainLayers != null && _cachedBiomeTerrainLayerCount > 0;
+        }
+
+        private void EnsureBiomeTerrainLayerCacheCapacity(int requiredCount)
+        {
+            int safeCount = Mathf.Max(1, requiredCount);
+            if (_cachedBiomeTerrainLayers != null && _cachedBiomeTerrainLayers.Length == safeCount)
+                return;
+
+            // COLD ALLOC: TerrainLayer[safeCount] - cached terrain layer handles for splat color sampling - owner: MapMagicBridge
+            _cachedBiomeTerrainLayers = new TerrainLayer[safeCount];
         }
 
         private static void AccumulateLayerColor(
@@ -2235,8 +2341,8 @@ namespace Hecton8.Core
             RefreshTerrainTileCache(force: true);
             ApplyTerrainDataMemoryBudgetToCachedTerrains();
 
-            TerrainTile[] terrainTiles = _cachedTerrainTiles;
-            int tileCount = terrainTiles.Length;
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Count;
 
             for (int i = 0; i < tileCount; i++)
             {
@@ -2389,8 +2495,8 @@ namespace Hecton8.Core
             int playerTileX = Mathf.FloorToInt(playerPosition.x / Mathf.Max(1f, mapMagicObject.tileSize.x));
             int playerTileZ = Mathf.FloorToInt(playerPosition.z / Mathf.Max(1f, mapMagicObject.tileSize.z));
 
-            TerrainTile[] terrainTiles = _cachedTerrainTiles;
-            int tileCount = terrainTiles.Length;
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Count;
 
             for (int i = 0; i < tileCount; i++)
             {
@@ -2458,8 +2564,8 @@ namespace Hecton8.Core
                     return cachedTerrain;
             }
 
-            TerrainTile[] terrainTiles = _cachedTerrainTiles;
-            int tileCount = terrainTiles.Length;
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Count;
 
             for (int i = 0; i < tileCount; i++)
             {
@@ -2471,11 +2577,71 @@ namespace Hecton8.Core
                 if (tileTerrain == null || tileTerrain.terrainData == null)
                     continue;
 
-                _lastResolvedTerrainTile = tile;
                 return tileTerrain;
             }
 
             return null;
+        }
+
+        private void UpdateLastResolvedTerrainTileOwnerPhase()
+        {
+            if (playerTransform == null)
+                return;
+
+            Vector3 position = playerTransform.position;
+            if (_lastResolvedTerrainTile != null &&
+                _lastResolvedTerrainTile.ContainsWorldPosition(position.x, position.z))
+            {
+                Terrain cachedTerrain = ResolveTileTerrain(_lastResolvedTerrainTile);
+                if (cachedTerrain != null && cachedTerrain.terrainData != null)
+                    return;
+            }
+
+            _lastResolvedTerrainTile = null;
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Count;
+
+            for (int i = 0; i < tileCount; i++)
+            {
+                TerrainTile tile = terrainTiles[i];
+                if (tile == null || !tile.ContainsWorldPosition(position.x, position.z))
+                    continue;
+
+                Terrain tileTerrain = ResolveTileTerrain(tile);
+                if (tileTerrain == null || tileTerrain.terrainData == null)
+                    continue;
+
+                _lastResolvedTerrainTile = tile;
+                return;
+            }
+        }
+
+        private void PrewarmBiomeAlphaTextureCacheOwnerPhase()
+        {
+            TerrainTile tile = _lastResolvedTerrainTile;
+            if (tile == null)
+                return;
+
+            Terrain terrain = ResolveTileTerrain(tile);
+            TerrainData terrainData = terrain != null ? terrain.terrainData : null;
+            if (terrainData == null)
+                return;
+
+            int textureCount = terrainData.alphamapTextureCount;
+            if (textureCount <= 0)
+                return;
+
+            TryGetCachedBiomeAlphaTextures(
+                terrainData,
+                textureCount,
+                out _,
+                allowCacheRefresh: true);
+
+            TryGetCachedBiomeTerrainLayers(
+                terrainData,
+                terrainData.alphamapLayers,
+                out _,
+                allowCacheRefresh: true);
         }
 
         /// <summary>
@@ -2569,7 +2735,7 @@ namespace Hecton8.Core
         {
             if (mapMagicObject == null)
             {
-                _cachedTerrainTiles = Array.Empty<TerrainTile>();
+                _cachedTerrainTiles.Clear();
                 _cachedTerrainTileRootCount = -1;
                 _lastResolvedTerrainTile = null;
                 InvalidateBiomeTextureCache();
@@ -2584,7 +2750,8 @@ namespace Hecton8.Core
             if (!force && rootChildCount == _cachedTerrainTileRootCount)
                 return;
 
-            _cachedTerrainTiles = mapMagicObject.GetComponentsInChildren<TerrainTile>(true); // COLD ALLOC: refresh only on MapMagic hierarchy change
+            _cachedTerrainTiles.Clear();
+            mapMagicObject.GetComponentsInChildren<TerrainTile>(true, _cachedTerrainTiles);
             _cachedTerrainTileRootCount = rootChildCount;
             _lastResolvedTerrainTile = null;
             InvalidateBiomeTextureCache();
@@ -2595,7 +2762,11 @@ namespace Hecton8.Core
         {
             _cachedBiomeTerrainData = null;
             _cachedBiomeAlphaTextures = Array.Empty<Texture2D>();
+            _cachedBiomeTerrainLayers = Array.Empty<TerrainLayer>();
             _cachedBiomeAlphaTextureCount = -1;
+            _cachedBiomeAlphaExpectedTextureCount = -1;
+            _cachedBiomeTerrainLayerCount = -1;
+            _cachedBiomeTerrainLayerExpectedCount = -1;
         }
 
         /// <summary>
@@ -2609,8 +2780,8 @@ namespace Hecton8.Core
 
             RefreshTerrainTileCache(force: true);
 
-            TerrainTile[] terrainTiles = _cachedTerrainTiles;
-            int tileCount = terrainTiles.Length;
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Count;
 
             for (int i = 0; i < tileCount; i++)
             {
@@ -2710,8 +2881,8 @@ namespace Hecton8.Core
 
             int expectedMainResolution = (int)mapMagicObject.tileResolution;
             int expectedDraftResolution = (int)mapMagicObject.draftResolution;
-            TerrainTile[] terrainTiles = _cachedTerrainTiles;
-            int tileCount = terrainTiles.Length;
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Count;
 
             for (int i = 0; i < tileCount; i++)
             {
@@ -2748,8 +2919,8 @@ namespace Hecton8.Core
 
             RefreshTerrainTileCache(force: true);
 
-            TerrainTile[] terrainTiles = _cachedTerrainTiles;
-            int tileCount = terrainTiles.Length;
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Count;
 
             for (int i = 0; i < tileCount; i++)
             {
@@ -2896,8 +3067,8 @@ namespace Hecton8.Core
 
         private void ApplyTerrainDataMemoryBudgetToCachedTerrains()
         {
-            TerrainTile[] terrainTiles = _cachedTerrainTiles;
-            int tileCount = terrainTiles != null ? terrainTiles.Length : 0;
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Count;
             for (int i = 0; i < tileCount; i++)
             {
                 TerrainTile tile = terrainTiles[i];
@@ -3017,9 +3188,7 @@ namespace Hecton8.Core
         {
             _debugMapMagicFound = mapMagicObject != null;
             _debugPlayerFound   = playerTransform != null;
-            _debugTileCount     = _cachedTerrainTiles != null
-                ? _cachedTerrainTiles.Length
-                : 0;
+            _debugTileCount     = _cachedTerrainTiles.Count;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

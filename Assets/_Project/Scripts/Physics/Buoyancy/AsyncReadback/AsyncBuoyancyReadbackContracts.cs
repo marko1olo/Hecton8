@@ -16,6 +16,7 @@ namespace Hecton8.Physics
 #if UNITY_EDITOR
         public const int CsvScratchBytes = 65536;
 #endif
+        public const float AuthoritativeQualityWeight = 1f;
         public const int WaveCapacity = 2;
         public const int ReadbackRequestBytes = 16;
         public const int ReadbackResolvedHeightBytes = 32;

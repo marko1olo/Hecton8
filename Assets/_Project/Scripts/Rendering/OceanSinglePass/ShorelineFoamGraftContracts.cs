@@ -599,12 +599,10 @@ namespace Hecton8.Rendering.OceanSinglePass
             if (vault == null)
                 return;
 
-            s_layoutValid = ShorelineFoamMath.ValidateRuntimeLayouts();
-            if (!s_layoutValid || !EnsureVaultState(vault, projectRootPath))
+            if (!s_layoutValid || !EnsureVaultState(vault, projectRootPath, allowAcquire: false))
                 return;
 
-            EnsureGpuBuffersCold();
-            if (s_bufferA == null || !s_bufferA.IsValid() || s_bufferB == null || !s_bufferB.IsValid())
+            if (!GpuBuffersReady())
                 return;
 
             if (!TryResolve(vault, in s_paramsHandle, ShorelineFoamConstants.MaxCapacity, out NativeArray<ShorelineFoamParamsDTO> foamParams) ||
@@ -648,6 +646,19 @@ namespace Hecton8.Rendering.OceanSinglePass
             s_publishedCount = math.clamp((int)state.ShaderLoopLimit, 1, math.min(count, ShorelineFoamConstants.ShaderLoopMax));
             s_publishedRuntimeParams = new Vector4(cameraLocalY, waterLocalY, quality, s_publishedCount);
             RecordTelemetry(vault, projectRootPath, in state, quality, cameraLocalY, waterLocalY, uploadMicros, depthPassMicroseconds, profile.NormalPerturbation);
+        }
+
+        public static bool EnsureColdState(IDataVault vault, string projectRootPath)
+        {
+            if (vault == null)
+                return false;
+
+            s_layoutValid = ShorelineFoamMath.ValidateRuntimeLayouts();
+            if (!s_layoutValid || !EnsureVaultState(vault, projectRootPath, allowAcquire: true))
+                return false;
+
+            EnsureGpuBuffersCold();
+            return GpuBuffersReady();
         }
 
         public static bool TryGetActiveBuffer(out GraphicsBuffer buffer, out int count, out Vector4 runtimeParams)
@@ -713,28 +724,31 @@ namespace Hecton8.Rendering.OceanSinglePass
             s_csvLoaded = false;
         }
 
-        private static bool EnsureVaultState(IDataVault vault, string projectRootPath)
+        private static bool EnsureVaultState(IDataVault vault, string projectRootPath, bool allowAcquire)
         {
-            if (!Acquire(vault, ShorelineFoamConstants.ParamsBuffer, ShorelineFoamConstants.MaxCapacity, NativeArrayOptions.ClearMemory, ref s_paramsHandle, out NativeArray<ShorelineFoamParamsDTO> _))
+            if (!Acquire(vault, ShorelineFoamConstants.ParamsBuffer, ShorelineFoamConstants.MaxCapacity, NativeArrayOptions.ClearMemory, ref s_paramsHandle, out NativeArray<ShorelineFoamParamsDTO> _, allowAcquire))
                 return false;
-            if (!Acquire(vault, ShorelineFoamConstants.RuntimeStateBuffer, 1, NativeArrayOptions.ClearMemory, ref s_stateHandle, out NativeArray<ShorelineFoamRuntimeStateDTO> state))
+            if (!Acquire(vault, ShorelineFoamConstants.RuntimeStateBuffer, 1, NativeArrayOptions.ClearMemory, ref s_stateHandle, out NativeArray<ShorelineFoamRuntimeStateDTO> state, allowAcquire))
                 return false;
-            if (!Acquire(vault, ShorelineFoamConstants.TelemetryRingBuffer, ShorelineFoamConstants.TelemetryCapacity, NativeArrayOptions.ClearMemory, ref s_telemetryHandle, out NativeArray<ShorelineFoamTelemetryEntry> _))
+            if (!Acquire(vault, ShorelineFoamConstants.TelemetryRingBuffer, ShorelineFoamConstants.TelemetryCapacity, NativeArrayOptions.ClearMemory, ref s_telemetryHandle, out NativeArray<ShorelineFoamTelemetryEntry> _, allowAcquire))
                 return false;
-            if (!Acquire(vault, ShorelineFoamConstants.TelemetryCursorBuffer, 1, NativeArrayOptions.ClearMemory, ref s_telemetryCursorHandle, out NativeArray<int> _))
+            if (!Acquire(vault, ShorelineFoamConstants.TelemetryCursorBuffer, 1, NativeArrayOptions.ClearMemory, ref s_telemetryCursorHandle, out NativeArray<int> _, allowAcquire))
                 return false;
-            if (!Acquire(vault, ShorelineFoamConstants.ProfileBuffer, ShorelineFoamConstants.ProfileCapacity, NativeArrayOptions.ClearMemory, ref s_profileHandle, out NativeArray<ShorelineFoamProfileDTO> profiles))
+            if (!Acquire(vault, ShorelineFoamConstants.ProfileBuffer, ShorelineFoamConstants.ProfileCapacity, NativeArrayOptions.ClearMemory, ref s_profileHandle, out NativeArray<ShorelineFoamProfileDTO> profiles, allowAcquire))
                 return false;
 
             if (!s_seeded)
             {
+                if (!allowAcquire)
+                    return false;
+
                 if (state.IsCreated && state.Length > 0)
                     state[0] = default;
                 SeedProfiles(profiles);
                 s_seeded = true;
             }
 
-            LoadProfilesCsvIfNeeded(vault, projectRootPath, profiles);
+            LoadProfilesCsvIfNeeded(vault, projectRootPath, profiles, allowAcquire);
             return true;
         }
 
@@ -748,12 +762,15 @@ namespace Hecton8.Rendering.OceanSinglePass
                 profiles[i] = default;
         }
 
-        private static void LoadProfilesCsvIfNeeded(IDataVault vault, string projectRootPath, NativeArray<ShorelineFoamProfileDTO> profiles)
+        private static void LoadProfilesCsvIfNeeded(IDataVault vault, string projectRootPath, NativeArray<ShorelineFoamProfileDTO> profiles, bool allowAcquire)
         {
 #if !UNITY_EDITOR
             s_csvLoaded = true;
             return;
 #else
+            if (!allowAcquire)
+                return;
+
             if (s_csvLoaded || string.IsNullOrEmpty(projectRootPath))
                 return;
 
@@ -762,7 +779,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             if (!File.Exists(path))
                 return;
 
-            if (!Acquire(vault, ShorelineFoamConstants.CsvScratchBuffer, ShorelineFoamConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory, ref s_csvScratchHandle, out NativeArray<byte> scratch))
+            if (!Acquire(vault, ShorelineFoamConstants.CsvScratchBuffer, ShorelineFoamConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory, ref s_csvScratchHandle, out NativeArray<byte> scratch, allowAcquire: true))
                 return;
 
             int byteCount = LoadFileBytes(path, scratch);
@@ -833,6 +850,14 @@ namespace Hecton8.Rendering.OceanSinglePass
                     ShorelineFoamConstants.MaxCapacity,
                     ShorelineFoamConstants.ParamsStrideBytes); // COLD ALLOC: shoreline foam double-buffer B - owner SHINOBU_277
             }
+        }
+
+        private static bool GpuBuffersReady()
+        {
+            return s_bufferA != null &&
+                   s_bufferA.IsValid() &&
+                   s_bufferB != null &&
+                   s_bufferB.IsValid();
         }
 
         private static float UploadToGpu(NativeArray<ShorelineFoamParamsDTO> source, int count)
@@ -921,7 +946,8 @@ namespace Hecton8.Rendering.OceanSinglePass
             int length,
             NativeArrayOptions options,
             ref VaultGenerationHandle<T> handle,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer,
+            bool allowAcquire) where T : struct
         {
             buffer = default;
             if (vault == null || length <= 0)
@@ -937,6 +963,19 @@ namespace Hecton8.Rendering.OceanSinglePass
             {
                 return true;
             }
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existing) &&
+                IsHandleValid(in existing) &&
+                vault.TryResolveHandle(in existing, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= length)
+            {
+                handle = existing;
+                return true;
+            }
+
+            if (!allowAcquire || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                return false;
 
             if (IsHandleValid(in handle))
                 vault.ReleaseBuffer(in handle);

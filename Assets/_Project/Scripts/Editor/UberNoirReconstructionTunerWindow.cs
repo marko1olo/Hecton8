@@ -151,8 +151,6 @@ namespace Hecton8.Editor
             signal.FrameTimeMs = mockActive ? 22.0f : 0f;
             signal.TemporalStress01 = mockActive ? 1f : 0f;
             signal.Flags = mockActive ? 1u : 0u;
-            signal._pad0 = 0u;
-            signal._pad1 = 0u;
             HectonVisorUberPostFeature.TryWriteEditorMockReconstructionSignal(in signal);
         }
 

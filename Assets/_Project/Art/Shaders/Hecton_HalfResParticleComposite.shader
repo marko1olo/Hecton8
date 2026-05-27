@@ -14,11 +14,15 @@ Shader "Hidden/Hecton8/HalfResParticleComposite"
         ZTest Always
 
         HLSLINCLUDE
-        #pragma target 4.5
+        #pragma target 3.5
+        #pragma multi_compile_instancing
+        #pragma instancing_options assumeuniformscaling
         #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
         #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
+        #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
         CBUFFER_START(HectonHalfResParticlesGlobals)
@@ -34,11 +38,14 @@ Shader "Hidden/Hecton8/HalfResParticleComposite"
 
         struct Attributes
         {
+            UNITY_VERTEX_INPUT_INSTANCE_ID
             uint vertexID : SV_VertexID;
         };
 
         struct Varyings
         {
+            UNITY_VERTEX_INPUT_INSTANCE_ID
+            UNITY_VERTEX_OUTPUT_STEREO
             float4 positionCS : SV_POSITION;
             float2 screenUV : TEXCOORD0;
         };
@@ -46,6 +53,9 @@ Shader "Hidden/Hecton8/HalfResParticleComposite"
         Varyings Vert(Attributes input)
         {
             Varyings output;
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_TRANSFER_INSTANCE_ID(input, output);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
             output.screenUV = float2((input.vertexID << 1) & 2, input.vertexID & 2);
             output.positionCS = float4(output.screenUV * 2.0 - 1.0, 0.0, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
@@ -54,9 +64,14 @@ Shader "Hidden/Hecton8/HalfResParticleComposite"
             return output;
         }
 
+        float2 ResolveFoveatedSourceUV(float2 uv)
+        {
+            return FoveatedRemapLinearToNonUniform(uv);
+        }
+
         float HectonSampleSceneEyeDepth(float2 uv)
         {
-            return LinearEyeDepth(SampleSceneDepth(uv), _ZBufferParams);
+            return LinearEyeDepth(SampleSceneDepth(ResolveFoveatedSourceUV(uv)), _ZBufferParams);
         }
 
         float HectonBilateralDepthWeight(float centerDepth, float tapDepth)
@@ -93,7 +108,10 @@ Shader "Hidden/Hecton8/HalfResParticleComposite"
 
         half4 FragComposite(Varyings input) : SV_Target
         {
-            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(input.screenUV));
             half4 particles = HectonSampleParticlesBilateral(input.screenUV);
             half strength = saturate((half)_HectonHalfResParticlesCompositeStrength);
             half alpha = saturate(particles.a * strength);

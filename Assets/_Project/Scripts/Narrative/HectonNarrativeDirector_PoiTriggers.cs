@@ -258,7 +258,7 @@ namespace Hecton8.Gameplay
         public int StateMaskCount;
     }
 
-    public struct AupNarrativePoiBuffers
+    public ref struct AupNarrativePoiBuffers
     {
         public NativeArray<NarrativePoiDTO> Pois;
         public NativeArray<NarrativePoiPresentationDTO> Presentation;

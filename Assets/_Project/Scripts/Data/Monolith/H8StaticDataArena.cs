@@ -1,9 +1,9 @@
 using System;
 using System.Diagnostics;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if !UNITY_WEBGL || UNITY_EDITOR
 using System.IO;
 #endif
-#if (UNITY_EDITOR || DEVELOPMENT_BUILD) && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
+#if !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
 using System.IO.MemoryMappedFiles;
 #endif
 using System.Runtime.CompilerServices;
@@ -20,7 +20,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if !UNITY_WEBGL
 using UnityEngine.Networking;
 #endif
 
@@ -29,7 +29,7 @@ namespace Hecton8.Data
     /// <summary>
     /// Boot-owned static data arena for monolithic baked content blobs.
     /// </summary>
-    public static unsafe class H8StaticDataArena
+    public static class H8StaticDataArena
     {
         private const long MaxBlobBytes = 256L * 1024L * 1024L;
         private const uint MissingUtf8Offset = uint.MaxValue;
@@ -47,6 +47,11 @@ namespace Hecton8.Data
         private const uint PathFlagVaultBacked = 4u;
         private const uint PathFlagStreamingUriStaged = 8u;
         private const uint PathFlagNativeFile = 16u;
+        private const uint PathFlagStreamingUriRequiresAsync = 32u;
+        private const uint PathFlagStreamingUriStagingCancelled = 64u;
+#if UNITY_EDITOR
+        private const int EditorHotReloadSnapshotChunkBytes = 64 * 1024;
+#endif
 #if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN) && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
         private const uint NativeGenericRead = 0x80000000u;
         private const uint NativeGenericWrite = 0x40000000u;
@@ -132,8 +137,8 @@ namespace Hecton8.Data
                 expectedAppVersionHash,
                 failIfMissing,
                 out status);
-#elif !UNITY_EDITOR && !DEVELOPMENT_BUILD
-            if (vault != null || !IsLoaded)
+#elif UNITY_WEBGL && !UNITY_EDITOR
+            if (!IsLoaded)
                 _vault = vault;
 
             status = H8DataBlobLoadStatus.ReadFailed;
@@ -147,10 +152,13 @@ namespace Hecton8.Data
                 H8DataLayoutConstants.DefaultStreamingAssetsRelativePath);
 
             uint pathFlags = 0u;
-            if (TryStageStreamingAssetsUriToCache(absolutePath, out string stagedPath))
+            if (!IsFilesystemPath(absolutePath))
             {
-                absolutePath = stagedPath;
-                pathFlags |= PathFlagStreamingUriStaged;
+                status = H8DataBlobLoadStatus.ReadFailed;
+                if (failIfMissing)
+                    RecordFailureTelemetry(status, PathFlagStreamingUriRequiresAsync);
+
+                return !failIfMissing && IsLoaded;
             }
 
             bool loaded = TryInitializeFromFile(
@@ -165,7 +173,106 @@ namespace Hecton8.Data
 #endif
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Loads the default monolith file from StreamingAssets without blocking URL-backed platforms.
+        /// </summary>
+        public static Awaitable<H8DataBlobLoadResult> TryInitializeFromStreamingAssetsAsync(
+            uint expectedWorldSeed,
+            uint expectedAppVersionHash,
+            bool failIfMissing,
+            CancellationToken cancellationToken)
+        {
+            return TryInitializeFromStreamingAssetsAsync(
+                GlobalRegistry.DataVault,
+                expectedWorldSeed,
+                expectedAppVersionHash,
+                failIfMissing,
+                cancellationToken);
+        }
+
+        /// <summary>
+        /// Loads the default monolith file from StreamingAssets using a bootstrap-owned vault instance.
+        /// </summary>
+        public static async Awaitable<H8DataBlobLoadResult> TryInitializeFromStreamingAssetsAsync(
+            IDataVault vault,
+            uint expectedWorldSeed,
+            uint expectedAppVersionHash,
+            bool failIfMissing,
+            CancellationToken cancellationToken)
+        {
+            await Awaitable.MainThreadAsync();
+            if (cancellationToken.IsCancellationRequested)
+            {
+                H8DataBlobLoadStatus cancelledStatus = H8DataBlobLoadStatus.ReadFailed;
+                if (failIfMissing)
+                    RecordFailureTelemetry(cancelledStatus, PathFlagStreamingUriStagingCancelled);
+
+                return new H8DataBlobLoadResult(!failIfMissing && IsLoaded, cancelledStatus);
+            }
+
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
+            bool loaded = TryInitializeFromWindowsPlayerStreamingAssets(
+                vault,
+                expectedWorldSeed,
+                expectedAppVersionHash,
+                failIfMissing,
+                out H8DataBlobLoadStatus status);
+            return new H8DataBlobLoadResult(loaded, status);
+#elif UNITY_WEBGL && !UNITY_EDITOR
+            if (!IsLoaded)
+                _vault = vault;
+
+            H8DataBlobLoadStatus status = H8DataBlobLoadStatus.ReadFailed;
+            if (failIfMissing)
+                RecordFailureTelemetry(status, PathFlagStreamingUriRequiresAsync);
+
+            return new H8DataBlobLoadResult(!failIfMissing && IsLoaded, status);
+#else
+            string absolutePath = BuildStreamingAssetsLocation(
+                Application.streamingAssetsPath,
+                H8DataLayoutConstants.DefaultStreamingAssetsRelativePath);
+
+            uint pathFlags = 0u;
+            if (!IsFilesystemPath(absolutePath))
+            {
+#if !UNITY_WEBGL
+                string stagedPath = await TryStageStreamingAssetsUriToCacheAsync(absolutePath, cancellationToken);
+                if (string.IsNullOrEmpty(stagedPath))
+                {
+                    H8DataBlobLoadStatus failedStatus = H8DataBlobLoadStatus.ReadFailed;
+                    uint failurePathFlags = cancellationToken.IsCancellationRequested
+                        ? PathFlagStreamingUriStagingCancelled
+                        : PathFlagStreamingUriRequiresAsync;
+                    if (failIfMissing)
+                        RecordFailureTelemetry(failedStatus, failurePathFlags);
+
+                    return new H8DataBlobLoadResult(!failIfMissing && IsLoaded, failedStatus);
+                }
+
+                absolutePath = stagedPath;
+                pathFlags |= PathFlagStreamingUriStaged;
+#else
+                H8DataBlobLoadStatus failedStatus = H8DataBlobLoadStatus.ReadFailed;
+                if (failIfMissing)
+                    RecordFailureTelemetry(failedStatus, PathFlagStreamingUriRequiresAsync);
+
+                return new H8DataBlobLoadResult(!failIfMissing && IsLoaded, failedStatus);
+#endif
+            }
+
+            bool loaded = TryInitializeFromFile(
+                vault,
+                absolutePath,
+                expectedWorldSeed,
+                expectedAppVersionHash,
+                failIfMissing,
+                pathFlags,
+                out H8DataBlobLoadStatus status);
+            return new H8DataBlobLoadResult(loaded, status);
+#endif
+        }
+
+#if !UNITY_WEBGL || UNITY_EDITOR
         private static string BuildStreamingAssetsLocation(string root, string relativePath)
         {
             if (string.IsNullOrEmpty(root))
@@ -184,16 +291,16 @@ namespace Hecton8.Data
                    !path.StartsWith("jar:", StringComparison.OrdinalIgnoreCase) &&
                    path.IndexOf("://", StringComparison.Ordinal) < 0;
         }
+#endif
 
-        private static bool TryStageStreamingAssetsUriToCache(string streamingUri, out string cachedPath)
+#if !UNITY_WEBGL
+        private static async Awaitable<string> TryStageStreamingAssetsUriToCacheAsync(
+            string streamingUri,
+            CancellationToken cancellationToken)
         {
-            cachedPath = null;
             if (string.IsNullOrEmpty(streamingUri) || IsFilesystemPath(streamingUri))
-                return false;
+                return null;
 
-#if UNITY_WEBGL
-            return false;
-#else
             string cachePath = null;
             string tempPath = null;
             try
@@ -214,30 +321,74 @@ namespace Hecton8.Data
 
                 UnityWebRequestAsyncOperation operation = request.SendWebRequest();
                 while (!operation.isDone)
-                    Thread.Sleep(1);
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        request.Abort();
+                        TryDeleteFile(tempPath);
+                        return null;
+                    }
+
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
+                }
 
                 if (request.result != UnityWebRequest.Result.Success)
                 {
                     TryDeleteFile(tempPath);
-                    return false;
+                    return null;
                 }
 
                 if (!File.Exists(tempPath))
-                    return false;
+                    return null;
 
                 TryDeleteFile(cachePath);
                 File.Move(tempPath, cachePath);
-                cachedPath = cachePath;
-                return true;
+                return cachePath;
             }
-            catch (Exception)
+            catch (OperationCanceledException)
             {
                 TryDeleteFile(tempPath);
-                return false;
+                return null;
             }
-#endif
+            catch (IOException)
+            {
+                TryDeleteFile(tempPath);
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                TryDeleteFile(tempPath);
+                return null;
+            }
+            catch (ArgumentException)
+            {
+                TryDeleteFile(tempPath);
+                return null;
+            }
+            catch (UriFormatException)
+            {
+                TryDeleteFile(tempPath);
+                return null;
+            }
+            catch (NotSupportedException)
+            {
+                TryDeleteFile(tempPath);
+                return null;
+            }
+            catch (System.Security.SecurityException)
+            {
+                TryDeleteFile(tempPath);
+                return null;
+            }
+            catch (InvalidOperationException)
+            {
+                TryDeleteFile(tempPath);
+                return null;
+            }
         }
+#endif
 
+#if !UNITY_WEBGL || UNITY_EDITOR
         private static void TryDeleteFile(string path)
         {
             if (string.IsNullOrEmpty(path))
@@ -248,7 +399,19 @@ namespace Hecton8.Data
                 if (File.Exists(path))
                     File.Delete(path);
             }
-            catch (Exception)
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (System.Security.SecurityException)
             {
             }
         }
@@ -270,7 +433,7 @@ namespace Hecton8.Data
             bool failIfMissing,
             out H8DataBlobLoadStatus status)
         {
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+#if UNITY_WEBGL && !UNITY_EDITOR
             status = H8DataBlobLoadStatus.ReadFailed;
             if (failIfMissing)
                 RecordFailureTelemetry(status, 0u);
@@ -296,8 +459,8 @@ namespace Hecton8.Data
             bool failIfMissing,
             out H8DataBlobLoadStatus status)
         {
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
-            if (vault != null || !IsLoaded)
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (!IsLoaded)
                 _vault = vault;
 
             status = H8DataBlobLoadStatus.ReadFailed;
@@ -317,7 +480,7 @@ namespace Hecton8.Data
 #endif
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if !UNITY_WEBGL || UNITY_EDITOR
         private static bool TryInitializeFromFile(
             IDataVault vault,
             string absolutePath,
@@ -327,39 +490,44 @@ namespace Hecton8.Data
             uint inheritedPathFlags,
             out H8DataBlobLoadStatus status)
         {
-            if (vault != null || !IsLoaded)
-                _vault = vault;
-            if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
-            {
-                status = H8DataBlobLoadStatus.Missing;
-                if (failIfMissing)
-                    RecordFailureTelemetry(status, inheritedPathFlags);
-
-                return !failIfMissing && IsLoaded;
-            }
-
             if (IsWriteLocked && IsLoaded)
             {
                 status = H8DataBlobLoadStatus.ReadyLocked;
                 return false;
             }
 
-            FileInfo info = new FileInfo(absolutePath);
-            if (info.Length < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
+            AdoptVaultForLoad(vault);
+            if (!TryGetExistingBlobLength(absolutePath, out long blobLength, out status))
+            {
+                if (status == H8DataBlobLoadStatus.Missing)
+                {
+                    if (failIfMissing)
+                        RecordFailureTelemetry(status, inheritedPathFlags);
+
+                    return !failIfMissing && IsLoaded;
+                }
+
+                if (status != H8DataBlobLoadStatus.None)
+                    RecordFailureTelemetry(status, inheritedPathFlags);
+
+                return false;
+            }
+
+            if (blobLength < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
             {
                 status = H8DataBlobLoadStatus.FileTooSmall;
                 RecordFailureTelemetry(status, inheritedPathFlags);
                 return false;
             }
 
-            if (info.Length > MaxBlobBytes || info.Length > int.MaxValue)
+            if (blobLength > MaxBlobBytes || blobLength > int.MaxValue)
             {
                 status = H8DataBlobLoadStatus.FileTooLarge;
                 RecordFailureTelemetry(status, inheritedPathFlags);
                 return false;
             }
 
-            int blobBytes = (int)info.Length;
+            int blobBytes = (int)blobLength;
             IDataVault activeVault = _vault;
             ShutdownArenaOnly();
             _vault = activeVault;
@@ -395,6 +563,58 @@ namespace Hecton8.Data
                 DumpTelemetry(status);
             return true;
         }
+
+        private static bool TryGetExistingBlobLength(
+            string absolutePath,
+            out long blobLength,
+            out H8DataBlobLoadStatus status)
+        {
+            blobLength = 0L;
+            if (string.IsNullOrEmpty(absolutePath))
+            {
+                status = H8DataBlobLoadStatus.Missing;
+                return false;
+            }
+
+            try
+            {
+                if (!File.Exists(absolutePath))
+                {
+                    status = H8DataBlobLoadStatus.Missing;
+                    return false;
+                }
+
+                FileInfo info = new FileInfo(absolutePath);
+                blobLength = info.Length;
+                status = H8DataBlobLoadStatus.None;
+                return true;
+            }
+            catch (IOException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                return false;
+            }
+        }
 #endif
 
         private static void RecordFailureTelemetry(H8DataBlobLoadStatus status, uint pathFlags)
@@ -414,7 +634,7 @@ namespace Hecton8.Data
         /// <param name="expectedAppVersionHash">Expected app-version hash, or zero to skip version matching.</param>
         /// <param name="status">Load status.</param>
         /// <returns>True when resident data is ready.</returns>
-        public static bool TryInitializeFromMemory(
+        public static unsafe bool TryInitializeFromMemory(
             void* source,
             int sourceBytes,
             uint expectedWorldSeed,
@@ -433,7 +653,7 @@ namespace Hecton8.Data
         /// <summary>
         /// Copies an already-read binary blob into the resident native arena using a bootstrap-owned vault.
         /// </summary>
-        public static bool TryInitializeFromMemory(
+        public static unsafe bool TryInitializeFromMemory(
             IDataVault vault,
             void* source,
             int sourceBytes,
@@ -441,8 +661,13 @@ namespace Hecton8.Data
             uint expectedAppVersionHash,
             out H8DataBlobLoadStatus status)
         {
-            if (vault != null || !IsLoaded)
-                _vault = vault;
+            if (IsWriteLocked && IsLoaded)
+            {
+                status = H8DataBlobLoadStatus.ReadyLocked;
+                return false;
+            }
+
+            AdoptVaultForLoad(vault);
             if (source == null || sourceBytes < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
             {
                 status = H8DataBlobLoadStatus.FileTooSmall;
@@ -454,12 +679,6 @@ namespace Hecton8.Data
             {
                 status = H8DataBlobLoadStatus.FileTooLarge;
                 RecordFailureTelemetry(status, 0u);
-                return false;
-            }
-
-            if (IsWriteLocked && IsLoaded)
-            {
-                status = H8DataBlobLoadStatus.ReadyLocked;
                 return false;
             }
 
@@ -539,7 +758,7 @@ namespace Hecton8.Data
             return TryGetSectionFromArena(arena, sectionId, out section);
         }
 
-        private static bool TryGetSectionFromArena(
+        private static unsafe bool TryGetSectionFromArena(
             NativeArray<byte>.ReadOnly arena,
             H8DataSectionId sectionId,
             out H8DataSectionEntry section)
@@ -594,7 +813,7 @@ namespace Hecton8.Data
         /// <summary>
         /// Returns a direct typed span over a resident section without allocating or copying.
         /// </summary>
-        public static bool TryGetSectionSpan<T>(H8DataSectionId sectionId, out ReadOnlySpan<T> records)
+        public static unsafe bool TryGetSectionSpan<T>(H8DataSectionId sectionId, out ReadOnlySpan<T> records)
             where T : unmanaged
         {
             records = ReadOnlySpan<T>.Empty;
@@ -640,14 +859,14 @@ namespace Hecton8.Data
                 return false;
 
             H8CreatureTraitRecord record = records[(int)recordIndex];
-            block.Aggression = math.isfinite(record.Genome.Aggression) ? record.Genome.Aggression : 0f;
-            block.Metabolism = math.isfinite(record.Genome.Metabolism) ? record.Genome.Metabolism : 1f;
-            block.MaxHealth = math.isfinite(record.Genome.MaxHealth) ? record.Genome.MaxHealth : 1f;
-            block.CruiseSpeed = math.isfinite(record.Genome.CruiseSpeed) ? record.Genome.CruiseSpeed : 0f;
-            block.BurstSpeed = math.isfinite(record.Genome.BurstSpeed) ? record.Genome.BurstSpeed : 0f;
-            block.SpawnCreditCost = math.isfinite(record.Genome.SpawnCreditCost) ? record.Genome.SpawnCreditCost : 0f;
-            block.PressureMinMeters = math.isfinite(record.Genome.PressureMinMeters) ? record.Genome.PressureMinMeters : 0f;
-            block.PressureMaxMeters = math.isfinite(record.Genome.PressureMaxMeters) ? record.Genome.PressureMaxMeters : 0f;
+            block.Aggression = H8SoAReconstructMath.FiniteOr(record.Genome.Aggression, 0f);
+            block.Metabolism = H8SoAReconstructMath.FiniteOr(record.Genome.Metabolism, 1f);
+            block.MaxHealth = H8SoAReconstructMath.FiniteOr(record.Genome.MaxHealth, 1f);
+            block.CruiseSpeed = H8SoAReconstructMath.FiniteOr(record.Genome.CruiseSpeed, 0f);
+            block.BurstSpeed = H8SoAReconstructMath.FiniteOr(record.Genome.BurstSpeed, 0f);
+            block.SpawnCreditCost = H8SoAReconstructMath.FiniteOr(record.Genome.SpawnCreditCost, 0f);
+            block.PressureMinMeters = H8SoAReconstructMath.FiniteOr(record.Genome.PressureMinMeters, 0f);
+            block.PressureMaxMeters = H8SoAReconstructMath.FiniteOr(record.Genome.PressureMaxMeters, 0f);
             return true;
         }
 
@@ -668,7 +887,7 @@ namespace Hecton8.Data
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private static bool TryFindByHash([NoAlias] H8ItemRecord* records, int count, uint hashId, out H8ItemRecord record)
+        private static unsafe bool TryFindByHash([NoAlias] H8ItemRecord* records, int count, uint hashId, out H8ItemRecord record)
         {
             record = default;
             if (records == null || count <= 0 || hashId == 0u)
@@ -695,7 +914,7 @@ namespace Hecton8.Data
             return false;
         }
 
-        public static bool TryFindByHash(ReadOnlySpan<H8ItemRecord> records, uint hashId, out H8ItemRecord record)
+        public static unsafe bool TryFindByHash(ReadOnlySpan<H8ItemRecord> records, uint hashId, out H8ItemRecord record)
         {
             fixed (H8ItemRecord* ptr = records)
             {
@@ -904,8 +1123,7 @@ namespace Hecton8.Data
         public static bool TrySampleDepthPressure(float depthMeters, out H8DepthPressureSampleRecord record)
         {
             record = default;
-            if (!math.isfinite(depthMeters))
-                depthMeters = 0f;
+            depthMeters = H8SoAReconstructMath.FiniteOr(depthMeters, 0f);
 
             int index = (int)math.round(math.clamp(depthMeters, 0f, 5000f) * (255f / 5000f));
             return TryGetDepthPressureSample(index, out record);
@@ -991,7 +1209,7 @@ namespace Hecton8.Data
             return TryReadLocalizedText((uint)utf8Offset, destination, out text);
         }
 
-        public static bool TryReadLocalizedText(uint utf8Offset, Span<char> destination, out ReadOnlySpan<char> text)
+        public static unsafe bool TryReadLocalizedText(uint utf8Offset, Span<char> destination, out ReadOnlySpan<char> text)
         {
             text = default;
             if (!IsLoaded ||
@@ -1124,7 +1342,7 @@ namespace Hecton8.Data
         /// <summary>
         /// Returns the full resident LocData UTF-8 byte block without decoding or allocation.
         /// </summary>
-        public static bool TryGetLocalizedUtf8Block(out ReadOnlySpan<byte> utf8Bytes)
+        public static unsafe bool TryGetLocalizedUtf8Block(out ReadOnlySpan<byte> utf8Bytes)
         {
             utf8Bytes = default;
             if (!IsLoaded || !TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena) || _directory.LocalizationBytes == 0)
@@ -1150,7 +1368,7 @@ namespace Hecton8.Data
             return TryGetLocalizedUtf8Span((uint)utf8Offset, byteLength, out utf8Bytes);
         }
 
-        public static bool TryGetLocalizedUtf8Span(uint utf8Offset, int byteLength, out ReadOnlySpan<byte> utf8Bytes)
+        public static unsafe bool TryGetLocalizedUtf8Span(uint utf8Offset, int byteLength, out ReadOnlySpan<byte> utf8Bytes)
         {
             utf8Bytes = default;
             if (!IsLoaded ||
@@ -1189,7 +1407,7 @@ namespace Hecton8.Data
             return TryGetLocalizedUtf8Span((uint)utf8Offset, out utf8Bytes);
         }
 
-        public static bool TryGetLocalizedUtf8Span(uint utf8Offset, out ReadOnlySpan<byte> utf8Bytes)
+        public static unsafe bool TryGetLocalizedUtf8Span(uint utf8Offset, out ReadOnlySpan<byte> utf8Bytes)
         {
             utf8Bytes = default;
             if (!IsLoaded ||
@@ -1432,17 +1650,155 @@ namespace Hecton8.Data
         /// <summary>
         /// Editor-only live balancing hook. It temporarily opens the write lock, reloads the blob, then restores Ready lock.
         /// </summary>
-        public static bool EditorHotReloadFromFile(string absolutePath, out H8DataBlobLoadStatus status)
+        public static unsafe bool EditorHotReloadFromFile(string absolutePath, out H8DataBlobLoadStatus status)
         {
-            Interlocked.Exchange(ref _writeLocked, 0);
-            bool loaded = TryInitializeFromFile(GlobalRegistry.DataVault, absolutePath, 0u, 0u, false, out status);
-            LockReady();
-            return loaded;
+            IDataVault reloadVault = _vault;
+            if (reloadVault == null)
+                reloadVault = GlobalRegistry.DataVault;
+
+            string rollbackSnapshotPath = null;
+            bool hasRollbackSnapshot = false;
+            if (TryGetResidentBlob(out NativeArray<byte>.ReadOnly previousArena, out int previousBytes) &&
+                previousBytes > 0)
+            {
+                if (!TryWriteEditorHotReloadRollbackSnapshot(previousArena, previousBytes, out rollbackSnapshotPath))
+                {
+                    status = H8DataBlobLoadStatus.ReadFailed;
+                    RecordFailureTelemetry(status, PathFlagManagedFileFallback);
+                    if (IsLoaded)
+                        LockReady();
+                    else
+                        Interlocked.Exchange(ref _writeLocked, 0);
+
+                    return false;
+                }
+
+                hasRollbackSnapshot = true;
+            }
+
+            try
+            {
+                Interlocked.Exchange(ref _writeLocked, 0);
+                bool loaded = TryInitializeFromFile(
+                    reloadVault,
+                    absolutePath,
+                    0u,
+                    0u,
+                    true,
+                    out status);
+
+                if (!loaded && hasRollbackSnapshot && !IsLoaded)
+                {
+                    Interlocked.Exchange(ref _writeLocked, 0);
+                    _ = TryInitializeFromFile(
+                        reloadVault,
+                        rollbackSnapshotPath,
+                        0u,
+                        0u,
+                        true,
+                        PathFlagManagedFileFallback,
+                        out _);
+                }
+
+                if (IsLoaded)
+                    LockReady();
+                else
+                    Interlocked.Exchange(ref _writeLocked, 0);
+
+                return loaded;
+            }
+            finally
+            {
+                TryDeleteFile(rollbackSnapshotPath);
+            }
+        }
+
+        private static unsafe bool TryWriteEditorHotReloadRollbackSnapshot(
+            NativeArray<byte>.ReadOnly arena,
+            int blobBytes,
+            out string snapshotPath)
+        {
+            snapshotPath = null;
+            if (!arena.IsCreated || blobBytes <= 0 || arena.Length < blobBytes)
+                return false;
+
+            string tempPath = null;
+            string finalPath = null;
+            try
+            {
+                string cacheDirectory = Path.Combine(Application.temporaryCachePath, "Hecton8", "DataMonolith");
+                System.IO.Directory.CreateDirectory(cacheDirectory);
+                finalPath = Path.Combine(cacheDirectory, "static_data_hot_reload_rollback.h8bin");
+                tempPath = finalPath + ".tmp";
+
+                TryDeleteFile(tempPath);
+                byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(arena);
+                using (FileStream stream = new FileStream(
+                           tempPath,
+                           FileMode.Create,
+                           FileAccess.Write,
+                           FileShare.Read,
+                           EditorHotReloadSnapshotChunkBytes,
+                           FileOptions.SequentialScan))
+                {
+                    int copiedBytes = 0;
+                    while (copiedBytes < blobBytes)
+                    {
+                        int chunkBytes = Math.Min(EditorHotReloadSnapshotChunkBytes, blobBytes - copiedBytes);
+                        ReadOnlySpan<byte> chunk = new ReadOnlySpan<byte>(source + copiedBytes, chunkBytes);
+                        stream.Write(chunk);
+                        copiedBytes += chunkBytes;
+                    }
+
+                    stream.Flush();
+                }
+
+                TryDeleteFile(finalPath);
+                File.Move(tempPath, finalPath);
+                snapshotPath = finalPath;
+                return true;
+            }
+            catch (IOException)
+            {
+                TryDeleteFile(tempPath);
+                TryDeleteFile(finalPath);
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                TryDeleteFile(tempPath);
+                TryDeleteFile(finalPath);
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                TryDeleteFile(tempPath);
+                TryDeleteFile(finalPath);
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                TryDeleteFile(tempPath);
+                TryDeleteFile(finalPath);
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                TryDeleteFile(tempPath);
+                TryDeleteFile(finalPath);
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                TryDeleteFile(tempPath);
+                TryDeleteFile(finalPath);
+                return false;
+            }
         }
 #endif
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static ulong ComputeResidentPayloadHash64()
+        internal static unsafe ulong ComputeResidentPayloadHash64()
         {
             if (!TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena) || arena.Length <= H8DataLayoutConstants.HeaderSizeBytes)
                 return 0UL;
@@ -1454,8 +1810,8 @@ namespace Hecton8.Data
             return ((ulong)hash.y << 32) | hash.x;
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static bool TryReadWholeFileIntoArena(string absolutePath, int expectedBytes, uint inheritedPathFlags, out H8DataBlobLoadStatus status)
+#if !UNITY_WEBGL || UNITY_EDITOR
+        private static unsafe bool TryReadWholeFileIntoArena(string absolutePath, int expectedBytes, uint inheritedPathFlags, out H8DataBlobLoadStatus status)
         {
             status = H8DataBlobLoadStatus.None;
             long readStart = Stopwatch.GetTimestamp();
@@ -1508,7 +1864,42 @@ namespace Hecton8.Data
                 _lastReadPathFlags = pathFlags | PathFlagManagedFileFallback;
                 return ok;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+                _lastReadPathFlags = pathFlags;
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+                _lastReadPathFlags = pathFlags;
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+                _lastReadPathFlags = pathFlags;
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+                _lastReadPathFlags = pathFlags;
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+                _lastReadPathFlags = pathFlags;
+                return false;
+            }
+            catch (InvalidOperationException)
             {
                 status = H8DataBlobLoadStatus.ReadFailed;
                 _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
@@ -1518,7 +1909,7 @@ namespace Hecton8.Data
         }
 
 #if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN) && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
-        private static bool TryReadViaNativeFile(string absolutePath, byte* destination, int destinationBytes, int expectedBytes)
+        private static unsafe bool TryReadViaNativeFile(string absolutePath, byte* destination, int destinationBytes, int expectedBytes)
         {
             if (string.IsNullOrEmpty(absolutePath) ||
                 destination == null ||
@@ -1560,7 +1951,7 @@ namespace Hecton8.Data
         }
 
         [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
-        private static extern IntPtr CreateFileW(
+        private static unsafe extern IntPtr CreateFileW(
             string lpFileName,
             uint dwDesiredAccess,
             uint dwShareMode,
@@ -1570,7 +1961,7 @@ namespace Hecton8.Data
             IntPtr hTemplateFile);
 
         [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool ReadFile(
+        private static unsafe extern bool ReadFile(
             IntPtr hFile,
             void* lpBuffer,
             uint nNumberOfBytesToRead,
@@ -1582,7 +1973,7 @@ namespace Hecton8.Data
 #endif
 
 #if !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
-        private static bool TryReadViaMemoryMappedFile(string absolutePath, byte* destination, int destinationBytes, int expectedBytes)
+        private static unsafe bool TryReadViaMemoryMappedFile(string absolutePath, byte* destination, int destinationBytes, int expectedBytes)
         {
             if (destination == null || expectedBytes <= 0)
                 return false;
@@ -1603,7 +1994,27 @@ namespace Hecton8.Data
                     accessor.SafeMemoryMappedViewHandle.ReleasePointer();
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                return false;
+            }
+            catch (InvalidOperationException)
             {
                 return false;
             }
@@ -1617,16 +2028,20 @@ namespace Hecton8.Data
         }
 
 #if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
-        private static bool TryInitializeFromWindowsPlayerStreamingAssets(
+        private static unsafe bool TryInitializeFromWindowsPlayerStreamingAssets(
             IDataVault vault,
             uint expectedWorldSeed,
             uint expectedAppVersionHash,
             bool failIfMissing,
             out H8DataBlobLoadStatus status)
         {
-            if (vault != null || !IsLoaded)
-                _vault = vault;
+            if (IsWriteLocked && IsLoaded)
+            {
+                status = H8DataBlobLoadStatus.ReadyLocked;
+                return false;
+            }
 
+            AdoptVaultForLoad(vault);
             char* path = stackalloc char[NativePathCapacity];
             if (!TryBuildWindowsPlayerMonolithPath(path, NativePathCapacity))
             {
@@ -1635,12 +2050,6 @@ namespace Hecton8.Data
                     RecordFailureTelemetry(status, 0u);
 
                 return !failIfMissing && IsLoaded;
-            }
-
-            if (IsWriteLocked && IsLoaded)
-            {
-                status = H8DataBlobLoadStatus.ReadyLocked;
-                return false;
             }
 
             if (!TryGetNativeFileSize(path, out long blobLength))
@@ -1704,7 +2113,7 @@ namespace Hecton8.Data
             return true;
         }
 
-        private static bool TryBuildWindowsPlayerMonolithPath(char* buffer, int capacity)
+        private static unsafe bool TryBuildWindowsPlayerMonolithPath(char* buffer, int capacity)
         {
             if (buffer == null || capacity <= 0)
                 return false;
@@ -1756,7 +2165,7 @@ namespace Hecton8.Data
             return value == expectedLower;
         }
 
-        private static bool AppendLiteral(char* buffer, int capacity, ref int write, ReadOnlySpan<char> literal)
+        private static unsafe bool AppendLiteral(char* buffer, int capacity, ref int write, ReadOnlySpan<char> literal)
         {
             if (literal.IsEmpty || write < 0 || write + literal.Length >= capacity)
                 return false;
@@ -1767,7 +2176,7 @@ namespace Hecton8.Data
             return true;
         }
 
-        private static bool TryGetNativeFileSize(char* path, out long byteLength)
+        private static unsafe bool TryGetNativeFileSize(char* path, out long byteLength)
         {
             byteLength = 0L;
             IntPtr handle = CreateFileWNative(
@@ -1786,7 +2195,7 @@ namespace Hecton8.Data
             return ok && byteLength >= 0L;
         }
 
-        private static bool TryReadWholeNativeFileIntoArena(char* path, int expectedBytes, out H8DataBlobLoadStatus status)
+        private static unsafe bool TryReadWholeNativeFileIntoArena(char* path, int expectedBytes, out H8DataBlobLoadStatus status)
         {
             status = H8DataBlobLoadStatus.None;
             long readStart = Stopwatch.GetTimestamp();
@@ -1834,10 +2243,10 @@ namespace Hecton8.Data
         }
 
         [DllImport("kernel32.dll", EntryPoint = "GetModuleFileNameW", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern uint GetModuleFileNameW(IntPtr hModule, char* lpFilename, uint nSize);
+        private static unsafe extern uint GetModuleFileNameW(IntPtr hModule, char* lpFilename, uint nSize);
 
         [DllImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern IntPtr CreateFileWNative(
+        private static unsafe extern IntPtr CreateFileWNative(
             char* lpFileName,
             uint dwDesiredAccess,
             uint dwShareMode,
@@ -1850,7 +2259,7 @@ namespace Hecton8.Data
         private static extern bool GetFileSizeEx(IntPtr hFile, out long lpFileSize);
 
         [DllImport("kernel32.dll", EntryPoint = "ReadFile", SetLastError = true)]
-        private static extern bool ReadFileNative(
+        private static unsafe extern bool ReadFileNative(
             IntPtr hFile,
             void* lpBuffer,
             uint nNumberOfBytesToRead,
@@ -1858,7 +2267,7 @@ namespace Hecton8.Data
             IntPtr lpOverlapped);
 
         [DllImport("kernel32.dll", EntryPoint = "WriteFile", SetLastError = true)]
-        private static extern bool WriteFileNative(
+        private static unsafe extern bool WriteFileNative(
             IntPtr hFile,
             void* lpBuffer,
             uint nNumberOfBytesToWrite,
@@ -1866,16 +2275,16 @@ namespace Hecton8.Data
             IntPtr lpOverlapped);
 
         [DllImport("kernel32.dll", EntryPoint = "CreateDirectoryW", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern bool CreateDirectoryWNative(char* lpPathName, IntPtr lpSecurityAttributes);
+        private static unsafe extern bool CreateDirectoryWNative(char* lpPathName, IntPtr lpSecurityAttributes);
 
         [DllImport("kernel32.dll", EntryPoint = "GetCurrentDirectoryW", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern uint GetCurrentDirectoryW(uint nBufferLength, char* lpBuffer);
+        private static unsafe extern uint GetCurrentDirectoryW(uint nBufferLength, char* lpBuffer);
 
         [DllImport("kernel32.dll", EntryPoint = "CloseHandle", SetLastError = true)]
         private static extern bool CloseHandleNative(IntPtr hObject);
 #endif
 
-        private static bool TryValidateResidentArena(
+        private static unsafe bool TryValidateResidentArena(
             uint expectedWorldSeed,
             uint expectedAppVersionHash,
             out H8DataBlobLoadStatus status)
@@ -1971,7 +2380,7 @@ namespace Hecton8.Data
             return true;
         }
 
-        private static bool IsDirectoryValid()
+        private static unsafe bool IsDirectoryValid()
         {
             const ushort ExpectedSectionCount = (ushort)H8DataSectionId.PhysicsConstants;
             if (_directory.SectionCount != ExpectedSectionCount)
@@ -2101,6 +2510,12 @@ namespace Hecton8.Data
             return false;
         }
 
+        private static void AdoptVaultForLoad(IDataVault vault)
+        {
+            if (vault != null || !IsLoaded)
+                _vault = vault;
+        }
+
         private static bool TryRefreshArenaView(out NativeArray<byte> arena)
         {
             arena = default;
@@ -2224,8 +2639,24 @@ namespace Hecton8.Data
                 WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_DATA_MONOLITH.bin"), status, ring, cursor[0]);
                 WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_X_002.bin"), status, ring, cursor[0]);
                 WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_1313.bin"), status, ring, cursor[0]);
+                WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_1330.bin"), status, ring, cursor[0]);
             }
-            catch (Exception)
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (System.Security.SecurityException)
+            {
+            }
+            catch (InvalidOperationException)
             {
             }
 #endif
@@ -2266,7 +2697,7 @@ namespace Hecton8.Data
 #endif
 
 #if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
-        private static void WriteTelemetryDumpsWin32(
+        private static unsafe void WriteTelemetryDumpsWin32(
             H8DataBlobLoadStatus status,
             NativeArray<H8DataMonolithTelemetryEntry> ring,
             int cursor)
@@ -2289,9 +2720,12 @@ namespace Hecton8.Data
 
             if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_1313.bin"))
                 WriteTelemetryDumpWin32(path, status, ring, cursor);
+
+            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_1330.bin"))
+                WriteTelemetryDumpWin32(path, status, ring, cursor);
         }
 
-        private static bool TryBuildCurrentDirectoryPath(char* buffer, int capacity, ReadOnlySpan<char> relativePath)
+        private static unsafe bool TryBuildCurrentDirectoryPath(char* buffer, int capacity, ReadOnlySpan<char> relativePath)
         {
             if (buffer == null || capacity <= 0)
                 return false;
@@ -2311,7 +2745,7 @@ namespace Hecton8.Data
             return true;
         }
 
-        private static bool WriteTelemetryDumpWin32(
+        private static unsafe bool WriteTelemetryDumpWin32(
             char* path,
             H8DataBlobLoadStatus status,
             NativeArray<H8DataMonolithTelemetryEntry> ring,
@@ -2373,17 +2807,17 @@ namespace Hecton8.Data
             return true;
         }
 
-        private static void WriteInt32Le(byte* output, ref int offset, int value)
+        private static unsafe void WriteInt32Le(byte* output, ref int offset, int value)
         {
             WriteUInt32Le(output, ref offset, (uint)value);
         }
 
-        private static void WriteInt64Le(byte* output, ref int offset, long value)
+        private static unsafe void WriteInt64Le(byte* output, ref int offset, long value)
         {
             WriteUInt64Le(output, ref offset, (ulong)value);
         }
 
-        private static void WriteUInt32Le(byte* output, ref int offset, uint value)
+        private static unsafe void WriteUInt32Le(byte* output, ref int offset, uint value)
         {
             output[offset++] = (byte)value;
             output[offset++] = (byte)(value >> 8);
@@ -2391,7 +2825,7 @@ namespace Hecton8.Data
             output[offset++] = (byte)(value >> 24);
         }
 
-        private static void WriteUInt64Le(byte* output, ref int offset, ulong value)
+        private static unsafe void WriteUInt64Le(byte* output, ref int offset, ulong value)
         {
             for (int i = 0; i < 8; i++)
                 output[offset++] = (byte)(value >> (i * 8));

@@ -1,0 +1,91 @@
+{
+  "schema": "hecton8.physics_culling_tracked_lane_lock_audit_1337.v1",
+  "agentId": "1337",
+  "sourceRoot": ".codex_tmp/agent1337_scope_apex_rerun30",
+  "status": "STATIC_GREEN_BUILD_DEFERRED_CPU_GATE",
+  "defectsFixed": [
+    {
+      "id": "PHYSICS_APPLY_PARTIAL_LOCK_RELEASE",
+      "severity": "high",
+      "fact": "FlushValidatedFrontBuffer and ScheduleFrontPacketValidation used chained acquisition and unconditional release calls in failure paths, which weakened proof that each ReleaseWriteLock matched a successful acquire.",
+      "fix": "Both paths now use explicit acquired flags and release only buffers actually locked."
+    },
+    {
+      "id": "PHYSICS_APPLY_FORCE_QUEUE_REGISTRATION_RESCAN",
+      "severity": "high",
+      "fact": "Every PhysicsApplySystem force/velocity/pose packet called GlobalPhysicsStateManager.RegisterTrackedBody, which can rescan culling components and refresh DTO state even when the body is already tracked.",
+      "fix": "PhysicsApplySystem packet routes now call RegisterTrackedBodyIfMissing, a cached-manager/dictionary fast path that performs full registration only for untracked bodies."
+    },
+    {
+      "id": "TRACKED_BODY_LANE_PARTIAL_NATIVE_PUBLISH",
+      "severity": "high",
+      "fact": "Tracked-body registration and lane removal published _lastValidPositions, PhysicsCullingDTO, FrozenVelocityDTO, and state-age lanes through multiple independent indexer-lock writes.",
+      "fix": "Registration and removal now acquire one scoped tracked-body lane mutation lock set for LastValidPositions, CullingDTO, FrozenVelocity, and StateAge, releasing in finally."
+    }
+  ],
+  "lockProof": [
+    {
+      "route": "FlushValidatedFrontBuffer",
+      "buffers": "PhysicsForceCommandFront, PhysicsForceValidationMask",
+      "acquisition": "typed TryAcquire*WriteLock flags",
+      "release": "only if matching acquired flag is true",
+      "holdsAcrossFrame": false
+    },
+    {
+      "route": "ScheduleFrontPacketValidation",
+      "buffers": "PhysicsForceCommandFront, PhysicsForceValidationPackets, PhysicsForceValidationMask",
+      "acquisition": "typed TryAcquire*WriteLock flags",
+      "release": "only if matching acquired flag is true; validation JobHandle still registered with H8Memory",
+      "holdsAcrossFrame": false
+    },
+    {
+      "route": "RegisterTrackedBodyInternal new-body publish",
+      "buffers": "RigidbodyLastValidPositions, PhysicsCullingDtos, PhysicsFrozenVelocities, PhysicsCullingStateAges",
+      "acquisition": "TryAcquirePhysicsTrackedBodyLaneMutationLocks1337",
+      "release": "ReleasePhysicsTrackedBodyLaneMutationLocks1337 in finally",
+      "holdsAcrossFrame": false
+    },
+    {
+      "route": "RemoveTrackedBodyAt lane swap",
+      "buffers": "RigidbodyLastValidPositions, PhysicsCullingDtos, PhysicsFrozenVelocities, PhysicsCullingStateAges",
+      "acquisition": "TryAcquirePhysicsTrackedBodyLaneMutationLocks1337",
+      "release": "ReleasePhysicsTrackedBodyLaneMutationLocks1337 in finally",
+      "holdsAcrossFrame": false
+    }
+  ],
+  "scannerSummary": {
+    "nativeAudit": {
+      "scannedFiles": 9,
+      "parseFailures": 0,
+      "totalNativeFieldDeclarations": 18,
+      "forbiddenPersistentCandidates": 0,
+      "jobTransientFields": 18
+    },
+    "nativeAuditHashSha256": "bcfe84051da17f8e6ae059678948a4a9e6c9c5b1c304326c342b01ad93b5bfab",
+    "zeroGcHotPath": {
+      "scannedFiles": 3,
+      "scannedHotMethods": 21,
+      "zeroGcHotPathHits": 0
+    },
+    "zeroGcHotPathHashSha256": "37d3eaae558afd5435b07b03d91bff82007b29bc958c42ca3b2ca2c062e54011",
+    "branchAudit": {
+      "scannedFiles": 3,
+      "jobExecuteIfStatements": 4,
+      "failClosedGuardIfStatements": 4,
+      "jobExecuteNonGuardIfStatements": 0,
+      "distanceSolverDecisionIfStatements": 0
+    },
+    "branchAuditHashSha256": "abb0338c4da2fe1fbabfeaa6fdab954ecfa1b50abfc6210f31863e1568858cea",
+    "absoluteAupCastHits": 0,
+    "widePaddingHits": 0,
+    "linqHits": 0,
+    "coldIoCatchBlocks": 6
+  },
+  "buildGate": {
+    "status": "DEFERRED_CPU_GATE_RED",
+    "cpuPercent": 94.19,
+    "dotnetProcesses": 0,
+    "cscProcesses": 0
+  },
+  "verificationHashSha256": "89396c2078f34a0a840d93ff6f026fca2c79266fa2131428896b32aeab08fc83"
+}

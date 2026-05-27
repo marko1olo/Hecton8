@@ -213,31 +213,31 @@ namespace Hecton8.Power
         private VaultGenerationHandle<LogisticsComponentSpecDTO> _componentSpecsHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
 
-        internal NativeArray<LogisticsNodeDTO> _nodes;
-        internal NativeArray<LogisticsEdgeDTO> _edges;
-        internal NativeArray<ulong> _stateFlags;
-        internal NativeArray<float> _oxygenFront;
-        internal NativeArray<float> _oxygenBack;
-        internal NativeArray<float> _internalPressureKpa;
-        internal NativeArray<float> _externalPressureKpa;
-        internal NativeArray<float> _yieldThresholdKpa;
-        internal NativeArray<float> _reinforcement;
-        internal NativeArray<double3> _nodeAup;
-        internal NativeArray<float3> _localPositions;
-        internal NativeArray<byte> _priorityTier;
-        internal NativeArray<byte> _visited;
-        internal NativeArray<int> _cellToNode;
-        internal NativeArray<int> _counters;
-        internal NativeArray<LogisticsTuningDTO> _tuning;
-        internal NativeArray<LogisticsGraphTelemetryEntry> _blackBox;
-        internal NativeArray<int> _componentIds;
-        internal NativeArray<float> _pressureFront;
-        internal NativeArray<float> _pressureBack;
-        internal NativeArray<float> _edgeRemainderMilli;
-        internal NativeArray<float> _csrEdgeCapacities;
-        internal NativeArray<float> _csrEdgeFlow01;
-        internal NativeArray<LogisticsComponentSpecDTO> _componentSpecs;
-        internal NativeArray<byte> _csvScratch;
+        internal NativeArray<LogisticsNodeDTO> _nodes => ResolveAlias(in _nodesHandle);
+        internal NativeArray<LogisticsEdgeDTO> _edges => ResolveAlias(in _edgesHandle);
+        internal NativeArray<ulong> _stateFlags => ResolveAlias(in _stateFlagsHandle);
+        internal NativeArray<float> _oxygenFront => ResolveAlias(in _oxygenFrontHandle);
+        internal NativeArray<float> _oxygenBack => ResolveAlias(in _oxygenBackHandle);
+        internal NativeArray<float> _internalPressureKpa => ResolveAlias(in _internalPressureHandle);
+        internal NativeArray<float> _externalPressureKpa => ResolveAlias(in _externalPressureHandle);
+        internal NativeArray<float> _yieldThresholdKpa => ResolveAlias(in _yieldThresholdHandle);
+        internal NativeArray<float> _reinforcement => ResolveAlias(in _reinforcementHandle);
+        internal NativeArray<double3> _nodeAup => ResolveAlias(in _nodeAupHandle);
+        internal NativeArray<float3> _localPositions => ResolveAlias(in _localPositionsHandle);
+        internal NativeArray<byte> _priorityTier => ResolveAlias(in _priorityTierHandle);
+        internal NativeArray<byte> _visited => ResolveAlias(in _visitedHandle);
+        internal NativeArray<int> _cellToNode => ResolveAlias(in _cellToNodeHandle);
+        internal NativeArray<int> _counters => ResolveAlias(in _countersHandle);
+        internal NativeArray<LogisticsTuningDTO> _tuning => ResolveAlias(in _tuningHandle);
+        internal NativeArray<LogisticsGraphTelemetryEntry> _blackBox => ResolveAlias(in _blackBoxHandle);
+        internal NativeArray<int> _componentIds => ResolveAlias(in _componentIdsHandle);
+        internal NativeArray<float> _pressureFront => ResolveAlias(in _pressureFrontHandle);
+        internal NativeArray<float> _pressureBack => ResolveAlias(in _pressureBackHandle);
+        internal NativeArray<float> _edgeRemainderMilli => ResolveAlias(in _edgeRemainderMilliHandle);
+        internal NativeArray<float> _csrEdgeCapacities => ResolveAlias(in _csrEdgeCapacitiesHandle);
+        internal NativeArray<float> _csrEdgeFlow01 => ResolveAlias(in _csrEdgeFlow01Handle);
+        internal NativeArray<LogisticsComponentSpecDTO> _componentSpecs => ResolveAlias(in _componentSpecsHandle);
+        internal NativeArray<byte> _csvScratch => ResolveAlias(in _csvScratchHandle);
 
         private JobHandle _solveHandle;
         private JobHandle _csrRebuildHandle;
@@ -332,40 +332,53 @@ namespace Hecton8.Power
             ConfigurePublicSignalLanes();
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
 
-            _tuning[0] = _offlineTuning;
-            LogisticsGraphInitializeJob initializeJob = new LogisticsGraphInitializeJob
+            if (!TryLockRouterMutationBuffers(out int lockedCount))
             {
-                Nodes = _nodes,
-                StateFlags = _stateFlags,
-                OxygenFront = _oxygenFront,
-                OxygenBack = _oxygenBack,
-                InternalPressureKpa = _internalPressureKpa,
-                ExternalPressureKpa = _externalPressureKpa,
-                YieldThresholdKpa = _yieldThresholdKpa,
-                Reinforcement = _reinforcement,
-                NodeAup = _nodeAup,
-                LocalPositions = _localPositions,
-                PriorityTier = _priorityTier,
-                Visited = _visited,
-                CellToNode = _cellToNode,
-                ComponentIds = _componentIds,
-                PressureFront = _pressureFront,
-                PressureBack = _pressureBack
-            };
-            for (int i = 0; i < MaxNodes; i++)
-                initializeJob.Execute(i);
-
-            for (int i = 0; i < _counters.Length; i++)
-                _counters[i] = 0;
-            for (int i = 0; i < _blackBox.Length; i++)
-                _blackBox[i] = default;
-            for (int i = 0; i < _csrEdgeCapacities.Length; i++)
-            {
-                _csrEdgeCapacities[i] = 0f;
-                _csrEdgeFlow01[i] = 0f;
+                _hasFatalLayoutFault = true;
+                return;
             }
-            for (int i = 0; i < _edgeRemainderMilli.Length; i++)
-                _edgeRemainderMilli[i] = 0f;
+
+            try
+            {
+                WriteNative(_tuning, 0, _offlineTuning);
+                LogisticsGraphInitializeJob initializeJob = new LogisticsGraphInitializeJob
+                {
+                    Nodes = _nodes,
+                    StateFlags = _stateFlags,
+                    OxygenFront = _oxygenFront,
+                    OxygenBack = _oxygenBack,
+                    InternalPressureKpa = _internalPressureKpa,
+                    ExternalPressureKpa = _externalPressureKpa,
+                    YieldThresholdKpa = _yieldThresholdKpa,
+                    Reinforcement = _reinforcement,
+                    NodeAup = _nodeAup,
+                    LocalPositions = _localPositions,
+                    PriorityTier = _priorityTier,
+                    Visited = _visited,
+                    CellToNode = _cellToNode,
+                    ComponentIds = _componentIds,
+                    PressureFront = _pressureFront,
+                    PressureBack = _pressureBack
+                };
+                for (int i = 0; i < MaxNodes; i++)
+                    initializeJob.Execute(i);
+
+                for (int i = 0; i < _counters.Length; i++)
+                    WriteNative(_counters, i, 0);
+                for (int i = 0; i < _blackBox.Length; i++)
+                    WriteNative(_blackBox, i, default);
+                for (int i = 0; i < _csrEdgeCapacities.Length; i++)
+                {
+                    WriteNative(_csrEdgeCapacities, i, 0f);
+                    WriteNative(_csrEdgeFlow01, i, 0f);
+                }
+                for (int i = 0; i < _edgeRemainderMilli.Length; i++)
+                    WriteNative(_edgeRemainderMilli, i, 0f);
+            }
+            finally
+            {
+                UnlockRouterMutationBuffers(lockedCount);
+            }
 
             _initialized = true;
             _missingVaultWarned = false;
@@ -385,109 +398,119 @@ namespace Hecton8.Power
             if (_solvePending)
                 return;
 
-            TryConsumeGeneratedSignals();
-            TryConsumeStateSignals();
-            TryConsumeDockingSignals();
-            RefreshHardwareCadence();
-#if UNITY_EDITOR
-            TryReloadCsvOverrides();
-#endif
-
-            if (!_hasGraph)
-                BuildEmergencyMockGraph();
-
-            if (_csrRebuildPending && _counters[CounterAdjacencyEntryCount] <= 0)
+            if (!TryLockRouterMutationBuffers(out int lockedCount))
                 return;
 
-            ApplyQueuedTuning();
-            ApplyDeterministicMockModuleToggle();
-
-            _frameIndex++;
-            bool runOxygen = ShouldRunOxygenSolver();
-            _solveStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            int deltaPassCount = _deltaPassCount;
-            int scheduledNodeCount = math.max(1, math.clamp(_nodeCount, 0, MaxNodes));
-            JobHandle solveHandle = new LogisticsFlowPrepareJob
+            try
             {
-                NodesPtr = (LogisticsNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),
-                NodeCount = _nodeCount,
-                StateFlags = _stateFlags,
-                EdgeOffsetsBaseIndex = EdgeOffsetsBase,
-                EdgeDestinationsBaseIndex = EdgeDestinationsBase,
-                AdjacencyEntryCount = _counters[CounterAdjacencyEntryCount],
-                ComponentIds = _componentIds,
-                PressureFront = _pressureFront,
-                PressureBack = _pressureBack,
-                Visited = _visited,
-                Counters = _counters,
-                BfsQueueBaseIndex = BfsQueueBase,
-                ReachableBaseIndex = ReachableOrderBase
-            }.Schedule();
+                TryConsumeGeneratedSignals();
+                TryConsumeStateSignals();
+                TryConsumeDockingSignals();
+                RefreshHardwareCadence();
+#if UNITY_EDITOR
+                TryReloadCsvOverrides();
+#endif
 
-            for (int passIndex = 0; passIndex < FixedDeltaPassCount; passIndex++)
-            {
-                bool frontToBack = (passIndex & 1) == 0;
-                solveHandle = new LogisticsFlowDeltaPassJob
+                if (!_hasGraph)
+                    BuildEmergencyMockGraph();
+
+                if (_csrRebuildPending && _counters[CounterAdjacencyEntryCount] <= 0)
+                    return;
+
+                ApplyQueuedTuning();
+                ApplyDeterministicMockModuleToggle();
+
+                _frameIndex++;
+                bool runOxygen = ShouldRunOxygenSolver();
+                _solveStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                int deltaPassCount = _deltaPassCount;
+                int scheduledNodeCount = math.max(1, math.clamp(_nodeCount, 0, MaxNodes));
+                JobHandle solveHandle = new LogisticsFlowPrepareJob
                 {
                     NodesPtr = (LogisticsNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),
                     NodeCount = _nodeCount,
-                    GlobalQualityWeight = _globalQualityWeight,
+                    StateFlags = _stateFlags,
                     EdgeOffsetsBaseIndex = EdgeOffsetsBase,
                     EdgeDestinationsBaseIndex = EdgeDestinationsBase,
                     AdjacencyEntryCount = _counters[CounterAdjacencyEntryCount],
                     ComponentIds = _componentIds,
-                    ReadPressure = frontToBack ? _pressureFront : _pressureBack,
-                    WritePressure = frontToBack ? _pressureBack : _pressureFront,
-                    CsrEdgeCapacities = _csrEdgeCapacities,
+                    PressureFront = _pressureFront,
+                    PressureBack = _pressureBack,
                     Visited = _visited,
                     Counters = _counters,
-                    Tuning = _tuning
-                }.Schedule(scheduledNodeCount, 64, solveHandle);
-            }
+                    BfsQueueBaseIndex = BfsQueueBase,
+                    ReachableBaseIndex = ReachableOrderBase
+                }.Schedule();
 
-            if ((deltaPassCount & 1) != 0)
-            {
-                solveHandle = new LogisticsPressureCopyJob
+                for (int passIndex = 0; passIndex < FixedDeltaPassCount; passIndex++)
                 {
-                    NodeCount = _nodeCount,
-                    SourcePressure = _pressureBack,
-                    DestinationPressure = _pressureFront
-                }.Schedule(scheduledNodeCount, 64, solveHandle);
-            }
+                    bool frontToBack = (passIndex & 1) == 0;
+                    solveHandle = new LogisticsFlowDeltaPassJob
+                    {
+                        NodesPtr = (LogisticsNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),
+                        NodeCount = _nodeCount,
+                        GlobalQualityWeight = _globalQualityWeight,
+                        EdgeOffsetsBaseIndex = EdgeOffsetsBase,
+                        EdgeDestinationsBaseIndex = EdgeDestinationsBase,
+                        AdjacencyEntryCount = _counters[CounterAdjacencyEntryCount],
+                        ComponentIds = _componentIds,
+                        ReadPressure = frontToBack ? _pressureFront : _pressureBack,
+                        WritePressure = frontToBack ? _pressureBack : _pressureFront,
+                        CsrEdgeCapacities = _csrEdgeCapacities,
+                        Visited = _visited,
+                        Counters = _counters,
+                        Tuning = _tuning
+                    }.Schedule(scheduledNodeCount, 64, solveHandle);
+                }
 
-            _solveHandle = new LogisticsFlowFinalizeJob
+                if ((deltaPassCount & 1) != 0)
+                {
+                    solveHandle = new LogisticsPressureCopyJob
+                    {
+                        NodeCount = _nodeCount,
+                        SourcePressure = _pressureBack,
+                        DestinationPressure = _pressureFront
+                    }.Schedule(scheduledNodeCount, 64, solveHandle);
+                }
+
+                _solveHandle = new LogisticsFlowFinalizeJob
+                {
+                    NodesPtr = (LogisticsNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),
+                    NodeCount = _nodeCount,
+                    EdgeCount = _edgeCount,
+                    FrameIndex = _frameIndex,
+                    RunOxygen = runOxygen ? 1 : 0,
+                    DeltaPassCount = deltaPassCount,
+                    OxygenDeltaSeconds = OxygenTickSeconds * _oxygenCadenceDivisor,
+                    DockingPowerWatts = MockDockingWatts,
+                    StateFlags = _stateFlags,
+                    Edges = _edges,
+                    EdgeOffsetsBaseIndex = EdgeOffsetsBase,
+                    EdgeDestinationsBaseIndex = EdgeDestinationsBase,
+                    AdjacencyEntryCount = _counters[CounterAdjacencyEntryCount],
+                    ComponentIds = _componentIds,
+                    PressureFront = _pressureFront,
+                    EdgeRemainderMilli = _edgeRemainderMilli,
+                    CsrEdgeCapacities = _csrEdgeCapacities,
+                    CsrEdgeFlow01 = _csrEdgeFlow01,
+                    Visited = _visited,
+                    OxygenFront = _oxygenFront,
+                    OxygenBack = _oxygenBack,
+                    InternalPressureKpa = _internalPressureKpa,
+                    ExternalPressureKpa = _externalPressureKpa,
+                    YieldThresholdKpa = _yieldThresholdKpa,
+                    Reinforcement = _reinforcement,
+                    Counters = _counters,
+                    BreachNodeBaseIndex = BreachNodeBase,
+                    Tuning = _tuning,
+                    BlackBox = _blackBox
+                }.Schedule(solveHandle);
+                _solvePending = true;
+            }
+            finally
             {
-                NodesPtr = (LogisticsNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),
-                NodeCount = _nodeCount,
-                EdgeCount = _edgeCount,
-                FrameIndex = _frameIndex,
-                RunOxygen = runOxygen ? 1 : 0,
-                DeltaPassCount = deltaPassCount,
-                OxygenDeltaSeconds = OxygenTickSeconds * _oxygenCadenceDivisor,
-                DockingPowerWatts = MockDockingWatts,
-                StateFlags = _stateFlags,
-                Edges = _edges,
-                EdgeOffsetsBaseIndex = EdgeOffsetsBase,
-                EdgeDestinationsBaseIndex = EdgeDestinationsBase,
-                AdjacencyEntryCount = _counters[CounterAdjacencyEntryCount],
-                ComponentIds = _componentIds,
-                PressureFront = _pressureFront,
-                EdgeRemainderMilli = _edgeRemainderMilli,
-                CsrEdgeCapacities = _csrEdgeCapacities,
-                CsrEdgeFlow01 = _csrEdgeFlow01,
-                Visited = _visited,
-                OxygenFront = _oxygenFront,
-                OxygenBack = _oxygenBack,
-                InternalPressureKpa = _internalPressureKpa,
-                ExternalPressureKpa = _externalPressureKpa,
-                YieldThresholdKpa = _yieldThresholdKpa,
-                Reinforcement = _reinforcement,
-                Counters = _counters,
-                BreachNodeBaseIndex = BreachNodeBase,
-                Tuning = _tuning,
-                BlackBox = _blackBox
-            }.Schedule(solveHandle);
-            _solvePending = true;
+                UnlockRouterMutationBuffers(lockedCount);
+            }
         }
 
         public void LateFrameTick(float now)
@@ -495,39 +518,49 @@ namespace Hecton8.Power
             if (!_initialized)
                 return;
 
-            if (_csrRebuildPending && _csrRebuildHandle.IsCompleted)
-            {
-                DispatcherJobFence.TryFinalizeCompleted(ref _csrRebuildHandle);
-                _csrRebuildPending = false;
-            }
+            if (!TryLockRouterMutationBuffers(out int lockedCount))
+                return;
 
-            if (_solvePending && _solveHandle.IsCompleted)
+            try
             {
-                DispatcherJobFence.TryFinalizeCompleted(ref _solveHandle);
-                _solvePending = false;
-                PatchLatestTelemetryMicros();
-                PublishSolveSideEffects();
-                PublishFlowVisuals();
-            }
-
-            if (_hasGraph && !_localShiftPending)
-            {
-                if (!RefreshVaultAliases())
-                    return;
-
-                _localShiftHandle = new LocalShiftResolverJob
+                if (_csrRebuildPending && _csrRebuildHandle.IsCompleted)
                 {
-                    NodeAup = _nodeAup,
-                    LocalPositions = _localPositions,
-                    CameraAup = _cameraAup
-                }.Schedule(_nodeCount, 64);
-                _localShiftPending = true;
-            }
+                    DispatcherJobFence.TryFinalizeCompleted(ref _csrRebuildHandle);
+                    _csrRebuildPending = false;
+                }
 
-            if (_localShiftPending && _localShiftHandle.IsCompleted)
+                if (_solvePending && _solveHandle.IsCompleted)
+                {
+                    DispatcherJobFence.TryFinalizeCompleted(ref _solveHandle);
+                    _solvePending = false;
+                    PatchLatestTelemetryMicros();
+                    PublishSolveSideEffects();
+                    PublishFlowVisuals();
+                }
+
+                if (_hasGraph && !_localShiftPending)
+                {
+                    if (!RefreshVaultAliases())
+                        return;
+
+                    _localShiftHandle = new LocalShiftResolverJob
+                    {
+                        NodeAup = _nodeAup,
+                        LocalPositions = _localPositions,
+                        CameraAup = _cameraAup
+                    }.Schedule(_nodeCount, 64);
+                    _localShiftPending = true;
+                }
+
+                if (_localShiftPending && _localShiftHandle.IsCompleted)
+                {
+                    DispatcherJobFence.TryFinalizeCompleted(ref _localShiftHandle);
+                    _localShiftPending = false;
+                }
+            }
+            finally
             {
-                DispatcherJobFence.TryFinalizeCompleted(ref _localShiftHandle);
-                _localShiftPending = false;
+                UnlockRouterMutationBuffers(lockedCount);
             }
         }
 
@@ -543,7 +576,17 @@ namespace Hecton8.Power
             if (!_initialized || _hasFatalLayoutFault)
                 return;
 
-            BuildEmergencyMockGraph();
+            if (!TryLockRouterMutationBuffers(out int lockedCount))
+                return;
+
+            try
+            {
+                BuildEmergencyMockGraph();
+            }
+            finally
+            {
+                UnlockRouterMutationBuffers(lockedCount);
+            }
         }
 
         public void ForceDumpBlackBox()
@@ -701,31 +744,31 @@ namespace Hecton8.Power
             if (vault == null)
                 return false;
 
-            return ResolveVaultBuffer(vault, ref _nodesHandle, BufferID.ShinobuLogisticsNodes, MaxNodes, out _nodes) &&
-                   ResolveVaultBuffer(vault, ref _edgesHandle, BufferID.ShinobuLogisticsEdges, MaxDirectedEdges, out _edges) &&
-                   ResolveVaultBuffer(vault, ref _stateFlagsHandle, BufferID.ShinobuLogisticsStateFlags, MaxNodes, out _stateFlags) &&
-                   ResolveVaultBuffer(vault, ref _oxygenFrontHandle, BufferID.ShinobuLogisticsOxygenFront, MaxNodes, out _oxygenFront) &&
-                   ResolveVaultBuffer(vault, ref _oxygenBackHandle, BufferID.ShinobuLogisticsOxygenBack, MaxNodes, out _oxygenBack) &&
-                   ResolveVaultBuffer(vault, ref _internalPressureHandle, BufferID.ShinobuLogisticsInternalPressure, MaxNodes, out _internalPressureKpa) &&
-                   ResolveVaultBuffer(vault, ref _externalPressureHandle, BufferID.ShinobuLogisticsExternalPressure, MaxNodes, out _externalPressureKpa) &&
-                   ResolveVaultBuffer(vault, ref _yieldThresholdHandle, BufferID.ShinobuLogisticsYieldThreshold, MaxNodes, out _yieldThresholdKpa) &&
-                   ResolveVaultBuffer(vault, ref _reinforcementHandle, BufferID.ShinobuLogisticsReinforcement, MaxNodes, out _reinforcement) &&
-                   ResolveVaultBuffer(vault, ref _nodeAupHandle, BufferID.ShinobuLogisticsNodeAup, MaxNodes, out _nodeAup) &&
-                   ResolveVaultBuffer(vault, ref _localPositionsHandle, BufferID.ShinobuLogisticsLocalPositions, MaxNodes, out _localPositions) &&
-                   ResolveVaultBuffer(vault, ref _priorityTierHandle, BufferID.ShinobuLogisticsPriorityTier, MaxNodes, out _priorityTier) &&
-                   ResolveVaultBuffer(vault, ref _visitedHandle, BufferID.ShinobuLogisticsVisited, MaxNodes, out _visited) &&
-                   ResolveVaultBuffer(vault, ref _cellToNodeHandle, BufferID.ShinobuLogisticsCellToNode, MaxNodes, out _cellToNode) &&
-                   ResolveVaultBuffer(vault, ref _countersHandle, BufferID.ShinobuLogisticsCounters, IntLaneCount, out _counters) &&
-                   ResolveVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuLogisticsTuning, 1, out _tuning) &&
-                   ResolveVaultBuffer(vault, ref _blackBoxHandle, BufferID.ShinobuLogisticsBlackBox, TelemetryFrames, out _blackBox) &&
-                   ResolveVaultBuffer(vault, ref _componentIdsHandle, BufferID.ShinobuLogisticsComponentIds, MaxNodes, out _componentIds) &&
-                   ResolveVaultBuffer(vault, ref _pressureFrontHandle, BufferID.ShinobuLogisticsPressureFront, MaxNodes, out _pressureFront) &&
-                   ResolveVaultBuffer(vault, ref _pressureBackHandle, BufferID.ShinobuLogisticsPressureBack, MaxNodes, out _pressureBack) &&
-                   ResolveVaultBuffer(vault, ref _edgeRemainderMilliHandle, BufferID.ShinobuLogisticsEdgeRemainderMilli, MaxAdjacencyEntries, out _edgeRemainderMilli) &&
-                   ResolveVaultBuffer(vault, ref _csrEdgeCapacitiesHandle, BufferID.ShinobuLogisticsCsrEdgeCapacities, MaxAdjacencyEntries, out _csrEdgeCapacities) &&
-                   ResolveVaultBuffer(vault, ref _csrEdgeFlow01Handle, BufferID.ShinobuLogisticsCsrEdgeFlow01, MaxAdjacencyEntries, out _csrEdgeFlow01) &&
-                   ResolveVaultBuffer(vault, ref _componentSpecsHandle, BufferID.ShinobuLogisticsComponentSpecs, MaxNodes, out _componentSpecs) &&
-                   ResolveVaultBuffer(vault, ref _csvScratchHandle, BufferID.ShinobuLogisticsCsvScratch, CsvBufferBytes, out _csvScratch);
+            return ResolveVaultBuffer(vault, ref _nodesHandle, BufferID.ShinobuLogisticsNodes, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _edgesHandle, BufferID.ShinobuLogisticsEdges, MaxDirectedEdges, out _) &&
+                   ResolveVaultBuffer(vault, ref _stateFlagsHandle, BufferID.ShinobuLogisticsStateFlags, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _oxygenFrontHandle, BufferID.ShinobuLogisticsOxygenFront, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _oxygenBackHandle, BufferID.ShinobuLogisticsOxygenBack, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _internalPressureHandle, BufferID.ShinobuLogisticsInternalPressure, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _externalPressureHandle, BufferID.ShinobuLogisticsExternalPressure, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _yieldThresholdHandle, BufferID.ShinobuLogisticsYieldThreshold, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _reinforcementHandle, BufferID.ShinobuLogisticsReinforcement, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _nodeAupHandle, BufferID.ShinobuLogisticsNodeAup, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _localPositionsHandle, BufferID.ShinobuLogisticsLocalPositions, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _priorityTierHandle, BufferID.ShinobuLogisticsPriorityTier, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _visitedHandle, BufferID.ShinobuLogisticsVisited, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _cellToNodeHandle, BufferID.ShinobuLogisticsCellToNode, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _countersHandle, BufferID.ShinobuLogisticsCounters, IntLaneCount, out _) &&
+                   ResolveVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuLogisticsTuning, 1, out _) &&
+                   ResolveVaultBuffer(vault, ref _blackBoxHandle, BufferID.ShinobuLogisticsBlackBox, TelemetryFrames, out _) &&
+                   ResolveVaultBuffer(vault, ref _componentIdsHandle, BufferID.ShinobuLogisticsComponentIds, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _pressureFrontHandle, BufferID.ShinobuLogisticsPressureFront, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _pressureBackHandle, BufferID.ShinobuLogisticsPressureBack, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _edgeRemainderMilliHandle, BufferID.ShinobuLogisticsEdgeRemainderMilli, MaxAdjacencyEntries, out _) &&
+                   ResolveVaultBuffer(vault, ref _csrEdgeCapacitiesHandle, BufferID.ShinobuLogisticsCsrEdgeCapacities, MaxAdjacencyEntries, out _) &&
+                   ResolveVaultBuffer(vault, ref _csrEdgeFlow01Handle, BufferID.ShinobuLogisticsCsrEdgeFlow01, MaxAdjacencyEntries, out _) &&
+                   ResolveVaultBuffer(vault, ref _componentSpecsHandle, BufferID.ShinobuLogisticsComponentSpecs, MaxNodes, out _) &&
+                   ResolveVaultBuffer(vault, ref _csvScratchHandle, BufferID.ShinobuLogisticsCsvScratch, CsvBufferBytes, out _);
         }
 
         private static bool ResolveVaultBuffer<T>(
@@ -768,31 +811,31 @@ namespace Hecton8.Power
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            return RefreshVaultBuffer(vault, ref _nodesHandle, MaxNodes, out _nodes) &&
-                   RefreshVaultBuffer(vault, ref _edgesHandle, MaxDirectedEdges, out _edges) &&
-                   RefreshVaultBuffer(vault, ref _stateFlagsHandle, MaxNodes, out _stateFlags) &&
-                   RefreshVaultBuffer(vault, ref _oxygenFrontHandle, MaxNodes, out _oxygenFront) &&
-                   RefreshVaultBuffer(vault, ref _oxygenBackHandle, MaxNodes, out _oxygenBack) &&
-                   RefreshVaultBuffer(vault, ref _internalPressureHandle, MaxNodes, out _internalPressureKpa) &&
-                   RefreshVaultBuffer(vault, ref _externalPressureHandle, MaxNodes, out _externalPressureKpa) &&
-                   RefreshVaultBuffer(vault, ref _yieldThresholdHandle, MaxNodes, out _yieldThresholdKpa) &&
-                   RefreshVaultBuffer(vault, ref _reinforcementHandle, MaxNodes, out _reinforcement) &&
-                   RefreshVaultBuffer(vault, ref _nodeAupHandle, MaxNodes, out _nodeAup) &&
-                   RefreshVaultBuffer(vault, ref _localPositionsHandle, MaxNodes, out _localPositions) &&
-                   RefreshVaultBuffer(vault, ref _priorityTierHandle, MaxNodes, out _priorityTier) &&
-                   RefreshVaultBuffer(vault, ref _visitedHandle, MaxNodes, out _visited) &&
-                   RefreshVaultBuffer(vault, ref _cellToNodeHandle, MaxNodes, out _cellToNode) &&
-                   RefreshVaultBuffer(vault, ref _countersHandle, IntLaneCount, out _counters) &&
-                   RefreshVaultBuffer(vault, ref _tuningHandle, 1, out _tuning) &&
-                   RefreshVaultBuffer(vault, ref _blackBoxHandle, TelemetryFrames, out _blackBox) &&
-                   RefreshVaultBuffer(vault, ref _componentIdsHandle, MaxNodes, out _componentIds) &&
-                   RefreshVaultBuffer(vault, ref _pressureFrontHandle, MaxNodes, out _pressureFront) &&
-                   RefreshVaultBuffer(vault, ref _pressureBackHandle, MaxNodes, out _pressureBack) &&
-                   RefreshVaultBuffer(vault, ref _edgeRemainderMilliHandle, MaxAdjacencyEntries, out _edgeRemainderMilli) &&
-                   RefreshVaultBuffer(vault, ref _csrEdgeCapacitiesHandle, MaxAdjacencyEntries, out _csrEdgeCapacities) &&
-                   RefreshVaultBuffer(vault, ref _csrEdgeFlow01Handle, MaxAdjacencyEntries, out _csrEdgeFlow01) &&
-                   RefreshVaultBuffer(vault, ref _componentSpecsHandle, MaxNodes, out _componentSpecs) &&
-                   RefreshVaultBuffer(vault, ref _csvScratchHandle, CsvBufferBytes, out _csvScratch);
+            return RefreshVaultBuffer(vault, ref _nodesHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _edgesHandle, MaxDirectedEdges, out _) &&
+                   RefreshVaultBuffer(vault, ref _stateFlagsHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _oxygenFrontHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _oxygenBackHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _internalPressureHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _externalPressureHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _yieldThresholdHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _reinforcementHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _nodeAupHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _localPositionsHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _priorityTierHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _visitedHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _cellToNodeHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _countersHandle, IntLaneCount, out _) &&
+                   RefreshVaultBuffer(vault, ref _tuningHandle, 1, out _) &&
+                   RefreshVaultBuffer(vault, ref _blackBoxHandle, TelemetryFrames, out _) &&
+                   RefreshVaultBuffer(vault, ref _componentIdsHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _pressureFrontHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _pressureBackHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _edgeRemainderMilliHandle, MaxAdjacencyEntries, out _) &&
+                   RefreshVaultBuffer(vault, ref _csrEdgeCapacitiesHandle, MaxAdjacencyEntries, out _) &&
+                   RefreshVaultBuffer(vault, ref _csrEdgeFlow01Handle, MaxAdjacencyEntries, out _) &&
+                   RefreshVaultBuffer(vault, ref _componentSpecsHandle, MaxNodes, out _) &&
+                   RefreshVaultBuffer(vault, ref _csvScratchHandle, CsvBufferBytes, out _);
         }
 
         private static bool RefreshVaultBuffer<T>(
@@ -814,6 +857,109 @@ namespace Hecton8.Power
         private static bool IsHandleValid<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
             return handle.BufferID != 0u;
+        }
+
+        private NativeArray<T> ResolveAlias<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsHandleValid(in handle))
+                return default;
+
+            return vault.TryResolveHandle(in handle, out NativeArray<T> buffer) && buffer.IsCreated
+                ? buffer
+                : default;
+        }
+
+        private bool TryLockRouterMutationBuffers(out int lockedCount)
+        {
+            lockedCount = 0;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsNodes, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsEdges, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsStateFlags, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsOxygenFront, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsOxygenBack, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsInternalPressure, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsExternalPressure, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsYieldThreshold, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsReinforcement, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsNodeAup, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsLocalPositions, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsPriorityTier, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsVisited, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsCellToNode, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsCounters, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsTuning, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsBlackBox, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsComponentIds, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsPressureFront, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsPressureBack, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsEdgeRemainderMilli, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsCsrEdgeCapacities, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsCsrEdgeFlow01, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsComponentSpecs, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            if (!TryLockRouterBuffer(vault, BufferID.ShinobuLogisticsCsvScratch, ref lockedCount)) { UnlockRouterMutationBuffers(lockedCount); return false; }
+            return true;
+        }
+
+        private static bool TryLockRouterBuffer(IDataVault vault, BufferID bufferId, ref int lockedCount)
+        {
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryLockBuffer(bufferId, SystemID.Power))
+                return false;
+
+            lockedCount++;
+            return true;
+        }
+
+        private void UnlockRouterMutationBuffers(int lockedCount)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || lockedCount <= 0)
+                return;
+
+            if (lockedCount >= 25) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsCsvScratch, SystemID.Power);
+            if (lockedCount >= 24) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsComponentSpecs, SystemID.Power);
+            if (lockedCount >= 23) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsCsrEdgeFlow01, SystemID.Power);
+            if (lockedCount >= 22) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsCsrEdgeCapacities, SystemID.Power);
+            if (lockedCount >= 21) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsEdgeRemainderMilli, SystemID.Power);
+            if (lockedCount >= 20) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsPressureBack, SystemID.Power);
+            if (lockedCount >= 19) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsPressureFront, SystemID.Power);
+            if (lockedCount >= 18) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsComponentIds, SystemID.Power);
+            if (lockedCount >= 17) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsBlackBox, SystemID.Power);
+            if (lockedCount >= 16) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsTuning, SystemID.Power);
+            if (lockedCount >= 15) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsCounters, SystemID.Power);
+            if (lockedCount >= 14) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsCellToNode, SystemID.Power);
+            if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsVisited, SystemID.Power);
+            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsPriorityTier, SystemID.Power);
+            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsLocalPositions, SystemID.Power);
+            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsNodeAup, SystemID.Power);
+            if (lockedCount >= 9) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsReinforcement, SystemID.Power);
+            if (lockedCount >= 8) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsYieldThreshold, SystemID.Power);
+            if (lockedCount >= 7) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsExternalPressure, SystemID.Power);
+            if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsInternalPressure, SystemID.Power);
+            if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsOxygenBack, SystemID.Power);
+            if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsOxygenFront, SystemID.Power);
+            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsStateFlags, SystemID.Power);
+            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsEdges, SystemID.Power);
+            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.ShinobuLogisticsNodes, SystemID.Power);
+        }
+
+        private static void WriteNative<T>(NativeArray<T> buffer, int index, T value)
+            where T : struct
+        {
+            buffer[index] = value;
+        }
+
+        private static void OrNative(NativeArray<int> buffer, int index, int mask)
+        {
+            buffer[index] = buffer[index] | mask;
         }
 
         public static bool TryGetTuning(out LogisticsTuningDTO tuning)
@@ -845,7 +991,9 @@ namespace Hecton8.Power
             }
 
             IDataVault vault = active._dataVault;
-            if (vault == null || !IsHandleValid(in active._tuningHandle))
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsHandleValid(in active._tuningHandle))
                 return;
 
             if (!vault.TryAcquireWriteLock(in active._tuningHandle, SystemID.Power, out NativeArray<LogisticsTuningDTO> tuningView))
@@ -857,7 +1005,6 @@ namespace Hecton8.Power
                     return;
 
                 tuningView[0] = sanitized;
-                active._tuning = tuningView;
             }
             finally
             {
@@ -980,32 +1127,6 @@ namespace Hecton8.Power
 
         private void ClearVaultAliases()
         {
-            _csvScratch = default;
-            _componentSpecs = default;
-            _csrEdgeFlow01 = default;
-            _csrEdgeCapacities = default;
-            _edgeRemainderMilli = default;
-            _pressureBack = default;
-            _pressureFront = default;
-            _componentIds = default;
-            _blackBox = default;
-            _tuning = default;
-            _counters = default;
-            _cellToNode = default;
-            _visited = default;
-            _priorityTier = default;
-            _localPositions = default;
-            _nodeAup = default;
-            _reinforcement = default;
-            _yieldThresholdKpa = default;
-            _externalPressureKpa = default;
-            _internalPressureKpa = default;
-            _oxygenBack = default;
-            _oxygenFront = default;
-            _stateFlags = default;
-            _edges = default;
-            _nodes = default;
-
             _csvScratchHandle = default;
             _componentSpecsHandle = default;
             _csrEdgeFlow01Handle = default;
@@ -1063,7 +1184,16 @@ namespace Hecton8.Power
             }
 
             if (WfcOutpostGridRegistry.TryGetGrid(latest.GridHandle, out WfcOutpostGridLease lease))
-                BuildFromWfcGrid(in lease, in latest);
+            {
+                try
+                {
+                    BuildFromWfcGrid(in lease, in latest);
+                }
+                finally
+                {
+                    WfcOutpostGridRegistry.ReleaseGridLease(in lease);
+                }
+            }
         }
 
         private void TryConsumeStateSignals()
@@ -1087,10 +1217,10 @@ namespace Hecton8.Power
                     flags |= LogisticsStateFlags.DoorLocked;
                 if ((signal.CurrentFlags & 0x04) != 0)
                     flags |= LogisticsStateFlags.Flooded;
-                _stateFlags[nodeIndex] = flags;
+                WriteNative(_stateFlags, nodeIndex, flags);
                 LogisticsNodeDTO node = _nodes[nodeIndex];
                 node.Flags = (uint)flags;
-                _nodes[nodeIndex] = node;
+                WriteNative(_nodes, nodeIndex, node);
                 rebuildAdjacency = true;
             }
 
@@ -1109,10 +1239,10 @@ namespace Hecton8.Power
                 return;
 
             ulong flags = _stateFlags[dockingNode] | LogisticsStateFlags.SubmarineAttached | LogisticsStateFlags.DockingPort;
-            _stateFlags[dockingNode] = flags;
+            WriteNative(_stateFlags, dockingNode, flags);
             LogisticsNodeDTO node = _nodes[dockingNode];
             node.Flags = (uint)flags;
-            _nodes[dockingNode] = node;
+            WriteNative(_nodes, dockingNode, node);
         }
 
         private void RefreshHardwareCadence()
@@ -1135,7 +1265,7 @@ namespace Hecton8.Power
             {
                 LogisticsTuningDTO tuning = _tuning[0];
                 tuning.GlobalQualityWeight = quality;
-                _tuning[0] = SanitizeTuning(tuning);
+                WriteNative(_tuning, 0, SanitizeTuning(tuning));
             }
         }
 
@@ -1164,7 +1294,7 @@ namespace Hecton8.Power
             if (!_hasQueuedTuning)
                 return;
 
-            _tuning[0] = _queuedTuning;
+            WriteNative(_tuning, 0, _queuedTuning);
             _hasQueuedTuning = false;
         }
 
@@ -1177,10 +1307,10 @@ namespace Hecton8.Power
             uint frame = (uint)_frameIndex;
             int nodeIndex = 1 + (int)((frame * 1103515245u + 12345u) % (uint)(_nodeCount - 1));
             ulong flags = _stateFlags[nodeIndex] ^ LogisticsStateFlags.DoorLocked;
-            _stateFlags[nodeIndex] = flags;
+            WriteNative(_stateFlags, nodeIndex, flags);
             LogisticsNodeDTO node = _nodes[nodeIndex];
             node.Flags = (uint)flags;
-            _nodes[nodeIndex] = node;
+            WriteNative(_nodes, nodeIndex, node);
             RebuildAdjacencyFromEdges();
 #endif
         }
@@ -1205,17 +1335,17 @@ namespace Hecton8.Power
 
                 if (_nodeCount >= MaxNodes)
                 {
-                    _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.CapacityExceeded;
+                    OrNative(_counters, CounterFaultFlags, LogisticsGraphFaultFlags.CapacityExceeded);
                     break;
                 }
 
                 int nodeIndex = _nodeCount++;
-                _cellToNode[cellIndex] = nodeIndex;
+                WriteNative(_cellToNode, cellIndex, nodeIndex);
                 int3 cell = Unflatten(cellIndex, dimensions);
                 byte kind = (byte)(packed & WfcOutpostGridConstants.CellMask);
                 float3 local = new float3(cell.x * cellSize, cell.y * floorHeight, cell.z * cellSize);
                 ulong flags = ResolveInitialStateFlags(kind, cell, dimensions);
-                _nodes[nodeIndex] = new LogisticsNodeDTO
+                WriteNative(_nodes, nodeIndex, new LogisticsNodeDTO
                 {
                     NodeHash = ComputeNodeHash(signal.SectorHash, nodeIndex, kind),
                     Capacity = ResolvePowerDemand(kind),
@@ -1223,17 +1353,17 @@ namespace Hecton8.Power
                     Flags = (uint)flags,
                     EdgeStartIndex = -1,
                     EdgeCount = 0
-                };
-                _stateFlags[nodeIndex] = flags;
-                _oxygenFront[nodeIndex] = 100f;
-                _oxygenBack[nodeIndex] = 100f;
-                _internalPressureKpa[nodeIndex] = 101.3f;
-                _externalPressureKpa[nodeIndex] = 101.3f + math.max(0f, -local.y + 80f) * 10.1f;
-                _yieldThresholdKpa[nodeIndex] = 850f + ResolveReinforcement(kind) * 300f;
-                _reinforcement[nodeIndex] = ResolveReinforcement(kind);
-                _nodeAup[nodeIndex] = origin + new double3(local.x, local.y, local.z);
-                _localPositions[nodeIndex] = local;
-                _priorityTier[nodeIndex] = ResolvePriority(kind);
+                });
+                WriteNative(_stateFlags, nodeIndex, flags);
+                WriteNative(_oxygenFront, nodeIndex, 100f);
+                WriteNative(_oxygenBack, nodeIndex, 100f);
+                WriteNative(_internalPressureKpa, nodeIndex, 101.3f);
+                WriteNative(_externalPressureKpa, nodeIndex, 101.3f + math.max(0f, -local.y + 80f) * 10.1f);
+                WriteNative(_yieldThresholdKpa, nodeIndex, 850f + ResolveReinforcement(kind) * 300f);
+                WriteNative(_reinforcement, nodeIndex, ResolveReinforcement(kind));
+                WriteNative(_nodeAup, nodeIndex, origin + new double3(local.x, local.y, local.z));
+                WriteNative(_localPositions, nodeIndex, local);
+                WriteNative(_priorityTier, nodeIndex, ResolvePriority(kind));
             }
 
             for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
@@ -1262,11 +1392,11 @@ namespace Hecton8.Power
             _activeGenerationSequence = signal.GenerationSequence;
             _hasGraph = _nodeCount > 0;
             RebuildCsrFromEdges();
-            _counters[CounterNodeCount] = _nodeCount;
-            _counters[CounterEdgeCount] = _edgeCount;
+            WriteNative(_counters, CounterNodeCount, _nodeCount);
+            WriteNative(_counters, CounterEdgeCount, _edgeCount);
 
             if (!HasGenerator())
-                _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.MissingGenerator;
+                OrNative(_counters, CounterFaultFlags, LogisticsGraphFaultFlags.MissingGenerator);
         }
 
         private void BuildEmergencyMockGraph()
@@ -1310,7 +1440,7 @@ namespace Hecton8.Power
         private void GenerateEmergencyMockProfiles()
         {
             LogisticsTuningDTO tuning = EmergencyTuning();
-            _tuning[0] = tuning;
+            WriteNative(_tuning, 0, tuning);
             _offlineTuning = tuning;
         }
 
@@ -1334,7 +1464,7 @@ namespace Hecton8.Power
             if (_solvePending || _csrRebuildPending || _localShiftPending)
             {
                 if (_counters.IsCreated)
-                    _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.LayoutFault;
+                    OrNative(_counters, CounterFaultFlags, LogisticsGraphFaultFlags.LayoutFault);
                 return false;
             }
 
@@ -1342,9 +1472,9 @@ namespace Hecton8.Power
             _edgeCount = 0;
             _hasGraph = false;
             for (int i = 0; i < _cellToNode.Length; i++)
-                _cellToNode[i] = -1;
+                WriteNative(_cellToNode, i, -1);
             for (int i = 0; i < _counters.Length; i++)
-                _counters[i] = 0;
+                WriteNative(_counters, i, 0);
             return true;
         }
 
@@ -1407,7 +1537,7 @@ namespace Hecton8.Power
                     return;
             }
 
-            _edges[_edgeCount++] = new LogisticsEdgeDTO
+            WriteNative(_edges, _edgeCount++, new LogisticsEdgeDTO
             {
                 Nodes = new int2(low, high),
                 Capacity = ResolveEdgeCapacity(low, high),
@@ -1415,7 +1545,7 @@ namespace Hecton8.Power
                 Flow01 = 0f,
                 LastMilliTransfer = 0,
                 Flags = 0u
-            };
+            });
         }
 
         private void TryConnectPlanar(
@@ -1495,10 +1625,10 @@ namespace Hecton8.Power
             {
                 int nodeIndex = _counters[BreachNodeBase + i];
                 if (!PublishFluidIncursion(nodeIndex))
-                    _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.SignalOverflow;
+                    OrNative(_counters, CounterFaultFlags, LogisticsGraphFaultFlags.SignalOverflow);
             }
             if (_counters.IsCreated)
-                _counters[CounterBreachSignalCount] = 0;
+                WriteNative(_counters, CounterBreachSignalCount, 0);
 
             int faultFlags = _counters[CounterFaultFlags];
             if ((faultFlags & (LogisticsGraphFaultFlags.InfiniteLoopGuard | LogisticsGraphFaultFlags.OxygenNan)) != 0)
@@ -1537,7 +1667,7 @@ namespace Hecton8.Power
 
             LogisticsGraphTelemetryEntry entry = _blackBox[index];
             entry.SolverMicros = micros;
-            _blackBox[index] = entry;
+            WriteNative(_blackBox, index, entry);
         }
 
         private void PublishFlowVisuals()
@@ -1687,7 +1817,7 @@ namespace Hecton8.Power
                 int read = ReadFileIntoNativeScratch(path, _csvScratch);
                 if (read <= 0)
                 {
-                    _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.AuthoringImportFault;
+                    OrNative(_counters, CounterFaultFlags, LogisticsGraphFaultFlags.AuthoringImportFault);
                     GlobalTelemetryBus.PublishPerformanceWarning(0x5348435Au, SourceHash, 0);
                     return;
                 }
@@ -1697,7 +1827,7 @@ namespace Hecton8.Power
             }
             catch (Exception exception)
             {
-                _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.AuthoringImportFault;
+                OrNative(_counters, CounterFaultFlags, LogisticsGraphFaultFlags.AuthoringImportFault);
                 GlobalTelemetryBus.PublishPerformanceWarning(0x53484353u, SourceHash, exception.HResult);
             }
         }
@@ -1789,7 +1919,7 @@ namespace Hecton8.Power
                 return;
 
             for (int i = 0; i < _componentSpecs.Length; i++)
-                _componentSpecs[i] = default;
+                WriteNative(_componentSpecs, i, default);
 
             int write = 0;
             int index = 0;
@@ -1851,7 +1981,7 @@ namespace Hecton8.Power
                     index++;
             }
 
-            _counters[CounterSpecCount] = write;
+            WriteNative(_counters, CounterSpecCount, write);
         }
 
         private bool TryInsertComponentSpec(in LogisticsComponentSpecDTO spec)
@@ -1867,12 +1997,12 @@ namespace Hecton8.Power
                 uint existing = _componentSpecs[index].ModuleHash;
                 if (existing == 0u || existing == spec.ModuleHash)
                 {
-                    _componentSpecs[index] = spec;
+                    WriteNative(_componentSpecs, index, spec);
                     return existing == 0u;
                 }
             }
 
-            _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.AuthoringImportFault;
+            OrNative(_counters, CounterFaultFlags, LogisticsGraphFaultFlags.AuthoringImportFault);
             return false;
         }
 

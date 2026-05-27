@@ -19,7 +19,7 @@ namespace Hecton8.Lighting
     }
 
     /// <summary>
-    /// Vault buffer identifiers owned by SHINOBU_151. Local cast constants avoid global enum churn during batch execution.
+    /// Vault buffer identifiers owned by 13KRA. Local cast constants preserve legacy IDs and avoid global enum churn during batch execution.
     /// </summary>
     public static class DynamicPointLightCullingVaultIds
     {
@@ -75,7 +75,7 @@ namespace Hecton8.Lighting
     }
 
     /// <summary>
-    /// Exact 32-byte culling result record. Offset contract is assigned in CURRENT_BATCH for SHINOBU_151.
+    /// Exact 32-byte culling result record. Offset contract is maintained by 13KRA; field layout and legacy BufferID values stay unchanged.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = DynamicPointLightCullingLayout.LightCullStateStrideBytes)]
     public struct LightCullStateDTO

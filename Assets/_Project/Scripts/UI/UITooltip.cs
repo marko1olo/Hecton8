@@ -10,8 +10,8 @@ using Hecton.Localization;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Tooltip system for UI elements (Subnautica-style).
-    /// Shows contextual help text on hover.
+    /// Tooltip system for pressure/instrument UI elements.
+    /// Shows contextual evidence text on hover.
     /// Zero-GC: late-frame state machine, cached strings, no LINQ.
     /// </summary>
     [DisallowMultipleComponent]

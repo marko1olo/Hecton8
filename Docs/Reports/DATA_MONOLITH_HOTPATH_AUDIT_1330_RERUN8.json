@@ -1,0 +1,33 @@
+﻿{
+    "schema":  "hecton8.data_monolith_focused_hotpath_audit.v1",
+    "agentId":  "1330",
+    "generatedUtc":  "2026-05-26T15:26:52.6095537Z",
+    "rawAudit":  "Docs/Reports/DATA_MONOLITH_HOTPATH_AUDIT_1330_RERUN8_RAW.json",
+    "methodBodies":  [
+                         {
+                             "path":  "Assets/_Project/Scripts/Data/Monolith/H8CreatureSoAReconstructJob.cs",
+                             "label":  "H8CreatureSoAReconstructJob.Execute/H8ItemSoAReconstructJob.Execute",
+                             "startLine":  33,
+                             "endLine":  45
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/Data/Monolith/H8CreatureSoAReconstructJob.cs",
+                             "label":  "H8CreatureSoAReconstructJob.Execute/H8ItemSoAReconstructJob.Execute",
+                             "startLine":  73,
+                             "endLine":  88
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+                             "label":  "GameBootstrapper.SlowTick",
+                             "startLine":  1289,
+                             "endLine":  1339
+                         }
+                     ],
+    "zeroGcHotPathHits":  0,
+    "findings":  [
+
+                 ],
+    "notes":  [
+                  "Focused scan is limited to Burst job Execute bodies and GameBootstrapper.SlowTick. Raw audit records cold bootstrap/I/O allocations separately."
+              ]
+}

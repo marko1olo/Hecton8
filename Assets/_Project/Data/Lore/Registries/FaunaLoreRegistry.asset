@@ -14,44 +14,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Narrative.FaunaLoreRegistry
   entries:
   - creatureId: creature.reef_glider
-    displayName: "\u0420\u0438\u0444\u043E\u0441\u043F\u0438\u043D\u043D\u0435\u0440
-      (Reef Glider)"
+    displayName: "Hullshadow Ray"
     localizedDisplayName:
       tableKey: FAUNA_CREATURE_REEF_GLIDER_NAME
       fallbackText: ""
       variants: []
     faunaType: 0
-    habitatZone: "\u041C\u0435\u043B\u043A\u043E\u0432\u043E\u0434\u044C\u0435, \u0448\u0435\u043B\u044C\u0444
-      (0-500\u043C)"
+    habitatZone: "Shelves, wreck lanes, pressure-current routes (80-700 m)"
     localizedHabitatZone:
       tableKey: FAUNA_CREATURE_REEF_GLIDER_HABITAT
       fallbackText: ""
       variants: []
     sizeMeters: 25
-    codexDescription: "\u0413\u0438\u0433\u0430\u043D\u0442\u0441\u043A\u0438\u0439
-      \u0441\u043A\u0430\u0442 \u0441 \u043A\u043E\u0440\u0430\u043B\u043B\u0430\u043C\u0438
-      \u0438 \u0441\u0432\u0435\u0442\u044F\u0449\u0438\u043C\u0438\u0441\u044F \u0432\u043E\u0434\u043E\u0440\u043E\u0441\u043B\u044F\u043C\u0438
-      \u043D\u0430 \u0441\u043F\u0438\u043D\u0435. \u0414\u0432\u0438\u0436\u0435\u043D\u0438\u044F
-      \u043F\u043B\u0430\u0432\u043D\u044B\u0435, \u0432\u0435\u043B\u0438\u0447\u0435\u0441\u0442\u0432\u0435\u043D\u043D\u044B\u0435.
-      \u0418\u0433\u043D\u043E\u0440\u0438\u0440\u0443\u0435\u0442 \u0438\u0433\u0440\u043E\u043A\u0430.
-      \u041C\u043E\u0436\u043D\u043E \u043A\u0430\u0442\u0430\u0442\u044C\u0441\u044F
-      \u043D\u0430 \u0441\u043F\u0438\u043D\u0435."
+    codexDescription: "A manta-scale scavenger carrying cable scars, salt growth, and trapped instrument debris. Its wake exposes route currents but raises noise risk; contact is not transport."
     localizedCodexDescription:
       tableKey: FAUNA_CREATURE_REEF_GLIDER_DESCRIPTION
       fallbackText: ""
       variants: []
-    gameplayRole: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C \u043C\u0430\u0441\u0448\u0442\u0430\u0431.
-      \u041A\u0440\u0430\u0441\u0438\u0432\u044B\u0435 \u0441\u043A\u0440\u0438\u043D\u0448\u043E\u0442\u044B.
-      \u041E\u0449\u0443\u0449\u0435\u043D\u0438\u0435 \u0436\u0438\u0432\u043E\u0433\u043E
-      \u043C\u0438\u0440\u0430."
+    gameplayRole: "Scale and route-risk signal. It marks currents, hides silhouettes, and can turn a return path expensive."
     localizedGameplayRole:
       tableKey: FAUNA_CREATURE_REEF_GLIDER_ROLE
       fallbackText: ""
       variants: []
-    scientificBasis: "\u0413\u0438\u0433\u0430\u043D\u0442\u0441\u043A\u0438\u0435
-      \u0441\u043A\u0430\u0442\u044B \u0440\u0435\u0430\u043B\u044C\u043D\u044B.
-      \u0421\u0438\u043C\u0431\u0438\u043E\u0437 \u0441 \u043A\u043E\u0440\u0430\u043B\u043B\u0430\u043C\u0438
-      \u2014 \u0440\u0435\u0430\u043B\u044C\u043D\u043E\u0435 \u044F\u0432\u043B\u0435\u043D\u0438\u0435."
+    scientificBasis: "Ray-like lift surfaces are plausible. The debris load is a HECTON-8 stress adaptation, not reef decoration."
     localizedScientificBasis:
       tableKey: FAUNA_CREATURE_REEF_GLIDER_SCIENCE
       fallbackText: ""
@@ -228,9 +213,7 @@ MonoBehaviour:
       tableKey: FAUNA_CREATURE_ABYSSAL_NIGHTMARE_DESCRIPTION
       fallbackText: ""
       variants: []
-    gameplayRole: "\u0421\u043A\u0440\u0438\u043C\u0435\u0440. \u0420\u0430\u0431\u043E\u0442\u0430\u0435\u0442
-      \u043D\u0430 \u043A\u043E\u043D\u0442\u0440\u0430\u0441\u0442\u0435 \u0441
-      \u0442\u0438\u0448\u0438\u043D\u043E\u0439."
+    gameplayRole: "Silence-breaker. Fear comes from route cost and acoustic warning before contact."
     localizedGameplayRole:
       tableKey: FAUNA_CREATURE_ABYSSAL_NIGHTMARE_ROLE
       fallbackText: ""
@@ -404,22 +387,12 @@ MonoBehaviour:
       fallbackText: ""
       variants: []
     sizeMeters: 30
-    codexDescription: "\u0411\u0438\u043E\u043C\u0435\u0445\u0430\u043D\u0438\u0447\u0435\u0441\u043A\u0438\u0439
-      \u0433\u0438\u0431\u0440\u0438\u0434 \u2014 \u043F\u043E\u043C\u0435\u0441\u044C
-      \u043A\u0440\u0430\u0431\u0430 \u0438 \u043F\u0440\u043E\u043C\u044B\u0448\u043B\u0435\u043D\u043D\u043E\u0433\u043E
-      \u044D\u043A\u0441\u043A\u0430\u0432\u0430\u0442\u043E\u0440\u0430. \u041D\u0430
-      \u0441\u043F\u0438\u043D\u0435 \u2014 \u0431\u0430\u0448\u043D\u0438 \u0418\u0418
-      \u0410\u0442\u043B\u0430\u0441\u0430, \u0441\u0442\u0440\u0435\u043B\u044F\u044E\u0449\u0438\u0435
-      \u043F\u043B\u0430\u0437\u043C\u043E\u0439. \u041E\u0445\u0440\u0430\u043D\u044F\u0435\u0442
-      \u044F\u0434\u0440\u043E. \u0424\u0438\u043D\u0430\u043B\u044C\u043D\u044B\u0439
-      \u0431\u043E\u0441\u0441."
+    codexDescription: "A biomechanical hybrid of crab and industrial excavator. Atlas AI towers on its back throw cutting arcs. It guards the core and turns shutdown into a pressure-route fight."
     localizedCodexDescription:
       tableKey: FAUNA_CREATURE_ATLAS_DREADNOUGHT_DESCRIPTION
       fallbackText: ""
       variants: []
-    gameplayRole: "\u0424\u0438\u043D\u0430\u043B\u044C\u043D\u044B\u0439 \u0431\u043E\u0441\u0441.
-      \u0422\u0440\u0435\u0431\u0443\u0435\u0442 \u0442\u0430\u043A\u0442\u0438\u043A\u0438
-      \u0438 \u0432\u0441\u0435\u0433\u043E \u0430\u0440\u0441\u0435\u043D\u0430\u043B\u0430."
+    gameplayRole: "Core guardian. Demands tactics, route control, and the full arsenal."
     localizedGameplayRole:
       tableKey: FAUNA_CREATURE_ATLAS_DREADNOUGHT_ROLE
       fallbackText: ""

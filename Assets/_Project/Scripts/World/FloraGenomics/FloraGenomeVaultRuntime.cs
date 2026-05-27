@@ -1,7 +1,5 @@
 using System;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -9,13 +7,14 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace Hecton8.World
 {
     /// <summary>
     /// Chunk-scoped buffer descriptor. Runtime instances point at Vault-owned memory; editor preview may own temp arrays.
     /// </summary>
-    public struct FloraGenomeChunkWorkspace : IDisposable
+    public ref struct FloraGenomeChunkWorkspace
     {
         public NativeArray<byte> ExpandedSymbols;
         public NativeArray<byte> ScratchSymbols;
@@ -110,7 +109,9 @@ namespace Hecton8.World
         private VaultGenerationHandle<FloraGenomeJobStats> _statsHandle;
         private VaultGenerationHandle<FloraGenomeBlackBoxEntry> _blackBoxHandle;
         private VaultGenerationHandle<int> _blackBoxCursorHandle;
-        private Task<int> _pendingBinaryRead;
+        private bool _pendingBinaryReadActive;
+        private bool _pendingBinaryReadCompleted;
+        private int _pendingBinaryReadByteCount;
         private bool _rawBufferLocked;
         private bool _generationInFlight;
         private int _genomeCount;
@@ -120,12 +121,6 @@ namespace Hecton8.World
         private long _csvLastWriteTicks;
 
         public int GenomeCount => _genomeCount;
-
-        private sealed class BinaryReadRequest
-        {
-            public string ProjectRoot;
-            public NativeArray<byte> RawBytes;
-        }
 
         public bool BindVault(
             IDataVault vault,
@@ -139,7 +134,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (_pendingBinaryRead != null || _generationInFlight)
+            if (_pendingBinaryReadActive || _generationInFlight)
                 return ReferenceEquals(_vault, vault);
 
             if (_vault != null && !ReferenceEquals(_vault, vault))
@@ -177,7 +172,7 @@ namespace Hecton8.World
 
         public bool ReleaseVault()
         {
-            if (_pendingBinaryRead != null || _generationInFlight)
+            if (_pendingBinaryReadActive || _generationInFlight)
                 return false;
 
             IDataVault vault = _vault;
@@ -228,7 +223,7 @@ namespace Hecton8.World
 
         public bool BeginLoadGenomeBinaryAsync(string projectRoot)
         {
-            if (_vault == null || _pendingBinaryRead != null)
+            if (_vault == null || _pendingBinaryReadActive)
                 return false;
 
             if (!TryResolveFloraGenomeVaultBuffer(_vault, ref _rawBytesHandle, BufferID.FloraGenomeRawBytes, DefaultRawBytesCapacity, out NativeArray<byte> rawBytes))
@@ -238,42 +233,25 @@ namespace Hecton8.World
                 return false;
 
             _rawBufferLocked = true;
-            BinaryReadRequest request = new BinaryReadRequest
-            {
-                ProjectRoot = projectRoot,
-                RawBytes = rawBytes
-            };
-            _pendingBinaryRead = Task.Factory.StartNew(
-                ReadGenomeBinaryWorker,
-                request,
-                CancellationToken.None,
-                TaskCreationOptions.LongRunning,
-                TaskScheduler.Default);
+            _pendingBinaryReadActive = true;
+            _pendingBinaryReadCompleted = false;
+            _pendingBinaryReadByteCount = 0;
+            _ = RunGenomeBinaryLoadAsync(projectRoot, rawBytes);
             return true;
         }
 
         public bool TryCompletePendingBinaryLoad()
         {
-            if (_pendingBinaryRead == null || !_pendingBinaryRead.IsCompleted)
+            if (!_pendingBinaryReadActive || !_pendingBinaryReadCompleted)
                 return false;
 
-            int byteCount = 0;
-            try
-            {
-                byteCount = _pendingBinaryRead.Result;
-            }
-            catch (AggregateException)
-            {
-                byteCount = 0;
-            }
-            finally
-            {
-                _pendingBinaryRead.Dispose();
-                _pendingBinaryRead = null;
-                if (_rawBufferLocked && _vault != null)
-                    _vault.TryUnlockBuffer(BufferID.FloraGenomeRawBytes, OwnerSystem);
-                _rawBufferLocked = false;
-            }
+            int byteCount = _pendingBinaryReadByteCount;
+            _pendingBinaryReadActive = false;
+            _pendingBinaryReadCompleted = false;
+            _pendingBinaryReadByteCount = 0;
+            if (_rawBufferLocked && _vault != null)
+                _vault.TryUnlockBuffer(BufferID.FloraGenomeRawBytes, OwnerSystem);
+            _rawBufferLocked = false;
 
             DecodeLoadedBytes(byteCount);
             return true;
@@ -428,15 +406,28 @@ namespace Hecton8.World
             _genomeCount = stats[0].GenomeCount;
         }
 
-        private static int ReadGenomeBinaryWorker(object state)
+        private async Awaitable RunGenomeBinaryLoadAsync(string projectRoot, NativeArray<byte> rawBytes)
         {
-            BinaryReadRequest request = state as BinaryReadRequest;
-            if (request == null)
-                return 0;
+            int byteCount = 0;
+            try
+            {
+                await Awaitable.BackgroundThreadAsync();
+                byteCount = FloraGenomeBinaryArchaeology.TryLoadFirstGenomeBinary(projectRoot, rawBytes, out int loadedBytes)
+                    ? loadedBytes
+                    : 0;
+            }
+            catch (IOException)
+            {
+                byteCount = 0;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                byteCount = 0;
+            }
 
-            return FloraGenomeBinaryArchaeology.TryLoadFirstGenomeBinary(request.ProjectRoot, request.RawBytes, out int byteCount)
-                ? byteCount
-                : 0;
+            await Awaitable.MainThreadAsync();
+            _pendingBinaryReadByteCount = byteCount;
+            _pendingBinaryReadCompleted = true;
         }
 
         private static int ResolveWriteCapacity(int bufferLength, int offset)

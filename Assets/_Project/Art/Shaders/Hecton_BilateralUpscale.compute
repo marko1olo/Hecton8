@@ -113,6 +113,17 @@ float4 SafeFinite4(float4 value, float4 fallback)
     return H8Finite4(value) ? value : fallback;
 }
 
+float ResolveLinearRamp01(float start, float end, float value)
+{
+    return saturate((value - start) * rcp(max(end - start, 0.00001)));
+}
+
+float ResolveOctagonalDistance(float2 value)
+{
+    float2 a = abs(value);
+    return max(a.x, a.y) + min(a.x, a.y) * 0.375;
+}
+
 float LoadRawDepth(uint2 pixel, uint2 depthDims)
 {
     float rawDepth = _H8FullResDepth.Load(LoadCoord(ClampPixel(int2(pixel), depthDims)));
@@ -231,11 +242,11 @@ float3 DecodeRadiusJitter(float packedRadius)
 float ResolveTapGate(int2 tapOffset, float radius, float quality)
 {
     float2 o = float2(tapOffset);
-    float dist = length(o);
+    float dist = ResolveOctagonalDistance(o);
     float radiusGate = saturate((radius + 0.35 - dist) * 2.0);
     float diagonal = abs(o.x * o.y);
-    float diagonalGate = lerp(1.0 - saturate(diagonal), 1.0, smoothstep(0.28, 0.64, quality));
-    float wideGate = lerp(1.0 - smoothstep(1.15, 2.15, dist), 1.0, smoothstep(0.62, 1.0, quality));
+    float diagonalGate = lerp(1.0 - saturate(diagonal), 1.0, ResolveLinearRamp01(0.28, 0.64, quality));
+    float wideGate = lerp(1.0 - ResolveLinearRamp01(1.15, 2.15, dist), 1.0, ResolveLinearRamp01(0.62, 1.0, quality));
     float center = tapOffset.x == 0 && tapOffset.y == 0 ? 1.0 : 0.0;
     return max(center, radiusGate * diagonalGate * wideGate);
 }
@@ -297,7 +308,7 @@ void SobelDepthMask(uint3 dispatchThreadId : SV_DispatchThreadID)
     float invCenterDepth = rcp(max(centerDepth, 0.25));
     gx *= invCenterDepth;
     gy *= invCenterDepth;
-    float sobel = sqrt(max(gx * gx + gy * gy, 0.0));
+    float sobel = ResolveOctagonalDistance(float2(gx, gy));
     float edgeScale = max(FilterParams.x, 1.0) * 0.0125;
     _H8EdgeMaskWrite[pixel] = saturate(SafeFinite1(sobel * edgeScale, 0.0));
 }
@@ -337,7 +348,7 @@ void SobelDepthMaskArray(uint3 dispatchThreadId : SV_DispatchThreadID)
     float invCenterDepth = rcp(max(centerDepth, 0.25));
     gx *= invCenterDepth;
     gy *= invCenterDepth;
-    float sobel = sqrt(max(gx * gx + gy * gy, 0.0));
+    float sobel = ResolveOctagonalDistance(float2(gx, gy));
     float edgeScale = max(FilterParams.x, 1.0) * 0.0125;
     _H8EdgeMaskArrayWrite[uint3(pixel, dispatchThreadId.z)] = saturate(SafeFinite1(sobel * edgeScale, 0.0));
 }
@@ -373,7 +384,7 @@ void BilateralUpscale(uint3 dispatchThreadId : SV_DispatchThreadID)
     float2 uv = (float2(pixel) + 0.5 + jitterPixels) / float2(highDims);
     float2 lowPixel = uv * float2(lowDims) - 0.5;
     float4 bilinear = BilinearLow(lowPixel, lowDims);
-    float qualityGate = smoothstep(H8_QUALITY_GATE_START, H8_QUALITY_GATE_END, quality);
+    float qualityGate = ResolveLinearRamp01(H8_QUALITY_GATE_START, H8_QUALITY_GATE_END, quality);
     if (qualityGate == 0.0)
     {
         _H8UpscaledColor[pixel] = SafeFinite4(bilinear, float4(0.0, 0.0, 0.0, 1.0));
@@ -405,12 +416,9 @@ void BilateralUpscale(uint3 dispatchThreadId : SV_DispatchThreadID)
         {
             int2 tap = int2(x, y);
             float gate = ResolveTapGate(tap, radius, quality) * qualityGate;
-            if (gate == 0.0)
-                continue;
-
             float2 tapLowPixel = lowPixel + float2(tap);
             float2 tapHighFloat = ((tapLowPixel + 0.5) / float2(lowDims)) * float2(highDims) - 0.5;
-            uint2 tapHighPixel = ClampPixel(int2(round(tapHighFloat)), highDims);
+            uint2 tapHighPixel = ClampPixel(int2(floor(tapHighFloat + 0.5)), highDims);
             float tapDepth = LoadEyeDepthMapped(tapHighPixel, highDims, depthDims);
             float spatialDist = dot(float2(tap), float2(tap));
             float spatialWeight = FastExpNeg(spatialDist * 0.52);
@@ -425,7 +433,7 @@ void BilateralUpscale(uint3 dispatchThreadId : SV_DispatchThreadID)
     }
 
     float4 bilateral = weightSum > 0.0001 ? accum / weightSum : bilinear;
-    float bilateralMix = saturate(edge * smoothstep(0.04, 0.22, quality));
+    float bilateralMix = saturate(edge * ResolveLinearRamp01(0.04, 0.22, quality));
     float4 finalColor = lerp(bilinear, bilateral, bilateralMix);
     _H8UpscaledColor[pixel] = SafeFinite4(finalColor, bilinear);
 }
@@ -468,7 +476,7 @@ void BilateralUpscaleArray(uint3 dispatchThreadId : SV_DispatchThreadID)
     float2 uv = (float2(pixel) + 0.5 + jitterPixels) / float2(highDims);
     float2 lowPixel = uv * float2(lowDims) - 0.5;
     float4 bilinear = BilinearLowArray(lowPixel, lowDims, lowSlice);
-    float qualityGate = smoothstep(H8_QUALITY_GATE_START, H8_QUALITY_GATE_END, quality);
+    float qualityGate = ResolveLinearRamp01(H8_QUALITY_GATE_START, H8_QUALITY_GATE_END, quality);
     if (qualityGate == 0.0)
     {
         _H8UpscaledColorArray[uint3(pixel, dispatchThreadId.z)] = SafeFinite4(bilinear, float4(0.0, 0.0, 0.0, 1.0));
@@ -500,12 +508,9 @@ void BilateralUpscaleArray(uint3 dispatchThreadId : SV_DispatchThreadID)
         {
             int2 tap = int2(x, y);
             float gate = ResolveTapGate(tap, radius, quality) * qualityGate;
-            if (gate == 0.0)
-                continue;
-
             float2 tapLowPixel = lowPixel + float2(tap);
             float2 tapHighFloat = ((tapLowPixel + 0.5) / float2(lowDims)) * float2(highDims) - 0.5;
-            uint2 tapHighPixel = ClampPixel(int2(round(tapHighFloat)), highDims);
+            uint2 tapHighPixel = ClampPixel(int2(floor(tapHighFloat + 0.5)), highDims);
             float tapDepth = LoadEyeDepthMappedArray(tapHighPixel, highDims, depthDims, depthSlice);
             float spatialDist = dot(float2(tap), float2(tap));
             float spatialWeight = FastExpNeg(spatialDist * 0.52);
@@ -520,7 +525,7 @@ void BilateralUpscaleArray(uint3 dispatchThreadId : SV_DispatchThreadID)
     }
 
     float4 bilateral = weightSum > 0.0001 ? accum / weightSum : bilinear;
-    float bilateralMix = saturate(edge * smoothstep(0.04, 0.22, quality));
+    float bilateralMix = saturate(edge * ResolveLinearRamp01(0.04, 0.22, quality));
     float4 finalColor = lerp(bilinear, bilateral, bilateralMix);
     _H8UpscaledColorArray[uint3(pixel, dispatchThreadId.z)] = SafeFinite4(finalColor, bilinear);
 }

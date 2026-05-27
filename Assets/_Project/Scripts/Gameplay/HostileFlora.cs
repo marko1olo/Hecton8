@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — HostileFlora.cs
-// Stationary turret plant (Tiger Plant equivalent) that shoots at the player.
+// Stationary hostile flora that pressures player routing through projectile threat.
 //
 // ARCHITECTURE:
 //   • Standalone prop — uses ISlowTickable via Core registry dispatcher (no Update).
@@ -41,7 +41,7 @@ namespace Hecton8.Gameplay
 
     /// <summary>
     /// Stationary hostile plant that queues mathematical shots at nearby players.
-    /// Subnautica Tiger Plant equivalent.
+    /// Intended as route pressure, not creature-gallery decoration.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HostileFlora : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener

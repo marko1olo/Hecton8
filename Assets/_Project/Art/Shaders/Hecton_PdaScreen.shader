@@ -23,8 +23,10 @@ Shader "Hidden/Hecton8/Hecton_PdaScreen"
             #pragma fragment Frag
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
             struct PdaStateDTO
             {
@@ -101,6 +103,16 @@ Shader "Hidden/Hecton8/Hecton_PdaScreen"
             #endif
             }
 
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(saturate(uv));
+            }
+
+            float ResolveLinearRamp01(float edge0, float edge1, float value)
+            {
+                return saturate((value - edge0) / max(edge1 - edge0, 1e-5));
+            }
+
             float Hash21(float2 p)
             {
                 p = frac(p * float2(123.34, 456.21));
@@ -140,7 +152,7 @@ Shader "Hidden/Hecton8/Hecton_PdaScreen"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float2 screenUV = ResolveXRStereoScreenUV(input.screenUV);
-                float4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, screenUV);
+                float4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(screenUV));
                 PdaStateDTO state = _HectonPdaStateBuffer[0];
 
                 float active = step(0.5, (float)(state.PdaFlags & H8_PDA_FLAG_ACTIVE));
@@ -172,11 +184,11 @@ Shader "Hidden/Hecton8/Hecton_PdaScreen"
                 float2 planeUv = float2(
                     dot(localDelta, right) * _HectonPdaScreenParams.z + 0.5,
                     dot(localDelta, up) * _HectonPdaScreenParams.w + 0.5);
-                float sceneRawDepth = SampleSceneDepth(screenUV);
+                float sceneRawDepth = SampleSceneDepth(ResolveFoveatedSourceUV(screenUV));
                 float sceneEyeDepth = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
                 float planeEyeDepth = max(0.0, -hit.z);
                 float depthMargin = lerp(0.004, 0.018, quality);
-                float depthVisibility = smoothstep(-depthMargin, depthMargin, sceneEyeDepth - planeEyeDepth);
+                float depthVisibility = ResolveLinearRamp01(-depthMargin, depthMargin, sceneEyeDepth - planeEyeDepth);
 
                 float inside =
                     step(0.0, t) *
@@ -188,7 +200,7 @@ Shader "Hidden/Hecton8/Hecton_PdaScreen"
 
                 float4 directSample = SAMPLE_TEXTURE2D(_HectonPdaInterfaceAtlas, sampler_HectonPdaInterfaceAtlas, ResolveAtlasUv(planeUv, float2(0.0, 0.0)));
                 float4 pdaColor = directSample;
-                float refractionTier = smoothstep(0.20, 0.36, quality);
+                float refractionTier = ResolveLinearRamp01(0.20, 0.36, quality);
                 if (refractionTier > 0.001)
                 {
                     float incidence = 1.0 - saturate(abs(dot(-rayDir, normal)));
@@ -202,7 +214,7 @@ Shader "Hidden/Hecton8/Hecton_PdaScreen"
 
                     float2 atlasUv = ResolveAtlasUv(planeUv, refractionOffset);
                     float4 refractedSample = SAMPLE_TEXTURE2D(_HectonPdaInterfaceAtlas, sampler_HectonPdaInterfaceAtlas, atlasUv);
-                    float chromaTier = smoothstep(0.52, 0.88, quality);
+                    float chromaTier = ResolveLinearRamp01(0.52, 0.88, quality);
                     if (chromaTier > 0.001)
                     {
                         float chroma = quality * quality * 0.65 * chromaTier;
@@ -215,7 +227,7 @@ Shader "Hidden/Hecton8/Hecton_PdaScreen"
                     pdaColor = lerp(directSample, refractedSample, refractionTier);
                 }
 
-                float edgeFade = smoothstep(0.0, 0.055, min(min(planeUv.x, 1.0 - planeUv.x), min(planeUv.y, 1.0 - planeUv.y)));
+                float edgeFade = ResolveLinearRamp01(0.0, 0.055, min(min(planeUv.x, 1.0 - planeUv.x), min(planeUv.y, 1.0 - planeUv.y)));
                 float alpha = saturate(pdaColor.a * inside * edgeFade * (0.85 + quality * 0.35));
                 float3 emissive = pdaColor.rgb * (0.85 + _HectonPdaVisualParams.x * 0.15) + float3(0.02, 0.08, 0.07) * alpha;
                 return float4(lerp(sourceColor.rgb, emissive, alpha), sourceColor.a);

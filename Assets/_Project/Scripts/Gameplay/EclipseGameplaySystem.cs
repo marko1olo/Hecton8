@@ -57,7 +57,7 @@ namespace Hecton8.Gameplay
     public static class EclipseGameplayEvents
     {
         [StructLayout(LayoutKind.Explicit, Size = 16)]
-        private struct EclipseGameplayEventPayload
+        private struct DeferredEclipseGameplayEventPayload
         {
             [FieldOffset(0)] public byte EventType;
             [FieldOffset(1)] public byte BoolValue;
@@ -86,8 +86,8 @@ namespace Hecton8.Gameplay
 
         // COLD ALLOC: ListenerSlot[8] - eclipse gameplay listeners drained without interface array dispatch - owner: EclipseGameplayEvents
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
-        private static NativeQueue<EclipseGameplayEventPayload> _pendingEvents;
-        private static NativeQueue<EclipseGameplayEventPayload> _nextFrameEvents;
+        private static NativeQueue<DeferredEclipseGameplayEventPayload> _pendingEvents;
+        private static NativeQueue<DeferredEclipseGameplayEventPayload> _nextFrameEvents;
         private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
@@ -152,7 +152,7 @@ namespace Hecton8.Gameplay
             if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
                 return false;
 
-            return Enqueue(new EclipseGameplayEventPayload
+            return Enqueue(new DeferredEclipseGameplayEventPayload
             {
                 EventType = PhaseChangedEventType,
                 BoolValue = active ? (byte)1 : (byte)0
@@ -204,7 +204,7 @@ namespace Hecton8.Gameplay
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
-                if (!_pendingEvents.TryDequeue(out EclipseGameplayEventPayload payload))
+                if (!_pendingEvents.TryDequeue(out DeferredEclipseGameplayEventPayload payload))
                 {
                     _pendingEventCount = 0;
                     break;
@@ -240,14 +240,14 @@ namespace Hecton8.Gameplay
             if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
                 return false;
 
-            return Enqueue(new EclipseGameplayEventPayload
+            return Enqueue(new DeferredEclipseGameplayEventPayload
             {
                 EventType = eventType,
                 Value = value
             });
         }
 
-        private static bool Enqueue(in EclipseGameplayEventPayload payload)
+        private static bool Enqueue(in DeferredEclipseGameplayEventPayload payload)
         {
             if (_isDispatching)
             {
@@ -261,7 +261,7 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private static void Dispatch(in EclipseGameplayEventPayload payload)
+        private static void Dispatch(in DeferredEclipseGameplayEventPayload payload)
         {
             int listenerCount = _listenerCount;
             for (int i = listenerCount - 1; i >= 0; i--)
@@ -322,7 +322,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<EclipseGameplayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[16] — deferred eclipse gameplay lane flushed by SystemDispatcher — owner: EclipseGameplayEvents
+                _pendingEvents = new NativeQueue<DeferredEclipseGameplayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<DeferredEclipseGameplayEventPayload>[16] — deferred eclipse gameplay lane flushed by SystemDispatcher — owner: EclipseGameplayEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     ExpectedPendingEventCapacity,
@@ -334,7 +334,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<EclipseGameplayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[16] — next-frame eclipse gameplay lane prevents same-frame reentrant dispatch — owner: EclipseGameplayEvents
+                _nextFrameEvents = new NativeQueue<DeferredEclipseGameplayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<DeferredEclipseGameplayEventPayload>[16] — next-frame eclipse gameplay lane prevents same-frame reentrant dispatch — owner: EclipseGameplayEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     ExpectedPendingEventCapacity,
@@ -369,7 +369,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            NativeQueue<EclipseGameplayEventPayload> swap = _pendingEvents;
+            NativeQueue<DeferredEclipseGameplayEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
             _pendingEventCount = _nextFrameEventCount;

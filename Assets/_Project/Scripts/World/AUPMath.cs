@@ -21,6 +21,7 @@ namespace Hecton8.World
     {
         private const double CellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
         private const long DeltaClampCells = 1000000L;
+        private const double RuntimeFloatClampMeters = DeltaClampCells * CellSizeMeters;
         private static int _invalidResultCount;
 
         /// <summary>
@@ -90,7 +91,13 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float3 ResolveCameraRelative(in AbsoluteUniversePosition target, in AbsoluteUniversePosition camera)
         {
-            double3 delta = AUPDelta(in target, in camera);
+            if (!target.IsFinite() || !camera.IsFinite())
+            {
+                ReportInvalidFloatResult();
+                return new float3(float.NaN, float.NaN, float.NaN);
+            }
+
+            double3 delta = ClampRuntimeFloatDelta(AUPDeltaClamped(in target, in camera));
             float3 result = new float3((float)delta.x, (float)delta.y, (float)delta.z);
             if (!math.all(math.isfinite(result)))
                 ReportInvalidFloatResult();
@@ -113,11 +120,24 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float3 ToRuntimeFloat3(in AbsoluteUniversePosition position, double3 committedOffset)
         {
-            double3 absolute = ToAbsoluteDouble3(in position);
+            if (!position.IsFinite())
+            {
+                ReportInvalidFloatResult();
+                return new float3(float.NaN, float.NaN, float.NaN);
+            }
+
+            AbsoluteUniversePosition origin = AbsoluteUniversePosition.FromAbsolutePosition(committedOffset);
+            if (!origin.IsFinite())
+            {
+                ReportInvalidFloatResult();
+                return new float3(float.NaN, float.NaN, float.NaN);
+            }
+
+            double3 delta = ClampRuntimeFloatDelta(AUPDeltaClamped(in position, in origin));
             float3 result = new float3(
-                (float)(absolute.x - committedOffset.x),
-                (float)(absolute.y - committedOffset.y),
-                (float)(absolute.z - committedOffset.z));
+                (float)delta.x,
+                (float)delta.y,
+                (float)delta.z);
             if (!math.all(math.isfinite(result)))
                 ReportInvalidFloatResult();
 
@@ -139,9 +159,9 @@ namespace Hecton8.World
         internal static double3 ToAbsoluteDouble3(in AbsoluteUniversePosition position)
         {
             return new double3(
-                (position.GridX * CellSizeMeters) + position.LocalX,
-                (position.GridY * CellSizeMeters) + position.LocalY,
-                (position.GridZ * CellSizeMeters) + position.LocalZ);
+                ((double)position.GridX * CellSizeMeters) + position.LocalX,
+                ((double)position.GridY * CellSizeMeters) + position.LocalY,
+                ((double)position.GridZ * CellSizeMeters) + position.LocalZ);
         }
 
         /// <summary>
@@ -150,21 +170,20 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static double3 OffsetAbsoluteMeters(in AbsoluteUniversePosition position, double3 deltaMeters)
         {
-            double3 absolute = ToAbsoluteDouble3(in position);
-            if (!math.all(math.isfinite(deltaMeters)))
+            if (!position.IsFinite() || !math.all(math.isfinite(deltaMeters)))
             {
                 ReportInvalidFloatResult();
-                return absolute;
+                return InvalidDouble3();
             }
 
-            double3 shifted = absolute + deltaMeters;
-            if (!math.all(math.isfinite(shifted)))
+            AbsoluteUniversePosition shiftedPosition = position.OffsetMeters(deltaMeters);
+            if (!shiftedPosition.IsFinite())
             {
                 ReportInvalidFloatResult();
-                return absolute;
+                return InvalidDouble3();
             }
 
-            return shifted;
+            return ToAbsoluteDouble3(in shiftedPosition);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -174,23 +193,34 @@ namespace Hecton8.World
             in AbsoluteUniversePosition c,
             double weight)
         {
+            if (!a.IsFinite() || !b.IsFinite() || !c.IsFinite())
+            {
+                ReportInvalidFloatResult();
+                return InvalidDouble3();
+            }
+
             if (!math.isfinite(weight))
             {
                 ReportInvalidFloatResult();
-                weight = 1.0d / 3.0d;
+                return InvalidDouble3();
             }
 
-            double3 sum = ToAbsoluteDouble3(in a);
-            sum += ToAbsoluteDouble3(in b);
-            sum += ToAbsoluteDouble3(in c);
-            double3 weighted = sum * weight;
-            if (!math.all(math.isfinite(weighted)))
+            double safeWeight = weight;
+            double3 anchoredDelta = (AUPDeltaClamped(in b, in a) + AUPDeltaClamped(in c, in a)) * safeWeight;
+            AbsoluteUniversePosition weightedPosition = a.OffsetMeters(anchoredDelta);
+            if (!weightedPosition.IsFinite())
             {
                 ReportInvalidFloatResult();
-                return ToAbsoluteDouble3(in a);
+                return InvalidDouble3();
             }
 
-            return weighted;
+            return ToAbsoluteDouble3(in weightedPosition);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double3 InvalidDouble3()
+        {
+            return new double3(double.NaN, double.NaN, double.NaN);
         }
 
         /// <summary>
@@ -202,18 +232,6 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static double3 AUPDelta(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
-        {
-            long gridDeltaX = a.GridX - b.GridX;
-            long gridDeltaY = a.GridY - b.GridY;
-            long gridDeltaZ = a.GridZ - b.GridZ;
-            return new double3(
-                (gridDeltaX * CellSizeMeters) + ((double)a.LocalX - b.LocalX),
-                (gridDeltaY * CellSizeMeters) + ((double)a.LocalY - b.LocalY),
-                (gridDeltaZ * CellSizeMeters) + ((double)a.LocalZ - b.LocalZ));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static double AUPAxisDeltaClamped(long aGrid, long bGrid, float aLocal, float bLocal)
         {
             if (aGrid > bGrid)
@@ -222,7 +240,7 @@ namespace Hecton8.World
                     ? long.MaxValue
                     : bGrid + DeltaClampCells;
                 if (aGrid > positiveLimit)
-                    return double.MaxValue * 0.25d;
+                    return RuntimeFloatClampMeters;
             }
             else if (aGrid < bGrid)
             {
@@ -230,11 +248,19 @@ namespace Hecton8.World
                     ? long.MinValue
                     : bGrid - DeltaClampCells;
                 if (aGrid < negativeLimit)
-                    return double.MinValue * 0.25d;
+                    return -RuntimeFloatClampMeters;
             }
 
             long gridDelta = aGrid - bGrid;
             return (gridDelta * CellSizeMeters) + ((double)aLocal - bLocal);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double3 ClampRuntimeFloatDelta(double3 delta)
+        {
+            double3 min = new double3(-RuntimeFloatClampMeters, -RuntimeFloatClampMeters, -RuntimeFloatClampMeters);
+            double3 max = new double3(RuntimeFloatClampMeters, RuntimeFloatClampMeters, RuntimeFloatClampMeters);
+            return math.clamp(delta, min, max);
         }
 
         [BurstDiscard]

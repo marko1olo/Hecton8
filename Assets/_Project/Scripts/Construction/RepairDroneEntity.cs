@@ -125,6 +125,19 @@ namespace Hecton8.Construction
             _lastOverflowWarningFrame = -1;
         }
 
+        internal static void BindDataVault(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            DropQueuedPayloads();
+            ReleaseVaultBuffer(ref _pendingEventsHandle);
+            ReleaseVaultBuffer(ref _nextFrameEventsHandle);
+            _vault = vault;
+            if (_listenerCount > 0)
+                TryEnsureInitialized();
+        }
+
         /// <summary>Registers one deferred repair-drone torch acoustic listener.</summary>
         public static void Register(IRepairDroneTorchAcousticListener listener)
         {
@@ -249,13 +262,7 @@ namespace Hecton8.Construction
 
             IDataVault vault = _vault;
             if (vault == null)
-            {
-                vault = GlobalRegistry.DataVault;
-                if (vault == null)
-                    return false;
-
-                _vault = vault;
-            }
+                return false;
 
             return TryEnsurePayloadBuffer(vault, ref _pendingEventsHandle, PendingEventBufferId) &&
                    TryEnsurePayloadBuffer(vault, ref _nextFrameEventsHandle, NextFrameEventBufferId);
@@ -263,14 +270,20 @@ namespace Hecton8.Construction
 
         public static bool RuntimeLayoutValid()
         {
-            return UnsafeUtility.SizeOf<RepairDroneTorchAcousticPayload>() == 32 &&
-                   Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.Position)).ToInt32() == 0 &&
+            if (UnsafeUtility.SizeOf<RepairDroneTorchAcousticPayload>() != 32)
+                return false;
+
+#if UNITY_EDITOR
+            return Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.Position)).ToInt32() == 0 &&
                    Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.Volume)).ToInt32() == 12 &&
                    Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.Pitch)).ToInt32() == 16 &&
                    Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.ClipHashId)).ToInt32() == 20 &&
                    Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.ReferenceSlot)).ToInt32() == 24 &&
                    Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.EventType)).ToInt32() == 28 &&
                    Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.Reserved)).ToInt32() == 30;
+#else
+            return true;
+#endif
         }
 
         private static bool Enqueue(in RepairDroneTorchAcousticPayload payload)

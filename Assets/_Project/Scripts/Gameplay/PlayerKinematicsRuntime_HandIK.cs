@@ -144,7 +144,7 @@ namespace Hecton8.Gameplay
             public const uint ConfigDisableBridgeInput = PlayerHandIkConfigFlags.DisableBridgeInput;
         }
 
-        public readonly struct HandIkVaultViews
+        public readonly ref struct HandIkVaultViews
         {
             public readonly NativeArray<IkHandStateDTO> States;
             public readonly NativeArray<IkHandStateDTO> PublishedStates;

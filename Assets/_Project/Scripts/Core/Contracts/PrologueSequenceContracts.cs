@@ -45,7 +45,8 @@ namespace Hecton8.Core.Contracts
     {
         HighResolutionSurface = 0,
         LowTierProxySurface = 1,
-        DevForcedShallowWater = 2
+        DevForcedShallowWater = 2,
+        StandaloneOrbitHandoffProxy = 3
     }
 
     public static class PrologueCancelReasons
@@ -143,6 +144,7 @@ namespace Hecton8.Core.Contracts
     {
         bool IsDevelopmentBuild { get; }
         bool IsLowTier { get; }
+        bool IsStandaloneOrbitHandoffProxyAllowed { get; }
         uint CurrentFrame { get; }
         bool ShouldSkipPrologue { get; }
 

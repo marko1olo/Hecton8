@@ -15,7 +15,7 @@ namespace Hecton8.Modding
         /// Creates a new payload for the completed load operation.
         /// </summary>
         /// <param name="slotName">Resolved save slot name that finished loading.</param>
-        public GameLoadedEvent(string slotName)
+        internal GameLoadedEvent(string slotName)
         {
             SlotName = slotName ?? string.Empty;
         }
@@ -23,7 +23,7 @@ namespace Hecton8.Modding
         /// <summary>
         /// Save slot that produced the current runtime state.
         /// </summary>
-        public string SlotName { get; }
+        internal string SlotName { get; }
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ namespace Hecton8.Modding
         /// Creates a crafted-item payload.
         /// </summary>
         /// <param name="item">Result item that completed crafting.</param>
-        public ItemCraftedEvent(ItemData item)
+        internal ItemCraftedEvent(ItemData item)
         {
             Item = item;
         }
@@ -70,7 +70,7 @@ namespace Hecton8.Modding
         /// <summary>
         /// Crafted item asset returned by the official crafting system.
         /// </summary>
-        public ItemData Item { get; }
+        internal ItemData Item { get; }
     }
 
     /// <summary>
@@ -133,17 +133,17 @@ namespace Hecton8.Modding
         /// <summary>
         /// Collected item asset.
         /// </summary>
-        public ItemData Item { get; }
+        internal ItemData Item { get; }
 
         /// <summary>
         /// Successfully added quantity.
         /// </summary>
-        public int Quantity { get; }
+        internal int Quantity { get; }
 
         /// <summary>
         /// Logic-tier hash identifier for the collected item.
         /// </summary>
-        public int ItemHashId { get; }
+        internal int ItemHashId { get; }
 
         /// <summary>
         /// Stable runtime entity identifier for the interactor that initiated the pickup flow.
@@ -173,7 +173,7 @@ namespace Hecton8.Modding
         /// <param name="item">Source item consumed by the recycling owner.</param>
         /// <param name="quantity">Number of source-item units recycled.</param>
         /// <param name="yieldUnitCount">Total quantity of resource units returned to the player.</param>
-        public ItemRecycledEvent(ItemData item, int quantity, int yieldUnitCount)
+        internal ItemRecycledEvent(ItemData item, int quantity, int yieldUnitCount)
         {
             Item = item;
             Quantity = quantity < 0 ? 0 : quantity;
@@ -183,17 +183,17 @@ namespace Hecton8.Modding
         /// <summary>
         /// Source item consumed by the recycling owner.
         /// </summary>
-        public ItemData Item { get; }
+        internal ItemData Item { get; }
 
         /// <summary>
         /// Number of source-item units recycled.
         /// </summary>
-        public int Quantity { get; }
+        internal int Quantity { get; }
 
         /// <summary>
         /// Total quantity of resource units returned to the player.
         /// </summary>
-        public int YieldUnitCount { get; }
+        internal int YieldUnitCount { get; }
     }
 
     /// <summary>
@@ -227,12 +227,12 @@ namespace Hecton8.Modding
         /// <summary>
         /// Discarded item asset.
         /// </summary>
-        public ItemData Item { get; }
+        internal ItemData Item { get; }
 
         /// <summary>
         /// Number of discarded units.
         /// </summary>
-        public int Quantity { get; }
+        internal int Quantity { get; }
 
         /// <summary>
         /// Stable runtime entity identifier for the interactor that initiated the discard flow.
@@ -260,7 +260,7 @@ namespace Hecton8.Modding
         /// </summary>
         /// <param name="biomeId">Stable biome identifier.</param>
         /// <param name="biomeName">Display name resolved at discovery time.</param>
-        public BiomeDiscoveredEvent(int biomeId, string biomeName)
+        internal BiomeDiscoveredEvent(int biomeId, string biomeName)
         {
             BiomeId = biomeId;
             BiomeName = biomeName ?? string.Empty;
@@ -269,12 +269,12 @@ namespace Hecton8.Modding
         /// <summary>
         /// Stable biome identifier.
         /// </summary>
-        public int BiomeId { get; }
+        internal int BiomeId { get; }
 
         /// <summary>
         /// Player-facing biome name resolved by the discovery owner.
         /// </summary>
-        public string BiomeName { get; }
+        internal string BiomeName { get; }
     }
 
     /// <summary>
@@ -290,7 +290,7 @@ namespace Hecton8.Modding
         /// </summary>
         /// <param name="survivalSystem">Owning survival system that is about to apply damage.</param>
         /// <param name="damageAmount">Requested integrity damage before any mod mutation.</param>
-        public PlayerTakeDamageEvent(HectonSurvivalSystem survivalSystem, float damageAmount)
+        internal PlayerTakeDamageEvent(HectonSurvivalSystem survivalSystem, float damageAmount)
         {
             SurvivalSystem = survivalSystem;
             _damageAmount = damageAmount < 0f ? 0f : damageAmount;
@@ -299,13 +299,13 @@ namespace Hecton8.Modding
         /// <summary>
         /// Survival owner about to receive the damage mutation.
         /// </summary>
-        public HectonSurvivalSystem SurvivalSystem { get; }
+        internal HectonSurvivalSystem SurvivalSystem { get; }
 
         /// <summary>
         /// Mutable damage amount that the game will apply if the event is not cancelled.
         /// Values below zero are clamped to zero.
         /// </summary>
-        public float DamageAmount
+        internal float DamageAmount
         {
             get => _damageAmount;
             set => _damageAmount = value < 0f ? 0f : value;
@@ -342,7 +342,7 @@ namespace Hecton8.Modding
         /// <summary>
         /// Buildable asset that produced the placed module.
         /// </summary>
-        public BuildableData BuildableData { get; }
+        internal BuildableData BuildableData { get; }
 
         /// <summary>
         /// Stable runtime entity identifier for the placed module.
@@ -377,7 +377,7 @@ namespace Hecton8.Modding
         /// <param name="survivalSystem">Owning survival system that just completed the death flow.</param>
         /// <param name="deathCause">Resolved fatal cause.</param>
         /// <param name="deathRecord">Captured telemetry for the completed life.</param>
-        public PlayerDiedEvent(HectonSurvivalSystem survivalSystem, SurvivalDeathCause deathCause, SurvivalDeathRecord deathRecord)
+        internal PlayerDiedEvent(HectonSurvivalSystem survivalSystem, SurvivalDeathCause deathCause, SurvivalDeathRecord deathRecord)
         {
             SurvivalSystem = survivalSystem;
             DeathCause = deathCause;
@@ -387,17 +387,17 @@ namespace Hecton8.Modding
         /// <summary>
         /// Survival owner that completed the death flow.
         /// </summary>
-        public HectonSurvivalSystem SurvivalSystem { get; }
+        internal HectonSurvivalSystem SurvivalSystem { get; }
 
         /// <summary>
         /// Resolved fatal cause for the completed life.
         /// </summary>
-        public SurvivalDeathCause DeathCause { get; }
+        internal SurvivalDeathCause DeathCause { get; }
 
         /// <summary>
         /// Captured death telemetry snapshot.
         /// </summary>
-        public SurvivalDeathRecord DeathRecord { get; }
+        internal SurvivalDeathRecord DeathRecord { get; }
     }
 
     /// <summary>
@@ -411,7 +411,7 @@ namespace Hecton8.Modding
         /// </summary>
         /// <param name="achievementId">Stable internal achievement identifier.</param>
         /// <param name="title">Player-facing achievement title.</param>
-        public AchievementUnlockedEvent(string achievementId, string title)
+        internal AchievementUnlockedEvent(string achievementId, string title)
             : this(QuestFlagHashKernel.ComputeStableHash(achievementId), achievementId, title)
         {
         }
@@ -422,7 +422,7 @@ namespace Hecton8.Modding
         /// <param name="achievementHash">FNV-1a stable achievement identifier hash.</param>
         /// <param name="achievementId">Stable internal achievement identifier for persistence boundaries.</param>
         /// <param name="title">Player-facing achievement title.</param>
-        public AchievementUnlockedEvent(uint achievementHash, string achievementId, string title)
+        internal AchievementUnlockedEvent(uint achievementHash, string achievementId, string title)
         {
             AchievementHash = achievementHash;
             AchievementId = achievementId ?? string.Empty;
@@ -432,17 +432,17 @@ namespace Hecton8.Modding
         /// <summary>
         /// FNV-1a stable achievement identifier hash.
         /// </summary>
-        public uint AchievementHash { get; }
+        internal uint AchievementHash { get; }
 
         /// <summary>
         /// Stable internal achievement identifier.
         /// </summary>
-        public string AchievementId { get; }
+        internal string AchievementId { get; }
 
         /// <summary>
         /// Player-facing achievement title at the time of unlock.
         /// </summary>
-        public string Title { get; }
+        internal string Title { get; }
     }
 
     /// <summary>
@@ -456,7 +456,7 @@ namespace Hecton8.Modding
         /// </summary>
         /// <param name="advisoryId">Stable advisory identifier.</param>
         /// <param name="message">Player-facing advisory text.</param>
-        public PlayerAdvisoryIssuedEvent(string advisoryId, string message)
+        internal PlayerAdvisoryIssuedEvent(string advisoryId, string message)
             : this(QuestFlagHashKernel.ComputeStableHash(advisoryId), advisoryId, message)
         {
         }
@@ -467,7 +467,7 @@ namespace Hecton8.Modding
         /// <param name="advisoryHash">FNV-1a stable advisory identifier hash.</param>
         /// <param name="advisoryId">Stable advisory identifier for persistence boundaries.</param>
         /// <param name="message">Player-facing advisory text.</param>
-        public PlayerAdvisoryIssuedEvent(uint advisoryHash, string advisoryId, string message)
+        internal PlayerAdvisoryIssuedEvent(uint advisoryHash, string advisoryId, string message)
         {
             AdvisoryHash = advisoryHash;
             AdvisoryId = advisoryId ?? string.Empty;
@@ -477,16 +477,16 @@ namespace Hecton8.Modding
         /// <summary>
         /// FNV-1a stable advisory identifier hash.
         /// </summary>
-        public uint AdvisoryHash { get; }
+        internal uint AdvisoryHash { get; }
 
         /// <summary>
         /// Stable advisory identifier.
         /// </summary>
-        public string AdvisoryId { get; }
+        internal string AdvisoryId { get; }
 
         /// <summary>
         /// Player-facing advisory text.
         /// </summary>
-        public string Message { get; }
+        internal string Message { get; }
     }
 }

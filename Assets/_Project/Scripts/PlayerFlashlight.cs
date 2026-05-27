@@ -447,14 +447,18 @@ namespace Hecton8.Gameplay
             battery01 = 0f;
             thermal01 = 0f;
 
-            if (!(_externalBatteryTool is FlashlightTool flashlightTool) || flashlightTool.RuntimeToolId == 0u)
+            if (!(_externalBatteryTool is IRuntimeEquipmentIdProvider equipmentIdProvider))
+                return false;
+
+            uint runtimeToolId = equipmentIdProvider.RuntimeEquipmentId;
+            if (runtimeToolId == 0u)
                 return false;
 
             IModularEquipmentService service = _modularEquipmentService;
-            if (service == null || !service.TryGetPublishedActiveEquipmentState(flashlightTool.RuntimeToolId, out state))
+            if (service == null || !service.TryGetPublishedActiveEquipmentState(runtimeToolId, out state))
                 return false;
 
-            battery01 = service.GetBatteryNormalized(flashlightTool.RuntimeToolId, math.saturate(_externalBatteryTool.BatteryCharge));
+            battery01 = service.GetBatteryNormalized(runtimeToolId, math.saturate(_externalBatteryTool.BatteryCharge));
             thermal01 = math.saturate(state.ThermalLoad);
             return true;
         }

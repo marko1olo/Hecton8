@@ -47,6 +47,8 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 #endif
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using CoreAudioEvent = Hecton8.Core.AudioEvent;
@@ -63,12 +65,40 @@ namespace Hecton8.Bootstrap
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public struct GameBootstrapperEventPayload
+    public struct GameBootstrapperEventPayload : ISignal
     {
+        public const int ExpectedCapacity = 12;
+        public const int MaxFrameSignals = 12;
+        public const int LowTierFrameSignals = 12;
+        public const uint LaneHash = 0x47425450u; // GBTP
+
         [FieldOffset(0)] public uint ErrorHash;
         [FieldOffset(4)] public ushort EventType;
         [FieldOffset(6)] public ushort Reserved;
         [FieldOffset(8)] private ulong _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct BootstrapTelemetryEntry
+    {
+        [FieldOffset(0)] public long TimestampTicks;
+        [FieldOffset(8)] public long DurationMicroseconds;
+        [FieldOffset(16)] public ulong ContextHash;
+        [FieldOffset(24)] public uint FrameIndex;
+        [FieldOffset(28)] public uint EventHash;
+        [FieldOffset(32)] public uint CollectionIndex;
+        [FieldOffset(36)] public uint ShaderIndex;
+        [FieldOffset(40)] public uint VariantCount;
+        [FieldOffset(44)] public uint WarmedVariantCount;
+        [FieldOffset(48)] public float QualityWeight01;
+        [FieldOffset(52)] public ushort Phase;
+        [FieldOffset(54)] public ushort Flags;
+        [FieldOffset(56)] public ushort ErrorCode;
+        [FieldOffset(58)] public ushort Reserved;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
     }
 
     public interface IGameBootstrapperEventListener
@@ -85,6 +115,7 @@ namespace Hecton8.Bootstrap
     {
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string MainMenuSceneName = "01_MAIN_MENU";
+        private const string OrbitSceneName = "01_ORBIT";
         private const string FatalBootCrashFileName = "fatal_boot_crash.log";
         private const string BootStateFileName = "boot.bin";
         private const string PersistentRootName = "[PROJECT_PERSISTENT_ROOT]";
@@ -102,7 +133,13 @@ namespace Hecton8.Bootstrap
         private const string TierLowAddressableLabel = "Tier_Low";
         private const string TierHighAddressableLabel = "Tier_High";
         private const int OptionalServiceTimeoutMilliseconds = 5000;
-        private const int ShaderWarmupTimeoutMilliseconds = 5000;
+        private const int ShaderWarmupBaseTimeoutMilliseconds = 5000;
+        private const int ShaderWarmupMaxTimeoutMilliseconds = 60000;
+        private const int ShaderWarmupPerShaderAttemptTimeoutMilliseconds = 20;
+        private const int ShaderWarmupPerGraphicsStateCollectionTimeoutMilliseconds = 4000;
+        private const int ShaderWarmupLowQualityTimeoutPaddingMilliseconds = 8000;
+        private const int ShaderWarmupLowQualityFrameCadenceMilliseconds = 34;
+        private const int ShaderWarmupHighQualityFrameCadenceMilliseconds = 17;
         private const int SuspiciousGraphicsMemoryFallbackThresholdMb = 256;
         private const int LowTierGraphicsMemoryMb = 3000;
         private const int LowTierProcessorCount = 6;
@@ -118,6 +155,18 @@ namespace Hecton8.Bootstrap
         private const int PendingEventCapacity = 12;
         private const int SceneRootGraphLimit = 512;
         private const int WarmupBatchSize = 8;
+        private const int BootstrapShaderWarmupTelemetryCapacity = 300;
+        private const int BootstrapTelemetryEntrySizeBytes = 64;
+        private const int BootstrapShaderWarmupDumpBytes = BootstrapShaderWarmupTelemetryCapacity * BootstrapTelemetryEntrySizeBytes;
+        private const BufferID BootstrapShaderWarmupTelemetryRingBufferId = (BufferID)76000;
+        private const string BootstrapShaderWarmupDumpFileName = "Dump_1336_Bootstrapper.bin";
+        private const string GraphicsStateCollectionExtension = ".graphicsstate";
+        private const string AssetsPathPrefix = "Assets/";
+        private const string ProjectSettingsPathPrefix = "ProjectSettings/";
+        private const string StreamingAssetsProjectPathPrefix = "Assets/StreamingAssets/";
+        private const string ShaderWarmupFailureReason = "BOOTSTRAP_SHADER_WARMUP_FAILED";
+        private const string ShaderWarmupFailureOverlayMessage =
+            "BIOS ERROR 0xSHADER\nEXPECTED: PRECOMPILED VARIANT WARMUP\nACTION: BOOT HALTED";
         private const float WorldReadyPollIntervalSec = 0.1f;
         private const int WorldReadyThreshold = 100;
         private const int WorldReadyStagnationPollLimit = 40;
@@ -134,6 +183,11 @@ namespace Hecton8.Bootstrap
         private const int BackgroundDomainHandshakeRunning = 1;
         private const int BackgroundDomainHandshakeComplete = 2;
         private const int BackgroundDomainHandshakeFailed = 3;
+        private const int BackgroundDomainHandshakeFailureNone = 0;
+        private const int BackgroundDomainHandshakeFailureInvalidPath = 1;
+        private const int BackgroundDomainHandshakeFailureIo = 2;
+        private const int BackgroundDomainHandshakeFailureUnauthorized = 3;
+        private const int BackgroundDomainHandshakeFailureUnsupported = 4;
         private const int LowTierAsyncUploadBufferMb = 64;
         private const int MidTierAsyncUploadBufferMb = 128;
         private const int HighTierAsyncUploadBufferMb = 256;
@@ -159,6 +213,111 @@ namespace Hecton8.Bootstrap
             "BIOS ERROR 0xBOOT\nEXPECTED: 00_BOOTSTRAP [0]\nACTION: FORCED RECOVERY";
         private const string FatalBootOverlayMessage =
             "BIOS ERROR 0xBOOT_FATAL\nACTION: SEE fatal_boot_crash.log";
+
+        private enum ShaderWarmupTelemetryPhase : ushort
+        {
+            Start = 1,
+            CollectionStart = 2,
+            ShaderComplete = 3,
+            CollectionComplete = 4,
+            Complete = 5,
+            Failure = 6,
+            Timeout = 7,
+            DumpQueued = 9,
+            GraphicsStateCollectionStart = 10,
+            GraphicsStateCollectionComplete = 11
+        }
+
+        [Flags]
+        private enum ShaderWarmupTelemetryFlags : ushort
+        {
+            None = 0,
+            Headless = 1 << 0,
+            MissingManifest = 1 << 2,
+            Timeout = 1 << 4,
+            Failure = 1 << 5,
+            DumpQueued = 1 << 6,
+            MissingCollections = 1 << 7,
+            GraphicsStateCollection = 1 << 8,
+            GraphicsStateIncompatible = 1 << 9
+        }
+
+        private enum ShaderWarmupErrorCode : ushort
+        {
+            None = 0,
+            MissingTelemetryRing = 1,
+            MissingShaderManifest = 2,
+            Timeout = 3,
+            InvalidCollectionSet = 4,
+            WarmupApiFailure = 5,
+            MissingShaderCollections = 6,
+            GraphicsStateWarmupFailure = 7,
+            GraphicsStateCompatibilityFailure = 8,
+            MissingGraphicsStateCollections = 9
+        }
+
+        private static readonly VertexAttributeDescriptor[] _shaderWarmupMeshVertexLayout =
+        {
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.Tangent, VertexAttributeFormat.Float32, 4),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
+        };
+
+        private static readonly VertexAttributeDescriptor[] _shaderWarmupPositionUvVertexLayout =
+        {
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
+        };
+
+        private static readonly VertexAttributeDescriptor[] _shaderWarmupPositionNormalVertexLayout =
+        {
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3)
+        };
+
+        private static readonly VertexAttributeDescriptor[] _shaderWarmupPositionNormalUvVertexLayout =
+        {
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
+        };
+
+        private static readonly VertexAttributeDescriptor[] _shaderWarmupUiVertexLayout =
+        {
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
+        };
+
+        private static readonly VertexAttributeDescriptor[] _shaderWarmupFloatColorVertexLayout =
+        {
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.Float32, 4),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
+        };
+
+        private static readonly VertexAttributeDescriptor[] _shaderWarmupVoxelVertexLayout =
+        {
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.Float32, 4),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord2, VertexAttributeFormat.Float32, 4),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord3, VertexAttributeFormat.Float32, 4),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord4, VertexAttributeFormat.UNorm8, 4)
+        };
+
+        private static readonly ShaderWarmupSetup[] _shaderWarmupSetups =
+        {
+            new ShaderWarmupSetup { vdecl = _shaderWarmupMeshVertexLayout },
+            new ShaderWarmupSetup { vdecl = _shaderWarmupPositionUvVertexLayout },
+            new ShaderWarmupSetup { vdecl = _shaderWarmupPositionNormalVertexLayout },
+            new ShaderWarmupSetup { vdecl = _shaderWarmupPositionNormalUvVertexLayout },
+            new ShaderWarmupSetup { vdecl = _shaderWarmupUiVertexLayout },
+            new ShaderWarmupSetup { vdecl = _shaderWarmupFloatColorVertexLayout },
+            new ShaderWarmupSetup { vdecl = _shaderWarmupVoxelVertexLayout }
+        };
         private struct ListenerSlot
         {
             public IGameBootstrapperEventListener Listener;
@@ -185,75 +344,12 @@ namespace Hecton8.Bootstrap
             }
         }
 
-        private struct BootstrapEventQueue
-        {
-            private GameBootstrapperEventPayload[] _items;
-            private int _head;
-            private int _tail;
-            private int _count;
-
-            public bool IsCreated => _items != null;
-
-            public bool IsEmpty()
-            {
-                return _count <= 0;
-            }
-
-            public void EnsureCapacity()
-            {
-                if (_items != null && _items.Length == PendingEventCapacity)
-                    return;
-
-                _items = new GameBootstrapperEventPayload[PendingEventCapacity]; // COLD ALLOC: fixed bootstrap event ring - owner: GameBootstrapper
-                _head = 0;
-                _tail = 0;
-                _count = 0;
-            }
-
-            public bool TryEnqueue(in GameBootstrapperEventPayload payload)
-            {
-                EnsureCapacity();
-                if (_count >= PendingEventCapacity)
-                    return false;
-
-                _items[_tail] = payload;
-                _tail = (_tail + 1) % PendingEventCapacity;
-                _count++;
-                return true;
-            }
-
-            public bool TryDequeue(out GameBootstrapperEventPayload payload)
-            {
-                payload = default;
-                if (_items == null || _count <= 0)
-                    return false;
-
-                payload = _items[_head];
-                _items[_head] = default;
-                _head = (_head + 1) % PendingEventCapacity;
-                _count--;
-                if (_count == 0)
-                {
-                    _head = 0;
-                    _tail = 0;
-                }
-
-                return true;
-            }
-
-            public void Clear()
-            {
-                if (_items != null)
-                    Array.Clear(_items, 0, _items.Length);
-
-                _head = 0;
-                _tail = 0;
-                _count = 0;
-            }
-        }
-
         // COLD ALLOC: ListenerSlot[12] - bootstrap listeners drained on dispatcher LateUpdate without interface array dispatch - owner: GameBootstrapper
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[PendingEventCapacity];
+        // COLD ALLOC: ListenerSlot[12] - deferred listener additions during bootstrap event dispatch - owner: GameBootstrapper
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[PendingEventCapacity];
+        // COLD ALLOC: ListenerSlot[12] - deferred listener removals during bootstrap event dispatch - owner: GameBootstrapper
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[PendingEventCapacity];
         // COLD ALLOC: FailureReasonSlot[8] - fixed hashed bootstrap failure reason sidecar; no managed map growth - owner: GameBootstrapper
         private static readonly FailureReasonSlot[] _failureReasonSlots = new FailureReasonSlot[8];
         private static GlobalDataVault _globalDataVault;
@@ -261,13 +357,13 @@ namespace Hecton8.Bootstrap
         private static BurstTokenBucketJobAdmissionService _jobAdmissionService;
         private static JobAdmissionTelemetryBridge _jobAdmissionTelemetryBridge;
         private static ModuloSimulationBucketer _simulationBucketerService;
-        private static BootstrapEventQueue _pendingEvents;
-        private static BootstrapEventQueue _nextFrameEvents;
         private static int _listenerCount;
+        private static int _deferredRegisterListenerCount;
+        private static int _deferredUnregisterListenerCount;
         private static int _failureReasonSlotCount;
-        private static int _pendingEventCount;
-        private static int _nextFrameEventCount;
-        private static bool _isDispatching;
+        private static int _droppedGameBootstrapperEventCount;
+        private static int _droppedGameBootstrapperListenerMutationCount;
+        private static bool _isDispatchingGameBootstrapperEvents;
         private static bool _h8MemoryFatalLogHooked;
         private static bool _h8MemoryFatalDumpWritten;
 #if UNITY_EDITOR
@@ -381,6 +477,13 @@ namespace Hecton8.Bootstrap
         private static readonly uint _BootstrapTotalBootTimeHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.TotalBootTimeMs"));
         private static readonly uint _GameBootstrapperContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("GameBootstrapper"));
         private static readonly uint _ServiceHeartbeatFreezeHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SERVICE_HEARTBEAT_FREEZE"));
+        private static readonly uint _ShaderWarmupStartHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.ShaderWarmup.Start"));
+        private static readonly uint _ShaderWarmupCollectionHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.ShaderWarmup.Collection"));
+        private static readonly uint _ShaderWarmupShaderHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.ShaderWarmup.Shader"));
+        private static readonly uint _ShaderWarmupCompleteHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.ShaderWarmup.Complete"));
+        private static readonly uint _ShaderWarmupFailureHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.ShaderWarmup.Failure"));
+        private static readonly uint _ShaderWarmupTimeoutHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.ShaderWarmup.Timeout"));
+        private static readonly WaitCallback _shaderWarmupDumpCallback = WriteBootstrapShaderWarmupDumpOnWorker;
         private static bool _isBootstrapComplete;
         private static bool _sceneGuardRegistered;
         private static bool _entryRecoveryIssued;
@@ -396,6 +499,12 @@ namespace Hecton8.Bootstrap
         [Header("Bootstrap Prewarm")]
         [Tooltip("Shader variant collections warmed during MemoryPreWarm before scene or player activation.")]
         [SerializeField] private ShaderVariantCollection[] shaderVariantCollections;
+        [Tooltip("Explicit shader manifest used by ShaderWarmup.WarmupShaderFromCollection. Must cover every shader inside the configured collections.")]
+        [SerializeField] private Shader[] shaderWarmupShaders;
+        [Tooltip("Bootstrap-owned shader reference catalog. Replaces the legacy runtime Resources fallback for first-party shader lookup.")]
+        [SerializeField] private RuntimeShaderReferenceCatalog runtimeShaderReferenceCatalog;
+        [Tooltip("Optional Unity 6 PSO trace files. Use StreamingAssets-relative paths for players; Assets/ProjectSettings paths are editor-only.")]
+        [SerializeField] private string[] shaderGraphicsStateCollectionPaths;
         [Tooltip("Optional human-authored GlobalDataVault sizing facade. If absent, legacy binary archaeology or mock config drives the vault.")]
         [SerializeField] private VaultConfigurationAsset vaultConfigurationAsset;
         [SerializeField] private uint expectedBiosRegistryFnv1a;
@@ -447,12 +556,20 @@ namespace Hecton8.Bootstrap
         private WorldProceduralScatterDirector _worldProceduralScatterDirector;
         private int _backgroundDomainHandshakeState;
         private string _backgroundDomainHandshakePath;
-        private string _backgroundDomainHandshakeError;
+        private int _backgroundDomainHandshakeFailureCode;
         private readonly List<GameObject> _shippingCleanupRootObjects = new List<GameObject>(64); // COLD ALLOC: List<GameObject>[64] - root cache for one-shot shipping scene cleanup - owner: GameBootstrapper
         private readonly List<Transform> _shippingCleanupTraversalStack = new List<Transform>(256); // COLD ALLOC: List<Transform>[256] - traversal stack for one-shot shipping scene cleanup - owner: GameBootstrapper
 #if UNITY_ADDRESSABLES_EXIST
         private AsyncOperationHandle<GameObject>[] _uiPrefabInstanceHandles;
 #endif
+        private VaultGenerationHandle<BootstrapTelemetryEntry> _shaderWarmupTelemetryHandle;
+        private bool _shaderWarmupTelemetryReady;
+        private int _shaderWarmupTelemetryCursor;
+        private int _shaderWarmupDumpQueued;
+        private byte[] _shaderWarmupDumpScratch;
+        private string _shaderWarmupDumpPath;
+        private string _shaderWarmupDumpTempPath;
+        private int _shaderWarmupDumpByteCount;
         // COLD ALLOC: BootstrapDependencyNode[bootstrap-node-count] - cached Kahn topological service execution order - owner: GameBootstrapper
         private readonly BootstrapDependencyNode[] _bootstrapExecutionOrder = new BootstrapDependencyNode[(int)BootstrapDependencyNode.Count];
         private readonly int[] _heartbeatTickSamples = new int[(int)BootstrapDependencyNode.Count];
@@ -477,13 +594,15 @@ namespace Hecton8.Bootstrap
 
         public static bool HasActiveInstance => BootstrapState.HasActiveInstance;
 
-        public static GameBootstrapper ActiveInstance => GlobalRegistry.BootstrapperRuntime;
+        private static GameBootstrapper s_activeRuntimeInstance;
+
+        public static GameBootstrapper ActiveInstance => s_activeRuntimeInstance;
 
         public static GameObject CurrentPlayerObject => BootstrapState.CurrentPlayerObject;
 
         public static Transform CurrentPlayerTransform => BootstrapState.CurrentPlayerTransform;
 
-        public static int PendingEventCount => _pendingEventCount + _nextFrameEventCount;
+        public static int PendingEventCount => SignalBus<GameBootstrapperEventPayload>.SnapshotCount;
 
         /// <summary>
         /// True when boot is running in data-only server/testing mode.
@@ -573,7 +692,13 @@ namespace Hecton8.Bootstrap
             if (listener == null)
                 return;
 
-            EnsureEventQueueInitialized();
+            EnsureGameBootstrapperEventLaneInitialized();
+            if (_isDispatchingGameBootstrapperEvents)
+            {
+                QueueDeferredGameBootstrapperRegister(listener);
+                return;
+            }
+
             RegisterImmediate(listener);
         }
 
@@ -582,55 +707,45 @@ namespace Hecton8.Bootstrap
             if (listener == null)
                 return;
 
+            if (_isDispatchingGameBootstrapperEvents)
+            {
+                QueueDeferredGameBootstrapperUnregister(listener);
+                return;
+            }
+
             TryUnregisterImmediate(listener);
         }
 
         public static void FlushPendingEvents()
         {
-            if (!_pendingEvents.IsCreated || _listenerCount <= 0)
-            {
-                DrainPendingEventsWithoutDispatch();
+            ReadOnlySpan<GameBootstrapperEventPayload> events = SignalBus<GameBootstrapperEventPayload>.GetFrameSnapshot();
+            int eventCount = events.Length;
+            if (eventCount <= 0 || _listenerCount <= 0)
                 return;
-            }
 
-            PromoteNextFrameEventsIfFrontEmpty();
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget > 0 && !_pendingEvents.IsEmpty())
+            int scanBudget = eventCount;
+            for (int eventIndex = 0; eventIndex < eventCount && scanBudget-- > 0; eventIndex++)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
-                if (!_pendingEvents.TryDequeue(out GameBootstrapperEventPayload payload))
-                {
-                    _pendingEventCount = 0;
-                    return;
-                }
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
-                scanBudget--;
-
+                GameBootstrapperEventPayload payload = events[eventIndex];
                 int count = _listenerCount;
-                _isDispatching = true;
+                _isDispatchingGameBootstrapperEvents = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
                         IGameBootstrapperEventListener listener = _listeners[i].Listener;
-                        if (listener != null)
+                        if (listener != null && !IsDeferredGameBootstrapperUnregisterPending(listener))
                             listener.OnGameBootstrapperEvent(in payload);
                     }
                 }
                 finally
                 {
-                    _isDispatching = false;
+                    _isDispatchingGameBootstrapperEvents = false;
+                    ApplyDeferredGameBootstrapperListenerMutations();
                 }
-            }
-
-            if (_pendingEvents.IsEmpty())
-            {
-                _pendingEventCount = 0;
-                PromoteNextFrameEventsIfFrontEmpty();
             }
         }
 
@@ -653,6 +768,7 @@ namespace Hecton8.Bootstrap
         private static void ResetStaticState()
         {
             ResetBootstrapEventState();
+            s_activeRuntimeInstance = null;
             GlobalRegistry.ClearBootstrapperRuntime(null);
             _isBootstrapComplete = false;
             _entryRecoveryIssued = false;
@@ -681,17 +797,19 @@ namespace Hecton8.Bootstrap
 
         private static void ResetBootstrapEventState()
         {
-            _pendingEvents.Clear();
-            _nextFrameEvents.Clear();
-
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
 
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterListenerCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterListenerCount);
             _listenerCount = 0;
+            _deferredRegisterListenerCount = 0;
+            _deferredUnregisterListenerCount = 0;
             ClearFailureReasonSlots();
-            _pendingEventCount = 0;
-            _nextFrameEventCount = 0;
-            _isDispatching = false;
+            _droppedGameBootstrapperEventCount = 0;
+            _droppedGameBootstrapperListenerMutationCount = 0;
+            _isDispatchingGameBootstrapperEvents = false;
+            ConfigureGameBootstrapperEventLane();
         }
 
         private static void ClearFailureReasonSlots()
@@ -738,6 +856,143 @@ namespace Hecton8.Bootstrap
             _listeners[_listenerCount++].Listener = listener;
         }
 
+        private static void QueueDeferredGameBootstrapperRegister(IGameBootstrapperEventListener listener)
+        {
+            if (IsGameBootstrapperListenerRegistered(listener))
+            {
+                CancelDeferredGameBootstrapperUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredGameBootstrapperRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterListenerCount >= _deferredRegisterListeners.Length)
+            {
+                IncrementGameBootstrapperListenerMutationDropCounter();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterListenerCount++].Listener = listener;
+        }
+
+        private static void QueueDeferredGameBootstrapperUnregister(IGameBootstrapperEventListener listener)
+        {
+            if (CancelDeferredGameBootstrapperRegister(listener))
+                return;
+
+            if (!IsGameBootstrapperListenerRegistered(listener))
+                return;
+
+            if (IsDeferredGameBootstrapperUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterListenerCount >= _deferredUnregisterListeners.Length)
+            {
+                IncrementGameBootstrapperListenerMutationDropCounter();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterListenerCount++].Listener = listener;
+        }
+
+        private static bool IsGameBootstrapperListenerRegistered(IGameBootstrapperEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredGameBootstrapperRegisterPending(IGameBootstrapperEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterListenerCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredGameBootstrapperUnregisterPending(IGameBootstrapperEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterListenerCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool CancelDeferredGameBootstrapperRegister(IGameBootstrapperEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterListenerCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    continue;
+
+                _deferredRegisterListenerCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterListenerCount];
+                _deferredRegisterListeners[_deferredRegisterListenerCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool CancelDeferredGameBootstrapperUnregister(IGameBootstrapperEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterListenerCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    continue;
+
+                _deferredUnregisterListenerCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterListenerCount];
+                _deferredUnregisterListeners[_deferredUnregisterListenerCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredGameBootstrapperListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterListenerCount; i++)
+            {
+                IGameBootstrapperEventListener listener = _deferredUnregisterListeners[i].Listener;
+                if (listener != null)
+                    TryUnregisterImmediate(listener);
+
+                _deferredUnregisterListeners[i].Clear();
+            }
+
+            _deferredUnregisterListenerCount = 0;
+
+            for (int i = 0; i < _deferredRegisterListenerCount; i++)
+            {
+                IGameBootstrapperEventListener listener = _deferredRegisterListeners[i].Listener;
+                if (listener != null)
+                    RegisterImmediate(listener);
+
+                _deferredRegisterListeners[i].Clear();
+            }
+
+            _deferredRegisterListenerCount = 0;
+        }
+
+        private static void IncrementGameBootstrapperListenerMutationDropCounter()
+        {
+            int current = Volatile.Read(ref _droppedGameBootstrapperListenerMutationCount);
+            if (current < int.MaxValue)
+                Interlocked.Increment(ref _droppedGameBootstrapperListenerMutationCount);
+        }
+
         private static bool TryUnregisterImmediate(IGameBootstrapperEventListener listener)
         {
             for (int i = 0; i < _listenerCount; i++)
@@ -754,17 +1009,24 @@ namespace Hecton8.Bootstrap
             return false;
         }
 
-        private static void EnsureEventQueueInitialized()
+        private static void EnsureGameBootstrapperEventLaneInitialized()
         {
-            _pendingEvents.EnsureCapacity();
-            _nextFrameEvents.EnsureCapacity();
+            ConfigureGameBootstrapperEventLane();
+            SignalBus<GameBootstrapperEventPayload>.EnsureInitialized();
+        }
+
+        private static void ConfigureGameBootstrapperEventLane()
+        {
+            SignalBus<GameBootstrapperEventPayload>.Configure(
+                GameBootstrapperEventPayload.ExpectedCapacity,
+                GameBootstrapperEventPayload.MaxFrameSignals,
+                GameBootstrapperEventPayload.LowTierFrameSignals,
+                GameBootstrapperEventPayload.LaneHash);
         }
 
         private static void RaiseGameReadyEvent()
         {
-            EnsureEventQueueInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-                return;
+            EnsureGameBootstrapperEventLaneInitialized();
 
             GameBootstrapperEventPayload payload = new GameBootstrapperEventPayload
             {
@@ -781,9 +1043,7 @@ namespace Hecton8.Bootstrap
             uint errorHash = string.IsNullOrWhiteSpace(error)
                 ? 0u
                 : unchecked((uint)Hecton.Localization.LocHash.Compute(error));
-            EnsureEventQueueInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-                return;
+            EnsureGameBootstrapperEventLaneInitialized();
 
             TryRegisterFailureReason(errorHash, error);
 
@@ -799,75 +1059,9 @@ namespace Hecton8.Bootstrap
 
         private static void EnqueueBootstrapEvent(in GameBootstrapperEventPayload payload)
         {
-            if (_isDispatching)
-            {
-                if (_nextFrameEvents.TryEnqueue(in payload))
-                    _nextFrameEventCount++;
-                return;
-            }
-
-            if (_pendingEvents.TryEnqueue(in payload))
-                _pendingEventCount++;
-        }
-
-        private static void DrainPendingEventsWithoutDispatch()
-        {
-            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
-                return;
-
-            if (_pendingEventCount <= 0)
-            {
-                PromoteNextFrameEventsIfFrontEmpty();
-                if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
-                    return;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
-        }
-
-        private static bool DrainQueueWithoutDispatch(
-            ref BootstrapEventQueue queue,
-            ref int pendingCount)
-        {
-            if (!queue.IsCreated)
-                return true;
-
-            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
-            while (scanBudget > 0 && !queue.IsEmpty())
-            {
-                if (!queue.TryDequeue(out _))
-                {
-                    pendingCount = 0;
-                    return false;
-                }
-
-                if (pendingCount > 0)
-                    pendingCount--;
-                scanBudget--;
-            }
-
-            if (queue.IsEmpty())
-                pendingCount = 0;
-
-            return true;
-        }
-
-        private static void PromoteNextFrameEventsIfFrontEmpty()
-        {
-            if (!_pendingEvents.IsCreated ||
-                !_nextFrameEvents.IsCreated ||
-                _pendingEventCount > 0 ||
-                _nextFrameEventCount <= 0)
-            {
-                return;
-            }
-
-            BootstrapEventQueue swap = _pendingEvents;
-            _pendingEvents = _nextFrameEvents;
-            _nextFrameEvents = swap;
-            _pendingEventCount = _nextFrameEventCount;
-            _nextFrameEventCount = 0;
+            SignalBus<GameBootstrapperEventPayload>.TryPushTracked(
+                in payload,
+                ref _droppedGameBootstrapperEventCount);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -1102,9 +1296,25 @@ namespace Hecton8.Bootstrap
             shaderVariantCollections = collections;
         }
 
+        internal void SetBootstrapShaderWarmupShaders(Shader[] shaders)
+        {
+            if (shaders == null || shaders.Length == 0 || _bootstrapRunInProgress || _isBootstrapComplete)
+                return;
+
+            shaderWarmupShaders = shaders;
+        }
+
+        internal void SetBootstrapShaderGraphicsStateCollectionPaths(string[] paths)
+        {
+            if (paths == null || paths.Length == 0 || _bootstrapRunInProgress || _isBootstrapComplete)
+                return;
+
+            shaderGraphicsStateCollectionPaths = paths;
+        }
+
         private void Awake()
         {
-            GameBootstrapper runtimeBootstrapper = ActiveInstance;
+            GameBootstrapper runtimeBootstrapper = s_activeRuntimeInstance ?? GlobalRegistry.BootstrapperRuntime;
             if (runtimeBootstrapper != null && runtimeBootstrapper != this)
             {
                 Destroy(this);
@@ -1113,6 +1323,8 @@ namespace Hecton8.Bootstrap
 
             GlobalRegistry.BeginRegistration();
             GlobalRegistry.RegisterBootstrapperRuntime(this);
+            s_activeRuntimeInstance = this;
+            RuntimeShaderReferenceCatalog.Register(runtimeShaderReferenceCatalog);
 
             if (Application.isPlaying)
             {
@@ -1161,7 +1373,10 @@ namespace Hecton8.Bootstrap
             if (Application.isPlaying)
                 BootstrapState.PublishGameReady(false);
             DisposeSessionNativeStateForShutdown();
+            RuntimeShaderReferenceCatalog.Unregister(runtimeShaderReferenceCatalog);
             GlobalRegistry.ClearBootstrapperRuntime(this);
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
         }
 
         public void SlowTick()
@@ -1205,11 +1420,7 @@ namespace Hecton8.Bootstrap
                 if (_heartbeatFrozenSamples[index] == HeartbeatFreezeSlowTickLimit)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError(
-                        "[GameBootstrapper] SERVICE_HEARTBEAT_FREEZE service=" +
-                        ResolveBootstrapDependencyNodeName(node) +
-                        " tick=" +
-                        tickCount);
+                    Debug.LogError("[GameBootstrapper] SERVICE_HEARTBEAT_FREEZE");
 #endif
                     GlobalTelemetryBus.PublishPerformanceWarning(
                         _ServiceHeartbeatFreezeHash,
@@ -1428,8 +1639,7 @@ namespace Hecton8.Bootstrap
             WriteBootStateRecord(BootStateMarker.Started, BootstrapPhase.HardwareCheck, GlobalRegistryServiceSlot.Unknown);
             _bootstrapStartTimestamp = Stopwatch.GetTimestamp();
             _bootstrapDurationTelemetryPublished = false;
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ownerToken);
-            CancellationToken ct = cts.Token;
+            CancellationToken ct = ownerToken;
 
             try
             {
@@ -1625,7 +1835,7 @@ namespace Hecton8.Bootstrap
                 BinaryLayoutManifest.VerifyColdBoot();
                 InitializeBootstrapMmfStorage();
                 uint appVersionHash = global::Hecton8.Data.H8DataHash.ComputeFnv1A32(Application.version.AsSpan());
-                if (!InitializeBootstrapDataMonolith(appVersionHash))
+                if (!await InitializeBootstrapDataMonolithAsync(appVersionHash, ct))
                 {
                     Debug.LogError("[GameBootstrapper] Data Monolith boot validation failed.");
                     return false;
@@ -1642,40 +1852,37 @@ namespace Hecton8.Bootstrap
 
         private async Awaitable<bool> InitializePresentationBootstrapAsync(CancellationToken ct)
         {
-            try
-            {
-                if (_headlessBootMode)
-                {
-                    _preWarmAssetsReady = true;
-                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
-                    return true;
-                }
+            if (ct.IsCancellationRequested)
+                return false;
 
-                if (!_headlessBootMode)
-                {
-                    WarmMathLodShaderKeywords();
-                    VRAMEnforcer.InitializeRuntimeBudget();
-                    VRAMOptimizationBootstrap.EnsureRuntimeManagers();
-                    SceneInstantiationGate gate = SceneInstantiationGate.EnsureRuntimeInstance();
-                    PersistRuntimeService(gate);
-                }
+            if (_headlessBootMode)
+            {
+                _preWarmAssetsReady = true;
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
+                return !ct.IsCancellationRequested;
+            }
+
+            WarmMathLodShaderKeywords();
+            VRAMEnforcer.InitializeRuntimeBudget();
+            VRAMOptimizationBootstrap.EnsureRuntimeManagers();
+            SceneInstantiationGate gate = SceneInstantiationGate.EnsureRuntimeInstance();
+            PersistRuntimeService(gate);
+            EnsureBootstrapShaderWarmupTelemetryRing();
 
 #if UNITY_ADDRESSABLES_EXIST
-                if (!_headlessBootMode && !await PreWarmTierAddressableTextureGroupAsync(ct))
-                    return false;
+            if (!await PreWarmTierAddressableTextureGroupAsync(ct))
+                return false;
 #endif
 
-                if (!await WarmConfiguredShaderVariantCollectionsAsync(ct))
-                    return false;
-
-                _preWarmAssetsReady = true;
-                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
-                return true;
-            }
-            catch (OperationCanceledException)
-            {
+            if (!await WarmConfiguredShaderVariantCollectionsAsync(ct))
                 return false;
-            }
+
+            if (ct.IsCancellationRequested)
+                return false;
+
+            _preWarmAssetsReady = true;
+            await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
+            return !ct.IsCancellationRequested;
         }
 
         private void InitializeBootstrapAllocators()
@@ -1855,24 +2062,24 @@ namespace Hecton8.Bootstrap
             GlobalRegistry.RegisterMacroDatabase(_macroDatabaseService);
         }
 
-        private static bool InitializeBootstrapDataMonolith(uint appVersionHash)
+        private static async Awaitable<bool> InitializeBootstrapDataMonolithAsync(uint appVersionHash, CancellationToken ct)
         {
 #if UNITY_EDITOR
             bool failIfMissing = false;
 #else
             bool failIfMissing = true;
 #endif
-            bool loaded = global::Hecton8.Data.H8StaticDataArena.TryInitializeFromStreamingAssets(
+            global::Hecton8.Data.H8DataBlobLoadResult result = await global::Hecton8.Data.H8StaticDataArena.TryInitializeFromStreamingAssetsAsync(
                 _globalDataVault,
                 0u,
                 appVersionHash,
                 failIfMissing,
-                out global::Hecton8.Data.H8DataBlobLoadStatus dataStatus);
+                ct);
 
 #if UNITY_EDITOR
-            return loaded || dataStatus == global::Hecton8.Data.H8DataBlobLoadStatus.Missing;
+            return result.Loaded || result.Status == global::Hecton8.Data.H8DataBlobLoadStatus.Missing;
 #else
-            return loaded;
+            return result.Loaded;
 #endif
         }
 
@@ -2182,6 +2389,15 @@ namespace Hecton8.Bootstrap
             rebindingManager.BindNativeInputManager(inputManager);
             PersistRuntimeService(rebindingManager);
 
+            AccessibilitySettings accessibilitySettings = AccessibilitySettings.ActiveRuntimeInstance;
+            if (accessibilitySettings == null)
+            {
+                GameObject accessibilityRoot = new GameObject("[AccessibilitySettings]"); // COLD ALLOC: GameObject[1] - bootstrap-owned accessibility cbuffer bridge - owner: GameBootstrapper
+                accessibilitySettings = accessibilityRoot.AddComponent<AccessibilitySettings>();
+            }
+
+            PersistRuntimeService(accessibilitySettings);
+
             ContextualPhysicalIkRuntime contextualIkRuntime = ContextualPhysicalIkRuntime.EnsureRuntimeInstance();
             PersistRuntimeService(contextualIkRuntime);
             VRSomaticRuntimeBootstrap vrSomaticRuntime = VRSomaticRuntimeBootstrap.EnsureRegisteredByBootstrap();
@@ -2419,7 +2635,11 @@ namespace Hecton8.Bootstrap
                 return true;
 
             AssetLifecycleGovernor lifecycleGovernor = GlobalRegistry.AssetLifecycle;
-            return lifecycleGovernor != null && lifecycleGovernor.TryReleaseExternalAddressableFault(handle);
+            if (lifecycleGovernor != null)
+                return lifecycleGovernor.TryReleaseExternalAddressableFault(handle);
+
+            Addressables.Release(handle);
+            return false;
         }
 
         private static void PublishAddressableDependencyGroupLoaded(
@@ -2475,31 +2695,1212 @@ namespace Hecton8.Bootstrap
 
         private async Awaitable<bool> WarmConfiguredShaderVariantCollectionsAsync(CancellationToken ct)
         {
-            try
+            if (ct.IsCancellationRequested)
+                return false;
+
+            if (_headlessBootMode)
             {
-                if (_headlessBootMode)
-                    return true;
-
-                int collectionCount = shaderVariantCollections != null ? shaderVariantCollections.Length : 0;
-                for (int i = 0; i < collectionCount; i++)
-                {
-                    ct.ThrowIfCancellationRequested();
-
-                    ShaderVariantCollection collection = shaderVariantCollections[i];
-                    if (collection == null)
-                        continue;
-
-                    if (!collection.isWarmedUp)
-                        collection.WarmUp();
-
-                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
-                }
-
-                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
-                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+                RecordBootstrapShaderWarmupTelemetry(
+                    ShaderWarmupTelemetryPhase.Complete,
+                    ShaderWarmupTelemetryFlags.Headless,
+                    ShaderWarmupErrorCode.None,
+                    _ShaderWarmupCompleteHash,
+                    -1,
+                    -1,
+                    0,
+                    0,
+                    0L);
                 return true;
             }
-            catch (OperationCanceledException)
+
+            int collectionCount = shaderVariantCollections != null ? shaderVariantCollections.Length : 0;
+            if (!EnsureBootstrapShaderWarmupTelemetryRing())
+            {
+                return FailBootstrapShaderWarmup(
+                    ShaderWarmupErrorCode.MissingTelemetryRing,
+                    _ShaderWarmupFailureHash,
+                    -1,
+                    -1,
+                    0,
+                    0L);
+            }
+
+            if (collectionCount <= 0)
+            {
+                return FailBootstrapShaderWarmup(
+                    ShaderWarmupErrorCode.MissingShaderCollections,
+                    _ShaderWarmupFailureHash,
+                    -1,
+                    -1,
+                    0,
+                    0L);
+            }
+
+            int invalidCollectionIndex = FindInvalidShaderVariantCollectionIndex(shaderVariantCollections);
+            if (invalidCollectionIndex >= 0)
+            {
+                return FailBootstrapShaderWarmup(
+                    ShaderWarmupErrorCode.MissingShaderCollections,
+                    _ShaderWarmupFailureHash,
+                    invalidCollectionIndex,
+                    -1,
+                    0,
+                    0L);
+            }
+
+            int emptyCollectionIndex = FindEmptyShaderVariantCollectionIndex(shaderVariantCollections);
+            if (emptyCollectionIndex >= 0)
+            {
+                return FailBootstrapShaderWarmup(
+                    ShaderWarmupErrorCode.InvalidCollectionSet,
+                    _ShaderWarmupFailureHash,
+                    emptyCollectionIndex,
+                    -1,
+                    0,
+                    0L);
+            }
+
+            int shaderCount = shaderWarmupShaders != null ? shaderWarmupShaders.Length : 0;
+            if (shaderCount <= 0)
+            {
+                return FailBootstrapShaderWarmup(
+                    ShaderWarmupErrorCode.MissingShaderManifest,
+                    _ShaderWarmupFailureHash,
+                    -1,
+                    -1,
+                    0,
+                    0L);
+            }
+
+            int validShaderCount = CountValidShaderWarmupShaders(shaderWarmupShaders);
+            if (validShaderCount != shaderCount)
+            {
+                int invalidShaderIndex = FindInvalidShaderWarmupShaderIndex(shaderWarmupShaders);
+                return FailBootstrapShaderWarmup(
+                    ShaderWarmupErrorCode.MissingShaderManifest,
+                    _ShaderWarmupFailureHash,
+                    -1,
+                    invalidShaderIndex,
+                    0,
+                    0L);
+            }
+
+            long warmupStart = Stopwatch.GetTimestamp();
+            int validCollectionCount = 0;
+            int warmupAttemptCount = 0;
+            int warmupBatchCounter = 0;
+            int shaderBatchSize = ResolveShaderWarmupBatchSize();
+            int shaderWarmupSetupCount = _shaderWarmupSetups.Length;
+            int graphicsStateCollectionCount = shaderGraphicsStateCollectionPaths != null ? shaderGraphicsStateCollectionPaths.Length : 0;
+            if (RequiresGraphicsStateCollectionsForCurrentApi() && graphicsStateCollectionCount <= 0)
+            {
+                return FailBootstrapShaderWarmup(
+                    ShaderWarmupErrorCode.MissingGraphicsStateCollections,
+                    _ShaderWarmupFailureHash,
+                    -1,
+                    -1,
+                    0,
+                    warmupStart);
+            }
+
+            int shaderWarmupTimeoutMilliseconds = ResolveShaderWarmupTimeoutMilliseconds(
+                collectionCount,
+                validShaderCount,
+                graphicsStateCollectionCount,
+                shaderWarmupSetupCount);
+            RecordBootstrapShaderWarmupTelemetry(
+                ShaderWarmupTelemetryPhase.Start,
+                ShaderWarmupTelemetryFlags.None,
+                ShaderWarmupErrorCode.None,
+                _ShaderWarmupStartHash,
+                -1,
+                -1,
+                collectionCount,
+                validShaderCount,
+                warmupStart);
+
+            if (!await WarmConfiguredGraphicsStateCollectionsAsync(ct, warmupStart, shaderWarmupTimeoutMilliseconds))
+                return false;
+
+            for (int i = 0; i < collectionCount; i++)
+            {
+                if (ct.IsCancellationRequested)
+                    return false;
+
+                ShaderVariantCollection collection = shaderVariantCollections[i];
+                if (collection == null)
+                {
+                    return FailBootstrapShaderWarmup(
+                        ShaderWarmupErrorCode.MissingShaderCollections,
+                        _ShaderWarmupFailureHash,
+                        i,
+                        -1,
+                        0,
+                        warmupStart);
+                }
+
+                int variantCount = collection.variantCount;
+                validCollectionCount++;
+                RecordBootstrapShaderWarmupTelemetry(
+                    ShaderWarmupTelemetryPhase.CollectionStart,
+                    ShaderWarmupTelemetryFlags.None,
+                    ShaderWarmupErrorCode.None,
+                    _ShaderWarmupCollectionHash,
+                    i,
+                    -1,
+                    variantCount,
+                    warmupAttemptCount,
+                    warmupStart);
+
+                for (int shaderIndex = 0; shaderIndex < shaderCount; shaderIndex++)
+                {
+                    if (ct.IsCancellationRequested)
+                        return false;
+
+                    Shader shader = shaderWarmupShaders[shaderIndex];
+                    if (shader == null)
+                    {
+                        return FailBootstrapShaderWarmup(
+                            ShaderWarmupErrorCode.MissingShaderManifest,
+                            _ShaderWarmupFailureHash,
+                            i,
+                            shaderIndex,
+                            variantCount,
+                            warmupStart);
+                    }
+
+                    for (int setupIndex = 0; setupIndex < shaderWarmupSetupCount; setupIndex++)
+                    {
+                        if (ct.IsCancellationRequested)
+                            return false;
+
+                        long shaderStart = Stopwatch.GetTimestamp();
+                        if (!TryWarmShaderVariant(collection, shader, _shaderWarmupSetups[setupIndex]))
+                        {
+                            return FailBootstrapShaderWarmup(
+                                ShaderWarmupErrorCode.WarmupApiFailure,
+                                _ShaderWarmupFailureHash,
+                                i,
+                                shaderIndex,
+                                variantCount,
+                                warmupStart);
+                        }
+
+                        warmupAttemptCount++;
+                        warmupBatchCounter++;
+                        RecordBootstrapShaderWarmupTelemetry(
+                            ShaderWarmupTelemetryPhase.ShaderComplete,
+                            ShaderWarmupTelemetryFlags.None,
+                            ShaderWarmupErrorCode.None,
+                            _ShaderWarmupShaderHash,
+                            i,
+                            shaderIndex,
+                            variantCount,
+                            warmupAttemptCount,
+                            shaderStart);
+
+                        if (HasShaderWarmupTimedOut(warmupStart, shaderWarmupTimeoutMilliseconds))
+                        {
+                            return FailBootstrapShaderWarmup(
+                                ShaderWarmupErrorCode.Timeout,
+                                _ShaderWarmupTimeoutHash,
+                                i,
+                                shaderIndex,
+                                variantCount,
+                                warmupStart);
+                        }
+
+                        if (warmupBatchCounter >= shaderBatchSize)
+                        {
+                            warmupBatchCounter = 0;
+                            await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
+                            if (ct.IsCancellationRequested)
+                                return false;
+                        }
+                    }
+                }
+
+                RecordBootstrapShaderWarmupTelemetry(
+                    ShaderWarmupTelemetryPhase.CollectionComplete,
+                    ShaderWarmupTelemetryFlags.None,
+                    ShaderWarmupErrorCode.None,
+                    _ShaderWarmupCollectionHash,
+                    i,
+                    -1,
+                    variantCount,
+                    warmupAttemptCount,
+                    warmupStart);
+
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
+                if (ct.IsCancellationRequested)
+                    return false;
+            }
+
+            if (validCollectionCount <= 0)
+            {
+                return FailBootstrapShaderWarmup(
+                    ShaderWarmupErrorCode.InvalidCollectionSet,
+                    _ShaderWarmupFailureHash,
+                    -1,
+                    -1,
+                    collectionCount,
+                    warmupStart);
+            }
+
+            await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
+            if (ct.IsCancellationRequested)
+                return false;
+
+            await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
+            if (ct.IsCancellationRequested)
+                return false;
+            RecordBootstrapShaderWarmupTelemetry(
+                ShaderWarmupTelemetryPhase.Complete,
+                ShaderWarmupTelemetryFlags.None,
+                ShaderWarmupErrorCode.None,
+                _ShaderWarmupCompleteHash,
+                -1,
+                -1,
+                collectionCount,
+                warmupAttemptCount,
+                warmupStart);
+            return true;
+        }
+
+        private bool EnsureBootstrapShaderWarmupTelemetryRing()
+        {
+            if (_shaderWarmupTelemetryReady)
+                return true;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            _shaderWarmupTelemetryHandle = vault.EnsureGenerationHandle<BootstrapTelemetryEntry>(
+                BootstrapShaderWarmupTelemetryRingBufferId,
+                BootstrapShaderWarmupTelemetryCapacity,
+                SystemID.Bootstrap,
+                NativeArrayOptions.ClearMemory);
+
+            if (_shaderWarmupTelemetryHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _shaderWarmupTelemetryHandle, SystemID.Bootstrap, out NativeArray<BootstrapTelemetryEntry> ring))
+            {
+                return false;
+            }
+
+            try
+            {
+                _shaderWarmupTelemetryReady = ring.IsCreated && ring.Length >= BootstrapShaderWarmupTelemetryCapacity;
+                return _shaderWarmupTelemetryReady;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _shaderWarmupTelemetryHandle, SystemID.Bootstrap);
+            }
+        }
+
+        private void RecordBootstrapShaderWarmupTelemetry(
+            ShaderWarmupTelemetryPhase phase,
+            ShaderWarmupTelemetryFlags flags,
+            ShaderWarmupErrorCode errorCode,
+            uint eventHash,
+            int collectionIndex,
+            int shaderIndex,
+            int variantCount,
+            int warmedVariantCount,
+            long startTimestamp)
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null ||
+                _shaderWarmupTelemetryHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _shaderWarmupTelemetryHandle, SystemID.Bootstrap, out NativeArray<BootstrapTelemetryEntry> ring))
+            {
+                return;
+            }
+
+            try
+            {
+                if (!ring.IsCreated || ring.Length <= 0)
+                    return;
+
+                int writeIndex = _shaderWarmupTelemetryCursor;
+                if ((uint)writeIndex >= (uint)ring.Length)
+                    writeIndex = 0;
+
+                long now = Stopwatch.GetTimestamp();
+                ring[writeIndex] = new BootstrapTelemetryEntry
+                {
+                    TimestampTicks = DateTime.UtcNow.Ticks,
+                    DurationMicroseconds = startTimestamp > 0L
+                        ? (long)((now - startTimestamp) * 1000000.0d / Stopwatch.Frequency)
+                        : 0L,
+                    ContextHash = _GameBootstrapperContextHash,
+                    FrameIndex = unchecked((uint)Time.frameCount),
+                    EventHash = eventHash,
+                    CollectionIndex = collectionIndex >= 0 ? (uint)collectionIndex : uint.MaxValue,
+                    ShaderIndex = shaderIndex >= 0 ? (uint)shaderIndex : uint.MaxValue,
+                    VariantCount = variantCount > 0 ? (uint)variantCount : 0u,
+                    WarmedVariantCount = warmedVariantCount > 0 ? (uint)warmedVariantCount : 0u,
+                    QualityWeight01 = ResolveBootstrapQualityWeight01(),
+                    Phase = (ushort)phase,
+                    Flags = (ushort)flags,
+                    ErrorCode = (ushort)errorCode,
+                    Reserved = 0
+                };
+
+                writeIndex++;
+                _shaderWarmupTelemetryCursor = writeIndex >= ring.Length ? 0 : writeIndex;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _shaderWarmupTelemetryHandle, SystemID.Bootstrap);
+            }
+        }
+
+        private bool FailBootstrapShaderWarmup(
+            ShaderWarmupErrorCode errorCode,
+            uint eventHash,
+            int collectionIndex,
+            int shaderIndex,
+            int variantCount,
+            long startTimestamp)
+        {
+            ShaderWarmupTelemetryFlags flags = ShaderWarmupTelemetryFlags.Failure;
+            ShaderWarmupTelemetryPhase phase = ShaderWarmupTelemetryPhase.Failure;
+            if (errorCode == ShaderWarmupErrorCode.Timeout)
+            {
+                flags |= ShaderWarmupTelemetryFlags.Timeout;
+                phase = ShaderWarmupTelemetryPhase.Timeout;
+            }
+            else if (errorCode == ShaderWarmupErrorCode.MissingShaderManifest)
+            {
+                flags |= ShaderWarmupTelemetryFlags.MissingManifest;
+            }
+            else if (errorCode == ShaderWarmupErrorCode.MissingShaderCollections)
+            {
+                flags |= ShaderWarmupTelemetryFlags.MissingCollections;
+            }
+            else if (errorCode == ShaderWarmupErrorCode.GraphicsStateWarmupFailure)
+            {
+                flags |= ShaderWarmupTelemetryFlags.GraphicsStateCollection;
+            }
+            else if (errorCode == ShaderWarmupErrorCode.GraphicsStateCompatibilityFailure)
+            {
+                flags |= ShaderWarmupTelemetryFlags.GraphicsStateCollection | ShaderWarmupTelemetryFlags.GraphicsStateIncompatible;
+            }
+            else if (errorCode == ShaderWarmupErrorCode.MissingGraphicsStateCollections)
+            {
+                flags |= ShaderWarmupTelemetryFlags.GraphicsStateCollection | ShaderWarmupTelemetryFlags.MissingCollections;
+            }
+
+            RecordBootstrapShaderWarmupTelemetry(
+                phase,
+                flags,
+                errorCode,
+                eventHash,
+                collectionIndex,
+                shaderIndex,
+                variantCount,
+                0,
+                startTimestamp);
+            QueueBootstrapShaderWarmupTelemetryDump();
+            RaiseBootstrapFailedEvent(ShaderWarmupFailureReason);
+            BootstrapBiosErrorOverlay.Show(ShaderWarmupFailureOverlayMessage);
+            return false;
+        }
+
+        private bool HasShaderWarmupTimedOut(long startTimestamp, int timeoutMilliseconds)
+        {
+            if (startTimestamp <= 0L)
+                return false;
+
+            long elapsedMilliseconds = (long)((Stopwatch.GetTimestamp() - startTimestamp) * 1000.0d / Stopwatch.Frequency);
+            return elapsedMilliseconds > math.max(timeoutMilliseconds, ShaderWarmupBaseTimeoutMilliseconds);
+        }
+
+        private static int ResolveShaderWarmupBatchSize()
+        {
+            float quality = ResolveBootstrapQualityWeight01();
+            if (GlobalRegistry.MathPrecision == MathPrecisionLevel.Low)
+                quality = math.min(quality, 0.12f);
+
+            int scaledBatchSize = 1 + (int)math.floor(math.saturate(quality) * (WarmupBatchSize - 1));
+            return math.clamp(scaledBatchSize, 1, WarmupBatchSize);
+        }
+
+        private static int ResolveShaderWarmupTimeoutMilliseconds(
+            int collectionCount,
+            int shaderCount,
+            int graphicsStateCollectionCount,
+            int setupCount)
+        {
+            int safeCollectionCount = math.max(collectionCount, 0);
+            int safeShaderCount = math.max(shaderCount, 0);
+            int safeGraphicsStateCollectionCount = math.max(graphicsStateCollectionCount, 0);
+            int safeSetupCount = math.max(setupCount, 1);
+            float quality = ResolveBootstrapQualityWeight01();
+            if (GlobalRegistry.MathPrecision == MathPrecisionLevel.Low)
+                quality = math.min(quality, 0.12f);
+
+            int shaderBatchSize = ResolveShaderWarmupBatchSize();
+            long shaderAttemptCount = (long)safeCollectionCount * safeShaderCount * safeSetupCount;
+            long shaderAttemptBudgetMilliseconds =
+                shaderAttemptCount * ShaderWarmupPerShaderAttemptTimeoutMilliseconds;
+            long shaderFrameSlices = shaderBatchSize > 0
+                ? (shaderAttemptCount + shaderBatchSize - 1L) / shaderBatchSize
+                : shaderAttemptCount;
+            int frameCadenceMilliseconds = (int)math.ceil(math.lerp(
+                ShaderWarmupLowQualityFrameCadenceMilliseconds,
+                ShaderWarmupHighQualityFrameCadenceMilliseconds,
+                math.saturate(quality)));
+            long yieldBudgetMilliseconds =
+                (shaderFrameSlices + safeCollectionCount + 2L) * frameCadenceMilliseconds;
+            long graphicsStateBudgetMilliseconds =
+                (long)safeGraphicsStateCollectionCount * ShaderWarmupPerGraphicsStateCollectionTimeoutMilliseconds;
+            int qualityPaddingMilliseconds = (int)math.ceil(
+                (1.0f - math.saturate(quality)) * ShaderWarmupLowQualityTimeoutPaddingMilliseconds);
+            long timeoutMilliseconds = ShaderWarmupBaseTimeoutMilliseconds +
+                                       shaderAttemptBudgetMilliseconds +
+                                       yieldBudgetMilliseconds +
+                                       graphicsStateBudgetMilliseconds +
+                                       qualityPaddingMilliseconds;
+            if (timeoutMilliseconds <= ShaderWarmupBaseTimeoutMilliseconds)
+                return ShaderWarmupBaseTimeoutMilliseconds;
+
+            return timeoutMilliseconds >= ShaderWarmupMaxTimeoutMilliseconds
+                ? ShaderWarmupMaxTimeoutMilliseconds
+                : (int)timeoutMilliseconds;
+        }
+
+        private static int ResolveGraphicsStateWarmupBatchSize()
+        {
+            int shaderBatchSize = ResolveShaderWarmupBatchSize();
+            return math.clamp(shaderBatchSize * 4, 4, 32);
+        }
+
+        private static bool RequiresGraphicsStateCollectionsForCurrentApi()
+        {
+            GraphicsDeviceType deviceType = SystemInfo.graphicsDeviceType;
+            return deviceType == GraphicsDeviceType.Direct3D12 ||
+                   deviceType == GraphicsDeviceType.Vulkan ||
+                   deviceType == GraphicsDeviceType.Metal;
+        }
+
+        private async Awaitable<bool> WarmConfiguredGraphicsStateCollectionsAsync(
+            CancellationToken ct,
+            long warmupStart,
+            int timeoutMilliseconds)
+        {
+            int collectionCount = shaderGraphicsStateCollectionPaths != null ? shaderGraphicsStateCollectionPaths.Length : 0;
+            if (collectionCount <= 0)
+                return true;
+
+            int graphicsStateBatchSize = ResolveGraphicsStateWarmupBatchSize();
+            for (int i = 0; i < collectionCount; i++)
+            {
+                if (ct.IsCancellationRequested)
+                    return false;
+
+                if (!TryLoadGraphicsStateCollection(shaderGraphicsStateCollectionPaths[i], out GraphicsStateCollection collection))
+                {
+                    return FailBootstrapShaderWarmup(
+                        ShaderWarmupErrorCode.GraphicsStateWarmupFailure,
+                        _ShaderWarmupFailureHash,
+                        i,
+                        -1,
+                        0,
+                        warmupStart);
+                }
+
+                if (!IsGraphicsStateCollectionCompatible(collection))
+                {
+                    UnityEngine.Object.Destroy(collection);
+                    return FailBootstrapShaderWarmup(
+                        ShaderWarmupErrorCode.GraphicsStateCompatibilityFailure,
+                        _ShaderWarmupFailureHash,
+                        i,
+                        -1,
+                        0,
+                        warmupStart);
+                }
+
+                bool collectionWarmed;
+                try
+                {
+                    collectionWarmed = await WarmLoadedGraphicsStateCollectionAsync(
+                        collection,
+                        i,
+                        graphicsStateBatchSize,
+                        ct,
+                        warmupStart,
+                        timeoutMilliseconds);
+                }
+                finally
+                {
+                    UnityEngine.Object.Destroy(collection);
+                }
+
+                if (!collectionWarmed)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private async Awaitable<bool> WarmLoadedGraphicsStateCollectionAsync(
+            GraphicsStateCollection collection,
+            int collectionIndex,
+            int graphicsStateBatchSize,
+            CancellationToken ct,
+            long warmupStart,
+            int timeoutMilliseconds)
+        {
+            int graphicsStateCount = ClampWarmupCountToInt(collection.totalGraphicsStateCount);
+            if (graphicsStateCount <= 0 || collection.isWarmedUp)
+                return true;
+
+            RecordBootstrapShaderWarmupTelemetry(
+                ShaderWarmupTelemetryPhase.GraphicsStateCollectionStart,
+                ShaderWarmupTelemetryFlags.GraphicsStateCollection,
+                ShaderWarmupErrorCode.None,
+                _ShaderWarmupCollectionHash,
+                collectionIndex,
+                -1,
+                graphicsStateCount,
+                ClampWarmupCountToInt(collection.completedWarmupCount),
+                warmupStart);
+
+            while (!collection.isWarmedUp)
+            {
+                if (ct.IsCancellationRequested)
+                    return false;
+
+                if (HasShaderWarmupTimedOut(warmupStart, timeoutMilliseconds))
+                {
+                    return FailBootstrapShaderWarmup(
+                        ShaderWarmupErrorCode.Timeout,
+                        _ShaderWarmupTimeoutHash,
+                        collectionIndex,
+                        -1,
+                        graphicsStateCount,
+                        warmupStart);
+                }
+
+                long completedBefore = collection.completedWarmupCount;
+                if (!TryScheduleGraphicsStateWarmup(collection, graphicsStateBatchSize, out JobHandle warmupHandle))
+                {
+                    return FailBootstrapShaderWarmup(
+                        ShaderWarmupErrorCode.GraphicsStateWarmupFailure,
+                        _ShaderWarmupFailureHash,
+                        collectionIndex,
+                        -1,
+                        graphicsStateCount,
+                        warmupStart);
+                }
+
+                if (!await WaitForShaderWarmupJobAsync(
+                        warmupHandle,
+                        ct,
+                        warmupStart,
+                        timeoutMilliseconds,
+                        collectionIndex,
+                        -1,
+                        graphicsStateCount))
+                    return false;
+
+                long completedAfter = collection.completedWarmupCount;
+                if (completedAfter <= completedBefore && !collection.isWarmedUp)
+                {
+                    return FailBootstrapShaderWarmup(
+                        ShaderWarmupErrorCode.GraphicsStateWarmupFailure,
+                        _ShaderWarmupFailureHash,
+                        collectionIndex,
+                        -1,
+                        graphicsStateCount,
+                        warmupStart);
+                }
+
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
+            }
+
+            RecordBootstrapShaderWarmupTelemetry(
+                ShaderWarmupTelemetryPhase.GraphicsStateCollectionComplete,
+                ShaderWarmupTelemetryFlags.GraphicsStateCollection,
+                ShaderWarmupErrorCode.None,
+                _ShaderWarmupCollectionHash,
+                collectionIndex,
+                -1,
+                graphicsStateCount,
+                ClampWarmupCountToInt(collection.completedWarmupCount),
+                warmupStart);
+            return true;
+        }
+
+        private static bool TryLoadGraphicsStateCollection(string configuredPath, out GraphicsStateCollection collection)
+        {
+            collection = null;
+            if (string.IsNullOrWhiteSpace(configuredPath))
+                return false;
+
+            if (!TryResolveGraphicsStateCollectionPath(configuredPath, out string resolvedPath))
+                return false;
+
+            if (!File.Exists(resolvedPath))
+                return false;
+
+            try
+            {
+                collection = new GraphicsStateCollection(resolvedPath);
+                if (collection.totalGraphicsStateCount > 0)
+                    return true;
+
+                UnityEngine.Object.Destroy(collection);
+                collection = null;
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                if (collection != null)
+                    UnityEngine.Object.Destroy(collection);
+                collection = null;
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                if (collection != null)
+                    UnityEngine.Object.Destroy(collection);
+                collection = null;
+                return false;
+            }
+            catch (IOException)
+            {
+                if (collection != null)
+                    UnityEngine.Object.Destroy(collection);
+                collection = null;
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                if (collection != null)
+                    UnityEngine.Object.Destroy(collection);
+                collection = null;
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                if (collection != null)
+                    UnityEngine.Object.Destroy(collection);
+                collection = null;
+                return false;
+            }
+            catch (UnityException)
+            {
+                if (collection != null)
+                    UnityEngine.Object.Destroy(collection);
+                collection = null;
+                return false;
+            }
+        }
+
+        private static bool IsGraphicsStateCollectionCompatible(GraphicsStateCollection collection)
+        {
+            if (collection == null)
+                return false;
+
+            if (collection.graphicsDeviceType != SystemInfo.graphicsDeviceType)
+                return false;
+
+            if (collection.runtimePlatform != Application.platform)
+                return false;
+
+            string collectionQuality = collection.qualityLevelName;
+            if (string.IsNullOrEmpty(collectionQuality))
+                return true;
+
+            string[] qualityNames = QualitySettings.names;
+            int qualityLevel = QualitySettings.GetQualityLevel();
+            if (qualityNames == null || (uint)qualityLevel >= (uint)qualityNames.Length)
+                return false;
+
+            return string.Equals(collectionQuality, qualityNames[qualityLevel], StringComparison.Ordinal);
+        }
+
+        private static bool TryResolveGraphicsStateCollectionPath(string configuredPath, out string resolvedPath)
+        {
+            resolvedPath = string.Empty;
+            if (string.IsNullOrWhiteSpace(configuredPath))
+                return false;
+
+            if (IsUrlLikePath(configuredPath))
+                return false;
+
+            if (!configuredPath.EndsWith(GraphicsStateCollectionExtension, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            try
+            {
+                if (Path.IsPathRooted(configuredPath))
+                {
+#if UNITY_EDITOR
+                    string absolutePath = Path.GetFullPath(configuredPath);
+                    if (!TryGetProjectFileSystemRoot(out string projectRoot))
+                        return false;
+
+                    if (!absolutePath.StartsWith(projectRoot, ResolvePathStringComparison()))
+                        return false;
+
+                    resolvedPath = absolutePath;
+                    return true;
+#else
+                    string absolutePath = Path.GetFullPath(configuredPath);
+                    if (!TryGetStreamingAssetsFileSystemRoot(out string streamingAssetsRoot))
+                        return false;
+
+                    if (!absolutePath.StartsWith(streamingAssetsRoot, ResolvePathStringComparison()))
+                        return false;
+
+                    resolvedPath = absolutePath;
+                    return true;
+#endif
+                }
+
+                string normalizedPath = configuredPath.Replace('\\', '/');
+                if (HasParentPathSegment(normalizedPath))
+                    return false;
+
+                if (normalizedPath.StartsWith(StreamingAssetsProjectPathPrefix, StringComparison.Ordinal))
+                {
+                    string relativeStreamingPath = normalizedPath.Substring(StreamingAssetsProjectPathPrefix.Length);
+                    return TryResolveStreamingAssetsPath(relativeStreamingPath, out resolvedPath);
+                }
+
+                if (normalizedPath.StartsWith(AssetsPathPrefix, StringComparison.Ordinal) ||
+                    normalizedPath.StartsWith(ProjectSettingsPathPrefix, StringComparison.Ordinal))
+                {
+#if UNITY_EDITOR
+                    if (!TryGetProjectFileSystemRoot(out string projectRoot))
+                        return false;
+
+                    resolvedPath = Path.GetFullPath(Path.Combine(projectRoot, normalizedPath.Replace('/', Path.DirectorySeparatorChar)));
+                    if (!resolvedPath.StartsWith(projectRoot, ResolvePathStringComparison()))
+                        return false;
+
+                    return true;
+#else
+                    return false;
+#endif
+                }
+
+                return TryResolveStreamingAssetsPath(normalizedPath, out resolvedPath);
+            }
+            catch (ArgumentException)
+            {
+                resolvedPath = string.Empty;
+                return false;
+            }
+            catch (IOException)
+            {
+                resolvedPath = string.Empty;
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                resolvedPath = string.Empty;
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                resolvedPath = string.Empty;
+                return false;
+            }
+        }
+
+        private static bool TryResolveStreamingAssetsPath(string relativePath, out string resolvedPath)
+        {
+            resolvedPath = string.Empty;
+            if (string.IsNullOrWhiteSpace(relativePath))
+                return false;
+
+            string normalizedRelativePath = relativePath.Replace('\\', '/');
+            if (IsUrlLikePath(normalizedRelativePath))
+                return false;
+
+            if (HasParentPathSegment(normalizedRelativePath))
+                return false;
+
+            if (!TryGetStreamingAssetsFileSystemRoot(out string streamingAssetsRoot))
+                return false;
+
+            string absolutePath = Path.GetFullPath(Path.Combine(
+                streamingAssetsRoot,
+                normalizedRelativePath.Replace('/', Path.DirectorySeparatorChar)));
+            if (!absolutePath.StartsWith(streamingAssetsRoot, ResolvePathStringComparison()))
+                return false;
+
+            resolvedPath = absolutePath;
+            return true;
+        }
+
+        private static bool TryGetStreamingAssetsFileSystemRoot(out string streamingAssetsRoot)
+        {
+            streamingAssetsRoot = string.Empty;
+            string streamingAssetsPath = Application.streamingAssetsPath;
+            if (string.IsNullOrWhiteSpace(streamingAssetsPath) || IsUrlLikePath(streamingAssetsPath))
+                return false;
+
+            streamingAssetsRoot = Path.GetFullPath(streamingAssetsPath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            return true;
+        }
+
+        private static bool TryGetProjectFileSystemRoot(out string projectRoot)
+        {
+            projectRoot = string.Empty;
+            string dataPath = Application.dataPath;
+            if (string.IsNullOrWhiteSpace(dataPath) || IsUrlLikePath(dataPath))
+                return false;
+
+            projectRoot = Path.GetFullPath(Path.Combine(dataPath, ".."))
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            return true;
+        }
+
+        private static bool IsUrlLikePath(string path)
+        {
+            return path.IndexOf("://", StringComparison.Ordinal) >= 0 ||
+                   path.StartsWith("jar:", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static StringComparison ResolvePathStringComparison()
+        {
+            RuntimePlatform platform = Application.platform;
+            return platform == RuntimePlatform.WindowsEditor || platform == RuntimePlatform.WindowsPlayer
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+        }
+
+        private static bool HasParentPathSegment(string normalizedPath)
+        {
+            return normalizedPath == ".." ||
+                   normalizedPath.StartsWith("../", StringComparison.Ordinal) ||
+                   normalizedPath.EndsWith("/..", StringComparison.Ordinal) ||
+                   normalizedPath.Contains("/../");
+        }
+
+        private static int ClampWarmupCountToInt(long count)
+        {
+            if (count <= 0L)
+                return 0;
+
+            return count >= int.MaxValue ? int.MaxValue : (int)count;
+        }
+
+        private static int CountValidShaderWarmupShaders(Shader[] shaders)
+        {
+            if (shaders == null)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < shaders.Length; i++)
+            {
+                if (shaders[i] != null)
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static int FindInvalidShaderVariantCollectionIndex(ShaderVariantCollection[] collections)
+        {
+            if (collections == null)
+                return -1;
+
+            for (int i = 0; i < collections.Length; i++)
+            {
+                if (collections[i] == null)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static int FindEmptyShaderVariantCollectionIndex(ShaderVariantCollection[] collections)
+        {
+            if (collections == null)
+                return -1;
+
+            for (int i = 0; i < collections.Length; i++)
+            {
+                ShaderVariantCollection collection = collections[i];
+                if (collection != null && collection.variantCount <= 0)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static int FindInvalidShaderWarmupShaderIndex(Shader[] shaders)
+        {
+            if (shaders == null)
+                return -1;
+
+            for (int i = 0; i < shaders.Length; i++)
+            {
+                if (shaders[i] == null)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private async Awaitable<bool> WaitForShaderWarmupJobAsync(
+            JobHandle handle,
+            CancellationToken ct,
+            long warmupStart,
+            int timeoutMilliseconds,
+            int collectionIndex,
+            int shaderIndex,
+            int variantCount)
+        {
+            while (!handle.IsCompleted)
+            {
+                if (ct.IsCancellationRequested)
+                {
+                    DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                    return false;
+                }
+
+                if (HasShaderWarmupTimedOut(warmupStart, timeoutMilliseconds))
+                {
+                    DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                    return FailBootstrapShaderWarmup(
+                        ShaderWarmupErrorCode.Timeout,
+                        _ShaderWarmupTimeoutHash,
+                        collectionIndex,
+                        shaderIndex,
+                        variantCount,
+                        warmupStart);
+                }
+
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
+            }
+
+            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            return true;
+        }
+
+        private static bool TryScheduleGraphicsStateWarmup(GraphicsStateCollection collection, int count, out JobHandle handle)
+        {
+            try
+            {
+                handle = collection.WarmUpProgressively(count, default);
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                handle = default;
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                handle = default;
+                return false;
+            }
+            catch (UnityException)
+            {
+                handle = default;
+                return false;
+            }
+        }
+
+        private static bool TryWarmShaderVariant(ShaderVariantCollection collection, Shader shader, ShaderWarmupSetup setup)
+        {
+            try
+            {
+                ShaderWarmup.WarmupShaderFromCollection(collection, shader, setup);
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
+        }
+
+        private unsafe void QueueBootstrapShaderWarmupTelemetryDump()
+        {
+            if (Interlocked.Exchange(ref _shaderWarmupDumpQueued, 1) != 0)
+                return;
+
+            RecordBootstrapShaderWarmupTelemetry(
+                ShaderWarmupTelemetryPhase.DumpQueued,
+                ShaderWarmupTelemetryFlags.DumpQueued,
+                ShaderWarmupErrorCode.None,
+                _ShaderWarmupFailureHash,
+                -1,
+                -1,
+                0,
+                0,
+                0L);
+
+            string absolutePath = ResolveBootstrapShaderWarmupDumpPath();
+            string tempPath = ResolveBootstrapShaderWarmupTempDumpPath(absolutePath);
+            HectonPersistentPathPolicy.EnsureParentDirectory(absolutePath);
+
+            if (_shaderWarmupDumpScratch == null || _shaderWarmupDumpScratch.Length < BootstrapShaderWarmupDumpBytes)
+                _shaderWarmupDumpScratch = new byte[BootstrapShaderWarmupDumpBytes]; // COLD ALLOC: byte[19200] - fatal shader warmup black-box snapshot - owner: GameBootstrapper
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null ||
+                _shaderWarmupTelemetryHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _shaderWarmupTelemetryHandle, SystemID.Bootstrap, out NativeArray<BootstrapTelemetryEntry> ring))
+            {
+                WriteBootstrapShaderWarmupFallbackDumpHeader(_shaderWarmupDumpScratch);
+                _shaderWarmupDumpPath = absolutePath;
+                _shaderWarmupDumpTempPath = tempPath;
+                _shaderWarmupDumpByteCount = BootstrapTelemetryEntrySizeBytes;
+                ThreadPool.QueueUserWorkItem(_shaderWarmupDumpCallback, this);
+                return;
+            }
+
+            int byteCount = 0;
+            bool snapshotCopied = false;
+            try
+            {
+                if (ring.IsCreated && ring.Length > 0)
+                {
+                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
+                    byteCount = math.min(ring.Length * BootstrapTelemetryEntrySizeBytes, BootstrapShaderWarmupDumpBytes);
+                    fixed (byte* target = _shaderWarmupDumpScratch)
+                    {
+                        UnsafeUtility.MemCpy(target, source, byteCount);
+                    }
+
+                    snapshotCopied = true;
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _shaderWarmupTelemetryHandle, SystemID.Bootstrap);
+            }
+
+            if (!snapshotCopied)
+            {
+                WriteBootstrapShaderWarmupFallbackDumpHeader(_shaderWarmupDumpScratch);
+                byteCount = BootstrapTelemetryEntrySizeBytes;
+            }
+
+            _shaderWarmupDumpPath = absolutePath;
+            _shaderWarmupDumpTempPath = tempPath;
+            _shaderWarmupDumpByteCount = byteCount;
+            ThreadPool.QueueUserWorkItem(_shaderWarmupDumpCallback, this);
+        }
+
+        private static unsafe void WriteBootstrapShaderWarmupFallbackDumpHeader(byte[] target)
+        {
+            if (target == null || target.Length < BootstrapTelemetryEntrySizeBytes)
+                return;
+
+            Array.Clear(target, 0, target.Length);
+            BootstrapTelemetryEntry fallbackEntry = new BootstrapTelemetryEntry
+            {
+                TimestampTicks = DateTime.UtcNow.Ticks,
+                DurationMicroseconds = 0L,
+                ContextHash = _GameBootstrapperContextHash,
+                FrameIndex = unchecked((uint)Time.frameCount),
+                EventHash = _ShaderWarmupFailureHash,
+                CollectionIndex = uint.MaxValue,
+                ShaderIndex = uint.MaxValue,
+                VariantCount = 0u,
+                WarmedVariantCount = 0u,
+                QualityWeight01 = ResolveBootstrapQualityWeight01(),
+                Phase = (ushort)ShaderWarmupTelemetryPhase.Failure,
+                Flags = (ushort)(ShaderWarmupTelemetryFlags.Failure | ShaderWarmupTelemetryFlags.DumpQueued),
+                ErrorCode = (ushort)ShaderWarmupErrorCode.MissingTelemetryRing,
+                Reserved = 0
+            };
+
+            fixed (byte* targetPtr = target)
+            {
+                UnsafeUtility.CopyStructureToPtr(ref fallbackEntry, targetPtr);
+            }
+        }
+
+        private static void WriteBootstrapShaderWarmupDumpOnWorker(object state)
+        {
+            if (state is GameBootstrapper bootstrapper)
+                bootstrapper.WriteBootstrapShaderWarmupDumpOnWorker();
+        }
+
+        private unsafe void WriteBootstrapShaderWarmupDumpOnWorker()
+        {
+            byte[] scratch = _shaderWarmupDumpScratch;
+            string path = _shaderWarmupDumpPath;
+            string tempPath = _shaderWarmupDumpTempPath;
+            int byteCount = _shaderWarmupDumpByteCount;
+            if (scratch == null ||
+                string.IsNullOrEmpty(path) ||
+                string.IsNullOrEmpty(tempPath) ||
+                byteCount <= 0 ||
+                byteCount > scratch.Length)
+            {
+                return;
+            }
+
+            fixed (byte* source = scratch)
+            {
+                if (!AsyncWriteManager.WriteAll(tempPath, source, byteCount, out _))
+                    return;
+            }
+
+            TryPromoteBootstrapShaderWarmupDump(tempPath, path);
+        }
+
+        private static string ResolveBootstrapShaderWarmupDumpPath()
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            return Path.Combine(projectRoot, "Docs", "AgentLogs", BootstrapShaderWarmupDumpFileName);
+        }
+
+        private static string ResolveBootstrapShaderWarmupTempDumpPath(string finalPath)
+        {
+            return string.IsNullOrEmpty(finalPath) ? string.Empty : finalPath + ".tmp";
+        }
+
+        private static bool TryPromoteBootstrapShaderWarmupDump(string tempPath, string finalPath)
+        {
+            if (string.IsNullOrEmpty(tempPath) || string.IsNullOrEmpty(finalPath) || !File.Exists(tempPath))
+                return false;
+
+            try
+            {
+                if (File.Exists(finalPath))
+                    File.Replace(tempPath, finalPath, null);
+                else
+                    File.Move(tempPath, finalPath);
+
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
             {
                 return false;
             }
@@ -4924,7 +6325,7 @@ namespace Hecton8.Bootstrap
                 return;
 
             _backgroundDomainHandshakePath = HectonPersistentPathPolicy.CombineDirectory("Telemetry");
-            _backgroundDomainHandshakeError = null;
+            _backgroundDomainHandshakeFailureCode = BackgroundDomainHandshakeFailureNone;
             string capturedPath = _backgroundDomainHandshakePath;
             Volatile.Write(ref _backgroundDomainHandshakeState, BackgroundDomainHandshakeRunning);
             _ = RunBackgroundDomainHandshakeAsync(capturedPath);
@@ -4932,30 +6333,43 @@ namespace Hecton8.Bootstrap
 
         private async Awaitable RunBackgroundDomainHandshakeAsync(string telemetryPath)
         {
-            string error = null;
-            int finalState = BackgroundDomainHandshakeComplete;
-            try
-            {
-                await Awaitable.BackgroundThreadAsync();
-                PrepareBackgroundDomainHandshake(telemetryPath);
-            }
-            catch (Exception)
-            {
-                error = "Background domain handshake failed.";
-                finalState = BackgroundDomainHandshakeFailed;
-            }
+            await Awaitable.BackgroundThreadAsync();
+            int failureCode = TryPrepareBackgroundDomainHandshake(telemetryPath);
+            int finalState = failureCode == BackgroundDomainHandshakeFailureNone
+                ? BackgroundDomainHandshakeComplete
+                : BackgroundDomainHandshakeFailed;
 
             await Awaitable.MainThreadAsync();
-            _backgroundDomainHandshakeError = error;
+            _backgroundDomainHandshakeFailureCode = failureCode;
             Volatile.Write(ref _backgroundDomainHandshakeState, finalState);
         }
 
-        private static void PrepareBackgroundDomainHandshake(string telemetryPath)
+        private static int TryPrepareBackgroundDomainHandshake(string telemetryPath)
         {
             if (string.IsNullOrEmpty(telemetryPath))
-                return;
+                return BackgroundDomainHandshakeFailureInvalidPath;
 
-            Directory.CreateDirectory(telemetryPath);
+            try
+            {
+                Directory.CreateDirectory(telemetryPath);
+                return BackgroundDomainHandshakeFailureNone;
+            }
+            catch (ArgumentException)
+            {
+                return BackgroundDomainHandshakeFailureInvalidPath;
+            }
+            catch (IOException)
+            {
+                return BackgroundDomainHandshakeFailureIo;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return BackgroundDomainHandshakeFailureUnauthorized;
+            }
+            catch (NotSupportedException)
+            {
+                return BackgroundDomainHandshakeFailureUnsupported;
+            }
         }
 
         private async Awaitable<bool> JoinBackgroundDomainHandshakeAsync(CancellationToken ct)
@@ -4966,14 +6380,39 @@ namespace Hecton8.Bootstrap
 
             while (state == BackgroundDomainHandshakeRunning)
             {
-                ct.ThrowIfCancellationRequested();
-                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+                if (ct.IsCancellationRequested)
+                    return false;
+
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
                 state = Volatile.Read(ref _backgroundDomainHandshakeState);
             }
 
             if (state == BackgroundDomainHandshakeFailed)
             {
-                Debug.LogError("[GameBootstrapper] Background domain handshake failed: " + _backgroundDomainHandshakeError);
+                int failureCode = Volatile.Read(ref _backgroundDomainHandshakeFailureCode);
+                if (failureCode == BackgroundDomainHandshakeFailureNone)
+                    return false;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                switch (failureCode)
+                {
+                    case BackgroundDomainHandshakeFailureInvalidPath:
+                        Debug.LogError("[GameBootstrapper] Background domain handshake invalid telemetry path.");
+                        break;
+                    case BackgroundDomainHandshakeFailureIo:
+                        Debug.LogError("[GameBootstrapper] Background domain handshake IO failure.");
+                        break;
+                    case BackgroundDomainHandshakeFailureUnauthorized:
+                        Debug.LogError("[GameBootstrapper] Background domain handshake unauthorized.");
+                        break;
+                    case BackgroundDomainHandshakeFailureUnsupported:
+                        Debug.LogError("[GameBootstrapper] Background domain handshake unsupported path.");
+                        break;
+                    default:
+                        Debug.LogError("[GameBootstrapper] Background domain handshake failed.");
+                        break;
+                }
+#endif
                 return false;
             }
 
@@ -5457,12 +6896,20 @@ namespace Hecton8.Bootstrap
                    string.Equals(scene.name, MainMenuSceneName, System.StringComparison.Ordinal);
         }
 
+        private static bool IsOrbitScene(Scene scene)
+        {
+            return scene.IsValid() &&
+                   scene.isLoaded &&
+                   string.Equals(scene.name, OrbitSceneName, System.StringComparison.Ordinal);
+        }
+
         private static bool RequiresGameplaySceneActivation(Scene scene)
         {
             return scene.IsValid() &&
                    scene.isLoaded &&
                    !IsBootstrapScene(scene) &&
-                   !IsMainMenuScene(scene);
+                   !IsMainMenuScene(scene) &&
+                   !IsOrbitScene(scene);
         }
 
     }

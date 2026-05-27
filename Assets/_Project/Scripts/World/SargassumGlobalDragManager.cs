@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -68,7 +67,6 @@ namespace Hecton8.World
         private const BufferID DensityBuildSourcesBufferId = BufferID.SargassumGlobalDragDensityBuildSources;
         private const BufferID ScavengerMatricesBufferId = BufferID.SargassumGlobalDragScavengerMatrices;
         private const BufferID ScavengerBatchMetadataBufferId = BufferID.SargassumGlobalDragBatchMetadata;
-        private const Allocator DataVaultExemptDensityBuildAllocator = Allocator.Persistent;
         private const float DebrisPetrificationDelaySeconds = 4f;
         private const float DebrisPetrificationSlowTickSeconds = 0.5f;
         private const int ScavengerBrgMetadataPlaceholderCount = 1;
@@ -127,6 +125,181 @@ namespace Hecton8.World
             [FieldOffset(4)] public float MinY;
             [FieldOffset(8)] public float MaxY;
             [FieldOffset(12)] private uint _pad0;
+        }
+
+        private struct FixedDensityCellMap
+        {
+            private const byte Empty = 0;
+            private const byte Occupied = 1;
+            private const byte Tombstone = 2;
+
+            private readonly int _maxCount;
+            private readonly int _bucketMask;
+            private readonly long[] _keys;
+            private readonly CellData[] _values;
+            private readonly byte[] _states;
+            private int _count;
+
+            public FixedDensityCellMap(int maxCount)
+            {
+                _maxCount = Math.Max(1, maxCount);
+                int bucketCapacity = NextPowerOfTwo(_maxCount * 2);
+                _bucketMask = bucketCapacity - 1;
+                _keys = new long[bucketCapacity];
+                _values = new CellData[bucketCapacity];
+                _states = new byte[bucketCapacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public int BucketCapacity => _states != null ? _states.Length : 0;
+
+            public void Clear()
+            {
+                if (_states == null)
+                {
+                    _count = 0;
+                    return;
+                }
+
+                for (int i = 0; i < _states.Length; i++)
+                    _states[i] = Empty;
+
+                _count = 0;
+            }
+
+            public bool TryGetValue(long key, out CellData value)
+            {
+                int bucket = FindBucket(key);
+                if (bucket >= 0)
+                {
+                    value = _values[bucket];
+                    return true;
+                }
+
+                value = default;
+                return false;
+            }
+
+            public bool TryAccumulate(long key, CellData value)
+            {
+                int bucket = FindInsertBucket(key, out bool existing);
+                if (bucket < 0)
+                    return false;
+
+                if (existing)
+                {
+                    CellData current = _values[bucket];
+                    current.Density += value.Density;
+                    current.MinY = Mathf.Min(current.MinY, value.MinY);
+                    current.MaxY = Mathf.Max(current.MaxY, value.MaxY);
+                    _values[bucket] = current;
+                    return true;
+                }
+
+                if (_count >= _maxCount)
+                    return false;
+
+                _keys[bucket] = key;
+                _values[bucket] = value;
+                _states[bucket] = Occupied;
+                _count++;
+                return true;
+            }
+
+            public bool TryGetOccupiedAtBucket(int bucket, out long key, out CellData value)
+            {
+                if (_states != null &&
+                    (uint)bucket < (uint)_states.Length &&
+                    _states[bucket] == Occupied)
+                {
+                    key = _keys[bucket];
+                    value = _values[bucket];
+                    return true;
+                }
+
+                key = 0L;
+                value = default;
+                return false;
+            }
+
+            private int FindBucket(long key)
+            {
+                if (_states == null || _states.Length == 0)
+                    return -1;
+
+                int start = HashKey(key) & _bucketMask;
+                for (int probe = 0; probe < _states.Length; probe++)
+                {
+                    int bucket = (start + probe) & _bucketMask;
+                    byte state = _states[bucket];
+                    if (state == Empty)
+                        return -1;
+
+                    if (state == Occupied && _keys[bucket] == key)
+                        return bucket;
+                }
+
+                return -1;
+            }
+
+            private int FindInsertBucket(long key, out bool existing)
+            {
+                existing = false;
+                if (_states == null || _states.Length == 0)
+                    return -1;
+
+                int start = HashKey(key) & _bucketMask;
+                int tombstone = -1;
+                for (int probe = 0; probe < _states.Length; probe++)
+                {
+                    int bucket = (start + probe) & _bucketMask;
+                    byte state = _states[bucket];
+                    if (state == Occupied)
+                    {
+                        if (_keys[bucket] == key)
+                        {
+                            existing = true;
+                            return bucket;
+                        }
+                    }
+                    else if (state == Tombstone)
+                    {
+                        if (tombstone < 0)
+                            tombstone = bucket;
+                    }
+                    else
+                    {
+                        return tombstone >= 0 ? tombstone : bucket;
+                    }
+                }
+
+                return tombstone;
+            }
+
+            private static int NextPowerOfTwo(int value)
+            {
+                int result = 1;
+                while (result < value && result < (1 << 30))
+                    result <<= 1;
+
+                return result;
+            }
+
+            private static int HashKey(long key)
+            {
+                unchecked
+                {
+                    ulong hash = (ulong)key;
+                    hash ^= hash >> 33;
+                    hash *= 0xff51afd7ed558ccdUL;
+                    hash ^= hash >> 33;
+                    hash *= 0xc4ceb9fe1a85ec53UL;
+                    hash ^= hash >> 33;
+                    return (int)hash;
+                }
+            }
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 128)]
@@ -217,69 +390,6 @@ namespace Hecton8.World
         {
             [FieldOffset(0)] public float3 OriginWS;
             [FieldOffset(12)] public float Scale;
-        }
-
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
-        private struct DensityContributionData
-        {
-            [FieldOffset(0)] public float Density;
-            [FieldOffset(4)] public float MinY;
-            [FieldOffset(8)] public float MaxY;
-            [FieldOffset(12)] private uint _pad0;
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct BuildDensityContributionJob : IJobParallelFor
-        {
-            [ReadOnly, NoAlias] public NativeArray<DensitySourceData> Sources;
-            [NoAlias] public NativeParallelMultiHashMap<long, DensityContributionData>.ParallelWriter Contributions;
-            public float CellSize;
-            public float InverseCellSize;
-            public float BaseInfluenceRadius;
-            public float BaseVerticalHalfExtent;
-            public float DistancePower;
-
-            public void Execute(int index)
-            {
-                DensitySourceData source = Sources[index];
-                float influenceRadius = math.max(BaseInfluenceRadius * source.Scale, CellSize * 0.35f);
-                float verticalHalfExtent = math.max(BaseVerticalHalfExtent * source.Scale, 0.5f);
-                float minY = source.OriginWS.y - verticalHalfExtent;
-                float maxY = source.OriginWS.y + verticalHalfExtent;
-
-                int minCellX = (int)math.floor((source.OriginWS.x - influenceRadius) * InverseCellSize);
-                int maxCellX = (int)math.floor((source.OriginWS.x + influenceRadius) * InverseCellSize);
-                int minCellZ = (int)math.floor((source.OriginWS.z - influenceRadius) * InverseCellSize);
-                int maxCellZ = (int)math.floor((source.OriginWS.z + influenceRadius) * InverseCellSize);
-                float safeDistancePower = math.max(1f, DistancePower);
-                float influenceRadiusSq = math.max(influenceRadius * influenceRadius, 0.000001f);
-
-                for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
-                {
-                    for (int cellX = minCellX; cellX <= maxCellX; cellX++)
-                    {
-                        float cellCenterX = (cellX + 0.5f) * CellSize;
-                        float cellCenterZ = (cellZ + 0.5f) * CellSize;
-                        float2 planarDelta = new float2(source.OriginWS.x - cellCenterX, source.OriginWS.z - cellCenterZ);
-                        float planarDistanceSq = math.lengthsq(planarDelta);
-                        if (planarDistanceSq > influenceRadiusSq)
-                            continue;
-
-                        float normalized = 1f - math.saturate(planarDistanceSq / influenceRadiusSq);
-                        float density = FastDensityFalloff01(normalized, safeDistancePower);
-                        if (density <= 0.0001f)
-                            continue;
-
-                        long key = ((long)cellX << 32) ^ (uint)cellZ;
-                        Contributions.Add(key, new DensityContributionData
-                        {
-                            Density = density,
-                            MinY = minY,
-                            MaxY = maxY
-                        });
-                    }
-                }
-            }
         }
 
         [Serializable]
@@ -732,10 +842,10 @@ namespace Hecton8.World
         [Tooltip("Bounds used for the current scavenger BRG draw call.")]
         private Bounds _debugScavengerBounds;
 
-        // COLD ALLOC: Dictionary<long, CellData>[4096] - coarse sargassum density field keyed by XZ cell hash - owner: SargassumGlobalDragManager
-        private readonly Dictionary<long, CellData> _densityCells = new Dictionary<long, CellData>(InitialCellCapacity);
-        // COLD ALLOC: Dictionary<long, CellData>[4096] - transient origin-shift rebin scratch used to preserve canopy sampling until the next Burst rebuild - owner: SargassumGlobalDragManager
-        private readonly Dictionary<long, CellData> _densityCellsShiftScratch = new Dictionary<long, CellData>(InitialCellCapacity);
+        // COLD ALLOC: fixed open-address density field keyed by XZ cell hash - owner: SargassumGlobalDragManager
+        private FixedDensityCellMap _densityCells = new FixedDensityCellMap(InitialCellCapacity);
+        // COLD ALLOC: fixed open-address origin-shift rebin scratch - owner: SargassumGlobalDragManager
+        private FixedDensityCellMap _densityCellsShiftScratch = new FixedDensityCellMap(InitialCellCapacity);
         private byte[] _densityTextureRaw;
         private Texture2D _densityFieldTexture;
         private byte[] _sinkTextureRaw;
@@ -804,7 +914,6 @@ namespace Hecton8.World
         private HectonMapMagicVegetationBridge.FloatingLabyrinthConfig _fallbackLabyrinthConfig;
         private Vector4 _densityFieldWorldRect;
         private VaultGenerationHandle<DensitySourceData> _densityBuildSourcesHandle;
-        private NativeParallelMultiHashMap<long, DensityContributionData> _densityContributions;
         private JobHandle _densityBuildHandle;
         private bool _serviceRegistered;
         private bool _densityBuildScheduled;
@@ -827,10 +936,12 @@ namespace Hecton8.World
         private bool _nestedRenderRequested;
         private bool _nestedAttachmentRebuildRequested;
 
+        private static SargassumGlobalDragManager s_activeRuntimeInstance;
+
         /// <summary>
-        /// Active registry-owned instance.
+        /// Active owner-published runtime instance.
         /// </summary>
-        public static SargassumGlobalDragManager Instance => GlobalRegistry.SargassumDrag;
+        public static SargassumGlobalDragManager Instance => s_activeRuntimeInstance;
         public int SavePriority => 45;
         public int LoadPriority => 45;
 
@@ -1152,28 +1263,12 @@ namespace Hecton8.World
 
         private static void DispatchEntanglementStrainToListener(ISargassumGlobalDragEventListener listener, in EntanglementStrainSignal signal)
         {
-            try
-            {
-                listener.OnSargassumEntanglementStrain(in signal);
-            }
-            catch (Exception exception)
-            {
-                ReportListenerDispatchException();
-                LogListenerDispatchException(exception);
-            }
+            listener.OnSargassumEntanglementStrain(in signal);
         }
 
         private static void DispatchMassiveDisplacementToListener(ISargassumGlobalDragEventListener listener, in MassiveDisplacementSignal signal)
         {
-            try
-            {
-                listener.OnSargassumMassiveDisplacement(in signal);
-            }
-            catch (Exception exception)
-            {
-                ReportListenerDispatchException();
-                LogListenerDispatchException(exception);
-            }
+            listener.OnSargassumMassiveDisplacement(in signal);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1928,11 +2023,11 @@ namespace Hecton8.World
                 return;
 
             _densityCellsShiftScratch.Clear();
-            Dictionary<long, CellData>.Enumerator enumerator = _densityCells.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int bucket = 0; bucket < _densityCells.BucketCapacity; bucket++)
             {
-                long key = enumerator.Current.Key;
-                CellData cell = enumerator.Current.Value;
+                if (!_densityCells.TryGetOccupiedAtBucket(bucket, out long key, out CellData cell))
+                    continue;
+
                 cell.MinY += runtimeOffset.y;
                 cell.MaxY += runtimeOffset.y;
 
@@ -1944,23 +2039,13 @@ namespace Hecton8.World
                 int shiftedCellZ = Mathf.FloorToInt(shiftedCenterZ * _inverseCellSize);
                 long shiftedKey = PackCellKey(shiftedCellX, shiftedCellZ);
 
-                if (_densityCellsShiftScratch.TryGetValue(shiftedKey, out CellData existing))
-                {
-                    existing.Density += cell.Density;
-                    existing.MinY = Mathf.Min(existing.MinY, cell.MinY);
-                    existing.MaxY = Mathf.Max(existing.MaxY, cell.MaxY);
-                    _densityCellsShiftScratch[shiftedKey] = existing;
-                }
-                else
-                {
-                    _densityCellsShiftScratch.Add(shiftedKey, cell);
-                }
+                _densityCellsShiftScratch.TryAccumulate(shiftedKey, cell);
             }
 
-            _densityCells.Clear();
-            Dictionary<long, CellData>.Enumerator shiftedEnumerator = _densityCellsShiftScratch.GetEnumerator();
-            while (shiftedEnumerator.MoveNext())
-                _densityCells.Add(shiftedEnumerator.Current.Key, shiftedEnumerator.Current.Value);
+            FixedDensityCellMap shifted = _densityCellsShiftScratch;
+            _densityCellsShiftScratch = _densityCells;
+            _densityCells = shifted;
+            _densityCellsShiftScratch.Clear();
 
             _debugOccupiedCells = _densityCells.Count;
             _hasFieldData = _densityCells.Count > 0;
@@ -2010,85 +2095,57 @@ namespace Hecton8.World
             Vector3 boundsMax = default;
             int trackedInstances = 0;
             double3 universeOffset = mapMagicVegetationBridge.TotalUniverseOffsetDouble;
-            if (!EnsureDensityBuildSourceCapacity(activeCount) ||
-                !TryAcquireVaultBuffer(in _densityBuildSourcesHandle, activeCount, out NativeArray<DensitySourceData> densityBuildSources))
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!runtimeOriginAup.IsFinite())
             {
                 ClearField();
                 return;
             }
 
-            int sourceCount = 0;
-            int estimatedContributionCount = 0;
-            bool densitySourceLockTransferred = false;
+            ClearField();
 
-            try
+            for (int i = 0; i < activeCount; i++)
             {
-                for (int i = 0; i < activeCount; i++)
+                if ((HectonVegetationInstanceType)types[i] != HectonVegetationInstanceType.Sargassum)
+                    continue;
+
+                Matrix4x4 matrix = matrices[i];
+                double3 originDouble = new double3(matrix.m03, matrix.m13, matrix.m23) + universeOffset;
+                AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(originDouble);
+                float3 originRuntime = AUPMath.ResolveCameraRelative(in originAup, in runtimeOriginAup);
+                if (!math.isfinite(originRuntime.x) ||
+                    !math.isfinite(originRuntime.y) ||
+                    !math.isfinite(originRuntime.z))
                 {
-                    if ((HectonVegetationInstanceType)types[i] != HectonVegetationInstanceType.Sargassum)
-                        continue;
-
-                    Matrix4x4 matrix = matrices[i];
-                    double3 originDouble = new double3(matrix.m03, matrix.m13, matrix.m23) + universeOffset;
-                    Vector3 origin = new Vector3((float)originDouble.x, (float)originDouble.y, (float)originDouble.z);
-                    float scale = ExtractUniformScale(matrix);
-                    float influenceRadius = Mathf.Max(baseInfluenceRadius * scale, cellSize * 0.35f);
-                    float verticalHalfExtent = Mathf.Max(baseVerticalHalfExtent * scale, 0.5f);
-
-                    densityBuildSources[sourceCount++] = new DensitySourceData
-                    {
-                        OriginWS = origin,
-                        Scale = scale
-                    };
-
-                    int minCellX = Mathf.FloorToInt((origin.x - influenceRadius) * _inverseCellSize);
-                    int maxCellX = Mathf.FloorToInt((origin.x + influenceRadius) * _inverseCellSize);
-                    int minCellZ = Mathf.FloorToInt((origin.z - influenceRadius) * _inverseCellSize);
-                    int maxCellZ = Mathf.FloorToInt((origin.z + influenceRadius) * _inverseCellSize);
-                    estimatedContributionCount += Mathf.Max(1, (maxCellX - minCellX + 1) * (maxCellZ - minCellZ + 1));
-                    EncapsulateExtents(
-                        origin,
-                        new Vector3(influenceRadius, verticalHalfExtent, influenceRadius),
-                        ref boundsMin,
-                        ref boundsMax,
-                        ref boundsInitialized);
-
-                    trackedInstances++;
+                    continue;
                 }
 
-                if (sourceCount <= 0)
-                {
-                    ClearField();
-                    return;
-                }
+                Vector3 origin = new Vector3(originRuntime.x, originRuntime.y, originRuntime.z);
+                float scale = ExtractUniformScale(matrix);
+                float influenceRadius = Mathf.Max(baseInfluenceRadius * scale, cellSize * 0.35f);
+                float verticalHalfExtent = Mathf.Max(baseVerticalHalfExtent * scale, 0.5f);
 
-                EnsureDensityContributionCapacity(estimatedContributionCount);
-                _densityContributions.Clear();
+                AccumulateDensityCells(origin, scale, cellSize, baseInfluenceRadius, baseVerticalHalfExtent, distancePower);
+                EncapsulateExtents(
+                    origin,
+                    new Vector3(influenceRadius, verticalHalfExtent, influenceRadius),
+                    ref boundsMin,
+                    ref boundsMax,
+                    ref boundsInitialized);
 
-                BuildDensityContributionJob buildJob = new BuildDensityContributionJob
-                {
-                    Sources = densityBuildSources.GetSubArray(0, sourceCount),
-                    Contributions = _densityContributions.AsParallelWriter(),
-                    CellSize = cellSize,
-                    InverseCellSize = _inverseCellSize,
-                    BaseInfluenceRadius = baseInfluenceRadius,
-                    BaseVerticalHalfExtent = baseVerticalHalfExtent,
-                    DistancePower = distancePower
-                };
-
-                _densityBuildHandle = buildJob.Schedule(sourceCount, math.max(1, math.min(32, sourceCount / 4)));
-                _densityBuildScheduled = true;
-                _densityBuildSourcesLocked = true;
-                densitySourceLockTransferred = true;
-                _pendingDensityTrackedInstances = trackedInstances;
-                _pendingDensityFieldBounds = boundsInitialized ? BuildBoundsFromMinMax(boundsMin, boundsMax) : default;
-                _pendingDensityFieldBoundsInitialized = boundsInitialized;
+                trackedInstances++;
             }
-            finally
+
+            if (trackedInstances <= 0 || _densityCells.Count <= 0)
             {
-                if (!densitySourceLockTransferred)
-                    ReleaseVaultWrite(in _densityBuildSourcesHandle);
+                ClearField();
+                return;
             }
+
+            _hasFieldData = true;
+            _debugTrackedInstances = trackedInstances;
+            _debugOccupiedCells = _densityCells.Count;
+            _debugFieldBounds = boundsInitialized ? BuildBoundsFromMinMax(boundsMin, boundsMax) : default;
         }
 
         private void CompleteDensityFieldBuildIfReady()
@@ -2104,39 +2161,58 @@ namespace Hecton8.World
             ApplyDensityFieldBuildResults();
         }
 
-        private void ApplyDensityFieldBuildResults()
+        private void AccumulateDensityCells(
+            Vector3 origin,
+            float scale,
+            float cellSize,
+            float baseInfluenceRadius,
+            float baseVerticalHalfExtent,
+            float distancePower)
         {
-            ClearField();
+            float influenceRadius = Mathf.Max(baseInfluenceRadius * scale, cellSize * 0.35f);
+            float verticalHalfExtent = Mathf.Max(baseVerticalHalfExtent * scale, 0.5f);
+            float minY = origin.y - verticalHalfExtent;
+            float maxY = origin.y + verticalHalfExtent;
+            int minCellX = Mathf.FloorToInt((origin.x - influenceRadius) * _inverseCellSize);
+            int maxCellX = Mathf.FloorToInt((origin.x + influenceRadius) * _inverseCellSize);
+            int minCellZ = Mathf.FloorToInt((origin.z - influenceRadius) * _inverseCellSize);
+            int maxCellZ = Mathf.FloorToInt((origin.z + influenceRadius) * _inverseCellSize);
+            float safeDistancePower = Mathf.Max(1f, distancePower);
+            float influenceRadiusSq = Mathf.Max(influenceRadius * influenceRadius, 0.000001f);
 
-            var contributionEnumerator = _densityContributions.GetEnumerator();
-            while (contributionEnumerator.MoveNext())
+            for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
             {
-                long key = contributionEnumerator.Current.Key;
-                DensityContributionData contribution = contributionEnumerator.Current.Value;
-                if (_densityCells.TryGetValue(key, out CellData existing))
+                for (int cellX = minCellX; cellX <= maxCellX; cellX++)
                 {
-                    existing.Density += contribution.Density;
-                    existing.MinY = Mathf.Min(existing.MinY, contribution.MinY);
-                    existing.MaxY = Mathf.Max(existing.MaxY, contribution.MaxY);
-                    _densityCells[key] = existing;
-                }
-                else
-                {
-                    _densityCells.Add(
+                    float cellCenterX = (cellX + 0.5f) * cellSize;
+                    float cellCenterZ = (cellZ + 0.5f) * cellSize;
+                    float deltaX = origin.x - cellCenterX;
+                    float deltaZ = origin.z - cellCenterZ;
+                    float planarDistanceSq = (deltaX * deltaX) + (deltaZ * deltaZ);
+                    if (planarDistanceSq > influenceRadiusSq)
+                        continue;
+
+                    float normalized = 1f - Mathf.Clamp01(planarDistanceSq / influenceRadiusSq);
+                    float density = FastDensityFalloff01(normalized, safeDistancePower);
+                    if (density <= 0.0001f)
+                        continue;
+
+                    long key = PackCellKey(cellX, cellZ);
+                    _densityCells.TryAccumulate(
                         key,
                         new CellData
                         {
-                            Density = contribution.Density,
-                            MinY = contribution.MinY,
-                            MaxY = contribution.MaxY
+                            Density = density,
+                            MinY = minY,
+                            MaxY = maxY
                         });
                 }
             }
+        }
 
-            _hasFieldData = _densityCells.Count > 0;
-            _debugTrackedInstances = _pendingDensityTrackedInstances;
-            _debugOccupiedCells = _densityCells.Count;
-            _debugFieldBounds = _pendingDensityFieldBoundsInitialized ? _pendingDensityFieldBounds : default;
+        private void ApplyDensityFieldBuildResults()
+        {
+            ClearField();
         }
 
         private void ClearField()
@@ -2156,72 +2232,22 @@ namespace Hecton8.World
             return EnsureVaultBuffer(ref _densityBuildSourcesHandle, DensityBuildSourcesBufferId, safeCount, NativeArrayOptions.UninitializedMemory);
         }
 
-        private void EnsureDensityContributionCapacity(int requiredCount)
-        {
-            int safeCount = Mathf.Max(1, Mathf.NextPowerOfTwo(requiredCount));
-            if (_densityContributions.IsCreated && _densityContributions.Capacity >= safeCount)
-                return;
-
-            if (_densityContributions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(
-                    nameof(SargassumGlobalDragManager),
-                    nameof(_densityContributions));
-                _densityContributions.Dispose();
-            }
-
-            // COLD ALLOC: NativeParallelMultiHashMap<long,DensityContributionData>[capacity] - Burst-built cell contribution fanout before dictionary compaction - owner: SargassumGlobalDragManager
-            _densityContributions = new NativeParallelMultiHashMap<long, DensityContributionData>(safeCount, DataVaultExemptDensityBuildAllocator);
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(
-                _densityContributions,
-                nameof(SargassumGlobalDragManager),
-                nameof(_densityContributions),
-                NativeAllocationLifetime.Scene);
-        }
-
         private void ReleaseDensityBuildStorage()
         {
-            JobHandle dependency = _densityBuildScheduled ? _densityBuildHandle : default;
             if (_densityBuildSourcesLocked)
             {
                 if (_densityBuildScheduled)
-                    _densityBuildHandle.Complete();
+                    DispatcherJobSwap.TryComplete(ref _densityBuildHandle, forceComplete: true);
 
                 ReleaseDensityBuildSourceWrite();
-                dependency = default;
-            }
-
-            if (_densityContributions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(
-                    nameof(SargassumGlobalDragManager),
-                    nameof(_densityContributions));
             }
 
             ReleaseVaultBuffer(ref _densityBuildSourcesHandle);
-            DisposeNativeParallelMultiHashMap(ref _densityContributions, dependency);
             _densityBuildHandle = default;
             _densityBuildScheduled = false;
             _pendingDensityTrackedInstances = 0;
             _pendingDensityFieldBounds = default;
             _pendingDensityFieldBoundsInitialized = false;
-        }
-
-        private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(
-            ref NativeParallelMultiHashMap<TKey, TValue> hashMap,
-            JobHandle dependency)
-            where TKey : unmanaged, IEquatable<TKey>
-            where TValue : unmanaged
-        {
-            if (!hashMap.IsCreated)
-                return;
-
-            if (dependency.IsCompleted)
-                hashMap.Dispose();
-            else
-                hashMap.Dispose(dependency);
-
-            hashMap = default;
         }
 
         private IDataVault CacheDataVaultCold()
@@ -2257,15 +2283,17 @@ namespace Hecton8.World
             NativeArrayOptions options) where T : struct
         {
             IDataVault vault = CacheDataVaultCold();
-            if (vault == null || requiredLength <= 0)
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
                 return false;
 
             uint expectedBufferId = unchecked((uint)(int)bufferId);
             if (IsVaultHandleCreated(in handle) &&
                 handle.BufferID == expectedBufferId &&
+                !vault.IsCompactionFenceActive &&
                 vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
                 existing.IsCreated &&
-                existing.Length >= requiredLength)
+                existing.Length >= requiredLength &&
+                !vault.IsCompactionFenceActive)
             {
                 return true;
             }
@@ -2279,11 +2307,13 @@ namespace Hecton8.World
                 VaultOwnerSystemId,
                 options);
 
-            return IsVaultHandleCreated(in handle) &&
+            return !vault.IsCompactionFenceActive &&
+                   IsVaultHandleCreated(in handle) &&
                    handle.BufferID == expectedBufferId &&
                    vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
                    resolved.IsCreated &&
-                   resolved.Length >= requiredLength;
+                   resolved.Length >= requiredLength &&
+                   !vault.IsCompactionFenceActive;
         }
 
         private bool TryAcquireVaultBuffer<T>(
@@ -2294,6 +2324,7 @@ namespace Hecton8.World
             buffer = default;
             IDataVault vault = _dataVault;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
                 !IsVaultHandleCreated(in handle) ||
                 !vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
@@ -2301,7 +2332,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (buffer.IsCreated && buffer.Length >= requiredLength)
+            if (!vault.IsCompactionFenceActive && buffer.IsCreated && buffer.Length >= requiredLength)
                 return true;
 
             vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
@@ -2422,11 +2453,11 @@ namespace Hecton8.World
             if (cutManager == null || _densityCells.Count == 0)
                 return;
 
-            Dictionary<long, CellData>.Enumerator enumerator = _densityCells.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int bucket = 0; bucket < _densityCells.BucketCapacity; bucket++)
             {
-                long cellKey = enumerator.Current.Key;
-                CellData cell = enumerator.Current.Value;
+                if (!_densityCells.TryGetOccupiedAtBucket(bucket, out long cellKey, out CellData cell))
+                    continue;
+
                 float normalizedDensity = Mathf.Clamp01(cell.Density * densityNormalization);
                 if (normalizedDensity < nestingNodeDensityThreshold)
                     continue;
@@ -2936,14 +2967,14 @@ namespace Hecton8.World
             if (denseNodeChance <= 0f)
                 return;
 
-            Dictionary<long, CellData>.Enumerator enumerator = _densityCells.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int bucket = 0; bucket < _densityCells.BucketCapacity; bucket++)
             {
                 if (_activeNestedAttachmentStateCount >= maxNestedAttachmentCount)
                     break;
 
-                long cellKey = enumerator.Current.Key;
-                CellData cell = enumerator.Current.Value;
+                if (!_densityCells.TryGetOccupiedAtBucket(bucket, out long cellKey, out CellData cell))
+                    continue;
+
                 float normalizedDensity = Mathf.Clamp01(cell.Density * densityNormalization);
                 if (normalizedDensity < nestingNodeDensityThreshold)
                     continue;
@@ -3257,7 +3288,9 @@ namespace Hecton8.World
                 chunkCenter.x + (dto.offsetX * ExternalSiteQuantizationMeters),
                 chunkCenter.y + (dto.offsetY * ExternalSiteQuantizationMeters),
                 chunkCenter.z + (dto.offsetZ * ExternalSiteQuantizationMeters));
-            float3 runtimePosition = AbsoluteUniversePosition.FromAbsolutePosition(absolutePosition).ToRuntimeFloat3();
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition siteAup = AbsoluteUniversePosition.FromAbsolutePosition(absolutePosition);
+            float3 runtimePosition = AUPMath.ResolveCameraRelative(in siteAup, in runtimeOriginAup);
 
             return new ExternalScavengerSiteState
             {
@@ -4081,6 +4114,8 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterSargassumDragRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.SargassumDrag, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -4090,6 +4125,8 @@ namespace Hecton8.World
 
             GlobalRegistry.UnregisterSargassumDragRuntime(this);
             _serviceRegistered = false;
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
         }
 
         private void TryUnregister()
@@ -4146,7 +4183,7 @@ namespace Hecton8.World
                     if (_densityBuildSourcesLocked)
                     {
                         if (_densityBuildScheduled)
-                            _densityBuildHandle.Complete();
+                            DispatcherJobSwap.TryComplete(ref _densityBuildHandle, forceComplete: true);
 
                         ReleaseDensityBuildSourceWrite();
                         _densityBuildScheduled = false;
@@ -4164,7 +4201,7 @@ namespace Hecton8.World
         private void RefreshColdRegistryDependencies()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _cutManager = GlobalRegistry.SargassumCut;
+            _cutManager = SargassumCutManager.Instance;
             _saveService = GlobalRegistry.Save;
         }
 

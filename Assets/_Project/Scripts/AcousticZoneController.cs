@@ -85,6 +85,7 @@ namespace Hecton8.Audio
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
         {
+            s_activeRuntimeInstance = null;
             _floodMuffleInitialized = false;
             EnsureInitialized();
         }
@@ -208,7 +209,9 @@ namespace Hecton8.Audio
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        public static AcousticZoneController Instance => GlobalRegistry.AcousticZone;
+        private static AcousticZoneController s_activeRuntimeInstance;
+
+        public static AcousticZoneController Instance => s_activeRuntimeInstance;
 
         // ══════════════════════════════════════════════════════════
         //  GLOBAL EVENT — ACOUSTIC ZONE CHANGE
@@ -798,7 +801,7 @@ namespace Hecton8.Audio
         private void Awake()
         {
             // ── Singleton ──
-            AcousticZoneController registered = GlobalRegistry.AcousticZone;
+            AcousticZoneController registered = s_activeRuntimeInstance ?? GlobalRegistry.AcousticZone;
             if (registered != null && registered != this)
             {
                 Destroy(gameObject);
@@ -1018,7 +1021,7 @@ namespace Hecton8.Audio
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            AcousticZoneController registered = GlobalRegistry.AcousticZone;
+            AcousticZoneController registered = s_activeRuntimeInstance ?? GlobalRegistry.AcousticZone;
             if (registered != null && registered != this)
             {
                 Destroy(gameObject);
@@ -1027,6 +1030,8 @@ namespace Hecton8.Audio
 
             GlobalRegistry.RegisterAcousticZoneRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AcousticZone, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -1035,6 +1040,8 @@ namespace Hecton8.Audio
                 return;
 
             GlobalRegistry.UnregisterAcousticZoneRuntime(this);
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
             _serviceRegistered = false;
         }
 

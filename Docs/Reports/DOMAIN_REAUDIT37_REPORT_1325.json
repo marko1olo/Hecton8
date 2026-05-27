@@ -1,0 +1,90 @@
+﻿{
+    "schema":  "hecton8.domain_reaudit37.v1",
+    "agentId":  "1325",
+    "domain":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs + World AUP persistence bridge",
+    "promptSha256":  "EE975B109958AEF4F71A0B55FED9B9E339A88F3EED23829E64D2BA249AA61F94",
+    "taskCount":  20,
+    "touchedFiles":  [
+                         "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                         "Assets/_Project/Scripts/World/AUPMath.cs",
+                         "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                         "Assets/_Project/Scripts/SaveManager.cs"
+                     ],
+    "individualHashes":  [
+                             {
+                                 "path":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                                 "sha256":  "3F9E7C7435F017E7842CDB2C8C6F1DC10DFDEA6484D0E9CD1811F639E876DEFD"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                                 "sha256":  "848AF96D81EBFEC76840D7AB09F2569EE7DDB0AA3FE10EC72E9BD2D06AECA40F"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                                 "sha256":  "025F24FE097E3DDF2A67DB2B1807173A2D9C56517E377DE362A0B8789C3D9BBB"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                 "sha256":  "1D65CFE1A457C85C53F33B44705E8765AE3248C0A9E10D6074D06E7CDE27F865"
+                             }
+                         ],
+    "verificationHashSha256":  "9C57F1942B8B22D60D60B40C1EEDAE910A350B3FB1DD39DBFDD4A13B20CCB799",
+    "sourceChanges":  [
+                          "Indexed sector paging and sector override commit now carry an async generation fence invalidated by restore, disable, OnDisable, and OnDestroy.",
+                          "Stale paging continuations return before mutating hydration, resident prefab hashes, entity states, or sector override residency.",
+                          "Sector override read work is stored in a fixed value window captured on the main thread; the old shared read-work list field was removed.",
+                          "Sector override commit copies due work into a per-operation array before background IO; runtime dictionary reconciliation remains main-thread and generation-checked.",
+                          "Resident sector snapshot writer now receives captured override directory and chunk size before the background hop.",
+                          "Indexed quarantine reset uses a per-operation scratch array, removing shared scratch mutation across overlapping async sessions."
+                      ],
+    "worldLedger":  "Docs\\\\Reports\\\\VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT37_WORLD.json",
+    "allScriptsLedger":  "Docs\\\\Reports\\\\VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT37_ALLSCRIPTS.json",
+    "zeroGcHotPathAudit":  "Docs\\\\Reports\\\\ZERO_GC_HOTPATH_AUDIT_1325_DEEP_REAUDIT37_RAW.json",
+    "aupAudit":  "Docs\\\\Reports\\\\AUP_DETERMINISM_AUDIT_1325_DEEP_REAUDIT37.json",
+    "asyncNativeAudit":  "Docs\\\\Reports\\\\ASYNC_NATIVE_LIFETIME_AUDIT_1325_DEEP_REAUDIT37.json",
+    "worldSummary":  {
+                         "scannedFiles":  276,
+                         "parseFailures":  0,
+                         "totalNativeFieldDeclarations":  1089,
+                         "forbiddenPersistentCandidates":  0,
+                         "forbiddenMonoBehaviourCandidates":  0,
+                         "jobTransientFields":  971,
+                         "stackOnlyRefStructViewFields":  118,
+                         "coreMemoryAllowedFields":  0,
+                         "rawPointerFields":  57
+                     },
+    "allScriptsSummary":  {
+                              "scannedFiles":  2441,
+                              "parseFailures":  0,
+                              "totalNativeFieldDeclarations":  6667,
+                              "forbiddenPersistentCandidates":  798,
+                              "forbiddenMonoBehaviourCandidates":  0,
+                              "jobTransientFields":  5492,
+                              "stackOnlyRefStructViewFields":  332,
+                              "coreMemoryAllowedFields":  45,
+                              "rawPointerFields":  864
+                          },
+    "primaryNativeFindings":  0,
+    "primaryForbiddenPersistentNativeFields":  0,
+    "saveManagerForbiddenNativeFields":  13,
+    "saveBinaryForbiddenNativeFields":  0,
+    "selectedHotPathFindings":  0,
+    "absoluteAupCastsFound":  0,
+    "asyncNativePersistentWorldRegistryFindings":  0,
+    "asyncNativeSaveManagerFindings":  17,
+    "compile":  {
+                    "attempted":  true,
+                    "result":  "failed_external_candice_sqlite_reference",
+                    "firstVisibleErrors":  [
+                                               "Assets/Candice AI for Games/Scripts/Libs/Candice Save System/Overrides/CandiceSQLiteProvider.cs(1,12): CS0234 Mono.Data namespace missing.",
+                                               "Assets/Candice AI for Games/Scripts/Libs/Candice Save System/Overrides/CandiceSQLiteProvider.cs(489,60): CS0246 SqliteDataReader missing."
+                                           ],
+                    "touched1325ErrorsVisible":  0
+                },
+    "failedGates":  [
+                        "BOUNDARY_NATIVE_ALIAS_RESIDUALS_IN_SAVE_MANAGER_OUTSIDE_1325_PRIMARY_DOMAIN",
+                        "BOUNDARY_ASYNC_NATIVE_RESIDUALS_IN_SAVE_MANAGER_OUTSIDE_1325_PRIMARY_DOMAIN",
+                        "BUILD_FAILED_EXTERNAL_CANDICE_SQLITE_REFERENCE"
+                    ],
+    "generatedAtUtc":  "2026-05-27T14:12:40.1914650Z"
+}

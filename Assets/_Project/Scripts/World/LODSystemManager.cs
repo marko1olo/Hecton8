@@ -361,7 +361,7 @@ namespace Hecton8.World
                 _dynamicResolutionScaler = GlobalRegistry.DynamicResolution;
 
             if (_impostorSystem == null)
-                _impostorSystem = GlobalRegistry.Impostors;
+                _impostorSystem = ImpostorSystem.Instance;
 
             if (_saveService == null)
                 _saveService = GlobalRegistry.Save;

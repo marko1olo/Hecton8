@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Play_FossilReef
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomePlayProfile
   profileId: biome.play.fossil_reef
-  profileLabel: Fossil Reef Play
-  whyPlayerComesHere: Dense life, organics, and beautiful but risky reef navigation.
+  profileLabel: Fossil Carbonate Shelf Play
+  whyPlayerComesHere: Dense organics, salvage hooks, and risky porous-carbonate navigation.
   playerPromise: Good reward biome with constant chance to disturb something dangerous.
-  traversalRhythm: Slow inspection of reef pockets with repeated greed-versus-safety
+  traversalRhythm: Slow inspection of porous shelf pockets with repeated greed-versus-exposure
     choices.
   routeClarity: 3
   landmarkStrength: 4
@@ -27,4 +27,4 @@ MonoBehaviour:
   encounterPressure: 3
   hazardPressure: 3
   expeditionCommitment: 3
-  cautionSummary: The reef pays well but punishes deep commitment into porous clusters.
+  cautionSummary: The carbonate shelf pays well but punishes deep commitment into porous clusters.

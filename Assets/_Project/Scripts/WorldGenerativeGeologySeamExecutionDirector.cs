@@ -118,6 +118,10 @@ namespace Hecton8.World
         [SerializeField] private int _debugVoxelRequests;
         [SerializeField] private string _debugTopExecutedFamilyId = string.Empty;
         [SerializeField] private WorldGenerativeGeologyProfile.ShapeArchetype _debugTopExecutedArchetype;
+        [SerializeField] private float _debugVisualQualityWeight = 1f;
+        [SerializeField] private int _debugExecutedPlanBudget;
+        [SerializeField] private int _debugCollarSegmentBudget;
+        [SerializeField] private int _debugDebrisBudget;
 
         private readonly List<long> _desiredRuntimeKeys = new List<long>(128);
         private readonly List<long> _retainedRuntimeKeys = new List<long>(128);
@@ -277,6 +281,7 @@ namespace Hecton8.World
             _debugTopExecutedFamilyId = string.Empty;
             _debugTopExecutedArchetype = default;
             _debugReady = false;
+            _debugDebrisBudget = 0;
 
             if (integrationDirector == null)
             {
@@ -285,19 +290,24 @@ namespace Hecton8.World
             }
 
             IReadOnlyList<WorldGenerativeGeologySeamPlan> plans = integrationDirector.ActivePlans;
+            float visualQualityWeight = ResolveGlobalQualityWeight();
+            int executedPlanBudget = ResolveExecutedPlanBudget(visualQualityWeight);
+            _debugVisualQualityWeight = visualQualityWeight;
+            _debugExecutedPlanBudget = executedPlanBudget;
+            _debugCollarSegmentBudget = ResolveVoxelCollarSegments(visualQualityWeight);
             int appliedCount = 0;
             for (int i = 0; i < _retainedRuntimeKeys.Count; i++)
             {
-                if (appliedCount >= Mathf.Max(1, maxExecutedPlans))
+                if (appliedCount >= executedPlanBudget)
                     break;
 
-                if (!TryApplyRuntimeKey(_retainedRuntimeKeys[i], ref appliedCount))
+                if (!TryApplyRuntimeKey(_retainedRuntimeKeys[i], visualQualityWeight, ref appliedCount))
                     continue;
             }
 
             for (int i = 0; i < plans.Count; i++)
             {
-                if (appliedCount >= Mathf.Max(1, maxExecutedPlans))
+                if (appliedCount >= executedPlanBudget)
                     break;
 
                 WorldGenerativeGeologySeamPlan plan = plans[i];
@@ -311,7 +321,7 @@ namespace Hecton8.World
                     continue;
 
                 _desiredRuntimeKeys.Add(plan.runtimeKey);
-                ApplySeam(binding, plan);
+                ApplySeam(binding, plan, visualQualityWeight);
                 RegisterVoxelRequest(plan);
                 appliedCount++;
 
@@ -335,7 +345,7 @@ namespace Hecton8.World
             _retainedRuntimeKeys.AddRange(_desiredRuntimeKeys);
         }
 
-        private bool TryApplyRuntimeKey(long runtimeKey, ref int appliedCount)
+        private bool TryApplyRuntimeKey(long runtimeKey, float visualQualityWeight, ref int appliedCount)
         {
             if (runtimeKey == 0L || integrationDirector == null)
                 return false;
@@ -351,7 +361,7 @@ namespace Hecton8.World
 
             _desiredRuntimeKeys.Add(plan.runtimeKey);
             _selectedRuntimeKeys.Add(plan.runtimeKey);
-            ApplySeam(binding, plan);
+            ApplySeam(binding, plan, visualQualityWeight);
             RegisterVoxelRequest(plan);
             appliedCount++;
 
@@ -364,7 +374,7 @@ namespace Hecton8.World
             return true;
         }
 
-        private void ApplySeam(WorldGenerativeGeologyBinding binding, in WorldGenerativeGeologySeamPlan plan)
+        private void ApplySeam(WorldGenerativeGeologyBinding binding, in WorldGenerativeGeologySeamPlan plan, float visualQualityWeight)
         {
             if (binding == null || binding.transform == null)
                 return;
@@ -374,10 +384,10 @@ namespace Hecton8.World
                 return;
 
             Transform seamRoot = runtime.transform;
-            int buildSignature = ComputeBuildSignature(plan);
+            int buildSignature = ComputeBuildSignature(plan, visualQualityWeight);
             if (runtime.BuildSignature == buildSignature)
             {
-                ConfigureGapDitherVfx(seamRoot, plan);
+                ConfigureGapDitherVfx(seamRoot, plan, visualQualityWeight);
                 SeamRegistry.ActiveRuntimeInstance?.Upsert(plan);
                 CountPlan(plan);
                 return;
@@ -389,12 +399,12 @@ namespace Hecton8.World
             // Terrain contact is now owned by the SDF-to-heightmap projection and global shader mask.
 
             if (plan.RequiresVoxelBlend)
-                BuildVoxelCollar(seamRoot, seamMaterial, plan, ref primitiveIndex);
+                BuildVoxelCollar(seamRoot, seamMaterial, plan, visualQualityWeight, ref primitiveIndex);
 
             if (plan.RequiresDebrisSeam)
-                BuildDebrisBand(seamRoot, seamMaterial, plan, ref primitiveIndex);
+                BuildDebrisBand(seamRoot, seamMaterial, plan, visualQualityWeight, ref primitiveIndex);
 
-            ConfigureGapDitherVfx(seamRoot, plan);
+            ConfigureGapDitherVfx(seamRoot, plan, visualQualityWeight);
             DisableUnusedChildren(seamRoot, primitiveIndex);
             runtime.Configure(plan.runtimeKey, buildSignature, plan);
             SeamRegistry.ActiveRuntimeInstance?.Upsert(plan);
@@ -467,7 +477,7 @@ namespace Hecton8.World
             return absoluteAup.IsFinite();
         }
 
-        private void ConfigureGapDitherVfx(Transform root, in WorldGenerativeGeologySeamPlan plan)
+        private void ConfigureGapDitherVfx(Transform root, in WorldGenerativeGeologySeamPlan plan, float visualQualityWeight)
         {
             if (root == null)
                 return;
@@ -504,18 +514,22 @@ namespace Hecton8.World
             system.useAutoRandomSeed = false;
             system.randomSeed = unchecked((uint)plan.runtimeKey);
 
+            int maxParticles = ResolveDitherParticleBudget(plan, visualQualityWeight);
+            float ditherSize = seamDitherSize * ResolveDitherSizeMultiplier(visualQualityWeight);
             var main = system.main;
-            main.maxParticles = Mathf.Clamp(Mathf.RoundToInt(plan.seamBlendRadius * 6f), 12, Mathf.Max(12, seamDitherMaxParticles));
+            main.maxParticles = maxParticles;
             main.startLifetime = new ParticleSystem.MinMaxCurve(2.2f, 4.6f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(0.08f, 0.22f);
-            main.startSize = new ParticleSystem.MinMaxCurve(seamDitherSize * 0.72f, seamDitherSize * 1.35f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(
+                Mathf.Lerp(0.05f, 0.08f, visualQualityWeight),
+                Mathf.Lerp(0.16f, 0.24f, visualQualityWeight));
+            main.startSize = new ParticleSystem.MinMaxCurve(ditherSize * 0.72f, ditherSize * 1.35f);
             main.startColor = new Color(0.32f, 0.92f, 1f, 0.9f);
 
             var emission = system.emission;
-            emission.rateOverTime = Mathf.Clamp(plan.seamBlendRadius * 5.5f, 8f, 28f);
+            emission.rateOverTime = ResolveDitherEmissionRate(plan, visualQualityWeight);
 
             var shape = system.shape;
-            shape.radius = Mathf.Max(0.9f, plan.seamBlendRadius * 0.82f);
+            shape.radius = Mathf.Max(0.9f, plan.seamBlendRadius * Mathf.Lerp(0.64f, 0.92f, visualQualityWeight));
 
             if (!system.isPlaying)
                 system.Play(true);
@@ -587,9 +601,9 @@ namespace Hecton8.World
         {
         }
 
-        private void BuildVoxelCollar(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, ref int primitiveIndex)
+        private void BuildVoxelCollar(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, float visualQualityWeight, ref int primitiveIndex)
         {
-            int segments = Mathf.Clamp(voxelCollarSegments, 3, 10);
+            int segments = ResolveVoxelCollarSegments(visualQualityWeight);
             float radius = Mathf.Max(1.4f, plan.seamBlendRadius * 0.48f);
             float height = Mathf.Max(1f, plan.voxelVolumeSize.y * 0.2f);
             Vector3 center = root.InverseTransformPoint(plan.RuntimeVoxelVolumeCenter);
@@ -604,10 +618,12 @@ namespace Hecton8.World
             }
         }
 
-        private void BuildDebrisBand(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, ref int primitiveIndex)
+        private void BuildDebrisBand(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, float visualQualityWeight, ref int primitiveIndex)
         {
-            int debrisCount = Mathf.Clamp(plan.suggestedDebrisCount, 1, 14);
+            int debrisCount = ResolveDebrisCount(plan, visualQualityWeight);
+            _debugDebrisBudget = Mathf.Max(_debugDebrisBudget, debrisCount);
             float radius = Mathf.Max(0.8f, plan.seamBlendRadius * 0.68f);
+            float scaleMultiplier = ResolveDebrisScaleMultiplier(visualQualityWeight);
             Vector3 contact = root.InverseTransformPoint(plan.TerrainContactPosition);
 
             for (int i = 0; i < debrisCount; i++)
@@ -617,7 +633,7 @@ namespace Hecton8.World
                 float jitter = Mathf.Lerp(-radius * 0.18f, radius * 0.18f, Hash01(plan.runtimeKey, i, 11));
                 float localRadius = radius + jitter;
                 Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * localRadius;
-                float scale = Mathf.Lerp(0.22f, 0.65f, Hash01(plan.runtimeKey, i, 29)) * debrisScale;
+                float scale = Mathf.Lerp(0.22f, 0.65f, Hash01(plan.runtimeKey, i, 29)) * debrisScale * scaleMultiplier;
                 Quaternion rotation = Quaternion.Euler(
                     Hash01(plan.runtimeKey, i, 37) * 18f,
                     angle + Hash01(plan.runtimeKey, i, 43) * 45f,
@@ -741,7 +757,7 @@ namespace Hecton8.World
             return null;
         }
 
-        private static int ComputeBuildSignature(in WorldGenerativeGeologySeamPlan plan)
+        private int ComputeBuildSignature(in WorldGenerativeGeologySeamPlan plan, float visualQualityWeight)
         {
             unchecked
             {
@@ -753,8 +769,71 @@ namespace Hecton8.World
                 hash = (hash * 397) ^ Mathf.RoundToInt(plan.suggestedTerrainRaise * 100f);
                 hash = (hash * 397) ^ Mathf.RoundToInt(plan.suggestedTerrainCut * 100f);
                 hash = (hash * 397) ^ plan.suggestedDebrisCount;
+                hash = (hash * 397) ^ ResolveVoxelCollarSegments(visualQualityWeight);
+                hash = (hash * 397) ^ ResolveDebrisCount(plan, visualQualityWeight);
                 return hash;
             }
+        }
+
+        private int ResolveExecutedPlanBudget(float visualQualityWeight)
+        {
+            int configuredBudget = Mathf.Max(1, maxExecutedPlans);
+            int survivalBudget = Mathf.Clamp(Mathf.CeilToInt(configuredBudget * 0.25f), 1, configuredBudget);
+            float curvedWeight = SmoothQualityWeight(visualQualityWeight);
+            return Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(survivalBudget, configuredBudget, curvedWeight)), 1, configuredBudget);
+        }
+
+        private int ResolveVoxelCollarSegments(float visualQualityWeight)
+        {
+            int configuredSegments = Mathf.Clamp(voxelCollarSegments, 3, 10);
+            float curvedWeight = SmoothQualityWeight(visualQualityWeight);
+            return Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(3f, configuredSegments, curvedWeight)), 3, configuredSegments);
+        }
+
+        private int ResolveDebrisCount(in WorldGenerativeGeologySeamPlan plan, float visualQualityWeight)
+        {
+            int requestedCount = Mathf.Clamp(plan.suggestedDebrisCount, 1, 14);
+            float curvedWeight = SmoothQualityWeight(visualQualityWeight);
+            float weightedMax = Mathf.Lerp(1f, requestedCount, curvedWeight);
+            float contextualWeight = Mathf.Lerp(0.85f, 1.15f, Mathf.Clamp01(plan.planWeight));
+            return Mathf.Clamp(Mathf.RoundToInt(weightedMax * contextualWeight), 1, requestedCount);
+        }
+
+        private int ResolveDitherParticleBudget(in WorldGenerativeGeologySeamPlan plan, float visualQualityWeight)
+        {
+            int configuredMax = Mathf.Max(12, seamDitherMaxParticles);
+            float curvedWeight = SmoothQualityWeight(visualQualityWeight);
+            float radiusBudget = plan.seamBlendRadius * Mathf.Lerp(3.5f, 7.5f, curvedWeight);
+            return Mathf.Clamp(Mathf.RoundToInt(radiusBudget), 12, configuredMax);
+        }
+
+        private float ResolveDitherEmissionRate(in WorldGenerativeGeologySeamPlan plan, float visualQualityWeight)
+        {
+            float curvedWeight = SmoothQualityWeight(visualQualityWeight);
+            float rateScale = Mathf.Lerp(3.5f, 6.5f, curvedWeight);
+            return Mathf.Clamp(plan.seamBlendRadius * rateScale, 6f, Mathf.Lerp(16f, 32f, curvedWeight));
+        }
+
+        private static float ResolveDebrisScaleMultiplier(float visualQualityWeight)
+        {
+            return Mathf.Lerp(0.82f, 1.12f, SmoothQualityWeight(visualQualityWeight));
+        }
+
+        private static float ResolveDitherSizeMultiplier(float visualQualityWeight)
+        {
+            return Mathf.Lerp(0.82f, 1.18f, SmoothQualityWeight(visualQualityWeight));
+        }
+
+        private static float SmoothQualityWeight(float visualQualityWeight)
+        {
+            float weight = Mathf.Clamp01(visualQualityWeight);
+            return weight * weight * (3f - 2f * weight);
+        }
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(weight) ? math.saturate(weight) : 1f;
         }
 
         private void CountPlan(in WorldGenerativeGeologySeamPlan plan)

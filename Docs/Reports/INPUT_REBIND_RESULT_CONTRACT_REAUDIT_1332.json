@@ -1,0 +1,136 @@
+{
+  "agentId": "1332",
+  "task": "1332_PURGE_REBIND_RESULT_CONTRACT",
+  "status": "STATIC_GREEN_BUILD_BLOCKED_BY_HOST_CPU_GATE",
+  "timestamp": "2026-05-26T21:38:18.0012974+04:00",
+  "domain": "Hecton8.Input + UI/PauseControlsPanel.cs + UI/PDAControlsRebindUI.cs",
+  "scannedFiles": 11,
+  "changedFiles": [
+    "Assets/_Project/Scripts/Core/BootstrapContracts/InputBindingServiceContracts.cs",
+    "Assets/_Project/Scripts/Core/RebindingManager.cs",
+    "Assets/_Project/Scripts/Input/ControlRemapper.cs",
+    "Assets/_Project/Scripts/Input/INPUT_MIGRATION_GUIDE.md",
+    "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+    "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs"
+  ],
+  "fixes": [
+    "IInputBindingService SaveOverrides/LoadOverrides/ClearOverrides now return bool so UI cannot claim success after a fail-closed persistence path.",
+    "RebindingManager SaveOverrides returns false while active rebind or pending conflict is present, and returns false when controls.json or temp deletion fails.",
+    "RebindingManager LoadOverrides treats missing controls.json as the default binding state by clearing runtime overrides and returning true; malformed files still fail without mutating current bindings.",
+    "PauseControlsPanel and PDAControlsRebindUI consume the bool result before presenting save/load/reset success status.",
+    "ControlRemapper early fail-closed exits now build numeric telemetry DTOs instead of returning only partial ResultCode/FaultFlags state.",
+    "Input migration guide documents the bool contract and missing-file default semantics."
+  ],
+  "failedGates": [
+    "dotnet_build_blocked_by_host_cpu_gate",
+    "roslyn_native_audit_not_run_due_host_cpu_gate",
+    "unity_editor_tests_not_run",
+    "unity_profiler_gcmonitor_not_run"
+  ],
+  "buildGate": {
+    "dotnetOrCscProcesses": 0,
+    "cpuAverageSamples": [
+      78.4859965250728,
+      99.93736938594036,
+      99.80758670641933,
+      100.0
+    ],
+    "rule": "Do not launch dotnet build when CPU > 50% or dotnet/csc is running.",
+    "result": "blocked"
+  },
+  "staticScans": {
+    "broadCatch": 0,
+    "throwNew": 0,
+    "playerPrefs": 0,
+    "jsonUtility": 0,
+    "removeAllListeners": 0,
+    "stringFormat": 0,
+    "toString": 0,
+    "stringInterpolation": 0,
+    "linq": 0,
+    "foreach": 0,
+    "clearPlayerPrefs": 0,
+    "voidOverrideContract": 0,
+    "uncheckedApplySaveStatus": 0,
+    "hotLoopMarkers": 0,
+    "absoluteAupCastsFound": 0
+  },
+  "totalNativeFieldDeclarations": 0,
+  "totalNativeTokens": 11,
+  "persistentNativeFieldsRemaining": 0,
+  "transientVaultViews": 3,
+  "transientJobViews": 0,
+  "byteOffsetMaps": [
+    {
+      "structName": "InputActionStateDTO",
+      "sizeBytes": 64,
+      "offsets": {
+        "BindingGuidHash64": "0:ulong",
+        "EffectivePathHash64": "8:ulong",
+        "OverridePathHash64": "16:ulong",
+        "ActionIdentityHash64": "24:ulong",
+        "ActionNameHash": "32:uint",
+        "ActionMapHash": "36:uint",
+        "BindingGroupHash": "40:uint",
+        "ControlPathHash": "44:uint",
+        "BindingIndex": "48:int",
+        "PathByteOffset": "52:ushort",
+        "PathByteLength": "54:ushort",
+        "CompositeDepth": "56:ushort",
+        "DeviceMask": "58:ushort",
+        "DisplayStyle": "60:byte",
+        "Flags": "61:byte",
+        "_pad0": "62:byte",
+        "_pad1": "63:byte"
+      }
+    },
+    {
+      "structName": "AccessibilityConfigDTO",
+      "sizeBytes": 16,
+      "offsets": {
+        "ColorMode": "0:uint",
+        "Flags": "4:uint",
+        "FilterStrength01": "8:float",
+        "GlobalQualityWeight": "12:float"
+      }
+    },
+    {
+      "structName": "InputBindingTelemetryEntry",
+      "sizeBytes": 64,
+      "offsets": {
+        "RealtimeSeconds": "0:double",
+        "PayloadHash64": "8:ulong",
+        "Frame": "16:uint",
+        "Operation": "20:uint",
+        "Result": "24:uint",
+        "Bytes": "28:uint",
+        "DurationMicroseconds": "32:uint",
+        "FaultFlags": "36:uint",
+        "BindingIndex": "40:int",
+        "RecordCount": "44:ushort",
+        "PathBytes": "46:ushort",
+        "IoPhase": "48:byte",
+        "_pad0.._pad14": "49:byte[15]"
+      }
+    },
+    {
+      "structName": "ControlRemapIoResult",
+      "sizeBytes": 88,
+      "offsets": {
+        "Telemetry": "0:InputBindingTelemetryEntry",
+        "ResultCode": "64:uint",
+        "FaultFlags": "68:uint",
+        "RecordCount": "72:int",
+        "ByteCount": "76:int",
+        "PathBytes": "80:int",
+        "_pad0.._pad3": "84:byte[4]"
+      }
+    }
+  ],
+  "zeroGcHotPathHits": 0,
+  "absoluteAupCastsFound": 0,
+  "compactionAwareLocksProven": true,
+  "telemetryRingIntegrated": true,
+  "verificationHashSha256": "4a038bae1304165ab6f21afe9b053e2cbfdfd18e50c3969ee0a42ff739cf9d21"
+}

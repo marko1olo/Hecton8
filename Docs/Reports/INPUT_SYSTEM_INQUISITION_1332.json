@@ -1,0 +1,168 @@
+{
+  "agentId": "1332",
+  "report": "INPUT_SYSTEM_INQUISITION",
+  "evidenceClass": "STATIC_SOURCE_SCAN",
+  "verificationState": "PENDING_UNITY_PROFILER_AND_BUILD",
+  "scope": [
+    "Assets/_Project/Scripts/Input",
+    "Assets/_Project/Scripts/Core/RebindingManager.cs",
+    "Assets/_Project/Scripts/Core/BootstrapContracts/InputBindingServiceContracts.cs",
+    "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+    "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+    "Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs",
+    "Assets/_Project/Scripts/Core/SystemDispatcherContracts.cs",
+    "Assets/_Project/Scripts/Core/Memory/H8Memory.cs"
+  ],
+  "domain": {
+    "owner": "Echelon 8 Presentation/UX",
+    "primaryNamespace": "Hecton8.Input",
+    "actualAssemblyFact": "Assets/_Project/Scripts/Input/* is compiled by Hecton8.Core.asmdef; no root Hecton8.Input.asmdef exists. Hecton8.Input.Determinism.asmdef exists for deterministic DTO contracts."
+  },
+  "missingContracts": [
+    {
+      "name": "ControlRemapper.cs",
+      "state": "ABSENT",
+      "evidence": "rg found no file in Assets/_Project/Scripts/Input or target UI scope."
+    },
+    {
+      "name": "AccessibilitySettings.cs",
+      "state": "ABSENT",
+      "evidence": "rg found no AccessibilitySettings, Colorblind, Protanopia, Deuteranopia, or Tritanopia implementation under Assets/_Project."
+    }
+  ],
+  "inputRuntime": {
+    "concreteManager": "Assets/_Project/Scripts/Input/InputManager.cs",
+    "contract": "Assets/_Project/Scripts/Core/BootstrapContracts/InputBindingServiceContracts.cs",
+    "rebindingService": "Assets/_Project/Scripts/Core/RebindingManager.cs",
+    "findings": [
+      {
+        "file": "Assets/_Project/Scripts/Input/InputManager.cs",
+        "lines": "893,913,933,958,985,995,1041,1073,1111,1942,1948,1954",
+        "fact": "InputManager exposes cached action/map access plus char-buffer display APIs, but SaveBindingOverridesAsJson and LoadBindingOverridesFromJson remain managed string APIs."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/RebindingManager.cs",
+        "lines": "194-202,226-233,314,374,381,402,411,442,444-447",
+        "fact": "Rebind callbacks allocate capturing delegates; controls.json save/load uses Unity JSON string plus File.ReadAllText/File.WriteAllText and delete-then-move atomicity gap."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/BootstrapContracts/InputBindingServiceContracts.cs",
+        "lines": "246-271,293-303,317-346",
+        "fact": "Public input contracts still include string display/JSON methods. Signature mutation is forbidden; implementation must route newer code through wrappers without breaking callers."
+      },
+      {
+        "file": "Assets/_Project/Input/HectonInputActions.cs",
+        "fact": "Generated asset exists as C# from inline InputActionAsset.FromJson; source .inputactions file was not found."
+      }
+    ],
+    "playerPrefs": {
+      "directUnityPlayerPrefsUsage": false,
+      "legacyStorage": "Legacy PlayerPrefs/Unity JSON migration fallback was removed from the active controls.json route during APEX reaudit. Unknown path bytes now fail closed before ClearBindingOverrides."
+    },
+    "jsonLibraries": {
+      "Newtonsoft": false,
+      "JsonUtility": "Only UserOptionsPersistence cold user-options path; not the controls.json rebind path."
+    }
+  },
+  "accessibilityRoutePlan": {
+    "existingStub": "NONE",
+    "renderRoute": "New Hecton8.Input.AccessibilitySettings publishes AccessibilityConfigDTO in DispatcherPhase.VisualSync.",
+    "gpuUploadPattern": "WaterOpticsRuntime pattern: double GraphicsBuffer, LockBufferForWrite, Shader.SetGlobalConstantBuffer.",
+    "cBufferName": "HectonAccessibilityConfig",
+    "fallbackVectorName": "_HectonAccessibilityParams",
+    "shaderContract": "float4/int-packed 16-byte config: mode, flags, strength01, globalQualityWeight."
+  },
+  "uiBlastRadius": {
+    "PauseControlsPanel": [
+      {
+        "lines": "115-117,140-153",
+        "fact": "Button listeners already use cached UnityAction fields, but RemoveAllListeners deletes inspector listeners."
+      },
+      {
+        "lines": "342,359,369,537,553,570,734,835,999-1008",
+        "fact": "Callback paths still fall back to GlobalRegistry.InputBinding/NativeInputRuntime when subscribed cache is absent."
+      },
+      {
+        "lines": "741-748,863-897",
+        "fact": "Binding/status text uses char buffers and SetCharArray; default status background still constructs Color structs repeatedly."
+      }
+    ],
+    "PDAControlsRebindUI": [
+      {
+        "lines": "125-128,496,671-750",
+        "fact": "autoResolveRowReferences may repeatedly recurse hierarchy by object name if RefreshAll triggers it after Awake."
+      },
+      {
+        "lines": "287,302,311,348,357,366,463,824,944,1053,1112,1142,1337-1346",
+        "fact": "Callback paths can call GlobalRegistry fallback instead of cached service fields."
+      },
+      {
+        "lines": "374-404,1197-1235",
+        "fact": "Text output uses char buffers but status color structs are recreated in event paths."
+      }
+    ]
+  },
+  "dtoLayoutPlan": {
+    "InputActionStateDTO": {
+      "sizeBytes": 64,
+      "fieldOrder": [
+        "0 ulong BindingGuidHash64",
+        "8 ulong EffectivePathHash64",
+        "16 ulong OverridePathHash64",
+        "24 ulong ActionIdentityHash64",
+        "32 uint ActionNameHash",
+        "36 uint ActionMapHash",
+        "40 uint BindingGroupHash",
+        "44 uint ControlPathHash",
+        "48 int BindingIndex",
+        "52 ushort PathByteOffset",
+        "54 ushort PathByteLength",
+        "56 ushort CompositeDepth",
+        "58 ushort DeviceMask",
+        "60 byte DisplayStyle",
+        "61 byte Flags",
+        "62-63 byte padding"
+      ]
+    },
+    "AccessibilityConfigDTO": {
+      "sizeBytes": 16,
+      "fieldOrder": [
+        "0 uint Mode",
+        "4 uint Flags",
+        "8 float Strength01",
+        "12 float GlobalQualityWeight"
+      ]
+    },
+    "InputRebindTelemetryEntry": {
+      "sizeBytes": 64,
+      "fieldOrder": [
+        "0 double RealtimeSeconds",
+        "8 ulong PayloadHash64",
+        "16 uint Frame",
+        "20 uint Operation",
+        "24 uint Result",
+        "28 uint Bytes",
+        "32 uint DurationMicroseconds",
+        "36 uint FaultFlags",
+        "40 int BindingIndex",
+        "44 ushort RecordCount",
+        "46 ushort PathBytes",
+        "48 byte IoPhase",
+        "49-63 byte padding"
+      ]
+    }
+  },
+  "telemetryPlan": {
+    "ownerSystem": "SystemID.UI",
+    "ringCapacity": 300,
+    "bufferId": 70534,
+    "cursorBufferId": 70535,
+    "reason": "Owner-local numeric BufferID cast uses the documented gap after Shinobu input buffers and before Babel buffers, avoiding Core enum mutation during parallel batch while still producing an exact vault route."
+  },
+  "regressionModel": {
+    "cpu": "Menu open and binding refresh should remove managed JSON/string construction from controls save/load and remove delegate captures from rebind callbacks. Measured proof absent.",
+    "gc": "Hot UI text already char-buffered; new target is 0 B in event paths. Cold Unity InputSystem load may still require a string boundary unless avoided by exact-path cache. Must be reported honestly.",
+    "memory": "CBuffer bridge uses two 16-byte GraphicsBuffer payloads plus driver allocation; no per-toggle material/profile creation.",
+    "correctness": "Do not mutate existing public interfaces; custom controls.json parser rejects invalid schema and unsupported paths without legacy managed JSON fallback."
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schema": "hecton8.agent1332.input_ui_modal_failclosed_reaudit.v1",
+  "agentId": "1332",
+  "domain": "Hecton8.Input + UI/PauseControlsPanel.cs + UI/PDAControlsRebindUI.cs",
+  "prompt": {
+    "path": "Docs/Tasks/CURRENT_BATCH.md",
+    "xmlTag": "AGENT_PROMPT id=\"1332\"",
+    "taskCount": 20,
+    "sha256": "be5f6d4689f0937718e0be477d0e0119e1b8e341a25399fa2a0b9230effe5502"
+  },
+  "finding": {
+    "id": "INPUT_UI_CONFLICT_MODAL_MISSING_SERVICE_STALL",
+    "severity": "high",
+    "description": "Pause/PDA rebind conflict UI routed through ModalWindow.Show, which silently returns when no modal service is registered. That leaves RebindingManager in pending-conflict IsRebinding state without a visible confirm/cancel owner.",
+    "affectedFiles": [
+      "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+      "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs"
+    ]
+  },
+  "fix": {
+    "route": "owner-local UI conflict handler",
+    "changes": [
+      "Resolve IModalWindowService through GlobalRegistry.ModalWindow in the cold conflict event path.",
+      "If the modal service is absent, invoke the cached cancel callback immediately and write a preallocated status message.",
+      "Call IModalWindowService.ShowModal directly so missing service can no longer be hidden by ModalWindow.Show's void/silent-return API.",
+      "Removed unreachable LegacyHighRtx switch arms after Normalize() to keep scalability proof literal."
+    ],
+    "hotPathImpact": "none; conflict handling is a cold rebind UI event, not simulation Tick/Update"
+  },
+  "verification": {
+    "sourceFilesScanned": 12,
+    "productionBroadCatchThrowPlayerPrefsJsonModalStaticHits": 0,
+    "productionStringLinqForeachFormatHits": 0,
+    "persistentNativeCollectionFields": 0,
+    "nativeAliasRoslynAudit": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1332_INPUT_MODAL_REAUDIT.json",
+    "nativeAliasRoslynAuditHash": "ebcd48608bc4048d6767a19c1c1a58bba9b615110fe6901535b17a7fc42d59db",
+    "diffCheck": "clean except repository CRLF warnings",
+    "build": "blocked: external dotnet build Hecton8.slnx pid 2448 ran under 100/99% CPU; after it exited CPU still sampled 91%, above the explicit 50% build gate"
+  },
+  "verificationHashSha256": "0f5459e5d47785ed42b42dbb7ae3f7675242727327692bf7233d7d6384770e06"
+}

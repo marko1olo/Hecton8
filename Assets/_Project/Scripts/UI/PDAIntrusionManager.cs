@@ -616,7 +616,15 @@ namespace Hecton8.UI
         /// <summary>
         /// Active runtime intrusion owner attached to the current player.
         /// </summary>
-        public static PDAIntrusionManager ActiveRuntimeInstance => GlobalRegistry.PDAIntrusion;
+        private static PDAIntrusionManager s_activeRuntimeInstance;
+
+        public static PDAIntrusionManager ActiveRuntimeInstance => s_activeRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRuntimeOwnerState()
+        {
+            s_activeRuntimeInstance = null;
+        }
 
         /// <summary>
         /// True when the PDA is currently hijacked and the player must manually reboot it.
@@ -633,7 +641,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            PDAIntrusionManager activeRuntime = GlobalRegistry.PDAIntrusion;
+            PDAIntrusionManager activeRuntime = s_activeRuntimeInstance ?? GlobalRegistry.PDAIntrusion;
             if (activeRuntime != null && activeRuntime != this)
             {
                 Destroy(this);
@@ -688,7 +696,7 @@ namespace Hecton8.UI
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            PDAIntrusionManager activeRuntime = GlobalRegistry.PDAIntrusion;
+            PDAIntrusionManager activeRuntime = s_activeRuntimeInstance ?? GlobalRegistry.PDAIntrusion;
             if (activeRuntime != null && activeRuntime != this)
             {
                 enabled = false;
@@ -698,6 +706,8 @@ namespace Hecton8.UI
 
             GlobalRegistry.RegisterPDAIntrusionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PDAIntrusion, this);
+            if (_serviceRegistered)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterService()
@@ -706,6 +716,8 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.UnregisterPDAIntrusionRuntime(this);
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
             _serviceRegistered = false;
         }
 

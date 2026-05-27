@@ -148,8 +148,14 @@ namespace Hecton8.Logistics
     {
         internal static bool ValidateRuntimeDtos()
         {
-            return UnsafeUtility.SizeOf<FluidPipeRuptureRecord>() == 48 &&
-                   OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.NodeIndex)) == 0 &&
+            if (UnsafeUtility.SizeOf<FluidPipeRuptureRecord>() != 48 ||
+                UnsafeUtility.SizeOf<FluidPipeTelemetryEntry>() != 32)
+            {
+                return false;
+            }
+
+#if UNITY_EDITOR
+            return OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.NodeIndex)) == 0 &&
                    OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.NetworkId)) == 4 &&
                    OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.RoomIndex)) == 8 &&
                    OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.FrameIndex)) == 12 &&
@@ -162,7 +168,6 @@ namespace Hecton8.Logistics
                    OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.Reserved)) == 34 &&
                    OffsetOf<FluidPipeRuptureRecord>("_pad0") == 36 &&
                    OffsetOf<FluidPipeRuptureRecord>("_pad11") == 47 &&
-                   UnsafeUtility.SizeOf<FluidPipeTelemetryEntry>() == 32 &&
                    OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.FrameIndex)) == 0 &&
                    OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.NodeCount)) == 4 &&
                    OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.RuptureCount)) == 8 &&
@@ -171,11 +176,16 @@ namespace Hecton8.Logistics
                    OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.TotalOxygen)) == 20 &&
                    OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.MaxPressureKPa)) == 24 &&
                    OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.StateHash)) == 28;
+#else
+            return true;
+#endif
         }
 
+#if UNITY_EDITOR
         private static int OffsetOf<T>(string fieldName)
         {
             return Marshal.OffsetOf(typeof(T), fieldName).ToInt32();
         }
+#endif
     }
 }

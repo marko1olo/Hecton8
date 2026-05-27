@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: ProceduralRule_rule_pocket_safe
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldProceduralPlacementRule
   ruleId: rule.pocket.safe
-  ruleLabel: Safe Pockets
+  ruleLabel: Reorientation Pockets
   familyProfile: {fileID: 11400000, guid: a04372d218eecde47bde46514cb9797d, type: 2}
-  gameplayIntent: Rare calm pockets between risk pushes.
+  gameplayIntent: Rare reorientation pockets between risk pushes.
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
   - {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}

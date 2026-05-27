@@ -65,7 +65,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
     /// <summary>
     /// Transient NativeArray views resolved for one dispatcher scheduling window.
     /// </summary>
-    public struct AirlockPressurizationVaultBuffers
+    public ref struct AirlockPressurizationVaultBuffers
     {
         public NativeArray<AirlockStateDTO> Airlocks;
         public NativeArray<AirlockTuningDTO> Tunings;
@@ -153,7 +153,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
         }
 
         /// <summary>
-        /// Advances the continuous GlobalQualityWeight cadence accumulator without touching scene state.
+        /// Advances the authority cadence accumulator without touching scene state.
         /// </summary>
         public static bool AdvanceCadence(
             ref AirlockPressurizationScheduleState state,
@@ -165,7 +165,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
         {
             float quality = math.saturate(AirlockPressurizationMath.FiniteOr(globalQualityWeight, 0.5f));
             float frameDelta = math.max(0f, AirlockPressurizationMath.FiniteOr(frameDeltaSeconds, 0f));
-            tickIntervalSeconds = AirlockPressurizationMath.ResolveTickInterval(quality);
+            tickIntervalSeconds = AirlockPressurizationMath.ResolveAuthorityTickInterval();
             state.GlobalQualityWeight = quality;
             state.LastFrame = frame;
             state.LastTickIntervalSeconds = tickIntervalSeconds;
@@ -268,7 +268,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
                 in buffers,
                 frame,
                 solverWallMicroseconds,
-                AirlockPressurizationMath.ResolveTickInterval(quality),
+                AirlockPressurizationMath.ResolveAuthorityTickInterval(),
                 exchangeHandle);
             H8Memory.RegisterActiveJob(OwnerSystemId, outputDependency);
             return true;

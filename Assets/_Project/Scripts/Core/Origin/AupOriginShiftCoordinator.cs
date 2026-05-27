@@ -54,7 +54,7 @@ namespace Hecton8.Core
     }
 
     /// <summary>Raw vault views proving a 50,000-entity origin rebase without sibling-domain dependencies.</summary>
-    internal struct MockEntityArrays
+    internal ref struct MockEntityArrays
     {
         internal NativeArray<AUP_StateDTO> States;
         internal NativeArray<float3> Velocities;

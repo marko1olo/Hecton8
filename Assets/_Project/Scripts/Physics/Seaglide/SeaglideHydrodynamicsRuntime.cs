@@ -323,7 +323,7 @@ namespace Hecton8.Physics
             float solverDelta = _thrustCadenceAccumulator;
             _thrustCadenceAccumulator = 0f;
             tuningDto.SectorAUP = requests[0].CurrentAUP;
-            tuningDto.ResolvedQualityWeight = quality;
+            tuningDto.ResolvedQualityWeight = SeaglideSimdMath.AuthoritativeQualityWeight;
             tuningDto.GlobalQualityWeight = quality;
             tuningDto.SimulationTickDelta = solverDelta;
             tuningDto.ActiveRequestCount = activeCount;
@@ -357,7 +357,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            int metabolismEnabled = AdvanceMetabolismCadence(solverDelta, quality, tuningDto);
+            int metabolismEnabled = AdvanceMetabolismCadence(solverDelta, tuningDto);
             _scheduleTimestamp = Stopwatch.GetTimestamp();
             CalculateSeaglideThrustJob thrustJob = new CalculateSeaglideThrustJob
             {
@@ -1192,7 +1192,7 @@ namespace Hecton8.Physics
             }
 
             value.GlobalQualityWeight = ApplyResolvedGlobalQualityWeight(ref value);
-            value.ResolvedQualityWeight = value.GlobalQualityWeight;
+            value.ResolvedQualityWeight = SeaglideSimdMath.AuthoritativeQualityWeight;
             tuning[0] = value;
         }
 
@@ -1240,17 +1240,17 @@ namespace Hecton8.Physics
                     return false;
 
                 value.GlobalQualityWeight = ApplyResolvedGlobalQualityWeight(ref value);
-                value.ResolvedQualityWeight = value.GlobalQualityWeight;
+                value.ResolvedQualityWeight = SeaglideSimdMath.AuthoritativeQualityWeight;
                 tuning[0] = value;
                 return true;
             }
         }
 
-        private int AdvanceMetabolismCadence(float deltaTime, float quality, SeaglideTuningDTO tuning)
+        private int AdvanceMetabolismCadence(float deltaTime, SeaglideTuningDTO tuning)
         {
             float minCadence = math.max(0.02f, tuning.MinimumCadenceSeconds);
             float maxCadence = math.max(minCadence, tuning.MaximumCadenceSeconds);
-            float cadence = math.lerp(maxCadence, minCadence, math.saturate(quality));
+            float cadence = math.lerp(maxCadence, minCadence, SeaglideSimdMath.AuthoritativeQualityWeight);
             _metabolismAccumulator += deltaTime;
             if (_metabolismAccumulator < cadence)
                 return 0;
@@ -1290,7 +1290,7 @@ namespace Hecton8.Physics
             }
 
             tuning.GlobalQualityWeight = quality;
-            tuning.ResolvedQualityWeight = quality;
+            tuning.ResolvedQualityWeight = SeaglideSimdMath.AuthoritativeQualityWeight;
             return quality;
         }
 

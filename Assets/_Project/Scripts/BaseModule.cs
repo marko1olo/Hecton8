@@ -1109,6 +1109,7 @@ namespace Hecton8.Gameplay
             RefreshVisualStateImmediate();
             SetInteriorReefVisualActive(_interiorReefInfestationActive);
             ApplyCondensationVisualState(_condensationActive);
+            InteractableRegistry.RegisterTree(this);
             if (_interiorReefInfestationActive)
                 RegisterFloodedReefFaunaAnchor();
             ResyncInteriorOccupants(true);
@@ -1126,6 +1127,7 @@ namespace Hecton8.Gameplay
 
         public void OnDespawn()
         {
+            InteractableRegistry.InvalidateTree(this);
             NotifyModuleExitIfNeeded();
             StopDrain();
             SetLeakActive(false);
@@ -1364,6 +1366,7 @@ namespace Hecton8.Gameplay
             TryRouteAudioSourceToSfxGroup(oxygenScrubberHumSource);
             TryRegisterHotSwapListener();
             LaserCutterTargetRegistry.RegisterModuleTree(this);
+            InteractableRegistry.RegisterTree(this);
             TryRegisterElectromagneticPulseListener();
             TryRegister();
             TryRegisterLateFrameTick();
@@ -1386,6 +1389,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             LaserCutterTargetRegistry.UnregisterModuleTree(this);
             TryUnregisterHotSwapListener();
             TryUnregisterElectromagneticPulseListener();
@@ -1411,6 +1415,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             LaserCutterTargetRegistry.UnregisterModuleTree(this);
             TryUnregisterHotSwapListener();
             TryUnregisterElectromagneticPulseListener();

@@ -1,15 +1,11 @@
 ﻿# HECTON-8 Marketing Preparation Index
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only as static documentation/source/platform-orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current official platform rules, current verification artifacts, and the latest DOC_GLOBAL reports.
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, public Steam page, public demo, wishlist performance, creator outreach readiness, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters, platform rules, dates, and marketing claims inside this file are subordinate to fresh official sources and current project proof.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 Status: working strategy / pre-screenshot / single-player-first
-Owner lane: SHINOBU / competitive intelligence / marketing preparation
+Owner lane: Marketing / competitive intelligence / marketing preparation
 Runtime impact: none
 
 ## Read First
@@ -91,14 +87,11 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 | `Steam/DEMO_PLAYTEST_AND_TELEMETRY_PLAN.md` | Public demo vs Steam Playtest decision, `demo_public_access_permission_gate`, demo scope, telemetry questions, survey, QA gates, `access_route_class` / `reply_consent_provenance`, and agency proof source rules. |
 | `Steam/WISHLIST_CONVERSION_AND_PAGE_ITERATION_PLAN.md` | Steam page section order, screenshot order, conversion experiments, and weekly page review. |
 | `CreatorOutreach/CREATOR_OUTREACH_DATABASE.md` | Curated public creator lead database and outreach segmentation. |
-| `CreatorOutreach/ADJACENT_SURVIVAL_CREATOR_LEADS.md` | Raw public leads from adjacent survival/horror/engineering games. |
 | `CreatorOutreach/CREATOR_CRM_SCHEMA_AND_SCORING.md` | CRM schema, scoring, status values, verification gates, paid creator permission gate, and send-log fields. |
-| `CreatorOutreach/RAW_LEAD_EXPANSION_QUEUE.md` | Parked raw public lead seeds; resume scaling only after first assets prove a CRM segment gap. |
 | `CreatorOutreach/SEGMENT_PITCH_MATRIX.md` | Segment-specific pitch angles, timing, risks, and personalization formula. |
 | `CreatorOutreach/PITCH_BANK.md` | Persona pitches, email/DM formats, subject lines, and Russian-language pitch. |
 | `CreatorOutreach/A_TIER_PERSONALIZED_PITCHES.md` | Personalized draft angles for top creators, outlets, and regional leads. |
 | `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` | How agents turn raw public leads into verified, personalized, asset/utility-gated outreach candidates. |
-| `CreatorOutreach/PRIORITY_250_PITCH_SHEET_FROM_RAW.md` | Top 250 raw public leads converted into pitch-planning rows. |
 | `CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md` | First 50 raw-signal message drafts; must be verified before sending. |
 | `Community/COMMUNITY_POST_TEMPLATES.md` | Reddit, Steam, X/Bluesky, TikTok/Shorts, Discord templates. |
 | `Community/COMMUNITY_TARGETS_AND_RULES.md` | Community buckets, post types, candidate spaces, and response rules. |
@@ -130,11 +123,9 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 | `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md` | One-page site structure, no-link holding state, `official_inbox_custody_gate`, `press_release_permission_gate` for public presskit use, presskit minimums, factsheet, and creator disclosure blocks. |
 | `KPI/MARKETING_DASHBOARD_SPEC.md` | Metrics schema, route class/permission/consent fields, targets, and kill criteria for Steam, clips, outreach, and feedback. |
 | `Regional/REGIONAL_OUTREACH_PLAN.md` | Regional outreach priorities, localization gate requirements, and first-pass localized pitch drafts. |
-| `Regional/REGIONAL_CREATOR_LEADS.md` | Regional raw lead list for RU/CIS, DE, PL, FR, ES, PT/BR, JP, KR. |
 | `AgentOps/AGENT_MARKETING_WORKFLOWS.md` | How to use agents as labor: lead mining, verification, copy tests, monitoring. |
-| `AgentOps/scrape_letsplayindex_public_leads.ps1` | Reproducible public-index lead extraction script. |
+| `AgentOps/scrape_letsplayindex_public_leads.ps1` | Hold-by-default public-index lead extraction script; raw CSV refresh requires an explicit source-backed sprint. |
 | `AgentOps/generate_priority50_messages.ps1` | Generates first 50 draft messages from the priority creator shortlist. |
-| `AgentOps/VerificationBatches_2026-05-19/VERIFY_BATCH_01.md` | First verification batch; other batch files in the same folder follow the same parked raw-sprint rule. `TODO`, checked boxes, contact notes, and public-index metrics inside these files are scratch values only, not CRM promotion or send readiness. |
 | `Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` | Marketing asset folder structure, filename rules, status values, metadata schema, and rejection codes. |
 | `Data/SOURCE_LEDGER.md` | Sources, evidence classes, raw lead-mining notes, and verification rules. |
 | `Data/MARKETING_BACKLOG_INDEX.md` | Agent-executable marketing backlog with P0/P1/P2 tasks and spend gates. |
@@ -142,12 +133,21 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 | `Data/CREATOR_VERIFICATION_TEMPLATE.csv` | CSV header/template for turning raw public creator leads into verified CRM rows with structured send-log, `send_route_class`, and `reply_consent_provenance` fields. |
 | `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` | CSV template for public asset build/source/status/hook/QA metadata plus creator utility/send-gate, pain-proof, agency-proof, and first-capture handoff fields. |
 | `Data/RAW_PUBLIC_CREATOR_LEADS_README.md` | Data dictionary and verification rules for raw/unique/priority creator CSVs. |
-| `Data/RAW_LEAD_SCRAPE_SUMMARY_2026-05-18.md` | Summary of the 7155-row public-index extraction and 4970-profile queue. |
 | `Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md` | Public roadmap promise levels, Promise Lint Gate, forbidden language, safe template, and EA roadmap rules. |
+
+Archived scratch note: old verification batch files were moved to `Docs/DEPRECATED/Active_Doc_Deprecation_2026-05-26/Marketing/AgentOps/VerificationBatches_2026-05-19/`. They are not active CRM, not active input, not a send queue, and not outreach permission.
+
+Archived raw planning sheet: `Docs/DEPRECATED/Active_Doc_Deprecation_2026-05-26/Marketing/CreatorOutreach/PRIORITY_250_PITCH_SHEET_FROM_RAW.md`. It was a parked Top 250 raw public-index pitch sheet, not active CRM and not outreach permission.
+
+Archived raw lead seed queue: `Docs/DEPRECATED/Active_Doc_Deprecation_2026-05-26/Marketing/CreatorOutreach/RAW_LEAD_EXPANSION_QUEUE.md`. It was a public seed list, not verified contacts, not active CRM, and not outreach permission.
+
+Archived raw prospecting lists: `Docs/DEPRECATED/Active_Doc_Deprecation_2026-05-26/Marketing/CreatorOutreach/ADJACENT_SURVIVAL_CREATOR_LEADS.md` and `Docs/DEPRECATED/Active_Doc_Deprecation_2026-05-26/Marketing/Regional/REGIONAL_CREATOR_LEADS.md`. They were raw public prospecting sheets, not active CRM, not verified contacts, and not outreach permission.
+
+Archived raw scrape summary: `Docs/DEPRECATED/Active_Doc_Deprecation_2026-05-26/Marketing/Data/RAW_LEAD_SCRAPE_SUMMARY_2026-05-18.md`. It was a dated human-readable scrape result, not the active CSV schema or current lead workflow.
 
 ## Core Position
 
-Competitor positioning note, source-check before public use: the active SN2 route is V6 or newer same-day monitoring only. Subnautica 2 currently presents co-op/multiplayer storefront positioning and owns bright alien-ocean wonder as a market contrast, but this is audience/identity context only. Do not use SN2 co-op momentum, EULA/privacy discourse, performance anecdotes, review negativity, or pain buckets as public copy, creator hooks, product superiority proof, or raw-lead expansion reason.
+Competitor positioning note, source-check before public use: the active SN2 route is V7 or newer same-day monitoring only. Subnautica 2 currently presents co-op/multiplayer storefront positioning and owns bright alien-ocean wonder as a market contrast, but this is audience/identity context only. Do not use SN2 co-op momentum, EULA/privacy discourse, performance anecdotes, review negativity, screenshot gaps, or pain buckets as public copy, creator hooks, product superiority proof, or raw-lead expansion reason.
 
 HECTON-8 must own:
 

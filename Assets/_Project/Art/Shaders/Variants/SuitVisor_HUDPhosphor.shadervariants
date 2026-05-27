@@ -23,3 +23,8 @@ ShaderVariantCollection:
       variants:
       - keywords: INSTANCING_ON
         passType: 0
+  - first: {fileID: 4800000, guid: 83fe0f4ef4dc4260ae2b77e1e1e218b2, type: 3}
+    second:
+      variants:
+      - keywords: INSTANCING_ON
+        passType: 0

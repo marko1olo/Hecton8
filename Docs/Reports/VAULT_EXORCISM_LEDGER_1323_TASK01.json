@@ -1,0 +1,386 @@
+﻿{
+    "agent":  "1323",
+    "report":  "VAULT_EXORCISM_LEDGER_1323_TASK01",
+    "generatedUtc":  "2026-05-25T22:45:22.9047381Z",
+    "file":  "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+    "sha256":  "296fc40600d62041615f8785ea3e5bcf87c9f11f67c9682ec4ca2577c6062327",
+    "promptExpectedPersistentFields":  37,
+    "persistentClassFieldCount":  37,
+    "transientStructFieldCountExcluded":  0,
+    "roslynStatus":  "Attempted: assemblies loaded; ParseText failed on System.Runtime.CompilerServices.Unsafe/System.Memory binding conflict in Windows PowerShell host. Fallback scanner is brace/depth aware and excludes struct job fields.",
+    "persistentFields":  [
+                             {
+                                 "fieldName":  "_pendingEvents",
+                                 "type":  "NativeQueue\u003cHighPressureEventPayload\u003e",
+                                 "line":  150,
+                                 "ownerType":  "HighPressureEvents",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_nextFrameEvents",
+                                 "type":  "NativeQueue\u003cHighPressureEventPayload\u003e",
+                                 "line":  151,
+                                 "ownerType":  "HighPressureEvents",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_pendingEvents",
+                                 "type":  "NativeQueue\u003cFatalPressureImplosionEventPayload\u003e",
+                                 "line":  479,
+                                 "ownerType":  "FatalPressureImplosionEvents",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_nextFrameEvents",
+                                 "type":  "NativeQueue\u003cFatalPressureImplosionEventPayload\u003e",
+                                 "line":  480,
+                                 "ownerType":  "FatalPressureImplosionEvents",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_roomVolumes",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1534,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_floodVolumes",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1535,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_o2Front",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1536,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_o2Back",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1537,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_co2Front",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1538,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_co2Back",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1539,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_inertFront",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1540,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_inertBack",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1541,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_pressureFront",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1542,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_pressureBack",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1543,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_o2PartialPressureFront",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1544,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_o2PartialPressureBack",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1545,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_co2PartialPressureFront",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1546,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_co2PartialPressureBack",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1547,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_n2PartialPressureFront",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1548,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_n2PartialPressureBack",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1549,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_gasVolumeFront",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1550,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_gasVolumeBack",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1551,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_o2ConsumptionRates",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1552,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_co2GenerationRates",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1553,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_roomPlayerCounts",
+                                 "type":  "NativeArray\u003cint\u003e",
+                                 "line":  1554,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_temperatureFront",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1555,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_temperatureBack",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1556,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_steamFront",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1557,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_steamBack",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1558,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_hydrogenPocketFront",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1559,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_oxygenPocketFront",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1560,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_roomHeatWatts",
+                                 "type":  "NativeArray\u003cfloat\u003e",
+                                 "line":  1561,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_roomStatusMaskFront",
+                                 "type":  "NativeArray\u003cuint\u003e",
+                                 "line":  1562,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_roomStatusMaskBack",
+                                 "type":  "NativeArray\u003cuint\u003e",
+                                 "line":  1563,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_doorPairs",
+                                 "type":  "NativeArray\u003cint2\u003e",
+                                 "line":  1564,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_doorSealed",
+                                 "type":  "NativeArray\u003cbyte\u003e",
+                                 "line":  1565,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             },
+                             {
+                                 "fieldName":  "_doorSealedPrevious",
+                                 "type":  "NativeArray\u003cbyte\u003e",
+                                 "line":  1566,
+                                 "ownerType":  "SubmarineAtmosphereSystem",
+                                 "ownerKind":  "class",
+                                 "persistent":  true,
+                                 "scanner":  "brace-aware lexical fallback after Roslyn dependency load failure",
+                                 "rationale":  "class/static helper field persists across frames and can retain native storage alias"
+                             }
+                         ],
+    "excludedTransientStructFields":  [
+
+                                      ]
+}

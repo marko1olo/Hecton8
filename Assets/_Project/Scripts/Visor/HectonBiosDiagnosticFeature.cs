@@ -7,7 +7,6 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
@@ -56,6 +55,13 @@ namespace Hecton8.Visor
 
         private sealed class DiagnosticPass : ScriptableRenderPass
         {
+            private sealed class DiagnosticPassData
+            {
+                public TextureHandle Source;
+                public TextureHandle Depth;
+                public Material Material;
+            }
+
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton BIOS Diagnostic");
             private FeatureSettings _settings;
             private Material _material;
@@ -111,17 +117,34 @@ namespace Hecton8.Visor
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
                 destinationDesc.msaaSamples = MSAASamples.None;
-                destinationDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                destinationDesc.colorFormat = sourceDesc.colorFormat;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
                 UpdateMaterialIfNeeded(_material, _settings, _state);
 
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
-                           passName: "Hecton BIOS Diagnostic",
-                           returnBuilder: true))
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<DiagnosticPassData>(
+                           "Hecton BIOS Diagnostic",
+                           out DiagnosticPassData passData,
+                           _profilingSampler))
                 {
+                    passData.Source = sourceTexture;
+                    passData.Depth = depthTexture;
+                    passData.Material = _material;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (DiagnosticPassData data, RasterGraphContext context) =>
+                    {
+                        if (data.Material == null)
+                            return;
+
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
+                        context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
+                        CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
+                    });
                 }
 
                 resourceData.cameraColor = destinationTexture;
@@ -184,6 +207,8 @@ namespace Hecton8.Visor
             internal static readonly int LootSphereId = Shader.PropertyToID("_HectonBiosLootSphere");
             internal static readonly int DitherStrengthId = Shader.PropertyToID("_HectonBiosDitherStrength");
             internal static readonly int ScanlineStrengthId = Shader.PropertyToID("_HectonBiosScanlineStrength");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
+            internal static readonly int CameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();

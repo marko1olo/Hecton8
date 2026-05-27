@@ -492,24 +492,78 @@ namespace Hecton8.UI
         {
             if (_terminalProjectionDumped ||
                 string.IsNullOrEmpty(_terminalProjectionDumpFullPath) ||
-                !TryOpenVaultBuffer(ref _terminalInputTelemetryRingHandle, out NativeArray<TerminalInputTelemetryEntry> telemetryRing) ||
-                telemetryRing.Length == 0)
+                !TryReadTerminalInputTelemetryDumpShape(out int telemetryLength, out int telemetryRingLength, out int telemetryCursor))
             {
                 return;
             }
 
             try
             {
-                WriteTerminalInputBlackBoxDump(_terminalProjectionDumpFullPath, faultFlags, telemetryRing);
+                WriteTerminalInputBlackBoxDump(_terminalProjectionDumpFullPath, faultFlags, telemetryLength, telemetryRingLength, telemetryCursor);
                 _terminalProjectionDumped = true;
             }
-            catch (Exception exception)
+            catch (IOException exception)
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (NotSupportedException exception)
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (ArgumentException exception)
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (ObjectDisposedException exception)
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+            }
+            catch (InvalidOperationException exception)
             {
                 Hecton8.Core.H8Debug.LogException(exception);
             }
         }
 
-        private void WriteTerminalInputBlackBoxDump(string path, uint faultFlags, NativeArray<TerminalInputTelemetryEntry> telemetryRing)
+        private bool TryReadTerminalInputTelemetryDumpShape(out int telemetryLength, out int telemetryRingLength, out int telemetryCursor)
+        {
+            telemetryLength = 0;
+            telemetryRingLength = 0;
+            telemetryCursor = 0;
+            if (!TryReadVaultBuffer(in _terminalInputTelemetryRingHandle, out NativeArray<TerminalInputTelemetryEntry> telemetryRing) ||
+                telemetryRing.Length == 0)
+            {
+                return false;
+            }
+
+            telemetryRingLength = telemetryRing.Length;
+            telemetryLength = math.min(TerminalOsConstants.BlackBoxFrameCount, telemetryRing.Length);
+            telemetryCursor = _terminalInputTelemetryCursor;
+            if (telemetryCursor < 0)
+                telemetryCursor = 0;
+            if (telemetryCursor >= telemetryRing.Length)
+                telemetryCursor %= telemetryRing.Length;
+
+            return telemetryLength > 0;
+        }
+
+        private bool TryReadTerminalInputTelemetryDumpEntry(int index, out TerminalInputTelemetryEntry entry)
+        {
+            entry = default;
+            if (!TryReadVaultBuffer(in _terminalInputTelemetryRingHandle, out NativeArray<TerminalInputTelemetryEntry> telemetryRing) ||
+                (uint)index >= (uint)telemetryRing.Length)
+            {
+                return false;
+            }
+
+            entry = telemetryRing[index];
+            return _vault != null && !_vault.IsCompactionFenceActive;
+        }
+
+        private void WriteTerminalInputBlackBoxDump(string path, uint faultFlags, int telemetryLength, int telemetryRingLength, int telemetryCursor)
         {
             string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory))
@@ -522,8 +576,8 @@ namespace Hecton8.UI
                 Magic = 0x33334853u,
                 Version = 1u,
                 FaultFlags = faultFlags,
-                Cursor = (uint)_terminalInputTelemetryCursor,
-                EntryCount = (uint)math.min(TerminalOsConstants.BlackBoxFrameCount, telemetryRing.Length),
+                Cursor = (uint)telemetryCursor,
+                EntryCount = (uint)telemetryLength,
                 EntryStrideBytes = (uint)rowBytes,
                 InputStateStrideBytes = (uint)UnsafeUtility.SizeOf<TerminalInputStateDTO>(),
                 RollbackExcluded = TerminalProjectionRollbackExcluded
@@ -533,19 +587,15 @@ namespace Hecton8.UI
                 UnsafeUtility.SizeOf<TerminalInputBlackBoxHeader>()));
 
             int count = (int)header.EntryCount;
-            int start = _terminalInputTelemetryCursor;
-            if (start < 0)
-                start = 0;
-            if (start >= telemetryRing.Length)
-                start %= telemetryRing.Length;
+            int start = telemetryCursor;
 
             for (int i = 0; i < count; i++)
             {
                 int index = start + i;
-                if (index >= telemetryRing.Length)
-                    index -= telemetryRing.Length;
+                if (index >= telemetryRingLength)
+                    index -= telemetryRingLength;
 
-                TerminalInputTelemetryEntry entry = telemetryRing[index];
+                TryReadTerminalInputTelemetryDumpEntry(index, out TerminalInputTelemetryEntry entry);
                 stream.Write(MemoryMarshal.CreateReadOnlySpan(
                     ref UnsafeUtility.AsRef<byte>(UnsafeUtility.AddressOf(ref entry)),
                     rowBytes));

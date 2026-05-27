@@ -43,9 +43,9 @@ namespace Hecton8.Core
         internal static ObjectPoolManager ActiveRuntimeInstance { get; private set; }
 
         /// <summary>
-        /// Runtime pool service resolved through <see cref="GlobalRegistry"/>.
+        /// Runtime pool service owned by the active scene instance.
         /// </summary>
-        public static ObjectPoolManager Instance => GlobalRegistry.ObjectPool;
+        public static ObjectPoolManager Instance => ActiveRuntimeInstance;
 
         /// <summary>
         /// True after scene-authored warmup presets have finished their frame-budgeted allocation pass.

@@ -1,0 +1,117 @@
+{
+    "schema":  "hecton8.async_native_lifetime_reaudit33.v2",
+    "agentId":  "1325",
+    "scannedFiles":  3,
+    "scannedAsyncMethods":  9,
+    "persistentWorldRegistryFindings":  0,
+    "saveManagerFindings":  15,
+    "findings":  [
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2859,
+                         "endLine":  3253,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2859,
+                         "endLine":  3253,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2859,
+                         "endLine":  3253,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2859,
+                         "endLine":  3253,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2859,
+                         "endLine":  3253,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2859,
+                         "endLine":  3253,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2859,
+                         "endLine":  3253,
+                         "text":  "new NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2859,
+                         "endLine":  3253,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2859,
+                         "endLine":  3253,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2859,
+                         "endLine":  3253,
+                         "text":  "new NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "SaveGameAsyncInternal",
+                         "startLine":  2859,
+                         "endLine":  3253,
+                         "text":  "new NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "LoadGameAsync",
+                         "startLine":  3584,
+                         "endLine":  3945,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "LoadGameAsync",
+                         "startLine":  3584,
+                         "endLine":  3945,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "LoadGameAsync",
+                         "startLine":  3584,
+                         "endLine":  3945,
+                         "text":  "NativeArray\u003c"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                         "method":  "LoadGameAsync",
+                         "startLine":  3584,
+                         "endLine":  3945,
+                         "text":  "NativeArray\u003c"
+                     }
+                 ],
+    "status":  "PersistentWorldRegistry async methods have no native collection declarations inside async state-machine bodies; sync helpers may allocate Temp/TempJob native collections and dispose before returning.",
+    "generatedAtUtc":  "2026-05-27T10:21:15.9839150Z"
+}

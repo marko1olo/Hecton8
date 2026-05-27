@@ -39,16 +39,21 @@ namespace Hecton8.Tools
         private static VaultGenerationHandle<LaserCutterTuningDTO> _tuningHandle;
         private static VaultGenerationHandle<LaserCutterSpecDTO> _specHandle;
         private static VaultGenerationHandle<byte> _csvScratchHandle;
+        private static VaultGenerationHandle<byte> _sdfSnapshotHandle;
         private static VaultGenerationHandle<LaserCutterCountersDTO> _countersHandle;
         private static VaultGenerationHandle<ScalabilityStateDTO> _scalabilityStateHandle;
 
         private static Hecton8.Core.Contracts.IVoxelSonarSdfReadModel _cachedVoxelSdfReadModel;
+        private static Hecton8.Core.Contracts.IVoxelSonarSdfReadLeaseModel _cachedVoxelSdfReadLeaseModel;
         private static JobHandle _scheduledSdfProbeHandle;
         private static bool _scheduledSdfProbeActive;
         private static int _scheduledSdfProbeCount;
+        private static bool _scheduledSdfSnapshotLocked;
+        private static int _scheduledSdfProbeBufferLockCount;
         private static JobHandle _scheduledEvaluationHandle;
         private static bool _scheduledEvaluationActive;
         private static int _scheduledEvaluationCount;
+        private static int _scheduledEvaluationBufferLockCount;
         private static uint _scheduledEvaluationCursorBase;
         private static uint _requestSequence;
         private static uint _lastDumpFrame;
@@ -104,6 +109,7 @@ namespace Hecton8.Tools
         internal static void CacheVoxelSdfReadModel(IVoxelSonarSdfReadModel readModel)
         {
             _cachedVoxelSdfReadModel = readModel;
+            _cachedVoxelSdfReadLeaseModel = readModel as IVoxelSonarSdfReadLeaseModel;
         }
 
         public static void ClearPresentationOriginAup()
@@ -272,79 +278,101 @@ namespace Hecton8.Tools
 
             RefreshCachedGlobalQualityWeight();
 
-            if (!BindSchedulerBuffers(
-                    out NativeArray<LaserCutRequestDTO> requests,
-                    out NativeArray<LaserCutRequestMetaDTO> requestMetas,
-                    out NativeArray<int> requestCount,
-                    out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
-                    out NativeArray<LaserCutCooldownDTO> cooldowns,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    allowAcquire: false))
+            if (!TryLockSdfProbeJobBuffers())
             {
                 return false;
             }
 
-            int scheduledCount = math.clamp(requestCount[0], 0, math.min(math.min(requests.Length, requestMetas.Length), sdfHits.Length));
-            scheduledCount = math.min(scheduledCount, cooldowns.Length);
-            if (scheduledCount <= 0)
-                return false;
-
-            if (!TryReadCutterSdfSnapshot(
-                    presentationOriginAup,
-                    requests,
-                    scheduledCount,
-                    out NativeArray<byte>.ReadOnly encodedSdf,
-                    out int3 gridDimensions,
-                    out float3 volumeOrigin,
-                    out float3 cellSize,
-                    out float sdfRange))
-            {
-                SuppressQueuedRequests(frame);
-                return false;
-            }
-
+            bool probeBuffersClaimed = false;
+            bool sdfSnapshotClaimed = false;
+            bool sdfSnapshotLocked = false;
             LaserCutterTuningDTO tuning = ReadTuningOrDefaultNoAcquire();
-            uint cooldownFrames = (uint)math.max(1f, math.isfinite(tuning.CooldownFrames) ? tuning.CooldownFrames : 1f);
-            ManageCutterCooldownJob cooldownJob = new ManageCutterCooldownJob
+            try
             {
-                Requests = requests,
-                RequestMetas = requestMetas,
-                Cooldowns = cooldowns,
-                Frame = frame,
-                CooldownFrames = cooldownFrames
-            };
+                if (!BindSchedulerBuffers(
+                        out NativeArray<LaserCutRequestDTO> requests,
+                        out NativeArray<LaserCutRequestMetaDTO> requestMetas,
+                        out NativeArray<int> requestCount,
+                        out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
+                        out NativeArray<LaserCutCooldownDTO> cooldowns,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        allowAcquire: false))
+                {
+                    return false;
+                }
 
-            BuildCutterSdfProbeHitsJob buildJob = new BuildCutterSdfProbeHitsJob
+                int scheduledCount = math.clamp(requestCount[0], 0, math.min(math.min(requests.Length, requestMetas.Length), sdfHits.Length));
+                scheduledCount = math.min(scheduledCount, cooldowns.Length);
+                if (scheduledCount <= 0)
+                    return false;
+
+                if (!TryReadCutterSdfSnapshot(
+                        presentationOriginAup,
+                        requests,
+                        scheduledCount,
+                        out NativeArray<byte>.ReadOnly encodedSdf,
+                        out int3 gridDimensions,
+                        out float3 volumeOrigin,
+                        out float3 cellSize,
+                        out float sdfRange,
+                        out sdfSnapshotLocked))
+                {
+                    SuppressQueuedRequests(frame);
+                    return false;
+                }
+
+                uint cooldownFrames = (uint)math.max(1f, math.isfinite(tuning.CooldownFrames) ? tuning.CooldownFrames : 1f);
+                ManageCutterCooldownJob cooldownJob = new ManageCutterCooldownJob
+                {
+                    Requests = requests,
+                    RequestMetas = requestMetas,
+                    Cooldowns = cooldowns,
+                    Frame = frame,
+                    CooldownFrames = cooldownFrames
+                };
+
+                BuildCutterSdfProbeHitsJob buildJob = new BuildCutterSdfProbeHitsJob
+                {
+                    Requests = requests,
+                    RequestMetas = requestMetas,
+                    SdfHits = sdfHits,
+                    EncodedSdf = encodedSdf,
+                    PresentationOriginAUP = presentationOriginAup,
+                    GridDimensions = gridDimensions,
+                    VolumeOrigin = volumeOrigin,
+                    CellSize = cellSize,
+                    SdfRange = sdfRange,
+                    StepMeters = ResolveCutterSdfStepMeters(sdfRange, in cellSize),
+                    MaxSteps = ResolveCutterSdfMaxSteps(_cachedGlobalQualityWeight),
+                    LayerMask = layerMask,
+                    VoxelLayerMask = HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask
+                };
+
+                JobHandle cooldownHandle = cooldownJob.Schedule(scheduledCount, LaserCutterDodConstants.MinCommandsPerJob);
+                _scheduledSdfProbeHandle = buildJob.Schedule(scheduledCount, LaserCutterDodConstants.MinCommandsPerJob, cooldownHandle);
+                H8Memory.RegisterActiveJob(SystemID.GameplayTools, _scheduledSdfProbeHandle);
+                _scheduledSdfProbeActive = true;
+                _scheduledSdfProbeCount = scheduledCount;
+                _scheduledSdfSnapshotLocked = sdfSnapshotLocked;
+                sdfSnapshotClaimed = true;
+                probeBuffersClaimed = true;
+                _scheduledSdfProbePresentationOriginAup = presentationOriginAup;
+                _hasScheduledSdfProbePresentationOriginAup = true;
+                return true;
+            }
+            finally
             {
-                Requests = requests,
-                RequestMetas = requestMetas,
-                SdfHits = sdfHits,
-                EncodedSdf = encodedSdf,
-                PresentationOriginAUP = presentationOriginAup,
-                GridDimensions = gridDimensions,
-                VolumeOrigin = volumeOrigin,
-                CellSize = cellSize,
-                SdfRange = sdfRange,
-                StepMeters = ResolveCutterSdfStepMeters(sdfRange, in cellSize),
-                MaxSteps = ResolveCutterSdfMaxSteps(_cachedGlobalQualityWeight),
-                LayerMask = layerMask,
-                VoxelLayerMask = HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask
-            };
-
-            JobHandle cooldownHandle = cooldownJob.Schedule(scheduledCount, LaserCutterDodConstants.MinCommandsPerJob);
-            _scheduledSdfProbeHandle = buildJob.Schedule(scheduledCount, LaserCutterDodConstants.MinCommandsPerJob, cooldownHandle);
-            H8Memory.RegisterActiveJob(SystemID.GameplayTools, _scheduledSdfProbeHandle);
-            _scheduledSdfProbeActive = true;
-            _scheduledSdfProbeCount = scheduledCount;
-            _scheduledSdfProbePresentationOriginAup = presentationOriginAup;
-            _hasScheduledSdfProbePresentationOriginAup = true;
-            return true;
+                if (!sdfSnapshotClaimed)
+                    UnlockSdfSnapshotBuffer(_dataVault, ref sdfSnapshotLocked);
+                if (!probeBuffersClaimed)
+                    ReleaseScheduledSdfProbeJobBufferLocks(_dataVault);
+            }
         }
 
         public static bool TryCompleteScheduledSdfProbesAndEvaluate(float heat01)
@@ -358,6 +386,9 @@ namespace Hecton8.Tools
             if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledSdfProbeHandle))
                 return false;
 
+            ReleaseScheduledSdfProbeJobBufferLocks(_dataVault);
+            ReleaseScheduledSdfSnapshotLock(_dataVault);
+
             if (!TryReadScheduledSdfProbePresentationOrigin(out double3 presentationOriginAup))
             {
                 SuppressQueuedRequests(ResolveCurrentFrameId());
@@ -367,20 +398,7 @@ namespace Hecton8.Tools
                 return false;
             }
 
-            if (!BindSchedulerBuffers(
-                    out NativeArray<LaserCutRequestDTO> requests,
-                    out NativeArray<LaserCutRequestMetaDTO> requestMetas,
-                    out NativeArray<int> requestCount,
-                    out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
-                    out _,
-                    out NativeArray<LaserCutHitDTO> hitResults,
-                    out NativeArray<LaserCutDeformationStateDTO> deformations,
-                    out NativeArray<LaserCutBatteryDrainRequest> batteryDrains,
-                    out NativeArray<LaserCutGlowDecalRequestDTO> decals,
-                    out NativeArray<LaserCutImpactVfxDTO> impactVfx,
-                    out NativeArray<LaserCutTelemetryEntry> telemetry,
-                    out NativeArray<int> telemetryCursor,
-                    allowAcquire: false))
+            if (!TryLockEvaluationJobBuffers())
             {
                 _scheduledSdfProbeActive = false;
                 _scheduledSdfProbeCount = 0;
@@ -388,52 +406,83 @@ namespace Hecton8.Tools
                 return false;
             }
 
-            int count = math.clamp(_scheduledSdfProbeCount, 0, math.min(math.min(requests.Length, requestMetas.Length), sdfHits.Length));
-            if (count <= 0)
+            bool evaluationBuffersClaimed = false;
+            try
             {
-                requestCount[0] = 0;
+                if (!BindSchedulerBuffers(
+                        out NativeArray<LaserCutRequestDTO> requests,
+                        out NativeArray<LaserCutRequestMetaDTO> requestMetas,
+                        out NativeArray<int> requestCount,
+                        out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
+                        out _,
+                        out NativeArray<LaserCutHitDTO> hitResults,
+                        out NativeArray<LaserCutDeformationStateDTO> deformations,
+                        out NativeArray<LaserCutBatteryDrainRequest> batteryDrains,
+                        out NativeArray<LaserCutGlowDecalRequestDTO> decals,
+                        out NativeArray<LaserCutImpactVfxDTO> impactVfx,
+                        out NativeArray<LaserCutTelemetryEntry> telemetry,
+                        out NativeArray<int> telemetryCursor,
+                        allowAcquire: false))
+                {
+                    _scheduledSdfProbeActive = false;
+                    _scheduledSdfProbeCount = 0;
+                    ClearScheduledSdfProbePresentationOrigin();
+                    return false;
+                }
+
+                int count = math.clamp(_scheduledSdfProbeCount, 0, math.min(math.min(requests.Length, requestMetas.Length), sdfHits.Length));
+                if (count <= 0)
+                {
+                    requestCount[0] = 0;
+                    _scheduledSdfProbeActive = false;
+                    _scheduledSdfProbeCount = 0;
+                    ClearScheduledSdfProbePresentationOrigin();
+                    return false;
+                }
+
+                uint cursorBase = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? (uint)math.max(0, telemetryCursor[0]) : 0u;
+                LaserCutterTuningDTO tuning = ReadTuningOrDefaultNoAcquire();
+                EvaluateCutterProbeHitsJob evaluateJob = new EvaluateCutterProbeHitsJob
+                {
+                    Requests = requests,
+                    RequestMetas = requestMetas,
+                    ProbeHits = sdfHits,
+                    HitResults = hitResults,
+                    DeformationStates = deformations,
+                    BatteryDrainRequests = batteryDrains,
+                    GlowDecalRequests = decals,
+                    ImpactVfxRequests = impactVfx,
+                    TelemetryRing = telemetry,
+                    PresentationOriginAUP = presentationOriginAup,
+                    TelemetryCursorBase = cursorBase,
+                    GlobalQualityWeight = _cachedGlobalQualityWeight,
+                    Heat01 = heat01,
+                    DentRadiusMinMeters = tuning.DentRadiusMinMeters,
+                    DentRadiusMaxMeters = tuning.DentRadiusMaxMeters,
+                    GlowLifetimeSeconds = tuning.GlowLifetimeSeconds,
+                    BatteryWattsAtPowerOne = tuning.BatteryWattsAtPowerOne,
+                    SparkIntensityScale = tuning.SparkIntensityScale,
+                    LowSparkCount = tuning.LowSparkCount,
+                    UltraSparkCount = tuning.UltraSparkCount
+                };
+                _scheduledEvaluationHandle = evaluateJob.Schedule(count, LaserCutterDodConstants.MinCommandsPerJob);
+                H8Memory.RegisterActiveJob(SystemID.GameplayTools, _scheduledEvaluationHandle);
+                _scheduledEvaluationActive = true;
+                _scheduledEvaluationCount = count;
+                _scheduledEvaluationCursorBase = cursorBase;
+                evaluationBuffersClaimed = true;
+                _scheduledEvaluationPresentationOriginAup = presentationOriginAup;
+                _hasScheduledEvaluationPresentationOriginAup = true;
                 _scheduledSdfProbeActive = false;
                 _scheduledSdfProbeCount = 0;
                 ClearScheduledSdfProbePresentationOrigin();
                 return false;
             }
-
-            uint cursorBase = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? (uint)math.max(0, telemetryCursor[0]) : 0u;
-            LaserCutterTuningDTO tuning = ReadTuningOrDefaultNoAcquire();
-            EvaluateCutterProbeHitsJob evaluateJob = new EvaluateCutterProbeHitsJob
+            finally
             {
-                Requests = requests,
-                RequestMetas = requestMetas,
-                ProbeHits = sdfHits,
-                HitResults = hitResults,
-                DeformationStates = deformations,
-                BatteryDrainRequests = batteryDrains,
-                GlowDecalRequests = decals,
-                ImpactVfxRequests = impactVfx,
-                TelemetryRing = telemetry,
-                PresentationOriginAUP = presentationOriginAup,
-                TelemetryCursorBase = cursorBase,
-                GlobalQualityWeight = _cachedGlobalQualityWeight,
-                Heat01 = heat01,
-                DentRadiusMinMeters = tuning.DentRadiusMinMeters,
-                DentRadiusMaxMeters = tuning.DentRadiusMaxMeters,
-                GlowLifetimeSeconds = tuning.GlowLifetimeSeconds,
-                BatteryWattsAtPowerOne = tuning.BatteryWattsAtPowerOne,
-                SparkIntensityScale = tuning.SparkIntensityScale,
-                LowSparkCount = tuning.LowSparkCount,
-                UltraSparkCount = tuning.UltraSparkCount
-            };
-            _scheduledEvaluationHandle = evaluateJob.Schedule(count, LaserCutterDodConstants.MinCommandsPerJob);
-            H8Memory.RegisterActiveJob(SystemID.GameplayTools, _scheduledEvaluationHandle);
-            _scheduledEvaluationActive = true;
-            _scheduledEvaluationCount = count;
-            _scheduledEvaluationCursorBase = cursorBase;
-            _scheduledEvaluationPresentationOriginAup = presentationOriginAup;
-            _hasScheduledEvaluationPresentationOriginAup = true;
-            _scheduledSdfProbeActive = false;
-            _scheduledSdfProbeCount = 0;
-            ClearScheduledSdfProbePresentationOrigin();
-            return false;
+                if (!evaluationBuffersClaimed)
+                    ReleaseScheduledEvaluationJobBufferLocks(_dataVault);
+            }
         }
 
         private static bool TryFinalizeScheduledEvaluation()
@@ -444,61 +493,68 @@ namespace Hecton8.Tools
             if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledEvaluationHandle))
                 return false;
 
-            if (!TryReadScheduledEvaluationPresentationOrigin(out double3 presentationOriginAup))
+            try
             {
-                SuppressQueuedRequests(ResolveCurrentFrameId());
-                _scheduledEvaluationActive = false;
-                _scheduledEvaluationCount = 0;
-                _scheduledEvaluationCursorBase = 0u;
-                ClearScheduledEvaluationPresentationOrigin();
-                return false;
-            }
+                if (!TryReadScheduledEvaluationPresentationOrigin(out double3 presentationOriginAup))
+                {
+                    SuppressQueuedRequests(ResolveCurrentFrameId());
+                    _scheduledEvaluationActive = false;
+                    _scheduledEvaluationCount = 0;
+                    _scheduledEvaluationCursorBase = 0u;
+                    ClearScheduledEvaluationPresentationOrigin();
+                    return false;
+                }
 
-            if (!BindSchedulerBuffers(
-                    out NativeArray<LaserCutRequestDTO> requests,
-                    out NativeArray<LaserCutRequestMetaDTO> _,
-                    out NativeArray<int> requestCount,
-                    out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
-                    out _,
-                    out _,
-                    out _,
-                    out NativeArray<LaserCutBatteryDrainRequest> batteryDrains,
-                    out _,
-                    out NativeArray<LaserCutImpactVfxDTO> impactVfx,
-                    out NativeArray<LaserCutTelemetryEntry> telemetry,
-                    out NativeArray<int> telemetryCursor,
-                    allowAcquire: false))
-            {
-                _scheduledEvaluationActive = false;
-                _scheduledEvaluationCount = 0;
-                _scheduledEvaluationCursorBase = 0u;
-                ClearScheduledEvaluationPresentationOrigin();
-                return false;
-            }
+                if (!BindSchedulerBuffers(
+                        out NativeArray<LaserCutRequestDTO> requests,
+                        out NativeArray<LaserCutRequestMetaDTO> _,
+                        out NativeArray<int> requestCount,
+                        out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
+                        out _,
+                        out _,
+                        out _,
+                        out NativeArray<LaserCutBatteryDrainRequest> batteryDrains,
+                        out _,
+                        out NativeArray<LaserCutImpactVfxDTO> impactVfx,
+                        out NativeArray<LaserCutTelemetryEntry> telemetry,
+                        out NativeArray<int> telemetryCursor,
+                        allowAcquire: false))
+                {
+                    _scheduledEvaluationActive = false;
+                    _scheduledEvaluationCount = 0;
+                    _scheduledEvaluationCursorBase = 0u;
+                    ClearScheduledEvaluationPresentationOrigin();
+                    return false;
+                }
 
-            int count = math.clamp(_scheduledEvaluationCount, 0, math.min(requests.Length, sdfHits.Length));
-            if (count <= 0)
-            {
+                int count = math.clamp(_scheduledEvaluationCount, 0, math.min(requests.Length, sdfHits.Length));
+                if (count <= 0)
+                {
+                    requestCount[0] = 0;
+                    _scheduledEvaluationActive = false;
+                    _scheduledEvaluationCount = 0;
+                    _scheduledEvaluationCursorBase = 0u;
+                    ClearScheduledEvaluationPresentationOrigin();
+                    return false;
+                }
+
+                if (telemetryCursor.IsCreated && telemetryCursor.Length > 0)
+                    telemetryCursor[0] = (int)((_scheduledEvaluationCursorBase + (uint)count) % (uint)LaserCutterDodConstants.BlackBoxFrameCount);
+
+                PublishDrainSignals(batteryDrains, count);
+                PublishImpactSignals(impactVfx, count, presentationOriginAup);
+                DumpOnNonFinite(telemetry, telemetryCursor);
                 requestCount[0] = 0;
                 _scheduledEvaluationActive = false;
                 _scheduledEvaluationCount = 0;
                 _scheduledEvaluationCursorBase = 0u;
                 ClearScheduledEvaluationPresentationOrigin();
-                return false;
+                return true;
             }
-
-            if (telemetryCursor.IsCreated && telemetryCursor.Length > 0)
-                telemetryCursor[0] = (int)((_scheduledEvaluationCursorBase + (uint)count) % (uint)LaserCutterDodConstants.BlackBoxFrameCount);
-
-            PublishDrainSignals(batteryDrains, count);
-            PublishImpactSignals(impactVfx, count, presentationOriginAup);
-            DumpOnNonFinite(telemetry, telemetryCursor);
-            requestCount[0] = 0;
-            _scheduledEvaluationActive = false;
-            _scheduledEvaluationCount = 0;
-            _scheduledEvaluationCursorBase = 0u;
-            ClearScheduledEvaluationPresentationOrigin();
-            return true;
+            finally
+            {
+                ReleaseScheduledEvaluationJobBufferLocks(_dataVault);
+            }
         }
 
         public static void StageGpuSparkSignal(double3 hitAup, float3 normal, float heat01, float cuttingPower01, uint toolHashID, uint parentEntityID, uint frame)
@@ -786,8 +842,10 @@ namespace Hecton8.Tools
             buffer = default;
             IDataVault vault = _dataVault;
             return vault != null &&
+                   !vault.IsCompactionFenceActive &&
                    IsHandleCreated(in handle) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
+                   !vault.IsCompactionFenceActive &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
@@ -797,11 +855,12 @@ namespace Hecton8.Tools
         {
             buffer = default;
             IDataVault vault = _dataVault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             if (IsHandleCreated(in handle) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
+                !vault.IsCompactionFenceActive &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
             {
@@ -811,11 +870,17 @@ namespace Hecton8.Tools
             if (!allowAcquire)
                 return false;
 
+            if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                return false;
+
             if (IsHandleCreated(in handle))
             {
                 vault.ReleaseBuffer(in handle);
                 handle = default;
             }
+
+            if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                return false;
 
             VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
                 bufferId,
@@ -823,7 +888,9 @@ namespace Hecton8.Tools
                 SystemID.GameplayTools,
                 NativeArrayOptions.ClearMemory);
             if (!IsHandleCreated(in acquired) ||
+                vault.IsCompactionFenceActive ||
                 !vault.TryResolveHandle(in acquired, out buffer) ||
+                vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -1041,9 +1108,23 @@ namespace Hecton8.Tools
                     stream.Flush(true);
                 }
             }
-            catch (Exception ex)
+            catch (IOException)
             {
-                Hecton8.Core.H8Debug.LogException(ex);
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
             }
         }
 
@@ -1077,7 +1158,7 @@ namespace Hecton8.Tools
                 return;
             }
 
-            _cachedGlobalQualityWeight = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            _cachedGlobalQualityWeight = math.saturate(SignalBusRegistry.GlobalQualityWeight01);
         }
 
         private static bool TryReadCutterSdfSnapshot(
@@ -1088,13 +1169,15 @@ namespace Hecton8.Tools
             out int3 gridDimensions,
             out float3 volumeOrigin,
             out float3 cellSize,
-            out float sdfRange)
+            out float sdfRange,
+            out bool snapshotLocked)
         {
             encodedSdf = default;
             gridDimensions = default;
             volumeOrigin = default;
             cellSize = default;
             sdfRange = 0f;
+            snapshotLocked = false;
 
             if (!requests.IsCreated ||
                 requestCount <= 0 ||
@@ -1108,21 +1191,245 @@ namespace Hecton8.Tools
             if (math.all(math.isfinite(request.RayOriginAUP)))
                 runtimeOrigin = AupPrecisionMath.LocalDeltaFloat3(request.RayOriginAUP, presentationOriginAup, float3.zero);
 
-            Hecton8.Core.Contracts.IVoxelSonarSdfReadModel readModel = _cachedVoxelSdfReadModel;
-            return readModel != null &&
-                   readModel.TryReadNearestSonarSdf(
+            Hecton8.Core.Contracts.IVoxelSonarSdfReadLeaseModel readModel = _cachedVoxelSdfReadLeaseModel;
+            Hecton8.Core.Contracts.VoxelSonarSdfReadLease lease = default;
+            NativeArray<byte>.ReadOnly sourceSdf = default;
+            bool leaseLocked = false;
+            bool snapshotClaimed = false;
+            if (readModel == null ||
+                !readModel.TryAcquireNearestSonarSdfReadLease(
                        runtimeOrigin,
-                       out encodedSdf,
+                       out sourceSdf,
                        out gridDimensions,
                        out volumeOrigin,
                        out cellSize,
-                       out sdfRange) &&
-                   encodedSdf.IsCreated &&
-                   math.all(gridDimensions > 1) &&
-                   math.all(math.isfinite(volumeOrigin)) &&
-                   math.all(math.isfinite(cellSize)) &&
-                   math.isfinite(sdfRange) &&
-                   sdfRange > 0.0001f;
+                       out sdfRange,
+                       out lease) ||
+                !sourceSdf.IsCreated ||
+                !math.all(gridDimensions > 1) ||
+                !math.all(math.isfinite(volumeOrigin)) ||
+                !math.all(math.isfinite(cellSize)) ||
+                !math.isfinite(sdfRange) ||
+                sdfRange <= 0.0001f)
+            {
+                leaseLocked = lease.IsValid;
+                ReleaseSdfReadLease(in lease, ref leaseLocked);
+
+                encodedSdf = default;
+                gridDimensions = default;
+                volumeOrigin = default;
+                cellSize = default;
+                sdfRange = 0f;
+                return false;
+            }
+
+            leaseLocked = true;
+            try
+            {
+                long expectedLong = (long)gridDimensions.x * gridDimensions.y * gridDimensions.z;
+                if (expectedLong <= 0L ||
+                    expectedLong > int.MaxValue ||
+                    !sourceSdf.IsCreated ||
+                    sourceSdf.Length < expectedLong ||
+                    !TryCopySdfLeaseToSnapshot(sourceSdf, (int)expectedLong, out encodedSdf, out snapshotLocked))
+                {
+                    return false;
+                }
+
+                snapshotClaimed = true;
+                return true;
+            }
+            finally
+            {
+                ReleaseSdfReadLease(in lease, ref leaseLocked);
+                if (!snapshotClaimed)
+                    UnlockSdfSnapshotBuffer(_dataVault, ref snapshotLocked);
+            }
+        }
+
+        private static bool TryCopySdfLeaseToSnapshot(
+            NativeArray<byte>.ReadOnly sourceSdf,
+            int requiredLength,
+            out NativeArray<byte>.ReadOnly snapshotSdf,
+            out bool snapshotLocked)
+        {
+            snapshotSdf = default;
+            snapshotLocked = false;
+            if (!sourceSdf.IsCreated || requiredLength <= 0 || sourceSdf.Length < requiredLength)
+                return false;
+
+            if (!BindOrAcquireBuffer(
+                    LaserCutterDodConstants.SdfSnapshotBuffer,
+                    requiredLength,
+                    ref _sdfSnapshotHandle,
+                    out NativeArray<byte> snapshot,
+                    allowAcquire: true))
+            {
+                return false;
+            }
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryLockBuffer(LaserCutterDodConstants.SdfSnapshotBuffer, SystemID.GameplayTools))
+                return false;
+
+            snapshotLocked = true;
+            if (vault.IsCompactionFenceActive)
+            {
+                UnlockSdfSnapshotBuffer(vault, ref snapshotLocked);
+                return false;
+            }
+
+            if (!ReadBoundBuffer(requiredLength, ref _sdfSnapshotHandle, out snapshot))
+                return false;
+
+            for (int i = 0; i < requiredLength; i++)
+                snapshot[i] = sourceSdf[i];
+
+            snapshotSdf = snapshot.AsReadOnly();
+            return true;
+        }
+
+        private static bool TryLockSdfProbeJobBuffers()
+        {
+            if (_scheduledSdfProbeBufferLockCount != 0)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            int locked = 0;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.RequestsBuffer)) { UnlockSdfProbeJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.RequestMetaBuffer)) { UnlockSdfProbeJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.RequestCountBuffer)) { UnlockSdfProbeJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.CooldownBuffer)) { UnlockSdfProbeJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.SdfProbeHitsBuffer)) { UnlockSdfProbeJobBuffers(vault, locked); return false; }
+            locked++;
+
+            _scheduledSdfProbeBufferLockCount = locked;
+            return true;
+        }
+
+        private static bool TryLockEvaluationJobBuffers()
+        {
+            if (_scheduledEvaluationBufferLockCount != 0)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            int locked = 0;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.RequestsBuffer)) { UnlockEvaluationJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.RequestMetaBuffer)) { UnlockEvaluationJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.RequestCountBuffer)) { UnlockEvaluationJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.SdfProbeHitsBuffer)) { UnlockEvaluationJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.HitResultsBuffer)) { UnlockEvaluationJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.DeformationBuffer)) { UnlockEvaluationJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.BatteryDrainBuffer)) { UnlockEvaluationJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.GlowDecalBuffer)) { UnlockEvaluationJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.ImpactVfxBuffer)) { UnlockEvaluationJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.TelemetryRingBuffer)) { UnlockEvaluationJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!TryLockGameplayBuffer(vault, LaserCutterDodConstants.TelemetryCursorBuffer)) { UnlockEvaluationJobBuffers(vault, locked); return false; }
+            locked++;
+
+            _scheduledEvaluationBufferLockCount = locked;
+            return true;
+        }
+
+        private static bool TryLockGameplayBuffer(IDataVault vault, BufferID bufferId)
+        {
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryLockBuffer(bufferId, SystemID.GameplayTools))
+                return false;
+
+            if (!vault.IsCompactionFenceActive)
+                return true;
+
+            vault.TryUnlockBuffer(bufferId, SystemID.GameplayTools);
+            return false;
+        }
+
+        private static void ReleaseScheduledSdfProbeJobBufferLocks(IDataVault vault)
+        {
+            UnlockSdfProbeJobBuffers(vault, _scheduledSdfProbeBufferLockCount);
+            _scheduledSdfProbeBufferLockCount = 0;
+        }
+
+        private static void ReleaseScheduledEvaluationJobBufferLocks(IDataVault vault)
+        {
+            UnlockEvaluationJobBuffers(vault, _scheduledEvaluationBufferLockCount);
+            _scheduledEvaluationBufferLockCount = 0;
+        }
+
+        private static void ReleaseScheduledSdfSnapshotLock(IDataVault vault)
+        {
+            if (!_scheduledSdfSnapshotLocked)
+                return;
+
+            if (vault != null)
+                vault.TryUnlockBuffer(LaserCutterDodConstants.SdfSnapshotBuffer, SystemID.GameplayTools);
+
+            _scheduledSdfSnapshotLocked = false;
+        }
+
+        private static void UnlockSdfSnapshotBuffer(IDataVault vault, ref bool locked)
+        {
+            if (!locked)
+                return;
+
+            if (vault != null)
+                vault.TryUnlockBuffer(LaserCutterDodConstants.SdfSnapshotBuffer, SystemID.GameplayTools);
+
+            locked = false;
+        }
+
+        private static void UnlockSdfProbeJobBuffers(IDataVault vault, int locked)
+        {
+            if (vault == null)
+                return;
+
+            if (locked >= 5) vault.TryUnlockBuffer(LaserCutterDodConstants.SdfProbeHitsBuffer, SystemID.GameplayTools);
+            if (locked >= 4) vault.TryUnlockBuffer(LaserCutterDodConstants.CooldownBuffer, SystemID.GameplayTools);
+            if (locked >= 3) vault.TryUnlockBuffer(LaserCutterDodConstants.RequestCountBuffer, SystemID.GameplayTools);
+            if (locked >= 2) vault.TryUnlockBuffer(LaserCutterDodConstants.RequestMetaBuffer, SystemID.GameplayTools);
+            if (locked >= 1) vault.TryUnlockBuffer(LaserCutterDodConstants.RequestsBuffer, SystemID.GameplayTools);
+        }
+
+        private static void UnlockEvaluationJobBuffers(IDataVault vault, int locked)
+        {
+            if (vault == null)
+                return;
+
+            if (locked >= 11) vault.TryUnlockBuffer(LaserCutterDodConstants.TelemetryCursorBuffer, SystemID.GameplayTools);
+            if (locked >= 10) vault.TryUnlockBuffer(LaserCutterDodConstants.TelemetryRingBuffer, SystemID.GameplayTools);
+            if (locked >= 9) vault.TryUnlockBuffer(LaserCutterDodConstants.ImpactVfxBuffer, SystemID.GameplayTools);
+            if (locked >= 8) vault.TryUnlockBuffer(LaserCutterDodConstants.GlowDecalBuffer, SystemID.GameplayTools);
+            if (locked >= 7) vault.TryUnlockBuffer(LaserCutterDodConstants.BatteryDrainBuffer, SystemID.GameplayTools);
+            if (locked >= 6) vault.TryUnlockBuffer(LaserCutterDodConstants.DeformationBuffer, SystemID.GameplayTools);
+            if (locked >= 5) vault.TryUnlockBuffer(LaserCutterDodConstants.HitResultsBuffer, SystemID.GameplayTools);
+            if (locked >= 4) vault.TryUnlockBuffer(LaserCutterDodConstants.SdfProbeHitsBuffer, SystemID.GameplayTools);
+            if (locked >= 3) vault.TryUnlockBuffer(LaserCutterDodConstants.RequestCountBuffer, SystemID.GameplayTools);
+            if (locked >= 2) vault.TryUnlockBuffer(LaserCutterDodConstants.RequestMetaBuffer, SystemID.GameplayTools);
+            if (locked >= 1) vault.TryUnlockBuffer(LaserCutterDodConstants.RequestsBuffer, SystemID.GameplayTools);
         }
 
         private static float ResolveCutterSdfStepMeters(float sdfRange, in float3 cellSize)
@@ -1260,15 +1567,20 @@ namespace Hecton8.Tools
             _tuningHandle = default;
             _specHandle = default;
             _csvScratchHandle = default;
+            _sdfSnapshotHandle = default;
             _countersHandle = default;
             _scalabilityStateHandle = default;
             _cachedVoxelSdfReadModel = null;
+            _cachedVoxelSdfReadLeaseModel = null;
             _scheduledSdfProbeHandle = default;
             _scheduledSdfProbeActive = false;
             _scheduledSdfProbeCount = 0;
+            _scheduledSdfSnapshotLocked = false;
+            _scheduledSdfProbeBufferLockCount = 0;
             _scheduledEvaluationHandle = default;
             _scheduledEvaluationActive = false;
             _scheduledEvaluationCount = 0;
+            _scheduledEvaluationBufferLockCount = 0;
             _scheduledEvaluationCursorBase = 0u;
             _cachedGlobalQualityWeight = 1f;
             _cachedPresentationOriginAup = double3.zero;
@@ -1284,6 +1596,9 @@ namespace Hecton8.Tools
 
             DispatcherJobFence.TryComplete(ref _scheduledSdfProbeHandle, forceComplete: true);
             DispatcherJobFence.TryComplete(ref _scheduledEvaluationHandle, forceComplete: true);
+            ReleaseScheduledSdfProbeJobBufferLocks(vault);
+            ReleaseScheduledSdfSnapshotLock(vault);
+            ReleaseScheduledEvaluationJobBufferLocks(vault);
             _scheduledSdfProbeActive = false;
             _scheduledSdfProbeCount = 0;
             _scheduledEvaluationActive = false;
@@ -1305,7 +1620,22 @@ namespace Hecton8.Tools
             ReleaseVaultHandle(vault, ref _tuningHandle);
             ReleaseVaultHandle(vault, ref _specHandle);
             ReleaseVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseVaultHandle(vault, ref _sdfSnapshotHandle);
             ReleaseVaultHandle(vault, ref _countersHandle);
+        }
+
+        private static void ReleaseSdfReadLease(
+            in Hecton8.Core.Contracts.VoxelSonarSdfReadLease lease,
+            ref bool leaseLocked)
+        {
+            if (!leaseLocked)
+                return;
+
+            Hecton8.Core.Contracts.IVoxelSonarSdfReadLeaseModel readModel = _cachedVoxelSdfReadLeaseModel;
+            if (readModel != null && lease.IsValid)
+                readModel.ReleaseNearestSonarSdfReadLease(in lease);
+
+            leaseLocked = false;
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct

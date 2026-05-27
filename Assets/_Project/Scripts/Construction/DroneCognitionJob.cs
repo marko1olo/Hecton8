@@ -1239,6 +1239,9 @@ namespace Hecton8.Construction
 
         private static float3 ToFloat3(double3 value)
         {
+            if (!IsFinite(value) || math.any(math.abs(value) > (double)float.MaxValue))
+                return new float3(float.NaN);
+
             return new float3((float)value.x, (float)value.y, (float)value.z);
         }
 

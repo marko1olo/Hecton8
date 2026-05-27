@@ -352,7 +352,7 @@ namespace Hecton8.Construction.Editor
                 csrLaneHits += Count(source, "TryGetDeconstructionCsrLanes");
                 typedLootSignalHits += Count(source, "SignalBus<InventoryDeathLootCacheSignal>.TryPush");
                 legacyLootPublishHits += Count(source, "GlobalSignals.Publish(new InventoryDeathLootCacheSignal");
-                blackBoxHits += Count(source, "Dump_SHINOBU_336.bin");
+                blackBoxHits += Count(source, "Dump_1306_Construction_DeconstructionTelemetry.bin");
             }
 
             bool pass = destroyHits == 0 &&

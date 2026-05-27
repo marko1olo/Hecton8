@@ -42,6 +42,9 @@ namespace Hecton8.Atmosphere
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
             HectonFloatingOrigin.RegisterListener(this);
         }
 

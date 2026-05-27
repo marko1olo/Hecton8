@@ -1,0 +1,602 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\BOOTSTRAP_HOTPATH_ROSLYN_AUDIT_1336_RAW.json",
+  "auditHashSha256": "09482be3493c83d6a0df598bcf1b70465bcaa2025cd61d2bc8b7896c0a451ede",
+  "summary": {
+    "scannedFiles": 4,
+    "parseFailures": 0,
+    "totalFindings": 71,
+    "objectCreations": 61,
+    "valueTypeCreations": 1,
+    "managedRiskCreations": 60,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 10
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Bootstrap\\GameBootstrapper.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Bootstrap\\BootstrapController.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Editor\\HectonShaderVariantCollectionCompiler1336.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Tests\\Editor\\BootstrapShaderWarmupEditTests.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 186,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<GameObject>",
+      "snippet": "new List<GameObject>(BootstrapSceneRootScratchCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 188,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<Transform>",
+      "snippet": "new List<Transform>(BootstrapTransformScratchCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 190,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<ProfilerRecorderHandle>",
+      "snippet": "new List<ProfilerRecorderHandle>(256)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 234,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 235,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 236,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.Tangent, VertexAttributeFormat.Float32, 4)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 237,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VertexAttributeDescriptor",
+      "snippet": "new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 240,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ShaderWarmupSetup",
+      "snippet": "new ShaderWarmupSetup         {             vdecl = _shaderWarmupVertexLayout         }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 457,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "object",
+      "snippet": "new object()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 504,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<WarmupEntry>",
+      "snippet": "new List<WarmupEntry>()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 506,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(0f, 10f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 543,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<GameObject>",
+      "snippet": "new List<GameObject>(64)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 544,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<Transform>",
+      "snippet": "new List<Transform>(256)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 817,
+      "owner": "TryRegisterFailureReason",
+      "kind": "object_creation",
+      "detail": "FailureReasonSlot",
+      "snippet": "new FailureReasonSlot              {                  ErrorHash = errorHash,                  Reason = reason,                  IsValid = 1              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 867,
+      "owner": "RaiseGameReadyEvent",
+      "kind": "object_creation",
+      "detail": "GameBootstrapperEventPayload",
+      "snippet": "new GameBootstrapperEventPayload              {                  ErrorHash = 0u,                  EventType = (ushort)GameBootstrapperEventType.GameReady,                  Reserved = 0              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 888,
+      "owner": "RaiseBootstrapFailedEvent",
+      "kind": "object_creation",
+      "detail": "GameBootstrapperEventPayload",
+      "snippet": "new GameBootstrapperEventPayload              {                  ErrorHash = errorHash,                  EventType = (ushort)GameBootstrapperEventType.BootstrapFailed,                  Reserved = 0              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 1024,
+      "owner": "EnsureRuntimeInstance",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(PersistentRootName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 1565,
+      "owner": "RunBootstrapStateMachineAsync",
+      "kind": "object_creation",
+      "detail": "InvalidOperationException",
+      "snippet": "new InvalidOperationException(\"[GameBootstrapper] BIOS integrity checksum mismatch.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 1942,
+      "owner": "EnsureMacroDatabaseRegistered",
+      "kind": "object_creation",
+      "detail": "H8MacroDatabaseService",
+      "snippet": "new H8MacroDatabaseService()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 1950,
+      "owner": "EnsureMacroDatabaseRegistered",
+      "kind": "object_creation",
+      "detail": "MacroDatabaseSignalBridge",
+      "snippet": "new MacroDatabaseSignalBridge()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 2244,
+      "owner": "InitializePlayerLayerAsync",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[InputManager]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 2270,
+      "owner": "InitializePlayerLayerAsync",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[UserOptionsPersistence]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 2281,
+      "owner": "InitializePlayerLayerAsync",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[RebindingManager]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 2368,
+      "owner": "EnsureSettingsRuntimeRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[SettingsManager]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 2845,
+      "owner": "RecordBootstrapShaderWarmupTelemetry",
+      "kind": "value_type_creation",
+      "detail": "BootstrapTelemetryEntry",
+      "snippet": "new BootstrapTelemetryEntry                 {                     TimestampTicks = DateTime.UtcNow.Ticks,                     DurationMicroseconds = startTimestamp > 0L                         ? (long)((now - startTimestamp) * 1000000.0d / "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3494,
+      "owner": "EnsureSystemDispatcherRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[SystemDispatcher]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3523,
+      "owner": "EnsureSimulationBucketerRegistered",
+      "kind": "object_creation",
+      "detail": "ModuloSimulationBucketer",
+      "snippet": "new ModuloSimulationBucketer()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3536,
+      "owner": "EnsureJobAdmissionServiceRegistered",
+      "kind": "object_creation",
+      "detail": "JobAdmissionTelemetryBridge",
+      "snippet": "new JobAdmissionTelemetryBridge()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3551,
+      "owner": "EnsureJobAdmissionServiceRegistered",
+      "kind": "object_creation",
+      "detail": "JobAdmissionTelemetryBridge",
+      "snippet": "new JobAdmissionTelemetryBridge()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3554,
+      "owner": "EnsureJobAdmissionServiceRegistered",
+      "kind": "object_creation",
+      "detail": "BurstTokenBucketJobAdmissionService",
+      "snippet": "new BurstTokenBucketJobAdmissionService()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3611,
+      "owner": "EnsureGameTickManagerRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[GameTickManager]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3627,
+      "owner": "EnsureSaveServiceRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[SaveManager]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3645,
+      "owner": "EnsureObjectPoolServiceRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[ObjectPoolManager]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3660,
+      "owner": "EnsureModWorldPersistenceRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[ModWorldPersistenceManager]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3677,
+      "owner": "EnsureRenderDispatcherRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[RenderDispatcher]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3694,
+      "owner": "EnsureEquipmentInteractionServiceRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[EquipmentInteractionHandler]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3711,
+      "owner": "EnsureAuxiliaryEquipmentRouterRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[AuxiliaryEquipmentRouterRuntime]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3724,
+      "owner": "EnsureCrashTelemetryBufferRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(CrashTelemetryRuntimeName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3742,
+      "owner": "EnsureRuntimeWatchdogRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(RuntimeWatchdogRuntimeName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3756,
+      "owner": "EnsureGCMonitorRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(GCMonitorRuntimeName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3802,
+      "owner": "EnsurePrefabRegistry",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(PrefabRegistryRuntimeName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3814,
+      "owner": "EnsurePersistentWorldRegistry",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(PersistentWorldRegistryRuntimeName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3837,
+      "owner": "EnsureConnectionSplineBatchRendererRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[ConnectionSplineBatchRenderer]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3851,
+      "owner": "EnsureBeaconNetworkServiceRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[BeaconNetworkSystem]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3868,
+      "owner": "EnsureGlobalPhysicsStateManagerRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[GlobalPhysicsStateManager]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3882,
+      "owner": "EnsurePhysicsApplySystemRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[PhysicsApplySystem]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3896,
+      "owner": "EnsureEcosystemDirectorRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[EcosystemDirector]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3936,
+      "owner": "EnsureInputDispatcherRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[InputDispatcher]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3974,
+      "owner": "EnsurePowerGridServiceRegistered",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[PowerGridManager]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 4190,
+      "owner": "ValidateOceanKinematicsPluginContract",
+      "kind": "object_creation",
+      "detail": "InvalidOperationException",
+      "snippet": "new InvalidOperationException(\"[GameBootstrapper] Hecton8.Plugins assembly missing; IOceanKinematics provider validation cannot continue.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 4203,
+      "owner": "ValidateOceanKinematicsPluginContract",
+      "kind": "object_creation",
+      "detail": "InvalidOperationException",
+      "snippet": "new InvalidOperationException(\"[GameBootstrapper] Hecton8.Plugins type table missing; IOceanKinematics provider validation cannot continue.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 4219,
+      "owner": "ValidateOceanKinematicsPluginContract",
+      "kind": "object_creation",
+      "detail": "InvalidOperationException",
+      "snippet": "new InvalidOperationException(\"[GameBootstrapper] No Hecton8.Plugins IOceanKinematics implementation found. World load is blocked.\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 4241,
+      "owner": "CaptureHardwareProfile",
+      "kind": "object_creation",
+      "detail": "global::Hecton8.Core.HectonHardwareProfile",
+      "snippet": "new global::Hecton8.Core.HectonHardwareProfile(                  graphicsMemoryMb,                  systemMemoryMb,                  processorCount,                  qualityTier,                  biosPhysicsMillisecondsPerStep,             "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 5528,
+      "owner": "InspectPreviousBootState",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(                      path,                      FileMode.Open,                      FileAccess.Read,                      FileShare.ReadWrite,                      BootStateRecordBytes,                      FileOptions.Seque"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 5774,
+      "owner": "EnsureBootstrapAudioListener",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(BootstrapAudioListenerRuntimeName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 6002,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "NoOpAudioService",
+      "snippet": "new NoOpAudioService()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 6125,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "DemiurgeFaunaSimulationService",
+      "snippet": "new DemiurgeFaunaSimulationService()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 6224,
+      "owner": "EnsureInstance",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(OverlayRootName)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 6273,
+      "owner": "BuildVisualTree",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"Message\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 6279,
+      "owner": "BuildVisualTree",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(72f, 72f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 6280,
+      "owner": "BuildVisualTree",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(-72f, -72f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 629,
+      "owner": "TryValidateSceneRootBudget",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"[GameBootstrapper] SCENE_GRAPH_CORRUPTION_GUARD abort. context=\" +                  context +                  \" scene=\" +                  scene.name +                  \" rootCount=\" +                  rootCount +                  \" limit"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 629,
+      "owner": "TryValidateSceneRootBudget",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"[GameBootstrapper] SCENE_GRAPH_CORRUPTION_GUARD abort. context=\" +                  context +                  \" scene=\" +                  scene.name +                  \" rootCount=\""
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 629,
+      "owner": "TryValidateSceneRootBudget",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"[GameBootstrapper] SCENE_GRAPH_CORRUPTION_GUARD abort. context=\" +                  context +                  \" scene=\""
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 629,
+      "owner": "TryValidateSceneRootBudget",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"[GameBootstrapper] SCENE_GRAPH_CORRUPTION_GUARD abort. context=\" +                  context"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 3310,
+      "owner": "TryRegisterStableFallbackForBootstrapNode",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"Injected stable bootstrap proxy for \" + ResolveBootstrapDependencyNodeName(node)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 5272,
+      "owner": "ApplyShippingSceneCleanup",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"[ShippingCleanup] Deactivated \" + suppressedCount + \" dev/trial scene objects.\""
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 5272,
+      "owner": "ApplyShippingSceneCleanup",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"[ShippingCleanup] Deactivated \" + suppressedCount"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 5391,
+      "owner": "FailSceneActivation",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"[GameBootstrapper] \" + error"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 5401,
+      "owner": "LogSceneActivation",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"[GameBootstrapper] \" + message"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 5502,
+      "owner": "JoinBackgroundDomainHandshakeAsync",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"[GameBootstrapper] Background domain handshake failed: \" + _backgroundDomainHandshakeError"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

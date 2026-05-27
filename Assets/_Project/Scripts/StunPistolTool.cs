@@ -381,7 +381,7 @@ namespace Hecton8.Gameplay
             if (!TryResolveStunRay(out Vector3 origin, out direction))
                 return false;
 
-            return TryResolvePrimarySurfaceHit(
+            return RequestPrimarySurfaceHit(
                 origin,
                 direction,
                 ResolveRuntimeRange(),

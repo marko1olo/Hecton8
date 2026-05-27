@@ -1,12 +1,8 @@
 ﻿# Prep Directions We Can Configure Now
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## R4 Interior Actuality Boundary
+## Authority Boundary
 
-This document is active only as static documentation/source/platform-orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current official platform rules, current verification artifacts, and the latest DOC_GLOBAL reports.
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, public Steam page, public demo, wishlist performance, creator outreach readiness, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters, platform rules, dates, creator availability, contact routes, and marketing claims inside this file are subordinate to fresh official sources and current project proof.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Static documentation only. Current source, active architecture contracts, fresh proof artifacts, and official platform rules override dated claims in this file. No runtime, profiler, memory, render, platform, public-page, or ship-readiness proof is implied by this file alone.
 
 Status: actionable pre-asset roadmap
 Public stance: single-player-first scope / proof-first public copy
@@ -28,7 +24,7 @@ Steam announcement stance: Steam news/events/announcements are blocked until the
 Press release stance: press releases, public presskit announcements, media one-pagers, site presskit blocks, email release copy, wire copy, embargo announcements, and Steam-news reuse are blocked until the exact surface has `press_release_permission_gate = ALLOW_PRESS_RELEASE_PUBLISH_VERIFIED`.
 Localization stance: localized/regional copy is blocked until the exact language/surface has `localization_public_permission_gate = ALLOW_LOCALIZED_PUBLIC_USE_VERIFIED`.
 First capture stance: the first screenshot/clip session is unusable for Campaign 01, Steam, creator, press, KPI, or public testing unless the first-capture handoff packet records file paths, build ID, QA score, reject codes, creator utility/send gate, pain freshness, public comparison gate, agency proof gate, viewer-named decision, verdict, and capped next actions. `AGENCY_MISSING_HOLD` keeps Campaign 01 held.
-SN2 stance: V6 or newer same-day monitoring is required for any SN2-derived pain bucket. SN2/Subnautica context is audience-fit and identity-contrast evidence only; it cannot drive public copy, creator hooks, co-op bait, EULA/privacy commentary, performance claims, or raw-lead expansion without HECTON asset-gap proof.
+SN2 stance: V7 or newer same-day monitoring is required for any SN2-derived pain bucket or visual-gap priority. SN2/Subnautica context is audience-fit and identity-contrast evidence only; it cannot drive public copy, creator hooks, co-op bait, EULA/privacy commentary, performance claims, or raw-lead expansion without HECTON asset-gap proof.
 
 ## Executive Cut
 

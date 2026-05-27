@@ -1,7 +1,5 @@
 using Unity.Collections;
 using Unity.Mathematics;
-using Hecton8.Core;
-
 namespace Hecton8.World
 {
     /// <summary>
@@ -18,7 +16,7 @@ namespace Hecton8.World
             float pillarRadiusMeters = 50f,
             float pillarHeightMeters = 1000f)
         {
-            ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;
+            ResourceDistributionDirector director = ResourceDistributionDirector.ActiveRuntimeInstance;
             if (director == null ||
                 !featureRecords.IsCreated ||
                 maxPillars <= 0 ||

@@ -14,7 +14,7 @@ Shader "Hidden/Hecton8/DeferredCaustics"
         ZTest Always
 
         HLSLINCLUDE
-        #pragma target 4.5
+        #pragma target 3.5
         // This fullscreen composite is LIGHT_COOKIE independent. LIGHT_COOKIE variants are stripped deliberately:
         // caustics come from screen depth + procedural math, not from LIGHT_COOKIE or PROJECTOR passes.
         #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS

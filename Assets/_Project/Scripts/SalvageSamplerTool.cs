@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Hecton8.Core;
+using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton.Localization;
 using Unity.Mathematics;
@@ -365,8 +366,8 @@ namespace Hecton8.Gameplay
                 };
             }
 
-            if (!hitCollider.TryGetComponent(out Hecton8.Scavenging.ResourceNode node))
-                node = hitCollider.GetComponentInParent<Hecton8.Scavenging.ResourceNode>();
+            InteractableRegistry.TryResolve(hitCollider, out InteractableRegistry.TargetInfo targetInfo);
+            Hecton8.Scavenging.ResourceNode node = targetInfo.ResourceNode;
             if (node != null)
             {
                 float integrityPercent = node.HealthNormalized * 100f;
@@ -394,7 +395,7 @@ namespace Hecton8.Gameplay
                 };
             }
 
-            if (hitCollider.TryGetComponent(out ICuttable _))
+            if (targetInfo.Cuttable != null)
             {
                 return new SamplerDiagnosis
                 {
@@ -478,7 +479,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            return TryResolvePrimarySurfaceHit(origin, direction, samplingRange, samplingMask.value, QueryTriggerInteraction.Collide, out hit);
+            return RequestPrimarySurfaceHit(origin, direction, samplingRange, samplingMask.value, QueryTriggerInteraction.Collide, out hit);
         }
 
         private bool TryResolveSamplingRay(out Vector3 origin, out Vector3 direction)

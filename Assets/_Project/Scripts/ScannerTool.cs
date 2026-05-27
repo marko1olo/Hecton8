@@ -2477,21 +2477,11 @@ namespace Hecton8.Gameplay
                     new float3(forward.x, forward.y, forward.z),
                     range,
                     math.max(0.1f, focusedScanSurfaceInset * 2f),
-                    out VoxelSonarSdfRaycastHit sdfHit,
-                    out NativeArray<byte>.ReadOnly encodedSdf,
-                    out int3 sdfGridDimensions,
-                    out float3 sdfVolumeOrigin,
-                    out float3 sdfCellSize,
-                    out float sdfRange) &&
+                    out VoxelSonarSdfRaycastHit sdfHit) &&
                 (sdfHit.Flags & VoxelSonarSdfRaycastHit.FlagHit) != 0u)
             {
                 ConsumeScientificVoxelHit(
                     in sdfHit,
-                    encodedSdf,
-                    sdfGridDimensions,
-                    sdfVolumeOrigin,
-                    sdfCellSize,
-                    sdfRange,
                     now);
             }
             else if (TryResolveScientificSpatialContact(origin, forward, range, coneTanSq, out SpatialQueryHit hit))
@@ -2925,11 +2915,6 @@ namespace Hecton8.Gameplay
 
         private void ConsumeScientificVoxelHit(
             in VoxelSonarSdfRaycastHit sdfHit,
-            NativeArray<byte>.ReadOnly encodedSdf,
-            int3 gridDimensions,
-            float3 volumeOrigin,
-            float3 voxelCellSize,
-            float sdfRange,
             float now)
         {
             if ((sdfHit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u)
@@ -2938,21 +2923,8 @@ namespace Hecton8.Gameplay
             StopScientificFragmentScan();
 
             Vector3 hitPoint = ToVector3(sdfHit.Point);
-            Vector3 hitNormal = ToVector3(sdfHit.Normal);
-            Vector3 sampleWorldPosition = hitPoint - hitNormal * math.max(0.01f, focusedScanSurfaceInset);
-            if (!TrySampleScientificDensity(
-                    encodedSdf,
-                    gridDimensions,
-                    volumeOrigin,
-                    voxelCellSize,
-                    sdfRange,
-                    sampleWorldPosition,
-                    out float density,
-                    out float density01))
-            {
-                ClearScientificSnapshot();
-                return;
-            }
+            float density = math.select(0f, sdfHit.Density, math.isfinite(sdfHit.Density));
+            float density01 = math.saturate(math.select(0f, sdfHit.Density01, math.isfinite(sdfHit.Density01)));
 
             float chemicalLoad01 = 0f;
             float organicBloodPeak01 = 0f;

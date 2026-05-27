@@ -66,7 +66,7 @@ namespace Hecton8.AI.Cognition
         }
     }
 
-    public struct UtilityAICognitionVaultBuffers
+    public ref struct UtilityAICognitionVaultBuffers
     {
         public NativeArray<CognitionStateDTO> States;
         public NativeArray<CognitionAupDTO> Aups;

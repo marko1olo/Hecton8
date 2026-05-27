@@ -1,0 +1,51 @@
+{
+  "agentId": "1332",
+  "task": "INPUT_UI_SAVEFAIL_SCALABILITY_REAUDIT",
+  "timestamp": "2026-05-27T18:25:02+04:00",
+  "status": "STATIC_VERIFIED_BUILD_BLOCKED_BY_CPU_GATE",
+  "scannedFiles": 10,
+  "changedFiles": [
+    "Assets/_Project/Scripts/Core/BootstrapContracts/InputBindingServiceContracts.cs",
+    "Assets/_Project/Scripts/Core/IPlatformIntegration.cs",
+    "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+    "Assets/_Project/Scripts/Core/RebindingManager.cs",
+    "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+    "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs"
+  ],
+  "fixedIssues": [
+    {
+      "id": "ownerless-save-failed-broadcast",
+      "problem": "Pause/PDA controls panels listened to global OnOverridesSaveFailed without an owner token, so another active panel could refresh and show save failure for a rebind it did not start.",
+      "fix": "Added IInputBindingService.OnRebindSaveFailed(actionName, actionMap, bindingIndex), invoked it before the generic compatibility event, and moved both panels to cached owner-local handlers gated by _ownsActiveRebind.",
+      "hotPathImpact": "0 us simulation; one cold rebind-event branch and one cached delegate per panel."
+    },
+    {
+      "id": "binary-scalability-profile",
+      "problem": "ScalabilityTierProfiles was documented and implemented as a binary Low/High profile despite project rules requiring continuous scalable quality.",
+      "fix": "Extended the persisted profile to low/middle/high/ultra with legacy high byte migration and added ToGlobalQualityWeight01 for continuous quality-weight consumers.",
+      "hotPathImpact": "0 us simulation; cold settings/platform normalization only."
+    }
+  ],
+  "staticVerification": {
+    "broadCatchHits": 0,
+    "throwNewHits": 0,
+    "playerPrefsHits": 0,
+    "jsonUtilityHits": 0,
+    "removeAllListenersHits": 0,
+    "stringFormattingHits": 0,
+    "linqHits": 0,
+    "foreachHits": 0,
+    "aupCandidatesFound": 0,
+    "nativeCollectionFieldDeclarations": 0,
+    "persistentNativeFieldsRemaining": 0,
+    "nativeTokenOccurrences": 21,
+    "uiDelegateChurnHits": 0,
+    "diffCheck": "clean except repository LF-to-CRLF warnings"
+  },
+  "buildVerification": {
+    "attempted": false,
+    "reason": "No compiler process was active during the first checks, but CPU sampled 57%, 90% after a 30s wait, and 56%; a later wait sampled 80-83% with dotnet pid 19660 and VBCSCompiler pid 35324 active. Explicit build gate requires CPU <= 50% and no compiler process."
+  },
+  "verificationHashSha256": "6ad7e44508940b02773554decb8882d2e87bd62502d3221fe55198b4918f6432"
+}

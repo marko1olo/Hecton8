@@ -24,6 +24,7 @@ namespace Hecton8.Core
         private static bool _isQuest3Like;
         private static bool _isSharedMemoryArchitecture;
         private static bool _allowComputeCulling;
+        private static bool _allowHighResourceComputeShaders;
         private static int _recommendedVramBudgetMegabytes;
         private static GraphicsDeviceType _graphicsDeviceType;
 
@@ -107,6 +108,16 @@ namespace Hecton8.Core
             }
         }
 
+        /// <summary>True when compute is supported on a desktop/proven backend above mobile resource-risk lanes.</summary>
+        public static bool AllowHighResourceComputeShaders
+        {
+            get
+            {
+                EnsureInitialized();
+                return _allowHighResourceComputeShaders;
+            }
+        }
+
         /// <summary>Recommended runtime VRAM budget after shared-memory clamps.</summary>
         public static int RecommendedVramBudgetMegabytes
         {
@@ -142,6 +153,7 @@ namespace Hecton8.Core
             _isQuest3Like = false;
             _isSharedMemoryArchitecture = false;
             _allowComputeCulling = false;
+            _allowHighResourceComputeShaders = false;
             _recommendedVramBudgetMegabytes = DefaultVramBudgetMegabytes;
             _graphicsDeviceType = GraphicsDeviceType.Null;
         }
@@ -173,6 +185,12 @@ namespace Hecton8.Core
             _allowComputeCulling =
                 SystemInfo.supportsComputeShaders &&
                 !_isLegacyDirect3D11;
+            _allowHighResourceComputeShaders =
+                SystemInfo.supportsComputeShaders &&
+                !_isSharedMemoryArchitecture &&
+                !(Application.isMobilePlatform && (_isVulkan || _isMetal)) &&
+                !(_isVulkan && (_isQuest3Like || _isSteamDeckLike)) &&
+                (_isLegacyDirect3D11 || _isDirect3D12 || _isVulkan || _isMetal);
             _recommendedVramBudgetMegabytes = ResolveRecommendedVramBudgetMegabytes(
                 _isSharedMemoryArchitecture,
                 _isSteamDeckLike,

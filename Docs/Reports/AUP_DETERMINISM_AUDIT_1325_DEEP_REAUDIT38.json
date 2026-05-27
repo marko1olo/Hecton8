@@ -1,0 +1,46 @@
+﻿{
+    "schema":  "hecton8.aup_determinism_reaudit38.v3",
+    "agentId":  "1325",
+    "scannedFiles":  4,
+    "findingCount":  0,
+    "findings":  [
+
+                 ],
+    "invalidPersistenceDimensionClampHits":  [
+
+                                             ],
+    "configChunkSizeClampHits":  [
+                                     {
+                                         "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                                         "line":  3151,
+                                         "text":  "chunkSizeMeters = math.max(16, chunkSizeMeters);",
+                                         "classification":  "serialized_authoring_guard_not_save_payload_reader"
+                                     }
+                                 ],
+    "bridgeProof":  {
+                        "resolveCameraRelativeRejectsInvalidAup":  true,
+                        "toRuntimeFloat3RejectsInvalidAup":  true,
+                        "weightedAupAverageRejectsNonFiniteWeight":  true,
+                        "weightedAverageUsesAnchoredDelta":  true,
+                        "snapshotWriterReturnChecked":  true,
+                        "snapshotDeltaPrevalidatesBeforeNativeAllocation":  true,
+                        "sectorCommitStateMutatesOnMainThread":  true,
+                        "sectorOverrideReadWorkCapturedBeforeBackground":  true,
+                        "backgroundSectorOverrideMergeDoesNotReadRuntimeDictionary":  true,
+                        "indexedQuarantineResetUsesCapturedSavePathAndChunkSize":  true,
+                        "indexedAsyncGenerationFenceIntegrated":  true,
+                        "sectorOverrideCommitUsesPerOperationSnapshot":  true,
+                        "backgroundSnapshotWriterUsesCapturedPathAndChunkSize":  true,
+                        "mappedScanDirectoryHeaderRejectsInvalidChunkSize":  true,
+                        "tryCommitDeletesFailClosed":  true,
+                        "invalidChunkDimensionsFailClosed":  true,
+                        "sectorOverrideCommitCandidateCaptureHasNoMainThreadFileProbe":  true,
+                        "sectorOverrideCommitClearsTempOnlyAfterStorageSuccess":  true
+                    },
+    "notes":  [
+                  "Reaudit38 removed main-thread File.Exists probes from sector override commit candidate capture and post-commit reconciliation.",
+                  "Reaudit38 also removed a fail-open directoryHeader.ChunkSizeMeters clamp from mapped sector scan; invalid save payload chunk size now returns false.",
+                  "The remaining chunkSizeMeters clamp is a serialized authoring guard in PersistentWorldRegistry.Awake, not a save payload reader or persistence identity repair."
+              ],
+    "generatedAtUtc":  "2026-05-27T16:55:03.2815781Z"
+}

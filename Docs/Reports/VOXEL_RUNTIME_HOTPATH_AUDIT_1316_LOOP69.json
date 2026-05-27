@@ -1,0 +1,600 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\VOXEL_RUNTIME_HOTPATH_AUDIT_1316_LOOP69.json",
+  "auditHashSha256": "2697ec068a0508d13dc93b46ba2d6c808bebb20f45754f722277eb82425d7535",
+  "summary": {
+    "scannedFiles": 2,
+    "parseFailures": 0,
+    "totalFindings": 71,
+    "objectCreations": 71,
+    "valueTypeCreations": 50,
+    "managedRiskCreations": 19,
+    "nativeTempJobAllocations": 2,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VoxelDynamicNavGridRuntime.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VoxelDynamicNavGridRuntimeLifecycle.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 123,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8/NavGrid/PartialClearanceDilationJob.Schedule\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 124,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8/NavGrid/PartialClearanceDilationJob.Complete\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 203,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 369,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(x * CellSize, y * CellSize, z * CellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 459,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(globalX * CellSize, globalY * CellSize, globalZ * CellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 793,
+      "owner": "QueueDirtyVolume",
+      "kind": "value_type_creation",
+      "detail": "DirtyVolumeRequest",
+      "snippet": "new DirtyVolumeRequest             {                 VolumeInstanceId = volumeInstanceId,                 RuntimeStamp = volume.RuntimeStamp             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 831,
+      "owner": "QueueDeferredDirtyVolume",
+      "kind": "value_type_creation",
+      "detail": "DeferredDirtyVolumeRequest",
+      "snippet": "new DeferredDirtyVolumeRequest             {                 Volume = volume,                 RuntimeStamp = runtimeStamp,                 RemainingSlowTicks = slowTickDelay             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 881,
+      "owner": "QueueLocalizedSdfPatch",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(minAbsoluteCell.x, minAbsoluteCell.y, minAbsoluteCell.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 882,
+      "owner": "QueueLocalizedSdfPatch",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(maxAbsoluteCell.x, maxAbsoluteCell.y, maxAbsoluteCell.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 884,
+      "owner": "QueueLocalizedSdfPatch",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(safeVoxelSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 885,
+      "owner": "QueueLocalizedSdfPatch",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3((float)extentDouble.x, (float)extentDouble.y, (float)extentDouble.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 894,
+      "owner": "QueueLocalizedSdfPatch",
+      "kind": "value_type_creation",
+      "detail": "DynamicObstacleClearRequest",
+      "snippet": "new DynamicObstacleClearRequest              {                  Center = new float3(runtimeCenter.x, runtimeCenter.y, runtimeCenter.z),                  Extents = extents              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 896,
+      "owner": "QueueLocalizedSdfPatch",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimeCenter.x, runtimeCenter.y, runtimeCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 961,
+      "owner": "TryScheduleBuild",
+      "kind": "value_type_creation",
+      "detail": "PassabilityBuildJob",
+      "snippet": "new PassabilityBuildJob                 {                     DensityField = densityField,                     Output = outputBuffer,                     SolidThreshold = 0f                 }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 968,
+      "owner": "TryScheduleBuild",
+      "kind": "value_type_creation",
+      "detail": "CopyByteBufferJob",
+      "snippet": "new CopyByteBufferJob                 {                     Source = outputBuffer,                     Destination = baseOutputBuffer                 }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 977,
+      "owner": "TryScheduleBuild",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<NavObstaclePrimitive>",
+      "snippet": "new NativeArray<NavObstaclePrimitive>(                         obstacleSnapshotCount,                         Allocator.TempJob,                         NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 991,
+      "owner": "TryScheduleBuild",
+      "kind": "value_type_creation",
+      "detail": "ObstacleStampJob",
+      "snippet": "new ObstacleStampJob                     {                         Passability = outputBuffer,                         Obstacles = obstacleSnapshot,                         Dimensions = dimensions,                         Origin = origin,  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1001,
+      "owner": "TryScheduleBuild",
+      "kind": "value_type_creation",
+      "detail": "ClearanceDilationJob",
+      "snippet": "new ClearanceDilationJob                 {                     Passability = outputBuffer,                     DistanceMap = distanceBuffer,                     Dimensions = dimensions,                     AgentRadiusCells = ResolveClearanc"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1082,
+      "owner": "TryPrepareBuild",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  math.max(0, dimensions.x - 1),                  math.max(0, dimensions.y - 1),                  math.max(0, dimensions.z - 1))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1267,
+      "owner": "EnqueueDynamicObstacleGrowth",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(lateralExpansion, math.max(0f, lateralExpansion * 0.25f), lateralExpansion)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1273,
+      "owner": "EnqueueDynamicObstacleGrowth",
+      "kind": "value_type_creation",
+      "detail": "DynamicObstacleClearRequest",
+      "snippet": "new DynamicObstacleClearRequest              {                  Center = center,                  Extents = expandedExtents              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1322,
+      "owner": "EnqueueDestroyedOrganicEvent",
+      "kind": "value_type_creation",
+      "detail": "DynamicObstacleClearRequest",
+      "snippet": "new DynamicObstacleClearRequest              {                  Center = center,                  Extents = extents              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1395,
+      "owner": "SchedulePendingDynamicObstacleUpdates",
+      "kind": "value_type_creation",
+      "detail": "CopyByteBufferJob",
+      "snippet": "new CopyByteBufferJob                     {                         Source = current,                         Destination = next                     }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1405,
+      "owner": "SchedulePendingDynamicObstacleUpdates",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<NavObstaclePrimitive>",
+      "snippet": "new NativeArray<NavObstaclePrimitive>(                             obstacleSnapshotCount,                             Allocator.TempJob,                             NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1421,
+      "owner": "SchedulePendingDynamicObstacleUpdates",
+      "kind": "value_type_creation",
+      "detail": "PartialObstacleResetAndStampJob",
+      "snippet": "new PartialObstacleResetAndStampJob                     {                         BasePassability = baseCurrent,                         Passability = next,                         Obstacles = obstacleSnapshot,                         Dimen"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1436,
+      "owner": "SchedulePendingDynamicObstacleUpdates",
+      "kind": "value_type_creation",
+      "detail": "PartialClearanceDilationJob",
+      "snippet": "new PartialClearanceDilationJob                         {                             Passability = next,                             ReferenceDistanceMap = currentDistance,                             DistanceMap = nextDistance,           "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1532,
+      "owner": "TryResolveMacroFloraObstacleWorldBounds",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(matrix.m03, matrix.m13, matrix.m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1534,
+      "owner": "TryResolveMacroFloraObstacleWorldBounds",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimeRoot.x, runtimeRoot.y, runtimeRoot.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1610,
+      "owner": "TryBuildMacroPortalRouteNonAlloc",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(startWorldPosition.x, startWorldPosition.y, startWorldPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1614,
+      "owner": "TryBuildMacroPortalRouteNonAlloc",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(node.Centroid.x, node.Centroid.y, node.Centroid.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1617,
+      "owner": "TryBuildMacroPortalRouteNonAlloc",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(endWorldPosition.x, endWorldPosition.y, endWorldPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1713,
+      "owner": "TryResolveNearestSafeNode",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1736,
+      "owner": "TryResolveNearestSafeNode",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                      math.clamp((int)math.floor(local.x), 0, math.max(0, record.Dimensions.x - 1)),                      math.clamp((int)math.floor(local.y), 0, math.max(0, record.Dimensions.y - 1)),                      math.clam"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1755,
+      "owner": "TryResolveNearestSafeNode",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1777,
+      "owner": "TryResolveNearestSafeNode",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(candidate.x, candidate.y, candidate.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1797,
+      "owner": "TryResolveNearestSafeNode",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(bestPosition.x, bestPosition.y, bestPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1837,
+      "owner": "TrySampleHybridNavigation",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(voxel.x, voxel.y, voxel.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1878,
+      "owner": "TryBuildMacroPortalRoute",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(startWorldPosition.x, startWorldPosition.y, startWorldPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1882,
+      "owner": "TryBuildMacroPortalRoute",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(node.Centroid.x, node.Centroid.y, node.Centroid.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 1885,
+      "owner": "TryBuildMacroPortalRoute",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(endWorldPosition.x, endWorldPosition.y, endWorldPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 2074,
+      "owner": "EnsureLifecycleOwner",
+      "kind": "object_creation",
+      "detail": "GameObject",
+      "snippet": "new GameObject(\"[VoxelDynamicNavGridRuntime]\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 2300,
+      "owner": "GetOrCreateRecord",
+      "kind": "object_creation",
+      "detail": "VolumeRecord",
+      "snippet": "new VolumeRecord()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 2627,
+      "owner": "RecordNavGridTelemetry",
+      "kind": "value_type_creation",
+      "detail": "NavGridTelemetryEntry",
+      "snippet": "new NavGridTelemetryEntry                 {                     StateHash = NavGridTelemetryStateHash,                     BufferId = bufferId,                     Generation = generation,                     Frame = (uint)math.max(0, Time."
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 2848,
+      "owner": "SchedulePureVoidScan",
+      "kind": "value_type_creation",
+      "detail": "PureVoidBlockScanJob",
+      "snippet": "new PureVoidBlockScanJob              {                  Passability = passability,                  DistanceMap = distanceMap,                  BlockFlags = blockFlags,                  PointCount = pointCount              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 2989,
+      "owner": "WriteColliderBounds",
+      "kind": "object_creation",
+      "detail": "NavObstaclePrimitive",
+      "snippet": "new NavObstaclePrimitive                  {                      Center = center,                      Extents = extents                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3150,
+      "owner": "ClearInvalidObstacleTail",
+      "kind": "object_creation",
+      "detail": "NavObstaclePrimitive",
+      "snippet": "new NavObstaclePrimitive                  {                      Center = float3.zero,                      Extents = new float3(-1f, -1f, -1f)                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3153,
+      "owner": "ClearInvalidObstacleTail",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(-1f, -1f, -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3171,
+      "owner": "RegisterPersistentDynamicObstacle",
+      "kind": "object_creation",
+      "detail": "NavObstaclePrimitive",
+      "snippet": "new NavObstaclePrimitive                      {                          Center = center,                          Extents = extents                      }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3186,
+      "owner": "RegisterPersistentDynamicObstacle",
+      "kind": "object_creation",
+      "detail": "NavObstaclePrimitive",
+      "snippet": "new NavObstaclePrimitive                      {                          Center = center,                          Extents = extents                      }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3202,
+      "owner": "RegisterPersistentDynamicObstacle",
+      "kind": "object_creation",
+      "detail": "NavObstaclePrimitive",
+      "snippet": "new NavObstaclePrimitive                 {                     Center = center,                     Extents = extents                 }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3212,
+      "owner": "RegisterPersistentDynamicObstacle",
+      "kind": "object_creation",
+      "detail": "NavObstaclePrimitive",
+      "snippet": "new NavObstaclePrimitive             {                 Center = center,                 Extents = extents             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3299,
+      "owner": "WriteMacroFloraObstacles",
+      "kind": "object_creation",
+      "detail": "NavObstaclePrimitive",
+      "snippet": "new NavObstaclePrimitive                  {                      Center = center,                      Extents = extents                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3337,
+      "owner": "TryResolveMacroFloraObstacle",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, height * 0.5f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3338,
+      "owner": "TryResolveMacroFloraObstacle",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(radius, height * 0.5f, radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3353,
+      "owner": "TryResolveMacroFloraObstacle",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(radius, halfHeight, radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3377,
+      "owner": "TryResolveMacroFloraObstacle",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, halfHeight, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3378,
+      "owner": "TryResolveMacroFloraObstacle",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(radius, halfHeight, radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3391,
+      "owner": "TryResolveDynamicUpdateRegion",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(int.MaxValue, int.MaxValue, int.MaxValue)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3392,
+      "owner": "TryResolveDynamicUpdateRegion",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(int.MinValue, int.MinValue, int.MinValue)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3419,
+      "owner": "TryResolveDynamicUpdateRegion",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  (requestMinVoxel.x / chunkCells) * chunkCells,                  (requestMinVoxel.y / chunkCells) * chunkCells,                  (requestMinVoxel.z / chunkCells) * chunkCells)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3423,
+      "owner": "TryResolveDynamicUpdateRegion",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  (((requestMaxVoxel.x / chunkCells) + 1) * chunkCells) - 1,                  (((requestMaxVoxel.y / chunkCells) + 1) * chunkCells) - 1,                  (((requestMaxVoxel.z / chunkCells) + 1) * chunkCells) - 1)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3437,
+      "owner": "WorldToVoxel",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  math.clamp((int)math.floor(local.x), 0, math.max(0, record.Dimensions.x - 1)),                  math.clamp((int)math.floor(local.y), 0, math.max(0, record.Dimensions.y - 1)),                  math.clamp((int)math."
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3793,
+      "owner": "ExtractFacePortal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(voxel.x, voxel.y, voxel.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 3820,
+      "owner": "ExtractFacePortal",
+      "kind": "object_creation",
+      "detail": "PortalNode",
+      "snippet": "new PortalNode              {                  ChunkId = record.ChunkId,                  Centroid = centroid,                  Radius = radius,                  ConnectedPortalIndex = InvalidPortalIndex,                  Face = face       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 4111,
+      "owner": "TrySamplePassabilityCell",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  math.clamp((int)math.floor(local.x), 0, math.max(0, record.Dimensions.x - 1)),                  math.clamp((int)math.floor(local.y), 0, math.max(0, record.Dimensions.y - 1)),                  math.clamp((int)math."
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 4130,
+      "owner": "ResolveFaceVoxel",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(0, u, v)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 4131,
+      "owner": "ResolveFaceVoxel",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(math.max(0, dimensions.x - 1), u, v)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 4132,
+      "owner": "ResolveFaceVoxel",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(u, 0, v)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 4133,
+      "owner": "ResolveFaceVoxel",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(u, math.max(0, dimensions.y - 1), v)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 4134,
+      "owner": "ResolveFaceVoxel",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(u, v, 0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 4135,
+      "owner": "ResolveFaceVoxel",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(u, v, math.max(0, dimensions.z - 1))"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

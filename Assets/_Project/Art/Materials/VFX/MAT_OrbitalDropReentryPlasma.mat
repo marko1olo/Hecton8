@@ -33,8 +33,8 @@ Material:
     - _HectonReentryPhase: 0
     - _PlasmaAltitude01: 1
     - _PlasmaHeat: 0
-    - _PlasmaLowTier: 1
     - _PlasmaOpacity: 0
+    - _PlasmaQualityPressure: 0
     - _PlasmaVelocity: 0
     - _VoronoiScale: 28
     - _VoronoiSpeed: 13

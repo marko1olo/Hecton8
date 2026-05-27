@@ -134,6 +134,15 @@ uint ResolveSafeFloatUInt(float value, uint maxValue)
     return (uint)floor(cappedValue);
 }
 
+uint ResolveGridCandidateCount(uint gridResolution, uint candidateCount)
+{
+    if (gridResolution == 0u || candidateCount == 0u)
+        return 0u;
+
+    uint gridCellCount = min(gridResolution * gridResolution, HECTON_SCATTER_MAX_SAFE_UINT);
+    return min(candidateCount, gridCellCount);
+}
+
 float2 Hash02(uint value)
 {
     return float2(Hash01(value), Hash01(value ^ 0x68bc21ebu));
@@ -460,11 +469,16 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     uint instanceIndex = dispatchThreadId.x;
     uint gridResolution = ResolveSafeUInt(_HectonScatterGridResolution, HECTON_SCATTER_MAX_GRID_RESOLUTION);
     uint totalCount = ResolveSafeUInt(_HectonScatterCandidateCount, HECTON_SCATTER_MAX_SAFE_UINT);
-    if (gridResolution == 0u || totalCount == 0u)
+    uint gridCandidateCount = ResolveGridCandidateCount(gridResolution, totalCount);
+    if (gridCandidateCount == 0u)
         return;
 
-    if (instanceIndex >= totalCount)
+    if (instanceIndex >= gridCandidateCount)
+    {
+        if (instanceIndex < totalCount)
+            _HectonScatterVisibilityCache[instanceIndex] = 0u;
         return;
+    }
 
     uint cellX = instanceIndex % gridResolution;
     uint cellZ = instanceIndex / gridResolution;
@@ -622,8 +636,10 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 void CompactVisibleScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
     uint instanceIndex = dispatchThreadId.x;
+    uint gridResolution = ResolveSafeUInt(_HectonScatterGridResolution, HECTON_SCATTER_MAX_GRID_RESOLUTION);
     uint totalCount = ResolveSafeUInt(_HectonScatterCandidateCount, HECTON_SCATTER_MAX_SAFE_UINT);
-    if (instanceIndex >= totalCount)
+    uint gridCandidateCount = ResolveGridCandidateCount(gridResolution, totalCount);
+    if (instanceIndex >= gridCandidateCount)
         return;
 
     if (_HectonScatterVisibilityCache[instanceIndex] != 0u)

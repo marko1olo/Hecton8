@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: FloraDataTemplate_RedGlassCoral
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.World.FloraDataTemplate
   stableId: flora.red_glass_coral
-  displayName: Red Glass Coral
+  displayName: Red Glass Carbonate
   vegetationType: 0
   category: 2
   semanticType: 0

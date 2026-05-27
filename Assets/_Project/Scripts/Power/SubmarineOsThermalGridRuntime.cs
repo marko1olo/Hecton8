@@ -331,7 +331,7 @@ namespace Hecton8.Power
 
         public int EdgeCount => ResolveEdgeCount();
 
-        private struct VaultViews
+        private ref struct VaultViews
         {
             public NativeArray<GridNodeDTO> NodesA;
             public NativeArray<GridNodeDTO> NodesB;
@@ -355,7 +355,7 @@ namespace Hecton8.Power
             public NativeArray<int> PendingCounters;
         }
 
-        private struct CsvImportViews
+        private ref struct CsvImportViews
         {
             public NativeArray<byte> CsvBytes;
             public NativeArray<SubmarineGridSpecDTO> Specs;
@@ -944,6 +944,7 @@ namespace Hecton8.Power
 
             IDataVault vault = _vault;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !IsHandleValid(in _tuningHandle) ||
                 !vault.TryAcquireWriteLock(in _tuningHandle, SystemID.CoreDiagnostics, out NativeArray<SubmarineThermalGridTuningDTO> tuningBuffer) ||
                 !tuningBuffer.IsCreated ||
@@ -1401,6 +1402,7 @@ namespace Hecton8.Power
             if (vault == null ||
                 requiredLength <= 0 ||
                 !IsHandleValid(in handle) ||
+                vault.IsCompactionFenceActive ||
                 !vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
             {
                 return false;
@@ -1526,6 +1528,9 @@ namespace Hecton8.Power
 
         private static bool TryLockBuffer(IDataVault vault, BufferID bufferId, ref int lockedCount)
         {
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
             if (!vault.TryLockBuffer(bufferId, SystemID.Power))
                 return false;
 

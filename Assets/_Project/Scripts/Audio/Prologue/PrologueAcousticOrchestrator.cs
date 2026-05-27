@@ -15,6 +15,7 @@ namespace Hecton8.Audio.Prologue
     {
         private const uint SourceHash = 0xAC0571C5u;
         private const uint PrologueSequenceSourceHash = PrologueSignalSourceHashes.SequenceDirector;
+        private const uint OrbitalRelativitySourceHash = PrologueSignalSourceHashes.OrbitalRelativityDirector;
         private const float MinimumLowPassCutoffHertz = 80f;
         private const float CutoffPublishEpsilonHertz = 1f;
         private const float GainPublishEpsilon = 0.0005f;
@@ -73,18 +74,12 @@ namespace Hecton8.Audio.Prologue
         private void OnEnable()
         {
             RefreshRuntimeServicesCold();
-            RefreshQualityPolicyCold();
+            RefreshQualityPolicy();
             ResetTransientState();
 
-            if (!_lateFrameRegistered)
-            {
-                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-            }
+            RegisterLateFrame();
 
-            if (!_hotSwapRegistered)
-            {
-                _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
-            }
+            RegisterHotSwap();
 
         }
 
@@ -145,7 +140,7 @@ namespace Hecton8.Audio.Prologue
 
             _lastLateFrame = frame;
             _tickCount++;
-            RefreshQualityPolicyCold();
+            RefreshQualityPolicy();
             ConsumeAtmosphericSignals();
             ConsumePrologueCompleteSignals();
             AdvanceFilterSweep(ResolveUnscaledDeltaTime());
@@ -180,9 +175,39 @@ namespace Hecton8.Audio.Prologue
                     CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _tickDispatcher = currentService as ITickDispatcher;
+                    if (ReferenceEquals(previousService, currentService))
+                    {
+                        _tickDispatcher = currentService as ITickDispatcher;
+                        break;
+                    }
+
+                    RebindDispatcher(currentService as ITickDispatcher);
                     break;
             }
+        }
+
+        private void RebindDispatcher(ITickDispatcher dispatcher)
+        {
+            _tickDispatcher = dispatcher;
+            _lateFrameRegistered = false;
+            if (_tickDispatcher != null && isActiveAndEnabled)
+                RegisterLateFrame();
+        }
+
+        private void RegisterLateFrame()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void RegisterHotSwap()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void ConsumeAtmosphericSignals()
@@ -374,6 +399,9 @@ namespace Hecton8.Audio.Prologue
 
         private void PublishNeutralTransitionOnDisable()
         {
+            if (!Application.isPlaying)
+                return;
+
             bool activeTransition = _prologueArmed ||
                                     _sweepActive ||
                                     _splashdownPending ||
@@ -418,7 +446,7 @@ namespace Hecton8.Audio.Prologue
             _tickDispatcher = GlobalRegistry.TickDispatcher;
         }
 
-        private void RefreshQualityPolicyCold()
+        private void RefreshQualityPolicy()
         {
             _qualityTierByte = ResolveQualityTierByte(ResolveGlobalQualityWeight01());
         }
@@ -474,10 +502,9 @@ namespace Hecton8.Audio.Prologue
 
         private static bool IsWhiteoutOnlyComplete(in PrologueCompleteSignal signal)
         {
-            if (signal.Phase == PrologueCompleteSignal.PhaseWhiteout)
-                return true;
-
-            return signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
+            return signal.SourceHash == OrbitalRelativitySourceHash &&
+                   signal.Sequence != 0 &&
+                   signal.Phase == PrologueCompleteSignal.PhaseWhiteout &&
                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) != 0;
         }
 

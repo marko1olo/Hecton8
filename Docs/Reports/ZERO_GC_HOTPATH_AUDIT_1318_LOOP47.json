@@ -1,0 +1,28 @@
+﻿{
+    "agentId":  "1318",
+    "loop":  47,
+    "report":  "ZERO_GC_HOTPATH_AUDIT_1318_LOOP47",
+    "scannedFile":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+    "hotOwners":  [
+                      "Tick",
+                      "SlowTick",
+                      "LateFrameTick"
+                  ],
+    "zeroGcHotPathHits":  0,
+    "strictPersistentNativeFields":  0,
+    "persistentAllocatorTokens":  0,
+    "passiveDecompositionRegrowthGuard":  1,
+    "passiveDecompositionRegrowthRemoveCount":  0,
+    "syncDestroyedForcesZero":  1,
+    "sourceSha256":  "94440eeb4013ee62f55beca378565cfbbda10ac20e8aec4f9ebf373390d833a5",
+    "buildStatus":  "NOT_RUN_CPU_COMPILER_GATE",
+    "buildGate":  {
+                      "cpuAverage":  76,
+                      "compilerProcessCount":  0,
+                      "compilerProcesses":  [
+
+                                            ],
+                      "csprojCount":  62,
+                      "slnxMissingProjectRefs":  0
+                  }
+}

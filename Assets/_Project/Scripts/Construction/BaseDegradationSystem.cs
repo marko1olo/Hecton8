@@ -27,14 +27,22 @@ namespace Hecton8.Construction
         private const float ParasiteCollapseMassExtentScale = 0.0125f;
         private const float RupturePositionChangeEpsilonSq = 0.00000001f;
         private const int ParasiteSporeHazardIdSalt = unchecked((int)0x58C20D40);
+        private const int RuptureStateCapacity = 64;
+        private const int IntegritySocketStateCapacity = 64;
+        private const int ModuleRuptureStateCapacity = 64;
+        private const int ParasiteSporeHazardCapacity = 32;
+        private const int PressureCompressionStateCapacity = 64;
+        private const int ParasiteStructuralStateCapacity = 32;
 
         private struct RuptureNodeState
         {
-            public byte IsRuptured;
+            public double3 AbsoluteUniversePositionDouble;
             public int ModuleRuntimeId;
             public uint SyncStamp;
-            public Vector3 AbsoluteUniversePosition;
-            public double3 AbsoluteUniversePositionDouble;
+            public byte IsRuptured;
+            private byte _pad0;
+            private byte _pad1;
+            private byte _pad2;
         }
 
         private struct ParasiteSporeHazardState
@@ -60,19 +68,29 @@ namespace Hecton8.Construction
         }
 
         // COLD ALLOC: Dictionary<UInt32,RuptureNodeState>[64] - last-known rupture state per habitat graph node - owner: BaseDegradationSystem
-        private static readonly Dictionary<uint, RuptureNodeState> _ruptureStates = new Dictionary<uint, RuptureNodeState>(64);
+        private static readonly Dictionary<uint, RuptureNodeState> _ruptureStates = new Dictionary<uint, RuptureNodeState>(RuptureStateCapacity);
         // COLD ALLOC: List<UInt32>[64] - stale-node scratch for rupture-state eviction after graph synchronization - owner: BaseDegradationSystem
-        private static readonly List<uint> _staleNodeIds = new List<uint>(64);
+        private static readonly List<uint> _staleNodeIds = new List<uint>(RuptureStateCapacity);
         // COLD ALLOC: Dictionary<Int32,Boolean>[64] - integrity-threshold latch per runtime module instance - owner: BaseDegradationSystem
-        private static readonly Dictionary<int, bool> _integritySocketStates = new Dictionary<int, bool>(64);
+        private static readonly Dictionary<int, bool> _integritySocketStates = new Dictionary<int, bool>(IntegritySocketStateCapacity);
         // COLD ALLOC: Dictionary<Int32,Boolean>[64] - rupture-state mirror keyed by runtime module id for fleet arbitration - owner: BaseDegradationSystem
-        private static readonly Dictionary<int, bool> _moduleRuptureStates = new Dictionary<int, bool>(64);
+        private static readonly Dictionary<int, bool> _moduleRuptureStates = new Dictionary<int, bool>(ModuleRuptureStateCapacity);
         // COLD ALLOC: Dictionary<Int32,ParasiteSporeHazardState>[32] - active parasite spore room hazards keyed by runtime module id - owner: BaseDegradationSystem
-        private static readonly Dictionary<int, ParasiteSporeHazardState> _parasiteSporeHazards = new Dictionary<int, ParasiteSporeHazardState>(32);
+        private static readonly Dictionary<int, ParasiteSporeHazardState> _parasiteSporeHazards = new Dictionary<int, ParasiteSporeHazardState>(ParasiteSporeHazardCapacity);
         // COLD ALLOC: Dictionary<Int32,PressureCompressionState>[64] - pressure-compressed module render state keyed by runtime module id - owner: BaseDegradationSystem
-        private static readonly Dictionary<int, PressureCompressionState> _pressureCompressionStates = new Dictionary<int, PressureCompressionState>(64);
+        private static readonly Dictionary<int, PressureCompressionState> _pressureCompressionStates = new Dictionary<int, PressureCompressionState>(PressureCompressionStateCapacity);
         // COLD ALLOC: Dictionary<Int32,ParasiteStructuralState>[32] - mature parasite structural-collapse latch keyed by runtime module id - owner: BaseDegradationSystem
-        private static readonly Dictionary<int, ParasiteStructuralState> _parasiteStructuralStates = new Dictionary<int, ParasiteStructuralState>(32);
+        private static readonly Dictionary<int, ParasiteStructuralState> _parasiteStructuralStates = new Dictionary<int, ParasiteStructuralState>(ParasiteStructuralStateCapacity);
+        private static IConstructionParasiteGraphService s_constructionParasiteGraph;
+        private static IFluidDecalPresentationSink s_fluidDecals;
+
+        internal static void BindRuntimeServices(
+            IConstructionParasiteGraphService constructionParasiteGraph,
+            IFluidDecalPresentationSink fluidDecals)
+        {
+            s_constructionParasiteGraph = constructionParasiteGraph;
+            s_fluidDecals = fluidDecals;
+        }
         private static uint _ruptureSyncStamp;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -109,6 +127,9 @@ namespace Hecton8.Construction
                 _pressureCompressionStates.Remove(moduleRuntimeId);
                 return;
             }
+
+            if (!CanWriteDictionarySlot(_pressureCompressionStates, moduleRuntimeId, PressureCompressionStateCapacity))
+                return;
 
             _pressureCompressionStates[moduleRuntimeId] = new PressureCompressionState
             {
@@ -175,6 +196,9 @@ namespace Hecton8.Construction
             float sanitizedInfection = Mathf.Clamp01(infectionLevel);
             float sanitizedMass = Mathf.Max(0f, addedMassKilograms);
             bool hadState = _parasiteStructuralStates.TryGetValue(moduleRuntimeId, out ParasiteStructuralState state);
+            if (!hadState && _parasiteStructuralStates.Count >= ParasiteStructuralStateCapacity)
+                return;
+
             if (sanitizedMatureSeconds <= 0.001f)
             {
                 if (hadState && state.CollapseDispatched == 0)
@@ -232,7 +256,7 @@ namespace Hecton8.Construction
         {
             bool isRuptured = (flags & LogisticsNodeFlags.Ruptured) != 0;
             bool hadPreviousState = _ruptureStates.TryGetValue(nodeId, out RuptureNodeState previousState);
-            int moduleRuntimeId = ResolveModuleRuntimeId(moduleObject);
+            int moduleRuntimeId = CaptureModuleRuntimeId(moduleObject);
 
             if (!isRuptured)
             {
@@ -240,34 +264,34 @@ namespace Hecton8.Construction
                     ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, false);
 
                 if (moduleRuntimeId != 0)
-                    _moduleRuptureStates[moduleRuntimeId] = false;
+                    TryWriteModuleRuptureState(moduleRuntimeId, false);
 
                 _ruptureStates.Remove(nodeId);
                 return;
             }
 
+            if (!hadPreviousState && _ruptureStates.Count >= RuptureStateCapacity)
+                return;
+
             if (!TryResolveAbsoluteFromRuntimeOrigin(ruptureWorldPosition, out double3 absoluteUniversePositionDouble))
                 return;
 
-            Vector3 absoluteUniversePosition = ToVector3(absoluteUniversePositionDouble);
             bool ruptureStateChanged = !hadPreviousState ||
                                        previousState.IsRuptured == 0 ||
                                        previousState.ModuleRuntimeId != moduleRuntimeId ||
-                                       !ApproximatelySameDouble3(
-                                           ResolveRuptureAbsolutePositionDouble(in previousState),
-                                           absoluteUniversePositionDouble);
+                                       !math.all(math.isfinite(previousState.AbsoluteUniversePositionDouble)) ||
+                                       !ApproximatelySameDouble3(previousState.AbsoluteUniversePositionDouble, absoluteUniversePositionDouble);
 
             _ruptureStates[nodeId] = new RuptureNodeState
             {
+                AbsoluteUniversePositionDouble = absoluteUniversePositionDouble,
                 IsRuptured = 1,
                 ModuleRuntimeId = moduleRuntimeId,
-                SyncStamp = _ruptureSyncStamp,
-                AbsoluteUniversePosition = absoluteUniversePosition,
-                AbsoluteUniversePositionDouble = absoluteUniversePositionDouble
+                SyncStamp = _ruptureSyncStamp
             };
 
             if (moduleRuntimeId != 0)
-                _moduleRuptureStates[moduleRuntimeId] = true;
+                TryWriteModuleRuptureState(moduleRuntimeId, true);
 
             ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, true);
 
@@ -282,7 +306,10 @@ namespace Hecton8.Construction
             while (enumerator.MoveNext())
             {
                 if (enumerator.Current.Value.SyncStamp != _ruptureSyncStamp)
-                    _staleNodeIds.Add(enumerator.Current.Key);
+                {
+                    if (_staleNodeIds.Count < RuptureStateCapacity)
+                        _staleNodeIds.Add(enumerator.Current.Key);
+                }
             }
 
             int staleCount = _staleNodeIds.Count;
@@ -290,7 +317,7 @@ namespace Hecton8.Construction
             {
                 uint nodeId = _staleNodeIds[i];
                 if (_ruptureStates.TryGetValue(nodeId, out RuptureNodeState staleState) && staleState.ModuleRuntimeId != 0)
-                    _moduleRuptureStates[staleState.ModuleRuntimeId] = false;
+                    TryWriteModuleRuptureState(staleState.ModuleRuntimeId, false);
 
                 ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, false);
                 _ruptureStates.Remove(nodeId);
@@ -318,6 +345,9 @@ namespace Hecton8.Construction
             }
 
             if (hadLatchedState || !isBelowThreshold)
+                return;
+
+            if (!CanWriteDictionarySlot(_integritySocketStates, moduleInstanceId, IntegritySocketStateCapacity))
                 return;
 
             _integritySocketStates[moduleInstanceId] = true;
@@ -353,6 +383,12 @@ namespace Hecton8.Construction
             if (!baseModule.TryGetParasiteSporeHazard(out Vector3 position, out float radius, out float intensity))
             {
                 ClearParasiteSporeHazard(baseModule);
+                return;
+            }
+
+            if (!CanWriteDictionarySlot(_parasiteSporeHazards, moduleRuntimeId, ParasiteSporeHazardCapacity))
+            {
+                baseModule.SetParasiteSporeVfxActive(false);
                 return;
             }
 
@@ -460,9 +496,9 @@ namespace Hecton8.Construction
 
             int moduleRuntimeId = unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));
             if (moduleRuntimeId != 0)
-                _moduleRuptureStates[moduleRuntimeId] = true;
+                TryWriteModuleRuptureState(moduleRuntimeId, true);
 
-            IConstructionParasiteGraphService constructionParasiteGraph = GlobalRegistry.ConstructionParasiteGraph;
+            IConstructionParasiteGraphService constructionParasiteGraph = s_constructionParasiteGraph;
             if (constructionParasiteGraph != null)
             {
                 constructionParasiteGraph.NotifyModuleParasiteRootStateChanged(baseModule);
@@ -493,7 +529,7 @@ namespace Hecton8.Construction
                 baseModule.EmitHullBreachJet(localRupturePoint, DefaultPressureDelta);
             }
 
-            IFluidDecalPresentationSink fluidDecals = Hecton8.Core.GlobalRegistry.FluidDecalPresentation;
+            IFluidDecalPresentationSink fluidDecals = s_fluidDecals;
             if (fluidDecals != null)
                 fluidDecals.RegisterRuptureFluid(ruptureWorldPosition, DefaultFluidRadiusScale);
         }
@@ -521,24 +557,21 @@ namespace Hecton8.Construction
             return math.all(math.isfinite(absolutePosition));
         }
 
-        private static double3 ResolveRuptureAbsolutePositionDouble(in RuptureNodeState state)
+        private static bool CanWriteDictionarySlot<TKey, TValue>(Dictionary<TKey, TValue> dictionary, TKey key, int capacity)
         {
-            if (math.all(math.isfinite(state.AbsoluteUniversePositionDouble)) &&
-                (math.any(state.AbsoluteUniversePositionDouble != double3.zero) ||
-                 state.AbsoluteUniversePosition == Vector3.zero))
-                return state.AbsoluteUniversePositionDouble;
-
-            return ToDouble3(state.AbsoluteUniversePosition);
+            return dictionary.ContainsKey(key) || dictionary.Count < capacity;
         }
 
-        private static Vector3 ToVector3(double3 value)
+        private static bool TryWriteModuleRuptureState(int moduleRuntimeId, bool isRuptured)
         {
-            return new Vector3((float)value.x, (float)value.y, (float)value.z);
-        }
+            if (moduleRuntimeId == 0 ||
+                !CanWriteDictionarySlot(_moduleRuptureStates, moduleRuntimeId, ModuleRuptureStateCapacity))
+            {
+                return false;
+            }
 
-        private static double3 ToDouble3(Vector3 value)
-        {
-            return new double3(value.x, value.y, value.z);
+            _moduleRuptureStates[moduleRuntimeId] = isRuptured;
+            return true;
         }
 
         private static int ComposeParasiteSporeHazardId(int moduleRuntimeId)
@@ -552,7 +585,7 @@ namespace Hecton8.Construction
             return safeValue > 0f ? safeValue * math.rsqrt(safeValue) : 0f;
         }
 
-        private static int ResolveModuleRuntimeId(GameObject moduleObject)
+        private static int CaptureModuleRuntimeId(GameObject moduleObject)
         {
             if (moduleObject == null || !moduleObject.TryGetComponent(out BaseModule baseModule))
                 return 0;

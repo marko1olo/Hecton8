@@ -1,0 +1,1073 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\VEGETATION_RUNTIME_HOTPATH_AUDIT_1316_LOOP71.json",
+  "auditHashSha256": "58a5bb3aa80a14a30e985b5a774925b348ce8dea38e4dbeb44771608221c0f37",
+  "summary": {
+    "scannedFiles": 3,
+    "parseFailures": 0,
+    "totalFindings": 130,
+    "objectCreations": 130,
+    "valueTypeCreations": 54,
+    "managedRiskCreations": 76,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationMemorySovereigntyContracts.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VegetationMemorySovereigntyRuntime.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\HectonMapMagicVegetationBridge.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationMemorySovereigntyRuntime.cs",
+      "line": 510,
+      "owner": "DumpVegetationMemoryBlackBox",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationMemorySovereigntyRuntime.cs",
+      "line": 511,
+      "owner": "DumpVegetationMemoryBlackBox",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/VegetationMemorySovereigntyRuntime.cs",
+      "line": 523,
+      "owner": "DumpVegetationMemoryBlackBox",
+      "kind": "object_creation",
+      "detail": "ReadOnlySpan<byte>",
+      "snippet": "new ReadOnlySpan<byte>(                             UnsafeUtility.AddressOf(ref entry),                             VegetationMemorySovereigntyConstants.TelemetryEntryStrideBytes)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 897,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.7f, 1.15f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 901,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(1.15f, 2.1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 905,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(0.85f, 1.35f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 932,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(6f, 24f, 6f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 937,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(36f, 24f, 36f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1132,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<DeferredTileCacheDisposal>",
+      "snippet": "new List<DeferredTileCacheDisposal>(8)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1518,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Dictionary<long, TileRuntimeState>",
+      "snippet": "new Dictionary<long, TileRuntimeState>(InitialTileCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1520,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Dictionary<ChunkKey, ChunkPayload>",
+      "snippet": "new Dictionary<ChunkKey, ChunkPayload>(InitialChunkCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1522,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Dictionary<ChunkKey, ChunkAbyssalNavPayload>",
+      "snippet": "new Dictionary<ChunkKey, ChunkAbyssalNavPayload>(InitialChunkCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1524,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Dictionary<ChunkKey, ChunkMegaWreckPayload>",
+      "snippet": "new Dictionary<ChunkKey, ChunkMegaWreckPayload>(InitialChunkCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1526,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "HashSet<ChunkKey>",
+      "snippet": "new HashSet<ChunkKey>(InitialCorruptedChunkCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1528,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<ChunkKey>",
+      "snippet": "new List<ChunkKey>(InitialChunkArrayCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1530,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<PersistentArtificialStructureRecord>",
+      "snippet": "new List<PersistentArtificialStructureRecord>(32)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1532,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<ChunkKey>",
+      "snippet": "new List<ChunkKey>(InitialChunkArrayCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1534,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<TerrainHoleRecord>",
+      "snippet": "new List<TerrainHoleRecord>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1536,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<long>",
+      "snippet": "new List<long>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1604,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Dictionary<ChunkKey, int>",
+      "snippet": "new Dictionary<ChunkKey, int>(InitialChunkCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1703,
+      "owner": "TryFillTerrainHeightGridFromNativeCache",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(worldX, 0f, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1931,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "IndirectVegetationNativeBufferSource",
+      "snippet": "new IndirectVegetationNativeBufferSource(this, false)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1934,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "IndirectVegetationNativeBufferSource",
+      "snippet": "new IndirectVegetationNativeBufferSource(this, true)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 2554,
+      "owner": "TryResolvePlayerRuntimePositionFromAup",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(resolved.x, resolved.y, resolved.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 2785,
+      "owner": "ActiveFloatingLabyrinthConfig",
+      "kind": "object_creation",
+      "detail": "FloatingLabyrinthConfig",
+      "snippet": "new FloatingLabyrinthConfig(              floatingPatchThreshold,              floatingPatchNoiseScale,              floatingCellSize,              floatingSecondaryCellSize,              floatingWallWidth,              floatingWarpMeters, "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 2816,
+      "owner": "EvaluateFloatingLabyrinth",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(flowDirection.x, flowDirection.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 2952,
+      "owner": "TryGetActiveHeightTexturePayload",
+      "kind": "object_creation",
+      "detail": "TerrainHeightTexturePayload",
+      "snippet": "new TerrainHeightTexturePayload(                  heightTexture,                  state.TerrainPosition,                  state.TerrainSize,                  state.HeightmapResolution,                  state.CacheRevision)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 2983,
+      "owner": "TryGetActiveTerrainHeightSamplePayload",
+      "kind": "value_type_creation",
+      "detail": "TerrainHeightSamplePayloadDTO",
+      "snippet": "new TerrainHeightSamplePayloadDTO(                  source.HeightSamples,                  source.TerrainPosition,                  source.TerrainSize,                  source.HeightmapResolution,                  source.CacheRevision)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 2998,
+      "owner": "TryGetHeightSamplePayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(worldX, 0f, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3013,
+      "owner": "TryGetTerrainHeightSamplePayload",
+      "kind": "value_type_creation",
+      "detail": "TerrainHeightSamplePayloadDTO",
+      "snippet": "new TerrainHeightSamplePayloadDTO(                  source.HeightSamples,                  source.TerrainPosition,                  source.TerrainSize,                  source.HeightmapResolution,                  source.CacheRevision)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3033,
+      "owner": "TryBuildHeightSamplePayload",
+      "kind": "object_creation",
+      "detail": "TerrainHeightSamplePayload",
+      "snippet": "new TerrainHeightSamplePayload(                  heightSamples,                  state.TerrainPosition,                  state.TerrainSize,                  state.HeightmapResolution,                  state.CacheRevision)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3294,
+      "owner": "TryGetEcosystemThreatVoxelPayload",
+      "kind": "object_creation",
+      "detail": "Vector3Int",
+      "snippet": "new Vector3Int(_ecosystemThreatGridResolution, _ecosystemThreatGridResolutionY, _ecosystemThreatGridResolution)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3296,
+      "owner": "TryGetEcosystemThreatVoxelPayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3424,
+      "owner": "SampleBiomassDensityImmediate",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(positionWS.x, positionWS.y, positionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3436,
+      "owner": "TryGetCachedTerrainHeight",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(worldX, 0f, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3532,
+      "owner": "TrySampleAbyssalFlow",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(sampledFlow.x, sampledFlow.y, sampledFlow.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3672,
+      "owner": "GetVegetationDensity",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3685,
+      "owner": "GetVegetationDensity",
+      "kind": "object_creation",
+      "detail": "VegetationDensitySample",
+      "snippet": "new VegetationDensitySample(                      true,                      dominantType,                      ResolveSemanticType(dominantType, biomeLayer, seed),                      biomeLayer,                      ResolveAcousticType(d"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3701,
+      "owner": "ApplyAbyssalFlowNoise",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(baseFlow.x, baseFlow.y, baseFlow.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3702,
+      "owner": "ApplyAbyssalFlowNoise",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3709,
+      "owner": "ApplyAbyssalFlowNoise",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(noisyFlow.x, noisyFlow.y, noisyFlow.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3727,
+      "owner": "GetPlayerVisibilityModifier",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3783,
+      "owner": "TryScheduleVisibilityModifierSample",
+      "kind": "value_type_creation",
+      "detail": "VegetationDensityQueryJob",
+      "snippet": "new VegetationDensityQueryJob              {                  Positions = positions,                  Output = outputVisibility,                  Chunks = chunks,                  DensityGrid = densityGrid,                  ChunkCount = _de"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3838,
+      "owner": "TryScheduleBiomassDensitySample",
+      "kind": "value_type_creation",
+      "detail": "SampleBiomassDensityJob",
+      "snippet": "new SampleBiomassDensityJob              {                  Positions = positions,                  Output = outputDensities,                  Chunks = chunks,                  DensityGrid = densityGrid,                  ChunkCount = _densi"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3872,
+      "owner": "TryScheduleAverageBiomassDensitySample",
+      "kind": "value_type_creation",
+      "detail": "ReduceAverageDensityJob",
+      "snippet": "new ReduceAverageDensityJob              {                  Input = perPointDensities,                  Output = averageOutput              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4160,
+      "owner": "WriteArtificialStructureRecord",
+      "kind": "object_creation",
+      "detail": "ArtificialStructureRecord",
+      "snippet": "new ArtificialStructureRecord              {                  MinX = bounds.min.x,                  MinY = bounds.min.y,                  MinZ = bounds.min.z,                  MaxX = bounds.max.x,                  MaxY = bounds.max.y,      "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4330,
+      "owner": "GetMegaWreckSectionBounds",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(section.WorldCenter, section.WorldSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4347,
+      "owner": "BuildChunkMegaWreckPayload",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(definition.Center, definition.Size)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4363,
+      "owner": "BuildChunkMegaWreckPayload",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(definition.Center, definition.Size)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4374,
+      "owner": "BuildChunkMegaWreckPayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3((minX + maxX) * 0.5f, wreckBounds.center.y, (minZ + maxZ) * 0.5f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4375,
+      "owner": "BuildChunkMegaWreckPayload",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(maxX - minX, wreckBounds.size.y, maxZ - minZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4381,
+      "owner": "BuildChunkMegaWreckPayload",
+      "kind": "object_creation",
+      "detail": "MegaWreckStreamSection",
+      "snippet": "new MegaWreckStreamSection                  {                      WreckId = definition.WreckId,                      SectionSeed = sectionSeed,                      SectionX = sectionX,                      SectionZ = sectionZ,            "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4408,
+      "owner": "FindMegaWreckInteriorWreckId",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(section.WorldCenter, section.WorldSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4657,
+      "owner": "TryResolveVegetationTypeFromCachedMasks",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(state.TerrainPosition.x, state.TerrainPosition.y, state.TerrainPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4658,
+      "owner": "TryResolveVegetationTypeFromCachedMasks",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(state.TerrainSize.x, state.TerrainSize.y, state.TerrainSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4686,
+      "owner": "TryResolveVegetationTypeFromCachedMasks",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(_floatingFlowDirectionNormalized.x, _floatingFlowDirectionNormalized.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4707,
+      "owner": "TryResolveVegetationTypeFromCachedMasks",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4729,
+      "owner": "TryResolveVegetationTypeFromCachedMasks",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4770,
+      "owner": "ToMatrix4x4",
+      "kind": "object_creation",
+      "detail": "Matrix4x4",
+      "snippet": "new Matrix4x4(                  new Vector4(value.c0.x, value.c0.y, value.c0.z, value.c0.w),                  new Vector4(value.c1.x, value.c1.y, value.c1.z, value.c1.w),                  new Vector4(value.c2.x, value.c2.y, value.c2.z, valu"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4771,
+      "owner": "ToMatrix4x4",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(value.c0.x, value.c0.y, value.c0.z, value.c0.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4772,
+      "owner": "ToMatrix4x4",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(value.c1.x, value.c1.y, value.c1.z, value.c1.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4773,
+      "owner": "ToMatrix4x4",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(value.c2.x, value.c2.y, value.c2.z, value.c2.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4774,
+      "owner": "ToMatrix4x4",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(value.c3.x, value.c3.y, value.c3.z, value.c3.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4797,
+      "owner": "ApplyMatrixTranslationOffsetDouble",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(matrix.m03, matrix.m13, matrix.m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4809,
+      "owner": "IsDistantFloraMatrix",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  matrix.m03 + offset.x,                  matrix.m13 + offset.y,                  matrix.m23 + offset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4824,
+      "owner": "ResolveRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(matrix.m03, matrix.m13, matrix.m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4830,
+      "owner": "ToDouble3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 4835,
+      "owner": "ToVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                  ClampDoubleToRuntimeFloat(value.x),                  ClampDoubleToRuntimeFloat(value.y),                  ClampDoubleToRuntimeFloat(value.z))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5096,
+      "owner": "TrySampleTerrainPlacement",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5129,
+      "owner": "ResolveSlopeFlowDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-normal.x, -normal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5205,
+      "owner": "TryEvaluateTechnoJungle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(worldX, worldZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5207,
+      "owner": "TryEvaluateTechnoJungle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-normalizedFlow.y, normalizedFlow.x)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5208,
+      "owner": "TryEvaluateTechnoJungle",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(                  math.dot(world, normalizedFlow),                  math.dot(world, crossFlow) * flowAnisotropy)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5241,
+      "owner": "ApplyAbyssalFlowNoiseStatic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  noise.snoise(sample + new float3(11.7f, 3.1f, 19.9f)),                  noise.snoise(sample + new float3(23.3f, 29.1f, 7.7f)),                  noise.snoise(sample + new float3(41.9f, 13.7f, 31.3f)))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5242,
+      "owner": "ApplyAbyssalFlowNoiseStatic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(11.7f, 3.1f, 19.9f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5243,
+      "owner": "ApplyAbyssalFlowNoiseStatic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(23.3f, 29.1f, 7.7f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5244,
+      "owner": "ApplyAbyssalFlowNoiseStatic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(41.9f, 13.7f, 31.3f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5245,
+      "owner": "ApplyAbyssalFlowNoiseStatic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  ((Hash01(seed ^ 0xA24BAEDCu) * 2f) - 1f) * 0.15f,                  ((Hash01(seed ^ 0x94D049BBu) * 2f) - 1f) * 0.08f,                  ((Hash01(seed ^ 0xC13FA9A9u) * 2f) - 1f) * 0.15f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5250,
+      "owner": "ApplyAbyssalFlowNoiseStatic",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(noiseVector.x, noiseVector.y * verticalStrength, noiseVector.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5317,
+      "owner": "TrySampleScatterSurfaceFromCachedTerrain",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(state.TerrainSize.x, state.TerrainSize.y, state.TerrainSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5320,
+      "owner": "TrySampleScatterSurfaceFromCachedTerrain",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(position.x, terrainY, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5321,
+      "owner": "TrySampleScatterSurfaceFromCachedTerrain",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(sampledNormal.x, sampledNormal.y, sampledNormal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5348,
+      "owner": "ResolveScatterSurfaceTangent",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(octant.x, 0f, octant.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5382,
+      "owner": "SampleBlueNoiseThreshold",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(worldX / cellSize, worldZ / cellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5395,
+      "owner": "SampleBlueNoiseThreshold",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(cellX + Hash01(cellSeed), cellZ + Hash01(cellSeed ^ 0x94D049BBu))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5419,
+      "owner": "SampleOrganicEdgeThreshold",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(worldX / cellSize, worldZ / cellSize)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5424,
+      "owner": "SampleOrganicEdgeThreshold",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(Hash01(cellSeed), Hash01(cellSeed ^ 0xA24BAEDCu))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5480,
+      "owner": "SampleNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(dx, hRight - hLeft, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5481,
+      "owner": "SampleNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, hUp - hDown, dz)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5482,
+      "owner": "SampleNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5502,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5504,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.70710677f, 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5506,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5508,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.70710677f, 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5510,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5512,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-0.70710677f, -0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5514,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5516,
+      "owner": "ResolveOctantDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.70710677f, -0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5525,
+      "owner": "ResolveOctantDirectionFromVector",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5532,
+      "owner": "ResolveOctantDirectionFromVector",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(signX * 0.70710677f, signY * 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5534,
+      "owner": "ResolveOctantDirectionFromVector",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(signX, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5534,
+      "owner": "ResolveOctantDirectionFromVector",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, signY)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5542,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5544,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0.38268343f, 0f, 0.9238795f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5546,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0.70710677f, 0f, 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5548,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0.9238795f, 0f, 0.38268343f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5550,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5552,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0.9238795f, 0f, -0.38268343f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5554,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0.70710677f, 0f, -0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5556,
+      "owner": "ResolveOctantYawRotation",
+      "kind": "object_creation",
+      "detail": "quaternion",
+      "snippet": "new quaternion(0f, 0.38268343f, 0f, -0.9238795f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5572,
+      "owner": "ResolveDominantFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, value.y < 0f ? -1f : 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5575,
+      "owner": "ResolveDominantFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(value.x < 0f ? -1f : 1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5576,
+      "owner": "ResolveDominantFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, value.z < 0f ? -1f : 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5804,
+      "owner": "CreateChunkPayloadHeader",
+      "kind": "object_creation",
+      "detail": "Bounds",
+      "snippet": "new Bounds(                  new Vector3(centerX, state.TerrainPosition.y + (state.TerrainSize.y * 0.5f), centerZ),                  new Vector3(sizeX, math.max(1f, state.TerrainSize.y), sizeZ))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5805,
+      "owner": "CreateChunkPayloadHeader",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(centerX, state.TerrainPosition.y + (state.TerrainSize.y * 0.5f), centerZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 5806,
+      "owner": "CreateChunkPayloadHeader",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(sizeX, math.max(1f, state.TerrainSize.y), sizeZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6023,
+      "owner": "TryFindChunkPoolEvictionVictim",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(playerRuntimePosition.x, playerRuntimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6048,
+      "owner": "ResolveMemoryGuardForward",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(_playerVelocity.x, _playerVelocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6053,
+      "owner": "ResolveMemoryGuardForward",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(octant.x, octant.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6063,
+      "owner": "EvaluateChunkEvictionScore",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(centerX - playerPositionXZ.x, centerZ - playerPositionXZ.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6134,
+      "owner": "TryEvaluateResidencyCandidate",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(centerX - playerPositionXZ.x, centerZ - playerPositionXZ.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6184,
+      "owner": "NormalizeScaleRange",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(min, max)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6287,
+      "owner": "InvalidateTileChunks",
+      "kind": "object_creation",
+      "detail": "ChunkKey",
+      "snippet": "new ChunkKey(tileX, tileZ, chunkX, chunkZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6481,
+      "owner": "TryReadChunkPoolView",
+      "kind": "object_creation",
+      "detail": "NativeChunkPoolView",
+      "snippet": "new NativeChunkPoolView(                  matrices,                  metadata,                  types,                  semanticTypes,                  biomeLayers,                  edgeDistances,                  flowDirections,           "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6551,
+      "owner": "TryAcquireChunkPoolWriteView",
+      "kind": "object_creation",
+      "detail": "NativeChunkPoolView",
+      "snippet": "new NativeChunkPoolView(                  matrices,                  metadata,                  types,                  semanticTypes,                  biomeLayers,                  edgeDistances,                  flowDirections,           "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 6745,
+      "owner": "TryAcquireNativeReadBuffer",
+      "kind": "object_creation",
+      "detail": "HectonIndirectVegetationNativeReadBuffer",
+      "snippet": "new HectonIndirectVegetationNativeReadBuffer(                  matrices,                  metadata,                  count,                  bufferIndex,                  producerHandle,                  hasExplicitBounds,                  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 7013,
+      "owner": "UpsertTileState",
+      "kind": "value_type_creation",
+      "detail": "TileRuntimeState",
+      "snippet": "new TileRuntimeState()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 7375,
+      "owner": "InitializeChunkPool",
+      "kind": "object_creation",
+      "detail": "PoolBlock",
+      "snippet": "new PoolBlock { Offset = 0, Length = capacity }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 7587,
+      "owner": "CreateTerrainLayerMaskSampler",
+      "kind": "object_creation",
+      "detail": "TerrainLayerMaskSampler",
+      "snippet": "new TerrainLayerMaskSampler(pixels, layerIndex & 3)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 8139,
+      "owner": "NormalizeFlowDirection",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(octant.x, octant.y)"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

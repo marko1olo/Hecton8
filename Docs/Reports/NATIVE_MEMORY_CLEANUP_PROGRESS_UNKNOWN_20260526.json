@@ -1,0 +1,85 @@
+{
+  "generatedSamara": "2026-05-26T12:35:27+04:00",
+  "agent": "UNKNOWN",
+  "evidenceClass": "STATIC_LOCAL_JSONL_STATIC_ROSLYN_LEDGER_STATUS_LOG_REVIEW",
+  "tokenSnapshot": {
+    "report": "Docs/Reports/TOKEN_USAGE_AUDIT_2026-05-26.json",
+    "ledger": "Docs/TOKEN_USAGE_LEDGER.md",
+    "totalTokens": 100190687073,
+    "inputTokens": 99842361313,
+    "cachedInputTokens": 95934146304,
+    "outputTokens": 347808960,
+    "reasoningOutputTokens": 109975170,
+    "sessionsWithUsage": 2707,
+    "jsonlFiles": 2832,
+    "firstPartyAssetsProjectCsFiles": 2509,
+    "firstPartyAssetsProjectCsLines": 1810267,
+    "broadSourceFiles": 15421,
+    "broadSourceLines": 16983272,
+    "gpt53CodexStandardEstimateUsd": 28497.17730895,
+    "gpt53CodexNoCacheUpperEstimateUsd": 179593.45773775002
+  },
+  "nativeLedgerDelta": {
+    "baselineLedger": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_UNKNOWN_CURRENT_20260526_0052.json",
+    "currentLedger": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1315_PASS14.json",
+    "baselineTimestampLocal": "2026-05-26T00:55:25",
+    "currentTimestampLocal": "2026-05-26T12:31:01",
+    "hours": 11.593463722334969,
+    "baseline": {
+      "scannedFiles": 2421,
+      "parseFailures": 0,
+      "nativeFields": 7324,
+      "forbiddenPersistentCandidates": 1770,
+      "forbiddenMonoBehaviourCandidates": 358,
+      "jobTransientFields": 5490,
+      "stackOnlyRefStructViews": 19,
+      "rawPointerFields": 865
+    },
+    "current": {
+      "scannedFiles": 2432,
+      "parseFailures": 0,
+      "nativeFields": 6811,
+      "forbiddenPersistentCandidates": 1081,
+      "forbiddenMonoBehaviourCandidates": 82,
+      "jobTransientFields": 5501,
+      "stackOnlyRefStructViews": 184,
+      "rawPointerFields": 861
+    },
+    "delta": {
+      "forbiddenPersistentCandidates": -689,
+      "forbiddenMonoBehaviourCandidates": -276,
+      "nativeFields": -513,
+      "stackOnlyRefStructViews": 165,
+      "rawPointerFields": -4,
+      "persistentCleanupPerHour": 59.43003889964584,
+      "monoBehaviourCleanupPerHour": 23.8065177595098
+    }
+  },
+  "topResidualPersistentFiles": [
+    {"count": 65, "path": "Assets/_Project/Scripts/World/VegetationMemoryPool.cs"},
+    {"count": 28, "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs"},
+    {"count": 24, "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs"},
+    {"count": 22, "path": "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs"},
+    {"count": 20, "path": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs"},
+    {"count": 20, "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs"},
+    {"count": 20, "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralVault.cs"}
+  ],
+  "topResidualMonoBehaviourFiles": [
+    {"count": 13, "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs"},
+    {"count": 13, "path": "Assets/_Project/Scripts/SaveManager.cs"},
+    {"count": 12, "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs"},
+    {"count": 11, "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonRuntime.cs"},
+    {"count": 10, "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs"}
+  ],
+  "dirtySourceSurface": {
+    "modifiedTrackedScriptFiles": 50,
+    "untrackedScriptEntries": 12,
+    "totalDirtyScriptEntries": 62
+  },
+  "buildBoundary": {
+    "freshBuildRunNow": false,
+    "reason": "CPU 100 percent and active dotnet process present",
+    "currentCompileStatus": "PENDING_CURRENT_BUILD"
+  },
+  "verdict": "REAL_PROGRESS_NOT_GLOBAL_CLEAN"
+}

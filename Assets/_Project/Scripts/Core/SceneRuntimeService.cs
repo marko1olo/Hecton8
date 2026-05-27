@@ -825,7 +825,12 @@ namespace Hecton8.Core
             image.raycastTarget = true;
             image.color = _TransitionAbyssColor;
 
-            Shader ditherShader = Shader.Find(TransitionDitherShaderName);
+            Shader ditherShader = null;
+            RuntimeShaderReferenceCatalog.TryGetSceneTransitionDitherShader(out ditherShader);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (ditherShader == null)
+                ditherShader = Shader.Find(TransitionDitherShaderName);
+#endif
             if (ditherShader != null)
             {
                 _transitionDitherMaterial = new Material(ditherShader); // COLD ALLOC: Material[1] - IGN scene dissolve material - owner: SceneRuntimeService

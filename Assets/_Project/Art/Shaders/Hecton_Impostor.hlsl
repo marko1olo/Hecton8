@@ -109,10 +109,16 @@ float2 HectonImpostorAtlasUv(float2 uv, uint viewIndex, float4 atlasGrid)
 {
     uv = HectonFiniteOr(uv, float2(0.5, 0.5));
     atlasGrid = HectonFiniteOr(atlasGrid, float4(4.0, 4.0, 0.25, 0.25));
-    uint columns = (uint)max(1.0, atlasGrid.x);
-    uint x = viewIndex % columns;
-    uint y = viewIndex / columns;
-    float2 invGrid = max(atlasGrid.zw, float2(0.0001, 0.0001));
+    float columnsFloat = clamp(floor(abs(atlasGrid.x) + 0.5), 1.0, 16.0);
+    float rowsFloat = clamp(floor(abs(atlasGrid.y) + 0.5), 1.0, 16.0);
+    uint columns = (uint)columnsFloat;
+    uint rows = (uint)rowsFloat;
+    uint totalViews = columns * rows;
+    totalViews = totalViews == 0u ? 1u : totalViews;
+    uint safeViewIndex = viewIndex % totalViews;
+    uint x = safeViewIndex % columns;
+    uint y = safeViewIndex / columns;
+    float2 invGrid = rcp(float2(columnsFloat, rowsFloat));
     return uv * invGrid + float2((float)x, (float)y) * invGrid;
 }
 

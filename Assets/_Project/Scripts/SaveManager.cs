@@ -144,8 +144,11 @@ namespace Hecton8.SaveSystem
         private readonly SaveBinaryStorage.IndexedSectorEntryInfo[] _indexedSectorDirectoryScratch = new SaveBinaryStorage.IndexedSectorEntryInfo[128];
         // COLD ALLOC: List<SaveSlotInfo>[8] - instance-owned metadata projection scratch - owner: SaveManager
         private readonly SaveSlotInfo[] _saveSlotInfoScratch = new SaveSlotInfo[SaveSlotScratchCapacity];
-        // COLD ALLOC: SaveLoadCandidate[9] - instance-owned load fallback chain scratch - owner: SaveManager
-        private NativeArray<SaveLoadCandidate> _loadCandidateScratch;
+        // COLD ALLOC: SaveManagerNativeBufferSet[1] - native save buffer owner indirection - owner: SaveManager
+        private SaveManagerNativeBufferSet _nativeBuffers = new SaveManagerNativeBufferSet();
+
+        private ref NativeArray<SaveLoadCandidate> _loadCandidateScratch => ref _nativeBuffers.LoadCandidateScratch;
+
         private int _saveableCount;
         private bool _registryDirty;
         private bool _saveableCapacityWarningLogged;
@@ -165,7 +168,7 @@ namespace Hecton8.SaveSystem
         // COLD ALLOC: object[1] - serializes static repair/audit candidate scratch - owner: SaveManager
         private static readonly object SaveLoadCandidateScratchSync = new object();
         // COLD ALLOC: SaveLoadCandidate[9] - static repair/audit load fallback scratch - owner: SaveManager
-        private static NativeArray<SaveLoadCandidate> SaveLoadCandidateScratch;
+        private static ref NativeArray<SaveLoadCandidate> SaveLoadCandidateScratch => ref StaticNativeBuffers.SaveLoadCandidateScratch;
         private static string s_persistentDataPathRoot;
 
         private sealed class SavePriorityComparerImpl : IComparer<ISaveable>
@@ -191,17 +194,38 @@ namespace Hecton8.SaveSystem
             return right.CompareTo(left);
         }
 
-        private NativeArray<byte> _savePayloadBuffer;
-        private NativeArray<byte> _compressedSaveBuffer;
-        private NativeArray<byte> _saveStagingBuffer;
-        private NativeArray<byte> _wfcOutpostGrid;
-        private NativeArray<ulong> _wfcOutpostPackedWords;
-        private NativeArray<ulong> _wfcOutpostRestoreWords;
-        private NativeArray<byte> _wfcOutpostPayloadBuffer;
-        private NativeArray<WfcOutpostSnapshotCacheEntry> _wfcOutpostSnapshotCache;
-        private NativeArray<AsyncPersistenceTelemetryEntry> _saveTelemetryRing;
-        private NativeArray<WfcOutpostTelemetryEntry> _wfcOutpostTelemetryRing;
-        private NativeArray<WfcOutpostTelemetryEntry> _wfcOutpostEventTelemetryRing;
+        private sealed class SaveManagerNativeBufferSet
+        {
+            public NativeArray<SaveLoadCandidate> LoadCandidateScratch;
+            public NativeArray<byte> SavePayloadBuffer;
+            public NativeArray<byte> CompressedSaveBuffer;
+            public NativeArray<byte> SaveStagingBuffer;
+            public NativeArray<byte> WfcOutpostGrid;
+            public NativeArray<ulong> WfcOutpostPackedWords;
+            public NativeArray<ulong> WfcOutpostRestoreWords;
+            public NativeArray<byte> WfcOutpostPayloadBuffer;
+            public NativeArray<WfcOutpostSnapshotCacheEntry> WfcOutpostSnapshotCache;
+            public NativeArray<AsyncPersistenceTelemetryEntry> SaveTelemetryRing;
+            public NativeArray<WfcOutpostTelemetryEntry> WfcOutpostTelemetryRing;
+            public NativeArray<WfcOutpostTelemetryEntry> WfcOutpostEventTelemetryRing;
+        }
+
+        private static class StaticNativeBuffers
+        {
+            public static NativeArray<SaveLoadCandidate> SaveLoadCandidateScratch;
+        }
+
+        private ref NativeArray<byte> _savePayloadBuffer => ref _nativeBuffers.SavePayloadBuffer;
+        private ref NativeArray<byte> _compressedSaveBuffer => ref _nativeBuffers.CompressedSaveBuffer;
+        private ref NativeArray<byte> _saveStagingBuffer => ref _nativeBuffers.SaveStagingBuffer;
+        private ref NativeArray<byte> _wfcOutpostGrid => ref _nativeBuffers.WfcOutpostGrid;
+        private ref NativeArray<ulong> _wfcOutpostPackedWords => ref _nativeBuffers.WfcOutpostPackedWords;
+        private ref NativeArray<ulong> _wfcOutpostRestoreWords => ref _nativeBuffers.WfcOutpostRestoreWords;
+        private ref NativeArray<byte> _wfcOutpostPayloadBuffer => ref _nativeBuffers.WfcOutpostPayloadBuffer;
+        private ref NativeArray<WfcOutpostSnapshotCacheEntry> _wfcOutpostSnapshotCache => ref _nativeBuffers.WfcOutpostSnapshotCache;
+        private ref NativeArray<AsyncPersistenceTelemetryEntry> _saveTelemetryRing => ref _nativeBuffers.SaveTelemetryRing;
+        private ref NativeArray<WfcOutpostTelemetryEntry> _wfcOutpostTelemetryRing => ref _nativeBuffers.WfcOutpostTelemetryRing;
+        private ref NativeArray<WfcOutpostTelemetryEntry> _wfcOutpostEventTelemetryRing => ref _nativeBuffers.WfcOutpostEventTelemetryRing;
         private ulong _lastWfcOutpostSectorHash;
         private ulong _lastWfcOutpostPayloadHash;
         private ulong _wfcOutpostMutableGridSectorHash;
@@ -590,17 +614,17 @@ namespace Hecton8.SaveSystem
                 _worldPager = null;
             }
 
-            DisposeNativeArray(ref _savePayloadBuffer);
-            DisposeNativeArray(ref _compressedSaveBuffer);
-            DisposeNativeArray(ref _saveStagingBuffer);
-            DisposeNativeArray(ref _wfcOutpostPackedWords);
-            DisposeNativeArray(ref _wfcOutpostRestoreWords);
-            DisposeNativeArray(ref _wfcOutpostPayloadBuffer);
-            DisposeNativeArray(ref _wfcOutpostSnapshotCache);
-            DisposeNativeArray(ref _saveTelemetryRing);
-            DisposeNativeArray(ref _wfcOutpostTelemetryRing);
-            DisposeNativeArray(ref _wfcOutpostEventTelemetryRing);
-            DisposeNativeArray(ref _loadCandidateScratch);
+            DisposeNativeArray(ref _nativeBuffers.SavePayloadBuffer);
+            DisposeNativeArray(ref _nativeBuffers.CompressedSaveBuffer);
+            DisposeNativeArray(ref _nativeBuffers.SaveStagingBuffer);
+            DisposeNativeArray(ref _nativeBuffers.WfcOutpostPackedWords);
+            DisposeNativeArray(ref _nativeBuffers.WfcOutpostRestoreWords);
+            DisposeNativeArray(ref _nativeBuffers.WfcOutpostPayloadBuffer);
+            DisposeNativeArray(ref _nativeBuffers.WfcOutpostSnapshotCache);
+            DisposeNativeArray(ref _nativeBuffers.SaveTelemetryRing);
+            DisposeNativeArray(ref _nativeBuffers.WfcOutpostTelemetryRing);
+            DisposeNativeArray(ref _nativeBuffers.WfcOutpostEventTelemetryRing);
+            DisposeNativeArray(ref _nativeBuffers.LoadCandidateScratch);
             DisposeStaticLoadCandidateScratch();
             _wfcOutpostGrid = default;
             _macroDatabaseService = null;
@@ -1188,12 +1212,12 @@ namespace Hecton8.SaveSystem
         {
             lock (SaveLoadCandidateScratchSync)
             {
-                if (!SaveLoadCandidateScratch.IsCreated)
+                if (!StaticNativeBuffers.SaveLoadCandidateScratch.IsCreated)
                     return;
 
-                NativeMemorySentinel.UnregisterNativeArray(SaveLoadCandidateScratch);
-                SaveLoadCandidateScratch.Dispose();
-                SaveLoadCandidateScratch = default;
+                NativeMemorySentinel.UnregisterNativeArray(StaticNativeBuffers.SaveLoadCandidateScratch);
+                StaticNativeBuffers.SaveLoadCandidateScratch.Dispose();
+                StaticNativeBuffers.SaveLoadCandidateScratch = default;
             }
         }
 
@@ -2911,7 +2935,9 @@ namespace Hecton8.SaveSystem
             SaveData data = SaveData.CreateNew(playTime);
             PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltaSnapshot = default;
+            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltaSnapshotOwner = default;
             NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorSnapshot = default;
+            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorSnapshotOwner = default;
             NativeArray<uint> packedQuestStateSnapshot = default;
             QuestSaveHeader packedQuestSaveHeader = default;
             NativeArray<byte> voxelDeltaSnapshot = default;
@@ -2952,7 +2978,27 @@ namespace Hecton8.SaveSystem
                             voxelDeltaSnapshotByteCount <= 0)
                         {
                             if (voxelDeltaSnapshotByteCount > 0)
-                                throw new InvalidOperationException($"Voxel delta native snapshot copy failed for {voxelDeltaSnapshotByteCount} bytes.");
+                            {
+                                const string reason = "Voxel delta native snapshot copy failed.";
+                                const string logReason = "[SaveManager] Save failed: voxel delta native snapshot copy failed.";
+                                const uint failureCode = 3u;
+                                voxelDeltaSnapshot = default;
+                                if (snapshotPauseActive)
+                                {
+                                    ReleaseSnapshotPause(operationId);
+                                    snapshotPauseActive = false;
+                                }
+
+                                RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
+                                PublishSaveCompleted(slotIndex, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: false);
+                                PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Failed, 1f, failureCode);
+                                DumpSaveBlackBox();
+                                RecordFailure(slotName, "save", reason);
+                                LastOperationError = reason;
+                                LogError(logReason);
+                                SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
+                                return;
+                            }
 
                             voxelDeltaSnapshot = default;
                         }
@@ -2972,15 +3018,91 @@ namespace Hecton8.SaveSystem
                 Stopwatch divergenceSnapshotTimer = Stopwatch.StartNew();
                 if (persistentWorldRegistry != null)
                 {
-                    persistentWorldRegistry.CaptureSaveSnapshot();
-                    persistentWorldDeltaSnapshot = persistentWorldRegistry.GetSaveSnapshotArray();
+                    if (!persistentWorldRegistry.CaptureSaveSnapshot())
+                    {
+                        const string reason = "Persistent world save snapshot capture failed.";
+                        const string logReason = "[SaveManager] Save failed: persistent world save snapshot capture failed.";
+                        const uint failureCode = 3u;
+                        if (snapshotPauseActive)
+                        {
+                            ReleaseSnapshotPause(operationId);
+                            snapshotPauseActive = false;
+                        }
+
+                        RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
+                        PublishSaveCompleted(slotIndex, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: false);
+                        PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Failed, 1f, failureCode);
+                        DumpSaveBlackBox();
+                        RecordFailure(slotName, "save", reason);
+                        LastOperationError = reason;
+                        LogError(logReason);
+                        SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
+                        return;
+                    }
+
+                    int persistentWorldSnapshotCapacity = persistentWorldRegistry.SaveSnapshotCapacity;
+                    if (persistentWorldSnapshotCapacity > 0)
+                    {
+                        persistentWorldDeltaSnapshotOwner = new NativeArray<PersistentWorldDeltaRecord>(
+                            persistentWorldSnapshotCapacity,
+                            Allocator.Persistent,
+                            NativeArrayOptions.UninitializedMemory);
+                        RegisterTransientNativeArray(persistentWorldDeltaSnapshotOwner, "persistentWorldDeltaSnapshotOwner");
+
+                        if (!persistentWorldRegistry.TryCopySaveSnapshotDeltas(
+                            persistentWorldDeltaSnapshotOwner,
+                            persistentWorldSnapshotCapacity,
+                            out int copiedPersistentWorldDeltas))
+                        {
+                            DisposeNativeArray(ref persistentWorldDeltaSnapshotOwner);
+                            const string reason = "Persistent world save snapshot copy failed.";
+                            const string logReason = "[SaveManager] Save failed: persistent world save snapshot copy failed.";
+                            const uint failureCode = 3u;
+                            if (snapshotPauseActive)
+                            {
+                                ReleaseSnapshotPause(operationId);
+                                snapshotPauseActive = false;
+                            }
+
+                            RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
+                            PublishSaveCompleted(slotIndex, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: false);
+                            PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Failed, 1f, failureCode);
+                            DumpSaveBlackBox();
+                            RecordFailure(slotName, "save", reason);
+                            LastOperationError = reason;
+                            LogError(logReason);
+                            SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
+                            return;
+                        }
+
+                        if (copiedPersistentWorldDeltas > 0)
+                        {
+                            NativeArray<PersistentWorldDeltaRecord> copiedView = copiedPersistentWorldDeltas < persistentWorldDeltaSnapshotOwner.Length
+                                ? persistentWorldDeltaSnapshotOwner.GetSubArray(0, copiedPersistentWorldDeltas)
+                                : persistentWorldDeltaSnapshotOwner;
+                            persistentWorldDeltaSnapshot = copiedView.AsReadOnly();
+                        }
+                    }
                 }
 
                 EcosystemDirector ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
                 if (ecosystemDirector != null)
                 {
                     ecosystemDirector.CaptureSaveSnapshot();
-                    ecosystemSectorSnapshot = ecosystemDirector.GetSaveSnapshotArray();
+                    NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemView = ecosystemDirector.GetSaveSnapshotArray();
+                    if (ecosystemView.IsCreated && ecosystemView.Length > 0)
+                    {
+                        ecosystemSectorSnapshotOwner = new NativeArray<EcosystemSectorSaveRecord>(
+                            ecosystemView.Length,
+                            Allocator.Persistent,
+                            NativeArrayOptions.UninitializedMemory);
+                        RegisterTransientNativeArray(ecosystemSectorSnapshotOwner, "ecosystemSectorSnapshotOwner");
+
+                        for (int i = 0; i < ecosystemView.Length; i++)
+                            ecosystemSectorSnapshotOwner[i] = ecosystemView[i];
+
+                        ecosystemSectorSnapshot = ecosystemSectorSnapshotOwner.AsReadOnly();
+                    }
                 }
 
                 divergenceSnapshotTimer.Stop();
@@ -3045,7 +3167,7 @@ namespace Hecton8.SaveSystem
                 int rawPayloadLength;
                 long compressionPipelineStartTicks = Stopwatch.GetTimestamp();
 
-                ExecuteVerifiedSavePipeline(
+                if (!TryExecuteVerifiedSavePipeline(
                     slotName,
                     tempPath,
                     GetPrimarySaveFilePath(slotName),
@@ -3061,7 +3183,24 @@ namespace Hecton8.SaveSystem
                     backupRetention,
                     out payloadHash64,
                     out rawPayloadLength,
-                    out long compressedSizeBytes);
+                    out long compressedSizeBytes,
+                    out string savePipelineError))
+                {
+                    await Awaitable.MainThreadAsync();
+                    const uint failureCode = 3u;
+                    string failureMessage = string.IsNullOrEmpty(savePipelineError)
+                        ? "Verified save pipeline failed."
+                        : savePipelineError;
+                    RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
+                    PublishSaveCompleted(slotIndex, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: false);
+                    PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Failed, 1f, failureCode);
+                    DumpSaveBlackBox();
+                    RecordFailure(slotName, "save", failureMessage);
+                    LastOperationError = failureMessage;
+                    LogError("[SaveManager] Save failed: " + failureMessage);
+                    SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(failureMessage), failureMessage);
+                    return;
+                }
 
                 long compressionPipelineElapsedTicks = Stopwatch.GetTimestamp() - compressionPipelineStartTicks;
                 await Awaitable.MainThreadAsync();
@@ -3116,6 +3255,12 @@ namespace Hecton8.SaveSystem
 
                 if (packedQuestStateSnapshot.IsCreated)
                     DisposeNativeArray(ref packedQuestStateSnapshot);
+
+                if (persistentWorldDeltaSnapshotOwner.IsCreated)
+                    DisposeNativeArray(ref persistentWorldDeltaSnapshotOwner);
+
+                if (ecosystemSectorSnapshotOwner.IsCreated)
+                    DisposeNativeArray(ref ecosystemSectorSnapshotOwner);
 
                 if (voxelDeltaSnapshot.IsCreated && ownsVoxelDeltaSnapshot)
                     DisposeNativeArray(ref voxelDeltaSnapshot);
@@ -3357,11 +3502,15 @@ namespace Hecton8.SaveSystem
             in AbsoluteUniversePosition savedAup,
             float terrainRuntimeY)
         {
-            double3 committedOffset = ResolveCurrentRuntimeOriginDouble3();
-            double savedRuntimeY = (savedAup.GridY * (double)AbsoluteUniversePosition.CellSizeMeters) +
-                                   savedAup.LocalY -
-                                   committedOffset.y;
-            return terrainRuntimeY - savedRuntimeY;
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return double.NaN;
+
+            double3 runtimeDelta = AUPMath.AUPDeltaClamped(in savedAup, in originAup);
+            if (!math.all(math.isfinite(runtimeDelta)))
+                return double.NaN;
+
+            return terrainRuntimeY - runtimeDelta.y;
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
@@ -3378,14 +3527,6 @@ namespace Hecton8.SaveSystem
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
             return positionAup.IsFinite();
-        }
-
-        private static double3 ResolveCurrentRuntimeOriginDouble3()
-        {
-            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
-            return originAup.IsFinite()
-                ? originAup.ToAbsoluteDouble3()
-                : double3.zero;
         }
 
         private static void TeleportLoadedPlayer(
@@ -3643,7 +3784,18 @@ namespace Hecton8.SaveSystem
                 }
 
                 if (data == null)
-                    throw new Exception(string.IsNullOrEmpty(lastErrorMessage) ? "No load candidate could be restored." : lastErrorMessage);
+                {
+                    string loadFailure = string.IsNullOrEmpty(lastErrorMessage)
+                        ? "No load candidate could be restored."
+                        : lastErrorMessage;
+                    await Awaitable.MainThreadAsync();
+                    RecordFailure(slotName, "load", loadFailure);
+                    LastOperationError = loadFailure;
+                    LogError("[SaveManager] Load failed: " + loadFailure);
+                    SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
+                    HideLoadingPipelineScreen();
+                    return;
+                }
 
                 await Awaitable.MainThreadAsync();
                 StageIntegrityPayload(_savePayloadBuffer, loadedPayloadLength, loadedPayloadHash64, slotName);
@@ -3699,7 +3851,18 @@ namespace Hecton8.SaveSystem
                     if (loadedVoxelDeltaSnapshot.IsCreated && loadedVoxelDeltaSnapshot.Length > 0)
                     {
                         if (!voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
-                            throw new Exception(voxelLoadError);
+                        {
+                            await Awaitable.MainThreadAsync();
+                            string loadFailure = string.IsNullOrEmpty(voxelLoadError)
+                                ? "Voxel delta native snapshot load failed."
+                                : voxelLoadError;
+                            RecordFailure(slotName, "load", loadFailure);
+                            LastOperationError = loadFailure;
+                            LogError("[SaveManager] Load failed: " + loadFailure);
+                            SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
+                            HideLoadingPipelineScreen();
+                            return;
+                        }
                     }
                     else
                     {
@@ -4175,31 +4338,51 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static void CommitTempSaveToPrimary(string slotName, string tempPath, string finalPath, int backupRetentionCount)
+        private static bool TryCommitTempSaveToPrimary(string slotName, string tempPath, string finalPath, int backupRetentionCount, out string error)
         {
+            error = string.Empty;
             if (!FileExists(tempPath))
-                throw new FileNotFoundException("Verified temp save was not found during final rotation.", GetPersistentAbsolutePath(tempPath));
+            {
+                error = "Verified temp save was not found during final rotation.";
+                return false;
+            }
 
-            // Step 5: rotate the previously committed primary into the backup chain before overwrite.
-            RotateBackupChain(finalPath, generation => GetBackupSaveFilePath(slotName, generation), math.clamp(backupRetentionCount, 1, 8));
+            try
+            {
+                // Step 5: rotate the previously committed primary into the backup chain before overwrite.
+                RotateBackupChain(finalPath, generation => GetBackupSaveFilePath(slotName, generation), math.clamp(backupRetentionCount, 1, 8));
 
-            // Step 6: promote the verified temp artifact to the authoritative primary slot.
-            File.Move(GetPersistentAbsolutePath(tempPath), GetPersistentAbsolutePath(finalPath));
+                // Step 6: promote the verified temp artifact to the authoritative primary slot.
+                File.Move(GetPersistentAbsolutePath(tempPath), GetPersistentAbsolutePath(finalPath));
 
-            string absoluteFinalPath = GetPersistentAbsolutePath(finalPath);
-            if (new FileInfo(absoluteFinalPath) is FileInfo promotedInfo && promotedInfo.Exists)
-                AsyncWriteManager.QueueThrottledFlush(absoluteFinalPath, promotedInfo.Length, out _);
+                string absoluteFinalPath = GetPersistentAbsolutePath(finalPath);
+                if (new FileInfo(absoluteFinalPath) is FileInfo promotedInfo && promotedInfo.Exists)
+                    AsyncWriteManager.QueueThrottledFlush(absoluteFinalPath, promotedInfo.Length, out _);
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
 
             // Step 7: primary must exist after promotion.
             if (!FileExists(finalPath))
-                throw new IOException($"Primary save promotion failed for '{slotName}'.");
+            {
+                error = "Primary save promotion failed.";
+                return false;
+            }
 
             // Step 8: temp must be fully consumed after promotion.
             if (FileExists(tempPath))
-                throw new IOException($"Temp save cleanup failed for '{slotName}'.");
+            {
+                error = "Temp save cleanup failed.";
+                return false;
+            }
+
+            return true;
         }
 
-        private static void ExecuteVerifiedSavePipeline(
+        private static bool TryExecuteVerifiedSavePipeline(
             string slotName,
             string tempPath,
             string finalPath,
@@ -4215,11 +4398,13 @@ namespace Hecton8.SaveSystem
             int backupRetentionCount,
             out ulong payloadHash64,
             out int rawPayloadLength,
-            out long compressedSizeBytes)
+            out long compressedSizeBytes,
+            out string error)
         {
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
             compressedSizeBytes = 0L;
+            error = string.Empty;
             // Step 1: clear any stale temp artifact from a previous interrupted transaction.
             DeleteFileIfExists(tempPath);
 
@@ -4242,18 +4427,22 @@ namespace Hecton8.SaveSystem
                     out rawPayloadLength,
                     out string writeError))
             {
-                throw new Exception(writeError);
+                error = writeError;
+                return false;
             }
 
             // Step 4: the writer already re-reads metadata internally, but the pipeline still requires the temp artifact to exist here.
             if (!FileExists(tempPath))
-                throw new FileNotFoundException("Verified temp save was not created by the binary writer.", absoluteTempPath);
+            {
+                error = "Verified temp save was not created by the binary writer.";
+                return false;
+            }
 
             if (!ModSaveStateStore.TryCommitMmfPayloads(absoluteTempPath, out string modPayloadCommitError))
                 ReportModPayloadCommitFailure(slotName, modPayloadCommitError);
 
             compressedSizeBytes = File.Exists(absoluteTempPath) ? new FileInfo(absoluteTempPath).Length : 0L;
-            CommitTempSaveToPrimary(slotName, tempPath, finalPath, backupRetentionCount);
+            return TryCommitTempSaveToPrimary(slotName, tempPath, finalPath, backupRetentionCount, out error);
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
@@ -5080,7 +5269,7 @@ namespace Hecton8.SaveSystem
                         packedQuestStateBuffer.CopyFrom(packedQuestStateWords);
                     }
 
-                    ExecuteVerifiedSavePipeline(
+                    if (!TryExecuteVerifiedSavePipeline(
                         slotName,
                         tempSavePath,
                         primarySavePath,
@@ -5096,7 +5285,11 @@ namespace Hecton8.SaveSystem
                         backupRetentionCount,
                         out _,
                         out _,
-                        out _);
+                        out _,
+                        out _))
+                    {
+                        return false;
+                    }
                 }
                 finally
                 {
@@ -5146,15 +5339,7 @@ namespace Hecton8.SaveSystem
 
         private static void AcquireReadBuffer(out NativeArray<byte> buffer, out bool ownsBuffer)
         {
-            SaveManager manager = GlobalRegistry.SaveRuntime;
-            if (manager != null && manager._savePayloadBuffer.IsCreated)
-            {
-                buffer = manager._savePayloadBuffer;
-                ownsBuffer = false;
-                return;
-            }
-
-            // COLD ALLOC: NativeArray<byte>[67108864] — fallback raw save read buffer when SaveManager instance is unavailable — owner: SaveManager
+            // COLD ALLOC: NativeArray<byte>[67108864] — isolated static save read buffer prevents live SaveManager payload aliasing — owner: SaveManager
             buffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, "fallbackReadBuffer", NativeMemoryLifetime);
             ownsBuffer = true;
@@ -5171,19 +5356,9 @@ namespace Hecton8.SaveSystem
             out NativeArray<byte> compressedBuffer,
             out bool ownsCompressedBuffer)
         {
-            SaveManager manager = GlobalRegistry.SaveRuntime;
-            if (manager != null && manager._savePayloadBuffer.IsCreated && manager._compressedSaveBuffer.IsCreated)
-            {
-                rawBuffer = manager._savePayloadBuffer;
-                compressedBuffer = manager._compressedSaveBuffer;
-                ownsRawBuffer = false;
-                ownsCompressedBuffer = false;
-                return;
-            }
-
-            // COLD ALLOC: NativeArray<byte>[67108864] — fallback raw save write buffer when SaveManager instance is unavailable — owner: SaveManager
+            // COLD ALLOC: NativeArray<byte>[67108864] — isolated static save write buffer prevents live SaveManager payload aliasing — owner: SaveManager
             rawBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            // COLD ALLOC: NativeArray<byte>[67378176] — fallback compressed save write buffer when SaveManager instance is unavailable — owner: SaveManager
+            // COLD ALLOC: NativeArray<byte>[67378176] — isolated static compressed save buffer prevents live SaveManager payload aliasing — owner: SaveManager
             compressedBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             NativeMemorySentinel.RegisterNativeArray(rawBuffer, NativeMemoryOwner, "fallbackRawWriteBuffer", NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(compressedBuffer, NativeMemoryOwner, "fallbackCompressedWriteBuffer", NativeMemoryLifetime);

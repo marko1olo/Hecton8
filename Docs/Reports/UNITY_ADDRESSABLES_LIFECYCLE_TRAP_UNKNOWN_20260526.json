@@ -1,0 +1,74 @@
+{
+  "agent": "UNKNOWN",
+  "date": "2026-05-26",
+  "scope": "Unity Addressables and Resources lifecycle trap pass",
+  "addressablesPackageVersion": "2.7.6",
+  "externalProof": [
+    "https://docs.unity3d.com/Packages/com.unity.addressables@2.7/manual/AddressableAssetsAsyncOperationHandle.html",
+    "https://docs.unity3d.com/Packages/com.unity.addressables@2.7/manual/memory-assets.html",
+    "https://docs.unity3d.com/ja/current/ScriptReference/Resources.UnloadUnusedAssets.html"
+  ],
+  "sourceChanges": [
+    {
+      "file": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "change": "Preserved queued world-prefab records before handle validity checks."
+    },
+    {
+      "file": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "change": "Persisted last-access touch data for queued and still-loading records."
+    },
+    {
+      "file": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "change": "Released failed or null-result Addressables handles through the governor route."
+    }
+  ],
+  "scanResults": {
+    "firstPartyRuntimeResourcesHits": 0,
+    "firstPartyRuntimeWaitForCompletionHits": 0,
+    "firstPartyRuntimeAddressablesHits": [
+      "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2572 Addressables.ReleaseInstance(handle) dirty_not_touched",
+      "Assets/_Project/Scripts/ItemCatalog.cs:1013 Addressables.Release(handle) governor_missing_fault_fallback",
+      "Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs:569 Addressables.LoadAssetAsync<GameObject>(address)",
+      "Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs:4589 Addressables.Release(handle)"
+    ],
+    "vendorCrestResourcesHits": [
+      "Assets/Crest/Crest/Scripts/Helpers/ComputeShaderHelpers.cs:14",
+      "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:127",
+      "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:130",
+      "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTBaker.cs:79"
+    ]
+  },
+  "validation": {
+    "diffCheck": "passed with LF/CRLF warning only",
+    "build": {
+      "status": "passed",
+      "log": "Docs/Reports/BUILD_UNKNOWN_ADDRESSABLES_LIFECYCLE_TRAP_20260526.log",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "proofLines": [66, 67, 68]
+    },
+    "documentation": {
+      "verifyDocStructure": {
+        "status": "passed",
+        "activeDocCount": 696,
+        "encodingWithoutUtf8Sig": 0,
+        "report": "Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json"
+      },
+      "oopDocScanner": {
+        "status": "passed",
+        "finalPass": true,
+        "activeFileCount": 696,
+        "sourceSyncPass": true,
+        "inventory": "Docs/Reports/DOCUMENTATION_CORPUS_INVENTORY_X_012.json",
+        "report": "Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json"
+      }
+    }
+  },
+  "runtimeMicrosecondsSavedClaimed": 0,
+  "remainingDebt": [
+    "Dirty GameBootstrapper and WorldChunkResidencyManager lifecycle code was not edited.",
+    "Vendor Crest Resources.Load compute-shader routes remain third-party surface.",
+    "Unity player import, Play Mode, profiler, Memory Profiler, and platform proof remain pending."
+  ]
+}

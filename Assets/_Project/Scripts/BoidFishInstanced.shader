@@ -109,8 +109,8 @@ Shader "Hecton8/BoidFishInstanced"
         }
 
         // ── Odin pass, bez teney, bez depth prepass ──
-        // ShadowCaster i DepthOnly passes NAMERENNO OTSUTSTVUYuT.
-        // 5000 ryb × shadow pass = ubiystvo dlya MX350.
+        // ShadowCaster stays absent. DepthOnly below feeds boid depth occlusion.
+        // 5000 fish x shadow pass is not a low-tier budget.
 
         Pass
         {
@@ -678,6 +678,179 @@ Shader "Hecton8/BoidFishInstanced"
                 }
 
                 return half4(color, 1.0);
+            }
+
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "DepthOnly"
+            Tags { "LightMode" = "DepthOnly" }
+
+            Cull Back
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+
+            HLSLPROGRAM
+            #pragma vertex DepthOnlyVertex
+            #pragma fragment DepthOnlyFragment
+            #pragma target 4.5
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            struct BoidData
+            {
+                float3 position;
+                float3 velocity;
+                float  panic;
+                uint   stateFlags;
+            };
+
+            StructuredBuffer<BoidData> _BoidsBuffer;
+            StructuredBuffer<uint> _VisibleBoidIndices;
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseColor;
+                float4 _BaseMap_ST;
+                float  _FishScale;
+                float  _H8FoveatedVatTimeScale;
+                float  _TailFrequency;
+                float  _TailAmplitude;
+                float  _TailPower;
+                float  _TailPhaseVariance;
+                float  _TailSpeedInfluence;
+                float  _TailWorldYPhase;
+                float  _VatEnabled;
+                float  _VatFrameCount;
+                float  _VatVertexCount;
+                float  _VatPlaybackSpeed;
+                float  _VatInstancePhaseScale;
+                float  _VatPositionScale;
+                float  _VatNormalBlend;
+                float  _VatSpeedReference;
+                float  _Phase;
+                float  _FinStretchStrength;
+                float  _BoidUseVisibleIndices;
+                float  _HitFlashStartTime;
+                float  _HitFlashDuration;
+                float  _HitFlashIntensity;
+                float  _HitFlashRadius;
+                float  _HitFlashBloat;
+                float4 _HitFlashOriginWS;
+                float4 _HitFlashColor;
+                float  _ColorVariance;
+                float4 _BellyColor;
+                float  _BellyBlend;
+                float4 _BiolumColor;
+                float  _BiolumStrength;
+                float  _BiolumPulseAmplitude;
+                float  _BiolumNightResponse;
+                float  _BiolumSpotScale;
+                float  _BiolumSpotThreshold;
+                float  _AggressiveGlowStrength;
+                float  _LodDitherKeep01;
+                float4 _ParasiteBaseColor;
+                float4 _ParasiteGlowColor;
+                float  _ParasiteGlowStrength;
+            CBUFFER_END
+
+            float _VelocitySleepScale;
+            float4 _TotalUniverseOffset;
+
+            #define BOID_FLAG_CONSUMED 8u
+
+            struct DepthOnlyAttributes
+            {
+                #if defined(UNITY_INSTANCING_ENABLED)
+                    UNITY_VERTEX_INPUT_INSTANCE_ID
+                #else
+                uint instanceID : SV_InstanceID;
+                #endif
+                float4 positionOS : POSITION;
+            };
+
+            struct DepthOnlyVaryings
+            {
+                UNITY_VERTEX_OUTPUT_STEREO
+                float4 positionCS : SV_POSITION;
+            };
+
+            uint DepthHashUInt(uint value)
+            {
+                value ^= value >> 16;
+                value *= 0x7feb352du;
+                value ^= value >> 15;
+                value *= 0x846ca68bu;
+                value ^= value >> 16;
+                return value;
+            }
+
+            float DepthHashToUnit01(uint hash)
+            {
+                return (float)(hash & 0x00ffffffu) * (1.0 / 16777216.0);
+            }
+
+            float3 DepthFastNormalizeL1(float3 value, float3 fallback)
+            {
+                float len = abs(value.x) + abs(value.y) + abs(value.z);
+                return lerp(fallback, value * rcp(max(len, 0.00001)), step(0.00001, len));
+            }
+
+            float3x3 DepthBuildLookRotation(float3 forward)
+            {
+                forward = DepthFastNormalizeL1(forward, float3(0, 0, 1));
+                float3 up = lerp(float3(0, 1, 0), float3(1, 0, 0), step(0.999, abs(forward.y)));
+                float3 right = DepthFastNormalizeL1(cross(up, forward), float3(1, 0, 0));
+                up = cross(forward, right);
+                return float3x3(
+                    right.x, up.x, forward.x,
+                    right.y, up.y, forward.y,
+                    right.z, up.z, forward.z);
+            }
+
+            DepthOnlyVaryings DepthOnlyVertex(DepthOnlyAttributes input)
+            {
+                DepthOnlyVaryings output;
+                #if defined(UNITY_INSTANCING_ENABLED)
+                    UNITY_SETUP_INSTANCE_ID(input);
+                    uint instanceID = unity_InstanceID;
+                #else
+                    uint instanceID = input.instanceID;
+                #endif
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+                uint boidIndex = _BoidUseVisibleIndices > 0.5 ? _VisibleBoidIndices[instanceID] : instanceID;
+                BoidData boid = _BoidsBuffer[boidIndex];
+                float consumedMask = (float)((boid.stateFlags & BOID_FLAG_CONSUMED) >> 3u);
+                float consumed01 = saturate(boid.panic) * consumedMask;
+                float aliveMask = 1.0 - step(0.999, consumed01);
+                uint instanceHash = DepthHashUInt(instanceID);
+                float lodKeep = saturate(_LodDitherKeep01);
+                float lodVisibleMask = step(max(DepthHashToUnit01(instanceHash ^ 0x5f356495u), 0.000001), lodKeep);
+                if (aliveMask * lodVisibleMask < 0.5)
+                {
+                    output.positionCS = float4(2.0, 2.0, 1.0, 1.0);
+                    return output;
+                }
+
+                float3 boidAup = boid.position + _TotalUniverseOffset.xyz;
+                float3 aupScaleJitter = 1.0 + frac(boidAup.xyz) * float3(0.20, 0.08, 0.14);
+                float scaleVariation = 0.95 + DepthHashToUnit01(instanceHash) * 0.1;
+                float consumedScale = 1.0 - consumed01;
+                float lodMorph = lodKeep * lodKeep * (3.0 - 2.0 * lodKeep);
+                float3 localPos = input.positionOS.xyz * _FishScale * scaleVariation * aupScaleJitter * consumedScale * lodMorph;
+                float3x3 rotMatrix = DepthBuildLookRotation(boid.velocity * saturate(_VelocitySleepScale));
+                output.positionCS = TransformWorldToHClip(mul(rotMatrix, localPos) + boid.position);
+                return output;
+            }
+
+            half4 DepthOnlyFragment(DepthOnlyVaryings input) : SV_Target
+            {
+                return half4(0.0h, 0.0h, 0.0h, 0.0h);
             }
 
             ENDHLSL

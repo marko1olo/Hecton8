@@ -28,7 +28,7 @@ MonoBehaviour:
   rareRewardHook: 'The rare pull is real: Rare Earth Dust and Stabilizer Coil.'
   landmarkIdentity: Tier 13 North Reserve reads through spires, steps, and big natural
     crowns. Landmarks should feel scarce but memorable.
-  safePocketIdentity: Safe pockets are scarce. Relief should come from one clear
+  safePocketIdentity: Reorientation pockets are scarce. Relief should come from one clear
     nook, not constant cover.
   riskSummary: 'Main failure mode: bad drops and exposed lines, then overstaying
     for loot. Creature pressure stays medium_to_high.'

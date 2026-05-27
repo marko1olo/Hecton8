@@ -14,12 +14,14 @@ Shader "Hidden/Hecton8/StochasticSSR"
         ZTest Always
 
         HLSLINCLUDE
-        #pragma target 4.5
+        #pragma target 3.5
         #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
         #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+        #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+        #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
         CBUFFER_START(HectonStochasticSsrGlobals)
             float4 _HectonSsrInputSize; // xy=input pixels, zw=input texel size
@@ -70,9 +72,14 @@ Shader "Hidden/Hecton8/StochasticSSR"
             return frac(52.9829189 * frac(dot(pixel + taaPhase, float2(0.06711056, 0.00583715))));
         }
 
+        float2 ResolveCameraSourceUV(float2 linearUV)
+        {
+            return FoveatedRemapLinearToNonUniform(saturate(linearUV));
+        }
+
         half4 FragMask(Varyings input) : SV_Target
         {
-            float rawDepth = SampleSceneDepth(input.screenUV);
+            float rawDepth = SampleSceneDepth(ResolveCameraSourceUV(input.screenUV));
             if (ResolveRawDepthValidity(rawDepth) <= 0.5)
                 return half4(0.0h, 0.0h, 0.0h, 1.0h);
 
@@ -91,7 +98,8 @@ Shader "Hidden/Hecton8/StochasticSSR"
 
         half4 FragComposite(Varyings input) : SV_Target
         {
-            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
+            float2 sourceUV = ResolveCameraSourceUV(input.screenUV);
+            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, sourceUV);
             half reflectionWeight = SAMPLE_TEXTURE2D_X(_HectonSsrMaskTex, sampler_LinearClamp, input.screenUV).r;
             if (reflectionWeight <= 0.0001h)
                 return sourceColor;
@@ -99,7 +107,7 @@ Shader "Hidden/Hecton8/StochasticSSR"
             half staticSeed = reflectionWeight - 0.5h;
             float2 staticOffset = float2(staticSeed, -staticSeed) * 0.25h;
             float2 reflectionUV = saturate(input.screenUV + (float2(0.0, -1.0) + staticOffset) * (_HectonSsrParamsA.x * _HectonSsrInputSize.zw));
-            half3 reflectedColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, reflectionUV).rgb;
+            half3 reflectedColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveCameraSourceUV(reflectionUV)).rgb;
 
             sourceColor.rgb = lerp(sourceColor.rgb, reflectedColor, reflectionWeight);
             return sourceColor;

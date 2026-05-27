@@ -32,9 +32,21 @@ int _FontAtlasReady;
 float _TimeSeed;
 float _HectonDiegeticGlitchQualityWeight;
 
+float H8LinearRamp01(float edge0, float edge1, float value)
+{
+    return saturate((value - edge0) / max(edge1 - edge0, 1e-5));
+}
+
+float H8LinearRampInv01(float edge0, float edge1, float value)
+{
+    return 1.0 - H8LinearRamp01(edge0, edge1, value);
+}
+
 float Hash11(float value)
 {
-    return frac(sin(value * 17.371 + 0.173) * 43758.5453);
+    float3 hash = frac(float3(value, value + 17.0, value + 43.0) * float3(0.1031, 0.11369, 0.13787));
+    hash += dot(hash, hash.yzx + 19.19);
+    return frac((hash.x + hash.y) * hash.z);
 }
 
 uint ReadTextWord(TerminalStateDTO state, uint wordIndex)
@@ -64,12 +76,13 @@ float3 UnpackRgb(uint packed)
     return float3(r, g, b);
 }
 
-float SegmentDistance(float2 p, float2 a, float2 b)
+float SegmentDistanceSq(float2 p, float2 a, float2 b)
 {
     float2 pa = p - a;
     float2 ba = b - a;
     float h = saturate(dot(pa, ba) / max(dot(ba, ba), 0.0001));
-    return length(pa - ba * h);
+    float2 delta = pa - ba * h;
+    return dot(delta, delta);
 }
 
 float ProceduralGlyphSdf(uint ascii, float2 glyphUv, float4 atlasUv)
@@ -80,21 +93,25 @@ float ProceduralGlyphSdf(uint ascii, float2 glyphUv, float4 atlasUv)
     float2 p = saturate(glyphUv);
     uint bits = ascii * 1103515245u + 12345u;
     float d = 1.0;
-    if ((bits & 1u) != 0u) d = min(d, SegmentDistance(p, float2(0.18, 0.84), float2(0.82, 0.84)));
-    if ((bits & 2u) != 0u) d = min(d, SegmentDistance(p, float2(0.18, 0.50), float2(0.82, 0.50)));
-    if ((bits & 4u) != 0u) d = min(d, SegmentDistance(p, float2(0.18, 0.16), float2(0.82, 0.16)));
-    if ((bits & 8u) != 0u) d = min(d, SegmentDistance(p, float2(0.18, 0.18), float2(0.18, 0.82)));
-    if ((bits & 16u) != 0u) d = min(d, SegmentDistance(p, float2(0.82, 0.18), float2(0.82, 0.82)));
-    if ((bits & 32u) != 0u) d = min(d, SegmentDistance(p, float2(0.24, 0.78), float2(0.76, 0.22)));
-    if ((bits & 64u) != 0u) d = min(d, SegmentDistance(p, float2(0.24, 0.22), float2(0.76, 0.78)));
-    if ((bits & 128u) != 0u) d = min(d, abs(length(p - 0.5) - 0.28));
+    if ((bits & 1u) != 0u) d = min(d, SegmentDistanceSq(p, float2(0.18, 0.84), float2(0.82, 0.84)));
+    if ((bits & 2u) != 0u) d = min(d, SegmentDistanceSq(p, float2(0.18, 0.50), float2(0.82, 0.50)));
+    if ((bits & 4u) != 0u) d = min(d, SegmentDistanceSq(p, float2(0.18, 0.16), float2(0.82, 0.16)));
+    if ((bits & 8u) != 0u) d = min(d, SegmentDistanceSq(p, float2(0.18, 0.18), float2(0.18, 0.82)));
+    if ((bits & 16u) != 0u) d = min(d, SegmentDistanceSq(p, float2(0.82, 0.18), float2(0.82, 0.82)));
+    if ((bits & 32u) != 0u) d = min(d, SegmentDistanceSq(p, float2(0.24, 0.78), float2(0.76, 0.22)));
+    if ((bits & 64u) != 0u) d = min(d, SegmentDistanceSq(p, float2(0.24, 0.22), float2(0.76, 0.78)));
+    if ((bits & 128u) != 0u)
+    {
+        float2 circleDelta = p - 0.5;
+        d = min(d, abs(dot(circleDelta, circleDelta) - 0.0784));
+    }
 
-    float fallbackAlpha = smoothstep(0.055, 0.015, d);
+    float fallbackAlpha = H8LinearRampInv01(0.000225, 0.003025, d);
     if (_FontAtlasReady != 0)
     {
         float2 atlasSampleUv = lerp(atlasUv.xy, atlasUv.zw, p);
         float sampled = _FontSdfAtlas.SampleLevel(sampler_FontSdfAtlas, atlasSampleUv, 0).r;
-        return smoothstep(0.46, 0.54, sampled);
+        return H8LinearRamp01(0.46, 0.54, sampled);
     }
 
     return fallbackAlpha;
@@ -151,7 +168,7 @@ void KTerminalBlit(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     if (uv.x < saturate(state.Value1) && uv.y < 0.2)
     {
-        float edge = smoothstep(0.0, 0.025, uv.y) * (1.0 - smoothstep(0.175, 0.2, uv.y));
+        float edge = H8LinearRamp01(0.0, 0.025, uv.y) * H8LinearRampInv01(0.175, 0.2, uv.y);
         float3 barColor = lerp(float3(0.02, 0.45, 0.13), float3(0.32, 1.0, 0.58), step(0.45, state.Value1));
         color = lerp(color, barColor, edge);
     }
@@ -166,7 +183,7 @@ void KTerminalBlit(uint3 dispatchThreadID : SV_DispatchThreadID)
     terminalGreen = lerp(terminalGreen, float3(1.0, 0.35, 0.22), colorGlitch * colorGlitchIntensity);
 
     color = lerp(color, terminalGreen, textAlpha);
-    float vignette = smoothstep(0.0, 0.18, uv.x) * smoothstep(0.0, 0.18, uv.y) *
-        smoothstep(0.0, 0.18, 1.0 - uv.x) * smoothstep(0.0, 0.18, 1.0 - uv.y);
+    float vignette = H8LinearRamp01(0.0, 0.18, uv.x) * H8LinearRamp01(0.0, 0.18, uv.y) *
+        H8LinearRamp01(0.0, 0.18, 1.0 - uv.x) * H8LinearRamp01(0.0, 0.18, 1.0 - uv.y);
     _TerminalTextureArray[uint3(dispatchThreadID.xy, (uint)terminalIndex)] = float4(color * lerp(0.62, 1.0, vignette), 1.0);
 }

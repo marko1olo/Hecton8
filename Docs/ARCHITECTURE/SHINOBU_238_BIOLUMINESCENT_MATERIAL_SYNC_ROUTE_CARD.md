@@ -222,7 +222,7 @@ After: CPU work is `O(1)` for four matrix rows plus bounded 16-pulse scan. Shade
 
 - Shader visual proof at low/middle/high/ultra `GlobalQualityWeight`.
 
-## R48 Exact Route Field Normalization
+## Route Field Contract
 
 Route ID: SHINOBU_238_BIOLUMINESCENT_MATERIAL_SYNC_ROUTE_CARD
 

@@ -88,7 +88,7 @@ Verification boundary: static scans only. No Unity import, Play Mode, profiler, 
 
 ## Resolution buffers
 
-R48 boundary: each `Fabricator` must not own new persistent private native scratch for cross-domain or rollback-visible craftability truth.
+Boundary: each `Fabricator` must not own new persistent private native scratch for cross-domain or rollback-visible craftability truth.
 
 Scratch capacity belongs in `GlobalDataVault` or an owner-local route card with shutdown/proof fields.
 

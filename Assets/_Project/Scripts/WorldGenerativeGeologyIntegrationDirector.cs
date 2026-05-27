@@ -42,6 +42,9 @@ namespace Hecton8.World
         [SerializeField] private string _debugTopPlanFamilyId = string.Empty;
         [SerializeField] private WorldGenerativeGeologyProfile.ShapeArchetype _debugTopPlanArchetype;
         [SerializeField] private float _debugTopPlanWeight;
+        [SerializeField] private float _debugVisualQualityWeight = 1f;
+        [SerializeField] private int _debugTrackedPlanBudget;
+        [SerializeField] private float _debugPlanRefreshDistanceThreshold;
 
         private readonly Dictionary<long, WorldGenerativeGeologySeamPlan> _plansByKey = new Dictionary<long, WorldGenerativeGeologySeamPlan>(256);
         private readonly Dictionary<long, WorldGenerativeGeologyBinding> _bindingsByKey = new Dictionary<long, WorldGenerativeGeologyBinding>(256);
@@ -290,8 +293,12 @@ namespace Hecton8.World
                 return;
 
             float searchRadius = ResolveSearchRadius();
+            float visualQualityWeight = ResolveGlobalQualityWeight();
             float now = Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
             _debugSearchRadius = searchRadius;
+            _debugVisualQualityWeight = visualQualityWeight;
+            _debugTrackedPlanBudget = ResolveTrackedPlanCapacity(visualQualityWeight);
+            _debugPlanRefreshDistanceThreshold = ResolvePlanRefreshDistanceThreshold(visualQualityWeight);
 
             if (includeInactiveBindings && !Application.isPlaying)
             {
@@ -309,7 +316,7 @@ namespace Hecton8.World
             RestoreRecentlyMissingPlans(searchRadius, now, playerRuntimePosition, hasPlayerAup, in playerAup);
 
             _orderedPlans.Sort(CompareByWeightDescending);
-            StabilizeTrackedPlans();
+            StabilizeTrackedPlans(visualQualityWeight);
 
             for (int i = 0; i < _orderedPlans.Count; i++)
             {
@@ -371,7 +378,7 @@ namespace Hecton8.World
                     return false;
             }
 
-            float threshold = Mathf.Max(0.5f, planRefreshDistanceThreshold);
+            float threshold = ResolvePlanRefreshDistanceThreshold(ResolveGlobalQualityWeight());
             float thresholdSq = threshold * threshold;
             if (hasPlayerAup && _hasPlanRefreshAup)
                 return AbsoluteUniversePosition.DistanceSq(in playerAup, in _lastPlanRefreshAup) < thresholdSq;
@@ -509,9 +516,9 @@ namespace Hecton8.World
             }
         }
 
-        private void StabilizeTrackedPlans()
+        private void StabilizeTrackedPlans(float visualQualityWeight)
         {
-            int capacity = Mathf.Max(1, maxTrackedPlans);
+            int capacity = ResolveTrackedPlanCapacity(visualQualityWeight);
             if (_orderedPlans.Count <= capacity)
                 return;
 
@@ -822,6 +829,36 @@ namespace Hecton8.World
             return chunkStreamingProfile != null
                 ? Mathf.Max(ResolveChunkSize(), chunkStreamingProfile.macroZoneSizeMeters)
                 : 768f;
+        }
+
+        private int ResolveTrackedPlanCapacity(float visualQualityWeight)
+        {
+            int configuredCapacity = Mathf.Max(1, maxTrackedPlans);
+            int survivalCapacity = Mathf.Clamp(Mathf.CeilToInt(configuredCapacity * 0.35f), 1, configuredCapacity);
+            return Mathf.Clamp(
+                Mathf.RoundToInt(Mathf.Lerp(survivalCapacity, configuredCapacity, SmoothQualityWeight(visualQualityWeight))),
+                1,
+                configuredCapacity);
+        }
+
+        private float ResolvePlanRefreshDistanceThreshold(float visualQualityWeight)
+        {
+            float configuredThreshold = Mathf.Max(0.5f, planRefreshDistanceThreshold);
+            float survivalThreshold = configuredThreshold * 2.5f;
+            float overkillThreshold = Mathf.Max(0.5f, configuredThreshold * 0.6f);
+            return Mathf.Lerp(survivalThreshold, overkillThreshold, SmoothQualityWeight(visualQualityWeight));
+        }
+
+        private static float SmoothQualityWeight(float visualQualityWeight)
+        {
+            float weight = Mathf.Clamp01(visualQualityWeight);
+            return weight * weight * (3f - 2f * weight);
+        }
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(weight) ? math.saturate(weight) : 1f;
         }
 
         private static float EvaluateTerrainBlendWeight(WorldGenerativeGeologyBinding binding, float terrainAnchor)

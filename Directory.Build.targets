@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
     <HectonVendorGeneratedWarningProjects>|AmplifyImpostors.Runtime|AstarPathfindingProject|AstarPathfindingProjectEditor|BakeryEditorAssembly|Crest|Crest.Helpers.Editor|Den.Tools|GPUInstancer|GPUInstancer.Editor|Lofelt.NiceVibrations|MapMagic.Editor|MapMagic.Settings|MeshBakerCore|MeshBakerEditor|MoreMountains.Tools|MoreMountains.Tools.Editor|RealtimeCSG|Unity.RenderPipelines.Core.Editor|Unity.RenderPipelines.Universal.Editor|Unity.RenderPipelines.Universal.Runtime|Unity.ShaderGraph.Editor|</HectonVendorGeneratedWarningProjects>
+    <HectonUnityPackageCliShimProjects>|Unity.RenderPipelines.Core.Editor|Unity.RenderPipelines.Universal.Editor|Unity.RenderPipelines.Universal.Runtime|Unity.ShaderGraph.Editor|</HectonUnityPackageCliShimProjects>
   </PropertyGroup>
 
   <PropertyGroup Condition="$([System.String]::Copy('$(HectonVendorGeneratedWarningProjects)').Contains('|$(MSBuildProjectName)|'))">
@@ -26,6 +27,22 @@
              Condition="'$(OutputPath)' != '' And !Exists('$(OutputPath)')" />
     <MakeDir Directories="$(IntermediateOutputPath)"
              Condition="'$(IntermediateOutputPath)' != '' And !Exists('$(IntermediateOutputPath)')" />
+  </Target>
+
+  <Target Name="HectonUseUnityPackageScriptAssembliesForCliReferences"
+          BeforeTargets="PrepareProjectReferences;ResolveProjectReferences"
+          Condition="$([System.String]::Copy('$(HectonUnityPackageCliShimProjects)').Contains('|$(MSBuildProjectName)|'))">
+    <ItemGroup>
+      <_HectonUnityPackageProjectReference Include="@(ProjectReference)"
+                                           Condition="$([System.String]::Copy('$(HectonUnityPackageCliShimProjects)').Contains('|%(ProjectReference.Filename)|')) And Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\%(ProjectReference.Filename).dll')" />
+      <Reference Include="%(_HectonUnityPackageProjectReference.Filename)"
+                 Condition="'@(_HectonUnityPackageProjectReference)' != ''">
+        <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\%(_HectonUnityPackageProjectReference.Filename).dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <ProjectReference Remove="@(_HectonUnityPackageProjectReference)" />
+      <_HectonUnityPackageProjectReference Remove="@(_HectonUnityPackageProjectReference)" />
+    </ItemGroup>
   </Target>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core'">
@@ -328,7 +345,7 @@
   </Target>
 
   <Target Name="HectonPruneMissingWaveHarmonicCrestPackageItems"
-          BeforeTargets="ResolveProjectReferences;ResolveAssemblyReferences;CoreCompile"
+          BeforeTargets="PrepareProjectReferences;ResolveProjectReferences;ResolveAssemblyReferences;CoreCompile"
           Condition="!Exists('$(MSBuildThisFileDirectory)Packages\com.waveharmonic.crest')">
     <ItemGroup>
       <_HectonMissingWaveHarmonicCrestCompile Include="@(Compile)"
@@ -379,14 +396,14 @@
   </Target>
 
   <Target Name="HectonCorePruneGeneratedProjectOutputs"
-          BeforeTargets="ResolveProjectReferences;ResolveAssemblyReferences;CoreCompile"
+          BeforeTargets="PrepareProjectReferences;ResolveProjectReferences;ResolveAssemblyReferences;CoreCompile"
           Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
     <ItemGroup>
       <ProjectReference Remove="@(ProjectReference)" />
       <ReferencePath Remove="@(ReferencePath)"
-                     Condition="!Exists('%(ReferencePath.Identity)') And ($([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp/bin/Debug')))" />
+                     Condition="!Exists('%(ReferencePath.Identity)') And ($([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp/bin/Debug')) Or $([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp\CodexBuild')) Or $([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp/CodexBuild')))" />
       <ReferenceDependencyPaths Remove="@(ReferenceDependencyPaths)"
-                                Condition="!Exists('%(ReferenceDependencyPaths.Identity)') And ($([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp/bin/Debug')))" />
+                                Condition="!Exists('%(ReferenceDependencyPaths.Identity)') And ($([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp/bin/Debug')) Or $([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp\CodexBuild')) Or $([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp/CodexBuild')))" />
     </ItemGroup>
   </Target>
 
@@ -395,9 +412,9 @@
           Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
     <ItemGroup>
       <ReferencePath Remove="@(ReferencePath)"
-                     Condition="!Exists('%(ReferencePath.Identity)') And ($([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp/bin/Debug')))" />
+                     Condition="!Exists('%(ReferencePath.Identity)') And ($([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp/bin/Debug')) Or $([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp\CodexBuild')) Or $([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp/CodexBuild')))" />
       <ReferenceDependencyPaths Remove="@(ReferenceDependencyPaths)"
-                                Condition="!Exists('%(ReferenceDependencyPaths.Identity)') And ($([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp/bin/Debug')))" />
+                                Condition="!Exists('%(ReferenceDependencyPaths.Identity)') And ($([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp/bin/Debug')) Or $([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp\CodexBuild')) Or $([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp/CodexBuild')))" />
     </ItemGroup>
   </Target>
 </Project>

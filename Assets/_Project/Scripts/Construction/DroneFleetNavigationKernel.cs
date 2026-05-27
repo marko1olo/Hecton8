@@ -163,8 +163,11 @@ namespace Hecton8.Construction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ValidateDroneStateDTO()
         {
-            return UnsafeUtility.SizeOf<DroneStateDTO>() == 64 &&
-                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.CurrentAUP)) == 0 &&
+            if (UnsafeUtility.SizeOf<DroneStateDTO>() != 64)
+                return false;
+
+#if UNITY_EDITOR
+            return OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.CurrentAUP)) == 0 &&
                 OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.Velocity)) == 24 &&
                 OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.CurrentTargetHashID)) == 36 &&
                 OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.TaskStateFlags)) == 40 &&
@@ -173,13 +176,19 @@ namespace Hecton8.Construction
                 OffsetOf<DroneStateDTO>("_pad4") == 52 &&
                 OffsetOf<DroneStateDTO>("_pad8") == 56 &&
                 OffsetOf<DroneStateDTO>("_pad15") == 63;
+#else
+            return true;
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ValidateDroneTargetDTO()
         {
-            return UnsafeUtility.SizeOf<DroneTargetDTO>() == 64 &&
-                OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.TargetAUP)) == 0 &&
+            if (UnsafeUtility.SizeOf<DroneTargetDTO>() != 64)
+                return false;
+
+#if UNITY_EDITOR
+            return OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.TargetAUP)) == 0 &&
                 OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.LocalPosition)) == 24 &&
                 OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.TaskHash)) == 36 &&
                 OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.TaskIndex)) == 40 &&
@@ -188,13 +197,22 @@ namespace Hecton8.Construction
                 OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.TaskKind)) == 52 &&
                 OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.Flags)) == 56 &&
                 OffsetOf<DroneTargetDTO>(nameof(DroneTargetDTO.Reserved0)) == 60;
+#else
+            return true;
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ValidateDroneTaskDTO()
         {
-            return UnsafeUtility.SizeOf<DroneTaskDTO>() == 32 &&
-                OffsetOf<DroneTaskDTO>(nameof(DroneTaskDTO.TargetEntityHash)) == 0 &&
+            if (UnsafeUtility.SizeOf<DroneTaskDTO>() != 32 ||
+                UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>() != 16)
+            {
+                return false;
+            }
+
+#if UNITY_EDITOR
+            return OffsetOf<DroneTaskDTO>(nameof(DroneTaskDTO.TargetEntityHash)) == 0 &&
                 OffsetOf<DroneTaskDTO>(nameof(DroneTaskDTO.TaskTypeHash)) == 4 &&
                 OffsetOf<DroneTaskDTO>(nameof(DroneTaskDTO.TaskProgress01)) == 8 &&
                 OffsetOf<DroneTaskDTO>(nameof(DroneTaskDTO.TaskEfficiencyScalar)) == 12 &&
@@ -202,17 +220,26 @@ namespace Hecton8.Construction
                 OffsetOf<DroneTaskDTO>("_pad0") == 20 &&
                 OffsetOf<DroneTaskDTO>("_pad4") == 24 &&
                 OffsetOf<DroneTaskDTO>("_pad8") == 28 &&
-                OffsetOf<DroneTaskDTO>("_pad11") == 31 &&
-                UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>() == 16;
+                OffsetOf<DroneTaskDTO>("_pad11") == 31;
+#else
+            return true;
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ValidateDroneAssignmentTaskDTO()
         {
-            return UnsafeUtility.SizeOf<DroneAssignmentTaskDTO>() == 64 &&
-                UnsafeUtility.SizeOf<PathWaypointDTO>() == 64 &&
-                UnsafeUtility.SizeOf<DroneAStarPersistentState>() == 64 &&
-                OffsetOf<PathWaypointDTO>(nameof(PathWaypointDTO.PositionAUP)) == 0 &&
+            if (UnsafeUtility.SizeOf<DroneAssignmentTaskDTO>() != 64 ||
+                UnsafeUtility.SizeOf<PathWaypointDTO>() != 64 ||
+                UnsafeUtility.SizeOf<DroneAStarPersistentState>() != 64 ||
+                UnsafeUtility.SizeOf<MockDroneSDFHeader>() != 64 ||
+                UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>() != 16)
+            {
+                return false;
+            }
+
+#if UNITY_EDITOR
+            return OffsetOf<PathWaypointDTO>(nameof(PathWaypointDTO.PositionAUP)) == 0 &&
                 OffsetOf<PathWaypointDTO>(nameof(PathWaypointDTO.LocalPosition)) == 24 &&
                 OffsetOf<PathWaypointDTO>(nameof(PathWaypointDTO.ActionCode)) == 36 &&
                 OffsetOf<PathWaypointDTO>(nameof(PathWaypointDTO.NodeIndex)) == 40 &&
@@ -221,7 +248,6 @@ namespace Hecton8.Construction
                 OffsetOf<PathWaypointDTO>("_pad4") == 52 &&
                 OffsetOf<PathWaypointDTO>("_pad8") == 56 &&
                 OffsetOf<PathWaypointDTO>("_pad15") == 63 &&
-                UnsafeUtility.SizeOf<MockDroneSDFHeader>() == 64 &&
                 OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.OriginAUP)) == 0 &&
                 OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.Dimensions)) == 24 &&
                 OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.VoxelSizeMeters)) == 36 &&
@@ -243,15 +269,20 @@ namespace Hecton8.Construction
                 OffsetOf<DroneAStarPersistentState>("_pad0") == 40 &&
                 OffsetOf<DroneAStarPersistentState>("_pad8") == 48 &&
                 OffsetOf<DroneAStarPersistentState>("_pad16") == 56 &&
-                OffsetOf<DroneAStarPersistentState>("_pad23") == 63 &&
-                UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>() == 16;
+                OffsetOf<DroneAStarPersistentState>("_pad23") == 63;
+#else
+            return true;
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ValidateDroneChassisSpecDTO()
         {
-            return UnsafeUtility.SizeOf<DroneChassisSpecDTO>() == 64 &&
-                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.TypeHash)) == 0 &&
+            if (UnsafeUtility.SizeOf<DroneChassisSpecDTO>() != 64)
+                return false;
+
+#if UNITY_EDITOR
+            return OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.TypeHash)) == 0 &&
                 OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.Flags)) == 4 &&
                 OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.MaxSpeed)) == 8 &&
                 OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.BatteryCapacity)) == 12 &&
@@ -265,13 +296,19 @@ namespace Hecton8.Construction
                 OffsetOf<DroneChassisSpecDTO>("_pad8") == 48 &&
                 OffsetOf<DroneChassisSpecDTO>("_pad16") == 56 &&
                 OffsetOf<DroneChassisSpecDTO>("_pad23") == 63;
+#else
+            return true;
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ValidateDroneSnapshotPayload()
         {
-            return UnsafeUtility.SizeOf<HectonDroneFleetSnapshotPayload>() == 48 &&
-                OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.ActiveHubCount)) == 0 &&
+            if (UnsafeUtility.SizeOf<HectonDroneFleetSnapshotPayload>() != 48)
+                return false;
+
+#if UNITY_EDITOR
+            return OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.ActiveHubCount)) == 0 &&
                 OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.ActiveDroneCount)) == 4 &&
                 OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.AssignedTaskCount)) == 8 &&
                 OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.DockedStasisSlotCount)) == 12 &&
@@ -289,12 +326,17 @@ namespace Hecton8.Construction
                 OffsetOf<HectonDroneFleetSnapshotPayload>("_padding4") == 45 &&
                 OffsetOf<HectonDroneFleetSnapshotPayload>("_padding5") == 46 &&
                 OffsetOf<HectonDroneFleetSnapshotPayload>("_padding6") == 47;
+#else
+            return true;
+#endif
         }
 
+#if UNITY_EDITOR
         private static int OffsetOf<T>(string fieldName)
         {
             return Marshal.OffsetOf(typeof(T), fieldName).ToInt32();
         }
+#endif
     }
 
     internal static class DroneFleetMockTasks
@@ -340,63 +382,6 @@ namespace Hecton8.Construction
         public void Execute()
         {
             DroneFleetMockTasks.GenerateMockDroneTasks(Tasks, FleetAup, RequestedCount);
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct GenerateMockDroneTasksQueueJob : IJob
-    {
-        public NativeQueue<DroneAssignmentTaskDTO>.ParallelWriter Tasks;
-        [NativeDisableParallelForRestriction] public NativeArray<int> TaskBudget;
-        public double3 FleetAup;
-        public int RequestedCount;
-
-        public void Execute()
-        {
-            int count = math.max(0, RequestedCount);
-            for (int i = 0; i < count; i++)
-            {
-                float angle = i * 2.3999631f;
-                float radius = 6f + ((i & 7) * 2.5f);
-                Hecton8.Core.MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
-                float3 local = new float3(cos * radius, -1.5f + ((i % 3) * 1.5f), sin * radius);
-                DroneAssignmentTaskDTO task = new DroneAssignmentTaskDTO
-                {
-                    TargetAup = FleetAup + new double3(local.x, local.y, local.z),
-                    LocalPosition = local,
-                    Priority = 1f + ((i & 3) * 0.25f),
-                    Score = 0f,
-                    CriticalityWeight = 1f + ((i % 5) * 0.2f),
-                    Radius = 1.25f,
-                    ModuleIndex = i,
-                    TaskKind = (i & 1) == 0 ? 1 : 3,
-                    Reserved0 = 0u
-                };
-                TryEnqueueBounded(Tasks, TaskBudget, in task);
-            }
-        }
-
-        private static unsafe bool TryEnqueueBounded(
-            NativeQueue<DroneAssignmentTaskDTO>.ParallelWriter writer,
-            NativeArray<int> writerBudget,
-            in DroneAssignmentTaskDTO task)
-        {
-            const int remainingIndex = 0;
-            const int droppedIndex = 1;
-            const int budgetLength = 2;
-            if (!writerBudget.IsCreated || writerBudget.Length < budgetLength)
-                return false;
-
-            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writerBudget);
-            int remainingAfterClaim = Interlocked.Decrement(ref budget[remainingIndex]);
-            if (remainingAfterClaim < 0)
-            {
-                Interlocked.Increment(ref budget[droppedIndex]);
-                return false;
-            }
-
-            writer.Enqueue(task);
-            return true;
         }
     }
 
@@ -582,6 +567,9 @@ namespace Hecton8.Construction
         private static float3 ToLocalDelta(double3 targetAup, double3 originAup)
         {
             double3 delta = targetAup - originAup;
+            if (!IsFinite(delta) || math.any(math.abs(delta) > (double)float.MaxValue))
+                return new float3(float.NaN);
+
             return new float3((float)delta.x, (float)delta.y, (float)delta.z);
         }
 
@@ -784,6 +772,9 @@ namespace Hecton8.Construction
 
         private static float3 ToFloat3(double3 value)
         {
+            if (!IsFinite(value) || math.any(math.abs(value) > (double)float.MaxValue))
+                return new float3(float.NaN);
+
             return new float3((float)value.x, (float)value.y, (float)value.z);
         }
 
@@ -2170,6 +2161,9 @@ namespace Hecton8.Construction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 ToFloat3(double3 value)
         {
+            if (!IsFinite(value) || math.any(math.abs(value) > (double)float.MaxValue))
+                return new float3(float.NaN);
+
             return new float3((float)value.x, (float)value.y, (float)value.z);
         }
 

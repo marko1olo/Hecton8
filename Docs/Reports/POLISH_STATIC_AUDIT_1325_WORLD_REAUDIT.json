@@ -1,0 +1,3242 @@
+{
+  "categories": {
+    "binaryHardwareSwitch": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "burstCompile": {
+      "examples": [
+        {
+          "line": 4792,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 4832,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 19,
+          "path": "Assets/_Project/Scripts/World/AUPMath.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 83,
+          "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 106,
+          "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 44,
+          "path": "Assets/_Project/Scripts/World/Biomes/BiomeBoundarySdfJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 348,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 432,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 515,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 533,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 804,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 940,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 988,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 1016,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 1056,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 87,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakeJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 125,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakeJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 158,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakeJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 228,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakeJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 403,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakeJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        }
+      ],
+      "files": 74,
+      "matches": 308,
+      "topFiles": [
+        {
+          "count": 15,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs"
+        },
+        {
+          "count": 12,
+          "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/OfflineWreckageBakeJobs.cs"
+        },
+        {
+          "count": 12,
+          "path": "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/VoxelTerrainSeamBinderJobs.cs"
+        },
+        {
+          "count": 11,
+          "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs"
+        },
+        {
+          "count": 11,
+          "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs"
+        },
+        {
+          "count": 10,
+          "path": "Assets/_Project/Scripts/World/ScatterMath.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfJobs.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakeJobs.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs"
+        }
+      ]
+    },
+    "burstMissingCompileSynchronously": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "burstMissingFloatMode": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "burstMissingFloatPrecision": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "globalQualityWeight": {
+      "examples": [
+        {
+          "line": 2460,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "float weight = HomeostasisBrain.GlobalQualityWeight;"
+        },
+        {
+          "line": 1046,
+          "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+          "text": "float qualityWeight = HomeostasisBrain.GlobalQualityWeight;"
+        },
+        {
+          "line": 836,
+          "path": "Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs",
+          "text": "GlobalQualityWeight = quality,"
+        },
+        {
+          "line": 850,
+          "path": "Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs",
+          "text": "GlobalQualityWeight = quality,"
+        },
+        {
+          "line": 912,
+          "path": "Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs",
+          "text": "float global = HomeostasisBrain.GlobalQualityWeight;"
+        },
+        {
+          "line": 544,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "public float GlobalQualityWeight;"
+        },
+        {
+          "line": 569,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "float quality = BiomeTransitionMath.Sanitize01(GlobalQualityWeight);"
+        },
+        {
+          "line": 812,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "public float GlobalQualityWeight;"
+        },
+        {
+          "line": 822,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "float quality = BiomeTransitionMath.Sanitize01(GlobalQualityWeight);"
+        },
+        {
+          "line": 176,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeSplatmapForgeWindow.cs",
+          "text": "config.GlobalQualityWeight = math.saturate(_qualityWeightSlider.value);"
+        },
+        {
+          "line": 58,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakeJobs.cs",
+          "text": "[FieldOffset(76)] public float GlobalQualityWeight;"
+        },
+        {
+          "line": 107,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakeJobs.cs",
+          "text": "float quality = BiomeWeightMapBakeMath.QualityCurve(Config.GlobalQualityWeight);"
+        },
+        {
+          "line": 145,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakeJobs.cs",
+          "text": "float quality = BiomeWeightMapBakeMath.QualityCurve(Config.GlobalQualityWeight);"
+        },
+        {
+          "line": 254,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakeJobs.cs",
+          "text": "float quality = BiomeWeightMapBakeMath.QualityCurve(Config.GlobalQualityWeight);"
+        },
+        {
+          "line": 70,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "GlobalQualityWeight = 1f,"
+        },
+        {
+          "line": 494,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "config.GlobalQualityWeight = math.saturate(config.GlobalQualityWeight);"
+        },
+        {
+          "line": 495,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "float quality = BiomeWeightMapBakeMath.QualityCurve(config.GlobalQualityWeight);"
+        },
+        {
+          "line": 692,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "Append(builder, \"globalQualityWeight\", config.GlobalQualityWeight, true);"
+        },
+        {
+          "line": 693,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "Append(builder, \"fractalNoiseOctaves\", BiomeWeightMapBakeMath.QualityOctaveCount(config.GlobalQualityWeight), true);"
+        },
+        {
+          "line": 818,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "builder.Append(\"- GlobalQualityWeight: \").Append(Format(config.GlobalQualityWeight)).AppendLine();"
+        }
+      ],
+      "files": 87,
+      "matches": 329,
+      "topFiles": [
+        {
+          "count": 20,
+          "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs"
+        },
+        {
+          "count": 15,
+          "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs"
+        },
+        {
+          "count": 14,
+          "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs"
+        },
+        {
+          "count": 10,
+          "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/OfflineWreckageBakeJobs.cs"
+        },
+        {
+          "count": 10,
+          "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs"
+        },
+        {
+          "count": 10,
+          "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs"
+        },
+        {
+          "count": 10,
+          "path": "Assets/_Project/Scripts/World/SpawnZoneSdfValidation.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs"
+        }
+      ]
+    },
+    "jobHandleComplete": {
+      "examples": [
+        {
+          "line": 252,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "finalHandle.Complete();"
+        },
+        {
+          "line": 292,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "cleanupHandle.Complete();"
+        },
+        {
+          "line": 424,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 436,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "cleanupHandle.Complete();"
+        },
+        {
+          "line": 310,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "countRleHandle.Complete();"
+        },
+        {
+          "line": 326,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "rleHandle.Complete();"
+        },
+        {
+          "line": 390,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "cleanupHandle.Complete();"
+        },
+        {
+          "line": 555,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "countRleHandle.Complete();"
+        },
+        {
+          "line": 571,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "rleHandle.Complete();"
+        },
+        {
+          "line": 636,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "cleanupHandle.Complete();"
+        },
+        {
+          "line": 771,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 796,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "cleanupHandle.Complete();"
+        },
+        {
+          "line": 153,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "sealHandle.Complete();"
+        },
+        {
+          "line": 159,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "cavityHandle.Complete();"
+        },
+        {
+          "line": 170,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "}.Schedule().Complete();"
+        },
+        {
+          "line": 185,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "}.Schedule().Complete();"
+        },
+        {
+          "line": 204,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "}.Schedule().Complete();"
+        },
+        {
+          "line": 214,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "}.Schedule().Complete();"
+        },
+        {
+          "line": 597,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "_activeHandle.Complete();"
+        },
+        {
+          "line": 689,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "_activeHandle.Complete();"
+        }
+      ],
+      "files": 13,
+      "matches": 45,
+      "topFiles": [
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/StaticCaveSdfBaker/Editor/StaticCaveSdfBakePipeline.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchForgeWindow.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/VoxelTerrainSeamBinderPipeline.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalStructureForgeWindow.cs"
+        }
+      ]
+    },
+    "linqSurface": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "nativeApiExposureAmbiguousMutable": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "nativeApiExposureBuildEditorOnly": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "nativeApiExposureBuildPlayerRuntime": {
+      "examples": [
+        {
+          "line": 2848,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+          "text": "public bool TryGetActiveSurfaceNativePayload( out NativeArray<Matrix4x4> matrices, out NativeArray<HectonVegetationInstanceData> metadata, out NativeArray<int> types, out int count)"
+        },
+        {
+          "line": 3016,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+          "text": "public bool TryGetActiveUnderwaterNativePayload( out NativeArray<Matrix4x4> matrices, out NativeArray<HectonVegetationInstanceData> metadata, out NativeArray<int> types, out int count)"
+        },
+        {
+          "line": 801,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<T> AsArray()"
+        },
+        {
+          "line": 988,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<T> AsArray()"
+        },
+        {
+          "line": 997,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<T> AsCapacityArray()"
+        },
+        {
+          "line": 1005,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<int> CountArray()"
+        },
+        {
+          "line": 65,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<sbyte> Density => ResolveView(Vault, in Handles.Density);"
+        },
+        {
+          "line": 66,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelVertexDTO> Vertices => ResolveView(Vault, in Handles.Vertices);"
+        },
+        {
+          "line": 67,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<uint> Indices => ResolveView(Vault, in Handles.Indices);"
+        },
+        {
+          "line": 68,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<int> CellVertexMap => ResolveView(Vault, in Handles.CellVertexMap);"
+        },
+        {
+          "line": 69,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<ChunkMeshingStateDTO> States => ResolveView(Vault, in Handles.States);"
+        },
+        {
+          "line": 70,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelMeshingTuningDTO> Tuning => ResolveView(Vault, in Handles.Tuning);"
+        },
+        {
+          "line": 71,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelMeshingTelemetryEntry> TelemetryRing => ResolveView(Vault, in Handles.TelemetryRing);"
+        },
+        {
+          "line": 72,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<int> TelemetryCursor => ResolveView(Vault, in Handles.TelemetryCursor);"
+        },
+        {
+          "line": 73,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<byte> CsvScratch => ResolveView(Vault, in Handles.CsvScratch);"
+        },
+        {
+          "line": 74,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<uint> SurfaceEdgeMasks => ResolveView(Vault, in Handles.SurfaceEdgeMasks);"
+        },
+        {
+          "line": 75,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<float3> RawDebugVertices => ResolveView(Vault, in Handles.RawDebugVertices);"
+        },
+        {
+          "line": 76,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfaceAabbDTO> ChunkAabbs => ResolveView(Vault, in Handles.ChunkAabbs);"
+        },
+        {
+          "line": 77,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfaceModifiedSignal> ModifiedSignals => ResolveView(Vault, in Handles.ModifiedSignals);"
+        },
+        {
+          "line": 78,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfacePriorityDTO> Priorities => ResolveView(Vault, in Handles.Priorities);"
+        }
+      ],
+      "files": 3,
+      "matches": 26,
+      "topFiles": [
+        {
+          "count": 20,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
+        }
+      ]
+    },
+    "nativeApiExposureBuildQaDevProof": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "nativeApiExposureMutableReturn": {
+      "examples": [
+        {
+          "line": 801,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<T> AsArray()"
+        },
+        {
+          "line": 988,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<T> AsArray()"
+        },
+        {
+          "line": 997,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<T> AsCapacityArray()"
+        },
+        {
+          "line": 1005,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<int> CountArray()"
+        },
+        {
+          "line": 65,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<sbyte> Density => ResolveView(Vault, in Handles.Density);"
+        },
+        {
+          "line": 66,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelVertexDTO> Vertices => ResolveView(Vault, in Handles.Vertices);"
+        },
+        {
+          "line": 67,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<uint> Indices => ResolveView(Vault, in Handles.Indices);"
+        },
+        {
+          "line": 68,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<int> CellVertexMap => ResolveView(Vault, in Handles.CellVertexMap);"
+        },
+        {
+          "line": 69,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<ChunkMeshingStateDTO> States => ResolveView(Vault, in Handles.States);"
+        },
+        {
+          "line": 70,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelMeshingTuningDTO> Tuning => ResolveView(Vault, in Handles.Tuning);"
+        },
+        {
+          "line": 71,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelMeshingTelemetryEntry> TelemetryRing => ResolveView(Vault, in Handles.TelemetryRing);"
+        },
+        {
+          "line": 72,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<int> TelemetryCursor => ResolveView(Vault, in Handles.TelemetryCursor);"
+        },
+        {
+          "line": 73,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<byte> CsvScratch => ResolveView(Vault, in Handles.CsvScratch);"
+        },
+        {
+          "line": 74,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<uint> SurfaceEdgeMasks => ResolveView(Vault, in Handles.SurfaceEdgeMasks);"
+        },
+        {
+          "line": 75,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<float3> RawDebugVertices => ResolveView(Vault, in Handles.RawDebugVertices);"
+        },
+        {
+          "line": 76,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfaceAabbDTO> ChunkAabbs => ResolveView(Vault, in Handles.ChunkAabbs);"
+        },
+        {
+          "line": 77,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfaceModifiedSignal> ModifiedSignals => ResolveView(Vault, in Handles.ModifiedSignals);"
+        },
+        {
+          "line": 78,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfacePriorityDTO> Priorities => ResolveView(Vault, in Handles.Priorities);"
+        },
+        {
+          "line": 79,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfaceIndirectArgsDTO> IndirectArgs => ResolveView(Vault, in Handles.IndirectArgs);"
+        },
+        {
+          "line": 80,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<MockVoxelDensityArray> MockDensityConfig => ResolveView(Vault, in Handles.MockDensityConfig);"
+        }
+      ],
+      "files": 2,
+      "matches": 22,
+      "topFiles": [
+        {
+          "count": 18,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"
+        }
+      ]
+    },
+    "nativeApiExposureOutRefMutable": {
+      "examples": [
+        {
+          "line": 2848,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+          "text": "public bool TryGetActiveSurfaceNativePayload( out NativeArray<Matrix4x4> matrices, out NativeArray<HectonVegetationInstanceData> metadata, out NativeArray<int> types, out int count)"
+        },
+        {
+          "line": 3016,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+          "text": "public bool TryGetActiveUnderwaterNativePayload( out NativeArray<Matrix4x4> matrices, out NativeArray<HectonVegetationInstanceData> metadata, out NativeArray<int> types, out int count)"
+        },
+        {
+          "line": 329,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public static bool TryAcquireStatesWriteLock( in VoxelSurfaceNetsVaultBuffers buffers, out NativeArray<ChunkMeshingStateDTO> states)"
+        },
+        {
+          "line": 355,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public static bool TryAcquireGpuUploadSourceLease( in VoxelSurfaceNetsVaultBuffers buffers, int vertexCount, int indexCount, out VoxelSurfaceNetsGpuUploadSourceLease lease, out NativeArray<VoxelVertexDTO> vertices, out NativeArray<uint> indices, out NativeArray<VoxelSurfaceIndirectArgsDTO> indirectArgs)"
+        }
+      ],
+      "files": 2,
+      "matches": 4,
+      "topFiles": [
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs"
+        }
+      ]
+    },
+    "nativeApiExposurePrivateNestedSuppressed": {
+      "examples": [
+        {
+          "line": 506,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+          "text": "public bool TryResolve(out NativeArray<T> buffer)"
+        },
+        {
+          "line": 609,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+          "text": "public bool TryResolveArray(out NativeArray<T> buffer)"
+        },
+        {
+          "line": 828,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+          "text": "public bool TryResolve(out NativeArray<Matrix4x4> buffer)"
+        },
+        {
+          "line": 865,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+          "text": "public bool TryResolve(out NativeArray<HectonVegetationInstanceData> buffer)"
+        },
+        {
+          "line": 897,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+          "text": "public bool TryResolve(out NativeArray<int> buffer)"
+        },
+        {
+          "line": 308,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "public NativeArray<T> GetSubArray(int start, int length)"
+        },
+        {
+          "line": 315,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "public NativeArray<T> Resolve()"
+        },
+        {
+          "line": 1049,
+          "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+          "text": "public bool TryResolve(out NativeArray<T> buffer)"
+        },
+        {
+          "line": 1059,
+          "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+          "text": "public NativeArray<T> AsArray()"
+        },
+        {
+          "line": 1120,
+          "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+          "text": "public NativeArray<T> AsArray()"
+        }
+      ],
+      "files": 3,
+      "matches": 10,
+      "topFiles": [
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs"
+        }
+      ]
+    },
+    "nativeApiRiskCoreVaultOrAllocatorSurface": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "nativeApiRiskEditorOrProofSurface": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "nativeApiRiskRuntimeAmbiguousMutableView": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "nativeApiRiskRuntimeDiagnosticNamedMutableView": {
+      "examples": [
+        {
+          "line": 71,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelMeshingTelemetryEntry> TelemetryRing => ResolveView(Vault, in Handles.TelemetryRing);"
+        },
+        {
+          "line": 72,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<int> TelemetryCursor => ResolveView(Vault, in Handles.TelemetryCursor);"
+        },
+        {
+          "line": 75,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<float3> RawDebugVertices => ResolveView(Vault, in Handles.RawDebugVertices);"
+        }
+      ],
+      "files": 1,
+      "matches": 3,
+      "topFiles": [
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs"
+        }
+      ]
+    },
+    "nativeApiRiskRuntimeOutRefMutableView": {
+      "examples": [
+        {
+          "line": 2848,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+          "text": "public bool TryGetActiveSurfaceNativePayload( out NativeArray<Matrix4x4> matrices, out NativeArray<HectonVegetationInstanceData> metadata, out NativeArray<int> types, out int count)"
+        },
+        {
+          "line": 3016,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+          "text": "public bool TryGetActiveUnderwaterNativePayload( out NativeArray<Matrix4x4> matrices, out NativeArray<HectonVegetationInstanceData> metadata, out NativeArray<int> types, out int count)"
+        },
+        {
+          "line": 329,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public static bool TryAcquireStatesWriteLock( in VoxelSurfaceNetsVaultBuffers buffers, out NativeArray<ChunkMeshingStateDTO> states)"
+        },
+        {
+          "line": 355,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public static bool TryAcquireGpuUploadSourceLease( in VoxelSurfaceNetsVaultBuffers buffers, int vertexCount, int indexCount, out VoxelSurfaceNetsGpuUploadSourceLease lease, out NativeArray<VoxelVertexDTO> vertices, out NativeArray<uint> indices, out NativeArray<VoxelSurfaceIndirectArgsDTO> indirectArgs)"
+        }
+      ],
+      "files": 2,
+      "matches": 4,
+      "topFiles": [
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs"
+        }
+      ]
+    },
+    "nativeApiRiskRuntimeReturnMutableView": {
+      "examples": [
+        {
+          "line": 801,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<T> AsArray()"
+        },
+        {
+          "line": 988,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<T> AsArray()"
+        },
+        {
+          "line": 997,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<T> AsCapacityArray()"
+        },
+        {
+          "line": 1005,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<int> CountArray()"
+        },
+        {
+          "line": 65,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<sbyte> Density => ResolveView(Vault, in Handles.Density);"
+        },
+        {
+          "line": 66,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelVertexDTO> Vertices => ResolveView(Vault, in Handles.Vertices);"
+        },
+        {
+          "line": 67,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<uint> Indices => ResolveView(Vault, in Handles.Indices);"
+        },
+        {
+          "line": 68,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<int> CellVertexMap => ResolveView(Vault, in Handles.CellVertexMap);"
+        },
+        {
+          "line": 69,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<ChunkMeshingStateDTO> States => ResolveView(Vault, in Handles.States);"
+        },
+        {
+          "line": 70,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelMeshingTuningDTO> Tuning => ResolveView(Vault, in Handles.Tuning);"
+        },
+        {
+          "line": 73,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<byte> CsvScratch => ResolveView(Vault, in Handles.CsvScratch);"
+        },
+        {
+          "line": 74,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<uint> SurfaceEdgeMasks => ResolveView(Vault, in Handles.SurfaceEdgeMasks);"
+        },
+        {
+          "line": 76,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfaceAabbDTO> ChunkAabbs => ResolveView(Vault, in Handles.ChunkAabbs);"
+        },
+        {
+          "line": 77,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfaceModifiedSignal> ModifiedSignals => ResolveView(Vault, in Handles.ModifiedSignals);"
+        },
+        {
+          "line": 78,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfacePriorityDTO> Priorities => ResolveView(Vault, in Handles.Priorities);"
+        },
+        {
+          "line": 79,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfaceIndirectArgsDTO> IndirectArgs => ResolveView(Vault, in Handles.IndirectArgs);"
+        },
+        {
+          "line": 80,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<MockVoxelDensityArray> MockDensityConfig => ResolveView(Vault, in Handles.MockDensityConfig);"
+        },
+        {
+          "line": 81,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfacePhysicsBakeRequestDTO> PhysicsBakeRequests => ResolveView(Vault, in Handles.PhysicsBakeRequests);"
+        },
+        {
+          "line": 82,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfaceHzbTileDTO> HzbTiles => ResolveView(Vault, in Handles.HzbTiles);"
+        }
+      ],
+      "files": 2,
+      "matches": 19,
+      "topFiles": [
+        {
+          "count": 15,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"
+        }
+      ]
+    },
+    "nativeCollectionPublicMutableApiExposure": {
+      "examples": [
+        {
+          "line": 2848,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+          "text": "public bool TryGetActiveSurfaceNativePayload( out NativeArray<Matrix4x4> matrices, out NativeArray<HectonVegetationInstanceData> metadata, out NativeArray<int> types, out int count)"
+        },
+        {
+          "line": 3016,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+          "text": "public bool TryGetActiveUnderwaterNativePayload( out NativeArray<Matrix4x4> matrices, out NativeArray<HectonVegetationInstanceData> metadata, out NativeArray<int> types, out int count)"
+        },
+        {
+          "line": 801,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<T> AsArray()"
+        },
+        {
+          "line": 988,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<T> AsArray()"
+        },
+        {
+          "line": 997,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<T> AsCapacityArray()"
+        },
+        {
+          "line": 1005,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "text": "public NativeArray<int> CountArray()"
+        },
+        {
+          "line": 65,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<sbyte> Density => ResolveView(Vault, in Handles.Density);"
+        },
+        {
+          "line": 66,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelVertexDTO> Vertices => ResolveView(Vault, in Handles.Vertices);"
+        },
+        {
+          "line": 67,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<uint> Indices => ResolveView(Vault, in Handles.Indices);"
+        },
+        {
+          "line": 68,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<int> CellVertexMap => ResolveView(Vault, in Handles.CellVertexMap);"
+        },
+        {
+          "line": 69,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<ChunkMeshingStateDTO> States => ResolveView(Vault, in Handles.States);"
+        },
+        {
+          "line": 70,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelMeshingTuningDTO> Tuning => ResolveView(Vault, in Handles.Tuning);"
+        },
+        {
+          "line": 71,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelMeshingTelemetryEntry> TelemetryRing => ResolveView(Vault, in Handles.TelemetryRing);"
+        },
+        {
+          "line": 72,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<int> TelemetryCursor => ResolveView(Vault, in Handles.TelemetryCursor);"
+        },
+        {
+          "line": 73,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<byte> CsvScratch => ResolveView(Vault, in Handles.CsvScratch);"
+        },
+        {
+          "line": 74,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<uint> SurfaceEdgeMasks => ResolveView(Vault, in Handles.SurfaceEdgeMasks);"
+        },
+        {
+          "line": 75,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<float3> RawDebugVertices => ResolveView(Vault, in Handles.RawDebugVertices);"
+        },
+        {
+          "line": 76,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfaceAabbDTO> ChunkAabbs => ResolveView(Vault, in Handles.ChunkAabbs);"
+        },
+        {
+          "line": 77,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfaceModifiedSignal> ModifiedSignals => ResolveView(Vault, in Handles.ModifiedSignals);"
+        },
+        {
+          "line": 78,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+          "text": "public NativeArray<VoxelSurfacePriorityDTO> Priorities => ResolveView(Vault, in Handles.Priorities);"
+        }
+      ],
+      "files": 3,
+      "matches": 26,
+      "topFiles": [
+        {
+          "count": 20,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
+        }
+      ]
+    },
+    "noAlias": {
+      "examples": [
+        {
+          "line": 4798,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "[NoAlias]"
+        },
+        {
+          "line": 4836,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "[NoAlias]"
+        },
+        {
+          "line": 437,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;"
+        },
+        {
+          "line": 540,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;"
+        },
+        {
+          "line": 811,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;"
+        },
+        {
+          "line": 994,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;"
+        },
+        {
+          "line": 1022,
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "text": "[NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;"
+        },
+        {
+          "line": 507,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<ApexTerritoryOverlapResult> Results;"
+        },
+        {
+          "line": 600,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<SectorPopulationState> BackStates;"
+        },
+        {
+          "line": 601,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<int> PreyBackCounts;"
+        },
+        {
+          "line": 602,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<int> PredatorBackCounts;"
+        },
+        {
+          "line": 603,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<float3> HeadlessPositions;"
+        },
+        {
+          "line": 604,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<byte> HeadlessSpeciesID;"
+        },
+        {
+          "line": 605,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<byte> HeadlessHunger;"
+        },
+        {
+          "line": 606,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<int2> HeadlessSectorCoord;"
+        },
+        {
+          "line": 607,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<int> HeadlessSectorID;"
+        },
+        {
+          "line": 723,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<float> PreyBack;"
+        },
+        {
+          "line": 724,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<float> PredatorBack;"
+        },
+        {
+          "line": 725,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<float> BiomassSumScratch;"
+        },
+        {
+          "line": 801,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "text": "[NoAlias] public NativeArray<float3> Positions;"
+        }
+      ],
+      "files": 44,
+      "matches": 493,
+      "topFiles": [
+        {
+          "count": 39,
+          "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs"
+        },
+        {
+          "count": 38,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs"
+        },
+        {
+          "count": 35,
+          "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs"
+        },
+        {
+          "count": 33,
+          "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/OfflineWreckageBakeJobs.cs"
+        },
+        {
+          "count": 31,
+          "path": "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/VoxelTerrainSeamBinderJobs.cs"
+        },
+        {
+          "count": 28,
+          "path": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs"
+        },
+        {
+          "count": 28,
+          "path": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsJobs.cs"
+        },
+        {
+          "count": 25,
+          "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs"
+        },
+        {
+          "count": 22,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakeJobs.cs"
+        },
+        {
+          "count": 20,
+          "path": "Assets/_Project/Scripts/World/StaticCaveSdfBaker/Editor/StaticCaveSdfBakeJobs.cs"
+        }
+      ]
+    },
+    "packOne": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "privateNativeBuildEditorOnly": {
+      "examples": [
+        {
+          "line": 504,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "private static NativeArray<BiomeBlendRuleDTO> CreateNativeRules(in FixedList4096Bytes<BiomeBlendRuleDTO> sourceRules, int targetCount)"
+        },
+        {
+          "line": 865,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaSpawnRuleDTO> CreateNativeRules("
+        },
+        {
+          "line": 887,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaRuleWeightDTO> CreateNativeWeights("
+        },
+        {
+          "line": 909,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaThermalVentDTO> CreateDefaultVents(BiotaDensityBakeConfigDTO config)"
+        },
+        {
+          "line": 504,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeArray<float> _densities;"
+        },
+        {
+          "line": 505,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeArray<byte> _cavity;"
+        },
+        {
+          "line": 506,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeArray<SdfShapeDTO> _shapes;"
+        },
+        {
+          "line": 507,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<HadalArchVertexDTO> _lod0Vertices;"
+        },
+        {
+          "line": 508,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<int> _lod0Indices;"
+        },
+        {
+          "line": 509,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<HadalArchVertexDTO> _lod1Vertices;"
+        },
+        {
+          "line": 510,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<int> _lod1Indices;"
+        },
+        {
+          "line": 511,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<HadalArchVertexDTO> _lod2Vertices;"
+        },
+        {
+          "line": 512,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<int> _lod2Indices;"
+        },
+        {
+          "line": 513,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<HadalArchVertexDTO> _weldedVertices;"
+        },
+        {
+          "line": 514,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<int> _weldedIndices;"
+        },
+        {
+          "line": 515,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeParallelHashMap<ulong, int> _weldMap;"
+        },
+        {
+          "line": 516,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeArray<HadalArchBakeTelemetryEntry> _telemetry;"
+        },
+        {
+          "line": 291,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+          "text": "private NativeArray<float> _densities;"
+        },
+        {
+          "line": 292,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+          "text": "private NativeArray<float> _excavatedMeters3;"
+        },
+        {
+          "line": 293,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+          "text": "private NativeArray<byte> _nonFiniteFlags;"
+        }
+      ],
+      "files": 6,
+      "matches": 29,
+      "topFiles": [
+        {
+          "count": 13,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchForgeWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/OfflineWreckageBlackBox.cs"
+        }
+      ]
+    },
+    "privateNativeBuildPlayerRuntime": {
+      "examples": [
+        {
+          "line": 664,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalCrystallizationSample> _crystallizationSamples;"
+        },
+        {
+          "line": 665,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalCrystallizationResult> _crystallizationResults;"
+        },
+        {
+          "line": 671,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapReadCelsius;"
+        },
+        {
+          "line": 672,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapWriteCelsius;"
+        },
+        {
+          "line": 673,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapSourceCelsius;"
+        },
+        {
+          "line": 674,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapInsulation01;"
+        },
+        {
+          "line": 675,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapVisualCelsius;"
+        },
+        {
+          "line": 676,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<SaveBinaryStorage.ThermalGridRleRun> _thermalGridRleRuns;"
+        },
+        {
+          "line": 677,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalTelemetryEntry> _thermalTelemetryRing;"
+        },
+        {
+          "line": 951,
+          "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+          "text": "private NativeArray<T> OpenChemicalVaultArray<T>("
+        },
+        {
+          "line": 88,
+          "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+          "text": "private static NativeQueue<DepthZoneEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 89,
+          "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+          "text": "private static NativeQueue<DepthZoneEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 7162,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+          "text": "private NativeArray<T> EnsureLaneCapacity<T>(ref VaultArray<T> array, BufferID bufferId, int requiredCount, string label) where T : struct"
+        },
+        {
+          "line": 126,
+          "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+          "text": "private static NativeQueue<RelayEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 127,
+          "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+          "text": "private static NativeQueue<RelayEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 57,
+          "path": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs",
+          "text": "private static NativeList<int> _queryHandles;"
+        },
+        {
+          "line": 309,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<PersistentWorldDeltaRecord> _destroyedFloraScratch;"
+        },
+        {
+          "line": 310,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<PersistentWorldDeltaRecord> _pendingSeedScratch;"
+        },
+        {
+          "line": 311,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<FloraRegrowthState> _regrowthStates;"
+        },
+        {
+          "line": 312,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeHashMap<uint, int> _stateIndexByInstanceUid;"
+        }
+      ],
+      "files": 24,
+      "matches": 99,
+      "topFiles": [
+        {
+          "count": 12,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs"
+        }
+      ]
+    },
+    "privateNativeBuildQaDevProof": {
+      "examples": [
+        {
+          "line": 324,
+          "path": "Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs",
+          "text": "private static NativeArray<T> AllocateSmokeArray<T>(int length, string label)"
+        }
+      ],
+      "files": 1,
+      "matches": 1,
+      "topFiles": [
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs"
+        }
+      ]
+    },
+    "privateNativeCollectionBlackBoxTelemetry": {
+      "examples": [
+        {
+          "line": 677,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalTelemetryEntry> _thermalTelemetryRing;"
+        },
+        {
+          "line": 7162,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+          "text": "private NativeArray<T> EnsureLaneCapacity<T>(ref VaultArray<T> array, BufferID bufferId, int requiredCount, string label) where T : struct"
+        },
+        {
+          "line": 516,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeArray<HadalArchBakeTelemetryEntry> _telemetry;"
+        },
+        {
+          "line": 299,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+          "text": "private NativeArray<HadalTrenchBakeTelemetryEntry> _telemetry;"
+        },
+        {
+          "line": 18,
+          "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/OfflineWreckageBlackBox.cs",
+          "text": "private static NativeArray<OfflineWreckageTelemetryEntry> s_ring;"
+        },
+        {
+          "line": 578,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+          "text": "private static NativeArray<PoiPlacementTelemetryEntry> AcquireTelemetryRing()"
+        },
+        {
+          "line": 324,
+          "path": "Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs",
+          "text": "private static NativeArray<T> AllocateSmokeArray<T>(int length, string label)"
+        },
+        {
+          "line": 1120,
+          "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+          "text": "private NativeArray<ChunkResidencyTelemetryEntry> ResolveResidencyTelemetryRing()"
+        }
+      ],
+      "files": 8,
+      "matches": 8,
+      "topFiles": [
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/OfflineWreckageBlackBox.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs"
+        }
+      ]
+    },
+    "privateNativeCollectionField": {
+      "examples": [
+        {
+          "line": 664,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalCrystallizationSample> _crystallizationSamples;"
+        },
+        {
+          "line": 665,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalCrystallizationResult> _crystallizationResults;"
+        },
+        {
+          "line": 671,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapReadCelsius;"
+        },
+        {
+          "line": 672,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapWriteCelsius;"
+        },
+        {
+          "line": 673,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapSourceCelsius;"
+        },
+        {
+          "line": 674,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapInsulation01;"
+        },
+        {
+          "line": 675,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapVisualCelsius;"
+        },
+        {
+          "line": 676,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<SaveBinaryStorage.ThermalGridRleRun> _thermalGridRleRuns;"
+        },
+        {
+          "line": 677,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalTelemetryEntry> _thermalTelemetryRing;"
+        },
+        {
+          "line": 504,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "private static NativeArray<BiomeBlendRuleDTO> CreateNativeRules(in FixedList4096Bytes<BiomeBlendRuleDTO> sourceRules, int targetCount)"
+        },
+        {
+          "line": 865,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaSpawnRuleDTO> CreateNativeRules("
+        },
+        {
+          "line": 887,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaRuleWeightDTO> CreateNativeWeights("
+        },
+        {
+          "line": 909,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaThermalVentDTO> CreateDefaultVents(BiotaDensityBakeConfigDTO config)"
+        },
+        {
+          "line": 951,
+          "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+          "text": "private NativeArray<T> OpenChemicalVaultArray<T>("
+        },
+        {
+          "line": 88,
+          "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+          "text": "private static NativeQueue<DepthZoneEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 89,
+          "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+          "text": "private static NativeQueue<DepthZoneEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 7162,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+          "text": "private NativeArray<T> EnsureLaneCapacity<T>(ref VaultArray<T> array, BufferID bufferId, int requiredCount, string label) where T : struct"
+        },
+        {
+          "line": 126,
+          "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+          "text": "private static NativeQueue<RelayEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 127,
+          "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+          "text": "private static NativeQueue<RelayEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 57,
+          "path": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs",
+          "text": "private static NativeList<int> _queryHandles;"
+        }
+      ],
+      "files": 31,
+      "matches": 129,
+      "topFiles": [
+        {
+          "count": 13,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs"
+        },
+        {
+          "count": 12,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs"
+        }
+      ]
+    },
+    "privateNativeCollectionOwnerLocalScratch": {
+      "examples": [
+        {
+          "line": 309,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<PersistentWorldDeltaRecord> _destroyedFloraScratch;"
+        },
+        {
+          "line": 310,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<PersistentWorldDeltaRecord> _pendingSeedScratch;"
+        },
+        {
+          "line": 256,
+          "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+          "text": "private NativeQueue<uint> _freeHandles;"
+        },
+        {
+          "line": 267,
+          "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+          "text": "private NativeList<uint> _transientCellKeysScratch;"
+        }
+      ],
+      "files": 2,
+      "matches": 4,
+      "topFiles": [
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs"
+        }
+      ]
+    },
+    "privateNativeCollectionStaticQueueLane": {
+      "examples": [
+        {
+          "line": 88,
+          "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+          "text": "private static NativeQueue<DepthZoneEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 89,
+          "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+          "text": "private static NativeQueue<DepthZoneEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 126,
+          "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+          "text": "private static NativeQueue<RelayEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 127,
+          "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+          "text": "private static NativeQueue<RelayEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 99,
+          "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs",
+          "text": "private static NativeQueue<HectonFloraSporeEvent> _pendingEvents;"
+        },
+        {
+          "line": 142,
+          "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs",
+          "text": "private static NativeQueue<int> _freeProxyLightSlots;"
+        },
+        {
+          "line": 148,
+          "path": "Assets/_Project/Scripts/World/SoundscapeSystem.cs",
+          "text": "private static NativeQueue<SoundscapeEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 149,
+          "path": "Assets/_Project/Scripts/World/SoundscapeSystem.cs",
+          "text": "private static NativeQueue<SoundscapeEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 97,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+          "text": "private static NativeQueue<DirtyVolumeRequest> _dirtyVolumes;"
+        },
+        {
+          "line": 98,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+          "text": "private static NativeQueue<DynamicObstacleClearRequest> _pendingObstacleClears;"
+        }
+      ],
+      "files": 6,
+      "matches": 10,
+      "topFiles": [
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/SoundscapeSystem.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs"
+        }
+      ]
+    },
+    "privateNativeCollectionUnclassified": {
+      "examples": [
+        {
+          "line": 664,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalCrystallizationSample> _crystallizationSamples;"
+        },
+        {
+          "line": 665,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalCrystallizationResult> _crystallizationResults;"
+        },
+        {
+          "line": 671,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapReadCelsius;"
+        },
+        {
+          "line": 672,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapWriteCelsius;"
+        },
+        {
+          "line": 673,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapSourceCelsius;"
+        },
+        {
+          "line": 674,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapInsulation01;"
+        },
+        {
+          "line": 675,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapVisualCelsius;"
+        },
+        {
+          "line": 676,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<SaveBinaryStorage.ThermalGridRleRun> _thermalGridRleRuns;"
+        },
+        {
+          "line": 504,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "private static NativeArray<BiomeBlendRuleDTO> CreateNativeRules(in FixedList4096Bytes<BiomeBlendRuleDTO> sourceRules, int targetCount)"
+        },
+        {
+          "line": 865,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaSpawnRuleDTO> CreateNativeRules("
+        },
+        {
+          "line": 887,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaRuleWeightDTO> CreateNativeWeights("
+        },
+        {
+          "line": 909,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaThermalVentDTO> CreateDefaultVents(BiotaDensityBakeConfigDTO config)"
+        },
+        {
+          "line": 951,
+          "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+          "text": "private NativeArray<T> OpenChemicalVaultArray<T>("
+        },
+        {
+          "line": 57,
+          "path": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs",
+          "text": "private static NativeList<int> _queryHandles;"
+        },
+        {
+          "line": 311,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<FloraRegrowthState> _regrowthStates;"
+        },
+        {
+          "line": 312,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeHashMap<uint, int> _stateIndexByInstanceUid;"
+        },
+        {
+          "line": 313,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<SeedFlightState> _seedFlightStates;"
+        },
+        {
+          "line": 314,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeHashMap<uint, int> _seedFlightIndexByUid;"
+        },
+        {
+          "line": 315,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeHashMap<uint, byte> _seedEmissionByDestroyedUid;"
+        },
+        {
+          "line": 316,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<FloraMaturationState> _maturationStates;"
+        }
+      ],
+      "files": 24,
+      "matches": 107,
+      "topFiles": [
+        {
+          "count": 12,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs"
+        },
+        {
+          "count": 10,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs"
+        }
+      ]
+    },
+    "privateNativeCollectionVaultAlias": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "privateNativeDeclarationAmbiguous": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "privateNativeDeclarationField": {
+      "examples": [
+        {
+          "line": 664,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalCrystallizationSample> _crystallizationSamples;"
+        },
+        {
+          "line": 665,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalCrystallizationResult> _crystallizationResults;"
+        },
+        {
+          "line": 671,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapReadCelsius;"
+        },
+        {
+          "line": 672,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapWriteCelsius;"
+        },
+        {
+          "line": 673,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapSourceCelsius;"
+        },
+        {
+          "line": 674,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapInsulation01;"
+        },
+        {
+          "line": 675,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapVisualCelsius;"
+        },
+        {
+          "line": 676,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<SaveBinaryStorage.ThermalGridRleRun> _thermalGridRleRuns;"
+        },
+        {
+          "line": 677,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalTelemetryEntry> _thermalTelemetryRing;"
+        },
+        {
+          "line": 88,
+          "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+          "text": "private static NativeQueue<DepthZoneEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 89,
+          "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+          "text": "private static NativeQueue<DepthZoneEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 126,
+          "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+          "text": "private static NativeQueue<RelayEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 127,
+          "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+          "text": "private static NativeQueue<RelayEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 57,
+          "path": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs",
+          "text": "private static NativeList<int> _queryHandles;"
+        },
+        {
+          "line": 309,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<PersistentWorldDeltaRecord> _destroyedFloraScratch;"
+        },
+        {
+          "line": 310,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<PersistentWorldDeltaRecord> _pendingSeedScratch;"
+        },
+        {
+          "line": 311,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<FloraRegrowthState> _regrowthStates;"
+        },
+        {
+          "line": 312,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeHashMap<uint, int> _stateIndexByInstanceUid;"
+        },
+        {
+          "line": 313,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<SeedFlightState> _seedFlightStates;"
+        },
+        {
+          "line": 314,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeHashMap<uint, int> _seedFlightIndexByUid;"
+        }
+      ],
+      "files": 19,
+      "matches": 95,
+      "topFiles": [
+        {
+          "count": 13,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs"
+        },
+        {
+          "count": 12,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/ScatterEvaluator.cs"
+        }
+      ]
+    },
+    "privateNativeDeclarationMethodReturn": {
+      "examples": [
+        {
+          "line": 504,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "private static NativeArray<BiomeBlendRuleDTO> CreateNativeRules(in FixedList4096Bytes<BiomeBlendRuleDTO> sourceRules, int targetCount)"
+        },
+        {
+          "line": 865,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaSpawnRuleDTO> CreateNativeRules("
+        },
+        {
+          "line": 887,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaRuleWeightDTO> CreateNativeWeights("
+        },
+        {
+          "line": 909,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaThermalVentDTO> CreateDefaultVents(BiotaDensityBakeConfigDTO config)"
+        },
+        {
+          "line": 951,
+          "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+          "text": "private NativeArray<T> OpenChemicalVaultArray<T>("
+        },
+        {
+          "line": 7162,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+          "text": "private NativeArray<T> EnsureLaneCapacity<T>(ref VaultArray<T> array, BufferID bufferId, int requiredCount, string label) where T : struct"
+        },
+        {
+          "line": 3083,
+          "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+          "text": "private NativeArray<T> OpenProbeLane<T>(in ProbeVaultLane<T> lane) where T : struct"
+        },
+        {
+          "line": 4733,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+          "text": "private static NativeArray<JobInstanceRecord> AllocateJobRecordArray(int count)"
+        },
+        {
+          "line": 2810,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+          "text": "private NativeArray<BoidData> ResolveBoidState()"
+        },
+        {
+          "line": 2815,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+          "text": "private NativeArray<GrazingAnchorData> ResolveGrazingAnchors()"
+        },
+        {
+          "line": 2820,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+          "text": "private NativeArray<MassiveThreatData> ResolveMassiveThreats()"
+        },
+        {
+          "line": 2825,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+          "text": "private NativeArray<FormationBeaconData> ResolveFormationBeacons()"
+        },
+        {
+          "line": 2830,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+          "text": "private NativeArray<FormationObstacleData> ResolveFormationObstacles()"
+        },
+        {
+          "line": 7939,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+          "text": "private NativeArray<T> ResolveSargassumVaultArray<T>("
+        },
+        {
+          "line": 566,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+          "text": "private static NativeArray<PoiTransformDTO> AcquirePoiTransformBuffer(int capacity)"
+        },
+        {
+          "line": 572,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+          "text": "private static NativeArray<PoiChunkRouteDTO> AcquireRouteBuffer(int capacity)"
+        },
+        {
+          "line": 578,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+          "text": "private static NativeArray<PoiPlacementTelemetryEntry> AcquireTelemetryRing()"
+        },
+        {
+          "line": 584,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+          "text": "private static NativeArray<T> AcquireWorldStreamingBuffer<T>("
+        },
+        {
+          "line": 854,
+          "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+          "text": "private NativeArray<float> GetThreatGridFloatView()"
+        },
+        {
+          "line": 866,
+          "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+          "text": "private NativeArray<float2> GetFlowFieldView()"
+        }
+      ],
+      "files": 12,
+      "matches": 34,
+      "topFiles": [
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
+        }
+      ]
+    },
+    "privateNativeRiskEditorOrProofNativeState": {
+      "examples": [
+        {
+          "line": 504,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeArray<float> _densities;"
+        },
+        {
+          "line": 505,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeArray<byte> _cavity;"
+        },
+        {
+          "line": 506,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeArray<SdfShapeDTO> _shapes;"
+        },
+        {
+          "line": 507,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<HadalArchVertexDTO> _lod0Vertices;"
+        },
+        {
+          "line": 508,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<int> _lod0Indices;"
+        },
+        {
+          "line": 509,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<HadalArchVertexDTO> _lod1Vertices;"
+        },
+        {
+          "line": 510,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<int> _lod1Indices;"
+        },
+        {
+          "line": 511,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<HadalArchVertexDTO> _lod2Vertices;"
+        },
+        {
+          "line": 512,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<int> _lod2Indices;"
+        },
+        {
+          "line": 513,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<HadalArchVertexDTO> _weldedVertices;"
+        },
+        {
+          "line": 514,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeList<int> _weldedIndices;"
+        },
+        {
+          "line": 515,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeParallelHashMap<ulong, int> _weldMap;"
+        },
+        {
+          "line": 516,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+          "text": "private NativeArray<HadalArchBakeTelemetryEntry> _telemetry;"
+        },
+        {
+          "line": 291,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+          "text": "private NativeArray<float> _densities;"
+        },
+        {
+          "line": 292,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+          "text": "private NativeArray<float> _excavatedMeters3;"
+        },
+        {
+          "line": 293,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+          "text": "private NativeArray<byte> _nonFiniteFlags;"
+        },
+        {
+          "line": 294,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+          "text": "private NativeArray<sbyte> _quantized;"
+        },
+        {
+          "line": 295,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+          "text": "private NativeArray<FaultLineParamsDTO> _faults;"
+        },
+        {
+          "line": 296,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+          "text": "private NativeArray<ThermalVentSpawnDTO> _vents;"
+        },
+        {
+          "line": 297,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+          "text": "private NativeArray<HadalTrenchAdaptiveBlockDTO> _adaptiveBlocks;"
+        }
+      ],
+      "files": 4,
+      "matches": 25,
+      "topFiles": [
+        {
+          "count": 13,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchForgeWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/OfflineWreckageBlackBox.cs"
+        }
+      ]
+    },
+    "privateNativeRiskJobStructNativeView": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "privateNativeRiskMethodReturningNativeCollection": {
+      "examples": [
+        {
+          "line": 504,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+          "text": "private static NativeArray<BiomeBlendRuleDTO> CreateNativeRules(in FixedList4096Bytes<BiomeBlendRuleDTO> sourceRules, int targetCount)"
+        },
+        {
+          "line": 865,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaSpawnRuleDTO> CreateNativeRules("
+        },
+        {
+          "line": 887,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaRuleWeightDTO> CreateNativeWeights("
+        },
+        {
+          "line": 909,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs",
+          "text": "private static NativeArray<BiotaThermalVentDTO> CreateDefaultVents(BiotaDensityBakeConfigDTO config)"
+        },
+        {
+          "line": 951,
+          "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+          "text": "private NativeArray<T> OpenChemicalVaultArray<T>("
+        },
+        {
+          "line": 7162,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+          "text": "private NativeArray<T> EnsureLaneCapacity<T>(ref VaultArray<T> array, BufferID bufferId, int requiredCount, string label) where T : struct"
+        },
+        {
+          "line": 3083,
+          "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+          "text": "private NativeArray<T> OpenProbeLane<T>(in ProbeVaultLane<T> lane) where T : struct"
+        },
+        {
+          "line": 4733,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+          "text": "private static NativeArray<JobInstanceRecord> AllocateJobRecordArray(int count)"
+        },
+        {
+          "line": 2810,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+          "text": "private NativeArray<BoidData> ResolveBoidState()"
+        },
+        {
+          "line": 2815,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+          "text": "private NativeArray<GrazingAnchorData> ResolveGrazingAnchors()"
+        },
+        {
+          "line": 2820,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+          "text": "private NativeArray<MassiveThreatData> ResolveMassiveThreats()"
+        },
+        {
+          "line": 2825,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+          "text": "private NativeArray<FormationBeaconData> ResolveFormationBeacons()"
+        },
+        {
+          "line": 2830,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+          "text": "private NativeArray<FormationObstacleData> ResolveFormationObstacles()"
+        },
+        {
+          "line": 7939,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+          "text": "private NativeArray<T> ResolveSargassumVaultArray<T>("
+        },
+        {
+          "line": 566,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+          "text": "private static NativeArray<PoiTransformDTO> AcquirePoiTransformBuffer(int capacity)"
+        },
+        {
+          "line": 572,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+          "text": "private static NativeArray<PoiChunkRouteDTO> AcquireRouteBuffer(int capacity)"
+        },
+        {
+          "line": 578,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+          "text": "private static NativeArray<PoiPlacementTelemetryEntry> AcquireTelemetryRing()"
+        },
+        {
+          "line": 584,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+          "text": "private static NativeArray<T> AcquireWorldStreamingBuffer<T>("
+        },
+        {
+          "line": 854,
+          "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+          "text": "private NativeArray<float> GetThreatGridFloatView()"
+        },
+        {
+          "line": 866,
+          "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+          "text": "private NativeArray<float2> GetFlowFieldView()"
+        }
+      ],
+      "files": 12,
+      "matches": 34,
+      "topFiles": [
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
+        }
+      ]
+    },
+    "privateNativeRiskOwnerLocalRuntimeNativeState": {
+      "examples": [
+        {
+          "line": 664,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalCrystallizationSample> _crystallizationSamples;"
+        },
+        {
+          "line": 665,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalCrystallizationResult> _crystallizationResults;"
+        },
+        {
+          "line": 671,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapReadCelsius;"
+        },
+        {
+          "line": 672,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapWriteCelsius;"
+        },
+        {
+          "line": 673,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapSourceCelsius;"
+        },
+        {
+          "line": 674,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapInsulation01;"
+        },
+        {
+          "line": 675,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<float> _thermalMapVisualCelsius;"
+        },
+        {
+          "line": 676,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<SaveBinaryStorage.ThermalGridRleRun> _thermalGridRleRuns;"
+        },
+        {
+          "line": 677,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+          "text": "private NativeArray<ThermalTelemetryEntry> _thermalTelemetryRing;"
+        },
+        {
+          "line": 309,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<PersistentWorldDeltaRecord> _destroyedFloraScratch;"
+        },
+        {
+          "line": 310,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<PersistentWorldDeltaRecord> _pendingSeedScratch;"
+        },
+        {
+          "line": 311,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<FloraRegrowthState> _regrowthStates;"
+        },
+        {
+          "line": 312,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeHashMap<uint, int> _stateIndexByInstanceUid;"
+        },
+        {
+          "line": 313,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<SeedFlightState> _seedFlightStates;"
+        },
+        {
+          "line": 314,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeHashMap<uint, int> _seedFlightIndexByUid;"
+        },
+        {
+          "line": 315,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeHashMap<uint, byte> _seedEmissionByDestroyedUid;"
+        },
+        {
+          "line": 316,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<FloraMaturationState> _maturationStates;"
+        },
+        {
+          "line": 317,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeHashMap<uint, int> _maturationIndexByInstanceUid;"
+        },
+        {
+          "line": 318,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeArray<FloraMaturationResult> _maturationResults;"
+        },
+        {
+          "line": 319,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "text": "private NativeList<SymbioticFungalNodeState> _symbioticFungalNodes;"
+        }
+      ],
+      "files": 7,
+      "matches": 46,
+      "topFiles": [
+        {
+          "count": 12,
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/ScatterEvaluator.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/ScatterBackendBindingState.cs"
+        }
+      ]
+    },
+    "privateNativeRiskStaticGlobalNativeState": {
+      "examples": [
+        {
+          "line": 57,
+          "path": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs",
+          "text": "private static NativeList<int> _queryHandles;"
+        },
+        {
+          "line": 139,
+          "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs",
+          "text": "private static NativeParallelHashMap<int, ProxyLightData> _lightsByKey;"
+        },
+        {
+          "line": 140,
+          "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs",
+          "text": "private static NativeParallelHashMap<int, int> _slotByKey;"
+        },
+        {
+          "line": 141,
+          "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs",
+          "text": "private static NativeArray<int> _keys;"
+        },
+        {
+          "line": 99,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+          "text": "private static NativeList<NavObstaclePrimitive> _persistentDynamicObstacles;"
+        },
+        {
+          "line": 247,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+          "text": "private static NativeList<int> _queryHandles;"
+        },
+        {
+          "line": 248,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+          "text": "private static NativeArray<double3> _validationAbsolutePositions;"
+        },
+        {
+          "line": 249,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+          "text": "private static NativeArray<float3> _validationRuntimePositions;"
+        },
+        {
+          "line": 250,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+          "text": "private static NativeArray<byte> _validationInvalidMask;"
+        },
+        {
+          "line": 254,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+          "text": "private static NativeArray<int> _farUnloadHandles;"
+        },
+        {
+          "line": 255,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+          "text": "private static NativeArray<double3> _farUnloadAbsolutePositions;"
+        },
+        {
+          "line": 256,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+          "text": "private static NativeArray<byte> _farUnloadEligibilityMask;"
+        },
+        {
+          "line": 257,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+          "text": "private static NativeArray<byte> _farUnloadResultMask;"
+        },
+        {
+          "line": 262,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+          "text": "private static NativeArray<float> _acousticDensityMap;"
+        }
+      ],
+      "files": 4,
+      "matches": 14,
+      "topFiles": [
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs"
+        }
+      ]
+    },
+    "privateNativeRiskStaticSignalOrEventBridge": {
+      "examples": [
+        {
+          "line": 88,
+          "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+          "text": "private static NativeQueue<DepthZoneEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 89,
+          "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+          "text": "private static NativeQueue<DepthZoneEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 126,
+          "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+          "text": "private static NativeQueue<RelayEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 127,
+          "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+          "text": "private static NativeQueue<RelayEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 99,
+          "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs",
+          "text": "private static NativeQueue<HectonFloraSporeEvent> _pendingEvents;"
+        },
+        {
+          "line": 142,
+          "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs",
+          "text": "private static NativeQueue<int> _freeProxyLightSlots;"
+        },
+        {
+          "line": 148,
+          "path": "Assets/_Project/Scripts/World/SoundscapeSystem.cs",
+          "text": "private static NativeQueue<SoundscapeEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 149,
+          "path": "Assets/_Project/Scripts/World/SoundscapeSystem.cs",
+          "text": "private static NativeQueue<SoundscapeEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 97,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+          "text": "private static NativeQueue<DirtyVolumeRequest> _dirtyVolumes;"
+        },
+        {
+          "line": 98,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+          "text": "private static NativeQueue<DynamicObstacleClearRequest> _pendingObstacleClears;"
+        }
+      ],
+      "files": 6,
+      "matches": 10,
+      "topFiles": [
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/SoundscapeSystem.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs"
+        }
+      ]
+    },
+    "privateNativeRiskUnclassifiedNativeCollection": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "privateNativeRiskVaultAliasOrVaultResolver": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "structAutoProperties": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "unityRandom": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "unityTimeBuildEditorOnly": {
+      "examples": [
+        {
+          "line": 69,
+          "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/Editor/SeedShipAnomalyTunerWindow.cs",
+          "text": "Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),"
+        }
+      ],
+      "files": 1,
+      "matches": 1,
+      "topFiles": [
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/Editor/SeedShipAnomalyTunerWindow.cs"
+        }
+      ]
+    },
+    "unityTimeBuildPlayerRuntime": {
+      "examples": [
+        {
+          "line": 137,
+          "path": "Assets/_Project/Scripts/World/FloraBrain.cs",
+          "text": "if (Time.time < _nextPlayerResolveTime)"
+        },
+        {
+          "line": 140,
+          "path": "Assets/_Project/Scripts/World/FloraBrain.cs",
+          "text": "_nextPlayerResolveTime = Time.time + Mathf.Max(0.1f, playerResolveRetryIntervalSeconds);"
+        },
+        {
+          "line": 9125,
+          "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+          "text": "Frame = (uint)Time.frameCount,"
+        }
+      ],
+      "files": 2,
+      "matches": 3,
+      "topFiles": [
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/FloraBrain.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs"
+        }
+      ]
+    },
+    "unityTimeBuildQaDevProof": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "unityTimeCritical": {
+      "examples": [
+        {
+          "line": 137,
+          "path": "Assets/_Project/Scripts/World/FloraBrain.cs",
+          "text": "if (Time.time < _nextPlayerResolveTime)"
+        },
+        {
+          "line": 140,
+          "path": "Assets/_Project/Scripts/World/FloraBrain.cs",
+          "text": "_nextPlayerResolveTime = Time.time + Mathf.Max(0.1f, playerResolveRetryIntervalSeconds);"
+        },
+        {
+          "line": 9125,
+          "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+          "text": "Frame = (uint)Time.frameCount,"
+        },
+        {
+          "line": 69,
+          "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/Editor/SeedShipAnomalyTunerWindow.cs",
+          "text": "Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),"
+        }
+      ],
+      "files": 3,
+      "matches": 4,
+      "topFiles": [
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/FloraBrain.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/Editor/SeedShipAnomalyTunerWindow.cs"
+        }
+      ]
+    },
+    "unityTimeDelta": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "unityTimeFrameCount": {
+      "examples": [
+        {
+          "line": 9125,
+          "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+          "text": "Frame = (uint)Time.frameCount,"
+        },
+        {
+          "line": 69,
+          "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/Editor/SeedShipAnomalyTunerWindow.cs",
+          "text": "Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),"
+        }
+      ],
+      "files": 2,
+      "matches": 2,
+      "topFiles": [
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/Editor/SeedShipAnomalyTunerWindow.cs"
+        }
+      ]
+    },
+    "unityTimeRiskCooldownOrPerfLog": {
+      "examples": [
+        {
+          "line": 137,
+          "path": "Assets/_Project/Scripts/World/FloraBrain.cs",
+          "text": "if (Time.time < _nextPlayerResolveTime)"
+        },
+        {
+          "line": 140,
+          "path": "Assets/_Project/Scripts/World/FloraBrain.cs",
+          "text": "_nextPlayerResolveTime = Time.time + Mathf.Max(0.1f, playerResolveRetryIntervalSeconds);"
+        }
+      ],
+      "files": 1,
+      "matches": 2,
+      "topFiles": [
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/FloraBrain.cs"
+        }
+      ]
+    },
+    "unityTimeRiskEditorOrProof": {
+      "examples": [
+        {
+          "line": 69,
+          "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/Editor/SeedShipAnomalyTunerWindow.cs",
+          "text": "Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),"
+        }
+      ],
+      "files": 1,
+      "matches": 1,
+      "topFiles": [
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/Editor/SeedShipAnomalyTunerWindow.cs"
+        }
+      ]
+    },
+    "unityTimeRiskFrameStampOrTelemetry": {
+      "examples": [
+        {
+          "line": 9125,
+          "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+          "text": "Frame = (uint)Time.frameCount,"
+        }
+      ],
+      "files": 1,
+      "matches": 1,
+      "topFiles": [
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs"
+        }
+      ]
+    },
+    "unityTimeRiskGameplayDelta": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "unityTimeRiskGameplayWallClock": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "unityTimeWallClock": {
+      "examples": [
+        {
+          "line": 137,
+          "path": "Assets/_Project/Scripts/World/FloraBrain.cs",
+          "text": "if (Time.time < _nextPlayerResolveTime)"
+        },
+        {
+          "line": 140,
+          "path": "Assets/_Project/Scripts/World/FloraBrain.cs",
+          "text": "_nextPlayerResolveTime = Time.time + Mathf.Max(0.1f, playerResolveRetryIntervalSeconds);"
+        }
+      ],
+      "files": 1,
+      "matches": 2,
+      "topFiles": [
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/FloraBrain.cs"
+        }
+      ]
+    },
+    "unityUpdateMethod": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    }
+  },
+  "csFileCount": 276,
+  "schema": "hecton8.polish_mandate_static_audit.v1",
+  "sourceRoot": "Assets/_Project/Scripts/World"
+}

@@ -1,0 +1,52 @@
+{
+  "agentId": 1324,
+  "sourceFile": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+  "scanUtc": "2026-05-26T00:00:00Z",
+  "scanner": "class-depth regex for private NativeArray/NativeList/NativeHashMap/NativeParallelHashMap/NativeQueue fields",
+  "persistentNativeFieldCountBefore": 31,
+  "persistentNativeFieldCountTargetAfter": 0,
+  "ownerSystemId": "SystemID.HabitatAtmosphere",
+  "vaultPolicy": "GlobalDataVault owns all persistent gas dynamics lanes; GasDynamicsSolver may only retain VaultGenerationHandle<T> descriptors and phase-local NativeArray views.",
+  "forbiddenFields": [
+    { "line": 105, "field": "RoomO2", "type": "NativeArray<float>", "bufferId": 74420, "role": "room oxygen front" },
+    { "line": 106, "field": "RoomCO2", "type": "NativeArray<float>", "bufferId": 74421, "role": "room carbon dioxide front" },
+    { "line": 107, "field": "RoomPressure", "type": "NativeArray<float>", "bufferId": 74422, "role": "room pressure front" },
+    { "line": 108, "field": "_roomO2Back", "type": "NativeArray<float>", "bufferId": 74423, "role": "room oxygen back buffer" },
+    { "line": 109, "field": "_roomCO2Back", "type": "NativeArray<float>", "bufferId": 74424, "role": "room carbon dioxide back buffer" },
+    { "line": 110, "field": "_roomNitrogen", "type": "NativeArray<float>", "bufferId": 74425, "role": "room nitrogen front" },
+    { "line": 111, "field": "_roomNitrogenBack", "type": "NativeArray<float>", "bufferId": 74426, "role": "room nitrogen back buffer" },
+    { "line": 112, "field": "_roomPressureBack", "type": "NativeArray<float>", "bufferId": 74427, "role": "room pressure back buffer" },
+    { "line": 113, "field": "_roomAmbientPressure", "type": "NativeArray<float>", "bufferId": 74428, "role": "room ambient pressure" },
+    { "line": 114, "field": "_roomSubmerged01", "type": "NativeArray<float>", "bufferId": 74429, "role": "room submerged fraction" },
+    { "line": 115, "field": "_roomPlayerStress01", "type": "NativeArray<float>", "bufferId": 74430, "role": "player stress per room" },
+    { "line": 116, "field": "_roomPlayerHeartRateBpm", "type": "NativeArray<float>", "bufferId": 74431, "role": "player heart rate per room" },
+    { "line": 117, "field": "_roomTemperatureCelsius", "type": "NativeArray<float>", "bufferId": 74432, "role": "room temperature" },
+    { "line": 118, "field": "_roomPlayerPresent", "type": "NativeArray<byte>", "bufferId": 74433, "role": "player presence per room" },
+    { "line": 119, "field": "_roomScrubberPowered", "type": "NativeArray<byte>", "bufferId": 74434, "role": "scrubber power per room" },
+    { "line": 120, "field": "_roomFlags", "type": "NativeArray<ushort>", "bufferId": 74435, "role": "room condition flags" },
+    { "line": 121, "field": "_roomBaseIndex", "type": "NativeArray<int>", "bufferId": 74436, "role": "room to base index" },
+    { "line": 122, "field": "BaseAwakeState", "type": "NativeArray<byte>", "bufferId": 63, "role": "base awake state" },
+    { "line": 123, "field": "_basePlayerInside", "type": "NativeArray<byte>", "bufferId": 74437, "role": "base player inside flag" },
+    { "line": 124, "field": "_basePlayerInsideCount", "type": "NativeArray<int>", "bufferId": 74438, "role": "base player inside count" },
+    { "line": 125, "field": "_baseRoomStart", "type": "NativeArray<int>", "bufferId": 74439, "role": "base room range start" },
+    { "line": 126, "field": "_baseRoomCount", "type": "NativeArray<int>", "bufferId": 74440, "role": "base room count" },
+    { "line": 127, "field": "_baseCenterAup", "type": "NativeArray<AbsoluteUniversePosition>", "bufferId": 74441, "role": "base center AUP" },
+    { "line": 128, "field": "_baseHibernatedUnscaledTime", "type": "NativeArray<double>", "bufferId": 74442, "role": "base hibernated time" },
+    { "line": 129, "field": "_baseBatteryWattSeconds", "type": "NativeArray<float>", "bufferId": 74443, "role": "base battery watt-seconds" },
+    { "line": 130, "field": "_baseIdleDrawWatts", "type": "NativeArray<float>", "bufferId": 74444, "role": "base idle power draw" },
+    { "line": 131, "field": "_baseLeakRatePerSecond", "type": "NativeArray<float>", "bufferId": 74445, "role": "base leak rate" },
+    { "line": 132, "field": "_baseAmbientOxygenKPa", "type": "NativeArray<float>", "bufferId": 74446, "role": "base ambient oxygen" },
+    { "line": 133, "field": "_bulkheadRoomA", "type": "NativeArray<int>", "bufferId": 74447, "role": "bulkhead room A" },
+    { "line": 134, "field": "_bulkheadRoomB", "type": "NativeArray<int>", "bufferId": 74448, "role": "bulkhead room B" },
+    { "line": 135, "field": "_bulkheadSealed", "type": "NativeArray<byte>", "bufferId": 74449, "role": "bulkhead sealed flag" }
+  ],
+  "dtoTargets": [
+    { "type": "PendingBaseTransitionSignal", "layout": "Explicit", "sizeBytes": 64, "status": "already ARM64 aligned" },
+    { "type": "AtmosphereTelemetryEntry", "layout": "Explicit", "sizeBytes": 64, "status": "planned replacement for 32-byte GasDynamicsTelemetryEntry" }
+  ],
+  "blackBox": {
+    "capacityFrames": 300,
+    "dumpPath": "Docs/AgentLogs/Dump_1324_SubmarineAtmosphere.bin",
+    "trigger": "NaN/state fault path only"
+  }
+}

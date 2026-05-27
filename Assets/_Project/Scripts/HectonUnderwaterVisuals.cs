@@ -127,6 +127,8 @@ namespace Hecton8.Environment
         private const float HudFogVolumetricScatterBoost = 0.14f;
         private const float SuitCriticalHealthThreshold01 = 0.2f;
         private const int FlashlightPhotophobiaFieldResolution = 128;
+        private const int PortableMaxComputeThreadsPerGroup = 256;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const float FlashlightPhotophobiaRecoveryGraceSeconds = 0.25f;
         private const float GpuBubbleTrailMinSpeed = 1.4f;
         private const float GpuBubbleTrailFullSpeed = 5.2f;
@@ -186,11 +188,15 @@ namespace Hecton8.Environment
         private float _nextHudFogLuminanceReadbackTime;
         private RenderTexture _hudFogLuminanceTexture;
         private int _hudFogLuminanceKernel = -1;
+        private int _hudFogLuminanceThreadGroupSizeX;
+        private int _hudFogLuminanceThreadGroupSizeY;
         private bool _hudFogLuminanceReady;
         private bool _hudFogReadbackPending;
         private RenderTexture _photophobiaFieldTextureA;
         private RenderTexture _photophobiaFieldTextureB;
         private int _photophobiaFieldKernel = -1;
+        private int _photophobiaFieldThreadGroupSizeX;
+        private int _photophobiaFieldThreadGroupSizeY;
         private bool _photophobiaFieldReady;
         private bool _photophobiaFieldWriteToA = true;
         private bool _photophobiaFieldDirty;
@@ -809,6 +815,7 @@ namespace Hecton8.Environment
         private DynamicResolutionScaler _dynamicResolutionRuntime;
         private IWeatherService _weatherRuntime;
         private ISurfaceWeatherReadModel _surfaceWeatherRuntime;
+        private IGIRelaySystem _giRelayRuntime;
         private SargassumGlobalDragManager _sargassumDragRuntime;
         private SoundscapeSystem _soundscapeRuntime;
         private MapMagicBridge _mapMagicRuntime;
@@ -928,6 +935,8 @@ namespace Hecton8.Environment
         private float _nextExhaleBubbleAllowedTime = float.NegativeInfinity;
         private float _nextRuntimePlayerCameraResolveTime = float.NegativeInfinity;
         private float _nextRuntimeMainCameraResolveTime = float.NegativeInfinity;
+        private float _nextRuntimeSpaceCameraResolveTime = float.NegativeInfinity;
+        private float _nextSecondaryUnderwaterPassPurgeTime = float.NegativeInfinity;
         private float _nextRuntimeReferenceWarningTime = float.NegativeInfinity;
         private byte _runtimeReferenceWarningMask;
         private const byte RuntimeReferenceWarningPlayerCamera = 1 << 0;
@@ -939,12 +948,38 @@ namespace Hecton8.Environment
         private Camera _gameplayMainCamera;
         private Camera _spaceCamera;
         private Camera _underwaterMarineSnowSearchCamera;
+        private Camera _underwaterSuspendedMotesSearchCamera;
+        private Camera _underwaterExhaleBubblesSearchCamera;
+        private Camera _transitionCameraVfxSearchCamera;
+        private Camera _secondaryUnderwaterPassPurgeMainCamera;
+        private Camera _secondaryUnderwaterPassPurgeSpaceCamera;
         private Camera _capturedCompositionMainCamera;
         private Camera _capturedCompositionSpaceCamera;
+        private Camera _shallowSunBeamSearchCamera;
+        private Transform _underwaterSuspendedMotesSearchTransform;
+        private Transform _underwaterExhaleBubblesSearchTransform;
+        private Transform _transitionVisorSearchRoot;
+        private Transform _transitionVisorSearchTransform;
         private Transform _shallowSunBeamTransform;
+        private Transform _shallowSunBeamLightSearchTransform;
+        private Light _sunVisualSearchLight;
         private Vector3 _shallowSunBeamBaseLocalPosition;
+        private bool _underwaterSuspendedMotesSearchCompleted;
+        private bool _underwaterExhaleBubblesSearchCompleted;
+        private bool _transitionCameraVfxSearchCompleted;
+        private bool _transitionVisorSearchCompleted;
+        private bool _shallowSunBeamLightSearchCompleted;
+        private bool _sunVisualSearchCompleted;
         private Component _mainCameraUnderwaterPass;
         private Component _spaceCameraUnderwaterPass;
+        private Component _secondaryUnderwaterPassPurgeMainPass;
+        private Component _secondaryUnderwaterPassPurgeSpacePass;
+        private Camera _cachedMainCameraDataCamera;
+        private Camera _cachedSpaceCameraDataCamera;
+        private UniversalAdditionalCameraData _cachedMainCameraData;
+        private UniversalAdditionalCameraData _cachedSpaceCameraData;
+        private bool _cachedMainCameraDataMissing;
+        private bool _cachedSpaceCameraDataMissing;
         private bool _cameraCompositionDefaultsCaptured;
         private bool _runtimeCameraStackFallbackActive;
         private int _spaceCameraOriginalCullingMask;
@@ -1025,6 +1060,8 @@ namespace Hecton8.Environment
                 TryRegisterRenderDispatcher();
                 EnsureRuntimeVisualOwners();
                 EnsureGameplayCameraStackEnabled();
+                EnsureHudFogLuminanceResources(allowAllocate: true);
+                EnsurePhotophobiaFieldResources(allowAllocate: true);
                 MapMagicBiomeEvents.Register(this);
                 BiomeMatrixEvents.Register(this);
                 SoundscapeEvents.Register(this);
@@ -1055,8 +1092,16 @@ namespace Hecton8.Environment
             if (spaceCamera != null && !spaceCamera.enabled)
                 spaceCamera.enabled = true;
 
-            EnsureCameraTextureRequirements(mainCamera);
-            EnsureCameraTextureRequirements(spaceCamera);
+            EnsureCameraTextureRequirementsCached(
+                mainCamera,
+                ref _cachedMainCameraDataCamera,
+                ref _cachedMainCameraData,
+                ref _cachedMainCameraDataMissing);
+            EnsureCameraTextureRequirementsCached(
+                spaceCamera,
+                ref _cachedSpaceCameraDataCamera,
+                ref _cachedSpaceCameraData,
+                ref _cachedSpaceCameraDataMissing);
             ApplyGameplayCameraCompositionMode();
             EnsureOceanUnderwaterPassOwnership();
         }
@@ -1071,16 +1116,24 @@ namespace Hecton8.Environment
             if (spaceCamera == null)
                 return;
 
-            if (!mainCamera.TryGetComponent(out UniversalAdditionalCameraData mainCameraData) ||
-                mainCameraData == null ||
-                !spaceCamera.TryGetComponent(out UniversalAdditionalCameraData spaceCameraData) ||
-                spaceCameraData == null)
+            if (!TryResolveCameraDataCached(
+                    mainCamera,
+                    ref _cachedMainCameraDataCamera,
+                    ref _cachedMainCameraData,
+                    ref _cachedMainCameraDataMissing,
+                    out UniversalAdditionalCameraData mainCameraData) ||
+                !TryResolveCameraDataCached(
+                    spaceCamera,
+                    ref _cachedSpaceCameraDataCamera,
+                    ref _cachedSpaceCameraData,
+                    ref _cachedSpaceCameraDataMissing,
+                    out UniversalAdditionalCameraData spaceCameraData))
             {
                 return;
             }
 
-            EnsureCameraTextureRequirements(mainCameraData);
-            EnsureCameraTextureRequirements(spaceCameraData);
+            EnsureCameraTextureRequirements(mainCameraData, mainCamera);
+            EnsureCameraTextureRequirements(spaceCameraData, spaceCamera);
             CaptureGameplayCameraCompositionDefaults(mainCameraData, spaceCameraData, spaceCamera);
 
             if (SupportsGameplayCameraStacking(mainCameraData, spaceCameraData))
@@ -1140,7 +1193,90 @@ namespace Hecton8.Environment
             EnsureCameraTextureRequirements(cameraData);
         }
 
-        private static void EnsureCameraTextureRequirements(UniversalAdditionalCameraData cameraData)
+        private void EnsureCameraTextureRequirementsCached(
+            Camera camera,
+            ref Camera cachedCamera,
+            ref UniversalAdditionalCameraData cachedData,
+            ref bool cachedMissing)
+        {
+            if (!TryResolveCameraDataCached(
+                    camera,
+                    ref cachedCamera,
+                    ref cachedData,
+                    ref cachedMissing,
+                    out UniversalAdditionalCameraData cameraData))
+            {
+                return;
+            }
+
+            EnsureCameraTextureRequirements(cameraData, camera);
+        }
+
+        private static bool TryResolveCameraDataCached(
+            Camera camera,
+            ref Camera cachedCamera,
+            ref UniversalAdditionalCameraData cachedData,
+            ref bool cachedMissing,
+            out UniversalAdditionalCameraData cameraData)
+        {
+            cameraData = null;
+            if (!IsCameraReferenceValid(camera))
+            {
+                cachedCamera = null;
+                cachedData = null;
+                cachedMissing = false;
+                return false;
+            }
+
+            if (ReferenceEquals(cachedCamera, camera))
+            {
+                if (IsCameraDataReferenceValid(cachedData))
+                {
+                    cameraData = cachedData;
+                    return true;
+                }
+
+                if (cachedMissing)
+                    return false;
+            }
+            else
+            {
+                cachedCamera = camera;
+                cachedData = null;
+                cachedMissing = false;
+            }
+
+            if (!camera.TryGetComponent(out cameraData) || cameraData == null)
+            {
+                cachedMissing = true;
+                return false;
+            }
+
+            cachedData = cameraData;
+            cachedMissing = false;
+            return true;
+        }
+
+        private static bool IsCameraDataReferenceValid(UniversalAdditionalCameraData cameraData)
+        {
+            if (ReferenceEquals(cameraData, null))
+                return false;
+
+            try
+            {
+                return cameraData != null;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnassignedReferenceException)
+            {
+                return false;
+            }
+        }
+
+        private static void EnsureCameraTextureRequirements(UniversalAdditionalCameraData cameraData, Camera camera = null)
         {
             if (cameraData == null)
                 return;
@@ -1157,7 +1293,9 @@ namespace Hecton8.Environment
             if (!cameraData.requiresColorTexture)
                 cameraData.requiresColorTexture = true;
 
-            cameraData.TryGetComponent(out Camera camera);
+            if (camera == null)
+                cameraData.TryGetComponent(out camera);
+
             bool shouldEnablePostProcessing = camera != null && HasUnderwaterPass(camera);
             if (!shouldEnablePostProcessing &&
                 camera != null &&
@@ -1405,6 +1543,34 @@ namespace Hecton8.Environment
             _cachedBottomSiltBoost = 0f;
             _nextBottomSiltProbeTime = float.NegativeInfinity;
             _nextExhaleBubbleAllowedTime = float.NegativeInfinity;
+            _nextRuntimeSpaceCameraResolveTime = float.NegativeInfinity;
+            _nextSecondaryUnderwaterPassPurgeTime = float.NegativeInfinity;
+            _cachedMainCameraDataCamera = null;
+            _cachedSpaceCameraDataCamera = null;
+            _cachedMainCameraData = null;
+            _cachedSpaceCameraData = null;
+            _cachedMainCameraDataMissing = false;
+            _cachedSpaceCameraDataMissing = false;
+            _underwaterSuspendedMotesSearchCamera = null;
+            _underwaterExhaleBubblesSearchCamera = null;
+            _transitionCameraVfxSearchCamera = null;
+            _secondaryUnderwaterPassPurgeMainCamera = null;
+            _secondaryUnderwaterPassPurgeSpaceCamera = null;
+            _secondaryUnderwaterPassPurgeMainPass = null;
+            _secondaryUnderwaterPassPurgeSpacePass = null;
+            _shallowSunBeamSearchCamera = null;
+            _underwaterSuspendedMotesSearchTransform = null;
+            _underwaterExhaleBubblesSearchTransform = null;
+            _transitionVisorSearchRoot = null;
+            _transitionVisorSearchTransform = null;
+            _shallowSunBeamLightSearchTransform = null;
+            _sunVisualSearchLight = null;
+            _underwaterSuspendedMotesSearchCompleted = false;
+            _underwaterExhaleBubblesSearchCompleted = false;
+            _transitionCameraVfxSearchCompleted = false;
+            _transitionVisorSearchCompleted = false;
+            _shallowSunBeamLightSearchCompleted = false;
+            _sunVisualSearchCompleted = false;
             UnsubscribePlayerMovement(_subscribedPlayerMovement);
             DisableUnderwaterSuspendedMotes(true);
             DisableUnderwaterExhaleBubbles(true);
@@ -2058,11 +2224,13 @@ namespace Hecton8.Environment
             _dynamicResolutionRuntime = GlobalRegistry.DynamicResolution;
             _weatherRuntime = GlobalRegistry.Weather;
             _surfaceWeatherRuntime = GlobalRegistry.SurfaceWeatherReadModel;
+            _giRelayRuntime = GlobalRegistry.GIRelay;
             _sargassumDragRuntime = GlobalRegistry.SargassumDrag;
             _soundscapeRuntime = GlobalRegistry.Soundscape;
             _mapMagicRuntime = GlobalRegistry.MapMagic;
             _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
             _biomeFogVault = GlobalRegistry.DataVault;
+            EnsureBiomeFogBlendBuffers(allowAcquire: true);
 
             if (depthZoneDirector == null)
                 depthZoneDirector = GlobalRegistry.DepthZone;
@@ -2112,6 +2280,10 @@ namespace Hecton8.Environment
                     _surfaceWeatherRuntime = currentService as ISurfaceWeatherReadModel;
                     break;
 
+                case GlobalRegistryServiceSlot.GIRelayRuntime:
+                    _giRelayRuntime = currentService as IGIRelaySystem;
+                    break;
+
                 case GlobalRegistryServiceSlot.SargassumDragRuntime:
                     _sargassumDragRuntime = currentService as SargassumGlobalDragManager;
                     break;
@@ -2141,9 +2313,12 @@ namespace Hecton8.Environment
                     break;
 
                 case GlobalRegistryServiceSlot.DataVault:
-                    if (!_biomeFogBlendScheduled)
+                    bool canPrewarmBiomeFogBuffers = !_biomeFogBlendScheduled;
+                    if (canPrewarmBiomeFogBuffers)
                         ReleaseBiomeFogBlendBuffers();
                     _biomeFogVault = currentService as IDataVault;
+                    if (canPrewarmBiomeFogBuffers)
+                        EnsureBiomeFogBlendBuffers(allowAcquire: true);
                     break;
 
                 case GlobalRegistryServiceSlot.FluidRuntime:
@@ -2418,14 +2593,11 @@ namespace Hecton8.Environment
             }
 
             ApplyGIRelaySurfaceEmissionToMaterial(oceanUnderwaterMaterial, surfaceEmission);
-            Material oceanMaterial = ResolveOceanMaterial();
-            if (oceanMaterial != null && !ReferenceEquals(oceanMaterial, oceanUnderwaterMaterial))
-                ApplyGIRelaySurfaceEmissionToMaterial(oceanMaterial, surfaceEmission);
         }
 
-        private static bool IsGIRelayAmbientAuthorityActive()
+        private bool IsGIRelayAmbientAuthorityActive()
         {
-            IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
+            IGIRelaySystem giRelay = _giRelayRuntime;
             return giRelay != null && giRelay.IsAmbientProbeAuthorityActive;
         }
 
@@ -2572,7 +2744,7 @@ namespace Hecton8.Environment
             return source;
         }
 
-        private static void ApplySurfaceReadableRenderSettingsFloor()
+        private void ApplySurfaceReadableRenderSettingsFloor()
         {
             if (RenderSettings.fog)
                 RenderSettings.fogDensity = ResolveReadableSurfaceFogDensity(RenderSettings.fogDensity);
@@ -3492,7 +3664,7 @@ namespace Hecton8.Environment
                 _biomeFogBlendScheduled ||
                 _biomeFogFromProfile == null ||
                 _biomeFogToProfile == null ||
-                !EnsureBiomeFogBlendBuffers())
+                !EnsureBiomeFogBlendBuffers(allowAcquire: false))
             {
                 return;
             }
@@ -3568,10 +3740,13 @@ namespace Hecton8.Environment
             }
         }
 
-        private bool EnsureBiomeFogBlendBuffers()
+        private bool EnsureBiomeFogBlendBuffers(bool allowAcquire)
         {
             if (AreBiomeFogBlendBuffersCreated())
                 return true;
+
+            if (!allowAcquire)
+                return false;
 
             if (HasPartialBiomeFogBlendBuffers())
                 ReleaseBiomeFogBlendBuffers();
@@ -3758,7 +3933,7 @@ namespace Hecton8.Environment
                 return false;
             }
 
-            if (vault.IsAllocationLocked)
+            if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
             {
                 if (!vault.TryGetGenerationHandle(bufferId, out handle))
                 {
@@ -3894,14 +4069,6 @@ namespace Hecton8.Environment
         private void ApplyOceanMaterialBindings()
         {
             ApplyOceanMaterialBindings(oceanUnderwaterMaterial, true);
-
-            Material oceanMaterial = ResolveOceanMaterial();
-
-            if (oceanMaterial != null &&
-                !ReferenceEquals(oceanMaterial, oceanUnderwaterMaterial))
-            {
-                ApplyOceanMaterialBindings(oceanMaterial, false);
-            }
         }
 
         private void ApplyOceanMaterialBindings(Material targetMaterial, bool underwaterMaterial)
@@ -4695,6 +4862,15 @@ namespace Hecton8.Environment
 
             _spaceCamera = null;
 
+            if (Application.isPlaying)
+            {
+                float now = ResolvePresentationClockSeconds();
+                if (now < _nextRuntimeSpaceCameraResolveTime)
+                    return;
+
+                _nextRuntimeSpaceCameraResolveTime = now + RuntimeCameraResolveRetryInterval;
+            }
+
             Transform spaceCameraTransform = null;
             if (playerCamera != null)
                 spaceCameraTransform = playerCamera.Find("SpaceCamera");
@@ -4750,10 +4926,14 @@ namespace Hecton8.Environment
                 SetUnderwaterPassEnabled(_mainCameraUnderwaterPass, true);
 
             SetCopyOceanMaterialParamsEachFrame(_mainCameraUnderwaterPass, true);
-            EnsureCameraTextureRequirements(mainCamera);
+            EnsureCameraTextureRequirementsCached(
+                mainCamera,
+                ref _cachedMainCameraDataCamera,
+                ref _cachedMainCameraData,
+                ref _cachedMainCameraDataMissing);
 
             ResolveSpaceCamera();
-            PurgeSecondaryUnderwaterPasses();
+            PurgeSecondaryUnderwaterPassesIfNeeded();
             EnsureOceanCameraOwnership();
         }
 
@@ -4865,7 +5045,11 @@ namespace Hecton8.Environment
             if (bridge.IsOceanCameraOwnedBy(mainCamera))
                 return;
 
-            EnsureCameraTextureRequirements(mainCamera);
+            EnsureCameraTextureRequirementsCached(
+                mainCamera,
+                ref _cachedMainCameraDataCamera,
+                ref _cachedMainCameraData,
+                ref _cachedMainCameraDataMissing);
             bridge.AssignOceanCamera(mainCamera);
         }
 
@@ -4966,6 +5150,26 @@ namespace Hecton8.Environment
             }
 
             return null;
+        }
+
+        private void PurgeSecondaryUnderwaterPassesIfNeeded()
+        {
+            bool ownerChanged =
+                !ReferenceEquals(_secondaryUnderwaterPassPurgeMainCamera, mainCamera) ||
+                !ReferenceEquals(_secondaryUnderwaterPassPurgeSpaceCamera, _spaceCamera) ||
+                !ReferenceEquals(_secondaryUnderwaterPassPurgeMainPass, _mainCameraUnderwaterPass) ||
+                !ReferenceEquals(_secondaryUnderwaterPassPurgeSpacePass, _spaceCameraUnderwaterPass);
+
+            float now = ResolvePresentationClockSeconds();
+            if (!ownerChanged && now < _nextSecondaryUnderwaterPassPurgeTime)
+                return;
+
+            PurgeSecondaryUnderwaterPasses();
+            _secondaryUnderwaterPassPurgeMainCamera = mainCamera;
+            _secondaryUnderwaterPassPurgeSpaceCamera = _spaceCamera;
+            _secondaryUnderwaterPassPurgeMainPass = _mainCameraUnderwaterPass;
+            _secondaryUnderwaterPassPurgeSpacePass = _spaceCameraUnderwaterPass;
+            _nextSecondaryUnderwaterPassPurgeTime = now + RuntimeCameraResolveRetryInterval;
         }
 
         private void PurgeSecondaryUnderwaterPasses()
@@ -5232,8 +5436,18 @@ namespace Hecton8.Environment
             if (mainCamera == null)
                 ResolveMainCamera();
 
-            if (mainCamera != null)
-                mainCamera.TryGetComponent(out transitionCameraVfx);
+            if (mainCamera == null)
+                return;
+
+            if (_transitionCameraVfxSearchCompleted &&
+                ReferenceEquals(_transitionCameraVfxSearchCamera, mainCamera))
+            {
+                return;
+            }
+
+            _transitionCameraVfxSearchCamera = mainCamera;
+            _transitionCameraVfxSearchCompleted = true;
+            mainCamera.TryGetComponent(out transitionCameraVfx);
         }
 
         private void ResolveTransitionVisorController()
@@ -5251,9 +5465,18 @@ namespace Hecton8.Environment
             if (playerRoot == null)
                 return;
 
-            Transform visorTransform = playerRoot.Find("Suit_Visor");
-            if (visorTransform != null)
-                visorTransform.TryGetComponent(out transitionVisorController);
+            if (!ReferenceEquals(_transitionVisorSearchRoot, playerRoot))
+            {
+                _transitionVisorSearchRoot = playerRoot;
+                _transitionVisorSearchTransform = playerRoot.Find("Suit_Visor");
+                _transitionVisorSearchCompleted = _transitionVisorSearchTransform == null;
+            }
+
+            if (_transitionVisorSearchTransform == null || _transitionVisorSearchCompleted)
+                return;
+
+            _transitionVisorSearchCompleted = true;
+            _transitionVisorSearchTransform.TryGetComponent(out transitionVisorController);
         }
 
         private void ResolveUnderwaterParticles()
@@ -5267,9 +5490,18 @@ namespace Hecton8.Environment
             if (mainCamera == null)
                 return;
 
-            Transform motesTransform = mainCamera.transform.Find(UnderwaterSuspendedMotesChildName);
-            if (motesTransform != null)
-                motesTransform.TryGetComponent(out underwaterSuspendedMotes);
+            if (!ReferenceEquals(_underwaterSuspendedMotesSearchCamera, mainCamera))
+            {
+                _underwaterSuspendedMotesSearchCamera = mainCamera;
+                _underwaterSuspendedMotesSearchTransform = mainCamera.transform.Find(UnderwaterSuspendedMotesChildName);
+                _underwaterSuspendedMotesSearchCompleted = _underwaterSuspendedMotesSearchTransform == null;
+            }
+
+            if (_underwaterSuspendedMotesSearchTransform == null || _underwaterSuspendedMotesSearchCompleted)
+                return;
+
+            _underwaterSuspendedMotesSearchCompleted = true;
+            _underwaterSuspendedMotesSearchTransform.TryGetComponent(out underwaterSuspendedMotes);
         }
 
         private void ResolveUnderwaterMarineSnow()
@@ -5307,9 +5539,18 @@ namespace Hecton8.Environment
             if (mainCamera == null)
                 return;
 
-            Transform exhaleTransform = mainCamera.transform.Find(UnderwaterExhaleBubblesChildName);
-            if (exhaleTransform != null)
-                exhaleTransform.TryGetComponent(out underwaterExhaleBubbles);
+            if (!ReferenceEquals(_underwaterExhaleBubblesSearchCamera, mainCamera))
+            {
+                _underwaterExhaleBubblesSearchCamera = mainCamera;
+                _underwaterExhaleBubblesSearchTransform = mainCamera.transform.Find(UnderwaterExhaleBubblesChildName);
+                _underwaterExhaleBubblesSearchCompleted = _underwaterExhaleBubblesSearchTransform == null;
+            }
+
+            if (_underwaterExhaleBubblesSearchTransform == null || _underwaterExhaleBubblesSearchCompleted)
+                return;
+
+            _underwaterExhaleBubblesSearchCompleted = true;
+            _underwaterExhaleBubblesSearchTransform.TryGetComponent(out underwaterExhaleBubbles);
         }
 
         private void ResolveShallowSunBeam()
@@ -5320,20 +5561,55 @@ namespace Hecton8.Environment
                 return;
             }
 
+            if (shallowSunBeamLight != null &&
+                _shallowSunBeamTransform == null)
+            {
+                CacheShallowSunBeamTransform(shallowSunBeamLight.transform);
+                return;
+            }
+
             if (mainCamera == null)
                 ResolveMainCamera();
 
             if (mainCamera == null)
                 return;
 
-            Transform beamTransform = mainCamera.transform.Find(UnderwaterShallowSunBeamChildName);
+            if (_shallowSunBeamTransform == null)
+            {
+                if (ReferenceEquals(_shallowSunBeamSearchCamera, mainCamera))
+                    return;
+
+                _shallowSunBeamSearchCamera = mainCamera;
+                Transform beamTransform = mainCamera.transform.Find(UnderwaterShallowSunBeamChildName);
+                if (beamTransform == null)
+                    return;
+
+                CacheShallowSunBeamTransform(beamTransform);
+            }
+
+            if (shallowSunBeamLight != null)
+                return;
+
+            if (_shallowSunBeamLightSearchCompleted &&
+                ReferenceEquals(_shallowSunBeamLightSearchTransform, _shallowSunBeamTransform))
+            {
+                return;
+            }
+
+            _shallowSunBeamLightSearchTransform = _shallowSunBeamTransform;
+            _shallowSunBeamLightSearchCompleted = true;
+            _shallowSunBeamTransform.TryGetComponent(out shallowSunBeamLight);
+        }
+
+        private void CacheShallowSunBeamTransform(Transform beamTransform)
+        {
             if (beamTransform == null)
                 return;
 
             _shallowSunBeamTransform = beamTransform;
             _shallowSunBeamBaseLocalPosition = beamTransform.localPosition;
-            if (shallowSunBeamLight == null)
-                beamTransform.TryGetComponent(out shallowSunBeamLight);
+            _shallowSunBeamLightSearchTransform = null;
+            _shallowSunBeamLightSearchCompleted = false;
         }
 
         private void ResolveSunVisualTransform()
@@ -5347,6 +5623,14 @@ namespace Hecton8.Environment
             if (sunLight == null)
                 return;
 
+            if (_sunVisualSearchCompleted &&
+                ReferenceEquals(_sunVisualSearchLight, sunLight))
+            {
+                return;
+            }
+
+            _sunVisualSearchLight = sunLight;
+            _sunVisualSearchCompleted = true;
             Transform resolvedSunVisual = sunLight.transform.Find("Sun_Body");
             if (resolvedSunVisual != null)
                 sunVisualTransform = resolvedSunVisual;
@@ -5537,12 +5821,17 @@ namespace Hecton8.Environment
             if (sourceTexture == null || sourceTexture.width <= 0 || sourceTexture.height <= 0)
                 return;
 
-            EnsureHudFogLuminanceResources();
+            EnsureHudFogLuminanceResources(allowAllocate: false);
             if (!_hudFogLuminanceReady || _hudFogLuminanceTexture == null || _hudFogReadbackPending)
                 return;
 
             float now = ResolvePresentationClockSeconds();
             if (now < _nextHudFogLuminanceReadbackTime)
+                return;
+
+            int groupsX = ResolveDispatchGroups(1, _hudFogLuminanceThreadGroupSizeX);
+            int groupsY = ResolveDispatchGroups(1, _hudFogLuminanceThreadGroupSizeY);
+            if (groupsX <= 0 || groupsY <= 0)
                 return;
 
             _nextHudFogLuminanceReadbackTime = now + HudFogLuminanceReadbackIntervalSeconds;
@@ -5555,14 +5844,17 @@ namespace Hecton8.Environment
                     sourceTexture.height,
                     1f / math.max(1f, sourceTexture.width),
                     1f / math.max(1f, sourceTexture.height)));
-            hudFogLuminanceCompute.Dispatch(_hudFogLuminanceKernel, 1, 1, 1);
+            hudFogLuminanceCompute.Dispatch(_hudFogLuminanceKernel, groupsX, groupsY, 1);
 
             _hudFogReadbackPending = true;
             AsyncGPUReadback.Request(_hudFogLuminanceTexture, 0, s_HudFogLuminanceReadbackCompleted);
         }
 
-        private void EnsureHudFogLuminanceResources()
+        private void EnsureHudFogLuminanceResources(bool allowAllocate = true)
         {
+            if (_hudFogLuminanceReady && _hudFogLuminanceTexture != null)
+                return;
+
             if (!SystemInfo.supportsComputeShaders)
             {
                 _hudFogLuminanceReady = false;
@@ -5582,30 +5874,34 @@ namespace Hecton8.Environment
 
             if (_hudFogLuminanceKernel < 0)
             {
-                if (!hudFogLuminanceCompute.HasKernel("ResolveHudFogLuminance"))
+                if (!TryResolveComputeKernel(hudFogLuminanceCompute, "ResolveHudFogLuminance", out _hudFogLuminanceKernel))
+                {
+                    _hudFogLuminanceReady = false;
+                    return;
+                }
+            }
+
+            if (!hudFogLuminanceCompute.IsSupported(_hudFogLuminanceKernel) ||
+                !TryResolveKernelThreadGroupSize2D(
+                    hudFogLuminanceCompute,
+                    _hudFogLuminanceKernel,
+                    out _hudFogLuminanceThreadGroupSizeX,
+                    out _hudFogLuminanceThreadGroupSizeY))
+            {
+                _hudFogLuminanceReady = false;
+                _hudFogLuminanceThreadGroupSizeX = 0;
+                _hudFogLuminanceThreadGroupSizeY = 0;
+                return;
+            }
+
+            if (_hudFogLuminanceTexture == null)
+            {
+                if (!allowAllocate)
                 {
                     _hudFogLuminanceReady = false;
                     return;
                 }
 
-                _hudFogLuminanceKernel = hudFogLuminanceCompute.FindKernel("ResolveHudFogLuminance");
-            }
-
-            if (!hudFogLuminanceCompute.IsSupported(_hudFogLuminanceKernel))
-            {
-                _hudFogLuminanceReady = false;
-                return;
-            }
-
-            hudFogLuminanceCompute.GetKernelThreadGroupSizes(
-                _hudFogLuminanceKernel,
-                out uint threadGroupSizeX,
-                out uint threadGroupSizeY,
-                out uint threadGroupSizeZ);
-            ulong threadGroupSize = (ulong)threadGroupSizeX * threadGroupSizeY * threadGroupSizeZ;
-
-            if (_hudFogLuminanceTexture == null)
-            {
                 RenderTextureDescriptor descriptor = new RenderTextureDescriptor(1, 1)
                 {
                     dimension = TextureDimension.Tex2D,
@@ -5628,7 +5924,7 @@ namespace Hecton8.Environment
                 _hudFogLuminanceTexture.Create();
             }
 
-            _hudFogLuminanceReady = threadGroupSize > 0UL && threadGroupSize <= 64UL;
+            _hudFogLuminanceReady = true;
         }
 
         private void ReleaseHudFogLuminanceResources()
@@ -5636,6 +5932,8 @@ namespace Hecton8.Environment
             _hudFogReadbackPending = false;
             _hudFogLuminanceReady = false;
             _hudFogLuminanceKernel = -1;
+            _hudFogLuminanceThreadGroupSizeX = 0;
+            _hudFogLuminanceThreadGroupSizeY = 0;
 
             if (_hudFogLuminanceTexture == null)
                 return;
@@ -5732,7 +6030,7 @@ namespace Hecton8.Environment
                 return;
             }
 
-            EnsurePhotophobiaFieldResources();
+            EnsurePhotophobiaFieldResources(allowAllocate: false);
             if (!_photophobiaFieldReady || _photophobiaFieldTextureA == null || _photophobiaFieldTextureB == null)
             {
                 Shader.SetGlobalVector(_HectonPhotophobiaFieldStateId, Vector4.zero);
@@ -5768,8 +6066,15 @@ namespace Hecton8.Environment
                 _HectonPhotophobiaCone2Id,
                 new Vector4(innerCos, invRange, lightEnergy, now));
 
-            int groups = FlashlightPhotophobiaFieldResolution / 8;
-            photophobiaFieldCompute.Dispatch(_photophobiaFieldKernel, groups, groups, 1);
+            int groupsX = ResolveDispatchGroups(FlashlightPhotophobiaFieldResolution, _photophobiaFieldThreadGroupSizeX);
+            int groupsY = ResolveDispatchGroups(FlashlightPhotophobiaFieldResolution, _photophobiaFieldThreadGroupSizeY);
+            if (groupsX <= 0 || groupsY <= 0)
+            {
+                Shader.SetGlobalVector(_HectonPhotophobiaFieldStateId, Vector4.zero);
+                return;
+            }
+
+            photophobiaFieldCompute.Dispatch(_photophobiaFieldKernel, groupsX, groupsY, 1);
             _photophobiaFieldWriteToA = !_photophobiaFieldWriteToA;
             _photophobiaFieldDirty = true;
 
@@ -5780,8 +6085,17 @@ namespace Hecton8.Environment
                 new Vector4(1f, lightEnergy, transitionSeconds, hasActiveCone ? 1f : 0f));
         }
 
-        private void EnsurePhotophobiaFieldResources()
+        private void EnsurePhotophobiaFieldResources(bool allowAllocate = true)
         {
+            if (_photophobiaFieldReady && _photophobiaFieldTextureA != null && _photophobiaFieldTextureB != null)
+                return;
+
+            if (!SystemInfo.supportsComputeShaders)
+            {
+                _photophobiaFieldReady = false;
+                return;
+            }
+
 #if UNITY_EDITOR
             if (photophobiaFieldCompute == null)
                 photophobiaFieldCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(PhotophobiaFieldComputeAssetPath);
@@ -5793,21 +6107,107 @@ namespace Hecton8.Environment
                 return;
             }
 
-            if (_photophobiaFieldKernel < 0)
-                _photophobiaFieldKernel = photophobiaFieldCompute.FindKernel("UpdatePhotophobiaField");
-
             if (_photophobiaFieldTextureA == null || _photophobiaFieldTextureB == null)
             {
+                if (!allowAllocate)
+                {
+                    _photophobiaFieldReady = false;
+                    return;
+                }
+
                 ReleasePhotophobiaFieldResources();
-                if (_photophobiaFieldKernel < 0)
-                    _photophobiaFieldKernel = photophobiaFieldCompute.FindKernel("UpdatePhotophobiaField");
                 _photophobiaFieldTextureA = CreatePhotophobiaFieldTexture("__HectonPhotophobiaFieldA");
                 _photophobiaFieldTextureB = CreatePhotophobiaFieldTexture("__HectonPhotophobiaFieldB");
                 ClearPhotophobiaFieldTextures();
                 _photophobiaFieldWriteToA = true;
             }
 
-            _photophobiaFieldReady = _photophobiaFieldKernel >= 0;
+            if (!TryResolveComputeKernel(photophobiaFieldCompute, "UpdatePhotophobiaField", out _photophobiaFieldKernel) ||
+                !photophobiaFieldCompute.IsSupported(_photophobiaFieldKernel) ||
+                !TryResolveKernelThreadGroupSize2D(
+                    photophobiaFieldCompute,
+                    _photophobiaFieldKernel,
+                    out _photophobiaFieldThreadGroupSizeX,
+                    out _photophobiaFieldThreadGroupSizeY))
+            {
+                _photophobiaFieldReady = false;
+                _photophobiaFieldThreadGroupSizeX = 0;
+                _photophobiaFieldThreadGroupSizeY = 0;
+                return;
+            }
+
+            _photophobiaFieldReady = true;
+        }
+
+        private static bool TryResolveComputeKernel(ComputeShader compute, string kernelName, out int kernelIndex)
+        {
+            kernelIndex = -1;
+            if (compute == null || !SystemInfo.supportsComputeShaders)
+                return false;
+            if (!compute.HasKernel(kernelName))
+                return false;
+
+            kernelIndex = compute.FindKernel(kernelName);
+            return kernelIndex >= 0;
+        }
+
+        private static bool TryResolveKernelThreadGroupSize2D(
+            ComputeShader compute,
+            int kernelIndex,
+            out int groupSizeX,
+            out int groupSizeY)
+        {
+            groupSizeX = 0;
+            groupSizeY = 0;
+            if (!TryQueryKernelThreadGroups(compute, kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ))
+                return false;
+            if (sizeY == 0u || sizeZ != 1u)
+                return false;
+
+            groupSizeX = (int)sizeX;
+            groupSizeY = (int)sizeY;
+            return true;
+        }
+
+        private static bool TryValidateKernelThreadProduct(ComputeShader compute, int kernelIndex)
+        {
+            return TryQueryKernelThreadGroups(compute, kernelIndex, out _, out _, out _);
+        }
+
+        private static bool TryQueryKernelThreadGroups(ComputeShader compute, int kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ)
+        {
+            sizeX = 0u;
+            sizeY = 0u;
+            sizeZ = 0u;
+            if (compute == null || kernelIndex < 0)
+                return false;
+
+            compute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            if (sizeX == 0u || sizeY == 0u || sizeZ == 0u)
+                return false;
+
+            ulong maxThreads = (ulong)PortableMaxComputeThreadsPerGroup;
+            ulong xyThreads = (ulong)sizeX * sizeY;
+            if (xyThreads == 0UL ||
+                xyThreads > maxThreads ||
+                sizeZ > maxThreads / xyThreads)
+            {
+                return false;
+            }
+
+            return xyThreads * sizeZ <= maxThreads;
+        }
+
+        private static int ResolveDispatchGroups(int value, int threadGroupSize)
+        {
+            if (value <= 0 || threadGroupSize <= 0)
+                return 0;
+
+            long groups = ((long)value + threadGroupSize - 1L) / threadGroupSize;
+            if (groups <= 0L || groups > MaxDispatchGroupsPerDimension)
+                return 0;
+
+            return (int)groups;
         }
 
         private static RenderTexture CreatePhotophobiaFieldTexture(string name)
@@ -5858,6 +6258,8 @@ namespace Hecton8.Environment
         {
             _photophobiaFieldReady = false;
             _photophobiaFieldKernel = -1;
+            _photophobiaFieldThreadGroupSizeX = 0;
+            _photophobiaFieldThreadGroupSizeY = 0;
             _photophobiaFieldWriteToA = true;
             _photophobiaFieldDirty = false;
             _photophobiaRecoverUntilUnscaledTime = 0f;
@@ -7265,26 +7667,10 @@ namespace Hecton8.Environment
         private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
         {
             float lengthSq = direction.sqrMagnitude;
-            if (lengthSq <= 0.0001f)
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.0001f)
                 return fallback;
 
-            return math.abs(lengthSq - 1f) <= 0.0625f
-                ? direction
-                : DominantAxisOrDefault(direction, fallback);
-        }
-
-        private static Vector3 DominantAxisOrDefault(Vector3 direction, Vector3 fallback)
-        {
-            float ax = math.abs(direction.x);
-            float ay = math.abs(direction.y);
-            float az = math.abs(direction.z);
-            if (ax <= 0.000001f && ay <= 0.000001f && az <= 0.000001f)
-                return fallback;
-            if (ax >= ay && ax >= az)
-                return direction.x < 0f ? Vector3.left : Vector3.right;
-            if (ay >= az)
-                return direction.y < 0f ? Vector3.down : Vector3.up;
-            return direction.z < 0f ? Vector3.back : Vector3.forward;
+            return math.abs(lengthSq - 1f) <= 0.0625f ? direction : direction * math.rsqrt(lengthSq);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

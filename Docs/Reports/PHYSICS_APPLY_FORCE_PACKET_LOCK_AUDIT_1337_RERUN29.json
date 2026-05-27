@@ -1,0 +1,133 @@
+﻿{
+    "schema":  "hecton8.physics_apply_force_packet_lock_audit_1337.v1",
+    "agentId":  "1337",
+    "source":  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+    "status":  "STATIC_GREEN_BUILD_DEFERRED_CPU_GATE",
+    "defectsFixed":  [
+                         {
+                             "id":  "PHYSICS_APPLY_POSTFIXED_BUFFER_GROWTH",
+                             "severity":  "high",
+                             "fact":  "PostFixedTick buffer swap and validation scheduling could route through EnsureForcePacketBuffers/EnsureValidationBuffers, which can call IDataVault.EnsureGenerationHandle from the hot fixed-step swap path.",
+                             "fix":  "PostFixedTick now uses TrySwapForcePacketBuffers and ScheduleFrontPacketValidation resolves only existing Vault handles; missing buffers fail closed by clearing front/back counts."
+                         },
+                         {
+                             "id":  "PHYSICS_APPLY_FORCE_PACKET_RAW_VAULT_WRITES",
+                             "severity":  "critical",
+                             "fact":  "Force packet enqueue, validation copy, flush clearing, and queue clearing wrote Vault-owned NativeArray views without TryAcquireWriteLock.",
+                             "fix":  "Back/front/validation force-packet and mask writes now acquire IDataVault.TryAcquireWriteLock through typed helpers and release in finally."
+                         },
+                         {
+                             "id":  "PHYSICS_COLLIDER_DISCOVERY_SCRATCH_GROWTH_RISK",
+                             "severity":  "medium",
+                             "fact":  "Compound-body and submarine collider discovery used small List\u003cT\u003e scratch capacities, allowing first-arm/cold-registration List growth for normal multi-collider hulls.",
+                             "fix":  "Mesh, sleep, and submarine collider discovery scratch capacities are now 64 cold slots. This avoids normal compound hierarchy growth without changing cached semantic limits."
+                         },
+                         {
+                             "id":  "PHYSICS_APPLY_VALIDATION_JOB_UNREGISTERED_HANDLE",
+                             "severity":  "medium",
+                             "fact":  "ValidateForcePacketsJob scheduled against Vault-backed NativeArray views without H8Memory.RegisterActiveJob ownership telemetry.",
+                             "fix":  "ScheduleFrontPacketValidation now registers the validation handle immediately after Schedule; completion and forced release clear the active job for SystemID.Physics."
+                         }
+                     ],
+    "lockProof":  [
+                      {
+                          "route":  "TryEnqueueBackPacket",
+                          "line":  2118,
+                          "buffers":  "PhysicsForceCommandBack",
+                          "acquisition":  "TryAcquireForcePacketBufferWriteLock",
+                          "release":  "finally ReleaseForcePacketBufferWriteLock",
+                          "phase":  "producer enqueue",
+                          "holdsAcrossFrame":  false
+                      },
+                      {
+                          "route":  "FlushValidatedFrontBuffer",
+                          "line":  2546,
+                          "buffers":  "PhysicsForceCommandFront, PhysicsForceValidationMask",
+                          "acquisition":  "TryAcquireForcePacketBufferWriteLock + TryAcquireByteBufferWriteLock",
+                          "release":  "finally before budget telemetry",
+                          "phase":  "FixedTick apply/clear",
+                          "holdsAcrossFrame":  false
+                      },
+                      {
+                          "route":  "ClearForcePacketBuffer/ClearByteBuffer",
+                          "line":  3336,
+                          "buffers":  "front/back/validation packets/mask",
+                          "acquisition":  "typed write-lock helpers",
+                          "release":  "finally",
+                          "phase":  "clear/shutdown",
+                          "holdsAcrossFrame":  false
+                      },
+                      {
+                          "route":  "ScheduleFrontPacketValidation",
+                          "line":  3675,
+                          "buffers":  "front, validation packets, validation mask",
+                          "acquisition":  "typed write-lock helpers",
+                          "release":  "finally after job scheduling",
+                          "phase":  "PostFixedTick validation schedule",
+                          "holdsAcrossFrame":  false
+                      },
+                      {
+                          "route":  "ValidateForcePacketsJob lifetime",
+                          "line":  3719,
+                          "buffers":  "PhysicsForceValidationPackets, PhysicsForceValidationMask",
+                          "acquisition":  "write-lock transaction for schedule plus H8Memory.RegisterActiveJob",
+                          "release":  "RegisterActiveJob(default) on nonblocking completion or forced release",
+                          "phase":  "PostFixedTick/LateFrame validation",
+                          "holdsAcrossFrame":  false
+                      }
+                  ],
+    "hotEnsureClassification":  {
+                                    "ensureCallsRemaining":  4,
+                                    "remainingCalls":  [
+                                                           "PhysicsApplySystem.cs:2298 EnsureForcePacketBuffers in EnsureRuntimeResources / OnEnable cold setup",
+                                                           "PhysicsApplySystem.cs:2299 EnsureValidationBuffers in EnsureRuntimeResources / OnEnable cold setup",
+                                                           "PhysicsApplySystem.cs:2473 EnsureForcePacketBuffers in DataVault hot-swap listener",
+                                                           "PhysicsApplySystem.cs:2474 EnsureValidationBuffers in DataVault hot-swap listener"
+                                                       ],
+                                    "fixedTickEnsureCalls":  0,
+                                    "postFixedTickEnsureCalls":  0,
+                                    "lateFrameTickEnsureCalls":  0,
+                                    "jobEnsureCalls":  0
+                                },
+    "scannerSummary":  {
+                           "nativeAudit":  {
+                                               "scannedFiles":  9,
+                                               "parseFailures":  0,
+                                               "totalNativeFieldDeclarations":  18,
+                                               "forbiddenPersistentCandidates":  0,
+                                               "forbiddenMonoBehaviourCandidates":  0,
+                                               "jobTransientFields":  18,
+                                               "stackOnlyRefStructViewFields":  0,
+                                               "coreMemoryAllowedFields":  0,
+                                               "rawPointerFields":  0
+                                           },
+                           "nativeAuditHashSha256":  "5d39cea853cfb6772af20c0fe51bb75c382347586cc988628e82a5b887fb94fc",
+                           "zeroGcHotPath":  {
+                                                 "ScannedFiles":  3,
+                                                 "ScannedHotMethods":  21,
+                                                 "ParseFailures":  0,
+                                                 "ZeroGcHotPathHits":  0,
+                                                 "ManagedReferenceCreations":  0,
+                                                 "NativeCollectionCreations":  0,
+                                                 "StringFormatCalls":  0,
+                                                 "ToStringCalls":  0,
+                                                 "LinqCalls":  0,
+                                                 "ForeachStatements":  0,
+                                                 "InterpolatedStrings":  0,
+                                                 "StringConcatSuspects":  0
+                                             },
+                           "zeroGcHotPathHashSha256":  "37d3eaae558afd5435b07b03d91bff82007b29bc958c42ca3b2ca2c062e54011",
+                           "branchAudit":  {
+                                               "ScannedFiles":  3,
+                                               "ParseFailures":  0,
+                                               "TotalIfStatements":  578,
+                                               "TotalConditionalExpressions":  126,
+                                               "JobExecuteIfStatements":  4,
+                                               "FailClosedGuardIfStatements":  4,
+                                               "JobExecuteNonGuardIfStatements":  0,
+                                               "DistanceSolverDecisionIfStatements":  0
+                                           },
+                           "branchAuditHashSha256":  "2c1b52662768e84b87e10950e1e0435866c2babb6c5baaa0c8b12d1afe027e96"
+                       },
+    "verificationHashSha256":  "97deedc6c753b96e5cc25e08b6efd1d830e64118c4d45dc0efe2c2987093d1e4"
+}

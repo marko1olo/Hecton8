@@ -1,0 +1,25 @@
+{
+  "agentId": "1318",
+  "loop": 39,
+  "scope": [
+    "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+  ],
+  "ownersScanned": [
+    "Tick",
+    "SlowTick",
+    "LateFrameTick",
+    "ProcessYieldBatchIfNeeded",
+    "EvaluateAggressiveOvergrowthInLane",
+    "TryEvaluateAggressiveOvergrowthStep"
+  ],
+  "forbiddenPatterns": [
+    "managed reference allocation",
+    "string formatting/interpolation",
+    "LINQ",
+    "foreach"
+  ],
+  "hotForbiddenHits": 0,
+  "overgrowthPrelockScanHits": 0,
+  "sourceSha256": "2447bdf5089d7b991c202e87d08ed57861e5099686af0e93d26df08f6a82100f",
+  "notes": "Aggressive overgrowth SlowTick scan now resolves owned Vault lane UID/material/health buffers only after TryLockOrganicOvergrowthMutationBuffers succeeds. Nav and root-mound side effects are dispatched after unlock."
+}

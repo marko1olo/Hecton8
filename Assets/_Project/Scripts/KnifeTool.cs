@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Interaction;
 using Hecton8.Scavenging;
 using Hecton.Localization;
 using System;
@@ -145,6 +146,7 @@ namespace Hecton8.Gameplay
         private Collider _cachedHitCollider;
         private Vector3 _cachedHitPoint;
         private float _cachedHitDistance;
+        private Transform _toolTransform;
         private ILocalizationTextReadModel _localization;
         private static FixedCharBuffer s_hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — survival blade HUD staging buffer — owner: KnifeTool
 
@@ -155,6 +157,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
+            _toolTransform = transform;
             _localization = GlobalRegistry.LocalizationText;
             _feedbackCooldownRemaining = 0f;
             InvalidateHitCache();
@@ -162,6 +165,7 @@ namespace Hecton8.Gameplay
 
         public override void OnDespawn()
         {
+            _toolTransform = null;
             _localization = null;
             _feedbackCooldownRemaining = 0f;
             InvalidateHitCache();
@@ -171,6 +175,7 @@ namespace Hecton8.Gameplay
         public override void OnEquip()
         {
             base.OnEquip();
+            _toolTransform = transform;
             _localization = GlobalRegistry.LocalizationText;
             InvalidateHitCache();
         }
@@ -333,7 +338,7 @@ namespace Hecton8.Gameplay
             if (queryRange <= 0f)
                 return false;
 
-            if (!TryResolvePrimarySurfaceHit(origin, direction, queryRange, hitMask, QueryTriggerInteraction.Ignore, out InteractionSurfaceHit hit))
+            if (!RequestPrimarySurfaceHit(origin, direction, queryRange, hitMask, QueryTriggerInteraction.Ignore, out InteractionSurfaceHit hit))
                 return false;
 
             Collider candidate = hit.collider;
@@ -487,12 +492,12 @@ namespace Hecton8.Gameplay
             if (candidate == null)
                 return true;
 
-            if (candidate.TryGetComponent(out KnifeTool directTool) && ReferenceEquals(directTool, this))
-                return true;
-
-            if (!candidate.TryGetComponent(out KnifeTool ownerTool))
-                ownerTool = candidate.GetComponentInParent<KnifeTool>();
-            return ReferenceEquals(ownerTool, this);
+            Transform candidateTransform = candidate.transform;
+            Transform toolTransform = _toolTransform != null ? _toolTransform : transform;
+            return toolTransform != null &&
+                   candidateTransform != null &&
+                   (ReferenceEquals(candidateTransform, toolTransform) ||
+                    candidateTransform.IsChildOf(toolTransform));
         }
 
         private bool TryConsumeFeedbackGate()
@@ -605,10 +610,13 @@ namespace Hecton8.Gameplay
             if (target == null)
                 return null;
 
-            if (target.TryGetComponent(out ResourceNode node))
-                return node;
+            if (InteractableRegistry.TryResolve(target, out InteractableRegistry.TargetInfo targetInfo) &&
+                targetInfo.ResourceNode != null)
+            {
+                return targetInfo.ResourceNode;
+            }
 
-            return target.GetComponentInParent<ResourceNode>();
+            return null;
         }
 
         private static BaseModule FindBaseModuleAdapter(Collider target)
@@ -616,10 +624,13 @@ namespace Hecton8.Gameplay
             if (target == null)
                 return null;
 
-            if (target.TryGetComponent(out BaseModule module))
-                return module;
+            if (InteractableRegistry.TryResolve(target, out InteractableRegistry.TargetInfo targetInfo) &&
+                targetInfo.BaseModule != null)
+            {
+                return targetInfo.BaseModule;
+            }
 
-            return target.GetComponentInParent<BaseModule>();
+            return null;
         }
 
         private KnifeAssessment BuildResourceAssessment(ResourceNode node, float distance)

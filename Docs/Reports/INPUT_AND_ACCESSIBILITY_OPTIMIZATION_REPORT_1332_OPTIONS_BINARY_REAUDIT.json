@@ -1,0 +1,87 @@
+﻿{
+    "agentId":  "1332",
+    "task":  "1332_OPTIONS_BINARY_AND_READ_PURITY_REAUDIT",
+    "timestamp":  "2026-05-26T19:32:36+04:00",
+    "status":  "STATIC_GREEN_BUILD_GREEN",
+    "domain":  "Hecton8.Input plus UI/PauseControlsPanel.cs plus UI/PDAControlsRebindUI.cs",
+    "changedFilesInThisPass":  [
+                                   "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+                                   "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+                                   "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1332_TOUCHED.json"
+                               ],
+    "workDone":  [
+                     "Removed JsonUtility from UserOptionsPersistence active save/load path.",
+                     "Replaced options.h8cfg active payload with bounded little-endian H8OP records under the existing H8CF file header.",
+                     "Kept cold legacy H8CF/JSON and text JSON migration through a strict manual parser without JsonUtility.",
+                     "Removed UserOptionsPersistence new FileInfo use from portable options read.",
+                     "Made binary and legacy options readers stage records before applying them, so corrupted tails do not partially mutate _records.",
+                     "Blocked corrupted portable H8CF containers from falling through into legacy text JSON parsing.",
+                     "Made UserOptionsPersistence read accessors pure over cached state: no EnsureLoaded, no disk I/O, no record mutation, no scalability publish from Get*/HasKey/TryGetRecord.",
+                     "Extended source regression guard to require the binary payload route and cached read-accessor shape."
+                 ],
+    "officialReferencesUsed":  [
+                                   "Unity GraphicsBuffer.LockBufferForWrite and UsageFlags.LockBufferForWrite documentation.",
+                                   "Unity Input System Action Bindings documentation for rebind override JSON and RebindingOperation disposal contract.",
+                                   "Unity TMP_Text.SetCharArray documentation.",
+                                   "Unity JsonUtility documentation showing ToJson returns a managed string and FromJson allocates objects/subobjects.",
+                                   "Unity Application.persistentDataPath documentation.",
+                                   ".NET File.Replace documentation.",
+                                   ".NET BinaryPrimitives little-endian documentation used as reference semantics; implementation remains manual byte writes."
+                               ],
+    "build":  {
+                  "attemptedAfterLatestPatch":  true,
+                  "command":  "dotnet build .\\Hecton8.Core.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly",
+                  "gate":  "Launched only after CPU and compiler-process gate opened; no dotnet/csc contention.",
+                  "result":  "success",
+                  "warnings":  0,
+                  "errors":  0,
+                  "externalError":  null,
+                  "externalFileStatus":  null,
+                  "agentDomainErrorsObserved":  0
+              },
+    "staticScans":  {
+                        "scopedProductionFiles":  8,
+                        "sourceTestFiles":  1,
+                        "nativeRoslynAuditReport":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1332.json",
+                        "nativeRoslynAuditHashSha256":  "d9841e268c8c81ed55869976dab50d01881ce67f259231bf7ad00aa56e633930",
+                        "nativeRoslynScannedFiles":  9,
+                        "nativeRoslynParseFailures":  0,
+                        "nativeCollectionFieldDeclarations":  0,
+                        "persistentNativeFieldsRemaining":  0,
+                        "forbiddenProductionTokenHits":  {
+                                                             "JsonUtility":  0,
+                                                             "PlayerPrefs":  0,
+                                                             "catch (Exception)":  0,
+                                                             "throw new":  0,
+                                                             "RemoveAllListeners":  0,
+                                                             "LINQ Select/Where/Any/ToList":  0,
+                                                             "foreach":  0
+                                                         },
+                        "expectedColdAllocationTokens":  [
+                                                             "ControlRemapper.cs: bounded new string for valid Unity control path revival after restart.",
+                                                             "UserOptionsPersistence.cs: bounded new string for legacy escaped JSON migration only."
+                                                         ],
+                        "absoluteAupCastsFound":  0,
+                        "compactionAwareLocksProven":  true
+                    },
+    "hashes":  {
+                   "Assets/_Project/Scripts/Input/InputBindingContracts.cs":  "74f73fdb549e40171bdab86bb080acb27ee14f944f24b7456f3c1bd955c455d6",
+                   "Assets/_Project/Scripts/Input/ControlRemapper.cs":  "9b4589d6c04ecd01a70d961a0e0e24a640b1f219847d3813d309ce3f2a69fc4e",
+                   "Assets/_Project/Scripts/Input/AccessibilitySettings.cs":  "cae4ccb6feea180c199d003aa02e92859ae3dc14cfbdc65134e36c63ecf858f1",
+                   "Assets/_Project/Scripts/Input/InputManager.cs":  "b57d3400da3e44a7869b721b4dba771308e2f6c29ce96c265b057bae7f68e9bd",
+                   "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs":  "bcc1bb06ae4571783b66a4bfa9c0974ce4e5a20d42840f8199aa3eb6bc643f4c",
+                   "Assets/_Project/Scripts/Input/INPUT_MIGRATION_GUIDE.md":  "7fa9a4057955f79ac3105dd6b50b27f54e5c6b6e5c84d1d13137d13d3b4baf58",
+                   "Assets/_Project/Scripts/Core/RebindingManager.cs":  "e8419982824df538e510b715ec859fa77e620dc53926ee3d6429c54903ab216d",
+                   "Assets/_Project/Scripts/UI/PauseControlsPanel.cs":  "e4aa3d0cfff530dd96a68b2468fc290ee6a0d444dbf3eb1726ee41d488f103c7",
+                   "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs":  "37596f23bf6b6bc873d333851f6dfd561c0e2bc48de4847c498e3826b0494825",
+                   "Assets/_Project/Art/Shaders/Hecton_VisorGlitchACES.shader":  "0f313fe7f2489d3280164b13e9b432b6da41c1b6504bd41fe93b0036bd2b3f90",
+                   "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs":  "4e6c0561363f85acd622b6973cea96f0592685a81056ae23f61b22e7ab1f765e",
+                   "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1332.json":  "e972845bb00e5d7b9108fc0fa9f626197f7f4041d930bb8e2143bdba5597ab33"
+               },
+    "combinedVerificationHashSha256":  "3c91bf78b4745433c9950a21d4279c5ebe971a42829913db9f44dadfe86ac6ca",
+    "residualRisks":  [
+                          "Unity Editor tests and Unity Profiler/GCMonitor were not run in this session; current proof is source/static plus dotnet build.",
+                          "ControlRemapper retains one bounded cold new string to revive valid arbitrary Unity control paths after restart; removing it breaks rebind persistence correctness.",
+                          "UserOptionsPersistence still uses managed string keys/values by public settings contract. These allocations are cold load/migration/settings operations, not simulation/UI hot paths."
+                      ]
+}

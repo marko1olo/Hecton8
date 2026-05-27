@@ -17,13 +17,36 @@
 /[Aa]ssets/AssetStoreTools*
 
 # ---- Agent / local verification artifacts ----
+/.agent_tmp/
 /.codexbuild/
 /.codex-build/
 /.codex-artifacts/
 /CodexArtifacts/
 /.codex_tmp/
 /codex_tmp/
+/.tmp/
 /Assets/_Recovery/
+/Assets/DOCS/
+/Assets/DOCS.meta
+/Assets/Screenshots/
+/Assets/Screenshots.meta
+/Assets/TRANSFER HUB/
+/Assets/TRANSFER HUB.meta
+/Assets/*.projectauditor
+/Assets/*.projectauditor.meta
+/Assets/tri.py
+/Assets/tri.py.meta
+/Assets/InitTestScene*.unity*
+/Assets/Scenes.meta
+/Assets/Scenes/pustaya_stsena.unity*
+/Assets/kuchka_melka_1_lod_1.asset
+/Assets/kuchka_melka_1_lod_1.asset.meta
+/Assets/pillar2_lod1.asset
+/Assets/pillar2_lod1.asset.meta
+/Assets/UniversalRenderPipelineGlobalSettings 1.asset
+/Assets/UniversalRenderPipelineGlobalSettings 1.asset.meta
+/Assets/UniversalRenderPipelineGlobalSettings.asset
+/Assets/UniversalRenderPipelineGlobalSettings.asset.meta
 /playmode_metrics.json
 *.log
 *.diff
@@ -44,6 +67,8 @@ ExportedObj/
 *.csproj
 *.unityproj
 *.sln
+*.slnx
+*.lscache
 *.suo
 *.tmp
 *.user

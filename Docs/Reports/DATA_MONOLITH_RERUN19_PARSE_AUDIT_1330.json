@@ -1,0 +1,24 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_RERUN19_PARSE_AUDIT_V1",
+    "agentId":  "1330",
+    "status":  "PASS",
+    "scannedFiles":  11,
+    "parseFailures":  0,
+    "hotpathRawAudit":  "Docs/Reports/DATA_MONOLITH_HOTPATH_AUDIT_1330_RERUN19_RAW.json",
+    "nativeAliasAudit":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1330_RERUN19.json",
+    "h8binValidator":  "Docs/Reports/DATA_MONOLITH_H8BIN_VALIDATOR_1330_RERUN19.json",
+    "verificationHashSha256":  "11d738c22147f2d75a1fd690d7dfc53638d0473d59e4e324ebf8fb2018507b2d",
+    "fileHashes":  [
+                       "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs\tbbfaa3cd846dd43d2a29bcf0f91dfed0f6063ceb3844e424cd5b648be4da1509",
+                       "Assets/_Project/Scripts/Data/Monolith/H8CreatureSoAReconstructJob.cs\t55520750417d325a3cd7a10aa8efb958967abbf08b606cdb263ca93dbcba7dab",
+                       "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs\tcce3e07d563cc7039e993c5c7b03357b017cb7b72fdb9c6c21e5096411b71374",
+                       "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompiler.cs\td8e8150f5a7f10a61cda5629d6e1f7e818cafd2d4ddc554fbc23b2c90fde635f",
+                       "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompilerWindow.cs\t06f0edfdd4f825c693faaedb5c0999c83cb70faa208cd957b609f1de25d4f326",
+                       "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCorruptionFuzzer.cs\t95d36d4a1f310309f1e4ea10ce961b61c1eaa25592ff41dcc98ea1bd8d40bbbb",
+                       "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithGlobalDataVaultStressProbe.cs\t07d61935b7c8bfbe216f547b420768673230a59c39f5f21689e828ea5c6106e7",
+                       "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithLayoutGuard.cs\t94808bb7dc0bf7e3b969794201ddfce3af077f469710deb8a348e39dc75fe716",
+                       "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithReleaseBuildGate.cs\t5ae271e9925da7e3c339745ed1ff408e5d2655a0946a2ad86a34f86ed6ad79d1",
+                       "Assets/_Project/Scripts/Editor/DataMonolith/OOP_StaticData_Scanner.cs\te7ffddbac12ce708e462d83153916e9cbad8d89c8652bac195c2919b2cb4a7f2",
+                       "Assets/_Project/Editor/DataMonolith/DataMonolithBakerWindow.cs\tce6fb275f5315bbb3fd283b8146b4296f8d070e6fe7d25ab9cd7d23ce8dd290b"
+                   ]
+}

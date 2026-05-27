@@ -148,6 +148,7 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
             float4 _HectonPlayerRuntimePosition; // xyz: player/KCC position, w: interaction radius
             float4 _HectonPlayerFloraInteractionParams; // x: speed, y: force, z: scooter, w: active
             float4 _HectonFloraDamageReaction; // xyz: latest organic hit position, w: decaying impulse
+            float _H8GlobalQualityWeight;
 
             struct Attributes
             {
@@ -238,6 +239,17 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
             half CoralTrianglePulse01(float phase01)
             {
                 return (half)(1.0 - abs(frac(phase01) * 2.0 - 1.0));
+            }
+
+            half HectonCoralGlobalQualityWeight()
+            {
+                return (half)(isfinite(_H8GlobalQualityWeight) ? saturate(_H8GlobalQualityWeight) : 0.0);
+            }
+
+            half HectonCoralSmoothRange01(half low, half high, half value)
+            {
+                half t = saturate((value - low) * rcp(max(high - low, 0.0001h)));
+                return t * t * (3.0h - 2.0h * t);
             }
 
             half3 ResolveCoralBiolumGroupTint(int stateIndex)
@@ -348,19 +360,33 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
             half ResolveBiolumTouchRipple(float3 positionWS)
             {
             #if !defined(_MATH_LOD_LOW)
-                int rippleCount = min((int)_BiolumTouchRippleParams.x, 16);
+                if (!all(isfinite(positionWS)))
+                    return 0.0h;
+
+                float rippleCountRaw = isfinite(_BiolumTouchRippleParams.x) ? _BiolumTouchRippleParams.x : 0.0;
+                int rippleCount = min(max((int)floor(rippleCountRaw + 0.0001), 0), 16);
+                half qualityWeight = HectonCoralSmoothRange01(0.24h, 0.82h, HectonCoralGlobalQualityWeight());
+                if (rippleCount <= 0 || qualityWeight <= 0.0001h)
+                    return 0.0h;
+
                 half rippleEnergy = 0.0h;
                 [loop]
                 for (int i = 0; i < rippleCount; i++)
                 {
                     float4 ripple = _BiolumTouchRipples[i];
+                    if (!all(isfinite(ripple)))
+                        continue;
+
                     float radius = max(abs(ripple.w), 0.01);
                     float3 diff = positionWS - ripple.xyz;
                     float distSq = dot(diff, diff);
+                    if (!isfinite(distSq))
+                        continue;
+
                     float radiusSq = radius * radius;
                     float insideMask = step(distSq, radiusSq);
                     float invSqFlash = insideMask * saturate(radiusSq * rcp(max(distSq + radius * 0.12, 0.0001)));
-                    rippleEnergy = max(rippleEnergy, (half)invSqFlash);
+                    rippleEnergy = max(rippleEnergy, (half)invSqFlash * qualityWeight);
                 }
 
                 return rippleEnergy;
@@ -415,7 +441,8 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 float3 samplePositionWS = input.positionWS;
                 half4 maskSample = SampleFloraDominantAxis(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, baseNormalWS);
                 #if defined(_QUALITY_HIGH)
-                samplePositionWS -= viewDirWS * ((maskSample.b - 0.5h) * _HeightScale);
+                half parallaxQualityWeight = HectonCoralSmoothRange01(0.55h, 0.95h, HectonCoralGlobalQualityWeight());
+                samplePositionWS -= viewDirWS * ((maskSample.b - 0.5h) * _HeightScale * parallaxQualityWeight);
                 maskSample = SampleFloraDominantAxis(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, baseNormalWS);
                 #endif
 

@@ -412,6 +412,7 @@ MonoBehaviour:
   mainMenuCamera: {fileID: 40934289}
   fadeDuration: 0.2
   targetSceneName: 02_HECTON_WORLD
+  newGameTargetSceneName: 01_ORBIT
 --- !u!114 &13958766
 MonoBehaviour:
   m_ObjectHideFlags: 0

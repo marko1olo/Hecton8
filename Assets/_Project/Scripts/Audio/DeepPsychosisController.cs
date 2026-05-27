@@ -16,6 +16,7 @@ namespace Hecton8.Audio
         private const int DependencyRetryFrameInterval = 30;
         private const float DiagonalCueAxis = 0.70710678f;
         private const float Random24ToUnit = 0.000000059604648f;
+        private const double AupRuntimeFloatClampMeters = 3.4028234663852886E+38d;
 
         [Header("── Clip Pools ──────────────────")]
         [Tooltip("3D whisper cues emitted around the player during deep psychosis windows.")]
@@ -528,9 +529,36 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            float3 runtime = movement.CurrentAup.ToRuntimeFloat3();
+            AbsoluteUniversePosition movementAup = movement.CurrentAup;
+            if (!TryResolveRuntimeOriginRelativeFloat3(in movementAup, out float3 runtime))
+            {
+                runtimePosition = default;
+                return false;
+            }
+
             runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
             return true;
+        }
+
+        private static bool TryResolveRuntimeOriginRelativeFloat3(
+            in AbsoluteUniversePosition positionAup,
+            out float3 runtimePosition)
+        {
+            runtimePosition = default;
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!positionAup.IsFinite() || !originAup.IsFinite())
+                return false;
+
+            double3 deltaAup = AbsoluteUniversePosition.DeltaMetersClamped(in positionAup, in originAup);
+            double3 clampedDelta = math.clamp(
+                deltaAup,
+                new double3(-AupRuntimeFloatClampMeters),
+                new double3(AupRuntimeFloatClampMeters));
+            runtimePosition = new float3(
+                (float)clampedDelta.x,
+                (float)clampedDelta.y,
+                (float)clampedDelta.z);
+            return math.all(math.isfinite(runtimePosition));
         }
 
         private static float3 ResolveCinematicCueOffset(float x, float y, float z)

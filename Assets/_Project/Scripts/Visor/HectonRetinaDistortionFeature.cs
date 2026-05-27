@@ -7,7 +7,6 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
@@ -87,6 +86,13 @@ namespace Hecton8.Visor
         {
             private const float GlobalsFloatEpsilon = 0.0001f;
 
+            private sealed class RetinaPassData
+            {
+                public TextureHandle Source;
+                public BufferHandle ConstantsBuffer;
+                public Material Material;
+            }
+
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Retina Distortion");
             private FeatureSettings _settings;
             private Material _material;
@@ -114,7 +120,11 @@ namespace Hecton8.Visor
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
-                EnsureRetinaGlobalsBuffer();
+            }
+
+            public bool PrepareResources()
+            {
+                return EnsureRetinaGlobalsBuffer();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -143,23 +153,55 @@ namespace Hecton8.Visor
                 if (!sourceTexture.IsValid())
                     return;
 
+                if (!UpdateRetinaGlobals(_settings, _runtimeState))
+                    return;
+                if (_retinaGlobalsBuffer == null || !_retinaGlobalsBuffer.IsValid())
+                    return;
+
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
                 TextureDesc destinationDesc = new TextureDesc(sourceDesc);
                 destinationDesc.name = "_HectonRetinaDistortion";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
                 destinationDesc.msaaSamples = MSAASamples.None;
-                destinationDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                destinationDesc.colorFormat = sourceDesc.colorFormat;
                 destinationDesc.useMipMap = false;
                 destinationDesc.autoGenerateMips = false;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
+                BufferHandle globalsBuffer = renderGraph.ImportBuffer(_retinaGlobalsBuffer);
 
-                if (!UpdateRetinaGlobals(_settings, _runtimeState))
-                    return;
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<RetinaPassData>(
+                           "Hecton Retina Distortion",
+                           out RetinaPassData passData,
+                           _profilingSampler))
+                {
+                    passData.Source = sourceTexture;
+                    passData.ConstantsBuffer = globalsBuffer;
+                    passData.Material = _material;
 
-                renderGraph.AddBlitPass(
-                    new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
-                    passName: "Hecton Retina Distortion");
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.UseBuffer(globalsBuffer, AccessFlags.Read);
+                    builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (RetinaPassData data, RasterGraphContext context) =>
+                    {
+                        if (data.Material == null)
+                            return;
+
+                        GraphicsBuffer constants = data.ConstantsBuffer;
+                        if (constants == null || !constants.IsValid())
+                            return;
+
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
+                        context.cmd.SetGlobalConstantBuffer(
+                            constants,
+                            ShaderConstants.RetinaGlobalsBufferId,
+                            0,
+                            RetinaGlobalsStrideBytes);
+                        CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
+                    });
+                }
 
                 resourceData.cameraColor = destinationTexture;
             }
@@ -212,7 +254,7 @@ namespace Hecton8.Visor
 
             private bool UpdateRetinaGlobals(FeatureSettings settings, RuntimeState runtimeState)
             {
-                if (!EnsureRetinaGlobalsBuffer())
+                if (!HasRetinaGlobalsBuffer())
                     return false;
 
                 float critical01 = math.saturate(runtimeState.Critical01);
@@ -235,29 +277,72 @@ namespace Hecton8.Visor
                     new Vector4(offsetBudget.ChromaticOffset, offsetBudget.DistortionOffset, vignetteStrength, 0f));
                 if (_hasRetinaGlobals && RetinaGlobalsEqual(in _lastRetinaGlobals, in globals))
                 {
-                    Shader.SetGlobalConstantBuffer(ShaderConstants.RetinaGlobalsBufferId, _retinaGlobalsBuffer, 0, RetinaGlobalsStrideBytes);
-                    return true;
+                    return _retinaGlobalsBuffer != null && _retinaGlobalsBuffer.IsValid();
                 }
 
                 GraphicsBuffer writeBuffer = (_retinaGlobalsWriteIndex & 1) == 0 ? _retinaGlobalsBufferA : _retinaGlobalsBufferB;
                 if (writeBuffer == null || !writeBuffer.IsValid())
                     return false;
 
-                NativeArray<RetinaGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<RetinaGlobalsDTO>(0, 1);
                 try
                 {
-                    mapped[0] = globals;
+                    NativeArray<RetinaGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<RetinaGlobalsDTO>(0, 1);
+                    try
+                    {
+                        mapped[0] = globals;
+                    }
+                    finally
+                    {
+                        writeBuffer.UnlockBufferAfterWrite<RetinaGlobalsDTO>(1);
+                    }
                 }
-                finally
+                catch (ObjectDisposedException)
                 {
-                    writeBuffer.UnlockBufferAfterWrite<RetinaGlobalsDTO>(1);
+                    MarkRetinaGlobalsUnavailable();
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    MarkRetinaGlobalsUnavailable();
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    MarkRetinaGlobalsUnavailable();
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    MarkRetinaGlobalsUnavailable();
+                    return false;
                 }
                 _retinaGlobalsBuffer = writeBuffer;
                 _retinaGlobalsWriteIndex ^= 1;
                 _lastRetinaGlobals = globals;
                 _hasRetinaGlobals = true;
-                Shader.SetGlobalConstantBuffer(ShaderConstants.RetinaGlobalsBufferId, _retinaGlobalsBuffer, 0, RetinaGlobalsStrideBytes);
+                return _retinaGlobalsBuffer != null && _retinaGlobalsBuffer.IsValid();
+            }
+
+            private bool HasRetinaGlobalsBuffer()
+            {
+                if (!SystemInfo.supportsSetConstantBuffer)
+                    return false;
+
+                if (_retinaGlobalsBufferA == null || !_retinaGlobalsBufferA.IsValid() ||
+                    _retinaGlobalsBufferB == null || !_retinaGlobalsBufferB.IsValid())
+                {
+                    return false;
+                }
+
+                if (_retinaGlobalsBuffer == null || !_retinaGlobalsBuffer.IsValid())
+                    _retinaGlobalsBuffer = _retinaGlobalsBufferA;
                 return true;
+            }
+
+            private void MarkRetinaGlobalsUnavailable()
+            {
+                _retinaGlobalsBuffer = null;
+                _hasRetinaGlobals = false;
             }
 
             private void SetMx350KeywordIfChanged(bool mx350Tier)
@@ -308,6 +393,7 @@ namespace Hecton8.Visor
         private static class ShaderConstants
         {
             internal static readonly int RetinaGlobalsBufferId = Shader.PropertyToID("HectonRetinaDistortionGlobals");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
             internal static readonly int NarcosisId = Shader.PropertyToID("_HectonNarcosisScalar");
             internal const string Mx350Keyword = "_QUALITY_MX350";
         }
@@ -337,6 +423,7 @@ namespace Hecton8.Visor
             }
 
             RecreateMaterial(ref _material, shader);
+            _pass.PrepareResources();
             TryRegisterHotSwapListener();
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }

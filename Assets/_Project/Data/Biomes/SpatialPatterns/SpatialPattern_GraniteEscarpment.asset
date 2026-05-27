@@ -18,7 +18,7 @@ MonoBehaviour:
     mouths along the wall.
   nodeClusterPattern: Nodes appear in vertical pocket chains, so one good line can
     yield several exact stops.
-  safePocketPattern: Safe pockets are overhang feet, side ledges, and recesses that
+  safePocketPattern: Reorientation pockets are overhang feet, side ledges, and recesses that
     break line-of-sight.
   routeAnchorPattern: The wall itself is the route anchor. Progress is measured by
     named ledges and visible breaks.

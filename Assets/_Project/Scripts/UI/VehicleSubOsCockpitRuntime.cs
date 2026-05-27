@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -63,6 +64,7 @@ namespace Hecton8.UI
         private const string DamageHologramComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_DamageHologram.compute";
         private const string DamageHologramMaterialAssetPath = "Assets/_Project/Art/Materials/MAT_Damage_Hologram.mat";
         private const string DamageHologramKernelName = "KMapHullDents";
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
         private const uint TelemetryContextHash = 0x56534F53u; // VSOS
         private const uint DamageHologramTelemetryHash = 0x44484F4Cu; // DHOL
         private const uint RadarActiveHash = 0x52414452u; // RADR
@@ -241,6 +243,7 @@ namespace Hecton8.UI
         private readonly char[] _statusTextBuffer = new char[TextBufferCapacity];
         private readonly float[] _damageRoomWaterUpload = new float[MaxDamageHologramRooms]; // COLD ALLOC: float[32] - habitat room flood upload staging - owner: VehicleSubOsCockpitRuntime
         private readonly Vector4[] _damageFallbackPoint = new Vector4[FallbackDamageWarningPoints]; // COLD ALLOC: Vector4[7] - static warning glyph upload fallback - owner: VehicleSubOsCockpitRuntime
+        private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _damageHologramArgsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] - cached damage hologram args upload - owner: VehicleSubOsCockpitRuntime
 
         private VaultGenerationHandle<byte> _buttonStatesHandle;
         private VaultGenerationHandle<byte> _buttonTargetsHandle;
@@ -313,10 +316,12 @@ namespace Hecton8.UI
         private bool _radarUsingGpr;
         private RenderTextureFormat _uiRenderTextureFormat = RenderTextureFormat.ARGB32;
         private int _radarKernel = -1;
+        private int _radarThreadGroupSizeX;
         private int _radarCapacity;
         private int _radarPointsPerTap = MinQualityRadarPointsPerTap;
         private int _radarActivePoints;
         private int _damageHologramKernel = -1;
+        private int _damageHologramThreadGroupSizeX;
         private int _damageProxyVertexCount;
         private int _buttonMatrixUploadIndex;
         private int _damageProxyUploadIndex;
@@ -364,6 +369,7 @@ namespace Hecton8.UI
         private Mesh _lastDamageArgsMesh;
         private Vector4 _damageProxyBounds = new Vector4(-0.75f, 0.75f, -0.45f, 0.35f);
         private Vector3[] _damageProxyUploadVertices;
+        private List<Vector3> _damageProxySourceVertices;
         private int _lastDamageArgsInstanceCount = int.MinValue;
         private float _qualityWeight01 = 1f;
         private bool _graphicsResourceDisposalPending;
@@ -1276,7 +1282,7 @@ namespace Hecton8.UI
                 _buttonMatrixUploadIndex = 0;
             }
             EnsureDamageHologramGraphicsResources();
-            if (radarCompute == null)
+            if (radarCompute == null || !SystemInfo.supportsComputeShaders)
             {
                 _radarResourcesReady = false;
                 return;
@@ -1324,7 +1330,12 @@ namespace Hecton8.UI
                 UpdateRadarArgs(0);
             }
             if (radarCompute != null && _radarKernel < 0)
-                _radarKernel = radarCompute.FindKernel("KTranslateSonarTaps");
+            {
+                _radarKernel = ResolveSupportedKernel(radarCompute, "KTranslateSonarTaps");
+                _radarThreadGroupSizeX = ResolveKernelThreadGroupSizeX(
+                    radarCompute,
+                    _radarKernel);
+            }
 
             _radarResourcesReady = _sonarTapBufferA != null &&
                                    _sonarTapBufferB != null &&
@@ -1334,7 +1345,8 @@ namespace Hecton8.UI
                                    _radarArgsBufferB != null &&
                                    _activeRadarArgsBuffer != null &&
                                    radarCompute != null &&
-                                   _radarKernel >= 0;
+                                   _radarKernel >= 0 &&
+                                   _radarThreadGroupSizeX > 0;
         }
 
         private void DisposeGraphicsResources()
@@ -1364,6 +1376,8 @@ namespace Hecton8.UI
             _damageRoomWaterUploadIndex = 0;
             _radarKernel = -1;
             _damageHologramKernel = -1;
+            _radarThreadGroupSizeX = 0;
+            _damageHologramThreadGroupSizeX = 0;
             _radarResourcesReady = false;
             _damageHologramResourcesReady = false;
             InvalidateRadarDispatchCache();
@@ -1432,7 +1446,6 @@ namespace Hecton8.UI
             {
                 _damagePointBuffer = new GraphicsBuffer(
                     GraphicsBuffer.Target.Append,
-                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     MaxDamageHologramPoints,
                     16); // COLD ALLOC: GraphicsBuffer[512 float4] - GPU append hologram point cloud - owner: VehicleSubOsCockpitRuntime
                 _damageHologramMaterialBufferBound = false;
@@ -1444,7 +1457,6 @@ namespace Hecton8.UI
             {
                 _damageArgsBuffer = new GraphicsBuffer(
                     GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
-                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - damage hologram indirect args - owner: VehicleSubOsCockpitRuntime
                 UpdateDamageHologramArgs(0, true);
@@ -1471,9 +1483,12 @@ namespace Hecton8.UI
             EnsureDamageProxyVertexBuffer();
 
             if (damageHologramCompute != null && _damageHologramKernel < 0)
-                _damageHologramKernel = damageHologramCompute.HasKernel(DamageHologramKernelName)
-                    ? damageHologramCompute.FindKernel(DamageHologramKernelName)
-                    : -1;
+            {
+                _damageHologramKernel = ResolveSupportedKernel(damageHologramCompute, DamageHologramKernelName);
+                _damageHologramThreadGroupSizeX = ResolveKernelThreadGroupSizeX(
+                    damageHologramCompute,
+                    _damageHologramKernel);
+            }
 
             bool fallbackReady = _damagePointBuffer != null &&
                                  _damageArgsBuffer != null &&
@@ -1486,6 +1501,8 @@ namespace Hecton8.UI
                                 _activeDamageRoomWaterBuffer != null &&
                                 damageHologramCompute != null &&
                                 _damageHologramKernel >= 0 &&
+                                damageHologramCompute.IsSupported(_damageHologramKernel) &&
+                                _damageHologramThreadGroupSizeX > 0 &&
                                 ResolveDamagePointMesh() != null &&
                                 _damageProxyVertexCount >= MinDamageProxyVertices;
             _damageHologramResourcesReady = fallbackReady || computeReady;
@@ -1498,17 +1515,19 @@ namespace Hecton8.UI
                 return;
 
             _lastDamageProxyMesh = mesh;
-            Vector3[] sourceVertices = null;
             int sourceCount = 0;
             if (mesh != null && mesh.vertexCount > 0)
             {
-                sourceVertices = mesh.vertices; // COLD ALLOC: Vector3[mesh.vertexCount] - one-time LOD3 proxy upload source - owner: VehicleSubOsCockpitRuntime
-                sourceCount = sourceVertices != null ? sourceVertices.Length : 0;
+                if (_damageProxySourceVertices == null)
+                    _damageProxySourceVertices = new List<Vector3>(MaxDamageHologramPoints); // COLD ALLOC: List<Vector3>[512] - reusable LOD3 proxy vertex source - owner: VehicleSubOsCockpitRuntime
+
+                mesh.GetVertices(_damageProxySourceVertices);
+                sourceCount = _damageProxySourceVertices.Count;
             }
 
+            bool useFallbackVertices = sourceCount < MinDamageProxyVertices;
             if (sourceCount < MinDamageProxyVertices)
             {
-                sourceVertices = FallbackDamageProxyVertices;
                 sourceCount = FallbackDamageProxyVertices.Length;
             }
 
@@ -1522,7 +1541,7 @@ namespace Hecton8.UI
             float maxY = float.MinValue;
             for (int i = 0; i < safeCount; i++)
             {
-                Vector3 vertex = sourceVertices[i];
+                Vector3 vertex = useFallbackVertices ? FallbackDamageProxyVertices[i] : _damageProxySourceVertices[i];
                 if (!IsFinite(vertex))
                     vertex = Vector3.zero;
 
@@ -1919,7 +1938,12 @@ namespace Hecton8.UI
         private void UploadSonarTapsAndDispatchRadar()
         {
             _radarActivePoints = 0;
-            if (!_radarResourcesReady || !_radarPowered || radarCompute == null || _radarKernel < 0 || !IsRadarDrawableReady())
+            if (!_radarResourcesReady ||
+                !_radarPowered ||
+                radarCompute == null ||
+                _radarKernel < 0 ||
+                !radarCompute.IsSupported(_radarKernel) ||
+                !IsRadarDrawableReady())
             {
                 ClearRadarDrawState();
                 return;
@@ -1945,6 +1969,13 @@ namespace Hecton8.UI
 
             int visualPointCount = ResolveRadarVisualPointCount(safeCount);
             if (visualPointCount <= 0)
+            {
+                ClearRadarDrawState();
+                return;
+            }
+
+            int radarDispatchGroups = CeilDividePositive(visualPointCount, _radarThreadGroupSizeX);
+            if (radarDispatchGroups <= 0)
             {
                 ClearRadarDrawState();
                 return;
@@ -1989,7 +2020,8 @@ namespace Hecton8.UI
             radarCompute.SetFloat(MaxDelaySecondsId, DefaultMaxSonarDelaySeconds);
             radarCompute.SetFloat(PowerLevelId, _nodeVoltageSupplyRatio);
             radarCompute.SetFloat(DamageFlickerId, _damageFlicker);
-            radarCompute.Dispatch(_radarKernel, (visualPointCount + 63) >> 6, 1, 1);
+
+            radarCompute.Dispatch(_radarKernel, radarDispatchGroups, 1, 1);
 
             CacheRadarDispatchState(sequence, visualPointCount);
             UpdateRadarArgs(visualPointCount);
@@ -2325,6 +2357,7 @@ namespace Hecton8.UI
         {
             if (damageHologramCompute == null ||
                 _damageHologramKernel < 0 ||
+                !damageHologramCompute.IsSupported(_damageHologramKernel) ||
                 _activeDamageProxyVertexBuffer == null ||
                 _damageProxyVertexCount <= 0 ||
                 _activeDamageRoomWaterBuffer == null)
@@ -2336,6 +2369,14 @@ namespace Hecton8.UI
 
             _damageHologramUsingFallbackGlyph = false;
             int pointBudget = ResolveDamageHologramPointBudget();
+            int damageDispatchGroups = CeilDividePositive(_damageProxyVertexCount, _damageHologramThreadGroupSizeX);
+            if (damageDispatchGroups <= 0)
+            {
+                UpdateDamageHologramArgs(0, true);
+                _damageHologramEstimatedPoints = 0;
+                return;
+            }
+
             _damagePointBuffer.SetCounterValue(0u);
             damageHologramCompute.SetBuffer(_damageHologramKernel, DamageProxyVerticesId, _activeDamageProxyVertexBuffer);
             damageHologramCompute.SetBuffer(_damageHologramKernel, DamageHologramPointsId, _damagePointBuffer);
@@ -2349,7 +2390,8 @@ namespace Hecton8.UI
             damageHologramCompute.SetVector(DamageHologramBoundsId, _damageProxyBounds);
             damageHologramCompute.SetInt(DamageProxyVertexCountId, _damageProxyVertexCount);
             damageHologramCompute.SetInt(DamageRoomCountId, _damageRoomCount);
-            damageHologramCompute.Dispatch(_damageHologramKernel, (_damageProxyVertexCount + 63) >> 6, 1, 1);
+
+            damageHologramCompute.Dispatch(_damageHologramKernel, damageDispatchGroups, 1, 1);
             UpdateDamageHologramArgs(0, false);
             GraphicsBuffer.CopyCount(_damagePointBuffer, _damageArgsBuffer, 4);
             _damageHologramEstimatedPoints = _damageKnownActiveDentCount > 0 || _damageHologramHadSignal
@@ -2360,7 +2402,10 @@ namespace Hecton8.UI
         private bool CanDispatchDamageHologramCompute()
         {
             return damageHologramCompute != null &&
+                   SystemInfo.supportsComputeShaders &&
                    _damageHologramKernel >= 0 &&
+                   damageHologramCompute.IsSupported(_damageHologramKernel) &&
+                   _damageHologramThreadGroupSizeX > 0 &&
                    _activeDamageProxyVertexBuffer != null &&
                    _damageProxyVertexCount >= MinDamageProxyVertices &&
                    _activeDamageRoomWaterBuffer != null;
@@ -2383,10 +2428,7 @@ namespace Hecton8.UI
                     FillFallbackWarningGlyph();
                 else
                     FillFallbackIdleGlyph();
-                GraphicsBufferUploadUtility.UploadArray(
-                    _damagePointBuffer,
-                    _damageFallbackPoint,
-                    FallbackDamageWarningPoints);
+                _damagePointBuffer.SetData(_damageFallbackPoint, 0, 0, FallbackDamageWarningPoints);
                 _damageHologramFallbackPointUploaded = true;
                 _damageHologramFallbackWarningActive = warningActive;
             }
@@ -2458,22 +2500,15 @@ namespace Hecton8.UI
                 return;
             }
 
-            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
-                _damageArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            try
+            _damageHologramArgsUpload[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
-                GraphicsBuffer.IndirectDrawIndexedArgs drawArgs = default;
-                drawArgs.indexCountPerInstance = mesh.GetIndexCount(0);
-                drawArgs.instanceCount = (uint)safeInstanceCount;
-                drawArgs.startIndex = mesh.GetIndexStart(0);
-                drawArgs.baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0));
-                drawArgs.startInstance = 0u;
-                argsWrite[0] = drawArgs;
-            }
-            finally
-            {
-                _damageArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
-            }
+                indexCountPerInstance = mesh.GetIndexCount(0),
+                instanceCount = (uint)safeInstanceCount,
+                startIndex = mesh.GetIndexStart(0),
+                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                startInstance = 0u
+            };
+            _damageArgsBuffer.SetData(_damageHologramArgsUpload, 0, 0, 1);
             _lastDamageArgsMesh = mesh;
             _lastDamageArgsInstanceCount = safeInstanceCount;
         }
@@ -3026,6 +3061,40 @@ namespace Hecton8.UI
         private float ResolveDamageHologramScanlineWidth()
         {
             return math.isfinite(damageHologramScanlineWidth) ? math.clamp(damageHologramScanlineWidth, 0.02f, 0.35f) : 0.11f;
+        }
+
+        private static int ResolveKernelThreadGroupSizeX(
+            ComputeShader compute,
+            int kernel)
+        {
+            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+                return 0;
+
+            compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
+            if (sizeX == 0u || sizeY != 1u || sizeZ != 1u || sizeX > int.MaxValue)
+                return 0;
+
+            ulong totalThreads = sizeX * (ulong)sizeY * sizeZ;
+            return totalThreads <= PortableMaxComputeThreadsPerGroup ? (int)sizeX : 0;
+        }
+
+        private static int ResolveSupportedKernel(ComputeShader compute, string kernelName)
+        {
+            if (compute == null || !SystemInfo.supportsComputeShaders || !compute.HasKernel(kernelName))
+                return -1;
+
+            int kernel = compute.FindKernel(kernelName);
+            return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
+        }
+
+        private static int CeilDividePositive(int value, int divisor)
+        {
+            const int MaxDispatchGroupsPerDimension = 65535;
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private void OnValidate()

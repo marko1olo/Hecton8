@@ -207,7 +207,7 @@ namespace Hecton8.Construction
             if (safeDamage <= 0f)
                 return;
 
-            int targetId = ResolveSurvivalCombatTargetId(trackedPlayerSurvival);
+            int targetId = CaptureSurvivalCombatTargetId(trackedPlayerSurvival);
             if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
                 return;
 
@@ -219,7 +219,7 @@ namespace Hecton8.Construction
                 math.saturate(safeDamage * FireSuitBurnMagnitudeScale));
         }
 
-        private static int ResolveSurvivalCombatTargetId(HectonSurvivalSystem trackedPlayerSurvival)
+        private static int CaptureSurvivalCombatTargetId(HectonSurvivalSystem trackedPlayerSurvival)
         {
             if (trackedPlayerSurvival.TryGetComponent(out HectonPlayerHealth playerHealth))
                 return CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);

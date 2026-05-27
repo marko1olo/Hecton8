@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -20,7 +21,6 @@ namespace Hecton8.Interaction
         private const int MaxQueuedSignals = 256;
         private const int MaxInteractionPacketsPerFrame = 256;
         private const int MaxQueuedSurfaceRequests = 64;
-        private const int MaxParentResolveDepth = 32;
         private const int MaxCompletedSurfaceAgeFrames = 1;
         private const float MinDirectionSqr = 0.0001f;
         private const float MinHitDistance = 0.05f;
@@ -93,7 +93,7 @@ namespace Hecton8.Interaction
         public ServiceHeartbeatState HeartbeatState => IsServiceReady ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
 
         /// <inheritdoc />
-        public bool IsServiceReady => _isInitialized && _serviceRegistered && ReferenceEquals(GlobalRegistry.InteractionSignals, this);
+        public bool IsServiceReady => _isInitialized && _serviceRegistered;
 
         /// <summary>
         /// Explicitly initializes the service and registers it into <see cref="GlobalRegistry"/>.
@@ -164,16 +164,16 @@ namespace Hecton8.Interaction
         }
 
         /// <inheritdoc />
-        public bool TryResolvePrimarySurfaceHit(ulong requesterId, in InteractionPacket packet, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out InteractionSurfaceHit hit)
+        public bool RequestPrimarySurfaceHit(ulong requesterId, in InteractionPacket packet, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out InteractionSurfaceHit hit)
         {
             Vector3 absoluteOrigin = new Vector3(packet.Origin.x, packet.Origin.y, packet.Origin.z);
             Vector3 origin = HectonFloatingOrigin.ToRuntimePosition(absoluteOrigin);
             Vector3 direction = new Vector3(packet.Direction.x, packet.Direction.y, packet.Direction.z);
-            return TryResolvePrimarySurfaceHit(requesterId, origin, direction, packet.Range, layerMask, queryTriggerInteraction, out hit);
+            return RequestPrimarySurfaceHit(requesterId, origin, direction, packet.Range, layerMask, queryTriggerInteraction, out hit);
         }
 
         /// <inheritdoc />
-        public bool TryResolvePrimarySurfaceHit(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out InteractionSurfaceHit hit)
+        public bool RequestPrimarySurfaceHit(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out InteractionSurfaceHit hit)
         {
             hit = default;
             if (requesterId == 0UL ||
@@ -422,7 +422,8 @@ namespace Hecton8.Interaction
             if (!_serviceRegistered)
                 return;
 
-            GlobalRegistry.UnregisterInteractionSignalService(this);
+            if (ReferenceEquals(GlobalRegistry.InteractionSignals, this))
+                GlobalRegistry.UnregisterInteractionSignalService(this);
             _serviceRegistered = false;
         }
 
@@ -502,21 +503,14 @@ namespace Hecton8.Interaction
         private static bool TryResolvePlatformTransform(Collider targetCollider, out Transform platformTransform)
         {
             platformTransform = null;
-            Transform current = targetCollider != null ? targetCollider.transform : null;
-            int depth = 0;
-            while (current != null && depth < MaxParentResolveDepth)
-            {
-                if (current.TryGetComponent(out ITransportPlatform platform) && platform.PlatformTransform != null)
-                {
-                    platformTransform = platform.PlatformTransform;
-                    return true;
-                }
+            if (targetCollider == null ||
+                !InteractableRegistry.TryResolve(targetCollider, out InteractableRegistry.TargetInfo targetInfo) ||
+                targetInfo.TransportPlatform == null ||
+                targetInfo.TransportPlatform.PlatformTransform == null)
+                return false;
 
-                current = current.parent;
-                depth++;
-            }
-
-            return false;
+            platformTransform = targetInfo.TransportPlatform.PlatformTransform;
+            return true;
         }
 
         private static bool IsFinite(Vector3 value)
@@ -610,10 +604,7 @@ namespace Hecton8.Interaction
             if (targetCollider == null)
                 return false;
 
-            if (!targetCollider.TryGetComponent(out IVoxelPlasmaCutTarget volume))
-                TryResolveParentComponent(targetCollider.transform, out volume);
-
-            if (volume == null)
+            if (!TryResolveVoxelPlasmaCutTarget(targetCollider, out IVoxelPlasmaCutTarget volume))
                 return false;
 
             if (!TryResolveSignalHitPointDouble(in signal, out double3 absoluteHitPoint))
@@ -668,7 +659,8 @@ namespace Hecton8.Interaction
             if (targetCollider == null || targetCollider.gameObject.layer != _baseModuleLayer)
                 return false;
 
-            if (!TryResolveParentComponent(targetCollider.transform, out IBaseModuleInteractionHost _))
+            if (!InteractableRegistry.TryResolve(targetCollider, out InteractableRegistry.TargetInfo targetInfo) ||
+                (targetInfo.ModuleHost == null && targetInfo.BaseModule == null))
                 return false;
 
             IOrganicToolHitService organicManager = s_organicToolHits;
@@ -711,63 +703,49 @@ namespace Hecton8.Interaction
         private static bool TryResolveSignalConsumer(Collider targetCollider, out IInteractionSignalConsumer signalConsumer)
         {
             signalConsumer = null;
-            if (targetCollider == null)
+            if (targetCollider == null ||
+                !InteractableRegistry.TryResolve(targetCollider, out InteractableRegistry.TargetInfo targetInfo) ||
+                targetInfo.InteractionSignalConsumer == null)
                 return false;
 
-            if (targetCollider.TryGetComponent(out IInteractionSignalConsumer directConsumer))
-            {
-                signalConsumer = directConsumer;
-                return true;
-            }
-
-            return TryResolveParentComponent(targetCollider.transform, out signalConsumer);
+            signalConsumer = targetInfo.InteractionSignalConsumer;
+            return true;
         }
 
         private static bool TryResolveVulnerabilitySource(Collider targetCollider, out IInteractionVulnerabilitySource vulnerabilitySource)
         {
             vulnerabilitySource = null;
-            if (targetCollider == null)
+            if (targetCollider == null ||
+                !InteractableRegistry.TryResolve(targetCollider, out InteractableRegistry.TargetInfo targetInfo) ||
+                targetInfo.InteractionVulnerabilitySource == null)
                 return false;
 
-            if (targetCollider.TryGetComponent(out IInteractionVulnerabilitySource directSource))
-            {
-                vulnerabilitySource = directSource;
-                return true;
-            }
-
-            return TryResolveParentComponent(targetCollider.transform, out vulnerabilitySource);
+            vulnerabilitySource = targetInfo.InteractionVulnerabilitySource;
+            return true;
         }
 
         private static bool TryResolveCuttable(Collider targetCollider, out ICuttable cuttable)
         {
             cuttable = null;
-            if (targetCollider == null)
+            if (targetCollider == null ||
+                !InteractableRegistry.TryResolve(targetCollider, out InteractableRegistry.TargetInfo targetInfo) ||
+                targetInfo.Cuttable == null)
                 return false;
 
-            if (targetCollider.TryGetComponent(out ICuttable directCuttable))
-            {
-                cuttable = directCuttable;
-                return true;
-            }
-
-            return TryResolveParentComponent(targetCollider.transform, out cuttable);
+            cuttable = targetInfo.Cuttable;
+            return true;
         }
 
-        private static bool TryResolveParentComponent<T>(Transform start, out T component)
+        private static bool TryResolveVoxelPlasmaCutTarget(Collider targetCollider, out IVoxelPlasmaCutTarget volume)
         {
-            component = default;
-            Transform current = start;
-            int depth = 0;
-            while (current != null && depth < MaxParentResolveDepth)
-            {
-                if (current.TryGetComponent(out component))
-                    return true;
+            volume = null;
+            if (targetCollider == null ||
+                !InteractableRegistry.TryResolve(targetCollider, out InteractableRegistry.TargetInfo targetInfo) ||
+                targetInfo.VoxelPlasmaCutTarget == null)
+                return false;
 
-                current = current.parent;
-                depth++;
-            }
-
-            return false;
+            volume = targetInfo.VoxelPlasmaCutTarget;
+            return true;
         }
 
         private static bool IsValidHit(Vector3 origin, Vector3 direction, float range, int layerMask, InteractionSurfaceHit hit)
@@ -906,7 +884,8 @@ namespace Hecton8.Interaction
 
         private static float ResolveToolSdfStepMeters(float range)
         {
-            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            float signalQuality = SignalBusRegistry.GlobalQualityWeight01;
+            float quality = math.saturate(math.select(1f, signalQuality, math.isfinite(signalQuality)));
             float coarse = math.max(0.12f, range * 0.04f);
             float fine = math.max(0.04f, range * 0.015f);
             return math.lerp(coarse, fine, quality);
@@ -1235,6 +1214,17 @@ namespace Hecton8.Interaction
 
                 case GlobalRegistryServiceSlot.TerrainProviderRuntime:
                     _terrainProvider = currentService as ITerrainProvider;
+                    break;
+
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _dispatcherRegistered = false;
+                    _lateFrameRegistered = false;
+                    if (currentService != null && _isInitialized && isActiveAndEnabled)
+                        TryRegisterToDispatcher();
+                    break;
+
+                case GlobalRegistryServiceSlot.InteractionSignals:
+                    _serviceRegistered = ReferenceEquals(currentService, this);
                     break;
             }
         }

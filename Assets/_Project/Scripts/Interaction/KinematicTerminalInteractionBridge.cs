@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Tools;
 using Hecton8.UI;
 using System.Runtime.InteropServices;
@@ -422,7 +423,7 @@ namespace Hecton8.Interaction
                 MinimumTickIntervalSeconds,
                 MaximumTickIntervalSeconds);
 
-            float quality = HomeostasisBrain.GlobalQualityWeight;
+            float quality = SignalBusRegistry.GlobalQualityWeight01;
             quality = math.saturate(math.select(1f, quality, math.isfinite(quality)));
             float qualityCurve = math.smoothstep(0f, 1f, quality);
             float tierFloor = math.lerp(LowTierTerminalTickIntervalSeconds, MinimumTickIntervalSeconds, qualityCurve);
@@ -436,7 +437,7 @@ namespace Hecton8.Interaction
 
         private void TryRegister()
         {
-            if ((_registered && _registeredLateFrame) || !Application.isPlaying)
+            if ((_registered && _registeredLateFrame) || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registered)
@@ -481,6 +482,7 @@ namespace Hecton8.Interaction
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registered = false;
+                    _registeredLateFrame = false;
                     if (currentService != null)
                         TryRegister();
                     break;

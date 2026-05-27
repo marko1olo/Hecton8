@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -30,7 +31,6 @@ namespace Hecton8.Visor
         private const float MaxQualityRefractionStrength = 0.0018f;
         private const float InternalWaterlineInvalidY = -100000f;
         private const float ShaderFloatEpsilon = 0.0001f;
-        private const int DependencyRefreshTickInterval = 30;
         private const uint WaterSplashSourceHash = 0x49535753u; // ISWS
         private const uint ScreenBubbleSpeciesHash = 0x53434242u; // SCBB
         private const byte ScreenBubbleDebrisKind = 12;
@@ -84,7 +84,6 @@ namespace Hecton8.Visor
         private int _cachedRoomId = -1;
         private int _currentRoomId = -1;
         private int _lastProcessedExternalDropletFrame = int.MinValue;
-        private int _nextDependencyRefreshTick;
         private float _currentWaterlineY = InternalWaterlineInvalidY;
         private float _targetWaterlineY = InternalWaterlineInvalidY;
         private float _currentFill01;
@@ -133,7 +132,7 @@ namespace Hecton8.Visor
         {
             EnsureNativeTelemetry();
             _shaderGlobalsDirty = true;
-            RefreshCachedDependencies(force: true);
+            CacheRuntimeDependenciesCold();
             RefreshQualityPolicy();
             _isInitialized = true;
             ActiveRuntimeInstance = this;
@@ -175,7 +174,6 @@ namespace Hecton8.Visor
             if (!_isInitialized || deltaTime <= 0f)
                 return;
 
-            RefreshCachedDependencies(force: false);
             RefreshQualityPolicy();
             ConsumeExternalDropletSignals();
             ConsumePlayerExhaleSignals();
@@ -437,18 +435,13 @@ namespace Hecton8.Visor
             }
         }
 
-        private void RefreshCachedDependencies(bool force)
+        private void CacheRuntimeDependenciesCold()
         {
-            if (!force && _tickCount < _nextDependencyRefreshTick)
-                return;
-
-            if (force || _playerRuntimeContext == null)
+            if (_playerRuntimeContext == null)
                 _playerRuntimeContext = GlobalRegistry.Player;
 
-            if (force || _habitatGraph == null)
+            if (_habitatGraph == null)
                 _habitatGraph = GlobalRegistry.HabitatGraph;
-
-            _nextDependencyRefreshTick = _tickCount + DependencyRefreshTickInterval;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -656,8 +649,12 @@ namespace Hecton8.Visor
         private void WriteTelemetry(in HabitatRoomWaterlineSnapshot snapshot, float cameraY, byte flags)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !IsVaultHandleCreated(in _telemetryHandle))
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsVaultHandleCreated(in _telemetryHandle))
+            {
                 return;
+            }
 
             float droplets01 = math.saturate(_dropletSecondsRemaining * math.rcp(DropletDurationSeconds));
             byte telemetryFlags = flags;
@@ -682,15 +679,18 @@ namespace Hecton8.Visor
                 StateHash = ResolveTelemetryHash(snapshot.RoomId, snapshot.Fill01, _currentWaterlineY, cameraY, droplets01, qualityByte)
             };
 
-            if (!vault.TryAcquireWriteLock(in _telemetryHandle, VaultOwnerSystemId, out NativeArray<WaterlineTelemetryEntry> telemetry) ||
-                !telemetry.IsCreated ||
-                telemetry.Length < TelemetryCapacity)
-            {
+            if (!vault.TryAcquireWriteLock(in _telemetryHandle, VaultOwnerSystemId, out NativeArray<WaterlineTelemetryEntry> telemetry))
                 return;
-            }
 
             try
             {
+                if (vault.IsCompactionFenceActive ||
+                    !telemetry.IsCreated ||
+                    telemetry.Length < TelemetryCapacity)
+                {
+                    return;
+                }
+
                 telemetry[_telemetryCursor] = entry;
                 _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
             }
@@ -708,9 +708,7 @@ namespace Hecton8.Visor
             IDataVault vault = _dataVault;
             if (_blackBoxDumped ||
                 vault == null ||
-                !IsVaultHandleCreated(in _telemetryHandle) ||
-                !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<WaterlineTelemetryEntry>.ReadOnly telemetry) ||
-                !telemetry.IsCreated)
+                !IsVaultHandleCreated(in _telemetryHandle))
             {
                 return;
             }
@@ -720,38 +718,109 @@ namespace Hecton8.Visor
             {
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", DumpFileName));
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(DumpMagic);
-                    writer.Write(DumpVersion);
-                    writer.Write(TelemetryEntrySizeBytes);
-                    writer.Write(TelemetryCapacity);
-                    writer.Write(_telemetryCursor);
-                    writer.Write(_tickCount);
-                    for (int i = 0; i < telemetry.Length; i++)
+                    Span<byte> header = stackalloc byte[24];
+                    WriteTelemetryDumpHeader(header, _telemetryCursor, _tickCount);
+                    stream.Write(header);
+
+                    Span<byte> row = stackalloc byte[TelemetryEntrySizeBytes];
+                    for (int i = 0; i < TelemetryCapacity; i++)
                     {
-                        WaterlineTelemetryEntry entry = telemetry[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Sequence);
-                        writer.Write(entry.RoomId);
-                        writer.Write(entry.Fill01);
-                        writer.Write(entry.CurrentWaterlineY);
-                        writer.Write(entry.TargetWaterlineY);
-                        writer.Write(entry.CameraY);
-                        writer.Write(entry.Droplets01);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Reserved0);
-                        writer.Write(entry.Reserved1);
-                        writer.Write(entry.StateHash);
+                        if (!TryReadTelemetryEntry(vault, i, out WaterlineTelemetryEntry entry))
+                            entry = default;
+
+                        WriteTelemetryEntry(row, in entry);
+                        stream.Write(row);
                     }
                 }
             }
-            catch (System.Exception)
+            catch (IOException)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump failed.");
+                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump IO failed.");
 #endif
             }
+            catch (UnauthorizedAccessException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump access denied.");
+#endif
+            }
+            catch (ObjectDisposedException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump stream disposed.");
+#endif
+            }
+            catch (InvalidOperationException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump invalid operation.");
+#endif
+            }
+            catch (ArgumentException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump argument invalid.");
+#endif
+            }
+            catch (NotSupportedException)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump path unsupported.");
+#endif
+            }
+        }
+
+        private bool TryReadTelemetryEntry(IDataVault vault, int index, out WaterlineTelemetryEntry entry)
+        {
+            entry = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                index < 0 ||
+                index >= TelemetryCapacity ||
+                !IsVaultHandleCreated(in _telemetryHandle) ||
+                !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<WaterlineTelemetryEntry>.ReadOnly telemetry) ||
+                vault.IsCompactionFenceActive ||
+                !telemetry.IsCreated ||
+                index >= telemetry.Length)
+            {
+                return false;
+            }
+
+            entry = telemetry[index];
+            return true;
+        }
+
+        private static void WriteTelemetryDumpHeader(Span<byte> destination, int telemetryCursor, int tickCount)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), DumpMagic);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(4, 4), DumpVersion);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(8, 4), TelemetryEntrySizeBytes);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(12, 4), TelemetryCapacity);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(16, 4), telemetryCursor);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(20, 4), tickCount);
+        }
+
+        private static void WriteTelemetryEntry(Span<byte> destination, in WaterlineTelemetryEntry entry)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.Sequence);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(8, 4), entry.RoomId);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.Fill01);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.CurrentWaterlineY);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.TargetWaterlineY);
+            WriteFloatLittleEndian(destination.Slice(24, 4), entry.CameraY);
+            WriteFloatLittleEndian(destination.Slice(28, 4), entry.Droplets01);
+            destination[32] = entry.Flags;
+            destination[33] = entry.Reserved0;
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(34, 2), entry.Reserved1);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(36, 4), entry.StateHash);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
         private static bool IsFiniteVector(Vector3 value)

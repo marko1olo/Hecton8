@@ -1,0 +1,23 @@
+{
+  "Schema": "hecton8.physics_culling_zero_gc_hotpath_audit_1337.v1",
+  "AgentId": "1337",
+  "RepoRoot": "C:\\hades\\Hecton8",
+  "OutputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN30.json",
+  "AuditHashSha256": "37d3eaae558afd5435b07b03d91bff82007b29bc958c42ca3b2ca2c062e54011",
+  "Summary": {
+    "ScannedFiles": 3,
+    "ScannedHotMethods": 21,
+    "ParseFailures": 0,
+    "ZeroGcHotPathHits": 0,
+    "ManagedReferenceCreations": 0,
+    "NativeCollectionCreations": 0,
+    "StringFormatCalls": 0,
+    "ToStringCalls": 0,
+    "LinqCalls": 0,
+    "ForeachStatements": 0,
+    "InterpolatedStrings": 0,
+    "StringConcatSuspects": 0
+  },
+  "Findings": [],
+  "ParseFailures": []
+}

@@ -1,4 +1,5 @@
 using Hecton8.Construction;
+using Hecton8.Inventory;
 using Unity.Collections;
 
 namespace Hecton8.Crafting
@@ -28,8 +29,8 @@ namespace Hecton8.Crafting
             }
 
             if (!_playerInventory.TryReadFastFailInventorySoA(
-                    out NativeArray<uint> itemHashIds,
-                    out NativeArray<uint> quantities,
+                    out NativeArray<uint>.ReadOnly itemHashIds,
+                    out NativeArray<uint>.ReadOnly quantities,
                     out int activeSlotCount,
                     out ulong currentInventoryMask))
             {
@@ -48,8 +49,8 @@ namespace Hecton8.Crafting
         internal bool TryCanCraftFastFailPresentation(
             RecipeData recipe,
             int multiplier,
-            NativeArray<uint> itemHashIds,
-            NativeArray<uint> quantities,
+            NativeArray<uint>.ReadOnly itemHashIds,
+            NativeArray<uint>.ReadOnly quantities,
             int activeSlotCount,
             ulong currentInventoryMask,
             out bool craftable)
@@ -87,8 +88,8 @@ namespace Hecton8.Crafting
             RecipeData recipe,
             int multiplier,
             in RecipeRequirementDTO requirement,
-            NativeArray<uint> itemHashIds,
-            NativeArray<uint> quantities,
+            NativeArray<uint>.ReadOnly itemHashIds,
+            NativeArray<uint>.ReadOnly quantities,
             int activeSlotCount,
             ulong currentInventoryMask,
             out bool craftable)
@@ -144,8 +145,8 @@ namespace Hecton8.Crafting
 
         private static bool TryHasIngredientsFastFailFromSoA(
             in RecipeRequirementDTO requirement,
-            NativeArray<uint> itemHashIds,
-            NativeArray<uint> quantities,
+            NativeArray<uint>.ReadOnly itemHashIds,
+            NativeArray<uint>.ReadOnly quantities,
             int activeSlotCount,
             ulong currentInventoryMask,
             out bool craftable)
@@ -197,9 +198,13 @@ namespace Hecton8.Crafting
             if (itemHash == 0u || requiredQuantity == 0u)
                 return true;
 
+            PlayerInventory reservationOwner = _craftReservationOwner != null ? _craftReservationOwner : _playerInventory;
+            if (reservationOwner == null)
+                return false;
+
             int itemHashId = unchecked((int)itemHash);
             int remaining = requiredQuantity > int.MaxValue ? int.MaxValue : (int)requiredQuantity;
-            if (!_playerInventory.TryReserveAvailableQuantityForCraft(
+            if (!reservationOwner.TryReserveAvailableQuantityForCraft(
                     itemHashId,
                     remaining,
                     _localCraftReservations,

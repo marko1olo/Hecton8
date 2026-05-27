@@ -1,0 +1,62 @@
+{
+  "agentId": "1318",
+  "loop": 37,
+  "task": "1318_PURGE",
+  "status": "VERIFICATION_BLOCKED_CPU_COMPILER_GATE",
+  "domain": "Echelon 3 Core Infrastructure and Ecology / Assets/_Project/Scripts/World / DestructibleOrganicManager.cs",
+  "promptStrictTaskCount": 20,
+  "promptLooseTaskMentions": 23,
+  "promptFile": "Docs/Reports/AGENT_PROMPT_1318_REEXTRACTED_LOOP37.xml",
+  "promptFileSha256": "78d4c0b2ba35813e61636068f869ee3ea208a76bb91d7d8067e5b030b03d90f5",
+  "sourceSha256": "383808daf0627d3f99caef313a749d3ce12049eb9afb3e8e62ce1f9df4600d39",
+  "scannedFiles": 1,
+  "changedFiles": [
+    "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+  ],
+  "fixes": [
+    "Organic lifecycle read lock set now pins destroyed/regrowth maps plus surface/underwater UID, material-class, and health Vault buffers read by harvest/consumable candidate scans",
+    "Nearest harvest target resolution now snapshots instance metadata and vegetation type while the scan is still inside the lifecycle read lock",
+    "Harvest interaction point no longer re-reads metadata/types after TryResolveNearestHarvestTarget releases the lifecycle read lock"
+  ],
+  "staticChecks": {
+    "braceOpen": 907,
+    "braceClose": 907,
+    "strictPersistentNativeFields": 0,
+    "persistentAllocatorTokens": 0,
+    "hotForbiddenHits": 0,
+    "organicLifecycleReadBufferCount": 8,
+    "lifecycleReadLockCallLines": [
+      2959,
+      6182,
+      6277,
+      6381
+    ],
+    "lifecycleReadBufferIds": [
+      "OrganicDestroyedByUidBufferId",
+      "OrganicRegrowthProgressByUidBufferId",
+      "OrganicSurfaceInstanceUidsBufferId",
+      "OrganicUnderwaterInstanceUidsBufferId",
+      "OrganicSurfaceMaterialClassesBufferId",
+      "OrganicUnderwaterMaterialClassesBufferId",
+      "OrganicSurfaceHealthBufferId",
+      "OrganicUnderwaterHealthBufferId"
+    ],
+    "harvestInteractionPostTargetLaneArrayReads": 0,
+    "harvestInteractionUsesLockedMetadataTypeSnapshot": true,
+    "gitDiffCheck": "LF_TO_CRLF_WARNING_ONLY"
+  },
+  "buildGate": {
+    "cpuAvg": 85.7,
+    "compilerProcessCount": 1,
+    "rootCsprojCount": 62,
+    "missingSlnxProjectRefs": 0,
+    "buildAllowed": false,
+    "reason": "AGENTS.md forbids dotnet/Roslyn while CPU >50% or another dotnet/csc/VBCSCompiler process is running."
+  },
+  "failedGates": [
+    "BUILD_GATE_BLOCKED_BY_CPU_GT_50",
+    "BUILD_GATE_BLOCKED_BY_ACTIVE_COMPILER_PROCESS",
+    "ROSLYN_RERUN_BLOCKED_BY_CPU_COMPILER_GATE"
+  ],
+  "verificationHashSha256": "383808daf0627d3f99caef313a749d3ce12049eb9afb3e8e62ce1f9df4600d39"
+}

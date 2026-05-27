@@ -52,6 +52,7 @@ uint _HectonOcclusionEnabled;
 uint _HectonFarLodAppendEnabled;
 uint _HectonDarknessCullEnabled;
 uint _HectonDensityDecimationStep;
+float _HectonDensityKeepProbability01;
 uint _HectonCullTelemetryEnabled;
 int _HectonScooterHeadlightCount;
 float4 _HectonScooterHeadlightPositionsWS[HECTON_MAX_SCOOTER_HEADLIGHTS];
@@ -103,11 +104,21 @@ uint HashUint(uint value)
 
 bool PassesDensityDecimation(uint instanceIndex)
 {
+    uint hash = HashUint(instanceIndex * 747796405u + 2891336453u);
+    if (IsFiniteScalar(_HectonDensityKeepProbability01) && _HectonDensityKeepProbability01 > 0.0)
+    {
+        float keep01 = saturate(_HectonDensityKeepProbability01);
+        if (keep01 >= 0.999)
+            return true;
+
+        float sample01 = (float)(hash & 0x00FFFFFFu) * (1.0 / 16777216.0);
+        return sample01 < keep01;
+    }
+
     uint step = min(max(_HectonDensityDecimationStep, 1u), 4u);
     if (step <= 1u)
         return true;
 
-    uint hash = HashUint(instanceIndex * 747796405u + 2891336453u);
     return (hash % step) == 0u;
 }
 

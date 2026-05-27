@@ -351,7 +351,8 @@ namespace Hecton8.UI
             if (_saveOperationInFlight)
                 return;
 
-            ConsumePlayerInputSignals();
+            bool controlsPanelConsumedCancel = _controlsPanel != null && _controlsPanel.ConsumePlayerInputSignals();
+            ConsumePlayerInputSignals(controlsPanelConsumedCancel);
 
             if (_pauseRequested)
             {
@@ -1960,7 +1961,7 @@ namespace Hecton8.UI
             _pauseRequested = true;
         }
 
-        private void ConsumePlayerInputSignals()
+        private void ConsumePlayerInputSignals(bool suppressCancelRequest)
         {
             ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
@@ -1972,7 +1973,8 @@ namespace Hecton8.UI
                     continue;
 
                 _lastPlayerInputSignalSequence = signal.Sequence;
-                _cancelRequested = true;
+                if (!suppressCancelRequest)
+                    _cancelRequested = true;
             }
         }
 

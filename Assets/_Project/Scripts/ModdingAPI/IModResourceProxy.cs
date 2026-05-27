@@ -51,8 +51,15 @@ namespace Hecton8.Modding
         {
         }
 
+        private static void ThrowIfNoActiveMod()
+        {
+            if (!ModExecutionScope.HasActiveMod)
+                throw new IllegalContractException("Resource proxy calls must originate from an active mod execution scope.");
+        }
+
         public bool TryResolvePrefab(string assetName, out uint hashId)
         {
+            ThrowIfNoActiveMod();
             if (ModLoader.GetIsFutureCommandEnvelopeOnly())
             {
                 hashId = 0u;
@@ -64,6 +71,7 @@ namespace Hecton8.Modding
 
         public bool TryResolveAudioClip(string assetName, out uint hashId)
         {
+            ThrowIfNoActiveMod();
             if (ModLoader.GetIsFutureCommandEnvelopeOnly())
             {
                 hashId = 0u;
@@ -75,6 +83,7 @@ namespace Hecton8.Modding
 
         public bool TryResolveTexture(string assetName, out uint hashId)
         {
+            ThrowIfNoActiveMod();
             if (ModLoader.GetIsFutureCommandEnvelopeOnly())
             {
                 hashId = 0u;
@@ -150,6 +159,9 @@ namespace Hecton8.Modding
 
             if (string.IsNullOrWhiteSpace(modId) || string.IsNullOrWhiteSpace(assetName) || kind == 0)
                 return false;
+
+            if (!string.Equals(modId, ModExecutionScope.CurrentModId, System.StringComparison.Ordinal))
+                throw new IllegalContractException("Resource registration owner must match the active mod execution scope.");
 
             Initialize();
             hashId = ComputeResourceHash(modId, assetName, kind);

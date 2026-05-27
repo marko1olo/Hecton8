@@ -153,7 +153,7 @@ Shader "Hecton8/Fabrication/HologramAssembly"
             {
                 float2 grid = abs(frac(localXZ * max(2.0, density)) - 0.5);
                 float gridLine = max(grid.x, grid.y);
-                return 1.0 - smoothstep(0.44, 0.5, gridLine);
+                return 1.0 - HectonCoreLitLinearRamp(0.44, 0.5, gridLine);
             }
 
             half4 Frag(Varyings input) : SV_Target
@@ -166,7 +166,7 @@ Shader "Hecton8/Fabrication/HologramAssembly"
 
                 float edgeWidth = max(0.001, _AssemblyEdgeWidth);
                 float edgeBoost = _H8FabricationAssemblyEdgeBoost;
-                float edgeMask = edgeBoost * input.quality01 * (1.0 - smoothstep(0.0, edgeWidth, abs(fabricatorLocalY - input.clipHeightY)));
+                float edgeMask = edgeBoost * input.quality01 * (1.0 - HectonCoreLitLinearRamp(0.0, edgeWidth, abs(fabricatorLocalY - input.clipHeightY)));
 
                 float3 normalWS = HectonCoreLitSafeNormalize(input.normalWS);
                 float3 viewDirWS = HectonCoreLitSafeNormalize(GetCameraPositionWS() - input.positionWS);

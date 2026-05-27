@@ -65,7 +65,22 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             {
                 lines = File.ReadAllLines(absolutePath, Encoding.UTF8);
             }
-            catch (Exception exception)
+            catch (IOException exception)
+            {
+                AddFinding(ref mode, relativePath, 0, "sourceReadFailure", exception.GetType().Name, allowed: false);
+                return;
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                AddFinding(ref mode, relativePath, 0, "sourceReadFailure", exception.GetType().Name, allowed: false);
+                return;
+            }
+            catch (ArgumentException exception)
+            {
+                AddFinding(ref mode, relativePath, 0, "sourceReadFailure", exception.GetType().Name, allowed: false);
+                return;
+            }
+            catch (NotSupportedException exception)
             {
                 AddFinding(ref mode, relativePath, 0, "sourceReadFailure", exception.GetType().Name, allowed: false);
                 return;

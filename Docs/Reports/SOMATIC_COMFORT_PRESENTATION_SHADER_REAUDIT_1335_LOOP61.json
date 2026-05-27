@@ -1,0 +1,32 @@
+﻿{
+    "agentId":  "1335",
+    "loop":  61,
+    "status":  "PATCHED_BUILD_BLOCKED_BY_COORDINATOR_CPU_AND_DOTNET_GATE",
+    "promptSha256":  "CED5DA5188E0838802BA00938AFD9F382174FAA78453C32C78A6AE34BCB1C2E2",
+    "scannedFiles":  4,
+    "patchedFiles":  [
+                         "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader",
+                         "Assets/_Project/Art/Shaders/Hecton_SubmarineSonarHoloMapStencil.shader",
+                         "Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl",
+                         "Assets/_Project/Scripts/Editor/VRSomaticComfortEvaluatorEditTests.cs"
+                     ],
+    "fixes":  [
+                  "PDA frequency shader lowered to target 3.5 and removed round from segment count",
+                  "Submarine sonar stencil radial uses octagonal approximation instead of length",
+                  "UberNoir hash/curl/radial/pow presentation paths use ALU/triangle/polynomial approximations",
+                  "Editor regression test pins the cheap math contract"
+              ],
+    "staticVerification":  {
+                               "scopedExpensiveShaderTerms":  0,
+                               "braceBalanceClean":  true,
+                               "gitDiffCheckErrors":  0,
+                               "gitDiffCheckNotes":  "LF-to-CRLF warnings only"
+                           },
+    "buildGate":  {
+                      "attempted":  false,
+                      "cpuAveragePercent":  80.2,
+                      "activeCompilerProcesses":  2,
+                      "reason":  "AGENTS forbids dotnet build when CPU is above 50 percent or dotnet/csc/MSBuild/VBCSCompiler is active"
+                  },
+    "verificationHashSha256":  "C4359E93B0238DDFBEE00558FD15A168447A3B5B663EA16DCB2AD4FC6F217575"
+}

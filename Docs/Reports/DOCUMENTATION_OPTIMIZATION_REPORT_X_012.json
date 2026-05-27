@@ -1,13 +1,13 @@
 ﻿{
   "schema": "hecton8.documentation_actuality_scan.x012.v1",
-  "generatedUtc": "2026-05-25T22:08:31.340166+00:00",
+  "generatedUtc": "2026-05-27T13:31:58.699152+00:00",
   "repoRoot": "C:\\hades\\Hecton8",
   "scope": "repository root approved text anchors plus Docs/**/*.md/txt",
   "checks": {
-    "activeFileCount": 704,
-    "activeWordCount": 1175304,
-    "inventoryFileCount": 5071,
-    "inventoryWordCount": 34640490,
+    "activeFileCount": 688,
+    "activeWordCount": 1267489,
+    "inventoryFileCount": 5325,
+    "inventoryWordCount": 36598097,
     "rootTextDocs": [
       "AGENTS.md",
       "BUILD_PLAYTEST_ISSUES.md",
@@ -33,11 +33,11 @@
     "sourceSyncPass": true,
     "wordReduction": {
       "method": "current active words plus X_012 archived report/root words minus concise replacement anchor words",
-      "activeWordCountAfter": 1175304,
-      "reconstructedActiveWordCountBefore": 1832409,
-      "retiredActiveWords": 657105,
-      "reductionRatio": 0.35860170955283455,
-      "reductionPercent": 35.86017095528346,
+      "activeWordCountAfter": 1267489,
+      "reconstructedActiveWordCountBefore": 1924306,
+      "retiredActiveWords": 656817,
+      "reductionRatio": 0.3413266912850659,
+      "reductionPercent": 34.132669128506585,
       "reductionPass": true,
       "archivedRootFiles": 2,
       "archivedReportFiles": 160,
@@ -45,17 +45,17 @@
       "archivedArchitectureDiffFiles": 2,
       "currentRootAnchorWords": 582,
       "currentBinaryPayloadLedgerWords": 154,
-      "currentActualityLedgerWords": 1129,
-      "currentArchitectureReplacementWords": 1283,
-      "architectureRetiredWords": 117738
+      "currentActualityLedgerWords": 1417,
+      "currentArchitectureReplacementWords": 1571,
+      "architectureRetiredWords": 117450
     },
     "architecture": {
-      "activeArchitectureFileCount": 192,
-      "activeArchitectureWordCount": 163742,
+      "activeArchitectureFileCount": 182,
+      "activeArchitectureWordCount": 155685,
       "markerHits": {
-        "docGlobalRefreshMarkers": 0,
-        "r51BoundaryBoilerplate": 0,
-        "docGlobalLegacyHeadings": 0,
+        "staleDocBoundaryRefreshMarkers": 0,
+        "staleBoundary51Boilerplate": 0,
+        "staleDocBoundaryLegacyHeadings": 0,
         "dataMonolithWasAbsent": 0
       },
       "longNarrativeParagraphsOver180Words": [],

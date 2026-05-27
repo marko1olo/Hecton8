@@ -1,0 +1,43 @@
+{
+    "agentId":  "1318",
+    "loop":  42,
+    "task":  "1318_PURGE",
+    "status":  "VERIFICATION_BLOCKED_CPU_COMPILER_GATE",
+    "promptReport":  "Docs/Reports/AGENT_PROMPT_1318_REEXTRACTED_LOOP42.xml",
+    "promptStrictTaskCount":  20,
+    "promptLooseTaskMentions":  23,
+    "promptSha256":  "bd959f47caea5a192f4bcaba65c92efaf7e647f034b3cf6c68ecb924f262022b",
+    "sourceFile":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+    "sourceSha256":  "e61cbd1076fd8485772db8fed74618aa66792e19b8ebd802ba13836f22d21c02",
+    "checks":  {
+                   "braceOpen":  905,
+                   "braceClose":  905,
+                   "braceBalanced":  true,
+                   "strictPersistentNativeFieldDeclarations":  0,
+                   "persistentAllocatorTokens":  0,
+                   "hotOwnerForbiddenTokenHits":  0,
+                   "mutatingReadLikeMethodHits":  0,
+                   "oldNearestHarvestResolveSymbols":  0,
+                   "staleToolHitPrelockDamageFormulaHits":  0,
+                   "baseScaleBufferReadLockReferences":  3,
+                   "targetedLoop41RegressionHits":  0,
+                   "gitDiffCheck":  "LF_TO_CRLF_WARNING_ONLY"
+               },
+    "fixes":  [
+                  "Lifecycle read lock now includes OrganicBaseScaleByUidBufferId so normalized height snapshots can use base scale under a pin.",
+                  "Nearest harvest target snapshot now returns normalized height from the pinned read window.",
+                  "Tool-hit damage and death decisions now recompute pinned lane health inside the lifecycle mutation lock instead of trusting the pre-lock read snapshot.",
+                  "Lock-taking private nearest-target helpers were renamed to Snapshot/WithLock and PinnedLane forms; legacy consumable resolve now delegates to an explicit snapshot method."
+              ],
+    "failedGates":  [
+                        "BUILD_GATE_BLOCKED_BY_CPU_GT_50",
+                        "BUILD_GATE_BLOCKED_BY_ACTIVE_COMPILER_PROCESSES"
+                    ],
+    "buildGate":  {
+                      "cpuAveragePercent":  100,
+                      "compilerProcessCount":  9,
+                      "csprojCount":  90,
+                      "missingSlnxProjectReferences":  0,
+                      "dotnetBuildInvoked":  false
+                  }
+}

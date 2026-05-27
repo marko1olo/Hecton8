@@ -14,7 +14,7 @@ namespace Hecton8.Construction
     [AddComponentMenu("Hecton8/Construction/Water Pump Module")]
     public sealed class WaterPumpModule : MonoBehaviour, IPowerComponent, IPoolable
     {
-        private const int InitialPumpCapacity = 16;
+        private const int MaxPumpCapacity = 32;
 
         [Header("Pump")]
         [SerializeField, Min(0f)] private float pumpRateM3PerSecond = 1.8f;
@@ -30,7 +30,7 @@ namespace Hecton8.Construction
         [SerializeField] private float _debugLastDrainBudgetM3;
 
         // COLD ALLOC: List<WaterPumpModule>[16] - active pump registry for CSR flood drainage - owner: WaterPumpModule
-        private static readonly List<WaterPumpModule> s_activePumps = new List<WaterPumpModule>(InitialPumpCapacity);
+        private static readonly List<WaterPumpModule> s_activePumps = new List<WaterPumpModule>(MaxPumpCapacity);
 
         private BaseModule _hostModule;
         private ISubmarineAtmosphereRoomReadModel _atmosphereSystem;
@@ -204,6 +204,9 @@ namespace Hecton8.Construction
                 return;
 
             CacheColdReferences();
+
+            if (s_activePumps.Count >= MaxPumpCapacity)
+                return;
 
             s_activePumps.Add(this);
             _registered = true;

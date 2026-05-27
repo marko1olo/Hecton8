@@ -1,0 +1,787 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\PHYSICS_CULLING_HOTPATH_AUDIT_1337.json",
+  "auditHashSha256": "362e25ffe5cad7d8eb9499a42b49d0b991a35cef32f2b2024c07a9d1d054369b",
+  "summary": {
+    "scannedFiles": 5,
+    "parseFailures": 0,
+    "totalFindings": 94,
+    "objectCreations": 94,
+    "valueTypeCreations": 47,
+    "managedRiskCreations": 47,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\GlobalPhysicsStateManager.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Physics\\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Physics\\GlobalPhysicsStateManager.WakeRequests.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Physics\\Editor\\PhysicsCullingMemorySovereigntyValidator1337.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Core\\Signals\\PhysicsWakeSignalContracts.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 601,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Dictionary<ulong, int>",
+      "snippet": "new Dictionary<ulong, int>(MaxTrackedBodies)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 603,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<GameObject>",
+      "snippet": "new List<GameObject>(SceneRootScanCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 605,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<Rigidbody>",
+      "snippet": "new List<Rigidbody>(SceneRigidbodyScanCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 611,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<MeshCollider>",
+      "snippet": "new List<MeshCollider>(MeshColliderScratchCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 617,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<Collider>",
+      "snippet": "new List<Collider>(SleepColliderScratchCapacity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 619,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "Dictionary<int, int>",
+      "snippet": "new Dictionary<int, int>(MaxTrackedBodies)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 621,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<float3>",
+      "snippet": "new VaultBufferBinding<float3>(BufferID.RigidbodyLastValidPositions, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 622,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<double3>",
+      "snippet": "new VaultBufferBinding<double3>(BufferID.RigidbodyAUPs, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 623,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<byte>",
+      "snippet": "new VaultBufferBinding<byte>(BufferID.RigidbodyCullingState, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 624,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<byte>",
+      "snippet": "new VaultBufferBinding<byte>(BufferID.RigidbodyAwakeResults, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 625,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<byte>",
+      "snippet": "new VaultBufferBinding<byte>(BufferID.RigidbodyCullingCommands, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 626,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<float>",
+      "snippet": "new VaultBufferBinding<float>(BufferID.RigidbodyDistanceSq, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 627,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<PhysicsCullingTelemetryEntry>",
+      "snippet": "new VaultBufferBinding<PhysicsCullingTelemetryEntry>(BufferID.PhysicsCullingTelemetry, PhysicsCullingTelemetryCapacity, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 628,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<PhysicsImpactEventData>",
+      "snippet": "new VaultBufferBinding<PhysicsImpactEventData>(BufferID.PhysicsImpactEvents, MaxQueuedImpactEvents, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 1592,
+      "owner": "PrepareTrackedBodiesForOriginShiftInternal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 1602,
+      "owner": "PrepareTrackedBodiesForOriginShiftInternal",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(_lastValidPositions[i].x, _lastValidPositions[i].y, _lastValidPositions[i].z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 1677,
+      "owner": "CommitTrackedBodiesForOriginShiftInternal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(targetPosition.x, targetPosition.y, targetPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 1679,
+      "owner": "CommitTrackedBodiesForOriginShiftInternal",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(targetPosition.x, targetPosition.y, targetPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 1768,
+      "owner": "ResetTrackedBodiesForSafeTeleportInternal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2045,
+      "owner": "RegisterTrackedBodyInternal",
+      "kind": "value_type_creation",
+      "detail": "RigidbodyState",
+      "snippet": "new RigidbodyState             {                 EntityId = bodyEntityId,                 EntityInstanceHash = bodyInstanceHash,                 StateMask = PhysicsStateMask.None,                 CompensationRefCount = 0,                 Cu"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2082,
+      "owner": "RegisterTrackedBodyInternal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(bodyPosition.x, bodyPosition.y, bodyPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2140,
+      "owner": "QueueKinematicImpactInternal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(point.x, point.y, point.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2141,
+      "owner": "QueueKinematicImpactInternal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(normal.x, normal.y, normal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2145,
+      "owner": "QueueKinematicImpactInternal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(centerOfMass.x, centerOfMass.y, centerOfMass.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2149,
+      "owner": "QueueKinematicImpactInternal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2152,
+      "owner": "QueueKinematicImpactInternal",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(point3.x, point3.y, point3.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2159,
+      "owner": "QueueKinematicImpactInternal",
+      "kind": "object_creation",
+      "detail": "PhysicsImpactEventData",
+      "snippet": "new PhysicsImpactEventData             {                 PrimaryBodyId = EntityId.ToULong(primaryBody.GetEntityId()),                 SecondaryBodyId = secondaryBody != null ? EntityId.ToULong(secondaryBody.GetEntityId()) : 0ul,            "
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2212,
+      "owner": "FlushImpactEvents",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(impactEvent.Point.x, impactEvent.Point.y, impactEvent.Point.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2213,
+      "owner": "FlushImpactEvents",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(impactEvent.Normal.x, impactEvent.Normal.y, impactEvent.Normal.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2214,
+      "owner": "FlushImpactEvents",
+      "kind": "value_type_creation",
+      "detail": "ImpactSignal",
+      "snippet": "new ImpactSignal                 {                     PointAup = impactEvent.PointAup,                     Force = impactEvent.Force,                     Intensity = impactEvent.Intensity,                     PrimaryBodyId = unchecked((uin"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2226,
+      "owner": "FlushImpactEvents",
+      "kind": "value_type_creation",
+      "detail": "PhysicsImpactSignal",
+      "snippet": "new PhysicsImpactSignal(                     impactEvent.PrimaryBodyId,                     impactEvent.SecondaryBodyId,                     impactPoint,                     in impactEvent.PointAup,                     impactNormal,        "
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2300,
+      "owner": "RegisterOrUpdateConnection",
+      "kind": "object_creation",
+      "detail": "PhysicsConnection",
+      "snippet": "new PhysicsConnection             {                 Owner = owner,                 BodyA = bodyA,                 BodyB = bodyB,                 CompensatedBody = null,                 Kind = kind,                 CompensationActive = 0    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2477,
+      "owner": "RefreshTrackedBodies",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(bodyPosition.x, bodyPosition.y, bodyPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2545,
+      "owner": "ApplyAupJitterSentinelForBody",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                 aupRuntimePosition3.x,                 aupRuntimePosition3.y,                 aupRuntimePosition3.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2595,
+      "owner": "SweepNaNPhysicsState",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(bodyPosition.x, bodyPosition.y, bodyPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2596,
+      "owner": "SweepNaNPhysicsState",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(bodyRotation.x, bodyRotation.y, bodyRotation.z, bodyRotation.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2597,
+      "owner": "SweepNaNPhysicsState",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(bodyLinearVelocity.x, bodyLinearVelocity.y, bodyLinearVelocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2598,
+      "owner": "SweepNaNPhysicsState",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(bodyAngularVelocity.x, bodyAngularVelocity.y, bodyAngularVelocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2614,
+      "owner": "SweepNaNPhysicsState",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2618,
+      "owner": "SweepNaNPhysicsState",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(lastValidPosition.x, lastValidPosition.y, lastValidPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 2619,
+      "owner": "SweepNaNPhysicsState",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                     recoveredRuntimePosition.x,                     recoveredRuntimePosition.y,                     recoveredRuntimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 3030,
+      "owner": "RunPhysicsCullingSlowTick",
+      "kind": "object_creation",
+      "detail": "PhysicsDistanceCullingJobShinobu37",
+      "snippet": "new PhysicsDistanceCullingJobShinobu37             {                 Dtos = _physicsCullingDtos,                 CurrentStates = _rigidbodyCullingStateSnapshot,                 CandidateIndices = _physicsCullingSpatialCandidates,           "
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 3408,
+      "owner": "TryResolvePhysicsCullingPlayerState",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 3422,
+      "owner": "TryResolvePhysicsCullingPlayerState",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 3555,
+      "owner": "RecordPhysicsCullingTelemetry",
+      "kind": "value_type_creation",
+      "detail": "PhysicsCullingTelemetryEntry",
+      "snippet": "new PhysicsCullingTelemetryEntry             {                 FrameIndex = frame,                 TrackedBodyCount = _trackedBodyCount,                 CulledBodyCount = culledCount,                 LockContentions = _physicsCullingLockCon"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 3724,
+      "owner": "PublishRigidbodySleepSignal",
+      "kind": "value_type_creation",
+      "detail": "RigidbodySleepSignal",
+      "snippet": "new RigidbodySleepSignal             {                 PositionAup = bodyAup,                 BodyId = unchecked((uint)bodyState.EntityId),                 DistanceMeters = distanceMeters,                 SleepState = sleepState,           "
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 4330,
+      "owner": "IsFinite",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 4336,
+      "owner": "IsFinite",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(value.x, value.y, value.z, value.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 4360,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 328,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<PhysicsCullingDTO>",
+      "snippet": "new VaultBufferBinding<PhysicsCullingDTO>(BufferID.ShinobuPhysicsCullingDtos, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 330,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<FrozenVelocityDTO>",
+      "snippet": "new VaultBufferBinding<FrozenVelocityDTO>(BufferID.ShinobuPhysicsCullingFrozenVelocities, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 332,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<float>",
+      "snippet": "new VaultBufferBinding<float>(BufferID.ShinobuPhysicsCullingStateAges, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 334,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<int>",
+      "snippet": "new VaultBufferBinding<int>(BufferID.ShinobuPhysicsCullingSpatialCandidates, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 336,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<byte>",
+      "snippet": "new VaultBufferBinding<byte>(BufferID.ShinobuPhysicsCullingSpatialCandidateMask, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 338,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<PhysicsCullingFrameTelemetry>",
+      "snippet": "new VaultBufferBinding<PhysicsCullingFrameTelemetry>(BufferID.ShinobuPhysicsCullingFrameTelemetry, PhysicsCullingFrameTelemetryCapacity, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 340,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<PhysicsCullingTuningDTO>",
+      "snippet": "new VaultBufferBinding<PhysicsCullingTuningDTO>(BufferID.ShinobuPhysicsCullingTuning, 1, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 342,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<MockSeismicShockwaveSignal>",
+      "snippet": "new VaultBufferBinding<MockSeismicShockwaveSignal>(BufferID.ShinobuPhysicsCullingMockSeismicSignals, PhysicsCullingMockSeismicSignalCapacity, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 344,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<PhysicsCullingTargetWakeRequestSignal>",
+      "snippet": "new VaultBufferBinding<PhysicsCullingTargetWakeRequestSignal>(BufferID.ShinobuPhysicsCullingWakeRequestMirror, PhysicsCullingTargetWakeQueueCapacity, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 346,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<int>",
+      "snippet": "new VaultBufferBinding<int>(BufferID.ShinobuPhysicsCullingSpatialBucketHeads, PhysicsCullingSpatialBucketCapacity, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 348,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<int>",
+      "snippet": "new VaultBufferBinding<int>(BufferID.ShinobuPhysicsCullingSpatialNext, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 350,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<int>",
+      "snippet": "new VaultBufferBinding<int>(BufferID.ShinobuPhysicsCullingSpatialCellHashes, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 352,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<int>",
+      "snippet": "new VaultBufferBinding<int>(BufferID.ShinobuPhysicsCullingChangedIndices, MaxTrackedBodies, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 354,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<PhysicsCullingCounter64>",
+      "snippet": "new VaultBufferBinding<PhysicsCullingCounter64>(BufferID.ShinobuPhysicsCullingChangedCount, 1, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 356,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "VaultBufferBinding<PhysicsCullingCounter64>",
+      "snippet": "new VaultBufferBinding<PhysicsCullingCounter64>(BufferID.ShinobuPhysicsCullingWakeRequestCount, 1, OwnerSystemId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 583,
+      "owner": "GenerateEmergencyMockRadii",
+      "kind": "value_type_creation",
+      "detail": "PhysicsCullingTuningDTO",
+      "snippet": "new PhysicsCullingTuningDTO             {                 DebrisWakeRadiusMeters = PhysicsCullingDefaultDebrisWakeRadiusMeters,                 VehicleWakeRadiusMeters = PhysicsCullingDefaultVehicleWakeRadiusMeters,                 FrustumC"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 747,
+      "owner": "TryBuildPhysicsCullingTuningFromLegacyFloats",
+      "kind": "value_type_creation",
+      "detail": "PhysicsCullingTuningDTO",
+      "snippet": "new PhysicsCullingTuningDTO             {                 DebrisWakeRadiusMeters = math.clamp(debrisRadiusMeters, 1f, 500f),                 VehicleWakeRadiusMeters = math.clamp(vehicleRadiusMeters, 1f, 1000f),                 FrustumClampD"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 844,
+      "owner": "WritePhysicsCullingDto",
+      "kind": "value_type_creation",
+      "detail": "PhysicsCullingDTO",
+      "snippet": "new PhysicsCullingDTO             {                 AUP = bodyAup.ToAbsoluteDouble3(),                 InstanceId = body != null ? body.GetEntityId().GetHashCode() : 0,                 ActivationRadiusSq = ResolvePhysicsCullingActivationRad"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 885,
+      "owner": "ResolvePhysicsCullingTuning",
+      "kind": "value_type_creation",
+      "detail": "PhysicsCullingTuningDTO",
+      "snippet": "new PhysicsCullingTuningDTO             {                 DebrisWakeRadiusMeters = PhysicsCullingDefaultDebrisWakeRadiusMeters,                 VehicleWakeRadiusMeters = PhysicsCullingDefaultVehicleWakeRadiusMeters,                 FrustumC"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 921,
+      "owner": "BuildPhysicsCullingSpatialCandidates",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(cameraCell.x + x, cameraCell.y, cameraCell.z + z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1028,
+      "owner": "ResolvePhysicsCullingCell",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                 (int)math.floor(absoluteAup.x * PhysicsCullingInvSpatialCellSizeMeters),                 (int)math.floor(absoluteAup.y * PhysicsCullingInvSpatialCellSizeMeters),                 (int)math.floor(absoluteAup.z * Phys"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1062,
+      "owner": "SchedulePhysicsChangedIndexClear",
+      "kind": "value_type_creation",
+      "detail": "ClearPhysicsChangedIndicesJob",
+      "snippet": "new ClearPhysicsChangedIndicesJob             {                 ChangedIndices = _physicsStateChangedIndices,                 Count = count             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1075,
+      "owner": "SchedulePhysicsChangedIndexCompaction",
+      "kind": "value_type_creation",
+      "detail": "CompactPhysicsChangedIndicesJob",
+      "snippet": "new CompactPhysicsChangedIndicesJob             {                 ChangedIndices = _physicsStateChangedIndices,                 ChangedCount = _physicsStateChangedCount,                 Count = math.min(scanCount, _physicsStateChangedIndice"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1098,
+      "owner": "ResolvePhysicsCullingCameraAup",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(forward.x, forward.y, forward.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1146,
+      "owner": "ConvertPlaneToCameraRelative",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(normal.x, normal.y, normal.z, localDistance)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1254,
+      "owner": "FreezeBodyVelocityForDistanceSleep",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(linearVelocity.x, linearVelocity.y, linearVelocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1255,
+      "owner": "FreezeBodyVelocityForDistanceSleep",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(angularVelocity.x, angularVelocity.y, angularVelocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1277,
+      "owner": "RestoreFrozenVelocityForDistanceSleep",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(frozen.LinearVelocity.x, frozen.LinearVelocity.y, frozen.LinearVelocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1284,
+      "owner": "RestoreFrozenVelocityForDistanceSleep",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(frozen.AngularVelocity.x, frozen.AngularVelocity.y, frozen.AngularVelocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1515,
+      "owner": "SetPhysicsCullingTuning",
+      "kind": "value_type_creation",
+      "detail": "PhysicsCullingTuningDTO",
+      "snippet": "new PhysicsCullingTuningDTO             {                 DebrisWakeRadiusMeters = math.clamp(tuning.DebrisWakeRadiusMeters, 1f, 500f),                 VehicleWakeRadiusMeters = math.clamp(tuning.VehicleWakeRadiusMeters, 1f, 1000f),        "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1547,
+      "owner": "TryGetPhysicsCullingDebugBody",
+      "kind": "object_creation",
+      "detail": "PhysicsCullingDebugBody",
+      "snippet": "new PhysicsCullingDebugBody             {                 Aup = dto.AUP,                 AgeSeconds = _physicsCullingStateAges.IsCreated ? _physicsCullingStateAges[index] : 0f,                 InstanceId = dto.InstanceId,                 Is"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1652,
+      "owner": "GenerateMockPhysicsBodies",
+      "kind": "value_type_creation",
+      "detail": "PhysicsCullingDTO",
+      "snippet": "new PhysicsCullingDTO                 {                     AUP = baseAup + new double3(x, y, z),                     InstanceId = -1000000 - i,                     ActivationRadiusSq = PhysicsCullingDefaultDebrisWakeRadiusMeters * PhysicsC"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1654,
+      "owner": "GenerateMockPhysicsBodies",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1690,
+      "owner": "FireMockSeismicShockwave",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(                 ((int)(h & 63u) - 32) * 2.0,                 0.0,                 ((int)((h >> 6) & 63u) - 32) * 2.0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1736,
+      "owner": "TryQueuePhysicsCullingWakeRegion",
+      "kind": "value_type_creation",
+      "detail": "MockSeismicShockwaveSignal",
+      "snippet": "new MockSeismicShockwaveSignal                 {                     EpicenterAup = epicenterAup,                     RadiusMeters = math.min(radiusMeters, ImpactWakeMaximumRadiusMeters),                     Seed = sourceHash,              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1810,
+      "owner": "TrySchedulePendingMockSeismicShockwave",
+      "kind": "value_type_creation",
+      "detail": "MockSeismicShockwaveWakeJob",
+      "snippet": "new MockSeismicShockwaveWakeJob             {                 Dtos = _physicsCullingDtos,                 AwakeResults = _rigidbodyAwakeResults,                 CommandResults = _rigidbodyCullingCommandResults,                 StateAges = _"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1888,
+      "owner": "RecordShinobu37PhysicsCullingFrameTelemetry",
+      "kind": "object_creation",
+      "detail": "PhysicsCullingFrameTelemetry",
+      "snippet": "new PhysicsCullingFrameTelemetry             {                 FrameIndex = unchecked((int)frame),                 TotalTrackedBodies = _trackedBodyCount,                 ActiveBodies = activeBodies,                 AsleepBodies = asleepBod"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 1976,
+      "owner": "TryDumpPhysicsCullingBlackBoxToFile",
+      "kind": "object_creation",
+      "detail": "PhysicsCullingBlackBoxDumpHeader1337",
+      "snippet": "new PhysicsCullingBlackBoxDumpHeader1337             {                 Magic = PhysicsCullingBlackBoxDumpMagic1337,                 Version = PhysicsCullingBlackBoxDumpVersion1337,                 ReasonHash = reasonHash,                 Fl"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 2002,
+      "owner": "TryDumpPhysicsCullingBlackBoxToFile",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 2006,
+      "owner": "TryDumpPhysicsCullingBlackBoxToFile",
+      "kind": "object_creation",
+      "detail": "ReadOnlySpan<byte>",
+      "snippet": "new ReadOnlySpan<byte>(headerBytes, UnsafeUtility.SizeOf<PhysicsCullingBlackBoxDumpHeader1337>())"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 2031,
+      "owner": "WritePhysicsCullingNativeRingToStream",
+      "kind": "object_creation",
+      "detail": "ReadOnlySpan<byte>",
+      "snippet": "new ReadOnlySpan<byte>(ptr, byteLength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 2474,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-PhysicsCullingLocalDeltaClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 2475,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(PhysicsCullingLocalDeltaClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 2477,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                     (float)clampedDeltaDouble.x,                     (float)clampedDeltaDouble.y,                     (float)clampedDeltaDouble.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "line": 2494,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

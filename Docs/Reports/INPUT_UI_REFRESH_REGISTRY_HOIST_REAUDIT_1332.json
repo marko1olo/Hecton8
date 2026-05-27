@@ -1,0 +1,74 @@
+{
+  "schema": "hecton8.input_ui_refresh_registry_hoist_reaudit.v1",
+  "agentId": "1332",
+  "timestamp": "2026-05-27T08:41:11+04:00",
+  "domain": "Hecton8.Input + UI/PauseControlsPanel.cs + UI/PDAControlsRebindUI.cs",
+  "taskCount": 20,
+  "status": "STATIC_ROSLYN_GREEN_BUILD_BLOCKED",
+  "changeSummary": [
+    "PauseControlsPanel.RefreshAllBindings resolves INativeInputManagerRuntime once per pass and passes it to RefreshRowBinding.",
+    "PDAControlsRebindUI.RefreshAllBindings resolves INativeInputManagerRuntime once per pass and passes it to RefreshRowBinding.",
+    "PDAControlsRebindUI.ResolveBindingIndex now receives the cached runtime and does not resolve input internally.",
+    "Pause/PDA row reset paths reuse the already resolved runtime for refresh and status update.",
+    "InputBindingContractsEditTests contains source guards for cached-service row refresh and PDA binding-index resolution."
+  ],
+  "scannedProductionFiles": 9,
+  "scannedFilesIncludingTestsAndGuide": 11,
+  "forbiddenTokenScan": {
+    "broadCatch": 0,
+    "throwNew": 0,
+    "playerPrefs": 0,
+    "jsonUtility": 0,
+    "removeAllListeners": 0,
+    "stringFormat": 0,
+    "toString": 0,
+    "interpolation": 0,
+    "linq": 0,
+    "foreach": 0,
+    "clearPlayerPrefs": 0,
+    "voidOverrideContract": 0,
+    "uncheckedPanelSave": 0,
+    "runtimeClearBeforeDelete": 0,
+    "rowResetNullOwnerLeak": 0
+  },
+  "nativeCollectionAudit": {
+    "tokenOccurrences": 11,
+    "fieldDeclarationsByGrep": 0,
+    "roslynScannedFiles": 9,
+    "roslynParseFailures": 0,
+    "roslynTotalNativeFieldDeclarations": 0,
+    "roslynForbiddenPersistentCandidates": 0,
+    "roslynHashSha256": "d9841e268c8c81ed55869976dab50d01881ce67f259231bf7ad00aa56e633930",
+    "reportPath": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1332_UI_REFRESH_REAUDIT.json"
+  },
+  "zeroGcHotPathAudit": {
+    "hotSimulationFrameAddedUs": 0,
+    "managedAllocationProof": "static-source-only",
+    "profilerGcMonitorRun": false,
+    "notes": "Patch changes cold visible controls-menu refresh and row reset paths only; no Tick/Update/LateUpdate/FixedUpdate code added."
+  },
+  "aupAudit": {
+    "absoluteAupCastsFound": 0,
+    "notes": "Assigned input/UI/accessibility scope does not process AUP coordinates."
+  },
+  "diffCheck": {
+    "gitDiffCheckErrors": 0,
+    "lineEndingWarnings": true
+  },
+  "buildVerification": {
+    "attempted": true,
+    "cpuGateSamplesPercent": [20, 41],
+    "compilerProcessesBeforeBuild": 0,
+    "firstCommand": "dotnet build .\\Hecton8.Core.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly",
+    "firstFailure": "MSB1009: Hecton8.Core.csproj does not exist",
+    "secondCommand": "dotnet build .\\Hecton8.slnx --no-restore --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly",
+    "secondFailure": "MSB3202: root Unity-generated .csproj files referenced by Hecton8.slnx are missing",
+    "compiledDomainCode": false
+  },
+  "verificationHashSha256": "b5ac06595e374c1c28a224f5a9ddf08126378ec79b5e5cedb6fd305a8f313bf7",
+  "failedGates": [
+    "dotnet_build_blocked_by_missing_generated_project_files",
+    "unity_editor_tests_not_run",
+    "unity_profiler_gcmonitor_not_run"
+  ]
+}

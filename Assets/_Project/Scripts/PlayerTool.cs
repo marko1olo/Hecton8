@@ -80,7 +80,10 @@ namespace Hecton8.Gameplay
                 if (_toolMetadata == null) return 0f;
                 IToolDurabilityService system = _toolDurabilityService;
                 if (system == null) return _toolMetadata.maxDurability;
-                return system.GetDurability(_toolMetadata.toolID, _toolMetadata.maxDurability);
+                float maxDurability = FiniteAtLeast(_toolMetadata.maxDurability, 1f);
+                return TryReadDurabilityByCachedHash(system, maxDurability, out float durability)
+                    ? durability
+                    : maxDurability;
             }
         }
 
@@ -100,7 +103,7 @@ namespace Hecton8.Gameplay
                 if (_toolMetadata == null) return false;
                 IToolDurabilityService system = _toolDurabilityService;
                 if (system == null) return false;
-                return system.IsBroken(_toolMetadata.toolID);
+                return TryReadBrokenByCachedHash(system, out bool broken) && broken;
             }
         }
 
@@ -124,6 +127,7 @@ namespace Hecton8.Gameplay
         private uint _runtimeToolSpecHashId;
         private uint _interactionFrameIndex;
         private uint _cachedToolItemHashId;
+        private uint _cachedToolMetadataHashId;
         private bool _runtimeToolRegistered;
         private bool _modularHotSwapRegistered;
         private bool _lastUseWasPrimary;
@@ -160,6 +164,7 @@ namespace Hecton8.Gameplay
             CacheSwimContractCold();
             CacheTransportFeelContractCold();
             CacheToolRegistryDependenciesCold();
+            RegisterDurabilityMirrorCold();
             TryRegisterModularHotSwap();
 
             EnsureModularRuntimeRegistration();
@@ -187,6 +192,7 @@ namespace Hecton8.Gameplay
             _runtimeToolSpecHashId = 0u;
             _interactionFrameIndex = 0u;
             _cachedToolItemHashId = 0u;
+            _cachedToolMetadataHashId = 0u;
             _runtimeToolRegistered = false;
             TryUnregisterModularHotSwap();
             _modularEquipmentService = null;
@@ -205,7 +211,7 @@ namespace Hecton8.Gameplay
             _queuedSurfaceRequesterId = EntityId.ToULong(gameObject.GetEntityId());
         }
 
-        protected bool TryResolvePrimarySurfaceHit(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction qti, out InteractionSurfaceHit hit)
+        protected bool RequestPrimarySurfaceHit(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction qti, out InteractionSurfaceHit hit)
         {
             IInteractionSignalService interactionService = _interactionSignalService;
             if (interactionService != null && interactionService.IsInitialized)
@@ -248,7 +254,7 @@ namespace Hecton8.Gameplay
                     (byte)ToolActionMode.Primary,
                     (byte)(IsEquipped ? ToolStateBits.Active : ToolStateBits.Idle),
                     NextInteractionFrameIndex());
-                return interactionService.TryResolvePrimarySurfaceHit(_queuedSurfaceRequesterId, in packet, layerMask, qti, out hit);
+                return interactionService.RequestPrimarySurfaceHit(_queuedSurfaceRequesterId, in packet, layerMask, qti, out hit);
             }
             hit = default;
             return false;
@@ -272,6 +278,7 @@ namespace Hecton8.Gameplay
         {
             _isEquipped = true;
             _lowDurabilityWarningFired = false;
+            RegisterDurabilityMirrorCold();
             EnsureModularRuntimeRegistration();
             SyncModularHeat(ResolveModularHeatNormalized());
             SyncModularDurability();
@@ -534,11 +541,18 @@ namespace Hecton8.Gameplay
                 ? service.GetDurabilityDrainMultiplier(_runtimeToolId, 1f)
                 : 1f;
             float safeMultiplier = FiniteNonNegativeOrZero(multiplier);
-            system.DrainDurabilityByTime(
-                _toolMetadata.toolID,
-                GetCachedToolItemHash(),
-                drainRate * math.rcp(safeMaxDurability) * safeMultiplier * safeDeltaTime,
-                safeMaxDurability);
+            float scaledDrain = drainRate * math.rcp(safeMaxDurability) * safeMultiplier * safeDeltaTime;
+            uint itemHashId = GetCachedToolItemHash();
+            if (itemHashId != 0u && system.TryDrainDurabilityByTime(itemHashId, scaledDrain, safeMaxDurability))
+            {
+                SyncModularDurability();
+                return;
+            }
+
+            uint metadataHashId = GetCachedToolMetadataHash();
+            if (metadataHashId != 0u && metadataHashId != itemHashId)
+                system.TryDrainDurabilityByTime(metadataHashId, scaledDrain, safeMaxDurability);
+
             SyncModularDurability();
         }
 
@@ -977,6 +991,7 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
                     _toolDurabilityService = currentService as IToolDurabilityService;
+                    RegisterDurabilityMirrorCold();
                     break;
             }
         }
@@ -1072,18 +1087,81 @@ namespace Hecton8.Gameplay
             if (_toolData != null)
                 _cachedToolItemHashId = unchecked((uint)LocHash.Compute(_toolData.PersistentId));
 
+            _cachedToolMetadataHashId = _toolMetadata != null && !string.IsNullOrEmpty(_toolMetadata.toolID)
+                ? unchecked((uint)Animator.StringToHash(_toolMetadata.toolID))
+                : 0u;
+
             if (_cachedToolItemHashId != 0u)
                 return;
 
-            string hashSource = _toolMetadata != null && !string.IsNullOrEmpty(_toolMetadata.toolID)
-                ? _toolMetadata.toolID
-                : SelectRuntimeToolIdSourceCold();
-            _cachedToolItemHashId = unchecked((uint)Animator.StringToHash(hashSource));
+            if (_cachedToolMetadataHashId != 0u)
+            {
+                _cachedToolItemHashId = _cachedToolMetadataHashId;
+                return;
+            }
+
+            _cachedToolItemHashId = unchecked((uint)Animator.StringToHash(SelectRuntimeToolIdSourceCold()));
         }
 
         private uint GetCachedToolItemHash()
         {
             return _cachedToolItemHashId;
+        }
+
+        private uint GetCachedToolMetadataHash()
+        {
+            return _cachedToolMetadataHashId;
+        }
+
+        private bool TryReadDurabilityByCachedHash(IToolDurabilityService system, float maxDurability, out float durability)
+        {
+            durability = maxDurability;
+            if (system == null)
+                return false;
+
+            uint itemHashId = GetCachedToolItemHash();
+            if (itemHashId != 0u && system.TryReadDurability(itemHashId, maxDurability, out durability))
+                return true;
+
+            uint metadataHashId = GetCachedToolMetadataHash();
+            return metadataHashId != 0u &&
+                   metadataHashId != itemHashId &&
+                   system.TryReadDurability(metadataHashId, maxDurability, out durability);
+        }
+
+        private bool TryReadBrokenByCachedHash(IToolDurabilityService system, out bool broken)
+        {
+            broken = false;
+            if (system == null)
+                return false;
+
+            uint itemHashId = GetCachedToolItemHash();
+            if (itemHashId != 0u && system.TryReadBroken(itemHashId, out broken))
+                return true;
+
+            uint metadataHashId = GetCachedToolMetadataHash();
+            return metadataHashId != 0u &&
+                   metadataHashId != itemHashId &&
+                   system.TryReadBroken(metadataHashId, out broken);
+        }
+
+        private void RegisterDurabilityMirrorCold()
+        {
+            if (_toolDurabilityService == null ||
+                _toolMetadata == null ||
+                string.IsNullOrEmpty(_toolMetadata.toolID))
+            {
+                return;
+            }
+
+            uint itemHashId = GetCachedToolItemHash();
+            if (itemHashId == 0u)
+                return;
+
+            _toolDurabilityService.RegisterCentralizedEquipmentMirror(
+                _toolMetadata.toolID,
+                itemHashId,
+                FiniteAtLeast(_toolMetadata.maxDurability, 1f));
         }
     }
 }

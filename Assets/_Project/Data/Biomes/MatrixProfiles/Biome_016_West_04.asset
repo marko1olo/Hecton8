@@ -26,7 +26,7 @@ MonoBehaviour:
   rareRewardHook: 'Rare pull is modest: Lithium Crystal and Precision Lens.'
   landmarkIdentity: Crystalline Ridges reads through dunes, plains, void cuts, and
     shape changes in the floor. Landmarks should feel bright and readable.
-  safePocketIdentity: Safe pockets are frequent. The player should often see a clear
+  safePocketIdentity: Reorientation pockets are frequent. The player should often see a clear
     reset point nearby.
   riskSummary: 'Main failure mode: orientation loss and long empty recovery swims.
     Creature pressure stays medium.'

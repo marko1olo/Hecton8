@@ -47,7 +47,7 @@
 - X-Ray editor facade exposes max distance and fault budget.
 - It no longer resets them to constants on every tuning write.
 
-- `RecordAcousticTelemetryJob` writes a 300-frame `SensoryTelemetryEntry` ring and triggers `Docs/AgentLogs/Dump_SHINOBU_311.bin` on budget or non-finite fault.
+- `RecordAcousticTelemetryJob` writes a 300-frame `SensoryTelemetryEntry` ring and triggers `Docs/AgentLogs/Dump_13AI.bin` on budget or non-finite fault.
 
 - Finalization patches the latest row with measured chain microseconds before dump.
 

@@ -1,3 +1,4 @@
+using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -128,9 +129,17 @@ namespace Hecton8.World
         private Vector3 _publishedHalfExtents;
         private float _publishedSdfRange;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticRuntimeState()
+        {
+            ActiveRuntimeInstance = null;
+            PredatorCognitionDomain.ClearCaveVoxelLightingSource(null);
+        }
+
         private void Awake()
         {
             ActiveRuntimeInstance = this;
+            PredatorCognitionDomain.BindCaveVoxelLightingSource(this);
             _sourceEntityId = unchecked((uint)EntityId.ToULong(GetEntityId()));
             ResolveFollowTarget();
             EnsureResources();
@@ -140,6 +149,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+            PredatorCognitionDomain.BindCaveVoxelLightingSource(this);
             ResolveFollowTarget();
             TryRegisterHotSwapListener();
             TryRegister();
@@ -150,6 +160,7 @@ namespace Hecton8.World
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
+            PredatorCognitionDomain.ClearCaveVoxelLightingSource(this);
             TryUnregister();
             TryUnregisterHotSwapListener();
             PublishInactiveGlobals();
@@ -160,6 +171,7 @@ namespace Hecton8.World
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
+            PredatorCognitionDomain.ClearCaveVoxelLightingSource(this);
             TryUnregister();
             TryUnregisterHotSwapListener();
             PublishInactiveGlobals();

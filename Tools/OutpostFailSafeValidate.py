@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static validator for the Mission Fail-Safe Architect handoff.
+"""Static validator for the Outpost fail-safe mission contract.
 
 Evidence class: STATIC_DOC / STATIC_SOURCE.
 This tool intentionally does not prove Unity import, runtime wiring, Play Mode,
@@ -20,15 +20,14 @@ MISSION_DOC_PATH = ROOT / "Docs/Design/Missions/Outpost_Failure_Modes.md"
 VALIDATOR_PATH = ROOT / "Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs"
 GAS_SOLVER_PATH = ROOT / "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs"
 GLOBAL_CONTRACTS_PATH = ROOT / "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs"
-CURRENT_BATCH_PATH = ROOT / "Docs/Tasks/CURRENT_BATCH.md"
+SURVIVAL_CONTRACT_PATH = ROOT / "Assets/_Project/Scripts/Core/Contracts/HectonSurvivalContract.cs"
 
-EXPECTED_AGENT = "MISSION_FAIL_SAFE_ARCHITECT"
-EXPECTED_ROLE = "SCENARIO_DESIGNER"
+EXPECTED_AGENT = "OUTPOST_FAILSAFE_STATIC_CONTRACT"
+EXPECTED_ROLE = "DESIGN_MISSIONS"
 EXPECTED_SCHEMA = "H8.OUTPOST.FAILSAFE.HANDOFF.V1"
-EXPECTED_SOURCE_AUTHORITY_DRIFTED = "ACTIVE_BATCH_DRIFT_DETECTED"
-EXPECTED_SOURCE_AUTHORITY_MATCHED = "ACTIVE_BATCH_MATCHED"
-EXPECTED_SOURCE_BATCH = "Docs/Tasks/CURRENT_BATCH.md"
-EXPECTED_REQUESTED_BATCH = "CURRENT_BATCH_OSHINO.md"
+EXPECTED_SOURCE_AUTHORITY_STATUS = "STATIC_MISSION_CONTRACT"
+EXPECTED_SOURCE_BATCH = "Docs/Design/Missions/Outpost_Failure_Modes.md"
+EXPECTED_REQUESTED_BATCH = "NONE_STATIC_CONTRACT"
 EXPECTED_LOC_TABLE = "Assets/_Project/Scripts/English.json"
 EXPECTED_FLAG_COUNT = 32
 EXPECTED_TOOLTIP_COUNT = 10
@@ -69,10 +68,18 @@ EXPECTED_GAS = {
 }
 
 EXPECTED_SOLVER_NEEDLES = (
+    "StandardOxygenKPa = HectonSurvivalContract.StandardOxygenKPa",
+    "DefaultPlayerO2KPaPerSecond = HectonSurvivalContract.DefaultPlayerOxygenKPaPerSecond",
+    "DefaultPlayerCO2KPaPerSecond = HectonSurvivalContract.DefaultPlayerCarbonDioxideKPaPerSecond",
+    "DefaultFireO2KPaPerSecond = HectonSurvivalContract.DefaultFireOxygenKPaPerSecond",
+    "DefaultScrubberKPaPerSecond = HectonSurvivalContract.DefaultScrubberKPaPerSecond",
+)
+
+EXPECTED_SURVIVAL_CONTRACT_NEEDLES = (
     "StandardOxygenKPa = 21.22f",
-    "DefaultPlayerO2KPaPerSecond = 0.012f",
-    "DefaultPlayerCO2KPaPerSecond = 0.010f",
-    "DefaultFireO2KPaPerSecond = 0.080f",
+    "DefaultPlayerOxygenKPaPerSecond = 0.012f",
+    "DefaultPlayerCarbonDioxideKPaPerSecond = 0.010f",
+    "DefaultFireOxygenKPaPerSecond = 0.080f",
     "DefaultScrubberKPaPerSecond = 0.055f",
 )
 
@@ -93,6 +100,11 @@ OUTPOST_REF_RE = re.compile(r"\boutpost\.[a-z0-9_]+\b")
 
 STALE_TEXT = (
     "The active prompt was extracted from",
+    "Historical extraction source:",
+    "ACTIVE_BATCH",
+    "CURRENT_BATCH",
+    "MISSION_FAIL_SAFE",
+    "SCENARIO_",
     "roomflag.",
     "GasDynamicsRoomFlags.Submerged",
     "Submerged on critical room",
@@ -119,7 +131,7 @@ TRAP_TEXT = (
 
 
 def read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+    return path.read_text(encoding="utf-8-sig")
 
 
 def fnv1a_utf16le(text: str) -> int:
@@ -160,27 +172,22 @@ def validate_identity(data: dict, errors: list[str]) -> None:
         add_error(errors, "requestedBatchPresent must be false")
 
 
-def validate_source_authority(data: dict, errors: list[str]) -> bool:
-    source_text = read_text(CURRENT_BATCH_PATH)
-    contains_prompt = EXPECTED_AGENT in source_text and EXPECTED_ROLE in source_text
-    expected_status = (
-        EXPECTED_SOURCE_AUTHORITY_MATCHED
-        if contains_prompt
-        else EXPECTED_SOURCE_AUTHORITY_DRIFTED
-    )
-
+def validate_source_authority(data: dict, errors: list[str]) -> str:
     source = data.get("sourceAuthority") or {}
-    if source.get("status") != expected_status:
+    if source.get("status") != EXPECTED_SOURCE_AUTHORITY_STATUS:
         add_error(errors, "sourceAuthority.status mismatch")
     if source.get("expectedPromptId") != EXPECTED_AGENT:
         add_error(errors, "sourceAuthority.expectedPromptId mismatch")
     if source.get("expectedPromptRole") != EXPECTED_ROLE:
         add_error(errors, "sourceAuthority.expectedPromptRole mismatch")
-    if source.get("activeBatchContainsPrompt") != contains_prompt:
-        add_error(errors, "sourceAuthority.activeBatchContainsPrompt mismatch")
+    if source.get("activeBatchContainsPrompt") is not False:
+        add_error(errors, "sourceAuthority.activeBatchContainsPrompt must be false")
     if not (source.get("policy") or "").strip():
         add_error(errors, "sourceAuthority.policy missing")
-    return contains_prompt
+    source_path = ROOT / EXPECTED_SOURCE_BATCH
+    if not source_path.exists():
+        add_error(errors, f"source contract missing: {EXPECTED_SOURCE_BATCH}")
+    return str(source.get("status") or "")
 
 
 def validate_flags(data: dict, errors: list[str]) -> set[str]:
@@ -313,6 +320,11 @@ def validate_gas(data: dict, json_text: str, errors: list[str]) -> None:
         if needle not in solver_text:
             add_error(errors, f"GasDynamicsSolver constant missing: {needle}")
 
+    survival_contract_text = read_text(SURVIVAL_CONTRACT_PATH)
+    for needle in EXPECTED_SURVIVAL_CONTRACT_NEEDLES:
+        if needle not in survival_contract_text:
+            add_error(errors, f"HectonSurvivalContract constant missing: {needle}")
+
     contracts_text = read_text(GLOBAL_CONTRACTS_PATH)
     enum_start = contracts_text.find("public enum GasDynamicsRoomFlags")
     enum_end = contracts_text.find("public enum GasDynamicsMathLod", enum_start)
@@ -342,8 +354,8 @@ def validate_prose_and_validator(
         if stale in combined:
             add_error(errors, f"stale text present: {stale}")
 
-    if EXPECTED_SOURCE_AUTHORITY_DRIFTED not in mission_doc:
-        add_error(errors, "mission doc missing ACTIVE_BATCH_DRIFT_DETECTED")
+    if EXPECTED_SOURCE_AUTHORITY_STATUS not in mission_doc:
+        add_error(errors, "mission doc missing STATIC_MISSION_CONTRACT")
 
     validate_outpost_refs(json_text, declared, "handoff json", errors)
     validate_outpost_refs(mission_doc, declared, "mission doc", errors)
@@ -356,7 +368,8 @@ def validate_prose_and_validator(
         "ValidateSourceAuthority",
         "ValidateMissionDocSourceAuthority",
         "ValidateFloatEquals",
-        "ExpectedFireOxygenDrainKpaPerSecond = 0.080f",
+        'ExpectedSourceAuthorityStatus = "STATIC_MISSION_CONTRACT"',
+        "ExpectedFireOxygenDrainKpaPerSecond = HectonSurvivalContract.DefaultFireOxygenKPaPerSecond",
     )
     for needle in required_validator_needles:
         if needle not in validator:
@@ -400,7 +413,7 @@ def main() -> int:
     data = json.loads(json_text)
 
     validate_identity(data, errors)
-    contains_prompt = validate_source_authority(data, errors)
+    source_status = validate_source_authority(data, errors)
     validate_runtime_decision(data, errors)
     declared = validate_flags(data, errors)
     validate_fallbacks(data, declared, errors)
@@ -414,7 +427,7 @@ def main() -> int:
             print("OUTPOST_FAIL_SAFE_ERROR: " + error)
         print(
             "OUTPOST_FAIL_SAFE_STATIC_VALIDATION FAIL "
-            f"errors={len(errors)} activeBatchContainsPrompt={contains_prompt}"
+            f"errors={len(errors)} sourceAuthority={source_status}"
         )
         return 1
 
@@ -424,7 +437,7 @@ def main() -> int:
         f"topo={len(data['topologicalOrder'])} "
         f"loc={len(data['localizationEntries'])} "
         f"fallbacks={len(data['fallbacks'])} "
-        f"activeBatchContainsPrompt={contains_prompt}"
+        f"sourceAuthority={source_status}"
     )
     return 0
 

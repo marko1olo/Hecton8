@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -17,9 +18,19 @@ namespace Hecton8.Ecosystem
             {
                 MacroEcosystemLayoutManifest.VerifyColdBoot();
             }
-            catch (Exception exception)
+            catch (CriticalBootException)
             {
-                failure = "Layout manifest failed: " + exception.Message;
+                failure = "Layout manifest failed.";
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                failure = "Layout manifest failed.";
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                failure = "Layout manifest failed.";
                 return false;
             }
 
@@ -87,7 +98,7 @@ namespace Hecton8.Ecosystem
             if (observed == expected)
                 return true;
 
-            failure = typeof(T).Name + " size " + observed + " != " + expected;
+            failure = "DTO size mismatch.";
             return false;
         }
 
@@ -98,7 +109,7 @@ namespace Hecton8.Ecosystem
             if (observed == expected)
                 return true;
 
-            failure = typeof(T).Name + "." + fieldName + " offset " + observed + " != " + expected;
+            failure = "DTO offset mismatch.";
             return false;
         }
 
@@ -109,7 +120,7 @@ namespace Hecton8.Ecosystem
             if (RunShinobu300SelfAudit(out string failure))
                 Hecton8.Core.H8Debug.Log("[SHINOBU_300] Macro ecosystem self audit passed.");
             else
-                Hecton8.Core.H8Debug.LogError("[SHINOBU_300] Macro ecosystem self audit failed: " + failure);
+                Hecton8.Core.H8Debug.LogError("[SHINOBU_300] Macro ecosystem self audit failed.");
         }
 #endif
     }

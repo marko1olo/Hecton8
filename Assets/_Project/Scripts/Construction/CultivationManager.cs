@@ -139,6 +139,7 @@ namespace Hecton8.Construction
         private readonly CultivationSlotState[] _slots = new CultivationSlotState[MaxCultivationSlots];
         private bool _registered;
         private IPlayerInventoryService _cachedInventoryService;
+        private HazardZoneManager _cachedHazardZones;
         private bool _hotSwapListenerRegistered;
         private uint _slowTickSequence;
         private int _hazardZoneId;
@@ -223,7 +224,15 @@ namespace Hecton8.Construction
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.PlayerInventory)
+            {
                 _cachedInventoryService = currentService as IPlayerInventoryService;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.HazardZoneRuntime)
+            {
+                ClearHazardState(previousService as HazardZoneManager);
+                ClearRotHazardState(previousService as HazardZoneManager);
+                _cachedHazardZones = currentService as HazardZoneManager;
+            }
         }
 
         /// <summary>
@@ -421,18 +430,14 @@ namespace Hecton8.Construction
         public void PopulateSaveData(ref ModuleDTO moduleDto, ItemCatalog itemCatalog)
         {
             moduleDto.cultivationSlotCount = 0;
-            moduleDto.cultivationSeedItemIds = null;
-            moduleDto.cultivationGeneticsMasks = null;
-            moduleDto.cultivationGrowth01 = null;
-            moduleDto.cultivationQuality01 = null;
 
-            if (_slots == null)
+            if (_slots == null || !moduleDto.HasCultivationSaveCapacity())
                 return;
 
-            string[] seedIds = new string[MaxCultivationSlots];
-            ulong[] geneticsMasks = new ulong[MaxCultivationSlots];
-            float[] growthValues = new float[MaxCultivationSlots];
-            float[] qualityValues = new float[MaxCultivationSlots];
+            string[] seedIds = moduleDto.cultivationSeedItemIds;
+            ulong[] geneticsMasks = moduleDto.cultivationGeneticsMasks;
+            float[] growthValues = moduleDto.cultivationGrowth01;
+            float[] qualityValues = moduleDto.cultivationQuality01;
             int writeIndex = 0;
 
             for (int i = 0; i < _slots.Length && writeIndex < MaxCultivationSlots; i++)
@@ -456,10 +461,6 @@ namespace Hecton8.Construction
                 return;
 
             moduleDto.cultivationSlotCount = writeIndex;
-            moduleDto.cultivationSeedItemIds = seedIds;
-            moduleDto.cultivationGeneticsMasks = geneticsMasks;
-            moduleDto.cultivationGrowth01 = growthValues;
-            moduleDto.cultivationQuality01 = qualityValues;
         }
 
         /// <summary>
@@ -689,14 +690,22 @@ namespace Hecton8.Construction
 
         private void ClearHazardState()
         {
-            HazardZoneManager hazardZoneManager = Hecton8.Core.GlobalRegistry.HazardZones;
+            ClearHazardState(_cachedHazardZones);
+        }
+
+        private void ClearHazardState(HazardZoneManager hazardZoneManager)
+        {
             if (hazardZoneManager != null)
                 hazardZoneManager.UnregisterZone(_hazardZoneId);
         }
 
         private void ClearRotHazardState()
         {
-            HazardZoneManager hazardZoneManager = Hecton8.Core.GlobalRegistry.HazardZones;
+            ClearRotHazardState(_cachedHazardZones);
+        }
+
+        private void ClearRotHazardState(HazardZoneManager hazardZoneManager)
+        {
             if (hazardZoneManager != null)
                 hazardZoneManager.UnregisterZone(_rotHazardZoneId);
         }
@@ -714,7 +723,7 @@ namespace Hecton8.Construction
                 resolvedRadius = math.max(radiusMeters, interiorRadius * 0.55f);
             }
 
-            HazardZoneManager hazardZoneManager = HazardZoneManager.EnsureRuntimeInstance();
+            HazardZoneManager hazardZoneManager = GetCachedHazardZoneRuntime();
             if (hazardZoneManager == null)
                 return;
 
@@ -742,7 +751,7 @@ namespace Hecton8.Construction
                 resolvedRadius = math.max(radiusMeters, interiorRadius * 0.45f);
             }
 
-            HazardZoneManager hazardZoneManager = HazardZoneManager.EnsureRuntimeInstance();
+            HazardZoneManager hazardZoneManager = GetCachedHazardZoneRuntime();
             if (hazardZoneManager == null)
                 return;
 
@@ -930,11 +939,18 @@ namespace Hecton8.Construction
         private void CacheRegistryServicesCold()
         {
             _cachedInventoryService = GlobalRegistry.PlayerInventory;
+            _cachedHazardZones = GlobalRegistry.HazardZones;
         }
 
         private void ClearCachedRegistryServices()
         {
             _cachedInventoryService = null;
+            _cachedHazardZones = null;
+        }
+
+        private HazardZoneManager GetCachedHazardZoneRuntime()
+        {
+            return _cachedHazardZones;
         }
 
         private void TryRegisterHotSwapListener()

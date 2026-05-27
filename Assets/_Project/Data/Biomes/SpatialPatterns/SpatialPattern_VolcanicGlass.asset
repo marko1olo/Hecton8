@@ -18,7 +18,7 @@ MonoBehaviour:
     strike pockets along thermal cracks.
   nodeClusterPattern: Node clusters gather around vents, broken flow edges, and hard
     temperature transitions.
-  safePocketPattern: Safe pockets are cool seams between hot structures and should
+  safePocketPattern: Reorientation pockets are cool seams between hot structures and should
     feel temporary, not comfortable.
   routeAnchorPattern: Routes are remembered by black flow edges and thermal lines,
     not by clutter.

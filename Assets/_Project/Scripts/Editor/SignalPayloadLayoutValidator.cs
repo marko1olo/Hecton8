@@ -29,7 +29,7 @@ namespace Hecton8.Editor
             "Hecton8.Gameplay.MeteorShowerEvent",
             "Hecton8.Gameplay.RandomEventStartedPayload",
             "Hecton8.Gameplay.SeismicShockwaveEvent",
-            "Hecton8.UI.BaseIntegrityEventPayload",
+            "Hecton8.UI.UiBaseIntegrityEventPayload",
             "Hecton8.Modding.long3",
             "Hecton8.Modding.ModAup",
             "Hecton8.Modding.ModAupCommand",

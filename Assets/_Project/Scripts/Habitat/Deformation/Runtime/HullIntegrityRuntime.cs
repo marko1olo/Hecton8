@@ -140,10 +140,10 @@ namespace Hecton8.Habitat.Deformation
         private VaultGenerationHandle<BaseIntegrityLedgerDTO> _ledgerHandle;
         private VaultGenerationHandle<HullIntegrityTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
-        private VaultGenerationHandle<MockDepthSignal> _mockDepthHandle;
+        private VaultGenerationHandle<HullMockDepthSignal> _mockDepthHandle;
         private VaultGenerationHandle<int> _countersHandle;
         private VaultGenerationHandle<HullIntegrityTuningDTO> _tuningHandle;
-        private VaultGenerationHandle<MockCombatDamageSignal> _damageSignalsHandle;
+        private VaultGenerationHandle<HullMockCombatDamageSignal> _damageSignalsHandle;
         private VaultGenerationHandle<DeformationStateDTO> _deformationStatesHandle;
         private VaultGenerationHandle<HullImpactDTO> _mockImpactsHandle;
         private VaultGenerationHandle<HullImpactDTO> _pendingVisualImpactsHandle;
@@ -320,9 +320,9 @@ namespace Hecton8.Habitat.Deformation
 
                 NativeArray<BaseModuleStateDTO> modules = ResolveVaultBuffer(in _modulesHandle);
                 NativeArray<BaseIntegrityLedgerDTO> ledger = ResolveVaultBuffer(in _ledgerHandle);
-                NativeArray<MockDepthSignal> depthSignal = ResolveVaultBuffer(in _mockDepthHandle);
+                NativeArray<HullMockDepthSignal> depthSignal = ResolveVaultBuffer(in _mockDepthHandle);
                 NativeArray<int> counters = ResolveVaultBuffer(in _countersHandle);
-                NativeArray<MockCombatDamageSignal> damageSignals = ResolveVaultBuffer(in _damageSignalsHandle);
+                NativeArray<HullMockCombatDamageSignal> damageSignals = ResolveVaultBuffer(in _damageSignalsHandle);
                 NativeArray<HullDentDTO> dents = ResolveVaultBuffer(in _dentsHandle);
                 NativeArray<DeformationStateDTO> deformationStates = ResolveVaultBuffer(in _deformationStatesHandle);
                 NativeArray<HullImpactDTO> pendingVisualImpacts = ResolveVaultBuffer(in _pendingVisualImpactsHandle);
@@ -567,7 +567,7 @@ namespace Hecton8.Habitat.Deformation
         /// </summary>
         /// <param name="signal">Mock damage payload in local space.</param>
         /// <returns>True when the signal was written into vault buffers.</returns>
-        public bool InjectMockDamage(in MockCombatDamageSignal signal)
+        public bool InjectMockDamage(in HullMockCombatDamageSignal signal)
         {
             if (_initialized == 0 && !TryInitialize())
                 return false;
@@ -750,7 +750,7 @@ namespace Hecton8.Habitat.Deformation
                 1,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _mockDepthHandle = _dataVault.EnsureGenerationHandle<MockDepthSignal>(
+            _mockDepthHandle = _dataVault.EnsureGenerationHandle<HullMockDepthSignal>(
                 BufferID.HullIntegrityMockDepth,
                 1,
                 SystemID.HullIntegrity,
@@ -765,7 +765,7 @@ namespace Hecton8.Habitat.Deformation
                 1,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _damageSignalsHandle = _dataVault.EnsureGenerationHandle<MockCombatDamageSignal>(
+            _damageSignalsHandle = _dataVault.EnsureGenerationHandle<HullMockCombatDamageSignal>(
                 BufferID.HullIntegrityDamageSignals,
                 HullIntegrityConstants.MaxDamageSignals,
                 SystemID.HullIntegrity,
@@ -866,13 +866,13 @@ namespace Hecton8.Habitat.Deformation
                    telemetry.Length >= HullIntegrityConstants.TelemetryFrameCapacity &&
                    TryResolveVaultBuffer(in _telemetryCursorHandle, out NativeArray<int> telemetryCursor) &&
                    telemetryCursor.Length >= 1 &&
-                   TryResolveVaultBuffer(in _mockDepthHandle, out NativeArray<MockDepthSignal> mockDepth) &&
+                   TryResolveVaultBuffer(in _mockDepthHandle, out NativeArray<HullMockDepthSignal> mockDepth) &&
                    mockDepth.Length >= 1 &&
                    TryResolveVaultBuffer(in _countersHandle, out NativeArray<int> counters) &&
                    counters.Length >= HullIntegrityConstants.CounterCount &&
                    TryResolveVaultBuffer(in _tuningHandle, out NativeArray<HullIntegrityTuningDTO> tuning) &&
                    tuning.Length >= 1 &&
-                   TryResolveVaultBuffer(in _damageSignalsHandle, out NativeArray<MockCombatDamageSignal> damageSignals) &&
+                   TryResolveVaultBuffer(in _damageSignalsHandle, out NativeArray<HullMockCombatDamageSignal> damageSignals) &&
                    damageSignals.Length >= HullIntegrityConstants.MaxDamageSignals &&
                    TryResolveVaultBuffer(in _deformationStatesHandle, out NativeArray<DeformationStateDTO> deformationStates) &&
                    deformationStates.Length >= HullIntegrityConstants.MaxDentCapacity &&
@@ -1052,10 +1052,10 @@ namespace Hecton8.Habitat.Deformation
             _cachedBreachJetCamera = playerCamera != null && playerCamera.isActiveAndEnabled ? playerCamera : null;
         }
 
-        private bool AppendDentAndDamage(in MockCombatDamageSignal signal)
+        private bool AppendDentAndDamage(in HullMockCombatDamageSignal signal)
         {
             NativeArray<int> counters = ResolveVaultBuffer(in _countersHandle);
-            NativeArray<MockCombatDamageSignal> damageSignals = ResolveVaultBuffer(in _damageSignalsHandle);
+            NativeArray<HullMockCombatDamageSignal> damageSignals = ResolveVaultBuffer(in _damageSignalsHandle);
             if (!counters.IsCreated || !damageSignals.IsCreated || !AppendDentOnly(signal, true))
                 return false;
 
@@ -1074,7 +1074,7 @@ namespace Hecton8.Habitat.Deformation
             return true;
         }
 
-        private bool AppendDentOnly(in MockCombatDamageSignal signal, bool publishSignal)
+        private bool AppendDentOnly(in HullMockCombatDamageSignal signal, bool publishSignal)
         {
             NativeArray<HullDentDTO> dents = ResolveVaultBuffer(in _dentsHandle);
             NativeArray<int> counters = ResolveVaultBuffer(in _countersHandle);
@@ -1118,7 +1118,7 @@ namespace Hecton8.Habitat.Deformation
         private int GatherDamageSignals(in HullIntegrityTuningDTO tuning)
         {
             NativeArray<int> counters = ResolveVaultBuffer(in _countersHandle);
-            NativeArray<MockCombatDamageSignal> damageSignals = ResolveVaultBuffer(in _damageSignalsHandle);
+            NativeArray<HullMockCombatDamageSignal> damageSignals = ResolveVaultBuffer(in _damageSignalsHandle);
             if (!counters.IsCreated || !damageSignals.IsCreated)
                 return 0;
 
@@ -1135,7 +1135,7 @@ namespace Hecton8.Habitat.Deformation
                 Vector3 local = baseWorldToLocal.MultiplyPoint3x4(worldPoint);
                 float magnitude = math.isfinite(signal.Magnitude) ? math.max(0f, signal.Magnitude) : 0f;
                 float3 direction = math.all(math.isfinite(signal.Direction)) ? signal.Direction : new float3(0f, -1f, 0f);
-                MockCombatDamageSignal mock = new MockCombatDamageSignal
+                HullMockCombatDamageSignal mock = new HullMockCombatDamageSignal
                 {
                     LocalPoint = new float3(local.x, local.y, local.z),
                     LocalNormal = math.normalizesafe(-direction, new float3(0f, 1f, 0f)),
@@ -1998,7 +1998,7 @@ namespace Hecton8.Habitat.Deformation
             float3 point,
             float radius,
             float depth,
-            in MockCombatDamageSignal source)
+            in HullMockCombatDamageSignal source)
         {
             NativeArray<int> counters = ResolveVaultBuffer(in _countersHandle);
             int activeDents = counters.IsCreated && counters.Length > HullIntegrityConstants.CounterActiveDentCount
@@ -2129,8 +2129,8 @@ namespace Hecton8.Habitat.Deformation
                 UnsafeUtility.SizeOf<BaseIntegrityLedgerDTO>() == 16 &&
                 UnsafeUtility.SizeOf<BaseModuleStateDTO>() == 64 &&
                 UnsafeUtility.SizeOf<MockWFCBaseArray>() == 16 &&
-                UnsafeUtility.SizeOf<MockCombatDamageSignal>() == 64 &&
-                UnsafeUtility.SizeOf<MockDepthSignal>() == 16 &&
+                UnsafeUtility.SizeOf<HullMockCombatDamageSignal>() == 64 &&
+                UnsafeUtility.SizeOf<HullMockDepthSignal>() == 16 &&
                 UnsafeUtility.SizeOf<MockRepairLaserSignal>() == 32 &&
                 UnsafeUtility.SizeOf<MockHullBreachSignal>() == 32 &&
                 UnsafeUtility.SizeOf<HullIntegrityTuningDTO>() == 32 &&

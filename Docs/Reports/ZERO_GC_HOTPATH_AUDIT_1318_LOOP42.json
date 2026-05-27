@@ -1,0 +1,17 @@
+{
+    "agentId":  "1318",
+    "loop":  42,
+    "sourceFile":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+    "scannedOwners":  [
+                          "Tick",
+                          "SlowTick",
+                          "LateFrameTick",
+                          "Execute"
+                      ],
+    "hotOwnerForbiddenTokenHits":  0,
+    "strictPersistentNativeFieldDeclarations":  0,
+    "mutatingReadLikeMethodHits":  0,
+    "staleToolHitPrelockDamageFormulaHits":  0,
+    "sourceSha256":  "e61cbd1076fd8485772db8fed74618aa66792e19b8ebd802ba13836f22d21c02",
+    "status":  "STATIC_HOTPATH_CLEAN_BUILD_BLOCKED"
+}

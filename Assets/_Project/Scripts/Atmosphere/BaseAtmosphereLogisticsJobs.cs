@@ -6,6 +6,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -59,6 +60,19 @@ namespace Hecton8.Atmosphere
         internal static void Clear(AtmosphereDeltaLane64* lanes, int index)
         {
             UnsafeUtility.AsRef<AtmosphereDeltaLane64>(lanes + index) = default;
+        }
+    }
+
+    internal static class AtmosphereLogisticsAupMath
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float3 LocalNodeDeltaClamped(double3 targetAup, double3 observerAup)
+        {
+            double3 localDelta = AupPrecisionMath.LocalDeltaDouble(targetAup, observerAup);
+            return AupPrecisionMath.DowncastLocalDeltaClamped(
+                localDelta,
+                AupPrecisionMath.DefaultMaxLocalCastMeters,
+                AupPrecisionMath.CreateOutOfBoundsSentinel());
         }
     }
 
@@ -444,8 +458,7 @@ namespace Hecton8.Atmosphere
 
             if ((uint)hint < (uint)NodeCount)
             {
-                double3 deltaD = Nodes[hint].Aup - aup;
-                float3 delta = new float3((float)deltaD.x, (float)deltaD.y, (float)deltaD.z);
+                float3 delta = AtmosphereLogisticsAupMath.LocalNodeDeltaClamped(Nodes[hint].Aup, aup);
                 float sq = math.lengthsq(delta);
                 if (sq <= radiusSq)
                     return hint;
@@ -453,14 +466,11 @@ namespace Hecton8.Atmosphere
 
             for (int i = 0; i < NodeCount; i++)
             {
-                double3 deltaD = Nodes[i].Aup - aup;
-                float3 delta = new float3((float)deltaD.x, (float)deltaD.y, (float)deltaD.z);
+                float3 delta = AtmosphereLogisticsAupMath.LocalNodeDeltaClamped(Nodes[i].Aup, aup);
                 float sq = math.lengthsq(delta);
-                if (sq < bestSq)
-                {
-                    bestSq = sq;
-                    bestIndex = i;
-                }
+                bool better = sq < bestSq;
+                bestSq = math.select(bestSq, sq, better);
+                bestIndex = math.select(bestIndex, i, better);
             }
 
             return bestIndex;
@@ -529,8 +539,7 @@ namespace Hecton8.Atmosphere
             float radiusSq = math.max(0.01f, radius * radius);
             if ((uint)hint < (uint)NodeCount)
             {
-                double3 hintDeltaD = Nodes[hint].Aup - aup;
-                float3 hintDelta = new float3((float)hintDeltaD.x, (float)hintDeltaD.y, (float)hintDeltaD.z);
+                float3 hintDelta = AtmosphereLogisticsAupMath.LocalNodeDeltaClamped(Nodes[hint].Aup, aup);
                 if (math.lengthsq(hintDelta) <= radiusSq)
                     return hint;
             }
@@ -539,14 +548,11 @@ namespace Hecton8.Atmosphere
             float bestSq = float.MaxValue;
             for (int i = 0; i < NodeCount; i++)
             {
-                double3 deltaD = Nodes[i].Aup - aup;
-                float3 delta = new float3((float)deltaD.x, (float)deltaD.y, (float)deltaD.z);
+                float3 delta = AtmosphereLogisticsAupMath.LocalNodeDeltaClamped(Nodes[i].Aup, aup);
                 float sq = math.lengthsq(delta);
-                if (sq < bestSq)
-                {
-                    bestSq = sq;
-                    best = i;
-                }
+                bool better = sq < bestSq;
+                bestSq = math.select(bestSq, sq, better);
+                best = math.select(best, i, better);
             }
 
             return best;
@@ -613,8 +619,7 @@ namespace Hecton8.Atmosphere
             float radiusSq = math.max(0.01f, radius * radius);
             if ((uint)hint < (uint)NodeCount)
             {
-                double3 hintDeltaD = Nodes[hint].Aup - aup;
-                float3 hintDelta = new float3((float)hintDeltaD.x, (float)hintDeltaD.y, (float)hintDeltaD.z);
+                float3 hintDelta = AtmosphereLogisticsAupMath.LocalNodeDeltaClamped(Nodes[hint].Aup, aup);
                 if (math.lengthsq(hintDelta) <= radiusSq)
                     return hint;
             }
@@ -623,14 +628,11 @@ namespace Hecton8.Atmosphere
             float bestSq = float.MaxValue;
             for (int i = 0; i < NodeCount; i++)
             {
-                double3 deltaD = Nodes[i].Aup - aup;
-                float3 delta = new float3((float)deltaD.x, (float)deltaD.y, (float)deltaD.z);
+                float3 delta = AtmosphereLogisticsAupMath.LocalNodeDeltaClamped(Nodes[i].Aup, aup);
                 float sq = math.lengthsq(delta);
-                if (sq < bestSq)
-                {
-                    bestSq = sq;
-                    best = i;
-                }
+                bool better = sq < bestSq;
+                bestSq = math.select(bestSq, sq, better);
+                best = math.select(best, i, better);
             }
 
             return best;

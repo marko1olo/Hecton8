@@ -18,7 +18,7 @@ MonoBehaviour:
     should not distract from the place itself.
   nodeClusterPattern: Meaningful nodes are rare and support one high-commitment objective,
     not farming.
-  safePocketPattern: Safe pockets are conceptual and temporary, usually just enough
+  safePocketPattern: Reorientation pockets are conceptual and temporary, usually just enough
     structure to regain control.
   routeAnchorPattern: The biome is defined by one or two overwhelming anchors, not
     by dense path signage.

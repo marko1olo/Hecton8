@@ -40,7 +40,9 @@ Shader "HECTON/World/AbyssalFluidDecal"
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -106,6 +108,16 @@ Shader "HECTON/World/AbyssalFluidDecal"
                 clip((float)alpha - InterleavedGradientNoise(positionCS.xy));
             }
 
+            half ResolveLinearRamp01(half edge0, half edge1, half value)
+            {
+                return saturate((value - edge0) * rcp(max(edge1 - edge0, 0.0001h)));
+            }
+
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(saturate(uv));
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
@@ -118,11 +130,12 @@ Shader "HECTON/World/AbyssalFluidDecal"
                 float2 distortedUv = input.uv + float2(wakeOffsetX, wakeOffsetZ) * (_WakeDistortion * wakeMask);
                 half2 radialAbs = abs(half2(distortedUv.x, distortedUv.y));
                 half radial = max(radialAbs.x, radialAbs.y) + min(radialAbs.x, radialAbs.y) * 0.375h;
-                half edge = saturate(1.0h - smoothstep(max(0.0h, 1.0h - _Softness), 1.0h, radial));
+                half edge = saturate(1.0h - ResolveLinearRamp01(max(0.0h, 1.0h - _Softness), 1.0h, radial));
                 half centerBoost = saturate(1.0h - radial * 0.82h);
                 half tearMask = saturate(1.0h - wakeMask * _WakeTearStrength);
                 float2 screenUV = input.positionCS.xy * rcp(max(_ScaledScreenParams.xy, float2(1.0, 1.0)));
-                float sceneRawDepth = SampleSceneDepth(screenUV);
+                screenUV = UnityStereoTransformScreenSpaceTex(screenUV);
+                float sceneRawDepth = SampleSceneDepth(ResolveFoveatedSourceUV(screenUV));
                 float sceneEyeDepth = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
                 float fragmentEyeDepth = LinearEyeDepth(input.positionCS.z, _ZBufferParams);
                 half depthFade = saturate((half)((sceneEyeDepth - fragmentEyeDepth) * rcp(max(_DepthFadeDistance, 0.001h))));

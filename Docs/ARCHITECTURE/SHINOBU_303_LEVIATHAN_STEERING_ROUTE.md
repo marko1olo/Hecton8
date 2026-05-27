@@ -12,7 +12,7 @@ Domain: Echelon 3, Predator Steering & Lunge
 - Route: `GlobalDataVault` buffers owned by `SystemID.AICognition`.
 - Proof artifact: `SteeringTelemetryEntry[300]`.
 - Fault breadcrumb: central `GlobalTelemetryBus`.
-- Dump path: `Docs/AgentLogs/Dump_SHINOBU_303.bin`.
+- Dump path: `Docs/AgentLogs/Dump_13AI.bin`.
 
 ## Phase
 
@@ -36,7 +36,7 @@ Domain: Echelon 3, Predator Steering & Lunge
 
 ## Failure Mode
 
-- Non-finite velocity or steering telemetry budget breach sets telemetry flags, publishes `SteeringDumpFaultHash` through `GlobalTelemetryBus`, and dumps the 300-frame ring to `Docs/AgentLogs/Dump_SHINOBU_303.bin` through pure Vault read handles.
+- Non-finite velocity or steering telemetry budget breach sets telemetry flags, publishes `SteeringDumpFaultHash` through `GlobalTelemetryBus`, and dumps the 300-frame ring to `Docs/AgentLogs/Dump_13AI.bin` through pure Vault read handles.
 - If Vault allocation is locked, cold hydration did not run, or a handle is stale, scheduler returns incoming dependency.
 - It allocates nothing.
 - Legacy presentation remains fallback for non-procedural fauna.

@@ -28,8 +28,14 @@ namespace Hecton8.Physics
     {
         private const float BiomeFlowBlendInvSeconds = 0.2f;
         private const float DegreesToHalfRadians = 0.008726646259971648f;
+        private const float LodHysteresisMultiplier = 1.12f;
         private const float MaxVisualRotationDegrees = 24f;
         private const int MotionCapacity = 128;
+        private const byte LodBandNear = 0;
+        private const byte LodBandMedium = 1;
+        private const byte LodBandFar = 2;
+        private const byte LodBandCull = 3;
+        private const byte LodBandOutside = 4;
 
         [Header("Observer / LOD")]
         [SerializeField] private Transform lodObserver;
@@ -232,6 +238,7 @@ namespace Hecton8.Physics
 
             // Cache observer AUP once per tick; Transform.position is presentation only.
             bool hasObserverAup = TryResolveObserverAup(out AbsoluteUniversePosition observerAup);
+            float quality = ResolveGlobalQualityWeight();
 
             // Distance squares are resolved once per tick.
             for (int i = _objects.Count - 1; i >= 0; i--)
@@ -254,7 +261,7 @@ namespace Hecton8.Physics
                     : ResolvePresentationRestWorldPosition(motion);
 
                 if (!ShouldUpdateAup(motion, i, motionAup, hasMotionAup, observerAup, hasObserverAup,
-                                  _nearDistanceSqr, _mediumDistanceSqr, _farDistanceSqr, _cullDistanceSqr))
+                                  _nearDistanceSqr, _mediumDistanceSqr, _farDistanceSqr, _cullDistanceSqr, quality))
                     continue;
 
                 ApplyMotion(motion, worldPos);
@@ -282,39 +289,99 @@ namespace Hecton8.Physics
             float nearSq,
             float mediumSq,
             float farSq,
-            float cullSq)
+            float cullSq,
+            float quality)
         {
-            if (!motion.AllowDistanceLod || !hasObserverAup || !hasMotionAup)
+            if (!motion.AllowDistanceLod || !hasObserverAup)
             {
+                motion.ManagerDistanceLodBand = LodBandNear;
                 _debugNearCount++;
                 return true;
+            }
+
+            if (!hasMotionAup)
+            {
+                motion.ManagerDistanceLodBand = LodBandMedium;
+                _debugMediumCount++;
+                return ((_frameCounter + index) & ResolveQualityScaledFrameMask(_mediumFrameMask, quality)) == 0;
             }
 
             float bias = math.max(0.1f, motion.LodBias);
             double biasSq = (double)bias * bias;
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in motionAup, in observerAup);
+            byte lodBand = ResolveDistanceLodBand(
+                motion.ManagerDistanceLodBand,
+                distanceSq,
+                biasSq,
+                nearSq,
+                mediumSq,
+                farSq,
+                cullSq);
+            motion.ManagerDistanceLodBand = lodBand;
 
-            if (distanceSq <= (double)nearSq * biasSq)
+            if (lodBand == LodBandNear)
             {
                 _debugNearCount++;
                 return true;
             }
 
-            if (distanceSq <= (double)mediumSq * biasSq)
+            if (lodBand == LodBandMedium)
             {
                 _debugMediumCount++;
-                return ((_frameCounter + index) & _mediumFrameMask) == 0;
+                return ((_frameCounter + index) & ResolveQualityScaledFrameMask(_mediumFrameMask, quality)) == 0;
             }
 
-            if (distanceSq <= (double)farSq * biasSq)
+            if (lodBand == LodBandFar)
             {
                 _debugFarCount++;
-                return ((_frameCounter + index) & _farFrameMask) == 0;
+                return ((_frameCounter + index) & ResolveQualityScaledFrameMask(_farFrameMask, quality)) == 0;
             }
 
             _debugCulledCount++;
-            return distanceSq <= (double)cullSq * biasSq
-                && ((_frameCounter + index) & _cullFrameMask) == 0;
+            return lodBand == LodBandCull
+                && ((_frameCounter + index) & ResolveQualityScaledFrameMask(_cullFrameMask, quality)) == 0;
+        }
+
+        private static byte ResolveDistanceLodBand(
+            byte previousBand,
+            double distanceSq,
+            double biasSq,
+            float nearSq,
+            float mediumSq,
+            float farSq,
+            float cullSq)
+        {
+            double hysteresisSq = (double)LodHysteresisMultiplier * LodHysteresisMultiplier;
+            double nearLimit = (double)nearSq * biasSq;
+            double mediumLimit = (double)mediumSq * biasSq;
+            double farLimit = (double)farSq * biasSq;
+            double cullLimit = (double)cullSq * biasSq;
+
+            if (previousBand == LodBandNear)
+                nearLimit *= hysteresisSq;
+            if (distanceSq <= nearLimit)
+                return LodBandNear;
+
+            if (previousBand == LodBandMedium)
+                mediumLimit *= hysteresisSq;
+            if (distanceSq <= mediumLimit)
+                return LodBandMedium;
+
+            if (previousBand == LodBandFar)
+                farLimit *= hysteresisSq;
+            if (distanceSq <= farLimit)
+                return LodBandFar;
+
+            if (previousBand == LodBandCull)
+                cullLimit *= hysteresisSq;
+            return distanceSq <= cullLimit ? LodBandCull : LodBandOutside;
+        }
+
+        private static int ResolveQualityScaledFrameMask(int baseMask, float quality)
+        {
+            int baseDivisor = math.max(1, baseMask + 1);
+            float scaledDivisor = math.lerp((float)baseDivisor, 1f, math.saturate(quality));
+            return NormalizeCadenceDivisor((int)math.ceil(scaledDivisor)) - 1;
         }
 
         private static Vector3 ResolveRuntimePosition(in AbsoluteUniversePosition aup)
@@ -386,7 +453,7 @@ namespace Hecton8.Physics
             float currentSqrMagnitude = current.x * current.x + current.y * current.y + current.z * current.z;
             float currentMagnitude = ApproximateVectorMagnitude(current);
             Vector3 currentDir = currentSqrMagnitude > 0.0001f
-                ? DominantAxisOrDefault(current, Vector3.forward)
+                ? current * math.rsqrt(currentSqrMagnitude)
                 : Vector3.forward;
 
             float t = (_time + motion.Phase)
@@ -429,22 +496,10 @@ namespace Hecton8.Physics
             return triangle01 * 2f - 1f;
         }
 
-        private static Vector3 DominantAxisOrDefault(Vector3 value, Vector3 fallback)
+        private static float ResolveGlobalQualityWeight()
         {
-            float ax = math.abs(value.x);
-            float ay = math.abs(value.y);
-            float az = math.abs(value.z);
-            float maxComponent = math.max(ax, math.max(ay, az));
-            if (maxComponent <= 0.000001f)
-                return fallback;
-
-            if (ax >= ay && ax >= az)
-                return new Vector3(value.x >= 0f ? 1f : -1f, 0f, 0f);
-
-            if (ay >= az)
-                return new Vector3(0f, value.y >= 0f ? 1f : -1f, 0f);
-
-            return new Vector3(0f, 0f, value.z >= 0f ? 1f : -1f);
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
 
         private static Quaternion ApproximateVisualRotation(float pitchDegrees, float yawDegrees, float rollDegrees)

@@ -72,7 +72,7 @@ namespace Hecton8.UI
     /// Blittable PDA event payload queued by <see cref="PDAEvents"/>.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct PDAEventPayload
+    public struct PDAEventPayload : ISignal
     {
         [FieldOffset(0)] public float DurationSeconds;
         [FieldOffset(4)] public int PreviousTab;
@@ -105,7 +105,9 @@ namespace Hecton8.UI
     {
         private const int ListenerCapacity = 32;
         private const int PendingEventCapacity = 32;
+        private const int LowTierPdaSignalFrameCapacity = 8;
         private const int EventDedupCapacity = 128;
+        private const uint PdaEventPayloadLaneHash = 0x50444145u; // PDAE
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const Allocator DataVaultExemptOwnerIndexAllocator = Allocator.Persistent;
 
@@ -128,9 +130,11 @@ namespace Hecton8.UI
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _dedupFrame = -1;
+        private static int s_x001PDAEventsSignalPushDropCount;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        internal static int DroppedTypedSignalCount => s_x001PDAEventsSignalPushDropCount;
 
         public static void Register(IPDAEventListener listener)
         {
@@ -207,6 +211,7 @@ namespace Hecton8.UI
                         _pendingEventCount--;
                     scanBudget--;
                     ApplySimulationSideEffects(in payload);
+                    PublishTypedSignal(in payload);
                     int count = _listenerCount;
                     for (int i = count - 1; i >= 0; i--)
                     {
@@ -401,6 +406,7 @@ namespace Hecton8.UI
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _dedupFrame = -1;
+            s_x001PDAEventsSignalPushDropCount = 0;
             _isDispatching = false;
         }
 
@@ -477,6 +483,13 @@ namespace Hecton8.UI
                     nameof(_queuedEventKeys),
                     NativeAllocationLifetime.Session);
             }
+
+            SignalBus<PDAEventPayload>.Configure(
+                PendingEventCapacity,
+                maxFrameSignals: PendingEventCapacity,
+                lowTierFrameSignals: LowTierPdaSignalFrameCapacity,
+                laneHash: PdaEventPayloadLaneHash);
+            SignalBus<PDAEventPayload>.EnsureInitialized();
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -543,6 +556,7 @@ namespace Hecton8.UI
                     _pendingEventCount--;
                 scanBudget--;
                 ApplySimulationSideEffects(in payload);
+                PublishTypedSignal(in payload);
                 processedCount++;
             }
 
@@ -570,6 +584,11 @@ namespace Hecton8.UI
         {
             if ((PDAEventType)payload.EventType == PDAEventType.UndoRequest)
                 UIStateStore.TryRollbackPDAState(payload.PayloadA <= 0 ? 1 : payload.PayloadA);
+        }
+
+        private static void PublishTypedSignal(in PDAEventPayload payload)
+        {
+            SignalBus<PDAEventPayload>.TryPushTracked(in payload, ref s_x001PDAEventsSignalPushDropCount);
         }
 
         private static void PrepareDedupFrame()
@@ -693,6 +712,9 @@ namespace Hecton8.UI
         [Tooltip("Vkladki PDA. Poryadok: 0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log, 5=Spectrum, 6=Atlas Signal, 7=Diagnostics.")]
         [SerializeField] private GameObject[] tabs = new GameObject[8];
 
+        [Tooltip("Controls-tab rebind UI owner. Resolved cold if unset.")]
+        [SerializeField] private PDAControlsRebindUI controlsRebindUI;
+
         [Tooltip("HectonSurvivalSystem dlya battery drain. Optsionalno.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
 
@@ -701,6 +723,9 @@ namespace Hecton8.UI
 
         [Tooltip("Compute shader forwarded into runtime-created PDA spectrum/map tabs for GPU sonar point-cloud rendering.")]
         [SerializeField] private ComputeShader pdaSonarMapCompute;
+
+        [Tooltip("Hologram volume shader forwarded into runtime-created PDA spectrum/map tabs.")]
+        [SerializeField] private Shader pdaHologramMapShader;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SETTINGS
@@ -814,7 +839,7 @@ namespace Hecton8.UI
         private readonly float[] _pendingSoundPitches = new float[PendingPdaSoundCapacity];
         private int _pendingSoundCount;
         private bool _pendingLowBatteryShutdownClose;
-        private bool _survivalResolveDirty;
+        private bool _survivalSystemFromRuntimeContext;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -832,6 +857,7 @@ namespace Hecton8.UI
         private void Awake()
         {
             ResolveTabReferences(createMissingTabs: false);
+            ResolveControlsRebindUIReference();
             IsOpen = false;
             _currentAlpha = 0f;
             _targetAlpha = 0f;
@@ -875,6 +901,7 @@ namespace Hecton8.UI
         private void Start()
         {
             ResolveTabReferences(createMissingTabs: false);
+            ResolveControlsRebindUIReference();
             RefreshColdRegistryReferences();
             TryRegister();
             TryRegisterCraftingEvents();
@@ -926,6 +953,8 @@ namespace Hecton8.UI
 
             if (pdaPanel != null && pdaCanvasGroup == null)
                 pdaPanel.TryGetComponent(out pdaCanvasGroup);
+
+            ResolveControlsRebindUIReference();
         }
 
         private void ResolveTabReferences(bool createMissingTabs)
@@ -989,6 +1018,8 @@ namespace Hecton8.UI
             }
             if (atlasSignal != null) tabs[6] = atlasSignal;
             if (diagnostics != null) tabs[7] = diagnostics;
+
+            ResolveControlsRebindUIReference();
         }
 
         private void ConfigureSpectrumRuntimeAssets(GameObject spectrum)
@@ -996,7 +1027,19 @@ namespace Hecton8.UI
             if (spectrum == null || !spectrum.TryGetComponent(out PDASpectrumTab spectrumTab))
                 return;
 
-            spectrumTab.ConfigureMapRuntimeAssets(pdaSonarPointCloudShader, pdaSonarMapCompute);
+            spectrumTab.ConfigureMapRuntimeAssets(pdaSonarPointCloudShader, pdaSonarMapCompute, pdaHologramMapShader);
+        }
+
+        private void ResolveControlsRebindUIReference()
+        {
+            if (controlsRebindUI != null)
+                return;
+
+            if (pdaPanel != null)
+                controlsRebindUI = pdaPanel.GetComponentInChildren<PDAControlsRebindUI>(true);
+
+            if (controlsRebindUI == null)
+                controlsRebindUI = GetComponentInChildren<PDAControlsRebindUI>(true);
         }
 
         private static GameObject EnsureRuntimeTab(Transform root, string name, Type tabComponentType)
@@ -1168,13 +1211,18 @@ namespace Hecton8.UI
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)
         {
             _playerRuntimeContext = playerRuntimeContext;
+            HectonSurvivalSystem runtimeSurvival = playerRuntimeContext != null ? playerRuntimeContext.SurvivalSystem : null;
+            if (runtimeSurvival != null)
+            {
+                survivalSystem = runtimeSurvival;
+                _survivalSystemFromRuntimeContext = true;
+            }
+            else if (_survivalSystemFromRuntimeContext)
+            {
+                survivalSystem = null;
+                _survivalSystemFromRuntimeContext = false;
+            }
 
-            if (survivalSystem != null || _playerRuntimeContext == null)
-                return;
-
-            Transform playerTransform = _playerRuntimeContext.PlayerTransform;
-            if (playerTransform != null)
-                playerTransform.TryGetComponent(out survivalSystem);
         }
 
         private void TryRegisterHotSwapListener()
@@ -1224,9 +1272,6 @@ namespace Hecton8.UI
             // ── Battery drain ──
             if (IsOpen && enableBatteryDrain)
             {
-                if (survivalSystem == null)
-                    _survivalResolveDirty = true;
-
                 if (survivalSystem != null)
                     ProcessBatteryDrain(deltaTime);
             }
@@ -1235,11 +1280,6 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
-            if (_survivalResolveDirty)
-            {
-                _survivalResolveDirty = false;
-                TryResolveSurvivalSystemFromRuntimeContext();
-            }
 
             ApplyHeadlessUIState();
 
@@ -1605,19 +1645,6 @@ namespace Hecton8.UI
             ApplyTabVisibility(_activeTab);
         }
 
-        private bool TryResolveSurvivalSystemFromRuntimeContext()
-        {
-            if (survivalSystem != null)
-                return true;
-
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
-            if (playerTransform == null)
-                return false;
-
-            return playerTransform.TryGetComponent(out survivalSystem);
-        }
-
         private void EnsureTabCanvasGroups()
         {
             if (tabs == null || tabs.Length == 0)
@@ -1841,6 +1868,18 @@ namespace Hecton8.UI
 
         private void ConsumePlayerInputSignals()
         {
+            bool suppressCancel = false;
+            bool suppressTabNext = false;
+            bool suppressTabPrevious = false;
+            PDAControlsRebindUI controlsPanel = controlsRebindUI;
+            if (controlsPanel != null)
+            {
+                controlsPanel.ConsumePlayerInputSignals(
+                    out suppressCancel,
+                    out suppressTabNext,
+                    out suppressTabPrevious);
+            }
+
             ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
             {
@@ -1859,13 +1898,16 @@ namespace Hecton8.UI
                         HandleInventoryInput();
                         break;
                     case PlayerInputSignalCommands.Cancel:
-                        HandleCancelInput();
+                        if (!suppressCancel)
+                            HandleCancelInput();
                         break;
                     case PlayerInputSignalCommands.TabPrevious:
-                        HandleBackInput();
+                        if (!suppressTabPrevious)
+                            HandleBackInput();
                         break;
                     case PlayerInputSignalCommands.TabNext:
-                        HandleTabNextInput();
+                        if (!suppressTabNext)
+                            HandleTabNextInput();
                         break;
                 }
             }

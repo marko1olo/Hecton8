@@ -1,0 +1,74 @@
+{
+  "agentId": "1337",
+  "domain": "Physics culling and Rigidbody sleep coordination",
+  "rerun": 34,
+  "prompt": {
+    "path": "Docs/Tasks/CURRENT_BATCH.md",
+    "bytes": 18613,
+    "sha256": "3e605cefcb2f812e4e2febd79f1e87c3d527fb27627de85b3f5c8ffa05c01387"
+  },
+  "defectsFound": [
+    {
+      "id": "CLEAR_FAIL_OPEN_AFTER_LOCK_FAILURE",
+      "severity": "high",
+      "files": [
+        "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+        "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs"
+      ],
+      "fact": "Runtime, impact, and Shinobu37 clear paths incremented contention after failed write-lock acquisition but still continued into Vault-backed clear loops."
+    },
+    {
+      "id": "COLD_DEBUG_VAULT_WRITES_WITHOUT_SCOPED_LOCKS",
+      "severity": "medium",
+      "file": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "fact": "SetPhysicsCullingTuning and GenerateMockPhysicsBodies wrote Vault-backed lanes without scoped write-lock transactions."
+    }
+  ],
+  "changes": [
+    "ClearRuntimeState skips root Vault clear loops unless the runtime clear lock set is acquired.",
+    "ClearPhysicsImpactEventQueue1337 returns immediately on impact-lane write-lock failure.",
+    "ClearShinobu37PhysicsCullingState skips Vault clear loops unless the Shinobu37 clear lock set is acquired.",
+    "SetPhysicsCullingTuning writes under _physicsCullingTuning.TryAcquireWriteLock and releases in finally.",
+    "GenerateMockPhysicsBodies completes/discards active culling jobs, acquires DTO/frozen velocity/state age/state snapshot locks as a single transaction, and returns 0 on lock failure."
+  ],
+  "staticValidation": {
+    "nativeAudit": {
+      "path": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN34.json",
+      "files": 5,
+      "parseFailures": 0,
+      "totalNativeFieldDeclarations": 18,
+      "persistentNativeFieldsRemaining": 0,
+      "transientJobViews": 18,
+      "sha256": "8e68112138378f1edb3d45607419fa5567c2355d50f0e816dff250d9873b5bee"
+    },
+    "zeroGcHotPathAudit": {
+      "path": "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN34.json",
+      "files": 3,
+      "scannedHotMethods": 21,
+      "zeroGcHotPathHits": 0,
+      "sha256": "37d3eaae558afd5435b07b03d91bff82007b29bc958c42ca3b2ca2c062e54011"
+    },
+    "branchAudit": {
+      "path": "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN34.json",
+      "files": 3,
+      "jobExecuteIfStatements": 4,
+      "failClosedGuardIfStatements": 4,
+      "jobExecuteNonGuardIfStatements": 0,
+      "distanceSolverDecisionIfStatements": 0,
+      "sha256": "a98c162fef02b1c51dc6a610f892aa75825ac5e5402eff83c61226c7a9b8f5e1"
+    },
+    "absoluteAupCastsFound": 0,
+    "forbiddenHotpathTokenHits": 0,
+    "gitDiffCheck": "green except CRLF normalization warnings",
+    "verificationHashSha256": "31ee30faad465aa01586a3d2f049dc03cef1072a57ef7b8d06ab63e84950b6bc"
+  },
+  "buildGate": {
+    "status": "DEFERRED_CPU_GATE_RED",
+    "cpuPercent": 78.06,
+    "latestCpuPercent": 92.27,
+    "dotnetProcesses": 0,
+    "cscProcesses": 0,
+    "assemblyCSharpCsprojExists": true,
+    "policy": "Do not run dotnet build while CPU > 50% or csc/dotnet is active."
+  }
+}

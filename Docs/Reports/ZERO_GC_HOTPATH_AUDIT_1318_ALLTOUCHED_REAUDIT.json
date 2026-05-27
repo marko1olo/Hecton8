@@ -1,0 +1,3269 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\ZERO_GC_HOTPATH_AUDIT_1318_ALLTOUCHED_REAUDIT.json",
+  "auditHashSha256": "16de74ece8701c89f701ec7a3baed60d8847b42e775c2bf741bb3105dfa0f11e",
+  "summary": {
+    "scannedFiles": 7,
+    "parseFailures": 0,
+    "totalFindings": 404,
+    "objectCreations": 403,
+    "valueTypeCreations": 222,
+    "managedRiskCreations": 174,
+    "nativeTempJobAllocations": 3,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 4,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 1
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\DestructibleOrganicManager.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\EntropyYieldJob.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\DropBuffer.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Editor\\FloraDearLieDestructionLayoutGuard.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\PersistentWorldRegistry.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\HectonFluidEngine.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Audio\\PlayerCriticalProceduralAudioRenderer.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1529,
+      "owner": "RegisterCorpseResourceNode",
+      "kind": "object_creation",
+      "detail": "CorpseResourceNodeRecord",
+      "snippet": "new CorpseResourceNodeRecord              {                  NodeId = (uint)(PersistentWorldRegistry.ComputeResourceNodeTombstoneId(in positionAup) & uint.MaxValue),                  ContaminatedItemHash = contaminatedItemHash,             "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1711,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "BridgeMatrixLane",
+      "snippet": "new BridgeMatrixLane(this, underwater: false)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1712,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "BridgeMetadataLane",
+      "snippet": "new BridgeMetadataLane(this, underwater: false)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1713,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "BridgeTypeLane",
+      "snippet": "new BridgeTypeLane(this, underwater: false)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1714,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "BridgeSemanticTypeLane",
+      "snippet": "new BridgeSemanticTypeLane(this, underwater: false)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1715,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "BridgeMatrixLane",
+      "snippet": "new BridgeMatrixLane(this, underwater: true)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1716,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "BridgeMetadataLane",
+      "snippet": "new BridgeMetadataLane(this, underwater: true)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1717,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "BridgeTypeLane",
+      "snippet": "new BridgeTypeLane(this, underwater: true)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1718,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "BridgeSemanticTypeLane",
+      "snippet": "new BridgeSemanticTypeLane(this, underwater: true)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 1843,
+      "owner": "OnOriginShift",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2603,
+      "owner": "StageDearLieDamageEvents",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(dearLieMockDamageCenter.x, dearLieMockDamageCenter.y, dearLieMockDamageCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2604,
+      "owner": "StageDearLieDamageEvents",
+      "kind": "value_type_creation",
+      "detail": "GenerateMockFloraDamageJob",
+      "snippet": "new GenerateMockFloraDamageJob                  {                      Events = _dearLieDamageEvents,                      Offset = writeCount,                      Count = mockCount,                      CenterAUP = centerAup,             "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2647,
+      "owner": "TryBuildDearLieEvent",
+      "kind": "value_type_creation",
+      "detail": "FloraDestructionEventDTO",
+      "snippet": "new FloraDestructionEventDTO              {                  ImpactAUP = signal.ImpactAup,                 FloraTypeHash = signal.TargetHash == 0u ? DearLieSignalHashFlora : signal.TargetHash,                 MagnitudeBits = math.asuint(mat"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2686,
+      "owner": "ScheduleDearLieLane",
+      "kind": "value_type_creation",
+      "detail": "ClearDearLieClaimsJob",
+      "snippet": "new ClearDearLieClaimsJob              {                  Claims = claims,                  Count = safeCount              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2692,
+      "owner": "ScheduleDearLieLane",
+      "kind": "value_type_creation",
+      "detail": "ClearDearLieBucketsJob",
+      "snippet": "new ClearDearLieBucketsJob              {                  BucketHeads = bucketHeads,                  Count = bucketHeads.Length              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2700,
+      "owner": "ScheduleDearLieLane",
+      "kind": "value_type_creation",
+      "detail": "BuildDearLieSpatialHashJob",
+      "snippet": "new BuildDearLieSpatialHashJob              {                  Matrices = matrices,                  InstanceUids = instanceUids,                  Health = health,                  BucketHeads = bucketHeads,                  BucketNext = bu"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2714,
+      "owner": "ScheduleDearLieLane",
+      "kind": "value_type_creation",
+      "detail": "ResolveDearLieDamageJob",
+      "snippet": "new ResolveDearLieDamageJob              {                  Matrices = matrices,                  Metadata = metadata,                  InstanceUids = instanceUids,                  MaterialClasses = materialClasses,                  Health"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2817,
+      "owner": "TryPublishDearLieDebris",
+      "kind": "value_type_creation",
+      "detail": "DebrisSpawnSignal",
+      "snippet": "new DebrisSpawnSignal              {                  PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(result.ImpactAUP),                  SpeciesHash = result.FloraTypeHash ^ ((uint)result.MaterialClass * 2246822519u),          "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2835,
+      "owner": "QueueDearLieRegeneration",
+      "kind": "object_creation",
+      "detail": "FloraDearLieRegenRecord",
+      "snippet": "new FloraDearLieRegenRecord              {                  OriginalMatrix = originalMatrix,                  InstanceUid = instanceUid,                  ActiveIndex = activeIndex,                  RestoreTimeSeconds = restoreTimeSeconds,  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2841,
+      "owner": "QueueDearLieRegeneration",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2858,
+      "owner": "ProcessDearLieRegeneration",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(record.RuntimePosition.x, record.RuntimePosition.y, record.RuntimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2953,
+      "owner": "RecordDearLieTelemetry",
+      "kind": "value_type_creation",
+      "detail": "FloraDearLieTelemetryEntry",
+      "snippet": "new FloraDearLieTelemetryEntry              {                  FrameIndex = frameIndex,                  SurfaceCount = _surfaceCount,                  UnderwaterCount = _underwaterCount,                  DamageSignalCount = damageSignalCou"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 2981,
+      "owner": "DumpDearLieTelemetry",
+      "kind": "object_creation",
+      "detail": "global::System.IO.FileStream",
+      "snippet": "new global::System.IO.FileStream(path, global::System.IO.FileMode.Create, global::System.IO.FileAccess.Write, global::System.IO.FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3067,
+      "owner": "ExtractMatrixTranslationDouble",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(matrix.m03, matrix.m13, matrix.m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3608,
+      "owner": "EvaluateAllelopathicRelease",
+      "kind": "object_creation",
+      "detail": "Vector2",
+      "snippet": "new Vector2(kelpPosition.x - coralPosition.x, kelpPosition.z - coralPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3700,
+      "owner": "BuildTemplateCaches",
+      "kind": "native_allocation",
+      "detail": "NativeList<HarvestableTemplate.LootRuntimeEntry>",
+      "snippet": "new NativeList<HarvestableTemplate.LootRuntimeEntry>(math.max(1, totalLootEntries), Allocator.Temp)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3980,
+      "owner": "WriteYieldMaterialLut",
+      "kind": "value_type_creation",
+      "detail": "EntropyYieldMaterialLutEntry",
+      "snippet": "new EntropyYieldMaterialLutEntry              {                  DensityKgPerM3 = Mathf.Max(0.01f, densityKgPerM3),                  UnitItemMassKg = Mathf.Max(0.01f, unitItemMassKg),                  MinimumRecovery = Mathf.Clamp01(minimum"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 3992,
+      "owner": "CountTemplateLootEntries",
+      "kind": "native_allocation",
+      "detail": "NativeList<HarvestableTemplate.LootRuntimeEntry>",
+      "snippet": "new NativeList<HarvestableTemplate.LootRuntimeEntry>(32, Allocator.Temp)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4320,
+      "owner": "ScheduleYieldJobIfNeeded",
+      "kind": "value_type_creation",
+      "detail": "EntropyYieldJob",
+      "snippet": "new EntropyYieldJob                 {                     Events = yieldJobInput,                     TemplateDescriptors = _templateDescriptors,                     LootEntries = _lootEntries,                     MaterialLut = _yieldMateri"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4469,
+      "owner": "DrainDropBuffer",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(drop.Position.x, drop.Position.y, drop.Position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 4616,
+      "owner": "TryResolveNearestHarvestInteractionPoint",
+      "kind": "object_creation",
+      "detail": "FloraHarvestInteractionPoint",
+      "snippet": "new FloraHarvestInteractionPoint(                  instanceUid,                  snapAup,                  snapPosition,                  normal,                  materialClass,                  templateIndex,                  1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5139,
+      "owner": "SpawnDebris",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(hitPoint.x, hitPoint.y, hitPoint.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5141,
+      "owner": "SpawnDebris",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(instancePosition.x, instancePosition.y, instancePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5146,
+      "owner": "SpawnDebris",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(spawnPosition.x, spawnPosition.y, spawnPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5151,
+      "owner": "SpawnDebris",
+      "kind": "value_type_creation",
+      "detail": "DebrisSpawnSignal",
+      "snippet": "new DebrisSpawnSignal              {                  PositionAup = debrisAup,                  SpeciesHash = unchecked((uint)materialClass) ^ 0x4F524741u,                  SourceEntityId = instanceUid ^ 0x7F4A7C15u,                  Intens"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5178,
+      "owner": "QueueYieldEvent",
+      "kind": "value_type_creation",
+      "detail": "DestroyedOrganicEvent",
+      "snippet": "new DestroyedOrganicEvent              {                  Position = new float3(instancePosition.x, instancePosition.y, instancePosition.z),                  NavObstacleCenter = navObstacleCenter,                  NavObstacleExtents = navOb"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5180,
+      "owner": "QueueYieldEvent",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(instancePosition.x, instancePosition.y, instancePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5252,
+      "owner": "CacheBaseScale",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(                      Mathf.Max(MinimumDecomposedHeightScale, Mathf.Abs(metadata.HeightScale)),                      Mathf.Max(MinimumDecomposedWidthScale, Mathf.Clamp01(Mathf.Abs(metadata.WidthScale))))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5657,
+      "owner": "DispatchHarvestAudioTransition",
+      "kind": "value_type_creation",
+      "detail": "HarvestAudioEvent",
+      "snippet": "new HarvestAudioEvent(soundAup, instancePosition, clip, volume, pitch, true)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5661,
+      "owner": "DispatchHarvestAudioTransition",
+      "kind": "value_type_creation",
+      "detail": "HarvestAudioEvent",
+      "snippet": "new HarvestAudioEvent(default, instancePosition, clip, volume, pitch, false)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5754,
+      "owner": "TryDispatchMatureSporeAcoustic",
+      "kind": "value_type_creation",
+      "detail": "SporeAcousticEvent",
+      "snippet": "new SporeAcousticEvent(                     soundAup,                     instancePosition,                     clip,                      pulseFrequency,                      volume,                     pitch,                     nextAllow"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 5768,
+      "owner": "TryDispatchMatureSporeAcoustic",
+      "kind": "value_type_creation",
+      "detail": "SporeAcousticEvent",
+      "snippet": "new SporeAcousticEvent(                     default,                     instancePosition,                     clip,                     pulseFrequency,                     volume,                     pitch,                     nextAllowedT"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6410,
+      "owner": "ApplyDecompositionMetadata",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 6970,
+      "owner": "TrySetRegrowthProgress",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 7076,
+      "owner": "ApplyMaturationVisualToLaneInstance",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 7114,
+      "owner": "ApplyRegrowthVisualToLaneInstance",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 7265,
+      "owner": "ResolveConstructionDistanceSq",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(0d, math.max(0.5d, kelpHeight + KelpRadiusBias), 0d)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 7317,
+      "owner": "ExtractTranslation",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(matrix.m03, matrix.m13, matrix.m23)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 7366,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "line": 7372,
+      "owner": "ToDouble3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Editor/FloraDearLieDestructionLayoutGuard.cs",
+      "line": 59,
+      "owner": "Validate",
+      "kind": "object_creation",
+      "detail": "FatalArchitectureException",
+      "snippet": "new FatalArchitectureException(                     \"SHINOBU_268 flora Dear Lie layout violation: DTO=32 align=8 ImpactAUP@0 FloraTypeHash@24 MagnitudeBits@28, result=128 ImpactAUP@0 OriginalMatrix@24, counter=64 Value@0, claim=64 Claimed@0"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 57,
+      "owner": "ToAlignedBlit",
+      "kind": "object_creation",
+      "detail": "AbsoluteUniversePositionBlit128",
+      "snippet": "new AbsoluteUniversePositionBlit128              {                  GridX = GridX,                  GridY = GridY,                  GridZ = GridZ,                  Local = new float4(LocalX, LocalY, LocalZ, 0f),                  Reserved = "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 62,
+      "owner": "ToAlignedBlit",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(LocalX, LocalY, LocalZ, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 74,
+      "owner": "FromAlignedBlit",
+      "kind": "object_creation",
+      "detail": "AbsoluteUniversePosition",
+      "snippet": "new AbsoluteUniversePosition              {                  GridX = aligned.GridX,                  GridY = aligned.GridY,                  GridZ = aligned.GridZ,                  LocalX = aligned.Local.x,                  LocalY = aligned"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 87,
+      "owner": "FromRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 97,
+      "owner": "FromRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(localRuntime.x, localRuntime.y, localRuntime.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 111,
+      "owner": "FromAbsolutePosition",
+      "kind": "object_creation",
+      "detail": "AbsoluteUniversePosition",
+      "snippet": "new AbsoluteUniversePosition              {                  GridX = gridX,                  GridY = gridY,                  GridZ = gridZ,                  LocalX = (float)(absolutePosition.x - originX),                  LocalY = (float)(a"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 205,
+      "owner": "ResolveChunkId",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(                  (int)math.floor(absolutePosition.x / chunkSize),                  (int)math.floor(absolutePosition.y / chunkSize),                  (int)math.floor(absolutePosition.z / chunkSize))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 541,
+      "owner": "FromRecord",
+      "kind": "object_creation",
+      "detail": "PersistentWorldDeltaRecord",
+      "snippet": "new PersistentWorldDeltaRecord              {                  ChunkId = record.ChunkId,                  ItemPersistentIdHash = record.ItemPersistentIdHash,                  InstanceUid = record.InstanceUid,                  PackedLocalPos"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 556,
+      "owner": "ToRecord",
+      "kind": "object_creation",
+      "detail": "PersistentWorldItemRecord",
+      "snippet": "new PersistentWorldItemRecord              {                  Position = position,                  ChunkId = ChunkId,                  ItemPersistentIdHash = ItemPersistentIdHash,                  ItemPersistentId = default,               "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 581,
+      "owner": "UnpackPosition",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(                  ChunkId.x * (double)chunkSizeMeters,                  ChunkId.y * (double)chunkSizeMeters,                  ChunkId.z * (double)chunkSizeMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 586,
+      "owner": "UnpackPosition",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(localX, localY, localZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 592,
+      "owner": "PackLocalPosition",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(                  chunkId.x * (double)chunkSizeMeters,                  chunkId.y * (double)chunkSizeMeters,                  chunkId.z * (double)chunkSizeMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1914,
+      "owner": "",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(int.MinValue, 0, 0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2118,
+      "owner": "IsModProtectedCoreRuntimePosition",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2147,
+      "owner": "IsModProtectedCoreAup",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimeFloat.x, runtimeFloat.y, runtimeFloat.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2255,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "Dictionary<int, GameObject>",
+      "snippet": "new Dictionary<int, GameObject>(128)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2257,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "Dictionary<ulong, ItemData>",
+      "snippet": "new Dictionary<ulong, ItemData>(1024)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2259,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "List<ItemData>",
+      "snippet": "new List<ItemData>(1024)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2261,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "List<int>",
+      "snippet": "new List<int>(256)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2263,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "List<int>",
+      "snippet": "new List<int>(256)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2265,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "List<int>",
+      "snippet": "new List<int>(128)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2267,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "List<EntityDataRecord>",
+      "snippet": "new List<EntityDataRecord>(128)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2269,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "List<EntityDataRecord>",
+      "snippet": "new List<EntityDataRecord>(128)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2270,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "List<EntityDataRecord>",
+      "snippet": "new List<EntityDataRecord>(128)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2272,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "List<SectorEntityStateWriteWork>",
+      "snippet": "new List<SectorEntityStateWriteWork>(MaxPendingEntityStateTempWrites)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2274,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "List<long>",
+      "snippet": "new List<long>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2284,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "List<SaveBinaryStorage.IndexedSectorEntryInfo>",
+      "snippet": "new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2286,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "Dictionary<long, SectorOverrideState>",
+      "snippet": "new Dictionary<long, SectorOverrideState>(32)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2288,
+      "owner": "Awake",
+      "kind": "object_creation",
+      "detail": "HashSet<int>",
+      "snippet": "new HashSet<int>(256)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2361,
+      "owner": "TryGetActiveNutrientThermalVent",
+      "kind": "value_type_creation",
+      "detail": "NutrientThermalVentSnapshotDTO",
+      "snippet": "new NutrientThermalVentSnapshotDTO              {                  RuntimeKey = source.RuntimeKey,                  PositionAup = source.PositionAup,                  RadiusWS = source.RadiusWS,                  HeightWS = source.HeightWS, "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2391,
+      "owner": "RegisterActiveThermalVent",
+      "kind": "object_creation",
+      "detail": "PersistentThermalVentRecord",
+      "snippet": "new PersistentThermalVentRecord              {                  RuntimeKey = runtimeKey,                  PositionAup = ventAup,                  RadiusWS = math.max(2f, radiusWS),                  HeightWS = math.max(4f, heightWS),        "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2703,
+      "owner": "TryRegisterDroppedItemStateful",
+      "kind": "object_creation",
+      "detail": "PersistentWorldItemRecord",
+      "snippet": "new PersistentWorldItemRecord              {                  Position = position,                  ChunkId = chunkId,                  ItemPersistentIdHash = ComputePersistentIdHash(itemData.PersistentId),                  ItemPersistentId"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2708,
+      "owner": "TryRegisterDroppedItemStateful",
+      "kind": "object_creation",
+      "detail": "FixedString128Bytes",
+      "snippet": "new FixedString128Bytes(itemData.PersistentId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2810,
+      "owner": "TryRegisterDestroyedFlora",
+      "kind": "object_creation",
+      "detail": "PersistentWorldItemRecord",
+      "snippet": "new PersistentWorldItemRecord              {                  Position = position,                  ChunkId = chunkId,                  ItemPersistentIdHash = floraPersistentIdHash,                  ItemPersistentId = default,              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2868,
+      "owner": "TryRegisterFloraStateOverride",
+      "kind": "object_creation",
+      "detail": "PersistentWorldItemRecord",
+      "snippet": "new PersistentWorldItemRecord              {                  Position = position,                  ChunkId = chunkId,                  ItemPersistentIdHash = floraPersistentIdHash,                  ItemPersistentId = default,              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2910,
+      "owner": "TryRegisterDestroyedResourceNode",
+      "kind": "object_creation",
+      "detail": "PersistentWorldItemRecord",
+      "snippet": "new PersistentWorldItemRecord              {                  Position = position,                  ChunkId = chunkId,                  ItemPersistentIdHash = tombstoneId,                  ItemPersistentId = default,                  Quanti"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2954,
+      "owner": "TryRegisterResourceNodeMetamorphosis",
+      "kind": "object_creation",
+      "detail": "PersistentWorldItemRecord",
+      "snippet": "new PersistentWorldItemRecord              {                  Position = position,                  ChunkId = chunkId,                  ItemPersistentIdHash = tombstoneId,                  ItemPersistentId = default,                  Quanti"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3009,
+      "owner": "TryRegisterPendingFloraSeed",
+      "kind": "object_creation",
+      "detail": "PersistentWorldItemRecord",
+      "snippet": "new PersistentWorldItemRecord              {                  Position = position,                  ChunkId = chunkId,                  ItemPersistentIdHash = floraPersistentIdHash,                  ItemPersistentId = default,              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3133,
+      "owner": "TryRegisterFaunaTombstone",
+      "kind": "object_creation",
+      "detail": "PersistentWorldDeltaRecord",
+      "snippet": "new PersistentWorldDeltaRecord              {                  ChunkId = ApexFaunaTombstoneChunkId,                  ItemPersistentIdHash = 0UL,                  InstanceUid = instanceUid,                  PackedLocalPosition = 0u,         "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3188,
+      "owner": "CopyResourceNodeTombstonesInChunk",
+      "kind": "object_creation",
+      "detail": "ResourceNodeTombstoneRecord",
+      "snippet": "new ResourceNodeTombstoneRecord                  {                      TombstoneId = record.ItemPersistentIdHash,                      InstanceUid = record.InstanceUid,                      Position = record.Position,                      "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3314,
+      "owner": "ResolveScatterPlanarDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3315,
+      "owner": "ResolveScatterPlanarDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3316,
+      "owner": "ResolveScatterPlanarDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3317,
+      "owner": "ResolveScatterPlanarDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, -1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3318,
+      "owner": "ResolveScatterPlanarDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(ScatterDiagonal2, ScatterDiagonal2)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3319,
+      "owner": "ResolveScatterPlanarDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-ScatterDiagonal2, ScatterDiagonal2)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3320,
+      "owner": "ResolveScatterPlanarDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(ScatterDiagonal2, -ScatterDiagonal2)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3321,
+      "owner": "ResolveScatterPlanarDirection",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(-ScatterDiagonal2, -ScatterDiagonal2)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3714,
+      "owner": "RestoreFromIndexedSave",
+      "kind": "object_creation",
+      "detail": "List<SaveBinaryStorage.IndexedSectorEntryInfo>",
+      "snippet": "new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3804,
+      "owner": "RunIndexedSectorPagingAsync",
+      "kind": "native_allocation",
+      "detail": "NativeArray<long>",
+      "snippet": "new NativeArray<long>(PagedSectorHashCount, DataVaultExemptIndexedSectorPagingAllocator, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3818,
+      "owner": "RunIndexedSectorPagingAsync",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(x, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3825,
+      "owner": "RunIndexedSectorPagingAsync",
+      "kind": "native_allocation",
+      "detail": "NativeList<PersistentWorldDeltaRecord>",
+      "snippet": "new NativeList<PersistentWorldDeltaRecord>(math.max(16, maxTrackedItems), DataVaultExemptIndexedSectorPagingAllocator)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4135,
+      "owner": "RefreshHydrationWindow",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4243,
+      "owner": "HydrateRecord",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4279,
+      "owner": "HydrateRecord",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(spawnVelocityChange.x, spawnVelocityChange.y, spawnVelocityChange.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4293,
+      "owner": "HydrateRecord",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(spawnImpulse.x, spawnImpulse.y, spawnImpulse.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4551,
+      "owner": "QuantizeSector",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(                  (int)math.floor(absolute.x / PagedSectorEdgeLengthMeters),                  (int)math.floor(absolute.z / PagedSectorEdgeLengthMeters))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4587,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "object_creation",
+      "detail": "Dictionary<long, List<PersistentWorldDeltaRecord>>",
+      "snippet": "new Dictionary<long, List<PersistentWorldDeltaRecord>>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4588,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "object_creation",
+      "detail": "Dictionary<long, List<EntityDataRecord>>",
+      "snippet": "new Dictionary<long, List<EntityDataRecord>>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4602,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "object_creation",
+      "detail": "List<PersistentWorldDeltaRecord>",
+      "snippet": "new List<PersistentWorldDeltaRecord>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4610,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "object_creation",
+      "detail": "List<EntityDataRecord>",
+      "snippet": "new List<EntityDataRecord>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4634,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "object_creation",
+      "detail": "List<PersistentWorldDeltaRecord>",
+      "snippet": "new List<PersistentWorldDeltaRecord>(0)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4640,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "object_creation",
+      "detail": "List<EntityDataRecord>",
+      "snippet": "new List<EntityDataRecord>(4)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4652,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "object_creation",
+      "detail": "List<SectorOverrideWriteResult>",
+      "snippet": "new List<SectorOverrideWriteResult>(sectors.Count)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4653,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "object_creation",
+      "detail": "List<SectorEntityStateWriteWork>",
+      "snippet": "new List<SectorEntityStateWriteWork>(sectorEntityStates.Count)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4666,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<PersistentWorldDeltaRecord>",
+      "snippet": "new NativeArray<PersistentWorldDeltaRecord>(bucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4710,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<EntityDataRecord>",
+      "snippet": "new NativeArray<EntityDataRecord>(entityStateBucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4734,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "object_creation",
+      "detail": "SectorEntityStateWriteWork",
+      "snippet": "new SectorEntityStateWriteWork                                      {                                          SectorHash = pair.Key,                                          TempPath = entityStateTempPath,                                  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4752,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "object_creation",
+      "detail": "SectorOverrideWriteResult",
+      "snippet": "new SectorOverrideWriteResult(pair.Key, tempPath, entityStateTempPath)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4807,
+      "owner": "SnapshotResidentSectorOverridesAsync",
+      "kind": "value_type_creation",
+      "detail": "SectorOverrideState",
+      "snippet": "new SectorOverrideState()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4839,
+      "owner": "ApplySectorOverrides",
+      "kind": "object_creation",
+      "detail": "Dictionary<long, List<PersistentWorldDeltaRecord>>",
+      "snippet": "new Dictionary<long, List<PersistentWorldDeltaRecord>>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4851,
+      "owner": "ApplySectorOverrides",
+      "kind": "object_creation",
+      "detail": "List<PersistentWorldDeltaRecord>",
+      "snippet": "new List<PersistentWorldDeltaRecord>(16)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4881,
+      "owner": "ApplySectorOverrides",
+      "kind": "object_creation",
+      "detail": "List<PersistentWorldDeltaRecord>",
+      "snippet": "new List<PersistentWorldDeltaRecord>(overrideRecords.Length)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 4920,
+      "owner": "TryLoadSectorEntityStateOverrides",
+      "kind": "object_creation",
+      "detail": "Dictionary<uint, EntityDataRecord>",
+      "snippet": "new Dictionary<uint, EntityDataRecord>(64)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5311,
+      "owner": "TryCacheSpecialEntityState",
+      "kind": "value_type_creation",
+      "detail": "SectorOverrideState",
+      "snippet": "new SectorOverrideState()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5341,
+      "owner": "ConsumeCachedFaunaHibernationStates",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(dx, dz)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5596,
+      "owner": "ReconcileFaunaHibernationSectorPopulation",
+      "kind": "value_type_creation",
+      "detail": "SectorOverrideState",
+      "snippet": "new SectorOverrideState()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5634,
+      "owner": "MigrateApexFaunaHibernationStatesToward",
+      "kind": "value_type_creation",
+      "detail": "int2",
+      "snippet": "new int2(dx, dz)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5687,
+      "owner": "MigrateApexFaunaHibernationStatesToward",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(toAttractor.x < 0d ? -moveMeters : moveMeters, 0d, 0d)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5689,
+      "owner": "MigrateApexFaunaHibernationStatesToward",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(0d, toAttractor.y < 0d ? -moveMeters : moveMeters, 0d)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5691,
+      "owner": "MigrateApexFaunaHibernationStatesToward",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(0d, 0d, toAttractor.z < 0d ? -moveMeters : moveMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5740,
+      "owner": "TryCommitEntityStateTempBlockOrDelete",
+      "kind": "value_type_creation",
+      "detail": "SectorOverrideState",
+      "snippet": "new SectorOverrideState()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5860,
+      "owner": "ResolveHibernatedPredationVictimUid",
+      "kind": "value_type_creation",
+      "detail": "uint4",
+      "snippet": "new uint4(                  sectorLow,                  sectorHigh,                  apexPredatorCandidate.InstanceUid,                  preyVictimCandidate.InstanceUid)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5898,
+      "owner": "SeedEquilibriumFaunaRecords",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(                          (double)jitterDirection.x * radius,                          0d,                          (double)jitterDirection.y * radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5970,
+      "owner": "TryWriteEntityStateTempBlock",
+      "kind": "native_tempjob_allocation",
+      "detail": "NativeArray<EntityDataRecord>",
+      "snippet": "new NativeArray<EntityDataRecord>(entityStates.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 5995,
+      "owner": "TryWriteEntityStateTempBlock",
+      "kind": "object_creation",
+      "detail": "SectorEntityStateWriteWork",
+      "snippet": "new SectorEntityStateWriteWork                  {                      SectorHash = sectorHash,                      TempPath = entityStateTempPath,                      WriteHandle = writeHandle                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 6222,
+      "owner": "CreateEntityStateFromRecord",
+      "kind": "object_creation",
+      "detail": "EntityDataRecord",
+      "snippet": "new EntityDataRecord              {                  Position = position,                  Quantity = math.max(1, record.Quantity),                  Integrity01 = ResolveItemQuality01(qualityMilli),                  InventoryHash = unchecke"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 6283,
+      "owner": "CreateFaunaHibernationState",
+      "kind": "object_creation",
+      "detail": "EntityDataRecord",
+      "snippet": "new EntityDataRecord              {                  Position = packedPosition,                  Quantity = math.max(1, speciesId),                  Integrity01 = health,                  InventoryHash = unchecked((int)packedState),        "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 6308,
+      "owner": "CreateFaunaEggState",
+      "kind": "object_creation",
+      "detail": "EntityDataRecord",
+      "snippet": "new EntityDataRecord              {                  Position = position.ToAlignedBlit(),                  Quantity = math.max(1, speciesId),                  Integrity01 = hatchTimeSeconds,                  InventoryHash = unchecked((int)F"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 6331,
+      "owner": "CreateWhaleFallPoiState",
+      "kind": "object_creation",
+      "detail": "EntityDataRecord",
+      "snippet": "new EntityDataRecord              {                  Position = position.ToAlignedBlit(),                  Quantity = math.max(1, speciesId),                  Integrity01 = math.max(0f, currentTimeSeconds) + WhaleFallDurationSeconds,       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 6353,
+      "owner": "CreateFloraSpawnTimestampState",
+      "kind": "object_creation",
+      "detail": "EntityDataRecord",
+      "snippet": "new EntityDataRecord              {                  Position = position.ToAlignedBlit(),                  Quantity = PackFloraSpawnTimestampMinutes(spawnPlayTimeSeconds),                  Integrity01 = 1f,                  InventoryHash = "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 6523,
+      "owner": "IsFiniteNonZero",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 6547,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 6565,
+      "owner": "RegisterSpawnImpulse",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(initialImpulse.x, initialImpulse.y, initialImpulse.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 6586,
+      "owner": "RegisterSpawnVelocityChange",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(inheritedVelocityChange.x, inheritedVelocityChange.y, inheritedVelocityChange.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 6682,
+      "owner": "WritePoolSlotPosition",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3((int)position.GridX, (int)position.GridY, (int)position.GridZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 6683,
+      "owner": "WritePoolSlotPosition",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.LocalX, position.LocalY, position.LocalZ)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 6688,
+      "owner": "ReadPoolSlotPosition",
+      "kind": "object_creation",
+      "detail": "AbsoluteUniversePosition",
+      "snippet": "new AbsoluteUniversePosition              {                  GridX = slotData.AupCell.x,                  GridY = slotData.AupCell.y,                  GridZ = slotData.AupCell.z,                  LocalX = slotData.LocalOffset.x,            "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 7132,
+      "owner": "WriteWorldTelemetry",
+      "kind": "value_type_creation",
+      "detail": "WorldTelemetryEntry",
+      "snippet": "new WorldTelemetryEntry             {                 Sequence = ++_worldTelemetrySequence,                 BufferId = (uint)bufferId,                 Generation = generation,                 SystemId = (uint)WorldRegistryVaultOwner,       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 7181,
+      "owner": "DumpWorldTelemetryCold",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(WorldTelemetryDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 7182,
+      "owner": "DumpWorldTelemetryCold",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 7264,
+      "owner": "UpdateDiagnostics",
+      "kind": "object_creation",
+      "detail": "Vector3Int",
+      "snippet": "new Vector3Int(_currentPlayerChunk.x, _currentPlayerChunk.y, _currentPlayerChunk.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 7540,
+      "owner": "TryBuildCompactDeltaRecord",
+      "kind": "object_creation",
+      "detail": "PersistentWorldCompactDeltaRecord",
+      "snippet": "new PersistentWorldCompactDeltaRecord              {                  PackedLocalPosition = expandedRecord.PackedLocalPosition,                  InstanceUid = expandedRecord.InstanceUid,                  Quantity = PersistentWorldDeltaRecor"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 7567,
+      "owner": "TryResolveDeltaRecord",
+      "kind": "object_creation",
+      "detail": "PersistentWorldDeltaRecord",
+      "snippet": "new PersistentWorldDeltaRecord              {                  ChunkId = chunkId,                  ItemPersistentIdHash = itemHash,                  InstanceUid = compactRecord.InstanceUid,                  PackedLocalPosition = compactReco"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 573,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.Fluid.GatherData\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 574,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.Fluid.ScheduleBuoyancyJob\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 575,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.Fluid.ApplyScheduledForces\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 576,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "ProfilerMarker",
+      "snippet": "new ProfilerMarker(\"H8.Fluid.ConsumeGpuReadback\")"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1168,
+      "owner": "TryQueueAdvectedBubbleBurst",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1188,
+      "owner": "TryQueueAdvectedBubbleBurst",
+      "kind": "object_creation",
+      "detail": "AdvectedBubble",
+      "snippet": "new AdvectedBubble                  {                      PositionWS = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z) + offset,                      Life = 1f,                      VelocityWS = new float3(offset.x * 0."
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1190,
+      "owner": "TryQueueAdvectedBubbleBurst",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1192,
+      "owner": "TryQueueAdvectedBubbleBurst",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(offset.x * 0.3f, BubbleAdvectionBuoyancyMetersPerSecond, offset.z * 0.3f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1203,
+      "owner": "GetFlowAtPosition",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1204,
+      "owner": "GetFlowAtPosition",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(flow.x, flow.y, flow.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1214,
+      "owner": "GetFlowAtPosition",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  currentVector.x * currentStrength,                  currentVector.y * currentStrength,                  currentVector.z * currentStrength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1267,
+      "owner": "GetWaterHeightAtPosition",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1274,
+      "owner": "GetWaterHeightAtPosition",
+      "kind": "value_type_creation",
+      "detail": "double2",
+      "snippet": "new double2(                  (double)position.x + aupOffset.x,                  (double)position.z + aupOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1302,
+      "owner": "TrySetActiveThruster",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(direction.x, direction.y, direction.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1303,
+      "owner": "TrySetActiveThruster",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1308,
+      "owner": "TrySetActiveThruster",
+      "kind": "object_creation",
+      "detail": "ActiveThrusterFlow",
+      "snippet": "new ActiveThrusterFlow              {                  PositionWS = new float3(position.x, position.y, position.z),                  DirectionWS = axisDirection,                  Strength = math.max(0f, strength),                  RadiusSq "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1310,
+      "owner": "TrySetActiveThruster",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(position.x, position.y, position.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1361,
+      "owner": "TrySetWhirlpool",
+      "kind": "object_creation",
+      "detail": "WhirlpoolFlow",
+      "snippet": "new WhirlpoolFlow              {                  CenterWS = new float3(center.x, center.y, center.z),                  RadiusSq = radiusSq,                  InvRadiusSq = math.rcp(radiusSq),                  TangentialStrength = tangential"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1363,
+      "owner": "TrySetWhirlpool",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(center.x, center.y, center.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1451,
+      "owner": "TrySampleMaelstromWarp",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1502,
+      "owner": "TryQueueAbyssalVortexImpulse",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(axis.x, axis.y, axis.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1503,
+      "owner": "TryQueueAbyssalVortexImpulse",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1504,
+      "owner": "TryQueueAbyssalVortexImpulse",
+      "kind": "object_creation",
+      "detail": "AbyssalVortexImpulse",
+      "snippet": "new AbyssalVortexImpulse              {                  PositionWS = position,                  AxisWS = new Vector3(normalizedAxis.x, normalizedAxis.y, normalizedAxis.z),                  RadiusMeters = math.clamp(radiusMeters, AbyssalVor"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1507,
+      "owner": "TryQueueAbyssalVortexImpulse",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(normalizedAxis.x, normalizedAxis.y, normalizedAxis.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1536,
+      "owner": "TrySetViscosityRegion",
+      "kind": "object_creation",
+      "detail": "FluidViscosityRegion",
+      "snippet": "new FluidViscosityRegion              {                  CenterWS = new float3(center.x, center.y, center.z),                  InvRadiusSq = math.rcp(radiusSq),                  ViscosityMultiplier = math.clamp(viscosityMultiplier, 0.05f, 8"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1538,
+      "owner": "TrySetViscosityRegion",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(center.x, center.y, center.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1600,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<BuoyancyObject>",
+      "snippet": "new List<BuoyancyObject>(256)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 1604,
+      "owner": "",
+      "kind": "object_creation",
+      "detail": "List<Rigidbody>",
+      "snippet": "new List<Rigidbody>(256)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2061,
+      "owner": "ApplyOriginShiftRebase",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  -shiftOffset.x,                  -shiftOffset.y,                  -shiftOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2316,
+      "owner": "TrySampleModAbyssalFlow",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2323,
+      "owner": "TrySampleModAbyssalFlow",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(currentVector.x, currentVector.y, currentVector.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2325,
+      "owner": "TrySampleModAbyssalFlow",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(authoredCurrent.x, authoredCurrent.y, authoredCurrent.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2402,
+      "owner": "TryGetGpuAbyssalFlowFieldTexture",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  AbyssalFlowTextureResolution,                  AbyssalFlowTextureResolution,                  AbyssalFlowTextureResolution,                  AbyssalFlowTextureResolution * AbyssalFlowTextureResolution * Abyssal"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2703,
+      "owner": "PublishOceanSurfaceWaveUniforms",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(activeWaveCount, math.max(0f, timeSeconds), sleepCount, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2714,
+      "owner": "BuildOceanSurfaceWaveVectors",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(wave.DirectionXZ.x, wave.DirectionXZ.y, wave.Amplitude, wave.Wavelength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2715,
+      "owner": "BuildOceanSurfaceWaveVectors",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(wave.Steepness, wave.PhaseOffset, wave.SpeedMultiplier, active ? 1f : 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2842,
+      "owner": "ResolvePrimaryGerstnerWaves",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2843,
+      "owner": "ResolvePrimaryGerstnerWaves",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2844,
+      "owner": "ResolvePrimaryGerstnerWaves",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0.70710677f, 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2868,
+      "owner": "ResolveGerstnerWaveAtIndex",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(                      source.DirectionXZ.x * directionCos - source.DirectionXZ.y * directionSin,                      source.DirectionXZ.x * directionSin + source.DirectionXZ.y * directionCos)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2871,
+      "owner": "ResolveGerstnerWaveAtIndex",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2938,
+      "owner": "WriteOceanSurfaceTelemetry",
+      "kind": "value_type_creation",
+      "detail": "OceanSurfaceTelemetryEntry",
+      "snippet": "new OceanSurfaceTelemetryEntry              {                  FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,                  OriginShiftSequence = _lastOriginShiftSequence,                  ActiveFloaters = activeCount,       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2949,
+      "owner": "WriteOceanSurfaceTelemetry",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(observerPosition.x, observerPosition.y, observerPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2969,
+      "owner": "DumpOceanSurfaceTelemetry",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2970,
+      "owner": "DumpOceanSurfaceTelemetry",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3183,
+      "owner": "DumpFluidSovereigntyTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3184,
+      "owner": "DumpFluidSovereigntyTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3237,
+      "owner": "FixedTick",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(_resolvedGiantWakeCurrent.x, _resolvedGiantWakeCurrent.y, _resolvedGiantWakeCurrent.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3290,
+      "owner": "FixedTick",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(_resolvedGiantWakeCurrent.x, _resolvedGiantWakeCurrent.y, _resolvedGiantWakeCurrent.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3304,
+      "owner": "FixedTick",
+      "kind": "value_type_creation",
+      "detail": "double2",
+      "snippet": "new double2(vectorNoiseAupOffset.x, vectorNoiseAupOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3314,
+      "owner": "FixedTick",
+      "kind": "value_type_creation",
+      "detail": "WaveQueryJob",
+      "snippet": "new WaveQueryJob                  {                      PositionsWS = _positions,                      ObjParams = _params,                      VerticalOffsets = _waveOffsets,                      SurfaceUpVectors = _surfaceUpVectors,    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3328,
+      "owner": "FixedTick",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(terrainPayload.TerrainPosition.x, terrainPayload.TerrainPosition.y, terrainPayload.TerrainPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3331,
+      "owner": "FixedTick",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(terrainPayload.TerrainSize.x, terrainPayload.TerrainSize.y, terrainPayload.TerrainSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3343,
+      "owner": "FixedTick",
+      "kind": "value_type_creation",
+      "detail": "BuoyancyJob",
+      "snippet": "new BuoyancyJob              {                  positions        = _positions,                  previousPositions = _previousPositions,                  previousPositionValid = _previousPositionValid,                  velocities       = _ve"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3381,
+      "owner": "FixedTick",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      currentVector.x * currentStrength,                      currentVector.y * currentStrength,                      currentVector.z * currentStrength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3535,
+      "owner": "TryBuildFluidAdvectionRenderGraphPayload",
+      "kind": "object_creation",
+      "detail": "FluidAdvectionRenderGraphPayload",
+      "snippet": "new FluidAdvectionRenderGraphPayload              {                  Compute = fluidAdvectionCompute,                  Kernel = _fluidAdvectionKernel,                  DispatchGroups = (maxCount + FluidAdvectionThreadGroupSize - 1) / FluidA"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3557,
+      "owner": "TryBuildFluidAdvectionRenderGraphPayload",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(_activeAdvectedSiltCount, _activeAdvectedBubbleCount, _activeAdvectedDebrisCount, maxCount)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3558,
+      "owner": "TryBuildFluidAdvectionRenderGraphPayload",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      math.max(SystemDispatcher.CurrentFrameDeltaTime, 0.0001f),                      1f - SmoothFluidAdvectionQuality(advectionQualityWeight),                      (hasFlowTexture || hasFlowBuffer) ? 1f : 0f,   "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3563,
+      "owner": "TryBuildFluidAdvectionRenderGraphPayload",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      SiltAdvectionBuoyancyMetersPerSecond,                      BubbleAdvectionBuoyancyMetersPerSecond,                      DebrisAdvectionBuoyancyMetersPerSecond,                      FluidAdvectionVelocityBle"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3568,
+      "owner": "TryBuildFluidAdvectionRenderGraphPayload",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      _pendingFluidAdvectionRuntimeShift.x,                      _pendingFluidAdvectionRuntimeShift.y,                      _pendingFluidAdvectionRuntimeShift.z,                      0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3584,
+      "owner": "TryBuildFluidAdvectionRenderGraphPayload",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(sdfActive, FluidAdvectionSdfSolidThreshold, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3839,
+      "owner": "QueueSplashdownBubbleRing",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(sin * spawnRadius * ringBand, HashToSignedUnit((uint)slot) * 0.18f, cos * spawnRadius * ringBand)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3841,
+      "owner": "QueueSplashdownBubbleRing",
+      "kind": "object_creation",
+      "detail": "AdvectedBubble",
+      "snippet": "new AdvectedBubble                  {                      PositionWS = runtimePosition + offset,                      Life = 1f,                      VelocityWS = velocity,                      Flags = AdvectedBubbleActiveFlag             "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3862,
+      "owner": "ResolveSplashdownBubbleVelocity",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3892,
+      "owner": "ScheduleSplashdownImpulseField",
+      "kind": "value_type_creation",
+      "detail": "FluidImpulseJob",
+      "snippet": "new FluidImpulseJob              {                  ImpulseField = _splashdownImpulseUpload,                  ImpulseStats = _splashdownImpulseStats,                  FieldCenterWS = flowCenter,                  ImpactPositionWS = runtimePo"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4034,
+      "owner": "ResolveSplashdownImpulseParams",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(1f, strengthScale, _lastSplashdownFluidImpulseCount, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4111,
+      "owner": "ResolveGlobalWakeParamsForFluidAdvection",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  slotLimit,                  1f - quality,                  activeCount,                  math.saturate(wakeParams.w))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4182,
+      "owner": "TryGetDynamicWakeGpuPayload",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(slotLimit, 1f - quality, activeCount, math.saturate(dynamicWakeParams.w))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4316,
+      "owner": "QueueAdvectedDebrisFromSignal",
+      "kind": "object_creation",
+      "detail": "AdvectedDebris",
+      "snippet": "new AdvectedDebris                  {                      PositionWS = runtimePosition + offset,                      Life = 1f,                      VelocityWS = new float3(offset.x * 0.2f, DebrisAdvectionBuoyancyMetersPerSecond, offset.z"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4320,
+      "owner": "QueueAdvectedDebrisFromSignal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(offset.x * 0.2f, DebrisAdvectionBuoyancyMetersPerSecond, offset.z * 0.2f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4458,
+      "owner": "EnsureEmptyFluidAdvectionTexture",
+      "kind": "object_creation",
+      "detail": "Texture3D",
+      "snippet": "new Texture3D(1, 1, 1, TextureFormat.RGBA32, false)              {                  name = \"__HectonFluidAdvectionEmptyTex3D\",                  wrapMode = TextureWrapMode.Clamp,                  filterMode = FilterMode.Bilinear,            "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4611,
+      "owner": "ResolveSpawnJitter",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(x, y, z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4613,
+      "owner": "ResolveSpawnJitter",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4643,
+      "owner": "WriteFluidAdvectionTelemetry",
+      "kind": "value_type_creation",
+      "detail": "FluidAdvectionTelemetryEntry",
+      "snippet": "new FluidAdvectionTelemetryEntry              {                  FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,                 OriginShiftSequence = _lastOriginShiftSequence,                  ActiveAdvectedParticles = activeCou"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4709,
+      "owner": "WriteFluidAdvectionTelemetryDump",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4710,
+      "owner": "WriteFluidAdvectionTelemetryDump",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4914,
+      "owner": "GatherData",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(com.x, com.y, com.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4925,
+      "owner": "GatherData",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(vel.x, vel.y, vel.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4926,
+      "owner": "GatherData",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(angVel.x, angVel.y, angVel.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4927,
+      "owner": "GatherData",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(up.x, up.y, up.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4929,
+      "owner": "GatherData",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4930,
+      "owner": "GatherData",
+      "kind": "object_creation",
+      "detail": "BuoyancyParams",
+      "snippet": "new BuoyancyParams                  {                      boundsCenter = new float3(boundsCenter.x, boundsCenter.y, boundsCenter.z),                      boundsExtents = new float3(boundsExtents.x, boundsExtents.y, boundsExtents.z),       "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4932,
+      "owner": "GatherData",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(boundsCenter.x, boundsCenter.y, boundsCenter.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4933,
+      "owner": "GatherData",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(boundsExtents.x, boundsExtents.y, boundsExtents.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4943,
+      "owner": "GatherData",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(localCurrent.x, localCurrent.y, localCurrent.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 5079,
+      "owner": "PublishFluidImpactSignal",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(impactEvent.PositionWS.x, impactEvent.PositionWS.y, impactEvent.PositionWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 5083,
+      "owner": "PublishFluidImpactSignal",
+      "kind": "value_type_creation",
+      "detail": "ImpactSignal",
+      "snippet": "new ImpactSignal              {                  PointAup = impactAup,                  Force = force,                  Intensity = intensity,                  PrimaryBodyId = bodyId,                  WeightClass = ResolveImpactWeightClass("
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 5097,
+      "owner": "PublishFluidImpactSignal",
+      "kind": "value_type_creation",
+      "detail": "SplashEvent",
+      "snippet": "new SplashEvent             {                 RuntimePosition = impactEvent.PositionWS,                 AbsoluteUniversePosition = splashRuntimeAup,                 SurfaceNormal = new float3(0f, 1f, 0f),                 ImpactSpeedMetersPe"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 5101,
+      "owner": "PublishFluidImpactSignal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 5109,
+      "owner": "PublishFluidImpactSignal",
+      "kind": "value_type_creation",
+      "detail": "DebrisSpawnSignal",
+      "snippet": "new DebrisSpawnSignal              {                  PositionAup = impactAup,                  SpeciesHash = OceanSplashSignalHash,                  SourceEntityId = bodyId,                  Intensity01 = intensity,                  Debris"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 5158,
+      "owner": "EnqueueCavitationBurst",
+      "kind": "value_type_creation",
+      "detail": "CavitationBurstEvent",
+      "snippet": "new CavitationBurstEvent              {                  Position = position,                  Direction = safeDirection,                  Intensity01 = math.saturate(intensity01),                  Radius = safeRadius,                  Radi"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 5861,
+      "owner": "EnsurePrebakedVectorNoiseField",
+      "kind": "object_creation",
+      "detail": "Color",
+      "snippet": "new Color(                              sample.x * 0.5f + 0.5f,                              sample.y * 0.5f + 0.5f,                              sample.z * 0.5f + 0.5f,                              1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 5871,
+      "owner": "EnsurePrebakedVectorNoiseField",
+      "kind": "object_creation",
+      "detail": "Texture3D",
+      "snippet": "new Texture3D(                  HectonAnalyticalFlowField.VectorNoiseResolution,                  HectonAnalyticalFlowField.VectorNoiseResolution,                  HectonAnalyticalFlowField.VectorNoiseResolution,                  TextureFor"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 5923,
+      "owner": "BuildPrebakedCurlVector",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6010,
+      "owner": "CopyActiveMaelstromsToNative",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(                          whirlpool.CenterWS.x,                          whirlpool.CenterWS.y,                          whirlpool.CenterWS.z,                          intensityOverRadius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6029,
+      "owner": "CopyActiveMaelstromsToNative",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  writeIndex,                  maxRadius,                  maxIntensity,                  0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6119,
+      "owner": "PublishMaelstromRuntimeSignals",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                      primary.CenterWS.x,                      primary.CenterWS.y,                      primary.CenterWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6183,
+      "owner": "TryPublishMaelstromDamage",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(whirlpool.CenterWS.x, whirlpool.CenterWS.y, whirlpool.CenterWS.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6194,
+      "owner": "TryPublishMaelstromDamage",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                      playerPose.RuntimePosition.x,                      playerPose.RuntimePosition.y,                      playerPose.RuntimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6232,
+      "owner": "PublishMaelstromDamageSignal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(direction.x, direction.y, direction.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6268,
+      "owner": "WriteMaelstromTelemetry",
+      "kind": "value_type_creation",
+      "detail": "MaelstromTelemetryEntry",
+      "snippet": "new MaelstromTelemetryEntry              {                  Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),                 FixedTime = Time.fixedTime,                  PrimaryCenterWS = primary.CenterWS,              "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6314,
+      "owner": "DumpMaelstromTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6315,
+      "owner": "DumpMaelstromTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6351,
+      "owner": "IsFiniteVector",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6366,
+      "owner": "TryResolveAupFromRuntimeOrigin",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6385,
+      "owner": "IsFiniteVector",
+      "kind": "value_type_creation",
+      "detail": "float4",
+      "snippet": "new float4(value.x, value.y, value.z, value.w)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6403,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6403,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(fallback.x, fallback.y, fallback.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6404,
+      "owner": "DominantAxisOrDefault",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(axis.x, axis.y, axis.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6411,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6412,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6413,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6428,
+      "owner": "TrySanitizePhysicsVector",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(value.x, value.y, value.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6631,
+      "owner": "EnsureGpuAbyssalFlowBuffers",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  AbyssalFlowTextureCellSizeMeters,                  AbyssalFlowTextureCellSizeMeters,                  AbyssalFlowTextureWorldSizeMeters,                  math.rcp(AbyssalFlowTextureWorldSizeMeters))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6702,
+      "owner": "CreateAbyssalFlowTexture",
+      "kind": "object_creation",
+      "detail": "RenderTextureDescriptor",
+      "snippet": "new RenderTextureDescriptor(                  AbyssalFlowTextureResolution,                  AbyssalFlowTextureResolution)              {                  dimension = TextureDimension.Tex3D,                  volumeDepth = AbyssalFlowTexture"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6717,
+      "owner": "CreateAbyssalFlowTexture",
+      "kind": "object_creation",
+      "detail": "RenderTexture",
+      "snippet": "new RenderTexture(descriptor)              {                  name = textureName,                  wrapMode = TextureWrapMode.Clamp,                  filterMode = FilterMode.Bilinear,                  hideFlags = HideFlags.HideAndDontSave  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7095,
+      "owner": "TryDispatchGpuAbyssalFlowField",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  resolvedWeatherCurrent.x,                  resolvedWeatherCurrent.y,                  resolvedWeatherCurrent.z,                  weatherSnapshot.WeatherIntensity)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7100,
+      "owner": "TryDispatchGpuAbyssalFlowField",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  weatherSnapshot.GlobalWindVector.x,                  weatherSnapshot.GlobalWindVector.y,                  weatherSnapshot.GlobalWindVector.z,                  0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7105,
+      "owner": "TryDispatchGpuAbyssalFlowField",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  AbyssalFlowTextureResolution,                  AbyssalFlowTextureResolution,                  AbyssalFlowTextureResolution,                  nodeCount)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7110,
+      "owner": "TryDispatchGpuAbyssalFlowField",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(flowCenter.x, flowCenter.y, flowCenter.z, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7111,
+      "owner": "TryDispatchGpuAbyssalFlowField",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  AbyssalFlowTextureCellSizeMeters,                  AbyssalFlowTextureCellSizeMeters,                  AbyssalFlowTextureWorldSizeMeters,                  math.rcp(AbyssalFlowTextureWorldSizeMeters))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7116,
+      "owner": "TryDispatchGpuAbyssalFlowField",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  AbyssalFlowTextureCellSizeMeters,                  AbyssalFlowTextureCellSizeMeters,                  AbyssalFlowTextureWorldSizeMeters,                  math.rcp(AbyssalFlowTextureWorldSizeMeters))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7127,
+      "owner": "TryDispatchGpuAbyssalFlowField",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  weatherSnapshot.CurrentMeta.ThermalIntensity,                  ApproximateMagnitude(weatherSnapshot.GlobalWindVector),                  resolvedWaveHeight,                  weatherSnapshot.CurrentMeta.TimeAccum"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7133,
+      "owner": "TryDispatchGpuAbyssalFlowField",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  AbyssalFlowTextureResolution,                  AbyssalFlowTextureWorldSizeMeters,                  flowTextureInitialized ? math.max(0f, fixedDeltaTime) : 1f,                  flowTextureDetail01)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7138,
+      "owner": "TryDispatchGpuAbyssalFlowField",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                  (float)aupOffset.x,                  (float)aupOffset.y,                  (float)aupOffset.z,                  _lastOriginShiftSequence)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7289,
+      "owner": "DispatchAbyssalVortexImpulses",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      impulse.PositionWS.x,                      impulse.PositionWS.y,                      impulse.PositionWS.z,                      impulse.RadiusMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7294,
+      "owner": "DispatchAbyssalVortexImpulses",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(                      impulse.AxisWS.x,                      impulse.AxisWS.y,                      impulse.AxisWS.z,                      impulse.StrengthMetersPerSecond * strengthScale * detail01)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7330,
+      "owner": "TryResolveSubmarineWakePayload",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(velocity.x, velocity.y, velocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7340,
+      "owner": "TryResolveSubmarineWakePayload",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(position.x, position.y, position.z, radius)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7341,
+      "owner": "TryResolveSubmarineWakePayload",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(velocity.x, velocity.y, velocity.z, speed)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7371,
+      "owner": "WriteAbyssalFlowTelemetry",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(wakeSphere.x, wakeSphere.y, wakeSphere.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7372,
+      "owner": "WriteAbyssalFlowTelemetry",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(wakeVelocity.x, wakeVelocity.y, wakeVelocity.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7373,
+      "owner": "WriteAbyssalFlowTelemetry",
+      "kind": "value_type_creation",
+      "detail": "AbyssalFlowTelemetryEntry",
+      "snippet": "new AbyssalFlowTelemetryEntry              {                  Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),                 FixedTime = Time.fixedTime,                  CenterWS = center,                  WakePositio"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7448,
+      "owner": "DumpAbyssalFlowTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7449,
+      "owner": "DumpAbyssalFlowTelemetryOnce",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7511,
+      "owner": "CaptureAbyssalHeatSources",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(                      flowCenter.x + sampleOffset.x,                      flowCenter.y + sampleOffset.y,                      flowCenter.z + sampleOffset.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7529,
+      "owner": "CaptureAbyssalHeatSources",
+      "kind": "object_creation",
+      "detail": "GpuHeatSourceData",
+      "snippet": "new GpuHeatSourceData                  {                      PositionWS = new float3(samplePosition.x, samplePosition.y, samplePosition.z),                      Intensity = intensity,                      Radius = abyssalHeatProbeRadius,  "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7531,
+      "owner": "CaptureAbyssalHeatSources",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(samplePosition.x, samplePosition.y, samplePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7548,
+      "owner": "ResolveAbyssalFlowCenter",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                  observerPosition.x,                  math.min(observerPosition.y, resolvedWaterLevel - 32f),                  observerPosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7563,
+      "owner": "ResolveGiantWakeCurrentBase",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(directionManaged.x, directionManaged.y, directionManaged.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7564,
+      "owner": "ResolveGiantWakeCurrentBase",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(skyDirection.x, 0f, skyDirection.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7569,
+      "owner": "ResolveGiantWakeCurrentBase",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7571,
+      "owner": "ResolveGiantWakeCurrentBase",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7598,
+      "owner": "ResolveHeatProbeOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(horizontalProbeOffset, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7599,
+      "owner": "ResolveHeatProbeOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(-horizontalProbeOffset, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7600,
+      "owner": "ResolveHeatProbeOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, horizontalProbeOffset)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7601,
+      "owner": "ResolveHeatProbeOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, -horizontalProbeOffset)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7602,
+      "owner": "ResolveHeatProbeOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, verticalProbeOffset, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7603,
+      "owner": "ResolveHeatProbeOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, -verticalProbeOffset, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7604,
+      "owner": "ResolveHeatProbeOffset",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(horizontalProbeOffset * 0.70710677f, 0f, horizontalProbeOffset * 0.70710677f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7674,
+      "owner": "UploadGpuBuoyancyObjectData",
+      "kind": "object_creation",
+      "detail": "GpuBuoyancyObjectData",
+      "snippet": "new GpuBuoyancyObjectData                  {                      Volume = buoyancyParams.volume,                      Height = buoyancyParams.height,                      IsInAir = buoyancyParams.isInAir != 0 ? 1f : 0f,                    "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7688,
+      "owner": "SetGpuWave",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(wave.DirectionXZ.x, wave.DirectionXZ.y, wave.Amplitude, wave.Wavelength)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7689,
+      "owner": "SetGpuWave",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(wave.Steepness, wave.PhaseOffset, wave.SpeedMultiplier, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 7736,
+      "owner": "TryDispatchGpuBuoyancySampling",
+      "kind": "object_creation",
+      "detail": "Vector4",
+      "snippet": "new Vector4(resolvedWaterLevel, waterDensity, math.abs(UnityEngine.Physics.gravity.y), weatherSnapshot.CurrentMeta.TimeAccumulator)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8105,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8114,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8118,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "double2",
+      "snippet": "new double2(centerXZ.x, centerXZ.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8138,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8310,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8334,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "FluidImpactEvent",
+      "snippet": "new FluidImpactEvent                  {                      PositionWS = pos,                      VelocityWS = vel,                      MassKg = p.mass,                      SurfaceY = surfaceY                  }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8395,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, buoyancyMagnitude, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8444,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(17.3f, 0f, 11.1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8486,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                      0f,                      0f,                      haloclineShearForcePerKg * p.mass * subRatio * math.max(0f, p.currentResponse))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8535,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, dampingForce, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8547,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8565,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8566,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8573,
+      "owner": "Execute",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.071f, 0.113f, 0.097f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8638,
+      "owner": "ResolveSurfaceNormalLod",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8642,
+      "owner": "ResolveSurfaceNormalLod",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8649,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8650,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8651,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8735,
+      "owner": "SampleFiniteDifferenceNormal",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(sampleDistance, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8736,
+      "owner": "SampleFiniteDifferenceNormal",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, sampleDistance)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8741,
+      "owner": "SampleFiniteDifferenceNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(left - right, sampleDistance * 2f, down - up)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8753,
+      "owner": "SampleFiniteDifferenceNormal",
+      "kind": "value_type_creation",
+      "detail": "double2",
+      "snippet": "new double2(sampleDistance, 0d)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8754,
+      "owner": "SampleFiniteDifferenceNormal",
+      "kind": "value_type_creation",
+      "detail": "double2",
+      "snippet": "new double2(0d, sampleDistance)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8759,
+      "owner": "SampleFiniteDifferenceNormal",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(left - right, (float)(sampleDistance * 2d), down - up)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8768,
+      "owner": "ComputeHeight",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8782,
+      "owner": "ComputeHeight",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8783,
+      "owner": "ComputeHeight",
+      "kind": "value_type_creation",
+      "detail": "double2",
+      "snippet": "new double2(directionFloat.x, directionFloat.y)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8812,
+      "owner": "ResolveNormalOrUp",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8835,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(math.select(-1f, 1f, value.x >= 0f), 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8836,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(0f, math.select(-1f, 1f, value.y >= 0f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8916,
+      "owner": "SampleBaseFlow",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(17.3f, 0f, 11.1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8961,
+      "owner": "SamplePrebakedVectorCurrent",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(worldPos.x, worldPos.y, worldPos.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 8969,
+      "owner": "SamplePrebakedVectorCurrent",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 9021,
+      "owner": "ApplyThrusterFlow",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 9074,
+      "owner": "SampleWhirlpoolVelocity",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 9159,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 9160,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 9161,
+      "owner": "DominantAxisOrDefault",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f))"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 9296,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "InteriorFloodBfsResult",
+      "snippet": "new InteriorFloodBfsResult                  {                      TotalWaterMassKg = totalLiters * sampleScale * 0.001f * math.max(0.01f, WaterDensityKgPerM3),                      StructuralLoadKg = structuralLoadKg * sampleScale,        "
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 870,
+      "owner": "",
+      "kind": "string_concat_suspect",
+      "detail": "operator+",
+      "snippet": "\"Koeffitsient vyazkogo soprotivleniya. \" +                   \"Chem bolshe — tem silnee tormozhenie pod vodoy.\""
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 815,
+      "owner": "Execute",
+      "kind": "object_creation",
+      "detail": "AcousticEcholocationRayHit",
+      "snippet": "new AcousticEcholocationRayHit                      {                          Point = hitPoint,                          Direction = direction,                          RayDistanceMeters = rayDistance,                          ReturnDistan"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 838,
+      "owner": "TrySampleDensity",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0.0001f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 912,
+      "owner": "ResolveRayDirection",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 0f, 1f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 913,
+      "owner": "ResolveRayDirection",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(1f, 0f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 914,
+      "owner": "ResolveRayDirection",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(0f, 1f, 0f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 3223,
+      "owner": "StartAudioProducerThread",
+      "kind": "object_creation",
+      "detail": "Thread",
+      "snippet": "new Thread(AudioProducerLoop)              {                  IsBackground = true,                  Name = \"Hecton8ProceduralAudioProducer\",                  Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.AudioProducer)     "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 3430,
+      "owner": "TryGetGranularSynthTuning",
+      "kind": "object_creation",
+      "detail": "GranularSynthTuningSnapshot",
+      "snippet": "new GranularSynthTuningSnapshot              {                  BasePitchScale = _targetGranularBasePitchScale,                  GrainLengthScale = _targetGranularGrainLengthScale,                  OverlapDensityScale = _targetGranularOverl"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 4469,
+      "owner": "TryHandleHighSpeedImpactSignal",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtime.x, runtime.y, runtime.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 4576,
+      "owner": "RecordHighSpeedImpactSignal",
+      "kind": "value_type_creation",
+      "detail": "HighSpeedImpactDuplicateEntry",
+      "snippet": "new HighSpeedImpactDuplicateEntry              {                  Frame = frame,                  Signature = signature,                  Valid = 1              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 4888,
+      "owner": "TryPublishKineticImpactEchoTap",
+      "kind": "value_type_creation",
+      "detail": "SonarTriggerState",
+      "snippet": "new SonarTriggerState                     {                         Sequence = Interlocked.Increment(ref _pendingSonarSequence),                         EchoRevision = 3,                         StartFrame = Interlocked.Read(ref _producedSa"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 4967,
+      "owner": "TriggerSonarEchoFromOrigin",
+      "kind": "value_type_creation",
+      "detail": "SonarTriggerState",
+      "snippet": "new SonarTriggerState                      {                          Sequence = sequence,                          EchoRevision = 1,                          StartFrame = scheduledStartFrame,                          Intensity = clampedInt"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5005,
+      "owner": "TriggerSonarEchoFromOrigin",
+      "kind": "value_type_creation",
+      "detail": "SonarTriggerState",
+      "snippet": "new SonarTriggerState                     {                         Sequence = sequence,                         EchoRevision = echoRevision,                         StartFrame = scheduledStartFrame,                         Intensity = clam"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5069,
+      "owner": "TryResolveRuntimeAup",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5093,
+      "owner": "TryResolveRuntimeOriginRelativeFloat3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(-AupRuntimeFloatClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5094,
+      "owner": "TryResolveRuntimeOriginRelativeFloat3",
+      "kind": "value_type_creation",
+      "detail": "double3",
+      "snippet": "new double3(AupRuntimeFloatClampMeters)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5095,
+      "owner": "TryResolveRuntimeOriginRelativeFloat3",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(                 (float)clampedDelta.x,                 (float)clampedDelta.y,                 (float)clampedDelta.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5110,
+      "owner": "TryResolveRuntimeOriginRelativeVector3",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(runtimeFloat.x, runtimeFloat.y, runtimeFloat.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5149,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "AcousticEcholocationRaymarchJob",
+      "snippet": "new AcousticEcholocationRaymarchJob                 {                     EncodedSdf = encodedSdf,                     AudioMaterialIds = audioMaterialIds,                     GridDimensions = new int3(gridDimensions.x, gridDimensions.y, gr"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5153,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "int3",
+      "snippet": "new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5154,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5155,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(voxelCellSize.x, voxelCellSize.y, voxelCellSize.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5157,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(origin.x, origin.y, origin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5158,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(origin.x, origin.y, origin.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5159,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(forward.x, forward.y, forward.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5160,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(right.x, right.y, right.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5161,
+      "owner": "TryRunSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "float3",
+      "snippet": "new float3(up.x, up.y, up.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5277,
+      "owner": "PublishSdfSonarEchoPass",
+      "kind": "value_type_creation",
+      "detail": "SonarTriggerState",
+      "snippet": "new SonarTriggerState                     {                         Sequence = _sonarEcholocationScheduledSequence,                         EchoRevision = echoRevision,                         StartFrame = _sonarEcholocationScheduledStartFr"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5424,
+      "owner": "HandleAcousticEchoReturned",
+      "kind": "object_creation",
+      "detail": "SonarEchoCompositeGroup",
+      "snippet": "new SonarEchoCompositeGroup(                     echoAup,                     echoEvent.DistanceMeters,                     echoEvent.ReturnStrength,                     echoEvent.Resonance,                     1,                     echoEv"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5518,
+      "owner": "RunSonarEchoCompositeHashPass",
+      "kind": "value_type_creation",
+      "detail": "SonarEchoSpatialHashCoalesceJob",
+      "snippet": "new SonarEchoSpatialHashCoalesceJob             {                 Candidates = candidates,                 Groups = spatialViews.Groups,                 GroupCount = spatialViews.GroupCount,                 CandidateCount = math.clamp(candi"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 5901,
+      "owner": "PublishPingReturnSignal",
+      "kind": "value_type_creation",
+      "detail": "PingReturnSignal",
+      "snippet": "new PingReturnSignal(                  position,                  in hitAup,                  distanceMeters,                  returnStrength,                  echoDelaySeconds,                  audioMaterialId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 6112,
+      "owner": "BuildSonarEchoTap",
+      "kind": "object_creation",
+      "detail": "SonarEchoTap",
+      "snippet": "new SonarEchoTap              {                  DelaySeconds = clampedDelaySeconds,                  PreviousDopplerRatio = 1f,                  DopplerRatio = math.clamp(dopplerRatio, SonarEchoMinimumDopplerRatio, SonarEchoMaximumDopplerR"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 6330,
+      "owner": "PublishAcousticImpulseSignal",
+      "kind": "object_creation",
+      "detail": "PhysicsEventPayload",
+      "snippet": "new PhysicsEventPayload             {                 RuntimePosition = runtimePosition,                 Direction = ResolveAcousticImpulseDirection(direction),                 ForceVector = default,                 ImpulseVector = default,"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 6583,
+      "owner": "HandleLeviathanRoarAudioPing",
+      "kind": "object_creation",
+      "detail": "Vector3",
+      "snippet": "new Vector3(predatorDeltaAup.x, predatorDeltaAup.y, predatorDeltaAup.z)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 6731,
+      "owner": "ResolveBaseStructuralWarningAup",
+      "kind": "object_creation",
+      "detail": "AbsoluteUniversePosition",
+      "snippet": "new AbsoluteUniversePosition              {                  GridX = warning.EpicenterAup.GridX,                  GridY = warning.EpicenterAup.GridY,                  GridZ = warning.EpicenterAup.GridZ,                  LocalX = warning.Epi"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 6746,
+      "owner": "ResolveStructuralStressRuntimePosition",
+      "kind": "object_creation",
+      "detail": "AbsoluteUniversePosition",
+      "snippet": "new AbsoluteUniversePosition                  {                      GridX = stressInfo.SourceAup.GridX,                      GridY = stressInfo.SourceAup.GridY,                      GridZ = stressInfo.SourceAup.GridZ,                      "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8139,
+      "owner": "EnsureBuffers",
+      "kind": "object_creation",
+      "detail": "AudioFrameSpscRingBuffer",
+      "snippet": "new AudioFrameSpscRingBuffer()"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8194,
+      "owner": "EnsureBuffers",
+      "kind": "value_type_creation",
+      "detail": "CriticalSidechainCompressorState",
+      "snippet": "new CriticalSidechainCompressorState { Gain = 1f }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8415,
+      "owner": "ClearLowPassState",
+      "kind": "value_type_creation",
+      "detail": "CriticalSidechainCompressorState",
+      "snippet": "new CriticalSidechainCompressorState { Gain = 1f }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 8582,
+      "owner": "PrimeForwardImpactEchoProbe",
+      "kind": "object_creation",
+      "detail": "PendingImpactEchoProbe",
+      "snippet": "new PendingImpactEchoProbe              {                  Valid = 1,                  Excitation = echoExcitation,                  ExpireAt = ResolvePresentationClockSeconds() + ImpactEchoMaximumLifetimeSeconds             }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 9823,
+      "owner": "ResetSonarPhaseState",
+      "kind": "value_type_creation",
+      "detail": "SonarSynthesisState",
+      "snippet": "new SonarSynthesisState              {                  ActiveSequence = activeSequence              }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 10355,
+      "owner": "TryEnqueueImpactAudioEvent",
+      "kind": "value_type_creation",
+      "detail": "ImpactAudioEvent",
+      "snippet": "new ImpactAudioEvent              {                  Stress = math.saturate(stress),                  Metallic = math.saturate(metallic),                  ClangExcitation = math.saturate(clangExcitation),                  EchoExcitation = m"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11822,
+      "owner": "RecordAudioSynthesisTelemetry",
+      "kind": "value_type_creation",
+      "detail": "AudioSynthesisTelemetryEntry",
+      "snippet": "new AudioSynthesisTelemetryEntry                 {                     StopwatchTicks = System.Diagnostics.Stopwatch.GetTimestamp(),                     Frame = (uint)math.max(0, Hecton8.Core.SystemDispatcher.CurrentFrameIndex),            "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 11915,
+      "owner": "RecordGranularTelemetry",
+      "kind": "value_type_creation",
+      "detail": "GranularAudioTelemetryEntry",
+      "snippet": "new GranularAudioTelemetryEntry                 {                     SampleIndex = sampleIndex,                     Stress01 = math.saturate(stress),                     StressDerivative01 = math.saturate(stressDerivative),                "
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12003,
+      "owner": "RecordPrologueTransitionTelemetry",
+      "kind": "value_type_creation",
+      "detail": "PrologueAudioTransitionTelemetryEntry",
+      "snippet": "new PrologueAudioTransitionTelemetryEntry                 {                     Frame = state.Frame,                     Sequence = state.Sequence,                     UniverseVelocityMetersPerSecond = state.UniverseVelocityMetersPerSecond,"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12100,
+      "owner": "WriteGranularTelemetryDumpCold",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12101,
+      "owner": "WriteGranularTelemetryDumpCold",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12151,
+      "owner": "WritePrologueTransitionTelemetryDumpCold",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12152,
+      "owner": "WritePrologueTransitionTelemetryDumpCold",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12207,
+      "owner": "WriteAudioSynthesisTelemetryDumpCold",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12208,
+      "owner": "WriteAudioSynthesisTelemetryDumpCold",
+      "kind": "object_creation",
+      "detail": "BinaryWriter",
+      "snippet": "new BinaryWriter(stream)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 12966,
+      "owner": "SampleSimplex01",
+      "kind": "value_type_creation",
+      "detail": "float2",
+      "snippet": "new float2(position + seedX * 31.17f, seedY * 17.93f)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 13070,
+      "owner": "WarmPrologueSplashdownBurstProbeCold",
+      "kind": "value_type_creation",
+      "detail": "PrologueSplashdownSineSweepProbeJob",
+      "snippet": "new PrologueSplashdownSineSweepProbeJob                 {                     Output = frameViews.MixScratch,                     NormalizedTime = 0.5f                 }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 13104,
+      "owner": "PublishAudioParameterSnapshot",
+      "kind": "object_creation",
+      "detail": "AudioParameterSnapshot",
+      "snippet": "new AudioParameterSnapshot              {                  HullStress = _targetHullStressValue,                  StructuralHullStress = _targetStructuralHullStressValue,                  StructuralHullStressVelocity = _targetStructuralHullS"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 1033,
+      "owner": "",
+      "kind": "implicit_object_creation",
+      "detail": "unknown",
+      "snippet": "new(false)"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

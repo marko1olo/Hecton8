@@ -5,10 +5,8 @@ using Hecton8.Core;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
@@ -85,6 +83,13 @@ namespace Hecton8.Visor
             private int _brownoutGlobalsWriteIndex;
             private bool _hasBrownoutGlobals;
 
+            private sealed class BrownoutPassData
+            {
+                public TextureHandle Source;
+                public BufferHandle ConstantsBuffer;
+                public Material Material;
+            }
+
             public BrownoutPass()
             {
                 profilingSampler = _profilingSampler;
@@ -99,7 +104,11 @@ namespace Hecton8.Visor
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
-                EnsureBrownoutGlobalsBuffer();
+            }
+
+            public bool PrepareResources()
+            {
+                return EnsureBrownoutGlobalsBuffer();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -131,23 +140,54 @@ namespace Hecton8.Visor
                 if (!sourceTexture.IsValid())
                     return;
 
+                if (!UpdateBrownoutGlobals(_settings, _runtimeState))
+                    return;
+                if (_brownoutGlobalsBuffer == null || !_brownoutGlobalsBuffer.IsValid())
+                    return;
+
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
                 TextureDesc destinationDesc = new TextureDesc(sourceDesc);
                 destinationDesc.name = "_HectonVRBrownout";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
                 destinationDesc.msaaSamples = MSAASamples.None;
-                destinationDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
                 destinationDesc.useMipMap = false;
                 destinationDesc.autoGenerateMips = false;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
+                BufferHandle globalsBuffer = renderGraph.ImportBuffer(_brownoutGlobalsBuffer);
 
-                if (!UpdateBrownoutGlobals(_settings, _runtimeState))
-                    return;
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<BrownoutPassData>(
+                           "Hecton VR Brownout",
+                           out BrownoutPassData passData,
+                           _profilingSampler))
+                {
+                    passData.Source = sourceTexture;
+                    passData.ConstantsBuffer = globalsBuffer;
+                    passData.Material = _material;
 
-                renderGraph.AddBlitPass(
-                    new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
-                    passName: "Hecton VR Brownout");
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.UseBuffer(globalsBuffer, AccessFlags.Read);
+                    builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (BrownoutPassData data, RasterGraphContext context) =>
+                    {
+                        if (data.Material == null)
+                            return;
+
+                        GraphicsBuffer constants = data.ConstantsBuffer;
+                        if (constants == null || !constants.IsValid())
+                            return;
+
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
+                        context.cmd.SetGlobalConstantBuffer(
+                            constants,
+                            ShaderConstants.BrownoutGlobalsBufferId,
+                            0,
+                            VRBrownoutGlobalsStrideBytes);
+                        CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
+                    });
+                }
 
                 resourceData.cameraColor = destinationTexture;
             }
@@ -199,7 +239,7 @@ namespace Hecton8.Visor
 
             private bool UpdateBrownoutGlobals(FeatureSettings settings, RuntimeState runtimeState)
             {
-                if (!EnsureBrownoutGlobalsBuffer())
+                if (!HasBrownoutGlobalsBuffer())
                     return false;
 
                 BrownoutGlobalsDTO globals = new BrownoutGlobalsDTO(
@@ -217,29 +257,73 @@ namespace Hecton8.Visor
                     SanitizeVrComfortMotion(runtimeState.VrComfortMotion));
                 if (_hasBrownoutGlobals && BrownoutGlobalsEqual(in _lastBrownoutGlobals, in globals))
                 {
-                    Shader.SetGlobalConstantBuffer(ShaderConstants.BrownoutGlobalsBufferId, _brownoutGlobalsBuffer, 0, VRBrownoutGlobalsStrideBytes);
-                    return true;
+                    return _brownoutGlobalsBuffer != null && _brownoutGlobalsBuffer.IsValid();
                 }
 
                 GraphicsBuffer writeBuffer = _brownoutGlobalsWriteIndex == 0 ? _brownoutGlobalsBufferA : _brownoutGlobalsBufferB;
                 if (writeBuffer == null || !writeBuffer.IsValid())
                     return false;
 
-                NativeArray<BrownoutGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<BrownoutGlobalsDTO>(0, 1);
                 try
                 {
-                    mapped[0] = globals;
+                    NativeArray<BrownoutGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<BrownoutGlobalsDTO>(0, 1);
+                    try
+                    {
+                        mapped[0] = globals;
+                    }
+                    finally
+                    {
+                        writeBuffer.UnlockBufferAfterWrite<BrownoutGlobalsDTO>(1);
+                    }
                 }
-                finally
+                catch (ObjectDisposedException)
                 {
-                    writeBuffer.UnlockBufferAfterWrite<BrownoutGlobalsDTO>(1);
+                    MarkBrownoutGlobalsUnavailable();
+                    return false;
                 }
+                catch (InvalidOperationException)
+                {
+                    MarkBrownoutGlobalsUnavailable();
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    MarkBrownoutGlobalsUnavailable();
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    MarkBrownoutGlobalsUnavailable();
+                    return false;
+                }
+
                 _brownoutGlobalsBuffer = writeBuffer;
                 _brownoutGlobalsWriteIndex ^= 1;
                 _lastBrownoutGlobals = globals;
                 _hasBrownoutGlobals = true;
-                Shader.SetGlobalConstantBuffer(ShaderConstants.BrownoutGlobalsBufferId, _brownoutGlobalsBuffer, 0, VRBrownoutGlobalsStrideBytes);
+                return _brownoutGlobalsBuffer != null && _brownoutGlobalsBuffer.IsValid();
+            }
+
+            private bool HasBrownoutGlobalsBuffer()
+            {
+                if (!SystemInfo.supportsSetConstantBuffer)
+                    return false;
+
+                if (_brownoutGlobalsBufferA == null || !_brownoutGlobalsBufferA.IsValid() ||
+                    _brownoutGlobalsBufferB == null || !_brownoutGlobalsBufferB.IsValid())
+                {
+                    return false;
+                }
+
+                if (_brownoutGlobalsBuffer == null || !_brownoutGlobalsBuffer.IsValid())
+                    _brownoutGlobalsBuffer = _brownoutGlobalsBufferA;
                 return true;
+            }
+
+            private void MarkBrownoutGlobalsUnavailable()
+            {
+                _brownoutGlobalsBuffer = null;
+                _hasBrownoutGlobals = false;
             }
 
             private static bool BrownoutGlobalsEqual(in BrownoutGlobalsDTO left, in BrownoutGlobalsDTO right)
@@ -290,6 +374,7 @@ namespace Hecton8.Visor
         private static class ShaderConstants
         {
             internal static readonly int BrownoutGlobalsBufferId = Shader.PropertyToID("HectonVRBrownoutGlobals");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
             internal static readonly int BrownoutIntensityId = Shader.PropertyToID("_HectonVRBrownoutIntensity");
             internal static readonly int WorldFocusBlurId = Shader.PropertyToID("_HectonWorldFocusBlur");
             internal static readonly int NearCollisionIntensityId = Shader.PropertyToID("_HectonVRNearCollisionIntensity");
@@ -325,6 +410,7 @@ namespace Hecton8.Visor
             }
 
             RecreateMaterial(ref _material, shader);
+            _pass.PrepareResources();
             TryRegisterHotSwapListener();
             _cachedPlayerContext = GlobalRegistry.Player;
         }

@@ -1,0 +1,147 @@
+{
+    "agentId":  "1316",
+    "task":  "1316_PURGE",
+    "status":  "PENDING_VERIFICATION",
+    "generatedLocal":  "2026-05-26",
+    "scannedFiles":  276,
+    "failedGates":  [
+                        "NATIVE_COLLECTION_EXORCISM_INCOMPLETE",
+                        "PERSISTENT_NATIVE_FIELDS_REMAIN",
+                        "PRIMARY_VEGETATION_MEMORY_POOL_ALIAS_DEBT_29",
+                        "BRIDGE_TILE_NAV_ALIAS_DEBT_8",
+                        "THREAT_FLOW_THERMAL_DOUBLE_BUFFER_REDESIGN_REQUIRED",
+                        "CHUNK_POOL_AND_ACTIVE_AGGREGATE_REDESIGN_REQUIRED"
+                    ],
+    "totalNativeFieldDeclarations":  1190,
+    "persistentNativeFieldsRemaining":  37,
+    "primaryPersistentNativeFieldsRemaining":  29,
+    "bridgePersistentNativeFieldsRemaining":  8,
+    "worldPersistentNativeFieldCandidates":  242,
+    "transientVaultViews":  16,
+    "transientJobViews":  947,
+    "touchedTransientJobViews":  107,
+    "stackOnlyRefStructViews":  1,
+    "nativeAuditHashSha256":  "a3b7d7a08068183a3d7df072f92c610a28c3afa8eb3c9e5b8514c24039f5d27c",
+    "worldAudit":  {
+                       "parseFailures":  0,
+                       "forbiddenPersistentCandidates":  242,
+                       "forbiddenMonoBehaviourCandidates":  22,
+                       "jobTransientFields":  947,
+                       "rawPointerFields":  57
+                   },
+    "remainingTouchedPersistentOwners":  {
+                                             "VegetationMemoryPool.NativeChunkPool":  8,
+                                             "VegetationMemoryPool.ActiveAggregateNativeBufferSet":  7,
+                                             "VegetationMemoryPool.VegetationNativeMemory":  14,
+                                             "HectonMapMagicVegetationBridge.TileNativeCacheBuffer":  3,
+                                             "HectonMapMagicVegetationBridge.TileRuntimeState":  1,
+                                             "HectonMapMagicVegetationBridge.ChunkAbyssalNavPayload":  4
+                                         },
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "VegetationMemoryTelemetryEntry",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "StateHash":  "0:ulong",
+                                               "BufferId":  "8:uint",
+                                               "Generation":  "12:uint",
+                                               "Frame":  "16:uint",
+                                               "ExpectedLength":  "20:int",
+                                               "ActualLength":  "24:int",
+                                               "CulledInstances":  "28:int",
+                                               "JobMicroseconds":  "32:float",
+                                               "QualityWeight":  "36:float",
+                                               "FailureCode":  "40:ushort",
+                                               "Phase":  "42:ushort",
+                                               "Flags":  "44:uint",
+                                               "Position":  "48:float3",
+                                               "Reserved0":  "60:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "VegetationMemoryHashPair",
+                               "sizeBytes":  8,
+                               "offsets":  {
+                                               "Key":  "0:int",
+                                               "Value":  "4:int"
+                                           }
+                           },
+                           {
+                               "structName":  "VegetationMemoryCounter",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "Count":  "0:int",
+                                               "Capacity":  "4:int",
+                                               "Generation":  "8:uint",
+                                               "Flags":  "12:uint"
+                                           }
+                           },
+                           {
+                               "structName":  "ChunkSliceMoveRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "SourceOffset":  "0:int",
+                                               "DestinationOffset":  "4:int",
+                                               "Count":  "8:int",
+                                               "_pad0":  "12:byte",
+                                               "_pad1":  "13:byte",
+                                               "_pad2":  "14:byte",
+                                               "_pad3":  "15:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "ActiveAggregateCopyRecord",
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "SourceOffset":  "0:int",
+                                               "DestinationOffset":  "4:int",
+                                               "Count":  "8:int",
+                                               "PoolSet":  "12:byte",
+                                               "_pad0":  "13:byte",
+                                               "_pad1":  "14:byte",
+                                               "_pad2":  "15:byte"
+                                           }
+                           },
+                           {
+                               "structName":  "MegaWreckStreamSection",
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "WreckId":  "0:int",
+                                               "SectionSeed":  "4:int",
+                                               "SectionX":  "8:int",
+                                               "SectionZ":  "12:int",
+                                               "WorldCenter":  "16:Vector3",
+                                               "WorldSize":  "28:Vector3",
+                                               "LocalCenter":  "40:Vector3",
+                                               "LocalSize":  "52:Vector3"
+                                           }
+                           },
+                           {
+                               "structName":  "PredatorFearNodeSnapshot",
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "Position":  "0:float3",
+                                               "Radius":  "12:float",
+                                               "Weight":  "16:float",
+                                               "SpeciesId":  "20:int",
+                                               "Padding":  "24:float",
+                                               "_pad0":  "28:uint"
+                                           }
+                           }
+                       ],
+    "zeroGcHotPathHits":  0,
+    "zeroGcScanNote":  "Case-sensitive Select-String over 1316 hot-path runtime files found no string.Format, ToString, interpolation, LINQ, foreach, catch(Exception), or throw new hits. Density query published snapshots, terrain-hole records, artificial-structure records, and threat/artificial hash-map persistent aliases were removed or routed through Vault/TempJob/fallback scan lanes. Remaining proof is static/source-level until Unity profiler capture exists.",
+    "absoluteAupCastsFound":  0,
+    "aupGateNote":  "Density and threat-grid accumulation now subtract minX/minZ in double precision before float reduction; matrix offset casts route through finite clamp helpers.",
+    "compactionAwareLocksProven":  true,
+    "compactionLockNote":  "Migrated write lanes release in finally. Density query, terrain-hole, and artificial-structure published snapshots now write through short DataVault locks; scheduled jobs receive TempJob copies released by dependency or synchronous method-finally cleanup. Threat/artificial persistent hash maps were removed in favor of bounded scan fallbacks. Remaining threat/flow/thermal double buffers and chunk-pool lanes still require redesign.",
+    "telemetryRingIntegrated":  true,
+    "compileAttempted":  true,
+    "coreCompileSucceeded":  true,
+    "coreCompileCommand":  "dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly",
+    "coreCompileBlockedReason":  "",
+    "solutionCompileSucceeded":  false,
+    "solutionCompileCommand":  "dotnet build Hecton8.slnx --disable-build-servers -p:UseSharedCompilation=false -nologo -clp:ErrorsOnly -maxcpucount:1",
+    "solutionCompileBlockedReason":  "Full solution build blocked by CPU/dotnet guard after core compile succeeded.",
+    "verificationHashSha256":  "9d80a9b9f86415750283cefef63151272ce9dea0139c24539f732b1687421709"
+}

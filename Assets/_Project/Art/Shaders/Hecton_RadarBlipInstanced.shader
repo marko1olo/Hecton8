@@ -145,8 +145,8 @@ Shader "HECTON/HUD/RadarBlipInstanced"
                 float instanceAlpha = saturate(input.instanceAlpha);
                 float2 centered = input.uv * 2.0 - 1.0;
                 float diamond = abs(centered.x) + abs(centered.y);
-                float border = 1.0 - smoothstep(1.0 - _EdgeWidth, 1.0, abs(diamond - 1.0));
-                float fill = smoothstep(1.0, 0.82, diamond) * _FillAlpha * instanceAlpha;
+                float border = 1.0 - saturate((abs(diamond - 1.0) - (1.0 - _EdgeWidth)) * rcp(max(_EdgeWidth, 0.0001)));
+                float fill = saturate((1.0 - diamond) * rcp(max(1.0 - 0.82, 0.0001))) * _FillAlpha * instanceAlpha;
                 float flicker = 1.0 - _FlickerIntensity + _FlickerIntensity * HectonFastTriangleSine(_Time.y * _FlickerFrequency * 6.2831853);
                 float alpha = saturate((border + fill) * _BaseColor.a * flicker * instanceAlpha);
                 return half4(_BaseColor.rgb * input.instanceColor * alpha, alpha);

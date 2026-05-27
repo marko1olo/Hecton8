@@ -1,0 +1,21 @@
+{
+  "schema": "hecton8.vault_native_alias_roslyn_ledger.v1",
+  "agentId": "1336",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "sourceRoot": "Assets/_Project/Scripts/Bootstrap",
+  "outputPath": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1336_BOOTSTRAP_LOOP26.json",
+  "auditHashSha256": "e1281c0bea552b87c5f7351b31cc7fb56124612aa992cbd90e7ad31ada89e15c",
+  "summary": {
+    "scannedFiles": 9,
+    "parseFailures": 0,
+    "totalNativeFieldDeclarations": 0,
+    "forbiddenPersistentCandidates": 0,
+    "forbiddenMonoBehaviourCandidates": 0,
+    "jobTransientFields": 0,
+    "stackOnlyRefStructViewFields": 0,
+    "coreMemoryAllowedFields": 0,
+    "rawPointerFields": 0
+  },
+  "findings": [],
+  "parseFailures": []
+}

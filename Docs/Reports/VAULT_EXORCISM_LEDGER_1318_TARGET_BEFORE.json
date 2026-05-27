@@ -1,0 +1,358 @@
+﻿{
+    "schema":  "hecton8.agent1318.destructible_organic_native_field_ledger.v1",
+    "agentId":  "1318",
+    "path":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+    "forbiddenPersistentNativeFieldCount":  50,
+    "fields":  [
+                   {
+                       "line":  544,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cuint\u003e",
+                       "name":  "_surfaceInstanceUids",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  545,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cuint\u003e",
+                       "name":  "_underwaterInstanceUids",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  546,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cbyte\u003e",
+                       "name":  "_surfaceMaterialClasses",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  547,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cbyte\u003e",
+                       "name":  "_underwaterMaterialClasses",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  548,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cUnity.Mathematics.half\u003e",
+                       "name":  "_surfaceHealth",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  549,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cUnity.Mathematics.half\u003e",
+                       "name":  "_underwaterHealth",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  550,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_surfaceDearLieBucketHeads",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  551,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_surfaceDearLieBucketNext",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  552,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_underwaterDearLieBucketHeads",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  553,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_underwaterDearLieBucketNext",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  554,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cFloraDearLieClaim64\u003e",
+                       "name":  "_surfaceDearLieClaims",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  555,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cFloraDearLieClaim64\u003e",
+                       "name":  "_underwaterDearLieClaims",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  556,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cFloraDestructionEventDTO\u003e",
+                       "name":  "_dearLieDamageEvents",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  557,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cFloraDearLieDestructionResult\u003e",
+                       "name":  "_dearLieResults",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  558,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cFloraDearLieCounter64\u003e",
+                       "name":  "_dearLieCounters",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  559,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cFloraDearLieRegenRecord\u003e",
+                       "name":  "_dearLieRegenRecords",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  560,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cFloraDearLieTelemetryEntry\u003e",
+                       "name":  "_dearLieTelemetryRing",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  573,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, Unity.Mathematics.half\u003e",
+                       "name":  "_healthByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  574,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, byte\u003e",
+                       "name":  "_destroyedByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  575,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, float\u003e",
+                       "name":  "_pendingWiltEndTimeByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  576,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, float\u003e",
+                       "name":  "_damageVisualProgressByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  577,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, float\u003e",
+                       "name":  "_decompositionStartTimeByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  578,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, float\u003e",
+                       "name":  "_regrowthProgressByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  579,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, float3\u003e",
+                       "name":  "_regrowthPositionByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  580,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, Unity.Mathematics.half\u003e",
+                       "name":  "_maturationScaleByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  581,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, Unity.Mathematics.half\u003e",
+                       "name":  "_maturationYieldByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  582,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, float\u003e",
+                       "name":  "_nextSporeAcousticTimeByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  583,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, float2\u003e",
+                       "name":  "_baseScaleByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  584,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, byte\u003e",
+                       "name":  "_runtimeFlagsByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  585,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, float\u003e",
+                       "name":  "_lastOrganicTouchTimeByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  586,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, byte\u003e",
+                       "name":  "_overgrownByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  587,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, byte\u003e",
+                       "name":  "_rootMoundAppliedByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  588,
+                       "collection":  "NativeList",
+                       "type":  "NativeList\u003cPersistentWorldDeltaRecord\u003e",
+                       "name":  "_destroyedFloraScratch",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  589,
+                       "collection":  "NativeList",
+                       "type":  "NativeList\u003cPersistentWorldDeltaRecord\u003e",
+                       "name":  "_floraStateOverrideScratch",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  590,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, Unity.Mathematics.half\u003e",
+                       "name":  "_persistedHealth01ByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  591,
+                       "collection":  "NativeHashMap",
+                       "type":  "NativeHashMap\u003cuint, Unity.Mathematics.half\u003e",
+                       "name":  "_persistedHeightScale01ByInstanceUid",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  592,
+                       "collection":  "NativeList",
+                       "type":  "NativeList\u003cDestroyedOrganicEvent\u003e",
+                       "name":  "_pendingYieldEvents",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  593,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cDestroyedOrganicEvent\u003e",
+                       "name":  "_yieldJobInput",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  595,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cHarvestableTemplate.RuntimeDescriptor\u003e",
+                       "name":  "_templateDescriptors",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  596,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cHarvestableTemplate.LootRuntimeEntry\u003e",
+                       "name":  "_lootEntries",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  597,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cEntropyYieldMaterialLutEntry\u003e",
+                       "name":  "_yieldMaterialLut",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  598,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cVector3\u003e",
+                       "name":  "_dropDebugScratch",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  631,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cMatrix4x4\u003e",
+                       "name":  "_surfaceMatrices",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  632,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cHectonVegetationInstanceData\u003e",
+                       "name":  "_surfaceMetadata",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  633,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_surfaceTypes",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  634,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e.ReadOnly",
+                       "name":  "_surfaceSemanticTypes",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  635,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cMatrix4x4\u003e",
+                       "name":  "_underwaterMatrices",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  636,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cHectonVegetationInstanceData\u003e",
+                       "name":  "_underwaterMetadata",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  637,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e",
+                       "name":  "_underwaterTypes",
+                       "ownerType":  "DestructibleOrganicManager"
+                   },
+                   {
+                       "line":  638,
+                       "collection":  "NativeArray",
+                       "type":  "NativeArray\u003cint\u003e.ReadOnly",
+                       "name":  "_underwaterSemanticTypes",
+                       "ownerType":  "DestructibleOrganicManager"
+                   }
+               ]
+}

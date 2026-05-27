@@ -1,8 +1,6 @@
 using System;
 using System.IO;
-using Hecton8.Core.Contracts;
 using Hecton8.World.OfflineWreckageBaker;
-using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
@@ -11,11 +9,9 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
     internal static class OfflineWreckageBlackBox
     {
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_209.bin";
-        private const string NativeMemoryOwner = nameof(OfflineWreckageBlackBox);
-        private const string RingLabel = "s_ring";
         private const uint DumpMagic = 0x5742524Bu; // WBRK
         private const uint DumpVersion = 1u;
-        private static NativeArray<OfflineWreckageTelemetryEntry> s_ring;
+        private static OfflineWreckageTelemetryEntry[] s_ring;
         private static int s_cursor;
         private static int s_retained;
 
@@ -53,7 +49,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
         public static bool Dump(string projectRoot)
         {
-            if (!s_ring.IsCreated || s_ring.Length <= 0)
+            if (s_ring == null || s_ring.Length <= 0)
                 return false;
 
             string tempPath = null;
@@ -109,31 +105,18 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
         public static void Dispose()
         {
-            if (s_ring.IsCreated)
-            {
-                NativeMemoryTrackingBridge.UnregisterNativeArray(s_ring, NativeMemoryOwner, RingLabel);
-                s_ring.Dispose();
-            }
-
+            s_ring = null;
             s_cursor = 0;
             s_retained = 0;
         }
 
         private static void EnsureRing()
         {
-            if (s_ring.IsCreated && s_ring.Length == OfflineWreckageBakeConstants.TelemetryFrames)
+            if (s_ring != null && s_ring.Length == OfflineWreckageBakeConstants.TelemetryFrames)
                 return;
 
             Dispose();
-            s_ring = new NativeArray<OfflineWreckageTelemetryEntry>(
-                OfflineWreckageBakeConstants.TelemetryFrames,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            NativeMemoryTrackingBridge.RegisterNativeArray(
-                s_ring,
-                NativeMemoryOwner,
-                RingLabel,
-                NativeMemoryBridgeLifetime.Session);
+            s_ring = new OfflineWreckageTelemetryEntry[OfflineWreckageBakeConstants.TelemetryFrames];
         }
 
         private static int PositiveModulo(int value, int modulo)

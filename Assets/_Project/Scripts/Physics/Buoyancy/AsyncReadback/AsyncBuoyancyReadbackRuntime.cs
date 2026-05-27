@@ -19,7 +19,8 @@ namespace Hecton8.Physics
         private const float TwoPi = 6.2831853071795864769f;
         private const string WaveHeightSamplerKernelName = "SampleBuoyancyReadbackRequests";
         private const string WaveHeightSamplerComputeGuid = "60f3dfa702904496933e12041a3e1764";
-        private const int WaveSamplerThreadGroupSizeFallback = 64;
+        private const int PortableMaxComputeThreadsPerGroup = 256;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const uint SystemHashPre = 0x53323650u;  // S26P
         private const uint SystemHashSim = 0x53323653u;  // S26S
         private const uint SystemHashPost = 0x5332364Fu; // S26O
@@ -165,7 +166,7 @@ namespace Hecton8.Physics
         private bool _hotSwapRegistered;
         private bool _registeredOriginShiftListener;
         private int _kernelIndex = -1;
-        private int _threadGroupSize = WaveSamplerThreadGroupSizeFallback;
+        private int _threadGroupSize;
         private float _lastFixedDelta = 0.016666667f;
         private double3 _cameraAup;
         private double3 _cachedOriginAup;
@@ -420,8 +421,7 @@ namespace Hecton8.Physics
                         WriteSlot = _mockWriteSlot,
                         LatencyFrames = AsyncBuoyancyReadbackConstants.MockLatencyFrames,
                         FrameIndex = _frameIndex,
-                        TimeSeconds = _timeSeconds,
-                        GlobalQualityWeight = _globalQualityWeight
+                        TimeSeconds = _timeSeconds
                     }.Schedule(handle);
                     _mockWriteSlot = (_mockWriteSlot + 1) % AsyncBuoyancyReadbackConstants.ReadbackRingSize;
                     _lastLatencyFrames = AsyncBuoyancyReadbackConstants.MockLatencyFrames;
@@ -450,7 +450,7 @@ namespace Hecton8.Physics
                 return handle;
             }
 
-            float smoothingAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha(_globalQualityWeight);
+            float smoothingAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha();
             long applyStart = System.Diagnostics.Stopwatch.GetTimestamp();
             handle = new ApplyDelayedBuoyancyReadbackJob
             {
@@ -460,7 +460,6 @@ namespace Hecton8.Physics
                 Counters = countersForApply,
                 CameraAupY = _cameraAup.y,
                 FixedDeltaTime = fixedDelta,
-                GlobalQualityWeight = _globalQualityWeight,
                 SmoothingAlpha = smoothingAlpha,
                 DeadReckoningDecayRate = ResolveDeadReckoningDecayRate(),
                 CompletedCount = _completedRequestCount,
@@ -541,7 +540,7 @@ namespace Hecton8.Physics
             if (waveBuffer == null)
                 return ReadbackDispatchStatus.Unavailable;
 
-            UploadNativeArrayToGraphicsBuffer(requestBuffer, requests, _dispatchRequestCount);
+            GraphicsBufferUploadUtility.UploadNativeArraySetData(requestBuffer, requests, _dispatchRequestCount);
             int waveUploadCount = math.min(waves.Length, AsyncBuoyancyReadbackConstants.WaveCapacity);
             uint waveUploadHash = ComputeWaveParametersHash(waves, waveUploadCount);
             ref uint waveHashRef = ref ResolveWaveUploadHashRef(slot);
@@ -553,9 +552,9 @@ namespace Hecton8.Physics
                 waveCountRef = waveUploadCount;
             }
 
-            int activeWaveCount = ResolveShaderActiveWaveIndex(_globalQualityWeight, AsyncBuoyancyReadbackConstants.WaveCapacity * 3);
+            int activeWaveCount = ResolveShaderActiveWaveIndex(AsyncBuoyancyReadbackConstants.WaveCapacity * 3);
             float maxWavelength = ResolveMaxWavelength(waves);
-            ResolveWavePhaseBases(_cameraAup, waves, activeWaveCount + 1, _globalQualityWeight, out float4 phaseBase0, out float4 phaseBase1);
+            ResolveWavePhaseBases(_cameraAup, waves, activeWaveCount + 1, out float4 phaseBase0, out float4 phaseBase1);
             Vector4 shorelineParams = Shader.GetGlobalVector(OceanShorelineDepthParamsId);
             float wakeWorldSize = ResolveWakeWorldSize(shorelineParams);
             float2 cameraProjection = ResolveCameraLocalProjection(_cameraAup, wakeWorldSize);
@@ -565,22 +564,29 @@ namespace Hecton8.Physics
             waveHeightSamplerCompute.SetInt(WaveSampleCountId, _dispatchRequestCount);
             waveHeightSamplerCompute.SetFloat(WaveSampleSeaLevelId, seaLevel);
             waveHeightSamplerCompute.SetFloat(OceanTimeId, _timeSeconds);
-            waveHeightSamplerCompute.SetFloat(OceanQualityId, _globalQualityWeight);
+            waveHeightSamplerCompute.SetFloat(OceanQualityId, AsyncBuoyancyReadbackConstants.AuthoritativeQualityWeight);
             waveHeightSamplerCompute.SetInt(OceanWaveCountId, activeWaveCount);
             waveHeightSamplerCompute.SetVector(OceanLocalProjectionId, ToVector4(new float4(cameraProjection.x, cameraProjection.y, maxWavelength, wakeWorldSize)));
             waveHeightSamplerCompute.SetVector(OceanWavePhaseBase0Id, ToVector4(phaseBase0));
             waveHeightSamplerCompute.SetVector(OceanWavePhaseBase1Id, ToVector4(phaseBase1));
-            waveHeightSamplerCompute.SetVector(WaveSampleLodId, new Vector4(maxWavelength, activeWaveCount, _globalQualityWeight, _timeSeconds));
+            waveHeightSamplerCompute.SetVector(WaveSampleLodId, new Vector4(maxWavelength, activeWaveCount, AsyncBuoyancyReadbackConstants.AuthoritativeQualityWeight, _timeSeconds));
             Texture wakeDisplacement = Shader.GetGlobalTexture(OceanWakeDisplacementId);
             waveHeightSamplerCompute.SetTexture(_kernelIndex, OceanWakeDisplacementId, wakeDisplacement != null ? wakeDisplacement : Texture2D.blackTexture);
             waveHeightSamplerCompute.SetVector(OceanShorelineDepthParamsId, shorelineParams);
 
-            int groups = math.max(1, (_dispatchRequestCount + _threadGroupSize - 1) / _threadGroupSize);
+            int groups = ResolveDispatchGroups(_dispatchRequestCount, _threadGroupSize);
+            if (groups <= 0)
+                return ReadbackDispatchStatus.Unavailable;
+
             waveHeightSamplerCompute.Dispatch(_kernelIndex, groups, 1, 1);
+            int readbackBytes = ResolveReadbackByteCount(requestBuffer, _dispatchRequestCount);
+            if (readbackBytes <= 0)
+                return ReadbackDispatchStatus.Unavailable;
+
             ref AsyncGPUReadbackRequest requestRef = ref ResolveReadbackRequestRef(slot);
             ref int countRef = ref ResolveReadbackCountRef(slot);
             ref uint frameRef = ref ResolveReadbackFrameRef(slot);
-            requestRef = AsyncGPUReadback.Request(requestBuffer);
+            requestRef = AsyncGPUReadback.Request(requestBuffer, readbackBytes, 0, null);
             countRef = _dispatchRequestCount;
             frameRef = _frameIndex;
             activeRef = 1;
@@ -651,7 +657,7 @@ namespace Hecton8.Physics
                 return;
 
             VehicleSamplingProfileDTO profile = ResolvePrimaryVehicleProfile();
-            int count = AsyncBuoyancyReadbackMath.ResolveSampleBudget(_globalQualityWeight, math.max(1, profile.MinSamples), math.max(profile.MinSamples, profile.MaxSamples));
+            int count = AsyncBuoyancyReadbackMath.ResolveSampleBudget(math.max(1, profile.MinSamples), math.max(profile.MinSamples, profile.MaxSamples));
             count = math.min(count, math.min(requests.Length, AsyncBuoyancyReadbackConstants.RequestCapacity));
             float length = math.max(1f, profile.LengthMeters);
             float beam = math.max(1f, profile.BeamMeters);
@@ -808,11 +814,11 @@ namespace Hecton8.Physics
         private bool EnsureGpuBuffers()
         {
             if (_requestBuffer0 == null)
-                _requestBuffer0 = CreateRequestBuffer();
+                _requestBuffer0 = new GraphicsBuffer(GraphicsBuffer.Target.Structured, AsyncBuoyancyReadbackConstants.RequestCapacity, UnsafeUtility.SizeOf<ReadbackRequestDTO>());
             if (_requestBuffer1 == null)
-                _requestBuffer1 = CreateRequestBuffer();
+                _requestBuffer1 = new GraphicsBuffer(GraphicsBuffer.Target.Structured, AsyncBuoyancyReadbackConstants.RequestCapacity, UnsafeUtility.SizeOf<ReadbackRequestDTO>());
             if (_requestBuffer2 == null)
-                _requestBuffer2 = CreateRequestBuffer();
+                _requestBuffer2 = new GraphicsBuffer(GraphicsBuffer.Target.Structured, AsyncBuoyancyReadbackConstants.RequestCapacity, UnsafeUtility.SizeOf<ReadbackRequestDTO>());
 
             if (_waveParametersBuffer0 == null)
                 _waveParametersBuffer0 = CreateWaveParametersBuffer();
@@ -822,11 +828,6 @@ namespace Hecton8.Physics
                 _waveParametersBuffer2 = CreateWaveParametersBuffer();
 
             return HasGpuBuffers();
-        }
-
-        private static GraphicsBuffer CreateRequestBuffer()
-        {
-            return CreateStructuredLockBuffer<ReadbackRequestDTO>(AsyncBuoyancyReadbackConstants.RequestCapacity);
         }
 
         private static GraphicsBuffer CreateWaveParametersBuffer()
@@ -881,13 +882,64 @@ namespace Hecton8.Physics
 
             _kernelResolved = true;
             _kernelIndex = -1;
-            if (waveHeightSamplerCompute == null || !waveHeightSamplerCompute.HasKernel(WaveHeightSamplerKernelName))
+            _threadGroupSize = 0;
+            if (waveHeightSamplerCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
+                return false;
+
+            if (!waveHeightSamplerCompute.HasKernel(WaveHeightSamplerKernelName))
                 return false;
 
             _kernelIndex = waveHeightSamplerCompute.FindKernel(WaveHeightSamplerKernelName);
-            waveHeightSamplerCompute.GetKernelThreadGroupSizes(_kernelIndex, out uint x, out _, out _);
-            _threadGroupSize = x > 0u ? math.clamp((int)x, 1, 1024) : WaveSamplerThreadGroupSizeFallback;
-            return _kernelIndex >= 0;
+            if (!waveHeightSamplerCompute.IsSupported(_kernelIndex) ||
+                !TryResolveKernelThreadGroupSize1D(waveHeightSamplerCompute, _kernelIndex, out _threadGroupSize))
+            {
+                _kernelIndex = -1;
+                _threadGroupSize = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryResolveKernelThreadGroupSize1D(ComputeShader compute, int kernelIndex, out int threadGroupSize)
+        {
+            threadGroupSize = 0;
+            if (compute == null || kernelIndex < 0)
+                return false;
+
+            compute.GetKernelThreadGroupSizes(kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ);
+            if (sizeX == 0u || sizeY != 1u || sizeZ != 1u)
+                return false;
+
+            if (sizeX > (uint)PortableMaxComputeThreadsPerGroup)
+                return false;
+
+            threadGroupSize = (int)sizeX;
+            return true;
+        }
+
+        private static int ResolveDispatchGroups(int value, int divisor)
+        {
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            if (groups <= 0L || groups > MaxDispatchGroupsPerDimension)
+                return 0;
+
+            return (int)groups;
+        }
+
+        private static int ResolveReadbackByteCount(GraphicsBuffer buffer, int requestCount)
+        {
+            if (buffer == null || requestCount <= 0)
+                return 0;
+
+            int stride = UnsafeUtility.SizeOf<ReadbackRequestDTO>();
+            int safeCount = math.min(requestCount, math.max(0, buffer.count));
+            long byteCount = (long)safeCount * stride;
+            long maxBytes = (long)math.max(0, buffer.count) * math.max(1, buffer.stride);
+            return byteCount > 0L && byteCount <= maxBytes ? (int)byteCount : 0;
         }
 
         private void ReleaseGpuBuffers()
@@ -1031,7 +1083,7 @@ namespace Hecton8.Physics
             value.MaxSampleCount = maximumSampleCount;
             value.FrameIndex = _frameIndex;
             value.Flags = _mockPathThisFrame ? AsyncBuoyancyReadbackConstants.FlagMockPath : AsyncBuoyancyReadbackConstants.FlagGpuPath;
-            value.SmoothingAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha(_globalQualityWeight);
+            value.SmoothingAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha();
             value.DeadReckoningDecayRate = ResolveDeadReckoningDecayRate();
             tuning[0] = value;
             ReleaseVaultWriteBuffer(_dataVault, in _tuningHandle);
@@ -1109,7 +1161,7 @@ namespace Hecton8.Physics
             entry.GlobalQualityWeight = _globalQualityWeight;
             entry.ApplyMicros = counter.ApplyMicros;
             entry.DispatchMicros = counter.DispatchMicros;
-            entry.SmoothedAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha(_globalQualityWeight);
+            entry.SmoothedAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha();
             entry.Flags = counter.Flags;
             entry.LastEntityHash = counter.LastEntityHash;
             entry.LastLocalHeight = counter.LastLocalHeight;
@@ -1578,7 +1630,7 @@ namespace Hecton8.Physics
                 return true;
             }
 
-            if (vault.IsAllocationLocked)
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, options);
@@ -1751,8 +1803,7 @@ namespace Hecton8.Physics
             if (_deadReckoningDecayOverride >= 0f)
                 return math.saturate(_deadReckoningDecayOverride);
 
-            float q = math.saturate(_globalQualityWeight);
-            return math.lerp(0.82f, 0.96f, q);
+            return 0.96f;
         }
 
         private float ResolveSimulationFixedDelta(in DispatcherTimingDTO timing)
@@ -1767,13 +1818,10 @@ namespace Hecton8.Physics
             return fixedDelta;
         }
 
-        private static int ResolveShaderActiveWaveIndex(float qualityWeight, int maxWaveCount)
+        private static int ResolveShaderActiveWaveIndex(int maxWaveCount)
         {
             int safeMax = math.max(1, maxWaveCount);
-            float q = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 0f);
-            float curved = q * q * (3f - (2f * q));
-            int activeCount = math.clamp((int)math.ceil(math.lerp(1f, safeMax, curved)), 1, safeMax);
-            return activeCount - 1;
+            return safeMax - 1;
         }
 
         private static float ResolveMaxWavelength(NativeArray<AsyncBuoyancyWaveParametersDTO> waves)
@@ -1828,7 +1876,6 @@ namespace Hecton8.Physics
             double3 cameraAup,
             NativeArray<AsyncBuoyancyWaveParametersDTO> waves,
             int activeWaveCount,
-            float qualityWeight,
             out float4 phaseBase0,
             out float4 phaseBase1)
         {
@@ -1838,7 +1885,7 @@ namespace Hecton8.Physics
             for (int i = 0; i < waveCount; i++)
             {
                 float4 lane = GetWaveLane(waves[i / 3], i - ((i / 3) * 3));
-                float2 direction = WaveLaneDirection(lane, qualityWeight);
+                float2 direction = WaveLaneDirection(lane);
                 float wavelength = WaveLaneWavelength(lane);
                 double projected = (cameraAup.x * direction.x) + (cameraAup.z * direction.y);
                 double safeWavelength = math.max(0.25f, wavelength);
@@ -1885,13 +1932,12 @@ namespace Hecton8.Physics
             return dto.Wave3;
         }
 
-        private static float2 WaveLaneDirection(float4 lane, float qualityWeight)
+        private static float2 WaveLaneDirection(float4 lane)
         {
             float angle = math.isfinite(lane.x) ? lane.x : 0f;
-            float quality = math.saturate(math.select(1f, qualityWeight, math.isfinite(qualityWeight)));
             return new float2(
-                SimdTranscendentalApproximator.CosPolynomial(angle, quality, 7),
-                SimdTranscendentalApproximator.SinPolynomial(angle, quality, 7));
+                SimdTranscendentalApproximator.CosPolynomial(angle, 1f, 7),
+                SimdTranscendentalApproximator.SinPolynomial(angle, 1f, 7));
         }
 
         private static float WaveLaneWavelength(float4 lane)

@@ -191,6 +191,11 @@ namespace Hecton8.Interaction
 
         public static int ListenerExceptionCount => _listenerExceptionCount;
 
+        internal static void PrewarmCold()
+        {
+            EnsureInitialized();
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
         {

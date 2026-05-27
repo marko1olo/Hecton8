@@ -1,0 +1,21 @@
+﻿{
+    "schema":  "hecton8.data_monolith_hotpath_focus.v1",
+    "agentId":  "1330",
+    "generatedUtc":  "2026-05-26T15:51:27.9534132Z",
+    "scannedMethods":  [
+                           "H8CreatureSoAReconstructJob.Execute",
+                           "H8ItemSoAReconstructJob.Execute",
+                           "GameBootstrapper.SlowTick"
+                       ],
+    "scannedFiles":  [
+                         "Assets/_Project/Scripts/Data/Monolith/H8CreatureSoAReconstructJob.cs",
+                         "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs"
+                     ],
+    "zeroGcHotPathHits":  0,
+    "findings":  [
+
+                 ],
+    "notes":  [
+                  "Focused scan only covers Burst Execute and dispatcher SlowTick bodies in touched/dependency scope. Cold bootstrap/editor I/O findings are excluded from zero-GC hot-path count."
+              ]
+}

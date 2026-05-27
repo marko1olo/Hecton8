@@ -119,11 +119,12 @@ namespace Hecton8.Tools
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            TryUnregister();
-            TryRegister();
+            _registeredToTickManager = false;
+            if (currentService != null && isActiveAndEnabled)
+                TryRegister();
         }
 
         private void TryRegisterHotSwapListener()

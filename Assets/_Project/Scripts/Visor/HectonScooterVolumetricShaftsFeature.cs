@@ -9,7 +9,6 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
-using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Serialization;
 
@@ -32,6 +31,8 @@ namespace Hecton8.Visor
         private const int ShaftGlobalsStrideBytes = 176;
         private const int MaterialParameterStateSizeBytes = 152;
         private const float ExposureStateDefaultMultiplier = 1f;
+        private const uint MaxKernelThreadProduct = 256u;
+        private const int MaxDispatchGroupsPerDimension = 65535;
         private const float ThermalHazeMotionCullSpeedMetersPerSecondSq = 225f;
         private const uint KccVelocityShaftMaxAgeFrames = 12u;
         private const float SurfaceNoirSuppressionDepth = 0.08f;
@@ -104,8 +105,8 @@ namespace Hecton8.Visor
             [Tooltip("Screen-space contact shadow strength applied to headlight-lit opaque pixels.")]
             [Range(0f, 1f)] public float contactShadowStrength = 0.62f;
 
-            [Tooltip("Number of depth raymarch steps used for screen-space contact shadows.")]
-            [Range(4, 8)] public int contactShadowSteps = 6;
+            [Tooltip("Maximum depth samples used for screen-space contact shadows. Runtime scales this continuously with GlobalQualityWeight.")]
+            [Range(1, 3)] public int contactShadowSteps = 3;
 
             [Tooltip("World-space bias used to prevent self-shadow acne in the contact shadow march.")]
             [Range(0.01f, 0.5f)] public float contactShadowBias = 0.08f;
@@ -180,6 +181,7 @@ namespace Hecton8.Visor
             {
                 internal ComputeShader computeShader;
                 internal int kernelIndex;
+                internal int dispatchX;
                 internal BufferHandle histogram;
             }
 
@@ -200,6 +202,7 @@ namespace Hecton8.Visor
             {
                 internal ComputeShader computeShader;
                 internal int kernelIndex;
+                internal int dispatchX;
                 internal BufferHandle histogram;
                 internal BufferHandle exposureState;
                 internal float minEv;
@@ -207,6 +210,22 @@ namespace Hecton8.Visor
                 internal float adaptationRate;
                 internal float deltaTime;
                 internal float maxDeltaPerFrame;
+            }
+
+            private sealed class ShaftFullscreenPassData
+            {
+                internal TextureHandle source;
+                internal TextureHandle depth;
+                internal TextureHandle shafts;
+                internal TextureHandle halfResDepth;
+                internal BufferHandle shaftGlobals;
+                internal BufferHandle exposureState;
+                internal Material material;
+                internal int shaderPassIndex;
+                internal bool bindDepth;
+                internal bool bindShafts;
+                internal bool bindHalfResDepth;
+                internal bool bindExposureState;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Underwater Noir Stack");
@@ -221,15 +240,16 @@ namespace Hecton8.Visor
             private GraphicsBuffer _shaftGlobalsBuffer;
             private GraphicsBuffer _shaftGlobalsBufferA;
             private GraphicsBuffer _shaftGlobalsBufferB;
-            private GraphicsBuffer _lastExposureStateBuffer;
             private MaterialParameterState _shaftGlobalsCache;
             private int _shaftGlobalsWriteIndex;
             private bool _hasShaftGlobalsCache;
             private int _clearHistogramKernel = -1;
             private int _buildHistogramKernel = -1;
             private int _resolveExposureKernel = -1;
-            private uint _buildThreadGroupSizeX = 8;
-            private uint _buildThreadGroupSizeY = 8;
+            private uint _clearHistogramThreadGroupSizeX;
+            private uint _buildThreadGroupSizeX;
+            private uint _buildThreadGroupSizeY;
+            private uint _resolveExposureThreadGroupSizeX;
             private HectonUnderwaterVisuals _underwaterVisuals;
             private IPlayerRuntimeContext _playerContext;
 
@@ -255,7 +275,7 @@ namespace Hecton8.Visor
                 _compositeMaterial = compositeMaterial;
                 _underwaterVisuals = underwaterVisuals;
                 _playerContext = playerContext;
-                _autoExposureComputeShader = settings != null ? settings.autoExposureComputeShader : null;
+                SetAutoExposureComputeShader(settings != null ? settings.autoExposureComputeShader : null);
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingTransparents;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
@@ -264,8 +284,15 @@ namespace Hecton8.Visor
                 {
                     TryInitializeAutoExposureKernels();
                 }
+            }
 
+            public bool PrepareResources(FeatureSettings settings)
+            {
+                SetAutoExposureComputeShader(settings != null ? settings.autoExposureComputeShader : null);
+                if (_clearHistogramKernel < 0)
+                    TryInitializeAutoExposureKernels();
                 EnsureAutoExposureResources();
+                return EnsureShaftGlobalsBuffer();
             }
 
             public void Dispose()
@@ -279,7 +306,6 @@ namespace Hecton8.Visor
                 _shaftGlobalsBufferA = null;
                 _shaftGlobalsBufferB = null;
                 _shaftGlobalsBuffer = null;
-                _lastExposureStateBuffer = null;
                 _shaftGlobalsCache = default;
                 _shaftGlobalsWriteIndex = 0;
                 _hasShaftGlobalsCache = false;
@@ -288,6 +314,10 @@ namespace Hecton8.Visor
                 _clearHistogramKernel = -1;
                 _buildHistogramKernel = -1;
                 _resolveExposureKernel = -1;
+                _clearHistogramThreadGroupSizeX = 0u;
+                _buildThreadGroupSizeX = 0u;
+                _buildThreadGroupSizeY = 0u;
+                _resolveExposureThreadGroupSizeX = 0u;
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -322,7 +352,15 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                float resolvedRenderScale = math.clamp(_settings.renderScale, 0.25f, 1f);
+                float globalQualityWeight = ResolveGlobalQualityWeight01();
+                float lowVramPressure01 = ResolveLowVramPressure01();
+                float visualBudgetPressure01 = CombineVisualBudgetPressure(
+                    lowVramPressure01,
+                    HectonDrsRenderFeatureGate.ResolveSurvivalPressure01());
+                float resolvedRenderScale = ResolveQualityScaledRenderScale(
+                    _settings.renderScale,
+                    globalQualityWeight,
+                    visualBudgetPressure01);
                 int sourceWidth = math.max(1, sourceDesc.width);
                 int sourceHeight = math.max(1, sourceDesc.height);
                 int shaftWidth = math.max(1, (int)math.round(sourceWidth * resolvedRenderScale));
@@ -334,7 +372,7 @@ namespace Hecton8.Visor
                 shaftDesc.height = shaftHeight;
                 shaftDesc.depthBufferBits = DepthBits.None;
                 shaftDesc.msaaSamples = MSAASamples.None;
-                shaftDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                shaftDesc.colorFormat = sourceDesc.colorFormat;
                 shaftDesc.clearBuffer = true;
                 shaftDesc.clearColor = ShaftClearColor;
                 shaftDesc.filterMode = FilterMode.Bilinear;
@@ -355,7 +393,7 @@ namespace Hecton8.Visor
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;
                 compositeDesc.msaaSamples = MSAASamples.None;
-                compositeDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                compositeDesc.colorFormat = sourceDesc.colorFormat;
 
                 TextureHandle shaftsTexture = renderGraph.CreateTexture(shaftDesc);
                 TextureHandle blurTexture = renderGraph.CreateTexture(blurDesc);
@@ -372,10 +410,12 @@ namespace Hecton8.Visor
                     _exposureStateBuffer != null;
                 float resolvedMinEv = math.min(_settings.minEv, _settings.maxEv - 0.01f);
                 float resolvedMaxEv = math.max(_settings.maxEv, resolvedMinEv + 0.01f);
-                int exposureThreadGroupSizeX = math.max(1, (int)_buildThreadGroupSizeX);
-                int exposureThreadGroupSizeY = math.max(1, (int)_buildThreadGroupSizeY);
-                int exposureDispatchX = (sourceWidth + exposureThreadGroupSizeX - 1) / exposureThreadGroupSizeX;
-                int exposureDispatchY = (sourceHeight + exposureThreadGroupSizeY - 1) / exposureThreadGroupSizeY;
+                int exposureClearDispatchX = ResolveDispatchGroups(1, _clearHistogramThreadGroupSizeX);
+                int exposureDispatchX = ResolveDispatchGroups(sourceWidth, _buildThreadGroupSizeX);
+                int exposureDispatchY = ResolveDispatchGroups(sourceHeight, _buildThreadGroupSizeY);
+                int exposureResolveDispatchX = ResolveDispatchGroups(1, _resolveExposureThreadGroupSizeX);
+                if (exposureAvailable && (exposureClearDispatchX <= 0 || exposureDispatchX <= 0 || exposureDispatchY <= 0 || exposureResolveDispatchX <= 0))
+                    exposureAvailable = false;
 
                 if (exposureAvailable)
                 {
@@ -386,13 +426,14 @@ namespace Hecton8.Visor
                     {
                         passData.computeShader = _autoExposureComputeShader;
                         passData.kernelIndex = _clearHistogramKernel;
+                        passData.dispatchX = exposureClearDispatchX;
                         passData.histogram = histogramHandle;
 
                         builder.UseBuffer(histogramHandle, AccessFlags.Write);
                         builder.SetRenderFunc((ExposureClearPassData data, ComputeGraphContext context) =>
                         {
                             context.cmd.SetComputeBufferParam(data.computeShader, data.kernelIndex, ShaderConstants.HistogramBufferId, data.histogram);
-                            context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, 1, 1, 1);
+                            context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, data.dispatchX, 1, 1);
                         });
                     }
 
@@ -425,6 +466,7 @@ namespace Hecton8.Visor
                     {
                         passData.computeShader = _autoExposureComputeShader;
                         passData.kernelIndex = _resolveExposureKernel;
+                        passData.dispatchX = exposureResolveDispatchX;
                         passData.histogram = histogramHandle;
                         passData.exposureState = exposureStateHandle;
                         passData.minEv = resolvedMinEv;
@@ -444,7 +486,7 @@ namespace Hecton8.Visor
                             context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.ExposureAdaptationRateId, data.adaptationRate);
                             context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.ExposureDeltaTimeId, data.deltaTime);
                             context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.EvMaxDeltaPerFrameId, data.maxDeltaPerFrame);
-                            context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, 1, 1, 1);
+                            context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, data.dispatchX, 1, 1);
                         });
                     }
                 }
@@ -453,61 +495,181 @@ namespace Hecton8.Visor
                     _settings,
                     exposureAvailable,
                     underwaterNoirBlend,
-                    ResolveThermalHazeIntensity(_settings.thermalHazeIntensity));
+                    ResolveThermalHazeIntensity(_settings.thermalHazeIntensity),
+                    resolvedRenderScale,
+                    globalQualityWeight,
+                    visualBudgetPressure01);
                 if (!UpdateShaftGlobals(in materialParameters))
                     return;
+                BufferHandle shaftGlobalsHandle = renderGraph.ImportBuffer(_shaftGlobalsBuffer);
 
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, halfResDepthTexture, _raymarchMaterial, HalfResContactDepthPassIndex),
-                           passName: "Hecton Underwater Noir Half-Res Contact Depth",
-                           returnBuilder: true))
-                {
-                    builder.UseTexture(depthTexture, AccessFlags.Read);
-                    builder.SetGlobalTextureAfterPass(halfResDepthTexture, ShaderConstants.HalfResDepthTextureId);
-                }
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Underwater Noir Half-Res Contact Depth",
+                    sourceTexture,
+                    depthTexture,
+                    default,
+                    default,
+                    halfResDepthTexture,
+                    shaftGlobalsHandle,
+                    default,
+                    _raymarchMaterial,
+                    HalfResContactDepthPassIndex,
+                    true,
+                    false,
+                    false,
+                    false);
 
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, shaftsTexture, _raymarchMaterial, 0),
-                           passName: "Hecton Underwater Noir Radial Shafts",
-                           returnBuilder: true))
-                {
-                    builder.UseTexture(depthTexture, AccessFlags.Read);
-                    if (exposureAvailable)
-                        builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
-                }
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Underwater Noir Radial Shafts",
+                    sourceTexture,
+                    depthTexture,
+                    default,
+                    default,
+                    shaftsTexture,
+                    shaftGlobalsHandle,
+                    exposureStateHandle,
+                    _raymarchMaterial,
+                    0,
+                    true,
+                    false,
+                    false,
+                    exposureAvailable);
 
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(shaftsTexture, blurTexture, _blurHorizontalMaterial, 1),
-                           passName: "Hecton Underwater Noir Blur Horizontal",
-                           returnBuilder: true))
-                {
-                    if (exposureAvailable)
-                        builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
-                }
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Underwater Noir Blur Horizontal",
+                    shaftsTexture,
+                    depthTexture,
+                    default,
+                    default,
+                    blurTexture,
+                    shaftGlobalsHandle,
+                    exposureStateHandle,
+                    _blurHorizontalMaterial,
+                    1,
+                    true,
+                    false,
+                    false,
+                    exposureAvailable);
 
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(blurTexture, shaftsTexture, _blurVerticalMaterial, 2),
-                           passName: "Hecton Underwater Noir Blur Vertical",
-                           returnBuilder: true))
-                {
-                    if (exposureAvailable)
-                        builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
-                    builder.SetGlobalTextureAfterPass(shaftsTexture, ShaderConstants.ShaftTextureId);
-                    builder.SetGlobalTextureAfterPass(shaftsTexture, ShaderConstants.HeadlightVolumetricsTextureId);
-                }
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Underwater Noir Blur Vertical",
+                    blurTexture,
+                    depthTexture,
+                    default,
+                    default,
+                    shaftsTexture,
+                    shaftGlobalsHandle,
+                    exposureStateHandle,
+                    _blurVerticalMaterial,
+                    2,
+                    true,
+                    false,
+                    false,
+                    exposureAvailable);
 
-                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
-                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, compositeTexture, _compositeMaterial, 3),
-                           passName: "Hecton Underwater Noir Composite",
-                           returnBuilder: true))
-                {
-                    builder.UseTexture(shaftsTexture, AccessFlags.Read);
-                    builder.UseTexture(halfResDepthTexture, AccessFlags.Read);
-                    if (exposureAvailable)
-                        builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
-                }
+                RecordFullscreenPass(
+                    renderGraph,
+                    "Hecton Underwater Noir Composite",
+                    sourceTexture,
+                    depthTexture,
+                    shaftsTexture,
+                    halfResDepthTexture,
+                    compositeTexture,
+                    shaftGlobalsHandle,
+                    exposureStateHandle,
+                    _compositeMaterial,
+                    3,
+                    true,
+                    true,
+                    true,
+                    exposureAvailable);
 
                 resourceData.cameraColor = compositeTexture;
+            }
+
+            private void RecordFullscreenPass(
+                RenderGraph renderGraph,
+                string passName,
+                TextureHandle source,
+                TextureHandle depth,
+                TextureHandle shafts,
+                TextureHandle halfResDepth,
+                TextureHandle destination,
+                BufferHandle shaftGlobals,
+                BufferHandle exposureState,
+                Material material,
+                int shaderPassIndex,
+                bool bindDepth,
+                bool bindShafts,
+                bool bindHalfResDepth,
+                bool bindExposureState)
+            {
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<ShaftFullscreenPassData>(
+                           passName,
+                           out ShaftFullscreenPassData passData,
+                           _profilingSampler))
+                {
+                    passData.source = source;
+                    passData.depth = depth;
+                    passData.shafts = shafts;
+                    passData.halfResDepth = halfResDepth;
+                    passData.shaftGlobals = shaftGlobals;
+                    passData.exposureState = exposureState;
+                    passData.material = material;
+                    passData.shaderPassIndex = shaderPassIndex;
+                    passData.bindDepth = bindDepth;
+                    passData.bindShafts = bindShafts;
+                    passData.bindHalfResDepth = bindHalfResDepth;
+                    passData.bindExposureState = bindExposureState;
+
+                    builder.UseTexture(source, AccessFlags.Read);
+                    if (bindDepth)
+                        builder.UseTexture(depth, AccessFlags.Read);
+                    if (bindShafts)
+                        builder.UseTexture(shafts, AccessFlags.Read);
+                    if (bindHalfResDepth)
+                        builder.UseTexture(halfResDepth, AccessFlags.Read);
+                    builder.UseBuffer(shaftGlobals, AccessFlags.Read);
+                    if (bindExposureState)
+                        builder.UseBuffer(exposureState, AccessFlags.Read);
+                    builder.SetRenderAttachment(destination, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (ShaftFullscreenPassData data, RasterGraphContext context) =>
+                    {
+                        if (data.material == null)
+                            return;
+
+                        GraphicsBuffer constants = data.shaftGlobals;
+                        if (constants == null || !constants.IsValid())
+                            return;
+
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.source);
+                        if (data.bindDepth)
+                            context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.depth);
+                        if (data.bindShafts)
+                            context.cmd.SetGlobalTexture(ShaderConstants.ShaftTextureId, data.shafts);
+                        if (data.bindHalfResDepth)
+                            context.cmd.SetGlobalTexture(ShaderConstants.HalfResDepthTextureId, data.halfResDepth);
+                        if (data.bindExposureState)
+                        {
+                            GraphicsBuffer exposure = data.exposureState;
+                            if (exposure != null && exposure.IsValid())
+                                context.cmd.SetGlobalBuffer(ShaderConstants.ExposureStateBufferId, exposure);
+                        }
+
+                        context.cmd.SetGlobalConstantBuffer(
+                            constants,
+                            ShaderConstants.ShaftGlobalsBufferId,
+                            0,
+                            ShaftGlobalsStrideBytes);
+                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, data.shaderPassIndex);
+                    });
+                }
             }
 
             private void EnsureAutoExposureResources()
@@ -521,37 +683,58 @@ namespace Hecton8.Visor
                     return;
                 }
 
-                if (_histogramBuffer == null)
+                try
                 {
-                    // COLD ALLOC: GraphicsBuffer[64] - persistent 64-bin GPU histogram for noir auto exposure - owner: ShaftsPass
-                    _histogramBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(HistogramBinCount);
-                }
-
-                if (_exposureStateBuffer == null)
-                {
-                    // COLD ALLOC: GraphicsBuffer[1] - persistent GPU exposure state for temporal EV clamp - owner: ShaftsPass
-                    _exposureStateBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1);
-                    NativeArray<Vector4> mapped = _exposureStateBuffer.LockBufferForWrite<Vector4>(0, 1);
-                    Vector4 exposureState;
-                    exposureState.x = 0f;
-                    exposureState.y = 0f;
-                    exposureState.z = ExposureStateDefaultMultiplier;
-                    exposureState.w = 0f;
-                    try
+                    if (_histogramBuffer == null)
                     {
-                        mapped[0] = exposureState;
+                        // COLD ALLOC: GraphicsBuffer[64] - persistent 64-bin GPU histogram for noir auto exposure - owner: ShaftsPass
+                        _histogramBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(HistogramBinCount);
                     }
-                    finally
+
+                    if (_exposureStateBuffer == null)
                     {
-                        _exposureStateBuffer.UnlockBufferAfterWrite<Vector4>(1);
+                        // COLD ALLOC: GraphicsBuffer[1] - persistent GPU exposure state for temporal EV clamp - owner: ShaftsPass
+                        _exposureStateBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1);
+                        NativeArray<Vector4> mapped = _exposureStateBuffer.LockBufferForWrite<Vector4>(0, 1);
+                        Vector4 exposureState;
+                        exposureState.x = 0f;
+                        exposureState.y = 0f;
+                        exposureState.z = ExposureStateDefaultMultiplier;
+                        exposureState.w = 0f;
+                        try
+                        {
+                            mapped[0] = exposureState;
+                        }
+                        finally
+                        {
+                            _exposureStateBuffer.UnlockBufferAfterWrite<Vector4>(1);
+                        }
                     }
                 }
-
-                if (_exposureStateBuffer != null &&
-                    !ReferenceEquals(_lastExposureStateBuffer, _exposureStateBuffer))
+                catch (ObjectDisposedException)
                 {
-                    Shader.SetGlobalBuffer(ShaderConstants.ExposureStateBufferId, _exposureStateBuffer);
-                    _lastExposureStateBuffer = _exposureStateBuffer;
+                    ReleaseAutoExposureResources();
+                    return;
+                }
+                catch (InvalidOperationException)
+                {
+                    ReleaseAutoExposureResources();
+                    return;
+                }
+                catch (ArgumentException)
+                {
+                    ReleaseAutoExposureResources();
+                    return;
+                }
+                catch (NotSupportedException)
+                {
+                    ReleaseAutoExposureResources();
+                    return;
+                }
+                catch (OutOfMemoryException)
+                {
+                    ReleaseAutoExposureResources();
+                    return;
                 }
 
                 EnsureShaftGlobalsBuffer();
@@ -587,11 +770,28 @@ namespace Hecton8.Visor
                 _clearHistogramKernel = clearHistogramKernel;
                 _buildHistogramKernel = buildHistogramKernel;
                 _resolveExposureKernel = resolveExposureKernel;
-                _autoExposureComputeShader.GetKernelThreadGroupSizes(
-                    _buildHistogramKernel,
-                    out _buildThreadGroupSizeX,
-                    out _buildThreadGroupSizeY,
-                    out _);
+                if (!TryResolveKernelThreadGroupSizeX(_autoExposureComputeShader, _clearHistogramKernel, out _clearHistogramThreadGroupSizeX) ||
+                    !TryResolveBuildHistogramThreadGroups(_autoExposureComputeShader, _buildHistogramKernel, out _buildThreadGroupSizeX, out _buildThreadGroupSizeY) ||
+                    !TryResolveKernelThreadGroupSizeX(_autoExposureComputeShader, _resolveExposureKernel, out _resolveExposureThreadGroupSizeX))
+                {
+                    DisableAutoExposure();
+                }
+            }
+
+            private void SetAutoExposureComputeShader(ComputeShader computeShader)
+            {
+                if (ReferenceEquals(_autoExposureComputeShader, computeShader))
+                    return;
+
+                _autoExposureComputeShader = computeShader;
+                _clearHistogramKernel = -1;
+                _buildHistogramKernel = -1;
+                _resolveExposureKernel = -1;
+                _clearHistogramThreadGroupSizeX = 0u;
+                _buildThreadGroupSizeX = 0u;
+                _buildThreadGroupSizeY = 0u;
+                _resolveExposureThreadGroupSizeX = 0u;
+                ReleaseAutoExposureResources();
             }
 
             private void DisableAutoExposure()
@@ -600,6 +800,10 @@ namespace Hecton8.Visor
                 _clearHistogramKernel = -1;
                 _buildHistogramKernel = -1;
                 _resolveExposureKernel = -1;
+                _clearHistogramThreadGroupSizeX = 0u;
+                _buildThreadGroupSizeX = 0u;
+                _buildThreadGroupSizeY = 0u;
+                _resolveExposureThreadGroupSizeX = 0u;
                 ReleaseAutoExposureResources();
             }
 
@@ -609,7 +813,6 @@ namespace Hecton8.Visor
                 _exposureStateBuffer?.Release();
                 _histogramBuffer = null;
                 _exposureStateBuffer = null;
-                _lastExposureStateBuffer = null;
             }
 
             private static Vector4 ResolveInputSize(int width, int height)
@@ -620,6 +823,60 @@ namespace Hecton8.Visor
                 inputSize.z = 1f / width;
                 inputSize.w = 1f / height;
                 return inputSize;
+            }
+
+            private static bool TryResolveKernelThreadGroupSizeX(ComputeShader computeShader, int kernelIndex, out uint groupSizeX)
+            {
+                groupSizeX = 0u;
+                if (!TryValidateKernelThreadGroups(computeShader, kernelIndex, out uint x, out uint y, out uint z))
+                    return false;
+                if (y != 1u || z != 1u)
+                    return false;
+
+                groupSizeX = x;
+                return true;
+            }
+
+            private static bool TryResolveBuildHistogramThreadGroups(ComputeShader computeShader, int kernelIndex, out uint groupSizeX, out uint groupSizeY)
+            {
+                groupSizeX = 0u;
+                groupSizeY = 0u;
+                if (!TryValidateKernelThreadGroups(computeShader, kernelIndex, out uint x, out uint y, out _))
+                    return false;
+
+                groupSizeX = x;
+                groupSizeY = y;
+                return true;
+            }
+
+            private static bool TryValidateKernelThreadGroups(ComputeShader computeShader, int kernelIndex)
+            {
+                return TryValidateKernelThreadGroups(computeShader, kernelIndex, out _, out _, out _);
+            }
+
+            private static bool TryValidateKernelThreadGroups(ComputeShader computeShader, int kernelIndex, out uint x, out uint y, out uint z)
+            {
+                x = 0u;
+                y = 0u;
+                z = 0u;
+                if (computeShader == null || kernelIndex < 0 || !computeShader.IsSupported(kernelIndex))
+                    return false;
+
+                computeShader.GetKernelThreadGroupSizes(kernelIndex, out x, out y, out z);
+                ulong threadProduct = (ulong)x * y * z;
+                if (x == 0u || y == 0u || z == 0u || threadProduct == 0UL || threadProduct > MaxKernelThreadProduct)
+                    return false;
+
+                return true;
+            }
+
+            private static int ResolveDispatchGroups(int value, uint groupSize)
+            {
+                if (value <= 0 || groupSize == 0u)
+                    return 0;
+
+                long groups = ((long)value + groupSize - 1L) / groupSize;
+                return groups > 0L && groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
             }
 
             private bool EnsureShaftGlobalsBuffer()
@@ -637,16 +894,39 @@ namespace Hecton8.Visor
 
                 _shaftGlobalsBufferA?.Release();
                 _shaftGlobalsBufferB?.Release();
-                _shaftGlobalsBufferA = new GraphicsBuffer(
-                    GraphicsBuffer.Target.Constant,
-                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                    1,
-                    ShaftGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[176B] - URP noir shaft global CBuffer A - owner: ShaftsPass
-                _shaftGlobalsBufferB = new GraphicsBuffer(
-                    GraphicsBuffer.Target.Constant,
-                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                    1,
-                    ShaftGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[176B] - URP noir shaft global CBuffer B - owner: ShaftsPass
+                try
+                {
+                    _shaftGlobalsBufferA = new GraphicsBuffer(
+                        GraphicsBuffer.Target.Constant,
+                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                        1,
+                        ShaftGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[176B] - URP noir shaft global CBuffer A - owner: ShaftsPass
+                    _shaftGlobalsBufferB = new GraphicsBuffer(
+                        GraphicsBuffer.Target.Constant,
+                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                        1,
+                        ShaftGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[176B] - URP noir shaft global CBuffer B - owner: ShaftsPass
+                }
+                catch (ArgumentException)
+                {
+                    MarkShaftGlobalsUnavailable();
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    MarkShaftGlobalsUnavailable();
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    MarkShaftGlobalsUnavailable();
+                    return false;
+                }
+                catch (OutOfMemoryException)
+                {
+                    MarkShaftGlobalsUnavailable();
+                    return false;
+                }
                 _shaftGlobalsBuffer = _shaftGlobalsBufferA;
                 _shaftGlobalsWriteIndex = 1;
                 _hasShaftGlobalsCache = false;
@@ -655,35 +935,78 @@ namespace Hecton8.Visor
 
             private bool UpdateShaftGlobals(in MaterialParameterState parameters)
             {
-                if (!EnsureShaftGlobalsBuffer())
+                if (!HasShaftGlobalsBuffer())
                     return false;
 
                 if (_hasShaftGlobalsCache && MaterialParametersEqual(in _shaftGlobalsCache, in parameters))
                 {
-                    Shader.SetGlobalConstantBuffer(ShaderConstants.ShaftGlobalsBufferId, _shaftGlobalsBuffer, 0, ShaftGlobalsStrideBytes);
-                    return true;
+                    return _shaftGlobalsBuffer != null && _shaftGlobalsBuffer.IsValid();
                 }
 
                 GraphicsBuffer writeBuffer = (_shaftGlobalsWriteIndex & 1) == 0 ? _shaftGlobalsBufferA : _shaftGlobalsBufferB;
                 if (writeBuffer == null || !writeBuffer.IsValid())
                     return false;
 
-                NativeArray<ShaftGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<ShaftGlobalsDTO>(0, 1);
                 try
                 {
-                    mapped[0] = ShaftGlobalsDTO.FromParameters(in parameters);
+                    NativeArray<ShaftGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<ShaftGlobalsDTO>(0, 1);
+                    try
+                    {
+                        mapped[0] = ShaftGlobalsDTO.FromParameters(in parameters);
+                    }
+                    finally
+                    {
+                        writeBuffer.UnlockBufferAfterWrite<ShaftGlobalsDTO>(1);
+                    }
                 }
-                finally
+                catch (ObjectDisposedException)
                 {
-                    writeBuffer.UnlockBufferAfterWrite<ShaftGlobalsDTO>(1);
+                    MarkShaftGlobalsUnavailable();
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    MarkShaftGlobalsUnavailable();
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    MarkShaftGlobalsUnavailable();
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    MarkShaftGlobalsUnavailable();
+                    return false;
                 }
 
                 _shaftGlobalsBuffer = writeBuffer;
                 _shaftGlobalsWriteIndex ^= 1;
-                Shader.SetGlobalConstantBuffer(ShaderConstants.ShaftGlobalsBufferId, _shaftGlobalsBuffer, 0, ShaftGlobalsStrideBytes);
                 _shaftGlobalsCache = parameters;
                 _hasShaftGlobalsCache = true;
+                return _shaftGlobalsBuffer != null && _shaftGlobalsBuffer.IsValid();
+            }
+
+            private bool HasShaftGlobalsBuffer()
+            {
+                if (!SystemInfo.supportsSetConstantBuffer)
+                    return false;
+
+                if (_shaftGlobalsBufferA == null || !_shaftGlobalsBufferA.IsValid() ||
+                    _shaftGlobalsBufferB == null || !_shaftGlobalsBufferB.IsValid())
+                {
+                    return false;
+                }
+
+                if (_shaftGlobalsBuffer == null || !_shaftGlobalsBuffer.IsValid())
+                    _shaftGlobalsBuffer = _shaftGlobalsBufferA;
                 return true;
+            }
+
+            private void MarkShaftGlobalsUnavailable()
+            {
+                _shaftGlobalsBuffer = null;
+                _hasShaftGlobalsCache = false;
             }
 
             private static bool MaterialParametersEqual(
@@ -753,6 +1076,68 @@ namespace Hecton8.Visor
                 return math.saturate(
                     (playerMovement.CurrentDepth - SurfaceNoirSuppressionDepth) /
                     math.max(0.0001f, UnderwaterNoirFullDepth - SurfaceNoirSuppressionDepth));
+            }
+
+            private static float ResolveGlobalQualityWeight01()
+            {
+                float quality = HomeostasisBrain.GlobalQualityWeight;
+                return math.saturate(math.isfinite(quality) ? quality : 1f);
+            }
+
+            private static float ResolveLowVramPressure01()
+            {
+                int graphicsMemoryMb = SystemInfo.graphicsMemorySize;
+                if (graphicsMemoryMb <= 0)
+                    return 0.35f;
+
+                return Smooth01(math.saturate((2048f - graphicsMemoryMb) * (1f / 1536f)));
+            }
+
+            private static float CombineVisualBudgetPressure(float lowVramPressure01, float drsSurvivalPressure01)
+            {
+                float low = math.saturate(lowVramPressure01);
+                float drs = math.saturate(drsSurvivalPressure01);
+                return 1f - ((1f - low) * (1f - drs));
+            }
+
+            private static float ResolveQualityScaledRenderScale(
+                float authoredRenderScale,
+                float globalQualityWeight,
+                float visualBudgetPressure01)
+            {
+                float authored = math.clamp(authoredRenderScale, 0.25f, 1f);
+                float qualityCurve = Smooth01(globalQualityWeight);
+                float survivalMultiplier = math.lerp(0.72f, 0.54f, math.saturate(visualBudgetPressure01));
+                float survivalScale = math.max(0.25f, authored * survivalMultiplier);
+                float budgetPressure = math.saturate(visualBudgetPressure01);
+                float overkillTarget = math.lerp(math.max(authored, 0.75f), authored, budgetPressure * 0.45f);
+                float overkillScale = math.lerp(
+                    authored,
+                    overkillTarget,
+                    math.saturate((qualityCurve - 0.72f) * 3.5714285f));
+                return math.clamp(math.lerp(survivalScale, overkillScale, qualityCurve), 0.25f, 1f);
+            }
+
+            private static float ResolveContactShadowStepBudget(
+                int authoredContactShadowSteps,
+                float globalQualityWeight,
+                float visualBudgetPressure01)
+            {
+                float authored = math.clamp(authoredContactShadowSteps, 1, 3);
+                float qualityCurve = Smooth01(globalQualityWeight) * math.lerp(1f, 0.68f, math.saturate(visualBudgetPressure01));
+                return math.clamp(math.lerp(1f, authored, qualityCurve), 1f, 3f);
+            }
+
+            private static float ResolveFlashlightShadowStepBudget(float globalQualityWeight, float visualBudgetPressure01)
+            {
+                float qualityCurve = Smooth01(globalQualityWeight) * math.lerp(1f, 0.62f, math.saturate(visualBudgetPressure01));
+                return math.clamp(math.lerp(1f, 5f, qualityCurve), 1f, 5f);
+            }
+
+            private static float Smooth01(float value)
+            {
+                float t = math.saturate(value);
+                return t * t * (3f - 2f * t);
             }
 
             private float3 ResolvePlayerVelocity()
@@ -920,11 +1305,14 @@ namespace Hecton8.Visor
                     FeatureSettings settings,
                     bool exposureAvailable,
                     float underwaterNoirBlend,
-                    float thermalHazeIntensity)
+                    float thermalHazeIntensity,
+                    float resolvedRenderScale,
+                    float globalQualityWeight,
+                    float visualBudgetPressure01)
                 {
                     MaterialParameterState state = default;
                     float underwaterBlend = math.saturate(underwaterNoirBlend);
-                    state.RenderScale = math.clamp(settings.renderScale, 0.25f, 1f);
+                    state.RenderScale = math.clamp(resolvedRenderScale, 0.25f, 1f);
                     state.MaxRayDistance = math.max(1f, settings.maxRayDistance);
                     state.ScatteringAnisotropy = math.clamp(settings.scatteringAnisotropy, 0f, 0.95f);
                     state.Density = math.max(0f, settings.density) * underwaterBlend;
@@ -938,10 +1326,10 @@ namespace Hecton8.Visor
                     state.SiltFloorBoost = math.max(0f, settings.siltFloorBoost);
                     state.SiltDriftSpeed = math.max(0f, settings.siltDriftSpeed);
                     state.ContactShadowStrength = math.saturate(settings.contactShadowStrength) * underwaterBlend;
-                    state.ContactShadowSteps = math.clamp(settings.contactShadowSteps, 4, 8);
+                    state.ContactShadowSteps = ResolveContactShadowStepBudget(settings.contactShadowSteps, globalQualityWeight, visualBudgetPressure01);
                     state.ContactShadowBias = math.max(0.001f, settings.contactShadowBias);
                     state.ContactShadowMaxDistance = math.max(0.1f, settings.contactShadowMaxDistance);
-                    state.FlashlightShadowSteps = SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048 ? 16f : 24f;
+                    state.FlashlightShadowSteps = ResolveFlashlightShadowStepBudget(globalQualityWeight, visualBudgetPressure01);
                     state.FlashlightShadowSoftness = math.max(0.1f, settings.flashlightShadowSoftness);
                     state.FlashlightShadowMinStep = math.max(0.005f, settings.flashlightShadowMinStep);
                     state.FlashlightShadowBias = math.max(0.001f, settings.flashlightShadowBias);
@@ -975,9 +1363,10 @@ namespace Hecton8.Visor
             internal static readonly int EvMaxDeltaPerFrameId = Shader.PropertyToID("_HectonNoirEVMaxDeltaPerFrame");
             internal static readonly int HistogramBufferId = Shader.PropertyToID("_HectonNoirHistogram");
             internal static readonly int ExposureStateBufferId = Shader.PropertyToID("_HectonNoirExposureState");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
+            internal static readonly int CameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
             internal static readonly int ShaftTextureId = Shader.PropertyToID("_HectonShaftsTexture");
             internal static readonly int HalfResDepthTextureId = Shader.PropertyToID("_HectonHalfResDepthTexture");
-            internal static readonly int HeadlightVolumetricsTextureId = Shader.PropertyToID("_HectonHeadlightVolumetrics");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -1002,6 +1391,8 @@ namespace Hecton8.Visor
 #endif
 
             Shader shader = settings != null ? settings.shader : null;
+            if (shader == null)
+                RuntimeShaderReferenceCatalog.TryGetScooterVolumetricShaftsShader(out shader);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (shader == null)
                 shader = Shader.Find("Hidden/Hecton8/ScooterVolumetricShafts");
@@ -1012,6 +1403,7 @@ namespace Hecton8.Visor
             RecreateMaterial(ref _blurHorizontalMaterial, shader);
             RecreateMaterial(ref _blurVerticalMaterial, shader);
             RecreateMaterial(ref _compositeMaterial, shader);
+            _pass.PrepareResources(settings);
             TryRegisterHotSwapListener();
             _cachedUnderwaterVisuals = GlobalRegistry.UnderwaterVisuals;
             _cachedPlayerContext = GlobalRegistry.Player;
@@ -1035,9 +1427,6 @@ namespace Hecton8.Visor
 
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (IsUnsupportedCameraType(cameraType))
-                return;
-
-            if (HectonDrsRenderFeatureGate.ShouldCullForSurvivalScale())
                 return;
 
             _pass.Setup(

@@ -18,14 +18,16 @@ Shader "Hidden/Hecton8/VRBrownout"
             Name "VRBrownout"
 
             HLSLPROGRAM
-            #pragma target 4.5
+            #pragma target 3.5
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHT_SHADOWS
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
 
             CBUFFER_START(HectonVRBrownoutGlobals)
                 float4 _HectonVRBrownoutParams0;
@@ -72,6 +74,11 @@ Shader "Hidden/Hecton8/VRBrownout"
                 return output;
             }
 
+            float2 ResolveFoveatedSourceUV(float2 uv)
+            {
+                return FoveatedRemapLinearToNonUniform(uv);
+            }
+
             float Hash21(float2 p)
             {
                 p = frac(p * float2(123.34, 456.21));
@@ -92,7 +99,9 @@ Shader "Hidden/Hecton8/VRBrownout"
                 float brownout = saturate(_HectonVRBrownoutIntensity);
                 float worldBlur = saturate(_HectonWorldFocusBlur);
                 float nearCollision = saturate(_HectonVRNearCollisionIntensity);
-                float2 uv = UnityStereoTransformScreenSpaceTex(input.screenUV);
+                float2 linearUv = UnityStereoTransformScreenSpaceTex(input.screenUV);
+                float2 cameraTextureUv = ResolveFoveatedSourceUV(linearUv);
+                float2 sampleUv = linearUv;
                 float2 eyeStableUv = input.screenUV;
                 float vrComfortEnabled = saturate(_HectonVrComfortSignals.w);
                 float vrComfortTunnel = saturate(max(_HectonVrComfortSignals.x, _HectonVrComfortMotion.z)) * vrComfortEnabled;
@@ -100,8 +109,8 @@ Shader "Hidden/Hecton8/VRBrownout"
                 float vrComfortPeripheralBlur = saturate(_HectonVrComfortSignals.z) * vrComfortEnabled;
                 float2 radialOffset = eyeStableUv * 2.0 - 1.0;
                 radialOffset.x *= _ScreenParams.x * rcp(max(_ScreenParams.y, 1.0));
-                float radialMagnitude = saturate(length(radialOffset));
-                float vrComfortEdge = smoothstep(0.36, 1.0, radialMagnitude);
+                float radialMagnitudeSq = saturate(dot(radialOffset, radialOffset));
+                float vrComfortEdge = saturate((radialMagnitudeSq - 0.1296) * 1.1485452);
                 [branch]
                 if (brownout <= 0.0001 &&
                     worldBlur <= 0.0001 &&
@@ -110,7 +119,7 @@ Shader "Hidden/Hecton8/VRBrownout"
                     vrComfortBlackout <= 0.0001 &&
                     vrComfortPeripheralBlur <= 0.0001)
                 {
-                    return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
+                    return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, cameraTextureUv);
                 }
 
                 float eyeStableSeed = 0.0;
@@ -125,22 +134,22 @@ Shader "Hidden/Hecton8/VRBrownout"
                     {
                         float rowNoise = Hash21(float2(row, eyeStableSeed));
                         float rowGate = step(0.62, rowNoise);
-                        uv.x += (rowNoise - 0.5) * brownout * rowGate * 0.0075;
-                        uv = saturate(uv);
+                        sampleUv.x += (rowNoise - 0.5) * brownout * rowGate * 0.0075;
+                        sampleUv = saturate(sampleUv);
                     }
                 }
 
-                half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
+                half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(sampleUv));
                 [branch]
                 if (worldBlur > 0.0001 || vrComfortPeripheralBlur > 0.0001)
                 {
                     float blurMix = saturate(max(worldBlur, vrComfortPeripheralBlur * vrComfortEdge));
                     float2 blurStep = _BlitTexture_TexelSize.xy * max(0.0, _HectonWorldBlurTexelRadius) * blurMix;
                     half4 blurColor = color;
-                    blurColor += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(uv + blurStep));
-                    blurColor += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(uv - blurStep));
-                    blurColor += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(uv + blurStep.yx));
-                    blurColor += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(uv - blurStep.yx));
+                    blurColor += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(saturate(sampleUv + blurStep)));
+                    blurColor += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(saturate(sampleUv - blurStep)));
+                    blurColor += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(saturate(sampleUv + blurStep.yx)));
+                    blurColor += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, ResolveFoveatedSourceUV(saturate(sampleUv - blurStep.yx)));
                     color = lerp(color, blurColor * 0.2h, (half)blurMix);
                 }
 
@@ -185,11 +194,12 @@ Shader "Hidden/Hecton8/VRBrownout"
                     float2 pixel = floor(eyeStableUv * _ScreenParams.xy);
                     float ign = frac(52.9829189 * frac(dot(pixel + eyeStableSeed * 23.0, float2(0.06711056, 0.00583715))));
                     float tunnelInner = lerp(0.74, 0.34, vrComfortTunnel);
-                    float tunnelMask = smoothstep(tunnelInner, 1.02, radialMagnitude) * vrComfortTunnel;
-                    float tunnelDither = step(ign, saturate(tunnelMask * 0.86 + vrComfortTunnel * 0.12));
-                    float ditheredTunnel = tunnelMask * lerp(0.58, 1.0, tunnelDither);
+                    float tunnelInnerSq = tunnelInner * tunnelInner;
+                    float tunnelMask = saturate((radialMagnitudeSq - tunnelInnerSq) * rcp(max(1.0 - tunnelInnerSq, 0.0009765625))) * vrComfortTunnel;
+                    float tunnelDither = step(ign, saturate(tunnelMask + vrComfortTunnel * 0.0625));
+                    float ditheredTunnel = tunnelMask * lerp(0.50, 0.96, tunnelDither);
                     half blackAmount = (half)saturate(max(ditheredTunnel, vrComfortBlackout));
-                    color.rgb = lerp(color.rgb, half3(0.0h, 0.0h, 0.0h), blackAmount);
+                    color.rgb = lerp(color.rgb, half3(0.0015h, 0.0023h, 0.0031h), blackAmount);
                 }
 
                 return color;

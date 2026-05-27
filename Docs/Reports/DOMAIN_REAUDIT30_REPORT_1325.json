@@ -1,0 +1,103 @@
+﻿{
+    "schema":  "hecton8.domain_reaudit.1325.v30",
+    "agentId":  "1325",
+    "status":  "PRIMARY_WORLD_AUP_ROUTE_GREEN_EXTERNAL_SAVE_MANAGER_AND_BUILD_GUARD_DECLARED",
+    "prompt":  {
+                   "path":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "tag":  "AGENT_PROMPT id=\"1325\"",
+                   "taskCount":  20,
+                   "sha256":  "EE975B109958AEF4F71A0B55FED9B9E339A88F3EED23829E64D2BA249AA61F94"
+               },
+    "changes":  [
+                    "RuntimeOriginRoute.CurrentRuntimeOriginAup now returns AbsoluteUniversePosition.Invalid() when HectonFloatingOrigin.CurrentTotalOffsetDouble is non-finite; invalid runtime-origin no longer masquerades as default AUP zero.",
+                    "PersistentWorldRegistry.TryResolveAupFromRuntimeOrigin now checks originAup.IsFinite before OffsetMeters to avoid telemetry pollution and fail-open origin math.",
+                    "SaveManager safe AUP snap vertical lift now uses TryResolveCurrentRuntimeOriginDouble3 and returns NaN/refusal instead of double3.zero when runtime origin is invalid.",
+                    "WorldMemorySovereigntyValidator1325 now validates the private nested PagedSectorHashWindow layout by reflection in editor-only code: explicit 72 bytes, Hash0..Hash8 at 8-byte offsets."
+                ],
+    "sourceReports":  {
+                          "worldNativeAliasLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT30_WORLD.json",
+                          "allScriptsNativeAliasLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT30_ALLSCRIPTS.json",
+                          "hotPathAudit":  "Docs/Reports/ZERO_GC_HOTPATH_AUDIT_1325_DEEP_REAUDIT30_RAW.json"
+                      },
+    "domainNativeAliasProof":  {
+                                   "scannedWorldFiles":  276,
+                                   "parseFailures":  0,
+                                   "totalWorldNativeFieldDeclarations":  1094,
+                                   "persistentWorldRegistryNativeFields":  0,
+                                   "broaderWorldForbiddenCandidates":  0,
+                                   "roslynAuditHash":  "996fb05324bf169a82efe1f38bd87af214eb837df4cb4cee03af5a2b5f543b94"
+                               },
+    "touchedBoundaryNativeAliasScan":  {
+                                           "scannedAllScriptFiles":  2441,
+                                           "parseFailures":  0,
+                                           "totalAllScriptNativeFields":  6662,
+                                           "touchedNativeFieldDeclarations":  38,
+                                           "broadScannerForbiddenTouchedCandidates":  13,
+                                           "saveBinaryStoragePersistentNativeFields":  0,
+                                           "saveManagerPersistentNativeFields":  13,
+                                           "stackOnlyRefStructViewFieldsInTouchedFiles":  12,
+                                           "transientJobFieldsInTouchedFiles":  13,
+                                           "status":  "primary world clean; SaveBinaryStorage clean; SaveManager residual declared external Data Archivist scope"
+                                       },
+    "aupRouteProof":  {
+                          "absoluteAupCastsFound":  0,
+                          "invalidRuntimeOriginDefaultFallbacksFound":  0,
+                          "runtimeOriginRouteReturnsInvalidAupOnNonFiniteOrigin":  true,
+                          "saveManagerZeroOriginFallbackRemoved":  true
+                      },
+    "asyncNativeProof":  {
+                             "asyncAwaitableNativeCollectionDeclarations":  0,
+                             "status":  "no NativeArray/NativeList/NativeQueue/NativeParallelHashMap/NativeParallelMultiHashMap/UnsafeList declarations inside PersistentWorldRegistry async Awaitable bodies"
+                         },
+    "hotPathProof":  {
+                         "scannedFiles":  5,
+                         "selectedSimulationHotPathManagedGcHits":  0,
+                         "rawHitCount":  0
+                     },
+    "byteOffsetMaps":  [
+                           {
+                               "structName":  "PagedSectorHashWindow",
+                               "sizeBytes":  72,
+                               "offsets":  {
+                                               "Hash0":  "0:long",
+                                               "Hash1":  "8:long",
+                                               "Hash2":  "16:long",
+                                               "Hash3":  "24:long",
+                                               "Hash4":  "32:long",
+                                               "Hash5":  "40:long",
+                                               "Hash6":  "48:long",
+                                               "Hash7":  "56:long",
+                                               "Hash8":  "64:long"
+                                           }
+                           },
+                           {
+                               "structName":  "AbsoluteUniversePosition",
+                               "sizeBytes":  48,
+                               "offsets":  {
+                                               "GridX":  "0:long",
+                                               "GridY":  "8:long",
+                                               "GridZ":  "16:long",
+                                               "LocalX":  "24:float",
+                                               "LocalY":  "28:float",
+                                               "LocalZ":  "32:float",
+                                               "_pad0":  "36:float",
+                                               "_pad1":  "40:ulong"
+                                           }
+                           }
+                       ],
+    "validation":  {
+                       "gitDiffCheck":  "pass_with_lf_crlf_warnings_only",
+                       "buildLaunched":  false,
+                       "buildBlockedReason":  "AGENTS guard: active dotnet MSBuild node PID 18480 exists; no concurrent dotnet build allowed",
+                       "cpuPercent":  0,
+                       "activeDotnetProcessCount":  1
+                   },
+    "hashes":  {
+                   "RuntimeOriginRoute":  "53900ED1E2406F35213AE54EAF8AFA98D4BEEA26A1EF0001A5BBB01F0E5054CC",
+                   "PersistentWorldRegistry":  "1F6E5103BABB23A86CD300A92508056951200D3CE4F68C5EE51E2C946CB3FB01",
+                   "AUPMath":  "3868E1955CC5EAD8B4C070AB92EDFEE845D267C592905C0510DAD7B655B9EC11",
+                   "SaveBinaryStorage":  "5DCC2DB739AE5D1E5C0566FECE0C8F2BB1A2788D68F08348A5B0E3E914797F5B",
+                   "SaveManager":  "2F58D9EA83A50A391B5FC9F23FA4FAC66F7C6DD23194A6C9646D3A5A77C1C73E",
+                   "fullTouchedIncludingBoundaries":  "06F9DF4E98FC2063E8E53A176F1B55C64586C0E9BBB0C4CF598620E9C4A7AE5D"
+               }
+}

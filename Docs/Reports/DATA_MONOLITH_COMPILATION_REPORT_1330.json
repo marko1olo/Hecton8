@@ -1,0 +1,149 @@
+{
+    "schema":  "HECTON8_DATA_MONOLITH_COMPILATION_REPORT_V1",
+    "agent":  "1330",
+    "generatedUtc":  "2026-05-26T14:29:01Z",
+    "status":  "CORE_BUILD_PASS_CLI_PASS_WITH_WARNINGS_BEFORE_SUPPRESSION_RETRY_BLOCKED_HOST_CPU_UNITY_PROFILER_PENDING",
+    "buildRunsByAgent":  0,
+    "purgeAudit":  {
+                       "path":  "Docs/Reports/DATA_MONOLITH_PURGE_AUDIT_1330.json",
+                       "rerunPath":  "Docs/Reports/DATA_MONOLITH_PURGE_AUDIT_1330_RERUN3.json",
+                       "status":  "VERIFIED_GREEN",
+                       "failedGates":  [
+
+                                       ],
+                       "scannedFiles":  9,
+                       "totalNativeFieldDeclarations":  0,
+                       "persistentNativeFieldsRemaining":  0,
+                       "transientVaultViews":  29,
+                       "zeroGcHotPathHits":  0,
+                       "absoluteAupCastsFound":  0,
+                       "compactionAwareLocksProven":  true,
+                       "telemetryRingIntegrated":  true,
+                       "verificationHashSha256":  "8da0cc1b44a433bbc277ebe96f98f12a21826456ce3f2370d5222f861e839ff4"
+                   },
+    "buildGate":  {
+                      "coreBuild":  {
+                                        "command":  "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+                                        "result":  "PASS",
+                                        "errors":  0,
+                                        "warnings":  0,
+                                        "elapsed":  "00:01:03.80"
+                                    },
+                      "dataMonolithCliBuild":  {
+                                                   "command":  "dotnet build Tools/DataMonolithBakeCli/DataMonolithBakeCli.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+                                                   "result":  "PASS_WITH_38_WARNINGS_BEFORE_TARGETED_SUPPRESSION",
+                                                   "errors":  0,
+                                                   "warnings":  38,
+                                                   "elapsed":  "00:00:10.01",
+                                                   "retryAfterWarningSuppression":  "BLOCKED_BY_HOST_CPU_100_PERCENT_DOTNET_OR_CSC_ACTIVE"
+                                               }
+                  },
+    "unityProfilerProof":  "PENDING",
+    "h8bin":  {
+                  "path":  "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin",
+                  "bytes":  1064384,
+                  "magic":  "0x4D443848",
+                  "formatVersion":  2,
+                  "headerBytes":  64,
+                  "checksum64":  "0x19D880780D6E1B46",
+                  "blobBytes":  1064384,
+                  "directoryOffset":  64,
+                  "directoryBytes":  64,
+                  "sectionTableOffset":  128,
+                  "sectionCount":  26,
+                  "flags":  "0x00000001",
+                  "schemaHash":  "0x33313331"
+              },
+    "sectionSummary":  {
+                           "activeSectionCount":  22,
+                           "declaredSectionCount":  26,
+                           "allSectionOffsets64Aligned":  true,
+                           "allFixedRecords16Aligned":  true
+                       },
+    "csvBake":  {
+                    "balanceCsvSourceFiles":  20,
+                    "bakedRecognizedCsvTables":  18,
+                    "allowedExternalCsvTables":  2,
+                    "bakedTables":  [
+                                        "AudioRegistry.csv",
+                                        "Biomes.csv",
+                                        "Economy.csv",
+                                        "Fauna.csv",
+                                        "GhostModules.csv",
+                                        "HudLayout.csv",
+                                        "Items.csv",
+                                        "Loot.csv",
+                                        "Physics.csv",
+                                        "PhysicsMaterials.csv",
+                                        "Recipes.csv",
+                                        "SectorPages.csv",
+                                        "SopErrors.csv",
+                                        "SpawnCredits.csv",
+                                        "SubmarineHull.csv",
+                                        "ToolHeat.csv",
+                                        "VfxScalars.csv",
+                                        "VoxelMaterials.csv"
+                                    ],
+                    "allowedExternalTables":  [
+                                                  "armor_penetration_matrix.csv",
+                                                  "btree_tuning_profiles.csv"
+                                              ]
+                },
+    "dtoProof":  {
+                     "h8StructCount":  32,
+                     "missingExplicitLayoutCount":  0,
+                     "missingExplicitLayouts":  [
+
+                                                ],
+                     "managedFieldFindingCount":  0,
+                     "managedFieldFindings":  [
+
+                                              ]
+                 },
+    "runtimeParserProof":  {
+                               "scanner":  "Installed H8DataMonolithReleaseParserScanner report plus 1330 report path wiring",
+                               "releaseGateReport":  "Docs/Reports/DATA_MONOLITH_RELEASE_BUILD_GATE_X_002.json",
+                               "blockingFindingCount":  0,
+                               "allowedPersistenceFindingCount":  12,
+                               "proofBoundary":  "Static source gate; Unity player profiler proof remains pending."
+                           },
+    "auditedFilesSha256":  [
+                               {
+                                   "path":  "Assets/_Project/Editor/DataMonolith/DataMonolithBakerWindow.cs",
+                                   "sha256":  "271c25568d66546be487555efa7a6bb73c67b7937a0b4121e56ae23998177a85"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/Editor/DataMonolith/OOP_StaticData_Scanner.cs",
+                                   "sha256":  "03be90344c121dc739ddfccb1d31dd86eee16a0e0baaba4707651ac939a36434"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCorruptionFuzzer.cs",
+                                   "sha256":  "109397dd531d0b063bc415b9c671a4b545730bc6b4bfcb3411a64bd847a1bfca"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithReleaseBuildGate.cs",
+                                   "sha256":  "06208afbfd136a4d72f108a3ea7b61293171f7439897ccb2fa33f6ae96ab2d94"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                                   "sha256":  "3b449e3be3a93dc05d9b239715ffbc55ebc853b0f56113abe3879a9bbee12a59"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+                                   "sha256":  "46977c099ce4a0163f8f0804d451935a81151382117c5a933d8f73b432ffca45"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithLayoutGuard.cs",
+                                   "sha256":  "3623497501f6eb944dda3a9882344fae8238585f79ad7f4876bbde1fdcdca5af"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompiler.cs",
+                                   "sha256":  "08c3cf8e4a4fe854a03a5ee8fc168dd003f22fc6ba5c802056668ff2b62f1651"
+                               },
+                               {
+                                   "path":  "Tools/DataMonolithBakeCli/UnityEditorStubs.cs",
+                                   "sha256":  "f8d39eb90ef5654f4891ed3335e5afdc04c6b21e4efa6739d152f9e113ebf801"
+                               }
+                           ],
+    "aggregateAuditSha256":  "8da0cc1b44a433bbc277ebe96f98f12a21826456ce3f2370d5222f861e839ff4"
+}

@@ -26,6 +26,7 @@ namespace Hecton8.World
         private const string FoamInputName = "SargassumFoamDampingInput";
         private const string OilFilmInputName = "SargassumOilFilmInput";
         private const int FacadeThreadGroupSize = 8;
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
 #if UNITY_EDITOR
         private const string FacadeComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_SargassumDampingFacade.compute";
 #endif
@@ -101,6 +102,8 @@ namespace Hecton8.World
 
         private ComputeShader _facadeBakeCompute;
         private int _facadeBakeKernel = -1;
+        private int _facadeThreadGroupSizeX;
+        private int _facadeThreadGroupSizeY;
         private RenderTexture _waveDampingMask;
         private RenderTexture _oilFilmMask;
         private Renderer _wavesInputRenderer;
@@ -149,7 +152,7 @@ namespace Hecton8.World
             CacheRegistryServicesCold();
             DisableLegacyInputs();
             EnsureFacadeResources();
-            RefreshFacadeTextures(force: true);
+            RefreshFacadeTextures(force: true, allowAllocate: true);
         }
 
         private void OnEnable()
@@ -159,7 +162,7 @@ namespace Hecton8.World
             CacheRegistryServicesCold();
             DisableLegacyInputs();
             EnsureFacadeResources();
-            RefreshFacadeTextures(force: true);
+            RefreshFacadeTextures(force: true, allowAllocate: true);
             HectonFloatingOrigin.RegisterListener(this);
             TryRegister();
         }
@@ -251,7 +254,7 @@ namespace Hecton8.World
                 bool force = _facadeRefreshForce;
                 _facadeRefreshRequested = false;
                 _facadeRefreshForce = false;
-                RefreshFacadeTextures(force);
+                RefreshFacadeTextures(force, allowAllocate: false);
             }
 
             if (!_facadeGlobalsDirty)
@@ -278,10 +281,10 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             if (dragManager == null)
-                dragManager = GlobalRegistry.SargassumDrag;
+                dragManager = SargassumGlobalDragManager.Instance;
 
             if (cutManager == null)
-                cutManager = GlobalRegistry.SargassumCut;
+                cutManager = SargassumCutManager.Instance;
 
             ResolveLegacyInputs();
         }
@@ -295,6 +298,7 @@ namespace Hecton8.World
             {
                 if (dragManager == null || ReferenceEquals(dragManager, previousService))
                     dragManager = currentService as SargassumGlobalDragManager;
+                RefreshFacadeTextures(force: true, allowAllocate: true);
                 return;
             }
 
@@ -302,10 +306,11 @@ namespace Hecton8.World
                 (cutManager == null || ReferenceEquals(cutManager, previousService)))
             {
                 cutManager = currentService as SargassumCutManager;
+                RefreshFacadeTextures(force: true, allowAllocate: true);
             }
         }
 
-        private void RefreshFacadeTextures(bool force)
+        private void RefreshFacadeTextures(bool force, bool allowAllocate)
         {
             if (dragManager == null)
             {
@@ -323,7 +328,11 @@ namespace Hecton8.World
                 return;
             }
 
-            EnsureFacadeResources(densityTexture.width, densityTexture.height);
+            if (!EnsureFacadeResources(densityTexture.width, densityTexture.height, allowAllocate))
+            {
+                QueueFacadeGlobals(active: false);
+                return;
+            }
 
             RenderTexture cutMaskTexture = null;
             Vector4 cutMaskWorldRect = Vector4.zero;
@@ -351,14 +360,29 @@ namespace Hecton8.World
 #if UNITY_EDITOR
             TryAutoAssignFacadeCompute();
 #endif
-            if (_facadeBakeCompute == null)
+            if (!ReferenceEquals(_facadeBakeCompute, facadeBakeComputeOverride))
+            {
                 _facadeBakeCompute = facadeBakeComputeOverride;
+                _facadeBakeKernel = -1;
+                _facadeThreadGroupSizeX = 0;
+                _facadeThreadGroupSizeY = 0;
+            }
 
-            if (_facadeBakeCompute == null)
+            if (_facadeBakeCompute == null || !HardwareTierDetector.AllowHighResourceComputeShaders)
                 return;
 
             if (_facadeBakeKernel < 0)
-                _facadeBakeKernel = _facadeBakeCompute.FindKernel("CSMain");
+            {
+                _facadeBakeKernel = ResolveSupportedKernel(_facadeBakeCompute, "CSMain");
+                ResolveKernelThreadGroupSizes(
+                    _facadeBakeCompute,
+                    _facadeBakeKernel,
+                    out _facadeThreadGroupSizeX,
+                    out _facadeThreadGroupSizeY);
+            }
+
+            if (_facadeBakeKernel < 0 || _facadeThreadGroupSizeX <= 0 || _facadeThreadGroupSizeY <= 0)
+                return;
 
             _facadeBakeCompute.SetTexture(_facadeBakeKernel, _DensityTexId, densityTexture);
             _facadeBakeCompute.SetTexture(_facadeBakeKernel, _CutMaskTexId, cutMaskActive && cutMaskTexture != null ? cutMaskTexture : Texture2D.blackTexture);
@@ -371,9 +395,57 @@ namespace Hecton8.World
             _facadeBakeCompute.SetVector(_WaveFacadeParamsId, new Vector4(waveDampingDensityPower, waveDampingCutRelief, 1f, 0f));
             _facadeBakeCompute.SetVector(_OilFacadeParamsId, new Vector4(oilFilmDensityPower, oilFilmCutRelief, oilFilmAlphaScale, 0f));
 
-            int groupCountX = Mathf.Max(1, Mathf.CeilToInt(_waveDampingMask.width / (float)FacadeThreadGroupSize));
-            int groupCountY = Mathf.Max(1, Mathf.CeilToInt(_waveDampingMask.height / (float)FacadeThreadGroupSize));
+            int groupCountX = CeilDividePositive(_waveDampingMask.width, _facadeThreadGroupSizeX);
+            int groupCountY = CeilDividePositive(_waveDampingMask.height, _facadeThreadGroupSizeY);
+            if (groupCountX <= 0 || groupCountY <= 0)
+                return;
+
             _facadeBakeCompute.Dispatch(_facadeBakeKernel, groupCountX, groupCountY, 1);
+        }
+
+        private static void ResolveKernelThreadGroupSizes(
+            ComputeShader compute,
+            int kernel,
+            out int sizeX,
+            out int sizeY)
+        {
+            sizeX = 0;
+            sizeY = 0;
+            if (compute == null ||
+                kernel < 0 ||
+                !HardwareTierDetector.AllowHighResourceComputeShaders ||
+                !compute.IsSupported(kernel))
+                return;
+
+            compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            if (queryX == 0u || queryY == 0u || queryZ != 1u || queryX > int.MaxValue || queryY > int.MaxValue)
+                return;
+
+            ulong totalThreads = queryX * (ulong)queryY * queryZ;
+            if (totalThreads > PortableMaxComputeThreadsPerGroup)
+                return;
+
+            sizeX = (int)queryX;
+            sizeY = (int)queryY;
+        }
+
+        private static int ResolveSupportedKernel(ComputeShader compute, string kernelName)
+        {
+            if (compute == null || !HardwareTierDetector.AllowHighResourceComputeShaders || !compute.HasKernel(kernelName))
+                return -1;
+
+            int kernel = compute.FindKernel(kernelName);
+            return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
+        }
+
+        private static int CeilDividePositive(int value, int divisor)
+        {
+            const int MaxDispatchGroupsPerDimension = 65535;
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private void EnsureFacadeResources()
@@ -384,18 +456,26 @@ namespace Hecton8.World
             EnsureFacadeResources(densityTexture.width, densityTexture.height);
         }
 
-        private void EnsureFacadeResources(int width, int height)
+        private bool EnsureFacadeResources(int width, int height, bool allowAllocate = true)
         {
-            _waveDampingMask = EnsureRenderTexture(ref _waveDampingMask, "__SargassumWaveDampingFacade", width, height);
-            _oilFilmMask = EnsureRenderTexture(ref _oilFilmMask, "__SargassumOilFilmFacade", width, height);
+            if (!EnsureRenderTexture(ref _waveDampingMask, "__SargassumWaveDampingFacade", width, height, allowAllocate) ||
+                !EnsureRenderTexture(ref _oilFilmMask, "__SargassumOilFilmFacade", width, height, allowAllocate))
+            {
+                return false;
+            }
+
             _debugWaveFacadeResolution = _waveDampingMask != null ? _waveDampingMask.width : 0;
             _debugOilFacadeResolution = _oilFilmMask != null ? _oilFilmMask.width : 0;
+            return _waveDampingMask != null && _oilFilmMask != null;
         }
 
-        private static RenderTexture EnsureRenderTexture(ref RenderTexture texture, string name, int width, int height)
+        private static bool EnsureRenderTexture(ref RenderTexture texture, string name, int width, int height, bool allowAllocate)
         {
             if (texture != null && texture.width == width && texture.height == height)
-                return texture;
+                return true;
+
+            if (!allowAllocate)
+                return false;
 
             if (texture != null)
             {
@@ -420,7 +500,7 @@ namespace Hecton8.World
                 hideFlags = HideFlags.HideAndDontSave
             }; // COLD ALLOC: RenderTexture[1] - public sargassum damping facade texture for ocean wave/albedo inputs - owner: SargassumCrestDampingController
             texture.Create();
-            return texture;
+            return texture != null;
         }
 
         private void ReleaseFacadeResources()

@@ -1,5 +1,6 @@
 using Hecton8.AI;
 using Hecton8.Building;
+using Hecton8.Construction;
 using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Scavenging;
@@ -30,16 +31,32 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private readonly struct ForwardTargetInfo
+        {
+            public readonly Component Source;
+            public readonly SpatialTargetKind Kind;
+            public readonly FieldTargetRole SignalRole;
+            public readonly float Distance;
+
+            public ForwardTargetInfo(Component source, SpatialTargetKind kind, FieldTargetRole signalRole, float distance)
+            {
+                Source = source;
+                Kind = kind;
+                SignalRole = signalRole;
+                Distance = distance;
+            }
+        }
+
         public static bool TryBuildForwardAdvice(Transform origin, float range, LayerMask mask, out LoadoutAdvice advice)
         {
             advice = default;
             if (origin == null)
                 return false;
 
-            if (!TryGetForwardTarget(origin, range, mask, out Component source, out float distance))
+            if (!TryGetForwardTargetInfo(origin, range, mask, out ForwardTargetInfo target))
                 return false;
 
-            return TryBuildAdvice(source, distance, out advice);
+            return TryBuildForwardAdvice(in target, out advice);
         }
 
         public static bool TryBuildForwardPresetName(Transform origin, float range, LayerMask mask, out string presetName)
@@ -48,10 +65,10 @@ namespace Hecton8.Gameplay
             if (origin == null)
                 return false;
 
-            if (!TryGetForwardTarget(origin, range, mask, out Component source, out _))
+            if (!TryGetForwardTargetInfo(origin, range, mask, out ForwardTargetInfo target))
                 return false;
 
-            return TryBuildPresetName(source, out presetName);
+            return TryBuildForwardPresetName(in target, out presetName);
         }
 
         public static bool TryBuildPresetName(Component source, out string presetName)
@@ -164,13 +181,184 @@ namespace Hecton8.Gameplay
             return false;
         }
 
+        private static bool TryBuildForwardAdvice(in ForwardTargetInfo target, out LoadoutAdvice advice)
+        {
+            advice = default;
+
+            if (target.SignalRole != FieldTargetRole.Generic &&
+                TryBuildDescriptorAdvice(target.SignalRole, target.Distance, out advice))
+            {
+                return true;
+            }
+
+            Component source = target.Source;
+            if (source is ModuleMarker marker &&
+                marker.SpatialRole != FieldTargetRole.Generic &&
+                TryBuildDescriptorAdvice(marker.SpatialRole, target.Distance, out advice))
+            {
+                return true;
+            }
+
+            if (source is BaseModule module)
+            {
+                advice = new LoadoutAdvice(
+                    PresetConstruction,
+                    module.IsFlooded
+                        ? "Flooded module ahead. Construction kit is a strong option if you want repair, cutter, and builder coverage."
+                        : "Serviceable module ahead. Construction kit fits this situation well.");
+                return true;
+            }
+
+            if (source is ResourceNode node)
+            {
+                advice = new LoadoutAdvice(
+                    PresetFieldRecovery,
+                    node.IsDepleted
+                        ? "Spent resource node ahead. Recovery tools still fit this route if you want to clear the area."
+                        : "Live resource node ahead. Recovery kit is a strong option here.");
+                return true;
+            }
+
+            if (source is FaunaBrain ai)
+            {
+                advice = new LoadoutAdvice(
+                    PresetDefense,
+                    ai.CurrentState == FaunaBrain.AIState.Aggressive
+                        ? "Aggressive contact ahead. Defense kit gives the safest margin."
+                        : "Bioform contact ahead. Defense tools are the safer choice if you want control.");
+                return true;
+            }
+
+            if (source is PickupItem)
+            {
+                advice = new LoadoutAdvice(
+                    PresetFieldRecovery,
+                    "Recoverable field asset ahead. Recovery kit is an efficient option.");
+                return true;
+            }
+
+            if (source is ScannableTarget || source is ScannableFragment)
+            {
+                advice = new LoadoutAdvice(
+                    PresetExploration,
+                    "Scannable point ahead. Exploration kit is a good fit for route and intel work.");
+                return true;
+            }
+
+            return TryBuildKindAdvice(target.Kind, out advice);
+        }
+
+        private static bool TryBuildForwardPresetName(in ForwardTargetInfo target, out string presetName)
+        {
+            presetName = null;
+
+            if (target.SignalRole != FieldTargetRole.Generic &&
+                TryBuildDescriptorPresetName(target.SignalRole, out presetName))
+            {
+                return true;
+            }
+
+            Component source = target.Source;
+            if (source is ModuleMarker marker &&
+                marker.SpatialRole != FieldTargetRole.Generic &&
+                TryBuildDescriptorPresetName(marker.SpatialRole, out presetName))
+            {
+                return true;
+            }
+
+            if (source is BaseModule)
+            {
+                presetName = PresetConstruction;
+                return true;
+            }
+
+            if (source is ResourceNode || source is PickupItem)
+            {
+                presetName = PresetFieldRecovery;
+                return true;
+            }
+
+            if (source is FaunaBrain)
+            {
+                presetName = PresetDefense;
+                return true;
+            }
+
+            if (source is ScannableTarget || source is ScannableFragment)
+            {
+                presetName = PresetExploration;
+                return true;
+            }
+
+            return TryBuildKindPresetName(target.Kind, out presetName);
+        }
+
+        private static bool TryBuildKindAdvice(SpatialTargetKind kind, out LoadoutAdvice advice)
+        {
+            advice = default;
+            if ((kind & SpatialTargetKind.Module) != 0)
+            {
+                advice = new LoadoutAdvice(
+                    PresetConstruction,
+                    "Service or build target ahead. Construction kit fits this situation well.");
+                return true;
+            }
+
+            if ((kind & (SpatialTargetKind.Resource | SpatialTargetKind.Pickup)) != 0)
+            {
+                advice = new LoadoutAdvice(
+                    PresetFieldRecovery,
+                    "Recoverable field asset ahead. Recovery kit is an efficient option.");
+                return true;
+            }
+
+            if ((kind & SpatialTargetKind.Bioform) != 0)
+            {
+                advice = new LoadoutAdvice(
+                    PresetDefense,
+                    "Bioform contact ahead. Defense tools are the safer choice if you want control.");
+                return true;
+            }
+
+            if ((kind & (SpatialTargetKind.Signal | SpatialTargetKind.Scannable)) != 0)
+            {
+                advice = new LoadoutAdvice(
+                    PresetExploration,
+                    "Route or intel objective ahead. Exploration kit fits this situation well.");
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryBuildKindPresetName(SpatialTargetKind kind, out string presetName)
+        {
+            presetName = null;
+            if ((kind & SpatialTargetKind.Module) != 0)
+                presetName = PresetConstruction;
+            else if ((kind & (SpatialTargetKind.Resource | SpatialTargetKind.Pickup)) != 0)
+                presetName = PresetFieldRecovery;
+            else if ((kind & SpatialTargetKind.Bioform) != 0)
+                presetName = PresetDefense;
+            else if ((kind & (SpatialTargetKind.Signal | SpatialTargetKind.Scannable)) != 0)
+                presetName = PresetExploration;
+
+            return presetName != null;
+        }
+
         private static bool TryBuildDescriptorAdvice(FieldTargetDescriptor descriptor, float distance, out LoadoutAdvice advice)
         {
             advice = default;
             if (descriptor == null)
                 return false;
 
-            switch (descriptor.Role)
+            return TryBuildDescriptorAdvice(descriptor.Role, distance, out advice);
+        }
+
+        private static bool TryBuildDescriptorAdvice(FieldTargetRole role, float distance, out LoadoutAdvice advice)
+        {
+            advice = default;
+            switch (role)
             {
                 case FieldTargetRole.CargoLight:
                 case FieldTargetRole.CargoWork:
@@ -233,10 +421,9 @@ namespace Hecton8.Gameplay
                 : source.GetComponentInParent<T>();
         }
 
-        private static bool TryGetForwardTarget(Transform origin, float range, LayerMask mask, out Component source, out float distance)
+        private static bool TryGetForwardTargetInfo(Transform origin, float range, LayerMask mask, out ForwardTargetInfo target)
         {
-            source = null;
-            distance = 0f;
+            target = default;
 
             if (origin == null || range <= 0f)
                 return false;
@@ -286,8 +473,7 @@ namespace Hecton8.Gameplay
 
                 found = true;
                 bestProjection = projection;
-                source = candidateSource;
-                distance = projection;
+                target = new ForwardTargetInfo(candidateSource, candidate.Kind, candidate.SignalRole, projection);
             }
 
             return found;
@@ -304,7 +490,13 @@ namespace Hecton8.Gameplay
             if (descriptor == null)
                 return false;
 
-            switch (descriptor.Role)
+            return TryBuildDescriptorPresetName(descriptor.Role, out presetName);
+        }
+
+        private static bool TryBuildDescriptorPresetName(FieldTargetRole role, out string presetName)
+        {
+            presetName = null;
+            switch (role)
             {
                 case FieldTargetRole.CargoLight:
                 case FieldTargetRole.CargoWork:

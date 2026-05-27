@@ -74,6 +74,7 @@ namespace Hecton8.Editor
     {
         private const int BakeLayer = 31;
         private const int MaxViewCount = 64;
+        private const uint PortableMaxComputeThreadsPerGroup = 256u;
         private const string OutputRoot = "Assets/_Project/BakedGeometry/Impostors";
         private const string ShaderPath = "Assets/_Project/Art/Shaders/Hecton_HLOD_Impostor.shader";
         private const string LegacyShaderPath = "Assets/_Project/Art/Shaders/Hecton_OctahedralImpostor.shader";
@@ -263,7 +264,17 @@ namespace Hecton8.Editor
                 ClearAtlas(atlasNormalXY);
                 progress?.Invoke("Capturing", 0.05f);
 
+                if (!SystemInfo.supportsComputeShaders)
+                    return false;
+
+                if (packCompute == null || !packCompute.HasKernel("CSMain"))
+                    return false;
+
                 int packKernel = packCompute.FindKernel("CSMain");
+                ResolveKernelThreadGroupSizes(packCompute, packKernel, out int packThreadGroupSizeX, out int packThreadGroupSizeY);
+                if (packThreadGroupSizeX <= 0 || packThreadGroupSizeY <= 0)
+                    return false;
+
                 for (int i = 0; i < settings.ViewCount; i++)
                 {
                     HlodImpostorCaptureAngleRecord record = records[i];
@@ -272,15 +283,22 @@ namespace Hecton8.Editor
                     RenderReplacementTo(bakeCamera, captureNormalDepth, normalDepthShader);
 
                     Stopwatch packWatch = Stopwatch.StartNew();
-                    PackCapture(packCompute, packKernel, captureAlbedo, captureNormalDepth, atlasAlbedoDepth, atlasNormalXY, i, tileWidth, tileHeight, grid);
+                    PackCapture(packCompute, packKernel, captureAlbedo, captureNormalDepth, atlasAlbedoDepth, atlasNormalXY, i, tileWidth, tileHeight, grid, packThreadGroupSizeX, packThreadGroupSizeY);
                     packWatch.Stop();
                     packTicks += packWatch.ElapsedTicks;
                     progress?.Invoke("Packing view " + (i + 1).ToString(CultureInfo.InvariantCulture), 0.05f + 0.65f * ((i + 1f) / settings.ViewCount));
                 }
 
+                if (dilateCompute == null || !dilateCompute.HasKernel("CSMain"))
+                    return false;
+
                 int dilateKernel = dilateCompute.FindKernel("CSMain");
-                DilateAtlas(dilateCompute, dilateKernel, atlasAlbedoDepth, atlasAlbedoDepth, dilatedAlbedoDepth, settings.AtlasResolution, settings.DilationRadiusPixels);
-                DilateAtlas(dilateCompute, dilateKernel, atlasNormalXY, atlasNormalXY, dilatedNormalXY, settings.AtlasResolution, settings.DilationRadiusPixels);
+                ResolveKernelThreadGroupSizes(dilateCompute, dilateKernel, out int dilateThreadGroupSizeX, out int dilateThreadGroupSizeY);
+                if (dilateThreadGroupSizeX <= 0 || dilateThreadGroupSizeY <= 0)
+                    return false;
+
+                DilateAtlas(dilateCompute, dilateKernel, atlasAlbedoDepth, atlasAlbedoDepth, dilatedAlbedoDepth, settings.AtlasResolution, settings.DilationRadiusPixels, dilateThreadGroupSizeX, dilateThreadGroupSizeY);
+                DilateAtlas(dilateCompute, dilateKernel, atlasNormalXY, atlasNormalXY, dilatedNormalXY, settings.AtlasResolution, settings.DilationRadiusPixels, dilateThreadGroupSizeX, dilateThreadGroupSizeY);
                 progress?.Invoke("Async readback queued", 0.78f);
 
                 float radius = Mathf.Max(0.5f, bakeBounds.extents.magnitude);
@@ -494,11 +512,21 @@ namespace Hecton8.Editor
             int viewIndex,
             int tileWidth,
             int tileHeight,
-            Vector2Int grid)
+            Vector2Int grid,
+            int threadGroupSizeX,
+            int threadGroupSizeY)
         {
             CommandBuffer cmd = new CommandBuffer { name = "SHINOBU_212 Pack Impostor Atlas" };
             try
             {
+                if (!SystemInfo.supportsComputeShaders)
+                    return;
+
+                int groupCountX = CeilDividePositive(tileWidth, threadGroupSizeX);
+                int groupCountY = CeilDividePositive(tileHeight, threadGroupSizeY);
+                if (groupCountX <= 0 || groupCountY <= 0)
+                    return;
+
                 cmd.SetComputeTextureParam(compute, kernel, SourceAlbedoId, sourceAlbedo);
                 cmd.SetComputeTextureParam(compute, kernel, SourceNormalDepthId, sourceNormalDepth);
                 cmd.SetComputeTextureParam(compute, kernel, AtlasAlbedoDepthId, atlasAlbedoDepth);
@@ -506,7 +534,7 @@ namespace Hecton8.Editor
                 cmd.SetComputeIntParam(compute, ViewIndexId, viewIndex);
                 cmd.SetComputeVectorParam(compute, TileSizeId, new Vector4(tileWidth, tileHeight, 0f, 0f));
                 cmd.SetComputeVectorParam(compute, AtlasGridId, new Vector4(grid.x, grid.y, 0f, 0f));
-                cmd.DispatchCompute(compute, kernel, Mathf.CeilToInt(tileWidth / 8f), Mathf.CeilToInt(tileHeight / 8f), 1);
+                cmd.DispatchCompute(compute, kernel, groupCountX, groupCountY, 1);
                 UnityEngine.Graphics.ExecuteCommandBuffer(cmd);
             }
             finally
@@ -522,23 +550,66 @@ namespace Hecton8.Editor
             RenderTexture mask,
             RenderTexture output,
             int atlasSize,
-            int radius)
+            int radius,
+            int threadGroupSizeX,
+            int threadGroupSizeY)
         {
             CommandBuffer cmd = new CommandBuffer { name = "SHINOBU_212 Dilate Impostor Atlas" };
             try
             {
+                if (!SystemInfo.supportsComputeShaders)
+                    return;
+
+                int groupCountX = CeilDividePositive(atlasSize, threadGroupSizeX);
+                int groupCountY = CeilDividePositive(atlasSize, threadGroupSizeY);
+                if (groupCountX <= 0 || groupCountY <= 0)
+                    return;
+
                 cmd.SetComputeTextureParam(compute, kernel, SourceAtlasId, source);
                 cmd.SetComputeTextureParam(compute, kernel, SourceMaskAtlasId, mask);
                 cmd.SetComputeTextureParam(compute, kernel, OutputAtlasId, output);
                 cmd.SetComputeVectorParam(compute, AtlasSizeId, new Vector4(atlasSize, atlasSize, 0f, 0f));
                 cmd.SetComputeIntParam(compute, DilationRadiusId, radius);
-                cmd.DispatchCompute(compute, kernel, Mathf.CeilToInt(atlasSize / 8f), Mathf.CeilToInt(atlasSize / 8f), 1);
+                cmd.DispatchCompute(compute, kernel, groupCountX, groupCountY, 1);
                 UnityEngine.Graphics.ExecuteCommandBuffer(cmd);
             }
             finally
             {
                 cmd.Release();
             }
+        }
+
+        private static void ResolveKernelThreadGroupSizes(
+            ComputeShader compute,
+            int kernel,
+            out int threadGroupSizeX,
+            out int threadGroupSizeY)
+        {
+            threadGroupSizeX = 0;
+            threadGroupSizeY = 0;
+            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+                return;
+
+            compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            if (queryX == 0u || queryY == 0u || queryZ != 1u || queryX > int.MaxValue || queryY > int.MaxValue)
+                return;
+
+            ulong totalThreads = queryX * (ulong)queryY * queryZ;
+            if (totalThreads > PortableMaxComputeThreadsPerGroup)
+                return;
+
+            threadGroupSizeX = (int)queryX;
+            threadGroupSizeY = (int)queryY;
+        }
+
+        private static int CeilDividePositive(int value, int divisor)
+        {
+            const int MaxDispatchGroupsPerDimension = 65535;
+            if (value <= 0 || divisor <= 0)
+                return 0;
+
+            long groups = ((long)value + divisor - 1L) / divisor;
+            return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
         }
 
         private static void RenderReplacementTo(Camera camera, RenderTexture target, Shader replacementShader)

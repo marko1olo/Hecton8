@@ -1,0 +1,87 @@
+﻿{
+    "schema":  "hecton8.domain_reaudit36.v1",
+    "agentId":  "1325",
+    "domain":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs + World AUP persistence bridge",
+    "promptSha256":  "EE975B109958AEF4F71A0B55FED9B9E339A88F3EED23829E64D2BA249AA61F94",
+    "taskCount":  20,
+    "touchedFiles":  [
+                         "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                         "Assets/_Project/Scripts/World/AUPMath.cs",
+                         "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                         "Assets/_Project/Scripts/SaveManager.cs"
+                     ],
+    "individualHashes":  [
+                             {
+                                 "path":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                                 "sha256":  "D39119CFE160D3C6FCE10B86AD2796CE6A88922462B6671AFE9BAE6859E2B7C7"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/World/AUPMath.cs",
+                                 "sha256":  "848AF96D81EBFEC76840D7AB09F2569EE7DDB0AA3FE10EC72E9BD2D06AECA40F"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                                 "sha256":  "025F24FE097E3DDF2A67DB2B1807173A2D9C56517E377DE362A0B8789C3D9BBB"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                 "sha256":  "813484DE6F651AACA226BF7917602FBB4EB9ED3CF3B95E55848D52F90F580D9D"
+                             }
+                         ],
+    "verificationHashSha256":  "095E2FA5B0B62E65EE2E701A353001E7219E966221734D2B341525E08CCBD065",
+    "sourceChanges":  [
+                          "Indexed sector paging now captures sector override temp/entity-state paths on the main thread before background IO.",
+                          "ApplySectorOverrides and TryLoadSectorEntityStateOverrides consume SectorOverrideReadWork only and no longer read _sectorOverrideStates on the background thread.",
+                          "Indexed quarantine reset uses captured save path/chunk size and no background Unity debug logging.",
+                          "SaveBinaryStorage sector override commit/reset/backup temp deletes use a fail-closed helper instead of raw File.Delete or empty catch cleanup."
+                      ],
+    "worldLedger":  "Docs\\\\Reports\\\\VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT36_WORLD.json",
+    "allScriptsLedger":  "Docs\\\\Reports\\\\VAULT_NATIVE_ALIAS_LEDGER_1325_DEEP_REAUDIT36_ALLSCRIPTS.json",
+    "zeroGcHotPathAudit":  "Docs\\\\Reports\\\\ZERO_GC_HOTPATH_AUDIT_1325_DEEP_REAUDIT36_RAW.json",
+    "aupAudit":  "Docs\\\\Reports\\\\AUP_DETERMINISM_AUDIT_1325_DEEP_REAUDIT36.json",
+    "asyncNativeAudit":  "Docs\\\\Reports\\\\ASYNC_NATIVE_LIFETIME_AUDIT_1325_DEEP_REAUDIT36.json",
+    "worldSummary":  {
+                         "scannedFiles":  276,
+                         "parseFailures":  0,
+                         "totalNativeFieldDeclarations":  1094,
+                         "forbiddenPersistentCandidates":  0,
+                         "forbiddenMonoBehaviourCandidates":  0,
+                         "jobTransientFields":  976,
+                         "stackOnlyRefStructViewFields":  118,
+                         "coreMemoryAllowedFields":  0,
+                         "rawPointerFields":  57
+                     },
+    "allScriptsSummary":  {
+                              "scannedFiles":  2441,
+                              "parseFailures":  0,
+                              "totalNativeFieldDeclarations":  6672,
+                              "forbiddenPersistentCandidates":  811,
+                              "forbiddenMonoBehaviourCandidates":  26,
+                              "jobTransientFields":  5497,
+                              "stackOnlyRefStructViewFields":  319,
+                              "coreMemoryAllowedFields":  45,
+                              "rawPointerFields":  864
+                          },
+    "primaryNativeFindings":  0,
+    "primaryForbiddenPersistentNativeFields":  0,
+    "saveManagerForbiddenNativeFields":  13,
+    "saveBinaryForbiddenNativeFields":  0,
+    "selectedHotPathFindings":  0,
+    "absoluteAupCastsFound":  0,
+    "asyncNativePersistentWorldRegistryFindings":  0,
+    "asyncNativeSaveManagerFindings":  21,
+    "compile":  {
+                    "attempted":  false,
+                    "result":  "blocked_by_build_guard_cpu_100",
+                    "firstVisibleErrors":  [
+                                               "Build guard sampled CPU at 100% with active compiler process count 0; AGENTS forbids dotnet build above 50% CPU."
+                                           ],
+                    "touched1325ErrorsVisible":  0
+                },
+    "failedGates":  [
+                        "BOUNDARY_NATIVE_ALIAS_RESIDUALS_IN_SAVE_MANAGER_OUTSIDE_1325_PRIMARY_DOMAIN",
+                        "BOUNDARY_ASYNC_NATIVE_RESIDUALS_IN_SAVE_MANAGER_OUTSIDE_1325_PRIMARY_DOMAIN",
+                        "BUILD_GUARD_BLOCKED_CPU_100"
+                    ],
+    "generatedAtUtc":  "2026-05-27T13:28:26.5051498Z"
+}

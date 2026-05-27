@@ -1,0 +1,55 @@
+{
+  "agentId": "1335",
+  "domain": "VR_SOMATIC_COMFORT_AND_TUNNELING_VFX_DRIVER",
+  "loop": 66,
+  "prompt": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "lengthBytes": 18576,
+    "taskCount": 20,
+    "sha256": "CED5DA5188E0838802BA00938AFD9F382174FAA78453C32C78A6AE34BCB1C2E2"
+  },
+  "scannedFiles": [
+    "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+    "Assets/_Project/Scripts/Visor/DeferredDecalPass.cs",
+    "Assets/_Project/Scripts/Visor/DynamicDecalGizmoVisualizer.cs"
+  ],
+  "problemsFound": [
+    "legacy mutable DataVault helper usage in dynamic decal runtime",
+    "read-only upload path exposing mutable NativeArray view",
+    "CSV/file IO path coupled to Vault-backed buffers",
+    "explicit-layout DTO padding represented as wide fields",
+    "deterministic mock trauma visual fake scheduled as a job",
+    "pending visual-sync aliases able to span dispatcher phases",
+    "old dump and owner names from prior agent scope"
+  ],
+  "changes": [
+    "writer routes use TryAcquireWriteLock and ReleaseWriteLock in finally",
+    "read routes use TryReadOnlyHandle and ReadOnly native views",
+    "CSV loading stages bytes in stack spans before short writer leases",
+    "deferred upload copies from NativeArray<TraumaDecalDTO>.ReadOnly",
+    "mock trauma requests are generated in owner phase",
+    "visual sync finalizes inside the active execution phase",
+    "DTO tails use explicit private byte padding",
+    "dynamic decal dump is named Dump_1335_DynamicDecal.bin"
+  ],
+  "staticProof": {
+    "forbiddenLegacyVaultAndDumpHits": 0,
+    "syntaxLikePersistentNativeFields": 0,
+    "broadCatchHits": 0,
+    "binaryWriterHits": 0,
+    "asNativeArrayHits": 0,
+    "oldDumpOrOwnerHits": 0,
+    "gitDiffCheckErrors": 0,
+    "gitDiffCheckWarnings": [
+      "LF will be replaced by CRLF for DynamicDecalVaultRuntime.cs",
+      "LF will be replaced by CRLF for DeferredDecalPass.cs"
+    ]
+  },
+  "build": {
+    "attempted": false,
+    "blockedReason": "CPU averaged 94.0 percent; AGENTS forbids dotnet build above 50 percent CPU.",
+    "compilerProcesses": 0
+  },
+  "verificationHashSha256": "FA9D236B3DF50DE9E11BFBB9EBC7BA3FFD3936FFA9AF70A1520C78DB582E5C8C",
+  "status": "PENDING_VERIFICATION"
+}

@@ -71,11 +71,16 @@ namespace Hecton8.Construction
         private const int DeconstructionTransactionCapacity = HabitatDeconstructionTransactionKernel.MaxTeardownsUltra;
         private const int DeconstructionRefundCommandCapacity = DeconstructionTransactionCapacity * HabitatDeconstructionTransactionKernel.MaxCostPairs;
         private const int DeconstructionLootCacheCapacity = DeconstructionRefundCommandCapacity;
-        private const string DeconstructionDumpRelativePath = "Docs/AgentLogs/Dump_BASE_DECONSTRUCTION_SYS.bin";
-        private const string Shinobu336DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_336.bin";
-        private const string NativeMemoryOwner = nameof(ConstructionManager);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
-        private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
+        private const string DeconstructionDumpRelativePath = "Docs/AgentLogs/Dump_1306_Construction_DeconstructionBlackBox.bin";
+        private const string Shinobu336DumpRelativePath = "Docs/AgentLogs/Dump_1306_Construction_DeconstructionTelemetry.bin";
+        private const int DeconstructionCounterLaneLength = 2;
+        private const int DeconstructionRefundCommandCountIndex = 0;
+        private const int DeconstructionLootCacheCountIndex = 1;
+        private const BufferID DeconstructionDfsStackBufferId = (BufferID)72140;
+        private const BufferID DeconstructionDfsVisitedBufferId = (BufferID)72141;
+        private const BufferID DeconstructionDfsResultBufferId = (BufferID)72142;
+        private const BufferID DeconstructionBlackBoxBufferId = (BufferID)72143;
+        private const BufferID DeconstructionFallbackCostsBufferId = (BufferID)72144;
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct HabitatDeconstructionTelemetryEntry
@@ -110,6 +115,7 @@ namespace Hecton8.Construction
         private static void ResetStaticState()
         {
             ActiveRuntimeInstance = null;
+            BaseDegradationSystem.BindRuntimeServices(null, null);
         }
         // SERVICE STATE
 
@@ -120,7 +126,7 @@ namespace Hecton8.Construction
         [SerializeField] private ModuleCatalog catalog;
 
         [Header("Settings")]
-        [Tooltip("Initial capacity for the placed-module registry. Increase for larger bases.")]
+        [Tooltip("Fixed placed-module registry capacity. Increase before runtime for larger bases.")]
         [SerializeField] private int initialCapacity = 64;
 
         [Header("Ambient Accidents")]
@@ -162,25 +168,29 @@ namespace Hecton8.Construction
         private IPlayerInventoryService _cachedPlayerInventoryService;
         private IDataVault _cachedDataVault;
         private IGasDynamicsSolver _cachedGasDynamics;
+        private IAtmosphereReadModel _cachedAtmosphereReadModel;
+        private IAmbientCurrentReadModel _cachedAmbientCurrentReadModel;
+        private IAudioService _cachedAudioService;
+        private IFluidDecalPresentationSink _cachedFluidDecalPresentation;
+        private IPhysicsService _cachedPhysicsService;
         private bool _isInitialized;
         private bool _habitatGraphDirty;
         private float _slowTickAccumulator;
         private float _ambientAccidentTimer;
         private int _ambientAccidentCursor;
-        private List<Joint> _jointRecoveryBuffer;
+        private Transform[] _jointRecoveryTransformStack;
         private Rigidbody[] _jointRecoveryBodies;
         private Vector3[] _jointRecoveryLinearVelocities;
         private Vector3[] _jointRecoveryAngularVelocities;
-        private NativeList<long> _deconstructionDfsStack;
-        private NativeParallelHashSet<long> _deconstructionDfsVisited;
-        private NativeArray<int> _deconstructionDfsResult;
-        private NativeArray<HabitatDeconstructionTelemetryEntry> _deconstructionBlackBox;
-        private NativeArray<DeconstructionTransactionDTO> _deconstructionTransactions;
-        private NativeArray<ModuleCostDTO> _deconstructionFallbackCosts;
-        private NativeArray<RefundCommandDTO> _deconstructionRefundCommands;
-        private NativeArray<int> _deconstructionRefundCommandCount;
-        private NativeArray<LootCacheDTO> _deconstructionLootCaches;
-        private NativeArray<int> _deconstructionLootCacheCount;
+        private VaultGenerationHandle<int> _deconstructionDfsStackHandle;
+        private VaultGenerationHandle<byte> _deconstructionDfsVisitedHandle;
+        private VaultGenerationHandle<int> _deconstructionDfsResultHandle;
+        private VaultGenerationHandle<HabitatDeconstructionTelemetryEntry> _deconstructionBlackBoxHandle;
+        private VaultGenerationHandle<DeconstructionTransactionDTO> _deconstructionTransactionsHandle;
+        private VaultGenerationHandle<ModuleCostDTO> _deconstructionFallbackCostsHandle;
+        private VaultGenerationHandle<RefundCommandDTO> _deconstructionRefundCommandsHandle;
+        private VaultGenerationHandle<LootCacheDTO> _deconstructionLootCachesHandle;
+        private VaultGenerationHandle<int> _deconstructionCountersHandle;
         private VaultGenerationHandle<TeardownTelemetryEntry> _deconstructionTelemetryHandle;
         private VaultGenerationHandle<int> _deconstructionTelemetryCursorHandle;
         private VaultGenerationHandle<RefundProfileDTO> _deconstructionRefundProfilesHandle;
@@ -192,6 +202,8 @@ namespace Hecton8.Construction
         private int _lastShinobu336OverflowCaches;
         private int _lastShinobu336SeveredEdges;
         private int _lastShinobu336NodeIndex;
+        private int _lastDeconstructionDfsVisitedCount;
+        private int _lastDeconstructionDfsExpectedCount;
         private float _lastShinobu336BurstMicroseconds;
         private Vector3 _lastShinobu336TargetRuntimePosition;
         private uint _deconstructionSequence;
@@ -366,14 +378,18 @@ namespace Hecton8.Construction
                 _spawnedBaseModules = new List<BaseModule>(capacity); // COLD ALLOC: List<BaseModule>[initialCapacity] - cached BaseModule registry for hot-path construction consumers - owner: ConstructionManager
 
             if (_habitatGraphManager == null)
-                _habitatGraphManager = new HabitatGraphManager(capacity); // COLD ALLOC: HabitatGraphManager[1] - persistent placed-module CSR adjacency owner - owner: ConstructionManager
+                _habitatGraphManager = new HabitatGraphManager(capacity, _cachedDataVault); // COLD ALLOC: HabitatGraphManager[1] - persistent placed-module CSR adjacency owner - owner: ConstructionManager
+            else
+                _habitatGraphManager.SetDataVault(_cachedDataVault);
 
-            EnsureDeconstructionNativeBuffers(capacity);
-            TryEnsureDeconstructionVaultBuffers();
+            BindConstructionRuntimeServices();
+            BaseLogisticsNetwork.BindDataVault(_cachedDataVault);
+            LogisticsPipeTransportScheduler.BindDataVault(_cachedDataVault);
+            TryEnsureDeconstructionVaultBuffers(capacity);
 
             int jointCapacity = Mathf.Max(InitialJointRecoveryCapacity, capacity);
-            if (_jointRecoveryBuffer == null)
-                _jointRecoveryBuffer = new List<Joint>(jointCapacity); // COLD ALLOC: List<Joint>[capacity] - AUP shift joint re-anchor staging - owner: ConstructionManager
+            if (_jointRecoveryTransformStack == null || _jointRecoveryTransformStack.Length < jointCapacity)
+                _jointRecoveryTransformStack = new Transform[jointCapacity]; // COLD ALLOC: Transform[capacity] - AUP shift joint traversal stack - owner: ConstructionManager
 
             int bodyCapacity = Mathf.Max(InitialJointBodyRecoveryCapacity, capacity * 2);
             if (_jointRecoveryBodies == null || _jointRecoveryBodies.Length < bodyCapacity)
@@ -391,15 +407,39 @@ namespace Hecton8.Construction
             _cachedDataVault = GlobalRegistry.DataVault;
             _cachedSaveService = GlobalRegistry.Save;
             _cachedGasDynamics = GlobalRegistry.GasDynamics;
+            _cachedAtmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
+            _cachedAmbientCurrentReadModel = GlobalRegistry.AmbientCurrent;
+            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedFluidDecalPresentation = GlobalRegistry.FluidDecalPresentation;
+            _cachedPhysicsService = GlobalRegistry.Physics;
+        }
+
+        private void BindConstructionRuntimeServices()
+        {
+            _habitatGraphManager?.SetRuntimeServices(
+                _cachedAtmosphereReadModel,
+                _cachedAmbientCurrentReadModel,
+                _cachedAudioService,
+                _cachedFluidDecalPresentation);
+            BaseDegradationSystem.BindRuntimeServices(this, _cachedFluidDecalPresentation);
         }
 
         private void ClearCachedRegistryServices()
         {
+            _habitatGraphManager?.SetRuntimeServices(null, null, null, null);
+            BaseDegradationSystem.BindRuntimeServices(null, null);
+            BaseLogisticsNetwork.BindDataVault(null);
+            LogisticsPipeTransportScheduler.BindDataVault(null);
             _cachedObjectPool = null;
             _cachedPlayerInventoryService = null;
             _cachedDataVault = null;
             _cachedSaveService = null;
             _cachedGasDynamics = null;
+            _cachedAtmosphereReadModel = null;
+            _cachedAmbientCurrentReadModel = null;
+            _cachedAudioService = null;
+            _cachedFluidDecalPresentation = null;
+            _cachedPhysicsService = null;
         }
 
         private void OnEnable()
@@ -540,13 +580,23 @@ namespace Hecton8.Construction
         public void RegisterModule(GameObject module)
         {
             if (module == null) return;
+            if (_spawnedModules == null || _spawnedBaseModules == null)
+                EnsureRuntimeStorage();
+            if (_spawnedModules == null || _spawnedBaseModules == null)
+                return;
 
             // Guard: duplicate module reference.
             if (ContainsRef(module)) return;
+            bool shouldAddBaseModule = module.TryGetComponent(out BaseModule baseModule) && !ContainsBaseModuleRef(baseModule);
+            if (_spawnedModules.Count >= _spawnedModules.Capacity ||
+                (shouldAddBaseModule && _spawnedBaseModules.Count >= _spawnedBaseModules.Capacity))
+            {
+                return;
+            }
 
             // Add to runtime registry.
             _spawnedModules.Add(module);
-            if (module.TryGetComponent(out BaseModule baseModule) && !ContainsBaseModuleRef(baseModule))
+            if (shouldAddBaseModule)
                 _spawnedBaseModules.Add(baseModule);
 
             RefreshHabitatGraph();
@@ -701,28 +751,53 @@ namespace Hecton8.Construction
                 RefreshHabitatGraph();
 
             const bool skipDfs = false;
-            EnsureDeconstructionNativeBuffers(Mathf.Max(initialCapacity, ModuleCount));
-            if (_habitatGraphManager != null &&
-                !_habitatGraphManager.TryValidateDeconstructionRollback(
-                    module,
-                    _deconstructionDfsStack,
-                    _deconstructionDfsVisited,
-                    _deconstructionDfsResult,
-                    out byte graphRejectReason))
+            _lastDeconstructionDfsVisitedCount = 0;
+            _lastDeconstructionDfsExpectedCount = 0;
+            if (_habitatGraphManager != null)
             {
-                RejectDeconstruction(in request, DeconstructReasonGraphRejected, graphRejectReason, ReadDfsVisitedCount(), ReadDfsExpectedCount());
-                return;
+                int deconstructionCapacity = Mathf.Max(initialCapacity, ModuleCount);
+                if (!TryAcquireDeconstructionDfsBuffers(
+                        deconstructionCapacity,
+                        out NativeArray<int> dfsStack,
+                        out NativeArray<byte> dfsVisited,
+                        out NativeArray<int> dfsResult,
+                        out IDataVault dfsVault))
+                {
+                    RejectDeconstruction(in request, DeconstructReasonGraphRejected, 3, 0, 0);
+                    return;
+                }
+
+                try
+                {
+                    if (!_habitatGraphManager.TryValidateDeconstructionRollback(
+                            module,
+                            dfsStack,
+                            dfsVisited,
+                            dfsResult,
+                            out byte graphRejectReason))
+                    {
+                        CacheDfsResult(dfsResult);
+                        RejectDeconstruction(in request, DeconstructReasonGraphRejected, graphRejectReason, ReadDfsVisitedCount(), ReadDfsExpectedCount());
+                        return;
+                    }
+
+                    CacheDfsResult(dfsResult);
+                }
+                finally
+                {
+                    ReleaseDeconstructionDfsBuffers(dfsVault);
+                }
             }
 
             PlayerInventory inventory = ResolvePlayerInventory();
-            BuildableData buildData = ResolveBuildData(module);
+            BuildableData buildData = FindBuildDataForModule(module);
             if (!module.TryBeginAuthoritativeDeconstruction())
             {
                 RejectDeconstruction(in request, DeconstructReasonAlreadyActive, 0, ReadDfsVisitedCount(), ReadDfsExpectedCount());
                 return;
             }
 
-            uint moduleHash = unchecked((uint)ResolveModuleHashId(module));
+            uint moduleHash = unchecked((uint)CaptureModuleHashId(module));
             if (moduleHash == 0u && buildData != null)
                 moduleHash = unchecked((uint)buildData.ModuleHashId);
             ushort nodeId = (ushort)Mathf.Clamp(ResolveRegisteredModuleIndex(module.gameObject), 0, ushort.MaxValue);
@@ -763,8 +838,8 @@ namespace Hecton8.Construction
             return TryCreateTemporaryBypass(
                 sourceModule,
                 destinationModule,
-                ResolveModuleHashId(sourceModule),
-                ResolveModuleHashId(destinationModule));
+                CaptureModuleHashId(sourceModule),
+                CaptureModuleHashId(destinationModule));
         }
 
         /// <summary>
@@ -795,7 +870,7 @@ namespace Hecton8.Construction
             return true;
         }
 
-        private static int ResolveModuleHashId(BaseModule module)
+        private static int CaptureModuleHashId(BaseModule module)
         {
             if (module != null &&
                 module.TryGetComponent(out ModuleMarker marker) &&
@@ -948,10 +1023,14 @@ namespace Hecton8.Construction
             if (module == null)
                 return false;
 
-            float3 targetRuntime = request.TargetAup.ToRuntimeFloat3();
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition targetAup = request.TargetAup;
+            if (!TryResolveRuntimeFloat3AupDelta(in targetAup, in runtimeOriginAup, out float3 targetRuntime))
+                return false;
+
             Vector3 modulePosition = module.transform.position;
             float3 moduleRuntime = new float3(modulePosition.x, modulePosition.y, modulePosition.z);
-            if (!math.all(math.isfinite(targetRuntime)) || !math.all(math.isfinite(moduleRuntime)))
+            if (!math.all(math.isfinite(moduleRuntime)))
                 return false;
 
             float distanceSq = math.lengthsq(targetRuntime - moduleRuntime);
@@ -965,13 +1044,18 @@ namespace Hecton8.Construction
 
             float3 direction = request.RayDirection;
             float directionLengthSq = math.lengthsq(direction);
-            float3 origin = request.RayOriginAup.ToRuntimeFloat3();
-            float3 target = request.TargetAup.ToRuntimeFloat3();
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition rayOriginAup = request.RayOriginAup;
+            AbsoluteUniversePosition targetAup = request.TargetAup;
+            if (!TryResolveRuntimeFloat3AupDelta(in rayOriginAup, in runtimeOriginAup, out float3 rayOriginRuntime) ||
+                !TryResolveRuntimeFloat3AupDelta(in targetAup, in runtimeOriginAup, out float3 targetRuntime))
+            {
+                return false;
+            }
+
             Vector3 modulePosition = module.transform.position;
             float3 moduleRuntime = new float3(modulePosition.x, modulePosition.y, modulePosition.z);
             if (!math.all(math.isfinite(direction)) ||
-                !math.all(math.isfinite(origin)) ||
-                !math.all(math.isfinite(target)) ||
                 !math.all(math.isfinite(moduleRuntime)) ||
                 directionLengthSq <= 0.0001f)
             {
@@ -980,15 +1064,33 @@ namespace Hecton8.Construction
 
             float maxDistance = math.max(0.001f, request.MaxDistance);
             direction *= math.rsqrt(directionLengthSq);
-            float3 toModule = moduleRuntime - origin;
+            float3 toModule = moduleRuntime - rayOriginRuntime;
             float axialDistance = math.dot(toModule, direction);
             if (axialDistance < -0.01f || axialDistance > maxDistance + 0.25f)
                 return false;
 
-            float3 closest = origin + direction * math.clamp(axialDistance, 0f, maxDistance);
+            float3 closest = rayOriginRuntime + direction * math.clamp(axialDistance, 0f, maxDistance);
             float lateralDistanceSq = math.lengthsq(moduleRuntime - closest);
-            float targetDistanceSq = math.lengthsq(moduleRuntime - target);
+            float targetDistanceSq = math.lengthsq(moduleRuntime - targetRuntime);
             return lateralDistanceSq <= 9f && targetDistanceSq <= 9f;
+        }
+
+        private static bool TryResolveRuntimeFloat3AupDelta(
+            in AbsoluteUniversePosition position,
+            in AbsoluteUniversePosition originAup,
+            out float3 runtime)
+        {
+            runtime = default;
+            if (!position.IsFinite() || !originAup.IsFinite())
+                return false;
+
+            double3 localDelta = position.ToAbsoluteDouble3() - originAup.ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(localDelta)) ||
+                math.any(math.abs(localDelta) > (double)float.MaxValue))
+                return false;
+
+            runtime = new float3((float)localDelta.x, (float)localDelta.y, (float)localDelta.z);
+            return math.all(math.isfinite(runtime));
         }
 
         private PlayerInventory ResolvePlayerInventory()
@@ -997,7 +1099,7 @@ namespace Hecton8.Construction
             return inventoryService != null ? inventoryService.Inventory : null;
         }
 
-        private BuildableData ResolveBuildData(BaseModule module)
+        private BuildableData FindBuildDataForModule(BaseModule module)
         {
             if (module == null)
                 return null;
@@ -1009,7 +1111,7 @@ namespace Hecton8.Construction
                 return marker.Data;
             }
 
-            int moduleHashId = ResolveModuleHashId(module);
+            int moduleHashId = CaptureModuleHashId(module);
             if (moduleHashId == 0 && module.ModuleTemplate != null)
                 moduleHashId = Hecton.Localization.LocHash.Compute(module.ModuleTemplate.PersistentId);
 
@@ -1048,12 +1150,7 @@ namespace Hecton8.Construction
             refundItemCount = 0;
             severedEdgeCount = 0;
             targetNodeIndex = -1;
-            if (!HabitatDeconstructionTransactionKernel.RuntimeLayoutValid() ||
-                !_deconstructionTransactions.IsCreated ||
-                !_deconstructionRefundCommands.IsCreated ||
-                !_deconstructionRefundCommandCount.IsCreated ||
-                !_deconstructionLootCaches.IsCreated ||
-                !_deconstructionLootCacheCount.IsCreated)
+            if (!HabitatDeconstructionTransactionKernel.RuntimeLayoutValid())
             {
                 return false;
             }
@@ -1061,9 +1158,18 @@ namespace Hecton8.Construction
             if (moduleHash == 0u || !TryBuildDeconstructionTransaction(in request, moduleHash, out DeconstructionTransactionDTO transaction))
                 return false;
 
-            _deconstructionTransactions[0] = transaction;
-            _deconstructionRefundCommandCount[0] = 0;
-            _deconstructionLootCacheCount[0] = 0;
+            if (!TryAcquireDeconstructionTransactionBuffers(
+                    out NativeArray<DeconstructionTransactionDTO> transactions,
+                    out NativeArray<RefundCommandDTO> refundCommands,
+                    out NativeArray<LootCacheDTO> lootCaches,
+                    out NativeArray<int> counters,
+                    out NativeArray<ModuleCostDTO> fallbackCosts,
+                    out IDataVault transactionVault))
+            {
+                return false;
+            }
+
+            bool telemetryLocked = false;
 
             NativeArray<int> edgeOffsets = default;
             NativeArray<int> edgeDestinations = default;
@@ -1072,103 +1178,127 @@ namespace Hecton8.Construction
             int nodeCount = 0;
             int edgeCount = 0;
             bool deconstructionCsrLocked = false;
-            if (_habitatGraphManager != null)
-            {
-                deconstructionCsrLocked = _habitatGraphManager.TryGetDeconstructionCsrLanes(
-                    module,
-                    out edgeOffsets,
-                    out edgeDestinations,
-                    out edgeStrength,
-                    out edgeFlags,
-                    out targetNodeIndex,
-                    out nodeCount,
-                    out edgeCount);
-            }
-
-            if (!TryResolveModuleCostSource(buildData, moduleHash, out NativeArray<ModuleCostDTO> moduleCosts, out int moduleCostCount))
-            {
-                moduleCosts = _deconstructionFallbackCosts;
-                moduleCostCount = 0;
-            }
-
-            IDataVault vault = _cachedDataVault;
-            TryEnsureDeconstructionVaultBuffers();
-            bool telemetryLocked = TryAcquireDeconstructionTelemetry(
-                vault,
-                out NativeArray<TeardownTelemetryEntry> telemetryRing,
-                out NativeArray<int> telemetryCursor);
-
-            long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-            ExecuteModuleTeardownJob job = new ExecuteModuleTeardownJob
-            {
-                Transactions = _deconstructionTransactions,
-                ModuleCosts = moduleCosts,
-                EdgeOffsets = edgeOffsets,
-                EdgeDestinations = edgeDestinations,
-                EdgeStrength = edgeStrength,
-                EdgeFlags = edgeFlags,
-                RefundCommands = _deconstructionRefundCommands,
-                RefundCommandCount = _deconstructionRefundCommandCount,
-                LootCaches = _deconstructionLootCaches,
-                LootCacheCount = _deconstructionLootCacheCount,
-                TelemetryRing = telemetryRing,
-                TelemetryCursor = telemetryCursor,
-                TransactionCount = 1,
-                ModuleCostCount = moduleCostCount,
-                TargetNodeIndex = targetNodeIndex,
-                NodeCount = nodeCount,
-                EdgeCount = edgeCount,
-                MaxTeardownsPerFrame = HabitatDeconstructionTransactionKernel.ResolveMaxTeardownsPerFrame(HomeostasisBrain.GlobalQualityWeight),
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                SequenceBase = ++_deconstructionSequence,
-                LayoutValid = 1u,
-                GlobalQualityWeight = HomeostasisBrain.GlobalQualityWeight
-            };
             try
             {
-                job.Execute(); // COLD SYNC JOB: player-triggered teardown transaction, bounded to <= 4 refund pairs.
+                transactions[0] = transaction;
+                counters[DeconstructionRefundCommandCountIndex] = 0;
+                counters[DeconstructionLootCacheCountIndex] = 0;
+
+                if (_habitatGraphManager != null)
+                {
+                    deconstructionCsrLocked = _habitatGraphManager.TryGetDeconstructionCsrLanes(
+                        module,
+                        out edgeOffsets,
+                        out edgeDestinations,
+                        out edgeStrength,
+                        out edgeFlags,
+                        out targetNodeIndex,
+                        out nodeCount,
+                        out edgeCount);
+                }
+
+                if (!TryResolveModuleCostSource(buildData, moduleHash, fallbackCosts, out NativeArray<ModuleCostDTO> moduleCosts, out int moduleCostCount))
+                {
+                    moduleCosts = fallbackCosts;
+                    moduleCostCount = 0;
+                }
+
+                IDataVault vault = _cachedDataVault;
+                telemetryLocked = TryAcquireDeconstructionTelemetry(
+                    vault,
+                    out NativeArray<TeardownTelemetryEntry> telemetryRing,
+                    out NativeArray<int> telemetryCursor);
+
+                long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+                ExecuteModuleTeardownJob job = new ExecuteModuleTeardownJob
+                {
+                    Transactions = transactions,
+                    ModuleCosts = moduleCosts,
+                    EdgeOffsets = edgeOffsets,
+                    EdgeDestinations = edgeDestinations,
+                    EdgeStrength = edgeStrength,
+                    EdgeFlags = edgeFlags,
+                    RefundCommands = refundCommands,
+                    RefundCommandCount = counters,
+                    LootCaches = lootCaches,
+                    LootCacheCount = counters,
+                    TelemetryRing = telemetryRing,
+                    TelemetryCursor = telemetryCursor,
+                    TransactionCount = 1,
+                    ModuleCostCount = moduleCostCount,
+                    TargetNodeIndex = targetNodeIndex,
+                    NodeCount = nodeCount,
+                    EdgeCount = edgeCount,
+                    RefundCommandCountIndex = DeconstructionRefundCommandCountIndex,
+                    LootCacheCountIndex = DeconstructionLootCacheCountIndex,
+                    MaxTeardownsPerFrame = HabitatDeconstructionTransactionKernel.ResolveMaxTeardownsPerFrame(HomeostasisBrain.GlobalQualityWeight),
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                    SequenceBase = ++_deconstructionSequence,
+                    LayoutValid = 1u,
+                    GlobalQualityWeight = HomeostasisBrain.GlobalQualityWeight
+                };
+                try
+                {
+                    job.Execute(); // COLD SYNC JOB: player-triggered teardown transaction, bounded to <= 4 refund pairs.
+                }
+                finally
+                {
+                    if (deconstructionCsrLocked && _habitatGraphManager != null)
+                    {
+                        _habitatGraphManager.ReleaseDeconstructionCsrLanes();
+                        deconstructionCsrLocked = false;
+                    }
+                }
+
+                long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
+                float burstMicroseconds = (float)(elapsedTicks * 1000000.0 / System.Diagnostics.Stopwatch.Frequency);
+
+                int refundCommandCount = counters[DeconstructionRefundCommandCountIndex];
+                int returnedCount = ApplyRefundCommandsOrOverflow(in request, inventory, refundCommandCount, refundCommands, lootCaches, counters);
+                PublishOverflowLootCaches(lootCaches, counters);
+                refundItemCount = (ushort)Mathf.Clamp(returnedCount, 0, ushort.MaxValue);
+
+                int overflowLootCacheCount = counters[DeconstructionLootCacheCountIndex];
+                ReadLastDeconstructionTelemetry(
+                    telemetryRing,
+                    telemetryCursor,
+                    burstMicroseconds,
+                    returnedCount,
+                    overflowLootCacheCount,
+                    out severedEdgeCount,
+                    out uint faultFlags,
+                    out uint stateHash);
+                _lastShinobu336BurstMicroseconds = burstMicroseconds;
+                _lastShinobu336RefundedResources = returnedCount;
+                _lastShinobu336OverflowCaches = overflowLootCacheCount;
+                _lastShinobu336NodeIndex = targetNodeIndex;
+                AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+                AbsoluteUniversePosition targetAup = request.TargetAup;
+                _lastShinobu336TargetRuntimePosition = TryResolveRuntimeFloat3AupDelta(in targetAup, in runtimeOriginAup, out float3 targetRuntime)
+                    ? new Vector3(targetRuntime.x, targetRuntime.y, targetRuntime.z)
+                    : (module != null ? module.transform.position : default);
+                _lastShinobu336StateHash = stateHash;
+                _lastShinobu336FaultFlags = faultFlags;
+
+                if (telemetryLocked)
+                {
+                    ReleaseDeconstructionTelemetry(vault);
+                    telemetryLocked = false;
+                }
+
+                if ((faultFlags & HabitatDeconstructionTransactionKernel.FaultNaN) != 0u || burstMicroseconds > 500f)
+                    DumpShinobu336BlackBox();
+
+                return true;
             }
             finally
             {
                 if (deconstructionCsrLocked && _habitatGraphManager != null)
                     _habitatGraphManager.ReleaseDeconstructionCsrLanes();
+                if (telemetryLocked)
+                    ReleaseDeconstructionTelemetry(_cachedDataVault);
+                ReleaseDeconstructionTransactionBuffers(transactionVault);
             }
-
-            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
-            float burstMicroseconds = (float)(elapsedTicks * 1000000.0 / System.Diagnostics.Stopwatch.Frequency);
-
-            int refundCommandCount = _deconstructionRefundCommandCount[0];
-            int returnedCount = ApplyRefundCommandsOrOverflow(in request, inventory, refundCommandCount);
-            PublishOverflowLootCaches();
-            refundItemCount = (ushort)Mathf.Clamp(returnedCount, 0, ushort.MaxValue);
-
-            ReadLastDeconstructionTelemetry(
-                telemetryRing,
-                telemetryCursor,
-                burstMicroseconds,
-                returnedCount,
-                _deconstructionLootCacheCount.IsCreated && _deconstructionLootCacheCount.Length > 0 ? _deconstructionLootCacheCount[0] : 0,
-                out severedEdgeCount,
-                out uint faultFlags,
-                out uint stateHash);
-            _lastShinobu336BurstMicroseconds = burstMicroseconds;
-            _lastShinobu336RefundedResources = returnedCount;
-            _lastShinobu336OverflowCaches = _deconstructionLootCacheCount.IsCreated && _deconstructionLootCacheCount.Length > 0 ? _deconstructionLootCacheCount[0] : 0;
-            _lastShinobu336NodeIndex = targetNodeIndex;
-            float3 targetRuntime = request.TargetAup.ToRuntimeFloat3();
-            _lastShinobu336TargetRuntimePosition = math.all(math.isfinite(targetRuntime))
-                ? new Vector3(targetRuntime.x, targetRuntime.y, targetRuntime.z)
-                : (module != null ? module.transform.position : default);
-            _lastShinobu336StateHash = stateHash;
-            _lastShinobu336FaultFlags = faultFlags;
-
-            if (telemetryLocked)
-                ReleaseDeconstructionTelemetry(vault);
-
-            if ((faultFlags & HabitatDeconstructionTransactionKernel.FaultNaN) != 0u || burstMicroseconds > 500f)
-                DumpShinobu336BlackBox();
-
-            return true;
         }
 
         private static bool TryBuildDeconstructionTransaction(
@@ -1189,6 +1319,7 @@ namespace Hecton8.Construction
         private bool TryResolveModuleCostSource(
             BuildableData buildData,
             uint moduleHash,
+            NativeArray<ModuleCostDTO> fallbackCosts,
             out NativeArray<ModuleCostDTO> moduleCosts,
             out int moduleCostCount)
         {
@@ -1207,14 +1338,15 @@ namespace Hecton8.Construction
                     return true;
             }
 
-            if (!_deconstructionFallbackCosts.IsCreated ||
+            if (!fallbackCosts.IsCreated ||
+                fallbackCosts.Length == 0 ||
                 !TryBuildFallbackCostDto(buildData, moduleHash, out ModuleCostDTO fallbackCost))
             {
                 return false;
             }
 
-            _deconstructionFallbackCosts[0] = fallbackCost;
-            moduleCosts = _deconstructionFallbackCosts;
+            fallbackCosts[0] = fallbackCost;
+            moduleCosts = fallbackCosts;
             moduleCostCount = 1;
             return true;
         }
@@ -1293,9 +1425,21 @@ namespace Hecton8.Construction
             if (!vault.TryAcquireWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction, out telemetryRing))
                 return false;
 
-            if (vault.TryAcquireWriteLock(in _deconstructionTelemetryCursorHandle, SystemID.Construction, out telemetryCursor))
+            if (!telemetryRing.IsCreated || telemetryRing.Length < HabitatDeconstructionTransactionKernel.TelemetryCapacity)
+            {
+                vault.ReleaseWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction);
+                telemetryRing = default;
+                return false;
+            }
+
+            bool cursorLocked = vault.TryAcquireWriteLock(in _deconstructionTelemetryCursorHandle, SystemID.Construction, out telemetryCursor);
+            if (cursorLocked &&
+                telemetryCursor.IsCreated &&
+                telemetryCursor.Length > 0)
                 return true;
 
+            if (cursorLocked)
+                vault.ReleaseWriteLock(in _deconstructionTelemetryCursorHandle, SystemID.Construction);
             vault.ReleaseWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction);
             telemetryRing = default;
             telemetryCursor = default;
@@ -1316,13 +1460,16 @@ namespace Hecton8.Construction
         private int ApplyRefundCommandsOrOverflow(
             in DeconstructRequestSignal request,
             PlayerInventory inventory,
-            int refundCommandCount)
+            int refundCommandCount,
+            NativeArray<RefundCommandDTO> refundCommands,
+            NativeArray<LootCacheDTO> lootCaches,
+            NativeArray<int> counters)
         {
             int returnedQuantity = 0;
-            int safeCount = math.min(math.max(0, refundCommandCount), _deconstructionRefundCommands.Length);
+            int safeCount = math.min(math.max(0, refundCommandCount), refundCommands.IsCreated ? refundCommands.Length : 0);
             for (int i = 0; i < safeCount; i++)
             {
-                RefundCommandDTO command = _deconstructionRefundCommands[i];
+                RefundCommandDTO command = refundCommands[i];
                 if (command.ItemHash == 0u || command.Quantity <= 0)
                     continue;
 
@@ -1332,13 +1479,13 @@ namespace Hecton8.Construction
                     returnedQuantity = Mathf.Min(ushort.MaxValue, returnedQuantity + command.Quantity);
                     PublishDeconstructionItemAcquired(in request, command.ItemHash, command.Quantity);
                     command.Status = HabitatDeconstructionTransactionKernel.RefundStatusPendingInventory;
-                    _deconstructionRefundCommands[i] = command;
+                    refundCommands[i] = command;
                     continue;
                 }
 
                 command.Status = HabitatDeconstructionTransactionKernel.RefundStatusOverflowLootCache;
-                _deconstructionRefundCommands[i] = command;
-                if (AppendOverflowLootCache(in request, in command))
+                refundCommands[i] = command;
+                if (AppendOverflowLootCache(in request, in command, lootCaches, counters))
                     returnedQuantity = Mathf.Min(ushort.MaxValue, returnedQuantity + command.Quantity);
             }
 
@@ -1364,24 +1511,26 @@ namespace Hecton8.Construction
 
         private bool AppendOverflowLootCache(
             in DeconstructRequestSignal request,
-            in RefundCommandDTO command)
+            in RefundCommandDTO command,
+            NativeArray<LootCacheDTO> lootCaches,
+            NativeArray<int> counters)
         {
-            if (!_deconstructionLootCaches.IsCreated ||
-                !_deconstructionLootCacheCount.IsCreated ||
-                _deconstructionLootCacheCount.Length == 0)
+            if (!lootCaches.IsCreated ||
+                !counters.IsCreated ||
+                counters.Length <= DeconstructionLootCacheCountIndex)
             {
                 return false;
             }
 
-            int index = _deconstructionLootCacheCount[0];
-            if (index < 0 || index >= _deconstructionLootCaches.Length)
+            int index = counters[DeconstructionLootCacheCountIndex];
+            if (index < 0 || index >= lootCaches.Length)
                 return false;
 
             float q = math.saturate(HomeostasisBrain.GlobalQualityWeight);
             float radius = math.lerp(0.35f, 0.95f, q);
             float3 offset = ResolveOverflowCacheOffset(command.Sequence, command.PairIndex, radius);
             double3 origin = request.TargetAup.ToAbsoluteDouble3();
-            _deconstructionLootCaches[index] = new LootCacheDTO
+            lootCaches[index] = new LootCacheDTO
             {
                 PositionAup = origin + new double3(offset.x, offset.y, offset.z),
                 LocalOffset = offset,
@@ -1391,7 +1540,7 @@ namespace Hecton8.Construction
                 Sequence = command.Sequence,
                 Flags = 0u
             };
-            _deconstructionLootCacheCount[0] = index + 1;
+            counters[DeconstructionLootCacheCountIndex] = index + 1;
             return true;
         }
 
@@ -1406,19 +1555,21 @@ namespace Hecton8.Construction
             return new float3(cos * radius, 0.45f, sin * radius);
         }
 
-        private void PublishOverflowLootCaches()
+        private void PublishOverflowLootCaches(
+            NativeArray<LootCacheDTO> lootCaches,
+            NativeArray<int> counters)
         {
-            if (!_deconstructionLootCaches.IsCreated ||
-                !_deconstructionLootCacheCount.IsCreated ||
-                _deconstructionLootCacheCount.Length == 0)
+            if (!lootCaches.IsCreated ||
+                !counters.IsCreated ||
+                counters.Length <= DeconstructionLootCacheCountIndex)
             {
                 return;
             }
 
-            int count = math.min(math.max(0, _deconstructionLootCacheCount[0]), _deconstructionLootCaches.Length);
+            int count = math.min(math.max(0, counters[DeconstructionLootCacheCountIndex]), lootCaches.Length);
             for (int i = 0; i < count; i++)
             {
-                LootCacheDTO cache = _deconstructionLootCaches[i];
+                LootCacheDTO cache = lootCaches[i];
                 if (cache.ItemHash == 0u || cache.Quantity <= 0)
                     continue;
 
@@ -1525,215 +1676,314 @@ namespace Hecton8.Construction
             }
         }
 
-        private void EnsureDeconstructionNativeBuffers(int requestedCapacity)
-        {
-            int capacity = Mathf.Max(1, requestedCapacity);
-            if (!_deconstructionDfsStack.IsCreated)
-            {
-                _deconstructionDfsStack = new NativeList<long>(capacity, DataVaultExemptSceneScratchAllocator); // COLD ALLOC: NativeList<long>[module capacity] - rollback DFS stack - owner: ConstructionManager
-                NativeMemorySentinel.RegisterNativeList(_deconstructionDfsStack, NativeMemoryOwner, nameof(_deconstructionDfsStack), NativeMemoryLifetime);
-            }
-            else if (_deconstructionDfsStack.Capacity < capacity)
-            {
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_deconstructionDfsStack));
-                _deconstructionDfsStack.Capacity = capacity;
-                NativeMemorySentinel.RegisterNativeList(_deconstructionDfsStack, NativeMemoryOwner, nameof(_deconstructionDfsStack), NativeMemoryLifetime);
-            }
-
-            if (!_deconstructionDfsVisited.IsCreated)
-            {
-                _deconstructionDfsVisited = new NativeParallelHashSet<long>(capacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashSet<long>[module capacity] - rollback DFS visited set - owner: ConstructionManager
-                NativeMemorySentinel.RegisterNativeParallelHashSet(
-                    _deconstructionDfsVisited,
-                    NativeMemoryOwner,
-                    nameof(_deconstructionDfsVisited),
-                    NativeMemoryLifetime);
-            }
-            else if (_deconstructionDfsVisited.Capacity < capacity)
-            {
-                _deconstructionDfsVisited.Capacity = capacity;
-                NativeMemorySentinel.RefreshNativeParallelHashSet(_deconstructionDfsVisited, NativeMemoryOwner, nameof(_deconstructionDfsVisited));
-            }
-
-            if (!_deconstructionDfsResult.IsCreated)
-            {
-                _deconstructionDfsResult = new NativeArray<int>(DeconstructionDfsResultLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[4] - rollback DFS result lane - owner: ConstructionManager
-                NativeMemorySentinel.RegisterNativeArray(_deconstructionDfsResult, NativeMemoryOwner, nameof(_deconstructionDfsResult), NativeMemoryLifetime);
-            }
-
-            if (!_deconstructionBlackBox.IsCreated)
-            {
-                _deconstructionBlackBox = new NativeArray<HabitatDeconstructionTelemetryEntry>(
-                    DeconstructionBlackBoxCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HabitatDeconstructionTelemetryEntry>[300] - deconstruction black box - owner: ConstructionManager
-                NativeMemorySentinel.RegisterNativeArray(_deconstructionBlackBox, NativeMemoryOwner, nameof(_deconstructionBlackBox), NativeMemoryLifetime);
-            }
-
-            if (!_deconstructionTransactions.IsCreated)
-            {
-                _deconstructionTransactions = new NativeArray<DeconstructionTransactionDTO>(
-                    DeconstructionTransactionCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<DeconstructionTransactionDTO>[50] - SHINOBU_336 teardown transaction staging - owner: ConstructionManager
-                NativeMemorySentinel.RegisterNativeArray(_deconstructionTransactions, NativeMemoryOwner, nameof(_deconstructionTransactions), NativeMemoryLifetime);
-            }
-
-            if (!_deconstructionFallbackCosts.IsCreated)
-            {
-                _deconstructionFallbackCosts = new NativeArray<ModuleCostDTO>(
-                    1,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<ModuleCostDTO>[1] - SHINOBU_336 DataMonolith fallback staging - owner: ConstructionManager
-                NativeMemorySentinel.RegisterNativeArray(_deconstructionFallbackCosts, NativeMemoryOwner, nameof(_deconstructionFallbackCosts), NativeMemoryLifetime);
-            }
-
-            if (!_deconstructionRefundCommands.IsCreated)
-            {
-                _deconstructionRefundCommands = new NativeArray<RefundCommandDTO>(
-                    DeconstructionRefundCommandCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RefundCommandDTO>[200] - SHINOBU_336 refund output commands - owner: ConstructionManager
-                NativeMemorySentinel.RegisterNativeArray(_deconstructionRefundCommands, NativeMemoryOwner, nameof(_deconstructionRefundCommands), NativeMemoryLifetime);
-            }
-
-            if (!_deconstructionRefundCommandCount.IsCreated)
-            {
-                _deconstructionRefundCommandCount = new NativeArray<int>(
-                    1,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - SHINOBU_336 refund command count - owner: ConstructionManager
-                NativeMemorySentinel.RegisterNativeArray(_deconstructionRefundCommandCount, NativeMemoryOwner, nameof(_deconstructionRefundCommandCount), NativeMemoryLifetime);
-            }
-
-            if (!_deconstructionLootCaches.IsCreated)
-            {
-                _deconstructionLootCaches = new NativeArray<LootCacheDTO>(
-                    DeconstructionLootCacheCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<LootCacheDTO>[200] - SHINOBU_336 overflow loot cache staging - owner: ConstructionManager
-                NativeMemorySentinel.RegisterNativeArray(_deconstructionLootCaches, NativeMemoryOwner, nameof(_deconstructionLootCaches), NativeMemoryLifetime);
-            }
-
-            if (!_deconstructionLootCacheCount.IsCreated)
-            {
-                _deconstructionLootCacheCount = new NativeArray<int>(
-                    1,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - SHINOBU_336 overflow loot cache count - owner: ConstructionManager
-                NativeMemorySentinel.RegisterNativeArray(_deconstructionLootCacheCount, NativeMemoryOwner, nameof(_deconstructionLootCacheCount), NativeMemoryLifetime);
-            }
-        }
-
-        private void TryEnsureDeconstructionVaultBuffers()
+        private bool TryEnsureDeconstructionVaultBuffers(int requestedCapacity = 0)
         {
             IDataVault vault = _cachedDataVault;
             if (vault == null)
+                return false;
+
+            int capacity = Mathf.Max(1, requestedCapacity > 0 ? requestedCapacity : Mathf.Max(initialCapacity, ModuleCount));
+            bool ready = true;
+            ready &= EnsureDeconstructionVaultBuffer(vault, DeconstructionDfsStackBufferId, capacity, NativeArrayOptions.ClearMemory, ref _deconstructionDfsStackHandle);
+            ready &= EnsureDeconstructionVaultBuffer(vault, DeconstructionDfsVisitedBufferId, capacity, NativeArrayOptions.ClearMemory, ref _deconstructionDfsVisitedHandle);
+            ready &= EnsureDeconstructionVaultBuffer(vault, DeconstructionDfsResultBufferId, DeconstructionDfsResultLength, NativeArrayOptions.ClearMemory, ref _deconstructionDfsResultHandle);
+            ready &= EnsureDeconstructionVaultBuffer(vault, DeconstructionBlackBoxBufferId, DeconstructionBlackBoxCapacity, NativeArrayOptions.ClearMemory, ref _deconstructionBlackBoxHandle);
+            ready &= EnsureDeconstructionVaultBuffer(vault, BufferID.Shinobu336TeardownTransactions, DeconstructionTransactionCapacity, NativeArrayOptions.UninitializedMemory, ref _deconstructionTransactionsHandle);
+            ready &= EnsureDeconstructionVaultBuffer(vault, DeconstructionFallbackCostsBufferId, 1, NativeArrayOptions.UninitializedMemory, ref _deconstructionFallbackCostsHandle);
+            ready &= EnsureDeconstructionVaultBuffer(vault, BufferID.Shinobu336RefundCommands, DeconstructionRefundCommandCapacity, NativeArrayOptions.UninitializedMemory, ref _deconstructionRefundCommandsHandle);
+            ready &= EnsureDeconstructionVaultBuffer(vault, BufferID.Shinobu336LootCaches, DeconstructionLootCacheCapacity, NativeArrayOptions.UninitializedMemory, ref _deconstructionLootCachesHandle);
+            ready &= EnsureDeconstructionVaultBuffer(vault, BufferID.Shinobu336Counters, DeconstructionCounterLaneLength, NativeArrayOptions.ClearMemory, ref _deconstructionCountersHandle);
+            ready &= EnsureDeconstructionVaultBuffer(vault, BufferID.Shinobu336TelemetryRing, HabitatDeconstructionTransactionKernel.TelemetryCapacity, NativeArrayOptions.ClearMemory, ref _deconstructionTelemetryHandle);
+            ready &= EnsureDeconstructionVaultBuffer(vault, BufferID.Shinobu336TelemetryCursor, 1, NativeArrayOptions.ClearMemory, ref _deconstructionTelemetryCursorHandle);
+            ready &= EnsureDeconstructionVaultBuffer(vault, BufferID.Shinobu336RefundProfiles, HabitatDeconstructionTransactionKernel.RefundProfileCapacity, NativeArrayOptions.ClearMemory, ref _deconstructionRefundProfilesHandle);
+#if UNITY_EDITOR
+            ready &= EnsureDeconstructionVaultBuffer(vault, BufferID.Shinobu336CsvScratch, HabitatDeconstructionTransactionKernel.CsvScratchBytes, NativeArrayOptions.ClearMemory, ref _deconstructionCsvScratchHandle);
+#endif
+            return ready;
+        }
+
+        private static bool EnsureDeconstructionVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault == null || requiredLength <= 0)
+            {
+                handle = default;
+                return false;
+            }
+
+            if (TryOpenDeconstructionVaultBuffer(vault, in handle, bufferId, requiredLength, out NativeArray<T> _))
+                return true;
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle))
+            {
+                handle = existingHandle;
+                if (TryOpenDeconstructionVaultBuffer(vault, in handle, bufferId, requiredLength, out NativeArray<T> _))
+                    return true;
+            }
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.Construction,
+                options);
+            if (TryOpenDeconstructionVaultBuffer(vault, in handle, bufferId, requiredLength, out NativeArray<T> _))
+                return true;
+
+            handle = default;
+            return false;
+        }
+
+        private static bool TryOpenDeconstructionVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.Generation != 0u &&
+                   handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.Construction &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryAcquireDeconstructionDfsBuffers(
+            int requestedCapacity,
+            out NativeArray<int> dfsStack,
+            out NativeArray<byte> dfsVisited,
+            out NativeArray<int> dfsResult,
+            out IDataVault vault)
+        {
+            dfsStack = default;
+            dfsVisited = default;
+            dfsResult = default;
+            vault = _cachedDataVault;
+            int capacity = Mathf.Max(1, requestedCapacity);
+            if (!TryEnsureDeconstructionVaultBuffers(capacity) || vault == null)
+                return false;
+
+            int acquiredCount = 0;
+            if (!vault.TryAcquireWriteLock(in _deconstructionDfsStackHandle, SystemID.Construction, out dfsStack))
+            {
+                ReleaseDeconstructionDfsBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount = 1;
+            if (!dfsStack.IsCreated || dfsStack.Length < capacity)
+            {
+                ReleaseDeconstructionDfsBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _deconstructionDfsVisitedHandle, SystemID.Construction, out dfsVisited))
+            {
+                ReleaseDeconstructionDfsBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount = 2;
+            if (!dfsVisited.IsCreated || dfsVisited.Length < capacity)
+            {
+                ReleaseDeconstructionDfsBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _deconstructionDfsResultHandle, SystemID.Construction, out dfsResult))
+            {
+                ReleaseDeconstructionDfsBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount = 3;
+            if (!dfsResult.IsCreated || dfsResult.Length < DeconstructionDfsResultLength)
+            {
+                ReleaseDeconstructionDfsBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ReleaseDeconstructionDfsBuffers(IDataVault vault)
+        {
+            ReleaseDeconstructionDfsBuffers(vault, 3);
+        }
+
+        private void ReleaseDeconstructionDfsBuffers(IDataVault vault, int acquiredCount)
+        {
+            if (vault == null)
                 return;
 
-            _deconstructionTelemetryHandle = vault.EnsureGenerationHandle<TeardownTelemetryEntry>(
-                BufferID.Shinobu336TelemetryRing,
-                HabitatDeconstructionTransactionKernel.TelemetryCapacity,
-                SystemID.Construction,
-                NativeArrayOptions.ClearMemory);
-            _deconstructionTelemetryCursorHandle = vault.EnsureGenerationHandle<int>(
-                BufferID.Shinobu336TelemetryCursor,
-                1,
-                SystemID.Construction,
-                NativeArrayOptions.ClearMemory);
-            _deconstructionRefundProfilesHandle = vault.EnsureGenerationHandle<RefundProfileDTO>(
-                BufferID.Shinobu336RefundProfiles,
-                HabitatDeconstructionTransactionKernel.RefundProfileCapacity,
-                SystemID.Construction,
-                NativeArrayOptions.ClearMemory);
-#if UNITY_EDITOR
-            _deconstructionCsvScratchHandle = vault.EnsureGenerationHandle<byte>(
-                BufferID.Shinobu336CsvScratch,
-                HabitatDeconstructionTransactionKernel.CsvScratchBytes,
-                SystemID.Construction,
-                NativeArrayOptions.ClearMemory);
-#endif
+            if (acquiredCount >= 3)
+                vault.ReleaseWriteLock(in _deconstructionDfsResultHandle, SystemID.Construction);
+            if (acquiredCount >= 2)
+                vault.ReleaseWriteLock(in _deconstructionDfsVisitedHandle, SystemID.Construction);
+            if (acquiredCount >= 1)
+                vault.ReleaseWriteLock(in _deconstructionDfsStackHandle, SystemID.Construction);
+        }
+
+        private bool TryAcquireDeconstructionTransactionBuffers(
+            out NativeArray<DeconstructionTransactionDTO> transactions,
+            out NativeArray<RefundCommandDTO> refundCommands,
+            out NativeArray<LootCacheDTO> lootCaches,
+            out NativeArray<int> counters,
+            out NativeArray<ModuleCostDTO> fallbackCosts,
+            out IDataVault vault)
+        {
+            transactions = default;
+            refundCommands = default;
+            lootCaches = default;
+            counters = default;
+            fallbackCosts = default;
+            vault = _cachedDataVault;
+            if (!TryEnsureDeconstructionVaultBuffers(Mathf.Max(initialCapacity, ModuleCount)) || vault == null)
+                return false;
+
+            int acquiredCount = 0;
+            if (!vault.TryAcquireWriteLock(in _deconstructionTransactionsHandle, SystemID.Construction, out transactions))
+            {
+                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount = 1;
+            if (!transactions.IsCreated || transactions.Length < 1)
+            {
+                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _deconstructionRefundCommandsHandle, SystemID.Construction, out refundCommands))
+            {
+                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount = 2;
+            if (!refundCommands.IsCreated || refundCommands.Length < DeconstructionRefundCommandCapacity)
+            {
+                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _deconstructionLootCachesHandle, SystemID.Construction, out lootCaches))
+            {
+                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount = 3;
+            if (!lootCaches.IsCreated || lootCaches.Length < DeconstructionLootCacheCapacity)
+            {
+                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _deconstructionCountersHandle, SystemID.Construction, out counters))
+            {
+                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount = 4;
+            if (!counters.IsCreated || counters.Length < DeconstructionCounterLaneLength)
+            {
+                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in _deconstructionFallbackCostsHandle, SystemID.Construction, out fallbackCosts))
+            {
+                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount = 5;
+            if (!fallbackCosts.IsCreated || fallbackCosts.Length < 1)
+            {
+                ReleaseDeconstructionTransactionBuffers(vault, acquiredCount);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ReleaseDeconstructionTransactionBuffers(IDataVault vault)
+        {
+            ReleaseDeconstructionTransactionBuffers(vault, 5);
+        }
+
+        private void ReleaseDeconstructionTransactionBuffers(IDataVault vault, int acquiredCount)
+        {
+            if (vault == null)
+                return;
+
+            if (acquiredCount >= 5)
+                vault.ReleaseWriteLock(in _deconstructionFallbackCostsHandle, SystemID.Construction);
+            if (acquiredCount >= 4)
+                vault.ReleaseWriteLock(in _deconstructionCountersHandle, SystemID.Construction);
+            if (acquiredCount >= 3)
+                vault.ReleaseWriteLock(in _deconstructionLootCachesHandle, SystemID.Construction);
+            if (acquiredCount >= 2)
+                vault.ReleaseWriteLock(in _deconstructionRefundCommandsHandle, SystemID.Construction);
+            if (acquiredCount >= 1)
+                vault.ReleaseWriteLock(in _deconstructionTransactionsHandle, SystemID.Construction);
+        }
+
+        private bool TryAcquireDeconstructionBlackBox(
+            out NativeArray<HabitatDeconstructionTelemetryEntry> blackBox,
+            out IDataVault vault)
+        {
+            blackBox = default;
+            vault = _cachedDataVault;
+            if (!TryEnsureDeconstructionVaultBuffers(Mathf.Max(initialCapacity, ModuleCount)) || vault == null)
+                return false;
+
+            if (!vault.TryAcquireWriteLock(in _deconstructionBlackBoxHandle, SystemID.Construction, out blackBox))
+                return false;
+
+            if (blackBox.IsCreated && blackBox.Length >= DeconstructionBlackBoxCapacity)
+                return true;
+
+            vault.ReleaseWriteLock(in _deconstructionBlackBoxHandle, SystemID.Construction);
+            blackBox = default;
+            return false;
+        }
+
+        private void ReleaseDeconstructionBlackBox(IDataVault vault)
+        {
+            if (vault != null)
+                vault.ReleaseWriteLock(in _deconstructionBlackBoxHandle, SystemID.Construction);
         }
 
         private void DisposeDeconstructionNativeBuffers()
         {
-            if (_deconstructionDfsStack.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_deconstructionDfsStack));
-                _deconstructionDfsStack.Dispose();
-                _deconstructionDfsStack = default;
-            }
-
-            if (_deconstructionDfsVisited.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashSet(NativeMemoryOwner, nameof(_deconstructionDfsVisited));
-                _deconstructionDfsVisited.Dispose();
-                _deconstructionDfsVisited = default;
-            }
-
-            if (_deconstructionDfsResult.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_deconstructionDfsResult);
-                _deconstructionDfsResult.Dispose();
-                _deconstructionDfsResult = default;
-            }
-
-            if (_deconstructionBlackBox.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_deconstructionBlackBox);
-                _deconstructionBlackBox.Dispose();
-                _deconstructionBlackBox = default;
-            }
-
-            if (_deconstructionTransactions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_deconstructionTransactions);
-                _deconstructionTransactions.Dispose();
-                _deconstructionTransactions = default;
-            }
-
-            if (_deconstructionFallbackCosts.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_deconstructionFallbackCosts);
-                _deconstructionFallbackCosts.Dispose();
-                _deconstructionFallbackCosts = default;
-            }
-
-            if (_deconstructionRefundCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_deconstructionRefundCommands);
-                _deconstructionRefundCommands.Dispose();
-                _deconstructionRefundCommands = default;
-            }
-
-            if (_deconstructionRefundCommandCount.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_deconstructionRefundCommandCount);
-                _deconstructionRefundCommandCount.Dispose();
-                _deconstructionRefundCommandCount = default;
-            }
-
-            if (_deconstructionLootCaches.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_deconstructionLootCaches);
-                _deconstructionLootCaches.Dispose();
-                _deconstructionLootCaches = default;
-            }
-
-            if (_deconstructionLootCacheCount.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_deconstructionLootCacheCount);
-                _deconstructionLootCacheCount.Dispose();
-                _deconstructionLootCacheCount = default;
-            }
-
-            _deconstructionBlackBoxCursor = 0;
+            _deconstructionDfsStackHandle = default;
+            _deconstructionDfsVisitedHandle = default;
+            _deconstructionDfsResultHandle = default;
+            _deconstructionBlackBoxHandle = default;
+            _deconstructionTransactionsHandle = default;
+            _deconstructionFallbackCostsHandle = default;
+            _deconstructionRefundCommandsHandle = default;
+            _deconstructionLootCachesHandle = default;
+            _deconstructionCountersHandle = default;
             _deconstructionTelemetryHandle = default;
             _deconstructionTelemetryCursorHandle = default;
             _deconstructionRefundProfilesHandle = default;
 #if UNITY_EDITOR
             _deconstructionCsvScratchHandle = default;
 #endif
+            _deconstructionBlackBoxCursor = 0;
+            _lastDeconstructionDfsVisitedCount = 0;
+            _lastDeconstructionDfsExpectedCount = 0;
             _deconstructionSequence = 0u;
             _lastShinobu336RefundedResources = 0;
             _lastShinobu336OverflowCaches = 0;
@@ -1747,16 +1997,18 @@ namespace Hecton8.Construction
 
         private int ReadDfsVisitedCount()
         {
-            return _deconstructionDfsResult.IsCreated && _deconstructionDfsResult.Length > 1
-                ? _deconstructionDfsResult[1]
-                : 0;
+            return _lastDeconstructionDfsVisitedCount;
         }
 
         private int ReadDfsExpectedCount()
         {
-            return _deconstructionDfsResult.IsCreated && _deconstructionDfsResult.Length > 2
-                ? _deconstructionDfsResult[2]
-                : 0;
+            return _lastDeconstructionDfsExpectedCount;
+        }
+
+        private void CacheDfsResult(NativeArray<int> dfsResult)
+        {
+            _lastDeconstructionDfsVisitedCount = dfsResult.IsCreated && dfsResult.Length > 1 ? dfsResult[1] : 0;
+            _lastDeconstructionDfsExpectedCount = dfsResult.IsCreated && dfsResult.Length > 2 ? dfsResult[2] : 0;
         }
 
         private void WriteDeconstructionBlackBoxSample(
@@ -1766,61 +2018,75 @@ namespace Hecton8.Construction
             int visitedCount,
             int expectedCount)
         {
-            if (!_deconstructionBlackBox.IsCreated || _deconstructionBlackBox.Length == 0)
+            if (!TryAcquireDeconstructionBlackBox(out NativeArray<HabitatDeconstructionTelemetryEntry> blackBox, out IDataVault vault))
                 return;
 
-            int index = _deconstructionBlackBoxCursor;
-            if (index < 0 || index >= _deconstructionBlackBox.Length)
-                index = 0;
-
-            _deconstructionBlackBox[index] = new HabitatDeconstructionTelemetryEntry
+            try
             {
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                TargetEntityId = request.TargetEntityId,
-                RequesterEntityId = request.RequesterEntityId,
-                DistanceMeters = Mathf.Max(0f, request.MaxDistance),
-                DfsVisitedCount = (ushort)Mathf.Clamp(visitedCount, 0, ushort.MaxValue),
-                DfsExpectedCount = (ushort)Mathf.Clamp(expectedCount, 0, ushort.MaxValue),
-                Result = result,
-                Reason = reason,
-                Flags = request.Flags,
-                Reserved = 0
-            };
+                int index = _deconstructionBlackBoxCursor;
+                if (index < 0 || index >= blackBox.Length)
+                    index = 0;
 
-            _deconstructionBlackBoxCursor = index + 1;
-            if (_deconstructionBlackBoxCursor >= _deconstructionBlackBox.Length)
-                _deconstructionBlackBoxCursor = 0;
+                blackBox[index] = new HabitatDeconstructionTelemetryEntry
+                {
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                    TargetEntityId = request.TargetEntityId,
+                    RequesterEntityId = request.RequesterEntityId,
+                    DistanceMeters = Mathf.Max(0f, request.MaxDistance),
+                    DfsVisitedCount = (ushort)Mathf.Clamp(visitedCount, 0, ushort.MaxValue),
+                    DfsExpectedCount = (ushort)Mathf.Clamp(expectedCount, 0, ushort.MaxValue),
+                    Result = result,
+                    Reason = reason,
+                    Flags = request.Flags,
+                    Reserved = 0
+                };
+
+                _deconstructionBlackBoxCursor = index + 1;
+                if (_deconstructionBlackBoxCursor >= blackBox.Length)
+                    _deconstructionBlackBoxCursor = 0;
+            }
+            finally
+            {
+                ReleaseDeconstructionBlackBox(vault);
+            }
         }
 
         private void DumpDeconstructionBlackBox()
         {
-            if (!_deconstructionBlackBox.IsCreated)
+            if (!TryAcquireDeconstructionBlackBox(out NativeArray<HabitatDeconstructionTelemetryEntry> blackBox, out IDataVault vault))
                 return;
 
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DeconstructionDumpRelativePath));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            try
             {
-                writer.Write(DeconstructionBlackBoxCapacity);
-                writer.Write(_deconstructionBlackBoxCursor);
-                for (int i = 0; i < _deconstructionBlackBox.Length; i++)
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DeconstructionDumpRelativePath));
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    HabitatDeconstructionTelemetryEntry entry = _deconstructionBlackBox[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.TargetEntityId);
-                    writer.Write(entry.RequesterEntityId);
-                    writer.Write(entry.DistanceMeters);
-                    writer.Write(entry.DfsVisitedCount);
-                    writer.Write(entry.DfsExpectedCount);
-                    writer.Write(entry.Result);
-                    writer.Write(entry.Reason);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.Reserved);
+                    writer.Write(DeconstructionBlackBoxCapacity);
+                    writer.Write(_deconstructionBlackBoxCursor);
+                    for (int i = 0; i < blackBox.Length; i++)
+                    {
+                        HabitatDeconstructionTelemetryEntry entry = blackBox[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.TargetEntityId);
+                        writer.Write(entry.RequesterEntityId);
+                        writer.Write(entry.DistanceMeters);
+                        writer.Write(entry.DfsVisitedCount);
+                        writer.Write(entry.DfsExpectedCount);
+                        writer.Write(entry.Result);
+                        writer.Write(entry.Reason);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.Reserved);
+                    }
                 }
+            }
+            finally
+            {
+                ReleaseDeconstructionBlackBox(vault);
             }
         }
 
@@ -1898,7 +2164,16 @@ namespace Hecton8.Construction
         public void PopulateSaveData(SaveData data)
         {
             ref ConstructionDTO dto = ref data.construction;
-            dto.EnsureCapacity();
+            if (!HasConstructionSaveDtoCapacity(in dto))
+            {
+                ClearConstructionSaveCounts(ref dto);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[ConstructionManager] Construction save DTO capacity missing. Save payload cleared.");
+#endif
+                return;
+            }
+
             dto.graphNodeCount = 0;
             dto.graphEdgeCount = 0;
             dto.moduleBlitCount = 0;
@@ -1918,8 +2193,7 @@ namespace Hecton8.Construction
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Hecton8.Core.H8Debug.LogWarning(
-                        $"[ConstructionManager] Module '{module.name}' has no ModuleMarker. " +
-                        "Skipping save for this module.");
+                        "[ConstructionManager] Module has no ModuleMarker. Skipping save.");
 #endif
                     continue;
                 }
@@ -1930,8 +2204,7 @@ namespace Hecton8.Construction
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Hecton8.Core.H8Debug.LogWarning(
-                        $"[ConstructionManager] Module '{module.name}' has empty PrefabId. " +
-                        "Skipping.");
+                        "[ConstructionManager] Module has empty PrefabId. Skipping save.");
 #endif
                     continue;
                 }
@@ -1941,21 +2214,21 @@ namespace Hecton8.Construction
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Hecton8.Core.H8Debug.LogWarning(
-                        $"[ConstructionManager] Max modules ({ConstructionDTO.MaxModules}) reached. " +
-                        $"Truncating save: {count - moduleIndex} modules not saved.");
+                        "[ConstructionManager] Max modules reached. Truncating construction save.");
 #endif
                     break;
                 }
 
                 // Serialize transform.
                 Transform t = module.transform;
-                ModuleDTO moduleDto = new ModuleDTO();
+                ModuleDTO moduleDto = dto.modules[moduleIndex];
+                moduleDto.ResetForConstructionSave();
                 moduleDto.prefabId = prefabId;
                 moduleDto.SetPosition(t.position);
                 moduleDto.SetRotation(t.rotation);
                 moduleDto.slottedToolItemId = string.Empty;
 
-                ModuleGraphNodeDTO graphNodeDto = new ModuleGraphNodeDTO();
+                ModuleGraphNodeDTO graphNodeDto = default;
                 graphNodeDto.prefabId = prefabId;
                 graphNodeDto.moduleHashId = marker.Data != null ? marker.Data.ModuleHashId : 0;
                 graphNodeDto.SetAup(TryResolveAupFromRuntimeOrigin(t.position, out AbsoluteUniversePosition moduleAup)
@@ -2018,6 +2291,44 @@ namespace Hecton8.Construction
             PopulateGraphEdges(ref dto, moduleIndex);
         }
 
+        private static bool HasConstructionSaveDtoCapacity(in ConstructionDTO dto)
+        {
+            return dto.modules != null &&
+                   dto.modules.Length >= ConstructionDTO.MaxModules &&
+                   dto.graphNodes != null &&
+                   dto.graphNodes.Length >= ConstructionDTO.MaxModules &&
+                   dto.graphEdges != null &&
+                   dto.graphEdges.Length >= ConstructionDTO.MaxGraphEdges &&
+                   dto.moduleBlitRecords != null &&
+                   dto.moduleBlitRecords.Length >= ConstructionDTO.MaxModules &&
+                   dto.habitatFloodStates != null &&
+                   dto.habitatFloodStates.Length >= ConstructionDTO.MaxModules &&
+                   HasModuleSaveNestedArrayCapacity(dto.modules);
+        }
+
+        private static bool HasModuleSaveNestedArrayCapacity(ModuleDTO[] modules)
+        {
+            if (modules == null || modules.Length < ConstructionDTO.MaxModules)
+                return false;
+
+            for (int i = 0; i < ConstructionDTO.MaxModules; i++)
+            {
+                if (!modules[i].HasNestedArrayCapacity())
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static void ClearConstructionSaveCounts(ref ConstructionDTO dto)
+        {
+            dto.moduleCount = 0;
+            dto.graphNodeCount = 0;
+            dto.graphEdgeCount = 0;
+            dto.moduleBlitCount = 0;
+            dto.habitatFloodStateCount = 0;
+        }
+
         /// <summary>
         /// Restores placed modules from ConstructionDTO.
         ///
@@ -2041,8 +2352,7 @@ namespace Hecton8.Construction
             if (catalog == null)
             {
                 Hecton8.Core.H8Debug.LogError(
-                    "[ConstructionManager] ModuleCatalog not assigned! " +
-                    "Cannot load construction data.");
+                    "[ConstructionManager] ModuleCatalog not assigned. Cannot load construction data.");
                 return;
             }
 
@@ -2050,8 +2360,7 @@ namespace Hecton8.Construction
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError(
-                    "[ConstructionManager] ModuleCatalog has ambiguous ID aliases. " +
-                    $"Construction load aborted: {catalog.LookupAmbiguitySummary}");
+                    "[ConstructionManager] ModuleCatalog has ambiguous ID aliases. Construction load aborted.");
 #endif
                 return;
             }
@@ -2081,6 +2390,9 @@ namespace Hecton8.Construction
                 : Mathf.Min(dto.moduleCount, dto.modules.Length);
             int loadedCount   = 0;
             int skippedCount  = 0;
+            AbsoluteUniversePosition graphLoadRuntimeOriginAup = hasGraphTopology
+                ? RuntimeOriginRoute.CurrentRuntimeOriginAup()
+                : default;
 
             for (int i = 0; i < count; i++)
             {
@@ -2110,18 +2422,30 @@ namespace Hecton8.Construction
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Hecton8.Core.H8Debug.LogWarning(
-                        $"[ConstructionManager] Module '{prefabId}' " +
-                        "not found in catalog. Skipping.");
+                        "[ConstructionManager] Module not found in catalog. Skipping.");
 #endif
                     skippedCount++;
                     continue;
                 }
 
                 // Validate position.
-                float3 graphRuntimePosition = hasGraphTopology ? graphNodeDto.GetAup().ToRuntimeFloat3() : float3.zero;
-                Vector3 pos = hasGraphTopology
-                    ? new Vector3(graphRuntimePosition.x, graphRuntimePosition.y, graphRuntimePosition.z)
-                    : moduleDto.GetPosition();
+                Vector3 pos;
+                if (hasGraphTopology)
+                {
+                    AbsoluteUniversePosition graphAup = graphNodeDto.GetAup();
+                    if (!TryResolveRuntimeFloat3AupDelta(in graphAup, in graphLoadRuntimeOriginAup, out float3 graphRuntimePosition))
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    pos = new Vector3(graphRuntimePosition.x, graphRuntimePosition.y, graphRuntimePosition.z);
+                }
+                else
+                {
+                    pos = moduleDto.GetPosition();
+                }
+
                 Quaternion rot = hasGraphTopology
                     ? graphNodeDto.GetRotation()
                     : moduleDto.GetRotation();
@@ -2132,8 +2456,7 @@ namespace Hecton8.Construction
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Hecton8.Core.H8Debug.LogWarning(
-                        $"[ConstructionManager] Module '{moduleDto.prefabId}' " +
-                        "has invalid position. Skipping.");
+                        "[ConstructionManager] Module has invalid position. Skipping.");
 #endif
                     skippedCount++;
                     continue;
@@ -2153,7 +2476,7 @@ namespace Hecton8.Construction
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                         Hecton8.Core.H8Debug.LogWarning(
-                            $"[ConstructionManager] ObjectPoolManager unavailable while loading '{prefabId}'. Skipping pooled prefab.");
+                            "[ConstructionManager] ObjectPoolManager unavailable while loading pooled prefab.");
 #endif
                         skippedCount++;
                         continue;
@@ -2165,7 +2488,7 @@ namespace Hecton8.Construction
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Hecton8.Core.H8Debug.LogWarning(
-                        $"[ConstructionManager] Module '{prefabId}' has no finalPrefab and proxy generation failed. Skipping.");
+                        "[ConstructionManager] Module has no finalPrefab and proxy generation failed. Skipping.");
 #endif
                     skippedCount++;
                     continue;
@@ -2175,7 +2498,7 @@ namespace Hecton8.Construction
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Hecton8.Core.H8Debug.LogWarning(
-                        $"[ConstructionManager] Failed to spawn '{prefabId}'.");
+                        "[ConstructionManager] Failed to spawn module.");
 #endif
                     skippedCount++;
                     continue;
@@ -2256,8 +2579,7 @@ namespace Hecton8.Construction
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Hecton8.Core.H8Debug.Log(
-                $"[ConstructionManager] Loaded {loadedCount} modules" +
-                (skippedCount > 0 ? $", skipped {skippedCount}." : "."));
+                "[ConstructionManager] Construction load completed.");
 #endif
 
             UpdateDiagnostics();
@@ -2351,7 +2673,7 @@ namespace Hecton8.Construction
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Hecton8.Core.H8Debug.LogWarning(
-                        $"[ConstructionManager] Habitat graph edge budget ({ConstructionDTO.MaxGraphEdges}) exceeded during save. Truncating persisted topology.");
+                        "[ConstructionManager] Habitat graph edge budget exceeded during save. Truncating persisted topology.");
 #endif
                     dto.graphEdgeCount = edgeWriteIndex;
                     return;
@@ -2591,11 +2913,34 @@ namespace Hecton8.Construction
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     _cachedDataVault = currentService as IDataVault;
+                    _habitatGraphManager?.SetDataVault(_cachedDataVault);
+                    BaseLogisticsNetwork.BindDataVault(_cachedDataVault);
+                    LogisticsPipeTransportScheduler.BindDataVault(_cachedDataVault);
                     if (_isInitialized && isActiveAndEnabled)
                         TryEnsureDeconstructionVaultBuffers();
                     break;
                 case GlobalRegistryServiceSlot.GasDynamicsRuntime:
                     _cachedGasDynamics = currentService as IGasDynamicsSolver;
+                    break;
+                case GlobalRegistryServiceSlot.AtmosphereRuntime:
+                    _cachedAtmosphereReadModel = currentService as IAtmosphereReadModel;
+                    _habitatGraphManager?.SetAtmosphereReadModel(_cachedAtmosphereReadModel);
+                    break;
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    _cachedAmbientCurrentReadModel = currentService as IAmbientCurrentReadModel;
+                    _habitatGraphManager?.SetAmbientCurrentReadModel(_cachedAmbientCurrentReadModel);
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _cachedAudioService = currentService as IAudioService;
+                    _habitatGraphManager?.SetAudioService(_cachedAudioService);
+                    break;
+                case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime:
+                    _cachedFluidDecalPresentation = currentService as IFluidDecalPresentationSink;
+                    _habitatGraphManager?.SetFluidDecalPresentation(_cachedFluidDecalPresentation);
+                    BaseDegradationSystem.BindRuntimeServices(this, _cachedFluidDecalPresentation);
+                    break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _cachedPhysicsService = currentService as IPhysicsService;
                     break;
             }
         }
@@ -2738,22 +3083,7 @@ namespace Hecton8.Construction
                 if (module == null)
                     continue;
 
-                _jointRecoveryBuffer.Clear();
-                module.GetComponentsInChildren(true, _jointRecoveryBuffer);
-                int jointCount = _jointRecoveryBuffer.Count;
-                for (int jointIndex = 0; jointIndex < jointCount; jointIndex++)
-                {
-                    Joint joint = _jointRecoveryBuffer[jointIndex];
-                    if (joint == null)
-                        continue;
-
-                    if (joint.TryGetComponent(out Rigidbody ownerBody))
-                        capacityOverflow |= !TryCaptureJointBodyVelocity(ownerBody, ref capturedBodyCount);
-                    capacityOverflow |= !TryCaptureJointBodyVelocity(joint.connectedBody, ref capturedBodyCount);
-
-                    if (joint.connectedBody == null && !joint.autoConfigureConnectedAnchor)
-                        joint.connectedAnchor -= shiftOffset;
-                }
+                capacityOverflow |= !RecoverModuleJointsAfterOriginShift(module.transform, shiftOffset, ref capturedBodyCount);
             }
 
             RestoreCapturedJointBodyVelocities(capturedBodyCount);
@@ -2761,6 +3091,61 @@ namespace Hecton8.Construction
             if (capacityOverflow)
                 Hecton8.Core.H8Debug.LogWarning("[ConstructionManager] AUP joint recovery body cache exhausted; increase initialCapacity.", this);
 #endif
+        }
+
+        private bool RecoverModuleJointsAfterOriginShift(Transform root, Vector3 shiftOffset, ref int capturedBodyCount)
+        {
+            Transform[] stack = _jointRecoveryTransformStack;
+            if (root == null || stack == null || stack.Length <= 0)
+                return true;
+
+            bool completed = true;
+            int stackCount = 1;
+            stack[0] = root;
+            while (stackCount > 0)
+            {
+                Transform current = stack[--stackCount];
+                stack[stackCount] = null;
+                if (current == null)
+                    continue;
+
+                completed &= RecoverJointComponent<FixedJoint>(current, shiftOffset, ref capturedBodyCount);
+                completed &= RecoverJointComponent<ConfigurableJoint>(current, shiftOffset, ref capturedBodyCount);
+                completed &= RecoverJointComponent<HingeJoint>(current, shiftOffset, ref capturedBodyCount);
+                completed &= RecoverJointComponent<SpringJoint>(current, shiftOffset, ref capturedBodyCount);
+                completed &= RecoverJointComponent<CharacterJoint>(current, shiftOffset, ref capturedBodyCount);
+
+                int childCount = current.childCount;
+                for (int childIndex = 0; childIndex < childCount; childIndex++)
+                {
+                    if (stackCount >= stack.Length)
+                    {
+                        completed = false;
+                        break;
+                    }
+
+                    stack[stackCount++] = current.GetChild(childIndex);
+                }
+            }
+
+            return completed;
+        }
+
+        private bool RecoverJointComponent<TJoint>(Transform owner, Vector3 shiftOffset, ref int capturedBodyCount)
+            where TJoint : Joint
+        {
+            if (owner == null || !owner.TryGetComponent(out TJoint joint) || joint == null)
+                return true;
+
+            bool completed = true;
+            if (joint.TryGetComponent(out Rigidbody ownerBody))
+                completed &= TryCaptureJointBodyVelocity(ownerBody, ref capturedBodyCount);
+            completed &= TryCaptureJointBodyVelocity(joint.connectedBody, ref capturedBodyCount);
+
+            if (joint.connectedBody == null && !joint.autoConfigureConnectedAnchor)
+                joint.connectedAnchor -= shiftOffset;
+
+            return completed;
         }
 
         private bool TryCaptureJointBodyVelocity(Rigidbody body, ref int capturedBodyCount)
@@ -2786,7 +3171,7 @@ namespace Hecton8.Construction
 
         private void RestoreCapturedJointBodyVelocities(int capturedBodyCount)
         {
-            IPhysicsService physicsService = GlobalRegistry.Physics;
+            IPhysicsService physicsService = _cachedPhysicsService;
             for (int i = 0; i < capturedBodyCount; i++)
             {
                 Rigidbody body = _jointRecoveryBodies[i];
@@ -2874,7 +3259,7 @@ namespace Hecton8.Construction
         private uint BuildAmbientAccidentRoll(BaseModule candidate)
         {
             uint hash = 2166136261u;
-            hash = FoldAmbientAccidentHash(hash, (uint)ResolveModuleHashId(candidate));
+            hash = FoldAmbientAccidentHash(hash, (uint)CaptureModuleHashId(candidate));
             hash = FoldAmbientAccidentHash(hash, (uint)_ambientAccidentCursor);
 
             hash ^= hash >> 16;
@@ -2923,14 +3308,14 @@ namespace Hecton8.Construction
             if (module == null)
                 return;
 
-            string source = ResolveModuleSource(module);
+            string source = CaptureModuleSource(module);
             string summary = BuildAmbientAccidentSummary(module);
             FieldOperationLogSystem.RecordOperation(source, "SERVICE ACCIDENT", summary, "WARN");
 
             module.ApplyDamage(module.CurrentIntegrity + 1f);
         }
 
-        private static string ResolveModuleSource(BaseModule module)
+        private static string CaptureModuleSource(BaseModule module)
         {
             if (module != null && module.TryGetComponent(out ModuleMarker marker) && marker.Data != null)
             {

@@ -24,7 +24,14 @@ namespace Hecton8.Inventory
         [FieldOffset(12)] public int SlotCount;
         [FieldOffset(16)] public uint Flags;
         [FieldOffset(20)] public int LastSlotIndex;
-        [FieldOffset(24)] public ulong Reserved0;
+        [FieldOffset(24)] private byte _pad0;
+        [FieldOffset(25)] private byte _pad1;
+        [FieldOffset(26)] private byte _pad2;
+        [FieldOffset(27)] private byte _pad3;
+        [FieldOffset(28)] private byte _pad4;
+        [FieldOffset(29)] private byte _pad5;
+        [FieldOffset(30)] private byte _pad6;
+        [FieldOffset(31)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -44,34 +51,41 @@ namespace Hecton8.Inventory
     public struct InventoryTransactionResultDTO
     {
         [FieldOffset(0)] public uint TransactionId;
-        [FieldOffset(4)] public byte Status;
-        [FieldOffset(5)] public byte Flags;
-        [FieldOffset(6)] public ushort Reserved0;
-        [FieldOffset(8)] public uint ItemHashID;
-        [FieldOffset(12)] public uint QuantityMoved;
-        [FieldOffset(16)] public int SourceSlotIndex;
-        [FieldOffset(20)] public int DestinationSlotIndex;
-        [FieldOffset(24)] public uint FrameIndex;
-        [FieldOffset(28)] public uint Reserved1;
+        [FieldOffset(4)] public uint ItemHashID;
+        [FieldOffset(8)] public uint QuantityMoved;
+        [FieldOffset(12)] public int SourceSlotIndex;
+        [FieldOffset(16)] public int DestinationSlotIndex;
+        [FieldOffset(20)] public uint FrameIndex;
+        [FieldOffset(24)] public uint Reserved1;
+        [FieldOffset(28)] public ushort Reserved0;
+        [FieldOffset(30)] public byte Status;
+        [FieldOffset(31)] public byte Flags;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct InventoryRoutingTelemetryEntry
     {
-        [FieldOffset(0)] public uint FrameIndex;
-        [FieldOffset(4)] public uint ActiveSlots;
-        [FieldOffset(8)] public uint EmptySlots;
-        [FieldOffset(12)] public uint OrphanedSlots;
-        [FieldOffset(16)] public uint QueryCount;
-        [FieldOffset(20)] public uint TransactionCount;
-        [FieldOffset(24)] public uint ConflictCount;
-        [FieldOffset(28)] public uint Flags;
-        [FieldOffset(32)] public ulong StateHash;
+        [FieldOffset(0)] public ulong StateHash;
+        [FieldOffset(8)] public uint FrameIndex;
+        [FieldOffset(12)] public uint ActiveSlots;
+        [FieldOffset(16)] public uint EmptySlots;
+        [FieldOffset(20)] public uint OrphanedSlots;
+        [FieldOffset(24)] public uint QueryCount;
+        [FieldOffset(28)] public uint TransactionCount;
+        [FieldOffset(32)] public uint ConflictCount;
+        [FieldOffset(36)] public uint Flags;
         [FieldOffset(40)] public float QueryTimeEstimateUs;
         [FieldOffset(44)] public float Fragmentation01;
         [FieldOffset(48)] public uint LastItemHash;
         [FieldOffset(52)] public uint LastContainerHashLo;
-        [FieldOffset(56)] public ulong Reserved0;
+        [FieldOffset(56)] private byte _pad0;
+        [FieldOffset(57)] private byte _pad1;
+        [FieldOffset(58)] private byte _pad2;
+        [FieldOffset(59)] private byte _pad3;
+        [FieldOffset(60)] private byte _pad4;
+        [FieldOffset(61)] private byte _pad5;
+        [FieldOffset(62)] private byte _pad6;
+        [FieldOffset(63)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -114,55 +128,137 @@ namespace Hecton8.Inventory
         [FieldOffset(4)] public int SlotCount;
         [FieldOffset(8)] public uint ItemHashID;
         [FieldOffset(12)] public uint Flags;
-        [FieldOffset(16)] public ulong Reserved0;
-        [FieldOffset(24)] public ulong Reserved1;
-        [FieldOffset(32)] public ulong Reserved2;
-        [FieldOffset(40)] public ulong Reserved3;
-        [FieldOffset(48)] public ulong Reserved4;
-        [FieldOffset(56)] public ulong Reserved5;
+        [FieldOffset(16)] private byte _pad00;
+        [FieldOffset(17)] private byte _pad01;
+        [FieldOffset(18)] private byte _pad02;
+        [FieldOffset(19)] private byte _pad03;
+        [FieldOffset(20)] private byte _pad04;
+        [FieldOffset(21)] private byte _pad05;
+        [FieldOffset(22)] private byte _pad06;
+        [FieldOffset(23)] private byte _pad07;
+        [FieldOffset(24)] private byte _pad08;
+        [FieldOffset(25)] private byte _pad09;
+        [FieldOffset(26)] private byte _pad10;
+        [FieldOffset(27)] private byte _pad11;
+        [FieldOffset(28)] private byte _pad12;
+        [FieldOffset(29)] private byte _pad13;
+        [FieldOffset(30)] private byte _pad14;
+        [FieldOffset(31)] private byte _pad15;
+        [FieldOffset(32)] private byte _pad16;
+        [FieldOffset(33)] private byte _pad17;
+        [FieldOffset(34)] private byte _pad18;
+        [FieldOffset(35)] private byte _pad19;
+        [FieldOffset(36)] private byte _pad20;
+        [FieldOffset(37)] private byte _pad21;
+        [FieldOffset(38)] private byte _pad22;
+        [FieldOffset(39)] private byte _pad23;
+        [FieldOffset(40)] private byte _pad24;
+        [FieldOffset(41)] private byte _pad25;
+        [FieldOffset(42)] private byte _pad26;
+        [FieldOffset(43)] private byte _pad27;
+        [FieldOffset(44)] private byte _pad28;
+        [FieldOffset(45)] private byte _pad29;
+        [FieldOffset(46)] private byte _pad30;
+        [FieldOffset(47)] private byte _pad31;
+        [FieldOffset(48)] private byte _pad32;
+        [FieldOffset(49)] private byte _pad33;
+        [FieldOffset(50)] private byte _pad34;
+        [FieldOffset(51)] private byte _pad35;
+        [FieldOffset(52)] private byte _pad36;
+        [FieldOffset(53)] private byte _pad37;
+        [FieldOffset(54)] private byte _pad38;
+        [FieldOffset(55)] private byte _pad39;
+        [FieldOffset(56)] private byte _pad40;
+        [FieldOffset(57)] private byte _pad41;
+        [FieldOffset(58)] private byte _pad42;
+        [FieldOffset(59)] private byte _pad43;
+        [FieldOffset(60)] private byte _pad44;
+        [FieldOffset(61)] private byte _pad45;
+        [FieldOffset(62)] private byte _pad46;
+        [FieldOffset(63)] private byte _pad47;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct LogisticsTransferSignal : ISignal
     {
-        [FieldOffset(0)] public uint TransactionId;
-        [FieldOffset(4)] public uint ItemHashID;
-        [FieldOffset(8)] public uint Quantity;
-        [FieldOffset(12)] public uint FrameIndex;
-        [FieldOffset(16)] public ulong SourceAUPHash;
-        [FieldOffset(24)] public ulong DestinationAUPHash;
+        [FieldOffset(0)] public ulong SourceAUPHash;
+        [FieldOffset(8)] public ulong DestinationAUPHash;
+        [FieldOffset(16)] public uint TransactionId;
+        [FieldOffset(20)] public uint ItemHashID;
+        [FieldOffset(24)] public uint Quantity;
+        [FieldOffset(28)] public uint FrameIndex;
         [FieldOffset(32)] public float3 VisualMidpoint;
         [FieldOffset(44)] public uint Flags;
         [FieldOffset(48)] public uint SourceSlotIndex;
         [FieldOffset(52)] public uint DestinationSlotIndex;
-        [FieldOffset(56)] public ulong Reserved0;
+        [FieldOffset(56)] private byte _pad0;
+        [FieldOffset(57)] private byte _pad1;
+        [FieldOffset(58)] private byte _pad2;
+        [FieldOffset(59)] private byte _pad3;
+        [FieldOffset(60)] private byte _pad4;
+        [FieldOffset(61)] private byte _pad5;
+        [FieldOffset(62)] private byte _pad6;
+        [FieldOffset(63)] private byte _pad7;
     }
 
-    public struct InventoryRoutingVaultLane<T> where T : struct
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    public struct InventoryRoutingVaultLane
     {
-        public VaultGenerationHandle<T> Handle;
+        [FieldOffset(0)]
+        public uint BufferID;
+
+        [FieldOffset(4)]
+        public uint SystemID;
+
+        [FieldOffset(8)]
+        public uint Generation;
+
+        [FieldOffset(12)]
+        public uint Flags;
+
+        [FieldOffset(16)]
         public uint ExpectedBufferID;
+
+        [FieldOffset(20)]
         public int Length;
+
+        public void SetHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            BufferID = handle.BufferID;
+            SystemID = handle.SystemID;
+            Generation = handle.Generation;
+            Flags = handle.Flags;
+        }
+
+        public VaultGenerationHandle<T> ToHandle<T>() where T : struct
+        {
+            VaultGenerationHandle<T> handle = default;
+            handle.BufferID = BufferID;
+            handle.SystemID = SystemID;
+            handle.Generation = Generation;
+            handle.Flags = Flags;
+            return handle;
+        }
     }
 
     public struct InventoryRoutingBufferHandles
     {
-        public InventoryRoutingVaultLane<InventorySlotDTO> Slots;
-        public InventoryRoutingVaultLane<int> ActiveSlotCount;
-        public InventoryRoutingVaultLane<InventoryQueryResultDTO> QueryResults;
-        public InventoryRoutingVaultLane<InventoryAtomicCounter64> QueryCounters;
-        public InventoryRoutingVaultLane<InventoryRoutingTelemetryEntry> TelemetryRing;
-        public InventoryRoutingVaultLane<int> TelemetryCursor;
-        public InventoryRoutingVaultLane<InventoryRoutingTuningDTO> Tuning;
-        public InventoryRoutingVaultLane<InventorySlotDTO> UiSnapshotA;
-        public InventoryRoutingVaultLane<InventorySlotDTO> UiSnapshotB;
-        public InventoryRoutingVaultLane<InventoryStackLimitDTO> StackLimits;
-        public InventoryRoutingVaultLane<InventoryContainerRangeDTO> ContainerRanges;
-        public InventoryRoutingVaultLane<int> ContainerRangeCount;
-        public InventoryRoutingVaultLane<InventoryContainerRangeDTO> ContainerSyncResult;
+        public InventoryRoutingVaultLane Slots;
+        public InventoryRoutingVaultLane ActiveSlotCount;
+        public InventoryRoutingVaultLane QueryResults;
+        public InventoryRoutingVaultLane QueryCounters;
+        public InventoryRoutingVaultLane TelemetryRing;
+        public InventoryRoutingVaultLane TelemetryCursor;
+        public InventoryRoutingVaultLane Tuning;
+        public InventoryRoutingVaultLane UiSnapshotA;
+        public InventoryRoutingVaultLane UiSnapshotB;
+        public InventoryRoutingVaultLane StackLimits;
+        public InventoryRoutingVaultLane ContainerRanges;
+        public InventoryRoutingVaultLane ContainerRangeCount;
+        public InventoryRoutingVaultLane ContainerSyncResult;
     }
 
-    public struct InventoryRoutingBuffers
+    public ref struct InventoryRoutingBuffers
     {
         public NativeArray<InventorySlotDTO> Slots;
         public NativeArray<int> ActiveSlotCount;
@@ -248,6 +344,7 @@ namespace Hecton8.Inventory
         private const long AupQuantizedMin = -(1L << 20);
         private const long AupQuantizedMax = (1L << 20) - 1L;
         private const ulong AupAxisMask = (1UL << 21) - 1UL;
+        private const double FloatCastClampMeters = 3.4028234663852886e38d;
         internal const uint FnvOffset = 2166136261u;
         internal const uint FnvPrime = 16777619u;
 
@@ -260,9 +357,38 @@ namespace Hecton8.Inventory
                    OffsetOf<InventorySlotDTO>(nameof(InventorySlotDTO.ConditionFlags)) == InventorySlotDTO_ConditionFlags &&
                    OffsetOf<InventorySlotDTO>(nameof(InventorySlotDTO.ReservedLock)) == InventorySlotDTO_ReservedLock &&
                    UnsafeUtility.SizeOf<InventoryQueryResultDTO>() == InventoryQueryResultDtoSizeBytes &&
+                   OffsetOf<InventoryQueryResultDTO>(nameof(InventoryQueryResultDTO.ItemHashID)) == 0 &&
+                   OffsetOf<InventoryQueryResultDTO>(nameof(InventoryQueryResultDTO.RequestedIndex)) == 4 &&
+                   OffsetOf<InventoryQueryResultDTO>(nameof(InventoryQueryResultDTO.Quantity)) == 8 &&
+                   OffsetOf<InventoryQueryResultDTO>(nameof(InventoryQueryResultDTO.SlotCount)) == 12 &&
+                   OffsetOf<InventoryQueryResultDTO>(nameof(InventoryQueryResultDTO.Flags)) == 16 &&
+                   OffsetOf<InventoryQueryResultDTO>(nameof(InventoryQueryResultDTO.LastSlotIndex)) == 20 &&
                    UnsafeUtility.SizeOf<InventoryTransactionRequestDTO>() == InventoryTransactionRequestDtoSizeBytes &&
                    UnsafeUtility.SizeOf<InventoryTransactionResultDTO>() == InventoryTransactionResultDtoSizeBytes &&
+                   OffsetOf<InventoryTransactionResultDTO>(nameof(InventoryTransactionResultDTO.TransactionId)) == 0 &&
+                   OffsetOf<InventoryTransactionResultDTO>(nameof(InventoryTransactionResultDTO.ItemHashID)) == 4 &&
+                   OffsetOf<InventoryTransactionResultDTO>(nameof(InventoryTransactionResultDTO.QuantityMoved)) == 8 &&
+                   OffsetOf<InventoryTransactionResultDTO>(nameof(InventoryTransactionResultDTO.SourceSlotIndex)) == 12 &&
+                   OffsetOf<InventoryTransactionResultDTO>(nameof(InventoryTransactionResultDTO.DestinationSlotIndex)) == 16 &&
+                   OffsetOf<InventoryTransactionResultDTO>(nameof(InventoryTransactionResultDTO.FrameIndex)) == 20 &&
+                   OffsetOf<InventoryTransactionResultDTO>(nameof(InventoryTransactionResultDTO.Reserved1)) == 24 &&
+                   OffsetOf<InventoryTransactionResultDTO>(nameof(InventoryTransactionResultDTO.Reserved0)) == 28 &&
+                   OffsetOf<InventoryTransactionResultDTO>(nameof(InventoryTransactionResultDTO.Status)) == 30 &&
+                   OffsetOf<InventoryTransactionResultDTO>(nameof(InventoryTransactionResultDTO.Flags)) == 31 &&
                    UnsafeUtility.SizeOf<InventoryRoutingTelemetryEntry>() == InventoryTelemetryEntrySizeBytes &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.StateHash)) == 0 &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.FrameIndex)) == 8 &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.ActiveSlots)) == 12 &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.EmptySlots)) == 16 &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.OrphanedSlots)) == 20 &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.QueryCount)) == 24 &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.TransactionCount)) == 28 &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.ConflictCount)) == 32 &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.Flags)) == 36 &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.QueryTimeEstimateUs)) == 40 &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.Fragmentation01)) == 44 &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.LastItemHash)) == 48 &&
+                   OffsetOf<InventoryRoutingTelemetryEntry>(nameof(InventoryRoutingTelemetryEntry.LastContainerHashLo)) == 52 &&
                    UnsafeUtility.SizeOf<InventoryRoutingTuningDTO>() == 32 &&
                    UnsafeUtility.SizeOf<InventoryStackLimitDTO>() == 16 &&
                    UnsafeUtility.SizeOf<InventoryContainerRangeDTO>() == InventoryContainerRangeDtoSizeBytes &&
@@ -273,13 +399,26 @@ namespace Hecton8.Inventory
                    OffsetOf<InventoryContainerRangeDTO>(nameof(InventoryContainerRangeDTO.ActiveSlotCount)) == InventoryContainerRangeDTO_ActiveSlotCount &&
                    OffsetOf<InventoryContainerRangeDTO>(nameof(InventoryContainerRangeDTO.StateFlags)) == InventoryContainerRangeDTO_StateFlags &&
                    UnsafeUtility.SizeOf<InventoryAtomicCounter64>() == 64 &&
-                   UnsafeUtility.SizeOf<LogisticsTransferSignal>() == 64;
+                   OffsetOf<InventoryAtomicCounter64>(nameof(InventoryAtomicCounter64.Quantity)) == 0 &&
+                   OffsetOf<InventoryAtomicCounter64>(nameof(InventoryAtomicCounter64.SlotCount)) == 4 &&
+                   OffsetOf<InventoryAtomicCounter64>(nameof(InventoryAtomicCounter64.ItemHashID)) == 8 &&
+                   OffsetOf<InventoryAtomicCounter64>(nameof(InventoryAtomicCounter64.Flags)) == 12 &&
+                   UnsafeUtility.SizeOf<LogisticsTransferSignal>() == 64 &&
+                   OffsetOf<LogisticsTransferSignal>(nameof(LogisticsTransferSignal.SourceAUPHash)) == 0 &&
+                   OffsetOf<LogisticsTransferSignal>(nameof(LogisticsTransferSignal.DestinationAUPHash)) == 8 &&
+                   OffsetOf<LogisticsTransferSignal>(nameof(LogisticsTransferSignal.TransactionId)) == 16 &&
+                   OffsetOf<LogisticsTransferSignal>(nameof(LogisticsTransferSignal.ItemHashID)) == 20 &&
+                   OffsetOf<LogisticsTransferSignal>(nameof(LogisticsTransferSignal.Quantity)) == 24 &&
+                   OffsetOf<LogisticsTransferSignal>(nameof(LogisticsTransferSignal.FrameIndex)) == 28 &&
+                   OffsetOf<LogisticsTransferSignal>(nameof(LogisticsTransferSignal.VisualMidpoint)) == 32 &&
+                   OffsetOf<LogisticsTransferSignal>(nameof(LogisticsTransferSignal.Flags)) == 44 &&
+                   OffsetOf<LogisticsTransferSignal>(nameof(LogisticsTransferSignal.SourceSlotIndex)) == 48 &&
+                   OffsetOf<LogisticsTransferSignal>(nameof(LogisticsTransferSignal.DestinationSlotIndex)) == 52;
         }
 
-        public static void ValidateRuntimeLayoutOrThrow()
+        public static bool ValidateRuntimeLayoutOrThrow()
         {
-            if (!RuntimeLayoutValid())
-                throw new InvalidOperationException("InventoryRoutingNetwork DTO layout mismatch.");
+            return RuntimeLayoutValid();
         }
 
         public static InventoryRoutingBufferHandles EnsureBuffers(
@@ -293,7 +432,9 @@ namespace Hecton8.Inventory
             if (vault == null)
                 return handles;
 
-            ValidateRuntimeLayoutOrThrow();
+            if (!ValidateRuntimeLayoutOrThrow())
+                return handles;
+
             slotCapacity = math.max(1, slotCapacity);
             queryCapacity = math.max(1, queryCapacity);
             stackLimitCapacity = math.max(1, stackLimitCapacity);
@@ -391,19 +532,19 @@ namespace Hecton8.Inventory
             if (vault == null)
                 return false;
 
-            buffers.Slots = OpenLane(vault, in handles.Slots);
-            buffers.ActiveSlotCount = OpenLane(vault, in handles.ActiveSlotCount);
-            buffers.QueryResults = OpenLane(vault, in handles.QueryResults);
-            buffers.QueryCounters = OpenLane(vault, in handles.QueryCounters);
-            buffers.TelemetryRing = OpenLane(vault, in handles.TelemetryRing);
-            buffers.TelemetryCursor = OpenLane(vault, in handles.TelemetryCursor);
-            buffers.Tuning = OpenLane(vault, in handles.Tuning);
-            buffers.UiSnapshotA = OpenLane(vault, in handles.UiSnapshotA);
-            buffers.UiSnapshotB = OpenLane(vault, in handles.UiSnapshotB);
-            buffers.StackLimits = OpenLane(vault, in handles.StackLimits);
-            buffers.ContainerRanges = OpenLane(vault, in handles.ContainerRanges);
-            buffers.ContainerRangeCount = OpenLane(vault, in handles.ContainerRangeCount);
-            buffers.ContainerSyncResult = OpenLane(vault, in handles.ContainerSyncResult);
+            buffers.Slots = OpenLane<InventorySlotDTO>(vault, in handles.Slots);
+            buffers.ActiveSlotCount = OpenLane<int>(vault, in handles.ActiveSlotCount);
+            buffers.QueryResults = OpenLane<InventoryQueryResultDTO>(vault, in handles.QueryResults);
+            buffers.QueryCounters = OpenLane<InventoryAtomicCounter64>(vault, in handles.QueryCounters);
+            buffers.TelemetryRing = OpenLane<InventoryRoutingTelemetryEntry>(vault, in handles.TelemetryRing);
+            buffers.TelemetryCursor = OpenLane<int>(vault, in handles.TelemetryCursor);
+            buffers.Tuning = OpenLane<InventoryRoutingTuningDTO>(vault, in handles.Tuning);
+            buffers.UiSnapshotA = OpenLane<InventorySlotDTO>(vault, in handles.UiSnapshotA);
+            buffers.UiSnapshotB = OpenLane<InventorySlotDTO>(vault, in handles.UiSnapshotB);
+            buffers.StackLimits = OpenLane<InventoryStackLimitDTO>(vault, in handles.StackLimits);
+            buffers.ContainerRanges = OpenLane<InventoryContainerRangeDTO>(vault, in handles.ContainerRanges);
+            buffers.ContainerRangeCount = OpenLane<int>(vault, in handles.ContainerRangeCount);
+            buffers.ContainerSyncResult = OpenLane<InventoryContainerRangeDTO>(vault, in handles.ContainerSyncResult);
 
             return buffers.Slots.IsCreated &&
                    buffers.ActiveSlotCount.IsCreated &&
@@ -420,7 +561,7 @@ namespace Hecton8.Inventory
                    buffers.ContainerSyncResult.IsCreated;
         }
 
-        private static InventoryRoutingVaultLane<T> AcquireLane<T>(
+        private static InventoryRoutingVaultLane AcquireLane<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
@@ -439,24 +580,24 @@ namespace Hecton8.Inventory
             if (handle.BufferID != expectedBufferId || handle.Generation == 0u)
                 return default;
 
-            return new InventoryRoutingVaultLane<T>
-            {
-                Handle = handle,
-                ExpectedBufferID = expectedBufferId,
-                Length = requiredLength
-            };
+            InventoryRoutingVaultLane lane = default;
+            lane.SetHandle(in handle);
+            lane.ExpectedBufferID = expectedBufferId;
+            lane.Length = requiredLength;
+            return lane;
         }
 
         private static NativeArray<T> OpenLane<T>(
             IDataVault vault,
-            in InventoryRoutingVaultLane<T> lane) where T : struct
+            in InventoryRoutingVaultLane lane) where T : struct
         {
+            VaultGenerationHandle<T> handle = lane.ToHandle<T>();
             if (vault == null ||
                 lane.ExpectedBufferID == 0u ||
-                lane.Handle.BufferID != lane.ExpectedBufferID ||
-                lane.Handle.Generation == 0u ||
+                lane.BufferID != lane.ExpectedBufferID ||
+                lane.Generation == 0u ||
                 lane.Length <= 0 ||
-                !vault.TryResolveHandle(in lane.Handle, out NativeArray<T> buffer) ||
+                !vault.TryResolveHandle(in handle, out NativeArray<T> buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < lane.Length)
             {
@@ -1006,11 +1147,21 @@ namespace Hecton8.Inventory
 
             double3 containerAup = DecodeAupHash(containerAupHash);
             double3 deltaDouble = containerAup - queryAup;
-            float3 delta = new float3((float)deltaDouble.x, (float)deltaDouble.y, (float)deltaDouble.z);
+            float3 delta = ClampAupDeltaToFloat3(deltaDouble);
             if (!math.all(math.isfinite(delta)))
                 return false;
 
             return math.lengthsq(delta) <= safeMaxDistance * safeMaxDistance;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float3 ClampAupDeltaToFloat3(double3 deltaAup)
+        {
+            float3 result = default;
+            result.x = (float)math.clamp(deltaAup.x, -FloatCastClampMeters, FloatCastClampMeters);
+            result.y = (float)math.clamp(deltaAup.y, -FloatCastClampMeters, FloatCastClampMeters);
+            result.z = (float)math.clamp(deltaAup.z, -FloatCastClampMeters, FloatCastClampMeters);
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1065,16 +1216,18 @@ namespace Hecton8.Inventory
             uint indexHash = unchecked((uint)index);
             uint itemHash = empty ? 0u : 0x1000u + (((indexHash * 2654435761u) + salt) & 255u);
             uint quantity = empty ? 0u : (uint)(1 + ((index * 17) & 63));
-            double3 offset = new double3((index % 317) * 2.0d, ((index / 317) % 19) * 0.5d, (index % 91) * -1.75d);
+            double3 offset = default;
+            offset.x = (index % 317) * 2.0d;
+            offset.y = ((index / 317) % 19) * 0.5d;
+            offset.z = (index % 91) * -1.75d;
 
-            Slots[index] = new InventorySlotDTO
-            {
-                ItemHashID = itemHash,
-                Quantity = quantity,
-                ContainerAUPHash = InventoryRoutingNetwork.PackAupHash(OriginAUP + offset),
-                ConditionFlags = InventoryRoutingNetwork.PackConditionFlags(1000, (index & 7) == 0 ? InventoryRoutingNetwork.ConditionPerishable : 0u),
-                ReservedLock = 0u
-            };
+            InventorySlotDTO slot = default;
+            slot.ItemHashID = itemHash;
+            slot.Quantity = quantity;
+            slot.ContainerAUPHash = InventoryRoutingNetwork.PackAupHash(OriginAUP + offset);
+            slot.ConditionFlags = InventoryRoutingNetwork.PackConditionFlags(1000, (index & 7) == 0 ? InventoryRoutingNetwork.ConditionPerishable : 0u);
+            slot.ReservedLock = 0u;
+            Slots[index] = slot;
         }
     }
 
@@ -1227,10 +1380,9 @@ namespace Hecton8.Inventory
             if (!Counters.IsCreated || (uint)index >= (uint)Counters.Length)
                 return;
 
-            Counters[index] = new InventoryAtomicCounter64
-            {
-                ItemHashID = RequestedItemHashIds.IsCreated && index < RequestedItemHashIds.Length ? RequestedItemHashIds[index] : 0u
-            };
+            InventoryAtomicCounter64 counter = default;
+            counter.ItemHashID = RequestedItemHashIds.IsCreated && index < RequestedItemHashIds.Length ? RequestedItemHashIds[index] : 0u;
+            Counters[index] = counter;
         }
     }
 
@@ -1306,15 +1458,14 @@ namespace Hecton8.Inventory
 
                 if (i < resultCount)
                 {
-                    Results[i] = new InventoryQueryResultDTO
-                    {
-                        ItemHashID = counter.ItemHashID,
-                        RequestedIndex = i,
-                        Quantity = quantity,
-                        SlotCount = math.max(0, counter.SlotCount),
-                        Flags = quantity > 0 ? 1u : 0u,
-                        LastSlotIndex = -1
-                    };
+                    InventoryQueryResultDTO result = default;
+                    result.ItemHashID = counter.ItemHashID;
+                    result.RequestedIndex = i;
+                    result.Quantity = quantity;
+                    result.SlotCount = math.max(0, counter.SlotCount);
+                    result.Flags = quantity > 0 ? 1u : 0u;
+                    result.LastSlotIndex = -1;
+                    Results[i] = result;
                 }
             }
         }
@@ -1341,15 +1492,14 @@ namespace Hecton8.Inventory
             uint hash = RequestedItemHashIds[index];
             int quantity;
             bool found = InventoryRoutingNetwork.TryLookupIndexedTotal(IndexKeys, IndexTotals, hash, out quantity);
-            Results[index] = new InventoryQueryResultDTO
-            {
-                ItemHashID = hash,
-                RequestedIndex = index,
-                Quantity = found ? quantity : 0,
-                SlotCount = 0,
-                Flags = found ? 1u : 0u,
-                LastSlotIndex = -1
-            };
+            InventoryQueryResultDTO result = default;
+            result.ItemHashID = hash;
+            result.RequestedIndex = index;
+            result.Quantity = found ? quantity : 0;
+            result.SlotCount = 0;
+            result.Flags = found ? 1u : 0u;
+            result.LastSlotIndex = -1;
+            Results[index] = result;
         }
     }
 
@@ -1394,14 +1544,12 @@ namespace Hecton8.Inventory
 
         private void ExecuteRequest(InventorySlotDTO* slots, InventoryTransactionRequestDTO request, ref InventoryTransactionResultDTO result)
         {
-            result = new InventoryTransactionResultDTO
-            {
-                TransactionId = request.TransactionId,
-                ItemHashID = request.ItemHashID,
-                SourceSlotIndex = request.SourceSlotIndex,
-                DestinationSlotIndex = request.DestinationSlotIndex,
-                FrameIndex = request.FrameIndex
-            };
+            result = default;
+            result.TransactionId = request.TransactionId;
+            result.ItemHashID = request.ItemHashID;
+            result.SourceSlotIndex = request.SourceSlotIndex;
+            result.DestinationSlotIndex = request.DestinationSlotIndex;
+            result.FrameIndex = request.FrameIndex;
 
             if ((uint)request.SourceSlotIndex >= (uint)Slots.Length ||
                 (uint)request.DestinationSlotIndex >= (uint)Slots.Length ||
@@ -1482,19 +1630,19 @@ namespace Hecton8.Inventory
                     double3 sourceAup = InventoryRoutingNetwork.DecodeAupHash(source.ContainerAUPHash);
                     double3 destinationAup = InventoryRoutingNetwork.DecodeAupHash(destination.ContainerAUPHash);
                     double3 midpointLocalFromSource = (destinationAup - sourceAup) * 0.5d;
-                    if (!SignalBus<LogisticsTransferSignal>.TryEnqueueBounded(TransferSignalWriter, TransferSignalWriterBudget, new LogisticsTransferSignal
-                    {
-                        TransactionId = request.TransactionId,
-                        ItemHashID = request.ItemHashID,
-                        Quantity = request.Quantity,
-                        FrameIndex = request.FrameIndex,
-                        SourceAUPHash = source.ContainerAUPHash,
-                        DestinationAUPHash = destination.ContainerAUPHash,
-                        VisualMidpoint = new float3((float)midpointLocalFromSource.x, (float)midpointLocalFromSource.y, (float)midpointLocalFromSource.z),
-                        Flags = request.Flags,
-                        SourceSlotIndex = unchecked((uint)request.SourceSlotIndex),
-                        DestinationSlotIndex = unchecked((uint)request.DestinationSlotIndex)
-                    }))
+                    float3 visualMidpoint = InventoryRoutingNetwork.ClampAupDeltaToFloat3(midpointLocalFromSource);
+                    LogisticsTransferSignal signal = default;
+                    signal.TransactionId = request.TransactionId;
+                    signal.ItemHashID = request.ItemHashID;
+                    signal.Quantity = request.Quantity;
+                    signal.FrameIndex = request.FrameIndex;
+                    signal.SourceAUPHash = source.ContainerAUPHash;
+                    signal.DestinationAUPHash = destination.ContainerAUPHash;
+                    signal.VisualMidpoint = visualMidpoint;
+                    signal.Flags = request.Flags;
+                    signal.SourceSlotIndex = unchecked((uint)request.SourceSlotIndex);
+                    signal.DestinationSlotIndex = unchecked((uint)request.DestinationSlotIndex);
+                    if (!SignalBus<LogisticsTransferSignal>.TryEnqueueBounded(TransferSignalWriter, TransferSignalWriterBudget, signal))
                     {
                         result.Flags |= InventoryRoutingNetwork.TransactionResultSignalDrop;
                     }
@@ -1616,25 +1764,23 @@ namespace Hecton8.Inventory
 
                 if (itemHash == 0u || quantity == 0u)
                 {
-                    Slots[range.SlotStart + index] = new InventorySlotDTO
-                    {
-                        ItemHashID = 0u,
-                        Quantity = 0u,
-                        ContainerAUPHash = range.ContainerAUPHash,
-                        ConditionFlags = InventoryRoutingNetwork.ConditionContainerRangePinned,
-                        ReservedLock = 0u
-                    };
+                    InventorySlotDTO emptySlot = default;
+                    emptySlot.ItemHashID = 0u;
+                    emptySlot.Quantity = 0u;
+                    emptySlot.ContainerAUPHash = range.ContainerAUPHash;
+                    emptySlot.ConditionFlags = InventoryRoutingNetwork.ConditionContainerRangePinned;
+                    emptySlot.ReservedLock = 0u;
+                    Slots[range.SlotStart + index] = emptySlot;
                     continue;
                 }
 
-                Slots[range.SlotStart + index] = new InventorySlotDTO
-                {
-                    ItemHashID = itemHash,
-                    Quantity = quantity,
-                    ContainerAUPHash = range.ContainerAUPHash,
-                    ConditionFlags = flags,
-                    ReservedLock = reservedLock
-                };
+                InventorySlotDTO slot = default;
+                slot.ItemHashID = itemHash;
+                slot.Quantity = quantity;
+                slot.ContainerAUPHash = range.ContainerAUPHash;
+                slot.ConditionFlags = flags;
+                slot.ReservedLock = reservedLock;
+                Slots[range.SlotStart + index] = slot;
                 active++;
             }
 
@@ -1721,15 +1867,13 @@ namespace Hecton8.Inventory
                     return false;
                 }
 
-                range = new InventoryContainerRangeDTO
-                {
-                    ContainerHash = 0UL,
-                    ContainerAUPHash = ContainerAUPHash,
-                    SlotStart = (int)slotStartLong,
-                    SlotCapacity = safeSlotCapacity,
-                    ActiveSlotCount = 0,
-                    StateFlags = InventoryRoutingNetwork.ContainerRangeMutating
-                };
+                range = default;
+                range.ContainerHash = 0UL;
+                range.ContainerAUPHash = ContainerAUPHash;
+                range.SlotStart = (int)slotStartLong;
+                range.SlotCapacity = safeSlotCapacity;
+                range.ActiveSlotCount = 0;
+                range.StateFlags = InventoryRoutingNetwork.ContainerRangeMutating;
                 ranges[index] = range;
 
                 Interlocked.Exchange(ref UnsafeUtility.AsRef<long>(hashPtr), hashValue);
@@ -1836,15 +1980,14 @@ namespace Hecton8.Inventory
             if (!ResultRange.IsCreated || ResultRange.Length == 0)
                 return;
 
-            ResultRange[0] = new InventoryContainerRangeDTO
-            {
-                ContainerHash = ContainerHash,
-                ContainerAUPHash = ContainerAUPHash,
-                SlotStart = -1,
-                SlotCapacity = 0,
-                ActiveSlotCount = 0,
-                StateFlags = InventoryRoutingNetwork.ContainerRangeSyncFailed | extraFlags
-            };
+            InventoryContainerRangeDTO failure = default;
+            failure.ContainerHash = ContainerHash;
+            failure.ContainerAUPHash = ContainerAUPHash;
+            failure.SlotStart = -1;
+            failure.SlotCapacity = 0;
+            failure.ActiveSlotCount = 0;
+            failure.StateFlags = InventoryRoutingNetwork.ContainerRangeSyncFailed | extraFlags;
+            ResultRange[0] = failure;
         }
     }
 
@@ -1911,12 +2054,11 @@ namespace Hecton8.Inventory
         {
             if (ResultRange.IsCreated && ResultRange.Length > 0)
             {
-                ResultRange[0] = new InventoryContainerRangeDTO
-                {
-                    ContainerHash = ContainerHash,
-                    SlotStart = -1,
-                    StateFlags = InventoryRoutingNetwork.ContainerRangeSyncFailed
-                };
+                InventoryContainerRangeDTO failure = default;
+                failure.ContainerHash = ContainerHash;
+                failure.SlotStart = -1;
+                failure.StateFlags = InventoryRoutingNetwork.ContainerRangeSyncFailed;
+                ResultRange[0] = failure;
             }
         }
     }
@@ -2091,22 +2233,21 @@ namespace Hecton8.Inventory
                 TelemetryCursor[0] = (cursor + 1) % TelemetryRing.Length;
             }
 
-            TelemetryRing[cursor % TelemetryRing.Length] = new InventoryRoutingTelemetryEntry
-            {
-                FrameIndex = FrameIndex,
-                ActiveSlots = active,
-                EmptySlots = empty,
-                OrphanedSlots = orphaned,
-                QueryCount = QueryCount,
-                TransactionCount = TransactionCount,
-                ConflictCount = ConflictCount,
-                Flags = flags,
-                StateHash = stateHash,
-                QueryTimeEstimateUs = QueryTimeEstimateUs,
-                Fragmentation01 = fragmentation,
-                LastItemHash = lastHash,
-                LastContainerHashLo = lastContainerLo
-            };
+            InventoryRoutingTelemetryEntry telemetry = default;
+            telemetry.FrameIndex = FrameIndex;
+            telemetry.ActiveSlots = active;
+            telemetry.EmptySlots = empty;
+            telemetry.OrphanedSlots = orphaned;
+            telemetry.QueryCount = QueryCount;
+            telemetry.TransactionCount = TransactionCount;
+            telemetry.ConflictCount = ConflictCount;
+            telemetry.Flags = flags;
+            telemetry.StateHash = stateHash;
+            telemetry.QueryTimeEstimateUs = QueryTimeEstimateUs;
+            telemetry.Fragmentation01 = fragmentation;
+            telemetry.LastItemHash = lastHash;
+            telemetry.LastContainerHashLo = lastContainerLo;
+            TelemetryRing[cursor % TelemetryRing.Length] = telemetry;
 
             if (ActiveSlotCount.IsCreated && ActiveSlotCount.Length > 0)
                 ActiveSlotCount[0] = unchecked((int)active);
@@ -2157,12 +2298,11 @@ namespace Hecton8.Inventory
                     continue;
                 }
 
-                StackLimits[written++] = new InventoryStackLimitDTO
-                {
-                    ItemHashID = hash,
-                    MaxStack = maxStack,
-                    Flags = flags
-                };
+                InventoryStackLimitDTO stackLimit = default;
+                stackLimit.ItemHashID = hash;
+                stackLimit.MaxStack = maxStack;
+                stackLimit.Flags = flags;
+                StackLimits[written++] = stackLimit;
             }
 
             if (ResultCounters.IsCreated && ResultCounters.Length >= 2)

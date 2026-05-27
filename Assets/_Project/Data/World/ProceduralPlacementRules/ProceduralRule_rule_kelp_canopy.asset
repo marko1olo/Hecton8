@@ -15,7 +15,7 @@ MonoBehaviour:
   ruleId: rule.kelp.canopy
   ruleLabel: Kelp Canopy Crowns
   familyProfile: {fileID: 11400000, guid: 77ab354ff4f9f9a4bbd31cdd3f8c5006, type: 2}
-  gameplayIntent: Upper canopy kelp that makes shallow reef routes feel layered and
+  gameplayIntent: Upper canopy kelp that makes shallow shelf routes feel layered and
     inhabited.
   preferredBiomeFamilies:
   - {fileID: 11400000, guid: d0a58ce33e78f134cb56f6d23fb89aa6, type: 2}
